@@ -25,7 +25,23 @@ async function transportRoutes(fastify) {
   fastify.get("/transport/vehicles/:id", { preHandler: requirePermission("transport", "read") }, (request) => service.getVehicle(request.user?.tenant_id, request.params.id));
   fastify.post("/transport/vehicles", { schema: schemas.vehicleSchema, preHandler: requirePermission("transport", "write") }, (request) => service.createVehicle(request.user?.tenant_id, request.user, request.body));
   fastify.put("/transport/vehicles/:id", { schema: schemas.vehicleSchema, preHandler: requirePermission("transport", "write") }, (request) => service.updateVehicle(request.user?.tenant_id, request.user, request.params.id, request.body));
-  fastify.post("/transport/vehicles/:id/documents", { schema: schemas.vehicleDocumentSchema, preHandler: requirePermission("transport", "write") }, (request) => service.addVehicleDocument(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.get("/transport/vehicles/:id/documents/:documentId/view", { preHandler: requirePermission("transport", "read") }, (request) => service.getVehicleDocumentView(request.user?.tenant_id, request.params.id, request.params.documentId));
+  fastify.post("/transport/vehicles/:id/documents", { preHandler: requirePermission("transport", "write") }, async (request) => {
+    const fields = {};
+    let file = null;
+    for await (const part of request.parts()) {
+      if (part.type === "file") {
+        if (part.fieldname === "file" && !file) {
+          file = { filename: part.filename, mimetype: part.mimetype, bytes: await part.toBuffer() };
+        } else {
+          await part.toBuffer();
+        }
+      } else {
+        fields[part.fieldname] = String(part.value ?? "");
+      }
+    }
+    return service.addVehicleDocument(request.user?.tenant_id, request.user, request.params.id, { ...fields, file });
+  });
   fastify.patch("/transport/vehicles/:id/documents/:documentId", { schema: schemas.vehicleDocumentUpdateSchema, preHandler: requirePermission("transport", "write") }, (request) => service.updateVehicleDocument(request.user?.tenant_id, request.user, request.params.id, request.params.documentId, request.body));
 
   fastify.get("/transport/control-tower", { preHandler: requirePermission("transport", "read") }, (request) => tms.getControlTower(request.user?.tenant_id));
@@ -119,6 +135,7 @@ async function transportRoutes(fastify) {
   fastify.put("/transport/settlement-periods/:id", { schema: tmsSchemas.settlementPeriodSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.saveSettlementPeriod(request.user?.tenant_id, request.user, request.params.id, request.body));
 
   fastify.get("/transport/settlement-control-tower", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementControlTower(request.user?.tenant_id, request.query));
+  fastify.get("/transport/settlement-vehicle-consolidation", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementVehicleConsolidation(request.user?.tenant_id, request.query));
   fastify.get("/transport/settlement-packages", { preHandler: requirePermission("transport", "read") }, (request) => settlement.listSettlementPackages(request.user?.tenant_id, request.query));
   fastify.post("/transport/settlement-packages", { schema: tmsSchemas.settlementPackageCreateSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await settlement.createSettlementPackage(request.user?.tenant_id, request.user, request.body)));
   fastify.get("/transport/settlement-packages/:id", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementPackage(request.user?.tenant_id, request.params.id));

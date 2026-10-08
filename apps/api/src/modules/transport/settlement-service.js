@@ -213,10 +213,42 @@ async function getSettlementControlTower(tenantId, query = {}) {
   };
 }
 
+// ---- Consolidacion de ingresos por vehiculo (torre de liquidacion) ----
+// Reutiliza el motor puro: agrupa las lineas de los paquetes por placa para responder
+// "cuanto ingreso genera cada vehiculo" sin duplicar consultas ni crear un subsistema aparte.
+async function getSettlementVehicleConsolidation(tenantId, query = {}) {
+  return read(tenantId, async (db) => {
+    const packages = await db.transportSettlementPackage.findMany({
+      where: packageWhere(query),
+      include: { items: true, period: { select: { code: true, start_date: true, end_date: true } } },
+      orderBy: { updated_at: "desc" }, take: Math.min(numberOr(query.limit, 200), 300)
+    });
+    const vehicles = E.consolidateByVehicle(packages.map((pkg) => ({
+      ...packageView(pkg),
+      period_code: pkg.period?.code || null
+    })));
+    const sum = (field) => E.round2(vehicles.reduce((acc, vehicle) => acc + numberOr(vehicle[field]), 0));
+    return {
+      generated_at: new Date().toISOString(),
+      total_packages: packages.length,
+      totals: {
+        vehicle_count: vehicles.length,
+        line_count: vehicles.reduce((acc, vehicle) => acc + vehicle.line_count, 0),
+        guide_count: vehicles.reduce((acc, vehicle) => acc + vehicle.guide_count, 0),
+        weight_kg: sum("weight_kg"),
+        distance_km: sum("distance_km"),
+        calculated_total: sum("calculated_total"),
+        adjusted_total: sum("adjusted_total"),
+        approved_total: sum("approved_total")
+      },
+      vehicles
+    };
+  });
+}
+
 async function loadCarrier(tx, carrierId) {
   return tx.transportCarrier.findFirst({ where: { id: Number(carrierId), __includeInactive: true } });
 }
-
 async function createSettlementPackage(tenantId, user, input) {
   return write(tenantId, async (tx) => {
     const code = String(input.code || "").trim().toUpperCase();
@@ -623,6 +655,7 @@ module.exports = {
   listSettlementTypes, saveSettlementType,
   listSettlementPeriods, saveSettlementPeriod,
   listSettlementPackages, getSettlementPackage, getSettlementControlTower,
+  getSettlementVehicleConsolidation,
   createSettlementPackage, updateSettlementPackage, addSettlementItems,
   validateSettlementPackage, precalculateSettlementPackage, addSettlementAdjustment,
   createSettlementIssue, resolveSettlementIssue, reopenSettlementIssue,

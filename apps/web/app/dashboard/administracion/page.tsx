@@ -59,7 +59,7 @@ type Role = {
   permissions: Record<string, Record<string, boolean>>;
 };
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
-type MasterOption = { code: string; name: string; description?: string; active?: boolean; sort_order?: number };
+type MasterOption = { code: string; name: string; description?: string; active?: boolean; sort_order?: number; parent_code?: string | null };
 type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceStore = { code: string; label: string; active?: boolean };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
@@ -93,6 +93,14 @@ type UserMasterData = {
   work_shifts: MasterOption[];
   activity_types: MasterOption[];
   banks: MasterOption[];
+  units_of_measure?: MasterOption[];
+  vehicle_types?: MasterOption[];
+  vehicle_categories?: MasterOption[];
+  vehicle_brands?: MasterOption[];
+  vehicle_lines?: MasterOption[];
+  vehicle_colors?: MasterOption[];
+  vehicle_fuels?: MasterOption[];
+  vehicle_body_types?: MasterOption[];
   roles?: Role[];
 };
 type AdminUser = {
@@ -319,7 +327,26 @@ const fallbackUserMasterData: UserMasterData = {
     { code: "ACT-03", name: "Entrega en tienda" },
     { code: "ACT-04", name: "Novedad en ruta" }
   ],
-  banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }]
+  banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }],
+  units_of_measure: [{ code: "UND", name: "Unidad" }, { code: "KG", name: "Kilogramo" }, { code: "TON", name: "Tonelada" }, { code: "M3", name: "Metro cubico" }, { code: "LB", name: "Libra" }, { code: "HORA", name: "Hora" }],
+  vehicle_types: [{ code: "camioneta", name: "Camioneta" }, { code: "furgon", name: "Furgon" }, { code: "camion", name: "Camion" }, { code: "motocicleta", name: "Motocicleta" }, { code: "automovil", name: "Automovil" }, { code: "buseta", name: "Buseta" }, { code: "bus", name: "Bus" }, { code: "camion_tracto", name: "Camion tracto" }, { code: "volqueta", name: "Volqueta" }],
+  vehicle_categories: [{ code: "motocicleta", name: "Motocicleta" }, { code: "liviano", name: "Liviano" }, { code: "utilitario", name: "Utilitario" }, { code: "camion_liviano", name: "Camion liviano" }, { code: "camion_mediano", name: "Camion mediano" }, { code: "camion_pesado", name: "Camion pesado" }, { code: "articulado", name: "Articulado / tractomula" }],
+  vehicle_brands: [{ code: "toyota", name: "Toyota" }, { code: "chevrolet", name: "Chevrolet" }, { code: "renault", name: "Renault" }, { code: "nissan", name: "Nissan" }, { code: "mazda", name: "Mazda" }, { code: "ford", name: "Ford" }, { code: "volkswagen", name: "Volkswagen" }, { code: "mercedes_benz", name: "Mercedes-Benz" }, { code: "hyundai", name: "Hyundai" }, { code: "kia", name: "Kia" }, { code: "iveco", name: "Iveco" }, { code: "hino", name: "Hino" }],
+  vehicle_lines: [
+    { code: "hilux", name: "Hilux", parent_code: "toyota" }, { code: "fortuner", name: "Fortuner", parent_code: "toyota" },
+    { code: "nhr", name: "NHR", parent_code: "chevrolet" }, { code: "npr", name: "NPR", parent_code: "chevrolet" }, { code: "dmax", name: "D-Max", parent_code: "chevrolet" }, { code: "spark_gt", name: "Spark GT", parent_code: "chevrolet" },
+    { code: "kangoo", name: "Kangoo", parent_code: "renault" }, { code: "trafic", name: "Trafic", parent_code: "renault" }, { code: "logan", name: "Logan", parent_code: "renault" },
+    { code: "frontier", name: "Frontier", parent_code: "nissan" }, { code: "urvan", name: "Urvan", parent_code: "nissan" },
+    { code: "bt50", name: "BT-50", parent_code: "mazda" },
+    { code: "ranger", name: "Ranger", parent_code: "ford" }, { code: "transit", name: "Transit", parent_code: "ford" },
+    { code: "amarok", name: "Amarok", parent_code: "volkswagen" }, { code: "delivery", name: "Delivery", parent_code: "volkswagen" },
+    { code: "sprinter", name: "Sprinter", parent_code: "mercedes_benz" }, { code: "atego", name: "Atego", parent_code: "mercedes_benz" },
+    { code: "daily", name: "Daily", parent_code: "iveco" },
+    { code: "dutro", name: "Dutro", parent_code: "hino" }
+  ],
+  vehicle_colors: [{ code: "blanco", name: "Blanco" }, { code: "negro", name: "Negro" }, { code: "gris", name: "Gris" }, { code: "plata", name: "Plata" }, { code: "rojo", name: "Rojo" }, { code: "azul", name: "Azul" }, { code: "verde", name: "Verde" }, { code: "amarillo", name: "Amarillo" }, { code: "naranja", name: "Naranja" }, { code: "beige", name: "Beige" }, { code: "cafe", name: "Cafe" }, { code: "vinotinto", name: "Vinotinto" }],
+  vehicle_fuels: [{ code: "gasolina", name: "Gasolina" }, { code: "diesel", name: "Diesel" }, { code: "gnv", name: "Gas natural (GNV)" }, { code: "gnv_gasolina", name: "Gasolina + GNV" }, { code: "electrico", name: "Electrico" }, { code: "hibrido", name: "Hibrido" }],
+  vehicle_body_types: [{ code: "estacas", name: "Estacas" }, { code: "caja_seca", name: "Caja seca" }, { code: "furgon", name: "Furgon" }, { code: "plataforma", name: "Plataforma" }, { code: "tanque", name: "Tanque" }, { code: "volco", name: "Volco" }, { code: "refrigerado", name: "Refrigerado" }, { code: "porta_contenedores", name: "Porta contenedores" }, { code: "cama_baja", name: "Cama baja" }]
 };
 
 const defaultServiceTypes: ServiceType[] = [
@@ -665,12 +692,14 @@ function Field({ label, value, onChange, type = "text", placeholder = "" }: { la
   );
 }
 
-function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: Array<[string, string]> }) {
+function SelectField({ label, value, onChange, options = [], optionGroups }: { label: string; value: string; onChange: (value: string) => void; options?: Array<[string, string]>; optionGroups?: Array<[string, Array<[string, string]>]> }) {
   return (
     <label className="block text-sm">
       <span className="mb-1 block font-medium text-neutral-700">{label}</span>
       <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
-        {options.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{labelText}</option>)}
+        {optionGroups
+          ? optionGroups.map(([group, items]) => <optgroup key={group} label={group}>{items.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{labelText}</option>)}</optgroup>)
+          : options.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{labelText}</option>)}
       </select>
     </label>
   );
@@ -753,7 +782,7 @@ export default function AdministracionPage() {
   const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [documentDraft, setDocumentDraft] = useState({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
-  const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
+  const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "", parent_code: "" });
   const [editingCatalogCode, setEditingCatalogCode] = useState<string | null>(null);
   const [catalogSaving, setCatalogSaving] = useState("");
   const [catalogNotice, setCatalogNotice] = useState<ToastState | null>(null);
@@ -1459,7 +1488,8 @@ export default function AdministracionPage() {
           code: catalogDraft.code.trim(),
           name: catalogDraft.name.trim(),
           description: catalogDraft.description.trim(),
-          active: true
+          active: true,
+          ...(catalogDraft.catalog === "vehicle_lines" ? { parent_code: catalogDraft.parent_code.trim() } : {})
         })
       });
       setMasterData({ ...fallbackUserMasterData, ...next });
@@ -1473,7 +1503,7 @@ export default function AdministracionPage() {
   }
 
   function resetCatalogDraft(catalog = catalogDraft.catalog) {
-    setCatalogDraft({ catalog, code: "", name: "", description: "" });
+    setCatalogDraft({ catalog, code: "", name: "", description: "", parent_code: "" });
     setEditingCatalogCode(null);
   }
 
@@ -1482,7 +1512,8 @@ export default function AdministracionPage() {
       catalog: catalogDraft.catalog,
       code: item.code,
       name: item.name,
-      description: item.description || ""
+      description: item.description || "",
+      parent_code: item.parent_code || ""
     });
     setEditingCatalogCode(item.code);
   }
@@ -1756,31 +1787,52 @@ export default function AdministracionPage() {
   }
 
   function renderMasterCatalogManager() {
-    const catalogOptions: Array<[string, string]> = [
-      ["user_types", "Tipos de usuario"],
-      ["user_statuses", "Estados de usuario"],
-      ["document_types", "Tipos de documento"],
-      ["positions", "Cargos"],
-      ["areas", "Areas"],
-      ["locations", "Sedes"],
-      ["cost_centers", "Centros de costo"],
-      ["contract_types", "Tipos de contrato"],
-      ["work_shifts", "Turnos"],
-      ["activity_types", "Tipos de actividad"],
-      ["user_document_types", "Tipos documentales"],
-      ["banks", "Bancos"],
-      ["service_types", "Tipos de servicio"],
-      ["service_stores", "Almacenes de servicio"],
-      ["satisfaction_questions", "Preguntas de satisfaccion"]
+    const catalogGroups: Array<[string, Array<[string, string]>]> = [
+      ["Usuarios y acceso", [
+        ["user_types", "Tipos de usuario"],
+        ["user_statuses", "Estados de usuario"],
+        ["document_types", "Tipos de documento"],
+        ["user_document_types", "Tipos documentales"]
+      ]],
+      ["Organizacion", [
+        ["positions", "Cargos"],
+        ["areas", "Areas"],
+        ["locations", "Sedes"],
+        ["cost_centers", "Centros de costo"],
+        ["contract_types", "Tipos de contrato"],
+        ["work_shifts", "Turnos"],
+        ["activity_types", "Tipos de actividad"]
+      ]],
+      ["Vehiculos y transporte", [
+        ["vehicle_types", "Tipos de vehiculo"],
+        ["vehicle_categories", "Categorias de vehiculo"],
+        ["vehicle_brands", "Marcas de vehiculo"],
+        ["vehicle_lines", "Lineas de vehiculo"],
+        ["vehicle_colors", "Colores de vehiculo"],
+        ["vehicle_fuels", "Combustibles de vehiculo"],
+        ["vehicle_body_types", "Carrocerias de vehiculo"],
+        ["units_of_measure", "Unidades de medida"]
+      ]],
+      ["Servicios", [
+        ["service_types", "Tipos de servicio"],
+        ["service_stores", "Almacenes de servicio"],
+        ["satisfaction_questions", "Preguntas de satisfaccion"]
+      ]],
+      ["Financiero", [
+        ["banks", "Bancos"]
+      ]]
     ];
+    const catalogOptions = catalogGroups.flatMap(([, items]) => items);
     const isServiceTypeCatalog = catalogDraft.catalog === "service_types";
     const isServiceStoreCatalog = catalogDraft.catalog === "service_stores";
     const isSatisfactionQuestionCatalog = catalogDraft.catalog === "satisfaction_questions";
     const isOperationalCatalog = isServiceTypeCatalog || isServiceStoreCatalog || isSatisfactionQuestionCatalog;
+    const isLineCatalog = catalogDraft.catalog === "vehicle_lines";
     const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
     const selectedCatalogLabel = catalogOptions.find(([value]) => value === catalogDraft.catalog)?.[1] || "Catalogo";
+    const selectedCatalogGroup = catalogGroups.find(([, items]) => items.some(([value]) => value === catalogDraft.catalog))?.[0] || "General";
     const catalogRows: Array<MasterOption & { active?: boolean }> = isServiceTypeCatalog
       ? serviceTypes.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
       : isServiceStoreCatalog
@@ -1789,13 +1841,27 @@ export default function AdministracionPage() {
         ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
       : selectedItems.map((item) => ({ ...item, active: item.active !== false }));
     const activeCatalogRows = catalogRows.filter((item) => item.active !== false).length;
+    const lineBrandOptions: Array<[string, string]> = (() => {
+      const options: Array<[string, string]> = [["", "Sin marca (uso general)"]];
+      const seen = new Set<string>();
+      for (const brand of masterData.vehicle_brands || []) {
+        if (brand.active === false && brand.code !== catalogDraft.parent_code) continue;
+        if (seen.has(brand.code)) continue;
+        seen.add(brand.code);
+        options.push([brand.code, brand.name]);
+      }
+      if (catalogDraft.parent_code && !seen.has(catalogDraft.parent_code)) {
+        options.push([catalogDraft.parent_code, catalogDraft.parent_code]);
+      }
+      return options;
+    })();
     return (
       <div className="space-y-3">
         <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr] md:items-end">
-          <SelectField label="Catalogo maestro" value={catalogDraft.catalog} onChange={(value) => resetCatalogDraft(value)} options={catalogOptions} />
+          <SelectField label="Catalogo maestro" value={catalogDraft.catalog} onChange={(value) => resetCatalogDraft(value)} optionGroups={catalogGroups} />
           <div>
             <p className="text-xs font-semibold uppercase text-neutral-500">{selectedCatalogLabel}</p>
-            <p className="mt-1 text-sm text-neutral-600">{catalogRows.length} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
+            <p className="mt-1 text-sm text-neutral-600"><span className="mr-2 inline-block rounded-full border border-line bg-white px-2 py-0.5 text-xs font-medium text-neutral-600">{selectedCatalogGroup}</span>{catalogRows.length} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
           </div>
         </div>
         {catalogNotice ? (
@@ -1818,6 +1884,7 @@ export default function AdministracionPage() {
               <p className="text-sm font-semibold">{editingCatalogCode ? "Editar maestro" : "Nuevo maestro"}</p>
               <Field label={isOperationalCatalog ? "Codigo" : "Codigo"} value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
               <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+              {isLineCatalog ? <SelectField label="Marca (padre)" value={catalogDraft.parent_code} onChange={(value) => setCatalogDraft((current) => ({ ...current, parent_code: value }))} options={lineBrandOptions} /> : null}
               {!isOperationalCatalog ? <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /> : null}
               <div className="grid gap-2">
                 <Button disabled={Boolean(catalogSaving)} onClick={saveCatalogItem} type="button">
@@ -1835,6 +1902,7 @@ export default function AdministracionPage() {
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
                 <th className="px-3 py-2">{isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"}</th>
+                {isLineCatalog ? <th className="px-3 py-2">Marca</th> : null}
                 {!isOperationalCatalog ? <th className="px-3 py-2">Descripcion</th> : null}
                 <th className="px-3 py-2">Estado</th>
                 <th className="px-3 py-2 text-right">Acciones</th>
@@ -1845,6 +1913,7 @@ export default function AdministracionPage() {
                 <tr className={`border-b border-line/70 ${editingCatalogCode === item.code ? "bg-apex/5" : ""}`} key={item.code}>
                   <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
+                  {isLineCatalog ? <td className="px-3 py-2 text-neutral-600">{(masterData.vehicle_brands || []).find((brand) => brand.code === item.parent_code)?.name || item.parent_code || "-"}</td> : null}
                   {!isOperationalCatalog ? <td className="px-3 py-2 text-neutral-600">{item.description || "-"}</td> : null}
                   <td className="px-3 py-2">
                     <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
@@ -1866,7 +1935,7 @@ export default function AdministracionPage() {
               ))}
               {!catalogRows.length ? (
                 <tr>
-                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={isOperationalCatalog ? 4 : 5}>No hay registros configurados.</td>
+                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={(isOperationalCatalog ? 4 : 5) + (isLineCatalog ? 1 : 0)}>No hay registros configurados.</td>
                 </tr>
               ) : null}
             </tbody>
