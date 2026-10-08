@@ -366,6 +366,89 @@ function assertDecisionComment(decision, comment) {
   }
 }
 
+// ---- Consolidacion de ingresos por vehiculo (vista torre de liquidacion) ----
+// Agrupa las lineas de los paquetes por placa normalizada para exponer el ingreso que
+// genera cada vehiculo. Es pura: recibe paquetes ya serializados (items con montos numericos).
+// Los montos se acumulan en centavos enteros, jamas en float.
+function consolidateByVehicle(packages = []) {
+  const buckets = new Map();
+  for (const pkg of packages) {
+    for (const item of pkg.items || []) {
+      const plate = String(item.vehicle_plate || "").trim();
+      const key = normalizeMatch(plate) || "sin-placa";
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = {
+          vehicle_key: key,
+          vehicle_plate: plate ? plate.toUpperCase() : "SIN PLACA",
+          vehicle_type: null,
+          line_count: 0,
+          calculated_cents: 0,
+          adjusted_cents: 0,
+          approved_cents: 0,
+          weight_kg: 0,
+          volume_m3: 0,
+          distance_km: 0,
+          package_map: new Map(),
+          guides: new Set(),
+          lines: []
+        };
+        buckets.set(key, bucket);
+      }
+      if (!bucket.vehicle_type && item.vehicle_type) bucket.vehicle_type = item.vehicle_type;
+      bucket.line_count += 1;
+      const guideKey = normalizeMatch(item.guide_reference);
+      if (guideKey) bucket.guides.add(guideKey);
+      bucket.weight_kg += numberValue(item.weight_kg);
+      bucket.volume_m3 += numberValue(item.volume_m3);
+      bucket.distance_km += numberValue(item.distance_km);
+      bucket.calculated_cents += cents(item.calculated_amount);
+      bucket.adjusted_cents += cents(item.adjusted_amount);
+      bucket.approved_cents += cents(item.approved_amount);
+      if (!bucket.package_map.has(pkg.id)) {
+        bucket.package_map.set(pkg.id, {
+          id: pkg.id,
+          code: pkg.code,
+          carrier_name: pkg.carrier_name || null,
+          status: pkg.status,
+          period_code: pkg.period_code || pkg.period?.code || null
+        });
+      }
+      bucket.lines.push({
+        package_id: pkg.id,
+        package_code: pkg.code,
+        carrier_name: pkg.carrier_name || null,
+        package_status: pkg.status,
+        guide_reference: item.guide_reference || null,
+        route_description: item.route_description || null,
+        origin_name: item.origin_name || null,
+        destination_city: item.destination_city || null,
+        service_date: item.service_date || null,
+        calculated_amount: fromCents(cents(item.calculated_amount)),
+        adjusted_amount: fromCents(cents(item.adjusted_amount)),
+        approved_amount: fromCents(cents(item.approved_amount))
+      });
+    }
+  }
+  return Array.from(buckets.values())
+    .map((bucket) => ({
+      vehicle_key: bucket.vehicle_key,
+      vehicle_plate: bucket.vehicle_plate,
+      vehicle_type: bucket.vehicle_type,
+      line_count: bucket.line_count,
+      guide_count: bucket.guides.size,
+      weight_kg: round2(bucket.weight_kg),
+      volume_m3: round2(bucket.volume_m3),
+      distance_km: round2(bucket.distance_km),
+      calculated_total: fromCents(bucket.calculated_cents),
+      adjusted_total: fromCents(bucket.adjusted_cents),
+      approved_total: fromCents(bucket.approved_cents),
+      packages: Array.from(bucket.package_map.values()),
+      lines: bucket.lines
+    }))
+    .sort((a, b) => b.adjusted_total - a.adjusted_total || a.vehicle_plate.localeCompare(b.vehicle_plate));
+}
+
 module.exports = {
   RESERVED_TYPE_CODES,
   PACKAGE_STATUS,
@@ -401,5 +484,6 @@ module.exports = {
   assertSegregation,
   accountingIdempotencyKey,
   assertAccountingAllowed,
-  assertDecisionComment
+  assertDecisionComment,
+  consolidateByVehicle
 };

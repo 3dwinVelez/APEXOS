@@ -1,5 +1,13 @@
 const prisma = require("../../core/prisma");
-const { MAX_DOCUMENT_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
+const { normalizeFileName } = require("../../security/policy");
+const {
+  BUCKET,
+  SIGNED_URL_TTL_SECONDS,
+  objectKey,
+  signedViewUrl,
+  uploadVehicleDocument,
+  validateVehicleDocument
+} = require("./vehicle-document-storage");
 
 const REQUIRED_DOCUMENTS = ["soat", "revision_tecnico_mecanica"];
 const EXPIRY_WARNING_DAYS = 30;
@@ -201,11 +209,20 @@ function calculateVehicleMaster(vehicle, docs = []) {
   };
 }
 
+function serializeVehicleDocument(document) {
+  const { base64_data, ...rest } = document;
+  return {
+    ...rest,
+    has_attachment: Boolean(base64_data) || /^https?:\/\//i.test(String(document.file_url || "")) || String(document.storage_path || "").startsWith(`${BUCKET}/`)
+  };
+}
+
 function serializeVehicle(vehicle) {
   const master = calculateVehicleMaster(vehicle, vehicle.documents || []);
   return {
     ...vehicle,
     ...master,
+    ...(vehicle.documents ? { documents: vehicle.documents.map(serializeVehicleDocument) } : {}),
     id: Number(vehicle.id),
     audit_logs: (vehicle.audit_logs || []).map((entry) => ({ ...entry, id: String(entry.id) })),
     dashboard_metrics: master.metrics
@@ -337,36 +354,43 @@ async function getVehicle(tenantId, id) {
 }
 
 async function addVehicleDocument(tenantId, user, id, input) {
+  const file = input.file || null;
+  if (!file?.bytes?.length) {
+    const error = new Error("Adjunta un archivo para el documento.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const documentType = String(input.document_type || "").trim();
+  if (!documentType) {
+    const error = new Error("El tipo documental es obligatorio.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const issuedAt = dateOrNull(input.issued_at);
+  const expiresAt = dateOrNull(input.expires_at);
+  if (issuedAt && expiresAt && expiresAt < issuedAt) {
+    const error = new Error("La fecha de vencimiento del documento no puede ser anterior a la emision.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const validated = validateVehicleDocument(file.bytes, file.mimetype);
   return prisma.runWithTenant(tenantId, async () => {
     const vehicle = await prisma.vehicle.findFirstOrThrow({ where: { id: Number(id) } });
-    const issuedAt = dateOrNull(input.issued_at);
-    const expiresAt = dateOrNull(input.expires_at);
-    if (issuedAt && expiresAt && expiresAt < issuedAt) {
-      const error = new Error("La fecha de vencimiento del documento no puede ser anterior a la emision.");
-      error.statusCode = 400;
-      throw error;
-    }
-    const documentType = String(input.document_type || "").trim();
-    if (!documentType) {
-      const error = new Error("El tipo documental es obligatorio.");
-      error.statusCode = 400;
-      throw error;
-    }
-    assertSafeFile(input, { maxBytes: MAX_DOCUMENT_BYTES });
-    const fileName = normalizeFileName(input.file_name || input.name || `${documentType}-${vehicle.plate}`);
+    const fileName = normalizeFileName(file.filename || `${documentType}-${vehicle.plate}.${validated.extension}`);
     const version = await prisma.vehicleDocument.count({ where: { vehicle_id: vehicle.id, document_type: documentType } }) + 1;
-    const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "transport", entity: "vehicle-documents", entityId: vehicle.id, fileName });
+    const objectPath = objectKey({ tenantId: user?.company_id || tenantId, vehicleId: vehicle.id, extension: validated.extension });
+    const storagePath = await uploadVehicleDocument({ objectPath, bytes: file.bytes, contentType: validated.mime });
     const document = await prisma.vehicleDocument.create({
       data: {
         vehicle_id: vehicle.id,
         plate: vehicle.plate,
         document_type: documentType,
         file_name: fileName,
-        file_url: input.file_url || "",
+        file_url: "",
         storage_path: storagePath,
-        base64_data: input.base64_data || "",
-        mime_type: input.mime_type || "",
-        file_size: numberOrNull(input.file_size),
+        base64_data: "",
+        mime_type: validated.mime,
+        file_size: file.bytes.length,
         issued_at: issuedAt,
         expires_at: expiresAt,
         document_status: input.document_status || documentStatus(expiresAt),
@@ -374,12 +398,62 @@ async function addVehicleDocument(tenantId, user, id, input) {
         observations: input.observations || "",
         version,
         active: input.active !== false,
-        metadata: input.metadata || {}
+        metadata: {
+          ...(input.metadata && typeof input.metadata === "object" ? input.metadata : {}),
+          storage_provider: "supabase",
+          storage_bucket: BUCKET,
+          checksum_sha256: validated.checksum_sha256,
+          ...(validated.width ? { width: validated.width, height: validated.height } : {})
+        }
       }
     });
     await auditVehicle(user, vehicle, "document_uploaded", [{ field: documentType, old_value: null, new_value: { document_id: document.id, expires_at: document.expires_at } }]);
     await refreshVehicleMaster(vehicle.id);
-    return document;
+    return serializeVehicleDocument(document);
+  });
+}
+
+async function getVehicleDocumentView(tenantId, vehicleId, documentId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const vehicle = await prisma.vehicle.findFirstOrThrow({ where: { id: Number(vehicleId) }, select: { id: true } });
+    const document = await prisma.vehicleDocument.findFirstOrThrow({ where: { id: Number(documentId), vehicle_id: vehicle.id } });
+    const storagePath = String(document.storage_path || "");
+    const fileUrl = String(document.file_url || "");
+    const base64 = String(document.base64_data || "");
+    if (storagePath.startsWith(`${BUCKET}/`)) {
+      return {
+        document_id: document.id,
+        file_name: document.file_name,
+        mime_type: document.mime_type || "",
+        source: "storage",
+        url: await signedViewUrl(storagePath),
+        expires_in: SIGNED_URL_TTL_SECONDS
+      };
+    }
+    if (base64.startsWith("data:")) {
+      const match = /^data:([^;,]+)/i.exec(base64);
+      return {
+        document_id: document.id,
+        file_name: document.file_name,
+        mime_type: document.mime_type || (match ? match[1] : ""),
+        source: "database",
+        url: base64,
+        expires_in: null
+      };
+    }
+    if (/^https?:\/\//i.test(fileUrl)) {
+      return {
+        document_id: document.id,
+        file_name: document.file_name,
+        mime_type: document.mime_type || "",
+        source: "external",
+        url: fileUrl,
+        expires_in: null
+      };
+    }
+    const error = new Error("El documento no tiene un archivo almacenado.");
+    error.statusCode = 404;
+    throw error;
   });
 }
 
@@ -408,7 +482,7 @@ async function updateVehicleDocument(tenantId, user, vehicleId, documentId, inpu
     });
     await auditVehicle(user, vehicle, "document_updated", [{ field: previous.document_type, old_value: previous, new_value: document }], input.reason || "");
     await refreshVehicleMaster(vehicle.id);
-    return document;
+    return serializeVehicleDocument(document);
   });
 }
 
@@ -489,6 +563,7 @@ module.exports = {
   updateVehicle,
   getVehicle,
   addVehicleDocument,
+  getVehicleDocumentView,
   updateVehicleDocument,
   getPlanningVehicleStatus,
   getVehicleDashboardMetrics

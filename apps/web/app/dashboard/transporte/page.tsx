@@ -1,10 +1,12 @@
 "use client";
 
-import { api } from "@/lib/api";
+import { api, isActiveMasterItem, loadVehicleMasterCatalogs } from "@/lib/api";
+import type { VehicleMasterCatalogs, VehicleMasterItem } from "@/lib/api";
+import { inspectFileSignature } from "@/lib/fileSignature";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Users, Wallet, Wrench } from "lucide-react";
+import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Users, Wallet, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -14,7 +16,6 @@ type VehicleDocument = {
   file_name: string;
   file_url?: string;
   storage_path?: string;
-  base64_data?: string;
   mime_type?: string;
   file_size?: number;
   issued_at?: string;
@@ -24,6 +25,26 @@ type VehicleDocument = {
   version: number;
   active: boolean;
   uploaded_at?: string;
+  has_attachment?: boolean;
+};
+
+type DocumentView = {
+  document_id: number;
+  file_name: string;
+  mime_type: string;
+  source: string;
+  url: string;
+  expires_in: number | null;
+};
+
+type DocumentPreview = {
+  document: VehicleDocument;
+  url: string;
+  mime_type: string;
+  source: string;
+  expires_in: number | null;
+  loading: boolean;
+  error?: string;
 };
 
 type VehicleAudit = {
@@ -181,9 +202,19 @@ const documentTypes = [
   ["foto_general", "Foto general"],
   ["otro", "Otro documento"]
 ];
+const DOCUMENT_ACCEPT = ".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp";
+const MAX_DOCUMENT_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 function dateOnly(value?: string | null) {
   return value ? String(value).slice(0, 10) : "";
+}
+
+function formatFileSize(bytes?: number) {
+  const value = Number(bytes || 0);
+  if (!value) return "";
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function statusLabel(status: string) {
@@ -224,20 +255,50 @@ function vehicleCompletion(source: object) {
   };
 }
 
-function readFile(file: File) {
-  return new Promise<{ base64_data: string; file_name: string; mime_type: string; file_size: number }>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve({ base64_data: String(reader.result || ""), file_name: file.name, mime_type: file.type, file_size: file.size });
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 function vehiclePayload(form: typeof emptyVehicle) {
   const payload: Record<string, string | number> = { ...form, plate: form.plate.toUpperCase().replace(/\s+/g, "") };
   if (!Number(payload.capacity_value)) delete payload.capacity_value;
   if (!Number(payload.volume_available)) delete payload.volume_available;
   return payload;
+}
+
+function catalogPairs(items: VehicleMasterItem[] | undefined, current: string): Array<[string, string]> {
+  const pairs: Array<[string, string]> = [];
+  const seen = new Set<string>();
+  for (const item of items || []) {
+    if (!isActiveMasterItem(item)) continue;
+    const label = item.name || item.code;
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    pairs.push([label, label]);
+  }
+  const trimmed = (current || "").trim();
+  if (trimmed && !seen.has(trimmed.toLowerCase())) pairs.push([trimmed, `${trimmed} (actual)`]);
+  return pairs;
+}
+
+function selectProps(pairs: Array<[string, string]>) {
+  return { options: pairs.map(([value]) => value), optionLabels: Object.fromEntries(pairs) as Record<string, string> };
+}
+
+type OrgSociety = { code: string; name: string; active?: boolean };
+type OrgBranch = { code: string; name: string; society_code: string; active?: boolean };
+type OrgCostCenter = { code: string; name: string; society_code: string; branch_code: string; active?: boolean };
+type OrgTree = { societies: OrgSociety[]; branches: OrgBranch[]; cost_centers: OrgCostCenter[] };
+
+function orgUnitPairs(units: Array<{ code: string; name: string; active?: boolean }> | undefined, current: string, emptyLabel: string): Array<[string, string]> {
+  const pairs: Array<[string, string]> = [["", emptyLabel]];
+  const seen = new Set<string>();
+  for (const unit of units || []) {
+    if (unit.active === false) continue;
+    if (seen.has(unit.code)) continue;
+    seen.add(unit.code);
+    pairs.push([unit.code, `${unit.code} - ${unit.name}`]);
+  }
+  const trimmed = (current || "").trim();
+  if (trimmed && !seen.has(trimmed)) pairs.push([trimmed, `${trimmed} (actual)`]);
+  return pairs;
 }
 
 export function TransportFleetPage() {
@@ -257,14 +318,31 @@ export function TransportFleetPage() {
   const [saving, setSaving] = useState(false);
   const [documentDraft, setDocumentDraft] = useState({
     document_type: "soat",
-    file_name: "",
-    base64_data: "",
-    mime_type: "",
-    file_size: 0,
     issued_at: "",
     expires_at: "",
     observations: ""
   });
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentSaving, setDocumentSaving] = useState(false);
+  const [documentInputKey, setDocumentInputKey] = useState(0);
+  const [documentPreview, setDocumentPreview] = useState<DocumentPreview | null>(null);
+  const [vehicleCatalogs, setVehicleCatalogs] = useState<VehicleMasterCatalogs | null>(null);
+  const [orgTree, setOrgTree] = useState<OrgTree | null>(null);
+  const [orgCreator, setOrgCreator] = useState<"branch" | "">("");
+  const [orgDraft, setOrgDraft] = useState({ society_code: "", code: "", name: "" });
+  const [orgSaving, setOrgSaving] = useState(false);
+  const [newCostCenter, setNewCostCenter] = useState({ code: "", name: "" });
+
+  useEffect(() => {
+    let alive = true;
+    loadVehicleMasterCatalogs()
+      .then((catalogs) => { if (alive) setVehicleCatalogs(catalogs); })
+      .catch(() => undefined);
+    api<OrgTree>("/api/v1/accounting/organization-tree")
+      .then((tree) => { if (alive) setOrgTree(tree); })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
 
   const load = useCallback(async () => {
     setMessage("");
@@ -303,6 +381,8 @@ export function TransportFleetPage() {
   async function openVehicle(vehicle: Vehicle) {
     const detail = await api<Vehicle>(`/api/v1/transport/vehicles/${vehicle.id}`).catch(() => vehicle);
     setSelected(detail);
+    setDocumentPreview(null);
+    setDocumentFile(null);
     setForm({
       ...emptyVehicle,
       ...detail,
@@ -327,7 +407,9 @@ export function TransportFleetPage() {
   function newVehicle() {
     setSelected(null);
     setForm({ ...emptyVehicle });
-    setDocumentDraft({ document_type: "soat", file_name: "", base64_data: "", mime_type: "", file_size: 0, issued_at: "", expires_at: "", observations: "" });
+    setDocumentDraft({ document_type: "soat", issued_at: "", expires_at: "", observations: "" });
+    setDocumentFile(null);
+    setDocumentPreview(null);
     setActiveTab(tabs[0]);
     setShowEditor(true);
   }
@@ -367,9 +449,31 @@ export function TransportFleetPage() {
       setMessage(validation);
       return;
     }
+    const newCode = newCostCenter.code.trim();
+    const newName = newCostCenter.name.trim();
+    if ((newCode && !newName) || (!newCode && newName)) {
+      setMessage("Completa codigo y nombre del centro de costo o deja ambos vacios.");
+      return;
+    }
     setSaving(true);
     try {
-      const payload = vehiclePayload(form);
+      let costCenterCode = form.cost_center.trim();
+      if (orgTree && newCode && newName) {
+        const branch = orgTree.branches.find((item) => item.code === form.base_site && item.active !== false);
+        if (!branch) {
+          setMessage("Selecciona una sucursal valida antes de crear el centro de costo.");
+          return;
+        }
+        const next = await api<OrgTree>("/api/v1/accounting/organization-tree", {
+          method: "POST",
+          body: JSON.stringify({ type: "cost_center", society_code: branch.society_code, branch_code: branch.code, code: newCode, name: newName })
+        });
+        setOrgTree(next);
+        costCenterCode = newCode;
+        setNewCostCenter({ code: "", name: "" });
+        setMessage(`Centro de costo ${newCode} creado en la estructura contable.`);
+      }
+      const payload = { ...vehiclePayload(form), cost_center: costCenterCode || null };
       const saved = selected
         ? await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`, { method: "PUT", body: JSON.stringify(payload) })
         : await api<Vehicle>("/api/v1/transport/vehicles", { method: "POST", body: JSON.stringify(payload) });
@@ -384,13 +488,25 @@ export function TransportFleetPage() {
   }
 
   async function selectDocument(file?: File) {
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      setMessage("El archivo supera 10 MB.");
+    if (!file) {
+      setDocumentFile(null);
       return;
     }
-    const fileData = await readFile(file);
-    setDocumentDraft((current) => ({ ...current, ...fileData }));
+    if (file.size > MAX_DOCUMENT_UPLOAD_BYTES) {
+      setMessage("El archivo supera 10 MB.");
+      setDocumentFile(null);
+      setDocumentInputKey((key) => key + 1);
+      return;
+    }
+    const signature = await inspectFileSignature(file);
+    if (!signature) {
+      setMessage("Formato no permitido. Adjunta un PDF, PNG, JPEG o WEBP.");
+      setDocumentFile(null);
+      setDocumentInputKey((key) => key + 1);
+      return;
+    }
+    setDocumentFile(file);
+    setMessage("");
   }
 
   async function saveDocument() {
@@ -398,19 +514,41 @@ export function TransportFleetPage() {
       setMessage("Guarda primero la ficha del vehiculo.");
       return;
     }
-    if (!documentDraft.document_type || !documentDraft.file_name) {
+    if (!documentDraft.document_type || !documentFile) {
       setMessage("Selecciona tipo documental y archivo.");
       return;
     }
+    setDocumentSaving(true);
     try {
-      const saved = await api<VehicleDocument>(`/api/v1/transport/vehicles/${selected.id}/documents`, { method: "POST", body: JSON.stringify(documentDraft) });
+      const payload = new FormData();
+      payload.append("document_type", documentDraft.document_type);
+      if (documentDraft.issued_at) payload.append("issued_at", documentDraft.issued_at);
+      if (documentDraft.expires_at) payload.append("expires_at", documentDraft.expires_at);
+      if (documentDraft.observations) payload.append("observations", documentDraft.observations);
+      payload.append("file", documentFile);
+      const saved = await api<VehicleDocument>(`/api/v1/transport/vehicles/${selected.id}/documents`, { method: "POST", body: payload });
       const detail = await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`);
       setSelected(detail);
       setVehicles((current) => current.map((vehicle) => vehicle.id === detail.id ? detail : vehicle));
-      setDocumentDraft({ document_type: "soat", file_name: "", base64_data: "", mime_type: "", file_size: 0, issued_at: "", expires_at: "", observations: "" });
+      setDocumentDraft({ document_type: "soat", issued_at: "", expires_at: "", observations: "" });
+      setDocumentFile(null);
+      setDocumentInputKey((key) => key + 1);
       setMessage(`Documento ${saved.file_name} cargado.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible adjuntar el documento.");
+    } finally {
+      setDocumentSaving(false);
+    }
+  }
+
+  async function openDocumentPreview(document: VehicleDocument) {
+    if (!selected?.id) return;
+    setDocumentPreview({ document, url: "", mime_type: document.mime_type || "", source: "", expires_in: null, loading: true });
+    try {
+      const view = await api<DocumentView>(`/api/v1/transport/vehicles/${selected.id}/documents/${document.id}/view`);
+      setDocumentPreview({ document, url: view.url, mime_type: view.mime_type || document.mime_type || "", source: view.source, expires_in: view.expires_in, loading: false });
+    } catch (error) {
+      setDocumentPreview({ document, url: "", mime_type: "", source: "", expires_in: null, loading: false, error: error instanceof Error ? error.message : "No fue posible abrir el documento." });
     }
   }
 
@@ -452,6 +590,47 @@ export function TransportFleetPage() {
   const activeTabIndex = editorTabs.indexOf(activeTab);
   const formCompletion = vehicleCompletion(form);
 
+  function lineItemsForBrand(brandValue: string) {
+    const all = vehicleCatalogs?.lines || [];
+    const brand = (vehicleCatalogs?.brands || []).find((item) => isActiveMasterItem(item) && (item.name.toLowerCase() === brandValue.trim().toLowerCase() || item.code.toLowerCase() === brandValue.trim().toLowerCase()));
+    if (!brand) return all;
+    const filtered = all.filter((item) => (item.parent_code || "").toLowerCase() === brand.code.toLowerCase());
+    return filtered.length ? filtered : all;
+  }
+
+  const typePairs: Array<[string, string]> = [["", "Seleccionar tipo"], ...catalogPairs(vehicleCatalogs?.types, form.type)];
+  const categoryPairs: Array<[string, string]> = [["", "Sin categoria"], ...catalogPairs(vehicleCatalogs?.categories, form.category)];
+  const brandPairs: Array<[string, string]> = [["", "Seleccionar marca"], ...catalogPairs(vehicleCatalogs?.brands, form.brand)];
+  const linePairs: Array<[string, string]> = [["", "Sin linea"], ...catalogPairs(lineItemsForBrand(form.brand), form.line)];
+  const colorPairs: Array<[string, string]> = [["", "Sin color"], ...catalogPairs(vehicleCatalogs?.colors, form.color)];
+  const fuelPairs: Array<[string, string]> = [["", "Sin combustible"], ...catalogPairs(vehicleCatalogs?.fuels, form.fuel)];
+  const bodyTypePairs: Array<[string, string]> = [["", "Sin carroceria"], ...catalogPairs(vehicleCatalogs?.bodyTypes, form.body_type)];
+  const unitPairs = (() => {
+    const pairs: Array<[string, string]> = [];
+    const seen = new Set<string>();
+    for (const item of vehicleCatalogs?.capacityUnits || []) {
+      if (!isActiveMasterItem(item)) continue;
+      if (seen.has(item.code)) continue;
+      seen.add(item.code);
+      pairs.push([item.code, item.name]);
+    }
+    const current = (form.capacity_unit || "").trim();
+    if (current && !seen.has(current)) pairs.push([current, `${current} (actual)`]);
+    return pairs;
+  })();
+  const currentYear = new Date().getFullYear();
+  const yearOptions = (() => {
+    const years: string[] = [];
+    for (let year = 1980; year <= currentYear + 1; year += 1) years.push(String(year));
+    if (form.year && !years.includes(String(form.year))) years.unshift(String(form.year));
+    return years;
+  })();
+  const branchesForSite = orgTree?.branches || [];
+  const sitePairs: Array<[string, string]> = orgTree
+    ? orgUnitPairs(branchesForSite, form.base_site, "Seleccionar sucursal")
+    : [["", "Seleccionar sede base"], ...catalogPairs(vehicleCatalogs?.locations, form.base_site)];
+  const costCenterPairs: Array<[string, string]> = [["", "Sin centro de costo"], ...catalogPairs(vehicleCatalogs?.costCenters, form.cost_center)];
+
   function clearFilters() {
     setQuery("");
     setStatusFilter("");
@@ -463,6 +642,43 @@ export function TransportFleetPage() {
   function moveEditor(direction: number) {
     const next = editorTabs[activeTabIndex + direction];
     if (next) setActiveTab(next);
+  }
+
+  function openOrgCreator() {
+    setOrgDraft({ society_code: orgTree?.societies.find((item) => item.active !== false)?.code || "", code: "", name: "" });
+    setOrgCreator("branch");
+  }
+
+  async function saveOrgUnit() {
+    if (!orgTree || !orgCreator) return;
+    const code = orgDraft.code.trim();
+    const name = orgDraft.name.trim();
+    if (!code || !name) {
+      setMessage("Codigo y nombre son obligatorios para crear la sucursal.");
+      return;
+    }
+    const societyCode = orgDraft.society_code || orgTree.societies.find((item) => item.active !== false)?.code || "";
+    if (!societyCode) {
+      setMessage("Selecciona la sociedad de la nueva sucursal.");
+      return;
+    }
+    setOrgSaving(true);
+    try {
+      const next = await api<OrgTree>("/api/v1/accounting/organization-tree", {
+        method: "POST",
+        body: JSON.stringify({ type: "branch", society_code: societyCode, code, name })
+      });
+      setOrgTree(next);
+      setField("base_site", next.branches.find((item) => item.code === code)?.code || code);
+      setNewCostCenter({ code: "", name: "" });
+      setOrgCreator("");
+      setOrgDraft({ society_code: "", code: "", name: "" });
+      setMessage(`Sucursal ${code} creada en la estructura contable.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible crear la sucursal en la estructura contable.");
+    } finally {
+      setOrgSaving(false);
+    }
   }
 
   if (!access.ready) {
@@ -601,16 +817,24 @@ export function TransportFleetPage() {
             {activeTab === "Identificacion" ? (
               <FormGrid>
                 <Input label="Placa *" value={form.plate} onChange={(value) => setField("plate", value.toUpperCase().replace(/\s+/g, ""))} />
-                <Input label="Tipo de vehiculo *" value={form.type} onChange={(value) => setField("type", value)} />
-                <Input label="Categoria vehicular" value={form.category} onChange={(value) => setField("category", value)} />
-                <Input label="Marca *" value={form.brand} onChange={(value) => setField("brand", value)} />
-                <Input label="Linea / referencia" value={form.line} onChange={(value) => setField("line", value)} />
-                <Input label="Modelo / ano" type="number" value={form.year} onChange={(value) => setField("year", Number(value))} />
-                <Input label="Color" value={form.color} onChange={(value) => setField("color", value)} />
-                <Input label="Combustible" value={form.fuel} onChange={(value) => setField("fuel", value)} />
-                <Input label="Carroceria" value={form.body_type} onChange={(value) => setField("body_type", value)} />
+                <Select label="Tipo de vehiculo *" value={form.type} onChange={(value) => setField("type", value)} {...selectProps(typePairs)} />
+                <Select label="Categoria vehicular" value={form.category} onChange={(value) => setField("category", value)} {...selectProps(categoryPairs)} />
+                <Select
+                  label="Marca *"
+                  value={form.brand}
+                  onChange={(value) => setForm((current) => {
+                    const keepLine = lineItemsForBrand(value).some((item) => (item.name || item.code).toLowerCase() === current.line.trim().toLowerCase());
+                    return { ...current, brand: value, line: keepLine ? current.line : "" };
+                  })}
+                  {...selectProps(brandPairs)}
+                />
+                <Select label="Linea / referencia" value={form.line} onChange={(value) => setField("line", value)} {...selectProps(linePairs)} />
+                <Select label="Modelo / ano" value={String(form.year || "")} onChange={(value) => setField("year", Number(value))} options={yearOptions} />
+                <Select label="Color" value={form.color} onChange={(value) => setField("color", value)} {...selectProps(colorPairs)} />
+                <Select label="Combustible" value={form.fuel} onChange={(value) => setField("fuel", value)} {...selectProps(fuelPairs)} />
+                <Select label="Carroceria" value={form.body_type} onChange={(value) => setField("body_type", value)} {...selectProps(bodyTypePairs)} />
                 <Input label="Capacidad" type="number" value={form.capacity_value} onChange={(value) => setField("capacity_value", Number(value))} />
-                <Input label="Unidad" value={form.capacity_unit} onChange={(value) => setField("capacity_unit", value)} />
+                <Select label="Unidad" value={form.capacity_unit} onChange={(value) => setField("capacity_unit", value)} {...selectProps(unitPairs)} />
                 <Input label="Volumen disponible" type="number" value={form.volume_available} onChange={(value) => setField("volume_available", Number(value))} />
                 <Textarea label="Observaciones generales" value={form.notes} onChange={(value) => setField("notes", value)} />
               </FormGrid>
@@ -622,8 +846,63 @@ export function TransportFleetPage() {
                 <Input label="Propietario legal" value={form.legal_owner} onChange={(value) => setField("legal_owner", value)} />
                 <Input label="NIT / documento" value={form.owner_document} onChange={(value) => setField("owner_document", value)} />
                 <Input label="Empresa vinculada" value={form.linked_company} onChange={(value) => setField("linked_company", value)} />
-                <Input label="Centro de costo" value={form.cost_center} onChange={(value) => setField("cost_center", value)} />
-                <Input label="Sede o bodega base *" value={form.base_site} onChange={(value) => setField("base_site", value)} />
+                <Select
+                  label="Sucursal base *"
+                  value={form.base_site}
+                  onChange={(value) => setForm((current) => {
+                    const keepCost = orgTree ? orgTree.cost_centers.some((center) => center.code === current.cost_center && center.branch_code === value) : true;
+                    return { ...current, base_site: value, cost_center: keepCost ? current.cost_center : "" };
+                  })}
+                  {...selectProps(sitePairs)}
+                />
+                {orgTree ? (
+                  <>
+                    <Input
+                      label="Codigo centro de costo"
+                      value={newCostCenter.code}
+                      onChange={(value) => setNewCostCenter((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "") }))}
+                      disabled={!form.base_site}
+                    />
+                    <Input
+                      label="Nombre centro de costo"
+                      value={newCostCenter.name}
+                      onChange={(value) => setNewCostCenter((current) => ({ ...current, name: value }))}
+                      disabled={!form.base_site}
+                    />
+                  </>
+                ) : (
+                  <Select label="Centro de costo" value={form.cost_center} onChange={(value) => setField("cost_center", value)} {...selectProps(costCenterPairs)} />
+                )}
+                {orgTree ? (
+                  <div className="rounded-md border border-line bg-paper p-3 md:col-span-2 xl:col-span-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase text-neutral-500">Estructura contable enlazada</p>
+                      <button className="h-8 rounded-md border border-line bg-white px-2 text-xs" onClick={openOrgCreator} type="button">+ Nueva sucursal</button>
+                    </div>
+                    <p className="mt-2 text-xs text-neutral-600">
+                      Selecciona la sucursal base y digita el codigo y nombre del centro de costo; al guardar el vehiculo el centro quedara creado en la estructura contable de esa sucursal.
+                      {!form.base_site ? " Primero elige la sucursal para habilitar la creacion del centro de costo." : ""}
+                      {selected && form.cost_center ? ` Centro actual: ${form.cost_center} (se reemplaza solo si digitas uno nuevo).` : ""}
+                    </p>
+                    {orgCreator ? (
+                      <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+                        <Select
+                          label="Sociedad"
+                          value={orgDraft.society_code}
+                          onChange={(value) => setOrgDraft((current) => ({ ...current, society_code: value }))}
+                          options={orgTree.societies.filter((item) => item.active !== false).map((item) => item.code)}
+                          optionLabels={Object.fromEntries(orgTree.societies.filter((item) => item.active !== false).map((item) => [item.code, `${item.code} - ${item.name}`]))}
+                        />
+                        <Input label="Codigo sucursal" value={orgDraft.code} onChange={(value) => setOrgDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "") }))} />
+                        <Input label="Nombre sucursal" value={orgDraft.name} onChange={(value) => setOrgDraft((current) => ({ ...current, name: value }))} />
+                        <div className="flex gap-2">
+                          <button className="h-10 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={orgSaving} onClick={saveOrgUnit} type="button">{orgSaving ? "Guardando..." : "Guardar"}</button>
+                          <button className="h-10 rounded-md border border-line px-3 text-sm" onClick={() => setOrgCreator("")} type="button">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <Select
                   label="Conductor autorizado"
                   value={String(form.authorized_driver_id || 0)}
@@ -660,12 +939,15 @@ export function TransportFleetPage() {
                   <h3 className="mb-3 text-sm font-semibold">Cargar documento por placa</h3>
                   <div className="space-y-3">
                     <Select label="Tipo documental" value={documentDraft.document_type} onChange={(value) => setDocumentDraft((current) => ({ ...current, document_type: value }))} options={documentTypes.map(([value]) => value)} optionLabels={Object.fromEntries(documentTypes)} />
-                    <input className="block w-full text-sm" type="file" onChange={(event) => selectDocument(event.target.files?.[0])} />
-                    {documentDraft.file_name ? <p className="rounded-md bg-paper p-2 text-xs font-semibold">{documentDraft.file_name}</p> : null}
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-neutral-600" htmlFor="vehicle-document-file">Archivo (PDF, PNG, JPEG o WEBP · maximo 10 MB)</label>
+                      <input accept={DOCUMENT_ACCEPT} className="block w-full text-sm" id="vehicle-document-file" key={documentInputKey} type="file" onChange={(event) => selectDocument(event.target.files?.[0])} />
+                    </div>
+                    {documentFile ? <p className="rounded-md bg-paper p-2 text-xs font-semibold">{documentFile.name}{documentFile.size ? ` · ${formatFileSize(documentFile.size)}` : ""}</p> : null}
                     <Input label="Fecha emision" type="date" value={documentDraft.issued_at} onChange={(value) => setDocumentDraft((current) => ({ ...current, issued_at: value }))} />
                     <Input label="Fecha vencimiento" type="date" value={documentDraft.expires_at} onChange={(value) => setDocumentDraft((current) => ({ ...current, expires_at: value }))} />
                     <Textarea label="Observaciones" value={documentDraft.observations} onChange={(value) => setDocumentDraft((current) => ({ ...current, observations: value }))} />
-                    <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={saveDocument} type="button"><Paperclip size={16} /> Adjuntar</button>
+                    <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={documentSaving || !access.canWrite} onClick={saveDocument} type="button"><Paperclip size={16} /> {documentSaving ? "Cargando..." : "Adjuntar"}</button>
                   </div>
                 </div>
                 <div className="rounded-md border border-line p-3">
@@ -678,14 +960,54 @@ export function TransportFleetPage() {
                             <p className="font-semibold">{document.file_name}</p>
                             <p className="text-xs text-neutral-500">{document.document_type} · v{document.version}</p>
                           </div>
-                          <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(document.document_status)}`}>{statusLabel(document.document_status)}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(document.document_status)}`}>{statusLabel(document.document_status)}</span>
+                            {document.has_attachment !== false ? (
+                              <button className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold hover:bg-paper" onClick={() => openDocumentPreview(document)} type="button"><Eye size={14} /> Ver</button>
+                            ) : null}
+                          </div>
                         </div>
-                        <p className="mt-2 text-xs text-neutral-500">Vence: {dateOnly(document.expires_at) || "Sin vencimiento"} · Ruta: {document.storage_path || "--"}</p>
+                        <p className="mt-2 text-xs text-neutral-500">Vence: {dateOnly(document.expires_at) || "Sin vencimiento"}{document.mime_type ? ` · ${document.mime_type}` : ""}{document.file_size ? ` · ${formatFileSize(document.file_size)}` : ""}</p>
                       </div>
                     ))}
                     {!selected?.documents?.length ? <p className="text-sm text-neutral-500">Sin adjuntos aun. Guarda la ficha y carga documentos por placa.</p> : null}
                   </div>
                 </div>
+                {documentPreview ? (
+                  <div className="rounded-md border border-line p-3 lg:col-span-2">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-semibold">{documentPreview.document.file_name}</h3>
+                        <p className="text-xs text-neutral-500">
+                          {documentPreview.loading
+                            ? "Preparando vista previa..."
+                            : documentPreview.source === "storage"
+                              ? `URL firmada vigente por ${Math.max(1, Math.round((documentPreview.expires_in || 0) / 60))} min`
+                              : documentPreview.source === "database"
+                                ? "Archivo almacenado en la base de datos"
+                                : documentPreview.source === "external"
+                                  ? "Archivo alojado en un enlace externo"
+                                  : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {documentPreview.url ? <a className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold hover:bg-paper" href={documentPreview.url} rel="noreferrer" target="_blank">Abrir en pestana</a> : null}
+                        <button className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold hover:bg-paper" onClick={() => setDocumentPreview(null)} type="button">Cerrar</button>
+                      </div>
+                    </div>
+                    {documentPreview.loading ? (
+                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">Cargando vista previa...</p>
+                    ) : documentPreview.error ? (
+                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">{documentPreview.error}</p>
+                    ) : documentPreview.mime_type.startsWith("image/") ? (
+                      <img alt={documentPreview.document.file_name} className="max-h-[60vh] w-full rounded-md border border-line object-contain" src={documentPreview.url} />
+                    ) : documentPreview.mime_type === "application/pdf" ? (
+                      <iframe className="h-[60vh] w-full rounded-md border border-line" src={documentPreview.url} title={documentPreview.document.file_name} />
+                    ) : (
+                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">Este formato no tiene vista previa integrada. Usa &quot;Abrir en pestana&quot;.</p>
+                    )}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -846,11 +1168,11 @@ function FormGrid({ children }: { children: ReactNode }) {
   return <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{children}</div>;
 }
 
-function Input({ label, value, onChange, type = "text" }: { label: string; value: string | number; onChange: (value: string) => void; type?: string }) {
+function Input({ label, value, onChange, type = "text", disabled = false }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; disabled?: boolean }) {
   return (
     <label className="space-y-1 text-sm">
       <span className="font-semibold text-neutral-700">{label}</span>
-      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type={type} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
+      <input className="h-10 w-full rounded-md border border-line px-3 text-sm disabled:bg-neutral-100 disabled:text-neutral-500" type={type} value={value ?? ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} />
     </label>
   );
 }

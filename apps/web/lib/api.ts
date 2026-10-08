@@ -652,6 +652,40 @@ async function ensureSupabaseCompanyRoleCatalog(companyId: string) {
   return created[0].id;
 }
 
+const COMPANY_MASTER_CATALOG_NAMES: Record<string, string> = {
+  vehicle_types: "Tipos de vehiculo",
+  vehicle_categories: "Categorias de vehiculo",
+  vehicle_brands: "Marcas de vehiculo",
+  vehicle_lines: "Lineas de vehiculo",
+  vehicle_colors: "Colores de vehiculo",
+  vehicle_fuels: "Combustibles de vehiculo",
+  vehicle_body_types: "Carrocerias de vehiculo",
+  units_of_measure: "Unidades de medida"
+};
+
+async function ensureSupabaseCompanyMasterCatalog(companyId: string, catalogCode: string) {
+  const existing = await supabaseFetch<Array<{ id: string; company_id?: string | null }>>(
+    `/rest/v1/master_catalogs?select=id,company_id&code=eq.${encodeURIComponent(catalogCode)}&company_id=eq.${encodeURIComponent(companyId)}&limit=5`
+  ).catch(() => []);
+  const companyCatalog = existing.find((catalog) => catalog.company_id === companyId);
+  if (companyCatalog?.id) return companyCatalog.id;
+  const created = await supabaseFetch<Array<{ id: string }>>("/rest/v1/master_catalogs?select=id", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      company_id: companyId,
+      code: catalogCode,
+      name: COMPANY_MASTER_CATALOG_NAMES[catalogCode] || catalogCode,
+      scope: "company",
+      active: true,
+      sort_order: 200,
+      metadata: { source: "apexos_company_masters" }
+    })
+  });
+  if (!created[0]?.id) throw new Error(`No fue posible preparar el catalogo ${catalogCode} de la empresa.`);
+  return created[0].id;
+}
+
 async function loadSupabaseAdminRoles() {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) return storedAdminRoles();
@@ -778,19 +812,32 @@ async function loadSupabaseUserMasterData() {
   ).catch(() => []);
   const catalogIds = catalogs.map((catalog) => catalog.id).filter(Boolean);
   if (!catalogIds.length) return stored;
-  const items = await supabaseFetch<Array<{ catalog_id: string; company_id?: string | null; code: string; name: string; description?: string; active?: boolean; sort_order?: number }>>(
-    `/rest/v1/master_catalog_items?select=catalog_id,company_id,code,name,description,active,sort_order&catalog_id=in.(${catalogIds.map((id) => encodeURIComponent(id)).join(",")})&order=sort_order.asc,name.asc&limit=2000`
+  const items = await supabaseFetch<Array<{ catalog_id: string; company_id?: string | null; code: string; name: string; description?: string; active?: boolean; sort_order?: number; parent_code?: string | null }>>(
+    `/rest/v1/master_catalog_items?select=catalog_id,company_id,code,name,description,active,sort_order,parent_code&catalog_id=in.(${catalogIds.map((id) => encodeURIComponent(id)).join(",")})&order=sort_order.asc,name.asc&limit=2000`
   ).catch(() => []);
   if (!items.length) return stored;
   const next = { ...stored } as ReturnType<typeof defaultUserMasterData> & Record<string, unknown>;
+  const catalogsByCode = new Map<string, Array<(typeof catalogs)[number]>>();
   for (const catalog of catalogs) {
-    if (!(catalog.code in stored) || catalog.code === "roles") continue;
-    const catalogItems = items.filter((item) => item.catalog_id === catalog.id);
+    if (!catalogsByCode.has(catalog.code)) catalogsByCode.set(catalog.code, []);
+    catalogsByCode.get(catalog.code)!.push(catalog);
+  }
+  for (const [catalogCode, codeCatalogs] of catalogsByCode) {
+    if (!(catalogCode in stored) || catalogCode === "roles") continue;
+    const catalogIds = new Set(codeCatalogs.map((catalog) => catalog.id));
+    const catalogItems = items.filter((item) => catalogIds.has(item.catalog_id));
     if (!catalogItems.length) continue;
     const byCode = new Map<string, (typeof catalogItems)[number]>();
     catalogItems.filter((item) => item.company_id == null).forEach((item) => byCode.set(item.code, item));
     catalogItems.filter((item) => item.company_id === membership.company_id).forEach((item) => byCode.set(item.code, item));
-    next[catalog.code] = Array.from(byCode.values());
+    next[catalogCode] = Array.from(byCode.values()).map((item) => ({
+      code: item.code,
+      name: item.name,
+      description: item.description || "",
+      active: item.active !== false,
+      sort_order: Number(item.sort_order || 100),
+      ...(item.parent_code ? { parent_code: item.parent_code } : {})
+    }));
   }
   saveStoredUserMasterData(next as ReturnType<typeof defaultUserMasterData>);
   return next;
@@ -811,7 +858,74 @@ function defaultUserMasterData() {
     cost_centers: [["CC-OPER", "Operacion"], ["CC-TRAN", "Transporte"], ["CC-ADMIN", "Administracion"]].map(([code, name]) => ({ code, name })),
     work_shifts: [["DIURNO", "Diurno"], ["NOCTURNO", "Nocturno"], ["MIXTO", "Mixto"]].map(([code, name]) => ({ code, name })),
     activity_types: fallbackActivityTypes.map((item) => ({ code: item.code, name: item.name, active: true, sort_order: item.sort_order })),
-    banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name }))
+    banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name })),
+    units_of_measure: [["UND", "Unidad"], ["KG", "Kilogramo"], ["TON", "Tonelada"], ["M3", "Metro cubico"], ["LB", "Libra"], ["HORA", "Hora"]].map(([code, name]) => ({ code, name })),
+    vehicle_types: [["camioneta", "Camioneta"], ["furgon", "Furgon"], ["camion", "Camion"], ["motocicleta", "Motocicleta"], ["automovil", "Automovil"], ["buseta", "Buseta"], ["bus", "Bus"], ["camion_tracto", "Camion tracto"], ["volqueta", "Volqueta"]].map(([code, name]) => ({ code, name })),
+    vehicle_categories: [["motocicleta", "Motocicleta"], ["liviano", "Liviano"], ["utilitario", "Utilitario"], ["camion_liviano", "Camion liviano"], ["camion_mediano", "Camion mediano"], ["camion_pesado", "Camion pesado"], ["articulado", "Articulado / tractomula"]].map(([code, name]) => ({ code, name })),
+    vehicle_brands: [["toyota", "Toyota"], ["chevrolet", "Chevrolet"], ["renault", "Renault"], ["nissan", "Nissan"], ["mazda", "Mazda"], ["ford", "Ford"], ["volkswagen", "Volkswagen"], ["mercedes_benz", "Mercedes-Benz"], ["hyundai", "Hyundai"], ["kia", "Kia"], ["iveco", "Iveco"], ["hino", "Hino"]].map(([code, name]) => ({ code, name })),
+    vehicle_lines: [
+      ["hilux", "Hilux", "toyota"], ["fortuner", "Fortuner", "toyota"],
+      ["nhr", "NHR", "chevrolet"], ["npr", "NPR", "chevrolet"], ["dmax", "D-Max", "chevrolet"], ["spark_gt", "Spark GT", "chevrolet"],
+      ["kangoo", "Kangoo", "renault"], ["trafic", "Trafic", "renault"], ["logan", "Logan", "renault"],
+      ["frontier", "Frontier", "nissan"], ["urvan", "Urvan", "nissan"],
+      ["bt50", "BT-50", "mazda"],
+      ["ranger", "Ranger", "ford"], ["transit", "Transit", "ford"],
+      ["amarok", "Amarok", "volkswagen"], ["delivery", "Delivery", "volkswagen"],
+      ["sprinter", "Sprinter", "mercedes_benz"], ["atego", "Atego", "mercedes_benz"],
+      ["daily", "Daily", "iveco"],
+      ["dutro", "Dutro", "hino"]
+    ].map(([code, name, parent_code]) => ({ code, name, parent_code })),
+    vehicle_colors: [["blanco", "Blanco"], ["negro", "Negro"], ["gris", "Gris"], ["plata", "Plata"], ["rojo", "Rojo"], ["azul", "Azul"], ["verde", "Verde"], ["amarillo", "Amarillo"], ["naranja", "Naranja"], ["beige", "Beige"], ["cafe", "Cafe"], ["vinotinto", "Vinotinto"]].map(([code, name]) => ({ code, name })),
+    vehicle_fuels: [["gasolina", "Gasolina"], ["diesel", "Diesel"], ["gnv", "Gas natural (GNV)"], ["gnv_gasolina", "Gasolina + GNV"], ["electrico", "Electrico"], ["hibrido", "Hibrido"]].map(([code, name]) => ({ code, name })),
+    vehicle_body_types: [["estacas", "Estacas"], ["caja_seca", "Caja seca"], ["furgon", "Furgon"], ["plataforma", "Plataforma"], ["tanque", "Tanque"], ["volco", "Volco"], ["refrigerado", "Refrigerado"], ["porta_contenedores", "Porta contenedores"], ["cama_baja", "Cama baja"]].map(([code, name]) => ({ code, name }))
+  };
+}
+
+export type VehicleMasterItem = {
+  code: string;
+  name: string;
+  description?: string;
+  active?: boolean;
+  sort_order?: number;
+  parent_code?: string | null;
+};
+
+export type VehicleMasterCatalogs = {
+  types: VehicleMasterItem[];
+  categories: VehicleMasterItem[];
+  brands: VehicleMasterItem[];
+  lines: VehicleMasterItem[];
+  colors: VehicleMasterItem[];
+  fuels: VehicleMasterItem[];
+  bodyTypes: VehicleMasterItem[];
+  locations: VehicleMasterItem[];
+  costCenters: VehicleMasterItem[];
+  capacityUnits: VehicleMasterItem[];
+};
+
+export function isActiveMasterItem(item: VehicleMasterItem) {
+  return item.active !== false;
+}
+
+export async function loadVehicleMasterCatalogs(): Promise<VehicleMasterCatalogs> {
+  const defaults = defaultUserMasterData() as unknown as Record<string, VehicleMasterItem[]>;
+  const masters = await loadSupabaseUserMasterData().catch(() => defaults);
+  const source = (masters && typeof masters === "object" ? masters : defaults) as Record<string, unknown>;
+  const pick = (key: string): VehicleMasterItem[] => {
+    const value = Array.isArray(source[key]) ? (source[key] as VehicleMasterItem[]) : [];
+    return value.length ? value : defaults[key] || [];
+  };
+  return {
+    types: pick("vehicle_types"),
+    categories: pick("vehicle_categories"),
+    brands: pick("vehicle_brands"),
+    lines: pick("vehicle_lines"),
+    colors: pick("vehicle_colors"),
+    fuels: pick("vehicle_fuels"),
+    bodyTypes: pick("vehicle_body_types"),
+    locations: pick("locations"),
+    costCenters: pick("cost_centers"),
+    capacityUnits: pick("units_of_measure")
   };
 }
 
@@ -3847,21 +3961,40 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const itemCode = adminCatalogItemMatch[2] ? decodeURIComponent(adminCatalogItemMatch[2]) : "";
     const body = JSON.parse(String(options.body || "{}"));
     const data = getStoredUserMasterData();
-    const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string; description?: string; active?: boolean; sort_order?: number }>) : [];
+    const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string; description?: string; active?: boolean; sort_order?: number; parent_code?: string | null }>) : [];
     if (method === "DELETE") {
       const previous = current.find((entry) => entry.code === itemCode);
       const nextData = { ...data, [catalogCode]: current.filter((entry) => entry.code !== itemCode) };
       saveStoredUserMasterData(nextData);
       const membership = await currentSupabaseCompanyUser().catch(() => null);
       if (membership?.company_id) {
-        const catalogs = await supabaseFetch<Array<{ id: string }>>(
-          `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
-        ).catch(() => []);
-        const catalogId = catalogs[0]?.id;
-        if (catalogId) {
-          await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(itemCode)}`, {
-            method: "DELETE"
-          }).catch((error) => safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error));
+        try {
+          const catalogId = await ensureSupabaseCompanyMasterCatalog(membership.company_id, catalogCode);
+          const companyItems = await supabaseFetch<Array<{ id: string }>>(
+            `/rest/v1/master_catalog_items?select=id&catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(itemCode)}&limit=5`
+          );
+          if (companyItems[0]?.id) {
+            await supabaseFetch(`/rest/v1/master_catalog_items?id=eq.${encodeURIComponent(companyItems[0].id)}&company_id=eq.${encodeURIComponent(membership.company_id)}`, {
+              method: "DELETE"
+            });
+          } else if (previous) {
+            await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
+              method: "POST",
+              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify({
+                catalog_id: catalogId,
+                company_id: membership.company_id,
+                code: itemCode,
+                name: previous.name,
+                description: previous.description || null,
+                active: false,
+                sort_order: Number(previous.sort_order || 100),
+                parent_code: previous.parent_code || null
+              })
+            });
+          }
+        } catch (error) {
+          safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error);
         }
       }
       if (catalogCode === "activity_types" && previous) {
@@ -3874,7 +4007,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       name: String(body.name || "").trim(),
       description: String(body.description || "").trim(),
       active: body.active !== false,
-      sort_order: Number(body.sort_order || 100)
+      sort_order: Number(body.sort_order || 100),
+      parent_code: typeof body.parent_code === "string" && body.parent_code.trim() ? body.parent_code.trim() : null
     };
     if (!item.code || !item.name) throw new Error("Codigo y nombre del catalogo son obligatorios.");
     const targetCode = itemCode || item.code;
@@ -3887,11 +4021,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
     const membership = await currentSupabaseCompanyUser().catch(() => null);
     if (membership?.company_id) {
-      const catalogs = await supabaseFetch<Array<{ id: string }>>(
-        `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
-      ).catch(() => []);
-      const catalogId = catalogs[0]?.id;
-      if (catalogId) {
+      try {
+        const catalogId = await ensureSupabaseCompanyMasterCatalog(membership.company_id, catalogCode);
         if (targetCode !== item.code) {
           await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(targetCode)}`, {
             method: "DELETE"
@@ -3907,9 +4038,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
             name: item.name,
             description: item.description || null,
             active: item.active,
-            sort_order: item.sort_order
+            sort_order: item.sort_order,
+            parent_code: item.parent_code
           })
-        }).catch((error) => safeDevLog("No fue posible persistir item de catalogo en Supabase.", error));
+        });
+      } catch (error) {
+        safeDevLog("No fue posible persistir item de catalogo en Supabase.", error);
       }
     }
     if (catalogCode === "activity_types") {

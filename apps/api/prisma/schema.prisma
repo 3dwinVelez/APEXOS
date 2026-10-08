@@ -1562,6 +1562,7 @@ model TransportOrigin {
   needs             TransportNeed[]
   trips             TransportTrip[]
   rate_cards        TransportRateCard[]
+  plans             TransportPlan[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, city, active])
@@ -1669,6 +1670,27 @@ model TransportDeliveryPoint {
   @@index([tenant_id, city, active])
 }
 
+model TransportPlan {
+  id              Int         @id @default(autoincrement())
+  tenant_id       String
+  code            String
+  name            String
+  origin_id       Int
+  origin          TransportOrigin @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  service_level   String      @default("normal")
+  due_date        DateTime?
+  status          String      @default("borrador")
+  notes           String?
+  metadata        Json        @default("{}")
+  created_by      Int?
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  needs           TransportNeed[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, due_date])
+}
+
 model TransportNeed {
   id                    Int                 @id @default(autoincrement())
   tenant_id             String
@@ -1683,6 +1705,8 @@ model TransportNeed {
   origin_name           String
   delivery_point_id     Int
   delivery_point        TransportDeliveryPoint @relation(fields: [delivery_point_id], references: [id], onDelete: Restrict)
+  plan_id               Int?
+  plan                  TransportPlan?      @relation(fields: [plan_id], references: [id], onDelete: SetNull)
   available_at          DateTime
   due_at                DateTime
   priority              String              @default("normal")
@@ -1713,6 +1737,7 @@ model TransportNeed {
   @@index([tenant_id, source_type, source_id])
   @@index([tenant_id, delivery_point_id, due_at])
   @@index([tenant_id, origin_id, status])
+  @@index([tenant_id, plan_id])
 }
 
 model TransportNeedLine {

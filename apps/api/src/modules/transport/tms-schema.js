@@ -80,7 +80,7 @@ const planningSchema = {
       origin_id: { type: "integer" }, need_ids: { type: "array", minItems: 1, uniqueItems: true, items: { type: "integer" } },
       vehicle_id: { type: "integer" }, vehicle_type: { type: "string" }, service_level: { type: "string" },
       strategy: { type: "string" }, return_to_origin: { type: "boolean" }, road_factor: { type: "number", minimum: 1, maximum: 2 },
-      average_speed_kmh: { type: "number", minimum: 5, maximum: 120 }
+      average_speed_kmh: { type: "number", minimum: 5, maximum: 120 }, plan_id: { type: "integer" }
     }
   }
 };
@@ -179,4 +179,35 @@ const settlementAccountSchema = { body: { type: "object", properties: { referenc
 const settlementTransitionSchema = { body: { type: "object", properties: { version: { type: "integer", minimum: 0 }, reference: { type: "string", maxLength: 120 }, reason: { type: "string", maxLength: 2000 }, status: { type: "string", enum: ["liquidada", "reversada"] } } } };
 const rateSimulateSchema = { body: { type: "object", properties: { carrier_id: { type: "integer", minimum: 1 }, service_date: { type: "string" }, destination_city: { type: "string", maxLength: 120 }, vehicle_type: { type: "string", maxLength: 40 }, service_level: { type: "string", maxLength: 40 }, quantity: { type: "number", exclusiveMinimum: 0 }, distance_km: { type: "number", minimum: 0 }, weight_kg: { type: "number", minimum: 0 }, volume_m3: { type: "number", minimum: 0 }, stop_count: { type: "integer", minimum: 0 } } } };
 
-module.exports = { carrierSchema, driverSchema, deliveryPointSchema, originSchema, rateCardSchema, planningSchema, commitPlanningSchema, needSchema, tripSchema, assignmentSchema, transitionSchema, eventSchema, attemptSchema, settlementSchema, gpsBatchSchema, stopVisitSchema, configSchema, mobileConfigSchema, notificationConfigSchema, orderUpdateSchema, orderImportSchema, notificationSchema, settlementTypeSchema, settlementPeriodSchema, settlementPackageCreateSchema, settlementPackageUpdateSchema, settlementItemsSchema, settlementAdjustmentSchema, settlementIssueSchema, settlementIssueResolveSchema, settlementDecisionSchema, settlementAccountSchema, settlementTransitionSchema, rateSimulateSchema };
+const planCreateSchema = {
+  body: {
+    type: "object",
+    required: ["origin_id"],
+    properties: {
+      code: { type: "string", maxLength: 40 }, name: { type: "string", maxLength: 120 },
+      origin_id: { type: "integer", minimum: 1 }, service_level: { type: "string", maxLength: 40 },
+      due_date: { type: "string" }, notes: { type: "string", maxLength: 500 }
+    }
+  }
+};
+
+const planUpdateSchema = {
+  body: {
+    type: "object",
+    properties: {
+      name: { type: "string", maxLength: 120 }, service_level: { type: "string", maxLength: 40 },
+      due_date: { type: "string" }, notes: { type: "string", maxLength: 500 },
+      status: { type: "string", enum: ["borrador", "listo"] }
+    }
+  }
+};
+
+const planNeedsSchema = {
+  body: {
+    type: "object",
+    required: ["need_ids"],
+    properties: { need_ids: { type: "array", minItems: 1, maxItems: 200, uniqueItems: true, items: { type: "integer", minimum: 1 } } }
+  }
+};
+
+module.exports = { carrierSchema, driverSchema, deliveryPointSchema, originSchema, rateCardSchema, planningSchema, commitPlanningSchema, needSchema, tripSchema, assignmentSchema, transitionSchema, eventSchema, attemptSchema, settlementSchema, gpsBatchSchema, stopVisitSchema, configSchema, mobileConfigSchema, notificationConfigSchema, orderUpdateSchema, orderImportSchema, notificationSchema, settlementTypeSchema, settlementPeriodSchema, settlementPackageCreateSchema, settlementPackageUpdateSchema, settlementItemsSchema, settlementAdjustmentSchema, settlementIssueSchema, settlementIssueResolveSchema, settlementDecisionSchema, settlementAccountSchema, settlementTransitionSchema, rateSimulateSchema, planCreateSchema, planUpdateSchema, planNeedsSchema };

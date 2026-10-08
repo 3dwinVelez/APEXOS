@@ -16,6 +16,7 @@ const TENANT_MODELS = new Set([
   "Vehicle", "ServiceOrder", "ServiceOrderItem", "ServiceOrderCorrection", "ServiceOrderCorrectionChange", "ServiceReference",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
   "TransportTmsConfig", "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
+  "TransportPlan",
   "TransportTrip", "TransportTripNeed", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt",
   "TransportPod", "TransportSettlement", "TransportSettlementLine", "TransportGpsPosition", "TransportNotification",
   "TransportSettlementType", "TransportSettlementPeriod", "TransportSettlementPackage", "TransportSettlementItem",
@@ -54,7 +55,7 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
-  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem"
+  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem", "TransportPlan"
 ]);
 
 function currentTenantId() {
