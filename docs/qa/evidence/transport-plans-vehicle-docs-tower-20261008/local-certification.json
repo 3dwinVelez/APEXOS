@@ -1,0 +1,250 @@
+{
+  "change_id": "transport-plans-vehicle-docs-tower-20261008",
+  "certification": "transport-plans-vehicle-docs-tower-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-10-08T22:46:48.588Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3212",
+  "scope": {
+    "capability": "Planes de despacho (consolidación por origen), catálogos maestros vehiculares con jerarquía marca->línea, adjuntos vehiculares multipart con vista previa firmada, consolidación de liquidación por vehículo en la torre e inteligencia de rutas con degradación controlada; extensión nativa del módulo Transporte sin duplicar subsistemas.",
+    "proven_by_live_execution": [
+      "GET /transport/vehicles lista la flota con campos de catálogo (marca/línea)",
+      "POST /transport/vehicles/:id/documents rechaza multipart sin archivo (400) y sin tipo documental (400) antes de tocar storage",
+      "POST /transport/origins + /transport/delivery-points + /transport/needs alimentan el plan",
+      "POST /transport/plans crea el plan en borrador ligado al origen",
+      "POST /transport/plans/:id/needs consolida la necesidad en el plan (caso #1 manual)",
+      "PUT /transport/plans/:id lo marca listo y GET /transport/planning/workbench lo expone",
+      "DELETE /transport/plans/:id/needs/:needId libera la necesidad y DELETE /transport/plans/:id limpia",
+      "GET /transport/route-intelligence/status responde 200 con estado de configuración",
+      "GET /transport/settlement-vehicle-consolidation agrega ingresos por vehículo (>=3 vehículos semilla)",
+      "POST /admin/user-master-data/vehicle_brands/items responde 400 VALIDACION: los catálogos vehiculares viven en Supabase (global compartido + override por empresa), no en el almacén tenant de la API; la edición la sirve la interceptación del cliente web hacia un catálogo por empresa",
+      "GET anónimo responde 401"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/transport-route-intelligence.test.js",
+      "apps/api/test/transport-settlement-vehicle-consolidation.test.js",
+      "apps/api/test/transport-vehicle-documents.test.js (incluye firma MIME, límites y URL firmada con storage simulado)",
+      "apps/web/test/transport-vehicle-master-catalogs.test.mjs (defaults con jerarquía, escritura tenant-safe y fusión global+empresa)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "vehicle_catalogs_rejected_by_api_store_by_design",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VALIDACION"
+      }
+    },
+    {
+      "name": "vehicle_master_catalogs_hierarchy",
+      "ok": true,
+      "detail": {
+        "checked": 5,
+        "failed": []
+      }
+    },
+    {
+      "name": "vehicles_listed_for_documents",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "count": 5
+      }
+    },
+    {
+      "name": "vehicle_document_requires_file",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VALIDACION"
+      }
+    },
+    {
+      "name": "vehicle_document_requires_type",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VALIDACION"
+      }
+    },
+    {
+      "name": "origin_created",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "delivery_point_created",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "need_created_pending",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "state": "pendiente"
+      }
+    },
+    {
+      "name": "plan_created_borrador",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "state": "borrador"
+      }
+    },
+    {
+      "name": "plan_consolidates_need",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "needs": 1
+      }
+    },
+    {
+      "name": "plan_marked_ready",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "state": "listo"
+      }
+    },
+    {
+      "name": "planning_workbench_exposes_plan",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "plans": 3
+      }
+    },
+    {
+      "name": "plan_releases_need",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "plan_deleted_cleanup",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "route_intelligence_status_accessible",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "configured": false
+      }
+    },
+    {
+      "name": "settlement_vehicle_consolidation_aggregates",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "packages": 5,
+        "vehicles": 3
+      }
+    },
+    {
+      "name": "unit_suite_transport-route-intelligence",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "8",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_transport-settlement-vehicle-consolidation",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "8",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_transport-vehicle-documents",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "12",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_transport-vehicle-master-catalogs",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "10",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "migration_files_present",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "engine_exports_vehicle_consolidation",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "routes_guard_plans_and_documents",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "storage_signed_urls_and_limits",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "web_tower_three_views",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "web_vehicle_documents_ui",
+      "ok": true,
+      "detail": {}
+    }
+  ],
+  "status": "passed",
+  "checks_passed": 29,
+  "checks_total": 29,
+  "finished_at": "2026-10-08T22:46:53.967Z"
+}

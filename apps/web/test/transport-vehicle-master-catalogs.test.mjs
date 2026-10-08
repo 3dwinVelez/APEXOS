@@ -25,6 +25,22 @@ test("la carga y escritura Supabase transportan parent_code para la jerarquia ma
   assert.match(apiSource, /parent_code: item\.parent_code/);
 });
 
+test("la escritura de maestros va a un catalogo por empresa y nunca pisa el global", () => {
+  assert.match(apiSource, /async function ensureSupabaseCompanyMasterCatalog\(companyId: string, catalogCode: string\)/);
+  assert.match(apiSource, /COMPANY_MASTER_CATALOG_NAMES/);
+  assert.match(apiSource, /metadata: \{ source: "apexos_company_masters" \}/);
+  assert.match(apiSource, /const catalogId = await ensureSupabaseCompanyMasterCatalog\(membership\.company_id, catalogCode\)/);
+  assert.doesNotMatch(apiSource, /or=\(and\(code\.eq\.\$\{encodeURIComponent\(catalogCode\)\},company_id\.eq\.\$\{encodeURIComponent\(membership\.company_id\)\}\),and\(code\.eq\.\$\{encodeURIComponent\(catalogCode\)\},company_id\.is\.null\)\)/);
+});
+
+test("la carga fusiona catalogos global y de empresa por codigo", () => {
+  assert.match(apiSource, /const catalogsByCode = new Map<string, Array<\(typeof catalogs\)\[number\]>>\(\)/);
+  assert.match(apiSource, /const catalogIds = new Set\(codeCatalogs\.map\(\(catalog\) => catalog\.id\)\)/);
+  assert.match(apiSource, /catalogItems\.filter\(\(item\) => item\.company_id == null\)/);
+  assert.match(apiSource, /catalogItems\.filter\(\(item\) => item\.company_id === membership\.company_id\)/);
+  assert.match(apiSource, /active: false,\s*\n\s*sort_order: Number\(previous\.sort_order \|\| 100\)/);
+});
+
 test("loadVehicleMasterCatalogs expone los catálogos que consume la ficha vehicular", () => {
   assert.match(apiSource, /export type VehicleMasterCatalogs = \{[\s\S]+?\};/);
   assert.match(apiSource, /export async function loadVehicleMasterCatalogs\(\): Promise<VehicleMasterCatalogs>/);

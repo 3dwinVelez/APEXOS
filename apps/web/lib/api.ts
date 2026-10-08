@@ -652,6 +652,40 @@ async function ensureSupabaseCompanyRoleCatalog(companyId: string) {
   return created[0].id;
 }
 
+const COMPANY_MASTER_CATALOG_NAMES: Record<string, string> = {
+  vehicle_types: "Tipos de vehiculo",
+  vehicle_categories: "Categorias de vehiculo",
+  vehicle_brands: "Marcas de vehiculo",
+  vehicle_lines: "Lineas de vehiculo",
+  vehicle_colors: "Colores de vehiculo",
+  vehicle_fuels: "Combustibles de vehiculo",
+  vehicle_body_types: "Carrocerias de vehiculo",
+  units_of_measure: "Unidades de medida"
+};
+
+async function ensureSupabaseCompanyMasterCatalog(companyId: string, catalogCode: string) {
+  const existing = await supabaseFetch<Array<{ id: string; company_id?: string | null }>>(
+    `/rest/v1/master_catalogs?select=id,company_id&code=eq.${encodeURIComponent(catalogCode)}&company_id=eq.${encodeURIComponent(companyId)}&limit=5`
+  ).catch(() => []);
+  const companyCatalog = existing.find((catalog) => catalog.company_id === companyId);
+  if (companyCatalog?.id) return companyCatalog.id;
+  const created = await supabaseFetch<Array<{ id: string }>>("/rest/v1/master_catalogs?select=id", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      company_id: companyId,
+      code: catalogCode,
+      name: COMPANY_MASTER_CATALOG_NAMES[catalogCode] || catalogCode,
+      scope: "company",
+      active: true,
+      sort_order: 200,
+      metadata: { source: "apexos_company_masters" }
+    })
+  });
+  if (!created[0]?.id) throw new Error(`No fue posible preparar el catalogo ${catalogCode} de la empresa.`);
+  return created[0].id;
+}
+
 async function loadSupabaseAdminRoles() {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) return storedAdminRoles();
@@ -783,14 +817,20 @@ async function loadSupabaseUserMasterData() {
   ).catch(() => []);
   if (!items.length) return stored;
   const next = { ...stored } as ReturnType<typeof defaultUserMasterData> & Record<string, unknown>;
+  const catalogsByCode = new Map<string, Array<(typeof catalogs)[number]>>();
   for (const catalog of catalogs) {
-    if (!(catalog.code in stored) || catalog.code === "roles") continue;
-    const catalogItems = items.filter((item) => item.catalog_id === catalog.id);
+    if (!catalogsByCode.has(catalog.code)) catalogsByCode.set(catalog.code, []);
+    catalogsByCode.get(catalog.code)!.push(catalog);
+  }
+  for (const [catalogCode, codeCatalogs] of catalogsByCode) {
+    if (!(catalogCode in stored) || catalogCode === "roles") continue;
+    const catalogIds = new Set(codeCatalogs.map((catalog) => catalog.id));
+    const catalogItems = items.filter((item) => catalogIds.has(item.catalog_id));
     if (!catalogItems.length) continue;
     const byCode = new Map<string, (typeof catalogItems)[number]>();
     catalogItems.filter((item) => item.company_id == null).forEach((item) => byCode.set(item.code, item));
     catalogItems.filter((item) => item.company_id === membership.company_id).forEach((item) => byCode.set(item.code, item));
-    next[catalog.code] = Array.from(byCode.values()).map((item) => ({
+    next[catalogCode] = Array.from(byCode.values()).map((item) => ({
       code: item.code,
       name: item.name,
       description: item.description || "",
@@ -3928,14 +3968,33 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       saveStoredUserMasterData(nextData);
       const membership = await currentSupabaseCompanyUser().catch(() => null);
       if (membership?.company_id) {
-        const catalogs = await supabaseFetch<Array<{ id: string }>>(
-          `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
-        ).catch(() => []);
-        const catalogId = catalogs[0]?.id;
-        if (catalogId) {
-          await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(itemCode)}`, {
-            method: "DELETE"
-          }).catch((error) => safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error));
+        try {
+          const catalogId = await ensureSupabaseCompanyMasterCatalog(membership.company_id, catalogCode);
+          const companyItems = await supabaseFetch<Array<{ id: string }>>(
+            `/rest/v1/master_catalog_items?select=id&catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(itemCode)}&limit=5`
+          );
+          if (companyItems[0]?.id) {
+            await supabaseFetch(`/rest/v1/master_catalog_items?id=eq.${encodeURIComponent(companyItems[0].id)}&company_id=eq.${encodeURIComponent(membership.company_id)}`, {
+              method: "DELETE"
+            });
+          } else if (previous) {
+            await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
+              method: "POST",
+              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify({
+                catalog_id: catalogId,
+                company_id: membership.company_id,
+                code: itemCode,
+                name: previous.name,
+                description: previous.description || null,
+                active: false,
+                sort_order: Number(previous.sort_order || 100),
+                parent_code: previous.parent_code || null
+              })
+            });
+          }
+        } catch (error) {
+          safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error);
         }
       }
       if (catalogCode === "activity_types" && previous) {
@@ -3962,11 +4021,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
     const membership = await currentSupabaseCompanyUser().catch(() => null);
     if (membership?.company_id) {
-      const catalogs = await supabaseFetch<Array<{ id: string }>>(
-        `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
-      ).catch(() => []);
-      const catalogId = catalogs[0]?.id;
-      if (catalogId) {
+      try {
+        const catalogId = await ensureSupabaseCompanyMasterCatalog(membership.company_id, catalogCode);
         if (targetCode !== item.code) {
           await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(targetCode)}`, {
             method: "DELETE"
@@ -3985,7 +4041,9 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
             sort_order: item.sort_order,
             parent_code: item.parent_code
           })
-        }).catch((error) => safeDevLog("No fue posible persistir item de catalogo en Supabase.", error));
+        });
+      } catch (error) {
+        safeDevLog("No fue posible persistir item de catalogo en Supabase.", error);
       }
     }
     if (catalogCode === "activity_types") {
