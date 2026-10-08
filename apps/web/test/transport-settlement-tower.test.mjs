@@ -63,7 +63,7 @@ test("la contabilizacion advierte el bloqueo y captura el pago", () => {
 
 test("las transiciones criticas viajan con version del paquete", () => {
   assert.match(page, /version: pkg\.version/);
-  assert.match(page, /onTransition\("close", \{ version: selected\.version \}/);
+  assert.match(page, /transition\("close", \{ version: selected\.version \}/);
 });
 
 test("maestros expone la tarjeta de tipos de liquidacion con politica documental", () => {

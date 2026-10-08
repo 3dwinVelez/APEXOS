@@ -47,5 +47,5 @@ test("el boton Ver solo aparece con archivo real y la fuente del archivo se etiq
   assert.match(transportSource, /"Archivo almacenado en la base de datos"/);
   assert.match(transportSource, /"Archivo alojado en un enlace externo"/);
   assert.match(transportSource, /Preparando vista previa\.\.\./);
-  assert.match(transportSource, /Este formato no tiene vista previa integrada\. Usa "Abrir en pestana"\./);
+  assert.match(transportSource, /Este formato no tiene vista previa integrada\. Usa &quot;Abrir en pestana&quot;\./);
 });

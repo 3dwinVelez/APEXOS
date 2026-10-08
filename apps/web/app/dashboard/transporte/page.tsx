@@ -1004,7 +1004,7 @@ export function TransportFleetPage() {
                     ) : documentPreview.mime_type === "application/pdf" ? (
                       <iframe className="h-[60vh] w-full rounded-md border border-line" src={documentPreview.url} title={documentPreview.document.file_name} />
                     ) : (
-                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">Este formato no tiene vista previa integrada. Usa "Abrir en pestana".</p>
+                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">Este formato no tiene vista previa integrada. Usa &quot;Abrir en pestana&quot;.</p>
                     )}
                   </div>
                 ) : null}
