@@ -84,6 +84,43 @@ test("resolveRate picks the single highest-priority (lowest number) tariff", () 
   assert.equal(trace.selected.matched_by, "vigencia+contexto+prioridad");
 });
 
+test("geographic scope: origin and municipality participate in rate matching", () => {
+  const scoped = rate({ id: 1, code: "GEO", origin_department: "Antioquia", origin_city: "Medellin", origin_municipality: "Envigado", destination_municipality: "Barbosa" });
+  const context = { origin_department: "antioquia", origin_city: "MEDELLIN ", origin_municipality: "envigado", destination_city: "Bogota", destination_municipality: "barbosa" };
+  assert.equal(E.rateMatchesContext(scoped, context), true);
+  assert.equal(E.rateMatchesContext(scoped, { ...context, origin_municipality: "itagui" }), false);
+  assert.equal(E.rateMatchesContext(scoped, { ...context, origin_city: "Cali" }), false);
+  assert.equal(E.rateMatchesContext(scoped, { ...context, destination_municipality: "soacha" }), false);
+});
+
+test("geographic scope: null means wildcard on either side", () => {
+  const unscoped = rate({ id: 1, code: "FREE" });
+  const context = { origin_city: "Bogota", destination_municipality: "Soacha" };
+  assert.equal(E.rateMatchesContext(unscoped, context), true);
+  const scoped = rate({ id: 2, code: "GEO", destination_municipality: "Soacha" });
+  assert.equal(E.rateMatchesContext(scoped, {}), true);
+  assert.equal(E.rateMatchesContext(scoped, { destination_municipality: "soacha" }), true);
+  assert.equal(E.rateMatchesContext(scoped, { destination_municipality: "chia" }), false);
+});
+
+test("resolveRate prefers the municipality-scoped rate and reports the context it used", () => {
+  const generic = rate({ id: 1, code: "GEN", priority: 200 });
+  const scoped = rate({ id: 2, code: "GEO", priority: 10, destination_municipality: "Envigado" });
+  const context = { carrier_id: 9, service_date: "2026-06-15T00:00:00.000Z", destination_city: "Medellin", destination_municipality: "envigado" };
+  const { rate: picked, trace } = E.resolveRate([generic, scoped], context);
+  assert.equal(picked.id, 2);
+  assert.equal(trace.context.destination_municipality, "envigado");
+  assert.equal(trace.context.origin_municipality, null);
+  assert.throws(() => E.resolveRate([scoped], { carrier_id: 9, destination_municipality: "itagui" }), (e) => e.code === "TMS_SETTLEMENT_RATE_NOT_FOUND");
+});
+
+test("resolveRate never silently picks between municipality-scoped rates of equal priority", () => {
+  const a = rate({ id: 1, code: "A", priority: 10, destination_municipality: "Envigado" });
+  const b = rate({ id: 2, code: "B", priority: 10, destination_municipality: "Itagui" });
+  assert.throws(() => E.resolveRate([a, b], { carrier_id: 9, service_date: "2026-06-15T00:00:00.000Z" }), (e) => e.code === "TMS_SETTLEMENT_RATE_AMBIGUOUS");
+});
+
+
 test("missing tariff never yields a silent zero value", () => {
   const context = { carrier_id: 9, service_date: "2026-06-15T00:00:00.000Z" };
   assert.throws(() => E.resolveRate([], context), (e) => e.code === "TMS_SETTLEMENT_RATE_NOT_FOUND");

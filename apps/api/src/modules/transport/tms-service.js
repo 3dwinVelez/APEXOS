@@ -268,9 +268,13 @@ function rateCardData(input) {
 
     code: normalizedCode(input.code), name: String(input.name || "").trim(), carrier_id: input.carrier_id || null,
 
-    origin_id: input.origin_id || null, destination_city: input.destination_city?.trim() || null,
+    origin_id: input.origin_id || null, origin_department: input.origin_department?.trim() || null,
 
-    destination_department: input.destination_department?.trim() || null, service_level: input.service_level?.trim() || null,
+    origin_city: input.origin_city?.trim() || null, origin_municipality: input.origin_municipality?.trim() || null,
+
+    destination_city: input.destination_city?.trim() || null, destination_department: input.destination_department?.trim() || null,
+
+    destination_municipality: input.destination_municipality?.trim() || null, service_level: input.service_level?.trim() || null,
 
     vehicle_type: input.vehicle_type?.trim() || null, valid_from: validFrom, valid_to: validTo, currency: input.currency || "COP",
 

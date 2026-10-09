@@ -1579,8 +1579,12 @@ model TransportRateCard {
   carrier              TransportCarrier? @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
   origin_id            Int?
   origin               TransportOrigin?  @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  origin_department    String?
+  origin_city          String?
+  origin_municipality  String?
   destination_city     String?
   destination_department String?
+  destination_municipality String?
   service_level        String?
   vehicle_type         String?
   valid_from           DateTime
@@ -2104,6 +2108,7 @@ model TransportSettlementItem {
   origin_name       String?
   destination_name  String?
   destination_city  String?
+  destination_municipality String?
   vehicle_plate     String?
   vehicle_type      String?
   service_level     String?
