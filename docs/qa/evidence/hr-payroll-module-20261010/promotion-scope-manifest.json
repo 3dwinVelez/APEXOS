@@ -1,0 +1,264 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-payroll-module-graft-20261010",
+  "base_commits": {
+    "develop": "ee6fb94a9c54e255db0afc2c6f4592e8210b6dbb"
+  },
+  "certified_commit": "ca529fde",
+  "change_intent": {
+    "summary": "Injertar el modulo de nomina (971d2eba) sobre develop (ee6fb94a) como capa aditiva, conservando marcaciones y transporte de develop.",
+    "modules": [
+      "hr/nomina",
+      "hr/marcaciones",
+      "hr/talento-humano-web"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/prisma/migrations/",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/modules/hr/",
+    "apps/api/test/",
+    "apps/web/app/dashboard/talento-humano/",
+    "apps/web/test/",
+    "docs/qa/evidence/hr-payroll-module-20261010/",
+    "supabase/migrations/"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918100000_hr_labor_deductions_parameters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918140000_hr_payroll_liquidation_documents/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918150000_hr_payroll_concepts_detail/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918160000_hr_employee_termination_liquidations/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918170000_hr_social_contributions/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918180000_hr_payroll_period_closures/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918190000_hr_social_contribution_exoneration_parameters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918200000_hr_pension_solidarity_parameter/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918210000_hr_payroll_libranzas/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918220000_hr_employee_contract_history/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919100000_hr_overtime_concept_value_type/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919120000_hr_monthly_ordinary_hours_param/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919130000_hr_social_benefit_payments/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/entidades/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/libranzas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/provisiones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-module-20261010/browser-certification.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-module-20261010/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-module-20261010/preqa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-module-20261010/promotion-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-payroll-module-20261010/regression.md"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918100000_hr_labor_deductions_parameters.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918140000_hr_payroll_liquidation_documents.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918150000_hr_payroll_concepts_detail.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918160000_hr_employee_termination_liquidations.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918170000_hr_social_contributions.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918180000_hr_payroll_period_closures.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918190000_hr_social_contribution_exoneration_parameters.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918200000_hr_pension_solidarity_parameter.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918210000_hr_payroll_libranzas.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918220000_hr_employee_contract_history.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919100000_hr_overtime_concept_value_type.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919110000_time_route_kind_descanso.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919120000_hr_monthly_ordinary_hours_param.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919130000_hr_social_benefit_payments.sql"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "nomina_liquidacion_prestaciones_aportes",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "browser-certification.md",
+        "regression.md"
+      ]
+    },
+    {
+      "name": "marcaciones_borrado_fisico_rutas",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression.md"
+      ]
+    },
+    {
+      "name": "rbac_y_aislamiento_tenant",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression.md"
+      ]
+    }
+  ]
+}
