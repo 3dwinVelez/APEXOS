@@ -26,6 +26,7 @@ const TENANT_MODELS = new Set([
   "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
   "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
   "SalesInvoice", "SalesInvoiceLine", "CxcCabdoc", "CxcCuedoc", "CxcPayment", "RetentionMaster", "SkuValuation",
+  "PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine",
   "WarehouseTransfer", "WarehouseTransferLine",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
@@ -43,6 +44,11 @@ const SOFT_DELETE = new Set([
   "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
   "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard",
   "TransportSettlementType",
+  // Gastos menores: solo los maestros tienen campo `active`. PettyCashAdvance, PettyCashVoucher
+  // y PettyCashVoucherLine quedan fuera de SOFT_DELETE y de PHYSICAL_DELETE_ALLOWED a proposito,
+  // igual que CntCabdoc/CntCuedoc/TreasuryAdvance: son documentos contables inmutables que se
+  // anulan por reverso (status = "cancelled"), nunca se borran.
+  "PettyCashConcept", "PettyCashBox",
   "Workflow", "CustomField", "EInvoiceConfig"
 ]);
 
