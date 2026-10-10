@@ -2946,6 +2946,172 @@ model TreasuryPaymentApplication {
   @@index([tenant_id, source_type, source_id])
 }
 
+// === GASTOS MENORES / CAJAS MENORES ===
+// Maestro de conceptos de egreso de caja menor (Peajes, Combustible, ...).
+// account_code debe resolver contra Account con type = "expense" y allows_tx = true.
+// default_vat_code se valida contra Tenant.config.accounting.vat_masters (scope purchases);
+// NULL significa "sin IVA sugerido", no "IVA 0%": el IVA real se decide linea a linea.
+model PettyCashConcept {
+  id                         Int      @id @default(autoincrement())
+  tenant_id                  String
+  code                       String
+  name                       String
+  account_code               String
+  account_id                 Int?
+  default_vat_code           String?
+  advance_account_code       String?
+  requires_supplier          Boolean  @default(false)
+  requires_invoice_reference Boolean  @default(false)
+  active                     Boolean  @default(true)
+  notes                      String?
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+
+  @@map("petty_cash_concepts")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active])
+}
+
+// Caja menor (ej. "Goliat"). account_code es un activo que inicia por "11"
+// (mismo criterio que treasury/service.js para bancos); advance_account_code es la
+// cuenta deudora del anticipo al custodio, un activo "13xx" (PUC 1330).
+// require_advance obliga a digitar gastos solo contra anticipo; block_unliquidated_advance
+// impide girar un segundo anticipo mientras exista uno en estado "open".
+model PettyCashBox {
+  id                         Int                @id @default(autoincrement())
+  tenant_id                  String
+  code                       String
+  name                       String
+  account_code               String
+  account_id                 Int?
+  advance_account_code       String
+  custodian_party_id         Int?
+  custodian_name             String?
+  branch_code                String?
+  cost_center_code           String?
+  monthly_limit              Decimal?           @db.Decimal(18, 2)
+  require_advance            Boolean            @default(false)
+  block_unliquidated_advance Boolean            @default(true)
+  active                     Boolean            @default(true)
+  notes                      String?
+  created_by                 Int?
+  created_at                 DateTime           @default(now())
+  updated_at                 DateTime           @updatedAt
+  advances                   PettyCashAdvance[]
+  vouchers                   PettyCashVoucher[]
+
+  @@map("petty_cash_boxes")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active])
+  @@index([tenant_id, active, name])
+}
+
+// Anticipo girado al custodio. Contablemente: debito advance_account_code / credito account_code.
+// balance = amount - applied_total; pasa a "liquidated" cuando el sobrante vuelve a la caja.
+model PettyCashAdvance {
+  id                              Int       @id @default(autoincrement())
+  tenant_id                       String
+  box_id                          Int
+  box                             PettyCashBox @relation(fields: [box_id], references: [id])
+  document_type                   String
+  number                          Int
+  full_number                     String
+  date                            DateTime
+  custodian_party_id              Int?
+  custodian_name                  String?
+  amount                          Decimal   @db.Decimal(18, 2)
+  applied_total                   Decimal   @default(0) @db.Decimal(18, 2)
+  balance                         Decimal   @db.Decimal(18, 2)
+  status                          String    @default("open")
+  description                     String?
+  accounting_document_id          Int?
+  reversal_accounting_document_id Int?
+  liquidated_at                   DateTime?
+  refund_amount                   Decimal   @default(0) @db.Decimal(18, 2)
+  shortfall_amount                Decimal   @default(0) @db.Decimal(18, 2)
+  created_by                      Int?
+  created_at                      DateTime  @default(now())
+  updated_at                      DateTime  @updatedAt
+  vouchers                        PettyCashVoucher[]
+
+  @@map("petty_cash_advances")
+  @@unique([tenant_id, document_type, number])
+  @@unique([tenant_id, full_number])
+  @@index([tenant_id, box_id, status])
+  @@index([tenant_id, date])
+}
+
+// Cabecera del comprobante de gasto menor. No existe estado borrador: al guardar queda
+// "posted" con su cnt_cabdoc generado en la misma transaccion. period tiene formato YYYY-MM.
+model PettyCashVoucher {
+  id                              Int       @id @default(autoincrement())
+  tenant_id                       String
+  box_id                          Int
+  box                             PettyCashBox @relation(fields: [box_id], references: [id])
+  advance_id                      Int?
+  advance                         PettyCashAdvance? @relation(fields: [advance_id], references: [id])
+  document_type                   String
+  number                          Int
+  full_number                     String
+  date                            DateTime
+  posting_date                    DateTime
+  period                          String
+  description                     String?
+  status                          String    @default("posted")
+  subtotal                        Decimal   @db.Decimal(18, 2)
+  vat_total                       Decimal   @default(0) @db.Decimal(18, 2)
+  total                           Decimal   @db.Decimal(18, 2)
+  accounting_document_id          Int?
+  reversal_accounting_document_id Int?
+  created_by                      Int?
+  created_at                      DateTime  @default(now())
+  updated_at                      DateTime  @updatedAt
+  lines                           PettyCashVoucherLine[]
+
+  @@map("petty_cash_vouchers")
+  @@unique([tenant_id, document_type, number])
+  @@unique([tenant_id, full_number])
+  @@index([tenant_id, box_id, date])
+  @@index([tenant_id, period])
+  @@index([tenant_id, advance_id])
+}
+
+// Linea de gasto. account_code y vat_account_code son snapshot al momento de contabilizar,
+// igual que cnt_cuedoc.account_code. vat_code NULL = gasto sin IVA.
+// advance_applied es la parte de la linea imputada al anticipo (reduce advance.balance);
+// el resto se acredita directamente contra box.account_code.
+model PettyCashVoucherLine {
+  id                Int       @id @default(autoincrement())
+  tenant_id         String
+  voucher_id        Int
+  voucher           PettyCashVoucher @relation(fields: [voucher_id], references: [id], onDelete: Cascade)
+  line_number       Int
+  concept_id        Int
+  concept_code      String
+  account_code      String
+  description       String
+  cost_center_code  String?
+  branch_code       String?
+  supplier_party_id Int?
+  invoice_reference String?
+  base_amount       Decimal   @db.Decimal(18, 2)
+  vat_code          String?
+  vat_percent       Decimal   @default(0) @db.Decimal(7, 4)
+  vat_amount        Decimal   @default(0) @db.Decimal(18, 2)
+  vat_account_code  String?
+  total             Decimal   @db.Decimal(18, 2)
+  advance_applied   Decimal   @default(0) @db.Decimal(18, 2)
+  ledger_entry_id   Int?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@map("petty_cash_voucher_lines")
+  @@unique([tenant_id, voucher_id, line_number])
+  @@index([tenant_id, voucher_id])
+  @@index([tenant_id, concept_code])
+  @@index([tenant_id, supplier_party_id])
+}
+
 model PurchaseImport {
   id                Int      @id @default(autoincrement())
   tenant_id         String
