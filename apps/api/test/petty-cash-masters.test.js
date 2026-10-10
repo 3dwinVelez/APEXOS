@@ -595,8 +595,8 @@ test("routes reutiliza el modulo de permisos accounting y no inventa petty-cash"
 test("las rutas quedan bajo /petty-cash para que la auditoria registre el modulo", () => {
   const source = readRoutes();
   const urls = source.match(/fastify\.(?:get|post|put|patch|delete)\("([^"]+)"/g) || [];
-  // 12 de maestros (T2) + 9 de anticipos y comprobantes (T3).
-  assert.equal(urls.length, 21);
+  // 12 de maestros (T2) + 9 de anticipos y comprobantes (T3) + 3 de reporteria (T4).
+  assert.equal(urls.length, 24);
   for (const url of urls) assert.match(url, /"\/petty-cash\//);
   // Sin DELETE fisico: el borrado es logico por POST activate/deactivate.
   assert.doesNotMatch(source, /fastify\.delete\(/);
@@ -618,12 +618,15 @@ test("los maestros quedan en SOFT_DELETE y fuera del borrado fisico", () => {
   assert.match(tenantModels, /"PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine"/);
 });
 
-test("la reporteria sigue sin implementarse (alcance de T4)", () => {
+test("la reporteria de T4 queda expuesta bajo /petty-cash/reports (solo lectura)", () => {
   const service = fs.readFileSync(path.join(__dirname, "../src/modules/petty-cash/service.js"), "utf8");
   const routes = readRoutes();
-  // T3 ya usa PettyCashAdvance/PettyCashVoucher y emite contabilidad; lo que sigue vedado es T4.
-  assert.doesNotMatch(routes, /fastify\.\w+\("\/petty-cash\/reports/);
-  assert.match(service, /=== Reservado T4/);
+  // T4 expone los tres reportes GET: la auditoria sigue registrando el modulo petty-cash.
+  assert.match(routes, /fastify\.get\("\/petty-cash\/reports\/summary"/);
+  assert.match(routes, /fastify\.get\("\/petty-cash\/reports\/detail"/);
+  assert.match(routes, /fastify\.get\("\/petty-cash\/reports\/boxes-ranking"/);
+  // El marcador reservado desaparece: la reporteria ya no es alcance futuro.
+  assert.doesNotMatch(service, /=== Reservado T4/);
   // createAccountingDocument abre su propia transaccion: T3 contabiliza dentro de la del modulo.
   assert.doesNotMatch(service, /accounting\.createAccountingDocument\(/);
 });

@@ -1674,7 +1674,7 @@ test("routes registra los 9 endpoints de T3 con el permiso correcto (approve par
   assert.match(routeLine(source, "post", "/petty-cash/advances/:id/liquidate"), /schema: schema\.liquidateSchema, preValidation: optionalBody/);
   assert.match(source, /const optionalBody = \(request, reply, done\) => \{/);
   const urls = source.match(/fastify\.(?:get|post|put|patch|delete)\("([^"]+)"/g) || [];
-  assert.equal(urls.length, 21, "12 maestros de T2 + 9 de T3");
+  assert.equal(urls.length, 24, "12 maestros de T2 + 9 de T3 + 3 reportes de T4");
   assert.doesNotMatch(source, /fastify\.delete\(/);
 });
 
@@ -1703,10 +1703,12 @@ test("los documentos de caja menor se emiten dentro de la transaccion del modulo
   assert.equal(typeof realAccounting.reserveAccountingDocumentNumber, "function");
 });
 
-test("T3 no implementa reportes (alcance de T4) y conserva el borrado logico de los maestros", () => {
+test("T4 implementa la reporteria y conserva el borrado logico de los maestros", () => {
   const serviceSource = fs.readFileSync(path.join(__dirname, "../src/modules/petty-cash/service.js"), "utf8");
-  assert.match(serviceSource, /=== Reservado T4: reportes ===/);
-  assert.doesNotMatch(readRoutes(), /fastify\.\w+\("\/petty-cash\/reports/);
+  // El marcador reservado de T4 fue remplazado por la seccion de reporteria real.
+  assert.doesNotMatch(serviceSource, /=== Reservado T4: reportes ===/);
+  assert.match(serviceSource, /=== T4: reporter/);
+  assert.match(readRoutes(), /fastify\.get\("\/petty-cash\/reports\/summary"/);
   const core = fs.readFileSync(path.join(__dirname, "../src/core/prisma.js"), "utf8");
   const physical = core.slice(core.indexOf("const PHYSICAL_DELETE_ALLOWED"));
   // Los movimientos no se borran fisicamente: la anulacion es siempre reversion espejo.

@@ -58,7 +58,13 @@ async function pettyCashRoutes(fastify) {
   fastify.post("/petty-cash/vouchers", { schema: schema.voucherCreateSchema, preHandler: write }, async (request, reply) => reply.code(201).send(await service.createVoucher(request.user?.tenant_id, request.user?.id, request.body)));
   fastify.post("/petty-cash/vouchers/:id/cancel", { schema: schema.idParamSchema, preHandler: approve }, (request) => service.cancelVoucher(request.user?.tenant_id, request.user?.id, request.params.id));
 
-  // --- Reservado T4: /petty-cash/reports ---
+  // --- T4: reportería (solo lectura; misma permisión que los listados) ---
+  // La validacion de filtros vive en el servicio (appError 400 REPORT_FILTER_INVALID), igual
+  // que en los listados de T3: los GET no declaran esquema de querystring. Asi el detalle
+  // acepta el limit/offset de la paginacion y los errores llegan con el codigo del modulo.
+  fastify.get("/petty-cash/reports/summary", { preHandler: read }, (request) => service.reportSummary(request.user?.tenant_id, request.query));
+  fastify.get("/petty-cash/reports/detail", { preHandler: read }, (request) => service.reportDetail(request.user?.tenant_id, request.query));
+  fastify.get("/petty-cash/reports/boxes-ranking", { preHandler: read }, (request) => service.reportBoxesRanking(request.user?.tenant_id, request.query));
 }
 
 module.exports = pettyCashRoutes;

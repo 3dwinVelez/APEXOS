@@ -1575,7 +1575,515 @@ async function cancelVoucher(tenantId, userId, id) {
   }, TX_OPTIONS));
 }
 
-// === Reservado T4: reportes ===
+// === T4: reportería de gastos (que caja gasta mas y en que concepto) ===
+// Agregacion en memoria sobre findMany de Prisma (mismo patron que sales-invoice): sin
+// $queryRaw para que el middleware de tenant y el harness de pruebas sigan aplicando.
+
+const REPORT_GROUP_BYS = ["box", "concept", "month", "cost_center", "supplier", "account"];
+const REPORT_ROW_CAP = 20000;
+
+// Validacion de filtros (vive en el servicio con appError 400 REPORT_FILTER_INVALID, igual que
+// en los listados de T3: los GET de reporteria no declaran esquema de querystring).
+
+// year: cuatro digitos.
+function reportYearFilter(query = {}) {
+  const text = query.year === undefined || query.year === null ? "" : String(query.year).trim();
+  if (!text) return null;
+  if (!/^\d{4}$/.test(text)) throw appError(400, "REPORT_FILTER_INVALID", "El filtro year debe ser un anio de 4 digitos");
+  return Number(text);
+}
+
+// month: entero 1-12 (requiere year; se valida en reportDateRange).
+function reportMonthFilter(query = {}) {
+  const text = query.month === undefined || query.month === null ? "" : String(query.month).trim();
+  if (!text) return null;
+  if (!/^\d{1,2}$/.test(text) || Number(text) < 1 || Number(text) > 12) {
+    throw appError(400, "REPORT_FILTER_INVALID", "El filtro month debe ser un mes entre 1 y 12");
+  }
+  return Number(text);
+}
+
+// Identificadores numericos (box_id, supplier_party_id): enteros positivos.
+function reportPositiveIntFilter(value, field) {
+  const text = value === undefined || value === null ? "" : String(value).trim();
+  if (!text) return null;
+  const parsed = Number(text);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw appError(400, "REPORT_FILTER_INVALID", `El filtro ${field} debe ser un identificador numerico positivo`);
+  }
+  return parsed;
+}
+
+// include_cancelled: el querystring llega como texto; solo se acepta true/false.
+function reportIncludeCancelled(query = {}) {
+  const raw = query.include_cancelled;
+  if (raw === undefined || raw === null || String(raw).trim() === "") return false;
+  const text = String(raw).trim().toLowerCase();
+  if (text === "true") return true;
+  if (text === "false") return false;
+  throw appError(400, "REPORT_FILTER_INVALID", "El filtro include_cancelled debe ser true o false");
+}
+
+// Rango efectivo: year/month y date_from/date_to se intersecan (AND). El mes usa Date.UTC
+// directo (misma aritmetica de mes que monthBoundsUtc: dia 0 del mes siguiente = ultimo dia).
+function reportDateRange(query = {}) {
+  const year = reportYearFilter(query);
+  const month = reportMonthFilter(query);
+  if (month !== null && year === null) throw appError(400, "REPORT_FILTER_INVALID", "El filtro month requiere year");
+  let from = null;
+  let to = null;
+  if (year !== null) {
+    from = month !== null
+      ? new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0))
+      : new Date(Date.UTC(year, 0, 1, 0, 0, 0, 0));
+    to = month !== null
+      ? new Date(Date.UTC(year, month, 0, 23, 59, 59, 999))
+      : new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
+  }
+  if (normalizeText(query.date_from)) {
+    const date = parseDocumentDate(query.date_from, "REPORT_FILTER_INVALID", "inicial del reporte");
+    from = from ? new Date(Math.max(from.getTime(), date.getTime())) : date;
+  }
+  if (normalizeText(query.date_to)) {
+    const date = parseDocumentDate(query.date_to, "REPORT_FILTER_INVALID", "final del reporte");
+    date.setUTCHours(23, 59, 59, 999);
+    to = to ? new Date(Math.min(to.getTime(), date.getTime())) : date;
+  }
+  if (from && to && from.getTime() > to.getTime()) {
+    throw appError(400, "REPORT_FILTER_INVALID", "El rango del reporte es invalido: la fecha inicial supera la final");
+  }
+  return { from, to };
+}
+
+function reportGroupBy(query = {}) {
+  const groupBy = normalizeText(query.group_by).toLowerCase() || "box";
+  if (!REPORT_GROUP_BYS.includes(groupBy)) {
+    throw appError(400, "REPORT_FILTER_INVALID", `El filtro group_by debe ser uno de: ${REPORT_GROUP_BYS.join(", ")}`);
+  }
+  return groupBy;
+}
+
+// Composicion de todos los filtros: eco literal para la UI + forma lista para el where.
+// box_code se resuelve contra el maestro con __includeInactive (una caja cerrada sigue
+// filtrando su historico). Codigos: concepto/caja en mayusculas; cuenta y organizacional
+// solo trim (misma convencion que assertBoxOrganizationReferences/findAccountByCode).
+async function reportFilters(query = {}) {
+  const year = reportYearFilter(query);
+  const month = reportMonthFilter(query);
+  const includeCancelled = reportIncludeCancelled(query);
+  const boxId = reportPositiveIntFilter(query.box_id, "box_id");
+  const supplierPartyId = reportPositiveIntFilter(query.supplier_party_id, "supplier_party_id");
+  const conceptCode = upperCode(query.concept_code) || null;
+  const boxCode = upperCode(query.box_code) || null;
+  const costCenterCode = trimCode(query.cost_center_code) || null;
+  const branchCode = trimCode(query.branch_code) || null;
+  const accountCode = trimCode(query.account_code) || null;
+  let effectiveBoxId = boxId;
+  if (boxCode) {
+    const box = await prisma.pettyCashBox.findFirst({ where: { code: boxCode, __includeInactive: true } });
+    if (!box) throw appError(400, "REPORT_FILTER_INVALID", `La caja menor ${boxCode} no existe en el maestro del tenant`);
+    if (boxId !== null && Number(box.id) !== boxId) {
+      throw appError(400, "REPORT_FILTER_INVALID", "Los filtros box_id y box_code apuntan a cajas distintas");
+    }
+    effectiveBoxId = Number(box.id);
+  }
+  return {
+    echo: {
+      year,
+      month,
+      date_from: normalizeText(query.date_from) || null,
+      date_to: normalizeText(query.date_to) || null,
+      box_id: boxId,
+      box_code: boxCode,
+      concept_code: conceptCode,
+      cost_center_code: costCenterCode,
+      branch_code: branchCode,
+      supplier_party_id: supplierPartyId,
+      account_code: accountCode,
+      include_cancelled: includeCancelled
+    },
+    includeCancelled,
+    boxId: effectiveBoxId,
+    conceptCode,
+    costCenterCode,
+    branchCode,
+    supplierPartyId,
+    accountCode,
+    range: reportDateRange(query)
+  };
+}
+
+// Filtros de linea + filtros del comprobante (caja, estado, fecha). El anulado se excluye por
+// defecto: el reporte de gasto no puede sumar comprobantes revertidos en el mayor.
+function reportLineWhere(filters) {
+  const where = {
+    ...(filters.conceptCode ? { concept_code: filters.conceptCode } : {}),
+    ...(filters.costCenterCode ? { cost_center_code: filters.costCenterCode } : {}),
+    ...(filters.branchCode ? { branch_code: filters.branchCode } : {}),
+    ...(filters.accountCode ? { account_code: filters.accountCode } : {}),
+    ...(filters.supplierPartyId ? { supplier_party_id: filters.supplierPartyId } : {})
+  };
+  const voucherWhere = {
+    ...(filters.includeCancelled ? {} : { status: { not: VOUCHER_STATUS_CANCELLED } }),
+    ...(filters.boxId ? { box_id: filters.boxId } : {}),
+    ...((filters.range.from || filters.range.to)
+      ? { date: { ...(filters.range.from ? { gte: filters.range.from } : {}), ...(filters.range.to ? { lte: filters.range.to } : {}) } }
+      : {})
+  };
+  if (Object.keys(voucherWhere).length) where.voucher = voucherWhere;
+  return where;
+}
+
+// take = tope + 1: detecta truncamiento sin una consulta de conteo adicional.
+async function fetchReportLines(filters) {
+  return prisma.pettyCashVoucherLine.findMany({
+    where: reportLineWhere(filters),
+    include: { voucher: { select: { id: true, box_id: true, advance_id: true, full_number: true, date: true, period: true, status: true, description: true } } },
+    orderBy: [{ voucher: { date: "desc" } }, { voucher: { id: "desc" } }, { line_number: "asc" }],
+    take: REPORT_ROW_CAP + 1
+  });
+}
+
+// Resolucion de etiquetas por lotes (nunca N+1; precedente enrichBoxes). Cada reporte pide solo
+// los maestros que usa. __includeInactive en todas las busquedas: un maestro desactivado despues
+// de gastar no puede dejar el historico sin nombre (el middleware de soft-delete quita la bandera
+// antes de llegar a Prisma). Los centros de costo no son tabla: se resuelven del arbol
+// organizacional activo (getOrganizationTree), con trimCode como en T2/T3.
+async function reportLabelMaps(tenantId, rows, wanted = { boxes: true, concepts: true, suppliers: true, accounts: true, costCenters: false }) {
+  const boxIds = new Set();
+  const conceptCodes = new Set();
+  const supplierIds = new Set();
+  const accountCodes = new Set();
+  for (const row of rows) {
+    if (wanted.boxes) {
+      const boxId = Number(row.voucher?.box_id);
+      if (Number.isInteger(boxId) && boxId > 0) boxIds.add(boxId);
+    }
+    if (wanted.concepts) {
+      const code = upperCode(row.concept_code);
+      if (code) conceptCodes.add(code);
+    }
+    if (wanted.suppliers) {
+      const supplierId = Number(row.supplier_party_id);
+      if (Number.isInteger(supplierId) && supplierId > 0) supplierIds.add(supplierId);
+    }
+    if (wanted.accounts) {
+      const code = trimCode(row.account_code);
+      if (code) accountCodes.add(code);
+    }
+  }
+  const [boxes, concepts, suppliers, accounts, tree] = await Promise.all([
+    wanted.boxes && boxIds.size
+      ? prisma.pettyCashBox.findMany({
+        where: { id: { in: [...boxIds] }, __includeInactive: true },
+        select: { id: true, code: true, name: true, custodian_name: true, monthly_limit: true }
+      })
+      : [],
+    wanted.concepts && conceptCodes.size
+      ? prisma.pettyCashConcept.findMany({ where: { code: { in: [...conceptCodes] }, __includeInactive: true }, select: { id: true, code: true, name: true } })
+      : [],
+    wanted.suppliers && supplierIds.size
+      ? prisma.party.findMany({ where: { id: { in: [...supplierIds] }, __includeInactive: true }, select: { id: true, name: true, legal_name: true, tax_id: true } })
+      : [],
+    wanted.accounts && accountCodes.size
+      ? prisma.account.findMany({ where: { code: { in: [...accountCodes] }, __includeInactive: true }, select: { id: true, code: true, name: true } })
+      : [],
+    wanted.costCenters ? accounting.getOrganizationTree(tenantId) : null
+  ]);
+  return {
+    boxes: new Map(boxes.map((row) => [Number(row.id), row])),
+    concepts: new Map(concepts.map((row) => [upperCode(row.code), row])),
+    suppliers: new Map(suppliers.map((row) => [Number(row.id), row])),
+    accounts: new Map(accounts.map((row) => [trimCode(row.code), row])),
+    costCenters: new Map(activeRows(tree?.cost_centers).map((row) => [trimCode(row.code), row.name]))
+  };
+}
+
+function emptyReportBucket() {
+  return { vouchers: new Set(), lines: 0, base_amount: 0, vat_amount: 0, total: 0, advance_applied: 0, cash_applied: 0 };
+}
+
+function accumulateReportLine(bucket, line) {
+  const total = Number(line.total || 0);
+  const applied = Number(line.advance_applied || 0);
+  bucket.lines += 1;
+  bucket.base_amount += Number(line.base_amount || 0);
+  bucket.vat_amount += Number(line.vat_amount || 0);
+  bucket.total += total;
+  bucket.advance_applied += applied;
+  bucket.cash_applied += total - applied;
+  const voucherId = Number(line.voucher?.id ?? line.voucher_id);
+  if (Number.isInteger(voucherId) && voucherId > 0) bucket.vouchers.add(voucherId);
+}
+
+// Nombres del contrato de T7: vouchers_count / lines_count / base_total / vat_total / total,
+// mas los desgloses de anticipo y efectivo con el sufijo _total que ya usa voucherDto.
+// La dimension del grupo se construye aparte para que los acumuladores internos nunca
+// filtren hacia la respuesta.
+function reportBucketTotals(bucket) {
+  return {
+    vouchers_count: bucket.vouchers.size,
+    lines_count: bucket.lines,
+    base_total: round(bucket.base_amount),
+    vat_total: round(bucket.vat_amount),
+    total: round(bucket.total),
+    advance_applied_total: round(bucket.advance_applied),
+    cash_applied_total: round(bucket.cash_applied)
+  };
+}
+
+async function reportSummary(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const groupBy = reportGroupBy(query);
+    const filters = await reportFilters(query);
+    const fetched = await fetchReportLines(filters);
+    const truncated = fetched.length > REPORT_ROW_CAP;
+    const rows = truncated ? fetched.slice(0, REPORT_ROW_CAP) : fetched;
+    const labels = await reportLabelMaps(tenantId, rows, {
+      boxes: groupBy === "box",
+      concepts: groupBy === "concept",
+      suppliers: groupBy === "supplier",
+      accounts: groupBy === "account",
+      costCenters: groupBy === "cost_center"
+    });
+    const buckets = new Map();
+    const totalsBucket = emptyReportBucket();
+    for (const line of rows) {
+      accumulateReportLine(totalsBucket, line);
+      const voucher = line.voucher || {};
+      let key;
+      let dimension;
+      switch (groupBy) {
+        case "box": {
+          const boxId = Number(voucher.box_id);
+          const box = labels.boxes.get(boxId);
+          key = `box:${boxId}`;
+          dimension = { box_id: boxId, box_code: box?.code ?? null, label: box ? `${box.code} - ${box.name}` : `Caja #${boxId}` };
+          break;
+        }
+        case "concept": {
+          const code = upperCode(line.concept_code);
+          const concept = labels.concepts.get(code);
+          key = `concept:${code || "sin-concepto"}`;
+          dimension = { concept_code: code || null, label: concept?.name || code || "Sin concepto" };
+          break;
+        }
+        case "month": {
+          const period = voucher.period ?? null;
+          key = `month:${period ?? "sin-periodo"}`;
+          dimension = { period, label: period ?? "(sin periodo)" };
+          break;
+        }
+        case "cost_center": {
+          const code = trimCode(line.cost_center_code);
+          key = `cc:${code || "sin-cc"}`;
+          dimension = {
+            cost_center_code: code || null,
+            label: code ? labels.costCenters.get(code) || code : "Sin centro de costo"
+          };
+          break;
+        }
+        case "supplier": {
+          const supplierId = line.supplier_party_id ? Number(line.supplier_party_id) : null;
+          const supplier = supplierId ? labels.suppliers.get(supplierId) : null;
+          key = `supplier:${supplierId ?? 0}`;
+          dimension = {
+            supplier_party_id: supplierId,
+            label: supplier
+              ? custodianDisplayName(supplier) || `Proveedor #${supplierId}`
+              : (supplierId ? `Proveedor #${supplierId}` : "Sin proveedor")
+          };
+          break;
+        }
+        default: {
+          const code = trimCode(line.account_code);
+          const account = labels.accounts.get(code);
+          key = `account:${code || "sin-cuenta"}`;
+          dimension = {
+            account_code: code || null,
+            account_name: account?.name ?? null,
+            label: account ? `${code} - ${account.name}` : code || "Sin cuenta"
+          };
+          break;
+        }
+      }
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = { dimension, ...emptyReportBucket() };
+        buckets.set(key, bucket);
+      }
+      accumulateReportLine(bucket, line);
+    }
+    const list = Array.from(buckets.values()).map((bucket) => ({ ...bucket.dimension, ...reportBucketTotals(bucket) }));
+    if (groupBy === "month") {
+      list.sort((a, b) => String(a.period ?? "").localeCompare(String(b.period ?? "")));
+    } else {
+      // La pregunta del reporte es "quien gasta mas": total descendente, con desempate por el
+      // codigo del grupo para que dos grupos empatados no bailen entre peticiones.
+      const codeOf = (row) => String(row.box_code ?? row.concept_code ?? row.cost_center_code ?? row.account_code ?? row.label ?? "");
+      list.sort((a, b) => b.total - a.total || codeOf(a).localeCompare(codeOf(b)));
+    }
+    return {
+      group_by: groupBy,
+      filters: filters.echo,
+      date_range: { from: filters.range.from, to: filters.range.to },
+      rows: list,
+      totals: reportBucketTotals(totalsBucket),
+      truncated
+    };
+  });
+}
+
+// Detalle de lineas (comprobante + linea) paginado con la convencion del modulo: pageParams
+// (limit/offset, 200 por pagina, tope 1000) sobre la ventana ordenada por fecha descendente del
+// comprobante. totals resume la ventana escaneada completa, no solo la pagina visible.
+async function reportDetail(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const filters = await reportFilters(query);
+    const fetched = await fetchReportLines(filters);
+    const truncated = fetched.length > REPORT_ROW_CAP;
+    const scanned = truncated ? fetched.slice(0, REPORT_ROW_CAP) : fetched;
+    const labels = await reportLabelMaps(tenantId, scanned, { boxes: true, concepts: true, suppliers: true, accounts: true, costCenters: true });
+    // Estado del anticipo: se lee el CAMPO status, nunca se deriva del saldo (la liquidacion
+    // preserva el invariante balance = amount - applied_total). Resolucion por lotes, sin N+1.
+    const advanceIds = new Set();
+    for (const line of scanned) {
+      const advanceId = Number(line.voucher?.advance_id);
+      if (Number.isInteger(advanceId) && advanceId > 0) advanceIds.add(advanceId);
+    }
+    const advances = advanceIds.size
+      ? await prisma.pettyCashAdvance.findMany({ where: { id: { in: [...advanceIds] } }, select: { id: true, full_number: true, status: true } })
+      : [];
+    const advanceById = new Map(advances.map((row) => [Number(row.id), row]));
+    const totalsBucket = emptyReportBucket();
+    for (const line of scanned) accumulateReportLine(totalsBucket, line);
+    const { take, skip } = pageParams(query);
+    const page = scanned.slice(skip, skip + take);
+    const rows = page.map((line) => {
+      const voucher = line.voucher || {};
+      const boxId = Number(voucher.box_id);
+      const box = labels.boxes.get(boxId) || null;
+      const conceptCode = upperCode(line.concept_code) || null;
+      const concept = conceptCode ? labels.concepts.get(conceptCode) || null : null;
+      const supplierId = line.supplier_party_id ? Number(line.supplier_party_id) : null;
+      const supplier = supplierId ? labels.suppliers.get(supplierId) || null : null;
+      const accountCode = trimCode(line.account_code) || null;
+      const account = accountCode ? labels.accounts.get(accountCode) || null : null;
+      const advance = voucher.advance_id ? advanceById.get(Number(voucher.advance_id)) || null : null;
+      const total = money(line.total);
+      const applied = money(line.advance_applied);
+      return {
+        voucher_id: Number(voucher.id ?? line.voucher_id) || null,
+        line_number: line.line_number,
+        date: voucher.date ?? null,
+        full_number: voucher.full_number ?? null,
+        status: voucher.status ?? null,
+        period: voucher.period ?? null,
+        voucher_description: voucher.description ?? null,
+        advance_id: voucher.advance_id ?? null,
+        advance_full_number: advance?.full_number ?? null,
+        advance_status: advance?.status ?? null,
+        box_id: Number.isInteger(boxId) ? boxId : null,
+        box_code: box?.code ?? null,
+        box_name: box?.name ?? null,
+        concept_code: conceptCode,
+        concept_name: concept?.name ?? null,
+        account_code: accountCode,
+        account_name: account?.name ?? null,
+        description: line.description ?? null,
+        cost_center_code: line.cost_center_code ?? null,
+        cost_center_name: labels.costCenters.get(trimCode(line.cost_center_code)) ?? null,
+        branch_code: line.branch_code ?? null,
+        supplier_party_id: supplierId,
+        supplier_name: supplier ? custodianDisplayName(supplier) : null,
+        invoice_reference: line.invoice_reference ?? null,
+        base_amount: money(line.base_amount),
+        vat_code: line.vat_code ?? null,
+        vat_percent: Number(line.vat_percent || 0),
+        vat_amount: money(line.vat_amount),
+        total,
+        advance_applied: applied,
+        cash_applied: round(total - applied)
+      };
+    });
+    return {
+      filters: filters.echo,
+      date_range: { from: filters.range.from, to: filters.range.to },
+      rows,
+      totals: reportBucketTotals(totalsBucket),
+      pagination: { limit: take, offset: skip, returned: rows.length, total: scanned.length },
+      truncated
+    };
+  });
+}
+
+// Ranking de cajas: responde "quien me esta gastando mas plata y en que". Cada caja trae su
+// desglose por concepto (ordenado por total descendente). El porcentaje del tope mensual solo
+// se calcula cuando el filtro cae en un mes unico (year+month sin rango explicito): en un
+// rango multi-mes un porcentaje contra el tope de UN mes seria mentira.
+async function reportBoxesRanking(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const filters = await reportFilters(query);
+    const fetched = await fetchReportLines(filters);
+    const truncated = fetched.length > REPORT_ROW_CAP;
+    const rows = truncated ? fetched.slice(0, REPORT_ROW_CAP) : fetched;
+    const labels = await reportLabelMaps(tenantId, rows, { boxes: true, concepts: true, suppliers: false, accounts: false, costCenters: false });
+    const singleMonth = filters.echo.year && filters.echo.month && !filters.echo.date_from && !filters.echo.date_to
+      ? `${filters.echo.year}-${String(filters.echo.month).padStart(2, "0")}`
+      : null;
+    const buckets = new Map();
+    const totalsBucket = emptyReportBucket();
+    for (const line of rows) {
+      accumulateReportLine(totalsBucket, line);
+      const boxId = Number(line.voucher?.box_id);
+      let bucket = buckets.get(boxId);
+      if (!bucket) {
+        bucket = { boxId, ...emptyReportBucket(), concepts: new Map() };
+        buckets.set(boxId, bucket);
+      }
+      accumulateReportLine(bucket, line);
+      const conceptCode = upperCode(line.concept_code);
+      const conceptKey = conceptCode || "sin-concepto";
+      let conceptBucket = bucket.concepts.get(conceptKey);
+      if (!conceptBucket) {
+        conceptBucket = { conceptCode: conceptCode || null, ...emptyReportBucket() };
+        bucket.concepts.set(conceptKey, conceptBucket);
+      }
+      accumulateReportLine(conceptBucket, line);
+    }
+    const list = Array.from(buckets.values()).map((bucket) => {
+      const box = labels.boxes.get(bucket.boxId) || null;
+      const monthlyLimit = box && box.monthly_limit !== null && box.monthly_limit !== undefined ? money(box.monthly_limit) : null;
+      const totals = reportBucketTotals(bucket);
+      const concepts = Array.from(bucket.concepts.values()).map((concept) => ({
+        concept_code: concept.conceptCode,
+        concept_name: labels.concepts.get(concept.conceptCode)?.name ?? null,
+        ...reportBucketTotals(concept)
+      })).sort((a, b) => b.total - a.total || String(a.concept_code ?? "").localeCompare(String(b.concept_code ?? "")));
+      return {
+        box: {
+          id: bucket.boxId,
+          code: box?.code ?? null,
+          name: box?.name ?? null,
+          custodian_name: box?.custodian_name ?? null,
+          monthly_limit: monthlyLimit
+        },
+        ...totals,
+        limit_month: singleMonth,
+        limit_pct: singleMonth && monthlyLimit && monthlyLimit > 0 ? round((totals.total / monthlyLimit) * 100) : null,
+        concepts
+      };
+    }).sort((a, b) => b.total - a.total || String(a.box.code ?? "").localeCompare(String(b.box.code ?? "")));
+    return {
+      filters: filters.echo,
+      date_range: { from: filters.range.from, to: filters.range.to },
+      single_month: singleMonth,
+      rows: list,
+      totals: reportBucketTotals(totalsBucket),
+      truncated
+    };
+  });
+}
 
 module.exports = {
   TX_OPTIONS,
@@ -1678,5 +2186,19 @@ module.exports = {
   liquidateAdvance,
   cancelAdvance,
   createVoucher,
-  cancelVoucher
+  cancelVoucher,
+
+  // --- T4: reportería ---
+  REPORT_GROUP_BYS,
+  REPORT_ROW_CAP,
+  reportGroupBy,
+  reportYearFilter,
+  reportMonthFilter,
+  reportDateRange,
+  reportIncludeCancelled,
+  reportFilters,
+  reportLineWhere,
+  reportSummary,
+  reportDetail,
+  reportBoxesRanking
 };
