@@ -37,6 +37,7 @@ import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCa
 import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
@@ -387,6 +388,8 @@ function routeSyncMetadata(route: TimeRoute | null | undefined) {
 }
 
 export default function MobilePunchPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
@@ -1154,7 +1157,7 @@ export default function MobilePunchPage() {
         </button>
       </div> : null}
 
-      {preop ? (
+      {mounted && preop ? createPortal((
         <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/50 p-0 sm:p-3">
           <section className="min-h-dvh bg-white p-3 shadow-xl sm:mx-auto sm:min-h-0 sm:max-w-3xl sm:rounded-md sm:p-4">
             <div className="sticky top-0 z-10 -mx-3 mb-4 border-b border-line bg-white/95 px-3 pb-3 pt-3 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pt-0">
@@ -1216,7 +1219,7 @@ export default function MobilePunchPage() {
             <button className="mt-4 h-12 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={submitPreop} type="button">Enviar checklist y validar ruta</button>
           </section>
         </div>
-      ) : null}
+      ), document.body) : null}
 
       {activityModal ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/50 p-0 sm:p-3">

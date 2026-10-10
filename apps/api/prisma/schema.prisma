@@ -1106,6 +1106,7 @@ model TimeRoute {
   per_diem          Float     @default(0)
   notes             String?
   status            String    @default("active")
+  kind              String    @default("trabajo")
   created_at        DateTime  @default(now())
   preop_checklists  RoutePreoperationalChecklist[]
   start_authorizations RouteStartAuthorization[]

@@ -1237,7 +1237,7 @@ export default function RoutesPlanningPage() {
           <section
             aria-label="Monitor de horario"
             aria-modal="true"
-            className="flex max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay"
+            className="flex h-dvh md:h-auto max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay"
             ref={monitorDialogRef}
             role="dialog"
             tabIndex={-1}

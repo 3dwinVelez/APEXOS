@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, CalendarDays, Clock3, FileText, MapPinned, Percent, Smartphone, UserRoundCheck, WalletCards } from "lucide-react";
+import { ArrowRight, Building2, CalendarDays, Clock3, FileText, HandCoins, Landmark, MapPinned, Percent, ReceiptText, Smartphone, UserRoundCheck, WalletCards } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -6,11 +6,17 @@ const JOURNEY_ACTIONS = [
   { title: "Crear y asignar mallas", detail: "Diseña mallas horarias, organiza jornadas y asigna personas.", href: "/dashboard/talento-humano/rutas", icon: <CalendarDays size={19} /> },
   { title: "Novedades de jornada", detail: "Gestiona alertas, justificaciones y revisión de marcaciones.", href: "/dashboard/talento-humano/novedades", icon: <Clock3 size={19} /> },
   { title: "Maestro de empleados", detail: "Administra datos laborales y asociación con usuarios APEX.", href: "/dashboard/talento-humano/empleados", icon: <UserRoundCheck size={19} /> },
-  { title: "Entidades y afiliaciones", detail: "Administra EPS, pension, ARL, caja, ICBF y vigencias.", href: "/dashboard/talento-humano/entidades", icon: <Building2 size={19} /> },
+  { title: "Entidades y afiliaciones", detail: "Administra EPS, pension, cesantias, ARL, caja, ICBF y vigencias.", href: "/dashboard/talento-humano/entidades", icon: <Building2 size={19} /> },
   { title: "Configuración laboral", detail: "Parametriza recargos, horas extra, límites y jornada nocturna.", href: "/dashboard/talento-humano/configuracion-laboral", icon: <Percent size={19} /> },
   { title: "Marcaciones y jornadas", detail: "Registra entradas, salidas, GPS y evidencias.", href: "/dashboard/talento-humano/marcacion", icon: <Smartphone size={19} /> },
   { title: "Monitor de jornada", detail: "Supervisa ubicación, actividad y cumplimiento en vivo.", href: "/dashboard/talento-humano/mapa", icon: <MapPinned size={19} /> },
-  { title: "Reportes de tiempo", detail: "Consulta horas laboradas, extras y trazabilidad.", href: "/dashboard/talento-humano/reportes", icon: <FileText size={19} /> }
+  { title: "Reportes de tiempo", detail: "Consulta horas laboradas, extras y trazabilidad.", href: "/dashboard/talento-humano/reportes", icon: <FileText size={19} /> },
+  { title: "Liquidacion de trabajador", detail: "Calcula retiro, prestaciones adeudadas e indemnizacion.", href: "/dashboard/talento-humano/liquidacion-trabajador", icon: <ReceiptText size={19} /> },
+  { title: "Aportes sociales", detail: "Liquida salud, pension, ARL, caja, ICBF y SENA.", href: "/dashboard/talento-humano/aportes-sociales", icon: <Landmark size={19} /> },
+  { title: "Provisiones", detail: "Provisiona prima, cesantias, intereses y vacaciones desde nomina liquidada.", href: "/dashboard/talento-humano/provisiones", icon: <ReceiptText size={19} /> },
+  { title: "Pago prestaciones", detail: "Paga prima, cesantias, intereses y vacaciones provisionadas.", href: "/dashboard/talento-humano/prestaciones-pagos", icon: <HandCoins size={19} /> },
+  { title: "Libranzas", detail: "Conceptos, cuotas, saldos y deducciones recurrentes.", href: "/dashboard/talento-humano/libranzas", icon: <HandCoins size={19} /> },
+  { title: "Nomina", detail: "Liquida periodos quincenales o mensuales y comprobantes.", href: "/dashboard/talento-humano/nomina", icon: <WalletCards size={19} /> }
 ] as const;
 
 export default function TalentPage() {

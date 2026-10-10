@@ -1,0 +1,47 @@
+{
+  "change_id": "hr-payroll-module-preqa-20261010",
+  "environment": "LOCAL",
+  "executed_at": "2026-10-10T00:00:00-05:00",
+  "certified_commit": "b61b319f",
+  "certification_script": "scripts/certifications/hr-workday-novelties-local.js",
+  "result": "passed",
+  "commands": [
+    {
+      "name": "api-policy-and-contract-tests",
+      "command": "node --test apps/api/test/hr-workday-novelties-contract.test.js apps/api/test/hr-workday-novelties-policy.test.js",
+      "status": "passed"
+    },
+    {
+      "name": "web-hr-ui-tests",
+      "command": "node --test apps/web/test/hr-workday-novelties-ui.test.mjs apps/web/test/hr-landing-information-architecture.test.mjs",
+      "status": "passed",
+      "tests": 18
+    },
+    {
+      "name": "api-service-syntax-check",
+      "command": "node --check apps/api/src/modules/hr/service.js",
+      "status": "passed"
+    },
+    {
+      "name": "api-routes-syntax-check",
+      "command": "node --check apps/api/src/modules/hr/routes.js",
+      "status": "passed"
+    },
+    {
+      "name": "api-schema-syntax-check",
+      "command": "node --check apps/api/src/modules/hr/schema.js",
+      "status": "passed"
+    },
+    {
+      "name": "web-typecheck",
+      "command": "npx tsc -p apps/web/tsconfig.json --noEmit",
+      "status": "passed"
+    },
+    {
+      "name": "prisma-validate",
+      "command": "npx prisma validate --schema apps/api/prisma/schema.prisma",
+      "status": "passed"
+    }
+  ],
+  "notes": "Certificacion automatizada del modulo de nomina y talento humano ejecutada localmente; todos los comandos versionados pasaron."
+}
