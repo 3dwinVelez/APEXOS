@@ -1033,8 +1033,7 @@ async function listAdvances(tenantId, query = {}) {
     };
     const rows = await prisma.pettyCashAdvance.findMany({
       where,
-      include: { box: true },
-      _count: { select: { vouchers: true } },
+      include: { box: true, _count: { select: { vouchers: true } } },
       orderBy: [{ date: "desc" }, { id: "desc" }],
       ...pageParams(query)
     });
@@ -1055,8 +1054,7 @@ async function listVouchers(tenantId, query = {}) {
     };
     const rows = await prisma.pettyCashVoucher.findMany({
       where,
-      include: { box: true, advance: true },
-      _count: { select: { lines: true } },
+      include: { box: true, advance: true, _count: { select: { lines: true } } },
       orderBy: [{ date: "desc" }, { id: "desc" }],
       ...pageParams(query)
     });
