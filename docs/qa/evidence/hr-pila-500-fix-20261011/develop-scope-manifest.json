@@ -48,28 +48,28 @@
       "name": "aportes_pila_persiste_960_lineas_por_lotes_sin_p2028",
       "status": "passed",
       "evidence": [
-        "local-certification.json"
+        "../qa-sweep-fixes-20261011/local-certification.json"
       ]
     },
     {
       "name": "provisiones_prestaciones_inserta_saldos_en_lote_unico",
       "status": "passed",
       "evidence": [
-        "local-certification.json"
+        "../qa-sweep-fixes-20261011/local-certification.json"
       ]
     },
     {
       "name": "flujo_escritura_pila_consulta_empleados_dentro_contexto_tenant",
       "status": "passed",
       "evidence": [
-        "local-certification.json"
+        "../qa-sweep-fixes-20261011/local-certification.json"
       ]
     },
     {
       "name": "talento_humano_malla_de_descanso_no_bloqueada_por_solapamiento",
       "status": "passed",
       "evidence": [
-        "local-certification.json"
+        "../qa-sweep-fixes-20261011/local-certification.json"
       ]
     },
     {
