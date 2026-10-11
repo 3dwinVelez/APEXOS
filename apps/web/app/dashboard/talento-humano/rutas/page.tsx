@@ -16,7 +16,7 @@ import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number | string; plate: string; type: string; model: string };
-type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
+type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string; gps_required?: boolean; tracking_mode?: string; kind?: string; metadata?: Record<string, unknown> };
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; status?: string; latitude?: number | null; longitude?: number | null; age_seconds?: number | null; last_punch_type?: string; last_punch_time?: string; last_activity_type?: string; last_activity_time?: string };
@@ -396,7 +396,7 @@ export default function RoutesPlanningPage() {
   const [loadingMonitor, setLoadingMonitor] = useState(false);
   const [savingRoute, setSavingRoute] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
-  const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true });
+  const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true, kind: "trabajo" });
   const [scheduleKind, setScheduleKind] = useState<"administrative" | "operational">("administrative");
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
   const [bulkMode, setBulkMode] = useState(false);
@@ -525,7 +525,7 @@ export default function RoutesPlanningPage() {
 
   function resetForm() {
     const today = localCalendarDate();
-    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true });
+    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true, kind: "trabajo" });
     setScheduleKind("administrative");
     setAdministrativeSite("SEDE-PRINCIPAL");
     setBulk({ start_date: today, end_date: addDays(today, 4), weekdays: [1, 2, 3, 4, 5] });
@@ -605,7 +605,8 @@ export default function RoutesPlanningPage() {
         end_time: route.end_time || "17:00",
         tolerance_minutes: route.tolerance_minutes ?? 15,
         notes: notesWithoutAdministrativeSite(route.notes || ""),
-        gps_required: scheduleGpsRequired(route)
+        gps_required: scheduleGpsRequired(route),
+        kind: route.kind === "descanso" ? "descanso" : "trabajo"
       });
       setBulk({ start_date: date, end_date: addDays(date, 4), weekdays: [1, 2, 3, 4, 5] });
     }
@@ -627,7 +628,8 @@ export default function RoutesPlanningPage() {
       end_time: route.end_time || "17:00",
       tolerance_minutes: route.tolerance_minutes ?? 15,
       notes: notesWithoutAdministrativeSite(route.notes || ""),
-      gps_required: scheduleGpsRequired(route)
+      gps_required: scheduleGpsRequired(route),
+      kind: route.kind === "descanso" ? "descanso" : "trabajo"
     });
     setModal("edit");
   }
@@ -1129,6 +1131,19 @@ export default function RoutesPlanningPage() {
                 </button>
                 <button className={`h-10 rounded-md text-sm font-semibold ${scheduleKind === "operational" ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setScheduleKind("operational")} type="button">
                   Operativo / recurso movil
+                </button>
+              </div>
+            </div>
+            <div className="md:col-span-2">
+              <p className="mb-1.5 text-sm font-semibold text-content-strong">Tipo de jornada</p>
+              <div className="grid gap-2 rounded-md border border-line bg-surface p-1.5 sm:grid-cols-2">
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.kind !== "descanso" ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setForm((prev) => ({ ...prev, kind: "trabajo" }))} type="button">
+                  Trabajo
+                  <span className="mt-1 block text-xs font-medium opacity-80">Dia laborable: se espera marcacion.</span>
+                </button>
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.kind === "descanso" ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setForm((prev) => ({ ...prev, kind: "descanso" }))} type="button">
+                  Descanso
+                  <span className="mt-1 block text-xs font-medium opacity-80">Dia de descanso: se paga sin marcacion.</span>
                 </button>
               </div>
             </div>
