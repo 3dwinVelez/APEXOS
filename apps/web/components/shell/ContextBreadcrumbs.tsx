@@ -19,7 +19,17 @@ export function ContextBreadcrumbs() {
         const moduleName = MODULES_BY_SLUG[part]?.name;
         const label = moduleName || labels[part] || part.replace(/-/g, " ").replace(/^./, (value) => value.toUpperCase());
         const current = index === parts.length - 2;
-        return <span className="flex shrink-0 items-center gap-1" key={href}><ChevronRight size={12} /><Link aria-current={current ? "page" : undefined} className={current ? "font-semibold text-content-strong" : "hover:text-content-strong"} href={href}>{label}</Link></span>;
+        // Solo el modulo raiz y la pagina actual son navegables: los segmentos intermedios pueden no
+        // tener pagina propia (p.ej. /dashboard/compras/ordenes) y enlazarlos producia 404 al prefetch.
+        const navigable = index === 0 || current;
+        return (
+          <span className="flex shrink-0 items-center gap-1" key={href}>
+            <ChevronRight size={12} />
+            {navigable
+              ? <Link aria-current={current ? "page" : undefined} className={current ? "font-semibold text-content-strong" : "hover:text-content-strong"} href={href}>{label}</Link>
+              : <span className="text-content-muted">{label}</span>}
+          </span>
+        );
       })}
     </nav>
   );

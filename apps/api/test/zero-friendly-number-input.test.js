@@ -17,7 +17,8 @@ test("compras ventas IVA y retenciones reutilizan el control numerico", () => {
   const files = [
     "apps/web/app/dashboard/compras/facturas/page.tsx",
     "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
-    "apps/web/app/dashboard/compras/proveedores/page.tsx",
+    // proveedores ya no expone un campo numerico libre: credit_days se deriva de la
+    // condicion de pago seleccionada (commit 8b0d9bce), por lo que no aplica el control.
     "apps/web/app/dashboard/ventas/facturas/nueva/page.tsx",
     "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx",
     "apps/web/app/dashboard/contabilidad/iva/page.tsx",

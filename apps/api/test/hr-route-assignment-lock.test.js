@@ -107,6 +107,11 @@ function buildFakePrisma() {
     routes,
     runWithTenant: (_tenantId, callback) => callback(),
     employee: { findMany: async () => [employeeFixture] },
+    // El pre-chequeo de solapamiento (fuera de la transaccion) usa el cliente raiz,
+    // igual que produccion; el chequeo definitivo ocurre dentro del lock con tx.timeRoute.
+    timeRoute: {
+      findMany: timeRouteFindMany
+    },
     $transaction: async (callback) => {
       const tx = makeTx();
       try {
@@ -170,9 +175,34 @@ test("crear mallas masivas adquiere locks por empleado y fecha antes de validar 
     assert.equal(lockScopes.length, 5, "un lock por dia del rango");
     assert.ok(lockScopes.every((scope) => scope.startsWith("tenant-qa:asignacion:emp-41:")), "scopes de asignacion por tenant y empleado");
     const firstLock = fakePrisma.events.findIndex((event) => event.kind === "lock");
-    const firstCheck = fakePrisma.events.findIndex((event) => event.kind === "check");
+    const firstCheck = fakePrisma.events.findIndex((event, index) => event.kind === "check" && index > firstLock);
     const firstCreate = fakePrisma.events.findIndex((event) => event.kind === "create");
     assert.ok(firstLock < firstCheck && firstCheck < firstCreate, "orden lock -> validacion -> creacion");
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("una jornada de descanso no se bloquea por una malla de trabajo superpuesta", async () => {
+  const fakePrisma = buildFakePrisma();
+  fakePrisma.routes.push({
+    id: 5,
+    tenant_id: "tenant-qa",
+    date: new Date("2026-09-25T05:00:00.000Z"),
+    employees: ["EMP-41"],
+    start_time: "08:00",
+    end_time: "17:00",
+    tolerance_minutes: 15,
+    per_diem: 0,
+    notes: "",
+    status: "active",
+    kind: "trabajo"
+  });
+  const loaded = loadHrService(fakePrisma);
+  try {
+    const route = await loaded.service.createRoute("tenant-qa", { ...routeInput, kind: "descanso" });
+    assert.equal(route.kind, "descanso");
+    assert.equal(fakePrisma.routes.length, 2, "el descanso se crea pese al solapamiento con una malla de trabajo");
   } finally {
     loaded.restore();
   }

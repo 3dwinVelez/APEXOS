@@ -42,6 +42,7 @@ test("breadcrumbs y trazabilidad conectan el recorrido entre módulos", () => {
   const traceability = read("components/system/TraceabilityCenter.tsx");
   assert.match(breadcrumbs, /Ruta de navegación/);
   assert.match(breadcrumbs, /aria-current/);
+  assert.match(breadcrumbs, /const navigable = index === 0 \|\| current/);
   assert.match(traceability, /apex_navigation_trace_v1/);
   assert.match(traceability, /Recorrido reciente/);
   assert.match(traceability, /slice\(0, 8\)/);

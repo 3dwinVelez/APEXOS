@@ -1304,12 +1304,16 @@ async function createRoute(tenantId, input) {
     const gpsRequired = routeGpsRequiredFromInput(input);
     return prisma.$transaction(async (tx) => {
       await lockRouteAssignmentScopes(tx, tenantId, employees, [input.date]);
-      await assertRouteAssignmentAvailable(tenantId, {
-        date: input.date,
-        start_time: input.start_time || "08:00",
-        end_time: input.end_time || "17:00",
-        employees
-      }, tx);
+      // El chequeo de solapamiento debe respetar el mismo criterio que el pre-chequeo:
+      // una jornada de descanso no bloquea ni es bloqueada por mallas de trabajo.
+      if (kind !== "descanso") {
+        await assertRouteAssignmentAvailable(tenantId, {
+          date: input.date,
+          start_time: input.start_time || "08:00",
+          end_time: input.end_time || "17:00",
+          employees
+        }, tx);
+      }
       return tx.timeRoute.create({
         data: {
           date: startOfDay(input.date),
@@ -1345,13 +1349,15 @@ async function updateRoute(tenantId, id, input) {
     const gpsRequired = routeGpsRequiredFromInput(input);
     return prisma.$transaction(async (tx) => {
       await lockRouteAssignmentScopes(tx, tenantId, employees, [input.date]);
-      await assertRouteAssignmentAvailable(tenantId, {
-        date: input.date,
-        start_time: input.start_time || "08:00",
-        end_time: input.end_time || "17:00",
-        employees,
-        excludeRouteId: Number(id)
-      }, tx);
+      if (kind !== "descanso") {
+        await assertRouteAssignmentAvailable(tenantId, {
+          date: input.date,
+          start_time: input.start_time || "08:00",
+          end_time: input.end_time || "17:00",
+          employees,
+          excludeRouteId: Number(id)
+        }, tx);
+      }
       return tx.timeRoute.update({
         where: { id: Number(id) },
         data: {
@@ -1767,13 +1773,15 @@ async function createRoutesBulk(tenantId, input) {
     const gpsRequired = routeGpsRequiredFromInput(input);
     return prisma.$transaction(async (tx) => {
       await lockRouteAssignmentScopes(tx, tenantId, employees, dates);
-      for (const date of dates) {
-        await assertRouteAssignmentAvailable(tenantId, {
-          date: date.toISOString().slice(0, 10),
-          start_time: input.start_time || "08:00",
-          end_time: input.end_time || "17:00",
-          employees
-        }, tx);
+      if (kind !== "descanso") {
+        for (const date of dates) {
+          await assertRouteAssignmentAvailable(tenantId, {
+            date: date.toISOString().slice(0, 10),
+            start_time: input.start_time || "08:00",
+            end_time: input.end_time || "17:00",
+            employees
+          }, tx);
+        }
       }
       const routes = [];
       for (const date of dates) {

@@ -23,5 +23,7 @@ test("inventario ofrece lista de productos filtrable y exportable", () => {
   assert.match(page, /active=all/);
   assert.match(page, /SKU, código anterior, nombre, familia o sociedad/);
   assert.match(page, /downloadExcelWorkbook\("lista-productos\.xls"/);
-  assert.match(nav, /Lista de productos/);
+  // El dominio de navegacion de inventario renombro la entrada a "Productos" (commit 97ec67af);
+  // el enlace al maestro de productos sigue existiendo bajo ese rotulo.
+  assert.match(nav, /href: "\/dashboard\/inventario\/productos", label: "Productos"/);
 });
