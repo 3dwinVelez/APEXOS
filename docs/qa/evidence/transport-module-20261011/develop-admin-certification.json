@@ -1,0 +1,264 @@
+{
+  "change_id": "transport-module-admin-20261011",
+  "certification": "transport-module-develop-admin",
+  "environment": "QA",
+  "target_environment": "develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "supabase_url": "https://jbirkghkekuifgfsgquq.supabase.co",
+  "api_commit": "37d5d5ffaf3c",
+  "expected_commit": "unset",
+  "generated_at": "2026-10-11T15:58:43.043Z",
+  "admin": {
+    "email": "admin@apexos.qa",
+    "auth": "supabase-password-grant"
+  },
+  "tenant": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "name": "Cliente Piloto QA"
+  },
+  "scope": {
+    "capability": "Transporte end-to-end en develop con el administrador real de QA: maestros TMS, pedido/necesidad, plan de despacho y viaje ejecutado, con reporteria de torre de control y flota, poblando datos reales visibles en la herramienta.",
+    "proven_by_live_execution": [
+      "Sesion del administrador real de QA via Supabase Auth consumiendo la API con el Bearer de Supabase",
+      "Maestros TMS persistidos: transportador, conductor, punto de entrega, origen, vehiculo y tarifa",
+      "Pedido/necesidad y plan de despacho creados y asociados",
+      "Viaje creado, asignado (vehiculo + conductor) y transicionado a en_cargue y despachado",
+      "Reporteria: torre de control, monitoring de flota, metricas de vehiculos y simulacion de tarifa",
+      "Los datos quedan activos en el tenant piloto QA para inspeccion en la interfaz"
+    ]
+  },
+  "checks": [
+    {
+      "name": "develop_health",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "37d5d5ffaf3c"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_supabase_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "admin_tenant_resolved",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "tenant": "c56bc5df-c807-4deb-83f8-fbb4751be613"
+      }
+    },
+    {
+      "name": "carrier_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 6
+      }
+    },
+    {
+      "name": "driver_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 6,
+        "driver_status": "disponible"
+      }
+    },
+    {
+      "name": "delivery_point_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 12
+      }
+    },
+    {
+      "name": "origin_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 6
+      }
+    },
+    {
+      "name": "vehicle_created",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "id": 53,
+        "plate": "T155843"
+      }
+    },
+    {
+      "name": "rate_card_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 5
+      }
+    },
+    {
+      "name": "need_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 5,
+        "need_status": "pendiente",
+        "validation_errors": []
+      }
+    },
+    {
+      "name": "plan_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 5
+      }
+    },
+    {
+      "name": "plan_needs_added",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "code": "TMS-PLAN-20261011155843"
+      }
+    },
+    {
+      "name": "plan_marked_ready",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "plan_status": "listo"
+      }
+    },
+    {
+      "name": "trip_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "id": 3,
+        "trip_status": "planificado"
+      }
+    },
+    {
+      "name": "trip_assigned",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": "TMS-VIA-20261011155843",
+        "trip_status": "asignado"
+      }
+    },
+    {
+      "name": "trip_in_loading",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "trip_status": "en_cargue"
+      }
+    },
+    {
+      "name": "trip_dispatched",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "trip_status": "despachado"
+      }
+    },
+    {
+      "name": "trip_invalid_transition_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409
+      }
+    },
+    {
+      "name": "trip_list_includes_created",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "total": 3
+      }
+    },
+    {
+      "name": "vehicle_list_includes_created",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "vehicle_planning_contract",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "can_start_route": true
+      }
+    },
+    {
+      "name": "vehicle_dashboard_metrics",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "control_tower_reports_execution",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "in_execution": 2,
+        "total": 3
+      }
+    },
+    {
+      "name": "fleet_monitoring_ok",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "rate_simulation_ok",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "carrier_list_includes_created",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    }
+  ],
+  "status": "passed",
+  "fixture": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "carrier_id": 6,
+    "driver_id": 6,
+    "delivery_point_id": 12,
+    "origin_id": 6,
+    "vehicle_id": 53,
+    "rate_card_id": 5,
+    "need_id": 5,
+    "plan_id": 5,
+    "trip_id": 3,
+    "note": "Datos dejados activos en el tenant piloto QA para inspeccion en la interfaz"
+  },
+  "checks_passed": 27,
+  "checks_total": 27,
+  "finished_at": "2026-10-11T15:59:06.457Z"
+}
