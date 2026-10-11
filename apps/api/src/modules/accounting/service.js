@@ -97,7 +97,15 @@ const DEFAULT_ACCOUNTING_DOCUMENT_TYPES = [
   { code: "NCP", description: "Nota credito compra" },
   { code: "EM", description: "Entrada de mercancia" },
   { code: "FV", description: "Factura venta" },
-  { code: "NCV", description: "Nota credito venta" }
+  { code: "NCV", description: "Nota credito venta" },
+  // Gastos Menores / Cajas Menores. Se agregan aditivo (sin tocar las entradas anteriores) porque
+  // cnt_cabdoc tiene @@unique([tenant_id, document_type, document_number]) con numeracion global
+  // por tipo: reutilizar "AP" (anticipo a proveedor, ya usado por treasury) mezclaria modulos y
+  // produciria P2002 determinista. No existe tabla de tipos: el maestro es esta lista, fusionada
+  // con Tenant.config.accounting.accounting_document_types por mergeByCode.
+  { code: "GM", description: "Gasto menor / caja menor" },
+  { code: "APC", description: "Anticipo de caja menor" },
+  { code: "LCM", description: "Liquidacion de anticipo de caja menor" }
 ].map((row) => ({ ...row, active: true, source: "Sistema" }));
 const DEFAULT_VAT_MASTERS = [
   { code: "COMPRAS-0", concept: "Compras", percent: 0, account_code: "2408", scope: "purchases" },
@@ -2185,6 +2193,14 @@ module.exports = {
   assertPaymentWithinBalance,
   periodBounds,
   periodFromDate,
+  // Numeracion contable: exportados aditivo para que los modulos que emiten documentos dentro de
+  // SU propia transaccion (petty-cash, igual que createGoodsReceiptDocumentTx de este archivo)
+  // reserven el numero con el candado advisory y el auto-sanado max(configurado, emitido+1)
+  // en vez de reimplementar la lectura de Tenant.config.
+  DEFAULT_ACCOUNTING_DOCUMENT_TYPES,
+  normalizeAccountingDocumentType,
+  mergeNumbering,
+  reserveAccountingDocumentNumber,
   isPayableAccount,
   isReceivableAccount,
   normalizeRetentionCodes,

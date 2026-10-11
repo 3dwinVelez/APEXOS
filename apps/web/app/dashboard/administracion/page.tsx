@@ -101,6 +101,11 @@ type UserMasterData = {
   vehicle_colors?: MasterOption[];
   vehicle_fuels?: MasterOption[];
   vehicle_body_types?: MasterOption[];
+  service_levels?: MasterOption[];
+  departments?: MasterOption[];
+  cities?: MasterOption[];
+  municipalities?: MasterOption[];
+  currencies?: MasterOption[];
   roles?: Role[];
 };
 type AdminUser = {
@@ -346,7 +351,93 @@ const fallbackUserMasterData: UserMasterData = {
   ],
   vehicle_colors: [{ code: "blanco", name: "Blanco" }, { code: "negro", name: "Negro" }, { code: "gris", name: "Gris" }, { code: "plata", name: "Plata" }, { code: "rojo", name: "Rojo" }, { code: "azul", name: "Azul" }, { code: "verde", name: "Verde" }, { code: "amarillo", name: "Amarillo" }, { code: "naranja", name: "Naranja" }, { code: "beige", name: "Beige" }, { code: "cafe", name: "Cafe" }, { code: "vinotinto", name: "Vinotinto" }],
   vehicle_fuels: [{ code: "gasolina", name: "Gasolina" }, { code: "diesel", name: "Diesel" }, { code: "gnv", name: "Gas natural (GNV)" }, { code: "gnv_gasolina", name: "Gasolina + GNV" }, { code: "electrico", name: "Electrico" }, { code: "hibrido", name: "Hibrido" }],
-  vehicle_body_types: [{ code: "estacas", name: "Estacas" }, { code: "caja_seca", name: "Caja seca" }, { code: "furgon", name: "Furgon" }, { code: "plataforma", name: "Plataforma" }, { code: "tanque", name: "Tanque" }, { code: "volco", name: "Volco" }, { code: "refrigerado", name: "Refrigerado" }, { code: "porta_contenedores", name: "Porta contenedores" }, { code: "cama_baja", name: "Cama baja" }]
+  vehicle_body_types: [{ code: "estacas", name: "Estacas" }, { code: "caja_seca", name: "Caja seca" }, { code: "furgon", name: "Furgon" }, { code: "plataforma", name: "Plataforma" }, { code: "tanque", name: "Tanque" }, { code: "volco", name: "Volco" }, { code: "refrigerado", name: "Refrigerado" }, { code: "porta_contenedores", name: "Porta contenedores" }, { code: "cama_baja", name: "Cama baja" }],
+  service_levels: [{ code: "normal", name: "Normal" }, { code: "express", name: "Express" }, { code: "programado", name: "Programado" }, { code: "dedicado", name: "Dedicado" }],
+  departments: [
+    { code: "amazonas", name: "Amazonas" }, { code: "antioquia", name: "Antioquia" }, { code: "arauca", name: "Arauca" }, { code: "atlantico", name: "Atlantico" }, { code: "bogota_dc", name: "Bogota D.C." },
+    { code: "bolivar", name: "Bolivar" }, { code: "boyaca", name: "Boyaca" }, { code: "caldas", name: "Caldas" }, { code: "caqueta", name: "Caqueta" }, { code: "casanare", name: "Casanare" },
+    { code: "cauca", name: "Cauca" }, { code: "cesar", name: "Cesar" }, { code: "choco", name: "Choco" }, { code: "cordoba", name: "Cordoba" }, { code: "cundinamarca", name: "Cundinamarca" },
+    { code: "guainia", name: "Guainia" }, { code: "guaviare", name: "Guaviare" }, { code: "huila", name: "Huila" }, { code: "la_guajira", name: "La Guajira" }, { code: "magdalena", name: "Magdalena" },
+    { code: "meta", name: "Meta" }, { code: "narino", name: "Narino" }, { code: "norte_de_santander", name: "Norte de Santander" }, { code: "putumayo", name: "Putumayo" }, { code: "quindio", name: "Quindio" },
+    { code: "risaralda", name: "Risaralda" }, { code: "san_andres", name: "San Andres y Providencia" }, { code: "santander", name: "Santander" }, { code: "sucre", name: "Sucre" }, { code: "tolima", name: "Tolima" },
+    { code: "valle_del_cauca", name: "Valle del Cauca" }, { code: "vaupes", name: "Vaupes" }, { code: "vichada", name: "Vichada" }
+  ],
+  cities: [
+    { code: "bogota", name: "Bogota", parent_code: "bogota_dc" }, { code: "medellin", name: "Medellin", parent_code: "antioquia" }, { code: "cali", name: "Cali", parent_code: "valle_del_cauca" },
+    { code: "barranquilla", name: "Barranquilla", parent_code: "atlantico" }, { code: "cartagena", name: "Cartagena", parent_code: "bolivar" }, { code: "bucaramanga", name: "Bucaramanga", parent_code: "santander" },
+    { code: "pereira", name: "Pereira", parent_code: "risaralda" }, { code: "manizales", name: "Manizales", parent_code: "caldas" }, { code: "ibague", name: "Ibague", parent_code: "tolima" },
+    { code: "villavicencio", name: "Villavicencio", parent_code: "meta" }, { code: "cucuta", name: "Cucuta", parent_code: "norte_de_santander" }, { code: "armenia", name: "Armenia", parent_code: "quindio" },
+    { code: "monteria", name: "Monteria", parent_code: "cordoba" }, { code: "santa_marta", name: "Santa Marta", parent_code: "magdalena" }, { code: "neiva", name: "Neiva", parent_code: "huila" },
+    { code: "popayan", name: "Popayan", parent_code: "cauca" }, { code: "pasto", name: "Pasto", parent_code: "narino" }, { code: "sincelejo", name: "Sincelejo", parent_code: "sucre" },
+    { code: "tunja", name: "Tunja", parent_code: "boyaca" }, { code: "florencia", name: "Florencia", parent_code: "caqueta" }, { code: "yopal", name: "Yopal", parent_code: "casanare" },
+    { code: "riohacha", name: "Riohacha", parent_code: "la_guajira" }, { code: "valledupar", name: "Valledupar", parent_code: "cesar" }, { code: "quibdo", name: "Quibdo", parent_code: "choco" }
+  ],
+  municipalities: [
+    { code: "bogota", name: "Bogota", parent_code: "bogota" }, { code: "soacha", name: "Soacha", parent_code: "bogota" }, { code: "chia", name: "Chia", parent_code: "bogota" },
+    { code: "zipaquira", name: "Zipaquira", parent_code: "bogota" }, { code: "mosquera", name: "Mosquera", parent_code: "bogota" }, { code: "funza", name: "Funza", parent_code: "bogota" },
+    { code: "madrid", name: "Madrid", parent_code: "bogota" }, { code: "facatativa", name: "Facatativa", parent_code: "bogota" }, { code: "fusagasuga", name: "Fusagasuga", parent_code: "bogota" },
+    { code: "cajica", name: "Cajica", parent_code: "bogota" }, { code: "tabio", name: "Tabio", parent_code: "bogota" }, { code: "tenjo", name: "Tenjo", parent_code: "bogota" },
+    { code: "medellin", name: "Medellin", parent_code: "medellin" }, { code: "envigado", name: "Envigado", parent_code: "medellin" }, { code: "itagui", name: "Itagui", parent_code: "medellin" },
+    { code: "bello", name: "Bello", parent_code: "medellin" }, { code: "copacabana", name: "Copacabana", parent_code: "medellin" }, { code: "sabaneta", name: "Sabaneta", parent_code: "medellin" },
+    { code: "la_estrella", name: "La Estrella", parent_code: "medellin" }, { code: "girardota", name: "Girardota", parent_code: "medellin" }, { code: "barbosa", name: "Barbosa", parent_code: "medellin" },
+    { code: "rionegro", name: "Rionegro", parent_code: "medellin" },
+    { code: "cali", name: "Cali", parent_code: "cali" }, { code: "palmira", name: "Palmira", parent_code: "cali" }, { code: "jamundi", name: "Jamundi", parent_code: "cali" },
+    { code: "yumbo", name: "Yumbo", parent_code: "cali" }, { code: "buga", name: "Buga", parent_code: "cali" }, { code: "tulua", name: "Tulua", parent_code: "cali" },
+    { code: "cartago", name: "Cartago", parent_code: "cali" }, { code: "florida", name: "Florida", parent_code: "cali" }, { code: "cerrito", name: "Cerrito", parent_code: "cali" },
+    { code: "barranquilla", name: "Barranquilla", parent_code: "barranquilla" }, { code: "soledad", name: "Soledad", parent_code: "barranquilla" },
+    { code: "puerto_colombia", name: "Puerto Colombia", parent_code: "barranquilla" }, { code: "malambo", name: "Malambo", parent_code: "barranquilla" },
+    { code: "galapa", name: "Galapa", parent_code: "barranquilla" }, { code: "sabanalarga", name: "Sabanalarga", parent_code: "barranquilla" },
+    { code: "cartagena", name: "Cartagena", parent_code: "cartagena" }, { code: "turbaco", name: "Turbaco", parent_code: "cartagena" }, { code: "turbana", name: "Turbana", parent_code: "cartagena" },
+    { code: "clemencia", name: "Clemencia", parent_code: "cartagena" }, { code: "maria_la_baja", name: "Maria La Baja", parent_code: "cartagena" },
+    { code: "bucaramanga", name: "Bucaramanga", parent_code: "bucaramanga" }, { code: "floridablanca", name: "Floridablanca", parent_code: "bucaramanga" },
+    { code: "giron", name: "Giron", parent_code: "bucaramanga" }, { code: "piedecuesta", name: "Piedecuesta", parent_code: "bucaramanga" }, { code: "lebrija", name: "Lebrija", parent_code: "bucaramanga" },
+    { code: "pereira", name: "Pereira", parent_code: "pereira" }, { code: "dosquebradas", name: "Dosquebradas", parent_code: "pereira" }, { code: "la_virginia", name: "La Virginia", parent_code: "pereira" },
+    { code: "santa_rosa_de_cabal", name: "Santa Rosa de Cabal", parent_code: "pereira" }, { code: "marsella", name: "Marsella", parent_code: "pereira" }, { code: "apia", name: "Apia", parent_code: "pereira" },
+    { code: "manizales", name: "Manizales", parent_code: "manizales" }, { code: "villamaria", name: "Villamaria", parent_code: "manizales" }, { code: "neira", name: "Neira", parent_code: "manizales" },
+    { code: "chinchina", name: "Chinchina", parent_code: "manizales" }, { code: "palestina", name: "Palestina", parent_code: "manizales" }, { code: "la_dorada", name: "La Dorada", parent_code: "manizales" },
+    { code: "ibague", name: "Ibague", parent_code: "ibague" }, { code: "cajamarca", name: "Cajamarca", parent_code: "ibague" }, { code: "espinal", name: "Espinal", parent_code: "ibague" },
+    { code: "natagaima", name: "Natagaima", parent_code: "ibague" }, { code: "chaparral", name: "Chaparral", parent_code: "ibague" }, { code: "guamo", name: "Guamo", parent_code: "ibague" },
+    { code: "villavicencio", name: "Villavicencio", parent_code: "villavicencio" }, { code: "acacias", name: "Acacias", parent_code: "villavicencio" },
+    { code: "granada", name: "Granada", parent_code: "villavicencio" }, { code: "san_martin", name: "San Martin", parent_code: "villavicencio" }, { code: "restrepo", name: "Restrepo", parent_code: "villavicencio" },
+    { code: "cucuta", name: "Cucuta", parent_code: "cucuta" }, { code: "los_patios", name: "Los Patios", parent_code: "cucuta" }, { code: "villa_del_rosario", name: "Villa del Rosario", parent_code: "cucuta" },
+    { code: "el_zulia", name: "El Zulia", parent_code: "cucuta" }, { code: "pamplona", name: "Pamplona", parent_code: "cucuta" }, { code: "ocana", name: "Ocana", parent_code: "cucuta" },
+    { code: "armenia", name: "Armenia", parent_code: "armenia" }, { code: "calarca", name: "Calarca", parent_code: "armenia" }, { code: "montenegro", name: "Montenegro", parent_code: "armenia" },
+    { code: "quimbaya", name: "Quimbaya", parent_code: "armenia" }, { code: "la_tebaida", name: "La Tebaida", parent_code: "armenia" }, { code: "salento", name: "Salento", parent_code: "armenia" },
+    { code: "filandia", name: "Filandia", parent_code: "armenia" }, { code: "cordoba", name: "Cordoba", parent_code: "armenia" },
+    { code: "monteria", name: "Monteria", parent_code: "monteria" }, { code: "cerete", name: "Cerete", parent_code: "monteria" }, { code: "lorica", name: "Lorica", parent_code: "monteria" },
+    { code: "san_pelayo", name: "San Pelayo", parent_code: "monteria" }, { code: "canalete", name: "Canalete", parent_code: "monteria" },
+    { code: "santa_marta", name: "Santa Marta", parent_code: "santa_marta" }, { code: "cienaga", name: "Cienaga", parent_code: "santa_marta" }, { code: "fundacion", name: "Fundacion", parent_code: "santa_marta" },
+    { code: "aracataca", name: "Aracataca", parent_code: "santa_marta" }, { code: "el_banco", name: "El Banco", parent_code: "santa_marta" },
+    { code: "neiva", name: "Neiva", parent_code: "neiva" }, { code: "pitalito", name: "Pitalito", parent_code: "neiva" }, { code: "garzon", name: "Garzon", parent_code: "neiva" },
+    { code: "la_plata", name: "La Plata", parent_code: "neiva" }, { code: "palermo", name: "Palermo", parent_code: "neiva" }, { code: "rivera", name: "Rivera", parent_code: "neiva" },
+    { code: "popayan", name: "Popayan", parent_code: "popayan" }, { code: "timbio", name: "Timbio", parent_code: "popayan" }, { code: "piendamo", name: "Piendamo", parent_code: "popayan" },
+    { code: "santander_de_quilichao", name: "Santander de Quilichao", parent_code: "popayan" }, { code: "el_bordo", name: "El Bordo", parent_code: "popayan" },
+    { code: "pasto", name: "Pasto", parent_code: "pasto" }, { code: "ipiales", name: "Ipiales", parent_code: "pasto" }, { code: "tuquerres", name: "Tuquerres", parent_code: "pasto" },
+    { code: "consaca", name: "Consaca", parent_code: "pasto" }, { code: "guaitarilla", name: "Guaitarilla", parent_code: "pasto" },
+    { code: "sincelejo", name: "Sincelejo", parent_code: "sincelejo" }, { code: "corozal", name: "Corozal", parent_code: "sincelejo" }, { code: "sampues", name: "Sampues", parent_code: "sincelejo" },
+    { code: "los_palmitos", name: "Los Palmitos", parent_code: "sincelejo" }, { code: "magangue", name: "Magangue", parent_code: "sincelejo" }, { code: "toluviejo", name: "Toluviejo", parent_code: "sincelejo" },
+    { code: "tunja", name: "Tunja", parent_code: "tunja" }, { code: "duitama", name: "Duitama", parent_code: "tunja" }, { code: "sogamoso", name: "Sogamoso", parent_code: "tunja" },
+    { code: "chiquinquira", name: "Chiquinquira", parent_code: "tunja" }, { code: "moniquira", name: "Moniquira", parent_code: "tunja" }, { code: "villa_de_leyva", name: "Villa de Leyva", parent_code: "tunja" },
+    { code: "paipa", name: "Paipa", parent_code: "tunja" },
+    { code: "florencia", name: "Florencia", parent_code: "florencia" }, { code: "morelia", name: "Morelia", parent_code: "florencia" }, { code: "puerto_rico", name: "Puerto Rico", parent_code: "florencia" },
+    { code: "san_vicente_del_caguan", name: "San Vicente del Caguan", parent_code: "florencia" }, { code: "el_doncello", name: "El Doncello", parent_code: "florencia" },
+    { code: "belen_de_los_andaquies", name: "Belen de los Andaquies", parent_code: "florencia" },
+    { code: "yopal", name: "Yopal", parent_code: "yopal" }, { code: "aguazul", name: "Aguazul", parent_code: "yopal" }, { code: "villanueva", name: "Villanueva", parent_code: "yopal" },
+    { code: "paz_de_ariporo", name: "Paz de Ariporo", parent_code: "yopal" }, { code: "tauramena", name: "Tauramena", parent_code: "yopal" }, { code: "monterrey", name: "Monterrey", parent_code: "yopal" },
+    { code: "riohacha", name: "Riohacha", parent_code: "riohacha" }, { code: "maicao", name: "Maicao", parent_code: "riohacha" }, { code: "barrancas", name: "Barrancas", parent_code: "riohacha" },
+    { code: "fonseca", name: "Fonseca", parent_code: "riohacha" }, { code: "san_juan_del_cesar", name: "San Juan del Cesar", parent_code: "riohacha" },
+    { code: "distraccion", name: "Distraccion", parent_code: "riohacha" }, { code: "albania", name: "Albania", parent_code: "riohacha" },
+    { code: "valledupar", name: "Valledupar", parent_code: "valledupar" }, { code: "aguachica", name: "Aguachica", parent_code: "valledupar" }, { code: "bosconia", name: "Bosconia", parent_code: "valledupar" },
+    { code: "chiriguana", name: "Chiriguana", parent_code: "valledupar" }, { code: "la_paz", name: "La Paz", parent_code: "valledupar" }, { code: "pueblo_bello", name: "Pueblo Bello", parent_code: "valledupar" },
+    { code: "quibdo", name: "Quibdo", parent_code: "quibdo" }, { code: "istmina", name: "Istmina", parent_code: "quibdo" }, { code: "condoto", name: "Condoto", parent_code: "quibdo" }, { code: "nuqui", name: "Nuqui", parent_code: "quibdo" }
+  ],
+  currencies: [{ code: "COP", name: "Peso colombiano (COP)" }, { code: "USD", name: "Dolar estadounidense (USD)" }, { code: "EUR", name: "Euro (EUR)" }]
+};
+
+const CATALOG_PARENT_CONFIG: Record<string, { parentCatalog: Exclude<keyof UserMasterData, "roles">; fieldLabel: string; emptyLabel: string; columnLabel: string }> = {
+  vehicle_lines: { parentCatalog: "vehicle_brands", fieldLabel: "Marca (padre)", emptyLabel: "Sin marca (uso general)", columnLabel: "Marca" },
+  cities: { parentCatalog: "departments", fieldLabel: "Departamento (padre)", emptyLabel: "Sin departamento (uso general)", columnLabel: "Departamento" },
+  municipalities: { parentCatalog: "cities", fieldLabel: "Ciudad (padre)", emptyLabel: "Sin ciudad (uso general)", columnLabel: "Ciudad" }
 };
 
 const defaultServiceTypes: ServiceType[] = [
@@ -1489,7 +1580,7 @@ export default function AdministracionPage() {
           name: catalogDraft.name.trim(),
           description: catalogDraft.description.trim(),
           active: true,
-          ...(catalogDraft.catalog === "vehicle_lines" ? { parent_code: catalogDraft.parent_code.trim() } : {})
+          ...(CATALOG_PARENT_CONFIG[catalogDraft.catalog] ? { parent_code: catalogDraft.parent_code.trim() } : {})
         })
       });
       setMasterData({ ...fallbackUserMasterData, ...next });
@@ -1811,7 +1902,11 @@ export default function AdministracionPage() {
         ["vehicle_colors", "Colores de vehiculo"],
         ["vehicle_fuels", "Combustibles de vehiculo"],
         ["vehicle_body_types", "Carrocerias de vehiculo"],
-        ["units_of_measure", "Unidades de medida"]
+        ["units_of_measure", "Unidades de medida"],
+        ["service_levels", "Niveles de servicio"],
+        ["departments", "Departamentos"],
+        ["cities", "Ciudades"],
+        ["municipalities", "Municipios"]
       ]],
       ["Servicios", [
         ["service_types", "Tipos de servicio"],
@@ -1819,7 +1914,8 @@ export default function AdministracionPage() {
         ["satisfaction_questions", "Preguntas de satisfaccion"]
       ]],
       ["Financiero", [
-        ["banks", "Bancos"]
+        ["banks", "Bancos"],
+        ["currencies", "Monedas"]
       ]]
     ];
     const catalogOptions = catalogGroups.flatMap(([, items]) => items);
@@ -1827,7 +1923,7 @@ export default function AdministracionPage() {
     const isServiceStoreCatalog = catalogDraft.catalog === "service_stores";
     const isSatisfactionQuestionCatalog = catalogDraft.catalog === "satisfaction_questions";
     const isOperationalCatalog = isServiceTypeCatalog || isServiceStoreCatalog || isSatisfactionQuestionCatalog;
-    const isLineCatalog = catalogDraft.catalog === "vehicle_lines";
+    const parentConfig = CATALOG_PARENT_CONFIG[catalogDraft.catalog];
     const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
@@ -1841,14 +1937,15 @@ export default function AdministracionPage() {
         ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
       : selectedItems.map((item) => ({ ...item, active: item.active !== false }));
     const activeCatalogRows = catalogRows.filter((item) => item.active !== false).length;
-    const lineBrandOptions: Array<[string, string]> = (() => {
-      const options: Array<[string, string]> = [["", "Sin marca (uso general)"]];
+    const parentOptions: Array<[string, string]> = (() => {
+      if (!parentConfig) return [];
+      const options: Array<[string, string]> = [["", parentConfig.emptyLabel]];
       const seen = new Set<string>();
-      for (const brand of masterData.vehicle_brands || []) {
-        if (brand.active === false && brand.code !== catalogDraft.parent_code) continue;
-        if (seen.has(brand.code)) continue;
-        seen.add(brand.code);
-        options.push([brand.code, brand.name]);
+      for (const parent of (masterData[parentConfig.parentCatalog] || [])) {
+        if (parent.active === false && parent.code !== catalogDraft.parent_code) continue;
+        if (seen.has(parent.code)) continue;
+        seen.add(parent.code);
+        options.push([parent.code, parent.name]);
       }
       if (catalogDraft.parent_code && !seen.has(catalogDraft.parent_code)) {
         options.push([catalogDraft.parent_code, catalogDraft.parent_code]);
@@ -1884,7 +1981,7 @@ export default function AdministracionPage() {
               <p className="text-sm font-semibold">{editingCatalogCode ? "Editar maestro" : "Nuevo maestro"}</p>
               <Field label={isOperationalCatalog ? "Codigo" : "Codigo"} value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
               <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
-              {isLineCatalog ? <SelectField label="Marca (padre)" value={catalogDraft.parent_code} onChange={(value) => setCatalogDraft((current) => ({ ...current, parent_code: value }))} options={lineBrandOptions} /> : null}
+              {parentConfig ? <SelectField label={parentConfig.fieldLabel} value={catalogDraft.parent_code} onChange={(value) => setCatalogDraft((current) => ({ ...current, parent_code: value }))} options={parentOptions} /> : null}
               {!isOperationalCatalog ? <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /> : null}
               <div className="grid gap-2">
                 <Button disabled={Boolean(catalogSaving)} onClick={saveCatalogItem} type="button">
@@ -1902,7 +1999,7 @@ export default function AdministracionPage() {
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
                 <th className="px-3 py-2">{isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"}</th>
-                {isLineCatalog ? <th className="px-3 py-2">Marca</th> : null}
+                {parentConfig ? <th className="px-3 py-2">{parentConfig.columnLabel}</th> : null}
                 {!isOperationalCatalog ? <th className="px-3 py-2">Descripcion</th> : null}
                 <th className="px-3 py-2">Estado</th>
                 <th className="px-3 py-2 text-right">Acciones</th>
@@ -1913,7 +2010,7 @@ export default function AdministracionPage() {
                 <tr className={`border-b border-line/70 ${editingCatalogCode === item.code ? "bg-apex/5" : ""}`} key={item.code}>
                   <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
-                  {isLineCatalog ? <td className="px-3 py-2 text-neutral-600">{(masterData.vehicle_brands || []).find((brand) => brand.code === item.parent_code)?.name || item.parent_code || "-"}</td> : null}
+                  {parentConfig ? <td className="px-3 py-2 text-neutral-600">{((masterData[parentConfig.parentCatalog] || []) as MasterOption[]).find((parent) => parent.code === item.parent_code)?.name || item.parent_code || "-"}</td> : null}
                   {!isOperationalCatalog ? <td className="px-3 py-2 text-neutral-600">{item.description || "-"}</td> : null}
                   <td className="px-3 py-2">
                     <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
@@ -1935,7 +2032,7 @@ export default function AdministracionPage() {
               ))}
               {!catalogRows.length ? (
                 <tr>
-                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={(isOperationalCatalog ? 4 : 5) + (isLineCatalog ? 1 : 0)}>No hay registros configurados.</td>
+                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={(isOperationalCatalog ? 4 : 5) + (parentConfig ? 1 : 0)}>No hay registros configurados.</td>
                 </tr>
               ) : null}
             </tbody>

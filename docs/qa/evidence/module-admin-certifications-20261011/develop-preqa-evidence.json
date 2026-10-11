@@ -1,0 +1,32 @@
+{
+  "change_id": "module-admin-certifications-20261011",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "4b4b50fd362c83aa00715ecf65415732ee7376c4",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json", "../transport-module-20261011/develop-admin-certification.json"] },
+    "error": { "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json", "../transport-module-20261011/develop-admin-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json", "../transport-module-20261011/develop-admin-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json", "../transport-module-20261011/develop-admin-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json", "../transport-module-20261011/develop-admin-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/petty-cash-develop-admin.js",
+    "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-develop-admin.js",
+    "evidence": ["../transport-module-20261011/develop-admin-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa: 'procede y continua hasta llegar a develop sin errores'",
+    "approved_at": "2026-10-11T00:00:00-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}

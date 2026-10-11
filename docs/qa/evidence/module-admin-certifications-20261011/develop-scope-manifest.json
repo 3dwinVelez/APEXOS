@@ -1,0 +1,38 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "module-admin-certifications-20261011",
+  "base_commit": "dbe91c6fe7893cad2584e6ad7c8b149f0e2c2f38",
+  "base_commits": {
+    "develop": "dbe91c6fe7893cad2584e6ad7c8b149f0e2c2f38"
+  },
+  "certified_commit": "4b4b50fd362c83aa00715ecf65415732ee7376c4",
+  "change_intent": {
+    "summary": "Certificacion en develop con el administrador real de QA (admin@apexos.qa via Supabase Auth) que pobla datos reales y arneses versionados para los modulos Transporte (27/27) y Gastos Menores (30/30), junto con la migracion versionada del catalogo de suscripcion que publica el modulo gastos_menores. No modifica codigo de aplicacion ni otros modulos: agrega scripts de certificacion, evidencia y una migracion.",
+    "modules": ["petty-cash", "transport", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "scripts/certifications/petty-cash-develop-admin.js" },
+    { "status": "A", "file": "scripts/certifications/transport-develop-admin.js" },
+    { "status": "A", "file": "docs/qa/evidence/petty-cash-module-20261010/develop-admin-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-module-20261011/develop-admin-certification.json" },
+    { "status": "A", "file": "supabase/migrations/20261011100000_petty_cash_module_catalog.sql" },
+    { "status": "A", "file": "docs/qa/evidence/module-admin-certifications-20261011/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/module-admin-certifications-20261011/develop-preqa-evidence.json" }
+  ],
+  "allowed_paths": [
+    "scripts/certifications/petty-cash-develop-admin.js",
+    "scripts/certifications/transport-develop-admin.js",
+    "docs/qa/evidence/petty-cash-module-20261010/develop-admin-certification.json",
+    "docs/qa/evidence/transport-module-20261011/develop-admin-certification.json",
+    "supabase/migrations/20261011100000_petty_cash_module_catalog.sql",
+    "docs/qa/evidence/module-admin-certifications-20261011/develop-scope-manifest.json",
+    "docs/qa/evidence/module-admin-certifications-20261011/develop-preqa-evidence.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "gastos_menores_end_to_end_en_develop_con_admin_real_y_datos_poblados", "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json"] },
+    { "name": "transporte_end_to_end_en_develop_con_admin_real_y_datos_poblados", "status": "passed", "evidence": ["../transport-module-20261011/develop-admin-certification.json"] },
+    { "name": "modulo_gastos_menores_publicado_en_catalogo_de_suscripcion", "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json"] },
+    { "name": "sesion_real_develop_con_admin_supabase_sin_secretos_versionados", "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json", "../transport-module-20261011/develop-admin-certification.json"] }
+  ]
+}

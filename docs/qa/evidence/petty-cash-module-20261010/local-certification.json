@@ -1,0 +1,415 @@
+{
+  "change_id": "petty-cash-module-20261010",
+  "certification": "petty-cash-module-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-10-10T16:14:39.533Z",
+  "api_commit": "dd2f6c5c4d95",
+  "api_url": "http://127.0.0.1:3212",
+  "scope": {
+    "capability": "Gastos Menores / Cajas Menores: maestros de conceptos de egreso y cajas menores con custodio y cuentas PUC 11xx/13xx, ciclo anticipo (APC) -> comprobante de gasto con IVA por linea y contabilizacion inmediata (GM) -> liquidacion con reintegro/faltante (LCM), anulacion con reversa contable y reporteria por caja/concepto (resumen agrupable, detalle paginado, ranking con % del tope mensual).",
+    "proven_by_live_execution": [
+      "POST /petty-cash/concepts crea concepto con cuenta de gasto 5195 (concepto_duplicado y cuenta no-gasto rechazados)",
+      "PUT /petty-cash/concepts/:id actualiza heredando las claves opcionales ausentes",
+      "POST /petty-cash/boxes crea caja lista para anticipos (cuenta 11xx caja, 13xx anticipo, custodio, tope mensual); cuenta 13xx como caja rechazada",
+      "PUT /petty-cash/boxes/:id reconfigura la politica de anticipos (require_advance + block_unliquidated_advance)",
+      "POST /petty-cash/advances gira anticipo APC contabilizado contra el mayor (debito 1330 / credito 1105); tope mensual, valor 0 y nuevo anticipo con uno abierto sin liquidar (ADVANCE_ALREADY_OPEN) rechazados",
+      "POST /petty-cash/vouchers exige anticipo cuando la caja lo configura (ADVANCE_REQUIRED) y contabiliza GM inmediato: IVA por linea recalculado del maestro (los importes del cliente se ignoran), imputacion linea a linea al anticipo",
+      "POST /petty-cash/advances/:id/liquidate SIN cuerpo liquida con reintegro por defecto = saldo (LCM)",
+      "POST /petty-cash/vouchers/:id/cancel anula con reversa contable y restaura el saldo del anticipo; doble anulacion y anulacion con anticipo liquidado rechazadas",
+      "GET /petty-cash/reports/summary agrupa por concepto con totales vouchers_count/lines_count/*_total",
+      "GET /petty-cash/reports/detail pagina lineas con pagination.total y expone advance_full_number/advance_status",
+      "GET /petty-cash/reports/boxes-ranking rankea cajas con % del tope mensual en mes unico",
+      "Reportes excluyen anulados por defecto e incluyen el filtro include_cancelled",
+      "GET anonimo responde 401"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/petty-cash-masters.test.js (maestros T2)",
+      "apps/api/test/petty-cash-vouchers.test.js (anticipos, gastos y contabilizacion T3)",
+      "apps/api/test/petty-cash-reports.test.js (reporteria T4)",
+      "apps/web/test/gastos-menores-module-registration.test.mjs (registro del modulo)",
+      "apps/web/test/gastos-menores-masters.test.mjs (pantallas de maestros)",
+      "apps/web/test/gastos-menores-operations.test.mjs (gastos, anticipos y liquidacion)",
+      "apps/web/test/gastos-menores-reports.test.mjs (reporteria con exportacion)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "dd2f6c5c4d95"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "concept_created_with_expense_account",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "account_code": "5195"
+      }
+    },
+    {
+      "name": "concept_duplicate_code_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "CONCEPT_CODE_TAKEN"
+      }
+    },
+    {
+      "name": "concept_non_expense_account_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "CONCEPT_ACCOUNT_INVALID"
+      }
+    },
+    {
+      "name": "concept_update_inherits_optional_keys",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "name": "Peajes y gastos v2",
+        "notes": "Concepto de certificacion local"
+      }
+    },
+    {
+      "name": "concept_deactivate_activate_cycle",
+      "ok": true,
+      "detail": {
+        "deactivated": 200,
+        "reactivated": 200
+      }
+    },
+    {
+      "name": "box_created_ready_for_advances",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "ready": true,
+        "warnings": 0
+      }
+    },
+    {
+      "name": "box_non_cash_asset_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "BOX_ACCOUNT_INVALID"
+      }
+    },
+    {
+      "name": "advance_created_and_accounted",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "APC-000007",
+        "balance": 500000
+      }
+    },
+    {
+      "name": "advance_zero_amount_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "ADVANCE_AMOUNT_INVALID"
+      }
+    },
+    {
+      "name": "advance_over_monthly_limit_blocked",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "ADVANCE_EXCEEDS_MONTHLY_LIMIT"
+      }
+    },
+    {
+      "name": "box_advance_policy_configurable",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "require_advance": true,
+        "block": true,
+        "custodian": 9,
+        "monthly_limit": 1000000
+      }
+    },
+    {
+      "name": "advance_blocked_while_previous_open",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ADVANCE_ALREADY_OPEN"
+      }
+    },
+    {
+      "name": "voucher_requires_advance_when_configured",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "ADVANCE_REQUIRED"
+      }
+    },
+    {
+      "name": "voucher_created_and_accounted_with_line_vat",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "GM-000014",
+        "total": 219000,
+        "client_vat_ignored": 19000
+      }
+    },
+    {
+      "name": "voucher_line_without_concept_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "CONCEPT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "voucher_unknown_vat_code_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VAT_MASTER_NOT_FOUND"
+      }
+    },
+    {
+      "name": "advance_balance_after_voucher",
+      "ok": true,
+      "detail": {
+        "applied": 219000,
+        "balance": 281000
+      }
+    },
+    {
+      "name": "report_summary_groups_by_concept",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 1,
+        "total": 219000
+      }
+    },
+    {
+      "name": "report_detail_paginates_lines",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "total": 2,
+        "advance_status": "open"
+      }
+    },
+    {
+      "name": "report_boxes_ranking_with_monthly_limit_pct",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "single_month": "2026-10",
+        "limit_pct": 21.9
+      }
+    },
+    {
+      "name": "report_month_without_year_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "REPORT_FILTER_INVALID"
+      }
+    },
+    {
+      "name": "voucher_cancelled_with_accounting_reversal",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "reversal": true
+      }
+    },
+    {
+      "name": "advance_balance_restored_after_cancel",
+      "ok": true,
+      "detail": {
+        "applied": 0,
+        "balance": 500000
+      }
+    },
+    {
+      "name": "voucher_double_cancel_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "VOUCHER_ALREADY_CANCELLED"
+      }
+    },
+    {
+      "name": "report_excludes_cancelled_by_default",
+      "ok": true,
+      "detail": {
+        "total": 0,
+        "rows": 0
+      }
+    },
+    {
+      "name": "report_include_cancelled_flag",
+      "ok": true,
+      "detail": {
+        "total": 219000,
+        "include_cancelled": true
+      }
+    },
+    {
+      "name": "second_voucher_applies_remaining_advance",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "total": 100000,
+        "applied": 100000
+      }
+    },
+    {
+      "name": "advance_liquidated_bodyless_default_refund",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "refund": 400000,
+        "shortfall": 0
+      }
+    },
+    {
+      "name": "advance_reliquidation_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ADVANCE_NOT_OPEN"
+      }
+    },
+    {
+      "name": "cancel_voucher_with_liquidated_advance_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "VOUCHER_ADVANCE_LIQUIDATED"
+      }
+    },
+    {
+      "name": "final_report_reflects_live_state",
+      "ok": true,
+      "detail": {
+        "summary_total": 100000,
+        "detail_total": 1,
+        "advance_status": "liquidated",
+        "ranking_limit_pct": 10
+      }
+    },
+    {
+      "name": "unit_suite_petty-cash-masters_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "35",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_petty-cash-vouchers_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "53",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_petty-cash-reports_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "35",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-module-registration_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "7",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-masters_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "16",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-operations_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "23",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-reports_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "14",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "schema_has_petty_cash_models",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "routes_guarded_by_accounting_rbac",
+      "ok": true,
+      "detail": {
+        "routes": 24,
+        "guards": 24
+      }
+    },
+    {
+      "name": "service_tenant_isolation_and_locks",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "web_pages_present",
+      "ok": true,
+      "detail": {
+        "missing": []
+      }
+    }
+  ],
+  "status": "passed",
+  "checks_passed": 45,
+  "checks_total": 45,
+  "finished_at": "2026-10-10T16:15:29.766Z"
+}

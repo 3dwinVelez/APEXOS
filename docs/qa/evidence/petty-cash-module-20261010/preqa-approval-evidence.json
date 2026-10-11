@@ -1,0 +1,32 @@
+{
+  "change_id": "petty-cash-module-20261010",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "dd2f6c5c4d95af1385feb5b486b2b19fff6ef8d9",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["local-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["local-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/petty-cash-module-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/petty-cash-module-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa: 'garantiza que todos los cambios suban hasta el ambiente de develop sin contaminar otros cambios de otros modulos que esten ya activos y funcionales'",
+    "approved_at": "2026-10-11T00:00:00-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}

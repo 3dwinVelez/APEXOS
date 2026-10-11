@@ -1,0 +1,294 @@
+{
+  "change_id": "petty-cash-module-admin-20261011",
+  "certification": "petty-cash-module-develop-admin",
+  "environment": "QA",
+  "target_environment": "develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "supabase_url": "https://jbirkghkekuifgfsgquq.supabase.co",
+  "api_commit": "37d5d5ffaf3c",
+  "expected_commit": "unset",
+  "generated_at": "2026-10-11T15:49:21.494Z",
+  "admin": {
+    "email": "admin@apexos.qa",
+    "auth": "supabase-password-grant"
+  },
+  "tenant": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "name": "Cliente Piloto QA",
+    "custodian_party_id": 7
+  },
+  "scope": {
+    "capability": "Gastos Menores end-to-end en develop con el administrador real de QA: maestros, anticipo APC, comprobante GM con IVA por linea, liquidacion LCM, anulacion con reversa y reporteria, poblando datos reales visibles en la herramienta.",
+    "proven_by_live_execution": [
+      "Sesion del administrador real de QA via Supabase Auth (password grant) consumiendo la API con el Bearer de Supabase",
+      "Maestros persistidos: conceptos de egreso con cuenta PUC 5195 y caja menor con 1105/1330, custodio y tope mensual",
+      "Anticipo APC contabilizado (debito 1330 / credito 1105) y comprobante GM con IVA por linea e imputacion al anticipo",
+      "Reporteria por caja/concepto (resumen, detalle paginado, ranking con % del tope) sobre los datos poblados",
+      "Los datos quedan activos en el tenant piloto QA para inspeccion en la interfaz"
+    ]
+  },
+  "checks": [
+    {
+      "name": "develop_health",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "37d5d5ffaf3c"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_supabase_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "admin_tenant_resolved",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "tenant": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+        "role": "APEX_ADMIN"
+      }
+    },
+    {
+      "name": "concept_created_with_expense_account",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "code": "GM-PAP-20261011154921",
+        "account": "5195"
+      }
+    },
+    {
+      "name": "second_concept_created",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "code": "GM-TRA-20261011154921"
+      }
+    },
+    {
+      "name": "concept_duplicate_code_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "CONCEPT_CODE_TAKEN"
+      }
+    },
+    {
+      "name": "concept_non_expense_account_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "CONCEPT_ACCOUNT_INVALID"
+      }
+    },
+    {
+      "name": "box_created_ready_for_advances",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "ready": true,
+        "warnings": 0,
+        "custodian": 7
+      }
+    },
+    {
+      "name": "box_non_cash_asset_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "BOX_ACCOUNT_INVALID"
+      }
+    },
+    {
+      "name": "advance_zero_amount_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "ADVANCE_AMOUNT_INVALID"
+      }
+    },
+    {
+      "name": "advance_over_monthly_limit_blocked",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "ADVANCE_EXCEEDS_MONTHLY_LIMIT"
+      }
+    },
+    {
+      "name": "advance_created_and_accounted",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "APC-000004",
+        "balance": 800000
+      }
+    },
+    {
+      "name": "advance_blocked_while_previous_open",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ADVANCE_ALREADY_OPEN"
+      }
+    },
+    {
+      "name": "voucher_requires_advance_when_configured",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "ADVANCE_REQUIRED"
+      }
+    },
+    {
+      "name": "voucher_created_and_accounted_with_line_vat",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "GM-000005",
+        "total": 228500,
+        "line0_vat": 28500
+      }
+    },
+    {
+      "name": "voucher_unknown_vat_code_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VAT_MASTER_NOT_FOUND"
+      }
+    },
+    {
+      "name": "advance_balance_after_voucher",
+      "ok": true,
+      "detail": {
+        "applied": 228500,
+        "balance": 571500
+      }
+    },
+    {
+      "name": "second_voucher_applies_advance",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "total": 142800,
+        "applied": 142800
+      }
+    },
+    {
+      "name": "report_summary_groups_by_concept",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 2,
+        "total": 371300
+      }
+    },
+    {
+      "name": "report_detail_paginates_lines",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "total": 3
+      }
+    },
+    {
+      "name": "report_boxes_ranking_with_monthly_limit_pct",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "single_month": "2026-10",
+        "limit_pct": 18.57
+      }
+    },
+    {
+      "name": "report_month_without_year_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "REPORT_FILTER_INVALID"
+      }
+    },
+    {
+      "name": "voucher_cancelled_with_accounting_reversal",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "reversal": true
+      }
+    },
+    {
+      "name": "advance_balance_restored_after_cancel",
+      "ok": true,
+      "detail": {
+        "applied": 142800,
+        "balance": 657200
+      }
+    },
+    {
+      "name": "voucher_double_cancel_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "VOUCHER_ALREADY_CANCELLED"
+      }
+    },
+    {
+      "name": "report_excludes_cancelled_by_default",
+      "ok": true,
+      "detail": {
+        "total": 142800
+      }
+    },
+    {
+      "name": "advance_liquidated_bodyless_default_refund",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "refund": 657200,
+        "shortfall": 0
+      }
+    },
+    {
+      "name": "advance_reliquidation_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ADVANCE_NOT_OPEN"
+      }
+    },
+    {
+      "name": "final_report_reflects_live_state",
+      "ok": true,
+      "detail": {
+        "vouchers": 1,
+        "total": 142800
+      }
+    }
+  ],
+  "status": "passed",
+  "fixture": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "concept_id": 97,
+    "concept2_id": 98,
+    "box_id": 4,
+    "advance_id": 4,
+    "voucher_id": 4,
+    "voucher2_id": 5,
+    "note": "Datos dejados activos en el tenant piloto QA para inspeccion en la interfaz"
+  },
+  "checks_passed": 30,
+  "checks_total": 30,
+  "finished_at": "2026-10-11T15:49:48.617Z"
+}

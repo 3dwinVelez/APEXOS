@@ -660,7 +660,12 @@ const COMPANY_MASTER_CATALOG_NAMES: Record<string, string> = {
   vehicle_colors: "Colores de vehiculo",
   vehicle_fuels: "Combustibles de vehiculo",
   vehicle_body_types: "Carrocerias de vehiculo",
-  units_of_measure: "Unidades de medida"
+  units_of_measure: "Unidades de medida",
+  service_levels: "Niveles de servicio",
+  departments: "Departamentos",
+  cities: "Ciudades",
+  municipalities: "Municipios",
+  currencies: "Monedas"
 };
 
 async function ensureSupabaseCompanyMasterCatalog(companyId: string, catalogCode: string) {
@@ -877,7 +882,87 @@ function defaultUserMasterData() {
     ].map(([code, name, parent_code]) => ({ code, name, parent_code })),
     vehicle_colors: [["blanco", "Blanco"], ["negro", "Negro"], ["gris", "Gris"], ["plata", "Plata"], ["rojo", "Rojo"], ["azul", "Azul"], ["verde", "Verde"], ["amarillo", "Amarillo"], ["naranja", "Naranja"], ["beige", "Beige"], ["cafe", "Cafe"], ["vinotinto", "Vinotinto"]].map(([code, name]) => ({ code, name })),
     vehicle_fuels: [["gasolina", "Gasolina"], ["diesel", "Diesel"], ["gnv", "Gas natural (GNV)"], ["gnv_gasolina", "Gasolina + GNV"], ["electrico", "Electrico"], ["hibrido", "Hibrido"]].map(([code, name]) => ({ code, name })),
-    vehicle_body_types: [["estacas", "Estacas"], ["caja_seca", "Caja seca"], ["furgon", "Furgon"], ["plataforma", "Plataforma"], ["tanque", "Tanque"], ["volco", "Volco"], ["refrigerado", "Refrigerado"], ["porta_contenedores", "Porta contenedores"], ["cama_baja", "Cama baja"]].map(([code, name]) => ({ code, name }))
+    vehicle_body_types: [["estacas", "Estacas"], ["caja_seca", "Caja seca"], ["furgon", "Furgon"], ["plataforma", "Plataforma"], ["tanque", "Tanque"], ["volco", "Volco"], ["refrigerado", "Refrigerado"], ["porta_contenedores", "Porta contenedores"], ["cama_baja", "Cama baja"]].map(([code, name]) => ({ code, name })),
+    service_levels: [["normal", "Normal"], ["express", "Express"], ["programado", "Programado"], ["dedicado", "Dedicado"]].map(([code, name]) => ({ code, name })),
+    departments: [
+      ["amazonas", "Amazonas"], ["antioquia", "Antioquia"], ["arauca", "Arauca"], ["atlantico", "Atlantico"], ["bogota_dc", "Bogota D.C."],
+      ["bolivar", "Bolivar"], ["boyaca", "Boyaca"], ["caldas", "Caldas"], ["caqueta", "Caqueta"], ["casanare", "Casanare"],
+      ["cauca", "Cauca"], ["cesar", "Cesar"], ["choco", "Choco"], ["cordoba", "Cordoba"], ["cundinamarca", "Cundinamarca"],
+      ["guainia", "Guainia"], ["guaviare", "Guaviare"], ["huila", "Huila"], ["la_guajira", "La Guajira"], ["magdalena", "Magdalena"],
+      ["meta", "Meta"], ["narino", "Narino"], ["norte_de_santander", "Norte de Santander"], ["putumayo", "Putumayo"], ["quindio", "Quindio"],
+      ["risaralda", "Risaralda"], ["san_andres", "San Andres y Providencia"], ["santander", "Santander"], ["sucre", "Sucre"], ["tolima", "Tolima"],
+      ["valle_del_cauca", "Valle del Cauca"], ["vaupes", "Vaupes"], ["vichada", "Vichada"]
+    ].map(([code, name]) => ({ code, name })),
+    cities: [
+      ["bogota", "Bogota", "bogota_dc"], ["medellin", "Medellin", "antioquia"], ["cali", "Cali", "valle_del_cauca"],
+      ["barranquilla", "Barranquilla", "atlantico"], ["cartagena", "Cartagena", "bolivar"], ["bucaramanga", "Bucaramanga", "santander"],
+      ["pereira", "Pereira", "risaralda"], ["manizales", "Manizales", "caldas"], ["ibague", "Ibague", "tolima"],
+      ["villavicencio", "Villavicencio", "meta"], ["cucuta", "Cucuta", "norte_de_santander"], ["armenia", "Armenia", "quindio"],
+      ["monteria", "Monteria", "cordoba"], ["santa_marta", "Santa Marta", "magdalena"], ["neiva", "Neiva", "huila"],
+      ["popayan", "Popayan", "cauca"], ["pasto", "Pasto", "narino"], ["sincelejo", "Sincelejo", "sucre"],
+      ["tunja", "Tunja", "boyaca"], ["florencia", "Florencia", "caqueta"], ["yopal", "Yopal", "casanare"],
+      ["riohacha", "Riohacha", "la_guajira"], ["valledupar", "Valledupar", "cesar"], ["quibdo", "Quibdo", "choco"]
+    ].map(([code, name, parent_code]) => ({ code, name, parent_code })),
+    municipalities: [
+      ["bogota", "Bogota", "bogota"], ["soacha", "Soacha", "bogota"], ["chia", "Chia", "bogota"],
+      ["zipaquira", "Zipaquira", "bogota"], ["mosquera", "Mosquera", "bogota"], ["funza", "Funza", "bogota"],
+      ["madrid", "Madrid", "bogota"], ["facatativa", "Facatativa", "bogota"], ["fusagasuga", "Fusagasuga", "bogota"],
+      ["cajica", "Cajica", "bogota"], ["tabio", "Tabio", "bogota"], ["tenjo", "Tenjo", "bogota"],
+      ["medellin", "Medellin", "medellin"], ["envigado", "Envigado", "medellin"], ["itagui", "Itagui", "medellin"],
+      ["bello", "Bello", "medellin"], ["copacabana", "Copacabana", "medellin"], ["sabaneta", "Sabaneta", "medellin"],
+      ["la_estrella", "La Estrella", "medellin"], ["girardota", "Girardota", "medellin"], ["barbosa", "Barbosa", "medellin"],
+      ["rionegro", "Rionegro", "medellin"],
+      ["cali", "Cali", "cali"], ["palmira", "Palmira", "cali"], ["jamundi", "Jamundi", "cali"],
+      ["yumbo", "Yumbo", "cali"], ["buga", "Buga", "cali"], ["tulua", "Tulua", "cali"],
+      ["cartago", "Cartago", "cali"], ["florida", "Florida", "cali"], ["cerrito", "Cerrito", "cali"],
+      ["barranquilla", "Barranquilla", "barranquilla"], ["soledad", "Soledad", "barranquilla"],
+      ["puerto_colombia", "Puerto Colombia", "barranquilla"], ["malambo", "Malambo", "barranquilla"],
+      ["galapa", "Galapa", "barranquilla"], ["sabanalarga", "Sabanalarga", "barranquilla"],
+      ["cartagena", "Cartagena", "cartagena"], ["turbaco", "Turbaco", "cartagena"], ["turbana", "Turbana", "cartagena"],
+      ["clemencia", "Clemencia", "cartagena"], ["maria_la_baja", "Maria La Baja", "cartagena"],
+      ["bucaramanga", "Bucaramanga", "bucaramanga"], ["floridablanca", "Floridablanca", "bucaramanga"],
+      ["giron", "Giron", "bucaramanga"], ["piedecuesta", "Piedecuesta", "bucaramanga"], ["lebrija", "Lebrija", "bucaramanga"],
+      ["pereira", "Pereira", "pereira"], ["dosquebradas", "Dosquebradas", "pereira"], ["la_virginia", "La Virginia", "pereira"],
+      ["santa_rosa_de_cabal", "Santa Rosa de Cabal", "pereira"], ["marsella", "Marsella", "pereira"], ["apia", "Apia", "pereira"],
+      ["manizales", "Manizales", "manizales"], ["villamaria", "Villamaria", "manizales"], ["neira", "Neira", "manizales"],
+      ["chinchina", "Chinchina", "manizales"], ["palestina", "Palestina", "manizales"], ["la_dorada", "La Dorada", "manizales"],
+      ["ibague", "Ibague", "ibague"], ["cajamarca", "Cajamarca", "ibague"], ["espinal", "Espinal", "ibague"],
+      ["natagaima", "Natagaima", "ibague"], ["chaparral", "Chaparral", "ibague"], ["guamo", "Guamo", "ibague"],
+      ["villavicencio", "Villavicencio", "villavicencio"], ["acacias", "Acacias", "villavicencio"],
+      ["granada", "Granada", "villavicencio"], ["san_martin", "San Martin", "villavicencio"], ["restrepo", "Restrepo", "villavicencio"],
+      ["cucuta", "Cucuta", "cucuta"], ["los_patios", "Los Patios", "cucuta"], ["villa_del_rosario", "Villa del Rosario", "cucuta"],
+      ["el_zulia", "El Zulia", "cucuta"], ["pamplona", "Pamplona", "cucuta"], ["ocana", "Ocana", "cucuta"],
+      ["armenia", "Armenia", "armenia"], ["calarca", "Calarca", "armenia"], ["montenegro", "Montenegro", "armenia"],
+      ["quimbaya", "Quimbaya", "armenia"], ["la_tebaida", "La Tebaida", "armenia"], ["salento", "Salento", "armenia"],
+      ["filandia", "Filandia", "armenia"], ["cordoba", "Cordoba", "armenia"],
+      ["monteria", "Monteria", "monteria"], ["cerete", "Cerete", "monteria"], ["lorica", "Lorica", "monteria"],
+      ["san_pelayo", "San Pelayo", "monteria"], ["canalete", "Canalete", "monteria"],
+      ["santa_marta", "Santa Marta", "santa_marta"], ["cienaga", "Cienaga", "santa_marta"], ["fundacion", "Fundacion", "santa_marta"],
+      ["aracataca", "Aracataca", "santa_marta"], ["el_banco", "El Banco", "santa_marta"],
+      ["neiva", "Neiva", "neiva"], ["pitalito", "Pitalito", "neiva"], ["garzon", "Garzon", "neiva"],
+      ["la_plata", "La Plata", "neiva"], ["palermo", "Palermo", "neiva"], ["rivera", "Rivera", "neiva"],
+      ["popayan", "Popayan", "popayan"], ["timbio", "Timbio", "popayan"], ["piendamo", "Piendamo", "popayan"],
+      ["santander_de_quilichao", "Santander de Quilichao", "popayan"], ["el_bordo", "El Bordo", "popayan"],
+      ["pasto", "Pasto", "pasto"], ["ipiales", "Ipiales", "pasto"], ["tuquerres", "Tuquerres", "pasto"],
+      ["consaca", "Consaca", "pasto"], ["guaitarilla", "Guaitarilla", "pasto"],
+      ["sincelejo", "Sincelejo", "sincelejo"], ["corozal", "Corozal", "sincelejo"], ["sampues", "Sampues", "sincelejo"],
+      ["los_palmitos", "Los Palmitos", "sincelejo"], ["magangue", "Magangue", "sincelejo"], ["toluviejo", "Toluviejo", "sincelejo"],
+      ["tunja", "Tunja", "tunja"], ["duitama", "Duitama", "tunja"], ["sogamoso", "Sogamoso", "tunja"],
+      ["chiquinquira", "Chiquinquira", "tunja"], ["moniquira", "Moniquira", "tunja"], ["villa_de_leyva", "Villa de Leyva", "tunja"],
+      ["paipa", "Paipa", "tunja"],
+      ["florencia", "Florencia", "florencia"], ["morelia", "Morelia", "florencia"], ["puerto_rico", "Puerto Rico", "florencia"],
+      ["san_vicente_del_caguan", "San Vicente del Caguan", "florencia"], ["el_doncello", "El Doncello", "florencia"],
+      ["belen_de_los_andaquies", "Belen de los Andaquies", "florencia"],
+      ["yopal", "Yopal", "yopal"], ["aguazul", "Aguazul", "yopal"], ["villanueva", "Villanueva", "yopal"],
+      ["paz_de_ariporo", "Paz de Ariporo", "yopal"], ["tauramena", "Tauramena", "yopal"], ["monterrey", "Monterrey", "yopal"],
+      ["riohacha", "Riohacha", "riohacha"], ["maicao", "Maicao", "riohacha"], ["barrancas", "Barrancas", "riohacha"],
+      ["fonseca", "Fonseca", "riohacha"], ["san_juan_del_cesar", "San Juan del Cesar", "riohacha"],
+      ["distraccion", "Distraccion", "riohacha"], ["albania", "Albania", "riohacha"],
+      ["valledupar", "Valledupar", "valledupar"], ["aguachica", "Aguachica", "valledupar"], ["bosconia", "Bosconia", "valledupar"],
+      ["chiriguana", "Chiriguana", "valledupar"], ["la_paz", "La Paz", "valledupar"], ["pueblo_bello", "Pueblo Bello", "valledupar"],
+      ["quibdo", "Quibdo", "quibdo"], ["istmina", "Istmina", "quibdo"], ["condoto", "Condoto", "quibdo"], ["nuqui", "Nuqui", "quibdo"]
+    ].map(([code, name, parent_code]) => ({ code, name, parent_code })),
+    currencies: [["COP", "Peso colombiano (COP)"], ["USD", "Dolar estadounidense (USD)"], ["EUR", "Euro (EUR)"]].map(([code, name]) => ({ code, name }))
   };
 }
 
@@ -901,6 +986,11 @@ export type VehicleMasterCatalogs = {
   locations: VehicleMasterItem[];
   costCenters: VehicleMasterItem[];
   capacityUnits: VehicleMasterItem[];
+  departments: VehicleMasterItem[];
+  cities: VehicleMasterItem[];
+  municipalities: VehicleMasterItem[];
+  serviceLevels: VehicleMasterItem[];
+  currencies: VehicleMasterItem[];
 };
 
 export function isActiveMasterItem(item: VehicleMasterItem) {
@@ -925,7 +1015,12 @@ export async function loadVehicleMasterCatalogs(): Promise<VehicleMasterCatalogs
     bodyTypes: pick("vehicle_body_types"),
     locations: pick("locations"),
     costCenters: pick("cost_centers"),
-    capacityUnits: pick("units_of_measure")
+    capacityUnits: pick("units_of_measure"),
+    departments: pick("departments"),
+    cities: pick("cities"),
+    municipalities: pick("municipalities"),
+    serviceLevels: pick("service_levels"),
+    currencies: pick("currencies")
   };
 }
 
