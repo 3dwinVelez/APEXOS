@@ -1,0 +1,33 @@
+{
+  "change_id": "qa-sweep-fixes-20261011",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "b2c082bf783db7bd2acf9f538a7fb30d9d71c425",
+  "qa_status": "pending",
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["local-certification.json"] },
+    "error": { "status": "passed", "evidence": ["local-certification.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["local-certification.json"] },
+    "regression": { "status": "passed", "evidence": ["local-certification.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["../transport-module-20261011/develop-admin-certification.json", "../petty-cash-module-20261010/develop-admin-certification.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/qa-sweep-fixes-local.js",
+    "evidence": ["local-certification.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-develop-admin.js",
+    "evidence": ["../transport-module-20261011/develop-admin-certification.json"]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa: 'lo actualizas hasta develop en sus ramas remotas'",
+    "approved_at": "2026-10-11T14:50:45-05:00",
+    "main_release": "pending_develop_deploy_and_qa",
+    "note": "Autorizada la promocion desarrollo -> develop (merge + push) de los fixes del barrido de salud QA y el redespliegue de QA. main no autorizado."
+  }
+}

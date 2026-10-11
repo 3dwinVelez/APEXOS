@@ -5,9 +5,9 @@
   "target_environment": "develop",
   "api_url": "https://apexos-api-qa-production.up.railway.app",
   "supabase_url": "https://jbirkghkekuifgfsgquq.supabase.co",
-  "api_commit": "37d5d5ffaf3c",
+  "api_commit": "2ec415cc8b24",
   "expected_commit": "unset",
-  "generated_at": "2026-10-11T15:49:21.494Z",
+  "generated_at": "2026-10-11T18:57:04.127Z",
   "admin": {
     "email": "admin@apexos.qa",
     "auth": "supabase-password-grant"
@@ -33,7 +33,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "commit": "37d5d5ffaf3c"
+        "commit": "2ec415cc8b24"
       }
     },
     {
@@ -64,7 +64,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "code": "GM-PAP-20261011154921",
+        "code": "GM-PAP-20261011185704",
         "account": "5195"
       }
     },
@@ -73,7 +73,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "code": "GM-TRA-20261011154921"
+        "code": "GM-TRA-20261011185704"
       }
     },
     {
@@ -131,7 +131,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "full_number": "APC-000004",
+        "full_number": "APC-000005",
         "balance": 800000
       }
     },
@@ -156,7 +156,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "full_number": "GM-000005",
+        "full_number": "GM-000008",
         "total": 228500,
         "line0_vat": 28500
       }
@@ -280,15 +280,15 @@
   "status": "passed",
   "fixture": {
     "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
-    "concept_id": 97,
-    "concept2_id": 98,
-    "box_id": 4,
-    "advance_id": 4,
-    "voucher_id": 4,
-    "voucher2_id": 5,
+    "concept_id": 99,
+    "concept2_id": 100,
+    "box_id": 5,
+    "advance_id": 5,
+    "voucher_id": 6,
+    "voucher2_id": 7,
     "note": "Datos dejados activos en el tenant piloto QA para inspeccion en la interfaz"
   },
   "checks_passed": 30,
   "checks_total": 30,
-  "finished_at": "2026-10-11T15:49:48.617Z"
+  "finished_at": "2026-10-11T18:57:31.877Z"
 }

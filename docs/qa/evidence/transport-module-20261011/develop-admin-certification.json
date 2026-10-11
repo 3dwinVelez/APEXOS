@@ -5,9 +5,9 @@
   "target_environment": "develop",
   "api_url": "https://apexos-api-qa-production.up.railway.app",
   "supabase_url": "https://jbirkghkekuifgfsgquq.supabase.co",
-  "api_commit": "37d5d5ffaf3c",
+  "api_commit": "2ec415cc8b24",
   "expected_commit": "unset",
-  "generated_at": "2026-10-11T15:58:43.043Z",
+  "generated_at": "2026-10-11T18:57:36.183Z",
   "admin": {
     "email": "admin@apexos.qa",
     "auth": "supabase-password-grant"
@@ -33,7 +33,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "commit": "37d5d5ffaf3c"
+        "commit": "2ec415cc8b24"
       }
     },
     {
@@ -63,7 +63,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 6
+        "id": 7
       }
     },
     {
@@ -71,7 +71,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 6,
+        "id": 7,
         "driver_status": "disponible"
       }
     },
@@ -80,7 +80,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 12
+        "id": 13
       }
     },
     {
@@ -88,7 +88,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 6
+        "id": 7
       }
     },
     {
@@ -96,8 +96,8 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "id": 53,
-        "plate": "T155843"
+        "id": 54,
+        "plate": "T185736"
       }
     },
     {
@@ -105,7 +105,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 5
+        "id": 6
       }
     },
     {
@@ -113,7 +113,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 5,
+        "id": 6,
         "need_status": "pendiente",
         "validation_errors": []
       }
@@ -123,7 +123,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 5
+        "id": 6
       }
     },
     {
@@ -131,7 +131,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "code": "TMS-PLAN-20261011155843"
+        "code": "TMS-PLAN-20261011185736"
       }
     },
     {
@@ -147,7 +147,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "id": 3,
+        "id": 4,
         "trip_status": "planificado"
       }
     },
@@ -156,7 +156,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "code": "TMS-VIA-20261011155843",
+        "code": "TMS-VIA-20261011185736",
         "trip_status": "asignado"
       }
     },
@@ -188,7 +188,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "total": 3
+        "total": 4
       }
     },
     {
@@ -218,8 +218,8 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "in_execution": 2,
-        "total": 3
+        "in_execution": 3,
+        "total": 4
       }
     },
     {
@@ -247,18 +247,18 @@
   "status": "passed",
   "fixture": {
     "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
-    "carrier_id": 6,
-    "driver_id": 6,
-    "delivery_point_id": 12,
-    "origin_id": 6,
-    "vehicle_id": 53,
-    "rate_card_id": 5,
-    "need_id": 5,
-    "plan_id": 5,
-    "trip_id": 3,
+    "carrier_id": 7,
+    "driver_id": 7,
+    "delivery_point_id": 13,
+    "origin_id": 7,
+    "vehicle_id": 54,
+    "rate_card_id": 6,
+    "need_id": 6,
+    "plan_id": 6,
+    "trip_id": 4,
     "note": "Datos dejados activos en el tenant piloto QA para inspeccion en la interfaz"
   },
   "checks_passed": 27,
   "checks_total": 27,
-  "finished_at": "2026-10-11T15:59:06.457Z"
+  "finished_at": "2026-10-11T18:57:59.010Z"
 }

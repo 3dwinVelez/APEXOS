@@ -1,0 +1,52 @@
+{
+  "change_id": "qa-sweep-fixes-20261011",
+  "environment": "LOCAL",
+  "generated_at": "2026-10-11T19:50:09.733Z",
+  "status": "passed",
+  "suites": {
+    "api": {
+      "label": "apps/api",
+      "tests": 593,
+      "pass": 591,
+      "fail": 0,
+      "failed": false
+    },
+    "web": {
+      "label": "apps/web",
+      "tests": 471,
+      "pass": 471,
+      "fail": 0,
+      "failed": false
+    }
+  },
+  "checks": [
+    {
+      "name": "purchases_vmi_alerts_sin_movimiento_no_lanza_500",
+      "suite": "api",
+      "status": "passed",
+      "evidence": "apps/api/test/purchases-vmi-alerts.test.js"
+    },
+    {
+      "name": "hr_malla_descanso_no_bloqueada_por_solapamiento",
+      "suite": "api",
+      "status": "passed",
+      "evidence": "apps/api/test/hr-route-assignment-lock.test.js"
+    },
+    {
+      "name": "web_breadcrumbs_sin_404_en_segmentos_intermedios",
+      "suite": "web",
+      "status": "passed",
+      "evidence": "apps/web/test/phase-two-intelligent-experience.test.mjs"
+    },
+    {
+      "name": "web_registro_funciones_cubre_rutas_de_nomina",
+      "suite": "web",
+      "status": "passed",
+      "evidence": "apps/web/test/command-palette-module-functions.test.mjs"
+    }
+  ],
+  "notes": [
+    "La suite de API se ejecuta con DISABLE_REDIS=true (req. de entorno del runner); offline-bootstrap exige Redis o DISABLE_REDIS.",
+    "La suite de web excluye los harness certify-*.mjs, que requieren un servidor vivo en 127.0.0.1:3001 (no son pruebas unitarias)."
+  ]
+}

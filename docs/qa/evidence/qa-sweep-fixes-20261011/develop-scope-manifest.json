@@ -1,0 +1,56 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "qa-sweep-fixes-20261011",
+  "base_commit": "2ec415cc8b247da07120a9ccfeead47f3df1903d",
+  "base_commits": {
+    "develop": "2ec415cc8b247da07120a9ccfeead47f3df1903d"
+  },
+  "certified_commit": "b2c082bf783db7bd2acf9f538a7fb30d9d71c425",
+  "change_intent": {
+    "summary": "Barrido de salud QA con el admin real sobre QA (transaction probe de 187 GET, recorrido headless de 77 rutas del dashboard, poblacion de Gastos Menores y Transporte). Corrige los hallazgos reales: 500 de GET /purchases/vmi-alerts sin proveedor de respaldo, 409 MALLA_SOLAPADA que bloqueaba mallas de descanso (regresion del injerto de Nomina ca529fde), 404 de breadcrumbs por enlaces a segmentos intermedios inexistentes y rutas de nomina sin registrar en el buscador de funciones. Repara tres pruebas estaticas obsoletas (drift de diseno, no de producto). Sin cambios de esquema ni de migraciones.",
+    "modules": ["purchases", "talento-humano", "web-shell", "command-palette", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/src/modules/purchases/service.js" },
+    { "status": "M", "file": "apps/api/test/hr-route-assignment-lock.test.js" },
+    { "status": "M", "file": "apps/api/test/inventory-transfer-product-list-ux.test.js" },
+    { "status": "M", "file": "apps/api/test/zero-friendly-number-input.test.js" },
+    { "status": "A", "file": "apps/api/test/purchases-vmi-alerts.test.js" },
+    { "status": "M", "file": "apps/web/components/shell/ContextBreadcrumbs.tsx" },
+    { "status": "M", "file": "apps/web/lib/moduleFunctions.ts" },
+    { "status": "M", "file": "apps/web/test/phase-two-intelligent-experience.test.mjs" },
+    { "status": "M", "file": "docs/qa/evidence/petty-cash-module-20261010/develop-admin-certification.json" },
+    { "status": "M", "file": "docs/qa/evidence/transport-module-20261011/develop-admin-certification.json" },
+    { "status": "A", "file": "scripts/certifications/qa-sweep-fixes-local.js" },
+    { "status": "A", "file": "docs/qa/evidence/qa-sweep-fixes-20261011/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/qa-sweep-fixes-20261011/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/qa-sweep-fixes-20261011/develop-preqa-evidence.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/purchases/service.js",
+    "apps/api/test/hr-route-assignment-lock.test.js",
+    "apps/api/test/inventory-transfer-product-list-ux.test.js",
+    "apps/api/test/zero-friendly-number-input.test.js",
+    "apps/api/test/purchases-vmi-alerts.test.js",
+    "apps/web/components/shell/ContextBreadcrumbs.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/phase-two-intelligent-experience.test.mjs",
+    "docs/qa/evidence/petty-cash-module-20261010/develop-admin-certification.json",
+    "docs/qa/evidence/transport-module-20261011/develop-admin-certification.json",
+    "scripts/certifications/qa-sweep-fixes-local.js",
+    "docs/qa/evidence/qa-sweep-fixes-20261011/local-certification.json",
+    "docs/qa/evidence/qa-sweep-fixes-20261011/develop-scope-manifest.json",
+    "docs/qa/evidence/qa-sweep-fixes-20261011/develop-preqa-evidence.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "compras_vmi_alerts_responde_200_aun_sin_proveedor_de_respaldo", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "talento_humano_malla_de_descanso_no_bloqueada_por_solapamiento", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "web_breadcrumbs_sin_404_en_segmentos_intermedios", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "command_palette_registra_rutas_de_nomina", "status": "passed", "evidence": ["local-certification.json"] },
+    { "name": "gastos_menores_regresion_en_develop_sin_errores", "status": "passed", "evidence": ["../petty-cash-module-20261010/develop-admin-certification.json"] },
+    { "name": "transporte_regresion_en_develop_sin_errores", "status": "passed", "evidence": ["../transport-module-20261011/develop-admin-certification.json"] }
+  ]
+}
