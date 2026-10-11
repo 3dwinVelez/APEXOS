@@ -1,11 +1,12 @@
 {
   "scope_schema_version": 2,
   "change_id": "petty-cash-500-fix-20261011",
-  "base_commit": "141f8c0ea2b42737e9dfc8d5a07ff4cfa38f2942",
+  "base_commit": "56b8f69190df35d596edd685c4137058def35d38",
   "base_commits": {
-    "develop": "141f8c0ea2b42737e9dfc8d5a07ff4cfa38f2942"
+    "develop": "56b8f69190df35d596edd685c4137058def35d38"
   },
   "certified_commit": "5e4325ad383577f9e084c4cd23870c8e8c0c30a1",
+  "rebaseline_note": "develop avanzo a 56b8f691 (promocion del modulo de Nomina, ajena a este cambio) despues de la primera validacion contra 141f8c0e. El candidato se re-baselina sobre 56b8f691: el diff neto del merge sigue siendo exactamente las 6 rutas de este manifiesto y no revierte el trabajo de Nomina.",
   "change_intent": {
     "summary": "Corrige el 500 de GET /petty-cash/advances y GET /petty-cash/vouchers en QA (PrismaClientValidationError: Unknown argument `_count`): el conteo viajaba como argumento de nivel superior de findMany y se mueve a include._count en listAdvances y listVouchers. No toca otros modulos ni el esquema: endurece el harness unitario y amplia la certificacion local con los listados que consume el web.",
     "modules": ["petty-cash", "qa-evidence"]
