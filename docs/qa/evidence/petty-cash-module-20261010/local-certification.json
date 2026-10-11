@@ -3,8 +3,8 @@
   "certification": "petty-cash-module-local",
   "environment": "LOCAL",
   "database_url_host": "postgresql://***@localhost:55432/apexos",
-  "generated_at": "2026-10-10T16:14:39.533Z",
-  "api_commit": "dd2f6c5c4d95",
+  "generated_at": "2026-10-11T16:31:18.756Z",
+  "api_commit": "5e4325ad3835",
   "api_url": "http://127.0.0.1:3212",
   "scope": {
     "capability": "Gastos Menores / Cajas Menores: maestros de conceptos de egreso y cajas menores con custodio y cuentas PUC 11xx/13xx, ciclo anticipo (APC) -> comprobante de gasto con IVA por linea y contabilizacion inmediata (GM) -> liquidacion con reintegro/faltante (LCM), anulacion con reversa contable y reporteria por caja/concepto (resumen agrupable, detalle paginado, ranking con % del tope mensual).",
@@ -17,6 +17,7 @@
       "POST /petty-cash/vouchers exige anticipo cuando la caja lo configura (ADVANCE_REQUIRED) y contabiliza GM inmediato: IVA por linea recalculado del maestro (los importes del cliente se ignoran), imputacion linea a linea al anticipo",
       "POST /petty-cash/advances/:id/liquidate SIN cuerpo liquida con reintegro por defecto = saldo (LCM)",
       "POST /petty-cash/vouchers/:id/cancel anula con reversa contable y restaura el saldo del anticipo; doble anulacion y anulacion con anticipo liquidado rechazadas",
+      "GET /petty-cash/vouchers?limit=1000 y GET /petty-cash/advances?status=open&limit=1000 responden 200 con lines_count/vouchers_count (contrato de las pantallas de gastos y anticipos; regresion del 500 por _count mal ubicado)",
       "GET /petty-cash/reports/summary agrupa por concepto con totales vouchers_count/lines_count/*_total",
       "GET /petty-cash/reports/detail pagina lineas con pagination.total y expone advance_full_number/advance_status",
       "GET /petty-cash/reports/boxes-ranking rankea cajas con % del tope mensual en mes unico",
@@ -39,7 +40,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "commit": "dd2f6c5c4d95"
+        "commit": "5e4325ad3835"
       }
     },
     {
@@ -119,7 +120,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "full_number": "APC-000007",
+        "full_number": "APC-000009",
         "balance": 500000
       }
     },
@@ -171,7 +172,7 @@
       "ok": true,
       "detail": {
         "status": 201,
-        "full_number": "GM-000014",
+        "full_number": "GM-000020",
         "total": 219000,
         "client_vat_ignored": 19000
       }
@@ -198,6 +199,40 @@
       "detail": {
         "applied": 219000,
         "balance": 281000
+      }
+    },
+    {
+      "name": "list_vouchers_returns_200_with_lines_count",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 14,
+        "lines_count": 2
+      }
+    },
+    {
+      "name": "list_vouchers_filters_by_concept_200",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 1
+      }
+    },
+    {
+      "name": "list_advances_returns_200_with_vouchers_count",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 9,
+        "vouchers_count": 1
+      }
+    },
+    {
+      "name": "list_advances_open_filter_200",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 3
       }
     },
     {
@@ -333,7 +368,7 @@
       "ok": true,
       "detail": {
         "status": 0,
-        "pass": "53",
+        "pass": "54",
         "fail": "0"
       }
     },
@@ -409,7 +444,7 @@
     }
   ],
   "status": "passed",
-  "checks_passed": 45,
-  "checks_total": 45,
-  "finished_at": "2026-10-10T16:15:29.766Z"
+  "checks_passed": 49,
+  "checks_total": 49,
+  "finished_at": "2026-10-11T16:31:28.861Z"
 }
