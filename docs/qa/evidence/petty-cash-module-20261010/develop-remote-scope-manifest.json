@@ -1,0 +1,31 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "petty-cash-develop-remote-cert-20261011",
+  "base_commit": "37d5d5ffaf3cbacb34956b694133040856fe8e85",
+  "base_commits": {
+    "develop": "37d5d5ffaf3cbacb34956b694133040856fe8e85"
+  },
+  "certified_commit": "9f0e431af7aeb984626b181b6cb3c565c5f48f0b",
+  "change_intent": {
+    "summary": "Anexo de certificacion en develop del modulo Gastos Menores: script de certificacion remota (API desplegada en Railway QA contra la base real de Supabase QA) y su evidencia versionada 33/33. No toca codigo de aplicacion ni otros modulos; solo agrega el arnes de prueba y su evidencia.",
+    "modules": ["petty-cash", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "scripts/certifications/petty-cash-develop-remote.js" },
+    { "status": "A", "file": "docs/qa/evidence/petty-cash-module-20261010/develop-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/petty-cash-module-20261010/develop-remote-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/petty-cash-module-20261010/develop-remote-preqa-evidence.json" }
+  ],
+  "allowed_paths": [
+    "scripts/certifications/petty-cash-develop-remote.js",
+    "docs/qa/evidence/petty-cash-module-20261010/develop-certification.json",
+    "docs/qa/evidence/petty-cash-module-20261010/develop-remote-scope-manifest.json",
+    "docs/qa/evidence/petty-cash-module-20261010/develop-remote-preqa-evidence.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "gastos_menores_end_to_end_en_develop_api_real_y_base_supabase_qa", "status": "passed", "evidence": ["develop-certification.json"] },
+    { "name": "integracion_gastos_menores_contabilidad_apc_gm_lcm_y_reversa_en_develop", "status": "passed", "evidence": ["develop-certification.json"] },
+    { "name": "sesion_real_api_develop_con_administrador_desechable_creado_y_eliminado", "status": "passed", "evidence": ["develop-certification.json"] }
+  ]
+}
