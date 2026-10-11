@@ -23,11 +23,11 @@
     "evidence": ["../transport-module-20261011/develop-admin-certification.json"]
   },
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "scope": "promotion_to_develop_for_qa",
-    "approved_by": null,
-    "approved_at": null,
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa: 'procede'",
+    "approved_at": "2026-10-11T11:49:26-05:00",
     "main_release": "pending_develop_deploy_and_qa",
-    "note": "Bloqueado a la espera de autorizacion explicita del lead para promover desarrollo -> develop (merge + push) y redesplegar QA, conforme a AGENTS.md."
+    "note": "Autorizada la promocion desarrollo -> develop (merge + push) y el redespliegue de QA para aplicar el fix del 500 en los listados de Gastos Menores."
   }
 }
