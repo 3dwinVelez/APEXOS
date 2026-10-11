@@ -1,0 +1,35 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "petty-cash-500-fix-20261011",
+  "base_commit": "141f8c0ea2b42737e9dfc8d5a07ff4cfa38f2942",
+  "base_commits": {
+    "develop": "141f8c0ea2b42737e9dfc8d5a07ff4cfa38f2942"
+  },
+  "certified_commit": "5e4325ad383577f9e084c4cd23870c8e8c0c30a1",
+  "change_intent": {
+    "summary": "Corrige el 500 de GET /petty-cash/advances y GET /petty-cash/vouchers en QA (PrismaClientValidationError: Unknown argument `_count`): el conteo viajaba como argumento de nivel superior de findMany y se mueve a include._count en listAdvances y listVouchers. No toca otros modulos ni el esquema: endurece el harness unitario y amplia la certificacion local con los listados que consume el web.",
+    "modules": ["petty-cash", "qa-evidence"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/petty-cash/service.js" },
+    { "status": "M", "file": "apps/api/test/petty-cash-vouchers.test.js" },
+    { "status": "M", "file": "scripts/certifications/petty-cash-module-local.js" },
+    { "status": "M", "file": "docs/qa/evidence/petty-cash-module-20261010/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/petty-cash-500-fix-20261011/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/petty-cash-500-fix-20261011/develop-preqa-evidence.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/petty-cash/service.js",
+    "apps/api/test/petty-cash-vouchers.test.js",
+    "scripts/certifications/petty-cash-module-local.js",
+    "docs/qa/evidence/petty-cash-module-20261010/local-certification.json",
+    "docs/qa/evidence/petty-cash-500-fix-20261011/develop-scope-manifest.json",
+    "docs/qa/evidence/petty-cash-500-fix-20261011/develop-preqa-evidence.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "gastos_menores_listados_de_anticipos_y_gastos_responden_200_con_conteo", "status": "passed", "evidence": ["../petty-cash-module-20261010/local-certification.json"] },
+    { "name": "gastos_menores_flujo_end_to_end_local_sin_regresion", "status": "passed", "evidence": ["../petty-cash-module-20261010/local-certification.json"] },
+    { "name": "gastos_menores_contrato_json_de_listados_estable", "status": "passed", "evidence": ["../petty-cash-module-20261010/local-certification.json"] }
+  ]
+}
