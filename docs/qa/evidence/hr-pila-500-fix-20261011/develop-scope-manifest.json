@@ -1,0 +1,90 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-pila-500-fix-20261011",
+  "base_commit": "28038ee60b90641fba87a275c928cdf124c5410e",
+  "base_commits": {
+    "develop": "28038ee60b90641fba87a275c928cdf124c5410e"
+  },
+  "certified_commit": "010856527aed5e9c44a78364fd7ba6d66ac9f792",
+  "change_intent": {
+    "summary": "Corrige el 500 (Prisma P2028 Transaction not found) del persist de aportes sociales PILA en QA: el INSERT por linea dentro de la transaccion interactiva superaba el timeout por defecto de Prisma por la latencia del pooler (~190 lineas x ~30ms). Se inserta por lotes multi-VALUES de 500 filas, se amplia el timeout de las transacciones de nomina (aportes, provisiones de prestaciones, pagos de prestaciones, liquidacion) a 30s y se envuelve buildSocialContributionRows en runWithTenant en el flujo de escritura para conservar el filtro de tenant de la consulta de empleados. Validado contra Postgres real: 960 lineas en <1s en los caminos INSERT, ON CONFLICT y recalculate. Sin cambios de esquema ni de migraciones.",
+    "modules": [
+      "talento-humano",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-social-contributions-bulk.test.js"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/qa-sweep-fixes-20261011/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-pila-500-fix-20261011/develop-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-pila-500-fix-20261011/develop-preqa-evidence.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-payroll-social-contributions-bulk.test.js",
+    "docs/qa/evidence/qa-sweep-fixes-20261011/local-certification.json",
+    "docs/qa/evidence/hr-pila-500-fix-20261011/develop-scope-manifest.json",
+    "docs/qa/evidence/hr-pila-500-fix-20261011/develop-preqa-evidence.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "aportes_pila_persiste_960_lineas_por_lotes_sin_p2028",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "provisiones_prestaciones_inserta_saldos_en_lote_unico",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "flujo_escritura_pila_consulta_empleados_dentro_contexto_tenant",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "talento_humano_malla_de_descanso_no_bloqueada_por_solapamiento",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_regresion_en_develop_sin_errores",
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json"
+      ]
+    },
+    {
+      "name": "transporte_regresion_en_develop_sin_errores",
+      "status": "passed",
+      "evidence": [
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  ]
+}
