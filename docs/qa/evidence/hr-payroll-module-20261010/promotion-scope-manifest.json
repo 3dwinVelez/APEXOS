@@ -6,7 +6,7 @@
   },
   "certified_commit": "ca529fde",
   "change_intent": {
-    "summary": "Injertar el modulo de nomina (971d2eba) sobre develop (ee6fb94a) como capa aditiva, conservando marcaciones y transporte de develop.",
+    "summary": "Injertar el modulo de nomina (971d2eba) sobre develop (ee6fb94a) como capa aditiva, conservando marcaciones y transporte de develop; incluye el selector de jornada trabajo/descanso (kind) en la pagina de rutas.",
     "modules": [
       "hr/nomina",
       "hr/marcaciones",
@@ -254,6 +254,14 @@
     },
     {
       "name": "rbac_y_aislamiento_tenant",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression.md"
+      ]
+    },
+    {
+      "name": "marcaciones_descanso_kind_rutas",
       "status": "passed",
       "evidence": [
         "local-certification.json",
