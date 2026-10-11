@@ -1,0 +1,322 @@
+{
+  "change_id": "petty-cash-module-20261010",
+  "certification": "petty-cash-module-develop-remote",
+  "environment": "QA",
+  "target_environment": "develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "supabase_url": "https://jbirkghkekuifgfsgquq.supabase.co",
+  "api_commit": "37d5d5ffaf3c",
+  "expected_commit": "37d5d5ffaf3c",
+  "generated_at": "2026-10-11T15:23:45.025Z",
+  "tenant": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "name": "Cliente Piloto QA",
+    "custodian_party_id": 7
+  },
+  "provisioned_admin": {
+    "email": "qa.pettycash.20261011152345@apexos.qa",
+    "user_table": "User(role_id=1)",
+    "deactivated": true
+  },
+  "scope": {
+    "capability": "Gastos Menores end-to-end en develop: API desplegada (Railway) contra base real de Supabase QA, con integracion contable (APC/GM/LCM + reversa) y autenticacion Supabase real.",
+    "proven_by_live_execution": [
+      "Sesion real: administrador desechable creado en la base QA (rol APEX_ADMIN del tenant) y autenticado por /api/v1/auth/login; /petty-cash/boxes anonimo responde 401",
+      "Maestros: conceptos de egreso con cuenta PUC de gasto y cajas menores con custodio/11xx/13xx persistidos en la base QA",
+      "Anticipos APC contabilizados en el mayor QA (debito 1330 / credito 1105) con tope mensual y candado por anticipo abierto",
+      "Comprobantes GM con IVA por linea (recalculo del maestro) e imputacion al anticipo, contabilizados de inmediato",
+      "Reporteria por caja/concepto (resumen, detalle paginado, ranking con % del tope) sobre los datos persistidos",
+      "Liquidacion LCM sin cuerpo (reintegro por defecto) y anulacion con reversa contable",
+      "Administrador de certificacion eliminado de Supabase al final (auth user + company_users)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "develop_health_and_commit",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "37d5d5ffaf3c",
+        "expected": "37d5d5ffaf3c"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "certification_admin_provisioned",
+      "ok": true,
+      "detail": {
+        "user_id_suffix": "599"
+      }
+    },
+    {
+      "name": "admin_login_and_tenant_resolution",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "tenant_id": "c56bc5df-c807-4deb-83f8-fbb4751be613"
+      }
+    },
+    {
+      "name": "concept_created_with_expense_account",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "account_code": "5195"
+      }
+    },
+    {
+      "name": "concept_duplicate_code_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "CONCEPT_CODE_TAKEN"
+      }
+    },
+    {
+      "name": "concept_non_expense_account_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "CONCEPT_ACCOUNT_INVALID"
+      }
+    },
+    {
+      "name": "box_created_ready_for_advances",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "ready": true,
+        "warnings": 0,
+        "custodian": 7
+      }
+    },
+    {
+      "name": "box_non_cash_asset_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "BOX_ACCOUNT_INVALID"
+      }
+    },
+    {
+      "name": "advance_created_and_accounted",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "APC-000001",
+        "balance": 500000
+      }
+    },
+    {
+      "name": "advance_zero_amount_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "ADVANCE_AMOUNT_INVALID"
+      }
+    },
+    {
+      "name": "advance_over_monthly_limit_blocked",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "ADVANCE_EXCEEDS_MONTHLY_LIMIT"
+      }
+    },
+    {
+      "name": "box_advance_policy_configurable",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "require_advance": true,
+        "block": true
+      }
+    },
+    {
+      "name": "advance_blocked_while_previous_open",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ADVANCE_ALREADY_OPEN"
+      }
+    },
+    {
+      "name": "voucher_requires_advance_when_configured",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "ADVANCE_REQUIRED"
+      }
+    },
+    {
+      "name": "voucher_created_and_accounted_with_line_vat",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "GM-000001",
+        "total": 219000,
+        "client_vat_ignored": 19000
+      }
+    },
+    {
+      "name": "voucher_unknown_vat_code_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VAT_MASTER_NOT_FOUND"
+      }
+    },
+    {
+      "name": "advance_balance_after_voucher",
+      "ok": true,
+      "detail": {
+        "applied": 219000,
+        "balance": 281000
+      }
+    },
+    {
+      "name": "report_summary_groups_by_concept",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 1,
+        "total": 219000
+      }
+    },
+    {
+      "name": "report_detail_paginates_lines",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "total": 2,
+        "advance_status": "open"
+      }
+    },
+    {
+      "name": "report_boxes_ranking_with_monthly_limit_pct",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "single_month": "2026-10",
+        "limit_pct": 21.9
+      }
+    },
+    {
+      "name": "report_month_without_year_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "REPORT_FILTER_INVALID"
+      }
+    },
+    {
+      "name": "voucher_cancelled_with_accounting_reversal",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "reversal": true
+      }
+    },
+    {
+      "name": "advance_balance_restored_after_cancel",
+      "ok": true,
+      "detail": {
+        "applied": 0,
+        "balance": 500000
+      }
+    },
+    {
+      "name": "voucher_double_cancel_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "VOUCHER_ALREADY_CANCELLED"
+      }
+    },
+    {
+      "name": "report_excludes_cancelled_by_default",
+      "ok": true,
+      "detail": {
+        "total": 0,
+        "rows": 0
+      }
+    },
+    {
+      "name": "second_voucher_applies_remaining_advance",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "total": 100000,
+        "applied": 100000
+      }
+    },
+    {
+      "name": "advance_liquidated_bodyless_default_refund",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "refund": 400000,
+        "shortfall": 0
+      }
+    },
+    {
+      "name": "advance_reliquidation_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "ADVANCE_NOT_OPEN"
+      }
+    },
+    {
+      "name": "cancel_voucher_with_liquidated_advance_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "VOUCHER_ADVANCE_LIQUIDATED"
+      }
+    },
+    {
+      "name": "final_report_reflects_live_state",
+      "ok": true,
+      "detail": {
+        "summary_total": 100000,
+        "detail_total": 1,
+        "advance_status": "liquidated",
+        "ranking_limit_pct": 10
+      }
+    },
+    {
+      "name": "qa_masters_deactivated_after_run",
+      "ok": true,
+      "detail": {
+        "box": 200,
+        "concept": 200
+      }
+    },
+    {
+      "name": "certification_admin_deprovisioned",
+      "ok": true,
+      "detail": {
+        "email": "qa.pettycash.20261011152345@apexos.qa"
+      }
+    }
+  ],
+  "status": "passed",
+  "fixture": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "concept_id": 92,
+    "box_id": 1,
+    "advance_id": 1,
+    "voucher_id": 1,
+    "voucher2_id": 2
+  },
+  "checks_passed": 33,
+  "checks_total": 33,
+  "finished_at": "2026-10-11T15:24:19.478Z"
+}
