@@ -5442,7 +5442,7 @@ async function runPayrollLiquidation(tenantId, input = {}, user = {}) {
       documents.push(inserted[0]);
     }
     return { ok: true, period_key: rows[0]?.period_key || null, documents: documents.length };
-  }));
+  }, PAYROLL_BATCH_TRANSACTION_OPTIONS));
 }
 
 // Nombre legible de cada concepto segun su codigo interno (para el reporte), en vez de la
@@ -6707,8 +6707,31 @@ async function previewSocialContributions(tenantId, input = {}) {
   return prisma.runWithTenant(tenantId, async () => ({ mode: "preview", document: await buildSocialContributionRows(tenantId, input) }));
 }
 
+// Los despliegues remotos hablan con la base por pooler (~30ms por query): un INSERT por
+// linea dentro de la transaccion interactiva supera el timeout por defecto de Prisma y
+// falla con P2028 "Transaction not found" (~190 lineas alcanzan los 5s). Se inserta por
+// lotes multi-VALUES y se amplía el timeout de las transacciones de nomina.
+const PAYROLL_BATCH_TRANSACTION_OPTIONS = { maxWait: 10000, timeout: 30000 };
+const PAYROLL_LINE_INSERT_CHUNK = 500; // 500 filas x 14 parametros = 7000 < 65535 (tope Postgres)
+
+function socialContributionLineValues(tenantId, documentId, line) {
+  return Prisma.sql`(${tenantId}, ${documentId}, ${line.employee_id}, ${line.entity_type}, ${line.entity_id}, ${line.concept_code}, ${line.concept_name}, ${line.ibc}, ${line.employee_percent}, ${line.employer_percent}, ${line.employee_amount}, ${line.employer_amount}, ${line.total_amount}, ${JSON.stringify(line.metadata)}::jsonb)`;
+}
+
+async function insertSocialContributionLines(tx, tenantId, documentId, lines = []) {
+  for (let index = 0; index < lines.length; index += PAYROLL_LINE_INSERT_CHUNK) {
+    const chunk = lines.slice(index, index + PAYROLL_LINE_INSERT_CHUNK);
+    await tx.$executeRaw`
+      INSERT INTO th_aportes_sociales_lineas (tenant_id, document_id, employee_id, entity_type, entity_id, concept_code, concept_name, ibc, employee_percent, employer_percent, employee_amount, employer_amount, total_amount, metadata)
+      VALUES ${Prisma.join(chunk.map((line) => socialContributionLineValues(tenantId, documentId, line)))}
+    `;
+  }
+}
+
 async function runSocialContributions(tenantId, input = {}, user = {}) {
-  const document = await buildSocialContributionRows(tenantId, input);
+  // buildSocialContributionRows consulta Employee sin filtro propio: debe correr dentro del
+  // contexto de tenant (igual que preview) para no mezclar empleados de otros tenants.
+  const document = await prisma.runWithTenant(tenantId, () => buildSocialContributionRows(tenantId, input));
   await assertPayrollPeriodOpen(tenantId, document.period_key);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     if (input.recalculate === true || input.recalculate === "true") await tx.$executeRaw`DELETE FROM th_aportes_sociales_documentos WHERE tenant_id = ${tenantId} AND period_key = ${document.period_key}`;
@@ -6721,14 +6744,9 @@ async function runSocialContributions(tenantId, input = {}, user = {}) {
     `;
     const doc = rows[0];
     await tx.$executeRaw`DELETE FROM th_aportes_sociales_lineas WHERE tenant_id = ${tenantId} AND document_id = ${doc.id}`;
-    for (const line of document.lines) {
-      await tx.$executeRaw`
-        INSERT INTO th_aportes_sociales_lineas (tenant_id, document_id, employee_id, entity_type, entity_id, concept_code, concept_name, ibc, employee_percent, employer_percent, employee_amount, employer_amount, total_amount, metadata)
-        VALUES (${tenantId}, ${doc.id}, ${line.employee_id}, ${line.entity_type}, ${line.entity_id}, ${line.concept_code}, ${line.concept_name}, ${line.ibc}, ${line.employee_percent}, ${line.employer_percent}, ${line.employee_amount}, ${line.employer_amount}, ${line.total_amount}, ${JSON.stringify(line.metadata)}::jsonb)
-      `;
-    }
+    await insertSocialContributionLines(tx, tenantId, doc.id, document.lines);
     return { ok: true, document: doc, lines: document.lines.length };
-  }));
+  }, PAYROLL_BATCH_TRANSACTION_OPTIONS));
 }
 
 async function listSocialContributionDocuments(tenantId, query = {}) {
@@ -6853,22 +6871,23 @@ async function runSocialBenefitProvisions(tenantId, input = {}, user = {}) {
         AND period_key = ${document.period_key}
         AND source_document_type = 'provision'
     `;
-    for (const line of document.lines) {
+    for (let index = 0; index < document.lines.length; index += PAYROLL_LINE_INSERT_CHUNK) {
+      const chunk = document.lines.slice(index, index + PAYROLL_LINE_INSERT_CHUNK);
       await tx.$executeRaw`
         INSERT INTO th_prestaciones_saldos (
           tenant_id, employee_id, concept_code, period_key, date_start, date_end, accrued_amount, paid_amount, balance_amount, source_document_type, source_document_id, metadata
         )
-        VALUES (
+        VALUES ${Prisma.join(chunk.map((line) => Prisma.sql`(
           ${tenantId}, ${line.employee_id}, ${line.code}, ${document.period_key}, ${document.date_start}::date, ${document.date_end}::date,
           ${Number(line.amount || 0)}, 0, ${Number(line.amount || 0)}, 'provision', ${line.payroll_document_id || null},
           ${JSON.stringify({ source: "provision_prestaciones_sociales", provisioned_by: user?.id || null, quantity: line.quantity, employee_name: line.employee_name })}::jsonb
-        )
+        )`))}
         ON CONFLICT (tenant_id, employee_id, concept_code, period_key)
         DO UPDATE SET accrued_amount = EXCLUDED.accrued_amount, paid_amount = 0, balance_amount = EXCLUDED.balance_amount, source_document_type = 'provision', source_document_id = EXCLUDED.source_document_id, metadata = EXCLUDED.metadata, updated_at = now()
       `;
     }
     return { ok: true, ...document, provisioned_lines: document.lines.length };
-  }));
+  }, PAYROLL_BATCH_TRANSACTION_OPTIONS));
 }
 
 const SOCIAL_BENEFIT_PAYMENT_TYPES = {
@@ -6992,7 +7011,7 @@ async function runSocialBenefitPayments(tenantId, input = {}, user = {}) {
       `;
     }
     return { ok: true, ...preview, document_id: doc.id };
-  }));
+  }, PAYROLL_BATCH_TRANSACTION_OPTIONS));
 }
 
 async function reverseSocialBenefitPaymentDocument(tx, tenantId, documentId) {

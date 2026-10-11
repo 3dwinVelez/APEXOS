@@ -1,13 +1,13 @@
 {
   "change_id": "qa-sweep-fixes-20261011",
   "environment": "LOCAL",
-  "generated_at": "2026-10-11T19:50:09.733Z",
+  "generated_at": "2026-10-11T20:22:08.158Z",
   "status": "passed",
   "suites": {
     "api": {
       "label": "apps/api",
-      "tests": 593,
-      "pass": 591,
+      "tests": 596,
+      "pass": 594,
       "fail": 0,
       "failed": false
     },

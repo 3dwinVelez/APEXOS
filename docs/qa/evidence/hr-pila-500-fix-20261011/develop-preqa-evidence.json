@@ -1,0 +1,62 @@
+{
+  "change_id": "hr-pila-500-fix-20261011",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "010856527aed5e9c44a78364fd7ba6d66ac9f792",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../qa-sweep-fixes-20261011/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../qa-sweep-fixes-20261011/local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../qa-sweep-fixes-20261011/local-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../qa-sweep-fixes-20261011/local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json",
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/qa-sweep-fixes-local.js",
+    "evidence": [
+      "../qa-sweep-fixes-20261011/local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/qa-sweep-fixes-local.js",
+    "evidence": [
+      "../qa-sweep-fixes-20261011/local-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa vigente: 'lo actualizas hasta develop en sus ramas remotas' (barrido QA: lo que encuentres arreglalo)",
+    "approved_at": "2026-10-11T21:05:00-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}
