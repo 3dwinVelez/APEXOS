@@ -2,11 +2,11 @@
   "scope_schema_version": 2,
   "change_id": "hr-payroll-module-graft-20261010",
   "base_commits": {
-    "develop": "ee6fb94a9c54e255db0afc2c6f4592e8210b6dbb"
+    "develop": "141f8c0ea2b42737e9dfc8d5a07ff4cfa38f2942"
   },
   "certified_commit": "ca529fde",
   "change_intent": {
-    "summary": "Injertar el modulo de nomina (971d2eba) sobre develop (ee6fb94a) como capa aditiva, conservando marcaciones y transporte de develop; incluye el selector de jornada trabajo/descanso (kind) en la pagina de rutas.",
+    "summary": "Injertar el modulo de nomina (971d2eba) sobre develop (ee6fb94a) como capa aditiva, conservando marcaciones y transporte de develop; incluye el selector de jornada trabajo/descanso (kind) en la pagina de rutas. Reintegrado sobre develop 141f8c0e (gastos menores + transporte) por merge sin conflictos.",
     "modules": [
       "hr/nomina",
       "hr/marcaciones",
