@@ -204,7 +204,11 @@ function rateIsValidOn(rate, date) {
 
 function rateMatchesContext(rate, context) {
   if (rate.carrier_id != null && context.carrier_id != null && numberValue(rate.carrier_id) !== numberValue(context.carrier_id)) return false;
+  if (rate.origin_department && context.origin_department && normalizeMatch(rate.origin_department) !== normalizeMatch(context.origin_department)) return false;
+  if (rate.origin_city && context.origin_city && normalizeMatch(rate.origin_city) !== normalizeMatch(context.origin_city)) return false;
+  if (rate.origin_municipality && context.origin_municipality && normalizeMatch(rate.origin_municipality) !== normalizeMatch(context.origin_municipality)) return false;
   if (rate.destination_city && context.destination_city && normalizeMatch(rate.destination_city) !== normalizeMatch(context.destination_city)) return false;
+  if (rate.destination_municipality && context.destination_municipality && normalizeMatch(rate.destination_municipality) !== normalizeMatch(context.destination_municipality)) return false;
   if (rate.destination_department && context.destination_department && normalizeMatch(rate.destination_department) !== normalizeMatch(context.destination_department)) return false;
   if (rate.vehicle_type && context.vehicle_type && normalizeMatch(rate.vehicle_type) !== normalizeMatch(context.vehicle_type)) return false;
   if (rate.service_level && context.service_level && normalizeMatch(rate.service_level) !== normalizeMatch(context.service_level)) return false;
@@ -215,7 +219,7 @@ function rateMatchesContext(rate, context) {
 // Nunca asume valor cero ni elige en silencio entre tarifas de igual prioridad.
 function resolveRate(candidates, context = {}) {
   const serviceDate = toDate(context.service_date) || new Date();
-  const trace = { context: { carrier_id: context.carrier_id ?? null, service_date: serviceDate.toISOString(), destination_city: context.destination_city ?? null, vehicle_type: context.vehicle_type ?? null, service_level: context.service_level ?? null }, evaluated: [], rejected: [] };
+  const trace = { context: { carrier_id: context.carrier_id ?? null, service_date: serviceDate.toISOString(), origin_department: context.origin_department ?? null, origin_city: context.origin_city ?? null, origin_municipality: context.origin_municipality ?? null, destination_city: context.destination_city ?? null, destination_department: context.destination_department ?? null, destination_municipality: context.destination_municipality ?? null, vehicle_type: context.vehicle_type ?? null, service_level: context.service_level ?? null }, evaluated: [], rejected: [] };
 
   const active = (candidates || []).filter((rate) => normalizeMatch(rate.status) === "activa" && rate.active !== false);
   for (const rate of candidates || []) {

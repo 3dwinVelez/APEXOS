@@ -53,6 +53,7 @@ const moduleCodeBySlug: Record<string, string> = {
   devoluciones: "devoluciones",
   facturacion: "facturacion",
   "facturacion-electronica": "facturacion_electronica",
+  "gastos-menores": "gastos_menores",
   "configuracion-inicial": "configuracion_inicial",
   inventario: "inventario",
   reportes: "apex_heart",
@@ -86,6 +87,7 @@ const permissionModulesBySlug: Record<string, string[]> = {
   cxc: ["accounts-receivable", "accounting"],
   crm: ["customers", "sales"],
   "comercio-exterior": ["imports", "exports"],
+  "gastos-menores": ["accounting"],
   tesoreria: ["treasury", "accounting"]
 };
 
@@ -105,6 +107,7 @@ const legacyPermissionKeysBySlug: Record<string, string[]> = {
   cxc: ["cxc", "contabilidad", "facturacion"],
   crm: ["clientes", "ventas"],
   "comercio-exterior": ["importaciones"],
+  "gastos-menores": ["gastos_menores", "contabilidad"],
   tesoreria: ["tesoreria", "contabilidad"]
 };
 

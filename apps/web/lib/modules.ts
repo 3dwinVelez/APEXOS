@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   Truck,
   Users,
+  Wallet,
   Wrench
 } from "lucide-react";
 
@@ -360,6 +361,17 @@ export const MODULES: ApexModule[] = [
     capabilities: ["Mi día", "Visitas", "Clientes", "Cotizaciones y pedidos", "Reportes gerenciales"],
     nextActions: ["Programar visita", "Abrir Mi día", "Consultar oportunidades"],
     icon: ContactRound
+  },
+  {
+    id: "M-29",
+    slug: "gastos-menores",
+    name: "Gastos Menores",
+    area: "Finanzas",
+    status: "Base funcional",
+    summary: "Cajas menores con conceptos de egreso, anticipos al custodio y comprobantes de gasto contabilizados al momento.",
+    capabilities: ["Conceptos de egreso", "Cajas y custodios", "Anticipos y liquidación", "Comprobante contable GM"],
+    nextActions: ["Configurar conceptos", "Crear caja menor", "Registrar gasto"],
+    icon: Wallet
   }
 ];
 
