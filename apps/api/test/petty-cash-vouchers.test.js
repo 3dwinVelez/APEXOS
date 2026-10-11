@@ -230,6 +230,17 @@ function createHarness(initial = {}) {
     const failure = failures.get(op);
     if (failure) throw failure;
   };
+  // Prisma 5 rechaza `_count` como argumento de nivel superior en findMany/findFirst
+  // ("Unknown argument `_count`"): solo es valido dentro de include/select. El harness lo
+  // replica para que la suposicion erronea falle aqui en lugar de en produccion.
+  const rejectTopLevelCount = (op, args) => {
+    if (args && Object.prototype.hasOwnProperty.call(args, "_count")) {
+      const error = new Error(`Unknown argument \`_count\` on ${op}; did you mean to place it inside \`include\`?`);
+      error.name = "PrismaClientValidationError";
+      error.code = "P2009";
+      throw error;
+    }
+  };
 
   function select(row, args) {
     if (!row) return row;
@@ -255,7 +266,7 @@ function createHarness(initial = {}) {
         return copy;
       });
     }
-    if (args?._count?.select?.vouchers) out._count = { vouchers: store.vouchers.filter((voucher) => voucher.advance_id === row.id).length };
+    if (include._count?.select?.vouchers) out._count = { vouchers: store.vouchers.filter((voucher) => voucher.advance_id === row.id).length };
     return out;
   }
 
@@ -265,7 +276,7 @@ function createHarness(initial = {}) {
     if (include.box) out.box = store.boxes.find((box) => box.id === row.box_id) || null;
     if (include.advance) out.advance = store.advances.find((advance) => advance.id === row.advance_id) || null;
     if (include.lines) out.lines = applyOrderBy(store.lines.filter((line) => line.voucher_id === row.id), include.lines.orderBy).map((line) => ({ ...line }));
-    if (args?._count?.select?.lines) out._count = { lines: store.lines.filter((line) => line.voucher_id === row.id).length };
+    if (include._count?.select?.lines) out._count = { lines: store.lines.filter((line) => line.voucher_id === row.id).length };
     return out;
   }
 
@@ -318,12 +329,14 @@ function createHarness(initial = {}) {
     },
     pettyCashAdvance: {
       findFirst: async (args) => {
+        rejectTopLevelCount("pettyCashAdvance.findFirst", args);
         record("pettyCashAdvance.findFirst", { where: args.where, include: args.include });
         guard("pettyCashAdvance.findFirst");
         const row = applyOrderBy(store.advances.filter((item) => matchesWhere(item, args.where)), args.orderBy)[0];
         return row ? attachAdvance(row, args) : null;
       },
       findMany: async (args) => {
+        rejectTopLevelCount("pettyCashAdvance.findMany", args);
         record("pettyCashAdvance.findMany", { where: args.where, include: args.include, orderBy: args.orderBy, take: args.take, skip: args.skip });
         guard("pettyCashAdvance.findMany");
         const rows = applyOrderBy(store.advances.filter((item) => matchesWhere(item, args.where)), args.orderBy);
@@ -347,13 +360,15 @@ function createHarness(initial = {}) {
     },
     pettyCashVoucher: {
       findFirst: async (args) => {
+        rejectTopLevelCount("pettyCashVoucher.findFirst", args);
         record("pettyCashVoucher.findFirst", { where: args.where, include: args.include });
         guard("pettyCashVoucher.findFirst");
         const row = applyOrderBy(store.vouchers.filter((item) => matchesWhere(item, args.where)), args.orderBy)[0];
         return row ? attachVoucher(row, args) : null;
       },
       findMany: async (args) => {
-        record("pettyCashVoucher.findMany", { where: args.where, orderBy: args.orderBy, take: args.take, skip: args.skip });
+        rejectTopLevelCount("pettyCashVoucher.findMany", args);
+        record("pettyCashVoucher.findMany", { where: args.where, include: args.include, orderBy: args.orderBy, take: args.take, skip: args.skip });
         guard("pettyCashVoucher.findMany");
         const rows = applyOrderBy(store.vouchers.filter((item) => matchesWhere(item, args.where)), args.orderBy);
         return rows.slice(args.skip || 0, (args.skip || 0) + (args.take || rows.length)).map((row) => attachVoucher(row, args));
@@ -1435,7 +1450,13 @@ test("GET /advances lista con filtros de caja, estado y rango de fechas sin N+1 
     assert.equal(paged[0].id, 22);
     const query = context.calls.find((call) => call.op === "pettyCashAdvance.findFirst");
     assert.equal(query, undefined);
-    assert.ok(context.calls.some((call) => call.op === "pettyCashAdvance.findMany"));
+    const listCall = context.calls.find((call) => call.op === "pettyCashAdvance.findMany");
+    assert.ok(listCall, "la lista se resuelve con findMany");
+    // Regresion: el conteo de comprobantes debe viajar DENTRO de include. Pasarlo como
+    // argumento de nivel superior de findMany hace que Prisma lance
+    // "Unknown argument `_count`" y el endpoint responda 500 (incidente QA 2026-10-11).
+    assert.ok(listCall.include?._count?.select?.vouchers, "_count de vouchers dentro de include");
+    assert.equal(Object.prototype.hasOwnProperty.call(listCall, "_count"), false, "_count nunca al nivel superior");
   } finally { context.restore(); }
 });
 
@@ -1520,6 +1541,25 @@ test("GET /vouchers filtra por caja, anticipo, concepto, periodo, estado y fecha
     assert.equal((await context.service.listVouchers("t-1", { date_from: "2026-03-01", date_to: "2026-03-31" })).length, 2);
     const conceptQuery = context.calls.filter((call) => call.op === "pettyCashVoucher.findMany").find((call) => call.where.lines);
     assert.deepEqual(conceptQuery.where.lines, { some: { concept_code: "PEAJE" } });
+    // Regresion: lines_count se obtiene con _count dentro de include, no como argumento superior.
+    const listCall = context.calls.find((call) => call.op === "pettyCashVoucher.findMany");
+    assert.ok(listCall.include?._count?.select?.lines, "_count de lineas dentro de include");
+    assert.equal(Object.prototype.hasOwnProperty.call(listCall, "_count"), false, "_count nunca al nivel superior");
+  } finally { context.restore(); }
+});
+
+test("el harness rechaza un _count de nivel superior igual que Prisma (regresion 500 QA)", async () => {
+  const context = setup();
+  try {
+    // Simula la firma que produjo el 500: findMany({ where, _count: {...} }).
+    await assert.rejects(
+      context.db.pettyCashVoucher.findMany({ where: {}, _count: { select: { lines: true } } }),
+      (error) => error.name === "PrismaClientValidationError" && /_count/.test(error.message)
+    );
+    await assert.rejects(
+      context.db.pettyCashAdvance.findMany({ where: {}, _count: { select: { vouchers: true } } }),
+      (error) => error.name === "PrismaClientValidationError" && /_count/.test(error.message)
+    );
   } finally { context.restore(); }
 });
 

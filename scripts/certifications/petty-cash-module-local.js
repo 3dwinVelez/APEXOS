@@ -93,6 +93,7 @@ const result = {
       "POST /petty-cash/vouchers exige anticipo cuando la caja lo configura (ADVANCE_REQUIRED) y contabiliza GM inmediato: IVA por linea recalculado del maestro (los importes del cliente se ignoran), imputacion linea a linea al anticipo",
       "POST /petty-cash/advances/:id/liquidate SIN cuerpo liquida con reintegro por defecto = saldo (LCM)",
       "POST /petty-cash/vouchers/:id/cancel anula con reversa contable y restaura el saldo del anticipo; doble anulacion y anulacion con anticipo liquidado rechazadas",
+      "GET /petty-cash/vouchers?limit=1000 y GET /petty-cash/advances?status=open&limit=1000 responden 200 con lines_count/vouchers_count (contrato de las pantallas de gastos y anticipos; regresion del 500 por _count mal ubicado)",
       "GET /petty-cash/reports/summary agrupa por concepto con totales vouchers_count/lines_count/*_total",
       "GET /petty-cash/reports/detail pagina lineas con pagination.total y expone advance_full_number/advance_status",
       "GET /petty-cash/reports/boxes-ranking rankea cajas con % del tope mensual en mes unico",
@@ -252,6 +253,36 @@ async function main() {
 
     const advanceAfterVoucher = await capture(`/api/v1/petty-cash/advances/${advanceId}`);
     check("advance_balance_after_voucher", advanceAfterVoucher.status === 200 && advanceAfterVoucher.payload.applied_total === 219000 && advanceAfterVoucher.payload.balance === 281000 && advanceAfterVoucher.payload.status === "open", { applied: advanceAfterVoucher.payload.applied_total, balance: advanceAfterVoucher.payload.balance });
+
+    // ---- Listados de las pantallas de operacion (contrato de gastos/anticipos) ----
+    // El web llama GET /vouchers?limit=1000 y GET /advances?status=open&limit=1000 al montar.
+    // Un `_count` mal ubicado en findMany hacia que Prisma lanzara "Unknown argument `_count`"
+    // y ambos endpoints respondieran 500 (incidente QA 2026-10-11): se certifica el 200 y el
+    // conteo que consume la UI (lines_count / vouchers_count) para que la regresion no vuelva.
+    const voucherList = await capture("/api/v1/petty-cash/vouchers?limit=1000");
+    const listedVoucher = (voucherList.payload || []).find((row) => row.id === voucherId) || {};
+    check("list_vouchers_returns_200_with_lines_count", voucherList.status === 200
+      && Array.isArray(voucherList.payload)
+      && listedVoucher.id === voucherId
+      && listedVoucher.lines_count === 2
+      && listedVoucher.box?.code === boxCode
+      && listedVoucher.lines === undefined,
+      { status: voucherList.status, rows: voucherList.payload?.length, lines_count: listedVoucher.lines_count });
+
+    const voucherListByConcept = await capture(`/api/v1/petty-cash/vouchers?limit=1000&concept_code=${encodeURIComponent(conceptCode)}`);
+    check("list_vouchers_filters_by_concept_200", voucherListByConcept.status === 200 && (voucherListByConcept.payload || []).some((row) => row.id === voucherId), { status: voucherListByConcept.status, rows: voucherListByConcept.payload?.length });
+
+    const advanceList = await capture("/api/v1/petty-cash/advances?limit=1000");
+    const listedAdvance = (advanceList.payload || []).find((row) => row.id === advanceId) || {};
+    check("list_advances_returns_200_with_vouchers_count", advanceList.status === 200
+      && Array.isArray(advanceList.payload)
+      && listedAdvance.id === advanceId
+      && listedAdvance.vouchers_count === 1
+      && listedAdvance.box?.code === boxCode,
+      { status: advanceList.status, rows: advanceList.payload?.length, vouchers_count: listedAdvance.vouchers_count });
+
+    const advanceListOpen = await capture("/api/v1/petty-cash/advances?status=open&limit=1000");
+    check("list_advances_open_filter_200", advanceListOpen.status === 200 && (advanceListOpen.payload || []).some((row) => row.id === advanceId), { status: advanceListOpen.status, rows: advanceListOpen.payload?.length });
 
     // ---- Reporteria con el comprobante vigente (requerimiento 4) ----
     const summary = await capture(`/api/v1/petty-cash/reports/summary?group_by=concept&box_id=${boxId}`);
