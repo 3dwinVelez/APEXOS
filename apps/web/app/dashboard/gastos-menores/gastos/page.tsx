@@ -160,7 +160,7 @@ function isLineEmpty(line: LineForm) {
 
 // Celdas de la planilla: mismo lenguaje visual de .control pero plano, para sensación de hoja
 // de cálculo. El foco dibuja el borde de acento.
-const CELL = "h-9 w-full border-0 bg-transparent px-2 text-sm outline-none ring-apex/40 placeholder:text-neutral-400 focus:bg-white focus:ring-1 dark:focus:bg-slate-900";
+const CELL = "h-9 w-full border-0 bg-transparent px-2 text-sm outline-none ring-apex/40 placeholder:text-neutral-400 focus:ring-1 apex-cell";
 
 const RANGE_PRESETS: Array<{ key: Exclude<RangePreset, "">; label: string }> = [
   { key: "hoy", label: "Hoy" },
@@ -488,7 +488,7 @@ export default function GastosGastosMenoresPage() {
           <label className="w-64 text-sm">
             <span className="mb-1 block text-neutral-600">Libro caja</span>
             <select
-  className="control"
+  className="control apex-select"
   onChange={(event) => {
     setBoxFilter(event.target.value);
     // El anticipo elegido pertenece a la caja anterior: el de otra caja no es imputable
@@ -582,7 +582,7 @@ export default function GastosGastosMenoresPage() {
                 <span className="mb-1 block text-neutral-600">{`Anticipo${selectedBox?.require_advance ? " (obligatorio)" : ""}`}</span>
                 <select
                   aria-label="Anticipo del comprobante"
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setDraft({ ...draft, advance_id: event.target.value })}
                   required={selectedBox?.require_advance === true}
                   value={draft.advance_id}
@@ -646,7 +646,7 @@ export default function GastosGastosMenoresPage() {
                         <td className="p-1">
                           <select
                             aria-label={`Concepto línea ${index + 1}`}
-                            className={CELL}
+                            className={`${CELL} apex-select`}
                             onChange={(event) => pickConcept(index, event.target.value)}
                             onKeyDown={focusNextCell}
                             required={!isLineEmpty(line)}
@@ -686,7 +686,7 @@ export default function GastosGastosMenoresPage() {
                         <td className="p-1">
                           <select
                             aria-label={`IVA línea ${index + 1}`}
-                            className={CELL}
+                            className={`${CELL} apex-select`}
                             onChange={(event) => setLine(index, { vat_code: event.target.value })}
                             onKeyDown={focusNextCell}
                             value={line.vat_code}
@@ -700,7 +700,7 @@ export default function GastosGastosMenoresPage() {
                         <td className="p-1">
                           <select
                             aria-label={`Proveedor línea ${index + 1}`}
-                            className={CELL}
+                            className={`${CELL} apex-select`}
                             onChange={(event) => setLine(index, { supplier_party_id: event.target.value })}
                             onKeyDown={focusNextCell}
                             required={concept?.requires_supplier === true}
@@ -727,7 +727,7 @@ export default function GastosGastosMenoresPage() {
                         <td className="p-1">
                           <select
                             aria-label={`Centro de costo línea ${index + 1}`}
-                            className={CELL}
+                            className={`${CELL} apex-select`}
                             onChange={(event) => setLine(index, { cost_center_code: event.target.value })}
                             onKeyDown={focusNextCell}
                             value={line.cost_center_code}

@@ -1047,13 +1047,51 @@ html.dark option {
 }
 
 /* Los popups nativos de <select> deben seguir el tema activo: si algun ancestro filtra
-   color-scheme, la lista desplegable se pinta con el tema opuesto al de la pagina. */
+   color-scheme, la lista desplegable se pinta con el tema opuesto al de la pagina.
+   En Windows el popup nativo ademas sigue el tema del SO e ignora color-scheme, asi que
+   los selects criticos optan por appearance: base-select: el picker pasa al pipeline del
+   navegador (top layer) y se pinta con los tokens del tema. Los navegadores sin soporte
+   conservan el select nativo con la mitigacion de color-scheme de arriba. */
 select {
   color-scheme: light;
 }
 
 html.dark select {
   color-scheme: dark;
+}
+
+.apex-select {
+  appearance: base-select;
+  accent-color: rgb(var(--color-apex));
+}
+
+.apex-select::picker(select) {
+  background: rgb(var(--surface));
+  color: rgb(var(--text-strong));
+  border: 1px solid rgb(var(--color-line));
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+.apex-select option {
+  background: rgb(var(--surface));
+  color: rgb(var(--text-strong));
+}
+
+.apex-select option:hover,
+.apex-select option:focus-visible {
+  background: rgb(var(--surface-muted));
+}
+
+/* Las variantes dark: de Tailwind responden a prefers-color-scheme (darkMode: media) y no
+   al tema de la app (html.dark): con el SO en modo oscuro y la app en tema claro, el foco
+   de la celda del journal se pintaria oscuro. Se acopla al tema con la clase apex-cell. */
+.apex-cell:focus {
+  background-color: #ffffff;
+}
+
+html.dark .apex-cell:focus {
+  background-color: #0f172a;
 }
 
 /* Public service requests keep a stable, high-contrast palette regardless of the dashboard theme. */

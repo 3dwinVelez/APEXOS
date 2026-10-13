@@ -507,7 +507,7 @@ export default function ReportesGastosMenoresPage() {
           </Field>
           <Field label="Mes">
             <select
-              className="control"
+              className="control apex-select"
               disabled={!filters.year}
               onChange={(event) => setFilter("month", event.target.value)}
               value={filters.month}
@@ -525,7 +525,7 @@ export default function ReportesGastosMenoresPage() {
             <input className="control" onChange={(event) => setFilter("date_to", event.target.value)} type="date" value={filters.date_to} />
           </Field>
           <Field label="Caja">
-            <select className="control" onChange={(event) => setFilter("box_id", event.target.value)} value={filters.box_id}>
+            <select className="control apex-select" onChange={(event) => setFilter("box_id", event.target.value)} value={filters.box_id}>
               <option value="">Todas</option>
               {boxes.map((row) => (
                 <option key={row.id} value={row.id}>{row.code} - {row.name}{row.active === false ? " (inactiva)" : ""}</option>
@@ -533,7 +533,7 @@ export default function ReportesGastosMenoresPage() {
             </select>
           </Field>
           <Field label="Concepto">
-            <select className="control" onChange={(event) => setFilter("concept_code", event.target.value)} value={filters.concept_code}>
+            <select className="control apex-select" onChange={(event) => setFilter("concept_code", event.target.value)} value={filters.concept_code}>
               <option value="">Todos</option>
               {concepts.map((row) => (
                 <option key={row.id} value={row.code}>{row.name}{row.active === false ? " (inactivo)" : ""}</option>
@@ -541,7 +541,7 @@ export default function ReportesGastosMenoresPage() {
             </select>
           </Field>
           <Field label="Centro de costo">
-            <select className="control" onChange={(event) => setFilter("cost_center_code", event.target.value)} value={filters.cost_center_code}>
+            <select className="control apex-select" onChange={(event) => setFilter("cost_center_code", event.target.value)} value={filters.cost_center_code}>
               <option value="">Todos</option>
               {orgTree.cost_centers.map((row) => (
                 <option key={row.code} value={row.code}>{row.code} - {row.name}</option>
@@ -549,7 +549,7 @@ export default function ReportesGastosMenoresPage() {
             </select>
           </Field>
           <Field label="Sede">
-            <select className="control" onChange={(event) => setFilter("branch_code", event.target.value)} value={filters.branch_code}>
+            <select className="control apex-select" onChange={(event) => setFilter("branch_code", event.target.value)} value={filters.branch_code}>
               <option value="">Todas</option>
               {orgTree.branches.map((row) => (
                 <option key={row.code} value={row.code}>{row.code} - {row.name}</option>
@@ -557,7 +557,7 @@ export default function ReportesGastosMenoresPage() {
             </select>
           </Field>
           <Field label="Proveedor">
-            <select className="control" onChange={(event) => setFilter("supplier_party_id", event.target.value)} value={filters.supplier_party_id}>
+            <select className="control apex-select" onChange={(event) => setFilter("supplier_party_id", event.target.value)} value={filters.supplier_party_id}>
               <option value="">Todos</option>
               {suppliers.map((row) => (
                 <option key={row.id} value={row.id}>{row.name}</option>
@@ -565,7 +565,7 @@ export default function ReportesGastosMenoresPage() {
             </select>
           </Field>
           <Field label="Cuenta contable">
-            <select className="control" onChange={(event) => setFilter("account_code", event.target.value)} value={filters.account_code}>
+            <select className="control apex-select" onChange={(event) => setFilter("account_code", event.target.value)} value={filters.account_code}>
               <option value="">Todas</option>
               {accounts.map((row) => (
                 <option key={row.id} value={row.code}>{row.code} - {row.name}</option>
@@ -574,7 +574,7 @@ export default function ReportesGastosMenoresPage() {
           </Field>
           <Field label="Comprobantes anulados">
             <select
-              className="control"
+              className="control apex-select"
               onChange={(event) => setFilter("include_cancelled", event.target.value === "true" ? "true" : "false")}
               value={filters.include_cancelled}
             >
@@ -583,7 +583,7 @@ export default function ReportesGastosMenoresPage() {
             </select>
           </Field>
           <Field label="Agrupar resumen por">
-            <select className="control" onChange={(event) => setFilter("group_by", event.target.value as GroupBy)} value={filters.group_by}>
+            <select className="control apex-select" onChange={(event) => setFilter("group_by", event.target.value as GroupBy)} value={filters.group_by}>
               {(Object.keys(GROUP_LABELS) as GroupBy[]).map((key) => (
                 <option key={key} value={key}>{GROUP_LABELS[key]}</option>
               ))}
