@@ -1,0 +1,62 @@
+{
+  "change_id": "transport-pyg-admin-cert-20261013",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "45a442dc7e4f39f1f5a2ea10412a1cc3a2d86242",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "develop-admin-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "develop-admin-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "develop-admin-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json",
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-pyg-develop-admin.js",
+    "evidence": [
+      "develop-admin-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-pyg-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa: 'procede con lo que nos haga falta para llegar a develop con la certificacion'",
+    "approved_at": "2026-10-13T12:30:00-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}
