@@ -1,0 +1,85 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-pyg-admin-cert-20261013",
+  "base_commit": "0b34e1768ce4669d2d1e7bc3585ac3c1516f48d4",
+  "base_commits": {
+    "develop": "0b34e1768ce4669d2d1e7bc3585ac3c1516f48d4"
+  },
+  "certified_commit": "45a442dc7e4f39f1f5a2ea10412a1cc3a2d86242",
+  "change_intent": {
+    "summary": "Versiona la certificacion remota (en vivo) del reporte PYG por vehiculo en develop con el administrador real de QA: el script scripts/certifications/transport-pyg-develop-admin.js (autenticacion Supabase password-grant, guard de host Railway, poblacion idempotente de los tres canales del reporte y 46 verificaciones) y su evidencia develop-admin-certification.json (46/46 PASS contra el commit 0b34e1768ce4 de develop). Sin cambios de producto: solo script de certificacion y evidencia versionada.",
+    "modules": [
+      "transporte",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-pyg-develop-admin.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-pyg-20261013/develop-admin-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-pyg-20261013/develop-admin-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/transport-pyg-20261013/develop-admin-preqa-evidence.json"
+    }
+  ],
+  "allowed_paths": [
+    "scripts/certifications/transport-pyg-develop-admin.js",
+    "docs/qa/evidence/transport-pyg-20261013/develop-admin-certification.json",
+    "docs/qa/evidence/transport-pyg-20261013/develop-admin-scope-manifest.json",
+    "docs/qa/evidence/transport-pyg-20261013/develop-admin-preqa-evidence.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "pyg_reporte_en_develop_certificado_con_admin_real_tres_canales",
+      "status": "passed",
+      "evidence": [
+        "develop-admin-certification.json"
+      ]
+    },
+    {
+      "name": "pyg_canal_conductor_nomina_pila_provision_imputado_por_placa",
+      "status": "passed",
+      "evidence": [
+        "develop-admin-certification.json"
+      ]
+    },
+    {
+      "name": "pyg_fila_dinamica_sin_clasificar_consolidado_y_periodo_vacio",
+      "status": "passed",
+      "evidence": [
+        "develop-admin-certification.json"
+      ]
+    },
+    {
+      "name": "pyg_certificacion_local_sin_regresion",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_sin_regresion_en_develop",
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json"
+      ]
+    },
+    {
+      "name": "transporte_sin_regresion_en_develop",
+      "status": "passed",
+      "evidence": [
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  ]
+}

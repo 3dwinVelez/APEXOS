@@ -1,0 +1,395 @@
+{
+  "change_id": "transport-pyg-20261013",
+  "certification": "transport-pyg-develop-admin",
+  "environment": "QA",
+  "target_environment": "develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "supabase_url": "https://jbirkghkekuifgfsgquq.supabase.co",
+  "api_commit": "0b34e1768ce4",
+  "expected_commit": "0b34e1768ce4",
+  "generated_at": "2026-10-13T15:30:22.462Z",
+  "admin": {
+    "email": "admin@apexos.qa",
+    "auth": "supabase-password-grant"
+  },
+  "tenant": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "name": "Cliente Piloto QA"
+  },
+  "scope": {
+    "capability": "Reporte PYG por vehiculo (centro de costo = placa) en develop con el administrador real de QA: catalogo corporativo de 23 lineas, presupuesto por vehiculo/concepto con cumplimiento, ingresos de liquidaciones aprobadas, gastos de caja menor por placa con fila dinamica sin clasificar, canal conductor (nomina/PILA/provisiones de TH), impuesto de regimen simple configurable y consolidado corporativo, poblando datos reales visibles en la herramienta.",
+    "proven_by_live_execution": [
+      "Sesion del administrador real de QA via Supabase Auth consumiendo la API con el Bearer de Supabase",
+      "Flujo completo de liquidacion por transporte (items con placa -> validate -> precalculate -> adjustments -> submit -> decision aprobada) alimenta el canal de ingresos por placa",
+      "Comprobantes de caja menor con centro de costo por placa alimentan los canales de gasto clasificados y la fila dinamica de gastos sin clasificar",
+      "Liquidacion de nomina, aportes sociales (PILA) y provision de prestaciones sociales de TH imputados al vehiculo por su conductor autorizado",
+      "Presupuestos por vehiculo/concepto, configuracion del impuesto de regimen simple y consolidado corporativo con cumplimiento",
+      "Los datos quedan activos en el tenant piloto QA para inspeccion en la interfaz"
+    ]
+  },
+  "checks": [
+    {
+      "name": "develop_health",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "0b34e1768ce4"
+      }
+    },
+    {
+      "name": "develop_commit_matches_candidate",
+      "ok": true,
+      "detail": {
+        "commit": "0b34e1768ce4",
+        "expected": "0b34e1768ce4"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_supabase_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "admin_tenant_resolved",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "tenant": "c56bc5df-c807-4deb-83f8-fbb4751be613"
+      }
+    },
+    {
+      "name": "catalog_seeded_23_concepts",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "count": 23
+      }
+    },
+    {
+      "name": "fleet_available",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "vehicles": 7
+      }
+    },
+    {
+      "name": "employees_available",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "employees": 28
+      }
+    },
+    {
+      "name": "payroll_preview_runs",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "payroll_preview_has_gross",
+      "ok": true,
+      "detail": {
+        "with_gross": 28,
+        "employees": 28
+      }
+    },
+    {
+      "name": "payroll_liquidated",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "documents": 28
+      }
+    },
+    {
+      "name": "pila_preview_runs",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "pila_preview_covers_employees",
+      "ok": true,
+      "detail": {
+        "lines": 135,
+        "covered": 27
+      }
+    },
+    {
+      "name": "driver_candidate_with_pila",
+      "ok": true,
+      "detail": {
+        "covered": 27
+      }
+    },
+    {
+      "name": "driver_pila_computed",
+      "ok": true,
+      "detail": {
+        "driver_pila": 478179
+      }
+    },
+    {
+      "name": "anchor_vehicle_driver_linked",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "budgets_saved",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "upserted": 13,
+        "expected": 13
+      }
+    },
+    {
+      "name": "settlement_period_ready",
+      "ok": true,
+      "detail": {
+        "reused": 1,
+        "status": "abierto"
+      }
+    },
+    {
+      "name": "package_approved",
+      "ok": true,
+      "detail": {
+        "reused": 1,
+        "approved_total": 136500000
+      }
+    },
+    {
+      "name": "petty_concepts_ready",
+      "ok": true,
+      "detail": {
+        "count": 4
+      }
+    },
+    {
+      "name": "petty_box_ready",
+      "ok": true,
+      "detail": {
+        "reused": 6
+      }
+    },
+    {
+      "name": "cost_centers_per_plate_ready",
+      "ok": true,
+      "detail": {
+        "plates": 7
+      }
+    },
+    {
+      "name": "petty_vouchers_ready",
+      "ok": true,
+      "detail": {
+        "note": "ancla(4 lineas, 1 sin mapear) + resto de la flota"
+      }
+    },
+    {
+      "name": "pila_persisted",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "lines": 135
+      }
+    },
+    {
+      "name": "provision_persisted",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "lines": 112,
+        "driver_provision": 102704.68
+      }
+    },
+    {
+      "name": "config_roundtrip",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "tax": 2.25
+      }
+    },
+    {
+      "name": "mapping_default_seeded",
+      "ok": true,
+      "detail": {
+        "rows": 11
+      }
+    },
+    {
+      "name": "report_200",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "anchor_vehicle_in_report",
+      "ok": true,
+      "detail": {
+        "plate": "T155437",
+        "vehicles": 7
+      }
+    },
+    {
+      "name": "anchor_income_matches_target",
+      "ok": true,
+      "detail": {
+        "income": 12000000,
+        "target": 12000000
+      }
+    },
+    {
+      "name": "anchor_income_budget_cump",
+      "ok": true,
+      "detail": {
+        "budget": 20000000,
+        "cump": 0.6
+      }
+    },
+    {
+      "name": "anchor_payroll_channel",
+      "ok": true,
+      "detail": {
+        "actual": 257398.17,
+        "expected": 257398.17
+      }
+    },
+    {
+      "name": "anchor_pila_channel",
+      "ok": true,
+      "detail": {
+        "actual": 478179,
+        "expected": 478179
+      }
+    },
+    {
+      "name": "anchor_provision_channel",
+      "ok": true,
+      "detail": {
+        "actual": 102704.68,
+        "expected": 102704.68
+      }
+    },
+    {
+      "name": "anchor_combustible",
+      "ok": true,
+      "detail": {
+        "actual": 3323769.1
+      }
+    },
+    {
+      "name": "anchor_peajes",
+      "ok": true,
+      "detail": {
+        "actual": 2013600
+      }
+    },
+    {
+      "name": "anchor_viaticos",
+      "ok": true,
+      "detail": {
+        "actual": 755000
+      }
+    },
+    {
+      "name": "anchor_total_gastos",
+      "ok": true,
+      "detail": {
+        "actual": 7050650.95,
+        "expected": 7050650.95
+      }
+    },
+    {
+      "name": "anchor_impuesto_regimen_simple",
+      "ok": true,
+      "detail": {
+        "actual": 270000,
+        "expected": 270000,
+        "tax_percent": 2.25
+      }
+    },
+    {
+      "name": "anchor_utilidad_neta",
+      "ok": true,
+      "detail": {
+        "actual": 4679349.05,
+        "expected": 4679349.05
+      }
+    },
+    {
+      "name": "unmapped_dynamic_row_present",
+      "ok": true,
+      "detail": {
+        "actual": 120000
+      }
+    },
+    {
+      "name": "unmapped_total_in_data_status",
+      "ok": true,
+      "detail": {
+        "total": 120000
+      }
+    },
+    {
+      "name": "unmapped_row_before_subtotal",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "corporate_income_matches_targets",
+      "ok": true,
+      "detail": {
+        "corporate": 136500000,
+        "expected": 136500000
+      }
+    },
+    {
+      "name": "corporate_net_margin_pct",
+      "ok": true,
+      "detail": {
+        "pct": 0.8797
+      }
+    },
+    {
+      "name": "empty_period_no_crash",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "income": 0
+      }
+    }
+  ],
+  "status": "passed",
+  "fixture": {
+    "company_id": "c56bc5df-c807-4deb-83f8-fbb4751be613",
+    "period": "2026-10",
+    "anchor_plate": "T155437",
+    "anchor_vehicle_id": 48,
+    "driver_employee_id": 536,
+    "package_code": "PYG-PKG-2026-10",
+    "box_code": "PYG-BOX-2026-10",
+    "note": "Datos dejados activos en el tenant piloto QA para inspeccion en la interfaz"
+  },
+  "checks_passed": 46,
+  "checks_total": 46,
+  "finished_at": "2026-10-13T15:31:03.017Z"
+}
