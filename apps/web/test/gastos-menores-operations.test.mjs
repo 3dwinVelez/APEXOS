@@ -64,9 +64,10 @@ test("todas las consultas pasan por api<T>() del cliente compartido", () => {
   assert.match(gastos, /api<Concept\[\]>\("\/api\/v1\/petty-cash\/concepts"\)/);
   assert.match(gastos, /api<VatMaster\[\]>\("\/api\/v1\/accounting\/vat-masters\?scope=purchases"\)/);
   assert.match(gastos, /third-parties\?type=supplier&active=true&limit=500/);
-  // Solo anticipos abiertos con saldo son imputables.
-  assert.match(gastos, /api<Advance\[\]>\("\/api\/v1\/petty-cash\/advances\?status=open&limit=1000"\)/);
-  assert.match(gastos, /row\.status === "open" && row\.balance > 0/);
+  // El resumen del periodo (ingresos y anticipo abierto) necesita anticipos de TODOS los
+  // estados: el filtro de imputables vive en el memo boxAdvances, no en el querystring.
+  assert.match(gastos, /api<Advance\[\]>\("\/api\/v1\/petty-cash\/advances\?limit=1000"\)/);
+  assert.match(gastos, /row\.status === "open" && Number\(row\.balance\) > 0/);
   assert.match(gastos, /api<OrgTree>\("\/api\/v1\/accounting\/organization-tree"\)/);
   // El detalle del comprobante pide las lineas a /vouchers/:id: el listado no las trae.
   assert.match(gastos, /api<VoucherDetail>\(`\/api\/v1\/petty-cash\/vouchers\/\$\{row\.id\}`\)/);
@@ -144,10 +145,13 @@ test("voucherPayload solo envia campos que declara el esquema del backend", () =
 });
 
 test("el anticipo del comprobante se filtra por caja y se exige cuando la caja lo requiere", () => {
-  assert.match(gastos, /openAdvances\.filter\(\(row\) => String\(row\.box_id\) === form\.box_id\)/);
+  // La caja de trabajo del journal es la del filtro (o la primera activa): solo sus anticipos
+  // abiertos con saldo aparecen en el encabezado del comprobante.
+  assert.match(gastos, /advances\.filter\(\(row\) => row\.status === "open" && Number\(row\.balance\) > 0 && String\(row\.box_id\) === effectiveBoxId\)/);
   assert.match(gastos, /required=\{selectedBox\?\.require_advance === true\}/);
   // Cambiar de caja limpia el anticipo seleccionado: el de otra caja no es imputable.
-  assert.match(gastos, /box_id: event\.target\.value, advance_id: "" \}\)/);
+  assert.match(gastos, /setBoxFilter\(event\.target\.value\)/);
+  assert.match(gastos, /advance_id: "" \}\)/);
   assert.match(gastos, /Sin anticipo: efectivo de la caja/);
 });
 
@@ -159,15 +163,28 @@ test("el concepto de la linea sugiere su IVA y exige los soportes que declara", 
   assert.match(gastos, /<option value="">Sin IVA<\/option>/);
 });
 
-test("los totales estimados se presentan como guia, nunca como fuente", () => {
-  assert.match(gastos, /El servidor recalcula el IVA y el total desde la base y el maestro de IVA/);
-  assert.match(gastos, /Base estimada/);
-  assert.match(gastos, /Total estimado/);
+test("los totales de la planilla son estimados, nunca la fuente", () => {
+  assert.match(gastos, /el servidor recalcula el IVA y el total desde la base/);
+  assert.match(gastos, />Base<\/span>/);
+  assert.match(gastos, />Total<\/span>/);
 });
 
-test("el editor de lineas respeta el rango del backend (1 a 100)", () => {
-  assert.match(gastos, /form\.lines\.length >= 100/);
-  assert.match(gastos, /form\.lines\.length <= 1/);
+test("la planilla auto-agrega la fila vacia y respeta el rango del backend (1 a 100)", () => {
+  // Al llenar la ultima fila aparece la siguiente (libro caja), con tope de 100 lineas.
+  assert.match(gastos, /next\.length < 100/);
+  assert.match(gastos, /nextLines\.length >= 100/);
+  // Quitar lineas nunca deja la planilla sin filas: siempre queda al menos una vacia.
+  assert.match(gastos, /return next\.length \? next : \[\{ \.\.\.emptyLine \}\]/);
+});
+
+test("el registro es una planilla journal inline, no un modal de creacion", () => {
+  assert.match(gastos, /Nuevo comprobante/);
+  assert.match(gastos, /draftLines/);
+  assert.match(gastos, /focusNextCell/);
+  assert.match(gastos, /Contabilizar \$\{filledLines/);
+  assert.match(gastos, /registerRef/);
+  assert.match(gastos, /params\.set\("date_from", dateFrom\)/);
+  assert.match(gastos, /RANGE_PRESETS/);
 });
 
 test("los errores del backend se presentan con codigo y mensaje", () => {

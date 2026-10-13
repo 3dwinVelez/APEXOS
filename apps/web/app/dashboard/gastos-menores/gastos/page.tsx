@@ -486,7 +486,16 @@ export default function GastosGastosMenoresPage() {
         <div className="flex flex-wrap items-end gap-3">
           <label className="w-64 text-sm">
             <span className="mb-1 block text-neutral-600">Libro caja</span>
-            <select className="control" onChange={(event) => setBoxFilter(event.target.value)} value={boxFilter}>
+            <select
+  className="control"
+  onChange={(event) => {
+    setBoxFilter(event.target.value);
+    // El anticipo elegido pertenece a la caja anterior: el de otra caja no es imputable
+    // (el backend rechaza ADVANCE_BOX_MISMATCH), asi que se limpia al cambiar de caja.
+    setDraft((current) => ({ ...current, advance_id: "" }));
+  }}
+  value={boxFilter}
+>
               <option value="">Todas las cajas</option>
               {activeBoxes.map((row) => (
                 <option key={row.id} value={row.id}>{row.code} - {row.name}</option>
