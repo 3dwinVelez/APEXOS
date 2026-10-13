@@ -1,0 +1,106 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-pyg-20261013",
+  "base_commit": "5291b6d7ddcccb3fab19ada1a09cfc15638ff3b5",
+  "base_commits": {
+    "develop": "5291b6d7ddcccb3fab19ada1a09cfc15638ff3b5"
+  },
+  "certified_commit": "1cbffc373221f0aefb04cb158a56fc39039150ba",
+  "change_intent": {
+    "summary": "Nuevo modulo transport-pyg: estado de resultados (PYG) por vehiculo con centro de costo = placa, replicando el PYG corporativo de logistica en apexheart. Catalogo de 23 conceptos, presupuesto por vehiculo/concepto con cumplimiento, impuesto de regimen simple configurable, fila dinamica GASTOS SIN CLASIFICAR como salud del dato y exportacion Excel. Canales reales de la plataforma: ingresos de items de liquidacion aprobados (TransportSettlementItem por placa), gastos de caja menor por centro de costo con mapeo configurable de conceptos (incluye des-mapeo desde la UI: fila vacia desactiva el mapping) y nomina/PILA/prestaciones imputadas por conductor autorizado. Incluye migracion 20261013120000_transport_pyg, tests unitarios 9/9 y certificacion local E2E 52/52 con datos reales poblados del workbook corporativo (ancla estricta GOLIAT). Suite completa del API 603 pass / 0 fail / 2 skipped.",
+    "modules": [
+      "transporte",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/prisma/migrations/20261013120000_transport_pyg/migration.sql" },
+    { "status": "M", "file": "apps/api/prisma/schema.prisma" },
+    { "status": "M", "file": "apps/api/server.js" },
+    { "status": "A", "file": "apps/api/src/modules/transport-pyg/concept-catalog.js" },
+    { "status": "A", "file": "apps/api/src/modules/transport-pyg/engine.js" },
+    { "status": "A", "file": "apps/api/src/modules/transport-pyg/routes.js" },
+    { "status": "A", "file": "apps/api/src/modules/transport-pyg/schema.js" },
+    { "status": "A", "file": "apps/api/src/modules/transport-pyg/service.js" },
+    { "status": "A", "file": "apps/api/test/transport-pyg-report.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/transporte/page.tsx" },
+    { "status": "A", "file": "apps/web/app/dashboard/transporte/pyg/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/lib/moduleFunctions.ts" },
+    { "status": "A", "file": "docs/qa/evidence/transport-pyg-20261013/develop-preqa-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-pyg-20261013/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/transport-pyg-20261013/local-certification.json" },
+    { "status": "A", "file": "scripts/certifications/transport-pyg-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20261013120000_transport_pyg/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/server.js",
+    "apps/api/src/modules/transport-pyg/concept-catalog.js",
+    "apps/api/src/modules/transport-pyg/engine.js",
+    "apps/api/src/modules/transport-pyg/routes.js",
+    "apps/api/src/modules/transport-pyg/schema.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/test/transport-pyg-report.test.js",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/app/dashboard/transporte/pyg/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "docs/qa/evidence/transport-pyg-20261013/develop-preqa-evidence.json",
+    "docs/qa/evidence/transport-pyg-20261013/develop-scope-manifest.json",
+    "docs/qa/evidence/transport-pyg-20261013/local-certification.json",
+    "scripts/certifications/transport-pyg-local.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "pyg_goliat_replica_estricta_workbook_corporativo",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "canales_reales_liquidacion_caja_menor_nomina_pila_prestaciones_por_placa",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "mapeo_conceptos_con_desmapeo_desde_ui",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "presupuesto_por_vehiculo_concepto_con_cumplimiento",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "aislamiento_tenant_y_rbac_en_modulo_pyg",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_sin_regresion_en_develop",
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json"
+      ]
+    },
+    {
+      "name": "transporte_sin_regresion_en_develop",
+      "status": "passed",
+      "evidence": [
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  ]
+}
