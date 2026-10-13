@@ -1,0 +1,66 @@
+{
+  "change_id": "gastos-menores-popup-base-select-20261013",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "35f71da47b14d61b8975f0950cc7c6f4c1a28743",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "popup-base-select-repro-light.png",
+        "popup-repro-light-theme.png",
+        "popup-after-real-click.png",
+        "journal-focused-cell-pre-fix.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json",
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/gastos-menores-journal-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/petty-cash-module-local.js",
+    "evidence": [
+      "regression-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa vigente: 'puedes validar porque en develop sigue el problema visual ?' (hallazgo del popup oscuro del select Concepto en develop) sobre la autorizacion de la misma ronda: 'ajusta los hallazgos... realiza los ajustes necesarios y actualiza los ambientes locales y remotos hasta develop pero antes garantiza que no se quede ninguna validacion por realizar'",
+    "approved_at": "2026-10-13T15:51:30-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}
