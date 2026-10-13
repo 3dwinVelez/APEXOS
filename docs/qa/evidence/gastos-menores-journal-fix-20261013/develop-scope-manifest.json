@@ -1,0 +1,119 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "gastos-menores-journal-fix-20261013",
+  "base_commit": "9c0feb5196c3a113d245bc9624cb506342f50497",
+  "base_commits": {
+    "develop": "9c0feb5196c3a113d245bc9624cb506342f50497"
+  },
+  "certified_commit": "f4c96bdf5908c3433c6cb2cf4d25e6d116aac1d0",
+  "change_intent": {
+    "summary": "Ajustes de los hallazgos QA del registro journal de Gastos Menores (commit funcional f4c96bdf en desarrollo). (1) Popup nativo del select IVA pintado oscuro sobre pagina clara: root cause en QA fue color-scheme filtrado al elemento select (la lista desplegable nativa toma el tema del color-scheme computado); fix estructural en globals.css acoplando color-scheme de los selects al tema activo (select { color-scheme: light } + html.dark select { color-scheme: dark }), de modo que el popup siga el tema por construccion en ambos temas. (2) Concepto de anticipo poco claro cuando la caja lo exige: texto de ayuda bajo el select ('El anticipo es el fondo girado al custodio: cada gasto se descuenta de su saldo...'), estado vacio accionable cuando la caja exige anticipo sin saldos abiertos ('Esta caja exige anticipo pero no hay anticipos abiertos con saldo. Gira un anticipo primero.' con Link a /dashboard/gastos-menores/anticipos) y tarjeta de resumen renombrada a 'Saldo anticipos vigentes' con leyenda 'Sin anticipos abiertos con saldo'. (3) Robustez pedida por el lead: +2 tests web (guia del anticipo y color-scheme de popups), +2 checks de codigo en la certificacion journal (journal_page_advance_guidance_and_empty_state, select_popup_color_scheme_follows_theme) y skill apexos-frontend con checklist visual obligatoria en ambos temas (los popups nativos del SO no son capturables por automatizacion CDP; proxy deterministo getComputedStyle.colorScheme). Certificacion local E2E del journal 51/51 (antes 49/49) mas regresion del modulo base 49/49; lint 0 errores, typecheck y build limpios; verificacion en navegador de ambos temas (capturas journal-light-check.png y journal-dark-check.png) incluido el estado vacio del anticipo en caja GM-CAJA-EXIGENTE.",
+    "modules": [
+      "gastos-menores",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    { "status": "M", "file": ".qoder/skills/apexos-frontend/SKILL.md" },
+    { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/gastos/page.tsx" },
+    { "status": "M", "file": "apps/web/app/globals.css" },
+    { "status": "M", "file": "apps/web/test/gastos-menores-operations.test.mjs" },
+    { "status": "M", "file": "scripts/certifications/gastos-menores-journal-local.js" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-fix-20261013/develop-preqa-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-fix-20261013/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-fix-20261013/journal-dark-check.png" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-fix-20261013/journal-light-check.png" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-fix-20261013/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-fix-20261013/regression-certification.json" }
+  ],
+  "allowed_paths": [
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/test/gastos-menores-operations.test.mjs",
+    "scripts/certifications/gastos-menores-journal-local.js",
+    "docs/qa/evidence/gastos-menores-journal-fix-20261013/develop-preqa-evidence.json",
+    "docs/qa/evidence/gastos-menores-journal-fix-20261013/develop-scope-manifest.json",
+    "docs/qa/evidence/gastos-menores-journal-fix-20261013/journal-dark-check.png",
+    "docs/qa/evidence/gastos-menores-journal-fix-20261013/journal-light-check.png",
+    "docs/qa/evidence/gastos-menores-journal-fix-20261013/local-certification.json",
+    "docs/qa/evidence/gastos-menores-journal-fix-20261013/regression-certification.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "registro_journal_planilla_inline_con_digitacion_continua",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "contrato_carga_pantalla_7_consultas_periodo_y_detalle_con_lineas",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "iva_por_linea_centro_de_costo_y_guardas_de_soportes_en_servidor",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "anulacion_con_reversa_que_restaura_saldo_del_anticipo",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "popups_de_select_acoplados_al_tema_claro_y_oscuro",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "journal-light-check.png",
+        "journal-dark-check.png"
+      ]
+    },
+    {
+      "name": "guia_del_concepto_de_anticipo_y_estado_vacio_accionable",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "journal-light-check.png"
+      ]
+    },
+    {
+      "name": "aislamiento_tenant_y_rbac_contable_en_petty_cash",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_modulo_base_sin_regresion",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "soporte_lint_typecheck_build_y_suites_sin_errores",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "transporte_sin_regresion_en_develop",
+      "status": "passed",
+      "evidence": [
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  ]
+}

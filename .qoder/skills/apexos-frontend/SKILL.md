@@ -28,4 +28,5 @@ when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formulari
 
 - `npm run lint`, `npm --workspace apps/web run typecheck` y build sin advertencias; una alerta silenciosa se corrige por causa raíz, no se oculta.
 - Probar la funcionalidad en navegador (camino feliz y casos borde) antes de declarar éxito; si no se puede probar la UI, decirlo explícitamente.
+- Revisar en navegador y en AMBOS temas (claro y oscuro): popups nativos de `<select>`, estados de foco y estados vacíos/guías de campos obligatorios. El `color-scheme` de los selects debe acoplarse al tema (`select { color-scheme: light }` + `html.dark select { color-scheme: dark }` en globals.css); la automatización CDP no captura popups nativos del SO, así que se mide `getComputedStyle(el).colorScheme` como proxy determinístico.
 - Verificar assets con `npm run verify:web-assets` cuando aplique.

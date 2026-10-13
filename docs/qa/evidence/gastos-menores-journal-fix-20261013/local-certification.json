@@ -1,0 +1,441 @@
+{
+  "change_id": "gastos-menores-journal-20261013",
+  "certification": "gastos-menores-journal-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-10-13T19:33:06.922Z",
+  "api_commit": "f4c96bdf5908",
+  "api_url": "http://127.0.0.1:3213",
+  "scope": {
+    "capability": "Registro de gastos de caja menor tipo planilla (journal) estilo libro caja: carga de la pantalla (7 consultas), digitacion inline de lineas con concept_id y IVA por linea (vat_code null = sin IVA), centro de costo por linea, guardas de proveedor/factura exigidos por concepto, historial filtrado por caja y rango de fechas, detalle con lineas, anulacion con reversa contable que restaura el saldo del anticipo, y anticipo de otra caja rechazado.",
+    "proven_by_live_execution": [
+      "GET /petty-cash/vouchers?limit=1000&box_id&date_from&date_to responde 200 con lines_count (filtro de periodo del journal)",
+      "GET /petty-cash/boxes?include_inactive=true, /petty-cash/concepts, /accounting/vat-masters?scope=purchases, /accounting/third-parties?type=supplier, /petty-cash/advances?limit=1000 (todos los estados) y /accounting/organization-tree responden 200: las 7 consultas de carga de la pantalla",
+      "POST /accounting/organization-tree crea sucursal y centro de costo enlazados a la sociedad (contrato del selector C. costo de la planilla)",
+      "POST /petty-cash/concepts crea concepto con default_vat_code COMPRAS-19 y requires_supplier/requires_invoice_reference (contrato de sugerencia de IVA y soportes exigidos)",
+      "POST /petty-cash/vouchers con el payload real del journal (concept_id numerico, vat_code null, cost_center_code por linea, branch_code null): contabiliza GM inmediato, aplica el IVA explicito de la linea, ignora vat_amount/total del cliente y respeta cost_center_code",
+      "vat_code null con concepto que tiene default_vat_code = gasto SIN IVA (el default es solo sugerencia de la UI, no se aplica automaticamente)",
+      "Guardas: SUPPLIER_REQUIRED, INVOICE_REFERENCE_REQUIRED, ADVANCE_BOX_MISMATCH, VAT_MASTER_NOT_FOUND, CONCEPT_NOT_FOUND",
+      "GET /petty-cash/vouchers/:id devuelve las lineas del comprobante (contrato del Ver del historial)",
+      "Anulacion con reversa contable que restaura saldo/aplicado del anticipo; doble anulacion y anulacion con anticipo liquidado rechazadas",
+      "Reporteria excluye anulados por defecto e incluye el anticipo liquidado en el detalle",
+      "GET anonimo responde 401"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/petty-cash-masters.test.js (maestros T2)",
+      "apps/api/test/petty-cash-vouchers.test.js (anticipos, gastos y contabilizacion T3)",
+      "apps/api/test/petty-cash-reports.test.js (reporteria T4)",
+      "apps/web/test/gastos-menores-module-registration.test.mjs (registro del modulo)",
+      "apps/web/test/gastos-menores-masters.test.mjs (pantallas de maestros)",
+      "apps/web/test/gastos-menores-operations.test.mjs (gastos journal: planilla, anticipos y liquidacion)",
+      "apps/web/test/gastos-menores-reports.test.mjs (reporteria con exportacion)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "f4c96bdf5908"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "journal_page_load_vouchers_boxes_concepts",
+      "ok": true,
+      "detail": {
+        "vouchers": 200,
+        "boxes": 200,
+        "concepts": 200
+      }
+    },
+    {
+      "name": "journal_page_load_vats_suppliers_advances_tree",
+      "ok": true,
+      "detail": {
+        "vats": 200,
+        "suppliers": 200,
+        "advances": 200,
+        "tree": 200
+      }
+    },
+    {
+      "name": "vat_master_compras_19_available_for_lines",
+      "ok": true,
+      "detail": {
+        "code": "COMPRAS-19",
+        "percent": 19
+      }
+    },
+    {
+      "name": "org_branch_created_for_journal_cc",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "code": "QA-SUC-20261013193306"
+      }
+    },
+    {
+      "name": "org_cost_center_created_and_listed",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "code": "QA-CC-20261013193306"
+      }
+    },
+    {
+      "name": "concept_with_suggested_vat_and_required_supports",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "default_vat": "COMPRAS-19"
+      }
+    },
+    {
+      "name": "concept_plain_without_defaults",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "box_created_ready_for_journal",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "ready": true
+      }
+    },
+    {
+      "name": "second_box_created_for_mismatch_guard",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "advance_created_for_journal",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "APC-000017",
+        "balance": 400000
+      }
+    },
+    {
+      "name": "journal_voucher_posted_with_real_payload",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "full_number": "GM-000047",
+        "total": 249000,
+        "line1_cc": "QA-CC-20261013193306",
+        "line1_client_vat_ignored": 19000,
+        "line2_vat": 0
+      }
+    },
+    {
+      "name": "journal_line_supplier_required_enforced",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "SUPPLIER_REQUIRED"
+      }
+    },
+    {
+      "name": "journal_line_invoice_reference_required_enforced",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "INVOICE_REFERENCE_REQUIRED"
+      }
+    },
+    {
+      "name": "second_advance_created_for_box_mismatch",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "journal_advance_from_other_box_blocked",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "ADVANCE_BOX_MISMATCH"
+      }
+    },
+    {
+      "name": "journal_unknown_vat_code_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VAT_MASTER_NOT_FOUND"
+      }
+    },
+    {
+      "name": "journal_line_without_concept_blocked",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "CONCEPT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "journal_advance_balance_after_voucher",
+      "ok": true,
+      "detail": {
+        "applied": 249000,
+        "balance": 151000
+      }
+    },
+    {
+      "name": "journal_voucher_detail_returns_lines",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "lines": 3
+      }
+    },
+    {
+      "name": "journal_history_filter_by_box_and_period",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "found": true,
+        "lines_count": 3
+      }
+    },
+    {
+      "name": "journal_history_period_excludes_out_of_range",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 0
+      }
+    },
+    {
+      "name": "journal_history_filter_by_other_box_excludes",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 0
+      }
+    },
+    {
+      "name": "journal_advances_all_states_listing",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "vouchers_count": 1,
+        "balance": 151000
+      }
+    },
+    {
+      "name": "journal_advances_open_listing",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 7
+      }
+    },
+    {
+      "name": "journal_voucher_cancelled_with_reversal",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "reversal": true
+      }
+    },
+    {
+      "name": "journal_advance_balance_restored_after_cancel",
+      "ok": true,
+      "detail": {
+        "applied": 0,
+        "balance": 400000
+      }
+    },
+    {
+      "name": "journal_double_cancel_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "VOUCHER_ALREADY_CANCELLED"
+      }
+    },
+    {
+      "name": "journal_report_excludes_cancelled_by_default",
+      "ok": true,
+      "detail": {
+        "total": 0,
+        "rows": 0
+      }
+    },
+    {
+      "name": "journal_second_voucher_applies_remaining_advance",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "total": 50000
+      }
+    },
+    {
+      "name": "journal_advance_liquidated_bodyless_default_refund",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "refund": 350000
+      }
+    },
+    {
+      "name": "journal_cancel_with_liquidated_advance_blocked",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "VOUCHER_ADVANCE_LIQUIDATED"
+      }
+    },
+    {
+      "name": "journal_final_report_reflects_live_state",
+      "ok": true,
+      "detail": {
+        "total": 1,
+        "advance_status": "liquidated"
+      }
+    },
+    {
+      "name": "unit_suite_petty-cash-masters_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "35",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_petty-cash-vouchers_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "54",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_petty-cash-reports_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "35",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-module-registration_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "7",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-masters_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "16",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-operations_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "26",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "unit_suite_gastos-menores-reports_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "14",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "journal_page_inline_register_not_modal",
+      "ok": true,
+      "detail": {
+        "register_heading": 24089,
+        "first_modal": 41025
+      }
+    },
+    {
+      "name": "journal_page_payload_contract",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "journal_page_period_and_advance_contract",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "journal_page_advance_guidance_and_empty_state",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "select_popup_color_scheme_follows_theme",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "schema_has_petty_cash_models",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "routes_guarded_by_accounting_rbac",
+      "ok": true,
+      "detail": {
+        "routes": 24,
+        "guards": 24
+      }
+    },
+    {
+      "name": "service_tenant_isolation_and_journal_line_resolution",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "web_pages_present",
+      "ok": true,
+      "detail": {
+        "missing": []
+      }
+    }
+  ],
+  "status": "passed",
+  "checks_passed": 51,
+  "checks_total": 51,
+  "finished_at": "2026-10-13T19:33:19.434Z"
+}
