@@ -1,0 +1,64 @@
+{
+  "change_id": "gastos-menores-journal-fix-20261013",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "f4c96bdf5908c3433c6cb2cf4d25e6d116aac1d0",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "journal-light-check.png",
+        "journal-dark-check.png"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json",
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/gastos-menores-journal-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/petty-cash-module-local.js",
+    "evidence": [
+      "regression-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa vigente: 'ajusta los hallazgos... realiza los ajustes necesarios y actualiza los ambientes locales y remotos hasta develop pero antes garantiza que no se quede ninguna validacion por realizar' (hallazgos QA del registro journal de Gastos Menores)",
+    "approved_at": "2026-10-13T15:10:00-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}
