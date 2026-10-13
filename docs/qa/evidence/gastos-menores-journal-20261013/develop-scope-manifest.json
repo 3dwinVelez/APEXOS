@@ -1,0 +1,102 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "gastos-menores-journal-20261013",
+  "base_commit": "20b92b633cdbb3ad95dc7ce474409ca55a867e02",
+  "base_commits": {
+    "develop": "20b92b633cdbb3ad95dc7ce474409ca55a867e02"
+  },
+  "certified_commit": "13ff3bd8849153e4e57de2d3121f3dac5e2574b8",
+  "change_intent": {
+    "summary": "Rediseño del registro de gastos de Gastos Menores: de ventana modal a planilla journal inline estilo SAP B1 (commit funcional a872bcc5 en desarrollo). La página carga con 7 consultas reales (comprobantes filtrados por caja y rango de fechas, cajas, conceptos, maestro de IVA de compras, proveedores, anticipos de TODOS los estados para el resumen del periodo y arbol organizacional con centros de costo), digita lineas inline (concept_id numerico, IVA por linea donde vat_code null = sin IVA porque el default del concepto es solo sugerencia de la UI, centro de costo por linea, proveedor/factura con required por concepto), auto-agrega la fila vacia al final, navega con Enter, resume Base/IVA/Total estimados (el servidor recalcula todo y rechaza vat_amount/total del cliente), y conserva el historial con Ver (detalle con lineas) y Anular (reversa contable que restaura el saldo del anticipo, bloqueada si ya fue liquidado). Fix funcional 13ff3bd8: al cambiar el Libro caja se limpia el anticipo seleccionado (quedaba stale y viajaba en el payload hasta el rechazo ADVANCE_BOX_MISMATCH). Suite gastos-menores-operations.test.mjs alineado al contrato journal (4 tests que assertaban el modal viejo) con un test nuevo que fija la creacion inline fuera de ModalFrame. Certificacion local E2E del journal 49/49 (payload real de la planilla, guardas SUPPLIER_REQUIRED/INVOICE_REFERENCE_REQUIRED/ADVANCE_BOX_MISMATCH/VAT_MASTER_NOT_FOUND/CONCEPT_NOT_FOUND, filtro de periodo, anulacion con restauracion del saldo) mas regresion del modulo base 49/49; lint 0 errores, typecheck y build limpios.",
+    "modules": [
+      "gastos-menores",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/gastos/page.tsx" },
+    { "status": "M", "file": "apps/web/test/gastos-menores-operations.test.mjs" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/build.log" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/develop-preqa-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/lint.log" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/regression-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/typecheck.log" },
+    { "status": "A", "file": "scripts/certifications/gastos-menores-journal-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
+    "apps/web/test/gastos-menores-operations.test.mjs",
+    "docs/qa/evidence/gastos-menores-journal-20261013/build.log",
+    "docs/qa/evidence/gastos-menores-journal-20261013/develop-preqa-evidence.json",
+    "docs/qa/evidence/gastos-menores-journal-20261013/develop-scope-manifest.json",
+    "docs/qa/evidence/gastos-menores-journal-20261013/lint.log",
+    "docs/qa/evidence/gastos-menores-journal-20261013/local-certification.json",
+    "docs/qa/evidence/gastos-menores-journal-20261013/regression-certification.json",
+    "docs/qa/evidence/gastos-menores-journal-20261013/typecheck.log",
+    "scripts/certifications/gastos-menores-journal-local.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "registro_journal_planilla_inline_con_digitacion_continua",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "contrato_carga_pantalla_7_consultas_periodo_y_detalle_con_lineas",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "iva_por_linea_centro_de_costo_y_guardas_de_soportes_en_servidor",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "anulacion_con_reversa_que_restaura_saldo_del_anticipo",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "aislamiento_tenant_y_rbac_contable_en_petty_cash",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_modulo_base_sin_regresion",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "soporte_lint_typecheck_build_sin_errores",
+      "status": "passed",
+      "evidence": [
+        "lint.log",
+        "typecheck.log",
+        "build.log"
+      ]
+    },
+    {
+      "name": "transporte_sin_regresion_en_develop",
+      "status": "passed",
+      "evidence": [
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  ]
+}
