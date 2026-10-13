@@ -395,7 +395,7 @@ export default function CajasGastosMenoresPage() {
               </Field>
               <Field label="Cuenta de caja (efectivo)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, account_code: event.target.value })}
                   required
                   value={form.account_code}
@@ -408,7 +408,7 @@ export default function CajasGastosMenoresPage() {
               </Field>
               <Field label="Cuenta de anticipo (requerida)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, advance_account_code: event.target.value })}
                   required
                   value={form.advance_account_code}
@@ -421,7 +421,7 @@ export default function CajasGastosMenoresPage() {
               </Field>
               <Field label="Custodio (opcional)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, custodian_party_id: event.target.value })}
                   value={form.custodian_party_id}
                 >
@@ -443,7 +443,7 @@ export default function CajasGastosMenoresPage() {
               </Field>
               <Field label="Sucursal (opcional)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, branch_code: event.target.value })}
                   value={form.branch_code}
                 >
@@ -455,7 +455,7 @@ export default function CajasGastosMenoresPage() {
               </Field>
               <Field label="Centro de costo (opcional)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, cost_center_code: event.target.value })}
                   value={form.cost_center_code}
                 >

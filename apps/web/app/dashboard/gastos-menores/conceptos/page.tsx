@@ -334,7 +334,7 @@ export default function ConceptosGastosMenoresPage() {
               </Field>
               <Field label="Cuenta contable (gasto)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, account_code: event.target.value })}
                   required
                   value={form.account_code}
@@ -347,7 +347,7 @@ export default function ConceptosGastosMenoresPage() {
               </Field>
               <Field label="Cuenta de anticipo (opcional)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, advance_account_code: event.target.value })}
                   value={form.advance_account_code}
                 >
@@ -359,7 +359,7 @@ export default function ConceptosGastosMenoresPage() {
               </Field>
               <Field label="IVA sugerido (opcional)">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setForm({ ...form, default_vat_code: event.target.value })}
                   value={form.default_vat_code}
                 >

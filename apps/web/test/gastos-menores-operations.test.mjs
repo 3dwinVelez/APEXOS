@@ -253,3 +253,23 @@ test("los popups nativos de select siguen el tema activo de la aplicacion", () =
   assert.match(globalsCss, /select\s*\{\s*color-scheme:\s*light;/);
   assert.match(globalsCss, /html\.dark\s+select\s*\{\s*color-scheme:\s*dark;/);
 });
+
+test("los selects criticos usan appearance base-select con picker tematizado", () => {
+  const globalsCss = read("../app/globals.css");
+  assert.match(globalsCss, /\.apex-select\s*\{\s*appearance:\s*base-select;/);
+  assert.match(globalsCss, /\.apex-select::picker\(select\)\s*\{/);
+  assert.match(globalsCss, /\.apex-select option\s*\{/);
+  assert.match(globalsCss, /html\.dark\s+\.apex-cell:focus\s*\{/);
+  const gastos = read("../app/dashboard/gastos-menores/gastos/page.tsx");
+  assert.match(gastos, /className=\{`\$\{CELL\} apex-select`\}/);
+  assert.match(gastos, /className="control apex-select"/);
+  assert.match(gastos, /apex-cell/);
+  for (const page of ["anticipos", "cajas", "conceptos", "reportes"]) {
+    const pageSrc = read(`../app/dashboard/gastos-menores/${page}/page.tsx`);
+    const selects = pageSrc.match(/<select[\s\S]*?>/g) || [];
+    assert.ok(selects.length > 0, `${page} debe tener selects`);
+    for (const tag of selects) {
+      assert.match(tag, /apex-select/, `${page} tiene un select sin apex-select`);
+    }
+  }
+});

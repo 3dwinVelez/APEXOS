@@ -323,7 +323,7 @@ export default function AnticiposGastosMenoresPage() {
         <div className="grid gap-3 border-b border-line p-4 md:grid-cols-5">
           <label className="text-sm">
             <span className="mb-1 block text-neutral-600">Estado</span>
-            <select className="control" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
+            <select className="control apex-select" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
               <option value="">Todos</option>
               <option value="open">Abiertos</option>
               <option value="liquidated">Liquidados</option>
@@ -332,7 +332,7 @@ export default function AnticiposGastosMenoresPage() {
           </label>
           <label className="text-sm">
             <span className="mb-1 block text-neutral-600">Caja</span>
-            <select className="control" onChange={(event) => setBoxFilter(event.target.value)} value={boxFilter}>
+            <select className="control apex-select" onChange={(event) => setBoxFilter(event.target.value)} value={boxFilter}>
               <option value="">Todas</option>
               {activeBoxes.map((row) => (
                 <option key={row.id} value={row.id}>{row.code} - {row.name}</option>
@@ -423,7 +423,7 @@ export default function AnticiposGastosMenoresPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <Field label="Caja menor">
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setAdvanceForm({ ...advanceForm, box_id: event.target.value })}
                   required
                   value={advanceForm.box_id}
@@ -458,7 +458,7 @@ export default function AnticiposGastosMenoresPage() {
               </Field>
               <Field label={`Custodio${selectedBox?.custodian_name ? ` (caja: ${selectedBox.custodian_name})` : ""}`}>
                 <select
-                  className="control"
+                  className="control apex-select"
                   onChange={(event) => setAdvanceForm({ ...advanceForm, custodian_party_id: event.target.value })}
                   value={advanceForm.custodian_party_id}
                 >
@@ -540,7 +540,7 @@ export default function AnticiposGastosMenoresPage() {
               </Field>
               <Field label="Concepto del faltante">
                 <select
-                  className="control"
+                  className="control apex-select"
                   disabled={liquidationShortfall <= 0}
                   onChange={(event) => setLiquidationForm({ ...liquidationForm, shortfall_concept_code: event.target.value })}
                   required={liquidationShortfall > 0}

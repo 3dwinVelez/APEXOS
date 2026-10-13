@@ -377,6 +377,27 @@ async function main() {
     check("select_popup_color_scheme_follows_theme", /select\s*\{\s*color-scheme:\s*light;/.test(globalsSrc)
       && /html\.dark\s+select\s*\{\s*color-scheme:\s*dark;/.test(globalsSrc),
       {});
+    check("select_popup_base_select_theming", /\.apex-select\s*\{\s*appearance:\s*base-select;/.test(globalsSrc)
+      && /\.apex-select::picker\(select\)\s*\{/.test(globalsSrc)
+      && /\.apex-select option\s*\{/.test(globalsSrc),
+      {});
+    check("journal_cells_follow_app_theme_on_focus", /apex-cell/.test(gastosSrc)
+      && /\.apex-cell:focus\s*\{/.test(globalsSrc)
+      && /html\.dark\s+\.apex-cell:focus\s*\{/.test(globalsSrc),
+      {});
+    check("module_selects_opt_into_apex_select", (() => {
+      const pages = ["gastos", "anticipos", "cajas", "conceptos", "reportes"];
+      for (const page of pages) {
+        const src = fs.readFileSync(path.join(WEB, `app/dashboard/gastos-menores/${page}/page.tsx`), "utf8");
+        const tags = src.match(/<select[\s\S]*?>/g) || [];
+        if (tags.length === 0) return false;
+        for (const tag of tags) {
+          if (!/apex-select/.test(tag)) return false;
+        }
+      }
+      return true;
+    })(),
+    {});
 
     const schemaSrc = fs.readFileSync(SCHEMA_SRC, "utf8");
     check("schema_has_petty_cash_models", ["PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine"].every((m) => schemaSrc.includes(`model ${m} `)), {});

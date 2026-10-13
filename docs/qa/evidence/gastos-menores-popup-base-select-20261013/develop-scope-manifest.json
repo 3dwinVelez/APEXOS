@@ -1,0 +1,131 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "gastos-menores-popup-base-select-20261013",
+  "base_commit": "707c04827e24c054b0882482da0c403aa7022daa",
+  "base_commits": {
+    "develop": "707c04827e24c054b0882482da0c403aa7022daa"
+  },
+  "certified_commit": "35f71da47b14d61b8975f0950cc7c6f4c1a28743",
+  "change_intent": {
+    "summary": "Fix estructural del popup oscuro de los selects que persistia en develop a pesar del acople de color-scheme de la ronda anterior (hallazgo del lead: captura del popup nativo oscuro del Concepto sobre la pagina clara del journal, QA con SO en modo oscuro). Root cause confirmado con investigacion y reproduccion: en Windows el popup nativo del <select> lo pinta el SO con su propio tema e ignora el color-scheme de la pagina, por lo que ningun CSS clasico puede tematizarlo. Solucion real: appearance: base-select (CSS UI-4, Chromium 135+) mueve el picker al pipeline de render del navegador (top layer), donde ::picker(select) y option aceptan CSS con tokens del tema activo; opt-in por clase apex-select en los 28 selects del modulo Gastos Menores (journal 6, anticipos 5, cajas 5, conceptos 3, reportes 9) con degradacion graceful en navegadores sin soporte. Bug relacionado encontrado en el barrido: tailwind.config.ts no declara darkMode (default 'media'), de modo que las variantes dark: responden al SO y no a la clase html.dark del tema de la app; con SO oscuro + app clara, dark:focus:bg-slate-900 de la celda del journal pintaba el foco oscuro (captura journal-focused-cell-pre-fix.png). Se acopla al tema con la clase apex-cell y reglas .apex-cell:focus / html.dark .apex-cell:focus con tokens --surface. Robustez pedida por el lead: +1 test web (suite 27/27), +3 checks de codigo en la certificacion journal (select_popup_base_select_theming, journal_cells_follow_app_theme_on_focus, module_selects_opt_into_apex_select; certificacion 54/54 antes 51/51), skill apexos-frontend actualizada con el mecanismo del SO, la solucion base-select, el quirk de darkMode media y la limitacion de captura con ventana oculta. Evidencia de mecanismo: pagina de repro con popup nativo oscuro vs picker base-select blanco bajo SO oscuro (popup-base-select-repro-light.png); verificacion en navegador local del journal con computed appearance base-select y contrato funcional intacto (Base 100000 + IVA COMPRAS-19 = Total $119.000). Limitacion honesta: la captura pixel del picker en tema oscuro dentro de la app no fue posible por oclusion de la ventana del navegador de automatizacion; el picker oscuro usa los mismos tokens que el resto de la app. Regresion del modulo base 49/49; lint 0 errores, typecheck y build limpios.",
+    "modules": [
+      "gastos-menores",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    { "status": "M", "file": ".qoder/skills/apexos-frontend/SKILL.md" },
+    { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/anticipos/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/cajas/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/gastos/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/reportes/page.tsx" },
+    { "status": "M", "file": "apps/web/app/globals.css" },
+    { "status": "M", "file": "apps/web/test/gastos-menores-operations.test.mjs" },
+    { "status": "M", "file": "scripts/certifications/gastos-menores-journal-local.js" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/develop-preqa-evidence.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/develop-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/journal-focused-cell-pre-fix.png" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/popup-after-real-click.png" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/popup-base-select-repro-light.png" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/popup-repro-light-theme.png" },
+    { "status": "A", "file": "docs/qa/evidence/gastos-menores-popup-base-select-20261013/regression-certification.json" }
+  ],
+  "allowed_paths": [
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    "apps/web/app/dashboard/gastos-menores/anticipos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/cajas/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/reportes/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/test/gastos-menores-operations.test.mjs",
+    "scripts/certifications/gastos-menores-journal-local.js",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/develop-preqa-evidence.json",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/develop-scope-manifest.json",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/journal-focused-cell-pre-fix.png",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/local-certification.json",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/popup-after-real-click.png",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/popup-base-select-repro-light.png",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/popup-repro-light-theme.png",
+    "docs/qa/evidence/gastos-menores-popup-base-select-20261013/regression-certification.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "registro_journal_planilla_inline_con_digitacion_continua",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "contrato_carga_pantalla_7_consultas_periodo_y_detalle_con_lineas",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "iva_por_linea_centro_de_costo_y_guardas_de_soportes_en_servidor",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "popup_de_selects_tematizado_al_tema_de_la_app_en_ambos_temas",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "popup-base-select-repro-light.png"
+      ]
+    },
+    {
+      "name": "foco_de_celda_del_journal_acoplado_al_tema_no_al_so",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "journal-focused-cell-pre-fix.png"
+      ]
+    },
+    {
+      "name": "guia_del_concepto_de_anticipo_y_estado_vacio_accionable",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "popup-repro-light-theme.png"
+      ]
+    },
+    {
+      "name": "aislamiento_tenant_y_rbac_contable_en_petty_cash",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_modulo_base_sin_regresion",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "soporte_lint_typecheck_build_y_suites_sin_errores",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "transporte_sin_regresion_en_develop",
+      "status": "passed",
+      "evidence": [
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  ]
+}
