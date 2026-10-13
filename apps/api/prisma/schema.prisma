@@ -1431,6 +1431,7 @@ model Vehicle {
   updated_at            DateTime  @updatedAt
   documents             VehicleDocument[]
   audit_logs            VehicleMasterAuditLog[]
+  pyg_budgets           TransportPygBudget[]
 
   @@unique([tenant_id, plate])
   @@index([tenant_id, vin_chassis])
@@ -2140,6 +2141,73 @@ model TransportSettlementItem {
   @@unique([tenant_id, package_id, guide_reference])
   @@index([tenant_id, guide_reference])
   @@index([tenant_id, package_id])
+}
+
+// === PYG POR VEHICULO (centro de costo = placa) ===
+// Catalogo de conceptos del estado de resultados por vehiculo. El servicio siembra
+// los conceptos por tenant de forma idempotente (mismos codigos que el Excel corporativo).
+model TransportPygConcept {
+  id            Int      @id @default(autoincrement())
+  tenant_id     String
+  code          String
+  name          String
+  section       String   @default("gastos_operativos")
+  kind          String   @default("expense")
+  display_order Int      @default(0)
+  active        Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("transport_pyg_concepts")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, display_order])
+}
+
+// Presupuesto mensual por vehiculo y concepto PYG (period YYYY-MM).
+model TransportPygBudget {
+  id           Int      @id @default(autoincrement())
+  tenant_id    String
+  vehicle_id   Int
+  vehicle      Vehicle  @relation(fields: [vehicle_id], references: [id])
+  period       String
+  concept_code String
+  amount       Decimal  @db.Decimal(18, 2)
+  created_by   Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("transport_pyg_budgets")
+  @@unique([tenant_id, vehicle_id, period, concept_code])
+  @@index([tenant_id, period])
+  @@index([tenant_id, vehicle_id])
+}
+
+// Mapping de fuentes de gasto hacia conceptos PYG. source_type='petty_cash_concept'
+// usa el codigo del concepto de caja menor; los canales de nomina/PILA/prestaciones
+// se resuelven por conductor autorizado del vehiculo y no requieren fila de mapping.
+model TransportPygSourceMap {
+  id              Int      @id @default(autoincrement())
+  tenant_id       String
+  source_type     String
+  source_code     String
+  pyg_concept_code String
+  active          Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@map("transport_pyg_source_map")
+  @@unique([tenant_id, source_type, source_code])
+}
+
+// Configuracion del reporte por tenant (una fila): tarifa del impuesto de regimen simple.
+model TransportPygConfig {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String   @unique
+  tax_percent Decimal  @default(2.25) @db.Decimal(7, 4)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("transport_pyg_config")
 }
 
 model TransportSettlementAdjustment {

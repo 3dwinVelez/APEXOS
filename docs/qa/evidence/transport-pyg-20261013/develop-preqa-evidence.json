@@ -1,0 +1,62 @@
+{
+  "change_id": "transport-pyg-20261013",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "1cbffc373221f0aefb04cb158a56fc39039150ba",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../petty-cash-module-20261010/develop-admin-certification.json",
+        "../transport-module-20261011/develop-admin-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-pyg-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/transport-pyg-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa vigente: 'lleva las actualizaciones hasta el ambiente remoto de develop con pruebas certificadas con datos poblados' (reporte PYG por vehiculo)",
+    "approved_at": "2026-10-13T09:55:00-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}
