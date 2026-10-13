@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { RefreshCw, Search, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
@@ -545,9 +546,13 @@ export default function GastosGastosMenoresPage() {
             <p className="text-xs text-neutral-500">ingresos menos gastos</p>
           </div>
           <div className="rounded-md border border-line bg-paper p-3">
-            <p className="text-xs uppercase text-neutral-500">Anticipo abierto{selectedBox ? ` · ${selectedBox.code}` : ""}</p>
+            <p className="text-xs uppercase text-neutral-500">Saldo anticipos vigentes{selectedBox ? ` · ${selectedBox.code}` : ""}</p>
             <p className="mt-1 text-xl font-semibold">{money(summary.anticipoAbiertoTotal)}</p>
-            <p className="text-xs text-neutral-500">{summary.anticiposAbiertos} anticipo{summary.anticiposAbiertos === 1 ? "" : "s"} vigente{summary.anticiposAbiertos === 1 ? "" : "s"}</p>
+            <p className="text-xs text-neutral-500">
+              {summary.anticiposAbiertos === 0
+                ? "Sin anticipos abiertos con saldo"
+                : `${summary.anticiposAbiertos} anticipo${summary.anticiposAbiertos === 1 ? "" : "s"} con saldo disponible`}
+            </p>
           </div>
         </div>
       </section>
@@ -573,9 +578,10 @@ export default function GastosGastosMenoresPage() {
                   value={draft.date}
                 />
               </label>
-              <label className="w-64 text-sm">
+              <div className="w-64 text-sm">
                 <span className="mb-1 block text-neutral-600">{`Anticipo${selectedBox?.require_advance ? " (obligatorio)" : ""}`}</span>
                 <select
+                  aria-label="Anticipo del comprobante"
                   className="control"
                   onChange={(event) => setDraft({ ...draft, advance_id: event.target.value })}
                   required={selectedBox?.require_advance === true}
@@ -588,7 +594,16 @@ export default function GastosGastosMenoresPage() {
                     <option key={row.id} value={row.id}>{row.full_number} · saldo {money(row.balance)}</option>
                   ))}
                 </select>
-              </label>
+                <p className="mt-1 text-xs leading-snug text-neutral-500">
+                  El anticipo es el fondo girado al custodio: cada gasto se descuenta de su saldo. Sin anticipo, el gasto sale del efectivo propio de la caja.
+                </p>
+                {selectedBox?.require_advance === true && boxAdvances.length === 0 ? (
+                  <p className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                    Esta caja exige anticipo pero no hay anticipos abiertos con saldo.{" "}
+                    <Link className="font-semibold underline" href="/dashboard/gastos-menores/anticipos">Gira un anticipo primero</Link>.
+                  </p>
+                ) : null}
+              </div>
               <label className="min-w-56 flex-1 text-sm">
                 <span className="mb-1 block text-neutral-600">Descripción general (opcional)</span>
                 <input

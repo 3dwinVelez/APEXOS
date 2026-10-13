@@ -366,6 +366,17 @@ async function main() {
       && /advances\.filter\(\(row\) => row\.status === "open" && Number\(row\.balance\) > 0 && String\(row\.box_id\) === effectiveBoxId\)/.test(gastosSrc)
       && /setDraft\(\(current\) => \(\{ \.\.\.current, advance_id: "" \}\)\)/.test(gastosSrc),
       {});
+    check("journal_page_advance_guidance_and_empty_state", /El anticipo es el fondo girado al custodio/.test(gastosSrc)
+      && /Esta caja exige anticipo pero no hay anticipos abiertos con saldo/.test(gastosSrc)
+      && /href="\/dashboard\/gastos-menores\/anticipos"/.test(gastosSrc)
+      && /Sin anticipos abiertos con saldo/.test(gastosSrc)
+      && /Saldo anticipos vigentes/.test(gastosSrc)
+      && /boxAdvances\.length === 0/.test(gastosSrc),
+      {});
+    const globalsSrc = fs.readFileSync(path.join(WEB, "app/globals.css"), "utf8");
+    check("select_popup_color_scheme_follows_theme", /select\s*\{\s*color-scheme:\s*light;/.test(globalsSrc)
+      && /html\.dark\s+select\s*\{\s*color-scheme:\s*dark;/.test(globalsSrc),
+      {});
 
     const schemaSrc = fs.readFileSync(SCHEMA_SRC, "utf8");
     check("schema_has_petty_cash_models", ["PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine"].every((m) => schemaSrc.includes(`model ${m} `)), {});

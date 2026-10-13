@@ -236,3 +236,20 @@ test("la landing ofrece las operaciones de anticipos y gastos", () => {
   assert.match(landing, /href="\/dashboard\/gastos-menores\/gastos"/);
   assert.match(landing, /import \{ BarChart3, HandCoins, ListChecks, Receipt, Wallet \} from "lucide-react"/);
 });
+
+test("el registro explica el concepto de anticipo y guia cuando la caja exige anticipo sin saldos abiertos", () => {
+  assert.match(gastos, /El anticipo es el fondo girado al custodio/);
+  assert.match(gastos, /cada gasto se descuenta de su saldo/);
+  assert.match(gastos, /Esta caja exige anticipo pero no hay anticipos abiertos con saldo/);
+  assert.match(gastos, /href="\/dashboard\/gastos-menores\/anticipos"/);
+  assert.match(gastos, /Gira un anticipo primero/);
+  assert.match(gastos, /Sin anticipos abiertos con saldo/);
+  assert.match(gastos, /Saldo anticipos vigentes/);
+  assert.match(gastos, /boxAdvances\.length === 0/);
+});
+
+test("los popups nativos de select siguen el tema activo de la aplicacion", () => {
+  const globalsCss = read("../app/globals.css");
+  assert.match(globalsCss, /select\s*\{\s*color-scheme:\s*light;/);
+  assert.match(globalsCss, /html\.dark\s+select\s*\{\s*color-scheme:\s*dark;/);
+});

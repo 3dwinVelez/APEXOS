@@ -1046,6 +1046,16 @@ html.dark option {
   color: rgb(var(--text-strong));
 }
 
+/* Los popups nativos de <select> deben seguir el tema activo: si algun ancestro filtra
+   color-scheme, la lista desplegable se pinta con el tema opuesto al de la pagina. */
+select {
+  color-scheme: light;
+}
+
+html.dark select {
+  color-scheme: dark;
+}
+
 /* Public service requests keep a stable, high-contrast palette regardless of the dashboard theme. */
 .apex-service-request {
   --request-ink: #17201e;
