@@ -277,6 +277,7 @@ async function build() {
   registerRoutes("petty-cash", require("./src/modules/petty-cash/routes"), { prefix: "/api/v1" });
   registerRoutes("commercial-management", require("./src/modules/commercial-management/routes"), { prefix: "/api/v1" });
   registerRoutes("apex-heart", require("./src/modules/apex-heart/routes"), { prefix: "/api/v1" });
+  registerRoutes("transport-pyg", require("./src/modules/transport-pyg/routes"), { prefix: "/api/v1" });
   bootLog("Registered API modules");
 
   bootLog("Registering brain websocket route");

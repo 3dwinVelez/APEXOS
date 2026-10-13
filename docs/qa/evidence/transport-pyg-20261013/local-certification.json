@@ -1,0 +1,416 @@
+{
+  "change_id": "transport-pyg-20261013",
+  "certification": "transport-pyg-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-10-13T14:53:58.602Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3212",
+  "scope": {
+    "capability": "Reporte PYG por vehiculo (centro de costo = placa) para el modulo de transporte: catalogo corporativo de 23 lineas, presupuesto por vehiculo/concepto, ingresos de liquidaciones aprobadas, gastos de caja menor con centro de costo, nomina/PILA/prestaciones por conductor autorizado, impuesto de regimen simple configurable, cumplimiento y porcentajes, fila dinamica de gastos sin clasificar, exportacion del reporte y auditoria de cambios de presupuesto/mapeo/configuracion.",
+    "proven_by_live_execution": [
+      "GET /transport-pyg/report?period=2026-08 reproduce el PYG GOLIAT del Excel (ingresos 19.150.000, cump 0.766, gastos operativos 22.653.852,39, impuesto 430.875, utilidad neta -3.934.727,39) con datos poblados por las APIs reales",
+      "POST /transport/vehicles crea las 9 placas del Excel y PUT /transport-pyg/budgets carga el presupuesto por vehiculo/concepto",
+      "Flujo completo de liquidacion (items con placa -> validate -> precalculate -> adjustments -> submit -> decision aprobada) alimenta el canal de ingresos",
+      "POST /petty-cash/vouchers con centro de costo por placa alimenta los canales de gasto clasificados y la fila dinamica sin clasificar",
+      "Empleado real + nomina/PILA/prestaciones en tablas de resultado de TH alimentan el canal conductor por authorized_driver_id",
+      "PUT /transport-pyg/config valida la tarifa del impuesto y PUT /transport-pyg/mapping valida el catalogo destino",
+      "GET anonimo responde 401 y periodo invalido responde 400"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/transport-pyg-report.test.js (motor puro + servicio con prisma falso: 9 controles)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "anonymous_blocked_401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "admin_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "tenant_resolved",
+      "ok": true,
+      "detail": {
+        "tenant": "c0d70738…"
+      }
+    },
+    {
+      "name": "catalog_seeded_23_concepts",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "count": 23
+      }
+    },
+    {
+      "name": "invalid_period_rejected",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "PYG_PERIOD_INVALID"
+      }
+    },
+    {
+      "name": "budget_unknown_vehicle_rejected",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "code": "PYG_VEHICLE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "budget_unknown_concept_rejected",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "PYG_BUDGET_CONCEPT_INVALID"
+      }
+    },
+    {
+      "name": "config_tax_out_of_range_rejected",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "FST_ERR_VALIDATION"
+      }
+    },
+    {
+      "name": "mapping_unknown_concept_rejected",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "PYG_MAPPING_CONCEPT_INVALID"
+      }
+    },
+    {
+      "name": "driver_employee_created",
+      "ok": true,
+      "detail": {
+        "reused": 558
+      }
+    },
+    {
+      "name": "vehicles_9_plates_ready",
+      "ok": true,
+      "detail": {
+        "plates": 9
+      }
+    },
+    {
+      "name": "budgets_saved_for_9_vehicles",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "upserted": 22
+      }
+    },
+    {
+      "name": "budgets_roundtrip",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "rows": 22
+      }
+    },
+    {
+      "name": "settlement_period_created",
+      "ok": true,
+      "detail": {
+        "reused": 3
+      }
+    },
+    {
+      "name": "package_created_borrador",
+      "ok": true,
+      "detail": {
+        "reused": 7,
+        "status": "aprobada"
+      }
+    },
+    {
+      "name": "petty_concepts_ready",
+      "ok": true,
+      "detail": {
+        "count": 9
+      }
+    },
+    {
+      "name": "petty_box_created",
+      "ok": true,
+      "detail": {
+        "reused": 11
+      }
+    },
+    {
+      "name": "petty_vouchers_created",
+      "ok": true,
+      "detail": {
+        "seeded": "GOLIAT(8 lineas) + 8 placas + sin mapear"
+      }
+    },
+    {
+      "name": "driver_channel_seeded",
+      "ok": true,
+      "detail": {
+        "employee_id": 558,
+        "period": "mes:2026-08-01:2026-08-31"
+      }
+    },
+    {
+      "name": "report_200",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "goliat_income_19150000",
+      "ok": true,
+      "detail": {
+        "income": 19150000
+      }
+    },
+    {
+      "name": "goliat_income_budget_and_cump",
+      "ok": true,
+      "detail": {
+        "budget": 25000000,
+        "cump": 0.766
+      }
+    },
+    {
+      "name": "goliat_payroll_channel",
+      "ok": true,
+      "detail": {
+        "actual": 7803733
+      }
+    },
+    {
+      "name": "goliat_pila_channel",
+      "ok": true,
+      "detail": {
+        "actual": 1191588.11
+      }
+    },
+    {
+      "name": "goliat_provision_channel",
+      "ok": true,
+      "detail": {
+        "actual": 1170559.95
+      }
+    },
+    {
+      "name": "goliat_combustible",
+      "ok": true,
+      "detail": {
+        "actual": 3323769.1
+      }
+    },
+    {
+      "name": "goliat_peajes",
+      "ok": true,
+      "detail": {
+        "actual": 2013600
+      }
+    },
+    {
+      "name": "goliat_total_gastos_22653852_39",
+      "ok": true,
+      "detail": {
+        "actual": 22653852.39
+      }
+    },
+    {
+      "name": "goliat_utilidad_operacional",
+      "ok": true,
+      "detail": {
+        "actual": -3503852.39
+      }
+    },
+    {
+      "name": "goliat_impuesto_430875",
+      "ok": true,
+      "detail": {
+        "actual": 430875,
+        "tax_percent": 2.25
+      }
+    },
+    {
+      "name": "goliat_utilidad_neta",
+      "ok": true,
+      "detail": {
+        "actual": -3934727.39
+      }
+    },
+    {
+      "name": "unmapped_dynamic_row_present",
+      "ok": true,
+      "detail": {
+        "actual": 120000
+      }
+    },
+    {
+      "name": "unmapped_total_in_data_status",
+      "ok": true,
+      "detail": {
+        "total": 120000
+      }
+    },
+    {
+      "name": "unmapped_row_before_subtotal",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "corporate_income_matches_excel_plates",
+      "ok": true,
+      "detail": {
+        "corporate": 200920531.33,
+        "expected": 200920531.33
+      }
+    },
+    {
+      "name": "corporate_expenses_positive",
+      "ok": true,
+      "detail": {
+        "actual": 51239433.39
+      }
+    },
+    {
+      "name": "corporate_net_margin_pct",
+      "ok": true,
+      "detail": {
+        "pct": 0.7225,
+        "expected": 0.7225
+      }
+    },
+    {
+      "name": "empty_period_no_crash",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "income": 0
+      }
+    },
+    {
+      "name": "config_roundtrip",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "tax": 2.25
+      }
+    },
+    {
+      "name": "mapping_default_seeded",
+      "ok": true,
+      "detail": {
+        "rows": 11
+      }
+    },
+    {
+      "name": "mapping_empty_row_deactivates",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "mapping_row_inactive_after_empty",
+      "ok": true,
+      "detail": {
+        "row": {
+          "source_type": "petty_cash_concept",
+          "source_code": "HONORARIOS",
+          "pyg_concept_code": "",
+          "active": false
+        }
+      }
+    },
+    {
+      "name": "mapping_remap_reactivates",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "row": {
+          "source_type": "petty_cash_concept",
+          "source_code": "HONORARIOS",
+          "pyg_concept_code": "HONORARIOS_CONTABLES_SST",
+          "active": true
+        }
+      }
+    },
+    {
+      "name": "functional_audit_written",
+      "ok": true,
+      "detail": {
+        "actions": [
+          "transport.pyg.budgets.updated",
+          "transport.pyg.config.updated",
+          "transport.pyg.mapping.updated"
+        ]
+      }
+    },
+    {
+      "name": "unit_suite_pass",
+      "ok": true,
+      "detail": {
+        "status": 0,
+        "pass": "9",
+        "fail": "0"
+      }
+    },
+    {
+      "name": "engine_contract",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "service_guards_tenant_and_lock",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "routes_guarded_by_rbac",
+      "ok": true,
+      "detail": {
+        "guards": 8
+      }
+    },
+    {
+      "name": "schema_has_pyg_models",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "migration_file_present",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "web_page_present",
+      "ok": true,
+      "detail": {}
+    }
+  ],
+  "status": "passed",
+  "checks_passed": 52,
+  "checks_total": 52,
+  "finished_at": "2026-10-13T14:54:05.246Z"
+}

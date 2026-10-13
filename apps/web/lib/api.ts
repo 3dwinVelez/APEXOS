@@ -4449,6 +4449,38 @@ export function listApexHeartReportSchedules() { return api<ApexHeartReportSched
 export function saveApexHeartReportSchedule(input: Omit<ApexHeartReportSchedule, "id" | "next_run_at" | "last_run_at">) { return api<ApexHeartReportSchedule>("/api/v1/apex-heart/report-schedules", { method: "POST", body: JSON.stringify(input) }); }
 export function deleteApexHeartReportSchedule(id: number) { return api(`/api/v1/apex-heart/report-schedules/${id}`, { method: "DELETE" }); }
 
+export type TransportPygConcept = { code: string; name: string; section: string; kind: string; display_order: number; dynamic?: boolean };
+export type TransportPygRow = { code: string; name: string; section: string; kind: string; dynamic?: boolean; budget: number; actual: number; pct: number | null; cump: number | null };
+export type TransportPygVehicle = {
+  vehicle_id: number; plate: string; vehicle_label: string | null; driver_id: number | null;
+  income_actual: number; unmapped_expense: number; rows: TransportPygRow[];
+};
+export type TransportPygReport = {
+  period: string; period_start: string; period_end: string; tax_percent: number;
+  concepts: TransportPygConcept[];
+  vehicles: TransportPygVehicle[];
+  corporate: { income_actual: number; unmapped_expense: number; rows: TransportPygRow[] };
+  data_status: { vehicle_count: number; vehicles_with_income: number; unmapped_total: number };
+};
+export type TransportPygBudgets = { period: string; rows: Array<{ vehicle_id: number; concept_code: string; amount: number }> };
+export type TransportPygMapping = { rows: Array<{ source_type: string; source_code: string; pyg_concept_code: string; active: boolean }> };
+export type TransportPygConfig = { tax_percent: number };
+
+export function getTransportPygConcepts() { return api<TransportPygConcept[]>("/api/v1/transport-pyg/concepts"); }
+export function getTransportPygReport(period: string) { return api<TransportPygReport>(`/api/v1/transport-pyg/report?period=${encodeURIComponent(period)}`); }
+export function getTransportPygBudgets(period: string) { return api<TransportPygBudgets>(`/api/v1/transport-pyg/budgets?period=${encodeURIComponent(period)}`); }
+export function saveTransportPygBudgets(period: string, rows: Array<{ vehicle_id: number; concept_code: string; amount: number }>) {
+  return api<TransportPygBudgets>("/api/v1/transport-pyg/budgets", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ period, rows }) });
+}
+export function getTransportPygMapping() { return api<TransportPygMapping>("/api/v1/transport-pyg/mapping"); }
+export function saveTransportPygMapping(rows: TransportPygMapping["rows"]) {
+  return api<TransportPygMapping>("/api/v1/transport-pyg/mapping", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }) });
+}
+export function getTransportPygConfig() { return api<TransportPygConfig>("/api/v1/transport-pyg/config"); }
+export function saveTransportPygConfig(taxPercent: number) {
+  return api<TransportPygConfig>("/api/v1/transport-pyg/config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tax_percent: taxPercent }) });
+}
+
 async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
   assertActiveSession();
   await keepSessionAlive();
