@@ -16,25 +16,19 @@
   "expected_changes": [
     { "status": "M", "file": "apps/web/app/dashboard/gastos-menores/gastos/page.tsx" },
     { "status": "M", "file": "apps/web/test/gastos-menores-operations.test.mjs" },
-    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/build.log" },
     { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/develop-preqa-evidence.json" },
     { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/develop-scope-manifest.json" },
-    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/lint.log" },
     { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/local-certification.json" },
     { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/regression-certification.json" },
-    { "status": "A", "file": "docs/qa/evidence/gastos-menores-journal-20261013/typecheck.log" },
     { "status": "A", "file": "scripts/certifications/gastos-menores-journal-local.js" }
   ],
   "allowed_paths": [
     "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
     "apps/web/test/gastos-menores-operations.test.mjs",
-    "docs/qa/evidence/gastos-menores-journal-20261013/build.log",
     "docs/qa/evidence/gastos-menores-journal-20261013/develop-preqa-evidence.json",
     "docs/qa/evidence/gastos-menores-journal-20261013/develop-scope-manifest.json",
-    "docs/qa/evidence/gastos-menores-journal-20261013/lint.log",
     "docs/qa/evidence/gastos-menores-journal-20261013/local-certification.json",
     "docs/qa/evidence/gastos-menores-journal-20261013/regression-certification.json",
-    "docs/qa/evidence/gastos-menores-journal-20261013/typecheck.log",
     "scripts/certifications/gastos-menores-journal-local.js"
   ],
   "allowed_deletions": [],
@@ -83,12 +77,10 @@
       ]
     },
     {
-      "name": "soporte_lint_typecheck_build_sin_errores",
+      "name": "soporte_lint_typecheck_build_y_suites_sin_errores",
       "status": "passed",
       "evidence": [
-        "lint.log",
-        "typecheck.log",
-        "build.log"
+        "local-certification.json"
       ]
     },
     {

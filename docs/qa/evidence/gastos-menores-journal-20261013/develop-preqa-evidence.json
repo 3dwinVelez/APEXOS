@@ -21,9 +21,7 @@
     "support_scripts": {
       "status": "passed",
       "evidence": [
-        "lint.log",
-        "typecheck.log",
-        "build.log"
+        "local-certification.json"
       ]
     },
     "regression": {
