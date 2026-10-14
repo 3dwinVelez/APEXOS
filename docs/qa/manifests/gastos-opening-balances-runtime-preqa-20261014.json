@@ -1,0 +1,86 @@
+{
+  "change_id": "gastos-opening-balances-runtime-preqa-20261014",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "c6e50ec90112a0c91694a2c469a296f34284ef53",
+  "qa_status": "pending",
+  "candidate": {
+    "status": "passed",
+    "reviewed_candidate_commit": "c6e50ec90112a0c91694a2c469a296f34284ef53",
+    "scope_manifest": "gastos-opening-balances-runtime-scope-20261014.json",
+    "target_baseline": "b84522b3e97b13fbdc5eabbcf5b93730402dc572",
+    "exactness": "scoped against current origin/develop b84522b3"
+  },
+  "change_intent": {
+    "summary": "Corregir la dependencia runtime ausente que causaba HTTP 500 al descargar la plantilla Excel.",
+    "modules": ["accounting-runtime", "qa-certification"]
+  },
+  "planned_scope": {
+    "status": "passed",
+    "owner": "qa_scope",
+    "rule": "Se enumeran exactamente las cuatro rutas runtime y los dos manifests del paquete.",
+    "allowed_deletions": []
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/browser-certification-candidate-c6e50ec.json",
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-c6e50ec-local.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-c6e50ec-local.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-c6e50ec-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/protected-flows-http-c6e50ec-local.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/platform-regression-c6e50ec-local.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/platform-regression-c6e50ec-local.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../apps/api/scripts/certifications/accounting-opening-balances-template-local.js",
+    "evidence": [
+      "../evidence/gastos-saldos-iniciales-20261014/accounting-opening-balances-template-api-local.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../apps/api/scripts/certifications/accounting-opening-balances-template-isolated-api-local.js",
+    "evidence": [
+      "../evidence/gastos-saldos-iniciales-20261014/accounting-opening-balances-template-isolated-api-local.json"
+    ]
+  },
+  "limitations": [
+    "La certificacion QA navegador previa permanece parcial por el fallo observado en b845; esta evidencia local acredita solo el fix runtime sobre c6e.",
+    "No acredita despliegue remoto ni migracion remota."
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante de APEXOS",
+    "approved_at": "2026-10-14",
+    "main_release": "not_authorized",
+    "merge_or_push": "not_authorized",
+    "remote_migrations": "not_authorized"
+  }
+}

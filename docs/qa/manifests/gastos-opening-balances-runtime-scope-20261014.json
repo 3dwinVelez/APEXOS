@@ -1,0 +1,56 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "gastos-opening-balances-runtime-fix-20261014",
+  "change_intent": {
+    "summary": "Incluir exceljs en el runtime de API y certificar la generacion de la plantilla de saldos iniciales.",
+    "modules": ["accounting-runtime", "qa-certification"]
+  },
+  "base_commits": {
+    "develop": "b84522b3e97b13fbdc5eabbcf5b93730402dc572"
+  },
+  "certified_commit": "c6e50ec90112a0c91694a2c469a296f34284ef53",
+  "certification_status": "passed_local_preqa_pending_remote_qa",
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/package.json" },
+    { "status": "A", "file": "apps/api/scripts/certifications/accounting-opening-balances-template-isolated-api-local.js" },
+    { "status": "A", "file": "apps/api/scripts/certifications/accounting-opening-balances-template-local.js" },
+    { "status": "M", "file": "package-lock.json" },
+    { "status": "A", "file": "docs/qa/manifests/gastos-opening-balances-runtime-scope-20261014.json" },
+    { "status": "A", "file": "docs/qa/manifests/gastos-opening-balances-runtime-preqa-20261014.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/scripts/certifications/accounting-opening-balances-template-isolated-api-local.js",
+    "apps/api/scripts/certifications/accounting-opening-balances-template-local.js",
+    "package-lock.json",
+    "docs/qa/manifests/gastos-opening-balances-runtime-scope-20261014.json",
+    "docs/qa/manifests/gastos-opening-balances-runtime-preqa-20261014.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "opening_balances_template_generation_and_import_contract",
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-c6e50ec-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/browser-certification-candidate-c6e50ec.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_journal_and_reversal",
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-menores-journal-20261014/journal-c6e50ec-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/browser-certification-candidate-c6e50ec.json"
+      ]
+    },
+    {
+      "name": "protected_http_platform_tenant_rbac_period_idempotency",
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/protected-flows-http-c6e50ec-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/platform-regression-c6e50ec-local.json"
+      ]
+    }
+  ]
+}
