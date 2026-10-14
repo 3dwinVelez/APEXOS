@@ -284,17 +284,15 @@ async function certifyGastos(page, fixture) {
   check("required_advance_box_starts_empty", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Seleccione el anticipo vigente")));
   const requiredAdvanceSubmit = await page.$('button[type="submit"]');
   const requiredAdvanceSubmitDisabled = await requiredAdvanceSubmit.evaluate((node) => node.disabled);
-  const requiredAdvanceHelperVisible = await page.$eval("body", (node) => {
-    const text = node.innerText;
-    return text.includes("Anticipo (obligatorio)") && text.includes("Seleccione el anticipo vigente");
-  });
+  const requiredAdvanceHelperVisible = await page.$eval("body", (node) => node.innerText.includes("Anticipo (obligatorio)"));
+  const requiredAdvancePlaceholderVisible = await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Seleccione el anticipo vigente"));
   let requiredBoxPostCount = 0;
   const onRequiredBoxRequest = (request) => { if (request.method() === "POST") requiredBoxPostCount += 1; };
   page.on("request", onRequiredBoxRequest);
   await requiredAdvanceSubmit.click();
   await new Promise((resolve) => setTimeout(resolve, 300));
   page.off("request", onRequiredBoxRequest);
-  check("required_advance_empty_disables_submit_and_shows_helper", requiredAdvanceSubmitDisabled && requiredAdvanceHelperVisible && requiredBoxPostCount === 0, { requiredAdvanceSubmitDisabled, requiredAdvanceHelperVisible, requiredBoxPostCount });
+  check("required_advance_empty_disables_submit_and_shows_helper", requiredAdvanceSubmitDisabled && requiredAdvanceHelperVisible && requiredAdvancePlaceholderVisible && requiredBoxPostCount === 0, { requiredAdvanceSubmitDisabled, requiredAdvanceHelperVisible, requiredAdvancePlaceholderVisible, requiredBoxPostCount });
   await certifyLookupKeyboardFlow(page, "Anticipo del comprobante", fixture.requiredAdvanceNumber, fixture.requiredAdvanceNumber, { key: "required_advance" });
   await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "cash_box_reset" });
   check("changing_box_clears_advance_id_and_error", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Sin anticipo")), { cashBox: fixture.boxCode, requiredBox: fixture.requiredBoxCode });
