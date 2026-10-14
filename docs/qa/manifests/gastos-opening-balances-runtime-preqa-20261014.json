@@ -1,0 +1,87 @@
+{
+  "change_id": "gastos-opening-balances-runtime-and-lookup-preqa-20261014",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "7923a8a169e0825c226021ac059be4fbb84902bd",
+  "qa_status": "pending",
+  "candidate": {
+    "status": "passed",
+    "reviewed_candidate_commit": "7923a8a169e0825c226021ac059be4fbb84902bd",
+    "scope_manifest": "gastos-opening-balances-runtime-scope-20261014.json",
+    "target_baseline": "b84522b3e97b13fbdc5eabbcf5b93730402dc572",
+    "exactness": "scoped against current origin/develop b84522b3"
+  },
+  "change_intent": {
+    "summary": "Corregir la dependencia runtime de Excel y certificar la experiencia de lookups de gastos menores.",
+    "modules": ["accounting-runtime", "gastos-menores", "qa-certification"]
+  },
+  "planned_scope": {
+    "status": "passed",
+    "owner": "qa_scope",
+    "rule": "El alcance enumera exactamente las diez rutas del net diff contra origin/develop.",
+    "allowed_deletions": []
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-keyboard-20261014/browser-certification-7923a8a.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/accounting-opening-balances-template-api-local.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/accounting-opening-balances-template-api-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/protected-flows-http-c6e50ec-local.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-keyboard-20261014/browser-certification-7923a8a.json",
+        "../evidence/gastos-menores-journal-20261014/journal-c6e50ec-local.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/platform-regression-c6e50ec-local.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../apps/api/scripts/certifications/accounting-opening-balances-template-local.js",
+    "evidence": [
+      "../evidence/gastos-saldos-iniciales-20261014/accounting-opening-balances-template-api-local.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../apps/api/scripts/certifications/accounting-opening-balances-template-isolated-api-local.js",
+    "evidence": [
+      "../evidence/gastos-saldos-iniciales-20261014/accounting-opening-balances-template-isolated-api-local.json"
+    ]
+  },
+  "limitations": [
+    "La evidencia es certificacion local; no acredita despliegue remoto ni migracion remota.",
+    "El candidato queda pendiente de QA funcional remoto despues de la promocion autorizada a develop."
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante de APEXOS",
+    "approved_at": "2026-10-14",
+    "main_release": "not_authorized",
+    "merge_or_push": "not_authorized",
+    "remote_migrations": "not_authorized"
+  }
+}
+
