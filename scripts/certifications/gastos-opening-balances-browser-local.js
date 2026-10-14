@@ -66,6 +66,7 @@ async function seedFixture() {
   let party = await db.party.findFirst({ where: { tenant_id: tenant.id, name: "Proveedor E2E" } });
   if (!party) party = await db.party.create({ data: { tenant_id: tenant.id, type: "supplier", name: "Proveedor E2E", active: true } });
   const box = await db.pettyCashBox.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code: `E2E-${suffix}` } }, update: { active: true }, create: { tenant_id: tenant.id, code: `E2E-${suffix}`, name: "Caja browser E2E", account_code: "1105", advance_account_code: "1330", custodian_party_id: party.id, monthly_limit: 2000000, require_advance: false, block_unliquidated_advance: false, active: true } });
+  await db.pettyCashBox.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code: `E2E-A-${suffix}` } }, update: { active: true, name: "Caja browser E2E" }, create: { tenant_id: tenant.id, code: `E2E-A-${suffix}`, name: "Caja browser E2E", account_code: "1105", advance_account_code: "1330", custodian_party_id: party.id, monthly_limit: 2000000, require_advance: false, block_unliquidated_advance: false, active: true } });
   const requiredBox = await db.pettyCashBox.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code: `E2E-R-${suffix}` } }, update: { active: true, require_advance: true }, create: { tenant_id: tenant.id, code: `E2E-R-${suffix}`, name: "Caja anticipo browser E2E", account_code: "1105", advance_account_code: "1330", custodian_party_id: party.id, monthly_limit: 2000000, require_advance: true, block_unliquidated_advance: false, active: true } });
   const advanceNumber = 800000 + (Number.parseInt(suffix.slice(0, 6), 16) % 99999);
   const requiredAdvance = await db.pettyCashAdvance.upsert({
@@ -79,7 +80,7 @@ async function seedFixture() {
   await db.user.create({ data: { tenant_id: tenant.id, name: "Limited E2E", email: limitedEmail, password: await bcrypt.hash("limited-e2e", 4), role_id: limitedRole.id, active: true } });
   const config = tenant.config && typeof tenant.config === "object" ? tenant.config : {};
   await db.tenant.update({ where: { id: tenant.id }, data: { active_modules: Array.from(new Set([...(tenant.active_modules || []), "M-07", "M-29"])), config: { ...config, accounting: { ...(config.accounting || {}), organization_tree: { societies: [{ code: `SOC-${suffix}`, name: "Sociedad E2E", active: true }], branches: [{ code: `BR-${suffix}`, name: "Sucursal E2E", society_code: `SOC-${suffix}`, active: true }], cost_centers: [{ code: `CC-${suffix}`, name: "Centro E2E", society_code: `SOC-${suffix}`, branch_code: `BR-${suffix}`, active: true }] } } } } });
-  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, requiredBoxId: requiredBox.id, requiredBoxCode: requiredBox.code, requiredAdvanceId: requiredAdvance.id, requiredAdvanceNumber: requiredAdvance.full_number, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, limitedEmail, adminEmail, adminPassword };
+  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, ambiguousBoxName: "Caja browser E2E", requiredBoxId: requiredBox.id, requiredBoxCode: requiredBox.code, requiredAdvanceId: requiredAdvance.id, requiredAdvanceNumber: requiredAdvance.full_number, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, limitedEmail, adminEmail, adminPassword };
 }
 
 async function login(page, email = "demo@apex.local", password = "test1234") {
@@ -197,6 +198,30 @@ async function certifyLookupKeyboardFlow(page, ariaLabel, query, expectedText, o
     await page.waitForFunction(({ selector, expected }) => document.querySelector(selector)?.value.includes(expected), {}, { selector: inputSelector, expected: expectedText });
     check(`${options.key || ariaLabel}_invalid_reselect_restores_valid_id`, true, { expectedText });
   }
+  if (options.ambiguous) {
+    let postCount = 0;
+    const onRequest = (request) => { if (request.method() === "POST") postCount += 1; };
+    page.on("request", onRequest);
+    await input.click();
+    await replaceFocusedText(page, options.ambiguous);
+    await page.keyboard.press("Enter");
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    page.off("request", onRequest);
+    const body = await page.$eval("body", (node) => node.innerText);
+    const visibleText = await page.$eval(inputSelector, (node) => node.value);
+    check(`${options.key || ariaLabel}_ambiguous_name_rejected_without_post`, postCount === 0 && body.includes("No encontramos") && visibleText === options.ambiguous, { postCount, ambiguous: options.ambiguous, visibleText });
+    await input.click();
+    await replaceFocusedText(page, "");
+    await page.keyboard.press("Tab");
+    await page.click(searchButton);
+    await page.waitForSelector(dialogSelector, { visible: true, timeout: 10000 });
+    await page.click(filterSelector);
+    await replaceFocusedText(page, query);
+    await page.waitForFunction((selector) => document.querySelectorAll(`${selector} [role="option"]`).length > 0, {}, dialogSelector);
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(({ selector, expected }) => document.querySelector(selector)?.value.includes(expected), {}, { selector: inputSelector, expected: expectedText });
+    check(`${options.key || ariaLabel}_ambiguous_reselect_restores_valid_id`, true, { expectedText });
+  }
   return inputSelector;
 }
 
@@ -220,7 +245,7 @@ async function certifyGastos(page, fixture) {
     return text.includes("Digitar gastos de caja") && !text.includes("Validando permisos");
   }, { timeout: 45000 });
   await page.waitForSelector('select[aria-label="Concepto línea 1"]', { visible: true, timeout: 45000 });
-  await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "box", invalid: "CAJA_INVALIDA_E2E" });
+  await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "box", invalid: "CAJA_INVALIDA_E2E", ambiguous: fixture.ambiguousBoxName });
   await page.waitForFunction((boxCode) => document.body.innerText.includes(`Caja ${boxCode} - Caja browser E2E`), {}, fixture.boxCode);
   check("gastos_box_fixture_selected", true, { boxId: fixture.boxId, boxCode: fixture.boxCode });
   check("gastos_box_lookup_enter_focuses_date", await page.$eval('input[type="date"]', (node) => document.activeElement === node));

@@ -288,23 +288,23 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
     () => advances.filter((row) => row.status === "open" && Number(row.balance) > 0 && String(row.box_id) === effectiveBoxId),
     [advances, effectiveBoxId]
   );
-  const boxOptions = useMemo<GastosLookupOption[]>(() => activeBoxes.map((row) => ({ value: String(row.id), label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}` })), [activeBoxes]);
+  const boxOptions = useMemo<GastosLookupOption[]>(() => activeBoxes.map((row) => ({ value: String(row.id), label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}`, aliases: [row.code, row.name] })), [activeBoxes]);
   const advanceOptions = useMemo<GastosLookupOption[]>(() => [
     { value: "", label: selectedBox?.require_advance ? "Seleccione el anticipo vigente" : "Sin anticipo: efectivo de la caja" },
-    ...boxAdvances.map((row) => ({ value: String(row.id), label: `${row.full_number} · saldo ${money(row.balance)}`, search: row.full_number }))
+    ...boxAdvances.map((row) => ({ value: String(row.id), label: `${row.full_number} · saldo ${money(row.balance)}`, search: row.full_number, aliases: [row.full_number] }))
   ], [boxAdvances, selectedBox?.require_advance]);
-  const conceptOptions = useMemo<GastosLookupOption[]>(() => activeConcepts.map((row) => ({ value: String(row.id), label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}` })), [activeConcepts]);
+  const conceptOptions = useMemo<GastosLookupOption[]>(() => activeConcepts.map((row) => ({ value: String(row.id), label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}`, aliases: [row.code, row.name] })), [activeConcepts]);
   const vatOptions = useMemo<GastosLookupOption[]>(() => [
     { value: "", label: "Sin IVA", search: "sin iva" },
-    ...activeVats.map((row) => ({ value: row.code, label: `${row.code} (${row.percent}%)`, search: `${row.code} ${row.concept} ${row.percent}` }))
+    ...activeVats.map((row) => ({ value: row.code, label: `${row.code} (${row.percent}%)`, search: `${row.code} ${row.concept} ${row.percent}`, aliases: [row.code, row.concept] }))
   ], [activeVats]);
   const supplierOptions = useMemo<GastosLookupOption[]>(() => [
     { value: "", label: "Sin proveedor", search: "sin proveedor" },
-    ...suppliers.map((row) => ({ value: String(row.id), label: row.name, search: `${row.code} ${row.name}` }))
+    ...suppliers.map((row) => ({ value: String(row.id), label: row.name, search: `${row.code} ${row.name}`, aliases: [row.code, row.name] }))
   ], [suppliers]);
   const costCenterOptions = useMemo<GastosLookupOption[]>(() => [
     { value: "", label: "Sin centro", search: "sin centro" },
-    ...activeCostCenters.map((row) => ({ value: row.code, label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}` }))
+    ...activeCostCenters.map((row) => ({ value: row.code, label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}`, aliases: [row.code, row.name] }))
   ], [activeCostCenters]);
 
   const filtered = useMemo(() => {

@@ -292,6 +292,7 @@ test("los filtros select siguen tematizados y la digitacion usa lookups de tecla
   assert.match(gastosLookup, /role=\"combobox\"/);
   assert.match(gastosLookup, /ArrowDown/);
   assert.match(gastosLookup, /exactMatches\.length !== 1/);
+  assert.match(gastosLookup, /option\.aliases/);
   assert.doesNotMatch(gastosLookup, /<span className=\"font-mono text-xs text-neutral-500\">\{option\.value\}<\/span>/);
   assert.match(gastos, /onValidityChange/);
   assert.match(gastos, /for \(const field of \["concept", "vat", "supplier", "cost-center"\]\)/);

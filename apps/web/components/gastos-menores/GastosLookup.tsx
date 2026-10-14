@@ -7,6 +7,7 @@ export type GastosLookupOption = {
   value: string;
   label: string;
   search?: string;
+  aliases?: string[];
 };
 
 type Props = {
@@ -29,7 +30,7 @@ type Props = {
 function matches(option: GastosLookupOption, text: string) {
   const needle = text.trim().toLocaleLowerCase();
   if (!needle) return false;
-  return [option.value, option.label, option.search || ""].some((value) => value.toLocaleLowerCase() === needle);
+  return [option.value, option.label, option.search || "", ...(option.aliases || [])].some((value) => value.toLocaleLowerCase() === needle);
 }
 
 export function GastosLookup({
@@ -81,7 +82,7 @@ export function GastosLookup({
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     if (!needle) return options;
-    return options.filter((option) => [option.value, option.label, option.search || ""].some((field) => field.toLocaleLowerCase().includes(needle)));
+    return options.filter((option) => [option.value, option.label, option.search || "", ...(option.aliases || [])].some((field) => field.toLocaleLowerCase().includes(needle)));
   }, [options, query]);
 
   function close(restoreFocus = true) {
