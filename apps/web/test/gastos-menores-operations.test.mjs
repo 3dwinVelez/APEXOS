@@ -12,6 +12,7 @@ const anticipos = read("../app/dashboard/gastos-menores/anticipos/page.tsx");
 const gastosListPage = read("../app/dashboard/gastos-menores/gastos/page.tsx");
 const gastosNuevoPage = read("../app/dashboard/gastos-menores/gastos/nuevo/page.tsx");
 const gastos = read("../components/gastos-menores/GastosMenoresWorkspace.tsx");
+const gastosLookup = read("../components/gastos-menores/GastosLookup.tsx");
 const operations = [["anticipos", anticipos], ["gastos", gastos]];
 
 test("las paginas de operaciones existen como paginas cliente", () => {
@@ -162,7 +163,9 @@ test("el anticipo del comprobante se filtra por caja y se exige cuando la caja l
   // La caja de trabajo del journal es la del filtro (o la primera activa): solo sus anticipos
   // abiertos con saldo aparecen en el encabezado del comprobante.
   assert.match(gastos, /advances\.filter\(\(row\) => row\.status === "open" && Number\(row\.balance\) > 0 && String\(row\.box_id\) === effectiveBoxId\)/);
-  assert.match(gastos, /required=\{selectedBox\?\.require_advance === true\}/);
+  assert.match(gastos, /aria-label="Anticipo del comprobante"/);
+  assert.match(gastos, /options=\{advanceOptions\}/);
+  assert.match(gastos, /selectedBox\?\.require_advance && !draft\.advance_id/);
   // Cambiar de caja limpia el anticipo seleccionado: el de otra caja no es imputable.
   assert.match(gastos, /setBoxFilter\(event\.target\.value\)/);
   assert.match(gastos, /advance_id: "" \}\)/);
@@ -173,15 +176,18 @@ test("la digitacion expone la caja de trabajo y limpia el anticipo al cambiarla"
   assert.match(gastos, /<span className="mb-1 block text-neutral-600">Caja de trabajo<\/span>/);
   assert.match(gastos, /aria-label="Caja de trabajo"/);
   assert.match(gastos, /value=\{effectiveBoxId\}/);
-  assert.match(gastos, /setBoxFilter\(event\.target\.value\);\s*setDraft\(\(current\) => \(\{ \.\.\.current, advance_id: "" \}\)\)/);
+  assert.match(gastos, /setBoxFilter\(value\);/);
+  assert.match(gastos, /setDraft\(\(current\) => \(\{ \.\.\.current, advance_id: "" \}\)\)/);
+  assert.match(gastos, /options=\{boxOptions\}/);
+  assert.match(gastos, /resetToken=\{effectiveBoxId\}/);
 });
 
 test("el concepto de la linea sugiere su IVA y exige los soportes que declara", () => {
   // default_vat_code es una sugerencia: la ausencia de IVA es un caso valido del negocio.
   assert.match(gastos, /vat_code: concept\?\.default_vat_code \|\| ""/);
-  assert.match(gastos, /required=\{concept\?\.requires_supplier === true\}/);
-  assert.match(gastos, /required=\{concept\?\.requires_invoice_reference === true\}/);
-  assert.match(gastos, /<option value="">Sin IVA<\/option>/);
+  assert.match(gastos, /optional=\{concept\?\.requires_supplier !== true\}/);
+  assert.match(gastos, /concept\.requires_invoice_reference && !line\.invoice_reference\.trim\(\)/);
+  assert.match(gastos, /options=\{vatOptions\}/);
 });
 
 test("los totales de la planilla son estimados, nunca la fuente", () => {
@@ -275,14 +281,20 @@ test("los popups nativos de select siguen el tema activo de la aplicacion", () =
   assert.match(globalsCss, /html\.dark\s+select\s*\{\s*color-scheme:\s*dark;/);
 });
 
-test("los selects criticos usan appearance base-select con picker tematizado", () => {
+test("los filtros select siguen tematizados y la digitacion usa lookups de teclado", () => {
   const globalsCss = read("../app/globals.css");
   assert.match(globalsCss, /\.apex-select\s*\{\s*appearance:\s*base-select;/);
   assert.match(globalsCss, /\.apex-select::picker\(select\)\s*\{/);
   assert.match(globalsCss, /\.apex-select option\s*\{/);
   assert.match(globalsCss, /html\.dark\s+\.apex-cell:focus\s*\{/);
   const gastos = read("../components/gastos-menores/GastosMenoresWorkspace.tsx");
-  assert.match(gastos, /className=\{`\$\{CELL\} apex-select`\}/);
+  assert.match(gastos, /GastosLookup/);
+  assert.match(gastosLookup, /role=\"combobox\"/);
+  assert.match(gastosLookup, /ArrowDown/);
+  assert.match(gastosLookup, /exactMatches\.length !== 1/);
+  assert.doesNotMatch(gastosLookup, /<span className=\"font-mono text-xs text-neutral-500\">\{option\.value\}<\/span>/);
+  assert.match(gastos, /onValidityChange/);
+  assert.match(gastos, /for \(const field of \["concept", "vat", "supplier", "cost-center"\]\)/);
   assert.match(gastos, /className="control apex-select"/);
   assert.match(gastos, /apex-cell/);
   for (const page of ["anticipos", "cajas", "conceptos", "reportes"]) {

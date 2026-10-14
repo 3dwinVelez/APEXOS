@@ -66,13 +66,20 @@ async function seedFixture() {
   let party = await db.party.findFirst({ where: { tenant_id: tenant.id, name: "Proveedor E2E" } });
   if (!party) party = await db.party.create({ data: { tenant_id: tenant.id, type: "supplier", name: "Proveedor E2E", active: true } });
   const box = await db.pettyCashBox.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code: `E2E-${suffix}` } }, update: { active: true }, create: { tenant_id: tenant.id, code: `E2E-${suffix}`, name: "Caja browser E2E", account_code: "1105", advance_account_code: "1330", custodian_party_id: party.id, monthly_limit: 2000000, require_advance: false, block_unliquidated_advance: false, active: true } });
+  const requiredBox = await db.pettyCashBox.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code: `E2E-R-${suffix}` } }, update: { active: true, require_advance: true }, create: { tenant_id: tenant.id, code: `E2E-R-${suffix}`, name: "Caja anticipo browser E2E", account_code: "1105", advance_account_code: "1330", custodian_party_id: party.id, monthly_limit: 2000000, require_advance: true, block_unliquidated_advance: false, active: true } });
+  const advanceNumber = 800000 + (Number.parseInt(suffix.slice(0, 6), 16) % 99999);
+  const requiredAdvance = await db.pettyCashAdvance.upsert({
+    where: { tenant_id_document_type_number: { tenant_id: tenant.id, document_type: "APC", number: advanceNumber } },
+    update: { box_id: requiredBox.id, status: "open", amount: 500000, balance: 500000, applied_total: 0 },
+    create: { tenant_id: tenant.id, box_id: requiredBox.id, document_type: "APC", number: advanceNumber, full_number: `APC-${String(advanceNumber).padStart(6, "0")}`, date: new Date(), custodian_party_id: party.id, amount: 500000, balance: 500000, applied_total: 0, status: "open", description: "Anticipo browser E2E" }
+  });
   const concept = await db.pettyCashConcept.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code: `E2E-C-${suffix}` } }, update: { active: true }, create: { tenant_id: tenant.id, code: `E2E-C-${suffix}`, name: "Gasto browser E2E", account_code: "5195", default_vat_code: "COMPRAS-19", requires_supplier: true, requires_invoice_reference: true, active: true } });
   const limitedRole = await db.role.create({ data: { tenant_id: tenant.id, name: `E2E_LIMITED_${suffix}`, is_system: false } });
   const limitedEmail = `limited-${suffix}@apex.local`;
   await db.user.create({ data: { tenant_id: tenant.id, name: "Limited E2E", email: limitedEmail, password: await bcrypt.hash("limited-e2e", 4), role_id: limitedRole.id, active: true } });
   const config = tenant.config && typeof tenant.config === "object" ? tenant.config : {};
   await db.tenant.update({ where: { id: tenant.id }, data: { active_modules: Array.from(new Set([...(tenant.active_modules || []), "M-07", "M-29"])), config: { ...config, accounting: { ...(config.accounting || {}), organization_tree: { societies: [{ code: `SOC-${suffix}`, name: "Sociedad E2E", active: true }], branches: [{ code: `BR-${suffix}`, name: "Sucursal E2E", society_code: `SOC-${suffix}`, active: true }], cost_centers: [{ code: `CC-${suffix}`, name: "Centro E2E", society_code: `SOC-${suffix}`, branch_code: `BR-${suffix}`, active: true }] } } } } });
-  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, limitedEmail, adminEmail, adminPassword };
+  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, requiredBoxId: requiredBox.id, requiredBoxCode: requiredBox.code, requiredAdvanceId: requiredAdvance.id, requiredAdvanceNumber: requiredAdvance.full_number, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, limitedEmail, adminEmail, adminPassword };
 }
 
 async function login(page, email = "demo@apex.local", password = "test1234") {
@@ -129,6 +136,70 @@ async function certifyDeniedPermissions(browser, fixture) {
   await context.close();
 }
 
+async function replaceFocusedText(page, text) {
+  await page.keyboard.down("Control");
+  await page.keyboard.press("A");
+  await page.keyboard.up("Control");
+  await page.keyboard.press("Backspace");
+  if (text) await page.keyboard.type(text);
+}
+
+async function certifyLookupKeyboardFlow(page, ariaLabel, query, expectedText, options = {}) {
+  const inputSelector = `input[role="combobox"][aria-label="${ariaLabel}"]`;
+  const nativeSelector = `select[aria-label="${ariaLabel}"]`;
+  check(`${options.key || ariaLabel}_uses_real_lookup_input`, Boolean(await page.$(inputSelector)) && !(await page.$(nativeSelector)), { ariaLabel });
+  const input = await page.$(inputSelector);
+  if (!input) throw new Error(`No se encontro el lookup ${ariaLabel}`);
+  await input.click();
+  await replaceFocusedText(page, "");
+  await page.keyboard.press("Enter");
+  const dialogSelector = `[role="dialog"][aria-label="Buscar ${ariaLabel}"]`;
+  await page.waitForSelector(dialogSelector, { visible: true, timeout: 10000 });
+  check(`${options.key || ariaLabel}_empty_enter_opens_lookup`, true, { ariaLabel });
+  const emptyEnterFocus = await page.$eval(`input[aria-label="Filtro ${ariaLabel}"]`, (node) => document.activeElement === node);
+  check(`${options.key || ariaLabel}_empty_enter_focus_filter`, emptyEnterFocus);
+  await page.keyboard.press("Escape");
+  await page.waitForFunction((selector) => !document.querySelector(selector), {}, dialogSelector);
+  const focusReturned = await page.$eval(inputSelector, (node) => document.activeElement === node);
+  check(`${options.key || ariaLabel}_escape_returns_focus`, focusReturned);
+
+  const searchButton = `button[aria-label="Buscar ${ariaLabel}"]`;
+  await page.click(searchButton);
+  await page.waitForSelector(dialogSelector, { visible: true, timeout: 10000 });
+  const filterSelector = `input[aria-label="Filtro ${ariaLabel}"]`;
+  await page.click(filterSelector);
+  await replaceFocusedText(page, query);
+  await page.waitForFunction((selector) => document.querySelectorAll(`${selector} [role="option"]`).length > 0, {}, dialogSelector);
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(({ selector, expected }) => document.querySelector(selector)?.value.includes(expected), {}, { selector: inputSelector, expected: expectedText });
+  check(`${options.key || ariaLabel}_filter_enter_picks_option`, true, { query, expectedText });
+  if (options.invalid) {
+    let postCount = 0;
+    const onRequest = (request) => { if (request.method() === "POST") postCount += 1; };
+    page.on("request", onRequest);
+    await input.click();
+    await replaceFocusedText(page, options.invalid);
+    await page.keyboard.press("Enter");
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    page.off("request", onRequest);
+    const body = await page.$eval("body", (node) => node.innerText);
+    const visibleText = await page.$eval(inputSelector, (node) => node.value);
+    check(`${options.key || ariaLabel}_invalid_no_post_and_clears_id`, postCount === 0 && body.includes("No encontramos") && visibleText === options.invalid, { postCount, invalid: options.invalid, visibleText });
+    await input.click();
+    await replaceFocusedText(page, "");
+    await page.keyboard.press("Tab");
+    await page.click(searchButton);
+    await page.waitForSelector(dialogSelector, { visible: true, timeout: 10000 });
+    await page.click(filterSelector);
+    await replaceFocusedText(page, query);
+    await page.waitForFunction((selector) => document.querySelectorAll(`${selector} [role="option"]`).length > 0, {}, dialogSelector);
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(({ selector, expected }) => document.querySelector(selector)?.value.includes(expected), {}, { selector: inputSelector, expected: expectedText });
+    check(`${options.key || ariaLabel}_invalid_reselect_restores_valid_id`, true, { expectedText });
+  }
+  return inputSelector;
+}
+
 async function certifyGastos(page, fixture) {
   console.error("[browser-cert] gastos:list");
   await page.goto(`${webUrl}/dashboard/gastos-menores/gastos`, { waitUntil: "networkidle2" });
@@ -149,17 +220,56 @@ async function certifyGastos(page, fixture) {
     return text.includes("Digitar gastos de caja") && !text.includes("Validando permisos");
   }, { timeout: 45000 });
   await page.waitForSelector('select[aria-label="Concepto línea 1"]', { visible: true, timeout: 45000 });
-  await page.select('select[aria-label="Caja de trabajo"]', String(fixture.boxId));
-  await page.waitForFunction((boxId) => document.querySelector('select[aria-label="Caja de trabajo"]')?.value === String(boxId), {}, fixture.boxId);
+  await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "box" });
   await page.waitForFunction((boxCode) => document.body.innerText.includes(`Caja ${boxCode} - Caja browser E2E`), {}, fixture.boxCode);
   check("gastos_box_fixture_selected", true, { boxId: fixture.boxId, boxCode: fixture.boxCode });
-  await page.select('select[aria-label="Concepto línea 1"]', String(fixture.conceptId));
+  check("gastos_box_lookup_enter_focuses_date", await page.$eval('input[type="date"]', (node) => document.activeElement === node));
+  await certifyLookupKeyboardFlow(page, "Concepto línea 1", "Gasto browser E2E", "Gasto browser E2E", { key: "concept", invalid: "CONCEPTO_INVALIDO_E2E" });
+  await page.waitForSelector('input[role="combobox"][aria-label="Concepto línea 2"]', { visible: true, timeout: 10000 });
+  check("gastos_lookup_adds_next_empty_row", true);
+  const invalidRow = await page.$('input[role="combobox"][aria-label="Concepto línea 2"]');
+  await invalidRow.click();
+  await replaceFocusedText(page, "CONCEPTO_FILA_INVALIDA_E2E");
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.body.innerText.includes("No encontramos el concepto"));
+  await page.click('button[aria-label="Quitar línea 2"]');
+  await page.waitForFunction(() => !document.querySelector('input[role="combobox"][aria-label="Concepto línea 2"]'));
+  check("gastos_remove_invalid_row_clears_lookup_error_and_last_row", !(await page.$('input[role="combobox"][aria-label="Concepto línea 2"]')) && !(await page.$eval("body", (node) => node.innerText.includes("No encontramos el concepto"))));
+  await certifyLookupKeyboardFlow(page, "Concepto línea 1", "Gasto browser E2E", "Gasto browser E2E", { key: "concept_reuse" });
+  await page.waitForSelector('input[role="combobox"][aria-label="Concepto línea 2"]', { visible: true, timeout: 10000 });
+  check("gastos_new_row_reused_after_invalid_row_removal", true);
   await page.type('input[aria-label="Descripción línea 1"]', "Gasto browser E2E");
   await page.type('input[aria-label="Base línea 1"]', "12500");
-  await page.select('select[aria-label="IVA línea 1"]', "COMPRAS-19");
-  await page.select('select[aria-label="Proveedor línea 1"]', String(fixture.partyId));
+  await certifyLookupKeyboardFlow(page, "IVA línea 1", "COMPRAS-19", "COMPRAS-19", { key: "vat" });
+  const vatInput = await page.$('input[role="combobox"][aria-label="IVA línea 1"]');
+  await vatInput.click();
+  await replaceFocusedText(page, "");
+  await page.keyboard.press("Tab");
+  check("vat_optional_lookup_clears_on_blur", !(await page.$eval('input[role="combobox"][aria-label="IVA línea 1"]', (node) => node.value)));
+  await certifyLookupKeyboardFlow(page, "IVA línea 1", "COMPRAS-19", "COMPRAS-19", { key: "vat_reselect" });
+  await certifyLookupKeyboardFlow(page, "Proveedor línea 1", "Proveedor E2E", "Proveedor E2E", { key: "supplier" });
   await page.type('input[aria-label="Factura línea 1"]', `E2E-${suffix}`);
-  await page.select('select[aria-label="Centro de costo línea 1"]', fixture.costCenter);
+  await certifyLookupKeyboardFlow(page, "Centro de costo línea 1", fixture.costCenter, fixture.costCenter, { key: "cost_center" });
+  await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.requiredBoxCode, fixture.requiredBoxCode, { key: "required_box" });
+  const requiredAdvanceInput = 'input[role="combobox"][aria-label="Anticipo del comprobante"]';
+  check("required_advance_box_starts_empty", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Seleccione el anticipo vigente")));
+  const requiredAdvanceSubmit = await page.$('button[type="submit"]');
+  const requiredAdvanceSubmitDisabled = await requiredAdvanceSubmit.evaluate((node) => node.disabled);
+  const requiredAdvanceHelperVisible = await page.$eval("body", (node) => {
+    const text = node.innerText;
+    return text.includes("Anticipo (obligatorio)") && text.includes("Seleccione el anticipo vigente");
+  });
+  let requiredBoxPostCount = 0;
+  const onRequiredBoxRequest = (request) => { if (request.method() === "POST") requiredBoxPostCount += 1; };
+  page.on("request", onRequiredBoxRequest);
+  await requiredAdvanceSubmit.click();
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  page.off("request", onRequiredBoxRequest);
+  check("required_advance_empty_disables_submit_and_shows_helper", requiredAdvanceSubmitDisabled && requiredAdvanceHelperVisible && requiredBoxPostCount === 0, { requiredAdvanceSubmitDisabled, requiredAdvanceHelperVisible, requiredBoxPostCount });
+  await certifyLookupKeyboardFlow(page, "Anticipo del comprobante", fixture.requiredAdvanceNumber, fixture.requiredAdvanceNumber, { key: "required_advance" });
+  await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "cash_box_reset" });
+  check("changing_box_clears_advance_id_and_error", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Sin anticipo")), { cashBox: fixture.boxCode, requiredBox: fixture.requiredBoxCode });
+  check("gastos_advance_scope_is_empty_for_cash_box", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Sin anticipo")), { boxId: fixture.boxId });
   await page.click('button[type="submit"]');
   console.error("[browser-cert] gastos:submitted");
   await page.waitForFunction(() => document.body.innerText.includes("contabilizado") || document.body.innerText.includes("Contabilizado"), { timeout: 20000 });

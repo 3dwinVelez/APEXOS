@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { GastosMenoresNav } from "@/components/gastos-menores-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { GastosLookup, GastosLookupOption } from "@/components/gastos-menores/GastosLookup";
 
 // DTO del listado de comprobantes (GET /api/v1/petty-cash/vouchers). El listado no incluye
 // lines: se piden a /vouchers/:id al abrir el detalle.
@@ -186,6 +187,7 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [lookupErrors, setLookupErrors] = useState<Set<string>>(() => new Set());
   // Encabezado del comprobante en edición (la planilla queda siempre visible, sin modal).
   const [draft, setDraft] = useState({ date: today(), advance_id: "", description: "" });
   const [draftLines, setDraftLines] = useState<LineForm[]>([{ ...emptyLine }]);
@@ -244,7 +246,6 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   const activeCostCenters = useMemo(() => orgTree.cost_centers.filter((row) => row.active !== false), [orgTree.cost_centers]);
   const vatByCode = useMemo(() => new Map(activeVats.map((row) => [row.code, row])), [activeVats]);
   const conceptById = useMemo(() => new Map(activeConcepts.map((row) => [String(row.id), row])), [activeConcepts]);
-
   // Caja de trabajo: la filtrada, o la primera activa como defecto (la planilla siempre
   // sabe qué caja está pagando).
   const effectiveBoxId = boxFilter || (activeBoxes[0] ? String(activeBoxes[0].id) : "");
@@ -287,6 +288,24 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
     () => advances.filter((row) => row.status === "open" && Number(row.balance) > 0 && String(row.box_id) === effectiveBoxId),
     [advances, effectiveBoxId]
   );
+  const boxOptions = useMemo<GastosLookupOption[]>(() => activeBoxes.map((row) => ({ value: String(row.id), label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}` })), [activeBoxes]);
+  const advanceOptions = useMemo<GastosLookupOption[]>(() => [
+    { value: "", label: selectedBox?.require_advance ? "Seleccione el anticipo vigente" : "Sin anticipo: efectivo de la caja" },
+    ...boxAdvances.map((row) => ({ value: String(row.id), label: `${row.full_number} · saldo ${money(row.balance)}`, search: row.full_number }))
+  ], [boxAdvances, selectedBox?.require_advance]);
+  const conceptOptions = useMemo<GastosLookupOption[]>(() => activeConcepts.map((row) => ({ value: String(row.id), label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}` })), [activeConcepts]);
+  const vatOptions = useMemo<GastosLookupOption[]>(() => [
+    { value: "", label: "Sin IVA", search: "sin iva" },
+    ...activeVats.map((row) => ({ value: row.code, label: `${row.code} (${row.percent}%)`, search: `${row.code} ${row.concept} ${row.percent}` }))
+  ], [activeVats]);
+  const supplierOptions = useMemo<GastosLookupOption[]>(() => [
+    { value: "", label: "Sin proveedor", search: "sin proveedor" },
+    ...suppliers.map((row) => ({ value: String(row.id), label: row.name, search: `${row.code} ${row.name}` }))
+  ], [suppliers]);
+  const costCenterOptions = useMemo<GastosLookupOption[]>(() => [
+    { value: "", label: "Sin centro", search: "sin centro" },
+    ...activeCostCenters.map((row) => ({ value: row.code, label: `${row.code} - ${row.name}`, search: `${row.code} ${row.name}` }))
+  ], [activeCostCenters]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -338,9 +357,30 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   }
 
   function removeLine(index: number) {
+    const oldLength = draftLines.length;
     setDraftLines((lines) => {
       const next = lines.filter((_, position) => position !== index);
       return next.length ? next : [{ ...emptyLine }];
+    });
+    setLookupErrors((current) => {
+      const next = new Set(current);
+      for (const field of ["concept", "vat", "supplier", "cost-center"]) {
+        next.delete(`${field}-${index}`);
+        for (let position = index + 1; position < oldLength; position += 1) {
+          const from = `${field}-${position}`;
+          const to = `${field}-${position - 1}`;
+          if (next.has(from)) { next.delete(from); next.add(to); }
+        }
+      }
+      return next;
+    });
+  }
+
+  function setLookupValidity(key: string, valid: boolean) {
+    setLookupErrors((current) => {
+      const next = new Set(current);
+      if (valid) next.delete(key); else next.add(key);
+      return next;
     });
   }
 
@@ -359,10 +399,14 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   function focusNextCell(event: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) {
     if (event.key !== "Enter") return;
     event.preventDefault();
+    focusNextInput(event.currentTarget);
+  }
+
+  function focusNextInput(currentTarget: HTMLElement) {
     const root = registerRef.current;
     if (!root) return;
     const cells = Array.from(root.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select"));
-    const current = cells.indexOf(event.currentTarget);
+    const current = cells.indexOf(currentTarget as HTMLInputElement | HTMLSelectElement);
     const next = cells[current + 1];
     if (next) {
       next.focus();
@@ -410,6 +454,7 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   function resetDraft() {
     setDraft({ date: today(), advance_id: "", description: "" });
     setDraftLines([{ ...emptyLine }]);
+    setLookupErrors(new Set());
   }
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -420,6 +465,23 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
     }
     if (!filledLines) {
       setError("Digita al menos una línea de gasto en la planilla.");
+      return;
+    }
+    if (selectedBox?.require_advance && !draft.advance_id) {
+      setError("Esta caja exige seleccionar un anticipo vigente antes de contabilizar.");
+      return;
+    }
+    if (lookupErrors.size) {
+      setError("Completa los campos de búsqueda con una opción válida antes de contabilizar.");
+      return;
+    }
+    const unresolved = draftLines.some((line) => {
+      if (isLineEmpty(line)) return false;
+      const concept = conceptById.get(line.concept_id);
+      return !concept || (concept.requires_supplier && !line.supplier_party_id) || (concept.requires_invoice_reference && !line.invoice_reference.trim());
+    });
+    if (unresolved) {
+      setError("Completa el concepto y los soportes obligatorios de cada línea de gasto.");
       return;
     }
     setSaving(true);
@@ -574,20 +636,27 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
             <div className="flex flex-wrap items-end gap-3">
               <label className="w-64 text-sm">
                 <span className="mb-1 block text-neutral-600">Caja de trabajo</span>
-                <select
+                <GastosLookup
                   aria-label="Caja de trabajo"
-                  className="control apex-select"
-                  onChange={(event) => {
-                    setBoxFilter(event.target.value);
+                  className="control pr-9"
+                  onClear={() => {
+                    setBoxFilter("");
                     setDraft((current) => ({ ...current, advance_id: "" }));
+                    setLookupValidity("advance", true);
                   }}
+                  onSelected={focusNextInput}
+                  onValidityChange={(valid) => setLookupValidity("box", valid)}
+                  onInvalid={(text) => setError(`No encontramos la caja ${text}. Selecciona una opción válida.`)}
+                  onResolve={(value) => {
+                    setError("");
+                    setBoxFilter(value);
+                    setDraft((current) => ({ ...current, advance_id: "" }));
+                    setLookupValidity("advance", true);
+                  }}
+                  options={boxOptions}
+                  placeholder="Código o nombre de caja"
                   value={effectiveBoxId}
-                >
-                  <option value="">Seleccione una caja</option>
-                  {activeBoxes.map((row) => (
-                    <option key={row.id} value={row.id}>{row.code} - {row.name}</option>
-                  ))}
-                </select>
+                />
               </label>
               <label className="text-sm">
                 <span className="mb-1 block text-neutral-600">Fecha</span>
@@ -601,20 +670,20 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
               </label>
               <div className="w-64 text-sm">
                 <span className="mb-1 block text-neutral-600">{`Anticipo${selectedBox?.require_advance ? " (obligatorio)" : ""}`}</span>
-                <select
+                <GastosLookup
                   aria-label="Anticipo del comprobante"
-                  className="control apex-select"
-                  onChange={(event) => setDraft({ ...draft, advance_id: event.target.value })}
-                  required={selectedBox?.require_advance === true}
+                  className="control pr-9"
+                  onClear={() => setDraft((current) => ({ ...current, advance_id: "" }))}
+                  onSelected={focusNextInput}
+                  resetToken={effectiveBoxId}
+                  onValidityChange={(valid) => setLookupValidity("advance", valid)}
+                  onInvalid={(text) => setError(`No encontramos el anticipo ${text}. Selecciona uno vigente para esta caja.`)}
+                  onResolve={(value) => { setError(""); setDraft((current) => ({ ...current, advance_id: value })); }}
+                  optional
+                  options={advanceOptions}
+                  placeholder="Número de anticipo"
                   value={draft.advance_id}
-                >
-                  <option value="">
-                    {selectedBox?.require_advance === true ? "Seleccione el anticipo vigente" : "Sin anticipo: efectivo de la caja"}
-                  </option>
-                  {boxAdvances.map((row) => (
-                    <option key={row.id} value={row.id}>{row.full_number} · saldo {money(row.balance)}</option>
-                  ))}
-                </select>
+                />
                 <p className="mt-1 text-xs leading-snug text-neutral-500">
                   El anticipo es el fondo girado al custodio: cada gasto se descuenta de su saldo. Sin anticipo, el gasto sale del efectivo propio de la caja.
                 </p>
@@ -665,19 +734,19 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
                       <tr className={`border-b align-middle ${last ? "bg-emerald-50/40" : ""}`} key={index}>
                         <td className="px-2 py-1 text-center text-xs text-neutral-400">{index + 1}</td>
                         <td className="p-1">
-                          <select
+                          <GastosLookup
                             aria-label={`Concepto línea ${index + 1}`}
-                            className={`${CELL} apex-select`}
-                            onChange={(event) => pickConcept(index, event.target.value)}
-                            onKeyDown={focusNextCell}
-                            required={!isLineEmpty(line)}
+                            className={`${CELL} pr-8`}
+                            onClear={() => setLine(index, { concept_id: "", vat_code: "" })}
+                            onEnterResolved={focusNextCell}
+                            onSelected={focusNextInput}
+                            onValidityChange={(valid) => setLookupValidity(`concept-${index}`, valid)}
+                            onInvalid={(text) => setError(`No encontramos el concepto ${text}. Selecciona un concepto válido.`)}
+                            onResolve={(value) => { setError(""); pickConcept(index, value); }}
+                            options={conceptOptions}
+                            placeholder={last ? "+ agregar concepto" : "Código o nombre"}
                             value={line.concept_id}
-                          >
-                            <option value="">{last ? "+ agregar concepto" : "Seleccione"}</option>
-                            {activeConcepts.map((row) => (
-                              <option key={row.id} value={row.id}>{row.code} - {row.name}</option>
-                            ))}
-                          </select>
+                          />
                         </td>
                         <td className="p-1">
                           <input
@@ -705,33 +774,36 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
                           />
                         </td>
                         <td className="p-1">
-                          <select
+                          <GastosLookup
                             aria-label={`IVA línea ${index + 1}`}
-                            className={`${CELL} apex-select`}
-                            onChange={(event) => setLine(index, { vat_code: event.target.value })}
-                            onKeyDown={focusNextCell}
+                            className={`${CELL} pr-8`}
+                            onClear={() => setLine(index, { vat_code: "" })}
+                            onEnterResolved={focusNextCell}
+                            onSelected={focusNextInput}
+                            onValidityChange={(valid) => setLookupValidity(`vat-${index}`, valid)}
+                            onInvalid={(text) => setError(`No encontramos el IVA ${text}. Selecciona una opción válida.`)}
+                            onResolve={(value) => { setError(""); setLine(index, { vat_code: value }); }}
+                            optional
+                            options={vatOptions}
+                            placeholder="Código IVA"
                             value={line.vat_code}
-                          >
-                            <option value="">Sin IVA</option>
-                            {activeVats.map((row) => (
-                              <option key={row.code} value={row.code}>{row.code} ({row.percent}%)</option>
-                            ))}
-                          </select>
+                          />
                         </td>
                         <td className="p-1">
-                          <select
+                          <GastosLookup
                             aria-label={`Proveedor línea ${index + 1}`}
-                            className={`${CELL} apex-select`}
-                            onChange={(event) => setLine(index, { supplier_party_id: event.target.value })}
-                            onKeyDown={focusNextCell}
-                            required={concept?.requires_supplier === true}
+                            className={`${CELL} pr-8`}
+                            onClear={() => setLine(index, { supplier_party_id: "" })}
+                            onEnterResolved={focusNextCell}
+                            onSelected={focusNextInput}
+                            onValidityChange={(valid) => setLookupValidity(`supplier-${index}`, valid)}
+                            onInvalid={(text) => setError(`No encontramos el proveedor ${text}. Selecciona una opción válida.`)}
+                            onResolve={(value) => { setError(""); setLine(index, { supplier_party_id: value }); }}
+                            optional={concept?.requires_supplier !== true}
+                            options={supplierOptions}
+                            placeholder="NIT o nombre"
                             value={line.supplier_party_id}
-                          >
-                            <option value="">Sin proveedor</option>
-                            {suppliers.map((row) => (
-                              <option key={row.id} value={row.id}>{row.name}</option>
-                            ))}
-                          </select>
+                          />
                         </td>
                         <td className="p-1">
                           <input
@@ -746,18 +818,20 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
                           />
                         </td>
                         <td className="p-1">
-                          <select
+                          <GastosLookup
                             aria-label={`Centro de costo línea ${index + 1}`}
-                            className={`${CELL} apex-select`}
-                            onChange={(event) => setLine(index, { cost_center_code: event.target.value })}
-                            onKeyDown={focusNextCell}
+                            className={`${CELL} pr-8`}
+                            onClear={() => setLine(index, { cost_center_code: "" })}
+                            onEnterResolved={focusNextCell}
+                            onSelected={focusNextInput}
+                            onValidityChange={(valid) => setLookupValidity(`cost-center-${index}`, valid)}
+                            onInvalid={(text) => setError(`No encontramos el centro de costo ${text}. Selecciona una opción válida.`)}
+                            onResolve={(value) => { setError(""); setLine(index, { cost_center_code: value }); }}
+                            optional
+                            options={costCenterOptions}
+                            placeholder="Código o nombre"
                             value={line.cost_center_code}
-                          >
-                            <option value="">Sin centro</option>
-                            {activeCostCenters.map((row) => (
-                              <option key={row.code} value={row.code}>{row.code} - {row.name}</option>
-                            ))}
-                          </select>
+                          />
                         </td>
                         <td className="px-2 py-1 text-right text-sm font-medium">{isLineEmpty(line) ? "--" : money(lineTotal)}</td>
                         <td className="px-1 py-1 text-center">
@@ -797,7 +871,7 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
                   <p><span className="text-neutral-600">IVA</span> <span className="ml-2 inline-block min-w-28 font-medium">{money(totals.vat)}</span></p>
                   <p className="text-base font-semibold"><span className="text-neutral-600">Total</span> <span className="ml-2 inline-block min-w-28">{money(totals.total)}</span></p>
                 </div>
-                <button className="btn-primary" disabled={saving || !effectiveBoxId || !filledLines} type="submit">
+                <button className="btn-primary" disabled={saving || !effectiveBoxId || !filledLines || Boolean(selectedBox?.require_advance && !draft.advance_id)} type="submit">
                   {saving ? "Contabilizando..." : `Contabilizar ${filledLines ? `${filledLines} línea${filledLines === 1 ? "" : "s"}` : "gasto"}`}
                 </button>
               </div>
