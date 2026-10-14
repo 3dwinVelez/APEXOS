@@ -297,8 +297,20 @@ async function certifyGastos(page, fixture) {
   await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "cash_box_reset" });
   check("changing_box_clears_advance_id_and_error", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Sin anticipo")), { cashBox: fixture.boxCode, requiredBox: fixture.requiredBoxCode });
   check("gastos_advance_scope_is_empty_for_cash_box", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Sin anticipo")), { boxId: fixture.boxId });
+  const submitDiagnostics = await page.$eval("form", (form) => ({
+    checkValidity: form.checkValidity(),
+    submitDisabled: Boolean(form.querySelector('button[type="submit"]')?.disabled),
+    invalidRequired: Array.from(form.querySelectorAll("input:required")).filter((node) => !node.checkValidity()).map((node) => ({ ariaLabel: node.getAttribute("aria-label"), value: node.value })),
+    text: form.innerText.slice(-500)
+  }));
+  await page.screenshot({ path: path.join(path.dirname(output), "browser-certification-form-before-submit.png"), fullPage: true });
+  console.error("[browser-cert] gastos:before-submit", JSON.stringify(submitDiagnostics));
   await page.click('button[type="submit"]');
   console.error("[browser-cert] gastos:submitted");
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  const afterSubmitText = await page.$eval("form", (form) => form.innerText.slice(-500));
+  await page.screenshot({ path: path.join(path.dirname(output), "browser-certification-form-after-submit.png"), fullPage: true });
+  console.error("[browser-cert] gastos:after-submit", JSON.stringify({ text: afterSubmitText }));
   await page.waitForFunction(() => document.body.innerText.includes("contabilizado") || document.body.innerText.includes("Contabilizado"), { timeout: 20000 });
   check("gastos_ui_save_success", true);
   await page.goto(`${webUrl}/dashboard/gastos-menores/gastos`, { waitUntil: "networkidle2" });
