@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { createHash } = require("node:crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const {
   OPERATIONAL_PARTY_ROLES,
@@ -16,6 +17,142 @@ function appError(statusCode, code, message) {
   error.code = code;
   return error;
 }
+function normalizeOpeningHeader(value) {
+  return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+}
+
+function openingDate(value, rowNumber) {
+  const date = value instanceof Date ? value : new Date(String(value || ""));
+  if (Number.isNaN(date.getTime())) throw appError(422, "INVALID_OPENING_BALANCE_DATE", `Fila ${rowNumber}: fecha de corte invalida`);
+  return date;
+}
+
+function openingCents(value, rowNumber) {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw appError(422, "INVALID_OPENING_BALANCE_AMOUNT", `Fila ${rowNumber}: saldo invalido`);
+    return Math.round(value * 100);
+  }
+  const raw = String(value ?? "").trim().replace(/\s/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
+  if (!/^-?\d+(?:\.\d{1,2})?$/.test(raw)) throw appError(422, "INVALID_OPENING_BALANCE_AMOUNT", `Fila ${rowNumber}: saldo invalido`);
+  const cents = Math.round(Number(raw) * 100);
+  if (!Number.isSafeInteger(cents)) throw appError(422, "INVALID_OPENING_BALANCE_AMOUNT", `Fila ${rowNumber}: saldo fuera de rango`);
+  return cents;
+}
+
+async function createOpeningBalancesTemplate() {
+  const ExcelJS = require("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Saldos iniciales");
+  sheet.addRow(["Plantilla de saldos iniciales historicos"]);
+  sheet.addRow(["Una sola fecha de corte por archivo. Saldo positivo = debito; saldo negativo = credito."]);
+  sheet.addRow(["No cambie los encabezados. Tercero es opcional salvo cuentas que lo exijan."]);
+  sheet.addRow(["fecha_corte", "cuenta", "centro_costo", "sucursal", "saldo", "tercero"]);
+  sheet.getRow(4).font = { bold: true, color: { argb: "FFFFFFFF" } };
+  sheet.getRow(4).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF146C63" } };
+  sheet.getColumn(1).width = 18; sheet.getColumn(2).width = 16; sheet.getColumn(3).width = 18;
+  sheet.getColumn(4).width = 16; sheet.getColumn(5).width = 18; sheet.getColumn(6).width = 18;
+  sheet.getColumn(5).numFmt = "#,##0.00";
+  return workbook.xlsx.writeBuffer();
+}
+
+async function parseOpeningBalancesWorkbook(buffer) {
+  const ExcelJS = require("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  try { await workbook.xlsx.load(buffer); } catch { throw appError(422, "INVALID_OPENING_BALANCES_FILE", "El archivo Excel no se puede leer"); }
+  const sheet = workbook.worksheets.find((row) => normalizeOpeningHeader(row.name) === "saldos_iniciales") || workbook.worksheets[0];
+  if (!sheet) throw appError(422, "INVALID_OPENING_BALANCES_FILE", "La plantilla no contiene hojas");
+  const headers = sheet.getRow(4).values.slice(1).map(normalizeOpeningHeader);
+  const required = ["fecha_corte", "cuenta", "centro_costo", "sucursal", "saldo"];
+  const missing = required.filter((header) => !headers.includes(header));
+  if (missing.length) throw appError(422, "INVALID_OPENING_BALANCES_TEMPLATE", `Faltan columnas: ${missing.join(", ")}`);
+  const rows = [];
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber <= 4) return;
+    const data = {};
+    headers.forEach((header, index) => { data[header] = row.getCell(index + 1).value; });
+    if (Object.values(data).some((value) => value !== null && value !== undefined && String(value).trim())) rows.push({ ...data, excel_row: rowNumber });
+  });
+  if (!rows.length) throw appError(400, "EMPTY_OPENING_BALANCES", "La plantilla no contiene saldos");
+  return rows;
+}
+
+async function prepareOpeningBalanceRows(client, tenantId, rows) {
+  const tree = await getOrganizationTree(tenantId);
+  const prepared = [];
+  const dates = new Set();
+  const societies = new Set();
+  let totalCents = 0;
+  for (const row of rows) {
+    const date = openingDate(row.fecha_corte, row.excel_row);
+    const accountCode = normalizeCode(row.cuenta);
+    const branchCode = normalizeCode(row.sucursal);
+    const costCenterCode = normalizeCode(row.centro_costo);
+    const cents = openingCents(row.saldo, row.excel_row);
+    if (!accountCode || !branchCode || !costCenterCode || cents === 0) throw appError(422, "INVALID_OPENING_BALANCE_ROW", `Fila ${row.excel_row}: cuenta, sucursal, centro de costo y saldo distinto de cero son obligatorios`);
+    const account = await client.account.findFirst({ where: { code: accountCode, active: true, allows_tx: true } });
+    if (!account) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${row.excel_row}: cuenta ${accountCode} inexistente, inactiva o no transaccional`);
+    const branch = activeRows(tree.branches).find((item) => item.code === branchCode);
+    const center = activeRows(tree.cost_centers).find((item) => item.code === costCenterCode && item.branch_code === branchCode);
+    if (!branch) throw appError(422, "OPENING_BALANCE_BRANCH_NOT_FOUND", `Fila ${row.excel_row}: sucursal ${branchCode} inexistente o inactiva`);
+    if (!center || center.society_code !== branch.society_code) throw appError(422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND", `Fila ${row.excel_row}: centro de costo no pertenece a la sucursal`);
+    const partyValue = String(row.tercero ?? "").trim();
+    let party = null;
+    if (partyValue) party = await client.party.findFirst({ where: /^\d+$/.test(partyValue) ? { id: Number(partyValue), active: true } : { tax_id: partyValue, active: true } });
+    if (partyValue && !party) throw appError(404, "OPENING_BALANCE_PARTY_NOT_FOUND", `Fila ${row.excel_row}: tercero no encontrado o inactivo`);
+    dates.add(date.toISOString().slice(0, 10)); societies.add(center.society_code); totalCents += cents;
+    prepared.push({ excel_row: row.excel_row, date, account, account_code: accountCode, branch_code: branchCode, cost_center_code: costCenterCode, society_code: center.society_code, party_id: party?.id || null, party_tax_id: party?.tax_id || null, cents, movement: cents > 0 ? "debit" : "credit", amount: Math.abs(cents) / 100 });
+  }
+  if (dates.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_DATE", "Todas las filas deben usar una sola fecha de corte");
+  if (societies.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_SOCIETY", "Todas las filas deben pertenecer a una sola sociedad");
+  if (totalCents !== 0) throw appError(422, "OPENING_BALANCE_UNBALANCED", `Los saldos no cuadran por ${Math.abs(totalCents / 100).toFixed(2)}`);
+  const grouped = new Map();
+  for (const row of prepared) {
+    const key = `${row.account_code}|${row.branch_code}|${row.cost_center_code}|${row.party_id || ""}`;
+    const current = grouped.get(key) || { ...row, cents: 0 };
+    current.cents += row.cents; grouped.set(key, current);
+  }
+  const lines = [...grouped.values()].filter((row) => row.cents !== 0).map((row, index) => ({ ...row, line_no: index + 1, amount: Math.abs(row.cents) / 100, movement: row.cents > 0 ? "debit" : "credit", description: `Saldo inicial historico ${row.account_code}` }));
+  return { rows: prepared, lines, posting_date: prepared[0].date, society_code: prepared[0].society_code, total_debit: lines.filter((row) => row.cents > 0).reduce((sum, row) => sum + row.amount, 0), total_credit: lines.filter((row) => row.cents < 0).reduce((sum, row) => sum + row.amount, 0) };
+}
+
+async function validateOpeningBalancesWorkbook(tenantId, buffer) {
+  const rows = await parseOpeningBalancesWorkbook(buffer);
+  if (rows.length > 5000) throw appError(413, "OPENING_BALANCES_TOO_LARGE", "La plantilla admite maximo 5.000 filas");
+  const prepared = await prisma.runWithTenant(tenantId, () => prepareOpeningBalanceRows(prisma, tenantId, rows));
+  await assertPeriodOpen(tenantId, prepared.posting_date);
+  return { valid: true, file_hash: createHash("sha256").update(buffer).digest("hex"), posting_date: prepared.posting_date, society_code: prepared.society_code, lines: prepared.lines.map((row) => ({ excel_row: row.excel_row, account_code: row.account_code, branch_code: row.branch_code, cost_center_code: row.cost_center_code, party_id: row.party_id, party_tax_id: row.party_tax_id, movement: row.movement, amount: row.amount })), totals: { lines: prepared.lines.length, debit: prepared.total_debit, credit: prepared.total_credit } };
+}
+
+async function postOpeningBalancesWorkbook(tenantId, userId, buffer) {
+  const rows = await parseOpeningBalancesWorkbook(buffer);
+  if (rows.length > 5000) throw appError(413, "OPENING_BALANCES_TOO_LARGE", "La plantilla admite maximo 5.000 filas");
+  const reference = `SI-${createHash("sha256").update(buffer).digest("hex").slice(0, 24).toUpperCase()}`;
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${tenantId}:${reference}`}))`;
+    const duplicate = await tx.cntCabdoc.findFirst({ where: { reference } });
+    if (duplicate) throw appError(409, "OPENING_BALANCES_ALREADY_POSTED", `La plantilla ya fue contabilizada como ${duplicate.full_number}`);
+    const prepared = await prepareOpeningBalanceRows(tx, tenantId, rows);
+    await assertPeriodOpen(tenantId, prepared.posting_date);
+    const documentType = "AJ";
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
+    const masters = mergeNumbering(mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code"), accounting.accounting_numbering);
+    const numbering = masters.find((item) => normalizeAccountingDocumentType(item.document_type) === documentType && item.active !== false) || { document_type: documentType, prefix: documentType, next_number: 1, active: true };
+    const documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentType, numbering);
+    const prefix = normalizeCode(numbering.prefix || documentType);
+    const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
+    const cabdoc = await tx.cntCabdoc.create({ data: { document_type: documentType, document_number: documentNumber, full_number: fullNumber, posting_date: prepared.posting_date, reference, header_text: "Saldos iniciales historicos", society_code: prepared.society_code, total_debit: prepared.total_debit, total_credit: prepared.total_credit, created_by: userId || null } });
+    for (const line of prepared.lines) {
+      const ledger = await tx.ledgerEntry.create({ data: { account_id: line.account.id, date: prepared.posting_date, debit: line.cents > 0 ? line.amount : 0, credit: line.cents < 0 ? line.amount : 0, balance: 0, description: line.description, period: periodFromDate(prepared.posting_date) } });
+      await tx.cntCuedoc.create({ data: { cabdoc_id: cabdoc.id, line_no: line.line_no, account_id: line.account.id, account_code: line.account_code, branch_code: line.branch_code, cost_center_code: line.cost_center_code, party_id: line.party_id, party_tax_id: line.party_tax_id, movement: line.movement, debit: line.cents > 0 ? line.amount : 0, credit: line.cents < 0 ? line.amount : 0, description: line.description, ledger_entry_id: ledger.id } });
+    }
+    return { valid: true, reference, accounting_document: await tx.cntCabdoc.findUnique({ where: { id: cabdoc.id }, include: { lines: { orderBy: { line_no: "asc" } } } }), lines: prepared.lines.length, total_debit: prepared.total_debit, total_credit: prepared.total_credit };
+  }, COMPLEX_TRANSACTION_OPTIONS));
+}
+
+
+
 
 const PUC_CO = [
   { code: "1105", name: "Caja", type: "asset" },
@@ -2174,6 +2311,9 @@ module.exports = {
   listAccountingDocuments,
   getAccountingDocument,
   createAccountingDocument,
+  createOpeningBalancesTemplate,
+  validateOpeningBalancesWorkbook,
+  postOpeningBalancesWorkbook,
   createGoodsReceiptDocumentTx,
   createInitialInventoryDocumentTx,
   createInventoryAdjustmentDocumentTx,

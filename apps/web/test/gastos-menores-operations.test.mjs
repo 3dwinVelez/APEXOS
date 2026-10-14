@@ -9,7 +9,9 @@ const read = (relative) => fs.readFileSync(path.resolve(directory, relative), "u
 
 const landing = read("../app/dashboard/gastos-menores/page.tsx");
 const anticipos = read("../app/dashboard/gastos-menores/anticipos/page.tsx");
-const gastos = read("../app/dashboard/gastos-menores/gastos/page.tsx");
+const gastosListPage = read("../app/dashboard/gastos-menores/gastos/page.tsx");
+const gastosNuevoPage = read("../app/dashboard/gastos-menores/gastos/nuevo/page.tsx");
+const gastos = read("../components/gastos-menores/GastosMenoresWorkspace.tsx");
 const operations = [["anticipos", anticipos], ["gastos", gastos]];
 
 test("las paginas de operaciones existen como paginas cliente", () => {
@@ -17,6 +19,18 @@ test("las paginas de operaciones existen como paginas cliente", () => {
     assert.ok(source.length > 0, `la pagina de ${label} debe existir`);
     assert.match(source, /^"use client";/);
   }
+});
+
+test("gastos separa listado y digitacion en rutas dedicadas", () => {
+  assert.match(gastosListPage, /GastosMenoresWorkspace mode="list"/);
+  assert.match(gastosNuevoPage, /GastosMenoresWorkspace mode="new"/);
+  assert.doesNotMatch(gastosListPage, /Nuevo comprobante|draftLines/);
+  assert.match(gastos, /mode === "new" && access\.canWrite/);
+  assert.match(gastos, /mode !== "new"/);
+  assert.match(gastos, /mode === "list" \? api<Voucher\[\]>\(`/);
+  assert.match(gastos, /mode !== "new" \? <section/);
+  assert.match(landing, /title="Digitar gastos"/);
+  assert.match(landing, /href="\/dashboard\/gastos-menores\/gastos\/nuevo"/);
 });
 
 test("el acceso se vigila con los permisos del modulo contable", () => {
@@ -155,6 +169,13 @@ test("el anticipo del comprobante se filtra por caja y se exige cuando la caja l
   assert.match(gastos, /Sin anticipo: efectivo de la caja/);
 });
 
+test("la digitacion expone la caja de trabajo y limpia el anticipo al cambiarla", () => {
+  assert.match(gastos, /<span className="mb-1 block text-neutral-600">Caja de trabajo<\/span>/);
+  assert.match(gastos, /aria-label="Caja de trabajo"/);
+  assert.match(gastos, /value=\{effectiveBoxId\}/);
+  assert.match(gastos, /setBoxFilter\(event\.target\.value\);\s*setDraft\(\(current\) => \(\{ \.\.\.current, advance_id: "" \}\)\)/);
+});
+
 test("el concepto de la linea sugiere su IVA y exige los soportes que declara", () => {
   // default_vat_code es una sugerencia: la ausencia de IVA es un caso valido del negocio.
   assert.match(gastos, /vat_code: concept\?\.default_vat_code \|\| ""/);
@@ -233,7 +254,7 @@ test("las operaciones manejan carga, vacio y formato COP como el resto del siste
 
 test("la landing ofrece las operaciones de anticipos y gastos", () => {
   assert.match(landing, /href="\/dashboard\/gastos-menores\/anticipos"/);
-  assert.match(landing, /href="\/dashboard\/gastos-menores\/gastos"/);
+  assert.match(landing, /href="\/dashboard\/gastos-menores\/gastos\/nuevo"/);
   assert.match(landing, /import \{ BarChart3, HandCoins, ListChecks, Receipt, Wallet \} from "lucide-react"/);
 });
 
@@ -260,7 +281,7 @@ test("los selects criticos usan appearance base-select con picker tematizado", (
   assert.match(globalsCss, /\.apex-select::picker\(select\)\s*\{/);
   assert.match(globalsCss, /\.apex-select option\s*\{/);
   assert.match(globalsCss, /html\.dark\s+\.apex-cell:focus\s*\{/);
-  const gastos = read("../app/dashboard/gastos-menores/gastos/page.tsx");
+  const gastos = read("../components/gastos-menores/GastosMenoresWorkspace.tsx");
   assert.match(gastos, /className=\{`\$\{CELL\} apex-select`\}/);
   assert.match(gastos, /className="control apex-select"/);
   assert.match(gastos, /apex-cell/);

@@ -7,6 +7,7 @@ const ITEMS = [
   { href: "/dashboard/contabilidad", label: "Resumen" },
   { href: "/dashboard/contabilidad/plan-cuentas", label: "Plan de cuentas" },
   { href: "/dashboard/contabilidad/asientos", label: "Asientos" },
+  { href: "/dashboard/contabilidad/importar-saldos-iniciales", label: "Saldos iniciales" },
   { href: "/dashboard/contabilidad/cuentas-por-pagar", label: "Cuentas por pagar" },
   { href: "/dashboard/cxc/documentos", label: "Cuentas por cobrar" },
   { href: "/dashboard/tesoreria", label: "Tesorería" },

@@ -9,6 +9,7 @@ const ITEMS = [
   { href: "/dashboard/gastos-menores/cajas", label: "Cajas" },
   { href: "/dashboard/gastos-menores/anticipos", label: "Anticipos" },
   { href: "/dashboard/gastos-menores/gastos", label: "Gastos" },
+  { href: "/dashboard/gastos-menores/gastos/nuevo", label: "Digitar gastos" },
   { href: "/dashboard/gastos-menores/reportes", label: "Reportes" }
 ];
 

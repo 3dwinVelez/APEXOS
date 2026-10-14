@@ -65,6 +65,8 @@ const WEB_PAGES = [
   "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx",
   "apps/web/app/dashboard/gastos-menores/cajas/page.tsx",
   "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
+  "apps/web/app/dashboard/gastos-menores/gastos/nuevo/page.tsx",
+  "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx",
   "apps/web/app/dashboard/gastos-menores/anticipos/page.tsx",
   "apps/web/app/dashboard/gastos-menores/reportes/page.tsx",
   "apps/web/components/gastos-menores-nav.tsx"
@@ -385,13 +387,13 @@ async function main() {
     for (const suite of apiSuites) {
       const run = spawnSync(process.execPath, ["--test", `test/${suite}`], { cwd: API, encoding: "utf8" });
       const out = `${run.stdout || ""}${run.stderr || ""}`;
-      check(`unit_suite_${suite.replace(/\.test\.js$/, "")}_pass`, run.status === 0 && /# fail 0\b/.test(out), { status: run.status, pass: (out.match(/# pass (\d+)/) || [])[1], fail: (out.match(/# fail (\d+)/) || [])[1] });
+      check(`unit_suite_${suite.replace(/\.test\.js$/, "")}_pass`, run.status === 0 && /(?:#|ℹ)\s+fail 0\b/.test(out), { status: run.status, pass: (out.match(/(?:#|ℹ)\s+pass (\d+)/) || [])[1], fail: (out.match(/(?:#|ℹ)\s+fail (\d+)/) || [])[1] });
     }
     const webSuites = ["gastos-menores-module-registration.test.mjs", "gastos-menores-masters.test.mjs", "gastos-menores-operations.test.mjs", "gastos-menores-reports.test.mjs"];
     for (const suite of webSuites) {
       const run = spawnSync(process.execPath, ["--test", `test/${suite}`], { cwd: WEB, encoding: "utf8" });
       const out = `${run.stdout || ""}${run.stderr || ""}`;
-      check(`unit_suite_${suite.replace(/\.test\.mjs$/, "")}_pass`, run.status === 0 && /# fail 0\b/.test(out), { status: run.status, pass: (out.match(/# pass (\d+)/) || [])[1], fail: (out.match(/# fail (\d+)/) || [])[1] });
+      check(`unit_suite_${suite.replace(/\.test\.mjs$/, "")}_pass`, run.status === 0 && /(?:#|ℹ)\s+fail 0\b/.test(out), { status: run.status, pass: (out.match(/(?:#|ℹ)\s+pass (\d+)/) || [])[1], fail: (out.match(/(?:#|ℹ)\s+fail (\d+)/) || [])[1] });
     }
 
     // ---- Aserciones a nivel de codigo (estructura versionada) ----

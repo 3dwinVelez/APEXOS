@@ -1,8 +1,9 @@
-import { BarChart3, BookOpen, Building2, FilePlus2, Landmark, ReceiptText, Users, WalletCards } from "lucide-react";
+import { BarChart3, BookOpen, Building2, FilePlus2, Landmark, ReceiptText, Users, WalletCards, Upload } from "lucide-react";
 import { ActionCard } from "@/components/ui/ActionCard";
 
 const actions = [
   { href: "/dashboard/contabilidad/asientos", title: "Asientos contables", detail: "Registrar y consultar comprobantes de doble partida.", icon: FilePlus2, primary: true },
+  { href: "/dashboard/contabilidad/importar-saldos-iniciales", title: "Importar saldos iniciales", detail: "Carga saldos históricos por cuenta, sucursal y centro de costo.", icon: Upload },
   { href: "/dashboard/contabilidad/plan-cuentas", title: "Plan de cuentas", detail: "Administrar cuentas PUCC y su naturaleza.", icon: BookOpen },
   { href: "/dashboard/contabilidad/cuentas-por-pagar", title: "Cuentas por pagar", detail: "Registrar obligaciones, notas y vencimientos de proveedores.", icon: WalletCards },
   { href: "/dashboard/cxc/documentos", title: "Cuentas por cobrar", detail: "Consultar documentos, saldos y cartera de clientes.", icon: Landmark },

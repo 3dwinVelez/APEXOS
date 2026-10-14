@@ -221,6 +221,32 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request, reply) => reply.code(201).send(await service.savePaymentTermMaster(request.user?.tenant_id, request.body)));
 
+  fastify.get("/accounting/opening-balances/template", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request, reply) => {
+    const buffer = await service.createOpeningBalancesTemplate();
+    return reply.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", 'attachment; filename="plantilla-saldos-iniciales.xlsx"').send(buffer);
+  });
+
+  fastify.post("/accounting/opening-balances/validate", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "OPENING_BALANCES_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_OPENING_BALANCES_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return service.validateOpeningBalancesWorkbook(request.user?.tenant_id, await file.toBuffer());
+  });
+
+  fastify.post("/accounting/opening-balances", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "OPENING_BALANCES_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_OPENING_BALANCES_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return reply.code(201).send(await service.postOpeningBalancesWorkbook(request.user?.tenant_id, request.user?.id, await file.toBuffer()));
+  });
+
   fastify.get("/accounting/third-parties", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listThirdParties(request.user?.tenant_id, request.query));

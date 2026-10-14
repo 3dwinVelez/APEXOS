@@ -183,9 +183,10 @@ export default function GastosMenoresPage() {
             />
             <ActionCard
               detail="Comprobantes de gasto con IVA por linea y contabilizacion inmediata."
-              href="/dashboard/gastos-menores/gastos"
+              href="/dashboard/gastos-menores/gastos/nuevo"
               icon={Receipt}
-              title="Gastos"
+              primary
+              title="Digitar gastos"
             />
             <ActionCard
               detail="Gasto por caja, concepto y dimension con filtros y exportacion a Excel."
