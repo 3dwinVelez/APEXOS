@@ -56,6 +56,7 @@ export function GastosLookup({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dirtyRef = useRef(false);
   const validityRef = useRef(onValidityChange);
+  const selectedLabelRef = useRef(selected?.label);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
   const selected = options.find((option) => option.value === value) || null;
@@ -68,10 +69,14 @@ export function GastosLookup({
   }, [onValidityChange]);
 
   useEffect(() => {
+    selectedLabelRef.current = selected?.label;
+  }, [selected?.label]);
+
+  useEffect(() => {
     dirtyRef.current = false;
-    setText(selected?.label || "");
+    setText(selectedLabelRef.current || "");
     validityRef.current?.(true);
-  }, [resetToken, selected?.label]);
+  }, [resetToken]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
