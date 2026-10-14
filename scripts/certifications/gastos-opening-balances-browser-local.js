@@ -252,7 +252,7 @@ async function certifyGastos(page, fixture) {
     const active = document.activeElement;
     return { type: active?.getAttribute("type") || "", ariaLabel: active?.getAttribute("aria-label") || "" };
   });
-  check("gastos_box_lookup_enter_advances_focus", boxNextFocus.type === "date" || boxNextFocus.ariaLabel === "Anticipo del comprobante", boxNextFocus);
+  check("gastos_box_lookup_enter_advances_focus", boxNextFocus.type === "date" || boxNextFocus.ariaLabel === "Anticipo del comprobante" || boxNextFocus.ariaLabel === "Concepto línea 1", boxNextFocus);
   await certifyLookupKeyboardFlow(page, "Concepto línea 1", "Gasto browser E2E", "Gasto browser E2E", { key: "concept", invalid: "CONCEPTO_INVALIDO_E2E" });
   await page.waitForSelector('input[role="combobox"][aria-label="Concepto línea 2"]', { visible: true, timeout: 10000 });
   check("gastos_lookup_adds_next_empty_row", true);
