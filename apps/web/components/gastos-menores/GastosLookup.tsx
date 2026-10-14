@@ -185,7 +185,7 @@ export function GastosLookup({
                 <h2 className="text-lg font-semibold">Buscar {ariaLabel}</h2>
                 <p className="text-sm text-neutral-600">Busca por código o nombre. Usa ↑ ↓ y Enter para seleccionar.</p>
               </div>
-              <button aria-label="Cerrar buscador" className="rounded-md border border-line p-2" onClick={close} type="button"><X size={18} /></button>
+              <button aria-label="Cerrar buscador" className="rounded-md border border-line p-2" onClick={() => close()} type="button"><X size={18} /></button>
             </div>
             <div className="relative mt-4">
               <Search className="absolute left-3 top-3 text-neutral-400" size={17} />

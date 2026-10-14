@@ -246,9 +246,9 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   const activeCostCenters = useMemo(() => orgTree.cost_centers.filter((row) => row.active !== false), [orgTree.cost_centers]);
   const vatByCode = useMemo(() => new Map(activeVats.map((row) => [row.code, row])), [activeVats]);
   const conceptById = useMemo(() => new Map(activeConcepts.map((row) => [String(row.id), row])), [activeConcepts]);
-  // Caja de trabajo: la filtrada, o la primera activa como defecto (la planilla siempre
-  // sabe qué caja está pagando).
-  const effectiveBoxId = boxFilter || (activeBoxes[0] ? String(activeBoxes[0].id) : "");
+  // El listado conserva su caja por defecto para resumen/filtros; la digitación exige una
+  // selección explícita para que nunca se contabilice contra una caja implícita.
+  const effectiveBoxId = mode === "new" ? boxFilter : boxFilter || (activeBoxes[0] ? String(activeBoxes[0].id) : "");
   const selectedBox = activeBoxes.find((row) => String(row.id) === effectiveBoxId) || null;
 
   const applyPreset = (preset: Exclude<RangePreset, "">) => {
