@@ -297,6 +297,8 @@ async function certifyGastos(page, fixture) {
   await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "cash_box_reset" });
   check("changing_box_clears_advance_id_and_error", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Sin anticipo")), { cashBox: fixture.boxCode, requiredBox: fixture.requiredBoxCode });
   check("gastos_advance_scope_is_empty_for_cash_box", await page.$eval(requiredAdvanceInput, (node) => node.value.includes("Sin anticipo")), { boxId: fixture.boxId });
+  await page.keyboard.press("Escape");
+  await page.click("h1");
   const submitDiagnostics = await page.$eval("form", (form) => ({
     checkValidity: form.checkValidity(),
     submitDisabled: Boolean(form.querySelector('button[type="submit"]')?.disabled),
