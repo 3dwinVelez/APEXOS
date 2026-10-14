@@ -1,20 +1,24 @@
 {
   "scope_schema_version": 2,
-  "change_id": "gastos-opening-balances-runtime-fix-20261014",
+  "change_id": "gastos-opening-balances-runtime-and-lookup-20261014",
   "change_intent": {
-    "summary": "Incluir exceljs en el runtime de API y certificar la generacion de la plantilla de saldos iniciales.",
-    "modules": ["accounting-runtime", "qa-certification"]
+    "summary": "Corregir el runtime de la plantilla Excel de saldos iniciales y certificar los lookups de gastos menores con teclado, validacion exacta y persistencia.",
+    "modules": ["accounting-runtime", "gastos-menores", "qa-certification"]
   },
   "base_commits": {
     "develop": "b84522b3e97b13fbdc5eabbcf5b93730402dc572"
   },
-  "certified_commit": "c6e50ec90112a0c91694a2c469a296f34284ef53",
+  "certified_commit": "7923a8a169e0825c226021ac059be4fbb84902bd",
   "certification_status": "passed_local_preqa_pending_remote_qa",
   "expected_changes": [
     { "status": "M", "file": "apps/api/package.json" },
     { "status": "A", "file": "apps/api/scripts/certifications/accounting-opening-balances-template-isolated-api-local.js" },
     { "status": "A", "file": "apps/api/scripts/certifications/accounting-opening-balances-template-local.js" },
+    { "status": "A", "file": "apps/web/components/gastos-menores/GastosLookup.tsx" },
+    { "status": "M", "file": "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx" },
+    { "status": "M", "file": "apps/web/test/gastos-menores-operations.test.mjs" },
     { "status": "M", "file": "package-lock.json" },
+    { "status": "M", "file": "scripts/certifications/gastos-opening-balances-browser-local.js" },
     { "status": "A", "file": "docs/qa/manifests/gastos-opening-balances-runtime-scope-20261014.json" },
     { "status": "A", "file": "docs/qa/manifests/gastos-opening-balances-runtime-preqa-20261014.json" }
   ],
@@ -22,7 +26,11 @@
     "apps/api/package.json",
     "apps/api/scripts/certifications/accounting-opening-balances-template-isolated-api-local.js",
     "apps/api/scripts/certifications/accounting-opening-balances-template-local.js",
+    "apps/web/components/gastos-menores/GastosLookup.tsx",
+    "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx",
+    "apps/web/test/gastos-menores-operations.test.mjs",
     "package-lock.json",
+    "scripts/certifications/gastos-opening-balances-browser-local.js",
     "docs/qa/manifests/gastos-opening-balances-runtime-scope-20261014.json",
     "docs/qa/manifests/gastos-opening-balances-runtime-preqa-20261014.json"
   ],
@@ -33,15 +41,16 @@
       "status": "passed",
       "evidence": [
         "../evidence/gastos-saldos-iniciales-20261014/opening-balances-c6e50ec-local.json",
-        "../evidence/gastos-saldos-iniciales-20261014/browser-certification-candidate-c6e50ec.json"
+        "../evidence/gastos-saldos-iniciales-20261014/accounting-opening-balances-template-api-local.json",
+        "../evidence/gastos-keyboard-20261014/browser-certification-7923a8a.json"
       ]
     },
     {
-      "name": "gastos_menores_journal_and_reversal",
+      "name": "gastos_menores_keyboard_lookup_persistence_and_reversal",
       "status": "passed",
       "evidence": [
-        "../evidence/gastos-menores-journal-20261014/journal-c6e50ec-local.json",
-        "../evidence/gastos-saldos-iniciales-20261014/browser-certification-candidate-c6e50ec.json"
+        "../evidence/gastos-keyboard-20261014/browser-certification-7923a8a.json",
+        "../evidence/gastos-menores-journal-20261014/journal-c6e50ec-local.json"
       ]
     },
     {
@@ -54,3 +63,4 @@
     }
   ]
 }
+
