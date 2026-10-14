@@ -49,6 +49,7 @@ export function GastosLookup({
   onValidityChange,
   resetToken
 }: Props) {
+  const selected = options.find((option) => option.value === value) || null;
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -60,7 +61,6 @@ export function GastosLookup({
   const selectedLabelRef = useRef(selected?.label);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
-  const selected = options.find((option) => option.value === value) || null;
   useEffect(() => {
     if (!dirtyRef.current) setText(selected?.label || "");
   }, [selected?.label, value]);
