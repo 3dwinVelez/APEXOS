@@ -290,6 +290,7 @@ test("los filtros select siguen tematizados y la digitacion usa lookups de tecla
   const gastos = read("../components/gastos-menores/GastosMenoresWorkspace.tsx");
   assert.match(gastos, /GastosLookup/);
   assert.match(gastosLookup, /role=\"combobox\"/);
+  assert.match(gastosLookup, /autoComplete=\"off\"/);
   assert.match(gastosLookup, /ArrowDown/);
   assert.match(gastosLookup, /exactMatches\.length !== 1/);
   assert.match(gastosLookup, /option\.aliases/);

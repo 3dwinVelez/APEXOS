@@ -144,6 +144,7 @@ export function GastosLookup({
           aria-label={ariaLabel}
           aria-autocomplete="list"
           aria-controls={listId}
+          autoComplete="off"
           aria-expanded={open}
           className={className}
           disabled={disabled}
@@ -193,6 +194,7 @@ export function GastosLookup({
               <input
                 aria-label={`Filtro ${ariaLabel}`}
                 autoFocus
+                autoComplete="off"
                 className="control w-full pl-10"
                 onChange={(event) => { setQuery(event.target.value); setActive(0); }}
                 onKeyDown={(event) => {
