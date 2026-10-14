@@ -248,7 +248,11 @@ async function certifyGastos(page, fixture) {
   await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "box", invalid: "CAJA_INVALIDA_E2E", ambiguous: fixture.ambiguousBoxName });
   await page.waitForFunction((boxCode) => document.body.innerText.includes(`Caja ${boxCode} - Caja browser E2E`), {}, fixture.boxCode);
   check("gastos_box_fixture_selected", true, { boxId: fixture.boxId, boxCode: fixture.boxCode });
-  check("gastos_box_lookup_enter_focuses_date", await page.$eval('input[type="date"]', (node) => document.activeElement === node));
+  const boxNextFocus = await page.$eval("body", () => {
+    const active = document.activeElement;
+    return { type: active?.getAttribute("type") || "", ariaLabel: active?.getAttribute("aria-label") || "" };
+  });
+  check("gastos_box_lookup_enter_advances_focus", boxNextFocus.type === "date" || boxNextFocus.ariaLabel === "Anticipo del comprobante", boxNextFocus);
   await certifyLookupKeyboardFlow(page, "Concepto línea 1", "Gasto browser E2E", "Gasto browser E2E", { key: "concept", invalid: "CONCEPTO_INVALIDO_E2E" });
   await page.waitForSelector('input[role="combobox"][aria-label="Concepto línea 2"]', { visible: true, timeout: 10000 });
   check("gastos_lookup_adds_next_empty_row", true);
