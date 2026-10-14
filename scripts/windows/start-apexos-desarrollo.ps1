@@ -32,8 +32,12 @@ function Invoke-RepoGit {
   if ($GitArgs.Count -eq 1 -and $GitArgs[0] -match "\s") {
     $GitArgs = $GitArgs[0] -split "\s+"
   }
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
   $output = & git @GitArgs 2>&1
-  if ($LASTEXITCODE -ne 0) {
+  $exitCode = $LASTEXITCODE
+  $ErrorActionPreference = $previousErrorActionPreference
+  if ($exitCode -ne 0) {
     Stop-Blocked "Git no pudo completar una operacion segura." @($output)
   }
   return $output
