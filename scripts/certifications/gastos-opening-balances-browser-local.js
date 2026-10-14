@@ -244,7 +244,7 @@ async function certifyGastos(page, fixture) {
     const text = document.body.innerText;
     return text.includes("Digitar gastos de caja") && !text.includes("Validando permisos");
   }, { timeout: 45000 });
-  await page.waitForSelector('select[aria-label="Concepto línea 1"]', { visible: true, timeout: 45000 });
+  await page.waitForSelector('input[role="combobox"][aria-label="Concepto línea 1"]', { visible: true, timeout: 45000 });
   await certifyLookupKeyboardFlow(page, "Caja de trabajo", fixture.boxCode, fixture.boxCode, { key: "box", invalid: "CAJA_INVALIDA_E2E", ambiguous: fixture.ambiguousBoxName });
   await page.waitForFunction((boxCode) => document.body.innerText.includes(`Caja ${boxCode} - Caja browser E2E`), {}, fixture.boxCode);
   check("gastos_box_fixture_selected", true, { boxId: fixture.boxId, boxCode: fixture.boxCode });
