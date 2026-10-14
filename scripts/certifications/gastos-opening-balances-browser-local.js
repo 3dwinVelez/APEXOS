@@ -305,12 +305,31 @@ async function certifyGastos(page, fixture) {
   }));
   await page.screenshot({ path: path.join(path.dirname(output), "browser-certification-form-before-submit.png"), fullPage: true });
   console.error("[browser-cert] gastos:before-submit", JSON.stringify(submitDiagnostics));
+  const submitTarget = await page.$eval("form", (form) => {
+    const button = form.querySelector('button[type="submit"]');
+    const rect = button?.getBoundingClientRect();
+    const pointTarget = rect ? document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) : null;
+    window.__browserCertSubmitTrace = [];
+    for (const eventName of ["pointerdown", "click", "submit"]) {
+      document.addEventListener(eventName, (event) => window.__browserCertSubmitTrace.push({ event: eventName, target: event.target?.tagName || "", targetType: event.target?.getAttribute?.("type") || "" }), true);
+    }
+    return {
+      formTag: form.tagName,
+      buttonFormMatches: button?.form === form,
+      buttonType: button?.getAttribute("type"),
+      buttonDisabled: Boolean(button?.disabled),
+      rect: rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null,
+      pointTarget: pointTarget ? { tag: pointTarget.tagName, type: pointTarget.getAttribute("type"), ariaLabel: pointTarget.getAttribute("aria-label") } : null
+    };
+  });
   await page.click('button[type="submit"]');
   console.error("[browser-cert] gastos:submitted");
   await new Promise((resolve) => setTimeout(resolve, 500));
   const afterSubmitText = await page.$eval("form", (form) => form.innerText.slice(-500));
+  const submitTrace = await page.evaluate(() => ({ events: window.__browserCertSubmitTrace || [] }));
   await page.screenshot({ path: path.join(path.dirname(output), "browser-certification-form-after-submit.png"), fullPage: true });
-  console.error("[browser-cert] gastos:after-submit", JSON.stringify({ text: afterSubmitText }));
+  console.error("[browser-cert] gastos:submit-target", JSON.stringify(submitTarget));
+  console.error("[browser-cert] gastos:after-submit", JSON.stringify({ text: afterSubmitText, submitTrace }));
   await page.waitForFunction(() => document.body.innerText.includes("contabilizado") || document.body.innerText.includes("Contabilizado"), { timeout: 20000 });
   check("gastos_ui_save_success", true);
   await page.goto(`${webUrl}/dashboard/gastos-menores/gastos`, { waitUntil: "networkidle2" });
