@@ -1,0 +1,63 @@
+{
+  "change_id": "shareholder-role-20261013",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "e73a70f92d786b2a924bb06ed1addd5baa53c77e",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "local-certification-pre-fix.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/shareholder-role-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/shareholder-role-regression-local.js",
+    "evidence": [
+      "regression-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "John Patino (propietario de la solicitud) - autorizacion expresa en sesion: 'Necesito desplegarlo tenemos toda la autonomia', tras confirmar en QA que isaac@scj.com con rol Accionistas recibe 403 en contabilidad. Alcance: push a desarrollo y promocion desarrollo -> develop (QA). No autoriza main.",
+    "approved_at": "2026-10-14T03:07:04-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}

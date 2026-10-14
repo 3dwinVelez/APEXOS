@@ -1,0 +1,97 @@
+{
+  "certification": "shareholder-role-regression-local",
+  "environment": "LOCAL",
+  "started_at": "2026-10-14T03:06:33.410Z",
+  "criterion": "toda suite de apps/api/test que carga security/supabaseAuth o middleware/rbac",
+  "suites": [
+    {
+      "file": "admin-role-capabilities.test.js",
+      "exit_code": 0,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "commercial-management-contract.test.js",
+      "exit_code": 0,
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "hr-marking-only-rbac.test.js",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "hr-route-physical-deletion.test.js",
+      "exit_code": 0,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "petty-cash-masters.test.js",
+      "exit_code": 0,
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "rbac-module-access.test.js",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "service-order-administrative-corrections.test.js",
+      "exit_code": 0,
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "supabase-auth-modules.test.js",
+      "exit_code": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "supabase-company-context.test.js",
+      "exit_code": 0,
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    }
+  ],
+  "totals": {
+    "suites": 9,
+    "tests": 115,
+    "pass": 115,
+    "fail": 0
+  },
+  "passed": true,
+  "finished_at": "2026-10-14T03:06:35.183Z"
+}

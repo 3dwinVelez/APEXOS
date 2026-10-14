@@ -1,0 +1,37 @@
+{
+  "certification": "shareholder-role-local",
+  "run_id": "20261014030546",
+  "environment": "LOCAL",
+  "database": "postgresql://***@127.0.0.1:55440/apexos",
+  "period": "2026-10",
+  "started_at": "2026-10-14T03:05:46.519Z",
+  "checks": [
+    {
+      "name": "la API real arranca contra el Postgres local",
+      "ok": true,
+      "detail": {
+        "api": "http://127.0.0.1:3197/api/v1"
+      }
+    },
+    {
+      "name": "el accionista inicia sesion con su token de Supabase",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "el API lo espeja con el rol Accionista",
+      "ok": false,
+      "detail": {
+        "user": {
+          "role": "Supabase Member"
+        }
+      }
+    }
+  ],
+  "finished_at": "2026-10-14T03:05:48.515Z",
+  "passed": false,
+  "note": "Corrida contra apps/api/src/security/supabaseAuth.js de e73a70f~1 (sin el arreglo). Se espera FALLA: reproduce el defecto de QA (rol Supabase Member)."
+}
