@@ -1,0 +1,93 @@
+{
+  "change_id": "gastos-opening-balances-preqa-20261014",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "4ef9657850bad49d855205dafcd11a373ddc51ef",
+  "qa_status": "pending",
+  "candidate": {
+    "status": "passed",
+    "reviewed_candidate_commit": "4ef9657850bad49d855205dafcd11a373ddc51ef",
+    "scope_manifest": "gastos-opening-balances-scope-20261014.json",
+    "target_baseline": "origin/develop",
+    "exactness": "scoped against candidate 4ef9657850bad49d855205dafcd11a373ddc51ef"
+  },
+  "change_intent": {
+    "summary": "Preparar para QA los saldos iniciales contables con tercero opcional y la base de caja menor asociada.",
+    "modules": [
+      "accounting",
+      "gastos-menores"
+    ]
+  },
+  "planned_scope": {
+    "status": "passed",
+    "owner": "qa_scope",
+    "rule": "El alcance final enumera cada archivo A, M o D contra el target remoto vigente.",
+    "allowed_deletions": []
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/browser-certification-candidate-4ef9657.json",
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-4ef9657-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/petty-journal-4ef9657-local.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-4ef9657-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/petty-journal-4ef9657-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/protected-flows-http-4ef9657-local.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/protected-regression-4ef9657-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-4ef9657-local.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/protected-flows-http-4ef9657-local.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/platform-regression-4ef9657-local.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../apps/api/scripts/certifications/accounting-opening-balances-local.js",
+    "evidence": [
+      "../evidence/gastos-saldos-iniciales-20261014/opening-balances-4ef9657-local.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "../evidence/gastos-saldos-iniciales-20261014/protected-flows-http-4ef9657-local.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante de APEXOS (mensaje: pruebas para que despliegues a QA)",
+    "approved_at": "2026-10-14",
+    "main_release": "not_authorized",
+    "merge_or_push": "not_authorized",
+    "remote_migrations": "not_authorized"
+  },
+  "limitations": [
+    "Browser 4ef9657 aun pendiente de resultado final.",
+    "Backend local completo pasado sobre 55439.",
+    "No se ejecutaron push, merge, despliegue remoto ni migraciones remotas."
+  ]
+}

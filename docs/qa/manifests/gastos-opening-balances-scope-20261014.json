@@ -1,0 +1,171 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "gastos-opening-balances-journal-20261014",
+  "change_intent": {
+    "summary": "Importacion de saldos iniciales con tercero opcional y nueva experiencia journal de Gastos Menores.",
+    "modules": [
+      "accounting",
+      "gastos-menores"
+    ]
+  },
+  "base_commits": {
+    "develop": "5a8351d528a406ab295df174b97187e25379a09f"
+  },
+  "certified_commit": "4ef9657850bad49d855205dafcd11a373ddc51ef",
+  "certification_status": "pending_browser_final",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261014120000_accounting_opening_balances_nullable_party/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/scripts/certifications/accounting-opening-balances-local.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-opening-balances.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/gastos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gastos-menores/gastos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gastos-menores/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/contabilidad-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/gastos-menores-nav.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/contabilidad-opening-balances.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/gastos-menores-module-registration.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/gastos-menores-operations.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/expenses-opening-balances-migrations-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/gastos-menores-journal-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/gastos-opening-balances-browser-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/petty-cash-module-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/protected-flows-http-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/protected-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/gastos-opening-balances-scope-20261014.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/gastos-opening-balances-preqa-20261014.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20261014120000_accounting_opening_balances_nullable_party/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/scripts/certifications/accounting-opening-balances-local.js",
+    "apps/api/src/modules/accounting/routes.js",
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx",
+    "apps/web/app/dashboard/contabilidad/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/gastos/nuevo/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/page.tsx",
+    "apps/web/components/contabilidad-nav.tsx",
+    "apps/web/components/gastos-menores-nav.tsx",
+    "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx",
+    "apps/web/test/contabilidad-opening-balances.test.mjs",
+    "apps/web/test/gastos-menores-module-registration.test.mjs",
+    "apps/web/test/gastos-menores-operations.test.mjs",
+    "scripts/certifications/expenses-opening-balances-migrations-local.js",
+    "scripts/certifications/gastos-menores-journal-local.js",
+    "scripts/certifications/gastos-opening-balances-browser-local.js",
+    "scripts/certifications/petty-cash-module-local.js",
+    "scripts/certifications/protected-flows-http-local.js",
+    "scripts/certifications/protected-regression-local.js",
+    "docs/qa/manifests/gastos-opening-balances-scope-20261014.json",
+    "docs/qa/manifests/gastos-opening-balances-preqa-20261014.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "opening_balances_accounting_tenant_isolation",
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/opening-balances-4ef9657-local.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_journal_and_reversal",
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/petty-journal-4ef9657-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/browser-certification-candidate-4ef9657.json"
+      ]
+    },
+    {
+      "name": "petty_cash_masters_reports_rbac_tenant_isolation",
+      "status": "passed",
+      "evidence": [
+        "../evidence/gastos-saldos-iniciales-20261014/protected-regression-4ef9657-local.json",
+        "../evidence/gastos-saldos-iniciales-20261014/platform-regression-4ef9657-local.json"
+      ]
+    }
+  ]
+}
