@@ -1,0 +1,346 @@
+{
+  "certification": "shareholder-role-local",
+  "run_id": "20261014030628",
+  "environment": "LOCAL",
+  "database": "postgresql://***@127.0.0.1:55440/apexos",
+  "period": "2026-10",
+  "started_at": "2026-10-14T03:06:28.719Z",
+  "checks": [
+    {
+      "name": "la API real arranca contra el Postgres local",
+      "ok": true,
+      "detail": {
+        "api": "http://127.0.0.1:3197/api/v1"
+      }
+    },
+    {
+      "name": "el accionista inicia sesion con su token de Supabase",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "el API lo espeja con el rol Accionista",
+      "ok": true,
+      "detail": {
+        "user": {
+          "role": "Accionista"
+        }
+      }
+    },
+    {
+      "name": "solo recibe accounting:read y transport:read",
+      "ok": true,
+      "detail": {
+        "permissions": [
+          "accounting:read",
+          "transport:read"
+        ]
+      }
+    },
+    {
+      "name": "la empresa espejada trae contabilidad y transporte activos",
+      "ok": true,
+      "detail": {
+        "active_modules": [
+          "M-07",
+          "M-14",
+          "M-26",
+          "M-17",
+          "M-22"
+        ]
+      }
+    },
+    {
+      "name": "lee /accounting/reports/balance-sheet?period=2026-10",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/reports/income-statement?period=2026-10",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/reports/trial-balance?period=2026-10",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/reports/taxes?period=2026-10",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/reports/receivables",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/reports/payables",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/periods",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/accounts?active=true",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /accounting/documents?period=2026-10&limit=100",
+      "ok": true,
+      "detail": {
+        "module": "accounting",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /transport/vehicles/metrics/dashboard",
+      "ok": true,
+      "detail": {
+        "module": "transport",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /transport-pyg/report?period=2026-10",
+      "ok": true,
+      "detail": {
+        "module": "transport",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /transport-pyg/config",
+      "ok": true,
+      "detail": {
+        "module": "transport",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /transport/settlement-control-tower?limit=300",
+      "ok": true,
+      "detail": {
+        "module": "transport",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /transport/settlement-periods",
+      "ok": true,
+      "detail": {
+        "module": "transport",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "lee /transport/settlement-types",
+      "ok": true,
+      "detail": {
+        "module": "transport",
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "el auxiliar responde por datos (200/404) y no por permiso",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "code": "ACCOUNT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "se le niega POST /accounting/chart/init",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "se le niega PATCH /accounting/periods/2026-10",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "se le niega POST /transport/packing/profiles",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "se le niega POST /transport/orders/sync",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "se le niega POST /transport/settlements/1/approve",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "no ve /services/orders",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "no ve /hr/employees",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "no ve /admin/users",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "CAPACIDAD_ROL_DENEGADA"
+      }
+    },
+    {
+      "name": "un permiso agregado a mano se retira en el siguiente ingreso",
+      "ok": true,
+      "detail": {
+        "permissions": [
+          "accounting:read",
+          "transport:read"
+        ]
+      }
+    },
+    {
+      "name": "la base conserva solo los dos permisos de lectura",
+      "ok": true,
+      "detail": {
+        "stored": [
+          {
+            "module": "accounting",
+            "action": "read"
+          },
+          {
+            "module": "transport",
+            "action": "read"
+          }
+        ]
+      }
+    },
+    {
+      "name": "access_profile accionista tambien produce el rol Accionista",
+      "ok": true,
+      "detail": {
+        "permissions": [
+          "accounting:read",
+          "transport:read"
+        ]
+      }
+    },
+    {
+      "name": "un rol con nombre parecido no se trata como accionista",
+      "ok": true,
+      "detail": {
+        "permissions": [
+          "dashboard:read",
+          "hr:read",
+          "hr:write",
+          "inventory:write",
+          "projects:read",
+          "projects:write",
+          "purchases:write",
+          "services:read",
+          "services:write",
+          "transport:read",
+          "transport:write"
+        ],
+        "balance_status": 403
+      }
+    },
+    {
+      "name": "un admin de la empresa con rol Accionista conserva APEX_ADMIN",
+      "ok": true,
+      "detail": {
+        "permissions": [
+          "*:*"
+        ]
+      }
+    },
+    {
+      "name": "el admin sigue accediendo a otros modulos",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "sin token la API responde 401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    }
+  ],
+  "finished_at": "2026-10-14T03:06:33.066Z",
+  "passed": true
+}

@@ -1,0 +1,119 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "shareholder-role-20261013",
+  "base_commit": "fa6b46f8dc6fbba40447a5c75c5e2398c6915cf4",
+  "base_commits": {
+    "develop": "fa6b46f8dc6fbba40447a5c75c5e2398c6915cf4"
+  },
+  "certified_commit": "e73a70f92d786b2a924bb06ed1addd5baa53c77e",
+  "change_intent": {
+    "summary": "El rol Accionista creado en Roles y permisos de la web (catalogo de roles de Supabase) llegaba al API en la metadata del empleado y roleBlueprint lo convertia en 'Supabase Member': escritura en servicios, RRHH, transporte, inventario y compras y ningun permiso contable. En QA isaac@scj.com (SCJ) recibia 403 en todos los reportes contables y podia escribir en transporte. Fix en apps/api/src/security/supabaseAuth.js: si el rol de la web es Accionista/Accionistas/Shareholder (normalizado sin tildes ni mayusculas) o trae access_profile accionista, el API asigna el rol 'Accionista' con solo accounting:read y transport:read (managed: retira cualquier permiso extra en cada ingreso). La membresia admin/owner mantiene precedencia (APEX_ADMIN). La app movil APEXOS (v5008) reconoce el rol por ese nombre fijo y muestra solo Reportes financieros y Transporte. Certificacion local de punta a punta 36/36 con la API real (server.js) contra Postgres local (esquema Prisma + migraciones SQL de nomina usadas por el PYG) y un servidor de identidad local que responde las rutas de Supabase que consulta supabaseAuth.js; la misma certificacion sobre el codigo previo falla reproduciendo el defecto de QA (rol 'Supabase Member'). Regresion 115/115 en las 9 suites que cargan supabaseAuth o rbac.",
+    "modules": [
+      "auth",
+      "rbac",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/security/supabaseAuth.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/supabase-company-context.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/shareholder-role-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/shareholder-role-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/shareholder-role-20261013/develop-preqa-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/shareholder-role-20261013/develop-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/shareholder-role-20261013/local-certification-pre-fix.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/shareholder-role-20261013/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/shareholder-role-20261013/regression-certification.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/supabase-company-context.test.js",
+    "scripts/certifications/shareholder-role-local.js",
+    "scripts/certifications/shareholder-role-regression-local.js",
+    "docs/qa/evidence/shareholder-role-20261013/develop-preqa-evidence.json",
+    "docs/qa/evidence/shareholder-role-20261013/develop-scope-manifest.json",
+    "docs/qa/evidence/shareholder-role-20261013/local-certification-pre-fix.json",
+    "docs/qa/evidence/shareholder-role-20261013/local-certification.json",
+    "docs/qa/evidence/shareholder-role-20261013/regression-certification.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "accionista_lee_reportes_contables_y_transporte_de_la_app_movil",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "accionista_sin_escritura_aprobacion_ni_otros_modulos",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "permisos_extra_del_rol_accionista_se_retiran_en_cada_ingreso",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "admin_owner_de_empresa_conserva_apex_admin",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "perfil_marcaciones_viewer_member_y_roles_especiales_sin_cambios",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "rbac_y_aislamiento_por_modulo_en_todos_los_modulos",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "defecto_reproducido_antes_del_fix",
+      "status": "passed",
+      "evidence": [
+        "local-certification-pre-fix.json"
+      ]
+    }
+  ]
+}
