@@ -709,7 +709,7 @@ model CntCuedoc {
   account_code      String
   branch_code       String
   cost_center_code  String
-  party_id          Int
+  party_id          Int?
   party_tax_id      String?
   movement          String
   debit             Float     @default(0)

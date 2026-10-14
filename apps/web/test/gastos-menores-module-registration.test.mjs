@@ -9,7 +9,6 @@ const read = (relative) => fs.readFileSync(path.resolve(directory, relative), "u
 
 const modules = read("../lib/modules.ts");
 const moduleAccess = read("../lib/moduleAccess.ts");
-const moduleFunctions = read("../lib/moduleFunctions.ts");
 const nav = read("../components/gastos-menores-nav.tsx");
 
 test("modules.ts registra Gastos Menores en el area Finanzas", () => {
@@ -35,20 +34,19 @@ test("el modulo reutiliza permisos de contabilidad y no inventa un modulo propio
   assert.equal(permissionLine, '["accounting"]');
 });
 
-test("moduleFunctions solo referencia rutas que existen hoy", () => {
-  assert.match(moduleFunctions, /"fn-gm-conceptos"[\s\S]*?href: "\/dashboard\/gastos-menores\/conceptos"/);
-  assert.match(moduleFunctions, /"fn-gm-cajas"[\s\S]*?href: "\/dashboard\/gastos-menores\/cajas"/);
-  assert.match(moduleFunctions, /"fn-gm-anticipos"[\s\S]*?href: "\/dashboard\/gastos-menores\/anticipos"/);
-  assert.match(moduleFunctions, /"fn-gm-gastos"[\s\S]*?href: "\/dashboard\/gastos-menores\/gastos"/);
-  assert.match(moduleFunctions, /"fn-gm-reportes"[\s\S]*?href: "\/dashboard\/gastos-menores\/reportes"/);
+test("MODULES registra las acciones funcionales de Gastos Menores", () => {
+  assert.match(modules, /nextActions: \["Configurar conceptos", "Crear caja menor", "Registrar gasto"\]/);
 });
 
-test("todo href de gastos-menores del centro de comandos responde a una pagina real", () => {
-  const entries = moduleFunctions.split("\n").filter((line) => line.includes('module: "gastos-menores"'));
-  assert.ok(entries.length >= 5, "deben existir las entradas de conceptos, cajas, anticipos, gastos y reportes");
-  for (const line of entries) {
-    const href = /href: "([^"]+)"/.exec(line)?.[1];
-    assert.ok(href, "cada entrada debe declarar href");
+test("las rutas publicadas por Gastos Menores responden a paginas reales", () => {
+  for (const href of [
+    "/dashboard/gastos-menores/conceptos",
+    "/dashboard/gastos-menores/cajas",
+    "/dashboard/gastos-menores/anticipos",
+    "/dashboard/gastos-menores/gastos",
+    "/dashboard/gastos-menores/gastos/nuevo",
+    "/dashboard/gastos-menores/reportes"
+  ]) {
     assert.ok(fs.existsSync(path.resolve(directory, `../app${href}/page.tsx`)), `${href} debe tener page.tsx`);
   }
 });
@@ -60,6 +58,7 @@ test("las paginas del modulo existen en el dashboard", () => {
     "/dashboard/gastos-menores/cajas",
     "/dashboard/gastos-menores/anticipos",
     "/dashboard/gastos-menores/gastos",
+    "/dashboard/gastos-menores/gastos/nuevo",
     "/dashboard/gastos-menores/reportes"
   ]) {
     const file = path.resolve(directory, `../app${route}/page.tsx`);
@@ -70,5 +69,7 @@ test("las paginas del modulo existen en el dashboard", () => {
 test("la navegacion publica todas las secciones del modulo", () => {
   assert.match(nav, /\{ href: "\/dashboard\/gastos-menores\/anticipos", label: "Anticipos" \}/);
   assert.match(nav, /\{ href: "\/dashboard\/gastos-menores\/gastos", label: "Gastos" \}/);
+  assert.match(nav, /\{ href: "\/dashboard\/gastos-menores\/gastos\/nuevo", label: "Digitar gastos" \}/);
   assert.match(nav, /\{ href: "\/dashboard\/gastos-menores\/reportes", label: "Reportes" \}/);
+  assert.match(nav, /const active = pathname === item\.href;/);
 });

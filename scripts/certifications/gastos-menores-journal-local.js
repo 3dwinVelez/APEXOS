@@ -68,9 +68,11 @@ const CERT_ID = "gastos-menores-journal-20261013";
 const SERVICE_SRC = path.join(API, "src/modules/petty-cash/service.js");
 const ROUTES_SRC = path.join(API, "src/modules/petty-cash/routes.js");
 const SCHEMA_SRC = path.join(API, "prisma/schema.prisma");
-const GASTOS_PAGE_SRC = path.join(WEB, "app/dashboard/gastos-menores/gastos/page.tsx");
+const GASTOS_PAGE_SRC = path.join(WEB, "components/gastos-menores/GastosMenoresWorkspace.tsx");
 const WEB_PAGES = [
   "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
+  "apps/web/app/dashboard/gastos-menores/gastos/nuevo/page.tsx",
+  "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx",
   "apps/web/components/gastos-menores-nav.tsx"
 ];
 
@@ -180,10 +182,20 @@ async function main() {
       && advancesAll.status === 200 && Array.isArray(advancesAll.payload)
       && orgTree.status === 200 && Array.isArray(orgTree.payload?.societies) && Array.isArray(orgTree.payload?.cost_centers),
       { vats: vatList.status, suppliers: suppliersList.status, advances: advancesAll.status, tree: orgTree.status });
+    const supplierParty = (suppliersList.payload || []).find((row) => Array.isArray(row.roles) && row.roles.includes("supplier")) || (suppliersList.payload || [])[0];
+    check("supplier_party_available_for_custodian_and_lines", Boolean(supplierParty?.id), { status: suppliersList.status, party_id: supplierParty?.id || null });
+    const supplierPartyId = supplierParty?.id;
     const vat19 = (vatList.payload || []).find((row) => row.code === "COMPRAS-19" && row.active !== false);
     check("vat_master_compras_19_available_for_lines", Boolean(vat19) && Number(vat19.percent) === 19, { code: vat19?.code, percent: vat19?.percent });
 
     // ---- Arbol organizacional: sucursal + centro de costo (selector C. costo de la planilla) ----
+    const society = (orgTree.payload?.societies || []).find((row) => row.code === "SOC-01");
+    if (!society) {
+      const createdSociety = await capture("/api/v1/accounting/organization-tree", { method: "POST", body: { type: "society", code: "SOC-01", name: "Sociedad certificacion journal", active: true } });
+      check("org_society_available_for_journal", createdSociety.status === 201 && (createdSociety.payload?.societies || []).some((row) => row.code === "SOC-01"), { status: createdSociety.status, code: "SOC-01" });
+    } else {
+      check("org_society_available_for_journal", true, { status: 200, code: "SOC-01", existing: true });
+    }
     const branchCode = `QA-SUC-${RUN_ID}`;
     const ccCode = `QA-CC-${RUN_ID}`;
     const branch = await capture("/api/v1/accounting/organization-tree", { method: "POST", body: { type: "branch", code: branchCode, name: "Sucursal certificacion journal", society_code: "SOC-01" } });
@@ -204,11 +216,11 @@ async function main() {
 
     // ---- Caja menor del journal ----
     const boxCode = `QAJRN-BOX-${RUN_ID}`;
-    const box = await capture("/api/v1/petty-cash/boxes", { method: "POST", body: { code: boxCode, name: "Caja journal certificacion", account_code: "1105", advance_account_code: "1330", custodian_party_id: 9, monthly_limit: 2000000, require_advance: false, block_unliquidated_advance: false, active: true } });
+    const box = await capture("/api/v1/petty-cash/boxes", { method: "POST", body: { code: boxCode, name: "Caja journal certificacion", account_code: "1105", advance_account_code: "1330", custodian_party_id: supplierPartyId, monthly_limit: 2000000, require_advance: false, block_unliquidated_advance: false, active: true } });
     check("box_created_ready_for_journal", box.status === 201 && box.payload.ready_for_advances === true && Array.isArray(box.payload.warnings) && box.payload.warnings.length === 0, { status: box.status, ready: box.payload.ready_for_advances });
     const boxId = box.payload.id;
 
-    const secondBox = await capture("/api/v1/petty-cash/boxes", { method: "POST", body: { code: `${boxCode}-B`, name: "Caja journal otra (para ADVANCE_BOX_MISMATCH)", account_code: "1105", advance_account_code: "1330", custodian_party_id: 9, monthly_limit: 2000000, active: true } });
+    const secondBox = await capture("/api/v1/petty-cash/boxes", { method: "POST", body: { code: `${boxCode}-B`, name: "Caja journal otra (para ADVANCE_BOX_MISMATCH)", account_code: "1105", advance_account_code: "1330", custodian_party_id: supplierPartyId, monthly_limit: 2000000, active: true } });
     check("second_box_created_for_mismatch_guard", secondBox.status === 201, { status: secondBox.status });
     const secondBoxId = secondBox.payload.id;
 
@@ -230,8 +242,8 @@ async function main() {
       advance_id: advanceId,
       description: "Comprobante del journal de certificacion",
       lines: [
-        { concept_id: Number(conceptId1), description: "Combustible ruta norte", base_amount: 100000, vat_code: "COMPRAS-19", vat_amount: 999999, total: 999999, cost_center_code: ccCode, branch_code: null, supplier_party_id: 9, invoice_reference: "FV-JRN-001" },
-        { concept_id: Number(conceptId1), description: "Peajes sin IVA (sugerencia quitada)", base_amount: 80000, vat_code: null, cost_center_code: null, branch_code: null, supplier_party_id: 9, invoice_reference: "FV-JRN-002" },
+        { concept_id: Number(conceptId1), description: "Combustible ruta norte", base_amount: 100000, vat_code: "COMPRAS-19", vat_amount: 999999, total: 999999, cost_center_code: ccCode, branch_code: null, supplier_party_id: supplierPartyId, invoice_reference: "FV-JRN-001" },
+        { concept_id: Number(conceptId1), description: "Peajes sin IVA (sugerencia quitada)", base_amount: 80000, vat_code: null, cost_center_code: null, branch_code: null, supplier_party_id: supplierPartyId, invoice_reference: "FV-JRN-002" },
         { concept_id: Number(conceptId2), description: "Aseo oficina", base_amount: 50000, vat_code: null, cost_center_code: null, branch_code: null, supplier_party_id: null, invoice_reference: null }
       ]
     } });
@@ -261,7 +273,7 @@ async function main() {
     const noSupplier = await capture("/api/v1/petty-cash/vouchers", { method: "POST", body: { box_id: boxId, date: TODAY, advance_id: advanceId, lines: [{ concept_id: Number(conceptId1), description: "Sin proveedor", base_amount: 10000, vat_code: null, invoice_reference: "FV-X" }] } });
     check("journal_line_supplier_required_enforced", noSupplier.status === 400 && noSupplier.payload.code === "SUPPLIER_REQUIRED", { status: noSupplier.status, code: noSupplier.payload.code });
 
-    const noInvoice = await capture("/api/v1/petty-cash/vouchers", { method: "POST", body: { box_id: boxId, date: TODAY, advance_id: advanceId, lines: [{ concept_id: Number(conceptId1), description: "Sin factura", base_amount: 10000, vat_code: null, supplier_party_id: 9 }] } });
+    const noInvoice = await capture("/api/v1/petty-cash/vouchers", { method: "POST", body: { box_id: boxId, date: TODAY, advance_id: advanceId, lines: [{ concept_id: Number(conceptId1), description: "Sin factura", base_amount: 10000, vat_code: null, supplier_party_id: supplierPartyId }] } });
     check("journal_line_invoice_reference_required_enforced", noInvoice.status === 400 && noInvoice.payload.code === "INVOICE_REFERENCE_REQUIRED", { status: noInvoice.status, code: noInvoice.payload.code });
 
     const otherBoxAdvance = await capture("/api/v1/petty-cash/advances", { method: "POST", body: { box_id: secondBoxId, date: TODAY, amount: 100000 } });
@@ -333,13 +345,13 @@ async function main() {
     for (const suite of apiSuites) {
       const run = spawnSync(process.execPath, ["--test", `test/${suite}`], { cwd: API, encoding: "utf8" });
       const out = `${run.stdout || ""}${run.stderr || ""}`;
-      check(`unit_suite_${suite.replace(/\.test\.js$/, "")}_pass`, run.status === 0 && /# fail 0\b/.test(out), { status: run.status, pass: (out.match(/# pass (\d+)/) || [])[1], fail: (out.match(/# fail (\d+)/) || [])[1] });
+      check(`unit_suite_${suite.replace(/\.test\.js$/, "")}_pass`, run.status === 0 && /(?:#|ℹ)\s+fail 0\b/.test(out), { status: run.status, pass: (out.match(/(?:#|ℹ)\s+pass (\d+)/) || [])[1], fail: (out.match(/(?:#|ℹ)\s+fail (\d+)/) || [])[1] });
     }
     const webSuites = ["gastos-menores-module-registration.test.mjs", "gastos-menores-masters.test.mjs", "gastos-menores-operations.test.mjs", "gastos-menores-reports.test.mjs"];
     for (const suite of webSuites) {
       const run = spawnSync(process.execPath, ["--test", `test/${suite}`], { cwd: WEB, encoding: "utf8" });
       const out = `${run.stdout || ""}${run.stderr || ""}`;
-      check(`unit_suite_${suite.replace(/\.test\.mjs$/, "")}_pass`, run.status === 0 && /# fail 0\b/.test(out), { status: run.status, pass: (out.match(/# pass (\d+)/) || [])[1], fail: (out.match(/# fail (\d+)/) || [])[1] });
+      check(`unit_suite_${suite.replace(/\.test\.mjs$/, "")}_pass`, run.status === 0 && /(?:#|ℹ)\s+fail 0\b/.test(out), { status: run.status, pass: (out.match(/(?:#|ℹ)\s+pass (\d+)/) || [])[1], fail: (out.match(/(?:#|ℹ)\s+fail (\d+)/) || [])[1] });
     }
 
     // ---- Aserciones a nivel de codigo (estructura versionada del journal) ----
@@ -386,7 +398,7 @@ async function main() {
       && /html\.dark\s+\.apex-cell:focus\s*\{/.test(globalsSrc),
       {});
     check("module_selects_opt_into_apex_select", (() => {
-      const pages = ["gastos", "anticipos", "cajas", "conceptos", "reportes"];
+      const pages = ["anticipos", "cajas", "conceptos", "reportes"];
       for (const page of pages) {
         const src = fs.readFileSync(path.join(WEB, `app/dashboard/gastos-menores/${page}/page.tsx`), "utf8");
         const tags = src.match(/<select[\s\S]*?>/g) || [];
@@ -395,6 +407,9 @@ async function main() {
           if (!/apex-select/.test(tag)) return false;
         }
       }
+      const workspace = fs.readFileSync(GASTOS_PAGE_SRC, "utf8");
+      const workspaceTags = workspace.match(/<select[\s\S]*?>/g) || [];
+      if (workspaceTags.length === 0 || workspaceTags.some((tag) => !/apex-select/.test(tag))) return false;
       return true;
     })(),
     {});
