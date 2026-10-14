@@ -358,6 +358,7 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
 
   function removeLine(index: number) {
     const oldLength = draftLines.length;
+    setError("");
     setDraftLines((lines) => {
       const next = lines.filter((_, position) => position !== index);
       return next.length ? next : [{ ...emptyLine }];
