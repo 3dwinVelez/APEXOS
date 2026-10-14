@@ -472,7 +472,15 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
       setError("Esta caja exige seleccionar un anticipo vigente antes de contabilizar.");
       return;
     }
-    if (lookupErrors.size) {
+    const activeLookupKeys = new Set(["box", "advance"]);
+    draftLines.forEach((_, index) => {
+      activeLookupKeys.add(`concept-${index}`);
+      activeLookupKeys.add(`vat-${index}`);
+      activeLookupKeys.add(`supplier-${index}`);
+      activeLookupKeys.add(`cost-center-${index}`);
+    });
+    const currentLookupErrors = [...lookupErrors].filter((key) => activeLookupKeys.has(key));
+    if (currentLookupErrors.length) {
       setError("Completa los campos de búsqueda con una opción válida antes de contabilizar.");
       return;
     }
