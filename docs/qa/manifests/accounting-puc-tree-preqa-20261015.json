@@ -5,7 +5,6 @@
   "source_branch": "desarrollo",
   "target_branch": "develop",
   "target_baseline": "origin/develop@54df09e2b71a82d9bc54fb3dd890624952e87ffa",
-  "candidate": "3c881dfb8f3c870048063a431b0c5e86b6d61bd3",
   "change_intent": {
     "summary": "PUC colombiano 1/2/4/6 con preview/apply jerárquico, auxiliares manuales de 8 dígitos y selección de cuentas transaccionales en gastos/asientos",
     "modules": [
@@ -111,61 +110,78 @@
     "saldos iniciales Excel con tercero opcional",
     "RBAC y aislamiento tenant"
   ],
-  "checks": {
-    "functional": {
-      "status": "passed",
-      "evidence": [
-        "../evidence/accounting-puc-tree-20261015/local-certification-3c881df.json",
-        "../evidence/accounting-puc-tree-20261015/browser-certification-3c881df.json"
-      ]
-    },
-    "browser": {
-      "status": "passed",
-      "checks": "93/93",
-      "evidence": [
-        "../evidence/accounting-puc-tree-20261015/browser-certification-3c881df.json"
-      ]
-    },
-    "api": {
-      "status": "passed",
-      "checks": "16/16",
-      "evidence": [
-        "../evidence/accounting-puc-tree-20261015/local-certification-3c881df.json"
-      ]
-    },
-    "regression": {
-      "status": "passed",
-      "evidence": [
-        "../evidence/accounting-puc-tree-20261015/build-verification-957.md"
-      ]
-    },
-    "ui_tests": {
-      "status": "passed",
-      "checks": "35/35"
-    }
-  },
   "promotion": {
     "status": "pending_authorization",
     "qa_publish": "not_authorized_yet",
     "remote_writes": "not_authorized",
     "main_release": "not_authorized"
   },
-  "qa_status": "pending_authorization",
+  "commit": "a2e7dcbed73591a4dc04a8ad06706b5d14885100",
+  "candidate": {
+    "status": "passed",
+    "reviewed_candidate_commit": "a2e7dcbed73591a4dc04a8ad06706b5d14885100",
+    "scope_manifest": "accounting-puc-tree-20261015.json",
+    "target_baseline": "origin/develop@54df09e2b71a82d9bc54fb3dd890624952e87ffa",
+    "exactness": "scoped against candidate a2e7dcbed73591a4dc04a8ad06706b5d14885100"
+  },
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-a2e7dcb.json",
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-a2e7dcb.json",
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-a2e7dcb.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/build-verification-a2e7dcb.md"
+      ]
+    }
+  },
   "certification": {
     "status": "passed",
-    "candidate": "3c881dfb8f3c870048063a431b0c5e86b6d61bd3",
     "script": "../../../scripts/certifications/accounting-puc-tree-local.js",
     "evidence": [
-      "../evidence/accounting-puc-tree-20261015/local-certification-3c881df.json",
-      "../evidence/accounting-puc-tree-20261015/browser-certification-3c881df.json"
+      "../evidence/accounting-puc-tree-20261015/local-certification-a2e7dcb.json",
+      "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
     ]
   },
   "approval": {
     "status": "pending",
     "scope": "promotion_to_develop_for_qa",
     "approved_by": null,
+    "approved_at": null,
     "main_release": "not_authorized",
     "merge_or_push": "not_authorized",
     "remote_migrations": "not_authorized"
   }
 }
+
