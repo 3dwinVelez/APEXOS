@@ -64,6 +64,10 @@ async function seedFixture() {
   for (const [code, name, type] of accountData) {
     await db.account.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code } }, update: { active: true, allows_tx: true }, create: { tenant_id: tenant.id, code, name, type, active: true, allows_tx: true } });
   }
+  const customAccounts = [["130505HEART", "Caja HEART", "asset"], ["220505HEART", "Proveedor HEART", "liability"], ["5290", "Aportes SENA", "expense"], ["5320", "Arrendamientos", "expense"], ["5360", "Servicios publicos", "expense"]];
+  for (const [code, name, type] of customAccounts) {
+    await db.account.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code } }, update: { name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true }, create: { tenant_id: tenant.id, code, name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true } });
+  }
   let party = await db.party.findFirst({ where: { tenant_id: tenant.id, name: "Proveedor E2E" } });
   if (!party) party = await db.party.create({ data: { tenant_id: tenant.id, type: "supplier", name: "Proveedor E2E", active: true } });
   const box = await db.pettyCashBox.upsert({ where: { tenant_id_code: { tenant_id: tenant.id, code: `E2E-${suffix}` } }, update: { active: true }, create: { tenant_id: tenant.id, code: `E2E-${suffix}`, name: "Caja browser E2E", account_code: "1105", advance_account_code: "1330", custodian_party_id: party.id, monthly_limit: 2000000, require_advance: false, block_unliquidated_advance: false, active: true } });
@@ -82,7 +86,7 @@ async function seedFixture() {
   const config = tenant.config && typeof tenant.config === "object" ? tenant.config : {};
   await db.tenant.update({ where: { id: tenant.id }, data: { active_modules: Array.from(new Set([...(tenant.active_modules || []), "M-07", "M-29"])), config: { ...config, accounting: { ...(config.accounting || {}), organization_tree: { societies: [{ code: `SOC-${suffix}`, name: "Sociedad E2E", active: true }], branches: [{ code: `BR-${suffix}`, name: "Sucursal E2E", society_code: `SOC-${suffix}`, active: true }], cost_centers: [{ code: `CC-${suffix}`, name: "Centro E2E", society_code: `SOC-${suffix}`, branch_code: `BR-${suffix}`, active: true }] } } } } });
   const protectedAccounts = await db.account.findMany({ where: { tenant_id: tenant.id }, select: { id: true, code: true, name: true, type: true, allows_tx: true, active: true } });
-  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, ambiguousBoxName: "Caja browser E2E", requiredBoxId: requiredBox.id, requiredBoxCode: requiredBox.code, requiredAdvanceId: requiredAdvance.id, requiredAdvanceNumber: requiredAdvance.full_number, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, protectedAccounts, limitedEmail, adminEmail, adminPassword };
+  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, ambiguousBoxName: "Caja browser E2E", requiredBoxId: requiredBox.id, requiredBoxCode: requiredBox.code, requiredAdvanceId: requiredAdvance.id, requiredAdvanceNumber: requiredAdvance.full_number, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, customAccounts, protectedAccounts, limitedEmail, adminEmail, adminPassword };
 }
 
 async function login(page, email = "demo@apex.local", password = "test1234") {
@@ -189,6 +193,7 @@ async function certifyPucTreeInBrowser(page, fixture) {
   const dbRows = await db.account.findMany({ where: { tenant_id: fixture.tenantId }, select: { id: true, code: true, name: true, type: true, allows_tx: true, active: true, parent_id: true }, orderBy: { code: "asc" } });
   const dbByCode = new Map(dbRows.map((row) => [row.code, row]));
   check("puc_browser_parent_links_persisted", catalog.every((row) => !row.parent_code || dbByCode.get(row.code)?.parent_id === dbByCode.get(row.parent_code)?.id), { rows: dbRows.length });
+  check("puc_browser_custom_parent_links_persisted", fixture.customAccounts.every(([code]) => { const row = dbByCode.get(code); const parentCode = code.length > 6 ? code.slice(0, 6) : code.slice(0, 2); return row?.parent_id === dbByCode.get(parentCode)?.id; }), { custom: fixture.customAccounts.map(([code]) => code) });
   check("puc_browser_protected_accounts_preserved", fixture.protectedAccounts.every((before) => { const after = dbRows.find((row) => row.id === before.id); return after && after.name === before.name && after.type === before.type && after.allows_tx === before.allows_tx && after.active === before.active; }), { protected_accounts: fixture.protectedAccounts.length });
 }
 
