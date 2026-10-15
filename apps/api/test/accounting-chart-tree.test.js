@@ -82,3 +82,11 @@ test("repara padres PUC de cuentas custom existentes sin crear cuentas custom", 
   assert.equal(report.creates.some((item) => item.code === "110505HEART"), false);
   assert.equal(report.unmapped_existing.some((item) => item.code === "9999HEART"), true);
 });
+
+test("crea solo el padre personalizado de un auxiliar existente cuando falta la subcuenta de seis dígitos", () => {
+  const report = buildChartTreePlan(minimalCatalog(), [{ id: 200, code: "110599HEART", name: "Auxiliar HEART", type: "asset", parent_id: null, level: 5, active: true }]);
+  assert.equal(report.custom_parent_creates.length, 1);
+  assert.equal(report.custom_parent_creates[0].code, "110599");
+  assert.equal(report.custom_parent_creates[0].parent_code, "1105");
+  assert.equal(report.repairs.some((item) => item.code === "110599HEART" && item.parent_code === "110599"), true);
+});

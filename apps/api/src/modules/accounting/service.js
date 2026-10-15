@@ -927,7 +927,8 @@ function buildChartTreePlan(catalog, existingAccounts = []) {
   const conflicts = [];
   const warnings = [];
   const customLinks = [];
-  const report = { total_catalog_entries: entries.length, existing_count: existingAccounts.length, creates, repairs, unchanged, conflicts, warnings, custom_links: customLinks, invalid: [], missing_parents: [], unmapped_existing: [] };
+  const customParentCreates = [];
+  const report = { total_catalog_entries: entries.length, existing_count: existingAccounts.length, creates, repairs, unchanged, conflicts, warnings, custom_links: customLinks, custom_parent_creates: customParentCreates, invalid: [], missing_parents: [], unmapped_existing: [] };
   for (const entry of entries) {
     const current = existing.get(entry.code);
     const parent = entry.parent_code ? existing.get(entry.parent_code) || entries.find((candidate) => candidate.code === entry.parent_code) : null;
@@ -954,13 +955,23 @@ function buildChartTreePlan(catalog, existingAccounts = []) {
   for (const current of existingAccounts) {
     const code = String(current.code);
     if (catalogCodes.has(code)) continue;
-    const customParentCode = /^\d{4}$/.test(code) ? code.slice(0, 2) : (/^\d{6}.+/.test(code) ? code.slice(0, 6) : null);
-    const customLevel = /^\d{4}$/.test(code) ? 3 : (customParentCode ? 5 : null);
-    if (!customParentCode || !catalogCodes.has(customParentCode)) {
+    const customParentCode = /^\d{4}$/.test(code) ? code.slice(0, 2) : (/^\d{6}.+/.test(code) ? code.slice(0, 6) : (/^\d{6}$/.test(code) ? code.slice(0, 4) : null));
+    const customLevel = /^\d{4}$/.test(code) ? 3 : (/^\d{6}$/.test(code) ? 4 : (customParentCode ? 5 : null));
+    const hasCanonicalCustomParent = /^\d{6}.+/.test(code) && catalogCodes.has(customParentCode.slice(0, 4));
+    if (!customParentCode || (!catalogCodes.has(customParentCode) && !hasCanonicalCustomParent)) {
       report.unmapped_existing.push({ id: current.id, code, name: current.name });
       continue;
     }
-    const expectedParent = existing.get(customParentCode) || entries.find((entry) => entry.code === customParentCode);
+    let expectedParent = existing.get(customParentCode) || entries.find((entry) => entry.code === customParentCode);
+    if (!expectedParent && /^\d{6}.+/.test(code)) {
+      const canonicalParent = entries.find((entry) => entry.code === customParentCode.slice(0, 4));
+      if (canonicalParent) {
+        expectedParent = { id: null, code: customParentCode, name: `${canonicalParent.name} personalizada ${customParentCode}`, type: canonicalParent.type, parent_code: canonicalParent.code, level: 4, active: true };
+        customParentCreates.push(expectedParent);
+        creates.push({ ...expectedParent, custom_parent: true });
+        existing.set(customParentCode, expectedParent);
+      }
+    }
     const expectedParentId = existing.get(customParentCode)?.id || null;
     customLinks.push({ id: current.id, code, parent_code: customParentCode, parent_id: expectedParentId, level: customLevel });
     if (!expectedParent) {
@@ -1037,6 +1048,7 @@ async function listAccounts(tenantId, query = {}) {
     const where = {};
     if (query.active !== undefined) where.active = String(query.active) !== "false";
     if (query.type) where.type = query.type;
+    if (query.allows_tx !== undefined) where.allows_tx = String(query.allows_tx) === "true";
     if (query.search) {
       where.OR = [
         { code: { contains: String(query.search), mode: "insensitive" } },

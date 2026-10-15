@@ -67,7 +67,7 @@ async function main() {
     await db.account.upsert({ where: { tenant_id_code: { tenant_id: primary.tenantId, code } }, update: { name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true }, create: { tenant_id: primary.tenantId, code, name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true } });
   }
   const preview = await call("/api/v1/accounting/chart/tree/preview", { token: primary.token, method: "POST", body: { catalog } });
-  check("preview_real", preview.status === 200 && preview.payload.total_catalog_entries === 2502 && preview.payload.custom_links?.length === 5, { status: preview.status, creates: preview.payload.creates?.length, repairs: preview.payload.repairs?.length, custom_links: preview.payload.custom_links?.length, conflicts: preview.payload.conflicts?.length });
+  check("preview_real", preview.status === 200 && preview.payload.total_catalog_entries === 2502 && preview.payload.custom_links?.length === 5 && preview.payload.custom_parent_creates?.length === 1, { status: preview.status, creates: preview.payload.creates?.length, repairs: preview.payload.repairs?.length, custom_links: preview.payload.custom_links?.length, custom_parent_creates: preview.payload.custom_parent_creates?.length, conflicts: preview.payload.conflicts?.length });
   const applied = await call("/api/v1/accounting/chart/tree/apply", { token: primary.token, method: "POST", body: { catalog } });
   check("apply_real", applied.status === 200 && (applied.payload.applied?.created || 0) + (applied.payload.applied?.repaired || 0) >= 2502, { status: applied.status, applied: applied.payload.applied });
   const second = await call("/api/v1/accounting/chart/tree/apply", { token: primary.token, method: "POST", body: { catalog } });
@@ -75,7 +75,7 @@ async function main() {
   const accounts = await call("/api/v1/accounting/accounts?limit=1000", { token: primary.token });
   const rows = Array.isArray(accounts.payload) ? accounts.payload : accounts.payload.data || [];
   const dbRows = await db.account.findMany({ where: { tenant_id: primary.tenantId }, orderBy: { code: "asc" } });
-  check("catalog_persisted", dbRows.length >= 2502, { api_count: rows.length, db_count: dbRows.length });
+  check("catalog_persisted", dbRows.length >= 2508, { api_count: rows.length, db_count: dbRows.length });
   const persisted = new Map(dbRows.map((row) => [String(row.code), row]));
   const byCode = new Map(rows.map((row) => [String(row.code), row]));
   check("parent_links_persisted", catalog.every((row) => !row.parent_code || persisted.get(row.code)?.parent_id === persisted.get(row.parent_code)?.id), { count: dbRows.length });
