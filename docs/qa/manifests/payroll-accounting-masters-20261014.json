@@ -1,0 +1,79 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "payroll-accounting-masters-20261014",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "candidate": "da9b40e34d08d9347fa421836174cfd9fd3930ef",
+  "target_baseline": "origin/develop@a1d3ba454248a5e22918c259f974b6e57dfb2ff0",
+  "base_commits": {
+    "develop": "a1d3ba45"
+  },
+  "certified_commit": "da9b40e34d08d9347fa421836174cfd9fd3930ef",
+  "change_intent": {
+    "summary": "Integra la asignacion organizacional de empleados y la referencia explicita a terceros contables en entidades laborales mediante lectura HR, preservando legado y control de tenant.",
+    "modules": [
+      "hr",
+      "payroll",
+      "accounting-consumption"
+    ]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "apps/api/src/modules/hr/laborEntityPartyMatcher.js" },
+    { "status": "A", "file": "apps/api/src/modules/hr/organization.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/routes.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/schema.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/test/hr-employee-organization.test.js" },
+    { "status": "A", "file": "apps/api/test/labor-entity-party-matcher.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/entidades/page.tsx" },
+    { "status": "A", "file": "apps/web/lib/payrollEntities.ts" },
+    { "status": "A", "file": "apps/web/lib/payrollOrganization.ts" },
+    { "status": "A", "file": "apps/web/test/payroll-employee-entity-ui.test.mjs" },
+    { "status": "A", "file": "scripts/certifications/payroll-accounting-masters-browser-local.js" },
+    { "status": "A", "file": "docs/qa/manifests/payroll-accounting-masters-20261014.json" },
+    { "status": "A", "file": "docs/qa/manifests/payroll-accounting-masters-preqa-20261014.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/laborEntityPartyMatcher.js",
+    "apps/api/src/modules/hr/organization.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-employee-organization.test.js",
+    "apps/api/test/labor-entity-party-matcher.test.js",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/entidades/page.tsx",
+    "apps/web/lib/payrollEntities.ts",
+    "apps/web/lib/payrollOrganization.ts",
+    "apps/web/test/payroll-employee-entity-ui.test.mjs",
+    "scripts/certifications/payroll-accounting-masters-browser-local.js",
+    "docs/qa/manifests/payroll-accounting-masters-20261014.json",
+    "docs/qa/manifests/payroll-accounting-masters-preqa-20261014.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "employee_assignment", "status": "passed", "evidence": ["../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json"] },
+    { "name": "legacy_edit", "status": "passed", "evidence": ["../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json"] },
+    { "name": "contracts_otrosi_rehire", "status": "passed", "evidence": ["../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json", "../evidence/payroll-rehire-20261015/summary.md"] },
+    { "name": "prefill_NIT_DV", "status": "passed", "evidence": ["../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json"] },
+    { "name": "no_party_duplicate", "status": "passed", "evidence": ["../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json"] },
+    { "name": "RBAC_tenant", "status": "passed", "evidence": ["../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json", "../evidence/payroll-rehire-20261015/summary.md"] }
+  ],
+  "certification_status": "passed",
+  "promotion": {
+    "status": "pending_qa_authorization",
+    "authorization": "approved",
+    "approved_by": "usuario",
+    "approved_at": "2026-10-15T14:21:46.6449080-05:00",
+    "authorization_flags": {
+      "push_desarrollo": true,
+      "pull_request_desarrollo_develop": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false
+    },
+    "reason": "La certificacion local esta completa y el usuario autorizo push/PR/merge/deploy hacia QA. La promocion a main permanece sin autorizacion."
+  }
+}
