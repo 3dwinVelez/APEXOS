@@ -1,0 +1,153 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-puc-tree-20261015",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "target_baseline": "origin/develop@54df09e2b71a82d9bc54fb3dd890624952e87ffa",
+  "candidate": "3c881dfb8f3c870048063a431b0c5e86b6d61bd3",
+  "change_intent": {
+    "summary": "PUC colombiano 1/2/4/6 con preview/apply jerárquico, auxiliares manuales de 8 dígitos y selección de cuentas transaccionales en gastos/asientos",
+    "modules": [
+      "accounting",
+      "petty-cash"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.json",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.provenance.json",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/puc-colombia-catalog.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/routes.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/schema.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/accounting-chart-tree.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/test/accounting-routes-contract.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/puc-colombia-catalog.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/asientos/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/plan-cuentas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/gastos-menores/cajas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/gastos-menores/reportes/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/lib/accounting-account-tree.ts",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/gastos-menores-reports.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/plan-cuentas-tree.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/accounting-puc-tree-local.js",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/gastos-opening-balances-browser-local.js",
+      "status": "M"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-puc-tree-20261015.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-puc-tree-preqa-20261015.json",
+      "status": "A"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    "PUC completo 2.502 registros y padres persistidos",
+    "5 códigos personalizados preservados y 220505 con padre activo",
+    "CRUD legacy con flags/status/IDs",
+    "auxiliar manual 8 dígitos, padre 6 dígitos, tenant isolation y rechazo de padre inválido",
+    "preview read-only, apply atómico e idempotente",
+    "no seed automático de auxiliares 8 dígitos",
+    "gastos menores legacy antes/después",
+    "saldos iniciales Excel con tercero opcional",
+    "RBAC y aislamiento tenant"
+  ],
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-3c881df.json",
+        "../evidence/accounting-puc-tree-20261015/browser-certification-3c881df.json"
+      ]
+    },
+    "browser": {
+      "status": "passed",
+      "checks": "93/93",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/browser-certification-3c881df.json"
+      ]
+    },
+    "api": {
+      "status": "passed",
+      "checks": "16/16",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-3c881df.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/build-verification-957.md"
+      ]
+    },
+    "ui_tests": {
+      "status": "passed",
+      "checks": "35/35"
+    }
+  },
+  "promotion": {
+    "status": "pending_authorization",
+    "qa_publish": "not_authorized_yet",
+    "remote_writes": "not_authorized",
+    "main_release": "not_authorized"
+  }
+}
