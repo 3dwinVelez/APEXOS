@@ -241,11 +241,12 @@ const actionLabels: Record<string, string> = {
   sensitive: "Sensible",
   manage_users: "Gestionar usuarios",
   manage_roles: "Gestionar roles",
+  manage_rates: "Gestionar tarifarios",
   edit_any_state: "Edicion especial"
 };
 
-const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
-const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles"];
+const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles", "manage_rates"];
+const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles", "manage_rates"];
 const defaultRoleScopes: RoleScopes = { locations: [], areas: [], cost_centers: [], processes: [] };
 
 const emptyUser: UserForm = {
@@ -538,6 +539,7 @@ const categories: ConfigCategory[] = [
     icon: Truck,
     items: [
       { key: "vehiculos", title: "Vehiculos", description: "Flota, documentos y conductor autorizado.", status: "activo", modal: "info", href: "/dashboard/transporte" },
+      { key: "maestros-transporte", title: "Maestros de transporte", description: "Transportadoras, conductores, origenes operativos, puntos de entrega y tipos de liquidacion.", status: "activo", modal: "info", href: "/dashboard/administracion/maestros-transporte" },
       { key: "rutas", title: "Rutas", description: "Planeacion y asignacion operativa.", status: "activo", modal: "info", href: "/dashboard/talento-humano/rutas" },
       { key: "marcaciones", title: "Marcaciones", description: "Reglas operativas de jornada y trazabilidad.", status: "activo", modal: "info", href: "/dashboard/talento-humano/marcacion" },
       { key: "almacenes-servicio", title: "Almacenes de servicio", description: "Catalogo usado en solicitudes externas y ordenes de servicio.", status: "configurado", modal: "masters" },

@@ -5,7 +5,7 @@ import test from "node:test";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const page = fs.readFileSync(path.join(root, "apps/web/app/dashboard/transporte/liquidaciones/page.tsx"), "utf8");
-const masters = fs.readFileSync(path.join(root, "apps/web/app/dashboard/transporte/maestros/page.tsx"), "utf8");
+const masters = fs.readFileSync(path.join(root, "apps/web/components/transport/TransportMastersPanel.tsx"), "utf8");
 
 test("la torre ofrece tres vistas: paquetes, semanas y vehiculos", () => {
   assert.match(page, /useState<"paquetes" \| "semanas" \| "vehiculos">\("paquetes"\)/);

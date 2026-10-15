@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const operation = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/operacion/page.tsx"), "utf8");
-const masters = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
+const masters = fs.readFileSync(path.resolve(directory, "../components/transport/TransportMastersPanel.tsx"), "utf8");
 const transportLayout = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/layout.tsx"), "utf8");
 const planning = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/planeacion/page.tsx"), "utf8");
 const planningMap = fs.readFileSync(path.resolve(directory, "../components/transport/PlanningRouteMap.tsx"), "utf8");
@@ -50,9 +50,16 @@ test("Transporte organiza el trabajo por etapas sin navegación redundante", () 
 });
 
 test("Transporte separa flota, operacion y maestros TMS", () => {
-  for (const route of ["flota", "operacion", "maestros", "planeacion", "tarifas", "configuracion", "ordenes", "monitoreo", "notificaciones", "pod"]) {
+  for (const route of ["flota", "operacion", "planeacion", "tarifas", "configuracion", "ordenes", "monitoreo", "notificaciones", "pod"]) {
     assert.match(fleet, new RegExp(`/dashboard/transporte/${route}`));
   }
+  assert.doesNotMatch(fleet, /\/dashboard\/transporte\/maestros/);
+});
+test("los maestros TMS viven en Configuracion bajo su categoria", () => {
+  const adminHub = fs.readFileSync(path.resolve(directory, "../app/dashboard/administracion/page.tsx"), "utf8");
+  const redirectPage = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
+  assert.match(adminHub, /\/dashboard\/administracion\/maestros-transporte/);
+  assert.match(redirectPage, /redirect\("\/dashboard\/administracion\/maestros-transporte"\)/);
 });
 test("POD expone KPIs, filtros y evidencia", () => { assert.match(pod, /\/transport\/pod\/stats/); assert.match(pod, /Primer intento/); assert.match(pod, /photos/); assert.match(pod, /signature/); });
 test("la operacion carga foto y firma POD como archivos", () => { assert.match(operation, /pod_photo/); assert.match(operation, /pod_signature_file/); assert.match(operation, /\/evidence/); assert.match(operation, /FormData/); });
@@ -193,6 +200,29 @@ test("los tarifarios exponen vigencias, versiones y componentes de costo", () =>
   assert.match(rates, /\/activate/);
   assert.match(rates, /price_per_km/);
   assert.match(rates, /fuel_surcharge_pct/);
+});
+
+test("el asistente de tarifarios crea origenes operativos enlazados al maestro", () => {
+  assert.match(rates, /\/api\/v1\/transport\/origins/);
+  assert.match(rates, /OriginQuickCreate/);
+  assert.match(rates, /Crear nuevo origen operativo/);
+  assert.match(rates, /Crear y seleccionar/);
+  assert.match(rates, /origin_id: String\(origin\.id\)/);
+  assert.match(rates, /canCreateOrigin=\{canWrite\}/);
+  assert.match(rates, /latitude,\s*longitude/);
+});
+
+test("los tarifarios se editan desde el monitor con permiso dedicado manage_rates", () => {
+  const adminHub = fs.readFileSync(path.resolve(directory, "../app/dashboard/administracion/page.tsx"), "utf8");
+  const apiClient = fs.readFileSync(path.resolve(directory, "../lib/api.ts"), "utf8");
+  assert.match(rates, /Editar tarifario/);
+  assert.match(rates, /startEdit/);
+  assert.match(rates, /draftFromRate/);
+  assert.match(rates, /Guardar como nueva version/);
+  assert.match(rates, /method: "PUT"/);
+  assert.match(rates, /hasStoredRolePermission\("transport", "manage_rates"\)/);
+  assert.match(adminHub, /manage_rates: "Gestionar tarifarios"/);
+  assert.match(apiClient, /"configure", "manage_rates"/);
 });
 
 test("la torre cubre demanda, viaje, entrega y liquidacion", () => {

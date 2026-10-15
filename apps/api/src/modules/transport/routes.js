@@ -1,5 +1,5 @@
 const tenancy = require("../../middleware/tenancy");
-const { requirePermission } = require("../../middleware/rbac");
+const { requirePermission, requireAnyPermission } = require("../../middleware/rbac");
 const schemas = require("./schema");
 const service = require("./service");
 const tmsSchemas = require("./tms-schema");
@@ -75,12 +75,13 @@ async function transportRoutes(fastify) {
   fastify.post("/transport/origins", { schema: tmsSchemas.originSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveOrigin(request.user?.tenant_id, null, request.body)));
   fastify.put("/transport/origins/:id", { schema: tmsSchemas.originSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveOrigin(request.user?.tenant_id, request.params.id, request.body));
 
+  const ratesWrite = requireAnyPermission([{ module: "transport", action: "write" }, { module: "transport", action: "manage_rates" }]);
   fastify.get("/transport/rate-cards", { preHandler: requirePermission("transport", "read") }, (request) => tms.listRateCards(request.user?.tenant_id, request.query));
   fastify.post("/transport/rate-cards", { schema: tmsSchemas.rateCardSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveRateCard(request.user?.tenant_id, request.user, null, request.body)));
-  fastify.put("/transport/rate-cards/:id", { schema: tmsSchemas.rateCardSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveRateCard(request.user?.tenant_id, request.user, request.params.id, request.body));
-  fastify.post("/transport/rate-cards/:id/versions", { schema: tmsSchemas.rateCardSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.versionRateCard(request.user?.tenant_id, request.user, request.params.id, request.body)));
-  fastify.post("/transport/rate-cards/:id/activate", { preHandler: requirePermission("transport", "write") }, (request) => tms.activateRateCard(request.user?.tenant_id, request.params.id));
-  fastify.post("/transport/rate-cards/:id/deactivate", { preHandler: requirePermission("transport", "write") }, (request) => tms.deactivateRateCard(request.user?.tenant_id, request.params.id));
+  fastify.put("/transport/rate-cards/:id", { schema: tmsSchemas.rateCardSchema, preHandler: ratesWrite }, (request) => tms.saveRateCard(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/transport/rate-cards/:id/versions", { schema: tmsSchemas.rateCardSchema, preHandler: ratesWrite }, async (request, reply) => reply.code(201).send(await tms.versionRateCard(request.user?.tenant_id, request.user, request.params.id, request.body)));
+  fastify.post("/transport/rate-cards/:id/activate", { preHandler: ratesWrite }, (request) => tms.activateRateCard(request.user?.tenant_id, request.params.id));
+  fastify.post("/transport/rate-cards/:id/deactivate", { preHandler: ratesWrite }, (request) => tms.deactivateRateCard(request.user?.tenant_id, request.params.id));
 
   fastify.get("/transport/planning/workbench", { preHandler: requirePermission("transport", "read") }, (request) => tms.getPlanningWorkbench(request.user?.tenant_id));
   fastify.post("/transport/planning/evaluate", { schema: tmsSchemas.planningSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.evaluatePlan(request.user?.tenant_id, request.body));
