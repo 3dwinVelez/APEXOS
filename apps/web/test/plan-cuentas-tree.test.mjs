@@ -58,9 +58,11 @@ test("filtra por codigo o nombre y conserva todos los ancestros", () => {
 });
 
 test("normaliza preview y bloquea solo conflictos estructurales", () => {
-  const ready = normalizeChartPreview({ existing_count: 3, total_catalog_entries: 2502, creates: [{ code: "11050501" }], repairs: [{ code: "1105" }], warnings: [{ code: "1105", reason: "Nombre distinto" }] });
+  const ready = normalizeChartPreview({ existing_count: 3, total_catalog_entries: 2502, creates: [{ code: "11050501" }], repairs: [{ code: "1105" }], custom_parent_creates: [{ code: "220505", name: "Personalizada", parent_code: "2205" }], warnings: [{ code: "1105", reason: "Nombre distinto" }] });
   assert.deepEqual({ existing: ready.existing_count, catalog: ready.catalog_count, create: ready.create_count, link: ready.link_count }, { existing: 3, catalog: 2502, create: 1, link: 1 });
   assert.equal(ready.warning_count, 1);
+  assert.deepEqual(ready.custom_parents, [{ code: "220505", name: "Personalizada", parent_code: "2205" }]);
+  assert.equal(ready.custom_parent_count, 1);
   assert.equal(ready.apply_ready, true);
   const blocked = normalizeChartPreview({ missing_parent_count: 1, conflicts: [{ code: "11050501", reason: "Padre ausente" }] });
   assert.equal(blocked.conflict_count, 2);

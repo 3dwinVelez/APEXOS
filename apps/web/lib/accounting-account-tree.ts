@@ -70,6 +70,10 @@ export async function fetchAccountPages<T>(fetchPage: (offset: number, limit: nu
 
 export function normalizeChartPreview(raw: Record<string, unknown>) {
   const list = (value: unknown) => Array.isArray(value) ? value : [];
+  const customParents = list(raw.custom_parent_creates).map((item) => {
+    const value = item as Record<string, unknown>;
+    return { code: String(value.code || ""), name: String(value.name || ""), parent_code: String(value.parent_code || "") };
+  });
   const conflicts = list(raw.conflicts).map((item) => typeof item === "string"
     ? { code: "", reason: item }
     : { code: String((item as Record<string, unknown>).code || ""), reason: String((item as Record<string, unknown>).reason || (item as Record<string, unknown>).message || "Conflicto no especificado") });
@@ -79,6 +83,8 @@ export function normalizeChartPreview(raw: Record<string, unknown>) {
     existing_count: Number(raw.existing_count ?? raw.existing_accounts ?? 0),
     catalog_count: Number(raw.catalog_count ?? raw.total_catalog_entries ?? list(raw.catalog).length),
     create_count: Number(raw.create_count ?? list(raw.creates).length),
+    custom_parent_count: customParents.length,
+    custom_parents: customParents,
     link_count: Number(raw.link_count ?? list(raw.repairs).length),
     conflict_count: conflictCount + missingParentCount,
     warning_count: Number(raw.warning_count ?? list(raw.warnings).length),
