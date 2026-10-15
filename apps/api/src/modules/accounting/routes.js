@@ -11,6 +11,34 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.initChartOfAccounts(request.user?.tenant_id, request.body.country || "CO"));
 
+  fastify.post("/accounting/chart/tree/preview", {
+    schema: schema.chartTreeSchema,
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.previewChartTree(request.user?.tenant_id, request.body.catalog));
+
+  fastify.post("/accounting/chart/tree/apply", {
+    schema: schema.chartTreeSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => service.applyChartTree(request.user?.tenant_id, request.body.catalog));
+
+  fastify.post("/accounting/chart/preview", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => {
+    const report = await service.previewDefaultChartTree(request.user?.tenant_id);
+    return {
+      ...report,
+      existing_count: report.existing_count,
+      catalog_count: report.total_catalog_entries,
+      create_count: report.creates.length,
+      link_count: report.repairs.length,
+      conflict_count: report.conflicts.length
+    };
+  });
+
+  fastify.post("/accounting/chart/apply", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => service.applyDefaultChartTree(request.user?.tenant_id, request.body || {}));
+
   fastify.get("/accounting/accounts", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listAccounts(request.user?.tenant_id, request.query));

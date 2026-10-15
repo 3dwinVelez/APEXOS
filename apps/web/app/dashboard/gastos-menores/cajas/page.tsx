@@ -105,7 +105,7 @@ export default function CajasGastosMenoresPage() {
       // Custodios: el backend exige tercero activo con rol proveedor o empleado.
       const [boxRows, accountRows, supplierRows, employeeRows, tree] = await Promise.all([
         api<Box[]>("/api/v1/petty-cash/boxes?include_inactive=true"),
-        api<Account[]>("/api/v1/accounting/accounts?active=true&limit=1000"),
+        api<Account[]>("/api/v1/accounting/accounts?active=true&allows_tx=true&limit=1000"),
         api<Party[]>("/api/v1/accounting/third-parties?type=supplier&active=true&limit=500"),
         api<Party[]>("/api/v1/accounting/third-parties?type=employee&active=true&limit=500"),
         api<OrgTree>("/api/v1/accounting/organization-tree")

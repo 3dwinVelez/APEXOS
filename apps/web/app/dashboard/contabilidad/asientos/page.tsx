@@ -84,7 +84,7 @@ export default function AsientosContablesPage() {
     setError("");
     try {
       const [accountRows, partyRows, orgTree, docMasters, docRows] = await Promise.all([
-        api<Account[]>("/api/v1/accounting/accounts?active=true"),
+        api<Account[]>("/api/v1/accounting/accounts?active=true&allows_tx=true&limit=1000"),
         api<ThirdParty[]>("/api/v1/accounting/third-parties?active=true&limit=300"),
         api<OrganizationTree>("/api/v1/accounting/organization-tree"),
         api<DocumentMasters>("/api/v1/accounting/document-masters"),

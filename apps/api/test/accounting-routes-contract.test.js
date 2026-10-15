@@ -8,6 +8,10 @@ const build = require("../server");
 
 const accountingRoutes = [
   ["POST", "/api/v1/accounting/chart/init"],
+  ["POST", "/api/v1/accounting/chart/tree/preview"],
+  ["POST", "/api/v1/accounting/chart/tree/apply"],
+  ["POST", "/api/v1/accounting/chart/preview"],
+  ["POST", "/api/v1/accounting/chart/apply"],
   ["GET", "/api/v1/accounting/accounts"],
   ["POST", "/api/v1/accounting/accounts"],
   ["PUT", "/api/v1/accounting/accounts/1"],
