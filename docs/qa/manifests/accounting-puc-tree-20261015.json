@@ -164,9 +164,9 @@
     }
   },
   "promotion": {
-    "status": "pending_authorization",
-    "qa_publish": "not_authorized_yet",
-    "remote_writes": "not_authorized",
+    "status": "authorized_for_develop_to_qa",
+    "qa_publish": "authorized",
+    "remote_writes": "authorized_by_user_but_not_executed_by_agent",
     "main_release": "not_authorized"
   },
   "base_commits": {
@@ -198,4 +198,3 @@
     "docs/qa/manifests/accounting-puc-tree-preqa-20261015.json"
   ]
 }
-

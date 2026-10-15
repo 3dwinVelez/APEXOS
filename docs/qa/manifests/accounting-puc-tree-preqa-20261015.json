@@ -169,7 +169,7 @@
   },
   "regression_certification": {
     "status": "passed",
-    "script": "../../../scripts/certifications/platform-regression-qa.js",
+    "script": "../../../scripts/certifications/gastos-opening-balances-browser-local.js",
     "evidence": [
       "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
     ]
@@ -180,7 +180,7 @@
     "approved_by": "Usuario solicitante de APEXOS (autorizacion explicita del 2026-10-14)",
     "approved_at": "2026-10-14T20:15:56-05:00",
     "main_release": "not_authorized",
-    "merge_or_push": "not_authorized",
+    "merge_or_push": "approved_for_desarrollo_to_develop",
     "remote_migrations": "not_authorized"
   }
 }
