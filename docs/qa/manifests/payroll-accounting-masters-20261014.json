@@ -64,7 +64,16 @@
   "certification_status": "passed",
   "promotion": {
     "status": "pending_qa_authorization",
-    "authorization": "pending",
-    "reason": "La certificacion local esta completa; falta exclusivamente la autorizacion funcional QA para esta nueva funcionalidad."
+    "authorization": "approved",
+    "approved_by": "usuario",
+    "approved_at": "2026-10-15T14:21:46.6449080-05:00",
+    "authorization_flags": {
+      "push_desarrollo": true,
+      "pull_request_desarrollo_develop": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false
+    },
+    "reason": "La certificacion local esta completa y el usuario autorizo push/PR/merge/deploy hacia QA. La promocion a main permanece sin autorizacion."
   }
 }

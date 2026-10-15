@@ -64,10 +64,17 @@
   ],
   "qa_status": "pending",
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "scope": "promotion_to_develop_for_qa",
-    "approved_by": null,
-    "approved_at": null
+    "approved_by": "usuario",
+    "approved_at": "2026-10-15T14:21:46.6449080-05:00",
+    "authorization_flags": {
+      "push_desarrollo": true,
+      "pull_request_desarrollo_develop": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false
+    }
   },
   "checks": {
     "functional": { "status": "passed", "evidence": ["../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json"] },
@@ -87,7 +94,8 @@
     "evidence": ["../evidence/payroll-rehire-20261015/summary.md", "../evidence/payroll-accounting-masters-20261014/payroll-accounting-masters-browser-local.json"]
   },
   "promotion": {
-    "status": "pending_qa_authorization",
-    "authorization": "pending"
+    "status": "approved_for_qa",
+    "authorization": "approved",
+    "promote_main": false
   }
 }
