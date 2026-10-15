@@ -175,13 +175,12 @@
     ]
   },
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "scope": "promotion_to_develop_for_qa",
-    "approved_by": null,
-    "approved_at": null,
+    "approved_by": "Usuario solicitante de APEXOS (autorizacion explicita del 2026-10-14)",
+    "approved_at": "2026-10-14T20:15:56-05:00",
     "main_release": "not_authorized",
     "merge_or_push": "not_authorized",
     "remote_migrations": "not_authorized"
   }
 }
-
