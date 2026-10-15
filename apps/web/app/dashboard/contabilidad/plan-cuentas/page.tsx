@@ -148,15 +148,15 @@ export default function PlanCuentasPage() {
     function renderNode(node: AccountTreeNode<Account>, depth = 0): React.ReactNode { const open = query.trim() ? true : expanded.has(node.code); return <div key={node.id}><div className={`flex items-center gap-2 border-b border-line/50 px-3 py-2 text-sm ${node.orphan ? "bg-amber-50" : ""}`} style={{ paddingLeft: `${12 + depth * 22}px` }}>{node.children.length ? <button type="button" aria-label={`${open ? "Contraer" : "Expandir"} ${node.code}`} onClick={() => toggle(node.code)}>{open ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}</button> : <span className="w-4"/>}<span className="w-20 font-mono text-xs font-semibold">{node.code}</span><span className="min-w-0 flex-1 truncate">{node.name}</span><span className="hidden text-xs text-neutral-500 md:inline">{TYPES[node.type] || node.type}</span>{node.orphan ? <span className="rounded bg-amber-100 px-2 py-1 text-[11px] text-amber-800">Sin ascendencia</span> : null}<span className={`rounded px-2 py-1 text-[11px] ${node.allows_tx ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{node.allows_tx ? "Movimiento" : "Agrupadora"}</span><button type="button" className="rounded border border-line px-2 py-1 text-xs" onClick={() => openEdit(node)} aria-label={`Editar ${node.code}`}>Editar</button><button type="button" className="rounded border border-line px-2 py-1 text-xs" onClick={() => void toggleAccount(node)} aria-label={`Cambiar estado ${node.code}`}>{node.active ? "Desactivar" : "Activar"}</button></div>{open && node.children.map((child) => renderNode(child, depth + 1))}</div>; }
     return (
         <div className="space-y-5">
-            <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div>
+            <header className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+                <div className="min-w-0">
                     <h1 className="text-3xl font-semibold">Plan de cuentas PUC</h1>
                     <p className="mt-1 text-sm text-neutral-600">Árbol colombiano completo, búsqueda por ascendencia y altas manuales protegidas.</p>
                 </div>
-                <div className="flex gap-2">
-                    <button className="inline-flex h-10 items-center gap-2 rounded-md border border-apex px-4 text-sm font-medium text-apex" onClick={() => void previewCatalog()} disabled={previewing} type="button"><Eye size={16} />{previewing ? "Previsualizando..." : "Previsualizar PUC"}</button>
-                    <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white" onClick={() => void legacyInit()} type="button">Inicializar catálogo existente</button>
-                    <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white" onClick={openCreate} type="button"><Plus size={16} />Nueva cuenta 8 dígitos</button>
+                <div className="flex flex-wrap justify-end gap-2">
+                    <button className="inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md border border-apex px-3 py-2 text-sm font-medium text-apex" onClick={() => void previewCatalog()} disabled={previewing} type="button"><Eye size={16} />{previewing ? "Previsualizando..." : "Previsualizar PUC"}</button>
+                    <button className="inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md bg-apex px-3 py-2 text-sm font-medium text-white" onClick={() => void legacyInit()} type="button">Inicializar catálogo existente</button>
+                    <button className="inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md bg-apex px-3 py-2 text-sm font-medium text-white" onClick={openCreate} type="button"><Plus size={16} />Nueva cuenta 8 dígitos</button>
                 </div>
             </header>
             <ContabilidadNav />
