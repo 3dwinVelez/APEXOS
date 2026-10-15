@@ -1132,7 +1132,9 @@ async function createEmployeeRehire(tenantId, employeeId, input = {}, user = {})
   const id = numericId(employeeId || input.employee_id);
   if (!id) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
-    const employee = await tx.employee.findFirst({ where: { tenant_id: tenantId, id } });
+    // Rehire intentionally resolves a previously retired employee. The explicit
+    // opt-out keeps the global soft-delete policy intact for every other HR read.
+    const employee = await findEmployeeForRehire(tx, tenantId, id);
     if (!employee) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
     await ensureEmployeeContractFoundation(tx, tenantId, employee, user);
     const active = await activeEmployeeContract(tx, tenantId, id);
@@ -1165,6 +1167,12 @@ async function createEmployeeRehire(tenantId, employeeId, input = {}, user = {})
     await syncEmployeeSalaryHistory(tx, tenantId, id, { salary_base: payload.salary_base, hire_date: payload.valid_from, salary_reason: "Recontratacion" }, user?.id || null);
     return jsonSafeBigInt(rows[0]);
   }));
+}
+
+async function findEmployeeForRehire(db, tenantId, employeeId) {
+  return db.employee.findFirst({
+    where: { tenant_id: tenantId, id: employeeId, __includeInactive: true }
+  });
 }
 
 async function listEmployeeSalaryHistory(tenantId, employeeId, query = {}) {
@@ -7290,6 +7298,7 @@ module.exports = {
   listEmployeeContracts,
   createEmployeeContractAddendum,
   createEmployeeRehire,
+  findEmployeeForRehire,
   syncEmployeeFromContract,
   jsonSafeBigInt,
   ensureEmployeeContractFoundation,

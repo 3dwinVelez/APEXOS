@@ -38,7 +38,7 @@ assertLocalUrl(webUrl, "LOCAL_WEB_URL");
 
 function check(name, ok, detail = {}) {
   checks.push({ name, ok: Boolean(ok), detail });
-  assert.ok(ok, `${name}: ${JSON.stringify(detail)}`);
+  assert.ok(ok, `${name}: ${jsonSafe(detail)}`);
 }
 
 async function waitForServer(url) {

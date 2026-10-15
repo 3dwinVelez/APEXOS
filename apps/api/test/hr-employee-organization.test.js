@@ -64,3 +64,28 @@ test("contract DTO serializes BIGINT values without coercing ordinary numbers", 
   const dto = hrService.jsonSafeBigInt({ id: 12n, previous_contract_id: 4n, salary_base: 2500000, metadata: { count: 2 } });
   assert.deepEqual(dto, { id: "12", previous_contract_id: "4", salary_base: 2500000, metadata: { count: 2 } });
 });
+
+test("rehire lookup includes retired employees while remaining tenant scoped", async () => {
+  const hrService = require("../src/modules/hr/service");
+  const calls = [];
+  const db = {
+    employee: {
+      findFirst: async ({ where }) => {
+        calls.push(where);
+        return where.tenant_id === "tenant-a" && where.id === 17
+          ? { id: 17, tenant_id: "tenant-a", active: false }
+          : null;
+      }
+    }
+  };
+
+  const retired = await hrService.findEmployeeForRehire(db, "tenant-a", 17);
+  const foreign = await hrService.findEmployeeForRehire(db, "tenant-b", 17);
+
+  assert.equal(retired.active, false);
+  assert.equal(foreign, null);
+  assert.deepEqual(calls, [
+    { tenant_id: "tenant-a", id: 17, __includeInactive: true },
+    { tenant_id: "tenant-b", id: 17, __includeInactive: true }
+  ]);
+});
