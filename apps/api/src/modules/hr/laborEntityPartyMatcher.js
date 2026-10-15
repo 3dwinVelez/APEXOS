@@ -43,11 +43,12 @@ function taxIdsMatch(left, right) {
 }
 
 function partyVerificationDigit(party) {
-  if (party?.verification_digit != null && String(party.verification_digit).trim() !== "") return String(party.verification_digit).trim().toUpperCase();
-  return party?.metadata?.verification_digit
+  const value = party?.verification_digit != null && String(party.verification_digit).trim() !== ""
+    ? party.verification_digit
+    : party?.metadata?.verification_digit
     ?? party?.metadata?.verificationDigit
-    ?? normalizeTaxId(party?.tax_id).verification_digit
-    ?? null;
+    ?? normalizeTaxId(party?.tax_id).verification_digit;
+  return value == null || String(value).trim() === "" ? null : String(value).trim().toUpperCase();
 }
 
 function partyTaxIdForComparison(party = {}) {
@@ -90,7 +91,7 @@ function filterPartyCandidates(parties, search = "", limit = 50) {
     .map(partyCommonFields);
 }
 
-function resolveExplicitParty({ parties, accounting_party_id, nit }) {
+function resolveExplicitParty({ parties, accounting_party_id, nit, verification_digit }) {
   const partyId = accounting_party_id == null || accounting_party_id === "" ? null : Number(accounting_party_id);
   if (accounting_party_id != null && accounting_party_id !== "" && !Number.isInteger(partyId)) {
     return { ok: false, code: "TERCERO_CONTABLE_INVALIDO" };
@@ -98,6 +99,11 @@ function resolveExplicitParty({ parties, accounting_party_id, nit }) {
   if (partyId == null) return { ok: true, party: null, common_fields: null };
   const party = (Array.isArray(parties) ? parties : []).find((item) => Number(item.id) === partyId && item.active !== false);
   if (!party) return { ok: false, code: "TERCERO_CONTABLE_NO_ENCONTRADO" };
+  const expectedDv = compactTaxId(normalizeTaxId(partyTaxIdForComparison(party)).verification_digit || "");
+  const suppliedDv = compactTaxId(verification_digit == null ? "" : verification_digit);
+  if (suppliedDv && expectedDv && suppliedDv !== expectedDv) {
+    return { ok: false, code: "TERCERO_DV_NO_COINCIDE", party: partyCommonFields(party) };
+  }
   if (nit && party.tax_id && !taxIdsMatch(nit, partyTaxIdForComparison(party))) {
     return { ok: false, code: "TERCERO_NIT_NO_COINCIDE", party: partyCommonFields(party) };
   }

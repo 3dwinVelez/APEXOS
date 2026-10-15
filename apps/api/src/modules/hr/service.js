@@ -3646,10 +3646,10 @@ async function createLaborEntity(tenantId, input = {}, user = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const party = input.accounting_party_id ? await prisma.party.findFirst({ where: { tenant_id: tenantId, id: Number(input.accounting_party_id), active: true } }) : null;
     if (input.accounting_party_id && !party) throw validationError("El tercero contable no existe o no esta activo.", 404, "TERCERO_CONTABLE_NO_ENCONTRADO");
-    const partyResolution = resolveExplicitParty({ parties: party ? [party] : [], accounting_party_id: input.accounting_party_id, nit: input.nit });
+    const partyResolution = resolveExplicitParty({ parties: party ? [party] : [], accounting_party_id: input.accounting_party_id, nit: input.nit, verification_digit: input.verification_digit });
     if (!partyResolution.ok) throw validationError(
-      partyResolution.code === "TERCERO_NIT_NO_COINCIDE" ? "El NIT no coincide con el tercero contable seleccionado." : "El tercero contable no existe o no esta activo.",
-      partyResolution.code === "TERCERO_NIT_NO_COINCIDE" ? 422 : 404,
+      ["TERCERO_NIT_NO_COINCIDE", "TERCERO_DV_NO_COINCIDE"].includes(partyResolution.code) ? "El NIT o digito de verificacion no coincide con el tercero contable seleccionado." : "El tercero contable no existe o no esta activo.",
+      ["TERCERO_NIT_NO_COINCIDE", "TERCERO_DV_NO_COINCIDE"].includes(partyResolution.code) ? 422 : 404,
       partyResolution.code
     );
     if (!party && !String(input.nit || "").trim()) throw validationError("El NIT es obligatorio si no se selecciona un tercero contable.", 422, "NIT_ENTIDAD_REQUERIDO");
@@ -3658,7 +3658,7 @@ async function createLaborEntity(tenantId, input = {}, user = {}) {
     const entityInput = {
       ...input,
       nit: String(input.nit || common.tax_id || "").trim(),
-      verification_digit: input.verification_digit || common.verification_digit || null,
+      verification_digit: input.verification_digit === undefined ? (common.verification_digit ?? null) : input.verification_digit,
       legal_name: String(input.legal_name || common.legal_name || common.name || "").trim(),
       trade_name: input.trade_name || common.trade_name || null,
       metadata: { ...(input.metadata || {}), accounting_party_common: common }
@@ -3730,8 +3730,8 @@ async function linkLaborEntityAccountingParty(tenantId, id, input = {}, user = {
     if (!input.unlink && !partyId) throw validationError("Selecciona un tercero contable valido.", 400, "TERCERO_CONTABLE_INVALIDO");
     const party = partyId ? await prisma.party.findFirst({ where: { tenant_id: tenantId, id: partyId, active: true } }) : null;
     if (partyId && !party) throw validationError("El tercero contable no existe o no esta activo.", 404, "TERCERO_CONTABLE_NO_ENCONTRADO");
-    const partyResolution = resolveExplicitParty({ parties: party ? [party] : [], accounting_party_id: partyId, nit: current.nit });
-    if (!partyResolution.ok) throw validationError("El NIT no coincide con el tercero contable seleccionado.", 422, partyResolution.code);
+    const partyResolution = resolveExplicitParty({ parties: party ? [party] : [], accounting_party_id: partyId, nit: current.nit, verification_digit: current.verification_digit });
+    if (!partyResolution.ok) throw validationError("El NIT o digito de verificacion no coincide con el tercero contable seleccionado.", 422, partyResolution.code);
     const nitMismatch = false;
     const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
     const rows = await prisma.$queryRaw`

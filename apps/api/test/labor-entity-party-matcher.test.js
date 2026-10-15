@@ -74,3 +74,19 @@ test("usa el DV del Party aunque esté separado en metadata y rechaza un DV dist
   assert.equal(matcher.partyMatchesSearch(parties[0], "900123456-8"), false);
 });
 
+test("rechaza un verification_digit separado incorrecto y autofill correcto con NIT base", () => {
+  const parties = [{ id: 13, active: true, tax_id: "900123456", name: "EPS con DV separado", metadata: { verification_digit: "7" } }];
+  assert.equal(matcher.resolveExplicitParty({ parties, accounting_party_id: 13, nit: "900123456", verification_digit: "8" }).code, "TERCERO_DV_NO_COINCIDE");
+  const resolved = matcher.resolveExplicitParty({ parties, accounting_party_id: 13, nit: "900123456" });
+  assert.equal(resolved.ok, true);
+  assert.equal(resolved.party.verification_digit, "7");
+});
+
+test("preserva DV cero desde metadata y rechaza un DV explicito distinto", () => {
+  const parties = [{ id: 14, active: true, tax_id: "900123456", name: "EPS DV cero", metadata: { verification_digit: 0 } }];
+  const resolved = matcher.resolveExplicitParty({ parties, accounting_party_id: 14, nit: "900123456" });
+  assert.equal(resolved.ok, true);
+  assert.equal(resolved.party.verification_digit, "0");
+  assert.equal(matcher.resolveExplicitParty({ parties, accounting_party_id: 14, nit: "900123456", verification_digit: "7" }).code, "TERCERO_DV_NO_COINCIDE");
+});
+

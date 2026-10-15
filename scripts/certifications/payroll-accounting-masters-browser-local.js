@@ -141,7 +141,11 @@ async function certifyOrganization(page, fixture) {
 async function certifyEmployee(page, fixture, token) {
   await page.goto(`${webUrl}/dashboard/talento-humano/empleados`, { waitUntil: "networkidle2" });
   await page.waitForFunction(() => document.body.innerText.includes("Maestro de empleados"));
-  await page.click("button", { text: "Nuevo empleado" }).catch(async () => page.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Nuevo empleado"))?.click()));
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Nuevo empleado"));
+    if (!button) throw new Error("button_not_found:Nuevo empleado");
+    button.click();
+  });
   await page.waitForFunction(() => document.body.innerText.includes("Nuevo empleado"));
   await setLabelValue(page, "Primer nombre", "Empleado");
   await setLabelValue(page, "Primer apellido", `E2E${suffix}`);
@@ -164,12 +168,12 @@ async function certifyEmployee(page, fixture, token) {
   const contract = employee ? await db.$queryRaw`SELECT * FROM th_empleado_contratos WHERE tenant_id = ${fixture.tenantId} AND employee_id = ${employee.id} ORDER BY id DESC LIMIT 1` : [];
   check("employee_contract_foundation_persisted", contract.length > 0, { employee_id: employee?.id });
   const beforeContract = contract[0];
-  const addendum = employee ? await apiJson(token, `/api/v1/talento-humano/empleados/${employee.id}/contratos/otrosi`, { method: "POST", body: { valid_from: "2026-02-01", contract_type: "indefinite", salary_base: 2750000, society_code: fixture.tree.societies[0].code, branch_code: fixture.tree.branches[0].code, cost_center_code: fixture.tree.cost_centers[0].code, reason: "Reasignación E2E" } }) : { status: 0, body: {} };
+  const addendum = employee ? await apiJson(token, `/api/v1/talento-humano/empleados/${employee.id}/contratos/otrosi`, { method: "POST", body: { valid_from: "2026-02-01", contract_type: "indefinite", salary_base: 2750000, society_code: fixture.tree.societies[0].code, branch_code: fixture.tree.branches[1].code, cost_center_code: fixture.tree.cost_centers[1].code, reason: "Reasignación E2E" } }) : { status: 0, body: {} };
   check("employee_addendum_valid_assignment", addendum.status < 300, { status: addendum.status, body: addendum.body });
   const history = employee ? await db.$queryRaw`SELECT * FROM th_empleado_contratos WHERE tenant_id = ${fixture.tenantId} AND employee_id = ${employee.id} ORDER BY valid_from ASC, id ASC` : [];
   check("employee_addendum_history_has_new_contract", history.length >= 2, { count: history.length });
   check("employee_addendum_preserves_previous_contract", Boolean(beforeContract) && history.some((row) => Number(row.id) === Number(beforeContract.id) && Number(row.salary_base) === Number(beforeContract.salary_base) && row.branch_code === beforeContract.branch_code), { before: beforeContract, history: history.map((row) => ({ id: row.id, salary_base: row.salary_base, branch_code: row.branch_code })) });
-  check("employee_addendum_new_assignment_persisted", history.some((row) => row.valid_from?.toISOString?.().slice(0, 10) === "2026-02-01" && row.branch_code === fixture.tree.branches[0].code && row.cost_center_code === fixture.tree.cost_centers[0].code), { history: history.map((row) => ({ valid_from: row.valid_from, branch_code: row.branch_code, cost_center_code: row.cost_center_code })) });
+  check("employee_addendum_new_assignment_persisted", history.some((row) => row.valid_from?.toISOString?.().slice(0, 10) === "2026-02-01" && row.branch_code === fixture.tree.branches[1].code && row.cost_center_code === fixture.tree.cost_centers[1].code), { history: history.map((row) => ({ valid_from: row.valid_from, branch_code: row.branch_code, cost_center_code: row.cost_center_code })) });
   const invalidAddendum = employee ? await apiJson(token, `/api/v1/talento-humano/empleados/${employee.id}/contratos/otrosi`, { method: "POST", body: { valid_from: "2026-03-01", contract_type: "indefinite", salary_base: 2800000, society_code: fixture.tree.societies[0].code, branch_code: fixture.tree.branches[0].code, cost_center_code: fixture.tree.cost_centers[1].code, reason: "Asignación inválida E2E" } }) : { status: 0, body: {} };
   check("employee_addendum_invalid_assignment_rejected", invalidAddendum.status === 422, { status: invalidAddendum.status, body: invalidAddendum.body });
   const retired = employee ? await apiJson(token, `/api/v1/talento-humano/empleados/${employee.id}`, { method: "PATCH", body: { active: false, end_date: "2026-02-28" } }) : { status: 0, body: {} };
@@ -186,31 +190,41 @@ async function certifyEmployee(page, fixture, token) {
 async function certifyEntity(page, fixture) {
   await page.goto(`${webUrl}/dashboard/talento-humano/entidades`, { waitUntil: "networkidle2" });
   await page.waitForFunction(() => document.body.innerText.includes("Entidades laborales") || document.body.innerText.includes("Nueva entidad"));
+  const partyCountBefore = await db.party.count({ where: { tenant_id: fixture.tenantId } });
   await page.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Nueva entidad"))?.click());
   await page.waitForFunction(() => document.body.innerText.includes("Nueva entidad"));
   const party = fixture.party;
   const partyName = party.legal_name || party.name;
-  await setLabelValue(page, "NIT de la entidad laboral", party.tax_id);
-  await page.waitForFunction((name) => document.body.innerText.includes("Encontramos un tercero contable") || document.body.innerText.includes(name), {}, partyName);
+  const partySearch = 'input[aria-label="Buscar tercero contable"]';
+  await page.click(partySearch);
+  await page.type(partySearch, `${party.tax_id}-${party.metadata.verification_digit}`);
   const select = 'select[aria-label="Seleccionar tercero contable"]';
+  await page.waitForFunction(({ selector, partyId }) => [...document.querySelectorAll(`${selector} option`)].some((option) => option.value === String(partyId)), {}, { selector: select, partyId: party.id });
   await page.select(select, String(party.id));
-  await page.waitForFunction((name) => document.querySelector('input[aria-label="NIT de la entidad laboral"]')?.value && document.body.innerText.includes(name), {}, partyName);
-  check("entity_party_lookup_and_prefill_ui", true, { party_id: party.id, party_name: partyName });
+  await page.waitForFunction(({ name, legalName, verificationDigit }) => {
+    const fieldValue = (labelText) => [...document.querySelectorAll("label")].find((label) => label.textContent?.trim().startsWith(labelText))?.querySelector("input")?.value;
+    return document.querySelector('input[aria-label="NIT de la entidad laboral"]')?.value && fieldValue("Digito verificacion") === verificationDigit && fieldValue("Razon social") === legalName && document.body.innerText.includes(name);
+  }, {}, { name: partyName, legalName: party.legal_name, verificationDigit: party.metadata.verification_digit });
+  check("entity_party_lookup_and_prefill_ui", true, { party_id: party.id, party_name: partyName, legal_name: party.legal_name, verification_digit: party.metadata.verification_digit });
   const entityPrefillScreenshot = path.join(path.dirname(output), "payroll-entity-prefill.png");
   await page.screenshot({ path: entityPrefillScreenshot, fullPage: true });
   screenshots.push(entityPrefillScreenshot);
   await setLabelValue(page, "Tipo", "EPS");
   await setLabelValue(page, "Codigo oficial", `EPS-${suffix}`);
-  await page.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Guardar"))?.click());
-  await page.waitForFunction(() => !document.body.innerText.includes("Nueva entidad"), { timeout: 30000 });
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Guardar"));
+    if (!button) throw new Error("button_not_found:Guardar");
+    button.click();
+  });
+  await page.waitForFunction(() => !document.querySelector('select[aria-label="Seleccionar tercero contable"]'), { timeout: 30000 });
   const entityPersistScreenshot = path.join(path.dirname(output), "payroll-entity-persisted.png");
   await page.screenshot({ path: entityPersistScreenshot, fullPage: true });
   screenshots.push(entityPersistScreenshot);
   const rows = await db.$queryRaw`SELECT * FROM th_entidades_laborales WHERE tenant_id = ${fixture.tenantId} ORDER BY id DESC LIMIT 1`;
   check("labor_entity_party_reference_persisted", rows[0]?.accounting_party_id === party.id, { row: rows[0] });
   check("labor_entity_common_snapshot_persisted", rows[0]?.nit === party.tax_id && rows[0]?.legal_name === party.legal_name, { row: rows[0] });
-  const partyCount = await db.party.count({ where: { tenant_id: fixture.tenantId, id: party.id } });
-  check("labor_entity_does_not_duplicate_party", partyCount === 1, { party_count: partyCount });
+  const partyCountAfter = await db.party.count({ where: { tenant_id: fixture.tenantId } });
+  check("labor_entity_does_not_duplicate_party", partyCountAfter === partyCountBefore, { party_count_before: partyCountBefore, party_count_after: partyCountAfter });
   return rows[0];
 }
 
@@ -220,7 +234,7 @@ async function certifyApiValidation(fixture, token, otherFixture) {
   const foreignParty = await apiJson(token, "/api/v1/talento-humano/entidades", { method: "POST", body: { entity_type: "EPS", nit: otherFixture.party.tax_id, legal_name: "Foreign", accounting_party_id: otherFixture.partyId } });
   check("entity_foreign_party_rejected", foreignParty.status === 404, { status: foreignParty.status, body: foreignParty.body });
   const mismatch = await apiJson(token, "/api/v1/talento-humano/entidades", { method: "POST", body: { entity_type: "EPS", nit: `${fixture.party.tax_id}-8`, legal_name: "Mismatch", accounting_party_id: fixture.partyId } });
-  check("entity_mismatched_nit_rejected", [409, 422].includes(mismatch.status), { status: mismatch.status, body: mismatch.body });
+  check("entity_mismatched_nit_rejected", mismatch.status === 422, { status: mismatch.status, body: mismatch.body });
   const inactive = await db.party.update({ where: { id: fixture.partyId }, data: { active: false } });
   const inactiveResult = await apiJson(token, "/api/v1/talento-humano/entidades", { method: "POST", body: { entity_type: "EPS", nit: inactive.tax_id, legal_name: "Inactive", accounting_party_id: inactive.id } });
   check("entity_inactive_party_rejected", inactiveResult.status === 404, { status: inactiveResult.status, body: inactiveResult.body });
@@ -231,6 +245,8 @@ async function certifyHrOnly(page, fixture) {
   await browserLogin(page, fixture.limitedEmail, fixture.limitedPassword);
   const candidates = await browserApi(page, `/api/v1/talento-humano/entidades/terceros?search=${encodeURIComponent(fixture.party.tax_id)}`);
   check("hr_only_party_lookup_allowed", candidates.status === 200 && Array.isArray(candidates.body) && candidates.body.some((row) => row.id === fixture.partyId), { status: candidates.status });
+  const organization = await browserApi(page, "/api/v1/talento-humano/empleados/organization-options");
+  check("hr_only_organization_lookup_allowed", organization.status === 200 && organization.body?.societies?.length > 0 && organization.body?.branches?.length > 0, { status: organization.status });
   const tail = await browserApi(page, `/api/v1/talento-humano/entidades/terceros?search=${encodeURIComponent(fixture.tailParty.tax_id)}`);
   check("hr_party_lookup_searches_beyond_first_page", tail.status === 200 && Array.isArray(tail.body) && tail.body.some((row) => row.id === fixture.tailPartyId), { status: tail.status, rows: Array.isArray(tail.body) ? tail.body.length : null });
   const accounting = await browserApi(page, "/api/v1/accounting/third-parties?limit=1");
