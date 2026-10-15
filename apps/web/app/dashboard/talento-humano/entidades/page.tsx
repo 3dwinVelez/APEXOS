@@ -1,10 +1,11 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { commonPartyFields, findPartyByDocument, type PayrollParty } from "@/lib/payrollEntities";
 import { ArrowLeft, Link2, Pencil, Plus, RefreshCw, Save, Search, X } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type LaborEntity = {
@@ -26,7 +27,7 @@ type LaborEntity = {
   nit_mismatch?: boolean;
   notes?: string | null;
 };
-type Party = { id: number; name?: string; legal_name?: string; tax_id?: string };
+type Party = PayrollParty;
 
 const entityTypes = [
   ["EPS", "EPS"],
@@ -50,6 +51,10 @@ export default function LaborEntitiesPage() {
   const [mounted, setMounted] = useState(false);
   const [entities, setEntities] = useState<LaborEntity[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
+  const [partySearch, setPartySearch] = useState("");
+  const [partyLoading, setPartyLoading] = useState(false);
+  const [partyError, setPartyError] = useState("");
+  const partyRequestRef = useRef(0);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [loading, setLoading] = useState(false);
@@ -60,12 +65,8 @@ export default function LaborEntitiesPage() {
   async function load() {
     setLoading(true);
     try {
-      const [entityData, partyData] = await Promise.all([
-        api<LaborEntity[]>("/api/v1/talento-humano/entidades?limit=500", { cache: "no-store" }).catch(() => []),
-        api<Party[]>("/api/v1/accounting/third-parties?limit=300", { cache: "no-store" }).catch(() => [])
-      ]);
+      const entityData = await api<LaborEntity[]>("/api/v1/talento-humano/entidades?limit=500", { cache: "no-store" }).catch(() => []);
       setEntities(Array.isArray(entityData) ? entityData : []);
-      setParties(Array.isArray(partyData) ? partyData : []);
     } finally {
       setLoading(false);
     }
@@ -73,6 +74,32 @@ export default function LaborEntitiesPage() {
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { void load(); }, []);
+
+  async function loadParties(search: string) {
+    const requestId = ++partyRequestRef.current;
+    setPartyLoading(true);
+    setPartyError("");
+    try {
+      const query = new URLSearchParams({ limit: "100" });
+      if (search.trim()) query.set("search", search.trim());
+      const result = await api<Party[]>(`/api/v1/talento-humano/entidades/terceros?${query.toString()}`, { cache: "no-store" });
+      if (requestId !== partyRequestRef.current) return;
+      setParties((current) => {
+        const byId = new Map(current.map((party) => [party.id, party]));
+        result.forEach((party) => byId.set(party.id, party));
+        return [...byId.values()];
+      });
+    } catch (err) {
+      if (requestId === partyRequestRef.current) setPartyError(err instanceof Error ? err.message : "No se pudieron buscar terceros contables");
+    } finally {
+      if (requestId === partyRequestRef.current) setPartyLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadParties(partySearch); }, 250);
+    return () => window.clearTimeout(timer);
+  }, [partySearch]);
 
   const filteredEntities = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -85,6 +112,7 @@ export default function LaborEntitiesPage() {
   }, [entities, query, typeFilter]);
 
   function openEntity(entity?: LaborEntity) {
+    setPartySearch(entity?.accounting_party_tax_id || "");
     if (entity) {
       setEntityModal({ mode: "edit", entity });
       setEntityForm({
@@ -103,6 +131,15 @@ export default function LaborEntitiesPage() {
       setEntityModal({ mode: "create" });
       setEntityForm(emptyEntity());
     }
+  }
+
+  function selectAccountingParty(partyId: string) {
+    const party = parties.find((item) => String(item.id) === partyId) || null;
+    setEntityForm((current) => ({ ...current, accounting_party_id: partyId, ...commonPartyFields(party) }));
+  }
+
+  function updateNit(nit: string) {
+    setEntityForm((current) => ({ ...current, nit }));
   }
 
   async function saveEntity() {
@@ -196,11 +233,13 @@ export default function LaborEntitiesPage() {
             </header>
             <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-4 md:grid-cols-2">
               <Field label="Tipo"><select className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm" value={entityForm.entity_type} onChange={(event) => setEntityForm((current) => ({ ...current, entity_type: event.target.value }))}>{entityTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-              <Field label="NIT"><input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={entityForm.nit} onChange={(event) => setEntityForm((current) => ({ ...current, nit: event.target.value }))} /></Field>
+              <Field label="NIT"><input aria-label="NIT de la entidad laboral" className="h-10 w-full rounded-md border border-line px-3 text-sm" value={entityForm.nit} onChange={(event) => updateNit(event.target.value)} /></Field>
               <Field label="Digito verificacion"><input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={entityForm.verification_digit} onChange={(event) => setEntityForm((current) => ({ ...current, verification_digit: event.target.value }))} /></Field>
               <Field label="Razon social"><input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={entityForm.legal_name} onChange={(event) => setEntityForm((current) => ({ ...current, legal_name: event.target.value }))} /></Field>
               <Field label="Codigo oficial"><input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={entityForm.official_code} onChange={(event) => setEntityForm((current) => ({ ...current, official_code: event.target.value }))} /></Field>
-              <Field label="Tercero contable"><select className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm" value={entityForm.accounting_party_id} onChange={(event) => setEntityForm((current) => ({ ...current, accounting_party_id: event.target.value }))}><option value="">Pendiente de enlace</option>{parties.map((party) => <option key={party.id} value={party.id}>{party.legal_name || party.name} - {party.tax_id || "sin NIT"}</option>)}</select></Field>
+              <Field label="Buscar tercero contable por NIT o nombre"><input aria-label="Buscar tercero contable" className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="NIT o razón social" value={partySearch} onChange={(event) => setPartySearch(event.target.value)} /></Field>
+              <Field label="Tercero contable"><select aria-label="Seleccionar tercero contable" className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm" value={entityForm.accounting_party_id} onChange={(event) => selectAccountingParty(event.target.value)}><option value="">Pendiente de enlace</option>{parties.map((party) => <option key={party.id} value={party.id}>{party.legal_name || party.name} - {party.tax_id || "sin NIT"}</option>)}</select>{partyLoading ? <span className="mt-1 block text-xs text-neutral-500" role="status">Buscando terceros...</span> : null}{partyError ? <span className="mt-1 block text-xs text-rose-700" role="alert">{partyError}</span> : null}</Field>
+              {entityForm.nit && findPartyByDocument(parties, entityForm.nit) ? <p className="md:col-span-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800" role="status">Encontramos un tercero contable con este NIT. Selecciónalo para enlazarlo; los datos comunes se prefijan y siguen siendo editables.</p> : null}
               <Field label="Vigencia desde"><input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={entityForm.valid_from} onChange={(event) => setEntityForm((current) => ({ ...current, valid_from: event.target.value }))} /></Field>
               <Field label="Vigencia hasta"><input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={entityForm.valid_to} onChange={(event) => setEntityForm((current) => ({ ...current, valid_to: event.target.value }))} /></Field>
               <label className="flex items-center gap-2 rounded-md border border-line bg-paper p-3 text-sm font-semibold"><input checked={entityForm.active} onChange={(event) => setEntityForm((current) => ({ ...current, active: event.target.checked }))} type="checkbox" /> Entidad activa</label>

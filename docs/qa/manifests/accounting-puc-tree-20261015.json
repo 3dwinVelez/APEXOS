@@ -1,0 +1,200 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-puc-tree-20261015",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "candidate": "a2e7dcbed73591a4dc04a8ad06706b5d14885100",
+  "change_intent": {
+    "summary": "PUC colombiano 1/2/4/6 con preview/apply jerárquico, auxiliares manuales de 8 dígitos y selección de cuentas transaccionales en gastos/asientos",
+    "modules": [
+      "accounting",
+      "petty-cash"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.json",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.provenance.json",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/puc-colombia-catalog.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/routes.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/schema.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/accounting-chart-tree.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/test/accounting-routes-contract.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/puc-colombia-catalog.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/asientos/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/plan-cuentas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/gastos-menores/cajas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/gastos-menores/reportes/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/lib/accounting-account-tree.ts",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/gastos-menores-reports.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/plan-cuentas-tree.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/accounting-puc-tree-local.js",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/gastos-opening-balances-browser-local.js",
+      "status": "M"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-puc-tree-20261015.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-puc-tree-preqa-20261015.json",
+      "status": "A"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "puc_full_tree_actual_parents_and_idempotence",
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-a2e7dcb.json",
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    {
+      "name": "manual_auxiliary_parent_tenant_rbac",
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    {
+      "name": "legacy_account_crud_and_custom_codes",
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    {
+      "name": "gastos_menores_and_opening_balances_regression",
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    }
+  ],
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-a2e7dcb.json",
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    "browser": {
+      "status": "passed",
+      "checks": "93/93",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/browser-certification-a2e7dcb.json"
+      ]
+    },
+    "api": {
+      "status": "passed",
+      "checks": "16/16",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/local-certification-a2e7dcb.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/accounting-puc-tree-20261015/build-verification-a2e7dcb.md"
+      ]
+    },
+    "ui_tests": {
+      "status": "passed",
+      "checks": "35/35"
+    }
+  },
+  "promotion": {
+    "status": "authorized_for_develop_to_qa",
+    "qa_publish": "authorized",
+    "remote_writes": "authorized_by_user_but_not_executed_by_agent",
+    "main_release": "not_authorized"
+  },
+  "base_commits": {
+    "develop": "54df09e2b71a82d9bc54fb3dd890624952e87ffa"
+  },
+  "certified_commit": "a2e7dcbed73591a4dc04a8ad06706b5d14885100",
+  "certification_status": "passed",
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/data/puc-colombia-20261015.json",
+    "apps/api/src/modules/accounting/data/puc-colombia-20261015.provenance.json",
+    "apps/api/src/modules/accounting/puc-colombia-catalog.js",
+    "apps/api/src/modules/accounting/routes.js",
+    "apps/api/src/modules/accounting/schema.js",
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-chart-tree.test.js",
+    "apps/api/test/accounting-routes-contract.test.js",
+    "apps/api/test/puc-colombia-catalog.test.js",
+    "apps/web/app/dashboard/contabilidad/asientos/page.tsx",
+    "apps/web/app/dashboard/contabilidad/plan-cuentas/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/cajas/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/reportes/page.tsx",
+    "apps/web/lib/accounting-account-tree.ts",
+    "apps/web/test/gastos-menores-reports.test.mjs",
+    "apps/web/test/plan-cuentas-tree.test.mjs",
+    "scripts/certifications/accounting-puc-tree-local.js",
+    "scripts/certifications/gastos-opening-balances-browser-local.js",
+    "docs/qa/manifests/accounting-puc-tree-20261015.json",
+    "docs/qa/manifests/accounting-puc-tree-preqa-20261015.json"
+  ]
+}

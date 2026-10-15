@@ -85,7 +85,7 @@ export default function ConceptosGastosMenoresPage() {
       // include_inactive: el maestro administra todo el catalogo, activo e inactivo.
       const [conceptRows, accountRows, vatRows] = await Promise.all([
         api<Concept[]>("/api/v1/petty-cash/concepts?include_inactive=true"),
-        api<Account[]>("/api/v1/accounting/accounts?active=true&limit=1000"),
+        api<Account[]>("/api/v1/accounting/accounts?active=true&allows_tx=true&limit=1000"),
         api<VatMaster[]>("/api/v1/accounting/vat-masters?scope=purchases")
       ]);
       setRows(conceptRows);

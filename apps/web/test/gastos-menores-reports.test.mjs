@@ -53,7 +53,7 @@ test("carga los maestros de los filtros con inactivos incluidos", () => {
   assert.match(reportes, /api<Box\[\]>\("\/api\/v1\/petty-cash\/boxes\?include_inactive=true"\)/);
   assert.match(reportes, /api<Concept\[\]>\("\/api\/v1\/petty-cash\/concepts\?include_inactive=true"\)/);
   assert.match(reportes, /api<Party\[\]>\("\/api\/v1\/accounting\/third-parties\?type=supplier&active=true&limit=500"\)/);
-  assert.match(reportes, /api<Account\[\]>\("\/api\/v1\/accounting\/accounts\?active=true&limit=1000"\)/);
+  assert.match(reportes, /api<Account\[\]>\("\/api\/v1\/accounting\/accounts\?active=true&allows_tx=true&limit=1000"\)/);
   assert.match(reportes, /api<OrgTree>\("\/api\/v1\/accounting\/organization-tree"\)/);
 });
 
@@ -119,3 +119,4 @@ test("los estados de carga, vacio y moneda siguen la convencion del modulo", () 
   assert.match(reportes, /colSpan=/);
   assert.match(reportes, /Intl\.NumberFormat\("es-CO", \{ style: "currency", currency: "COP", maximumFractionDigits: 0 \}\)/);
 });
+
