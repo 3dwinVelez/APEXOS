@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { activeOrganizationRows, branchesForSociety, costCentersForBranch, EMPTY_PAYROLL_ORGANIZATION, organizationAssignmentChanged, organizationSelection, type PayrollOrganizationTree } from "@/lib/payrollOrganization";
 import { ArrowLeft, Eye, Link2, Pencil, Plus, RefreshCw, Save, Search, UserRoundCheck, UserRoundX, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -26,6 +27,10 @@ type Employee = {
     last_name?: string;
     second_last_name?: string;
     cost_center?: string;
+    branch_code?: string;
+    society_code?: string;
+    cost_center_code?: string;
+    accounting?: { society_code?: string; branch_code?: string; cost_center_code?: string; cost_center?: string };
     weekly_hours?: number;
     currency?: string;
     social_security?: {
@@ -49,6 +54,8 @@ type EmployeeForm = {
   code: string;
   position: string;
   cost_center: string;
+  society_code: string;
+  branch_code: string;
   weekly_hours: string;
   hire_date: string;
   contract_type: string;
@@ -131,6 +138,9 @@ export default function EmployeesMasterPage() {
   const [entities, setEntities] = useState<LaborEntity[]>([]);
   const [documentTypes, setDocumentTypes] = useState<MasterItem[]>(fallbackDocumentTypes);
   const [costCenters, setCostCenters] = useState<MasterItem[]>(fallbackCostCenters);
+  const [organization, setOrganization] = useState<PayrollOrganizationTree>(EMPTY_PAYROLL_ORGANIZATION);
+  const [organizationLoading, setOrganizationLoading] = useState(false);
+  const [organizationError, setOrganizationError] = useState("");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Employee | null>(null);
@@ -154,6 +164,8 @@ export default function EmployeesMasterPage() {
     code: "",
     position: "",
     cost_center: "",
+    society_code: "",
+    branch_code: "",
     weekly_hours: "",
     hire_date: "",
     contract_type: "indefinite",
@@ -183,6 +195,8 @@ export default function EmployeesMasterPage() {
       code: "",
       position: "",
       cost_center: "",
+      society_code: "",
+      branch_code: "",
       weekly_hours: "",
       hire_date: today(),
       contract_type: "indefinite",
@@ -209,6 +223,16 @@ export default function EmployeesMasterPage() {
       setEntities(Array.isArray(entityData) ? entityData : []);
       if (masterData?.document_types?.length) setDocumentTypes(masterData.document_types.filter((item) => item.active !== false));
       if (masterData?.cost_centers?.length) setCostCenters(masterData.cost_centers.filter((item) => item.active !== false));
+      try {
+        setOrganizationLoading(true);
+        setOrganizationError("");
+        setOrganization(await api<PayrollOrganizationTree>("/api/v1/talento-humano/empleados/organization-options", { cache: "no-store" }));
+      } catch {
+        setOrganization(EMPTY_PAYROLL_ORGANIZATION);
+        setOrganizationError("No se pudo cargar el maestro contable. Configura sociedades, sucursales y centros antes de crear empleados.");
+      } finally {
+        setOrganizationLoading(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -265,6 +289,7 @@ export default function EmployeesMasterPage() {
     const last = employee.metadata?.last_name || "";
     const secondLast = employee.metadata?.second_last_name || "";
     const builtName = [first, middle, last, secondLast].filter(Boolean).join(" ");
+    const accounting = employee.metadata?.accounting || {};
     setSelected(employee);
     setMode(nextMode);
     setModalMessage("");
@@ -281,7 +306,9 @@ export default function EmployeesMasterPage() {
       document: employee.metadata?.document || "",
       code: employee.code || "",
       position: employee.position || "",
-      cost_center: employee.metadata?.cost_center || "",
+      cost_center: accounting.cost_center_code || employee.metadata?.cost_center_code || employee.metadata?.cost_center || "",
+      society_code: accounting.society_code || employee.metadata?.society_code || "",
+      branch_code: accounting.branch_code || employee.metadata?.branch_code || "",
       weekly_hours: employee.metadata?.weekly_hours ? String(employee.metadata.weekly_hours) : "",
       hire_date: displayDate(employee.hire_date),
       contract_type: employee.contract_type || "indefinite",
@@ -320,6 +347,29 @@ export default function EmployeesMasterPage() {
       window.alert("El numero de documento es obligatorio y no se puede repetir.");
       return;
     }
+    const selectedAccounting = selected?.metadata?.accounting || {
+      society_code: selected?.metadata?.society_code,
+      branch_code: selected?.metadata?.branch_code,
+      cost_center_code: selected?.metadata?.cost_center_code || selected?.metadata?.cost_center
+    };
+    const assignmentChanged = mode === "create" || !selected || organizationAssignmentChanged(selectedAccounting, {
+      society_code: form.society_code,
+      branch_code: form.branch_code,
+      cost_center_code: form.cost_center
+    });
+    const resolvedOrganization = organizationSelection(organization, {
+      society_code: form.society_code,
+      branch_code: assignmentChanged ? form.branch_code : "",
+      cost_center_code: assignmentChanged ? form.cost_center : ""
+    }, { requireAssignment: mode === "create" || assignmentChanged });
+    if (resolvedOrganization && "error" in resolvedOrganization) {
+      window.alert(resolvedOrganization.error);
+      return;
+    }
+    if (mode === "create" && !resolvedOrganization) {
+      window.alert("Selecciona la sucursal y el centro de costo contable del empleado.");
+      return;
+    }
     setSaving(true);
     setModalMessage("");
     try {
@@ -332,7 +382,10 @@ export default function EmployeesMasterPage() {
         document_type: form.document_type,
         document: form.document,
         position: form.position,
-        cost_center: form.cost_center,
+        ...(assignmentChanged ? {
+          cost_center: form.cost_center,
+          ...(resolvedOrganization && !("error" in resolvedOrganization) ? resolvedOrganization : {})
+        } : {}),
         weekly_hours: form.weekly_hours ? Number(form.weekly_hours) : null,
         hire_date: form.hire_date || undefined,
         contract_type: form.contract_type,
@@ -534,6 +587,8 @@ export default function EmployeesMasterPage() {
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {modalMessage ? <p className="mb-4 rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{modalMessage}</p> : null}
+              {mode === "create" && organizationLoading ? <p className="mb-4 rounded-md border border-line bg-paper p-3 text-sm text-neutral-600" role="status">Cargando maestro contable...</p> : null}
+              {mode === "create" && organizationError ? <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="alert">{organizationError}</p> : null}
               <div className="grid gap-3 md:grid-cols-2">
                 <EmployeeField label="Primer nombre" readOnly={mode === "view"} value={form.first_name} onChange={(value) => updateNamePart("first_name", value)} />
                 <EmployeeField label="Segundo nombre" readOnly={mode === "view"} value={form.middle_name} onChange={(value) => updateNamePart("middle_name", value)} />
@@ -547,7 +602,10 @@ export default function EmployeesMasterPage() {
                 <SelectField label="Tipo documento" disabled={mode === "view"} value={form.document_type} onChange={(value) => setForm((current) => ({ ...current, document_type: value }))} options={documentTypes.map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))} />
                 <EmployeeField label="Numero documento" readOnly={mode === "view"} value={form.document} onChange={(value) => setForm((current) => ({ ...current, document: value }))} />
                 <EmployeeField label="Cargo" readOnly={mode === "view"} value={form.position} onChange={(value) => setForm((current) => ({ ...current, position: value }))} />
-                <SelectField label="Centro de costos" disabled={mode === "view"} value={form.cost_center} onChange={(value) => setForm((current) => ({ ...current, cost_center: value }))} options={[{ value: "", label: "Sin centro" }, ...costCenters.map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} />
+                {organization.societies.length ? <SelectField label="Sociedad contable" disabled={mode === "view"} value={form.society_code} onChange={(value) => setForm((current) => ({ ...current, society_code: value, branch_code: "", cost_center: "" }))} options={[{ value: "", label: "Seleccionar sociedad" }, ...activeOrganizationRows(organization.societies).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : null}
+                {organization.branches.length ? <SelectField label="Sucursal contable" disabled={mode === "view"} value={form.branch_code} onChange={(value) => setForm((current) => ({ ...current, branch_code: value, society_code: current.society_code || organization.branches.find((branch) => branch.code === value)?.society_code || "", cost_center: "" }))} options={[{ value: "", label: mode === "create" ? "Seleccionar sucursal" : "Sin sucursal nueva" }, ...branchesForSociety(organization, form.society_code).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : null}
+                {organization.cost_centers.length ? <SelectField label="Centro de costos contable" disabled={mode === "view"} value={form.cost_center} onChange={(value) => setForm((current) => ({ ...current, cost_center: value }))} options={[{ value: "", label: mode === "create" ? "Seleccionar centro" : "Sin centro nuevo" }, ...costCentersForBranch(organization, form.society_code, form.branch_code).map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} /> : mode === "create" ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800" role="alert">No hay maestro contable disponible. Configura la estructura contable para habilitar el alta.</p> : <SelectField label="Centro de costos legado" disabled={mode === "view"} value={form.cost_center} onChange={(value) => setForm((current) => ({ ...current, cost_center: value }))} options={[{ value: "", label: "Sin centro" }, ...costCenters.map((item) => ({ value: item.code, label: `${item.code} - ${item.name}` }))]} />}
+                {mode === "edit" && !form.branch_code && !form.cost_center ? <p className="md:col-span-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800" role="status">Este empleado es legado y no tiene asignación contable. Puedes conservarlo así o asignar sucursal y centro antes de guardar.</p> : null}
                 <EmployeeField label="Fecha de ingreso" readOnly={mode === "view"} type="date" value={form.hire_date} onChange={(value) => setForm((current) => ({ ...current, hire_date: value }))} />
                 <SelectField label="Tipo de contrato" disabled={mode === "view"} value={form.contract_type} onChange={(value) => setForm((current) => ({ ...current, contract_type: value, end_date: value === "fixed" ? current.end_date : "" }))} options={contractTypes.map((item) => ({ value: item.code, label: item.name }))} />
                 {form.contract_type === "fixed" ? <EmployeeField label="Fecha de vencimiento del contrato" readOnly={mode === "view"} type="date" value={form.end_date} onChange={(value) => setForm((current) => ({ ...current, end_date: value }))} /> : null}

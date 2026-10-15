@@ -73,6 +73,7 @@ async function hrRoutes(fastify) {
   fastify.patch("/hr/affiliations/:id", { schema: schemas.employeeAffiliationPatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateEmployeeAffiliation(request.user?.tenant_id, request.params.id, request.body));
 
   fastify.get("/hr/labor-entities", { preHandler: requirePermission("hr", "read") }, (request) => service.listLaborEntities(request.user?.tenant_id, request.query));
+  fastify.get("/hr/labor-entities/party-candidates", { preHandler: requirePermission("hr", "read") }, (request) => service.listLaborEntityPartyCandidates(request.user?.tenant_id, request.query));
   fastify.post("/hr/labor-entities", { schema: schemas.laborEntitySchema, preHandler: requirePermission("hr", "write") }, (request) => service.createLaborEntity(request.user?.tenant_id, request.body, request.user));
   fastify.patch("/hr/labor-entities/:id", { schema: schemas.laborEntityPatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateLaborEntity(request.user?.tenant_id, request.params.id, request.body, request.user));
   fastify.post("/hr/labor-entities/:id/link-accounting-party", { schema: schemas.laborEntityLinkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.linkLaborEntityAccountingParty(request.user?.tenant_id, request.params.id, request.body, request.user));
@@ -126,6 +127,7 @@ async function hrRoutes(fastify) {
   fastify.patch("/hr/labor-configuration/calendar-days/:id", { schema: schemas.calendarDayPatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateCalendarDay(request.user?.tenant_id, request.params.id, request.body));
 
   fastify.get("/talento-humano/empleados", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployees(request.user?.tenant_id, request.query));
+  fastify.get("/talento-humano/empleados/organization-options", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployeeOrganizationOptions(request.user?.tenant_id));
   fastify.post("/talento-humano/empleados", { schema: schemas.employeeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployee(request.user?.tenant_id, request.body));
   fastify.patch("/talento-humano/empleados/:id", { schema: schemas.employeePatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateEmployee(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/talento-humano/empleados/:id/contratos", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployeeContracts(request.user?.tenant_id, request.params.id, request.query));
@@ -137,6 +139,7 @@ async function hrRoutes(fastify) {
   fastify.post("/talento-humano/empleados/:id/afiliaciones", { schema: schemas.employeeAffiliationSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployeeAffiliation(request.user?.tenant_id, request.params.id, request.body));
   fastify.patch("/talento-humano/afiliaciones/:id", { schema: schemas.employeeAffiliationPatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateEmployeeAffiliation(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/talento-humano/entidades", { preHandler: requirePermission("hr", "read") }, (request) => service.listLaborEntities(request.user?.tenant_id, request.query));
+  fastify.get("/talento-humano/entidades/terceros", { preHandler: requirePermission("hr", "read") }, (request) => service.listLaborEntityPartyCandidates(request.user?.tenant_id, request.query));
   fastify.post("/talento-humano/entidades", { schema: schemas.laborEntitySchema, preHandler: requirePermission("hr", "write") }, (request) => service.createLaborEntity(request.user?.tenant_id, request.body, request.user));
   fastify.patch("/talento-humano/entidades/:id", { schema: schemas.laborEntityPatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateLaborEntity(request.user?.tenant_id, request.params.id, request.body, request.user));
   fastify.post("/talento-humano/entidades/:id/vincular-tercero", { schema: schemas.laborEntityLinkSchema, preHandler: requirePermission("hr", "write") }, (request) => service.linkLaborEntityAccountingParty(request.user?.tenant_id, request.params.id, request.body, request.user));

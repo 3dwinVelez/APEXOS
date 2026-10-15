@@ -210,6 +210,9 @@ const employeeSchema = {
       site: { type: "string" },
       area: { type: "string" },
       cost_center: { type: "string" },
+      society_code: { type: "string" },
+      branch_code: { type: "string" },
+      cost_center_code: { type: "string" },
       weekly_hours: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
       currency: { type: "string" },
       eps_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
@@ -281,7 +284,7 @@ const employeeRehireSchema = {
 const laborEntitySchema = {
   body: {
     type: "object",
-    required: ["entity_type", "nit", "legal_name"],
+    required: ["entity_type"],
     properties: {
       entity_type: { type: "string" },
       internal_code: { type: "string" },

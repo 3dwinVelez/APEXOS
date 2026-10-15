@@ -6,6 +6,8 @@ const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath
 const { buildRouteEventSummaries } = require("./routeEventSummaries");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 const hrPolicy = require("./policy");
+const { resolveTenantEmployeeOrganization, organizationTreeFromConfig } = require("./organization");
+const { resolveExplicitParty, partyCommonFields, partyMatchesSearch, compactTaxId, normalizeTaxId } = require("./laborEntityPartyMatcher");
 
 const DEFAULT_PARAMS = {
   ordinary_hours_day: 8,
@@ -887,6 +889,16 @@ async function listEmployees(tenantId, query = {}) {
   }));
 }
 
+async function listEmployeeOrganizationOptions(tenantId) {
+  const config = await getTenantConfig(tenantId);
+  const tree = organizationTreeFromConfig(config);
+  return {
+    societies: tree.societies.filter((row) => row && row.active !== false),
+    branches: tree.branches.filter((row) => row && row.active !== false),
+    cost_centers: tree.cost_centers.filter((row) => row && row.active !== false)
+  };
+}
+
 function normalizeContractType(value) {
   const raw = String(value || "").trim();
   if (raw === "obra_labor" || raw === "fixed" || raw === "indefinite") return raw;
@@ -977,10 +989,37 @@ function employeeContractPayload(input = {}, employee = {}) {
     valid_to: input.end_date || input.valid_to ? dateOnly(input.end_date || input.valid_to) : null,
     salary_base: Number(input.salary_base ?? employee.salary_base ?? 0),
     cost_center: input.cost_center ?? metadata.cost_center ?? "",
-    society_code: input.society_code ?? accounting.society_code ?? null,
-    branch_code: input.branch_code ?? accounting.branch_code ?? null,
-    cost_center_code: input.cost_center_code ?? accounting.cost_center_code ?? input.cost_center ?? metadata.cost_center ?? null
+    society_code: input.society_code ?? accounting.society_code ?? metadata.society_code ?? null,
+    branch_code: input.branch_code ?? accounting.branch_code ?? metadata.branch_code ?? null,
+    cost_center_code: input.cost_center_code ?? accounting.cost_center_code ?? metadata.cost_center_code ?? input.cost_center ?? metadata.cost_center ?? null
   };
+}
+
+async function syncEmployeeFromContract(tx, employee, contract) {
+  const metadata = employee?.metadata && typeof employee.metadata === "object" ? employee.metadata : {};
+  const accounting = {
+    ...(metadata.accounting && typeof metadata.accounting === "object" ? metadata.accounting : {}),
+    society_code: contract.society_code || null,
+    branch_code: contract.branch_code || null,
+    cost_center_code: contract.cost_center_code || null
+  };
+  return tx.employee.update({
+    where: { id: employee.id },
+    data: {
+      ...(contract.contract_type ? { contract_type: contract.contract_type } : {}),
+      ...(contract.salary_base != null ? { salary_base: contract.salary_base } : {}),
+      ...(contract.valid_to !== undefined ? { end_date: contract.valid_to ? new Date(contract.valid_to) : null } : {}),
+      metadata: {
+        ...metadata,
+        cost_center: contract.cost_center || contract.cost_center_code || metadata.cost_center || "",
+        branch_code: contract.branch_code || metadata.branch_code || "",
+        society_code: contract.society_code || metadata.society_code || "",
+        cost_center_code: contract.cost_center_code || metadata.cost_center_code || "",
+        labor_status: contract.status === "activo" ? "activo" : (metadata.labor_status || "activo"),
+        accounting
+      }
+    }
+  });
 }
 
 async function ensureEmployeeContractFoundation(tx, tenantId, employee, user = {}) {
@@ -1049,7 +1088,8 @@ async function createEmployeeContractAddendum(tenantId, employeeId, input = {}, 
     if (employee.active === false) throw validationError("No se puede crear otrosi sobre un empleado retirado. Use recontratacion.", 409, "EMPLEADO_RETIRADO");
     await ensureEmployeeContractFoundation(tx, tenantId, employee, user);
     const active = await activeEmployeeContract(tx, tenantId, id);
-    const payload = employeeContractPayload(input, employee);
+    const organization = await resolveTenantEmployeeOrganization(tenantId, input, employee, { allowEmpty: true });
+    const payload = employeeContractPayload(organization ? { ...input, ...organization } : input, employee);
     if (!payload.valid_from) throw validationError("La fecha de vigencia del otrosi es obligatoria.", 400, "OTROSI_FECHA_REQUERIDA");
     if (payload.contract_type === "fixed" && !payload.valid_to) throw validationError("La fecha de vencimiento del contrato es obligatoria para termino fijo.", 422, "FECHA_FIN_CONTRATO_REQUERIDA");
     if (active?.valid_from && new Date(payload.valid_from) <= new Date(active.valid_from)) {
@@ -1073,16 +1113,7 @@ async function createEmployeeContractAddendum(tenantId, employeeId, input = {}, 
       )
       RETURNING *
     `;
-    const metadata = employee.metadata && typeof employee.metadata === "object" ? employee.metadata : {};
-    await tx.employee.update({
-      where: { id },
-      data: {
-        contract_type: payload.contract_type,
-        salary_base: payload.salary_base,
-        end_date: payload.valid_to ? new Date(payload.valid_to) : null,
-        metadata: { ...metadata, cost_center: payload.cost_center || "", labor_status: "activo", accounting: { ...(metadata.accounting || {}), society_code: payload.society_code, branch_code: payload.branch_code, cost_center_code: payload.cost_center_code } }
-      }
-    });
+    await syncEmployeeFromContract(tx, employee, rows[0]);
     await syncEmployeeSalaryHistory(tx, tenantId, id, { salary_base: payload.salary_base, hire_date: payload.valid_from, salary_reason: input.reason || "Otrosi contractual" }, user?.id || null);
     return rows[0];
   }));
@@ -1104,7 +1135,8 @@ async function createEmployeeRehire(tenantId, employeeId, input = {}, user = {})
         WHERE tenant_id = ${tenantId} AND id = ${active.id}
       `;
     }
-    const payload = employeeContractPayload({ ...input, valid_from: input.valid_from || input.hire_date || input.new_hire_date }, employee);
+    const organization = await resolveTenantEmployeeOrganization(tenantId, input, employee, { allowEmpty: true });
+    const payload = employeeContractPayload({ ...(organization ? { ...input, ...organization } : input), valid_from: input.valid_from || input.hire_date || input.new_hire_date }, employee);
     if (!payload.valid_from) throw validationError("La fecha de recontratacion es obligatoria.", 400, "RECONTRATACION_FECHA_REQUERIDA");
     if (payload.contract_type === "fixed" && !payload.valid_to) throw validationError("La fecha de vencimiento del contrato es obligatoria para termino fijo.", 422, "FECHA_FIN_CONTRATO_REQUERIDA");
     const rows = await tx.$queryRaw`
@@ -1119,18 +1151,8 @@ async function createEmployeeRehire(tenantId, employeeId, input = {}, user = {})
       )
       RETURNING *
     `;
-    const metadata = employee.metadata && typeof employee.metadata === "object" ? employee.metadata : {};
-    await tx.employee.update({
-      where: { id },
-      data: {
-        active: true,
-        hire_date: new Date(payload.valid_from),
-        end_date: payload.valid_to ? new Date(payload.valid_to) : null,
-        contract_type: payload.contract_type,
-        salary_base: payload.salary_base,
-        metadata: { ...metadata, cost_center: payload.cost_center || "", labor_status: "activo", accounting: { ...(metadata.accounting || {}), society_code: payload.society_code, branch_code: payload.branch_code, cost_center_code: payload.cost_center_code } }
-      }
-    });
+    await tx.employee.update({ where: { id }, data: { active: true, hire_date: new Date(payload.valid_from) } });
+    await syncEmployeeFromContract(tx, { ...employee, active: true }, rows[0]);
     await syncEmployeeSalaryHistory(tx, tenantId, id, { salary_base: payload.salary_base, hire_date: payload.valid_from, salary_reason: "Recontratacion" }, user?.id || null);
     return rows[0];
   }));
@@ -1170,6 +1192,7 @@ async function createEmployeeSalaryHistory(tenantId, employeeId, input = {}, use
 async function createEmployee(tenantId, input) {
   const fullName = input.name || [input.first_name, input.middle_name, input.last_name, input.second_last_name].filter(Boolean).join(" ").trim();
   validateEmployeeLaborInput(input);
+  const organization = await resolveTenantEmployeeOrganization(tenantId, input);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     await assertEmployeeDocumentAvailable(tx, tenantId, input);
     const employee = await tx.employee.create({
@@ -1198,7 +1221,11 @@ async function createEmployee(tenantId, input) {
           company_id: input.company_id || "",
           site: input.site || "",
           area: input.area || input.department || "",
-          cost_center: input.cost_center || "",
+          cost_center: organization.cost_center,
+          branch_code: organization.branch_code,
+          society_code: organization.society_code,
+          cost_center_code: organization.cost_center_code,
+          accounting: organization,
           weekly_hours: input.weekly_hours ?? null,
           currency: input.currency || "COP",
           social_security: {
@@ -1232,6 +1259,7 @@ async function updateEmployee(tenantId, id, input = {}) {
     if (!current) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
     validateEmployeeLaborInput(input, current);
     const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
+    const organization = await resolveTenantEmployeeOrganization(tenantId, input, current, { allowEmpty: true });
     const nextDocument = input.document !== undefined ? input.document : metadata.document;
     const nextDocumentType = input.document_type !== undefined ? input.document_type : metadata.document_type;
     await assertEmployeeDocumentAvailable(prisma, tenantId, { document: nextDocument, document_type: nextDocumentType }, employeeId);
@@ -1249,7 +1277,7 @@ async function updateEmployee(tenantId, id, input = {}) {
       ...(input.phone !== undefined ? { phone: input.phone || "" } : {}),
       ...(input.site !== undefined ? { site: input.site || "" } : {}),
       ...(input.area !== undefined ? { area: input.area || "" } : {}),
-      ...(input.cost_center !== undefined ? { cost_center: input.cost_center || "" } : {}),
+      ...(organization ? { cost_center: organization.cost_center, branch_code: organization.branch_code, society_code: organization.society_code, cost_center_code: organization.cost_center_code, accounting: organization } : {}),
       ...(input.weekly_hours !== undefined ? { weekly_hours: input.weekly_hours === "" || input.weekly_hours == null ? null : Number(input.weekly_hours) } : {}),
       ...(input.labor_status !== undefined ? { labor_status: input.labor_status || "activo" } : {}),
       ...(input.currency !== undefined ? { currency: input.currency || "COP" } : {}),
@@ -3577,6 +3605,34 @@ async function listLaborEntities(tenantId, query = {}) {
   `);
 }
 
+async function listLaborEntityPartyCandidates(tenantId, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const search = String(query.search || query.q || "").trim();
+    const normalizedSearch = normalizeNit(search);
+    const limit = Math.min(Math.max(Number(query.limit) || 50, 1), 100);
+    const parties = await prisma.$queryRaw`
+      SELECT *
+      FROM "Party"
+      WHERE tenant_id = ${tenantId}
+        AND active = true
+        AND (
+          ${!search}
+          OR name ILIKE ${`%${search}%`}
+          OR COALESCE(legal_name, '') ILIKE ${`%${search}%`}
+          OR regexp_replace(COALESCE(tax_id, ''), '[\\s.-]', '', 'g') ILIKE ${`%${normalizedSearch}%`}
+        )
+      ORDER BY COALESCE(legal_name, name) ASC
+      LIMIT ${limit}
+    `;
+    const explicitDv = /[-]/.test(search) && normalizeTaxId(search).verification_digit != null;
+    return parties
+      .filter((party) => partyMatchesSearch(party, search)
+        || (!explicitDv && normalizedSearch && compactTaxId(party.tax_id).includes(normalizedSearch)))
+      .slice(0, limit)
+      .map(partyCommonFields);
+  });
+}
+
 async function createLaborEntity(tenantId, input = {}, user = {}) {
   const entityType = normalizeLaborEntityType(input.entity_type || input.type);
   const validFrom = dateOnly(input.valid_from || new Date());
@@ -3585,17 +3641,34 @@ async function createLaborEntity(tenantId, input = {}, user = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const party = input.accounting_party_id ? await prisma.party.findFirst({ where: { tenant_id: tenantId, id: Number(input.accounting_party_id), active: true } }) : null;
     if (input.accounting_party_id && !party) throw validationError("El tercero contable no existe o no esta activo.", 404, "TERCERO_CONTABLE_NO_ENCONTRADO");
-    const nitMismatch = party ? normalizeNit(party.tax_id) !== normalizeNit(input.nit) : false;
+    const partyResolution = resolveExplicitParty({ parties: party ? [party] : [], accounting_party_id: input.accounting_party_id, nit: input.nit });
+    if (!partyResolution.ok) throw validationError(
+      partyResolution.code === "TERCERO_NIT_NO_COINCIDE" ? "El NIT no coincide con el tercero contable seleccionado." : "El tercero contable no existe o no esta activo.",
+      partyResolution.code === "TERCERO_NIT_NO_COINCIDE" ? 422 : 404,
+      partyResolution.code
+    );
+    if (!party && !String(input.nit || "").trim()) throw validationError("El NIT es obligatorio si no se selecciona un tercero contable.", 422, "NIT_ENTIDAD_REQUERIDO");
+    if (!party && !String(input.legal_name || "").trim()) throw validationError("La razon social es obligatoria si no se selecciona un tercero contable.", 422, "RAZON_SOCIAL_ENTIDAD_REQUERIDA");
+    const common = party ? partyCommonFields(party) : {};
+    const entityInput = {
+      ...input,
+      nit: String(input.nit || common.tax_id || "").trim(),
+      verification_digit: input.verification_digit || common.verification_digit || null,
+      legal_name: String(input.legal_name || common.legal_name || common.name || "").trim(),
+      trade_name: input.trade_name || common.trade_name || null,
+      metadata: { ...(input.metadata || {}), accounting_party_common: common }
+    };
+    const nitMismatch = false;
     const rows = await prisma.$queryRaw`
       INSERT INTO th_entidades_laborales (
         tenant_id, entity_type, internal_code, nit, verification_digit, legal_name, trade_name, official_code,
         active, valid_from, valid_to, accounting_party_id, notes, metadata
       )
       VALUES (
-        ${tenantId}, ${entityType}, ${laborEntityInternalCode({ ...input, entity_type: entityType })}, ${String(input.nit || "").trim()},
-        ${input.verification_digit || null}, ${String(input.legal_name || "").trim()}, ${input.trade_name || null}, ${input.official_code || null},
+        ${tenantId}, ${entityType}, ${laborEntityInternalCode({ ...entityInput, entity_type: entityType })}, ${entityInput.nit},
+        ${entityInput.verification_digit}, ${entityInput.legal_name}, ${entityInput.trade_name}, ${entityInput.official_code || null},
         ${input.active !== false}, ${validFrom}, ${validTo}, ${party?.id || null}, ${input.notes || null},
-        ${JSON.stringify({ ...(input.metadata || {}), audit: [{ action: "created", user_id: user?.id || null, at: new Date().toISOString() }], nit_mismatch: nitMismatch })}::jsonb
+        ${JSON.stringify({ ...(entityInput.metadata || {}), audit: [{ action: "created", user_id: user?.id || null, at: new Date().toISOString() }], nit_mismatch: nitMismatch })}::jsonb
       )
       RETURNING *
     `;
@@ -3652,7 +3725,9 @@ async function linkLaborEntityAccountingParty(tenantId, id, input = {}, user = {
     if (!input.unlink && !partyId) throw validationError("Selecciona un tercero contable valido.", 400, "TERCERO_CONTABLE_INVALIDO");
     const party = partyId ? await prisma.party.findFirst({ where: { tenant_id: tenantId, id: partyId, active: true } }) : null;
     if (partyId && !party) throw validationError("El tercero contable no existe o no esta activo.", 404, "TERCERO_CONTABLE_NO_ENCONTRADO");
-    const nitMismatch = party ? normalizeNit(party.tax_id) !== normalizeNit(current.nit) : false;
+    const partyResolution = resolveExplicitParty({ parties: party ? [party] : [], accounting_party_id: partyId, nit: current.nit });
+    if (!partyResolution.ok) throw validationError("El NIT no coincide con el tercero contable seleccionado.", 422, partyResolution.code);
+    const nitMismatch = false;
     const metadata = current.metadata && typeof current.metadata === "object" ? current.metadata : {};
     const rows = await prisma.$queryRaw`
       UPDATE th_entidades_laborales
@@ -7192,6 +7267,7 @@ module.exports = {
   getPayrollConfig,
   savePayrollConfig,
   listEmployees,
+  listEmployeeOrganizationOptions,
   getCurrentEmployee,
   createEmployee,
   updateEmployee,
@@ -7200,8 +7276,10 @@ module.exports = {
   listEmployeeContracts,
   createEmployeeContractAddendum,
   createEmployeeRehire,
+  syncEmployeeFromContract,
   ensureEmployeeContractFoundation,
   listLaborEntities,
+  listLaborEntityPartyCandidates,
   createLaborEntity,
   updateLaborEntity,
   linkLaborEntityAccountingParty,
