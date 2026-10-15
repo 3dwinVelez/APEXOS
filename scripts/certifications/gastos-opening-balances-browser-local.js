@@ -24,6 +24,7 @@ if (!/^postgres(?:ql)?:\/\/[^@\s]+@(localhost|127\.0\.0\.1)(:\d+)?\//.test(datab
 const apiUrl = process.env.LOCAL_API_URL || "http://127.0.0.1:3213";
 const webUrl = process.env.LOCAL_WEB_URL || "http://127.0.0.1:3001";
 const output = path.resolve(process.env.BROWSER_EVIDENCE_PATH || "docs/qa/evidence/gastos-saldos-iniciales-20261014/browser-certification-local.json");
+const pucCatalogPath = process.env.PUC_CATALOG_PATH ? path.resolve(process.env.PUC_CATALOG_PATH) : null;
 const browserPath = process.env.CHROME_BIN || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const suffix = crypto.randomBytes(5).toString("hex");
 const checks = [];
@@ -56,7 +57,7 @@ async function seedFixture() {
     ["5195", "Gasto E2E caja", "expense"],
     ["1105", "Caja E2E", "asset"],
     ["1330", "Anticipo E2E", "asset"],
-    ["2408", "IVA E2E", "asset"],
+    ["2408", "IVA E2E", "liability"],
     ["1305", "Clientes E2E", "asset"],
     ["3105", "Capital E2E", "equity"]
   ];
@@ -80,7 +81,8 @@ async function seedFixture() {
   await db.user.create({ data: { tenant_id: tenant.id, name: "Limited E2E", email: limitedEmail, password: await bcrypt.hash("limited-e2e", 4), role_id: limitedRole.id, active: true } });
   const config = tenant.config && typeof tenant.config === "object" ? tenant.config : {};
   await db.tenant.update({ where: { id: tenant.id }, data: { active_modules: Array.from(new Set([...(tenant.active_modules || []), "M-07", "M-29"])), config: { ...config, accounting: { ...(config.accounting || {}), organization_tree: { societies: [{ code: `SOC-${suffix}`, name: "Sociedad E2E", active: true }], branches: [{ code: `BR-${suffix}`, name: "Sucursal E2E", society_code: `SOC-${suffix}`, active: true }], cost_centers: [{ code: `CC-${suffix}`, name: "Centro E2E", society_code: `SOC-${suffix}`, branch_code: `BR-${suffix}`, active: true }] } } } } });
-  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, ambiguousBoxName: "Caja browser E2E", requiredBoxId: requiredBox.id, requiredBoxCode: requiredBox.code, requiredAdvanceId: requiredAdvance.id, requiredAdvanceNumber: requiredAdvance.full_number, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, limitedEmail, adminEmail, adminPassword };
+  const protectedAccounts = await db.account.findMany({ where: { tenant_id: tenant.id }, select: { id: true, code: true, name: true, type: true, allows_tx: true, active: true } });
+  return { tenantId: tenant.id, partyId: party.id, boxId: box.id, boxCode: box.code, ambiguousBoxName: "Caja browser E2E", requiredBoxId: requiredBox.id, requiredBoxCode: requiredBox.code, requiredAdvanceId: requiredAdvance.id, requiredAdvanceNumber: requiredAdvance.full_number, conceptId: concept.id, society: `SOC-${suffix}`, branch: `BR-${suffix}`, costCenter: `CC-${suffix}`, protectedAccounts, limitedEmail, adminEmail, adminPassword };
 }
 
 async function login(page, email = "demo@apex.local", password = "test1234") {
@@ -135,6 +137,59 @@ async function certifyDeniedPermissions(browser, fixture) {
   await denied.waitForFunction(() => document.body.innerText.includes("Acceso no autorizado"), { timeout: 45000 });
   check("browser_denied_role_visible", (await denied.$eval("body", (body) => body.innerText)).includes("Acceso no autorizado"), { email: fixture.limitedEmail });
   await context.close();
+}
+
+async function certifyPucTreeInBrowser(page, fixture) {
+  if (!pucCatalogPath) return;
+  const source = JSON.parse(fs.readFileSync(pucCatalogPath, "utf8"));
+  const catalog = Array.isArray(source) ? source : source.records || [];
+  check("puc_browser_catalog_loaded", catalog.length === 2502 && catalog.every((row) => String(row.code).length <= 6), { records: catalog.length });
+  await page.goto(`${webUrl}/dashboard/contabilidad/plan-cuentas`, { waitUntil: "networkidle2" });
+  await page.waitForFunction(() => document.body.innerText.includes("Plan de cuentas PUC"), { timeout: 45000 });
+  const clickButton = async (label) => {
+    await page.waitForFunction((text) => [...document.querySelectorAll("button")].some((button) => button.textContent?.includes(text)), { timeout: 45000 }, label);
+    await page.evaluate((text) => { const button = [...document.querySelectorAll("button")].find((candidate) => candidate.textContent?.includes(text)); if (!button) throw new Error(`button_missing:${text}`); button.click(); }, label);
+  };
+  check("puc_browser_plan_loaded", true, { path: await page.evaluate(() => location.pathname) });
+  await clickButton("Previsualizar PUC");
+  await page.waitForFunction(() => document.body.innerText.includes("Previsualización del PUC Colombia"), { timeout: 45000 });
+  check("puc_browser_preview_ui", (await page.$eval("body", (body) => body.innerText)).includes("cuentas nuevas"));
+  await page.screenshot({ path: path.join(path.dirname(output), "puc-browser-preview.png"), fullPage: true });
+  await clickButton("Aplicar cambios");
+  await page.waitForFunction(() => document.body.innerText.includes("PUC aplicado:"), { timeout: 90000 });
+  check("puc_browser_apply_ui", true);
+  const search = 'input[placeholder*="Buscar código o nombre"]';
+  await page.waitForSelector(search, { visible: true });
+  await page.click(search);
+  await page.type(search, "110505");
+  await page.waitForFunction(() => document.body.innerText.includes("110505"), { timeout: 15000 });
+  check("puc_browser_tree_search", (await page.$eval("body", (body) => body.innerText)).includes("110505"));
+  await page.screenshot({ path: path.join(path.dirname(output), "puc-browser-tree-before-auxiliary.png"), fullPage: true });
+  await page.reload({ waitUntil: "networkidle2" });
+  await page.waitForFunction(() => document.body.innerText.includes("Plan de cuentas PUC"), { timeout: 45000 });
+  await page.click(search);
+  await page.type(search, "110505");
+  await page.waitForFunction(() => document.body.innerText.includes("110505"), { timeout: 15000 });
+  check("puc_browser_tree_reload", true);
+  await clickButton("Nueva cuenta 8 dígitos");
+  await page.waitForSelector('input[required][maxLength="8"]', { visible: true });
+  const parentSelect = await page.$('form select');
+  if (parentSelect) await page.select('form select', "110505");
+  const codeInput = 'input[required][maxLength="8"]';
+  await page.click(codeInput, { clickCount: 3 });
+  await page.type(codeInput, "11050501");
+  const nameInput = 'input[required]:not([maxLength])';
+  await page.type(nameInput, "Auxiliar browser PUC");
+  await clickButton("Crear cuenta");
+  await page.waitForFunction(() => document.body.innerText.includes("Cuenta 11050501 creada"), { timeout: 45000 });
+  check("puc_browser_manual_auxiliary", true);
+  await page.screenshot({ path: path.join(path.dirname(output), "puc-browser-tree-after-auxiliary.png"), fullPage: true });
+  const dbCount = await db.account.count({ where: { tenant_id: fixture.tenantId } });
+  check("puc_browser_tree_persisted", dbCount >= 2502, { db_count: dbCount });
+  const dbRows = await db.account.findMany({ where: { tenant_id: fixture.tenantId }, select: { id: true, code: true, name: true, type: true, allows_tx: true, active: true, parent_id: true }, orderBy: { code: "asc" } });
+  const dbByCode = new Map(dbRows.map((row) => [row.code, row]));
+  check("puc_browser_parent_links_persisted", catalog.every((row) => !row.parent_code || dbByCode.get(row.code)?.parent_id === dbByCode.get(row.parent_code)?.id), { rows: dbRows.length });
+  check("puc_browser_protected_accounts_preserved", fixture.protectedAccounts.every((before) => { const after = dbRows.find((row) => row.id === before.id); return after && after.name === before.name && after.type === before.type && after.allows_tx === before.allows_tx && after.active === before.active; }), { protected_accounts: fixture.protectedAccounts.length });
 }
 
 async function replaceFocusedText(page, text) {
@@ -425,6 +480,7 @@ async function main() {
   page.setDefaultTimeout(15000);
   try {
     await login(page, fixture.adminEmail, fixture.adminPassword);
+    await certifyPucTreeInBrowser(page, fixture);
     await certifyGastos(page, fixture);
     await refreshOrganizationFixture(page, fixture);
     await certifyOpeningBalances(page, fixture);

@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { PUC_COLOMBIA_CATALOG, TYPES_BY_CLASS, validatePucCatalog } = require("./puc-colombia-catalog");
 const { createHash } = require("node:crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const {
@@ -288,8 +289,10 @@ function periodFromDate(date) {
   return new Date(date).toISOString().substring(0, 7);
 }
 
-function accountNature(type) {
-  return ["asset", "expense"].includes(type) ? "debit" : "credit";
+function accountNature(type, code = "") {
+  if (["asset", "expense", "cost"].includes(type)) return "debit";
+  if (type === "order") return String(code).startsWith("8") ? "debit" : "credit";
+  return "credit";
 }
 
 function pucBreakdown(code) {
@@ -307,7 +310,7 @@ function accountDto(account) {
   const breakdown = pucBreakdown(account.code);
   return {
     ...account,
-    nature: accountNature(account.type),
+    nature: accountNature(account.type, account.code),
     puc: breakdown,
     requires_third_party: ["1305", "2205", "2365", "2408"].some((prefix) => account.code.startsWith(prefix)),
     requires_cost_center: ["4", "5", "6", "7"].includes(breakdown.class),
@@ -848,6 +851,156 @@ async function initChartOfAccounts(tenantId, country = "CO") {
   });
 }
 
+const CHART_TREE_LENGTHS = [1, 2, 4, 6];
+const ACCOUNT_TYPES = new Set(["asset", "liability", "equity", "income", "expense", "cost", "order"]);
+
+function defaultPucTreeCatalog() {
+  return validatePucCatalog(PUC_COLOMBIA_CATALOG);
+}
+
+function normalizeChartTreeEntry(entry) {
+  const code = normalizeCode(entry?.code);
+  const name = String(entry?.name || "").trim();
+  const type = normalizeCode(entry?.type).toLowerCase();
+  const parentCode = normalizeCode(entry?.parent_code || entry?.parentCode);
+  const level = Number(entry?.level || code.length);
+  return {
+    code,
+    name,
+    type,
+    parent_code: parentCode || null,
+    level,
+    allows_tx: entry?.allows_tx === true,
+    active: entry?.active !== false
+  };
+}
+
+function validateChartTreeCatalog(catalog) {
+  if (!Array.isArray(catalog) || !catalog.length) throw appError(400, "CHART_CATALOG_REQUIRED", "El catalogo PUC debe contener cuentas");
+  const entries = catalog.map(normalizeChartTreeEntry);
+  const byCode = new Map();
+  const invalid = [];
+  for (const entry of entries) {
+    if (!/^[1-9]\d*$/.test(entry.code) || !CHART_TREE_LENGTHS.includes(entry.code.length)) {
+      invalid.push({ code: entry.code, reason: "CODE_LENGTH_MUST_BE_1_2_4_OR_6" });
+      continue;
+    }
+    if (!entry.name || !ACCOUNT_TYPES.has(entry.type) || TYPES_BY_CLASS[entry.code.slice(0, 1)] !== entry.type) {
+      invalid.push({ code: entry.code, reason: "NAME_OR_ACCOUNT_TYPE_INVALID" });
+      continue;
+    }
+    if (entry.allows_tx) {
+      invalid.push({ code: entry.code, reason: "PUC_GROUPS_DO_NOT_ALLOW_TRANSACTIONS" });
+      continue;
+    }
+    const expectedParent = entry.code.length === 1 ? null : entry.code.slice(0, entry.code.length === 2 ? 1 : entry.code.length - 2);
+    if (entry.parent_code !== expectedParent) {
+      invalid.push({ code: entry.code, reason: "PARENT_CODE_MUST_MATCH_PUC_PREFIX", expected_parent_code: expectedParent });
+      continue;
+    }
+    if (entry.level !== CHART_TREE_LENGTHS.indexOf(entry.code.length) + 1) {
+      invalid.push({ code: entry.code, reason: "LEVEL_MUST_MATCH_1_2_4_6_HIERARCHY" });
+      continue;
+    }
+    if (byCode.has(entry.code)) {
+      invalid.push({ code: entry.code, reason: "DUPLICATE_CODE" });
+      continue;
+    }
+    byCode.set(entry.code, entry);
+  }
+  for (const entry of byCode.values()) {
+    if (entry.parent_code && !byCode.has(entry.parent_code)) invalid.push({ code: entry.code, reason: "PARENT_MISSING_FROM_CATALOG", parent_code: entry.parent_code });
+  }
+  const missingClasses = ["1", "2", "3", "4", "5", "6", "7", "8", "9"].filter((code) => !byCode.has(code));
+  if (missingClasses.length) invalid.push({ reason: "PUC_CLASSES_1_TO_9_REQUIRED", codes: missingClasses });
+  if (invalid.length) throw appError(422, "INVALID_CHART_CATALOG", "El catalogo PUC no cumple la jerarquia 1/2/4/6");
+  return [...byCode.values()].sort((a, b) => a.code.length - b.code.length || a.code.localeCompare(b.code));
+}
+
+function buildChartTreePlan(catalog, existingAccounts = []) {
+  const entries = validateChartTreeCatalog(catalog);
+  const existing = new Map(existingAccounts.map((account) => [String(account.code), account]));
+  const creates = [];
+  const repairs = [];
+  const unchanged = [];
+  const conflicts = [];
+  const warnings = [];
+  const report = { total_catalog_entries: entries.length, existing_count: existingAccounts.length, creates, repairs, unchanged, conflicts, warnings, invalid: [], missing_parents: [], unmapped_existing: [] };
+  for (const entry of entries) {
+    const current = existing.get(entry.code);
+    const parent = entry.parent_code ? existing.get(entry.parent_code) || entries.find((candidate) => candidate.code === entry.parent_code) : null;
+    if (entry.parent_code && !parent) {
+      report.missing_parents.push({ code: entry.code, parent_code: entry.parent_code });
+      continue;
+    }
+    if (!current) {
+      creates.push({ ...entry, parent_code: entry.parent_code });
+      existing.set(entry.code, { ...entry, id: null });
+      continue;
+    }
+    const expectedParentId = entry.parent_code ? existing.get(entry.parent_code)?.id || null : null;
+    if (current.type !== entry.type) {
+      conflicts.push({ code: entry.code, reason: "EXISTING_ACCOUNT_TYPE_CONFLICT", existing_type: current.type, catalog_type: entry.type });
+      continue;
+    }
+    if (current.name !== entry.name || current.active !== entry.active) warnings.push({ code: entry.code, reason: "EXISTING_DISPLAY_FIELDS_PRESERVED", existing: { name: current.name, active: current.active }, catalog: { name: entry.name, active: entry.active } });
+    if (current.parent_id == null && entry.parent_code) repairs.push({ id: current.id, code: entry.code, parent_code: entry.parent_code, parent_id: expectedParentId, level: entry.level });
+    else if (current.parent_id != null && current.parent_id !== expectedParentId) conflicts.push({ code: entry.code, reason: "EXISTING_PARENT_CONFLICT", existing_parent_id: current.parent_id, expected_parent_id: expectedParentId });
+    else if (current.level !== entry.level) repairs.push({ id: current.id, code: entry.code, parent_code: entry.parent_code, parent_id: expectedParentId, level: entry.level });
+    else unchanged.push({ code: entry.code, id: current.id });
+  }
+  for (const current of existing.values()) {
+    if (!entries.some((entry) => entry.code === String(current.code))) report.unmapped_existing.push({ id: current.id, code: current.code, name: current.name });
+  }
+  return report;
+}
+
+async function previewChartTree(tenantId, catalog) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const existing = await prisma.account.findMany({ orderBy: { code: "asc" } });
+    return buildChartTreePlan(catalog, existing);
+  });
+}
+
+async function applyChartTree(tenantId, catalog) {
+  return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    const entries = validateChartTreeCatalog(catalog);
+    const existing = await tx.account.findMany({ orderBy: { code: "asc" } });
+    const plan = buildChartTreePlan(entries, existing);
+    if (plan.conflicts.length || plan.missing_parents.length) {
+      throw appError(409, "CHART_TREE_CONFLICT", "La carga PUC fue bloqueada por conflictos existentes; revise el preview antes de aplicar");
+    }
+    const idsByCode = new Map(existing.map((account) => [String(account.code), account.id]));
+    for (const entry of plan.creates) {
+      const parentId = entry.parent_code ? idsByCode.get(entry.parent_code) || null : null;
+      const account = await tx.account.create({ data: { tenant_id: tenantId, code: entry.code, name: entry.name, type: entry.type, parent_id: parentId, level: entry.level, allows_tx: entry.allows_tx, active: entry.active } });
+      idsByCode.set(entry.code, account.id);
+    }
+    for (const repair of plan.repairs) {
+      const parentId = idsByCode.get(repair.parent_code) || repair.parent_id || null;
+      if (parentId) await tx.account.update({ where: { id: repair.id }, data: { parent_id: parentId, level: repair.level } });
+      else throw appError(409, "PARENT_CREATE_ID_UNAVAILABLE", `No se pudo resolver el padre PUC de ${repair.code}`);
+    }
+    return { ...plan, applied: { created: plan.creates.length, repaired: plan.repairs.length } };
+  }, { maxWait: 10_000, timeout: 60_000 }));
+}
+
+async function previewDefaultChartTree(tenantId) {
+  return previewChartTree(tenantId, defaultPucTreeCatalog());
+}
+
+async function applyDefaultChartTree(tenantId, expected = {}) {
+  const catalog = defaultPucTreeCatalog();
+  const preview = await previewChartTree(tenantId, catalog);
+  const expectedCreates = expected.expected_create_count === undefined ? null : Number(expected.expected_create_count);
+  const expectedLinks = expected.expected_link_count === undefined ? null : Number(expected.expected_link_count);
+  if ((expectedCreates !== null && expectedCreates !== preview.creates.length) || (expectedLinks !== null && expectedLinks !== preview.repairs.length)) {
+    throw appError(409, "CHART_TREE_PREVIEW_STALE", "La previsualizacion PUC cambio; vuelva a previsualizar antes de aplicar");
+  }
+  const applied = await applyChartTree(tenantId, catalog);
+  return { ...applied, created_count: applied.applied.created, linked_count: applied.applied.repaired };
+}
+
 async function listAccounts(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const where = {};
@@ -869,20 +1022,33 @@ async function listAccounts(tenantId, query = {}) {
   });
 }
 
+async function assertAuxiliaryParent(client, code, parentId) {
+  if (!/^\d{8}$/.test(code)) return null;
+  const parent = await client.account.findFirst({ where: { id: Number(parentId), code: code.slice(0, 6), active: true } });
+  if (!parent) throw appError(422, "AUXILIARY_PARENT_INVALID", `El auxiliar ${code} requiere como padre activo la subcuenta ${code.slice(0, 6)}`);
+  return parent;
+}
+
 async function createAccount(tenantId, data) {
   const code = String(data.code || "").trim();
   const name = String(data.name || "").trim();
   if (!code || !name) throw appError(400, "REQUIRED_ACCOUNT", "Codigo y nombre son obligatorios");
   return prisma.runWithTenant(tenantId, async () => {
+    const parentCode = normalizeCode(data.parent_code);
+    const parent = parentCode ? await prisma.account.findFirst({ where: { code: parentCode, active: true } }) : null;
+    const parentId = data.parent_id === undefined ? parent?.id || null : data.parent_id;
+    const auxiliaryParent = await assertAuxiliaryParent(prisma, code, parentId);
+    const accountType = data.type || auxiliaryParent?.type || "asset";
+    if (auxiliaryParent && accountType !== auxiliaryParent.type) throw appError(422, "AUXILIARY_TYPE_MISMATCH", `El auxiliar ${code} debe conservar la naturaleza de su padre ${auxiliaryParent.code}`);
     const existing = await prisma.account.findFirst({ where: { code } });
     if (existing) throw appError(409, "ACCOUNT_EXISTS", `La cuenta ${code} ya existe`);
     const account = await prisma.account.create({
       data: {
         code,
         name,
-        type: data.type || "asset",
-        parent_id: data.parent_id || null,
-        level: data.level || Math.max(1, Math.ceil(code.length / 2)),
+        type: accountType,
+        parent_id: parentId,
+        level: /^\d{8}$/.test(code) ? 5 : (data.level || Math.max(1, Math.ceil(code.length / 2))),
         allows_tx: data.allows_tx !== false,
         active: data.active !== false
       }
@@ -895,13 +1061,15 @@ async function updateAccount(tenantId, id, data) {
   return prisma.runWithTenant(tenantId, async () => {
     const account = await prisma.account.findFirst({ where: { id: Number(id) } });
     if (!account) throw appError(404, "ACCOUNT_NOT_FOUND", "Cuenta no encontrada");
+    const auxiliaryParent = await assertAuxiliaryParent(prisma, account.code, data.parent_id === undefined ? account.parent_id : data.parent_id);
+    if (auxiliaryParent && Object.prototype.hasOwnProperty.call(data, "type") && data.type !== auxiliaryParent.type) throw appError(422, "AUXILIARY_TYPE_MISMATCH", `El auxiliar ${account.code} debe conservar la naturaleza de su padre ${auxiliaryParent.code}`);
     const updated = await prisma.account.update({
       where: { id: account.id },
       data: {
         name: data.name === undefined ? account.name : String(data.name).trim(),
         type: data.type || account.type,
         parent_id: data.parent_id === undefined ? account.parent_id : data.parent_id,
-        level: data.level === undefined ? account.level : data.level,
+        level: /^\d{8}$/.test(account.code) ? 5 : (data.level === undefined ? account.level : data.level),
         allows_tx: data.allows_tx === undefined ? account.allows_tx : Boolean(data.allows_tx),
         active: data.active === undefined ? account.active : Boolean(data.active)
       }
@@ -2278,6 +2446,12 @@ async function createInventoryAdjustmentDocumentTx(tx, tenantId, userId, data) {
 
 module.exports = {
   initChartOfAccounts,
+  previewChartTree,
+  applyChartTree,
+  previewDefaultChartTree,
+  applyDefaultChartTree,
+  validateChartTreeCatalog,
+  buildChartTreePlan,
   listAccounts,
   createAccount,
   updateAccount,
@@ -2333,6 +2507,7 @@ module.exports = {
   assertPaymentWithinBalance,
   periodBounds,
   periodFromDate,
+  accountNature,
   // Numeracion contable: exportados aditivo para que los modulos que emiten documentos dentro de
   // SU propia transaccion (petty-cash, igual que createGoodsReceiptDocumentTx de este archivo)
   // reserven el numero con el candado advisory y el auto-sanado max(configurado, emitido+1)

@@ -32,9 +32,37 @@ const accountSchema = {
       name: { type: "string", minLength: 1 },
       type: { type: "string", enum: ["asset", "liability", "equity", "income", "expense", "cost", "order"] },
       parent_id: { type: ["integer", "null"] },
+      parent_code: { type: ["string", "null"] },
       level: { type: "integer", minimum: 1 },
       allows_tx: { type: "boolean" },
       active: { type: "boolean" }
+    }
+  }
+};
+
+const chartTreeSchema = {
+  body: {
+    type: "object",
+    required: ["catalog"],
+    properties: {
+      catalog: {
+        type: "array",
+        minItems: 9,
+        maxItems: 10000,
+        items: {
+          type: "object",
+          required: ["code", "name", "type"],
+          properties: {
+            code: { type: "string", pattern: "^[0-9]+$", minLength: 1, maxLength: 6 },
+            name: { type: "string", minLength: 1 },
+            type: { type: "string", enum: ["asset", "liability", "equity", "income", "expense", "cost", "order"] },
+            parent_code: { type: ["string", "null"] },
+            level: { type: "integer", minimum: 1, maximum: 4 },
+            allows_tx: { type: "boolean" },
+            active: { type: "boolean" }
+          }
+        }
+      }
     }
   }
 };
@@ -316,6 +344,7 @@ const payableApplicationSchema = {
 module.exports = {
   journalEntrySchema,
   accountSchema,
+  chartTreeSchema,
   thirdPartySchema,
   documentTypeMasterSchema,
   daneLocationMasterSchema,
