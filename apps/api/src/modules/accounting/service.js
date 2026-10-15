@@ -994,10 +994,18 @@ async function applyChartTree(tenantId, catalog) {
       throw appError(409, "CHART_TREE_CONFLICT", "La carga PUC fue bloqueada por conflictos existentes; revise el preview antes de aplicar");
     }
     const idsByCode = new Map(existing.map((account) => [String(account.code), account.id]));
-    for (const entry of plan.creates) {
-      const parentId = entry.parent_code ? idsByCode.get(entry.parent_code) || null : null;
-      const account = await tx.account.create({ data: { tenant_id: tenantId, code: entry.code, name: entry.name, type: entry.type, parent_id: parentId, level: entry.level, allows_tx: entry.allows_tx, active: entry.active } });
-      idsByCode.set(entry.code, account.id);
+    for (const level of CHART_TREE_LENGTHS) {
+      const batch = plan.creates.filter((entry) => entry.code.length === level);
+      if (!batch.length) continue;
+      const data = batch.map((entry) => {
+        const parentId = entry.parent_code ? idsByCode.get(entry.parent_code) || null : null;
+        if (entry.parent_code && !parentId) throw appError(409, "PARENT_CREATE_ID_UNAVAILABLE", `No se pudo resolver el padre PUC de ${entry.code}`);
+        return { tenant_id: tenantId, code: entry.code, name: entry.name, type: entry.type, parent_id: parentId, level: entry.level, allows_tx: entry.allows_tx, active: entry.active };
+      });
+      await tx.account.createMany({ data });
+      const created = await tx.account.findMany({ where: { tenant_id: tenantId, code: { in: batch.map((entry) => entry.code) } }, select: { id: true, code: true } });
+      for (const account of created) idsByCode.set(String(account.code), account.id);
+      if (created.length !== batch.length) throw appError(409, "PARENT_CREATE_ID_UNAVAILABLE", `No se pudieron recuperar todas las cuentas PUC del nivel ${level}`);
     }
     for (const repair of plan.repairs) {
       const parentId = idsByCode.get(repair.parent_code) || repair.parent_id || null;
