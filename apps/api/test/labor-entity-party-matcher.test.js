@@ -70,5 +70,7 @@ test("usa el DV del Party aunque esté separado en metadata y rechaza un DV dist
   assert.equal(matcher.resolveExplicitParty({ parties, accounting_party_id: 12, nit: "900123456-7" }).ok, true);
   assert.equal(matcher.resolveExplicitParty({ parties, accounting_party_id: 12, nit: "900123456-8" }).code, "TERCERO_NIT_NO_COINCIDE");
   assert.equal(matcher.resolveExplicitParty({ parties, accounting_party_id: 12, nit: "900123456" }).ok, true);
+  assert.equal(matcher.partyMatchesSearch(parties[0], "9001234567"), true);
+  assert.equal(matcher.partyMatchesSearch(parties[0], "900123456-8"), false);
 });
 

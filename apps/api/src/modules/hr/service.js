@@ -3619,7 +3619,7 @@ async function listLaborEntityPartyCandidates(tenantId, query = {}) {
           ${!search}
           OR name ILIKE ${`%${search}%`}
           OR COALESCE(legal_name, '') ILIKE ${`%${search}%`}
-          OR regexp_replace(COALESCE(tax_id, ''), '[\\s.-]', '', 'g') ILIKE ${`%${normalizedSearch}%`}
+          OR regexp_replace(COALESCE(tax_id, '') || COALESCE(metadata->>'verification_digit', ''), '[\\s.-]', '', 'g') ILIKE ${`%${normalizedSearch}%`}
         )
       ORDER BY COALESCE(legal_name, name) ASC
       LIMIT ${limit}
@@ -3627,7 +3627,12 @@ async function listLaborEntityPartyCandidates(tenantId, query = {}) {
     const explicitDv = /[-]/.test(search) && normalizeTaxId(search).verification_digit != null;
     return parties
       .filter((party) => partyMatchesSearch(party, search)
-        || (!explicitDv && normalizedSearch && compactTaxId(party.tax_id).includes(normalizedSearch)))
+        || (!explicitDv && normalizedSearch && (() => {
+          const base = compactTaxId(party.tax_id);
+          const knownDv = compactTaxId(party.metadata?.verification_digit || "");
+          const combined = knownDv ? `${base}${knownDv}` : base;
+          return normalizedSearch === base || (knownDv && normalizedSearch === combined) || (normalizedSearch.length < base.length && base.startsWith(normalizedSearch));
+        })()))
       .slice(0, limit)
       .map(partyCommonFields);
   });

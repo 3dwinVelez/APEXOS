@@ -23,6 +23,14 @@ const output = path.resolve(process.env.BROWSER_EVIDENCE_PATH || "docs/qa/eviden
 const suffix = crypto.randomBytes(5).toString("hex");
 const db = new PrismaClient();
 const checks = [];
+const screenshots = [];
+
+function assertLocalUrl(value, name) {
+  const parsed = new URL(value);
+  if (!/^https?:$/.test(parsed.protocol) || !["127.0.0.1", "localhost"].includes(parsed.hostname)) throw new Error(`${name} debe apuntar a localhost/127.0.0.1`);
+}
+assertLocalUrl(apiUrl, "LOCAL_API_URL");
+assertLocalUrl(webUrl, "LOCAL_WEB_URL");
 
 function check(name, ok, detail = {}) {
   checks.push({ name, ok: Boolean(ok), detail });
@@ -32,6 +40,13 @@ function check(name, ok, detail = {}) {
 async function waitForServer(url) {
   const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
   if (!response.ok) throw new Error(`${url} respondió ${response.status}`);
+}
+
+async function assertApiCommitMarker() {
+  const expected = require("node:child_process").execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const response = await fetch(`${apiUrl}/health`, { signal: AbortSignal.timeout(10000) });
+  const body = await response.json().catch(() => ({}));
+  check("api_health_ok_and_commit_marker", response.status === 200 && body.status === "OK" && String(body.commit || "").startsWith(expected.slice(0, 12)), { status: response.status, health_commit: body.commit, expected_prefix: expected.slice(0, 12) });
 }
 
 async function register(email, password, name) {
@@ -138,6 +153,9 @@ async function certifyEmployee(page, fixture, token) {
   await setLabelValue(page, "Centro de costos contable", fixture.tree.cost_centers[0].code);
   await setLabelValue(page, "Fecha de ingreso", "2026-01-01");
   await setLabelValue(page, "Salario mensual", "2500000");
+  const employeeScreenshot = path.join(path.dirname(output), "payroll-employee-selection.png");
+  await page.screenshot({ path: employeeScreenshot, fullPage: true });
+  screenshots.push(employeeScreenshot);
   await page.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Crear empleado"))?.click());
   await page.waitForFunction(() => !document.body.innerText.includes("Nuevo empleado") || document.body.innerText.includes("EMPLEADO_"), { timeout: 30000 });
   const employee = await db.employee.findFirst({ where: { tenant_id: fixture.tenantId, code: { startsWith: "EMP-" } }, orderBy: { id: "desc" } });
@@ -153,7 +171,15 @@ async function certifyEmployee(page, fixture, token) {
   check("employee_addendum_preserves_previous_contract", Boolean(beforeContract) && history.some((row) => Number(row.id) === Number(beforeContract.id) && Number(row.salary_base) === Number(beforeContract.salary_base) && row.branch_code === beforeContract.branch_code), { before: beforeContract, history: history.map((row) => ({ id: row.id, salary_base: row.salary_base, branch_code: row.branch_code })) });
   check("employee_addendum_new_assignment_persisted", history.some((row) => row.valid_from?.toISOString?.().slice(0, 10) === "2026-02-01" && row.branch_code === fixture.tree.branches[0].code && row.cost_center_code === fixture.tree.cost_centers[0].code), { history: history.map((row) => ({ valid_from: row.valid_from, branch_code: row.branch_code, cost_center_code: row.cost_center_code })) });
   const invalidAddendum = employee ? await apiJson(token, `/api/v1/talento-humano/empleados/${employee.id}/contratos/otrosi`, { method: "POST", body: { valid_from: "2026-03-01", contract_type: "indefinite", salary_base: 2800000, society_code: fixture.tree.societies[0].code, branch_code: fixture.tree.branches[0].code, cost_center_code: fixture.tree.cost_centers[1].code, reason: "Asignación inválida E2E" } }) : { status: 0, body: {} };
-  check("employee_addendum_invalid_assignment_rejected", invalidAddendum.status >= 400, { status: invalidAddendum.status, body: invalidAddendum.body });
+  check("employee_addendum_invalid_assignment_rejected", invalidAddendum.status === 422, { status: invalidAddendum.status, body: invalidAddendum.body });
+  const retired = employee ? await apiJson(token, `/api/v1/talento-humano/empleados/${employee.id}`, { method: "PATCH", body: { active: false, end_date: "2026-02-28" } }) : { status: 0, body: {} };
+  check("employee_retirement_for_rehire_succeeds", retired.status < 300, { status: retired.status, body: retired.body });
+  const rehire = employee ? await apiJson(token, `/api/v1/talento-humano/empleados/${employee.id}/recontratar`, { method: "POST", body: { new_hire_date: "2026-03-01", contract_type: "indefinite", salary_base: 2850000, society_code: fixture.tree.societies[0].code, branch_code: fixture.tree.branches[0].code, cost_center_code: fixture.tree.cost_centers[0].code, reason: "Recontratación E2E" } }) : { status: 0, body: {} };
+  check("employee_rehire_valid_assignment_succeeds", rehire.status < 300, { status: rehire.status, body: rehire.body });
+  const rehireHistory = employee ? await db.$queryRaw`SELECT * FROM th_empleado_contratos WHERE tenant_id = ${fixture.tenantId} AND employee_id = ${employee.id} ORDER BY valid_from ASC, id ASC` : [];
+  check("employee_rehire_history_and_metadata_persisted", rehireHistory.length >= 3 && rehireHistory.at(-1)?.reason === "recontratacion" && rehireHistory.at(-1)?.branch_code === fixture.tree.branches[0].code, { count: rehireHistory.length, last: rehireHistory.at(-1) });
+  const employeeAfterRehire = employee ? await db.employee.findUnique({ where: { id: employee.id } }) : null;
+  check("employee_rehire_reactivates_employee", employeeAfterRehire?.active === true && employeeAfterRehire?.metadata?.accounting?.branch_code === fixture.tree.branches[0].code, { active: employeeAfterRehire?.active, accounting: employeeAfterRehire?.metadata?.accounting });
   return employee;
 }
 
@@ -170,10 +196,16 @@ async function certifyEntity(page, fixture) {
   await page.select(select, String(party.id));
   await page.waitForFunction((name) => document.querySelector('input[aria-label="NIT de la entidad laboral"]')?.value && document.body.innerText.includes(name), {}, partyName);
   check("entity_party_lookup_and_prefill_ui", true, { party_id: party.id, party_name: partyName });
+  const entityPrefillScreenshot = path.join(path.dirname(output), "payroll-entity-prefill.png");
+  await page.screenshot({ path: entityPrefillScreenshot, fullPage: true });
+  screenshots.push(entityPrefillScreenshot);
   await setLabelValue(page, "Tipo", "EPS");
   await setLabelValue(page, "Codigo oficial", `EPS-${suffix}`);
   await page.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Guardar"))?.click());
   await page.waitForFunction(() => !document.body.innerText.includes("Nueva entidad"), { timeout: 30000 });
+  const entityPersistScreenshot = path.join(path.dirname(output), "payroll-entity-persisted.png");
+  await page.screenshot({ path: entityPersistScreenshot, fullPage: true });
+  screenshots.push(entityPersistScreenshot);
   const rows = await db.$queryRaw`SELECT * FROM th_entidades_laborales WHERE tenant_id = ${fixture.tenantId} ORDER BY id DESC LIMIT 1`;
   check("labor_entity_party_reference_persisted", rows[0]?.accounting_party_id === party.id, { row: rows[0] });
   check("labor_entity_common_snapshot_persisted", rows[0]?.nit === party.tax_id && rows[0]?.legal_name === party.legal_name, { row: rows[0] });
@@ -184,14 +216,14 @@ async function certifyEntity(page, fixture) {
 
 async function certifyApiValidation(fixture, token, otherFixture) {
   const wrongBranch = await apiJson(token, "/api/v1/talento-humano/empleados", { method: "POST", body: { name: `Wrong ${suffix}`, document: `WRONG${suffix}`, document_type: "CC", position: "QA", department: "QA", salary_base: 1, hire_date: "2026-01-01", society_code: fixture.tree.societies[0].code, branch_code: otherFixture.tree.branches[0].code, cost_center_code: fixture.tree.cost_centers[0].code } });
-  check("employee_wrong_branch_rejected", wrongBranch.status >= 400, { status: wrongBranch.status, body: wrongBranch.body });
+  check("employee_wrong_branch_rejected", wrongBranch.status === 422, { status: wrongBranch.status, body: wrongBranch.body });
   const foreignParty = await apiJson(token, "/api/v1/talento-humano/entidades", { method: "POST", body: { entity_type: "EPS", nit: otherFixture.party.tax_id, legal_name: "Foreign", accounting_party_id: otherFixture.partyId } });
-  check("entity_foreign_party_rejected", foreignParty.status >= 400, { status: foreignParty.status, body: foreignParty.body });
+  check("entity_foreign_party_rejected", foreignParty.status === 404, { status: foreignParty.status, body: foreignParty.body });
   const mismatch = await apiJson(token, "/api/v1/talento-humano/entidades", { method: "POST", body: { entity_type: "EPS", nit: `${fixture.party.tax_id}-8`, legal_name: "Mismatch", accounting_party_id: fixture.partyId } });
-  check("entity_mismatched_nit_rejected", mismatch.status >= 400, { status: mismatch.status, body: mismatch.body });
+  check("entity_mismatched_nit_rejected", [409, 422].includes(mismatch.status), { status: mismatch.status, body: mismatch.body });
   const inactive = await db.party.update({ where: { id: fixture.partyId }, data: { active: false } });
   const inactiveResult = await apiJson(token, "/api/v1/talento-humano/entidades", { method: "POST", body: { entity_type: "EPS", nit: inactive.tax_id, legal_name: "Inactive", accounting_party_id: inactive.id } });
-  check("entity_inactive_party_rejected", inactiveResult.status >= 400, { status: inactiveResult.status, body: inactiveResult.body });
+  check("entity_inactive_party_rejected", inactiveResult.status === 404, { status: inactiveResult.status, body: inactiveResult.body });
   await db.party.update({ where: { id: fixture.partyId }, data: { active: true } });
 }
 
@@ -210,6 +242,7 @@ async function certifyHrOnly(page, fixture) {
 async function main() {
   await waitForServer(`${apiUrl}/health`);
   await waitForServer(webUrl);
+  await assertApiCommitMarker();
   const fixture = await seedTenant(`admin-a-${suffix}@example.test`, `Admin-${suffix}!`, "A");
   const other = await seedTenant(`admin-b-${suffix}@example.test`, `AdminB-${suffix}!`, "B");
   const legacy = await seedLegacyEmployee(fixture);
@@ -234,7 +267,7 @@ async function main() {
     await browser.close();
     await db.$disconnect();
   }
-  const evidence = { version: 1, certification: "payroll-accounting-masters-browser-local", status: "passed", generated_at: new Date().toISOString(), commit: require("node:child_process").execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), api_url: apiUrl, web_url: webUrl, fixture: { tenant_id: fixture.tenantId, other_tenant_id: other.tenantId, party_id: fixture.partyId }, checks };
+  const evidence = { version: 1, certification: "payroll-accounting-masters-browser-local", status: "passed", generated_at: new Date().toISOString(), commit: require("node:child_process").execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), api_url: apiUrl, web_url: webUrl, fixture: { tenant_id: fixture.tenantId, other_tenant_id: other.tenantId, party_id: fixture.partyId }, screenshots, checks };
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`);
   console.log(JSON.stringify(evidence));

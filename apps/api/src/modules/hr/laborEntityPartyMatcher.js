@@ -76,7 +76,7 @@ function partyCommonFields(party = {}) {
 function partyMatchesSearch(party, search = "") {
   const term = String(search || "").trim();
   if (!term) return true;
-  if (taxIdsMatch(term, party.tax_id)) return true;
+  if (taxIdsMatch(term, partyTaxIdForComparison(party))) return true;
   const normalized = term.toLowerCase();
   return [party.name, party.legal_name, party.metadata?.trade_name, party.metadata?.commercial_name]
     .filter(Boolean)
