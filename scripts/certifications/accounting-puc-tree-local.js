@@ -56,8 +56,18 @@ async function register(label) {
 async function main() {
   const catalog = loadCatalog();
   const primary = await register("primary");
+  const customSeed = [
+    ["130505HEART", "Caja HEART", "asset"],
+    ["220505HEART", "Proveedor HEART", "liability"],
+    ["5290", "Aportes SENA", "expense"],
+    ["5320", "Arrendamientos", "expense"],
+    ["5360", "Servicios publicos", "expense"]
+  ];
+  for (const [code, name, type] of customSeed) {
+    await db.account.upsert({ where: { tenant_id_code: { tenant_id: primary.tenantId, code } }, update: { name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true }, create: { tenant_id: primary.tenantId, code, name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true } });
+  }
   const preview = await call("/api/v1/accounting/chart/tree/preview", { token: primary.token, method: "POST", body: { catalog } });
-  check("preview_real", preview.status === 200 && preview.payload.total_catalog_entries === 2502, { status: preview.status, creates: preview.payload.creates?.length, repairs: preview.payload.repairs?.length, conflicts: preview.payload.conflicts?.length });
+  check("preview_real", preview.status === 200 && preview.payload.total_catalog_entries === 2502 && preview.payload.custom_links?.length === 5, { status: preview.status, creates: preview.payload.creates?.length, repairs: preview.payload.repairs?.length, custom_links: preview.payload.custom_links?.length, conflicts: preview.payload.conflicts?.length });
   const applied = await call("/api/v1/accounting/chart/tree/apply", { token: primary.token, method: "POST", body: { catalog } });
   check("apply_real", applied.status === 200 && (applied.payload.applied?.created || 0) + (applied.payload.applied?.repaired || 0) >= 2502, { status: applied.status, applied: applied.payload.applied });
   const second = await call("/api/v1/accounting/chart/tree/apply", { token: primary.token, method: "POST", body: { catalog } });
@@ -69,7 +79,9 @@ async function main() {
   const persisted = new Map(dbRows.map((row) => [String(row.code), row]));
   const byCode = new Map(rows.map((row) => [String(row.code), row]));
   check("parent_links_persisted", catalog.every((row) => !row.parent_code || persisted.get(row.code)?.parent_id === persisted.get(row.parent_code)?.id), { count: dbRows.length });
-  check("no_automatic_auxiliaries", dbRows.every((row) => String(row.code).length <= 6), { max: Math.max(...dbRows.map((row) => String(row.code).length)) });
+  check("custom_parent_links_persisted", customSeed.every(([code]) => { const row = persisted.get(code); const parentCode = code.length > 6 ? code.slice(0, 6) : code.slice(0, 2); return row?.parent_id === persisted.get(parentCode)?.id; }), { custom: customSeed.map(([code]) => code) });
+  const customCodes = new Set(customSeed.map(([code]) => code));
+  check("no_automatic_auxiliaries", dbRows.every((row) => String(row.code).length <= 6 || customCodes.has(String(row.code))), { max: Math.max(...dbRows.map((row) => String(row.code).length)), seeded_custom: [...customCodes] });
   const sub = catalog.find((row) => row.code.length === 6);
   const parent = persisted.get(sub.code);
   const auxiliary = await call("/api/v1/accounting/accounts", { token: primary.token, method: "POST", body: { code: `${sub.code}01`, name: "Auxiliar QA PUC", type: sub.type, parent_code: sub.code, allows_tx: true, active: true } });

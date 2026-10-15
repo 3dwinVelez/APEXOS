@@ -920,12 +920,14 @@ function validateChartTreeCatalog(catalog) {
 function buildChartTreePlan(catalog, existingAccounts = []) {
   const entries = validateChartTreeCatalog(catalog);
   const existing = new Map(existingAccounts.map((account) => [String(account.code), account]));
+  const catalogCodes = new Set(entries.map((entry) => entry.code));
   const creates = [];
   const repairs = [];
   const unchanged = [];
   const conflicts = [];
   const warnings = [];
-  const report = { total_catalog_entries: entries.length, existing_count: existingAccounts.length, creates, repairs, unchanged, conflicts, warnings, invalid: [], missing_parents: [], unmapped_existing: [] };
+  const customLinks = [];
+  const report = { total_catalog_entries: entries.length, existing_count: existingAccounts.length, creates, repairs, unchanged, conflicts, warnings, custom_links: customLinks, invalid: [], missing_parents: [], unmapped_existing: [] };
   for (const entry of entries) {
     const current = existing.get(entry.code);
     const parent = entry.parent_code ? existing.get(entry.parent_code) || entries.find((candidate) => candidate.code === entry.parent_code) : null;
@@ -949,8 +951,29 @@ function buildChartTreePlan(catalog, existingAccounts = []) {
     else if (current.level !== entry.level) repairs.push({ id: current.id, code: entry.code, parent_code: entry.parent_code, parent_id: expectedParentId, level: entry.level });
     else unchanged.push({ code: entry.code, id: current.id });
   }
-  for (const current of existing.values()) {
-    if (!entries.some((entry) => entry.code === String(current.code))) report.unmapped_existing.push({ id: current.id, code: current.code, name: current.name });
+  for (const current of existingAccounts) {
+    const code = String(current.code);
+    if (catalogCodes.has(code)) continue;
+    const customParentCode = /^\d{4}$/.test(code) ? code.slice(0, 2) : (/^\d{6}.+/.test(code) ? code.slice(0, 6) : null);
+    const customLevel = /^\d{4}$/.test(code) ? 3 : (customParentCode ? 5 : null);
+    if (!customParentCode || !catalogCodes.has(customParentCode)) {
+      report.unmapped_existing.push({ id: current.id, code, name: current.name });
+      continue;
+    }
+    const expectedParent = existing.get(customParentCode) || entries.find((entry) => entry.code === customParentCode);
+    const expectedParentId = existing.get(customParentCode)?.id || null;
+    customLinks.push({ id: current.id, code, parent_code: customParentCode, parent_id: expectedParentId, level: customLevel });
+    if (!expectedParent) {
+      report.unmapped_existing.push({ id: current.id, code, name: current.name, reason: "CUSTOM_PARENT_MISSING" });
+    } else if (current.type !== expectedParent.type) {
+      conflicts.push({ code, reason: "EXISTING_CUSTOM_TYPE_CONFLICT", existing_type: current.type, expected_type: expectedParent.type });
+    } else if (current.parent_id != null && current.parent_id !== expectedParentId) {
+      conflicts.push({ code, reason: "EXISTING_CUSTOM_PARENT_CONFLICT", existing_parent_id: current.parent_id, expected_parent_id: expectedParentId });
+    } else if (current.parent_id == null || current.level !== customLevel) {
+      repairs.push({ id: current.id, code, parent_code: customParentCode, parent_id: expectedParentId, level: customLevel, custom: true });
+    } else {
+      unchanged.push({ code, id: current.id, custom: true });
+    }
   }
   return report;
 }

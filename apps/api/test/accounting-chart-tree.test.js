@@ -68,3 +68,17 @@ test("el validador rechaza clases extra, tipos de clase inconsistentes y grupos 
   invalid(minimalCatalog().map((row) => row.code === "1" ? { ...row, type: "expense" } : row));
   invalid(minimalCatalog().map((row) => row.code === "11" ? { ...row, allows_tx: true } : row));
 });
+
+test("repara padres PUC de cuentas custom existentes sin crear cuentas custom", () => {
+  const catalog = minimalCatalog();
+  const existing = [
+    { id: 100, code: "110505HEART", name: "Caja HEART", type: "asset", parent_id: null, level: 5, active: true },
+    { id: 101, code: "1199", name: "Custom", type: "asset", parent_id: null, level: 3, active: true },
+    { id: 102, code: "9999HEART", name: "No mapeable", type: "expense", parent_id: null, level: 5, active: true }
+  ];
+  const report = buildChartTreePlan(catalog, existing);
+  assert.equal(report.custom_links.length, 2);
+  assert.deepEqual(report.repairs.filter((item) => item.custom).map((item) => item.parent_code), ["110505", "11"]);
+  assert.equal(report.creates.some((item) => item.code === "110505HEART"), false);
+  assert.equal(report.unmapped_existing.some((item) => item.code === "9999HEART"), true);
+});
