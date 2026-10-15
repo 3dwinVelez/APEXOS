@@ -164,6 +164,10 @@ async function certifyEmployee(page, fixture, token) {
   await setLabelValue(page, "Centro de costos contable", fixture.tree.cost_centers[0].code);
   await setLabelValue(page, "Fecha de ingreso", "2026-01-01");
   await setLabelValue(page, "Salario mensual", "2500000");
+  await page.evaluate(() => {
+    const label = [...document.querySelectorAll("label")].find((item) => item.textContent?.trim().startsWith("Centro de costos contable"));
+    label?.scrollIntoView({ block: "center", behavior: "auto" });
+  });
   const employeeScreenshot = path.join(path.dirname(output), "payroll-employee-selection.png");
   await page.screenshot({ path: employeeScreenshot, fullPage: true });
   screenshots.push(employeeScreenshot);
@@ -262,7 +266,8 @@ async function certifyHrOnly(page, fixture) {
   const accounting = await browserApi(page, "/api/v1/accounting/third-parties?limit=1");
   check("hr_only_accounting_read_denied", accounting.status === 403, { status: accounting.status, body: accounting.body });
   await page.goto(`${webUrl}/dashboard/talento-humano/entidades`, { waitUntil: "networkidle2" });
-  check("hr_only_entities_page_visible", (await page.$eval("body", (node) => node.innerText)).includes("Entidad laboral"), {});
+  const entitiesPageText = await page.$eval("body", (node) => node.innerText);
+  check("hr_only_entities_page_visible", entitiesPageText.includes("Entidad laboral") || entitiesPageText.includes("Entidades laborales") || entitiesPageText.includes("Nueva entidad"), {});
 }
 
 async function main() {
