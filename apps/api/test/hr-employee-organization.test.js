@@ -57,3 +57,10 @@ test("hr contract exposes organization fields and tenant-filtered lookup", () =>
   assert.match(service, /resolveExplicitParty/);
   assert.match(service, /metadata: \{[\s\S]*accounting: organization/);
 });
+
+test("contract DTO serializes BIGINT values without coercing ordinary numbers", () => {
+  process.env.DISABLE_REDIS = "true";
+  const hrService = require("../src/modules/hr/service");
+  const dto = hrService.jsonSafeBigInt({ id: 12n, previous_contract_id: 4n, salary_base: 2500000, metadata: { count: 2 } });
+  assert.deepEqual(dto, { id: "12", previous_contract_id: "4", salary_base: 2500000, metadata: { count: 2 } });
+});

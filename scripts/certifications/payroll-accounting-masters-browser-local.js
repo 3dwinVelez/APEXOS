@@ -25,6 +25,10 @@ const db = new PrismaClient();
 const checks = [];
 const screenshots = [];
 
+function jsonSafe(value, space = 0) {
+  return JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item, space);
+}
+
 function assertLocalUrl(value, name) {
   const parsed = new URL(value);
   if (!/^https?:$/.test(parsed.protocol) || !["127.0.0.1", "localhost"].includes(parsed.hostname)) throw new Error(`${name} debe apuntar a localhost/127.0.0.1`);
@@ -81,10 +85,11 @@ async function seedTenant(adminEmail, adminPassword, label) {
   const tenantId = String(registration.tenantId);
   const tenant = await db.tenant.findUnique({ where: { id: tenantId } });
   if (!tenant) throw new Error(`tenant not found ${tenantId}`);
+  const labelKey = String(label).replace(/[^A-Za-z0-9]/g, "").toUpperCase();
   const tree = {
-    societies: [{ code: `SOC-${suffix}`, name: "Sociedad Nómina E2E", active: true }],
-    branches: [{ code: `BR-${suffix}`, name: "Sucursal Nómina E2E", society_code: `SOC-${suffix}`, active: true }, { code: `BRX-${suffix}`, name: "Sucursal Incorrecta E2E", society_code: `SOC-${suffix}`, active: true }],
-    cost_centers: [{ code: `CC-${suffix}`, name: "Centro Nómina E2E", society_code: `SOC-${suffix}`, branch_code: `BR-${suffix}`, active: true }, { code: `CCX-${suffix}`, name: "Centro Incorrecto E2E", society_code: `SOC-${suffix}`, branch_code: `BRX-${suffix}`, active: true }]
+    societies: [{ code: `SOC-${labelKey}-${suffix}`, name: `Sociedad Nómina E2E ${label}`, active: true }],
+    branches: [{ code: `BR-${labelKey}-${suffix}`, name: `Sucursal Nómina E2E ${label}`, society_code: `SOC-${labelKey}-${suffix}`, active: true }, { code: `BRX-${labelKey}-${suffix}`, name: `Sucursal Incorrecta E2E ${label}`, society_code: `SOC-${labelKey}-${suffix}`, active: true }],
+    cost_centers: [{ code: `CC-${labelKey}-${suffix}`, name: `Centro Nómina E2E ${label}`, society_code: `SOC-${labelKey}-${suffix}`, branch_code: `BR-${labelKey}-${suffix}`, active: true }, { code: `CCX-${labelKey}-${suffix}`, name: `Centro Incorrecto E2E ${label}`, society_code: `SOC-${labelKey}-${suffix}`, branch_code: `BRX-${labelKey}-${suffix}`, active: true }]
   };
   await db.tenant.update({ where: { id: tenantId }, data: { active_modules: ["M-07", "M-17", "accounting", "hr", "payroll"], config: { ...(tenant.config || {}), accounting: { ...((tenant.config || {}).accounting || {}), organization_tree: tree } } } });
   const party = await db.party.create({ data: { tenant_id: tenantId, type: "supplier", name: `EPS Party ${suffix}`, legal_name: `EPS Party ${suffix} SAS`, tax_id: `900${suffix.replace(/[^0-9]/g, "0").slice(0, 6)}`, tax_type: "NIT", email: `eps-${suffix}@example.test`, phone: "3001234567", address: "Calle E2E", city: "Bogota", metadata: { document_type: "NIT", verification_digit: "7", trade_name: `EPS E2E ${suffix}`, role_flags: { supplier: true } }, active: true } });
@@ -132,10 +137,12 @@ async function setLabelValue(page, labelText, value) {
   }, { labelText, value });
 }
 
-async function certifyOrganization(page, fixture) {
+async function certifyOrganization(page, fixture, forbiddenFixture) {
   await page.goto(`${webUrl}/dashboard/contabilidad/estructura`, { waitUntil: "networkidle2" });
   await page.waitForFunction((codes) => codes.every((code) => document.body.innerText.includes(code)), {}, [fixture.tree.societies[0].code, fixture.tree.branches[0].code, fixture.tree.cost_centers[0].code]);
-  check("organization_tree_real_ui", true, { codes: [fixture.tree.societies[0].code, fixture.tree.branches[0].code, fixture.tree.cost_centers[0].code] });
+  const bodyText = await page.$eval("body", (node) => node.innerText);
+  const forbiddenCodes = forbiddenFixture ? [forbiddenFixture.tree.societies[0].code, forbiddenFixture.tree.branches[0].code, forbiddenFixture.tree.cost_centers[0].code] : [];
+  check("organization_tree_real_ui", forbiddenCodes.every((code) => !bodyText.includes(code)), { codes: [fixture.tree.societies[0].code, fixture.tree.branches[0].code, fixture.tree.cost_centers[0].code], forbidden_codes: forbiddenCodes });
 }
 
 async function certifyEmployee(page, fixture, token) {
@@ -161,7 +168,10 @@ async function certifyEmployee(page, fixture, token) {
   await page.screenshot({ path: employeeScreenshot, fullPage: true });
   screenshots.push(employeeScreenshot);
   await page.evaluate(() => [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("Crear empleado"))?.click());
-  await page.waitForFunction(() => !document.body.innerText.includes("Nuevo empleado") || document.body.innerText.includes("EMPLEADO_"), { timeout: 30000 });
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    return Boolean(dialog && !dialog.innerText.includes("Nuevo empleado") && dialog.innerText.includes("Empleado guardado correctamente"));
+  }, { timeout: 30000 });
   const employee = await db.employee.findFirst({ where: { tenant_id: fixture.tenantId, code: { startsWith: "EMP-" } }, orderBy: { id: "desc" } });
   check("employee_ui_persisted", Boolean(employee), { employee_id: employee?.id });
   check("employee_organization_metadata_persisted", employee?.metadata?.accounting?.branch_code === fixture.tree.branches[0].code && employee?.metadata?.accounting?.cost_center_code === fixture.tree.cost_centers[0].code, { metadata: employee?.metadata?.accounting });
@@ -259,8 +269,8 @@ async function main() {
   await waitForServer(`${apiUrl}/health`);
   await waitForServer(webUrl);
   await assertApiCommitMarker();
-  const fixture = await seedTenant(`admin-a-${suffix}@example.test`, `Admin-${suffix}!`, "A");
-  const other = await seedTenant(`admin-b-${suffix}@example.test`, `AdminB-${suffix}!`, "B");
+  const fixture = await seedTenant(`admin-a-${suffix}@example.test`, `Admin-${suffix}!`, "Tenant A");
+  const other = await seedTenant(`admin-b-${suffix}@example.test`, `AdminB-${suffix}!`, "Tenant B");
   const legacy = await seedLegacyEmployee(fixture);
   const token = await loginToken(fixture.adminEmail, fixture.adminPassword);
   const browser = await puppeteer.launch({ executablePath: browserPath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
@@ -268,7 +278,7 @@ async function main() {
     const page = await browser.newPage();
     page.setDefaultTimeout(20000);
     await browserLogin(page, fixture.adminEmail, fixture.adminPassword);
-    await certifyOrganization(page, fixture);
+    await certifyOrganization(page, fixture, other);
     await certifyEmployee(page, fixture, token);
     await certifyEntity(page, fixture);
     await certifyApiValidation(fixture, token, other);
@@ -285,15 +295,15 @@ async function main() {
   }
   const evidence = { version: 1, certification: "payroll-accounting-masters-browser-local", status: "passed", generated_at: new Date().toISOString(), commit: require("node:child_process").execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), api_url: apiUrl, web_url: webUrl, fixture: { tenant_id: fixture.tenantId, other_tenant_id: other.tenantId, party_id: fixture.partyId }, screenshots, checks };
   fs.mkdirSync(path.dirname(output), { recursive: true });
-  fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`);
-  console.log(JSON.stringify(evidence));
+  fs.writeFileSync(output, `${jsonSafe(evidence, 2)}\n`);
+  console.log(jsonSafe(evidence));
 }
 
 main().catch(async (error) => {
   await db.$disconnect().catch(() => undefined);
   const evidence = { version: 1, certification: "payroll-accounting-masters-browser-local", status: "failed", generated_at: new Date().toISOString(), error: String(error?.stack || error), checks };
   fs.mkdirSync(path.dirname(output), { recursive: true });
-  fs.writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`);
-  console.error(JSON.stringify(evidence));
+  fs.writeFileSync(output, `${jsonSafe(evidence)}\n`);
+  console.error(jsonSafe(evidence));
   process.exitCode = 1;
 });

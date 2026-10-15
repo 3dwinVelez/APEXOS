@@ -113,6 +113,15 @@ function validationError(message, statusCode = 400, code = "VALIDATION_ERROR") {
   return error;
 }
 
+function jsonSafeBigInt(value) {
+  if (typeof value === "bigint") return value.toString();
+  if (Array.isArray(value)) return value.map(jsonSafeBigInt);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, jsonSafeBigInt(item)]));
+  }
+  return value;
+}
+
 function normalizeExtraEvidence(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const base64 = String(value.base64 || value.base64_data || "").trim();
@@ -1070,7 +1079,7 @@ async function listEmployeeContracts(tenantId, employeeId, query = {}) {
     ORDER BY valid_from DESC, id DESC
     LIMIT ${Math.min(Number(query.limit || 100), 500)}
     `;
-    return rows.map((row) => ({
+    return rows.map((row) => jsonSafeBigInt({
       ...row,
       id: Number(row.id),
       previous_contract_id: row.previous_contract_id == null ? null : Number(row.previous_contract_id),
@@ -1115,7 +1124,7 @@ async function createEmployeeContractAddendum(tenantId, employeeId, input = {}, 
     `;
     await syncEmployeeFromContract(tx, employee, rows[0]);
     await syncEmployeeSalaryHistory(tx, tenantId, id, { salary_base: payload.salary_base, hire_date: payload.valid_from, salary_reason: input.reason || "Otrosi contractual" }, user?.id || null);
-    return rows[0];
+    return jsonSafeBigInt(rows[0]);
   }));
 }
 
@@ -1154,7 +1163,7 @@ async function createEmployeeRehire(tenantId, employeeId, input = {}, user = {})
     await tx.employee.update({ where: { id }, data: { active: true, hire_date: new Date(payload.valid_from) } });
     await syncEmployeeFromContract(tx, { ...employee, active: true }, rows[0]);
     await syncEmployeeSalaryHistory(tx, tenantId, id, { salary_base: payload.salary_base, hire_date: payload.valid_from, salary_reason: "Recontratacion" }, user?.id || null);
-    return rows[0];
+    return jsonSafeBigInt(rows[0]);
   }));
 }
 
@@ -7282,6 +7291,7 @@ module.exports = {
   createEmployeeContractAddendum,
   createEmployeeRehire,
   syncEmployeeFromContract,
+  jsonSafeBigInt,
   ensureEmployeeContractFoundation,
   listLaborEntities,
   listLaborEntityPartyCandidates,
