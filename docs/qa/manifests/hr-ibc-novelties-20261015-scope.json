@@ -1,0 +1,55 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-ibc-novelties-20261015",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "candidate": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
+  "base_commits": { "develop": "e0929520874e208e7d1ad5e4f16bd962056c347e" },
+  "certified_commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
+  "change_intent": {
+    "summary": "Integra la segmentacion de IBC por novedades laborales en nomina y aportes sociales, manteniendo contratos existentes y capacidades protegidas de maestros contables, RBAC y tenant.",
+    "modules": ["hr", "payroll", "social-contributions"]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/src/modules/hr/schema.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "A", "file": "apps/api/src/modules/hr/socialContributionSegments.js" },
+    { "status": "M", "file": "apps/api/test/hr-payroll-social-contributions-bulk.test.js" },
+    { "status": "A", "file": "apps/api/test/hr-social-contribution-segments.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx" },
+    { "status": "M", "file": "apps/web/test/hr-workday-novelties-ui.test.mjs" },
+    { "status": "A", "file": "apps/web/test/ibc-nomina-ui.test.mjs" },
+    { "status": "A", "file": "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md" },
+    { "status": "A", "file": "scripts/certifications/hr-ibc-novelties-browser-local.js" },
+    { "status": "A", "file": "docs/qa/manifests/hr-ibc-novelties-20261015-preqa.json" },
+    { "status": "A", "file": "docs/qa/manifests/hr-ibc-novelties-20261015-scope.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/socialContributionSegments.js",
+    "apps/api/test/hr-payroll-social-contributions-bulk.test.js",
+    "apps/api/test/hr-social-contribution-segments.test.js",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "apps/web/test/ibc-nomina-ui.test.mjs",
+    "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md",
+    "scripts/certifications/hr-ibc-novelties-browser-local.js",
+    "docs/qa/manifests/hr-ibc-novelties-20261015-preqa.json",
+    "docs/qa/manifests/hr-ibc-novelties-20261015-scope.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    { "name": "ibc_novedades_segmented_liquidation", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
+    { "name": "social_contributions_pila_preview", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
+    { "name": "payroll_accounting_masters_regression", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] },
+    { "name": "rbac_and_tenant_isolation", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] }
+  ]
+}
