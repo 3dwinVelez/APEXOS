@@ -1,0 +1,54 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-ibc-novelties-preqa-20261015",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
+  "target_baseline": "origin/develop@e0929520874e208e7d1ad5e4f16bd962056c347e",
+  "candidate": {
+    "status": "certified",
+    "reviewed_commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
+    "scope_manifest": "hr-ibc-novelties-20261015-scope.json"
+  },
+  "change_intent": {
+    "summary": "Promueve a QA la segmentacion del IBC de nomina y novedades laborales, preservando liquidacion, aportes sociales, regresion de maestros contables y aislamiento por tenant.",
+    "modules": ["hr", "payroll", "social-contributions"]
+  },
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "usuario",
+    "approved_at": "2026-10-16T00:00:00-05:00",
+    "authorization_flags": {
+      "push_desarrollo": true,
+      "pull_request_desarrollo_develop": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false
+    }
+  },
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
+    "error": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
+    "support_scripts": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
+    "regression": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] },
+    "platform_regression": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json", "../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-ibc-novelties-browser-local.js",
+    "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-ibc-novelties-browser-local.js",
+    "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json", "../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"]
+  },
+  "promotion": {
+    "status": "approved_for_qa",
+    "authorization": "approved",
+    "promote_main": false
+  }
+}
