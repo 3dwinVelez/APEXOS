@@ -17,13 +17,30 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - name: Validate mandatory branch flow
+        if: github.event_name != 'pull_request' || !startsWith(github.event.pull_request.head.ref, 'codex/qa-')
         run: npm run governance:ci
+      - name: Validate scoped promotion manifests
+        if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'codex/qa-')
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: node scripts/git-governance-guard.js ci-promotion "$PR_HEAD_SHA" "$PR_BASE_SHA" "$PR_BASE_REF" "$PR_HEAD_REF"
+      - name: Run versioned scoped governance certification
+        if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'codex/qa-')
+        run: node scripts/certifications/scoped-qa-governance-local.js
+      - name: Test governance guard
+        if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'codex/qa-')
+        run: node --test scripts/test/git-governance-guard.test.js
 
   lint-typecheck:
     name: Lint & TypeCheck

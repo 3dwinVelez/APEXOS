@@ -15,13 +15,34 @@ type ContributionDocument = {
   total_employee: number;
   total_employer: number;
   total_payable: number;
-  source_summary?: { employees?: number; lines?: number; missing_affiliations?: number };
+  total_payable_pila?: number;
+  source_summary?: { employees?: number; lines?: number; missing_affiliations?: number; total_payable_pila?: number };
   employees?: ContributionEmployee[];
   lines?: ContributionLine[];
 };
-type ContributionEmployee = { employee_id: number; employee_name: string; employee_code?: string; ibc: number; employee_amount: number; employer_amount: number; total_amount: number; documents: number };
+type Segment = {
+  id?: number | string | null;
+  type: string;
+  pila_code?: string | null;
+  from?: string;
+  to?: string;
+  days?: number;
+  amount?: number;
+  recognized?: number;
+  reference?: { monthlyAmount?: number; sourcePeriod?: string | null; capturedAt?: string | null } | null;
+  supportReference?: string | null;
+  ibcBefore?: Record<string, number>;
+  ibcAfter?: Record<string, number>;
+  employeeAmounts?: Record<string, number>;
+  employerAmounts?: Record<string, number>;
+  retentionApplied?: Record<string, number>;
+  daysReportBySubsystem?: Record<string, number>;
+  daysContributing?: Record<string, number>;
+};
+type ContributionEmployee = { employee_id: number; employee_name: string; employee_code?: string; ibc: number; ibc_by_subsystem?: Record<string, number>; employee_amount: number; employer_amount: number; total_amount: number; documents: number; segment_result?: { segments?: Segment[]; totals?: { basesBefore?: Record<string, number>; basesAfter?: Record<string, number>; retentionsApplied?: Record<string, number> }; warnings?: Array<{ code: string }> } | null };
 type ContributionLine = {
   id?: number;
+  employee_id?: number;
   employee_name?: string;
   employee_code?: string;
   entity_type: string;
@@ -34,7 +55,7 @@ type ContributionLine = {
   employee_amount: number;
   employer_amount: number;
   total_amount: number;
-  metadata?: { missing_affiliation?: boolean; source?: string; arl_risk_class?: number; novedades_pila?: Array<{ code: string; days: number }>; ibc_delta?: number };
+  metadata?: { missing_affiliation?: boolean; source?: string; arl_risk_class?: number; novedades_pila?: Array<{ code: string; days: number }>; ibc_delta?: number; segment_audit?: { segments?: Segment[]; warnings?: Array<{ code: string }> } | null };
 };
 
 const today = new Date();
@@ -66,6 +87,11 @@ function contributionConceptLabel(code: string, fallback = "") {
   return String(fallback || key).replace(/^Deduccion\s+/i, "").replace(/^Aporte\s+/i, "").replace(/\s+emplead(or|o)$/i, "");
 }
 
+function contributingDaysSummary(segment: Segment) {
+  const days = segment.daysContributing || {};
+  return `Salud ${Number(days.salud ?? 0)} · Pensión ${Number(days.pension ?? 0)} · ARL ${Number(days.arl ?? 0)} · Parafiscales ${Number(days.parafiscales ?? 0)}`;
+}
+
 export default function SocialContributionsPage() {
   const [startDate, setStartDate] = useState(monthStart);
   const [endDate, setEndDate] = useState(monthEnd);
@@ -91,15 +117,17 @@ export default function SocialContributionsPage() {
   }, [lines]);
 
   const employeeMatrix = useMemo(() => {
-    const map = new Map<string, { key: string; employee_name: string; ibc: number; concepts: Record<string, { employee: number; employer: number }>; total_employee: number; total_employer: number; total: number }>();
+    const map = new Map<string, { key: string; employee_name: string; ibc: number; ibcBySubsystem: Record<string, number>; concepts: Record<string, { employee: number; employer: number }>; total_employee: number; total_employer: number; total: number }>();
     for (const line of lines) {
       const key = String(line.employee_code || line.employee_name || "");
       let row = map.get(key);
       if (!row) {
-        row = { key, employee_name: line.employee_name || line.employee_code || key, ibc: 0, concepts: {}, total_employee: 0, total_employer: 0, total: 0 };
+        row = { key, employee_name: line.employee_name || line.employee_code || key, ibc: 0, ibcBySubsystem: {}, concepts: {}, total_employee: 0, total_employer: 0, total: 0 };
         map.set(key, row);
       }
       row.ibc = Math.max(row.ibc, Number(line.ibc || 0));
+      const subsystem = contributionConceptKey(line.concept_code);
+      if (line.metadata?.segment_audit) row.ibcBySubsystem[subsystem] = Math.max(row.ibcBySubsystem[subsystem] || 0, Number(line.ibc || 0));
       const conceptKey = contributionConceptKey(line.concept_code);
       const current = row.concepts[conceptKey] || { employee: 0, employer: 0 };
       current.employee += Number(line.employee_amount || 0);
@@ -110,6 +138,21 @@ export default function SocialContributionsPage() {
       row.total += Number(line.total_amount || 0);
     }
     return Array.from(map.values());
+  }, [lines]);
+
+  const segmentRows = useMemo(() => {
+    const rows: Array<Segment & { employee_name: string; employee_code?: string }> = [];
+    const seen = new Set<string>();
+    for (const line of lines) {
+      const segments = line.metadata?.segment_audit?.segments || [];
+      for (const segment of segments) {
+        const key = `${line.employee_id || line.employee_code || line.employee_name}|${segment.id || "work"}|${segment.type}|${segment.from || ""}|${segment.to || ""}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push({ ...segment, employee_name: line.employee_name || line.employee_code || "Empleado", employee_code: line.employee_code });
+      }
+    }
+    return rows;
   }, [lines]);
 
   async function load() {
@@ -202,17 +245,18 @@ export default function SocialContributionsPage() {
           <div className="text-sm">Periodo<p className="mt-1 flex h-10 items-center rounded-md border border-line bg-paper px-3 font-mono text-xs">{periodKey}</p></div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={previewDocument} type="button"><Calculator size={16} /> Calcular prueba</button>
+          <button data-testid="ibc-preview-contributions" className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={previewDocument} type="button"><Calculator size={16} /> Calcular prueba</button>
           <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={busy} onClick={() => runDocument(false)} type="button"><Play size={16} /> Crear documento</button>
           <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm disabled:opacity-60" disabled={busy} onClick={() => runDocument(true)} type="button"><Play size={16} /> Recalcular</button>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-5">
         <Kpi label="IBC" value={money(totals?.total_ibc)} />
         <Kpi label="Empleado" value={money(totals?.total_employee)} />
         <Kpi label="Empleador" value={money(totals?.total_employer)} />
-        <Kpi label="Total planilla" value={money(totals?.total_payable)} />
+        <Kpi label="Total conceptual" value={money(totals?.total_payable)} />
+        <Kpi label="Total PILA calculado" value={money(totals?.total_payable_pila ?? totals?.source_summary?.total_payable_pila)} />
       </section>
 
       <section className="rounded-md border border-line bg-white">
@@ -270,6 +314,39 @@ export default function SocialContributionsPage() {
             ) : null}
           </table>
           {!employeeMatrix.length ? <p className="p-4 text-sm text-neutral-500">Calcula o abre un documento para ver el resumen por empleado.</p> : null}
+        </div>
+      </section>
+
+      <section className="rounded-md border border-line bg-white">
+        <div className="border-b border-line p-4">
+          <h2 className="text-base font-semibold">Base y novedades por segmento</h2>
+          <p className="text-sm text-neutral-500">Detalle trazable de trabajo, VAC disfrutadas/compensadas, licencia remunerada y SLN. La referencia histórica conserva periodo, soporte y origen capturado.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1680px] text-sm">
+            <thead className="bg-paper text-left text-xs uppercase text-neutral-500"><tr><th className="px-3 py-2">Empleado</th><th className="px-3 py-2">Segmento</th><th className="px-3 py-2">PILA</th><th className="px-3 py-2">Fechas</th><th className="px-3 py-2 text-right">Días reportados</th><th className="px-3 py-2 text-right">Días con aporte</th><th className="px-3 py-2 text-right">Base salud</th><th className="px-3 py-2 text-right">Base pensión</th><th className="px-3 py-2 text-right">Base ARL</th><th className="px-3 py-2 text-right">Base parafiscal</th><th className="px-3 py-2 text-right">Cargo empleado</th><th className="px-3 py-2 text-right">Cargo empleador</th><th className="px-3 py-2">Referencia / soporte</th><th className="px-3 py-2 text-right">Retenciones anticipadas</th></tr></thead>
+            <tbody>{segmentRows.map((segment, index) => {
+              const ref = segment.reference;
+              const retention = Object.values(segment.retentionApplied || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+              return <tr className="border-t border-line/70" key={`${segment.employee_code || segment.employee_name}-${segment.id || index}`}>
+                <td className="px-3 py-2 font-medium">{segment.employee_name}<span className="block text-xs text-neutral-500">{segment.employee_code || ""}</span></td>
+                <td className="px-3 py-2">{segment.type === "VAC_DISFRUTADAS" ? "VAC disfrutadas" : segment.type === "VAC_COMPENSADAS" ? "VAC compensadas" : segment.type === "LICENCIA_REMUNERADA" ? "Licencia remunerada" : segment.type === "SLN" ? "SLN" : "Trabajo"}</td>
+                <td className="px-3 py-2 font-mono text-xs">{segment.pila_code || "--"}</td>
+                <td className="px-3 py-2">{segment.from || "--"} → {segment.to || "--"}</td>
+                <td className="px-3 py-2 text-right">{segment.days ?? 0}</td>
+                <td className="px-3 py-2 text-right text-xs leading-5">{contributingDaysSummary(segment)}</td>
+                <td className="px-3 py-2 text-right">{money(segment.ibcAfter?.salud)}</td>
+                <td className="px-3 py-2 text-right">{money(segment.ibcAfter?.pension)}</td>
+                <td className="px-3 py-2 text-right">{money(segment.ibcAfter?.arl)}</td>
+                <td className="px-3 py-2 text-right">{money(segment.ibcAfter?.parafiscales)}</td>
+                <td className="px-3 py-2 text-right">{money(Object.values(segment.employeeAmounts || {}).reduce((sum, value) => sum + Number(value || 0), 0))}</td>
+                <td className="px-3 py-2 text-right">{money(Object.values(segment.employerAmounts || {}).reduce((sum, value) => sum + Number(value || 0), 0))}</td>
+                <td className="px-3 py-2 text-xs">{ref ? `${money(ref.monthlyAmount)} · ${ref.sourcePeriod || "periodo no informado"}` : segment.supportReference || "--"}<span className="block text-neutral-500">{segment.supportReference || (ref?.capturedAt ? `capturado ${ref.capturedAt}` : "")}</span></td>
+                <td className="px-3 py-2 text-right">{money(retention)}</td>
+              </tr>;
+            })}</tbody>
+          </table>
+          {!segmentRows.length ? <p className="p-4 text-sm text-neutral-500">Calcula o abre un documento con novedades segmentadas para ver el desglose.</p> : null}
         </div>
       </section>
     </div>

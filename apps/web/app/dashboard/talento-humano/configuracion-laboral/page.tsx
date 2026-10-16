@@ -64,6 +64,7 @@ const parameterPresets = [
   ["KILOMETRAJE_INUSUAL", "Umbral kilometraje inusual", "km"],
   ["SMMLV", "Salario minimo mensual legal vigente", "currency"],
   ["EXONERACION_APORTES_TOPE_SMMLV", "Tope exoneracion aportes salud, ICBF y SENA", "smmlv"],
+  ["EXONERACION_EMPRESA_ELEGIBLE", "Empresa elegible para exoneración ET 114-1 (explícita)", "booleano"],
   ["AUX_TRANSPORTE", "Auxilio de transporte mensual", "currency"],
   ["AUX_TRANSPORTE_TOPE_SMMLV", "Tope auxilio de transporte", "smmlv"]
 ] as const;
@@ -403,6 +404,7 @@ export default function LaborConfigurationPage() {
             actionLabel="Nueva deducción"
             onAction={() => openDeduction()}
           >
+            <p className="mx-4 mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">La exoneración ET 114-1 debe quedar explícita y sustentada. Configura el umbral vigente y la elegibilidad por razón social/trabajador cuando el backend la habilite; nunca se presume por estar bajo el tope.</p>
             <DataTable rows={deductions} kind="parameter" onEdit={(row) => openDeduction(row as LaborDeduction)} />
           </TabPanel>
         ) : null}

@@ -8,6 +8,7 @@ const { normalizePunchType, processWorkday } = require("./timeLogic");
 const hrPolicy = require("./policy");
 const { resolveTenantEmployeeOrganization, organizationTreeFromConfig } = require("./organization");
 const { resolveExplicitParty, partyCommonFields, partyMatchesSearch, compactTaxId, normalizeTaxId } = require("./laborEntityPartyMatcher");
+const { calculateSocialContributionSegments, commercialDaysBetween: commercialDayCount } = require("./socialContributionSegments");
 
 const DEFAULT_PARAMS = {
   ordinary_hours_day: 8,
@@ -915,6 +916,13 @@ function normalizeContractType(value) {
   return "indefinite";
 }
 
+function isStrictIsoDate(value) {
+  const text = String(value || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
+  const parsed = new Date(`${text}T00:00:00Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === text;
+}
+
 function validateEmployeeLaborInput(input = {}, current = {}) {
   const contractType = normalizeContractType(input.contract_type ?? current.contract_type);
   const endDate = input.end_date === undefined ? current.end_date : input.end_date;
@@ -1252,8 +1260,13 @@ async function createEmployee(tenantId, input) {
             arl_risk_class: Number(input.arl_risk_class || 1),
             compensation_fund_id: input.compensation_fund_id || null,
             icbf_entity_id: input.icbf_entity_id || null,
+            exoneration_eligible: input.exoneration_eligible === true,
+            exoneration_support: input.exoneration_support || "",
+            sln_pension_employer_percent: input.sln_pension_employer_percent == null || input.sln_pension_employer_percent === "" ? 12 : Number(input.sln_pension_employer_percent),
             exoneration_mode: "automatic_by_ibc_threshold"
           },
+          regime: input.regime || input.regimen || "ordinary",
+          sector: input.sector || "private",
           labor_status: input.labor_status || "activo",
           user_type: input.user_type || input.position || "operario",
           classification: input.user_type || input.position || "operario",
@@ -1298,6 +1311,8 @@ async function updateEmployee(tenantId, id, input = {}) {
       ...(input.weekly_hours !== undefined ? { weekly_hours: input.weekly_hours === "" || input.weekly_hours == null ? null : Number(input.weekly_hours) } : {}),
       ...(input.labor_status !== undefined ? { labor_status: input.labor_status || "activo" } : {}),
       ...(input.currency !== undefined ? { currency: input.currency || "COP" } : {}),
+      ...(input.regime !== undefined || input.regimen !== undefined ? { regime: input.regime || input.regimen || "ordinary" } : {}),
+      ...(input.sector !== undefined ? { sector: input.sector || "private" } : {}),
       social_security: {
         ...(metadata.social_security || {}),
         ...(input.eps_id !== undefined ? { eps_id: input.eps_id || null } : {}),
@@ -1306,6 +1321,9 @@ async function updateEmployee(tenantId, id, input = {}) {
         ...(input.arl_risk_class !== undefined ? { arl_risk_class: Number(input.arl_risk_class || 1) } : {}),
         ...(input.compensation_fund_id !== undefined ? { compensation_fund_id: input.compensation_fund_id || null } : {}),
         ...(input.icbf_entity_id !== undefined ? { icbf_entity_id: input.icbf_entity_id || null } : {}),
+        ...(input.exoneration_eligible !== undefined ? { exoneration_eligible: input.exoneration_eligible === true } : {}),
+        ...(input.exoneration_support !== undefined ? { exoneration_support: input.exoneration_support || "" } : {}),
+        ...(input.sln_pension_employer_percent !== undefined ? { sln_pension_employer_percent: input.sln_pension_employer_percent === "" || input.sln_pension_employer_percent == null ? 12 : Number(input.sln_pension_employer_percent) } : {}),
         exoneration_mode: "automatic_by_ibc_threshold"
       }
     };
@@ -4229,6 +4247,7 @@ function payrollConceptInput(input = {}) {
   const conceptType = String(input.concept_type || "devengo").trim();
   if (!["devengo", "deduccion", "aporte_empleador", "informativo"].includes(conceptType)) throw validationError("Tipo de concepto de nomina invalido.", 400, "TIPO_CONCEPTO_NOMINA_INVALIDO");
   const metadata = { ...(input.metadata || {}) };
+  if (input.lr_arl_policy !== undefined) metadata.lr_arl_policy = input.lr_arl_policy;
   if (input.debit_account_code !== undefined) metadata.debit_account_code = String(input.debit_account_code || "").trim();
   if (input.credit_account_code !== undefined) metadata.credit_account_code = String(input.credit_account_code || "").trim();
   return {
@@ -5123,13 +5142,14 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
   const endExclusive = endOfDay(end);
   const employeeFilter = input.employee_id ? { id: numericId(input.employee_id) } : {};
-  const [deductionMasters, legalParameterRows, surchargeMasters, payrollConcepts, employees, payrollConfig] = await Promise.all([
+  const [deductionMasters, legalParameterRows, surchargeMasters, payrollConcepts, employees, payrollConfig, socialContributionParameters] = await Promise.all([
     activeLaborDeductions(tenantId, start),
-    activeLaborParameterValues(tenantId, start, ["SMMLV", "AUX_TRANSPORTE", "AUX_TRANSPORTE_TOPE_SMMLV", "HORAS_MENSUALES_ORDINARIAS"]),
+    activeLaborParameterValues(tenantId, start, ["SMMLV", "AUX_TRANSPORTE", "AUX_TRANSPORTE_TOPE_SMMLV", "HORAS_MENSUALES_ORDINARIAS", "EXONERACION_APORTES_TOPE_SMMLV", "EXONERACION_EMPRESA_ELEGIBLE", "IBC_TOPE_SMMLV", "IBC_CAPS_FLOORS", "REDONDEO_PILA"]),
     activeSurchargeConcepts(tenantId, start),
     activePayrollConcepts(tenantId, start, input.country || "CO"),
     prisma.employee.findMany({ where: { active: true, ...employeeFilter }, include: { user: { select: safeUserSelect } } }),
-    getPayrollConfig(tenantId)
+    getPayrollConfig(tenantId),
+    activeSocialContributionParameters(tenantId, start)
   ]);
   const transportAllowancePaymentRaw = String(payrollConfig?.parameters?.transport_allowance_payment || "ambas").toLowerCase();
   // Solo se admite prorrateo en ambas quincenas o pago en la ultima quincena.
@@ -5171,8 +5191,12 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       SELECT *
       FROM th_nomina_ajustes
       WHERE tenant_id = ${tenantId}
-        AND period_key = ${periodKey}
         AND status = 'activo'
+        AND (period_key = ${periodKey} OR (
+          (LOWER(adjustment_type) IN ('licencia_remunerada', 'licencia_no_remunerada', 'vacaciones', 'vacaciones_disfrutadas', 'vacaciones_compensadas', 'sln') OR UPPER(concept_code) IN ('LICENCIA_REMUNERADA', 'LICENCIA_NO_REMUNERADA', 'VACACIONES', 'VACACIONES_DISFRUTADAS', 'VACACIONES_COMPENSADAS', 'SLN'))
+          AND metadata->>'date_start' IS NOT NULL AND metadata->>'date_end' IS NOT NULL
+          AND (metadata->>'date_start')::date <= ${end}::date AND (metadata->>'date_end')::date >= ${start}::date
+        ))
       ORDER BY created_at ASC
     `.then((rows) => rows.filter((row) => employeeIds.includes(Number(row.employee_id)))).catch(() => []) : [],
     activeEmployeeLibranzas(tenantId, employeeIds, { start, end, periodType }),
@@ -5334,7 +5358,9 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const restDates = restDatesByEmployee.get(employee.id) || new Set();
     const paidLeaveDates = new Set(
       employeeAdjustments
-        .filter((adjustment) => PAID_LEAVE_CODES.has(normalizeLaborCode(adjustment.concept_code || "")) || isVacationAdjustment(adjustment))
+        // Las VAC/LR segmentadas se pagan por su valor reconocido en una línea
+        // propia; no deben volver a cubrir días del salario básico.
+        .filter((adjustment) => !segmentedAdjustmentType(adjustment) && PAID_LEAVE_CODES.has(normalizeLaborCode(adjustment.concept_code || "")))
         .map((adjustment) => String(adjustment.metadata?.work_date || adjustment.metadata?.date_start || adjustment.date_start || "").slice(0, 10))
         .filter(Boolean)
     );
@@ -5347,7 +5373,13 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const uncoveredDays = Math.max(0, periodDays - coveredDates.size);
     const freeCommercialDays = Math.max(0, periodDays - commercialBaseDays);
     const computableAbsenceDays = Math.max(0, uncoveredDays - freeCommercialDays);
-    const paidBaseDays = Math.max(0, commercialBaseDays - computableAbsenceDays);
+    const periodizedSalarySegments = employeeAdjustments.map((adjustment) => segmentedAdjustmentType(adjustment) ? periodizeSegmentAdjustment(adjustment, start, end) : null).filter(Boolean);
+    const excludedNoveltyDays = periodizedSalarySegments
+      .filter((adjustment) => segmentedAdjustmentType(adjustment) !== "VAC_COMPENSADAS")
+      .reduce((sum, adjustment) => sum + Number(adjustment.metadata?.days_periodized ?? adjustment.metadata?.days ?? 0), 0);
+    const availableCommercialDays = Math.max(0, commercialBaseDays - excludedNoveltyDays);
+    const paidBaseDays = Math.min(availableCommercialDays, Math.max(0, commercialBaseDays - computableAbsenceDays));
+    const contributionWorkedDays = Math.min(availableCommercialDays, Math.max(paidBaseDays, days.length + correctionDates.size + externalWorkedDays));
     const base = money((salaryBase / 30) * paidBaseDays);
     // El salario base solo se muestra cuando hay dias pagados por marcacion/descanso. Las jornadas
     // ordinarias cargadas como externas se muestran igualmente como "Salario" mas abajo.
@@ -5375,7 +5407,9 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       const hours = minutes / 60;
       lines.push(payrollLine(code, concept.name || payrollConcepts[code]?.name || code, hours, hourly * factor, hours * hourly * factor, "marcaciones", payrollConcepts[code] || concept));
     }
-    for (const adjustment of employeeAdjustments) {
+    for (const rawAdjustment of employeeAdjustments) {
+      const adjustment = segmentedAdjustmentType(rawAdjustment) ? periodizeSegmentAdjustment(rawAdjustment, start, end) : rawAdjustment;
+      if (!adjustment) continue;
       const adjustmentDate = adjustment.metadata?.work_date || adjustment.metadata?.date_start || adjustment.date_start;
       const adjustmentCalendarType = adjustmentDate ? calendarDayTypeForDate(adjustmentDate, calendarDays) : "ordinario";
       const calendarConceptCode = adjustment.concept_code === "JORNADA_ORDINARIA" && ["festivo", "dominical", "no_laboral"].includes(adjustmentCalendarType)
@@ -5383,6 +5417,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
         : adjustment.concept_code;
       const concept = payrollConcepts[calendarConceptCode] || payrollConceptFallback(calendarConceptCode);
       const payrollMinutes = adjustmentPayrollMinutes(adjustment);
+      const segmentedType = segmentedAdjustmentType(adjustment);
       // Aplica el mismo multiplicador (segun value_type) que la ruta de marcaciones, para que una
       // hora extra diurna o un recargo nocturno importados por jornada externa se liquiden igual.
       const factor = surchargeMultiplierFor(calendarConceptCode);
@@ -5393,7 +5428,12 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       let quantity;
       let unitRate;
       let amount;
-      if (isOrdinaryWorkedDay && ordinaryDays > 0) {
+      if (segmentedType) {
+        const recognizedValue = Number(adjustment.metadata?.recognized_value ?? adjustment.amount ?? 0);
+        quantity = Number(adjustment.metadata?.days_periodized ?? adjustment.metadata?.days ?? adjustmentDays(adjustment));
+        unitRate = quantity > 0 ? recognizedValue / quantity : 0;
+        amount = segmentedType === "SLN" ? 0 : recognizedValue;
+      } else if (isOrdinaryWorkedDay && ordinaryDays > 0) {
         // Salario ordinario se paga por DIA (salario/30), no por hora. El divisor por hora (210)
         // es solo para horas extra/recargos, que van por encima del salario diario.
         quantity = ordinaryDays;
@@ -5441,13 +5481,52 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const socialBenefitsBase = socialBenefitBaseFromLines(lines, salaryBase, socialBenefitDays || liquidationDays);
     const vacationBase = socialBenefitBaseFromLines(lines, salaryBase, liquidationDays, { includeVacationBase: true });
     const salaryBaseForDeductions = money(lines.filter((line) => line.amount > 0 && line.affects_ibc !== false).reduce((sum, line) => sum + line.amount, 0));
+    const workedCotizableRemuneration = money(lines.filter((line) => line.amount > 0 && line.affects_ibc !== false && !["VACACIONES", "VACACIONES_DISFRUTADAS", "LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "VACACIONES_COMPENSADAS", "SLN"].includes(String(line.code || ""))).reduce((sum, line) => sum + line.amount, 0));
+    let payrollSegmentResult = null;
+    const payrollSegmentAdjustments = employeeAdjustments.filter((adjustment) => segmentedAdjustmentType(adjustment));
+    if (payrollSegmentAdjustments.length) {
+      if (!(legalParameterRows.SMMLV && Number(legalParameterRows.SMMLV.value) > 0)) throw validationError("SMMLV vigente requerida para calcular pisos IBC.", 409, "SMMLV_VIGENTE_REQUERIDA");
+      const periodizedPayrollSegmentAdjustments = payrollSegmentAdjustments.map((adjustment) => periodizeSegmentAdjustment(adjustment, start, end)).filter(Boolean);
+      const socialSecurity = employee.metadata?.social_security || {};
+      const payrollContributionParameters = socialContributionParameters.map((row) => ({ ...row }));
+      const segmentRules = configuredSegmentRules(legalParameterRows, smmlv, socialSecurity, floorDaysForSegments(periodizedPayrollSegmentAdjustments, contributionWorkedDays, socialSecurity));
+      const noveltyLrPolicy = periodizedPayrollSegmentAdjustments.find((row) => row.metadata?.lr_arl_policy)?.metadata?.lr_arl_policy;
+      const advancesRetentions = {};
+      for (const adjustment of employeeAdjustments) {
+        const periodAdvance = adjustment.metadata?.advance_retentions || adjustment.metadata?.retenciones_anticipadas || {};
+        for (const [key, amount] of Object.entries(periodAdvance)) {
+          const normalizedKey = key.includes(":") ? key : `${key}:${periodKey}`;
+          advancesRetentions[normalizedKey] = money(Number(advancesRetentions[normalizedKey] || 0) + Number(amount || 0));
+        }
+      }
+      const payrollSalaryEarningsForExoneration = money(lines.filter((line) => line.amount > 0 && line.salary_constitutive !== false).reduce((sum, line) => sum + Number(line.amount || 0), 0));
+      const payrollExonerationConfig = socialContributionExonerationConfig(legalParameterRows);
+      const payrollEligibilityByThreshold = payrollExonerationConfig.threshold_amount > 0 && payrollSalaryEarningsForExoneration < payrollExonerationConfig.threshold_amount;
+      const socialSecurityEligibility = socialSecurity.exoneration_eligible === true && Boolean(String(socialSecurity.exoneration_support || "").trim()) && Number(legalParameterRows.EXONERACION_EMPRESA_ELEGIBLE?.value || 0) === 1 && payrollEligibilityByThreshold;
+      payrollSegmentResult = calculateSocialContributionSegments({
+        periodStart: start.toISOString().slice(0, 10),
+        periodEnd: end.toISOString().slice(0, 10),
+        periodKey,
+        employee: { regime: employee.metadata?.regime || employee.metadata?.regimen || "ordinary", sector: employee.metadata?.sector || "private" },
+        currentWorkedCotizableRemuneration: { amount: workedCotizableRemuneration, days: Math.max(contributionWorkedDays, 0) },
+        workedDays: Math.max(contributionWorkedDays, 0),
+        adjustments: periodizedPayrollSegmentAdjustments.map((adjustment) => ({ ...adjustment, type: segmentedAdjustmentType(adjustment), start: adjustment.metadata?.date_start, end: adjustment.metadata?.date_end, originalEventStart: adjustment.metadata?.original_event_start, originalEventEnd: adjustment.metadata?.original_event_end, days: adjustment.metadata?.days_periodized ?? adjustment.metadata?.days, originalDays: adjustment.metadata?.days, amount: adjustment.amount, recognizedValue: adjustment.metadata?.recognized_value, frozenHistoricalReference: adjustment.metadata?.frozen_historical_reference, continuityKey: adjustment.metadata?.continuity_key, documentSupport: adjustment.metadata?.document_support || adjustment.metadata?.documento_soporte })),
+        contributionRates: segmentRates(payrollContributionParameters, socialSecurity),
+        lrArlPolicy: noveltyLrPolicy || socialSecurity.lr_arl_policy || employee.metadata?.lr_arl_policy || null,
+        overrideSLN: { pensionEmployerPercent: socialSecurity.sln_pension_employer_percent || null },
+        advancesRetentions,
+        config: { exonerationEligibility: { salud: socialSecurityEligibility, parafiscales: false }, capsFloors: segmentRules.capsFloors, roundingPila: segmentRules.roundingPila, rulesSource: segmentRules.source, ibcCapSmmlv: segmentRules.topMultiplier }
+      });
+    }
     const nonSalaryEarnings = money(lines.filter((line) => line.amount > 0 && line.salary_constitutive === false).reduce((sum, line) => sum + line.amount, 0));
     const legalSalaryEarnings = money(lines.filter((line) => line.amount > 0 && line.salary_constitutive !== false).reduce((sum, line) => sum + line.amount, 0));
     const gross = money(lines.filter((line) => line.amount > 0).reduce((sum, line) => sum + line.amount, 0));
     const deductionLines = deductionMasters.filter((row) => String(row.code || "").startsWith("DED_") && row.code !== "DED_FONDO_SOLIDARIDAD_PENSIONAL").map((row) => {
       const percent = Number(row.value || 0);
-      const basis = row.metadata?.basis === "gross" ? gross : salaryBaseForDeductions;
-      return payrollLine(row.code, row.name, percent, basis, basis * (percent / 100), "parametros", payrollConcepts[row.code] || { concept_type: "deduccion", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "seguridad_social" } });
+      const subsystem = row.code === "DED_SALUD" ? "salud" : row.code === "DED_PENSION" ? "pension" : null;
+      const basis = row.metadata?.basis === "gross" ? gross : payrollSegmentResult && subsystem ? payrollSegmentResult.totals.basesAfter[subsystem] : salaryBaseForDeductions;
+      const segmentedAmount = payrollSegmentResult && subsystem ? Math.max(0, Number(payrollSegmentResult.totals.employeeAmounts[subsystem] || 0) - Number(payrollSegmentResult.totals.retentionsApplied[subsystem] || 0)) : null;
+      return payrollLine(row.code, row.name, percent, basis, segmentedAmount == null ? basis * (percent / 100) : segmentedAmount, "parametros", payrollConcepts[row.code] || { concept_type: "deduccion", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "seguridad_social", segment_audit: payrollSegmentResult ? payrollSegmentResult.segments : null } });
     });
     const pensionSolidarityPercent = pensionSolidarityRate(salaryBaseForDeductions, smmlv, pensionSolidarityParameter);
     if (pensionSolidarityPercent > 0) {
@@ -5479,7 +5558,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       net: money(gross - deductions),
       employer_cost: gross,
       lines: allLines,
-      source_summary: { days_worked: daysWorked, workdays: daysWorked, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: salaryBaseForDeductions, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
+      source_summary: { days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: salaryBaseForDeductions, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
     };
   });
 }
@@ -5951,10 +6030,102 @@ async function createPayrollAdjustment(tenantId, input = {}, user = {}) {
   if (input.date_start !== undefined) metadata.date_start = input.date_start || null;
   if (input.date_end !== undefined) metadata.date_end = input.date_end || null;
   if (input.days !== undefined) metadata.days = Number(input.days || 0);
-  if (input.paid_by !== undefined) metadata.paid_by = input.paid_by || "";
+  if (input.paid_by !== undefined) {
+    const paidBy = String(input.paid_by || "");
+    if (paidBy && !["empresa", "eps", "arl", "empleado", "empleado/no remunerado"].includes(paidBy)) throw validationError("Responsable de pago fuera del alcance de novedades IBC.", 400, "RESPONSABLE_PAGO_INVALIDO");
+    metadata.paid_by = paidBy;
+  }
   if (input.pila_ibc_amount !== undefined && input.pila_ibc_amount !== "") metadata.pila_ibc_amount = Number(input.pila_ibc_amount || 0);
+  const segmentedNoveltyTypes = new Set(["licencia_remunerada", "licencia_no_remunerada", "vacaciones", "vacaciones_disfrutadas", "vacaciones_compensadas", "sln"]);
+  const isVacCompensated = adjustmentType.toLowerCase() === "vacaciones_compensadas" || conceptCode === "VACACIONES_COMPENSADAS";
+  const isSegmentedNovelty = segmentedNoveltyTypes.has(adjustmentType.toLowerCase()) || ["LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "VACACIONES", "VACACIONES_COMPENSADAS", "SLN"].includes(conceptCode);
+  if (isSegmentedNovelty) {
+    const dateStart = String(metadata.date_start || "").slice(0, 10);
+    const dateEnd = String(metadata.date_end || dateStart).slice(0, 10);
+    if (!isStrictIsoDate(dateStart) || !isStrictIsoDate(dateEnd) || Date.parse(`${dateStart}T00:00:00Z`) > Date.parse(`${dateEnd}T00:00:00Z`)) throw validationError("Las fechas de la novedad IBC son inválidas.", 400, "FECHAS_NOVEDAD_IBC_INVALIDAS");
+    if (metadata.days !== undefined && (!Number.isFinite(Number(metadata.days)) || Number(metadata.days) < 0)) throw validationError("Los días de la novedad IBC deben ser finitos y no negativos.", 400, "DIAS_NOVEDAD_IBC_INVALIDOS");
+    metadata.original_event_start = dateStart;
+    metadata.original_event_end = dateEnd;
+    const support = input.document_support ?? input.documento_soporte ?? metadata.document_support ?? metadata.documento_soporte;
+    if (!support) throw validationError("La novedad IBC requiere soporte documental antes de iniciar el evento.", 400, "SOPORTE_NOVEDAD_REQUERIDO");
+    metadata.document_support = String(support);
+    if (!isVacCompensated) {
+      metadata.reference_source = input.reference_source ?? metadata.reference_source;
+      if (!metadata.reference_source) throw validationError("El origen del IBC es obligatorio.", 400, "IBC_ORIGEN_REQUERIDO");
+      const reportedPilaId = input.reported_pila_id ?? metadata.reported_pila_id;
+      if (!reportedPilaId) throw validationError("La referencia de planilla o atestación es obligatoria.", 400, "IBC_REPORTE_ID_REQUERIDO");
+      metadata.reported_pila_id = String(reportedPilaId);
+      metadata.captured_by = user?.id || null;
+      metadata.captured_at = new Date().toISOString();
+    }
+    if (!isVacCompensated && !["manual_reported_pila", "pila_reported_metadata", "operator_attested"].includes(String(metadata.reference_source))) {
+      throw validationError("El origen del IBC debe ser planilla reportada, metadata reportada o atestación del operador.", 400, "IBC_ORIGEN_INVALIDO");
+    }
+    if (!isVacCompensated && metadata.reference_source === "pila_reported_metadata") throw validationError("No existe un registro PILA tenant-owned verificable para este origen; usa atestación explícita con soporte.", 409, "IBC_PLANILLA_NO_VERIFICABLE");
+    if (metadata.lr_arl_policy !== undefined && !["cotiza", "no_cotiza"].includes(String(metadata.lr_arl_policy))) {
+      throw validationError("La política ARL de licencia remunerada debe ser cotiza o no_cotiza.", 400, "LR_ARL_POLICY_INVALIDA");
+    }
+    if (conceptCode === "SLN" || adjustmentType.toLowerCase() === "sln") {
+      metadata.suspension_cause = input.suspension_cause ?? input.causal ?? metadata.suspension_cause;
+      if (!["suspension_disciplinaria", "licencia_no_remunerada"].includes(String(metadata.suspension_cause))) throw validationError("La causal SLN debe ser suspension_disciplinaria o licencia_no_remunerada.", 400, "CAUSAL_SLN_INVALIDA");
+      metadata.suspension_kind = input.suspension_kind ?? metadata.suspension_kind ?? "disciplinaria_sin_remuneracion";
+    }
+    const recognizedRaw = input.recognized_value ?? metadata.recognized_value;
+    const amountRaw = input.amount;
+    const hasRecognized = recognizedRaw !== undefined && recognizedRaw !== null && recognizedRaw !== "";
+    const hasAmount = amountRaw !== undefined && amountRaw !== null && amountRaw !== "";
+    if (!hasRecognized && !hasAmount) throw validationError("La novedad IBC requiere valor reconocido explícito.", 400, "VALOR_RECONOCIDO_REQUERIDO");
+    if (hasRecognized && hasAmount && Number(recognizedRaw) !== Number(amountRaw)) throw validationError("recognized_value y amount no pueden discrepar.", 400, "VALOR_RECONOCIDO_CONFLICTO");
+    const recognizedValue = Number(recognizedRaw ?? amountRaw);
+    if (!Number.isFinite(recognizedValue) || recognizedValue < 0) throw validationError("El valor reconocido debe ser numérico y no negativo.", 400, "VALOR_RECONOCIDO_INVALIDO");
+    metadata.recognized_value = recognizedValue;
+    if (isVacCompensated) {
+      const recognitionDate = input.recognition_date ?? metadata.recognition_date ?? metadata.date_start;
+      if (!isStrictIsoDate(recognitionDate)) throw validationError("La fecha de reconocimiento de vacaciones compensadas es obligatoria.", 400, "FECHA_RECONOCIMIENTO_REQUERIDA");
+      metadata.recognition_date = String(recognitionDate).slice(0, 10);
+    }
+    if (!isVacCompensated) {
+    const referenceAmount = input.ibc_reference_amount ?? input.ibc_referencia_inicio ?? metadata.ibc_reference_amount ?? metadata.ibc_referencia_inicio;
+    const referencePeriod = input.ibc_reference_period ?? input.periodo_ibc_referencia ?? metadata.ibc_reference_period ?? metadata.periodo_ibc_referencia;
+    if (referenceAmount === undefined || referenceAmount === null || referenceAmount === "" || !Number.isFinite(Number(referenceAmount)) || Number(referenceAmount) <= 0 || !referencePeriod) {
+      throw validationError("Las novedades IBC requieren el IBC histórico reportado congelado al inicio; pila_ibc_amount legacy no lo sustituye.", 400, "IBC_REFERENCIA_HISTORICA_REQUERIDA");
+    }
+    const eventStart = String(metadata.date_start || "").slice(0, 10);
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(referencePeriod)) || (eventStart && String(referencePeriod) >= eventStart.slice(0, 7))) {
+      throw validationError("El período del IBC histórico debe ser estrictamente anterior al inicio de la novedad.", 400, "IBC_REFERENCIA_PERIODO_INVALIDO");
+    }
+    metadata.frozen_historical_reference = {
+      monthlyAmount: Number(referenceAmount),
+      sourcePeriod: referencePeriod,
+      capturedAt: input.ibc_reference_captured_at ?? input.fecha_captura_ibc ?? metadata.ibc_reference_captured_at ?? new Date().toISOString().slice(0, 10)
+    };
+    if (!isStrictIsoDate(metadata.frozen_historical_reference.capturedAt)) throw validationError("La fecha de captura del IBC histórico es inválida.", 400, "FECHA_CAPTURA_IBC_INVALIDA");
+    }
+    // La continuidad es una decisión del evento y debe ser explícita. Un fallback
+    // por empleado/concepto congelaría eventos independientes posteriores.
+    const continuityKey = input.continuity_key ?? metadata.continuity_key;
+    if (continuityKey) metadata.continuity_key = String(continuityKey);
+  }
+  const advanceHealth = input.advance_retention_health ?? metadata.advance_retention_health;
+  const advancePension = input.advance_retention_pension ?? metadata.advance_retention_pension;
+  const advanceObligationId = input.advance_obligation_id ?? input.advance_obligation ?? metadata.advance_obligation_id;
+  const hasAdvanceHealth = advanceHealth !== undefined && advanceHealth !== null && advanceHealth !== "";
+  const hasAdvancePension = advancePension !== undefined && advancePension !== null && advancePension !== "";
+  if (hasAdvanceHealth && (!Number.isFinite(Number(advanceHealth)) || Number(advanceHealth) < 0) || hasAdvancePension && (!Number.isFinite(Number(advancePension)) || Number(advancePension) < 0)) throw validationError("Las retenciones anticipadas deben ser finitas y no negativas.", 400, "ANTICIPO_RETENCION_INVALIDO");
+  if ((advanceHealth !== undefined || advancePension !== undefined) && !advanceObligationId) throw validationError("La retención anticipada requiere identificador de obligación.", 400, "ANTICIPO_OBLIGACION_REQUERIDA");
+  const advancePeriod = input.advance_period ?? metadata.advance_period ?? periodKey;
+  if (hasAdvanceHealth || hasAdvancePension) {
+    assertValidPeriodKey(String(advancePeriod));
+    if (!metadata.advance_support && !input.advance_support) throw validationError("La retención anticipada requiere soporte.", 400, "ANTICIPO_SOPORTE_REQUERIDO");
+    metadata.advance_period = String(advancePeriod);
+    metadata.advance_support = String(input.advance_support ?? metadata.advance_support);
+  }
+  if (advanceObligationId && (hasAdvanceHealth || hasAdvancePension)) {
+    metadata.advance_obligation_id = String(advanceObligationId);
+    metadata.advance_retentions = { [`salud:${advancePeriod}`]: Number(advanceHealth || 0), [`pension:${advancePeriod}`]: Number(advancePension || 0) };
+  }
   let minutes = Number(input.minutes || 0);
-  if (!minutes && Number(metadata.days || 0) > 0) minutes = Number(metadata.days || 0) * 8 * 60;
+  if (!isSegmentedNovelty && !minutes && Number(metadata.days || 0) > 0) minutes = Number(metadata.days || 0) * 8 * 60;
   if (isWorkdayCorrection({ adjustment_type: adjustmentType, concept_code: conceptCode })) {
     const workDate = dateOnly(input.work_date || metadata.work_date || null, null);
     if (!workDate) throw validationError("La fecha de jornada es obligatoria.", 400, "FECHA_JORNADA_REQUERIDA");
@@ -5964,15 +6135,58 @@ async function createPayrollAdjustment(tenantId, input = {}, user = {}) {
     metadata.start_time = String(input.start_time || metadata.start_time || "").trim();
     metadata.end_time = String(input.end_time || metadata.end_time || "").trim();
   }
-  return prisma.runWithTenant(tenantId, async () => {
+  return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    const employeeLockScope = `hr-ibc-adjustment:${tenantId}:${employeeId}`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${employeeLockScope}, 0))`;
+    const employeeTenant = await tx.$queryRaw`SELECT id FROM "Employee" WHERE id = ${employeeId} AND tenant_id = ${tenantId} LIMIT 1`;
+    if (!employeeTenant[0]) throw validationError("Empleado no pertenece al tenant activo.", 404, "EMPLEADO_NO_ENCONTRADO");
+    if (metadata.advance_obligation_id) {
+      const duplicateAdvance = await tx.$queryRaw`
+        SELECT id FROM th_nomina_ajustes
+        WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND status = 'activo'
+          AND metadata->>'advance_obligation_id' = ${metadata.advance_obligation_id}
+          AND metadata->>'advance_period' = ${metadata.advance_period}
+        LIMIT 1
+      `;
+      if (duplicateAdvance[0]) throw validationError("La retención anticipada ya está registrada para esta obligación y período.", 409, "ANTICIPO_RETENCION_DUPLICADA");
+    }
+    if (segmentedNoveltyTypes.has(adjustmentType.toLowerCase()) || ["LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "VACACIONES", "VACACIONES_COMPENSADAS", "SLN"].includes(conceptCode)) {
+      const newStart = String(metadata.date_start || "").slice(0, 10);
+      const newEnd = String(metadata.date_end || newStart).slice(0, 10);
+      const currentRows = await tx.$queryRaw`
+        SELECT id, adjustment_type, concept_code, metadata
+        FROM th_nomina_ajustes
+        WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND status = 'activo'
+          AND adjustment_type IN ('licencia_remunerada', 'licencia_no_remunerada', 'vacaciones', 'vacaciones_disfrutadas', 'vacaciones_compensadas', 'sln')
+      `;
+      const startMs = Date.parse(`${newStart}T00:00:00Z`);
+      const endMs = Date.parse(`${newEnd}T00:00:00Z`);
+      for (const existing of currentRows) {
+        const oldMetadata = existing.metadata || {};
+        const oldStart = String(oldMetadata.date_start || "").slice(0, 10);
+        const oldEnd = String(oldMetadata.date_end || oldStart).slice(0, 10);
+        const oldStartMs = Date.parse(`${oldStart}T00:00:00Z`);
+        const oldEndMs = Date.parse(`${oldEnd}T00:00:00Z`);
+        if (!Number.isFinite(oldStartMs) || !Number.isFinite(oldEndMs)) continue;
+        if (startMs <= oldEndMs && oldStartMs <= endMs) {
+          throw validationError("La novedad se solapa con otra novedad IBC activa del empleado.", 409, "NOVEDAD_IBC_SOLAPADA");
+        }
+        const sameContinuity = metadata.continuity_key && metadata.continuity_key === oldMetadata.continuity_key;
+        const newReference = metadata.frozen_historical_reference;
+        const oldReference = oldMetadata.frozen_historical_reference;
+        if (sameContinuity && newReference && oldReference && (Number(newReference.monthlyAmount) !== Number(oldReference.monthlyAmount) || newReference.sourcePeriod !== oldReference.sourcePeriod)) {
+          throw validationError("La referencia histórica no puede cambiar dentro de una continuidad IBC.", 409, "IBC_REFERENCIA_INMUTABLE");
+        }
+      }
+    }
     if (isWorkdayCorrection({ adjustment_type: adjustmentType, concept_code: conceptCode })) {
       const workDate = startOfDay(metadata.work_date);
-      const existingWorkday = await prisma.processedWorkday.findFirst({
+      const existingWorkday = await tx.processedWorkday.findFirst({
         where: { employee_id: employeeId, date: { gte: workDate, lt: endOfDay(workDate) }, inconsistent: false },
         select: { id: true }
       });
       if (existingWorkday) throw validationError("El empleado ya tiene una jornada procesada para esa fecha.", 409, "JORNADA_YA_PROCESADA");
-      const duplicateRows = await prisma.$queryRaw`
+      const duplicateRows = await tx.$queryRaw`
         SELECT id
         FROM th_nomina_ajustes
         WHERE tenant_id = ${tenantId}
@@ -5984,13 +6198,13 @@ async function createPayrollAdjustment(tenantId, input = {}, user = {}) {
       `;
       if (duplicateRows[0]) throw validationError("Ya existe una jornada registrada para esa fecha.", 409, "JORNADA_DUPLICADA");
     }
-    const rows = await prisma.$queryRaw`
+    const rows = await tx.$queryRaw`
       INSERT INTO th_nomina_ajustes (tenant_id, employee_id, period_key, adjustment_type, concept_code, description, minutes, amount, taxable, metadata, created_by)
       VALUES (${tenantId}, ${employeeId}, ${periodKey}, ${adjustmentType}, ${conceptCode}, ${correctionDescription({ ...input, adjustment_type: adjustmentType, concept_code: conceptCode })}, ${minutes}, ${Number(input.amount || 0)}, ${input.taxable !== false}, ${JSON.stringify(metadata)}::jsonb, ${user?.id || null})
       RETURNING *
     `;
     return rows[0];
-  });
+  }));
 }
 
 function normalizeDocument(value) {
@@ -6642,6 +6856,113 @@ function pilaNoveltyFromAdjustment(adjustment = {}, dailySalary = 0) {
   return null;
 }
 
+function segmentedAdjustmentType(adjustment = {}) {
+  const type = String(adjustment.adjustment_type || adjustment.type || "").toLowerCase();
+  const code = normalizeLaborCode(adjustment.concept_code || "");
+  if (code === "VACACIONES_COMPENSADAS" || type === "vacaciones_compensadas") return "VAC_COMPENSADAS";
+  if (["vacaciones", "vacaciones_disfrutadas"].includes(type) || code === "VACACIONES") return "VAC_DISFRUTADAS";
+  if (type === "licencia_remunerada" || code === "LICENCIA_REMUNERADA") return "LICENCIA_REMUNERADA";
+  if (type === "licencia_no_remunerada" || type === "sln" || code === "LICENCIA_NO_REMUNERADA" || code === "SLN") return "SLN";
+  return null;
+}
+
+function periodizeSegmentAdjustment(adjustment, periodStart, periodEnd) {
+  const metadata = adjustment.metadata || {};
+  const sourceStart = String(metadata.date_start || adjustment.date_start || "").slice(0, 10);
+  const sourceEnd = String(metadata.date_end || adjustment.date_end || sourceStart).slice(0, 10);
+  if (!sourceStart) return adjustment;
+  const sourceStartMs = Date.parse(`${sourceStart}T00:00:00Z`);
+  const sourceEndMs = Date.parse(`${sourceEnd}T00:00:00Z`);
+  const periodStartMs = new Date(periodStart).getTime();
+  const periodEndMs = new Date(periodEnd).getTime();
+  const overlapStartMs = Math.max(sourceStartMs, periodStartMs);
+  const overlapEndMs = Math.min(sourceEndMs, periodEndMs);
+  if (!Number.isFinite(sourceStartMs) || !Number.isFinite(sourceEndMs) || overlapEndMs < overlapStartMs) return null;
+  const sourceDays = Math.max(1, commercialDayCount(new Date(sourceStartMs), new Date(sourceEndMs)));
+  const overlapDays = Math.max(1, commercialDayCount(new Date(overlapStartMs), new Date(overlapEndMs)));
+  let originalDays = Number(metadata.days ?? sourceDays);
+  const sourceFrom = new Date(sourceStartMs);
+  const sourceTo = new Date(sourceEndMs);
+  const calendarSourceDays = Math.floor((sourceEndMs - sourceStartMs) / 86400000) + 1;
+  const nextSourceDate = new Date(sourceEndMs + 86400000);
+  if (sourceFrom.getUTCDate() === 1 && nextSourceDate.getUTCDate() === 1 && sourceFrom.getUTCMonth() === sourceTo.getUTCMonth() && originalDays === calendarSourceDays) originalDays = sourceDays;
+  const localDays = segmentedAdjustmentType(adjustment) === "VAC_COMPENSADAS" ? 0 : money(originalDays * overlapDays / sourceDays);
+  const recognized = metadata.recognized_value ?? adjustment.recognized_value;
+  return {
+    ...adjustment,
+    metadata: { ...metadata, original_event_start: metadata.original_event_start || sourceStart, original_event_end: metadata.original_event_end || sourceEnd, days: originalDays, days_periodized: localDays, date_start: new Date(overlapStartMs).toISOString().slice(0, 10), date_end: new Date(overlapEndMs).toISOString().slice(0, 10), recognized_value: recognized == null ? recognized : money(Number(recognized) * overlapDays / sourceDays) },
+    date_start: new Date(overlapStartMs).toISOString().slice(0, 10),
+    date_end: new Date(overlapEndMs).toISOString().slice(0, 10)
+  };
+}
+
+function segmentRates(parameters, socialSecurity = {}) {
+  const by = (codes) => parameters.find((row) => codes.includes(row.code));
+  const healthEmployee = by(["DED_SALUD"]);
+  const healthEmployer = by(["APORTE_SALUD"]);
+  const pensionEmployee = by(["DED_PENSION"]);
+  const pensionEmployer = by(["APORTE_PENSION"]);
+  const arl = parameters.find((row) => row.entity_type === "ARL" && Number(row.arl_risk_class || 1) === Number(socialSecurity.arl_risk_class || 1));
+  return {
+    salud: { employee: Number(healthEmployee?.value || 0), employer: Number(healthEmployer?.value || 0) },
+    pension: { employee: Number(pensionEmployee?.value || 0), employer: Number(pensionEmployer?.value || 0) },
+    arl: { employee: 0, employer: Number(arl?.value || 0) },
+    // Keep only the parafiscal base here; CCF, ICBF and SENA are separate
+    // concepts and are priced independently by the caller.
+    parafiscales: { employer: 0 }
+  };
+}
+
+function parameterSubsystem(parameter) {
+  if (parameter.entity_type === "EPS") return "salud";
+  if (parameter.entity_type === "PENSION") return "pension";
+  if (parameter.entity_type === "ARL") return "arl";
+  return "parafiscales";
+}
+
+function floorDaysForSegments(adjustments = [], workedDays = 0, socialSecurity = {}) {
+  let healthPensionDays = Math.max(0, Number(workedDays || 0));
+  let arlDays = healthPensionDays;
+  for (const adjustment of adjustments) {
+    const type = segmentedAdjustmentType(adjustment);
+    const days = Math.max(0, Number(adjustment.metadata?.days_periodized ?? adjustment.metadata?.days ?? 0));
+    if (type && type !== "VAC_COMPENSADAS") healthPensionDays += days;
+    if (type === "LICENCIA_REMUNERADA" && (adjustment.metadata?.lr_arl_policy || socialSecurity.lr_arl_policy) !== "no_cotiza") arlDays += days;
+  }
+  return { healthPensionDays: Math.min(30, healthPensionDays), arlDays: Math.min(30, arlDays) };
+}
+
+function configuredSegmentRules(parameterRows, smmlv, socialSecurity = {}, floorDays = {}) {
+  const topMultiplier = Number(parameterRows.IBC_TOPE_SMMLV?.value || socialSecurity.ibc_cap_smmlv || 25);
+  const cap = smmlv > 0 && topMultiplier > 0 ? smmlv * topMultiplier : null;
+  const configuredCaps = parameterRows.IBC_CAPS_FLOORS?.metadata || socialSecurity.ibc_caps_floors || {};
+  const capsFloors = { ...configuredCaps };
+  if (cap != null) {
+    for (const subsystem of ["salud", "pension", "arl"]) capsFloors[subsystem] = { ...(capsFloors[subsystem] || {}), cap: capsFloors[subsystem]?.cap ?? cap };
+    const healthFloor = cap > 0 ? money(smmlv * Math.max(0, Number(floorDays.healthPensionDays || 0)) / 30) : null;
+    const arlFloor = cap > 0 ? money(smmlv * Math.max(0, Number(floorDays.arlDays || 0)) / 30) : null;
+    if (healthFloor != null && healthFloor > 0) for (const subsystem of ["salud", "pension"]) capsFloors[subsystem] = { ...(capsFloors[subsystem] || {}), floor: capsFloors[subsystem]?.floor ?? healthFloor };
+    if (arlFloor != null && arlFloor > 0) capsFloors.arl = { ...(capsFloors.arl || {}), floor: capsFloors.arl?.floor ?? arlFloor };
+  }
+  const roundingPila = parameterRows.REDONDEO_PILA?.metadata || socialSecurity.rounding_pila || {
+    // Regla legal versionada por configuración: IBC se conserva a peso y el
+    // aporte PILA se eleva al siguiente múltiplo de $100. El motor consume
+    // decimals/step por subsistema.
+    default: { decimals: 0, mode: "ceil", step: 100 },
+    ibc: { decimals: 0, mode: "ceil", step: 1 }
+  };
+  return { capsFloors, roundingPila, source: parameterRows.IBC_TOPE_SMMLV ? "th_parametros_laborales" : "norma_default_documentada", topMultiplier };
+}
+
+function pilaRoundAmount(value, rounding = {}) {
+  const rule = rounding?.default || rounding;
+  const mode = rule?.mode || "ceil";
+  const step = Number(rule?.step || 100);
+  if (!(step > 0)) return money(value);
+  const operation = mode === "floor" ? Math.floor : mode === "nearest" ? Math.round : Math.ceil;
+  return operation(Number(value || 0) / step) * step;
+}
+
 async function buildSocialContributionRows(tenantId, input = {}) {
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || "mes";
@@ -6649,7 +6970,7 @@ async function buildSocialContributionRows(tenantId, input = {}) {
   const employeeFilter = input.employee_id ? { id: numericId(input.employee_id) } : {};
   const [parameters, exonerationParameterRows, employees, payrollDocs, adjustments] = await Promise.all([
     activeSocialContributionParameters(tenantId, start),
-    activeLaborParameterValues(tenantId, start, ["SMMLV", "EXONERACION_APORTES_TOPE_SMMLV"]),
+    activeLaborParameterValues(tenantId, start, ["SMMLV", "EXONERACION_APORTES_TOPE_SMMLV", "EXONERACION_EMPRESA_ELEGIBLE", "IBC_TOPE_SMMLV", "IBC_CAPS_FLOORS", "REDONDEO_PILA"]),
     prisma.employee.findMany({ where: { active: true, ...employeeFilter }, include: { user: { select: safeUserSelect } } }),
     prisma.$queryRaw`
       SELECT *
@@ -6662,8 +6983,12 @@ async function buildSocialContributionRows(tenantId, input = {}) {
       SELECT *
       FROM th_nomina_ajustes
       WHERE tenant_id = ${tenantId}
-        AND period_key = ${periodKey}
         AND status = 'activo'
+        AND (period_key = ${periodKey} OR (
+          (LOWER(adjustment_type) IN ('licencia_remunerada', 'licencia_no_remunerada', 'vacaciones', 'vacaciones_disfrutadas', 'vacaciones_compensadas', 'sln') OR UPPER(concept_code) IN ('LICENCIA_REMUNERADA', 'LICENCIA_NO_REMUNERADA', 'VACACIONES', 'VACACIONES_DISFRUTADAS', 'VACACIONES_COMPENSADAS', 'SLN'))
+          AND metadata->>'date_start' IS NOT NULL AND metadata->>'date_end' IS NOT NULL
+          AND (metadata->>'date_start')::date <= ${end}::date AND (metadata->>'date_end')::date >= ${start}::date
+        ))
     `.catch(() => [])
   ]);
   const exonerationConfig = socialContributionExonerationConfig(exonerationParameterRows);
@@ -6702,23 +7027,96 @@ async function buildSocialContributionRows(tenantId, input = {}) {
   const lines = [];
   for (const employee of employees) {
     const docs = docsByEmployee.get(employee.id) || [];
-    const baseIbc = money(docs.reduce((sum, doc) => sum + Number(doc.source_summary?.ibc || 0), 0) || Number(employee.salary_base || 0));
+    const employeeAdjustments = adjustmentsByEmployee.get(employee.id) || [];
+    const workedReportedIbc = docs.reduce((sum, doc) => sum + Number(doc.source_summary?.worked_cotizable_remuneration || 0), 0);
+    const segmentWorkedIbc = docs.reduce((sum, doc) => sum + (Array.isArray(doc.source_summary?.ibc_segments) ? doc.source_summary.ibc_segments.filter((segment) => segment.type === "TRABAJO").reduce((inner, segment) => inner + Number(segment.amount || 0), 0) : 0), 0);
+    // La nómina ordinaria conserva su fuente salarial histórica; para una
+    // novedad segmentada la validación inmediatamente antes del motor exige
+    // un IBC reportado de nómina y jamás usa este fallback salarial.
+    const reportedBaseIbc = money(workedReportedIbc || segmentWorkedIbc || docs.reduce((sum, doc) => sum + Number(doc.source_summary?.ibc || 0), 0));
+    const baseIbc = money(reportedBaseIbc || Number(employee.salary_base || 0));
     const dailySalary = Number(employee.salary_base || 0) / 30;
-    const noveltySummary = (adjustmentsByEmployee.get(employee.id) || []).map((adjustment) => pilaNoveltyFromAdjustment(adjustment, dailySalary)).filter(Boolean);
+    const noveltySummary = employeeAdjustments.map((adjustment) => pilaNoveltyFromAdjustment(adjustment, dailySalary)).filter(Boolean);
     const ibcDelta = money(noveltySummary.reduce((sum, novelty) => sum + Number(novelty.ibc_delta || 0), 0));
-    const ibc = money(Math.max(baseIbc + ibcDelta, 0));
+    const socialSecurity = employee.metadata?.social_security || {};
+    const segmentAdjustments = employeeAdjustments.filter((adjustment) => segmentedAdjustmentType(adjustment));
+    const periodizedSegmentAdjustments = segmentAdjustments.map((adjustment) => periodizeSegmentAdjustment(adjustment, start, end)).filter(Boolean);
+    let segmentResult = null;
+    if (periodizedSegmentAdjustments.length) {
+      if (!(Number(exonerationConfig.smmlv) > 0)) throw validationError("SMMLV vigente requerida para calcular pisos IBC.", 409, "SMMLV_VIGENTE_REQUERIDA");
+      const hasValidPayrollSnapshot = docs.length > 0 && docs.every((doc) => doc.source_summary && typeof doc.source_summary === "object" && !Number.isNaN(Number(doc.source_summary.worked_cotizable_remuneration || 0)) && !Number.isNaN(Number(doc.source_summary.ibc || 0)));
+      const missingReportedBase = !hasValidPayrollSnapshot;
+      if (missingReportedBase) throw validationError("No existe IBC reportado de nómina para calcular segmentos de novedades; no se usa el salario del empleado como fallback.", 409, "IBC_REPORTADO_REQUERIDO");
+      const periodDaysWorked = docs.reduce((sum, doc) => sum + Number(doc.source_summary?.contribution_worked_days ?? doc.source_summary?.days_worked ?? 0), 0);
+      const salaryEarningsAvailable = docs.length > 0 && docs.every((doc) => doc.source_summary?.devengos_salariales !== undefined && doc.source_summary?.devengos_salariales !== null && Number.isFinite(Number(doc.source_summary.devengos_salariales)) && Number(doc.source_summary.devengos_salariales) >= 0);
+      const salaryEarnings = docs.reduce((sum, doc) => {
+        const value = doc.source_summary?.devengos_salariales;
+        return sum + (value !== undefined && value !== null && Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : 0);
+      }, 0);
+      const threshold = exonerationConfig.threshold_amount;
+      const explicitEligibility = socialSecurity.exoneration_eligible === true;
+      const workerSupportPresent = Boolean(String(socialSecurity.exoneration_support || "").trim());
+      const companyEligibility = Number(exonerationParameterRows.EXONERACION_EMPRESA_ELEGIBLE?.value || 0) === 1;
+      const eligibleByThreshold = salaryEarningsAvailable && threshold > 0 && salaryEarnings < threshold;
+      const eligible = companyEligibility && explicitEligibility && workerSupportPresent && eligibleByThreshold;
+      const rates = segmentRates(parameters, socialSecurity);
+      const segmentRules = configuredSegmentRules(exonerationParameterRows, Number(exonerationConfig.smmlv || 0), socialSecurity, floorDaysForSegments(periodizedSegmentAdjustments, periodDaysWorked, socialSecurity));
+      const noveltyLrPolicy = periodizedSegmentAdjustments.find((row) => row.metadata?.lr_arl_policy)?.metadata?.lr_arl_policy;
+      segmentResult = calculateSocialContributionSegments({
+        periodStart: start.toISOString().slice(0, 10),
+        periodEnd: end.toISOString().slice(0, 10),
+        periodKey,
+        employee: { regime: employee.metadata?.regime || employee.metadata?.regimen || "ordinary", sector: employee.metadata?.sector || "private" },
+        currentWorkedCotizableRemuneration: { amount: reportedBaseIbc, days: periodDaysWorked || 0 },
+        workedDays: periodDaysWorked || 0,
+        adjustments: periodizedSegmentAdjustments.map((adjustment) => ({
+          ...adjustment,
+          type: segmentedAdjustmentType(adjustment),
+          start: adjustment.metadata?.date_start,
+          end: adjustment.metadata?.date_end,
+          originalEventStart: adjustment.metadata?.original_event_start,
+          originalEventEnd: adjustment.metadata?.original_event_end,
+          days: adjustment.metadata?.days_periodized ?? adjustment.metadata?.days,
+          originalDays: adjustment.metadata?.days,
+          amount: adjustment.amount,
+          recognizedValue: adjustment.metadata?.recognized_value,
+          frozenHistoricalReference: adjustment.metadata?.frozen_historical_reference,
+          continuityKey: adjustment.metadata?.continuity_key,
+          documentSupport: adjustment.metadata?.document_support || adjustment.metadata?.documento_soporte
+        })),
+        contributionRates: rates,
+        config: {
+          exonerationEligibility: { salud: eligible, parafiscales: eligible },
+          capsFloors: segmentRules.capsFloors,
+          roundingPila: segmentRules.roundingPila,
+          rulesSource: segmentRules.source,
+          ibcCapSmmlv: segmentRules.topMultiplier
+        },
+        overrideSLN: { pensionEmployerPercent: socialSecurity.sln_pension_employer_percent || null },
+        lrArlPolicy: noveltyLrPolicy || socialSecurity.lr_arl_policy || employee.metadata?.lr_arl_policy || null,
+        advancesRetentions: employee.metadata?.payroll_advance_retentions || {}
+      });
+      segmentResult.audit = { explicitEligibility, workerSupportPresent, companyEligibility, salaryEarningsAvailable, eligibleByThreshold, eligible, salaryEarnings, threshold, pensionSlnEmployerRate: rates.pension.employer };
+    }
+    const ibc = segmentResult ? money(segmentResult.totals.basesAfter.salud) : money(Math.max(baseIbc + ibcDelta, 0));
     const employeeName = employee.metadata?.name || employee.user?.name || employee.code || `Empleado ${employee.id}`;
     const employeeAffiliations = affiliationsByEmployee.get(employee.id) || [];
-    const socialSecurity = employee.metadata?.social_security || {};
+    const employeePilaRules = configuredSegmentRules(exonerationParameterRows, Number(exonerationConfig.smmlv || 0), socialSecurity).roundingPila;
     const arlRiskClass = Math.min(Math.max(Number(socialSecurity.arl_risk_class || 1), 1), 5);
-    const appliesByThreshold = exonerationConfig.threshold_amount > 0 && ibc < exonerationConfig.threshold_amount;
-    const exoneratedSena = appliesByThreshold;
-    const exoneratedIcbf = appliesByThreshold;
-    const exoneratedHealthEmployer = appliesByThreshold;
+    const appliesByThreshold = segmentResult?.audit?.eligibleByThreshold ?? (exonerationConfig.threshold_amount > 0 && ibc < exonerationConfig.threshold_amount);
+    const explicitEligibility = segmentResult?.audit?.explicitEligibility ?? socialSecurity.exoneration_eligible === true;
+    const workerSupportPresent = segmentResult?.audit?.workerSupportPresent ?? Boolean(String(socialSecurity.exoneration_support || "").trim());
+    const companyEligibility = segmentResult?.audit?.companyEligibility ?? Number(exonerationParameterRows.EXONERACION_EMPRESA_ELEGIBLE?.value || 0) === 1;
+    const eligibleForExoneration = segmentResult?.audit?.eligible ?? (companyEligibility && explicitEligibility && workerSupportPresent && appliesByThreshold);
+    const exoneratedSena = eligibleForExoneration;
+    const exoneratedIcbf = eligibleForExoneration;
+    const exoneratedHealthEmployer = eligibleForExoneration;
     const exonerationSummary = {
       ...exonerationConfig,
-      mode: "automatic_by_ibc_threshold",
-      eligible_by_employee: true,
+      mode: "explicit_eligibility_plus_devengos_threshold",
+      eligible_by_employee: explicitEligibility,
+      soporte_elegibilidad: workerSupportPresent,
+      empresa_elegible: companyEligibility,
       applies_by_threshold: appliesByThreshold,
       salud_empleador: exoneratedHealthEmployer,
       icbf: exoneratedIcbf,
@@ -6726,6 +7124,7 @@ async function buildSocialContributionRows(tenantId, input = {}) {
     };
     let employeeTotal = 0;
     let employerTotal = 0;
+    const employeePilaTotals = {};
     for (const parameter of parameters) {
       if (parameter.code === "DED_FONDO_SOLIDARIDAD_PENSIONAL") continue;
       if (parameter.entity_type === "ARL" && Number(parameter.arl_risk_class || 1) !== arlRiskClass) continue;
@@ -6733,10 +7132,21 @@ async function buildSocialContributionRows(tenantId, input = {}) {
       if (parameter.code === "APORTE_ICBF" && exoneratedIcbf) continue;
       if (parameter.code === "APORTE_SALUD" && exoneratedHealthEmployer) continue;
       const affiliation = affiliationForType(employeeAffiliations, parameter.entity_type);
-      const amount = money(ibc * (Number(parameter.value || 0) / 100));
+      const subsystem = parameterSubsystem(parameter);
+      const subsystemBase = segmentResult ? Number(segmentResult.totals.basesAfter[subsystem] || 0) : ibc;
+      const segmentedEmployeeAmount = segmentResult && parameter.payer === "employee" ? Number(segmentResult.totals.employeeAmounts[subsystem] || 0) : null;
+      const segmentedEmployerAmount = segmentResult && parameter.payer === "employer" && ["salud", "pension", "arl"].includes(subsystem)
+        ? Number(segmentResult.totals.employerAmounts[subsystem] || 0)
+        : null;
+      const amount = money(segmentedEmployeeAmount != null ? segmentedEmployeeAmount : segmentedEmployerAmount != null ? segmentedEmployerAmount : subsystemBase * (Number(parameter.value || 0) / 100));
       if (!amount) continue;
       const employeeAmount = parameter.payer === "employee" ? amount : 0;
       const employerAmount = parameter.payer === "employer" ? amount : 0;
+      // Health and pension are one obligation per subsystem, not two payable
+      // obligations for the employee/employer concept lines. Parafiscals remain
+      // independent obligations (CCF, SENA and ICBF must each be rounded).
+      const pilaAmount = subsystem === "parafiscales" ? pilaRoundAmount(amount, employeePilaRules) : null;
+      if (pilaAmount != null) employeePilaTotals[parameter.code] = pilaAmount;
       employeeTotal += employeeAmount;
       employerTotal += employerAmount;
       lines.push({
@@ -6748,20 +7158,31 @@ async function buildSocialContributionRows(tenantId, input = {}) {
         entity_name: affiliation?.entity_legal_name || "Sin entidad asociada",
         concept_code: parameter.code,
         concept_name: parameter.name,
-        ibc,
+        ibc: money(subsystemBase),
         employee_percent: parameter.payer === "employee" ? Number(parameter.value || 0) : 0,
         employer_percent: parameter.payer === "employer" ? Number(parameter.value || 0) : 0,
         employee_amount: employeeAmount,
         employer_amount: employerAmount,
         total_amount: amount,
-        metadata: { missing_affiliation: !affiliation, source: docs.length ? "nomina" : "salario_empleado", arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, ibc_base: baseIbc, ibc_delta: ibcDelta, exoneration: exonerationSummary }
+        metadata: { missing_affiliation: !affiliation, source: docs.length ? "nomina" : "salario_empleado", arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, ibc_base: baseIbc, ibc_delta: ibcDelta, exoneration: exonerationSummary, conceptual_amount: amount, pila_amount: pilaAmount, segment_audit: segmentResult ? { ...segmentResult.audit, period: segmentResult.period, warnings: segmentResult.warnings, segments: segmentResult.segments } : null }
       });
+    }
+    const employeeContributionLines = lines.filter((line) => line.employee_id === employee.id);
+    for (const subsystem of ["salud", "pension", "arl"]) {
+      const subsystemLines = employeeContributionLines.filter((line) => parameterSubsystem(line) === subsystem);
+      if (!subsystemLines.length) continue;
+      const conceptual = money(subsystemLines.reduce((sum, line) => sum + line.total_amount, 0));
+      const segmentedTotal = segmentResult?.totals?.pilaAmounts?.[subsystem];
+      const payable = typeof segmentedTotal === "number" ? segmentedTotal : pilaRoundAmount(conceptual, employeePilaRules);
+      employeePilaTotals[subsystem] = payable;
+      for (const line of subsystemLines) line.metadata.pila_total_subsystem = payable;
     }
     const pensionSolidarityPercent = pensionSolidarityRate(ibc, exonerationConfig.smmlv, pensionSolidarityParameter);
     if (pensionSolidarityPercent > 0) {
       const affiliation = affiliationForType(employeeAffiliations, "PENSION");
       const amount = money(ibc * (pensionSolidarityPercent / 100));
       employeeTotal += amount;
+      employeePilaTotals.DED_FONDO_SOLIDARIDAD_PENSIONAL = pilaRoundAmount(amount, employeePilaRules);
       lines.push({
         employee_id: employee.id,
         employee_name: employeeName,
@@ -6780,11 +7201,12 @@ async function buildSocialContributionRows(tenantId, input = {}) {
         metadata: { missing_affiliation: !affiliation, source: docs.length ? "nomina" : "salario_empleado", novedades_pila: noveltySummary, ibc_base: baseIbc, ibc_delta: ibcDelta, smmlv: exonerationConfig.smmlv, salary_multiples: exonerationConfig.smmlv ? money(ibc / exonerationConfig.smmlv) : 0 }
       });
     }
-    employeeRows.push({ employee_id: employee.id, employee_name: employeeName, employee_code: employee.code, ibc, employee_amount: money(employeeTotal), employer_amount: money(employerTotal), total_amount: money(employeeTotal + employerTotal), documents: docs.length, arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, exoneration: exonerationSummary });
+    employeeRows.push({ employee_id: employee.id, employee_name: employeeName, employee_code: employee.code, ibc, ibc_by_subsystem: segmentResult?.totals?.basesAfter || { salud: ibc, pension: ibc, arl: ibc, parafiscales: ibc }, employee_amount: money(employeeTotal), employer_amount: money(employerTotal), total_amount: money(employeeTotal + employerTotal), pila_totals: employeePilaTotals, documents: docs.length, arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, exoneration: exonerationSummary, segment_result: segmentResult });
   }
   const totalIbc = money(employeeRows.reduce((sum, row) => sum + row.ibc, 0));
   const totalEmployee = money(lines.reduce((sum, row) => sum + row.employee_amount, 0));
   const totalEmployer = money(lines.reduce((sum, row) => sum + row.employer_amount, 0));
+  const totalPayablePila = money(employeeRows.reduce((sum, row) => sum + Object.values(row.pila_totals || {}).reduce((inner, value) => inner + Number(value || 0), 0), 0));
   return {
     period_key: periodKey,
     period_type: periodType,
@@ -6794,9 +7216,10 @@ async function buildSocialContributionRows(tenantId, input = {}) {
     total_employee: totalEmployee,
     total_employer: totalEmployer,
     total_payable: money(totalEmployee + totalEmployer),
+    total_payable_pila: totalPayablePila,
     employees: employeeRows,
     lines,
-    source_summary: { employees: employeeRows.length, lines: lines.length, missing_affiliations: lines.filter((line) => line.metadata.missing_affiliation).length, novedades_pila: employeeRows.reduce((sum, row) => sum + row.novedades_pila.length, 0), exoneration: exonerationConfig }
+    source_summary: { employees: employeeRows.length, lines: lines.length, missing_affiliations: lines.filter((line) => line.metadata.missing_affiliation).length, novedades_pila: employeeRows.reduce((sum, row) => sum + row.novedades_pila.length, 0), pila_totals: employeeRows.map((row) => ({ employee_id: row.employee_id, ...row.pila_totals })), total_payable_pila: totalPayablePila, exoneration: exonerationConfig }
   };
 }
 
