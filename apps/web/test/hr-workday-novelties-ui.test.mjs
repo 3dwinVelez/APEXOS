@@ -194,7 +194,8 @@ test("payroll page supports preview, real liquidation, adjustments and pdf vouch
   assert.match(source, /Fecha inicio novedad/);
   assert.match(source, /Fecha fin novedad/);
   assert.match(source, /Responsable pago/);
-  assert.match(source, /IBC PILA opcional/);
+  assert.match(source, /IBC PILA legacy \(no sustituye referencia histórica\)/);
+  assert.match(source, /IBC histórico congelado al inicio/);
   assert.match(source, /COMISION/);
   assert.match(source, /BONIFICACION_SALARIAL/);
   assert.match(source, /BONIFICACION_NO_SALARIAL/);

@@ -39,7 +39,19 @@ type Adjustment = {
   minutes: number;
   amount: number;
   status: string;
-  metadata?: { work_date?: string; start_time?: string; end_time?: string };
+  metadata?: {
+    work_date?: string;
+    start_time?: string;
+    end_time?: string;
+    date_start?: string;
+    date_end?: string;
+    days?: number;
+    paid_by?: string;
+    frozen_historical_reference?: { monthlyAmount?: number; sourcePeriod?: string | null; capturedAt?: string | null };
+    continuity_key?: string;
+    recognized_value?: number;
+    document_support?: string;
+  };
 };
 type ValidationIssue = { severity: "error" | "warning" | "info"; code: string; employee_id?: number; employee_name?: string; message: string };
 type PeriodClosure = {
@@ -169,7 +181,7 @@ export default function PayrollLiquidationPage() {
   const [message, setMessage] = useState("");
   const [adjustmentError, setAdjustmentError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [adjustment, setAdjustment] = useState({ employee_id: "", adjustment_type: "manual", concept_code: "AJUSTE_MANUAL", description: "", work_date: "", start_time: "", end_time: "", date_start: "", date_end: "", days: "", paid_by: "", pila_ibc_amount: "", minutes: "", amount: "" });
+  const [adjustment, setAdjustment] = useState({ employee_id: "", adjustment_type: "manual", concept_code: "AJUSTE_MANUAL", description: "", work_date: "", start_time: "", end_time: "", date_start: "", date_end: "", days: "", paid_by: "", sln_cause: "", pila_ibc_amount: "", ibc_reference_amount: "", ibc_reference_period: "", ibc_reference_captured_at: "", continuity_key: "", reference_source: "", reported_pila_id: "", recognized_value: "", document_support: "", lr_arl_policy: "", advance_obligation: "", advance_period: "", advance_support: "", advance_retention_health: "", advance_retention_pension: "", minutes: "", amount: "" });
 
   const currentPeriodKey = useMemo(() => periodKey(periodType, startDate, endDate), [periodType, startDate, endDate]);
   const periodRangeError = useMemo(() => {
@@ -427,13 +439,44 @@ export default function PayrollLiquidationPage() {
           date_end: adjustment.date_end,
           days: Number(adjustment.days || 0),
           paid_by: adjustment.paid_by,
+          suspension_cause: adjustment.sln_cause || undefined,
+          document_support: adjustment.document_support || undefined,
+          reference_source: adjustment.reference_source || undefined,
+          reported_pila_id: adjustment.reported_pila_id || undefined,
           pila_ibc_amount: adjustment.pila_ibc_amount,
+          ibc_reference_amount: adjustment.ibc_reference_amount ? Number(adjustment.ibc_reference_amount) : undefined,
+          ibc_reference_period: adjustment.ibc_reference_period || undefined,
+          ibc_reference_captured_at: adjustment.ibc_reference_captured_at || undefined,
+          continuity_key: adjustment.continuity_key || undefined,
+          recognized_value: ["licencia_remunerada", "sln", "vacaciones_disfrutadas", "vacaciones_compensadas"].includes(adjustment.adjustment_type) ? Number(adjustment.recognized_value || 0) : undefined,
           minutes: Number(adjustment.minutes || 0),
-          amount: Number(adjustment.amount || 0),
-          metadata: adjustment.adjustment_type === "jornada_ordinaria" ? { work_date: adjustment.work_date, start_time: adjustment.start_time, end_time: adjustment.end_time } : { date_start: adjustment.date_start, date_end: adjustment.date_end, days: Number(adjustment.days || 0), paid_by: adjustment.paid_by, pila_ibc_amount: adjustment.pila_ibc_amount ? Number(adjustment.pila_ibc_amount) : undefined }
+          amount: ["licencia_remunerada", "sln", "vacaciones_disfrutadas", "vacaciones_compensadas"].includes(adjustment.adjustment_type) ? Number(adjustment.recognized_value || 0) : Number(adjustment.amount || 0),
+          advance_obligation_id: adjustment.advance_obligation || undefined,
+          advance_period: adjustment.advance_period || undefined,
+          advance_support: adjustment.advance_support || undefined,
+          advance_retention_health: adjustment.advance_retention_health !== "" ? Number(adjustment.advance_retention_health) : undefined,
+          advance_retention_pension: adjustment.advance_retention_pension !== "" ? Number(adjustment.advance_retention_pension) : undefined,
+          metadata: adjustment.adjustment_type === "jornada_ordinaria" ? { work_date: adjustment.work_date, start_time: adjustment.start_time, end_time: adjustment.end_time } : {
+            date_start: adjustment.date_start,
+            date_end: adjustment.date_end,
+            days: Number(adjustment.days || 0),
+            paid_by: adjustment.paid_by,
+            suspension_cause: adjustment.sln_cause || undefined,
+            reference_source: adjustment.reference_source || undefined,
+            reported_pila_id: adjustment.reported_pila_id || undefined,
+            pila_ibc_amount: adjustment.pila_ibc_amount ? Number(adjustment.pila_ibc_amount) : undefined,
+            frozen_historical_reference: adjustment.ibc_reference_amount ? { monthlyAmount: Number(adjustment.ibc_reference_amount), sourcePeriod: adjustment.ibc_reference_period || null, capturedAt: adjustment.ibc_reference_captured_at || null } : undefined,
+            continuity_key: adjustment.continuity_key || undefined,
+            recognized_value: adjustment.recognized_value ? Number(adjustment.recognized_value) : undefined,
+            document_support: adjustment.document_support || undefined,
+            lr_arl_policy: adjustment.lr_arl_policy || undefined,
+            advance_obligation_id: adjustment.advance_obligation || undefined,
+            advance_period: adjustment.advance_period || undefined,
+            advance_support: adjustment.advance_support || undefined,
+          }
         })
       });
-      setAdjustment((current) => ({ ...current, description: "", work_date: "", start_time: "", end_time: "", date_start: "", date_end: "", days: "", paid_by: "", pila_ibc_amount: "", minutes: "", amount: "" }));
+      setAdjustment((current) => ({ ...current, description: "", work_date: "", start_time: "", end_time: "", date_start: "", date_end: "", days: "", paid_by: "", sln_cause: "", pila_ibc_amount: "", ibc_reference_amount: "", ibc_reference_period: "", ibc_reference_captured_at: "", continuity_key: "", reference_source: "", reported_pila_id: "", recognized_value: "", document_support: "", lr_arl_policy: "", advance_obligation: "", advance_period: "", advance_support: "", advance_retention_health: "", advance_retention_pension: "", minutes: "", amount: "" }));
       await loadBase();
       setMessage("Ajuste agregado. Ejecuta prueba o recalcula para verlo en la liquidacion.");
     } catch (err) {
@@ -604,8 +647,18 @@ export default function PayrollLiquidationPage() {
   }
 
   const isWorkdayCorrection = adjustment.adjustment_type === "jornada_ordinaria";
+  const isSegmentedNovelty = ["licencia_remunerada", "sln", "vacaciones_disfrutadas", "vacaciones_compensadas"].includes(adjustment.adjustment_type);
+  const requiresPilaAttestation = isSegmentedNovelty && adjustment.adjustment_type !== "vacaciones_compensadas";
+  const requiresFrozenIbcReference = ["licencia_remunerada", "sln", "vacaciones_disfrutadas"].includes(adjustment.adjustment_type);
   const canCreateAdjustment = Boolean(adjustment.employee_id)
-    && (!isWorkdayCorrection || Boolean(adjustment.work_date && adjustment.start_time && adjustment.end_time));
+    && (!isWorkdayCorrection || Boolean(adjustment.work_date && adjustment.start_time && adjustment.end_time))
+    && (!isSegmentedNovelty || Boolean(adjustment.date_start && adjustment.date_end && (adjustment.adjustment_type === "vacaciones_compensadas" || adjustment.days)))
+    && (!isSegmentedNovelty || Boolean(adjustment.document_support))
+    && (!requiresPilaAttestation || Boolean(adjustment.reference_source && adjustment.reported_pila_id))
+    && (!requiresFrozenIbcReference || Boolean(adjustment.ibc_reference_amount && adjustment.ibc_reference_period && adjustment.ibc_reference_captured_at))
+    && (adjustment.adjustment_type !== "sln" || Boolean(adjustment.sln_cause))
+    && (!(Number(adjustment.advance_retention_health || 0) > 0 || Number(adjustment.advance_retention_pension || 0) > 0) || Boolean(adjustment.advance_obligation && adjustment.advance_period && adjustment.advance_support))
+    && (!isSegmentedNovelty || adjustment.recognized_value !== "");
 
   return (
     <div className="space-y-5">
@@ -873,24 +926,27 @@ export default function PayrollLiquidationPage() {
           <h2 className="text-base font-semibold">Ajustes manuales, licencias y vacaciones</h2>
           <div className="mt-3 grid gap-3">
             <label className="text-sm">Empleado
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.employee_id} onChange={(event) => setAdjustment((current) => ({ ...current, employee_id: event.target.value }))}>
+              <select data-testid="ibc-adjustment-employee" className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.employee_id} onChange={(event) => setAdjustment((current) => ({ ...current, employee_id: event.target.value }))}>
                 <option value="">Seleccionar</option>
                 {employees.map((employee) => <option key={employee.id} value={employee.id}>{employeeName(employee)}</option>)}
               </select>
             </label>
             <label className="text-sm">Tipo
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.adjustment_type} onChange={(event) => {
+              <select data-testid="ibc-novelty-type" className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.adjustment_type} onChange={(event) => {
                 const nextType = event.target.value;
                 const conceptByType: Record<string, string> = {
                   jornada_ordinaria: "JORNADA_ORDINARIA",
                   comision: "COMISION",
                   bonificacion: "BONIFICACION_SALARIAL",
                   licencia_remunerada: "LICENCIA_REMUNERADA",
-                  licencia_no_remunerada: "LICENCIA_NO_REMUNERADA",
+                  licencia_no_remunerada: "SLN",
                   incapacidad_general: "INCAPACIDAD_GENERAL",
                   incapacidad_laboral: "INCAPACIDAD_LABORAL",
                   maternidad_paternidad: "LICENCIA_MATERNIDAD_PATERNIDAD",
-                  vacaciones: "VACACIONES"
+                  vacaciones: "VACACIONES",
+                  vacaciones_disfrutadas: "VACACIONES",
+                  vacaciones_compensadas: "VACACIONES_COMPENSADAS",
+                  sln: "SLN"
                 };
                 setAdjustment((current) => ({ ...current, adjustment_type: nextType, concept_code: conceptByType[nextType] || current.concept_code }));
               }}>
@@ -899,11 +955,12 @@ export default function PayrollLiquidationPage() {
                 <option value="comision">Comisión</option>
                 <option value="bonificacion">Bonificación</option>
                 <option value="licencia_remunerada">Licencia remunerada</option>
-                <option value="licencia_no_remunerada">Licencia no remunerada</option>
+                <option value="sln">SLN · suspensión disciplinaria/licencia no remunerada</option>
                 <option value="incapacidad_general">Incapacidad general</option>
                 <option value="incapacidad_laboral">Incapacidad laboral</option>
                 <option value="maternidad_paternidad">Maternidad/Paternidad</option>
-                <option value="vacaciones">Vacaciones</option>
+                <option value="vacaciones_disfrutadas">VAC disfrutadas</option>
+                <option value="vacaciones_compensadas">VAC compensadas en dinero</option>
               </select>
             </label>
             <div className="grid gap-3 md:grid-cols-2">
@@ -915,11 +972,12 @@ export default function PayrollLiquidationPage() {
                   <option value="BONIFICACION_SALARIAL">BONIFICACION_SALARIAL</option>
                   <option value="BONIFICACION_NO_SALARIAL">BONIFICACION_NO_SALARIAL</option>
                   <option value="LICENCIA_REMUNERADA">LICENCIA_REMUNERADA</option>
-                  <option value="LICENCIA_NO_REMUNERADA">LICENCIA_NO_REMUNERADA</option>
+                  <option value="SLN">SLN</option>
                   <option value="INCAPACIDAD_GENERAL">INCAPACIDAD_GENERAL</option>
                   <option value="INCAPACIDAD_LABORAL">INCAPACIDAD_LABORAL</option>
                   <option value="LICENCIA_MATERNIDAD_PATERNIDAD">LICENCIA_MATERNIDAD_PATERNIDAD</option>
-                  <option value="VACACIONES">VACACIONES</option>
+                  <option value="VACACIONES">VACACIONES (disfrutadas)</option>
+                  <option value="VACACIONES_COMPENSADAS">VACACIONES_COMPENSADAS</option>
                 </select>
               </label>
               {isWorkdayCorrection ? (
@@ -929,20 +987,47 @@ export default function PayrollLiquidationPage() {
                   <label className="text-sm">Hora fin<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="time" value={adjustment.end_time} onChange={(event) => setAdjustment((current) => ({ ...current, end_time: event.target.value }))} /></label>
                 </>
               ) : null}
-              {["licencia_remunerada", "licencia_no_remunerada", "incapacidad_general", "incapacidad_laboral", "maternidad_paternidad", "vacaciones"].includes(adjustment.adjustment_type) ? (
+              {["licencia_remunerada", "sln", "vacaciones_disfrutadas", "vacaciones_compensadas", "incapacidad_general", "incapacidad_laboral", "maternidad_paternidad"].includes(adjustment.adjustment_type) ? (
                 <>
-                  <label className="text-sm">Fecha inicio novedad<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={adjustment.date_start} onChange={(event) => setAdjustment((current) => ({ ...current, date_start: event.target.value }))} /></label>
-                  <label className="text-sm">Fecha fin novedad<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={adjustment.date_end} onChange={(event) => setAdjustment((current) => ({ ...current, date_end: event.target.value }))} /></label>
-                  <label className="text-sm">Dias novedad<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" value={adjustment.days} onChange={(event) => setAdjustment((current) => ({ ...current, days: event.target.value }))} /></label>
+                  <label className="text-sm">{adjustment.adjustment_type === "vacaciones_compensadas" ? "Fecha reconocimiento" : "Fecha inicio novedad"}<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={adjustment.date_start} onChange={(event) => setAdjustment((current) => ({ ...current, date_start: event.target.value, ...(current.adjustment_type === "vacaciones_compensadas" ? { date_end: event.target.value } : {}) }))} /></label>
+                  {adjustment.adjustment_type !== "vacaciones_compensadas" ? <label className="text-sm">Fecha fin novedad<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={adjustment.date_end} onChange={(event) => setAdjustment((current) => ({ ...current, date_end: event.target.value }))} /></label> : null}
+                  {adjustment.adjustment_type !== "vacaciones_compensadas" ? <label className="text-sm">Dias novedad<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" min="0" max="30" value={adjustment.days} onChange={(event) => setAdjustment((current) => ({ ...current, days: event.target.value }))} /></label> : <p className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 md:col-span-2">VAC compensadas se registra como valor reconocido para parafiscales. No crea días de descanso ni aporte adicional de salud, pensión o ARL.</p>}
                   <label className="text-sm">Responsable pago<select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={adjustment.paid_by} onChange={(event) => setAdjustment((current) => ({ ...current, paid_by: event.target.value }))}><option value="">No definido</option><option value="empresa">Empresa</option><option value="eps">EPS</option><option value="arl">ARL</option><option value="empleado">Empleado/no remunerado</option></select></label>
-                  <label className="text-sm">IBC PILA opcional<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" value={adjustment.pila_ibc_amount} onChange={(event) => setAdjustment((current) => ({ ...current, pila_ibc_amount: event.target.value }))} /></label>
+                  {adjustment.adjustment_type === "sln" ? <label className="text-sm">Causal SLN<select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={adjustment.sln_cause} onChange={(event) => setAdjustment((current) => ({ ...current, sln_cause: event.target.value }))}><option value="">Seleccionar causal</option><option value="suspension_disciplinaria">Suspensión disciplinaria sin remuneración</option><option value="licencia_no_remunerada">Licencia no remunerada</option></select></label> : null}
+                  {adjustment.adjustment_type === "licencia_remunerada" ? <label className="text-sm">Política ARL licencia remunerada<select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={adjustment.lr_arl_policy} onChange={(event) => setAdjustment((current) => ({ ...current, lr_arl_policy: event.target.value }))}><option value="">Seleccionar política</option><option value="cotiza">Cotiza ARL</option><option value="no_cotiza">No cotiza ARL</option></select></label> : null}
+                  <label className="text-sm">IBC PILA legacy (no sustituye referencia histórica)<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" value={adjustment.pila_ibc_amount} onChange={(event) => setAdjustment((current) => ({ ...current, pila_ibc_amount: event.target.value }))} /></label>
+                  {requiresFrozenIbcReference ? <>
+                    <label className="text-sm">IBC histórico congelado al inicio<input data-testid="ibc-reference-amount" className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" min="0" value={adjustment.ibc_reference_amount} onChange={(event) => setAdjustment((current) => ({ ...current, ibc_reference_amount: event.target.value }))} /></label>
+                    <label className="text-sm">Periodo del IBC reportado<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="month" value={adjustment.ibc_reference_period} onChange={(event) => setAdjustment((current) => ({ ...current, ibc_reference_period: event.target.value }))} /></label>
+                    <label className="text-sm">Fecha de captura<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={adjustment.ibc_reference_captured_at} onChange={(event) => setAdjustment((current) => ({ ...current, ibc_reference_captured_at: event.target.value }))} /></label>
+                    <label className="text-sm">Soporte / origen del IBC<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.document_support} onChange={(event) => setAdjustment((current) => ({ ...current, document_support: event.target.value }))} placeholder="Nómina, planilla o documento" /></label>
+                    <label className="text-sm">Origen de referencia<select className="mt-1 h-10 w-full rounded-md border border-line bg-white px-3" value={adjustment.reference_source} onChange={(event) => setAdjustment((current) => ({ ...current, reference_source: event.target.value }))}><option value="">Seleccionar origen</option><option value="manual_reported_pila">Planilla reportada manualmente</option><option value="operator_attested">Atestación explícita del operador</option></select></label>
+                    <label className="text-sm">ID planilla / atestación<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.reported_pila_id} onChange={(event) => setAdjustment((current) => ({ ...current, reported_pila_id: event.target.value }))} placeholder="Referencia verificable" /></label>
+                    <label className="text-sm">Clave de continuidad<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.continuity_key} onChange={(event) => setAdjustment((current) => ({ ...current, continuity_key: event.target.value }))} placeholder="Empleado + novedad continua" /></label>
+                  </> : null}
+                  {adjustment.adjustment_type === "vacaciones_compensadas" ? <>
+                    <label className="text-sm">Valor reconocido para parafiscales<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" min="0" value={adjustment.recognized_value} onChange={(event) => setAdjustment((current) => ({ ...current, recognized_value: event.target.value }))} /></label>
+                    <label className="text-sm">Soporte documental<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.document_support} onChange={(event) => setAdjustment((current) => ({ ...current, document_support: event.target.value }))} /></label>
+                  </> : null}
+                  {adjustment.adjustment_type !== "vacaciones_compensadas" ? <label className="text-sm">Valor reconocido del segmento<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" min="0" value={adjustment.recognized_value} onChange={(event) => setAdjustment((current) => ({ ...current, recognized_value: event.target.value }))} />{adjustment.adjustment_type === "sln" ? <span className="mt-1 block text-xs text-amber-700">Para SLN registra 0: no se descuenta aporte ordinario al trabajador.</span> : null}</label> : null}
+                  {adjustment.adjustment_type === "vacaciones_disfrutadas" ? <>
+                    <p className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 md:col-span-2">Si hubo anticipo, registra la retención efectivamente aplicada a la misma obligación y período para descontarla una sola vez.</p>
+                    <label className="text-sm">Obligación del anticipo<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.advance_obligation} onChange={(event) => setAdjustment((current) => ({ ...current, advance_obligation: event.target.value }))} placeholder="VACACIONES_SALUD / VACACIONES_PENSION" /></label>
+                    <label className="text-sm">Período de obligación<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.advance_period} onChange={(event) => setAdjustment((current) => ({ ...current, advance_period: event.target.value }))} placeholder={currentPeriodKey} /></label>
+                    <label className="text-sm">Soporte de retención<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.advance_support} onChange={(event) => setAdjustment((current) => ({ ...current, advance_support: event.target.value }))} placeholder="Comprobante / documento" /></label>
+                    <label className="text-sm">Retención anticipada salud<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" min="0" value={adjustment.advance_retention_health} onChange={(event) => setAdjustment((current) => ({ ...current, advance_retention_health: event.target.value }))} /></label>
+                    <label className="text-sm">Retención anticipada pensión<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" min="0" value={adjustment.advance_retention_pension} onChange={(event) => setAdjustment((current) => ({ ...current, advance_retention_pension: event.target.value }))} /></label>
+                  </> : null}
                 </>
               ) : null}
-              <label className="text-sm">Minutos<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" value={adjustment.minutes} onChange={(event) => setAdjustment((current) => ({ ...current, minutes: event.target.value }))} /></label>
-              <label className="text-sm">Valor COP<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" value={adjustment.amount} onChange={(event) => setAdjustment((current) => ({ ...current, amount: event.target.value }))} /></label>
+              {!isSegmentedNovelty ? <>
+                <label className="text-sm">Minutos<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" value={adjustment.minutes} onChange={(event) => setAdjustment((current) => ({ ...current, minutes: event.target.value }))} /></label>
+                <label className="text-sm">Valor COP<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="number" value={adjustment.amount} onChange={(event) => setAdjustment((current) => ({ ...current, amount: event.target.value }))} /></label>
+              </> : null}
+              {adjustment.adjustment_type === "sln" ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 md:col-span-2">SLN no genera descuento monetario ordinario al trabajador por los días suspendidos. Registra solo días, causal y soporte.</p> : null}
               <label className="text-sm">Motivo opcional<input className="mt-1 h-10 w-full rounded-md border border-line px-3" value={adjustment.description} onChange={(event) => setAdjustment((current) => ({ ...current, description: event.target.value }))} /></label>
             </div>
-            <button className="inline-flex h-10 w-fit items-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canCreateAdjustment} onClick={createAdjustment} type="button"><Plus size={16} /> Agregar ajuste</button>
+            <button data-testid="ibc-add-adjustment" className="inline-flex h-10 w-fit items-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white disabled:opacity-60" disabled={busy || !canCreateAdjustment} onClick={createAdjustment} type="button"><Plus size={16} /> Agregar ajuste</button>
           </div>
         </div>
       </section>

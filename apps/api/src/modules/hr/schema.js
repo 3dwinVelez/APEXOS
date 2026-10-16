@@ -231,6 +231,12 @@ const employeeSchema = {
       contract_type: { type: "string" },
       company: { type: "string" },
       labor_status: { type: "string" },
+      regime: { type: "string" },
+      regimen: { type: "string" },
+      sector: { type: "string" },
+      exoneration_eligible: { type: "boolean" },
+      exoneration_support: { type: "string" },
+      sln_pension_employer_percent: { anyOf: [{ type: "number" }, { type: "string" }] },
       legacy: { type: "object" }
     }
   }
@@ -479,6 +485,23 @@ const payrollAdjustmentSchema = {
       date_end: { type: "string" },
       paid_by: { type: "string" },
       pila_ibc_amount: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+      ibc_reference_amount: { anyOf: [{ type: "number" }, { type: "string" }] },
+      ibc_reference_period: { type: "string" },
+      ibc_reference_captured_at: { type: "string" },
+      ibc_referencia_inicio: { anyOf: [{ type: "number" }, { type: "string" }] },
+      periodo_ibc_referencia: { type: "string" },
+      continuidad_key: { type: "string" },
+      continuity_key: { type: "string" },
+      recognized_value: { anyOf: [{ type: "number" }, { type: "string" }] },
+      document_support: { type: "string" },
+      documento_soporte: { type: "string" },
+      reference_source: { type: "string" },
+      reported_pila_id: { type: "string" },
+      advance_obligation_id: { type: "string" },
+      advance_retention_health: { anyOf: [{ type: "number" }, { type: "string" }] },
+      advance_retention_pension: { anyOf: [{ type: "number" }, { type: "string" }] },
+      suspension_cause: { type: "string" },
+      suspension_kind: { type: "string" },
       taxable: { type: "boolean" },
       metadata: { type: "object" }
     }

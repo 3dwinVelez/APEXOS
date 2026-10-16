@@ -30,11 +30,19 @@ type Employee = {
     branch_code?: string;
     society_code?: string;
     cost_center_code?: string;
+    regime?: string;
+    regimen?: string;
+    sector?: string;
     accounting?: { society_code?: string; branch_code?: string; cost_center_code?: string; cost_center?: string };
     weekly_hours?: number;
     currency?: string;
     social_security?: {
       arl_risk_class?: number | string;
+      exoneration_eligible?: boolean;
+      exoneration_support?: string;
+      regime?: string;
+      sector?: string;
+      sln_pension_employer_percent?: number | string;
     };
   };
   user?: { id?: number | string; name?: string; email?: string; active?: boolean };
@@ -62,6 +70,11 @@ type EmployeeForm = {
   end_date: string;
   salary_base: string;
   arl_risk_class: string;
+  exoneration_eligible: boolean;
+  exoneration_support: string;
+  regime: string;
+  sector: string;
+  sln_pension_employer_percent: string;
   eps_id: string;
   pension_fund_id: string;
   severance_fund_id: string;
@@ -172,6 +185,11 @@ export default function EmployeesMasterPage() {
     end_date: "",
     salary_base: "",
     arl_risk_class: "1",
+    exoneration_eligible: false,
+    exoneration_support: "",
+    regime: "ordinary",
+    sector: "private",
+    sln_pension_employer_percent: "12",
     eps_id: "",
     pension_fund_id: "",
     severance_fund_id: "",
@@ -203,6 +221,11 @@ export default function EmployeesMasterPage() {
       end_date: "",
       salary_base: "",
       arl_risk_class: "1",
+      exoneration_eligible: false,
+      exoneration_support: "",
+      regime: "ordinary",
+      sector: "private",
+      sln_pension_employer_percent: "12",
       eps_id: "",
       pension_fund_id: "",
       severance_fund_id: "",
@@ -315,6 +338,11 @@ export default function EmployeesMasterPage() {
       end_date: displayDate(employee.end_date),
       salary_base: employee.salary_base ? String(employee.salary_base) : "",
       arl_risk_class: String(employee.metadata?.social_security?.arl_risk_class || "1"),
+      exoneration_eligible: employee.metadata?.social_security?.exoneration_eligible === true,
+      exoneration_support: employee.metadata?.social_security?.exoneration_support || "",
+      regime: employee.metadata?.regime || employee.metadata?.regimen || "ordinary",
+      sector: employee.metadata?.sector || "private",
+      sln_pension_employer_percent: String(employee.metadata?.social_security?.sln_pension_employer_percent || "12"),
       eps_id: "",
       pension_fund_id: "",
       severance_fund_id: "",
@@ -345,6 +373,10 @@ export default function EmployeesMasterPage() {
     }
     if (!form.document.trim()) {
       window.alert("El numero de documento es obligatorio y no se puede repetir.");
+      return;
+    }
+    if (form.exoneration_eligible && !form.exoneration_support.trim()) {
+      window.alert("La elegibilidad ET 114-1 requiere soporte explícito.");
       return;
     }
     const selectedAccounting = selected?.metadata?.accounting || {
@@ -392,6 +424,11 @@ export default function EmployeesMasterPage() {
         end_date: form.contract_type === "fixed" ? (form.end_date || null) : null,
         salary_base: form.salary_base ? Number(form.salary_base) : 0,
         arl_risk_class: Number(form.arl_risk_class || 1),
+        exoneration_eligible: form.exoneration_eligible,
+        exoneration_support: form.exoneration_support || undefined,
+        regime: form.regime,
+        sector: form.sector,
+        sln_pension_employer_percent: Number(form.sln_pension_employer_percent || 12),
         salary_type: "monthly"
       };
       const isCreate = !selected;
@@ -618,6 +655,12 @@ export default function EmployeesMasterPage() {
                   { value: "4", label: "Riesgo IV - 4.350%" },
                   { value: "5", label: "Riesgo V - 6.960%" }
                 ]} />
+                <SelectField label="Régimen laboral" disabled={mode === "view"} value={form.regime} onChange={(value) => setForm((current) => ({ ...current, regime: value }))} options={[{ value: "ordinary", label: "Ordinario privado" }, { value: "public", label: "Público (bloqueado por alcance)" }, { value: "integral", label: "Salario integral (bloqueado por alcance)" }]} />
+                <SelectField label="Sector" disabled={mode === "view"} value={form.sector} onChange={(value) => setForm((current) => ({ ...current, sector: value }))} options={[{ value: "private", label: "Privado" }, { value: "public", label: "Público (bloqueado por alcance)" }]} />
+                {form.regime !== "ordinary" || form.sector !== "private" ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 md:col-span-2">Este régimen/sector se conserva en el maestro, pero el cálculo IBC de novedades actual bloqueará la liquidación hasta contar con reglas específicas.</p> : null}
+                <EmployeeField label="Pensión patronal SLN (%)" readOnly={mode === "view"} type="number" value={form.sln_pension_employer_percent} onChange={(value) => setForm((current) => ({ ...current, sln_pension_employer_percent: value }))} />
+                <label className="flex items-center gap-2 rounded-md border border-line bg-paper p-3 text-sm font-semibold"><input checked={form.exoneration_eligible} disabled={mode === "view"} onChange={(event) => setForm((current) => ({ ...current, exoneration_eligible: event.target.checked }))} type="checkbox" /> Empresa/trabajador elegible ET 114-1 explícitamente</label>
+                <EmployeeField label="Soporte elegibilidad ET 114-1" readOnly={mode === "view"} value={form.exoneration_support} onChange={(value) => setForm((current) => ({ ...current, exoneration_support: value }))} />
                 {mode === "create" ? (
                   <section className="md:col-span-2 rounded-md border border-line bg-white p-3">
                     <h3 className="text-base font-semibold">Afiliaciones iniciales</h3>
