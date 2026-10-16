@@ -193,6 +193,9 @@ function Ensure-Dependencies {
     Write-Host "Instalando dependencias con npm ci..." -ForegroundColor Cyan
     & npm ci
     if ($LASTEXITCODE -ne 0) { Stop-Blocked "npm ci fallo." }
+    Write-Host "Generando cliente Prisma..." -ForegroundColor Cyan
+    & npm run prisma:generate
+    if ($LASTEXITCODE -ne 0) { Stop-Blocked "prisma generate fallo." }
     New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
     Set-Content -LiteralPath $hashFile -Value $hash
   }
