@@ -7,9 +7,27 @@
   "candidate": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
   "base_commits": { "develop": "e0929520874e208e7d1ad5e4f16bd962056c347e" },
   "certified_commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
+  "promotion_branch": "codex/qa-ibc-57481e6c",
+  "target_head": "e0929520874e208e7d1ad5e4f16bd962056c347e",
+  "candidate_source": { "branch": "desarrollo", "commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159" },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/socialContributionSegments.js",
+    "apps/api/test/hr-payroll-social-contributions-bulk.test.js",
+    "apps/api/test/hr-social-contribution-segments.test.js",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "apps/web/test/ibc-nomina-ui.test.mjs",
+    "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md",
+    "scripts/certifications/hr-ibc-novelties-browser-local.js"
+  ],
   "change_intent": {
     "summary": "Integra la segmentacion de IBC por novedades laborales en nomina y aportes sociales, manteniendo contratos existentes y capacidades protegidas de maestros contables, RBAC y tenant.",
-    "modules": ["hr", "payroll", "social-contributions"]
+    "modules": ["hr", "payroll", "social-contributions", "promotion-governance"]
   },
   "expected_changes": [
     { "status": "M", "file": "apps/api/src/modules/hr/schema.js" },
@@ -25,6 +43,11 @@
     { "status": "A", "file": "apps/web/test/ibc-nomina-ui.test.mjs" },
     { "status": "A", "file": "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md" },
     { "status": "A", "file": "scripts/certifications/hr-ibc-novelties-browser-local.js" },
+    { "status": "A", "file": "scripts/certifications/scoped-qa-governance-local.js" },
+    { "status": "M", "file": "scripts/git-governance-guard.js" },
+    { "status": "M", "file": ".github/workflows/ci.yml" },
+    { "status": "A", "file": "scripts/test/git-governance-guard.test.js" },
+    { "status": "A", "file": "docs/qa/certifications/hr-ibc-novelties-20261016.md" },
     { "status": "A", "file": "docs/qa/manifests/hr-ibc-novelties-20261015-preqa.json" },
     { "status": "A", "file": "docs/qa/manifests/hr-ibc-novelties-20261015-scope.json" }
   ],
@@ -42,14 +65,22 @@
     "apps/web/test/ibc-nomina-ui.test.mjs",
     "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md",
     "scripts/certifications/hr-ibc-novelties-browser-local.js",
+    "scripts/certifications/scoped-qa-governance-local.js",
+    "scripts/git-governance-guard.js",
+    ".github/workflows/ci.yml",
+    "scripts/test/git-governance-guard.test.js",
+    "docs/qa/certifications/hr-ibc-novelties-20261016.md",
     "docs/qa/manifests/hr-ibc-novelties-20261015-preqa.json",
     "docs/qa/manifests/hr-ibc-novelties-20261015-scope.json"
   ],
   "allowed_deletions": [],
   "protected_capabilities": [
-    { "name": "ibc_novedades_segmented_liquidation", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
-    { "name": "social_contributions_pila_preview", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
-    { "name": "payroll_accounting_masters_regression", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] },
-    { "name": "rbac_and_tenant_isolation", "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] }
+    { "name": "ibc_novedades_segmented_liquidation", "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] },
+    { "name": "social_contributions_pila_preview", "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] },
+    { "name": "payroll_accounting_masters_regression", "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] },
+    { "name": "rbac_and_tenant_isolation", "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] }
+    ,{ "name": "promotion_governance_real_git_fixture", "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] }
+    ,{ "name": "promotion_branch_authorization", "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] }
+    ,{ "name": "certified_functional_paths_unchanged", "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] }
   ]
 }

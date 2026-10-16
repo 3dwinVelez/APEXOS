@@ -4,16 +4,19 @@
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
+  "promotion_branch": "codex/qa-ibc-57481e6c",
+  "target_head": "e0929520874e208e7d1ad5e4f16bd962056c347e",
   "commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
   "target_baseline": "origin/develop@e0929520874e208e7d1ad5e4f16bd962056c347e",
   "candidate": {
     "status": "certified",
     "reviewed_commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159",
+    "candidate_source": { "branch": "desarrollo", "commit": "57481e6c0ede8d4ad26beeb0f24dc01643e9b159" },
     "scope_manifest": "hr-ibc-novelties-20261015-scope.json"
   },
   "change_intent": {
     "summary": "Promueve a QA la segmentacion del IBC de nomina y novedades laborales, preservando liquidacion, aportes sociales, regresion de maestros contables y aislamiento por tenant.",
-    "modules": ["hr", "payroll", "social-contributions"]
+    "modules": ["hr", "payroll", "social-contributions", "promotion-governance"]
   },
   "qa_status": "pending",
   "approval": {
@@ -26,25 +29,32 @@
       "pull_request_desarrollo_develop": true,
       "merge_develop": true,
       "deploy_qa": true,
+      "auxiliary_branch_promotion": true,
       "promote_main": false
     }
   },
   "checks": {
-    "functional": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
-    "error": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
-    "support_scripts": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"] },
-    "regression": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] },
-    "platform_regression": { "status": "passed", "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json", "../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json"] }
+    "functional": { "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] },
+    "error": { "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] },
+    "regression": { "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["../certifications/hr-ibc-novelties-20261016.md"] }
   },
   "certification": {
     "status": "passed",
     "script": "../../../scripts/certifications/hr-ibc-novelties-browser-local.js",
-    "evidence": ["../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"]
+    "evidence": ["../certifications/hr-ibc-novelties-20261016.md"]
   },
   "regression_certification": {
     "status": "passed",
-    "script": "../../../scripts/certifications/hr-ibc-novelties-browser-local.js",
-    "evidence": ["../evidence/hr-ibc-novelties-20261015/payroll-masters-regression.json", "../evidence/hr-ibc-novelties-20261015/hr-ibc-novelties-browser-local.json"]
+    "script": "../../../scripts/certifications/payroll-accounting-masters-browser-local.js",
+    "evidence": ["../certifications/hr-ibc-novelties-20261016.md"]
+  },
+  "governance_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/scoped-qa-governance-local.js",
+    "checks": 15,
+    "evidence": ["../certifications/hr-ibc-novelties-20261016.md"]
   },
   "promotion": {
     "status": "approved_for_qa",
