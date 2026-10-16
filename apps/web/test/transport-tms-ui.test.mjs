@@ -202,14 +202,14 @@ test("los tarifarios exponen vigencias, versiones y componentes de costo", () =>
   assert.match(rates, /fuel_surcharge_pct/);
 });
 
-test("el asistente de tarifarios crea origenes operativos enlazados al maestro", () => {
-  assert.match(rates, /\/api\/v1\/transport\/origins/);
-  assert.match(rates, /OriginQuickCreate/);
-  assert.match(rates, /Crear nuevo origen operativo/);
-  assert.match(rates, /Crear y seleccionar/);
-  assert.match(rates, /origin_id: String\(origin\.id\)/);
-  assert.match(rates, /canCreateOrigin=\{canWrite\}/);
-  assert.match(rates, /latitude,\s*longitude/);
+test("el asistente de tarifarios define ambito solo por destino y aplica a nivel nacional desde cualquier sede", () => {
+  assert.doesNotMatch(rates, /\/api\/v1\/transport\/origins/);
+  assert.doesNotMatch(rates, /OriginQuickCreate|origin_id/);
+  assert.match(rates, /GeoCascade title="Destino"/);
+  assert.match(rates, /destinationScope/);
+  assert.match(rates, /Aplica a: <b>\{destinationScope\}<\/b>/);
+  assert.match(rates, /nacional, desde cualquier sede/);
+  assert.match(rates, /Red nacional/);
 });
 
 test("los tarifarios se editan desde el monitor con permiso dedicado manage_rates", () => {

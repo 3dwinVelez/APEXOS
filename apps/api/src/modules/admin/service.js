@@ -308,6 +308,59 @@ function activityTypeDataFromMasterItem(item, previousMetadata = {}) {
   };
 }
 
+function sedeToMasterItem(sede) {
+  return {
+    code: sede.code,
+    name: sede.name,
+    description: sede.address || "",
+    active: sede.active !== false,
+    sort_order: 100
+  };
+}
+
+async function ensureAdminSedes() {
+  const current = await prisma.sede.findMany({ where: { __includeInactive: true }, take: 1 });
+  if (current.length) return;
+  await prisma.sede.createMany({
+    data: USER_MASTER_DATA.locations.map((item) => ({
+      code: item.code,
+      name: item.name,
+      address: `${item.name} - direccion por completar`,
+      city: "Por completar",
+      country: "CO",
+      timezone: "America/Bogota",
+      service_minutes: 60,
+      active: true,
+      metadata: { source: "admin_user_master_data" }
+    })),
+    skipDuplicates: true
+  });
+}
+
+async function listSedeMasterItems() {
+  await ensureAdminSedes();
+  const rows = await prisma.sede.findMany({
+    where: { __includeInactive: true },
+    orderBy: [{ name: "asc" }]
+  });
+  return rows.map(sedeToMasterItem);
+}
+
+async function userMasterDataView() {
+  return {
+    activity_types: await listActivityTypeMasterItems(),
+    locations: await listSedeMasterItems()
+  };
+}
+
+function assertUserMasterCatalogWritable(catalog) {
+  if (catalog === "locations") {
+    const err = new Error("El catalogo Sedes se administra desde el maestro Sedes del modulo Transporte.");
+    err.statusCode = 409;
+    throw err;
+  }
+}
+
 function emptyLegacyPermissions() {
   return Object.fromEntries(PERMISSION_CATALOG.map((item) => [
     item.key,
@@ -628,9 +681,7 @@ async function getPermissionCatalog(tenantId) {
 
 async function getUserMasterData(tenantId) {
   tenantId = normalizeTenantId(tenantId);
-  return prisma.runWithTenant(tenantId, async () => cloneUserMasterData({
-    activity_types: await listActivityTypeMasterItems()
-  }));
+  return prisma.runWithTenant(tenantId, async () => cloneUserMasterData(await userMasterDataView()));
 }
 
 function assertUserMasterCatalog(catalog) {
@@ -678,6 +729,7 @@ async function auditUserMasterDataItem(tenantId, actorId, action, catalog, code,
 async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
+  assertUserMasterCatalogWritable(catalog);
   const item = normalizeUserMasterItem(input);
   if (catalog === "activity_types") {
     return prisma.runWithTenant(tenantId, async () => {
@@ -704,7 +756,7 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
         });
       }
       await auditUserMasterDataItem(tenantId, actorId, "catalog_item_upserted", catalog, item.code, previous && activityTypeToMasterItem(previous), item);
-      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+      return cloneUserMasterData(await userMasterDataView());
     });
   }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
@@ -714,13 +766,14 @@ async function addUserMasterDataItem(tenantId, catalog, input, actorId = null) {
     : [...current, item];
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_upserted", catalog, item.code, previous, item);
-    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    return cloneUserMasterData(await userMasterDataView());
   });
 }
 
 async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
+  assertUserMasterCatalogWritable(catalog);
   if (catalog === "activity_types") {
     return prisma.runWithTenant(tenantId, async () => {
       await ensureAdminActivityTypes();
@@ -753,7 +806,7 @@ async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId 
         data: activityTypeDataFromMasterItem(nextItem, previousRow.metadata)
       });
       await auditUserMasterDataItem(tenantId, actorId, "catalog_item_updated", catalog, nextItem.code, previous, nextItem);
-      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+      return cloneUserMasterData(await userMasterDataView());
     });
   }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
@@ -772,13 +825,14 @@ async function updateUserMasterDataItem(tenantId, catalog, code, input, actorId 
   USER_MASTER_DATA[catalog] = current.map((entry) => entry.code === code ? nextItem : entry);
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_updated", catalog, nextItem.code, previous, nextItem);
-    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    return cloneUserMasterData(await userMasterDataView());
   });
 }
 
 async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null) {
   tenantId = normalizeTenantId(tenantId);
   assertUserMasterCatalog(catalog);
+  assertUserMasterCatalogWritable(catalog);
   if (catalog === "activity_types") {
     return prisma.runWithTenant(tenantId, async () => {
       await ensureAdminActivityTypes();
@@ -791,7 +845,7 @@ async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null)
       const previous = activityTypeToMasterItem(previousRow);
       await prisma.activityType.delete({ where: { id: previousRow.id } });
       await auditUserMasterDataItem(tenantId, actorId, "catalog_item_deleted", catalog, code, previous, null);
-      return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+      return cloneUserMasterData(await userMasterDataView());
     });
   }
   const current = Array.isArray(USER_MASTER_DATA[catalog]) ? USER_MASTER_DATA[catalog] : [];
@@ -804,7 +858,7 @@ async function deleteUserMasterDataItem(tenantId, catalog, code, actorId = null)
   USER_MASTER_DATA[catalog] = current.filter((entry) => entry.code !== code);
   return prisma.runWithTenant(tenantId, async () => {
     await auditUserMasterDataItem(tenantId, actorId, "catalog_item_deleted", catalog, code, previous, null);
-    return cloneUserMasterData({ activity_types: await listActivityTypeMasterItems() });
+    return cloneUserMasterData(await userMasterDataView());
   });
 }
 

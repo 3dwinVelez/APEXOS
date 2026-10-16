@@ -42,7 +42,7 @@ const deliveryPointSchema = {
   }
 };
 
-const originSchema = {
+const sedeSchema = {
   body: {
     type: "object",
     required: ["code", "name", "address", "city", "latitude", "longitude"],
@@ -62,7 +62,6 @@ const rateCardSchema = {
     required: ["code", "name", "valid_from", "valid_to"],
     properties: {
       code: { type: "string", minLength: 1 }, name: { type: "string", minLength: 1 }, carrier_id: { type: "integer" },
-      origin_id: { type: "integer" }, origin_department: { type: "string" }, origin_city: { type: "string" }, origin_municipality: { type: "string" },
       destination_city: { type: "string" }, destination_department: { type: "string" }, destination_municipality: { type: "string" },
       service_level: { type: "string" }, vehicle_type: { type: "string" }, valid_from: { type: "string" }, valid_to: { type: "string" },
       currency: { type: "string" }, base_rate: { type: "number", minimum: 0 }, minimum_charge: { type: "number", minimum: 0 },
@@ -76,9 +75,9 @@ const rateCardSchema = {
 const planningSchema = {
   body: {
     type: "object",
-    required: ["origin_id", "need_ids"],
+    required: ["sede_id", "need_ids"],
     properties: {
-      origin_id: { type: "integer" }, need_ids: { type: "array", minItems: 1, uniqueItems: true, items: { type: "integer" } },
+      sede_id: { type: "integer" }, need_ids: { type: "array", minItems: 1, uniqueItems: true, items: { type: "integer" } },
       vehicle_id: { type: "integer" }, vehicle_type: { type: "string" }, service_level: { type: "string" },
       strategy: { type: "string" }, return_to_origin: { type: "boolean" }, road_factor: { type: "number", minimum: 1, maximum: 2 },
       average_speed_kmh: { type: "number", minimum: 5, maximum: 120 }, plan_id: { type: "integer" }
@@ -89,7 +88,7 @@ const planningSchema = {
 const commitPlanningSchema = {
   body: {
     ...planningSchema.body,
-    required: ["code", "origin_id", "need_ids", "rate_card_id"],
+    required: ["code", "sede_id", "need_ids", "rate_card_id"],
     properties: {
       ...planningSchema.body.properties,
       code: { type: "string", minLength: 1 }, rate_card_id: { type: "integer" }, planned_departure: { type: "string" },
@@ -105,7 +104,7 @@ const needSchema = {
     properties: {
       code: { type: "string", minLength: 1 }, source_type: { type: "string", minLength: 1 }, source_id: { type: "string" },
       source_reference: { type: "string" }, sales_order_id: { type: "integer" }, origin_place_id: { type: "integer" },
-      origin_id: { type: "integer" }, origin_name: { type: "string", minLength: 1 }, delivery_point_id: { type: "integer" }, available_at: { type: "string" }, due_at: { type: "string" },
+      sede_id: { type: "integer" }, origin_name: { type: "string", minLength: 1 }, delivery_point_id: { type: "integer" }, available_at: { type: "string" }, due_at: { type: "string" },
       priority: { type: "string" }, service_level: { type: "string" }, weight_kg: { type: "number", minimum: 0 },
       volume_m3: { type: "number", minimum: 0 }, pallets: { type: "number", minimum: 0 }, packages: { type: "integer", minimum: 0 },
       temperature_min_c: nullableNumber, temperature_max_c: nullableNumber, required_vehicle_type: { type: "string" },
@@ -120,7 +119,7 @@ const tripSchema = {
     type: "object",
     required: ["code", "origin_name", "need_ids"],
     properties: {
-      code: { type: "string", minLength: 1 }, origin_place_id: { type: "integer" }, origin_id: { type: "integer" }, origin_name: { type: "string", minLength: 1 },
+      code: { type: "string", minLength: 1 }, origin_place_id: { type: "integer" }, sede_id: { type: "integer" }, origin_name: { type: "string", minLength: 1 },
       need_ids: { type: "array", minItems: 1, uniqueItems: true, items: { type: "integer" } }, planned_departure: { type: "string" },
       planned_arrival: { type: "string" }, service_level: { type: "string" }, estimated_cost: { type: "number", minimum: 0 },
       currency: { type: "string" }, planned_distance_km: { type: "number", minimum: 0 }, planned_duration_minutes: { type: "integer", minimum: 0 },
@@ -178,15 +177,15 @@ const settlementIssueResolveSchema = { body: { type: "object", required: ["resol
 const settlementDecisionSchema = { body: { type: "object", required: ["decision"], properties: { decision: { type: "string", enum: ["aprobada", "rechazada", "con_novedad"] }, comment: { type: "string", maxLength: 2000 }, level: { type: "integer", minimum: 1 }, actor_role: { type: "string", maxLength: 80 }, version: { type: "integer", minimum: 0 } } } };
 const settlementAccountSchema = { body: { type: "object", properties: { reference: { type: "string", maxLength: 120 }, accounting_period: { type: "string", maxLength: 20 }, idempotency_key: { type: "string", maxLength: 160 }, payload: { type: "object" } } } };
 const settlementTransitionSchema = { body: { type: "object", properties: { version: { type: "integer", minimum: 0 }, reference: { type: "string", maxLength: 120 }, reason: { type: "string", maxLength: 2000 }, status: { type: "string", enum: ["liquidada", "reversada"] } } } };
-const rateSimulateSchema = { body: { type: "object", properties: { carrier_id: { type: "integer", minimum: 1 }, service_date: { type: "string" }, origin_department: { type: "string", maxLength: 120 }, origin_city: { type: "string", maxLength: 120 }, origin_municipality: { type: "string", maxLength: 120 }, destination_city: { type: "string", maxLength: 120 }, destination_department: { type: "string", maxLength: 120 }, destination_municipality: { type: "string", maxLength: 120 }, vehicle_type: { type: "string", maxLength: 40 }, service_level: { type: "string", maxLength: 40 }, quantity: { type: "number", exclusiveMinimum: 0 }, distance_km: { type: "number", minimum: 0 }, weight_kg: { type: "number", minimum: 0 }, volume_m3: { type: "number", minimum: 0 }, stop_count: { type: "integer", minimum: 0 } } } };
+const rateSimulateSchema = { body: { type: "object", properties: { carrier_id: { type: "integer", minimum: 1 }, service_date: { type: "string" }, destination_city: { type: "string", maxLength: 120 }, destination_department: { type: "string", maxLength: 120 }, destination_municipality: { type: "string", maxLength: 120 }, vehicle_type: { type: "string", maxLength: 40 }, service_level: { type: "string", maxLength: 40 }, quantity: { type: "number", exclusiveMinimum: 0 }, distance_km: { type: "number", minimum: 0 }, weight_kg: { type: "number", minimum: 0 }, volume_m3: { type: "number", minimum: 0 }, stop_count: { type: "integer", minimum: 0 } } } };
 
 const planCreateSchema = {
   body: {
     type: "object",
-    required: ["origin_id"],
+    required: ["sede_id"],
     properties: {
       code: { type: "string", maxLength: 40 }, name: { type: "string", maxLength: 120 },
-      origin_id: { type: "integer", minimum: 1 }, service_level: { type: "string", maxLength: 40 },
+      sede_id: { type: "integer", minimum: 1 }, service_level: { type: "string", maxLength: 40 },
       due_date: { type: "string" }, notes: { type: "string", maxLength: 500 }
     }
   }
@@ -211,4 +210,26 @@ const planNeedsSchema = {
   }
 };
 
-module.exports = { carrierSchema, driverSchema, deliveryPointSchema, originSchema, rateCardSchema, planningSchema, commitPlanningSchema, needSchema, tripSchema, assignmentSchema, transitionSchema, eventSchema, attemptSchema, settlementSchema, gpsBatchSchema, stopVisitSchema, configSchema, mobileConfigSchema, notificationConfigSchema, orderUpdateSchema, orderImportSchema, notificationSchema, settlementTypeSchema, settlementPeriodSchema, settlementPackageCreateSchema, settlementPackageUpdateSchema, settlementItemsSchema, settlementAdjustmentSchema, settlementIssueSchema, settlementIssueResolveSchema, settlementDecisionSchema, settlementAccountSchema, settlementTransitionSchema, rateSimulateSchema, planCreateSchema, planUpdateSchema, planNeedsSchema };
+const simulatorPointSchema = {
+  type: "object",
+  properties: {
+    sede_id: { type: "integer" }, latitude: { type: "number" }, longitude: { type: "number" },
+    label: { type: "string", maxLength: 200 }, address: { type: "string", maxLength: 200 }
+  },
+  additionalProperties: false
+};
+
+const routeSimulatorSchema = {
+  body: {
+    type: "object",
+    required: ["origin", "destination"],
+    properties: {
+      origin: { ...simulatorPointSchema, anyOf: [{ required: ["sede_id"] }, { required: ["latitude", "longitude"] }, { required: ["address"] }] },
+      destination: { ...simulatorPointSchema, anyOf: [{ required: ["latitude", "longitude"] }, { required: ["address"] }] },
+      intermediates: { type: "array", maxItems: 10, items: { ...simulatorPointSchema, anyOf: [{ required: ["latitude", "longitude"] }] } },
+      round_trip: { type: "boolean" }
+    }
+  }
+};
+
+module.exports = { carrierSchema, driverSchema, deliveryPointSchema, sedeSchema, rateCardSchema, planningSchema, commitPlanningSchema, needSchema, tripSchema, assignmentSchema, transitionSchema, eventSchema, attemptSchema, settlementSchema, gpsBatchSchema, stopVisitSchema, configSchema, mobileConfigSchema, notificationConfigSchema, orderUpdateSchema, orderImportSchema, notificationSchema, settlementTypeSchema, settlementPeriodSchema, settlementPackageCreateSchema, settlementPackageUpdateSchema, settlementItemsSchema, settlementAdjustmentSchema, settlementIssueSchema, settlementIssueResolveSchema, settlementDecisionSchema, settlementAccountSchema, settlementTransitionSchema, rateSimulateSchema, planCreateSchema, planUpdateSchema, planNeedsSchema, routeSimulatorSchema };

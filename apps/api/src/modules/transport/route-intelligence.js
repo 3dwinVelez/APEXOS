@@ -1,4 +1,5 @@
 const GOOGLE_ROUTES_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes";
+const GOOGLE_GEOCODE_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json";
 const GOOGLE_ROUTES_FIELD_MASK = [
   "routes.distanceMeters",
   "routes.duration",
@@ -9,6 +10,7 @@ const GOOGLE_ROUTES_FIELD_MASK = [
 ].join(",");
 const GOOGLE_ROUTES_ENV_VARS = ["GOOGLE_ROUTES_API_KEY", "GOOGLE_MAPS_API_KEY", "GOOGLE_MAPS_ROUTES_API_KEY"];
 const GOOGLE_ROUTES_WAYPOINT_LIMIT = 25;
+const ROAD_FACTOR_FALLBACK = 1.35;
 
 function routesApiKey() {
   return process.env.GOOGLE_ROUTES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_ROUTES_API_KEY || "";
@@ -251,4 +253,103 @@ async function connectionStatus({ probe } = {}) {
   }
 }
 
-module.exports = { enrichRouteWithGoogle, connectionStatus, routeIntelligenceConfig, waypointsFromLegs, safeDepartureTime };
+function haversineKmBetween(from, to) {
+  const rad = Math.PI / 180;
+  const dLat = (to.latitude - from.latitude) * rad;
+  const dLng = (to.longitude - from.longitude) * rad;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(from.latitude * rad) * Math.cos(to.latitude * rad) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function googleGeocodeError(status) {
+  if (status === 400) return "Google Geocoding rechazo la solicitud (400): revisa la direccion buscada.";
+  if (status === 403) return "Google Geocoding rechazo la clave (403): confirma que la Geocoding API este habilitada para esta clave.";
+  if (status === 429) return "Google Geocoding reporto cuota agotada (429): revisa el presupuesto o el limite de solicitudes de la clave.";
+  return `Google Geocoding respondio ${status}.`;
+}
+
+// Geocodificacion server-side: la clave viaja solo en el backend y nunca se devuelve al cliente.
+async function geocodeCandidates(address) {
+  const query = String(address || "").trim();
+  if (query.length < 3) return { configured: Boolean(routesApiKey()), candidates: [] };
+  const key = routesApiKey();
+  if (!key) {
+    return { configured: false, candidates: [], message: "Geocoding Google no configurado en backend; solo hay resultados internos del tenant." };
+  }
+  try {
+    const url = `${GOOGLE_GEOCODE_ENDPOINT}?address=${encodeURIComponent(query)}&region=co&language=es&key=${key}`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(4500) });
+    if (!response.ok) return { configured: true, candidates: [], message: googleGeocodeError(response.status) };
+    const payload = await response.json();
+    if (payload.status === "ZERO_RESULTS") return { configured: true, candidates: [], message: "Google no encontro resultados para esa direccion." };
+    if (payload.status !== "OK") return { configured: true, candidates: [], message: `Google Geocoding respondio ${payload.status}.` };
+    const candidates = (payload.results || []).slice(0, 5).map((item) => ({
+      label: item.formatted_address || query,
+      latitude: item.geometry?.location?.lat ?? null,
+      longitude: item.geometry?.location?.lng ?? null,
+      source: "google"
+    })).filter((item) => item.latitude != null && item.longitude != null);
+    return { configured: true, candidates, message: candidates.length ? undefined : "Google no devolvio coordenadas utilizables." };
+  } catch {
+    return { configured: true, candidates: [], message: "Google Geocoding no respondio dentro del tiempo esperado." };
+  }
+}
+
+// Internos del tenant primero (sedes, puntos de entrega), luego Google; deduplicado por coordenadas.
+function mergePlaceCandidates(internalPlaces = [], googlePlaces = []) {
+  const seen = new Set();
+  const merged = [];
+  for (const place of [...internalPlaces, ...googlePlaces]) {
+    if (place?.latitude == null || place?.longitude == null) continue;
+    const key = `${Number(place.latitude).toFixed(5)}:${Number(place.longitude).toFixed(5)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(place);
+  }
+  return merged.slice(0, 8);
+}
+
+function estimateRouteFallback({ origin, destination, intermediates, round_trip }) {
+  const points = [origin, ...intermediates, destination];
+  let straightKm = 0;
+  for (let index = 0; index < points.length - 1; index += 1) straightKm += haversineKmBetween(points[index], points[index + 1]);
+  const oneWayKm = straightKm * ROAD_FACTOR_FALLBACK;
+  const distanceKm = Number((round_trip ? oneWayKm * 2 : oneWayKm).toFixed(2));
+  return {
+    distance_km: distanceKm,
+    duration_minutes: Math.max(1, Math.round(distanceKm / 0.6)),
+    source: "estimate",
+    polyline: null,
+    traffic_level: "sin_lectura",
+    message: `Distancia estimada por linea recta con factor vial ${ROAD_FACTOR_FALLBACK} (sin Google Routes); conecta la clave en backend para distancia y tiempo reales.`
+  };
+}
+
+// Simulacion de recorrido del tarifario: reutiliza Google Routes server-side y
+// cae a estimacion vial cuando no hay clave o Google no responde.
+async function simulateRoutePoints({ origin, destination, intermediates = [], round_trip = false } = {}) {
+  const stops = intermediates.filter((point) => Number.isFinite(Number(point?.latitude)) && Number.isFinite(Number(point?.longitude)));
+  const legs = [];
+  let previous = origin;
+  for (const stop of stops) {
+    legs.push({ from_coordinate: previous, to_coordinate: stop });
+    previous = stop;
+  }
+  legs.push({ from_coordinate: previous, to_coordinate: destination });
+  const intel = await enrichRouteWithGoogle({ legs });
+  const route = intel.routes?.[0];
+  if (!route) {
+    return { ...estimateRouteFallback({ origin, destination, intermediates: stops, round_trip }), google_status: intel.status };
+  }
+  return {
+    distance_km: round_trip ? Number((route.distance_km * 2).toFixed(2)) : route.distance_km,
+    duration_minutes: round_trip ? Math.max(1, route.duration_minutes * 2) : route.duration_minutes,
+    source: "google",
+    polyline: route.polyline || null,
+    traffic_level: route.traffic_level,
+    waypoints_used: intel.waypoints_used || 0,
+    message: round_trip ? "Distancia y tiempo duplicados por ida y regreso." : "Ruta calculada con Google Routes desde backend."
+  };
+}
+
+module.exports = { enrichRouteWithGoogle, connectionStatus, routeIntelligenceConfig, waypointsFromLegs, safeDepartureTime, geocodeCandidates, mergePlaceCandidates, simulateRoutePoints };

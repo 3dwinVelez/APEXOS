@@ -131,35 +131,76 @@ test("administracion administra los catálogos vehiculares y de tarifas con jera
   assert.match(adminSource, /parent_code: item\.parent_code \|\| ""/);
 });
 
+test("las sedes se gestionan completas dentro de Configuracion del administrador", () => {
+  assert.match(adminSource, /\{ key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones\.", status: "activo", modal: "sedes" \}/);
+  assert.match(adminSource, /type SedeRow = \{[\s\S]+?department\?: string \| null; country\?: string;[\s\S]+?service_minutes\?: number; active: boolean;\s*\};/);
+  assert.match(adminSource, /const emptySedeDraft: SedeDraft = \{[\s\S]+?country: "CO"[\s\S]+?service_minutes: "60" \};/);
+  assert.match(adminSource, /const canWriteSedes = hasStoredRolePermission\("transport", "write"\);/);
+  assert.match(adminSource, /api<SedeRow\[\]>\("\/api\/v1\/transport\/sedes\?include_inactive=true"\)/);
+  assert.match(adminSource, /function resetSedeDraft\(\) \{\s*setSedeDraft\(\{ \.\.\.emptySedeDraft \}\);\s*setEditingSedeId\(null\);\s*\}/);
+  assert.match(adminSource, /function editSedeRow\(row: SedeRow\) \{\s*setSedeDraft\(\{/);
+  assert.match(adminSource, /async function saveSedeMaster\(\) \{/);
+  assert.match(adminSource, /if \(!sedeDraft\.latitude\.trim\(\) \|\| !sedeDraft\.longitude\.trim\(\) \|\| Number\.isNaN\(latitude\) \|\| Number\.isNaN\(longitude\)\) \{/);
+  assert.match(adminSource, /await api\(`\/api\/v1\/transport\/sedes\/\$\{editingSedeId\}`, \{ method: "PUT", body: JSON\.stringify\(payload\) \}\);/);
+  assert.match(adminSource, /await api\("\/api\/v1\/transport\/sedes", \{ method: "POST", body: JSON\.stringify\(payload\) \}\);/);
+  assert.match(adminSource, /async function toggleSedeRow\(row: SedeRow\) \{/);
+  assert.match(adminSource, /active: !row\.active/);
+  assert.match(adminSource, /<Field label="Direccion normalizada \*" value=\{sedeDraft\.address\}/);
+  assert.match(adminSource, /<Field label="Latitud \*" step="any" type="number" value=\{sedeDraft\.latitude\}/);
+  assert.match(adminSource, /<Field label="Preparacion \(minutos\)" type="number" value=\{sedeDraft\.service_minutes\}/);
+  assert.match(adminSource, /toggleSedeRow\(row\)/);
+  assert.match(adminSource, /row\.active \? "Inactivar" : "Activar"/);
+  assert.match(adminSource, /<ModalFrame title="Sedes" onClose=\{\(\) => setActiveModal\(null\)\} maxWidth="md:max-w-5xl">/);
+  assert.doesNotMatch(adminSource, /operational_origins/);
+  assert.doesNotMatch(adminSource, /Gestionar origenes/);
+  assert.doesNotMatch(adminSource, /La gestion completa se realiza en el panel de maestros de transporte\./);
+});
+
+test("la creacion y edicion de registros ocurre en ventana emergente y el catalogo queda limpio", () => {
+  for (const code of ["user_types", "user_statuses", "document_types", "user_document_types", "positions", "areas", "cost_centers", "contract_types", "work_shifts", "activity_types", "vehicle_types", "vehicle_categories", "vehicle_brands", "vehicle_lines", "vehicle_colors", "vehicle_fuels", "vehicle_body_types", "units_of_measure", "service_levels", "departments", "cities", "municipalities", "service_types", "service_stores", "satisfaction_questions", "banks", "currencies"]) {
+    assert.match(adminSource, new RegExp(`^  ${code}: "`, "m"), `${code} debe tener etiqueta de creacion`);
+  }
+  assert.match(adminSource, /function catalogCreateLabel\(catalog: string\) \{\s*return CATALOG_CREATE_LABELS\[catalog\] \|\| "registro";\s*\}/);
+  assert.match(adminSource, /<Button onClick=\{openCatalogCreator\} type="button"><Plus size=\{16\} \/> Nuevo \{catalogCreateLabel\(catalogDraft\.catalog\)\}<\/Button>/);
+  assert.match(adminSource, /function openCatalogCreator\(\) \{\s*setCatalogDraft\(\{ catalog: catalogDraft\.catalog, code: "", name: "", description: "", parent_code: "" \}\);\s*setEditingCatalogCode\(null\);\s*setCatalogEditorOpen\(true\);\s*\}/);
+  assert.match(adminSource, /title=\{editingCatalogCode \? `Editar \$\{catalogDraft\.name \|\| editingCatalogCode\}` : `Nuevo \$\{catalogCreateLabel\(catalogDraft\.catalog\)\}`\}/);
+  assert.match(adminSource, /title=\{editingSedeId \? `Editar sede \$\{sedeDraft\.code\}` : "Nueva sede"\}/);
+  assert.match(adminSource, /onClose=\{\(\) => \{ setSedeEditorOpen\(false\); resetSedeDraft\(\); \}\}/);
+  assert.match(adminSource, /<Button onClick=\{\(\) => \{ resetSedeDraft\(\); setSedeEditorOpen\(true\); \}\} type="button"><Plus size=\{16\} \/> Nueva sede<\/Button>/);
+  assert.match(adminSource, /setSedeEditorOpen\(false\);\s*await loadSedeMasterRows\(\);/);
+  assert.doesNotMatch(adminSource, /lg:grid-cols-\[280px_minmax\(0,1fr\)\]/);
+});
+
 test("el tarifario usa ModalFrame y selects alimentados por los maestros del módulo", () => {
   assert.match(ratesSource, /import \{ api, isActiveMasterItem, loadVehicleMasterCatalogs \} from "@\/lib\/api";/);
   assert.match(ratesSource, /import type \{ VehicleMasterCatalogs \} from "@\/lib\/api";/);
   assert.match(ratesSource, /import \{ ModalFrame \} from "@\/components\/ui\/ModalFrame";/);
-  assert.match(ratesSource, /<ModalFrame maxWidth="md:max-w-3xl" onClose=\{\(\) => setOpen\(false\)\} title="Nueva versión tarifaria">/);
+  assert.match(ratesSource, /<ModalFrame maxWidth=\{wizardStep === 3 \? "md:max-w-6xl" : "md:max-w-3xl"\} onClose=\{closeWizard\} title=\{editing \? `Editar tarifario \$\{editing\.code\} · v\$\{editing\.version\}` : "Nuevo tarifario"\}>/);
   assert.doesNotMatch(ratesSource, /fixed inset-0 z-50 grid place-items-center/);
   assert.match(ratesSource, /loadVehicleMasterCatalogs\(\)/);
-  assert.match(ratesSource, /<RateForm carriers=\{carriers\} origins=\{origins\} masters=\{masters\} onSubmit=\{createRate\} \/>/);
+  assert.match(ratesSource, /<RateWizard carriers=\{carriers\} vehicles=\{vehicles\} masters=\{masters\}/);
+  assert.doesNotMatch(ratesSource, /origins=|canCreateOrigin|onCreateOrigin|origin_id/);
   assert.match(ratesSource, /const code = departments\.find\(\(item\) => item\.name === departmentName\)\?\.code;/);
   assert.match(ratesSource, /item\.parent_code === code/);
   assert.match(ratesSource, /codes\.has\(item\.parent_code\)/);
-  assert.match(ratesSource, /onChange=\{\(value\) => \{ setOriginDepartment\(value\); setOriginCity\(""\); setOriginMunicipality\(""\); \}\}/);
-  assert.match(ratesSource, /onChange=\{\(value\) => \{ setDestinationDepartment\(value\); setDestinationCity\(""\); setDestinationMunicipality\(""\); \}\}/);
-  for (const name of ["origin_department", "origin_city", "origin_municipality", "destination_department", "destination_city", "destination_municipality", "service_level", "vehicle_type", "currency"]) {
-    assert.match(ratesSource, new RegExp(`<Select name="${name}"`), `${name} debe ser un select de maestros`);
+  assert.match(ratesSource, /onDepartment=\{\(value\) => setDraft\(\(p\) => \(\{ \.\.\.p, destination_department: value, destination_city: "", destination_municipality: "" \}\)\)\}/);
+  assert.match(ratesSource, /<GeoCascade title="Destino" department=\{draft\.destination_department\}/);
+  assert.doesNotMatch(ratesSource, /<GeoCascade title="Origen"/);
+  for (const name of ["vehicle_id", "carrier_id", "service_level", "vehicle_type", "currency"]) {
+    assert.match(ratesSource, new RegExp(`<Select label="[^"]+" name="${name}"`), `${name} debe ser un select de maestros`);
   }
-  assert.match(ratesSource, /label="Origen operativo \(sede\)"/);
-  assert.match(ratesSource, /label="Municipio origen"/);
-  assert.match(ratesSource, /label="Municipio destino"/);
-  assert.match(ratesSource, /empty="Cualquier departamento"/);
-  assert.match(ratesSource, /empty="Cualquier ciudad"/);
-  assert.match(ratesSource, /empty="Cualquier municipio"/);
+  assert.match(ratesSource, /aria-label=\{`Departamento \$\{title\.toLowerCase\(\)\}`\}/);
+  assert.match(ratesSource, /aria-label=\{`Municipio \$\{title\.toLowerCase\(\)\}`\}/);
+  assert.match(ratesSource, /<option value="">Cualquier departamento<\/option>/);
+  assert.match(ratesSource, /<option value="">Cualquier ciudad<\/option>/);
+  assert.match(ratesSource, /<option value="">Cualquier municipio<\/option>/);
   assert.match(ratesSource, /empty="Cualquier servicio"/);
   assert.match(ratesSource, /empty="Cualquier vehículo"/);
-  assert.match(ratesSource, /origin_department: data\.get\("origin_department"\), origin_city: data\.get\("origin_city"\), origin_municipality: data\.get\("origin_municipality"\)/);
-  assert.match(ratesSource, /destination_municipality: data\.get\("destination_municipality"\)/);
-  assert.match(ratesSource, /function rateOriginLabel\(rate: RateCard\)/);
+  assert.match(ratesSource, /destination_city: draft\.destination_city, destination_department: draft\.destination_department, destination_municipality: draft\.destination_municipality,/);
+  assert.doesNotMatch(ratesSource, /origin_department|rateOriginLabel/);
   assert.match(ratesSource, /function rateDestinationLabel\(rate: RateCard\)/);
-  assert.match(ratesSource, /los campos vacíos aplican a cualquier valor/);
+  assert.match(ratesSource, /Aplica a: <b>\{destinationScope\}<\/b>/);
+  assert.match(ratesSource, /nacional, desde cualquier sede/);
 });
 
 test("los maestros se agrupan por modulo para no perder al usuario", () => {

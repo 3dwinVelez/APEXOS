@@ -2,13 +2,12 @@
 
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Building2, Calculator, MapPin, Plus, RefreshCw, UserRound, Warehouse } from "lucide-react";
+import { Building2, Calculator, MapPin, Plus, RefreshCw, UserRound } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type Carrier = { id: number; code: string; legal_name: string; tax_id?: string; status: string; score: number };
 type Driver = { id: number; code: string; document: string; name: string; phone?: string; license_category?: string; license_expires_at?: string; status: string; carrier?: Carrier };
 type DeliveryPoint = { id: number; code: string; name: string; address: string; city: string; latitude?: number; longitude?: number; window_start?: string; window_end?: string; appointment_required: boolean };
-type Origin = { id: number; code: string; name: string; address: string; city: string; latitude: number; longitude: number; operation_start?: string; operation_end?: string };
 type SettlementType = { id: number | null; code: string; name: string; description?: string | null; documentary_policy?: string; requires_reinforced_approval?: boolean; required_documents?: string[]; reserved?: boolean };
 
 const inputClass = "h-10 w-full rounded-md border border-line bg-surface px-3 text-sm outline-none focus:border-apex";
@@ -17,9 +16,8 @@ export function TransportMastersPanel() {
   const [carriers, setCarriers] = useState<Carrier[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [points, setPoints] = useState<DeliveryPoint[]>([]);
-  const [origins, setOrigins] = useState<Origin[]>([]);
   const [types, setTypes] = useState<SettlementType[]>([]);
-  const [panel, setPanel] = useState<"carrier" | "driver" | "origin" | "point" | "settlement_type" | null>(null);
+  const [panel, setPanel] = useState<"carrier" | "driver" | "point" | "settlement_type" | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const canWrite = hasStoredRolePermission("transport", "write");
@@ -27,12 +25,12 @@ export function TransportMastersPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [carrierRows, driverRows, originRows, pointRows, typeRows] = await Promise.all([
+      const [carrierRows, driverRows, pointRows, typeRows] = await Promise.all([
         api<Carrier[]>("/api/v1/transport/carriers"), api<Driver[]>("/api/v1/transport/drivers"),
-        api<Origin[]>("/api/v1/transport/origins"), api<DeliveryPoint[]>("/api/v1/transport/delivery-points"),
+        api<DeliveryPoint[]>("/api/v1/transport/delivery-points"),
         api<SettlementType[]>("/api/v1/transport/settlement-types")
       ]);
-      setCarriers(carrierRows); setDrivers(driverRows); setOrigins(originRows); setPoints(pointRows); setTypes(typeRows); setMessage("");
+      setCarriers(carrierRows); setDrivers(driverRows); setPoints(pointRows); setTypes(typeRows); setMessage("");
     } catch (error) { setMessage(error instanceof Error ? error.message : "No fue posible cargar los maestros TMS."); }
     finally { setLoading(false); }
   }, []);
@@ -57,12 +55,6 @@ export function TransportMastersPanel() {
     setPanel(null); setMessage("Punto de entrega creado."); await load();
   }
 
-  async function submitOrigin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); const data = new FormData(event.currentTarget);
-    await api("/api/v1/transport/origins", { method: "POST", body: JSON.stringify({ code: data.get("code"), name: data.get("name"), address: data.get("address"), city: data.get("city"), department: data.get("department"), country: data.get("country") || "CO", latitude: Number(data.get("latitude")), longitude: Number(data.get("longitude")), operation_start: data.get("operation_start"), operation_end: data.get("operation_end"), service_minutes: Number(data.get("service_minutes") || 60) }) });
-    setPanel(null); setMessage("Origen operativo creado."); await load();
-  }
-
   async function submitSettlementType(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); const data = new FormData(event.currentTarget);
     const documents = String(data.get("required_documents") || "").split(",").map((entry) => entry.trim()).filter(Boolean);
@@ -72,7 +64,7 @@ export function TransportMastersPanel() {
 
   return <div className="space-y-5">
     <header className="flex flex-wrap items-start justify-between gap-3">
-      <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Configuracion · Operacion logistica</p><h1 className="mt-1 text-3xl font-semibold">Maestros de transporte</h1><p className="mt-2 text-sm text-content-muted">Transportadoras, conductores, origenes y destinos georreferenciados para construir planes viables. Estos datos alimentan tarifas, planeacion y liquidacion del modulo de Transporte.</p></div>
+      <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Configuracion · Operacion logistica</p><h1 className="mt-1 text-3xl font-semibold">Maestros de transporte</h1><p className="mt-2 text-sm text-content-muted">Transportadoras, conductores y destinos georreferenciados para construir planes viables. Las sedes se administran desde Configuracion del modulo principal. Estos datos alimentan tarifas, planeacion y liquidacion del modulo de Transporte.</p></div>
       <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-semibold" onClick={() => void load()}><RefreshCw size={16} />Actualizar</button>
     </header>
     {message ? <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{message}</div> : null}
@@ -83,9 +75,6 @@ export function TransportMastersPanel() {
       <MasterCard icon={<UserRound size={19} />} title="Conductores" count={drivers.length} action={() => setPanel("driver")} canWrite={canWrite}>
         {drivers.map((row) => <Row key={row.id} title={row.name} detail={`${row.code} · ${row.carrier?.legal_name || "Flota propia"}`} state={row.status} />)}
       </MasterCard>
-      <MasterCard icon={<Warehouse size={19} />} title="Origenes operativos" count={origins.length} action={() => setPanel("origin")} canWrite={canWrite}>
-        {origins.map((row) => <Row key={row.id} title={row.name} detail={`${row.address} · ${row.city}`} state="georreferenciado" />)}
-      </MasterCard>
       <MasterCard icon={<MapPin size={19} />} title="Puntos de entrega" count={points.length} action={() => setPanel("point")} canWrite={canWrite}>
         {points.map((row) => <Row key={row.id} title={row.name} detail={`${row.address} · ${row.city}`} state={row.latitude == null ? "sin coordenadas" : "georreferenciado"} />)}
       </MasterCard>
@@ -95,10 +84,9 @@ export function TransportMastersPanel() {
     </div>
     {loading ? <p className="text-sm text-content-muted">Cargando maestros...</p> : null}
     {panel ? <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4"><div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-xl bg-surface p-5 shadow-xl">
-      <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-semibold uppercase text-apex">Nuevo maestro</p><h2 className="text-xl font-semibold">{panel === "carrier" ? "Transportadora" : panel === "driver" ? "Conductor" : panel === "origin" ? "Origen operativo" : panel === "point" ? "Punto de entrega" : "Tipo de liquidacion"}</h2></div><button className="text-sm" onClick={() => setPanel(null)}>Cerrar</button></div>
+      <div className="mb-4 flex items-center justify-between"><div><p className="text-xs font-semibold uppercase text-apex">Nuevo maestro</p><h2 className="text-xl font-semibold">{panel === "carrier" ? "Transportadora" : panel === "driver" ? "Conductor" : panel === "point" ? "Punto de entrega" : "Tipo de liquidacion"}</h2></div><button className="text-sm" onClick={() => setPanel(null)}>Cerrar</button></div>
       {panel === "carrier" ? <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => void submitCarrier(event)}><Field name="code" label="Codigo" required /><Field name="legal_name" label="Razon social" required /><Field name="tax_id" label="Identificacion tributaria" /><Field name="phone" label="Telefono" /><Field name="email" label="Correo" type="email" /><Submit /></form> : null}
       {panel === "driver" ? <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => void submitDriver(event)}><Field name="code" label="Codigo" required /><Field name="document" label="Documento" required /><Field name="name" label="Nombre" required /><Field name="phone" label="Telefono" /><label className="text-sm"><span className="mb-1 block font-medium">Transportadora</span><select className={`${inputClass} apex-select`} name="carrier_id"><option value="">Flota propia</option>{carriers.map((row) => <option key={row.id} value={row.id}>{row.legal_name}</option>)}</select></label><Field name="license_number" label="Licencia" /><Field name="license_category" label="Categoria" /><Field name="license_expires_at" label="Vencimiento" type="date" /><Submit /></form> : null}
-      {panel === "origin" ? <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => void submitOrigin(event)}><Field name="code" label="Codigo" required /><Field name="name" label="Nombre" required /><Field name="address" label="Direccion normalizada" required /><Field name="city" label="Ciudad" required /><Field name="department" label="Departamento/estado" /><Field name="country" label="Pais" defaultValue="CO" /><Field name="latitude" label="Latitud" type="number" step="any" required /><Field name="longitude" label="Longitud" type="number" step="any" required /><Field name="operation_start" label="Inicio operacion" type="time" /><Field name="operation_end" label="Fin operacion" type="time" /><Field name="service_minutes" label="Preparacion minutos" type="number" defaultValue="60" /><Submit /></form> : null}
       {panel === "point" ? <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => void submitPoint(event)}><Field name="code" label="Codigo" required /><Field name="name" label="Nombre" required /><Field name="address" label="Direccion normalizada" required /><Field name="city" label="Ciudad" required /><Field name="department" label="Departamento/estado" /><Field name="country" label="Pais" defaultValue="CO" /><Field name="latitude" label="Latitud" type="number" step="any" /><Field name="longitude" label="Longitud" type="number" step="any" /><Field name="window_start" label="Inicio ventana" type="time" /><Field name="window_end" label="Fin ventana" type="time" /><Field name="service_minutes" label="Minutos de servicio" type="number" defaultValue="30" /><label className="flex items-center gap-2 pt-7 text-sm"><input name="appointment_required" type="checkbox" />Requiere cita</label><Submit /></form> : null}
       {panel === "settlement_type" ? <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => void submitSettlementType(event)}><Field name="code" label="Codigo" required /><Field name="name" label="Nombre" required /><Field name="description" label="Descripcion" /><label className="text-sm"><span className="mb-1 block font-medium">Politica documental</span><select className={`${inputClass} apex-select`} defaultValue="alerta" name="documentary_policy"><option value="alerta">Alerta: permite avanzar con soportes pendientes</option><option value="bloqueo">Bloqueo: exige soportes completos</option></select></label><Field name="required_documents" label="Soportes requeridos (separados por coma)" /><label className="flex items-center gap-2 pt-7 text-sm"><input name="requires_reinforced_approval" type="checkbox" />Requiere aprobacion reforzada</label><Submit /></form> : null}
     </div></div> : null}

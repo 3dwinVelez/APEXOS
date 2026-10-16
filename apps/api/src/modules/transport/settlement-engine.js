@@ -71,6 +71,24 @@ function numberValue(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+// Configuracion aditiva de la etapa 4 del tarifario (todo opcional; sin metadata
+// extra el comportamiento es identico al tarifario legacy). Se replica en
+// calculateRateQuote del TMS para mantener una sola semantica de negocio.
+function rateCostConfig(rate) {
+  const meta = rate?.metadata && typeof rate.metadata === "object" ? rate.metadata : {};
+  const nonNegative = (value) => Math.max(0, numberValue(value));
+  return {
+    stops_included: nonNegative(meta.stops_included),
+    wait_included_min: nonNegative(meta.wait_time_included_min),
+    wait_rate_per_min: nonNegative(meta.wait_time_rate_per_min),
+    load_unload_flat: nonNegative(meta.load_unload_flat),
+    other_costs_amount: nonNegative(meta.other_costs_amount),
+    other_costs_label: String(meta.other_costs_label || "").trim(),
+    fuel_mode: meta.fuel_mode === "estimated" ? "estimated" : "surcharge",
+    fuel_estimated_cost: nonNegative(meta.fuel_estimated_cost)
+  };
+}
+
 function cents(value) {
   return Math.round(numberValue(value) * 100);
 }
@@ -204,9 +222,6 @@ function rateIsValidOn(rate, date) {
 
 function rateMatchesContext(rate, context) {
   if (rate.carrier_id != null && context.carrier_id != null && numberValue(rate.carrier_id) !== numberValue(context.carrier_id)) return false;
-  if (rate.origin_department && context.origin_department && normalizeMatch(rate.origin_department) !== normalizeMatch(context.origin_department)) return false;
-  if (rate.origin_city && context.origin_city && normalizeMatch(rate.origin_city) !== normalizeMatch(context.origin_city)) return false;
-  if (rate.origin_municipality && context.origin_municipality && normalizeMatch(rate.origin_municipality) !== normalizeMatch(context.origin_municipality)) return false;
   if (rate.destination_city && context.destination_city && normalizeMatch(rate.destination_city) !== normalizeMatch(context.destination_city)) return false;
   if (rate.destination_municipality && context.destination_municipality && normalizeMatch(rate.destination_municipality) !== normalizeMatch(context.destination_municipality)) return false;
   if (rate.destination_department && context.destination_department && normalizeMatch(rate.destination_department) !== normalizeMatch(context.destination_department)) return false;
@@ -219,7 +234,7 @@ function rateMatchesContext(rate, context) {
 // Nunca asume valor cero ni elige en silencio entre tarifas de igual prioridad.
 function resolveRate(candidates, context = {}) {
   const serviceDate = toDate(context.service_date) || new Date();
-  const trace = { context: { carrier_id: context.carrier_id ?? null, service_date: serviceDate.toISOString(), origin_department: context.origin_department ?? null, origin_city: context.origin_city ?? null, origin_municipality: context.origin_municipality ?? null, destination_city: context.destination_city ?? null, destination_department: context.destination_department ?? null, destination_municipality: context.destination_municipality ?? null, vehicle_type: context.vehicle_type ?? null, service_level: context.service_level ?? null }, evaluated: [], rejected: [] };
+  const trace = { context: { carrier_id: context.carrier_id ?? null, service_date: serviceDate.toISOString(), destination_city: context.destination_city ?? null, destination_department: context.destination_department ?? null, destination_municipality: context.destination_municipality ?? null, vehicle_type: context.vehicle_type ?? null, service_level: context.service_level ?? null }, evaluated: [], rejected: [] };
 
   const active = (candidates || []).filter((rate) => normalizeMatch(rate.status) === "activa" && rate.active !== false);
   for (const rate of candidates || []) {
@@ -262,22 +277,29 @@ function resolveRate(candidates, context = {}) {
 // en centavos enteros, y multiplica por la cantidad/base del detalle.
 function calculateItemAmount(rate, item = {}) {
   const quantity = numberValue(item.quantity, 1) || 1;
+  const config = rateCostConfig(rate);
   const metrics = {
     distance_km: numberValue(item.distance_km),
     weight_kg: numberValue(item.weight_kg),
     volume_m3: numberValue(item.volume_m3),
-    stop_count: numberValue(item.stop_count, 1)
+    stop_count: numberValue(item.stop_count, 1),
+    wait_minutes: numberValue(item.wait_minutes)
   };
   const components = {
     base: numberValue(rate.base_rate),
     distance: numberValue(rate.price_per_km) * metrics.distance_km,
     weight: numberValue(rate.price_per_kg) * metrics.weight_kg,
     volume: numberValue(rate.price_per_m3) * metrics.volume_m3,
-    stops: numberValue(rate.price_per_stop) * metrics.stop_count,
+    stops: numberValue(rate.price_per_stop) * Math.max(0, metrics.stop_count - config.stops_included),
     tolls: numberValue(rate.tolls_flat)
   };
+  const billableWaitMin = Math.max(0, metrics.wait_minutes - config.wait_included_min);
+  if (config.wait_rate_per_min > 0 && billableWaitMin > 0) components.wait_time = config.wait_rate_per_min * billableWaitMin;
+  if (config.load_unload_flat > 0) components.load_unload = config.load_unload_flat;
+  if (config.other_costs_amount > 0) components.other_costs = config.other_costs_amount;
   const beforeFuelCents = Object.values(components).reduce((sum, value) => sum + cents(value), 0);
-  const fuelCents = Math.round((beforeFuelCents / 100) * numberValue(rate.fuel_surcharge_pct) );
+  // Combustible estimado (costo fijo del simulador) REEMPLAZA al recargo porcentual: nunca ambos.
+  const fuelCents = config.fuel_mode === "estimated" ? cents(config.fuel_estimated_cost) : Math.round((beforeFuelCents / 100) * numberValue(rate.fuel_surcharge_pct) );
   const calculatedCents = beforeFuelCents + fuelCents;
   const minimumCents = cents(rate.minimum_charge);
   const unitCents = Math.max(calculatedCents, minimumCents);
@@ -301,7 +323,9 @@ function calculateItemAmount(rate, item = {}) {
       currency: rate.currency || "COP",
       priority: numberValue(rate.priority, 100),
       components: roundedComponents,
-      minimum_applied: unitCents > calculatedCents
+      minimum_applied: unitCents > calculatedCents,
+      ...(config.fuel_mode === "estimated" ? { fuel_mode: "estimated", fuel_estimated_cost: round2(config.fuel_estimated_cost) } : {}),
+      ...(config.other_costs_label ? { other_costs_label: config.other_costs_label } : {})
     }
   };
 }
@@ -464,6 +488,7 @@ module.exports = {
   SettlementError,
   fail,
   numberValue,
+  rateCostConfig,
   cents,
   fromCents,
   round2,

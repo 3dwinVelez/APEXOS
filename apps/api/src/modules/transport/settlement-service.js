@@ -645,7 +645,7 @@ async function getSettlementAudit(tenantId, id) {
 async function simulateRate(tenantId, input) {
   return read(tenantId, async (db) => {
     const rates = await db.transportRateCard.findMany({ where: { status: "activa" }, include: { carrier: true } });
-    const context = { carrier_id: input.carrier_id ?? null, service_date: dateOrNull(input.service_date) || new Date(), origin_department: input.origin_department, origin_city: input.origin_city, origin_municipality: input.origin_municipality, destination_city: input.destination_city, destination_department: input.destination_department, destination_municipality: input.destination_municipality, vehicle_type: input.vehicle_type, service_level: input.service_level };
+    const context = { carrier_id: input.carrier_id ?? null, service_date: dateOrNull(input.service_date) || new Date(), destination_city: input.destination_city, destination_department: input.destination_department, destination_municipality: input.destination_municipality, vehicle_type: input.vehicle_type, service_level: input.service_level };
     const { rate, trace } = E.resolveRate(rates, context);
     const calc = E.calculateItemAmount(rate, { quantity: numberOr(input.quantity, 1), distance_km: numberOr(input.distance_km), weight_kg: numberOr(input.weight_kg), volume_m3: numberOr(input.volume_m3), stop_count: numberOr(input.stop_count, 1) });
     return { rate: { id: rate.id, code: rate.code, version: rate.version, priority: numberOr(rate.priority, 100), currency: rate.currency }, amount: calc.amount, unit_amount: calc.unit_amount, minimum_applied: calc.minimum_applied, components: calc.components, trace };

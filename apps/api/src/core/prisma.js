@@ -15,7 +15,7 @@ const TENANT_MODELS = new Set([
   "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
   "Vehicle", "ServiceOrder", "ServiceOrderItem", "ServiceOrderCorrection", "ServiceOrderCorrectionChange", "ServiceReference",
   "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
-  "TransportTmsConfig", "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
+  "TransportTmsConfig", "TransportCarrier", "TransportDriver", "Sede", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
   "TransportPlan",
   "TransportTrip", "TransportTripNeed", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt",
   "TransportPod", "TransportSettlement", "TransportSettlementLine", "TransportGpsPosition", "TransportNotification",
@@ -42,7 +42,7 @@ const SOFT_DELETE = new Set([
   "Tenant", "User", "InventoryFamily", "InventoryFamilyAccounting",
   "Location", "Account", "ProjectResourceAssignment", "WorkSchedule",
   "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
-  "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard",
+  "TransportCarrier", "TransportDriver", "Sede", "TransportDeliveryPoint", "TransportRateCard",
   "TransportSettlementType",
   // Gastos menores: solo los maestros tienen campo `active`. PettyCashAdvance, PettyCashVoucher
   // y PettyCashVoucherLine quedan fuera de SOFT_DELETE y de PHYSICAL_DELETE_ALLOWED a proposito,

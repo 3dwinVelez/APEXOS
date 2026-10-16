@@ -9,11 +9,11 @@ import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 
 import { createPortal } from "react-dom";
 import type { PlanningMapScenario, PlanningRouteStop } from "@/components/transport/PlanningRouteMap";
 
-type Origin = { id: number; code: string; name: string; city: string; latitude: number; longitude: number };
+type Sede = { id: number; code: string; name: string; city: string; latitude: number; longitude: number };
 type Need = { id: number; code: string; due_at: string; weight_kg: number; volume_m3: number; delivery_point: { name: string; city: string } };
-type Group = { key: string; origin_id?: number; origin?: Origin; service_level: string; required_vehicle_type?: string; due_date: string; need_ids: number[]; needs: Need[]; total_weight_kg: number; total_volume_m3: number; total_pallets: number };
-type DispatchPlan = { id: number; code: string; name: string; origin_id: number; origin?: Origin; service_level: string; due_date: string | null; status: string; needs: Need[]; need_ids: number[]; total_weight_kg: number; total_volume_m3: number; total_pallets: number; stop_count: number };
-type EvalTarget = { key: string; kind: "plan" | "group"; plan_id?: number; origin_id?: number; origin?: Origin; service_level: string; due_date?: string | null; need_ids: number[]; needs: Need[]; total_weight_kg: number; total_volume_m3: number; name: string };
+type Group = { key: string; sede_id?: number; sede?: Sede; service_level: string; required_vehicle_type?: string; due_date: string; need_ids: number[]; needs: Need[]; total_weight_kg: number; total_volume_m3: number; total_pallets: number };
+type DispatchPlan = { id: number; code: string; name: string; sede_id: number; sede?: Sede; service_level: string; due_date: string | null; status: string; needs: Need[]; need_ids: number[]; total_weight_kg: number; total_volume_m3: number; total_pallets: number; stop_count: number };
+type EvalTarget = { key: string; kind: "plan" | "group"; plan_id?: number; sede_id?: number; sede?: Sede; service_level: string; due_date?: string | null; need_ids: number[]; needs: Need[]; total_weight_kg: number; total_volume_m3: number; name: string };
 type Workbench = { pending_needs: number; planned_needs: number; plans: DispatchPlan[]; consolidation_groups: Group[] };
 type Vehicle = { id: number; plate: string; type?: string; master_status: string; capacity_value?: number; capacity_unit?: string; volume_available?: number };
 type Coordinate = { latitude: number; longitude: number };
@@ -22,7 +22,7 @@ type Quote = { rate_card_id: number; rate_code: string; rate_version: number; ca
 type RouteTrafficSegment = { start_index: number; end_index: number; speed: string; label: string; severity: "alta" | "media" | "baja" | "sin_lectura" };
 type RouteIntelligenceRoute = { rank: number; distance_km: number | null; duration_minutes: number | null; static_duration_minutes: number | null; delay_minutes: number | null; traffic_level: "alto" | "medio" | "bajo" | "sin_lectura"; traffic_segments?: RouteTrafficSegment[]; pros?: string[]; cons?: string[]; issue_tags?: string[]; polyline: string | null };
 type RouteIntelligence = { provider: "google_routes"; status: "configured" | "not_configured" | "unavailable" | "invalid_coordinates" | "invalid_key" | "quota_exceeded" | "empty"; traffic_available: boolean; routes: RouteIntelligenceRoute[]; message?: string };
-type Plan = { generated_at: string; strategy: string; origin: Origin; ordered_need_ids: number[]; route: { legs: Leg[]; distance_km: number; road_factor: number }; totals: { weight_kg: number; volume_m3: number; pallets: number; stop_count: number; distance_km: number }; planned_duration_minutes: number; capacity: { vehicle_id?: number; plate?: string; feasible: boolean; weight_feasible: boolean; volume_feasible: boolean; weight_capacity_kg: number; volume_capacity_m3: number }; quotes: Quote[]; warnings: string[]; route_intelligence?: RouteIntelligence };
+type Plan = { generated_at: string; strategy: string; sede: Sede; ordered_need_ids: number[]; route: { legs: Leg[]; distance_km: number; road_factor: number }; totals: { weight_kg: number; volume_m3: number; pallets: number; stop_count: number; distance_km: number }; planned_duration_minutes: number; capacity: { vehicle_id?: number; plate?: string; feasible: boolean; weight_feasible: boolean; volume_feasible: boolean; weight_capacity_kg: number; volume_capacity_m3: number }; quotes: Quote[]; warnings: string[]; route_intelligence?: RouteIntelligence };
 type Scenario = { id: string; strategy: string; strategyLabel: string; vehicle?: Vehicle; plan: Plan; quote?: Quote; cost: number | null; costPerKm: number | null; score: number; alerts: string[]; benefits: string[]; tradeoffs: string[]; recommended: boolean };
 
 const STRATEGIES = [
@@ -41,7 +41,7 @@ const PlanningRouteMap = dynamic(() => import("@/components/transport/PlanningRo
 
 export default function TransportPlanningPage() {
   const [workbench, setWorkbench] = useState<Workbench>({ pending_needs: 0, planned_needs: 0, plans: [], consolidation_groups: [] });
-  const [origins, setOrigins] = useState<Origin[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selection, setSelection] = useState<EvalTarget | null>(null);
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
@@ -57,13 +57,13 @@ export default function TransportPlanningPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [workbenchData, originRows, vehicleRows] = await Promise.all([
+      const [workbenchData, sedeRows, vehicleRows] = await Promise.all([
         api<Workbench>("/api/v1/transport/planning/workbench"),
-        api<Origin[]>("/api/v1/transport/origins"),
+        api<Sede[]>("/api/v1/transport/sedes"),
         api<Vehicle[]>("/api/v1/transport/vehicles"),
       ]);
       setWorkbench(workbenchData);
-      setOrigins(originRows);
+      setSedes(sedeRows);
       setVehicles(vehicleRows);
       setError("");
     } catch (caught) {
@@ -111,9 +111,9 @@ export default function TransportPlanningPage() {
   async function evaluateScenarios(target?: EvalTarget) {
     const evalTarget = target || selection;
     if (!evalTarget) return;
-    const originId = evalTarget.origin_id || evalTarget.origin?.id;
-    if (!originId) {
-      setError("El objetivo seleccionado no tiene origen válido para evaluar.");
+    const sedeId = evalTarget.sede_id || evalTarget.sede?.id;
+    if (!sedeId) {
+      setError("El objetivo seleccionado no tiene sede válida para evaluar.");
       return;
     }
     setEvaluating(true);
@@ -124,7 +124,7 @@ export default function TransportPlanningPage() {
         const plan = await api<Plan>("/api/v1/transport/planning/evaluate", {
           method: "POST",
           body: JSON.stringify({
-            origin_id: originId,
+            sede_id: sedeId,
             need_ids: evalTarget.need_ids,
             vehicle_id: vehicle?.id,
             strategy: strategy.value,
@@ -170,7 +170,7 @@ export default function TransportPlanningPage() {
         method: "POST",
         body: JSON.stringify({
           code: data.get("code"),
-          origin_id: selectedScenario.plan.origin.id,
+          sede_id: selectedScenario.plan.sede.id,
           need_ids: selection.need_ids,
           plan_id: selection.plan_id,
           rate_card_id: selectedQuote,
@@ -227,7 +227,7 @@ export default function TransportPlanningPage() {
             return (
             <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === rowKey ? "bg-emerald-50 text-apex" : "bg-white"}`} key={rowKey} role="button" tabIndex={0} onClick={selectPlan} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectPlan(); } }}>
               <span className="grid h-8 w-8 place-items-center rounded-md bg-apex/10 text-xs font-semibold text-apex">{dispatchPlan.code}</span>
-              <span><span className="block font-semibold text-neutral-900">{dispatchPlan.name} <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${dispatchPlan.status === "confirmado" ? "bg-emerald-100 text-emerald-800" : dispatchPlan.status === "listo" ? "bg-apex/10 text-apex" : "bg-paper text-neutral-500"}`}>{dispatchPlan.status}</span></span><span className="mt-1 block text-xs text-neutral-600">{dispatchPlan.origin?.name || "Origen"} · {dispatchPlan.service_level}</span></span>
+              <span><span className="block font-semibold text-neutral-900">{dispatchPlan.name} <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${dispatchPlan.status === "confirmado" ? "bg-emerald-100 text-emerald-800" : dispatchPlan.status === "listo" ? "bg-apex/10 text-apex" : "bg-paper text-neutral-500"}`}>{dispatchPlan.status}</span></span><span className="mt-1 block text-xs text-neutral-600">{dispatchPlan.sede?.name || "Sede"} · {dispatchPlan.service_level}</span></span>
               <span>{dispatchPlan.due_date ? new Date(`${dispatchPlan.due_date}T12:00:00`).toLocaleDateString() : "—"}</span>
               <span>{dispatchPlan.stop_count} entrega(s)</span>
               <span>{dispatchPlan.total_weight_kg.toLocaleString()} kg</span>
@@ -241,7 +241,7 @@ export default function TransportPlanningPage() {
             return (
             <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === group.key ? "bg-emerald-50 text-apex" : "bg-white"}`} key={group.key} role="button" tabIndex={0} onClick={selectGroup} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectGroup(); } }}>
               <span className="grid h-8 w-8 place-items-center rounded-md bg-paper text-sm font-semibold text-neutral-500">{index + 1}</span>
-              <span><span className="block font-semibold text-neutral-900">{group.origin?.name || "Origen por completar"} <span className="ml-1 rounded-md bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">sin asignar</span></span><span className="mt-1 block text-xs text-neutral-600">{group.service_level}</span></span>
+              <span><span className="block font-semibold text-neutral-900">{group.sede?.name || "Sede por completar"} <span className="ml-1 rounded-md bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">sin asignar</span></span><span className="mt-1 block text-xs text-neutral-600">{group.service_level}</span></span>
               <span>{new Date(`${group.due_date}T12:00:00`).toLocaleDateString()}</span>
               <span>{group.needs.length} entrega(s)</span>
               <span>{group.total_weight_kg.toLocaleString()} kg</span>
@@ -257,7 +257,7 @@ export default function TransportPlanningPage() {
       <main className="space-y-4">
         <section className="rounded-md border border-line bg-white p-4">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">Parámetros bloqueados del escenario</h2><p className="mt-1 text-xs text-neutral-500">{selectedSummary}</p></div></div>
-          {selection ? <ScenarioWorkbench target={selection} origins={origins} vehicles={vehicles} /> : <EmptyPlannerState />}
+          {selection ? <ScenarioWorkbench target={selection} sedes={sedes} vehicles={vehicles} /> : <EmptyPlannerState />}
         </section>
       </main>
     </div>
@@ -270,8 +270,8 @@ function targetFromPlan(dispatchPlan: DispatchPlan): EvalTarget {
     key: `plan-${dispatchPlan.id}`,
     kind: "plan",
     plan_id: dispatchPlan.id,
-    origin_id: dispatchPlan.origin_id,
-    origin: dispatchPlan.origin,
+    sede_id: dispatchPlan.sede_id,
+    sede: dispatchPlan.sede,
     service_level: dispatchPlan.service_level,
     due_date: dispatchPlan.due_date,
     need_ids: dispatchPlan.need_ids,
@@ -286,15 +286,15 @@ function targetFromGroup(group: Group): EvalTarget {
   return {
     key: group.key,
     kind: "group",
-    origin_id: group.origin_id,
-    origin: group.origin,
+    sede_id: group.sede_id,
+    sede: group.sede,
     service_level: group.service_level,
     due_date: group.due_date,
     need_ids: group.need_ids,
     needs: group.needs,
     total_weight_kg: group.total_weight_kg,
     total_volume_m3: group.total_volume_m3,
-    name: group.origin?.name || "Consolidación sin origen",
+    name: group.sede?.name || "Consolidación sin sede",
   };
 }
 
@@ -369,11 +369,11 @@ function EmptyPlannerState() {
   return <div className="mt-4 rounded-md border border-dashed border-line p-4"><p className="font-semibold">Selecciona una consolidación</p><p className="mt-1 text-sm text-neutral-600">Elige una fila del monitor para revisar sus parámetros o usa su botón Evaluar escenarios para abrir el monitor directamente.</p></div>;
 }
 
-function ScenarioWorkbench({ target, origins, vehicles }: { target: EvalTarget; origins: Origin[]; vehicles: Vehicle[] }) {
-  const origin = origins.find((item) => item.id === (target.origin_id || target.origin?.id)) || target.origin;
+function ScenarioWorkbench({ target, sedes, vehicles }: { target: EvalTarget; sedes: Sede[]; vehicles: Vehicle[] }) {
+  const sede = sedes.find((item) => item.id === (target.sede_id || target.sede?.id)) || target.sede;
   return <div className="mt-4 grid gap-2 md:grid-cols-4">
     <ReadOnlyParam label={target.kind === "plan" ? "Plan" : "Consolidación"} value={target.name} />
-    <ReadOnlyParam label="Origen" value={origin ? `${origin.code} · ${origin.name}` : "Origen pendiente"} />
+    <ReadOnlyParam label="Sede" value={sede ? `${sede.code} · ${sede.name}` : "Sede pendiente"} />
     <ReadOnlyParam label="Vehículos" value={`${Math.max(vehicles.length, 1)} alternativa(s)`} />
     <ReadOnlyParam label="Estrategias" value={`${STRATEGIES.length} estrategias`} />
   </div>;
@@ -471,7 +471,7 @@ function stopsFromPlan(plan: Plan): PlanningRouteStop[] {
         { kind: "origin", label: plan.route.legs[0].from, latitude: plan.route.legs[0].from_coordinate.latitude, longitude: plan.route.legs[0].from_coordinate.longitude },
         ...plan.route.legs.map((leg) => ({ kind: "stop" as const, label: leg.to, latitude: leg.to_coordinate.latitude, longitude: leg.to_coordinate.longitude })),
       ]
-    : [{ kind: "origin", label: plan.origin.name, latitude: plan.origin.latitude, longitude: plan.origin.longitude }];
+    : [{ kind: "origin", label: plan.sede.name, latitude: plan.sede.latitude, longitude: plan.sede.longitude }];
 }
 
 function trafficLabel(scenario: Scenario) {

@@ -71,9 +71,9 @@ async function transportRoutes(fastify) {
   fastify.post("/transport/delivery-points", { schema: tmsSchemas.deliveryPointSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveDeliveryPoint(request.user?.tenant_id, null, request.body)));
   fastify.put("/transport/delivery-points/:id", { schema: tmsSchemas.deliveryPointSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveDeliveryPoint(request.user?.tenant_id, request.params.id, request.body));
 
-  fastify.get("/transport/origins", { preHandler: requirePermission("transport", "read") }, (request) => tms.listOrigins(request.user?.tenant_id, request.query));
-  fastify.post("/transport/origins", { schema: tmsSchemas.originSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveOrigin(request.user?.tenant_id, null, request.body)));
-  fastify.put("/transport/origins/:id", { schema: tmsSchemas.originSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveOrigin(request.user?.tenant_id, request.params.id, request.body));
+  fastify.get("/transport/sedes", { preHandler: requirePermission("transport", "read") }, (request) => tms.listSedes(request.user?.tenant_id, request.query));
+  fastify.post("/transport/sedes", { schema: tmsSchemas.sedeSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveSede(request.user?.tenant_id, null, request.body)));
+  fastify.put("/transport/sedes/:id", { schema: tmsSchemas.sedeSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveSede(request.user?.tenant_id, request.params.id, request.body));
 
   const ratesWrite = requireAnyPermission([{ module: "transport", action: "write" }, { module: "transport", action: "manage_rates" }]);
   fastify.get("/transport/rate-cards", { preHandler: requirePermission("transport", "read") }, (request) => tms.listRateCards(request.user?.tenant_id, request.query));
@@ -98,6 +98,9 @@ async function transportRoutes(fastify) {
     const probe = ["1", "true", "yes"].includes(String(request.query?.probe || "").toLowerCase());
     return connectionStatus({ probe });
   });
+
+  fastify.get("/transport/route-places", { preHandler: requirePermission("transport", "read") }, (request) => tms.searchRoutePlaces(request.user?.tenant_id, request.query?.term));
+  fastify.post("/transport/route-simulator", { schema: tmsSchemas.routeSimulatorSchema, preHandler: requirePermission("transport", "read") }, (request) => tms.simulateRoute(request.user?.tenant_id, request.body));
 
   fastify.get("/transport/needs", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNeeds(request.user?.tenant_id, request.query));
   fastify.post("/transport/needs", { schema: tmsSchemas.needSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createNeed(request.user?.tenant_id, request.user, request.body)));
