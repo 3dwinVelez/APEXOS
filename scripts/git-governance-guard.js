@@ -101,7 +101,7 @@ function ancestor(commit, candidate, label) {
 }
 
 function candidatePath(ref, manifestFile, item, label) {
-  if (typeof item !== "string" || !item.trim() || path.isAbsolute(item)) throw new Error(`${label} contiene una ruta no portable`);
+  if (typeof item !== "string" || !item.trim() || path.isAbsolute(item) || path.posix.isAbsolute(item) || path.win32.isAbsolute(item)) throw new Error(`${label} contiene una ruta no portable`);
   const root = path.resolve(process.cwd());
   const absolute = path.resolve(path.dirname(path.resolve(manifestFile)), item);
   const relative = path.relative(root, absolute);

@@ -51,6 +51,9 @@ test("rechaza cero o multiples manifiestos scope en el inventario Git", () => {
 test("rechaza referencias de evidencia absolutas, fuera del repo y no versionadas", () => {
   const manifest = path.resolve("docs/qa/manifests/hr-ibc-novelties-20261015-preqa.json");
   assert.throws(() => candidatePath("HEAD", manifest, "/etc/hosts", "evidence"), /no portable/);
+  assert.throws(() => candidatePath("HEAD", manifest, "C:/outside/evidence.json", "evidence"), /no portable/);
+  assert.throws(() => candidatePath("HEAD", manifest, "C:\\outside\\evidence.json", "evidence"), /no portable/);
+  assert.throws(() => candidatePath("HEAD", manifest, "\\\\server\\share\\evidence.json", "evidence"), /no portable/);
   assert.throws(() => candidatePath("HEAD", manifest, "../../../../etc/hosts", "evidence"), /escapa/);
   assert.throws(() => candidatePath("HEAD", manifest, "../../../.qa-untracked-evidence.json", "evidence"), /no esta versionada/);
 });
