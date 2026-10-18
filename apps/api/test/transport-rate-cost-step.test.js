@@ -1,3 +1,5 @@
+// These cases certify the Google and last-resort estimate paths without public network calls.
+process.env.TRANSPORT_OPEN_MAPS_LOCAL = "false";
 const test = require("node:test"), assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");

@@ -11,7 +11,7 @@ const page = fs.readFileSync(path.join(root, "app/dashboard/transporte/tarifas/p
 const planningMap = fs.readFileSync(path.join(root, "components/transport/PlanningRouteMap.tsx"), "utf8");
 
 test("etapa 4 renderiza el layout de 3 columnas con los bloques del PRD", () => {
-  assert.match(designer, /lg:grid-cols-\[290px_minmax\(0,1fr\)_280px\]/);
+  assert.match(designer, /lg:grid-cols-\[minmax\(280px,1\.1fr\)_minmax\(0,1\.65fr\)_minmax\(260px,\.8fr\)\]/);
   assert.match(designer, /Tarifa principal/);
   assert.match(designer, /Costos adicionales/);
   assert.match(designer, /Simulador de recorrido/);
@@ -64,7 +64,7 @@ test("simulador consume endpoints server-side y km manual queda marcado", () => 
   assert.match(designer, /\/api\/v1\/transport\/route-simulator/);
   assert.match(designer, /\/api\/v1\/transport\/route-places\?term=/);
   assert.match(designer, /km_source: "manual", sim_manual_km: true/);
-  assert.match(designer, /\.\.\.\(draft\.sim_manual_km \? \{\} : \{ billable_km: String\(result\.distance_km\), km_source: result\.source \}\)/, "km manual no se sobrescribe");
+  assert.match(designer, /\.\.\.\(currentDraft\.sim_manual_km \? \{\} : \{ billable_km: String\(result\.distance_km\), km_source: result\.source \}\)/, "km manual no se sobrescribe");
   assert.match(designer, /Usar la calculada/, "restaurar distancia calculada");
   assert.match(designer, /Ida y regreso/);
   assert.match(designer, /Agregar parada/);
@@ -101,7 +101,7 @@ test("pasos 1 a 3 del asistente quedan intactos y el paso 4 usa diseñador dedic
   assert.match(page, /GeoCascade title="Destino"/);
   assert.match(page, /\{step === 2 \? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">/);
   assert.match(page, /\{step === 3 \? <RateCostDesigner draft=\{draft\}/);
-  assert.match(page, /wizardStep === 3 \? "md:max-w-6xl" : "md:max-w-3xl"/, "modal ensancha solo en la etapa 4");
+  assert.match(page, /wizardStep === 3 \? "md:max-w-\[1536px\]" : "md:max-w-3xl"/, "modal ensancha solo en la etapa 4");
   assert.match(page, /stepError[\s\S]*?Escribe el código y el nombre para continuar\./);
   assert.match(page, /Selecciona la transportadora de terceros para continuar\./);
   assert.doesNotMatch(page, /calculateExample|function CostField|function ExampleInput/, "cálculo de ejemplo viejo eliminado");

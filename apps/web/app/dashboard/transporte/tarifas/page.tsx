@@ -1,10 +1,11 @@
 "use client";
 
+import costStyles from "@/components/transport/RateCostDesigner.module.css";
 import { api, isActiveMasterItem, loadVehicleMasterCatalogs } from "@/lib/api";
 import type { VehicleMasterCatalogs } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { BadgeDollarSign, Check, CheckCircle2, ChevronLeft, ChevronRight, CopyPlus, Pencil, Plus, RefreshCw } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EmptyState } from "@/components/ui/feedback";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { RateCostDesigner } from "@/components/transport/RateCostDesigner";
@@ -23,12 +24,15 @@ type RateCard = {
     tariff_method?: string; load_unit?: string;
     stops_included?: number; wait_time_included_min?: number; wait_time_rate_per_min?: number;
     load_unload_flat?: number; other_costs_amount?: number; other_costs_label?: string;
+    costs_enabled?: { stops?: boolean; tolls?: boolean; wait?: boolean; load_unload?: boolean; other?: boolean };
     fuel_mode?: string; fuel_estimated_cost?: number;
+    fuel_estimation?: { kind?: string; rendimiento?: number; price_per_liter?: number; extra_pct?: number };
     simulation?: {
       origin_label?: string; origin_latitude?: number | null; origin_longitude?: number | null;
       destination_label?: string; destination_latitude?: number | null; destination_longitude?: number | null;
       round_trip?: boolean; stops?: Array<{ label?: string; latitude?: number | null; longitude?: number | null }>;
       distance_km?: number; duration_minutes?: number; source?: string;
+      calculated_distance_km?: number; calculated_source?: string; origin_kind?: string; origin_sede_id?: string;
     } | null;
   } | null;
 };
@@ -81,6 +85,8 @@ export default function TransportRatesPage() {
   const [masters, setMasters] = useState<VehicleMasterCatalogs | null>(null);
   const [open, setOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [editing, setEditing] = useState<RateCard | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -102,22 +108,26 @@ export default function TransportRatesPage() {
   useEffect(() => { void load(); }, [load]);
 
   async function createRate(draft: RateDraft) {
+    if (savingRef.current) return;
+    savingRef.current = true; setSaving(true); setError("");
     try {
       await api("/api/v1/transport/rate-cards", { method: "POST", body: JSON.stringify(ratePayload(draft, vehicles)) });
       setOpen(false); setMessage("Tarifario creado y publicado con vigencia controlada."); await load();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "No fue posible crear el tarifario."); }
+    finally { savingRef.current = false; setSaving(false); }
   }
 
   function startEdit(rate: RateCard) {
-    setEditing(rate); setWizardStep(0); setOpen(true);
+    setError(""); setEditing(rate); setWizardStep(0); setOpen(true);
   }
 
   function startCreate() {
-    setEditing(null); setWizardStep(0); setOpen(true);
+    setError(""); setEditing(null); setWizardStep(0); setOpen(true);
   }
 
   async function updateRate(draft: RateDraft) {
-    if (!editing) return;
+    if (!editing || savingRef.current) return;
+    savingRef.current = true; setSaving(true); setError("");
     const payload = { ...ratePayload(draft, vehicles), status: "borrador" };
     try {
       if (editing.status === "borrador") {
@@ -129,9 +139,11 @@ export default function TransportRatesPage() {
       }
       setEditing(null); setOpen(false); await load();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "No fue posible guardar los cambios del tarifario."); }
+    finally { savingRef.current = false; setSaving(false); }
   }
 
   function closeWizard() {
+    if (savingRef.current) return;
     setEditing(null); setOpen(false);
   }
 
@@ -162,8 +174,8 @@ export default function TransportRatesPage() {
         {rates.map((rate) => <tr className="border-t border-line" key={rate.id}><td className="p-3"><p className="font-semibold">{rate.code} · v{rate.version}</p><p className="text-xs text-content-muted">{rate.name} · {rateTransporterLabel(rate)}</p></td><td><p>{rateDestinationLabel(rate)}</p><p className="text-xs text-content-muted">{rate.service_level || "Cualquier servicio"} · {rate.vehicle_type || "Cualquier vehículo"}</p></td><td><p>{new Date(rate.valid_from).toLocaleDateString()} – {new Date(rate.valid_to).toLocaleDateString()}</p><p className="text-xs text-content-muted">Mínimo {money(rate.minimum_charge, rate.currency)}</p></td><td><p>Base {money(rate.base_rate, rate.currency)} + {money(rate.price_per_km, rate.currency)}/km</p><p className="text-xs text-content-muted">kg {money(rate.price_per_kg, rate.currency)} · m³ {money(rate.price_per_m3, rate.currency)} · parada {money(rate.price_per_stop, rate.currency)}</p></td><td><span className={`rounded-full px-2 py-1 text-xs font-semibold ${rate.status === "activa" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{rate.status}</span></td><td><div className="flex justify-end gap-2 pr-3">{canEditRates ? <button aria-label="Editar tarifario" className="rounded-md border border-line p-2 text-apex" onClick={() => startEdit(rate)}><Pencil size={16} /></button> : null}{canEditRates && rate.status === "borrador" ? <button aria-label="Activar tarifario" className="rounded-md border border-line p-2 text-apex" onClick={() => void activate(rate)}><CheckCircle2 size={16} /></button> : null}{canEditRates ? <button aria-label="Crear nueva version" className="rounded-md border border-line p-2 text-apex" onClick={() => void version(rate)}><CopyPlus size={16} /></button> : null}</div></td></tr>)}
       </tbody></table></div>}
     </section>
-    {open ? <ModalFrame maxWidth={wizardStep === 3 ? "md:max-w-6xl" : "md:max-w-3xl"} onClose={closeWizard} title={editing ? `Editar tarifario ${editing.code} · v${editing.version}` : "Nuevo tarifario"}>
-      <RateWizard carriers={carriers} vehicles={vehicles} masters={masters} sedes={sedes} step={wizardStep} onStepChange={setWizardStep} initial={editing ? draftFromRate(editing, vehicles) : null} lockedCode={Boolean(editing)} submitLabel={editing ? (editing.status === "borrador" ? "Guardar cambios" : "Guardar como nueva version") : "Crear y activar"} onSubmit={editing ? updateRate : createRate} onCancel={closeWizard} />
+    {open ? <ModalFrame maxWidth={`${wizardStep === 3 ? "md:max-w-[1536px]" : "md:max-w-3xl"} ${wizardStep === 3 ? costStyles.modal : ""}`} onClose={closeWizard} title={editing ? `Editar tarifario ${editing.code} · v${editing.version}` : "Nuevo tarifario"}>
+      <RateWizard saving={saving} saveError={error} carriers={carriers} vehicles={vehicles} masters={masters} sedes={sedes} step={wizardStep} onStepChange={setWizardStep} initial={editing ? draftFromRate(editing, vehicles) : null} lockedCode={Boolean(editing)} submitLabel={editing ? (editing.status === "borrador" ? "Guardar cambios" : "Guardar como nueva version") : "Crear y activar"} onSubmit={editing ? updateRate : createRate} onCancel={closeWizard} />
     </ModalFrame> : null}
   </div>;
 }
@@ -182,6 +194,7 @@ function ratePayload(draft: RateDraft, vehicles: VehicleOption[]) {
     ? { applies_to: "flota_propia", vehicle_id: vehicle?.id ?? null, vehicle_plate: vehicle?.plate ?? null }
     : { applies_to: "terceros" };
   metadata.tariff_method = draft.tariff_method;
+  metadata.costs_enabled = { stops: draft.stops_included !== "" || numberValue(draft.price_per_stop) > 0, tolls: draft.tolls_flat !== "", wait: draft.wait_included_min !== "" || numberValue(draft.wait_rate_per_min) > 0, load_unload: draft.load_unload_flat !== "", other: draft.other_costs_amount !== "" || Boolean(draft.other_costs_label.trim()) };
   if (draft.tariff_method === "por_carga") metadata.load_unit = draft.load_unit;
   if (numberValue(draft.stops_included) > 0) metadata.stops_included = numberValue(draft.stops_included);
   if (numberValue(draft.wait_included_min) > 0) metadata.wait_time_included_min = numberValue(draft.wait_included_min);
@@ -195,9 +208,11 @@ function ratePayload(draft: RateDraft, vehicles: VehicleOption[]) {
     metadata.fuel_mode = "estimated";
     metadata.fuel_estimated_cost = numberValue(draft.fuel_estimated_cost);
   }
+  metadata.fuel_estimation = { kind: draft.fuel_kind, rendimiento: numberValue(draft.fuel_rendimiento), price_per_liter: numberValue(draft.fuel_precio_litro), extra_pct: numberValue(draft.fuel_extra_pct) };
   const simulatedDistance = numberValue(draft.billable_km);
   if (draft.sim_origin_label.trim() || draft.sim_destination_label.trim() || simulatedDistance > 0) {
     metadata.simulation = {
+      origin_kind: draft.sim_origin_kind, origin_sede_id: draft.sim_origin_sede_id,
       origin_label: draft.sim_origin_label.trim() || undefined,
       origin_latitude: draft.sim_origin_lat,
       origin_longitude: draft.sim_origin_lng,
@@ -207,6 +222,7 @@ function ratePayload(draft: RateDraft, vehicles: VehicleOption[]) {
       round_trip: draft.sim_round_trip,
       stops: draft.sim_stops.filter((stop) => stop.label.trim() || stop.latitude != null).map((stop) => ({ label: stop.label, latitude: stop.latitude, longitude: stop.longitude })),
       distance_km: simulatedDistance,
+      calculated_distance_km: numberValue(draft.sim_distance_km), calculated_source: draft.sim_source,
       duration_minutes: numberValue(draft.sim_duration_min),
       source: draft.km_source || undefined
     };
@@ -245,25 +261,25 @@ function draftFromRate(rate: RateCard, vehicles: VehicleOption[]): RateDraft {
     base_rate: String(rate.base_rate ?? ""), minimum_charge: String(rate.minimum_charge ?? ""),
     price_per_km: String(rate.price_per_km ?? ""), price_per_kg: String(rate.price_per_kg ?? ""),
     price_per_m3: String(rate.price_per_m3 ?? ""), price_per_stop: String(rate.price_per_stop ?? ""),
-    fuel_surcharge_pct: String(rate.fuel_surcharge_pct ?? ""), tolls_flat: String(rate.tolls_flat ?? ""),
+    fuel_surcharge_pct: String(rate.fuel_surcharge_pct ?? ""), tolls_flat: meta.costs_enabled?.tolls === false ? "" : String(rate.tolls_flat ?? ""),
     tariff_method: tariffMethod,
     load_unit: meta.load_unit === "m3" ? "m3" : "kg",
-    stops_included: meta.stops_included ? String(meta.stops_included) : "",
-    wait_included_min: meta.wait_time_included_min ? String(meta.wait_time_included_min) : "",
+    stops_included: meta.costs_enabled?.stops ? String(meta.stops_included || 0) : meta.stops_included ? String(meta.stops_included) : "",
+    wait_included_min: meta.costs_enabled?.wait ? String(meta.wait_time_included_min || 0) : meta.wait_time_included_min ? String(meta.wait_time_included_min) : "",
     wait_rate_per_min: meta.wait_time_rate_per_min ? String(meta.wait_time_rate_per_min) : "",
-    load_unload_flat: meta.load_unload_flat ? String(meta.load_unload_flat) : "",
-    other_costs_amount: meta.other_costs_amount ? String(meta.other_costs_amount) : "",
+    load_unload_flat: meta.costs_enabled?.load_unload ? String(meta.load_unload_flat || 0) : meta.load_unload_flat ? String(meta.load_unload_flat) : "",
+    other_costs_amount: meta.costs_enabled?.other ? String(meta.other_costs_amount || 0) : meta.other_costs_amount ? String(meta.other_costs_amount) : "",
     other_costs_label: meta.other_costs_label || "",
     fuel_mode: meta.fuel_mode === "estimated" ? "estimated" : "surcharge",
     fuel_estimated_cost: meta.fuel_estimated_cost ? String(meta.fuel_estimated_cost) : "",
     billable_km: sim?.distance_km ? String(sim.distance_km) : "",
-    km_source: sim?.source === "google" || sim?.source === "estimate" || sim?.source === "manual" ? sim.source : "",
+    km_source: sim?.source === "google" || sim?.source === "osrm" || sim?.source === "estimate" || sim?.source === "manual" ? sim.source : "",
     preview_load: "1000", preview_wait_min: "30",
-    fuel_kind: "gasolina", fuel_rendimiento: "", fuel_precio_litro: "", fuel_extra_pct: "0",
+    fuel_kind: meta.fuel_estimation?.kind === "acpm" ? "acpm" : "gasolina", fuel_rendimiento: meta.fuel_estimation?.rendimiento ? String(meta.fuel_estimation.rendimiento) : "", fuel_precio_litro: meta.fuel_estimation?.price_per_liter ? String(meta.fuel_estimation.price_per_liter) : "", fuel_extra_pct: String(meta.fuel_estimation?.extra_pct || 0),
     sim_round_trip: Boolean(sim?.round_trip),
     sim_stops: (sim?.stops || []).map((stop, index) => ({ id: `sim-${index}`, label: stop.label || `Parada ${index + 1}`, latitude: stop.latitude ?? null, longitude: stop.longitude ?? null })),
-    sim_origin_kind: sim?.origin_latitude != null ? "custom" : "sede",
-    sim_origin_sede_id: "",
+    sim_origin_kind: sim?.origin_kind === "sede" && sim.origin_sede_id ? "sede" : sim?.origin_latitude != null ? "custom" : "sede",
+    sim_origin_sede_id: sim?.origin_sede_id || "",
     sim_origin_label: sim?.origin_label || "",
     sim_origin_lat: sim?.origin_latitude ?? null,
     sim_origin_lng: sim?.origin_longitude ?? null,
@@ -271,10 +287,10 @@ function draftFromRate(rate: RateCard, vehicles: VehicleOption[]): RateDraft {
     sim_destination_lat: sim?.destination_latitude ?? null,
     sim_destination_lng: sim?.destination_longitude ?? null,
     sim_manual_km: sim?.source === "manual",
-    sim_distance_km: sim?.distance_km ? String(sim.distance_km) : "",
+    sim_distance_km: sim?.calculated_distance_km ? String(sim.calculated_distance_km) : sim?.source !== "manual" && sim?.distance_km ? String(sim.distance_km) : "",
     sim_duration_min: sim?.duration_minutes ? String(sim.duration_minutes) : "",
     sim_polyline: null,
-    sim_source: sim?.source === "google" || sim?.source === "estimate" ? sim.source : ""
+    sim_source: sim?.calculated_source === "google" || sim?.calculated_source === "osrm" || sim?.calculated_source === "estimate" ? sim.calculated_source : sim?.source === "google" || sim?.source === "osrm" || sim?.source === "estimate" ? sim.source : ""
   };
 }
 
@@ -287,7 +303,7 @@ function rateDestinationLabel(rate: RateCard) {
   return geoScopeLabel([rate.destination_department, rate.destination_city, rate.destination_municipality]) || "Red nacional";
 }
 
-function RateWizard({ carriers, vehicles, masters, sedes, step, onStepChange, initial, lockedCode, submitLabel, onSubmit, onCancel }: { carriers: Carrier[]; vehicles: VehicleOption[]; masters: VehicleMasterCatalogs | null; sedes: SedeOption[]; step: number; onStepChange: (step: number) => void; initial?: RateDraft | null; lockedCode?: boolean; submitLabel?: string; onSubmit: (draft: RateDraft) => void; onCancel: () => void }) {
+function RateWizard({ saving, saveError, carriers, vehicles, masters, sedes, step, onStepChange, initial, lockedCode, submitLabel, onSubmit, onCancel }: { saving?: boolean; saveError?: string; carriers: Carrier[]; vehicles: VehicleOption[]; masters: VehicleMasterCatalogs | null; sedes: SedeOption[]; step: number; onStepChange: (step: number) => void; initial?: RateDraft | null; lockedCode?: boolean; submitLabel?: string; onSubmit: (draft: RateDraft) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState<RateDraft>(initial ?? emptyDraft);
   const set = (key: keyof RateDraft) => (value: string) => setDraft((previous) => ({ ...previous, [key]: value }));
 
@@ -317,6 +333,12 @@ function RateWizard({ carriers, vehicles, masters, sedes, step, onStepChange, in
       if (!draft.valid_from || !draft.valid_to) return "Indica la vigencia (desde y hasta) para continuar.";
       if (draft.valid_from > draft.valid_to) return "La fecha \"desde\" no puede ser mayor que la \"hasta\".";
     }
+    if (step === 3) {
+      const unresolved = draft.sim_stops.some(stop => stop.label.trim() && (stop.latitude == null || stop.longitude == null));
+      if (unresolved) return "Selecciona una sugerencia para cada parada o elimina las paradas incompletas.";
+      if (draft.sim_destination_label.trim() && (draft.sim_destination_lat == null || draft.sim_destination_lng == null)) return "Selecciona el destino en las sugerencias para confirmar su ubicación.";
+      if (draft.sim_origin_kind === "custom" && draft.sim_origin_label.trim() && (draft.sim_origin_lat == null || draft.sim_origin_lng == null)) return "Selecciona el origen en las sugerencias para confirmar su ubicación.";
+    }
     return "";
   }, [step, draft]);
 
@@ -325,7 +347,7 @@ function RateWizard({ carriers, vehicles, masters, sedes, step, onStepChange, in
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (step < WIZARD_STEPS.length - 1) { if (canAdvance) onStepChange(step + 1); return; }
-    if (!canAdvance) return;
+    if (!canAdvance || saving) return;
     onSubmit(draft);
   }
 
@@ -341,11 +363,11 @@ function RateWizard({ carriers, vehicles, masters, sedes, step, onStepChange, in
       </li>)}
     </ol>
 
-    <div className="mb-1 flex items-center gap-2">
+    <div className={step === 3 ? "sr-only" : "mb-1 flex items-center gap-2"}>
       <h3 className="text-base font-semibold text-content-strong">{WIZARD_STEPS[step].title}</h3>
       <span className="text-xs text-content-muted">Paso {step + 1} de {WIZARD_STEPS.length}</span>
     </div>
-    <p className="mb-4 text-sm text-content-muted">{WIZARD_STEPS[step].help}</p>
+    <p className={step === 3 ? "sr-only" : "mb-4 text-sm text-content-muted"}>{WIZARD_STEPS[step].help}</p>
 
     {step === 0 ? <div className="grid gap-3 sm:grid-cols-2">
       <Field label="Código de tarifa" name="code" value={draft.code} onChange={set("code")} placeholder="Ej: TRJ-AND-001" required autoFocus disabled={lockedCode} />
@@ -394,14 +416,15 @@ function RateWizard({ carriers, vehicles, masters, sedes, step, onStepChange, in
 
     {step === 3 ? <RateCostDesigner draft={draft} onChange={(patch) => setDraft((previous) => ({ ...previous, ...patch }))} sedes={sedes} /> : null}
 
+    {saveError ? <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{saveError}</p> : null}
     {stepError ? <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{stepError}</p> : null}
 
-    <div className="mt-5 flex items-center justify-between gap-2 border-t border-line pt-4">
-      <button className="inline-flex h-10 items-center rounded-md border border-line px-3 text-sm font-semibold" onClick={onCancel} type="button">Cancelar</button>
+    <div className="sticky bottom-0 z-10 mt-5 flex items-center justify-between gap-2 border-t border-line bg-surface py-3">
+      <button className="inline-flex h-10 items-center rounded-md border border-line px-3 text-sm font-semibold" disabled={saving} onClick={onCancel} type="button">Cancelar</button>
       <div className="flex gap-2">
-        {step > 0 ? <button className="inline-flex h-10 items-center gap-1 rounded-md border border-line px-3 text-sm font-semibold" onClick={() => onStepChange(step - 1)} type="button"><ChevronLeft size={16} />Atrás</button> : null}
+        {step > 0 ? <button className="inline-flex h-10 items-center gap-1 rounded-md border border-line px-3 text-sm font-semibold" disabled={saving} onClick={() => onStepChange(step - 1)} type="button"><ChevronLeft size={16} />Atrás</button> : null}
         {lastStep
-          ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!canAdvance} type="submit"><BadgeDollarSign size={16} />{submitLabel || "Crear y activar"}</button>
+          ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!canAdvance || saving} type="submit"><BadgeDollarSign size={16} />{saving ? "Guardando…" : submitLabel || "Crear y activar"}</button>
           : <button className="inline-flex h-10 items-center gap-1 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!canAdvance} type="submit">Siguiente<ChevronRight size={16} /></button>}
       </div>
     </div>

@@ -618,7 +618,7 @@ function searchRoutePlaces(tenantId, term) {
 
     ].slice(0, 6);
 
-    return { places: mergePlaceCandidates(internal, google.candidates || []), google_configured: google.configured !== false, message: google.message };
+    return { places: mergePlaceCandidates(internal, google.candidates || []), google_configured: google.configured !== false, places_provider: google.provider || (hasKey ? "google" : "internal"), external_available: google.external_available || google.configured === true, message: google.message };
 
   });
 
@@ -652,7 +652,7 @@ async function resolveSimulatorPoint(tenantId, point = {}, role) {
 
     if (!first) throw appError(422, "TMS_SIMULATOR_POINT_NOT_FOUND", `No fue posible ubicar el ${role} "${point.address}".${geo.message ? ` ${geo.message}` : ""}`);
 
-    return { latitude: first.latitude, longitude: first.longitude, label: first.label, source: "google" };
+    return { latitude: first.latitude, longitude: first.longitude, label: first.label, source: first.source };
 
   }
 

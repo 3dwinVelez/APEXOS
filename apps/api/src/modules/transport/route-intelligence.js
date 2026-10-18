@@ -1,3 +1,4 @@
+const openMaps = require("./open-map-simulator");
 const GOOGLE_ROUTES_ENDPOINT = "https://routes.googleapis.com/directions/v2:computeRoutes";
 const GOOGLE_GEOCODE_ENDPOINT = "https://maps.googleapis.com/maps/api/geocode/json";
 const GOOGLE_ROUTES_FIELD_MASK = [
@@ -274,6 +275,10 @@ async function geocodeCandidates(address) {
   if (query.length < 3) return { configured: Boolean(routesApiKey()), candidates: [] };
   const key = routesApiKey();
   if (!key) {
+    if (openMaps.enabled()) {
+      try { return await openMaps.places(query); }
+      catch { return { configured: false, candidates: [], provider: "photon", message: "La búsqueda de direcciones no está disponible. Reintenta o selecciona una sede o punto interno." }; }
+    }
     return { configured: false, candidates: [], message: "Geocoding Google no configurado en backend; solo hay resultados internos del tenant." };
   }
   try {
@@ -339,6 +344,12 @@ async function simulateRoutePoints({ origin, destination, intermediates = [], ro
   const intel = await enrichRouteWithGoogle({ legs });
   const route = intel.routes?.[0];
   if (!route) {
+    if (openMaps.enabled()) {
+      try {
+        const road = await openMaps.route({ origin, destination, intermediates: stops, round_trip });
+        if (road) return { ...road, google_status: intel.status };
+      } catch { /* Explicitly labelled approximate estimate remains the last fallback. */ }
+    }
     return { ...estimateRouteFallback({ origin, destination, intermediates: stops, round_trip }), google_status: intel.status };
   }
   return {
