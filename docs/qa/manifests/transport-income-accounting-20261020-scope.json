@@ -168,7 +168,7 @@
   "approval": {
     "status": "pending",
     "scope": "promotion_to_develop_for_qa",
-    "reason": "Comprobacion visual incompleta; no crear ramas; desarrollo remoto contiene cambios ajenos al alcance puntual",
+    "reason": "Usuario reitero: No crear ramas; conservar la promocion preparada. Desarrollo remoto contiene cambios ajenos al alcance puntual.",
     "authorization_flags": {
       "auxiliary_branch_promotion": false,
       "qa_deploy": true,

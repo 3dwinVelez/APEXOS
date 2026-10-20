@@ -168,7 +168,7 @@
   "approval": {
     "status": "pending",
     "scope": "promotion_to_develop_for_qa",
-    "reason": "Comprobacion visual incompleta; no crear ramas; desarrollo remoto contiene cambios ajenos al alcance puntual",
+    "reason": "Usuario reitero: No crear ramas; conservar la promocion preparada. Desarrollo remoto contiene cambios ajenos al alcance puntual.",
     "authorization_flags": {
       "auxiliary_branch_promotion": false,
       "qa_deploy": true,
@@ -181,7 +181,7 @@
   "qa_status": "pending",
   "checks": {
     "functional": {
-      "status": "pending",
+      "status": "passed",
       "evidence": [
         "../certifications/transport-income-accounting-20261020.md"
       ]
@@ -212,12 +212,12 @@
     }
   },
   "certification": {
-    "status": "pending",
+    "status": "passed",
     "script": "../../../scripts/certifications/transport-income-accounting-local.js",
     "evidence": [
       "../certifications/transport-income-accounting-20261020.md"
     ],
-    "scope": "API/PostgreSQL real verificados; flujo visual completo pendiente por interrupcion de navegador"
+    "scope": "46 comprobaciones API/PostgreSQL reales en commit certificado; flujo de interfaz compilada completado con CUA y siete comprobaciones posteriores de persistencia"
   },
   "backend_certification": {
     "status": "passed",
@@ -234,10 +234,16 @@
     ]
   },
   "pending_qa": [
-    "Completar comprobacion visual local",
     "Via autorizada de promocion puntual sin incluir cambios ajenos",
     "Revalidar target, alcance y pre-QA antes de publicar",
-    "Railway: reanudar builds y desplegar commit exacto de ambos servicios QA",
+    "Desplegar ambos servicios QA al mismo commit exacto; Railway nuevamente operativo",
     "Certificar flujo completo en QA antes de declarar solucionado"
-  ]
+  ],
+  "browser_certification": {
+    "status": "passed",
+    "scope": "Interaccion DOM: seleccion de cuentas, contabilizacion, liquidacion, trazabilidad, estructura y ficha; captura PNG no disponible",
+    "evidence": [
+      "../certifications/transport-income-accounting-20261020.md"
+    ]
+  }
 }
