@@ -26,7 +26,7 @@ function sqlText(strings) {
   return Array.isArray(strings) ? strings.join("?") : String(strings);
 }
 
-function buildFakePrisma({ employees = [], payrollDocuments = [] } = {}) {
+function buildFakePrisma({ employees = [], payrollDocuments = [], payrollAdjustments = [] } = {}) {
   const events = [];
   let tenantContext = null;
 
@@ -34,7 +34,9 @@ function buildFakePrisma({ employees = [], payrollDocuments = [] } = {}) {
     const sql = sqlText(strings);
     events.push({ kind: "query", sql });
     if (sql.includes("INSERT INTO th_aportes_sociales_documentos")) return [{ id: 77 }];
+    if (sql.includes("th_parametros_laborales")) return [{ code: "SMMLV", value: 1750905, metadata: {} }];
     if (sql.includes("th_nomina_documentos")) return payrollDocuments;
+    if (sql.includes("th_nomina_ajustes")) return payrollAdjustments;
     return [];
   }
 
@@ -98,6 +100,94 @@ test("aportes sociales inserta las lineas por lotes y dentro del contexto de ten
     assert.equal(transaction.options?.timeout, 30000, "la transaccion remota necesita timeout ampliado");
   } finally {
     loaded.restore();
+  }
+});
+
+test("preview de aportes consume segmentos de ajuste y no vuelve a descontar SLN al trabajador", async () => {
+  const employee = { ...employeesFixture[0], metadata: { name: "Empleado 1", social_security: { arl_risk_class: 1, exoneration_eligible: false } } };
+  const fakePrisma = buildFakePrisma({
+    employees: [employee],
+    payrollDocuments: [{ employee_id: 1, source_summary: { ibc: 1500000, days_worked: 15, devengos_salariales: 1500000 } }],
+    payrollAdjustments: [{ employee_id: 1, period_key: "mes:2026-08-01:2026-08-31", adjustment_type: "sln", concept_code: "SLN", amount: 0, metadata: { date_start: "2026-09-16", date_end: "2026-09-30", days: 15, continuity_key: "sln-1", document_support: "acta-1", reference_source: "manual_reported_pila", frozen_historical_reference: { monthlyAmount: 3000000, sourcePeriod: "2026-08", capturedAt: "2026-09-16" } } }]
+  });
+  const loaded = loadHrService(fakePrisma);
+  try {
+    const result = await loaded.service.previewSocialContributions("tenant-qa", { fecha_inicio: "2026-09-01", fecha_fin: "2026-09-30", period_type: "mes" });
+    const employeeRow = result.document.employees[0];
+    assert.equal(employeeRow.segment_result.segments.find((segment) => segment.type === "SLN").employeeAmounts.salud, 0);
+    assert.equal(employeeRow.segment_result.segments.find((segment) => segment.type === "SLN").employeeAmounts.pension, 0);
+    assert.equal(employeeRow.segment_result.segments.find((segment) => segment.type === "SLN").reference.sourcePeriod, "2026-08");
+    assert.equal(result.document.lines.filter((line) => line.concept_code === "DED_SALUD")[0].employee_amount, 60000);
+    assert.ok(fakePrisma.events.some((event) => event.kind === "query" && event.sql.includes("metadata->>'date_start'") && event.sql.includes("metadata->>'date_end'")), "las novedades deben consultarse por solapamiento de fechas aunque period_key sea distinto");
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("SLN completo permite IBC reportado cero sin usar salario como fallback", async () => {
+  const employee = { ...employeesFixture[0], metadata: { name: "Empleado SLN", social_security: { arl_risk_class: 1 } } };
+  const fakePrisma = buildFakePrisma({
+    employees: [employee],
+    payrollDocuments: [{ employee_id: 1, source_summary: { ibc: 0, worked_cotizable_remuneration: 0, days_worked: 0, devengos_salariales: 0 } }],
+    payrollAdjustments: [{ employee_id: 1, adjustment_type: "sln", concept_code: "SLN", amount: 0, metadata: { date_start: "2026-09-01", date_end: "2026-09-30", days: 30, document_support: "acta-sln", reference_source: "manual_reported_pila", frozen_historical_reference: { monthlyAmount: 3000000, sourcePeriod: "2026-08", capturedAt: "2026-09-01" } } }]
+  });
+  const loaded = loadHrService(fakePrisma);
+  try {
+    const result = await loaded.service.previewSocialContributions("tenant-qa", { fecha_inicio: "2026-09-01", fecha_fin: "2026-09-30", period_type: "mes" });
+    const row = result.document.employees[0];
+    assert.equal(row.segment_result.segments.find((segment) => segment.type === "TRABAJO"), undefined);
+    assert.equal(row.segment_result.segments.find((segment) => segment.type === "SLN").amount, 3000000);
+    assert.ok(row.segment_result.totals.employerAmounts.pension > 0);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("novedad cross-month conserva referencia y prorratea reconocido comercial por período", async () => {
+  const employee = { ...employeesFixture[0], metadata: { name: "Empleado cross-month", social_security: { arl_risk_class: 1 } } };
+  const adjustment = { employee_id: 1, period_key: "mes:2026-05-01:2026-05-31", adjustment_type: "vacaciones", concept_code: "VACACIONES", amount: 0, metadata: { date_start: "2026-05-25", date_end: "2026-06-05", days: 11, recognized_value: 880000, document_support: "vac-cross", reference_source: "manual_reported_pila", reported_pila_id: "PILA-MAY-001", frozen_historical_reference: { monthlyAmount: 2800000, sourcePeriod: "2026-04", capturedAt: "2026-05-01" } } };
+  const run = async (from, to, ibc) => {
+    const fakePrisma = buildFakePrisma({ employees: [employee], payrollDocuments: [{ employee_id: 1, source_summary: { ibc, worked_cotizable_remuneration: ibc, days_worked: 24, devengos_salariales: ibc } }], payrollAdjustments: [adjustment] });
+    const loaded = loadHrService(fakePrisma);
+    try { return (await loaded.service.previewSocialContributions("tenant-qa", { fecha_inicio: from, fecha_fin: to, period_type: "mes" })).document.employees[0]; } finally { loaded.restore(); }
+  };
+  const may = await run("2026-05-01", "2026-05-31", 2400000);
+  const june = await run("2026-06-01", "2026-06-30", 2500000);
+  const maySegment = may.segment_result.segments.find((segment) => segment.type === "VAC_DISFRUTADAS");
+  const juneSegment = june.segment_result.segments.find((segment) => segment.type === "VAC_DISFRUTADAS");
+  assert.equal(maySegment.recognized, 480000);
+  assert.equal(juneSegment.recognized, 400000);
+  assert.equal(maySegment.reference.sourcePeriod, "2026-04");
+  assert.equal(juneSegment.reference.sourcePeriod, "2026-04");
+  assert.equal(maySegment.recognized + juneSegment.recognized, 880000);
+});
+
+test("PILA redondea cada obligación una vez y mantiene separados los parafiscales", async () => {
+  // Fractional contributions detect both duplicated health/pension totals and
+  // the extra $100 caused by rounding employee/employer shares separately.
+  const employee = { ...employeesFixture[0], salary_base: 3000011 };
+  for (const segmented of [false, true]) {
+    const loaded = loadHrService(buildFakePrisma({
+      employees: [employee],
+      payrollDocuments: [{ employee_id: 1, source_summary: { ibc: 3000011, worked_cotizable_remuneration: 3000011, days_worked: 30, devengos_salariales: 3000011 } }],
+      payrollAdjustments: segmented ? [{ employee_id: 1, adjustment_type: "vacaciones_compensadas", concept_code: "VACACIONES_COMPENSADAS", amount: 1000011, metadata: { date_start: "2026-09-30", date_end: "2026-09-30", days: 0, recognized_value: 1000011, document_support: "compensacion" } }] : []
+    }));
+    try {
+      const { document } = await loaded.service.previewSocialContributions("tenant-qa", { fecha_inicio: "2026-09-01", fecha_fin: "2026-09-30", period_type: "mes" });
+      const row = document.employees[0];
+      const ceil100 = (value) => Math.ceil(value / 100) * 100;
+      for (const [subsystem, type] of [["salud", "EPS"], ["pension", "PENSION"], ["arl", "ARL"]]) {
+        const amount = document.lines.filter((line) => line.entity_type === type && line.concept_code !== "DED_FONDO_SOLIDARIDAD_PENSIONAL").reduce((sum, line) => sum + line.total_amount, 0);
+        assert.equal(row.pila_totals[subsystem], ceil100(amount), `${subsystem}, segmented=${segmented}`);
+      }
+      const parafiscalLines = document.lines.filter((line) => ["APORTE_CAJA", "APORTE_SENA", "APORTE_ICBF"].includes(line.concept_code));
+      assert.ok(parafiscalLines.length > 0);
+      for (const line of parafiscalLines) assert.equal(row.pila_totals[line.concept_code], ceil100(line.total_amount));
+      assert.equal(document.total_payable_pila, Object.values(row.pila_totals).reduce((sum, value) => sum + value, 0));
+      assert.ok(document.total_payable_pila >= document.total_payable);
+      assert.equal(row.pila_totals.DED_SALUD, undefined, "no duplicate employee-share obligation");
+      assert.equal(row.pila_totals.APORTE_SALUD, undefined, "no duplicate employer-share obligation");
+    } finally { loaded.restore(); }
   }
 });
 
