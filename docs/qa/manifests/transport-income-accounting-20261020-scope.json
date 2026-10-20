@@ -1,0 +1,179 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-income-accounting-20261020",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "91a676ece56412ed92256111edf3a962fedae072"
+  },
+  "certified_commit": "91a676ece56412ed92256111edf3a962fedae072",
+  "target_head": "b9b977716bc4d442e1bc0cde59b5ae78ffb2d531",
+  "base_commits": {
+    "develop": "b9b977716bc4d442e1bc0cde59b5ae78ffb2d531"
+  },
+  "change_intent": {
+    "summary": "Vehiculos como centros de costo y liquidaciones de ingresos con comprobante LT, cartera y mayor reales",
+    "modules": [
+      "transport",
+      "accounting"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/routes.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/schema.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/settlement-posting.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/transport/settlement-service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/tms-schema.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/vehicle-accounting.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/test/transport-settlement-posting.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "docs/qa/certifications/transport-income-accounting-20261020.md",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-income-accounting-local.js",
+      "status": "A"
+    },
+    {
+      "file": "scripts/data-migrations/20261020-scj-vehicle-cost-centers.sql",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/transport-income-accounting-20261020-scope.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/transport-income-accounting-20261020-preqa.json",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/schema.js",
+    "apps/api/src/modules/transport/service.js",
+    "apps/api/src/modules/transport/settlement-posting.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/vehicle-accounting.js",
+    "apps/api/test/transport-settlement-posting.test.js",
+    "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "docs/qa/certifications/transport-income-accounting-20261020.md",
+    "scripts/certifications/transport-income-accounting-local.js",
+    "scripts/data-migrations/20261020-scj-vehicle-cost-centers.sql",
+    "docs/qa/manifests/transport-income-accounting-20261020-scope.json",
+    "docs/qa/manifests/transport-income-accounting-20261020-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/schema.js",
+    "apps/api/src/modules/transport/service.js",
+    "apps/api/src/modules/transport/settlement-posting.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/vehicle-accounting.js",
+    "apps/api/test/transport-settlement-posting.test.js",
+    "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "docs/qa/certifications/transport-income-accounting-20261020.md",
+    "scripts/certifications/transport-income-accounting-local.js",
+    "scripts/data-migrations/20261020-scj-vehicle-cost-centers.sql"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Centros vehiculares y estructura manual",
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-income-accounting-20261020.md"
+      ]
+    },
+    {
+      "name": "Consecutivos LT e idempotencia",
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-income-accounting-20261020.md"
+      ]
+    },
+    {
+      "name": "Cartera, saldos del cliente y mayor",
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-income-accounting-20261020.md"
+      ]
+    },
+    {
+      "name": "Periodos y reversiones",
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-income-accounting-20261020.md"
+      ]
+    },
+    {
+      "name": "RBAC y aislamiento por empresa",
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-income-accounting-20261020.md"
+      ]
+    },
+    {
+      "name": "PYG vehicular sin doble contabilizacion",
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-income-accounting-20261020.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "reason": "Comprobacion visual incompleta; no crear ramas; desarrollo remoto contiene cambios ajenos al alcance puntual",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": false,
+      "qa_deploy": true,
+      "qa_remote_migration": true,
+      "production": false
+    }
+  }
+}
