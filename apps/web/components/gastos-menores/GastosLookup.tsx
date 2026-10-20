@@ -27,10 +27,16 @@ type Props = {
   resetToken?: string;
 };
 
+function lookupFields(option: GastosLookupOption): string[] {
+  // Los maestros pueden omitir campos opcionales: jamas se normaliza undefined/null.
+  return [option.value, option.label, option.search, ...(option.aliases || [])]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+}
+
 function matches(option: GastosLookupOption, text: string) {
   const needle = text.trim().toLocaleLowerCase();
   if (!needle) return false;
-  return [option.value, option.label, option.search || "", ...(option.aliases || [])].some((value) => value.toLocaleLowerCase() === needle);
+  return lookupFields(option).some((value) => value.toLocaleLowerCase() === needle);
 }
 
 export function GastosLookup({
@@ -82,7 +88,7 @@ export function GastosLookup({
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     if (!needle) return options;
-    return options.filter((option) => [option.value, option.label, option.search || "", ...(option.aliases || [])].some((field) => field.toLocaleLowerCase().includes(needle)));
+    return options.filter((option) => lookupFields(option).some((field) => field.toLocaleLowerCase().includes(needle)));
   }, [options, query]);
 
   function close(restoreFocus = true) {
@@ -92,13 +98,13 @@ export function GastosLookup({
     if (restoreFocus) window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
-  function choose(option: GastosLookupOption, advance = false) {
+  function choose(option: GastosLookupOption, advance = false, notifySelected = advance) {
     dirtyRef.current = false;
     onResolve(option.value, option);
     setText(option.label);
     onValidityChange?.(true);
     close(!advance);
-    if (advance && onSelected) window.setTimeout(() => { if (inputRef.current) onSelected(inputRef.current); }, 0);
+    if (notifySelected && onSelected) window.setTimeout(() => { if (inputRef.current) onSelected(inputRef.current); }, 0);
   }
 
   function resolveOrSearch(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -120,7 +126,8 @@ export function GastosLookup({
       onValidityChange?.(false);
       return;
     }
-    choose(exactMatches[0], true);
+    // El Enter inline avanza por onEnterResolved; solo el Enter del popup usa onSelected.
+    choose(exactMatches[0], true, false);
     onEnterResolved?.(event);
   }
 
@@ -153,7 +160,9 @@ export function GastosLookup({
             dirtyRef.current = true;
             setText(event.target.value);
             if (value) onClear();
-            onValidityChange?.(!event.target.value.trim() || options.some((option) => matches(option, event.target.value)));
+            // Un texto editado no queda resuelto aunque coincida con una opcion: solo Enter
+            // o la eleccion del popup llaman a onResolve. Vacio sigue siendo valido.
+            onValidityChange?.(!event.target.value.trim());
           }}
           onKeyDown={resolveOrSearch}
           placeholder={placeholder}

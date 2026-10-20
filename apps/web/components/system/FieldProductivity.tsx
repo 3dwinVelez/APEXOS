@@ -2,12 +2,18 @@
 import { useEffect, useState } from "react";
 type Suggestion = { key: string; values: string[]; target: HTMLInputElement };
 const prefix = "apex_field_history:";
-function fieldKey(input: HTMLInputElement) { return input.name || input.id || input.placeholder?.slice(0, 40) || ""; }
-function allowed(input: HTMLInputElement) { return !["password", "hidden", "file", "email", "tel"].includes(input.type) && !/token|secret|password|clave|document/i.test(fieldKey(input)); }
+function fieldKey(input: HTMLInputElement) {
+  return input.name || input.id || input.placeholder?.slice(0, 40) || "";
+}
+function allowed(input: HTMLInputElement) {
+  if (input.closest('[data-field-history="off"]')) return false;
+  return !["password", "hidden", "file", "email", "tel"].includes(input.type)
+    && !/token|secret|password|clave|document/i.test(fieldKey(input));
+}
 export function FieldProductivity() {
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   useEffect(() => {
-    const onFocus = (event: FocusEvent) => { const input = event.target as HTMLInputElement; if (!(input instanceof HTMLInputElement) || !allowed(input)) return; const key = fieldKey(input); if (!key) return; try { const values = JSON.parse(localStorage.getItem(`${prefix}${key}`) || "[]"); setSuggestion(Array.isArray(values) && values.length ? { key, values: values.slice(0, 5), target: input } : null); } catch { setSuggestion(null); } };
+    const onFocus = (event: FocusEvent) => { const input = event.target as HTMLInputElement; if (!(input instanceof HTMLInputElement) || !allowed(input)) { setSuggestion(null); return; } const key = fieldKey(input); if (!key) return; try { const values = JSON.parse(localStorage.getItem(`${prefix}${key}`) || "[]"); setSuggestion(Array.isArray(values) && values.length ? { key, values: values.slice(0, 5), target: input } : null); } catch { setSuggestion(null); } };
     const onBlur = (event: FocusEvent) => { const input = event.target as HTMLInputElement; if (!(input instanceof HTMLInputElement) || !allowed(input) || !input.value.trim()) return; const key = fieldKey(input); if (!key) return; let values: string[] = []; try { values = JSON.parse(localStorage.getItem(`${prefix}${key}`) || "[]"); } catch { values = []; } localStorage.setItem(`${prefix}${key}`, JSON.stringify([input.value.trim(), ...values.filter((value) => value !== input.value.trim())].slice(0, 5))); window.setTimeout(() => setSuggestion(null), 180); };
     const undo = () => document.execCommand("undo"); const redo = () => document.execCommand("redo");
     document.addEventListener("focusin", onFocus); document.addEventListener("focusout", onBlur); window.addEventListener("apex:undo", undo); window.addEventListener("apex:redo", redo);
