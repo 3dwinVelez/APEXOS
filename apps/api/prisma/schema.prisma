@@ -1542,7 +1542,7 @@ model TransportCarrier {
   @@index([tenant_id, tax_id])
 }
 
-model TransportOrigin {
+model Sede {
   id                Int                 @id @default(autoincrement())
   tenant_id         String
   code              String
@@ -1551,8 +1551,8 @@ model TransportOrigin {
   city              String
   department        String?
   country           String              @default("CO")
-  latitude          Float
-  longitude         Float
+  latitude          Float?
+  longitude         Float?
   timezone          String              @default("America/Bogota")
   operation_start   String?
   operation_end     String?
@@ -1563,11 +1563,11 @@ model TransportOrigin {
   updated_at        DateTime            @updatedAt
   needs             TransportNeed[]
   trips             TransportTrip[]
-  rate_cards        TransportRateCard[]
   plans             TransportPlan[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, city, active])
+  @@map("sedes")
 }
 
 model TransportRateCard {
@@ -1579,11 +1579,6 @@ model TransportRateCard {
   status               String            @default("borrador")
   carrier_id           Int?
   carrier              TransportCarrier? @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
-  origin_id            Int?
-  origin               TransportOrigin?  @relation(fields: [origin_id], references: [id], onDelete: Restrict)
-  origin_department    String?
-  origin_city          String?
-  origin_municipality  String?
   destination_city     String?
   destination_department String?
   destination_municipality String?
@@ -1610,7 +1605,6 @@ model TransportRateCard {
   @@unique([tenant_id, code, version])
   @@index([tenant_id, status, valid_from, valid_to], map: "TransportRateCard_tenant_status_valid_idx")
   @@index([tenant_id, carrier_id, active], map: "TransportRateCard_tenant_carrier_active_idx")
-  @@index([tenant_id, origin_id, destination_city], map: "TransportRateCard_tenant_origin_destination_idx")
 }
 
 model TransportDriver {
@@ -1681,8 +1675,8 @@ model TransportPlan {
   tenant_id       String
   code            String
   name            String
-  origin_id       Int
-  origin          TransportOrigin @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  sede_id         Int
+  sede            Sede        @relation(fields: [sede_id], references: [id], onDelete: Restrict)
   service_level   String      @default("normal")
   due_date        DateTime?
   status          String      @default("borrador")
@@ -1706,8 +1700,8 @@ model TransportNeed {
   source_reference      String?
   sales_order_id        Int?
   origin_place_id       Int?
-  origin_id             Int?
-  origin                TransportOrigin?    @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  sede_id               Int?
+  sede                  Sede?               @relation(fields: [sede_id], references: [id], onDelete: Restrict)
   origin_name           String
   delivery_point_id     Int
   delivery_point        TransportDeliveryPoint @relation(fields: [delivery_point_id], references: [id], onDelete: Restrict)
@@ -1742,7 +1736,7 @@ model TransportNeed {
   @@index([tenant_id, status, due_at])
   @@index([tenant_id, source_type, source_id])
   @@index([tenant_id, delivery_point_id, due_at])
-  @@index([tenant_id, origin_id, status])
+  @@index([tenant_id, sede_id, status])
   @@index([tenant_id, plan_id])
 }
 
@@ -1771,8 +1765,8 @@ model TransportTrip {
   code               String
   status             String                 @default("borrador")
   origin_place_id    Int?
-  origin_id          Int?
-  origin             TransportOrigin?       @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  sede_id            Int?
+  sede               Sede?                  @relation(fields: [sede_id], references: [id], onDelete: Restrict)
   origin_name        String
   carrier_id         Int?
   carrier            TransportCarrier?      @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
@@ -1810,7 +1804,7 @@ model TransportTrip {
   @@index([tenant_id, status, planned_departure])
   @@index([tenant_id, carrier_id, status])
   @@index([tenant_id, vehicle_id, status])
-  @@index([tenant_id, origin_id, status])
+  @@index([tenant_id, sede_id, status])
 }
 
 model TransportTripNeed {
@@ -2067,7 +2061,7 @@ model TransportSettlementPackage {
   code             String
   period_id        Int?
   period           TransportSettlementPeriod?    @relation(fields: [period_id], references: [id], onDelete: SetNull)
-  carrier_id       Int
+  carrier_id       Int?
   carrier_code     String?
   carrier_name     String?
   type_id          Int?

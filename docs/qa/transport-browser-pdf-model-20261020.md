@@ -1,0 +1,17 @@
+# PDF de liquidacion desde el navegador
+
+El usuario rechazo contratar infraestructura adicional y autorizo replantear el PDF. El formato se prepara en el navegador autenticado, con detalle y capturas reales de la etapa 4; el usuario elige Guardar como PDF en la impresion del navegador. No hay descarga binaria automatica del API ni se promete automatizar ese dialogo del sistema operativo.
+
+`GET /api/v1/transport/settlement-packages/:id/invoice-report` exige permiso transport/read, empresa propietaria y estado liquidada. Devuelve no-store. No admite HTML, URLs de renderizado ni precios suministrados por el cliente. El boton abre `/print/transport-settlement?id=<id>` sin tokens en la URL; la vista consulta el API con la sesion existente. Antes de imprimir vuelve a autorizar el informe y lo prepara de nuevo si cambio. Cerrar sesion en otra pestaña limpia la vista. No se persiste el documento en localStorage, IndexedDB ni un servicio externo.
+
+El navegador captura cada RateCostDesigner de solo lectura con html-to-image 1.11.13, dependencia MIT sin dependencias transitivas. Los anexos usan exclusivamente definiciones y valores congelados; si falta una definicion historica, el documento lo indica y no usa la tarifa vigente. Se mantiene el detalle como texto seleccionable y los anexos como imagenes en paginas horizontales. La fecha de servicio conserva el dia calendario y no se desplaza por convertir medianoche UTC a Colombia.
+
+El API deja de lanzar Chromium y su imagen no instala un navegador ni requiere PDF_WEB_ORIGIN, PDF_BROWSER_EXECUTABLE, una VM, namespaces o un perfil seccomp especial. Los controles de seguridad del host de Railway permanecen intactos. Los planes e informes anteriores de infraestructura son historicos y no describen este modelo. La promocion puntual excluye los perfiles, licencias, overlays y certificados del generador servidor que nunca llegaron a develop.
+
+Las teselas cartograficas son un recurso externo ya usado por el tarifario. Si no estan disponibles, la captura informa la ausencia del mapa base y conserva recorrido, marcadores y valores; no recalcula la ruta durante el reporte. Fallos en la preparacion de los anexos bloquean el boton e incluyen reintento.
+
+Certificacion versionada: `scripts/certifications/transport-settlement-four-stages-local.js` crea datos sinteticos, recorre las cuatro etapas, comprueba los casos negativos del informe e invoca `transport-settlement-browser-pdf-local.js`. Este abre Edge real, consulta el API real, comprueba dos capturas, conserva el precio anterior a una nueva version, verifica la reautorizacion del boton y produce PDF con el motor de impresion. No simula respuestas de datos o permisos. Solo sustituye el dialogo nativo por una marca observable y usa el equivalente de impresion automatizado para guardar el artefacto. El validador Python verifica tres paginas, dos anexos, precios, texto e imagenes; se revisa ademas el render visual.
+
+Los resultados finales se vinculan al SHA exacto en el manifiesto pre-QA. Las pruebas del arbol de trabajo sirven para diagnostico, no reemplazan la certificacion del candidato. La certificacion remota de QA, las dos migraciones pendientes y cualquier autorizacion independiente siguen sujetas a AGENTS.md. No se autoriza main.
+
+Fuentes de la dependencia y del modelo de captura: https://github.com/bubkoo/html-to-image y https://registry.npmjs.org/html-to-image/1.11.13.
