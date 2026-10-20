@@ -1,22 +1,25 @@
 "use client";
 
+import { ModalFrame } from "@/components/ui/ModalFrame";
+import { SettlementDocumentsEditor, newSettlementDocument, settlementDocumentPayload, type SettlementDocumentDraft, type ChargeCriterion } from "@/components/transport/SettlementDocumentsEditor";
+import dialogStyles from "@/components/transport/SettlementDialog.module.css";
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { Badge, EmptyState } from "@/components/ui/feedback";
 import { AlertTriangle, CalendarDays, Calculator, CheckCircle2, ClipboardList, FileCheck2, Lock, Plus, RefreshCw, Route, Search, Send, Truck, Wallet, Weight, XCircle } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type Carrier = { id: number; code: string; legal_name: string };
-type SettlementType = { id: number | null; code: string; name: string; requires_reinforced_approval?: boolean; documentary_policy?: string };
+type Vehicle = { id: number; plate: string; type?: string; status: string };
 type PeriodPackage = { id: number; code: string; status: string; carrier_name?: string | null; adjusted_total?: number | string; approved_total?: number | string };
 type Period = { id: number; code: string; name?: string | null; start_date: string; end_date: string; status: string; packages?: PeriodPackage[] };
 type Item = {
-  id: number; guide_reference: string; service?: string | null; route_description?: string | null;
+  id: number; service_date?: string | null; guide_reference: string; service?: string | null; route_description?: string | null;
   origin_name?: string | null; destination_city?: string | null; vehicle_plate?: string | null; vehicle_type?: string | null;
   base_type: string; quantity: number; unit?: string | null; distance_km: number; weight_kg: number;
   rate_code?: string | null; rate_version?: number | null; rate_base?: number | null; rate_unit_value?: number | null;
   calculated_amount: number; adjusted_amount: number; approved_amount: number;
   calculation_trace?: unknown;
+  metadata?: { charge_criteria?: ChargeCriterion[] };
 };
 type Adjustment = { id: number; item_id?: number | null; before_value: number; delta: number; after_value: number; reason: string; created_by?: number | null };
 type Issue = { id: number; category: string; severity: string; blocking: boolean; status: string; description: string };
@@ -24,13 +27,15 @@ type Approval = { id: number; level?: string | null; decision: string; from_stat
 type Accounting = { id: number; reference: string; amount: number; accounting_period?: string | null; idempotency_key: string };
 type SettlementPackage = {
   id: number; code: string; status: string; version: number; currency: string;
-  carrier_id: number; carrier_code?: string | null; carrier_name?: string | null; type_code: string;
+  metadata?: { vehicle_id?: number; vehicle_plate?: string; cost_center?: string; accounting_period?: string; tariff_locked?: boolean };
+  carrier_id: number | null; carrier_code?: string | null; carrier_name?: string | null; type_code: string;
   responsible_id?: number | null; calculated_total: number; adjusted_total: number; approved_total: number; accounted_total: number;
   period?: { code: string; start_date: string; end_date: string } | null;
   items?: Item[]; adjustments?: Adjustment[]; issues?: Issue[]; approvals?: Approval[]; accountings?: Accounting[];
   open_blocking_issues?: number; aging_days?: number;
 };
 type Kpis = {
+  created_value: number; liquidated_value: number; accounted_pending_value: number;
   draft_value: number; pending_approval_value: number; approved_value: number; accounted_value: number;
   blocked_packages: number; open_issues: number;
 };
@@ -70,40 +75,33 @@ const STATUS_TONE: Record<string, "neutral" | "success" | "warning" | "error" | 
   liquidada: "success", reversada: "error", cancelada: "neutral"
 };
 const STATUS_LABEL: Record<string, string> = {
-  borrador: "Borrador", validando: "Validando", preliquidada: "Preliquidada", con_novedad: "Con novedad",
+  borrador: "Creado", validando: "Validando", preliquidada: "Preliquidada", con_novedad: "Con novedad",
   en_revision: "En revision", rechazada: "Rechazada", aprobada: "Aprobada", contabilizada: "Contabilizada",
   liquidada: "Liquidada", reversada: "Reversada", cancelada: "Cancelada"
 };
 
-// Escalera de etapas del prototipo: Generado -> Validado -> Preliquidado -> Autorizado -> Contabilizado.
-const PACKAGE_STEPS = ["Generado", "Validado", "Preliquidado", "Autorizado", "Contabilizado"];
-const STEP_STATUSES: Record<string, number> = {
-  borrador: 0, validando: 1, preliquidada: 2, con_novedad: 2, rechazada: 2,
-  en_revision: 3, aprobada: 3, contabilizada: 4, liquidada: 4, reversada: 4, cancelada: 0
-};
+// Los estados técnicos de preparación pertenecen a Creado; no son etapas contables.
+const PACKAGE_STEPS = ["Creado", "Aprobado", "Contabilizado", "Liquidado"];
 const STEP_BUCKETS: string[][] = [
-  ["borrador", "cancelada"],
-  ["validando"],
-  ["preliquidada", "con_novedad", "rechazada"],
-  ["en_revision", "aprobada"],
-  ["contabilizada", "liquidada", "reversada"]
+  ["borrador", "validando", "preliquidada", "con_novedad", "rechazada", "en_revision", "cancelada"],
+  ["aprobada"], ["contabilizada", "reversada"], ["liquidada"]
 ];
+const STEP_STATUSES: Record<string, number> = Object.fromEntries(STEP_BUCKETS.flatMap((statuses, index) => statuses.map((status) => [status, index])));
 const ACTION_STEP: Record<string, number> = {
   "transport.settlement_package.created": 0,
-  "transport.settlement_package.validated": 1,
-  "transport.settlement_package.precalculated": 2,
-  "transport.settlement_package.aprobada": 3,
-  "transport.settlement_package.accounted": 4
+  "transport.settlement_package.aprobada": 1,
+  "transport.settlement_package.accounted": 2,
+  "transport.settlement_package.liquidada": 3
 };
 const ACTION_LABEL: Record<string, string> = {
-  "transport.settlement_package.created": "Generado",
+  "transport.settlement_package.created": "Creado",
   "transport.settlement_package.items_added": "Detalles agregados",
   "transport.settlement_package.updated": "Actualizado",
   "transport.settlement_package.validated": "Validado",
   "transport.settlement_package.precalculated": "Preliquidado",
   "transport.settlement_package.adjusted": "Ajustado",
   "transport.settlement_package.submitted": "Enviado a revision",
-  "transport.settlement_package.aprobada": "Autorizado",
+  "transport.settlement_package.aprobada": "Aprobado",
   "transport.settlement_package.rechazada": "Rechazado",
   "transport.settlement_package.con_novedad": "Con novedad",
   "transport.settlement_package.accounted": "Contabilizado",
@@ -130,15 +128,33 @@ const emptyItemDraft = {
 };
 const emptyPeriodDraft = { code: "", name: "", start_date: "", end_date: "" };
 
+async function loadSettlementVehicles(): Promise<Vehicle[]> {
+  const rows: Vehicle[] = [];
+  for (let offset = 0; ; offset += 200) {
+    const page = await api<Vehicle[]>(`/api/v1/transport/vehicles?limit=200&offset=${offset}`);
+    rows.push(...page);
+    if (page.length < 200) return rows;
+  }
+}
+
 export default function TransportSettlementsPage() {
   const canRead = hasStoredRolePermission("transport", "read");
   const canWrite = hasStoredRolePermission("transport", "write");
-  const canApprove = hasStoredRolePermission("transport", "approve");
+  const canAccount = hasStoredRolePermission("transport", "account_settlements");
+  const canLiquidate = hasStoredRolePermission("transport", "liquidate_settlements");
+  const canApprove = hasStoredRolePermission("transport", "approve_settlements");
   const [view, setView] = useState<"paquetes" | "semanas" | "vehiculos">("paquetes");
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [packages, setPackages] = useState<SettlementPackage[]>([]);
-  const [carriers, setCarriers] = useState<Carrier[]>([]);
-  const [types, setTypes] = useState<SettlementType[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [createRatesReady, setCreateRatesReady] = useState(false);
+  const [detailRatesReady, setDetailRatesReady] = useState(false);
+  const [createDocuments, setCreateDocuments] = useState<SettlementDocumentDraft[]>([newSettlementDocument()]);
+  const mutationRef = useRef(false);
+  const [detailVehicleId, setDetailVehicleId] = useState<number | undefined>();
+  const [detailDocuments, setDetailDocuments] = useState<SettlementDocumentDraft[]>([newSettlementDocument()]);
+  const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState("");
   const [periods, setPeriods] = useState<Period[]>([]);
   const [consolidation, setConsolidation] = useState<ConsolidationResponse | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
@@ -151,7 +167,7 @@ export default function TransportSettlementsPage() {
   const [selectedAudit, setSelectedAudit] = useState<AuditResponse | null>(null);
   const [itemDraft, setItemDraft] = useState({ ...emptyItemDraft });
   const [createOpen, setCreateOpen] = useState(false);
-  const [createDraft, setCreateDraft] = useState({ code: "", carrier_id: 0, type_code: "TRANSPORTADOR", period_id: 0, currency: "COP", observation: "" });
+  const [createDraft, setCreateDraft] = useState({ vehicle_id: 0, currency: "COP", observation: "" });
   const [periodModal, setPeriodModal] = useState(false);
   const [periodDraft, setPeriodDraft] = useState({ ...emptyPeriodDraft });
   const [decisionModal, setDecisionModal] = useState<"aprobada" | "rechazada" | null>(null);
@@ -164,20 +180,18 @@ export default function TransportSettlementsPage() {
     try {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
-      if (carrierFilter) params.set("carrier_id", carrierFilter);
+      if (carrierFilter) params.set("vehicle_id", carrierFilter);
       if (periodFilter) params.set("period_id", periodFilter);
       const suffix = params.toString();
-      const [tower, carrierRows, typeRows, periodRows, consolidationRows] = await Promise.all([
+      const [tower, periodRows, consolidationRows, vehicleRows] = await Promise.all([
         api<{ kpis: Kpis; packages: SettlementPackage[] }>(`/api/v1/transport/settlement-control-tower?${suffix}`),
-        api<Carrier[]>("/api/v1/transport/carriers"),
-        api<SettlementType[]>("/api/v1/transport/settlement-types"),
         api<Period[]>("/api/v1/transport/settlement-periods"),
-        api<ConsolidationResponse>(`/api/v1/transport/settlement-vehicle-consolidation?${suffix}`)
+        api<ConsolidationResponse>(`/api/v1/transport/settlement-vehicle-consolidation?${suffix}`),
+        loadSettlementVehicles()
       ]);
+      setVehicles(vehicleRows.filter((vehicle) => !["retirado", "inactivo", "bloqueado"].includes(vehicle.status)));
       setKpis(tower.kpis);
       setPackages(tower.packages);
-      setCarriers(carrierRows);
-      setTypes(typeRows);
       setPeriods(periodRows);
       setConsolidation(consolidationRows);
       setError("");
@@ -194,6 +208,9 @@ export default function TransportSettlementsPage() {
         api<SettlementPackage>(`/api/v1/transport/settlement-packages/${pkg.id}`),
         api<AuditResponse>(`/api/v1/transport/settlement-packages/${pkg.id}/audit`).catch(() => null)
       ]);
+      setDetailVehicleId(detail.metadata?.vehicle_id || vehicles.find(vehicle => detail.items?.some(item => item.vehicle_plate === vehicle.plate))?.id);
+      setDetailDocuments(detail.items?.length ? detail.items.map(item => ({ ...newSettlementDocument(), id: item.id, delivery_point_ids: (item.metadata as { delivery_point_ids?: number[] })?.delivery_point_ids, delivery_point_id: (item.metadata as { delivery_point_id?: number })?.delivery_point_id, guide_reference: item.guide_reference, service: item.service || "", customer_id: (item.metadata as { customer_id?: number })?.customer_id, route_description: item.route_description || "", service_date: item.service_date?.slice(0, 10) || "", charge_criteria: item.metadata?.charge_criteria?.length ? item.metadata.charge_criteria.map(row => ({ ...row, _key: crypto.randomUUID() })) : newSettlementDocument().charge_criteria })) : [newSettlementDocument()]);
+      setError("");
       setSelected(detail);
       setSelectedAudit(audit);
       setItemDraft({ ...emptyItemDraft });
@@ -214,14 +231,23 @@ export default function TransportSettlementsPage() {
   }
 
   async function transition(path: string, body: Record<string, unknown> = {}, success = "Estado actualizado.") {
-    if (!selected) return;
+    if (!selected || mutationRef.current) return;
+    mutationRef.current = true; setSaving(true); setError("");
     try {
-      await api(`/api/v1/transport/settlement-packages/${selected.id}/${path}`, { method: "POST", body: JSON.stringify(body) });
+      if (path === "prepare") {
+        let current = selected;
+        for (const action of ["validate", "precalculate", "submit"]) {
+          if ((action === "validate" && current.status !== "borrador") || (action === "precalculate" && current.status !== "validando") || (action === "submit" && !["preliquidada", "con_novedad", "rechazada"].includes(current.status))) continue;
+          current = await api<SettlementPackage>(`/api/v1/transport/settlement-packages/${selected.id}/${action}`, { method: "POST", body: JSON.stringify({ version: current.version }) });
+        }
+      } else await api(`/api/v1/transport/settlement-packages/${selected.id}/${path}`, { method: "POST", body: JSON.stringify(body) });
       setMessage(success);
       await refreshSelected();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : `No fue posible ejecutar ${path}.`);
-    }
+      const current = await api<SettlementPackage>(`/api/v1/transport/settlement-packages/${selected.id}`).catch(() => null);
+      if (current) setSelected(current);
+    } finally { mutationRef.current = false; setSaving(false); }
   }
 
   async function submitDecision() {
@@ -230,6 +256,8 @@ export default function TransportSettlementsPage() {
       setError("El rechazo requiere un motivo");
       return;
     }
+    if (mutationRef.current) return;
+    mutationRef.current = true; setSaving(true); setError("");
     try {
       await api(`/api/v1/transport/settlement-packages/${selected.id}/decision`, {
         method: "POST",
@@ -241,7 +269,7 @@ export default function TransportSettlementsPage() {
       await refreshSelected();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No fue posible registrar la decision.");
-    }
+    } finally { mutationRef.current = false; setSaving(false); }
   }
 
   async function submitAccounting() {
@@ -250,12 +278,14 @@ export default function TransportSettlementsPage() {
       setError("La referencia contable es obligatoria.");
       return;
     }
+    if (mutationRef.current) return;
+    mutationRef.current = true; setSaving(true); setError("");
     try {
       await api(`/api/v1/transport/settlement-packages/${selected.id}/account`, {
         method: "POST",
         body: JSON.stringify({
           reference: accountDraft.reference.trim(),
-          accounting_period: accountDraft.accounting_period.trim() || undefined,
+
           payload: accountDraft.payment_date ? { payment_date: accountDraft.payment_date } : {},
           version: selected.version
         })
@@ -266,26 +296,44 @@ export default function TransportSettlementsPage() {
       await refreshSelected();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No fue posible contabilizar el paquete.");
-    }
+    } finally { mutationRef.current = false; setSaving(false); }
+  }
+
+  async function downloadInvoicePdf() {
+    if (!selected || mutationRef.current) return;
+    mutationRef.current = true; setSaving(true); setError("");
+    try {
+      const pdf = await api<Blob>(`/api/v1/transport/settlement-packages/${selected.id}/invoice-pdf`, { cache: "no-store" });
+      const url = URL.createObjectURL(pdf); const link = document.createElement("a");
+      link.href = url; link.download = `${selected.code}-soporte-facturacion.pdf`; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "No fue posible generar el PDF."); }
+    finally { mutationRef.current = false; setSaving(false); }
   }
 
   async function createPackage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (mutationRef.current) return;
+    mutationRef.current = true;
+    setSaving(true); setModalError("");
     try {
-      await api("/api/v1/transport/settlement-packages", {
+      const created = await api<SettlementPackage>("/api/v1/transport/settlement-packages", {
         method: "POST",
         body: JSON.stringify({
-          code: createDraft.code, carrier_id: createDraft.carrier_id, type_code: createDraft.type_code,
-          period_id: createDraft.period_id || undefined, currency: createDraft.currency, observation: createDraft.observation || undefined
+          vehicle_id: createDraft.vehicle_id,
+          items: createDocuments.map(settlementDocumentPayload),
+          currency: createDraft.currency, observation: createDraft.observation || undefined
         })
       });
       setCreateOpen(false);
-      setCreateDraft({ code: "", carrier_id: 0, type_code: "TRANSPORTADOR", period_id: 0, currency: "COP", observation: "" });
-      setMessage("Paquete de liquidacion creado en borrador.");
+      setCreateDraft({ vehicle_id: 0, currency: "COP", observation: "" });
+      setCreateDocuments([newSettlementDocument()]);
+      setMessage(`Liquidación ${created.code} creada con destinos, criterios y soportes.`);
+      await openPackage(created);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "No fue posible crear el paquete.");
-    }
+      setModalError(caught instanceof Error ? caught.message : "No fue posible crear el paquete.");
+    } finally { mutationRef.current = false; setSaving(false); }
   }
 
   async function createPeriod(event: React.FormEvent<HTMLFormElement>) {
@@ -320,23 +368,28 @@ export default function TransportSettlementsPage() {
   async function addItem(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selected) return;
+    if (mutationRef.current) return;
+    mutationRef.current = true; setSaving(true); setError("");
     try {
-      await api(`/api/v1/transport/settlement-packages/${selected.id}/items`, {
-        method: "POST",
-        body: JSON.stringify({ items: [{ ...itemDraft, service_date: itemDraft.service_date || undefined, reported_value: itemDraft.reported_value || undefined }] })
+      await api(`/api/v1/transport/settlement-packages/${selected.id}/documents`, {
+        method: "PUT",
+        body: JSON.stringify({ version: selected.version, vehicle_id: detailVehicleId, items: detailDocuments.map(settlementDocumentPayload) })
       });
       setItemDraft({ ...emptyItemDraft });
-      setMessage("Detalle agregado.");
-      await refreshSelected();
+      setMessage("Documentos y criterios actualizados.");
+      await openPackage(selected);
+      await load();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No fue posible agregar el detalle.");
-    }
+    } finally { mutationRef.current = false; setSaving(false); }
   }
 
   async function addAdjustment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selected) return;
     const data = new FormData(event.currentTarget);
+    if (mutationRef.current) return;
+    mutationRef.current = true; setSaving(true); setError("");
     try {
       await api(`/api/v1/transport/settlement-packages/${selected.id}/adjustments`, {
         method: "POST",
@@ -349,7 +402,7 @@ export default function TransportSettlementsPage() {
       await refreshSelected();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No fue posible registrar el ajuste.");
-    }
+    } finally { mutationRef.current = false; setSaving(false); }
   }
 
   const filtered = useMemo(() => {
@@ -372,11 +425,11 @@ export default function TransportSettlementsPage() {
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Liquidacion de transporte</p>
           <h1 className="mt-1 text-3xl font-semibold">Torre de liquidaciones</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Monitorea el ciclo semanal por transportador (generado, validado, preliquidado, autorizado, contabilizado) y consolida el ingreso contable de cada vehiculo.</p>
+          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Monitorea el ciclo por vehículo (creado, aprobado, contabilizado, liquidado) y consolida el ingreso contable de cada vehiculo.</p>
         </div>
         <div className="flex gap-2">
           <button className="inline-flex h-11 items-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={16} /> Actualizar</button>
-          {canWrite ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={() => setCreateOpen(true)} type="button"><Plus size={16} /> Nuevo paquete</button> : null}
+          {canWrite ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={() => { setModalError(""); setCreateOpen(true); }} type="button"><Plus size={16} /> Nuevo paquete</button> : null}
         </div>
       </header>
 
@@ -384,10 +437,10 @@ export default function TransportSettlementsPage() {
       {error ? <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p> : null}
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Kpi label="En borrador" value={money(kpis?.draft_value || 0)} icon={<ClipboardList size={18} />} />
-        <Kpi label="Por aprobar" value={money(kpis?.pending_approval_value || 0)} icon={<Send size={18} />} />
+        <Kpi label="Creado" value={money(kpis?.created_value || 0)} icon={<ClipboardList size={18} />} />
         <Kpi label="Aprobado" value={money(kpis?.approved_value || 0)} icon={<CheckCircle2 size={18} />} />
-        <Kpi label="Contabilizado" value={money(kpis?.accounted_value || 0)} icon={<Wallet size={18} />} />
+        <Kpi label="Contabilizado" value={money(kpis?.accounted_pending_value || 0)} icon={<Wallet size={18} />} />
+        <Kpi label="Liquidado" value={money(kpis?.liquidated_value || 0)} icon={<CheckCircle2 size={18} />} />
         <Kpi label="Bloqueados" value={String(kpis?.blocked_packages || 0)} icon={<AlertTriangle size={18} />} tone={(kpis?.blocked_packages || 0) > 0 ? "warning" : "neutral"} />
         <Kpi label="Novedades abiertas" value={String(kpis?.open_issues || 0)} icon={<FileCheck2 size={18} />} tone={(kpis?.open_issues || 0) > 0 ? "warning" : "neutral"} />
       </section>
@@ -398,7 +451,7 @@ export default function TransportSettlementsPage() {
             <button className={`rounded-md px-3 py-1.5 text-sm font-semibold ${view === key ? "border border-line bg-white text-apex shadow-sm" : "text-neutral-600"}`} key={key} onClick={() => setView(key)} type="button">{label}</button>
           ))}
         </div>
-        <p className="text-xs font-semibold text-neutral-500">{consolidation ? `${consolidation.totals.vehicle_count} vehiculo(s) · ${consolidation.totals.guide_count} guia(s) en ${consolidation.total_packages} paquete(s)` : ""}</p>
+        <p className="text-xs font-semibold text-neutral-500">{consolidation ? `${consolidation.totals.vehicle_count} vehiculo(s) · ${consolidation.totals.guide_count} destino(s) en ${consolidation.total_packages} paquete(s)` : ""}</p>
       </div>
 
       {view === "paquetes" ? (
@@ -410,15 +463,15 @@ export default function TransportSettlementsPage() {
             </label>
             <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
               <option value="">Todos los estados</option>
-              {Object.keys(STATUS_LABEL).map((status) => <option key={status} value={status}>{STATUS_LABEL[status]}</option>)}
+              {["Creado", "Aprobado", "Contabilizado", "Liquidado"].map((label) => <option key={label} value={label.toLowerCase()}>{label}</option>)}
             </select>
             <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={carrierFilter} onChange={(event) => setCarrierFilter(event.target.value)}>
-              <option value="">Todos los transportadores</option>
-              {carriers.map((carrier) => <option key={carrier.id} value={carrier.id}>{carrier.legal_name}</option>)}
+              <option value="">Todos los vehículos</option>
+              {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.plate}</option>)}
             </select>
             <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={periodFilter} onChange={(event) => setPeriodFilter(event.target.value)}>
               <option value="">Todos los periodos</option>
-              {periods.map((period) => <option key={period.id} value={period.id}>{period.code}</option>)}
+              {periods.filter((period) => period.status !== "cerrado").map((period) => <option key={period.id} value={period.id}>{period.code}</option>)}
             </select>
             <span className="ml-auto text-xs font-semibold text-neutral-500">{filtered.length} de {packages.length} paquete(s)</span>
           </div>
@@ -428,14 +481,14 @@ export default function TransportSettlementsPage() {
               icon={<Calculator size={22} />}
               title="Aun no hay paquetes de liquidacion"
               description={canWrite ? "Crea el primer paquete para agrupar servicios de un transportador y preliquidarlo con la tarifa vigente." : "No hay paquetes disponibles para consulta."}
-              primaryAction={canWrite ? <button className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white" onClick={() => setCreateOpen(true)} type="button">Crear primer paquete</button> : undefined}
+              primaryAction={canWrite ? <button className="rounded-md bg-apex px-4 py-2 text-sm font-semibold text-white" onClick={() => { setModalError(""); setCreateOpen(true); }} type="button">Crear primer paquete</button> : undefined}
             />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[920px] text-left text-sm">
                 <thead className="bg-paper text-xs uppercase text-neutral-500">
                   <tr>
-                    <th className="p-3">Paquete</th><th>Transportador</th><th>Periodo</th><th>Tipo</th>
+                    <th className="p-3">Paquete</th><th>Transportador</th><th>Periodo</th>
                     <th className="text-right">Preliquidado</th><th className="text-right">Ajustado</th><th className="text-right">Aprobado</th>
                     <th>Estado</th><th></th>
                   </tr>
@@ -446,7 +499,6 @@ export default function TransportSettlementsPage() {
                       <td className="p-3"><p className="font-semibold">{pkg.code}</p><p className="text-xs text-neutral-500">v{pkg.version} · {pkg.aging_days ?? 0}d</p></td>
                       <td><p>{pkg.carrier_name || "-"}</p><p className="text-xs text-neutral-500">{pkg.carrier_code || ""}</p></td>
                       <td className="text-xs text-neutral-600">{pkg.period ? `${pkg.period.code}` : "Sin periodo"}</td>
-                      <td className="text-xs">{pkg.type_code}</td>
                       <td className="text-right">{money(pkg.calculated_total, pkg.currency)}</td>
                       <td className="text-right">{money(pkg.adjusted_total, pkg.currency)}</td>
                       <td className="text-right font-semibold">{money(pkg.approved_total, pkg.currency)}</td>
@@ -500,7 +552,7 @@ export default function TransportSettlementsPage() {
                     ) : null}
                   </div>
                 </header>
-                <div className="mt-3 grid gap-2 md:grid-cols-5">
+                <div className="mt-3 grid gap-2 md:grid-cols-4">
                   {PACKAGE_STEPS.map((step, index) => {
                     const inStep = pkgs.filter((pkg) => STEP_BUCKETS[index].includes(pkg.status));
                     return (
@@ -584,32 +636,24 @@ export default function TransportSettlementsPage() {
       ) : null}
 
       {createOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
-          <form className="w-full max-w-lg space-y-3 rounded-xl bg-white p-5" onSubmit={createPackage}>
-            <div className="flex justify-between"><h2 className="text-xl font-semibold">Nuevo paquete de liquidacion</h2><button onClick={() => setCreateOpen(false)} type="button">Cerrar</button></div>
-            <label className="block text-sm"><span className="font-semibold">Codigo *</span>
-              <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={createDraft.code} onChange={(event) => setCreateDraft((d) => ({ ...d, code: event.target.value.toUpperCase() }))} required /></label>
-            <label className="block text-sm"><span className="font-semibold">Transportador *</span>
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={createDraft.carrier_id} onChange={(event) => setCreateDraft((d) => ({ ...d, carrier_id: Number(event.target.value) }))} required>
-                <option value={0}>Selecciona...</option>
-                {carriers.map((carrier) => <option key={carrier.id} value={carrier.id}>{carrier.legal_name}</option>)}
+        <ModalFrame title="Nuevo paquete de liquidación" onClose={() => { if (!saving) setCreateOpen(false); }} maxWidth={`md:max-w-5xl ${dialogStyles.dialog}`}>
+          <form className="space-y-4" onSubmit={createPackage}>
+            <fieldset disabled={saving} className="space-y-4">
+            {modalError ? <p role="alert" className="rounded-md bg-rose-50 p-3 text-sm text-rose-800">{modalError}</p> : null}
+            <label className="block text-sm"><span className="font-semibold">Transportador / vehículo *</span>
+              <select aria-label="Vehículo del paquete" className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={createDraft.vehicle_id || ""} onChange={(event) => { setCreateDraft((d) => ({ ...d, vehicle_id: Number(event.target.value) })); setCreateRatesReady(false); setCreateDocuments((docs) => docs.map(doc => ({ ...doc, charge_criteria: doc.charge_criteria.map(row => ({ ...row, rate_card_id: undefined, unit_value: 0, pricing: false, price_error: "" })) }))); }} required>
+                <option value="">Selecciona una placa...</option>
+                {vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.plate} · {vehicle.type || "Vehículo"}</option>)}
               </select></label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block text-sm"><span className="font-semibold">Tipo</span>
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={createDraft.type_code} onChange={(event) => setCreateDraft((d) => ({ ...d, type_code: event.target.value }))}>
-                  {types.map((type) => <option key={type.code} value={type.code}>{type.name}</option>)}
-                </select></label>
-              <label className="block text-sm"><span className="font-semibold">Periodo</span>
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={createDraft.period_id} onChange={(event) => setCreateDraft((d) => ({ ...d, period_id: Number(event.target.value) }))}>
-                  <option value={0}>Sin periodo</option>
-                  {periods.map((period) => <option key={period.id} value={period.id}>{period.code}</option>)}
-                </select></label>
-            </div>
+            <label className="block text-sm">Centro de costos (placa)<input className="mt-1 h-10 w-full rounded-md border border-line bg-paper px-3" readOnly value={vehicles.find((vehicle) => vehicle.id === createDraft.vehicle_id)?.plate || ""} /></label>
+            <label className="block text-sm">Periodo contable / PYG<input aria-label="Periodo contable automático" className="mt-1 h-10 w-full rounded-md border border-line bg-paper px-3" readOnly value={new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" }).format(new Date())} /></label>
             <label className="block text-sm"><span className="font-semibold">Observacion</span>
               <textarea className="mt-1 min-h-[60px] w-full rounded-md border border-line p-3 text-sm" value={createDraft.observation} onChange={(event) => setCreateDraft((d) => ({ ...d, observation: event.target.value }))} /></label>
-            <div className="flex justify-end gap-2 pt-2"><button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setCreateOpen(false)} type="button">Cancelar</button><button className="h-10 rounded-md bg-apex px-4 text-sm font-semibold text-white" type="submit">Crear</button></div>
+            <SettlementDocumentsEditor documents={createDocuments} onChange={setCreateDocuments} vehicleId={createDraft.vehicle_id} currency={createDraft.currency} onReadyChange={setCreateRatesReady} />
+            <div className="flex justify-end gap-2 pt-2"><button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setCreateOpen(false)} type="button">Cancelar</button><button className="h-10 rounded-md bg-apex px-4 text-sm font-semibold text-white" type="submit" disabled={!createRatesReady}>{saving ? "Creando…" : "Crear paquete completo"}</button></div>
+            </fieldset>
           </form>
-        </div>
+        </ModalFrame>
       ) : null}
 
       {periodModal ? (
@@ -632,10 +676,11 @@ export default function TransportSettlementsPage() {
       ) : null}
 
       {decisionModal ? (
-        <div className="fixed inset-0 z-[60] grid place-items-center bg-black/45 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-xl bg-white p-5">
+        <ModalFrame title={decisionModal === "aprobada" ? "Aprobar paquete" : "Rechazar paquete"} onClose={() => { if (!saving) setDecisionModal(null); }} maxWidth={`${dialogStyles.dialog} ${dialogStyles.nested}`}>
+          <fieldset disabled={saving} className="space-y-3">
+            {error ? <p role="alert" className="text-sm text-rose-700">{error}</p> : null}
             <h2 className="text-xl font-semibold">{decisionModal === "aprobada" ? "Aprobar paquete" : "Rechazar paquete"}</h2>
-            <p className="text-sm text-neutral-600">{selected?.code} · {selected?.carrier_name} · {money(decisionModal === "aprobada" ? selected?.approved_total ?? selected?.adjusted_total : selected?.adjusted_total, selected?.currency)}</p>
+            <p className="text-sm text-neutral-600">{selected?.code} · {selected?.carrier_name} · {money(decisionModal === "aprobada" ? selected?.adjusted_total : selected?.adjusted_total, selected?.currency)}</p>
             {decisionModal === "rechazada" ? <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">El rechazo requiere un motivo y quedara en la trazabilidad del paquete.</p> : null}
             <label className="block text-sm"><span className="font-semibold">Comentario {decisionModal === "rechazada" ? "*" : "(opcional)"}</span>
               <textarea autoFocus className="mt-1 min-h-[70px] w-full rounded-md border border-line p-2 text-sm" placeholder={decisionModal === "rechazada" ? "Motivo del rechazo" : "Comentario de aprobacion"} value={decisionComment} onChange={(event) => setDecisionComment(event.target.value)} /></label>
@@ -643,20 +688,21 @@ export default function TransportSettlementsPage() {
               <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => { setDecisionModal(null); setDecisionComment(""); }} type="button">Cancelar</button>
               <button className="h-10 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={decisionModal === "rechazada" && !decisionComment.trim()} onClick={() => void submitDecision()} type="button">{decisionModal === "aprobada" ? "Aprobar" : "Rechazar"}</button>
             </div>
-          </div>
-        </div>
+          </fieldset>
+        </ModalFrame>
       ) : null}
 
       {accountModal ? (
-        <div className="fixed inset-0 z-[60] grid place-items-center bg-black/45 p-4">
-          <div className="w-full max-w-md space-y-3 rounded-xl bg-white p-5">
+        <ModalFrame title="Contabilizar paquete" onClose={() => { if (!saving) setAccountModal(false); }} maxWidth={`${dialogStyles.dialog} ${dialogStyles.nested}`}>
+          <fieldset disabled={saving} className="space-y-3">
+            {error ? <p role="alert" className="text-sm text-rose-700">{error}</p> : null}
             <h2 className="text-xl font-semibold">Contabilizar paquete</h2>
             <p className="text-sm text-neutral-600">{selected?.code} · {selected?.carrier_name} · {money(selected?.approved_total, selected?.currency)}</p>
             <label className="block text-sm"><span className="font-semibold">Referencia contable *</span>
               <input autoFocus className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="CB-2026-00123" value={accountDraft.reference} onChange={(event) => setAccountDraft((d) => ({ ...d, reference: event.target.value }))} /></label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-sm"><span className="font-semibold">Periodo contable</span>
-                <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="2026-10" value={accountDraft.accounting_period} onChange={(event) => setAccountDraft((d) => ({ ...d, accounting_period: event.target.value }))} /></label>
+                <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" readOnly value={selected?.metadata?.accounting_period || new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" }).format(new Date())} /></label>
               <label className="block text-sm"><span className="font-semibold">Fecha de pago</span>
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={accountDraft.payment_date} onChange={(event) => setAccountDraft((d) => ({ ...d, payment_date: event.target.value }))} /></label>
             </div>
@@ -665,8 +711,8 @@ export default function TransportSettlementsPage() {
               <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setAccountModal(false)} type="button">Cancelar</button>
               <button className="h-10 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={() => void submitAccounting()} type="button">Contabilizar</button>
             </div>
-          </div>
-        </div>
+          </fieldset>
+        </ModalFrame>
       ) : null}
 
       {vehicleDrill ? (
@@ -676,7 +722,7 @@ export default function TransportSettlementsPage() {
               <div>
                 <p className="text-xs font-semibold uppercase text-apex">Consolidacion por vehiculo</p>
                 <h2 className="text-2xl font-semibold">{vehicleDrill.vehicle_plate}{vehicleDrill.vehicle_type ? ` · ${vehicleDrill.vehicle_type}` : ""}</h2>
-                <p className="text-sm text-neutral-600">{vehicleDrill.guide_count} guia(s) · {vehicleDrill.line_count} linea(s) · {vehicleDrill.packages.length} paquete(s)</p>
+                <p className="text-sm text-neutral-600">{vehicleDrill.guide_count} destino(s) · {vehicleDrill.line_count} linea(s) · {vehicleDrill.packages.length} paquete(s)</p>
               </div>
               <button onClick={() => setVehicleDrill(null)} type="button">Cerrar</button>
             </div>
@@ -719,8 +765,11 @@ export default function TransportSettlementsPage() {
 
       {selected ? (
         <PackageDetail
-          pkg={selected} audit={selectedAudit} canWrite={canWrite} canApprove={canApprove}
+          pkg={selected} audit={selectedAudit} canWrite={canWrite} canApprove={canApprove} canAccount={canAccount} canLiquidate={canLiquidate} busy={saving} error={error}
+          vehicles={vehicles} vehicleId={detailVehicleId} onVehicleChange={setDetailVehicleId}
+          documents={detailDocuments} setDocuments={setDetailDocuments} ratesReady={detailRatesReady} onRatesReady={setDetailRatesReady}
           itemDraft={itemDraft} setItemDraft={setItemDraft}
+          onDownloadPdf={downloadInvoicePdf}
           onClose={() => setSelected(null)} onAddItem={addItem} onAddAdjustment={addAdjustment}
           onTransition={transition}
           onOpenDecision={(decision) => { setDecisionComment(""); setDecisionModal(decision); }}
@@ -742,28 +791,32 @@ function Kpi({ label, value, icon, tone = "neutral" }: { label: string; value: s
 }
 
 function PackageDetail(props: {
-  pkg: SettlementPackage; audit: AuditResponse | null; canWrite: boolean; canApprove: boolean;
+  ratesReady: boolean; onRatesReady: (ready: boolean) => void;
+  vehicles: Vehicle[]; vehicleId?: number; onVehicleChange: (id: number) => void;
+  busy: boolean; error: string; documents: SettlementDocumentDraft[]; setDocuments: (value: SettlementDocumentDraft[]) => void;
+  pkg: SettlementPackage; audit: AuditResponse | null; canWrite: boolean; canApprove: boolean; canAccount: boolean; canLiquidate: boolean;
   itemDraft: typeof emptyItemDraft; setItemDraft: (updater: (d: typeof emptyItemDraft) => typeof emptyItemDraft | typeof emptyItemDraft) => void;
-  onClose: () => void; onAddItem: (event: React.FormEvent<HTMLFormElement>) => void; onAddAdjustment: (event: React.FormEvent<HTMLFormElement>) => void;
+  onDownloadPdf: () => Promise<void>; onClose: () => void; onAddItem: (event: React.FormEvent<HTMLFormElement>) => void; onAddAdjustment: (event: React.FormEvent<HTMLFormElement>) => void;
   onTransition: (path: string, body?: Record<string, unknown>, success?: string) => Promise<void>;
   onOpenDecision: (decision: "aprobada" | "rechazada") => void;
   onOpenAccounting: () => void;
   onClosePackage: () => void;
 }) {
-  const { pkg, audit, canWrite, canApprove, itemDraft, setItemDraft, onClose, onAddItem, onAddAdjustment, onTransition, onOpenDecision, onOpenAccounting, onClosePackage } = props;
+  const { pkg, audit, canWrite, canApprove, canAccount, canLiquidate, onClose, onAddItem, onAddAdjustment, onTransition, onOpenDecision, onOpenAccounting, onClosePackage } = props;
   const [tab, setTab] = useState<"detalles" | "ajustes" | "novedades" | "trazabilidad">("detalles");
   const editable = ["borrador", "validando", "preliquidada", "con_novedad", "rechazada"].includes(pkg.status);
   const currency = pkg.currency;
   const steps = packageSteps(pkg.status, (audit?.timeline || []).map((event) => event.action));
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-xl bg-white p-5">
+    <ModalFrame title={`Paquete ${pkg.code}`} onClose={onClose} maxWidth={`md:max-w-5xl ${dialogStyles.dialog}`}>
+      <fieldset disabled={props.busy} className="min-w-0 space-y-3">
+        {props.error ? <p role="alert" className="rounded-md bg-rose-50 p-3 text-sm text-rose-800">{props.error}</p> : null}
         <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase text-apex">{pkg.type_code} · v{pkg.version}</p>
+            <p className="text-xs font-semibold uppercase text-apex">Liquidación · v{pkg.version}</p>
             <h2 className="text-2xl font-semibold">{pkg.code}</h2>
-            <p className="text-sm text-neutral-600">{pkg.carrier_name} {pkg.period ? `· Periodo ${pkg.period.code}` : ""}</p>
+            <p className="text-sm text-neutral-600">{pkg.carrier_name} {pkg.metadata?.cost_center ? `· Centro de costos ${pkg.metadata.cost_center}` : ""} {pkg.period ? `· Periodo ${pkg.period.code}` : ""}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge tone={STATUS_TONE[pkg.status] || "neutral"}>{STATUS_LABEL[pkg.status] || pkg.status}</Badge>
@@ -791,19 +844,18 @@ function PackageDetail(props: {
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2">
-          {canWrite && pkg.status === "borrador" ? <button className="h-9 rounded-md border border-line px-3 text-sm font-semibold" onClick={() => void onTransition("validate", { version: pkg.version }, "Paquete en validacion.")} type="button">Validar</button> : null}
-          {canWrite && pkg.status === "validando" ? <button className="h-9 rounded-md border border-line px-3 text-sm font-semibold" onClick={() => void onTransition("precalculate", { version: pkg.version }, "Preliquidacion calculada con tarifa congelada.")} type="button"><Calculator size={15} className="mr-1 inline" />Preliquidar</button> : null}
-          {canWrite && ["preliquidada", "con_novedad"].includes(pkg.status) ? <button className="h-9 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => void onTransition("submit", { version: pkg.version }, "Enviado a revision.")} type="button"><Send size={15} className="mr-1 inline" />Enviar a revision</button> : null}
+          {canWrite && ["borrador", "validando", "preliquidada", "con_novedad", "rechazada"].includes(pkg.status) ? <button className="h-9 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => void onTransition("prepare", {}, "Paquete preparado para aprobación.")} type="button"><Send size={15} className="mr-1 inline" />Enviar a aprobación</button> : null}
+          {pkg.status === "liquidada" ? <button type="button" disabled={props.busy} className="h-9 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-50" onClick={() => void props.onDownloadPdf()}>{props.busy ? "Generando PDF…" : "PDF para facturar"}</button> : null}
           {canApprove && pkg.status === "en_revision" ? <button className="h-9 rounded-md bg-emerald-600 px-3 text-sm font-semibold text-white" onClick={() => onOpenDecision("aprobada")} type="button"><CheckCircle2 size={15} className="mr-1 inline" />Aprobar</button> : null}
           {canApprove && pkg.status === "en_revision" ? <button className="h-9 rounded-md border border-rose-300 px-3 text-sm font-semibold text-rose-700" onClick={() => onOpenDecision("rechazada")} type="button"><XCircle size={15} className="mr-1 inline" />Rechazar</button> : null}
-          {canApprove && pkg.status === "aprobada" ? <button className="h-9 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={onOpenAccounting} type="button"><Wallet size={15} className="mr-1 inline" />Contabilizar</button> : null}
-          {canApprove && pkg.status === "contabilizada" ? <button className="h-9 rounded-md border border-line px-3 text-sm font-semibold" onClick={onClosePackage} type="button">Cerrar (liquidada)</button> : null}
+          {canAccount && pkg.status === "aprobada" ? <button className="h-9 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={onOpenAccounting} type="button"><Wallet size={15} className="mr-1 inline" />Contabilizar</button> : null}
+          {canLiquidate && pkg.status === "contabilizada" ? <button className="h-9 rounded-md border border-line px-3 text-sm font-semibold" onClick={onClosePackage} type="button">Liquidar paquete</button> : null}
           {canWrite && ["borrador", "validando", "preliquidada", "con_novedad", "en_revision", "rechazada"].includes(pkg.status) ? <button className="h-9 rounded-md border border-line px-3 text-sm font-semibold text-neutral-600" onClick={() => void onTransition("cancel", { version: pkg.version }, "Paquete cancelado.")} type="button">Cancelar paquete</button> : null}
         </div>
 
-        <div className="mb-3 flex gap-2 border-b border-line">
+        <div className="mb-3 flex gap-2 overflow-x-auto border-b border-line">
           {(["detalles", "ajustes", "novedades", "trazabilidad"] as const).map((name) => (
-            <button className={`px-3 py-2 text-sm font-semibold ${tab === name ? "border-b-2 border-apex text-apex" : "text-neutral-500"}`} key={name} onClick={() => setTab(name)} type="button">{name[0].toUpperCase() + name.slice(1)}</button>
+            <button className={`shrink-0 whitespace-nowrap px-3 py-2 text-sm font-semibold ${tab === name ? "border-b-2 border-apex text-apex" : "text-neutral-500"}`} key={name} onClick={() => setTab(name)} type="button">{name[0].toUpperCase() + name.slice(1)}</button>
           ))}
         </div>
 
@@ -811,33 +863,27 @@ function PackageDetail(props: {
           <div className="space-y-4">
             <div className="overflow-x-auto rounded-md border border-line">
               <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="bg-paper text-xs uppercase text-neutral-500"><tr><th className="p-2">Guia</th><th>Ruta</th><th>Tarifa</th><th className="text-right">Cantidad</th><th className="text-right">Calculado</th><th className="text-right">Ajustado</th></tr></thead>
+                <thead className="bg-paper text-xs uppercase text-neutral-500"><tr><th className="p-2">Destino / tienda</th><th>Ruta</th><th>Tarifa</th><th className="text-right">Cantidad</th><th className="text-right">Calculado</th><th className="text-right">Ajustado</th></tr></thead>
                 <tbody>
                   {(pkg.items || []).map((item) => (
                     <tr className="border-t border-line" key={item.id}>
-                      <td className="p-2 font-semibold">{item.guide_reference}</td>
-                      <td className="text-xs text-neutral-600">{item.origin_name || "-"} → {item.destination_city || "-"}{item.vehicle_plate ? ` · ${item.vehicle_plate}` : ""}</td>
-                      <td className="text-xs">{item.rate_code ? `${item.rate_code} v${item.rate_version ?? "?"}` : "Sin tarifa"}{item.rate_unit_value != null ? ` · ${money(item.rate_unit_value, currency)}` : ""}</td>
+                      <td className="p-2 font-semibold">{(item.metadata as { destination_snapshots?: { name: string }[] })?.destination_snapshots?.map(point => point.name).join(", ") || (item.metadata as { destination_snapshot?: { name: string } })?.destination_snapshot?.name || item.guide_reference}{item.service ? <p className="text-xs font-normal">Cliente / servicio: {item.service}</p> : null}{item.metadata?.charge_criteria ? <ul className="mt-2 space-y-2 text-xs font-normal">{item.metadata.charge_criteria.map((entry, i) => <li key={i}><strong>{entry.concept}</strong>{entry.rate_version ? ` · v${entry.rate_version}` : ""} · {entry.quantity} × {money(entry.unit_value, currency)}<p>Soporte: {entry.support}</p></li>)}</ul> : null}</td>
+                      <td className="text-xs text-neutral-600">{item.route_description || `${item.origin_name || "-"} → ${item.destination_city || "-"}`}{item.vehicle_plate ? ` · ${item.vehicle_plate}` : ""}</td>
+                      <td className="text-xs">{item.rate_code ? `${item.rate_code} v${item.rate_version ?? "?"}` : item.metadata?.charge_criteria ? "Criterios documentados" : "Sin tarifa"}{item.rate_unit_value != null ? ` · ${money(item.rate_unit_value, currency)}` : ""}</td>
                       <td className="text-right">{item.quantity} {item.unit || ""}</td>
                       <td className="text-right">{money(item.calculated_amount, currency)}</td>
                       <td className="text-right font-semibold">{money(item.adjusted_amount, currency)}</td>
                     </tr>
                   ))}
-                  {!(pkg.items || []).length ? <tr><td className="p-4 text-center text-neutral-500" colSpan={6}>Sin detalles. Agrega guias/servicios para preliquidar.</td></tr> : null}
+                  {!(pkg.items || []).length ? <tr><td className="p-4 text-center text-neutral-500" colSpan={6}>Sin destinos. Agrega las tiendas cubiertas por este paquete.</td></tr> : null}
                 </tbody>
               </table>
             </div>
             {canWrite && editable ? (
-              <form className="grid gap-2 rounded-md border border-line p-3 sm:grid-cols-3" onSubmit={onAddItem}>
-                <input className="h-9 rounded-md border border-line px-2 text-sm" placeholder="Guia/referencia *" value={itemDraft.guide_reference} onChange={(event) => setItemDraft((d) => ({ ...d, guide_reference: event.target.value }))} required />
-                <input className="h-9 rounded-md border border-line px-2 text-sm" placeholder="Origen" value={itemDraft.origin_name} onChange={(event) => setItemDraft((d) => ({ ...d, origin_name: event.target.value }))} />
-                <input className="h-9 rounded-md border border-line px-2 text-sm" placeholder="Ciudad destino" value={itemDraft.destination_city} onChange={(event) => setItemDraft((d) => ({ ...d, destination_city: event.target.value }))} />
-                <input className="h-9 rounded-md border border-line px-2 text-sm" placeholder="Placa" value={itemDraft.vehicle_plate} onChange={(event) => setItemDraft((d) => ({ ...d, vehicle_plate: event.target.value }))} />
-                <input className="h-9 rounded-md border border-line px-2 text-sm" placeholder="Tipo vehiculo" value={itemDraft.vehicle_type} onChange={(event) => setItemDraft((d) => ({ ...d, vehicle_type: event.target.value }))} />
-                <label className="text-xs">Km<input className="mt-1 h-9 w-full rounded-md border border-line px-2 text-sm" type="number" step="0.01" value={itemDraft.distance_km} onChange={(event) => setItemDraft((d) => ({ ...d, distance_km: Number(event.target.value) }))} /></label>
-                <label className="text-xs">Peso kg<input className="mt-1 h-9 w-full rounded-md border border-line px-2 text-sm" type="number" step="0.01" value={itemDraft.weight_kg} onChange={(event) => setItemDraft((d) => ({ ...d, weight_kg: Number(event.target.value) }))} /></label>
-                <label className="text-xs">Cantidad<input className="mt-1 h-9 w-full rounded-md border border-line px-2 text-sm" type="number" step="0.0001" value={itemDraft.quantity} onChange={(event) => setItemDraft((d) => ({ ...d, quantity: Number(event.target.value) }))} /></label>
-                <button className="h-9 rounded-md bg-apex px-3 text-sm font-semibold text-white" type="submit"><Plus size={15} className="mr-1 inline" />Agregar detalle</button>
+              <form onSubmit={onAddItem} className="space-y-3">
+                <label className="block text-sm">Vehículo / centro de costos *<select aria-label="Vehículo del paquete histórico" className="mt-1 w-full rounded-md border border-line p-2" required disabled={Boolean(pkg.metadata?.vehicle_id)} value={props.vehicleId || ""} onChange={event => props.onVehicleChange(Number(event.target.value))}><option value="">Selecciona el vehículo...</option>{props.vehicles.map(vehicle => <option key={vehicle.id} value={vehicle.id}>{vehicle.plate} · {vehicle.type}</option>)}</select></label>
+                <SettlementDocumentsEditor documents={props.documents} onChange={props.setDocuments} vehicleId={props.vehicleId} currency={pkg.currency} onReadyChange={props.onRatesReady} />
+                <button className="rounded-md bg-apex px-3 py-2 text-white disabled:opacity-40" type="submit" disabled={!props.ratesReady || props.busy}>Guardar destinos y criterios</button>
               </form>
             ) : null}
           </div>
@@ -854,7 +900,7 @@ function PackageDetail(props: {
               ))}
               {!(pkg.adjustments || []).length ? <li className="text-sm text-neutral-500">Sin ajustes registrados.</li> : null}
             </ul>
-            {canWrite && ["preliquidada", "con_novedad"].includes(pkg.status) ? (
+            {canWrite && !pkg.metadata?.tariff_locked && ["preliquidada", "con_novedad"].includes(pkg.status) ? (
               <form className="grid gap-2 rounded-md border border-line p-3 sm:grid-cols-4" onSubmit={onAddAdjustment}>
                 <select className="h-9 rounded-md border border-line px-2 text-sm" name="item_id"><option value="">Paquete completo</option>{(pkg.items || []).map((item) => <option key={item.id} value={item.id}>{item.guide_reference}</option>)}</select>
                 <input className="h-9 rounded-md border border-line px-2 text-sm" name="delta" placeholder="Delta (+/-)" type="number" step="0.01" required />
@@ -907,8 +953,8 @@ function PackageDetail(props: {
             </div>
           </div>
         ) : null}
-      </div>
-    </div>
+      </fieldset>
+    </ModalFrame>
   );
 }
 
