@@ -37,6 +37,23 @@ async function main() {
     assert.ok(definition, "foundation " + table);
     sql(definition[0]);
   }
+  // Optional read-only QA extraction rehearsed ONLY inside the new local database.
+  const snapshotPath = process.env.STANDARD_CHART_QA_SNAPSHOT;
+  let snapshot = null;
+  if (snapshotPath) {
+    snapshot = JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
+    assert.equal(snapshot.project_ref, "jbirkghkekuifgfsgquq");
+    const rows = (value, definition) => {
+      const data = JSON.stringify(value);
+      assert.ok(!data.includes("$qa_snapshot$"));
+      return "jsonb_to_recordset($qa_snapshot$" + data + "$qa_snapshot$::jsonb) as x(" + definition + ")";
+    };
+    sql('insert into public.companies(id,name) select id,name from ' + rows(snapshot.companies, "id uuid,name text") + ";");
+    sql('insert into public."Tenant"(id,name,updated_at) select id,name,now() from ' + rows(snapshot.tenants, "id text,name text") + ";");
+    sql('insert into public."Account"(id,tenant_id,code,name,type,parent_id,level,allows_tx,active) select id,tenant_id,code,name,type,parent_id,level,allows_tx,active from ' +
+      rows(snapshot.accounts, "id integer,tenant_id text,code text,name text,type text,parent_id integer,level integer,allows_tx boolean,active boolean") + ";");
+    sql('select setval(pg_get_serial_sequence(\'public."Account"\',\'id\'),(select max(id) from public."Account"));');
+  }
   // Preexisting empty company and tenant with a referenced account and custom fields.
   sql(`insert into public.companies(id,name) values ('11111111-1111-4111-8111-111111111111','Existing empty');
     insert into public."Tenant"(id,name,updated_at) values ('legacy-cert','Legacy',now());
@@ -47,6 +64,14 @@ async function main() {
     select 'legacy-cert',id,now(),12,0,12,'Protected posting','2026-10' from public."Account" where tenant_id='legacy-cert' and code='1105';`);
   const protectedBefore = sql('select row_to_json(e)::text from public."LedgerEntry" e;');
   sql("begin;\n" + migration + "\ncommit;");
+  if (snapshot) {
+    const after = JSON.parse(sql('select json_agg(a) from public."Account" a;'));
+    const byId = new Map(after.map((row) => [row.id, row]));
+    check("qa_snapshot_existing_fields_preserved", snapshot.accounts.every((before) =>
+      ["tenant_id", "code", "name", "type", "allows_tx", "active"].every((key) => byId.get(before.id)?.[key] === before[key])));
+    check("qa_snapshot_existing_parent_links_preserved", snapshot.accounts.every((before) =>
+      before.parent_id == null || byId.get(before.id)?.parent_id === before.parent_id));
+  }
   check("snapshot_exact_2508", catalog.length === 2508);
   check("existing_empty_company_backfilled", sql('select count(*) from public."Account" where tenant_id=\'11111111-1111-4111-8111-111111111111\';') === "2508");
   check("existing_custom_account_preserved", sql('select count(*) from public."Account" where tenant_id=\'legacy-cert\';') === "2509");

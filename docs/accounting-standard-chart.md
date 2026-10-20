@@ -90,8 +90,8 @@ movimientos nuevos. No restaurar árboles históricos ni borrar cuentas masivame
 
 ## Resultado local y preparación de promoción (2026-10-20)
 
-Commit funcional en desarrollo: 3123f3349caf31bbcc23a77b9a315674362323ff.
-Certificado de API/PostgreSQL repetido sobre ese commit exacto: 26 controles
+Implementación inicial en desarrollo: 3123f3349caf31bbcc23a77b9a315674362323ff.
+Certificado de API/PostgreSQL: 26 controles
 aprobados; el certificado HTTP del árbol y auxiliares aporta otros 16 controles.
 Las 23 pruebas seleccionadas y el typecheck del frontend terminaron correctamente.
 La prueba visual CUA verificó login, 2.508 cuentas, búsqueda jerárquica,
@@ -112,16 +112,42 @@ Hay 12 archivos ajenos al plan de cuentas entre desarrollo y ese baseline,
 principalmente documentación/infraestructura de PDF y una página de privacidad.
 No se autoriza su inclusión ni una promoción de la rama completa.
 
-El usuario pidió después no crear ramas y dejar la promoción preparada. Por ello
-no se hace push, PR, merge, despliegue ni migración remota. El gate pre-QA conserva
-la autorización de ejecución pendiente. Se prepara un objeto Git de integración
-sin crear una rama: parte del baseline remoto y superpone solo las seis rutas del
-manifiesto, con el commit de desarrollo como padre para conservar trazabilidad.
-Su SHA y el resultado del gate de alcance se guardan en .tmp.
+El usuario autorizó expresamente la rama codex/qa-plan-cuentas-20261020, el PR,
+la integración y la migración exclusivamente a QA el 2026-10-20, tras resolver
+la instrucción previa de dejar preparada la promoción. Producción no está autorizada.
+El baseline actual se conserva y se reconstruye únicamente el cambio puntual;
+el commit reconstruido se registra también como ancestro de desarrollo, sin
+reescribir historia ni incluir los 12 archivos ajenos.
 
-Antes de una integración futura hay que actualizar el target, recalcular el
-inventario, repetir los gates y obtener una vía de PR permitida por el usuario.
-QA debe certificar después el onboarding completo en la UI de plataforma con
-Supabase Auth sobre el candidato desplegado, la copia automática de la sociedad
-nueva y la persistencia visible de las sociedades existentes. Producción queda
-fuera del alcance. No se aplicó la migración a ninguna base remota.
+### Atestación portable de evidencia local
+
+Este informe redactado resume evidencia ejecutada; los logs, capturas, respaldo y
+credenciales quedan fuera de Git. Los manifiestos vigentes son
+accounting-standard-chart-20261020-scope.json y
+accounting-standard-chart-20261020-preqa.json. Su certified_commit identifica el
+commit puntual reconstruido y recertificado, no un snapshot de una rama antigua.
+
+- Script versionado de API/PostgreSQL real: 28 controles aprobados al añadir el
+  ensayo con la extracción de QA (2872 cuentas, 9 companies, 23 Tenant).
+- La extracción se obtiene con SELECT, se guarda localmente y se incorpora solo
+  a una base aislada nueva. Se verificó conservar todos los campos de negocio y
+  todos los padres ya existentes. Los 113 movimientos de QA se registran mediante
+  digest previo para comprobarlos después; no se copian ni modifican remotamente
+  durante el ensayo.
+- Regresión HTTP versionada del árbol/auxiliares: 16 controles aprobados.
+- Unitarias/contratos contables seleccionados: 23/23 aprobados.
+- Typecheck del frontend: exit 0.
+- CUA, acciones reales desde la UI: ocho comprobaciones aprobadas sobre login,
+  2508 cuentas, búsqueda/ancestros, inicialización idempotente, edición/guardar,
+  recargar/reabrir, restaurar y denegación 403 para CERT_VIEWER.
+- Seguridad local: esquema privado sin USAGE público, tabla con RLS, función
+  invoker sin EXECUTE público, trigger definer de destino NEW.id, search_path
+  vacío; negativas SQL y API de rol y tenant aprobadas.
+- El rol configurado de API QA es postgres.jbirkghkekuifgfsgquq y el proyecto
+  Supabase configurado coincide con jbirkghkekuifgfsgquq.
+
+Antes de ejecutar la publicación se repiten los gates sobre el commit puntual y
+el target remoto vigente. La migración se aplica antes de activar la nueva API.
+QA debe comprobar el onboarding UI/Supabase Auth del candidato desplegado, la
+copia automática de la sociedad nueva y la persistencia visible de las existentes.
+Esta atestación pre-QA no acredita pruebas remotas todavía ni autoriza main.
