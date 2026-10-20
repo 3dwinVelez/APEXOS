@@ -37,5 +37,19 @@ module.exports = async function ({ base, token, packageId, draftId, foreignId, o
   const payload = await response.json();
   check('liquidated_report_authorized', response.status === 200 && payload.package.id === packageId && payload.annexes.length === 2);
   check('report_no_cache', response.headers.get('cache-control') === 'no-store');
+  const db = require('../../apps/api/src/core/prisma');
+  const limited = await db.runWithTenant(tenantId, async () => {
+    const original = await db.user.findFirstOrThrow({ where: { tenant_id: tenantId, email: process.env.LOCAL_TMS_EMAIL || 'demo@apex.local' } });
+    const role = await db.role.create({ data: { name: `QA PDF sin transporte ${stamp}`, permissions: { create: [{ module: 'services', action: 'read' }] } } });
+    return db.user.create({ data: { name: 'QA PDF sin permiso', email: `qa-pdf-denied-${stamp}@apex.local`, password: original.password, role_id: role.id } });
+  });
+  try {
+    const session = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: limited.email, password: process.env.LOCAL_TMS_PASSWORD || 'test1234' }) });
+    const identity = await session.json();
+    check('report_limited_role_real_login', session.status === 200 && Boolean(identity.token));
+    check('report_role_without_permission_denied', (await fetch(url(packageId), { headers: { authorization: `Bearer ${identity.token}` } })).status === 403);
+  } finally {
+    await db.runWithTenant(tenantId, async () => await db.user.update({ where: { id: limited.id }, data: { active: false } }));
+  }
   await require('./transport-settlement-browser-pdf-local')({ base, token, packageId, draftId, foreignId, output, check });
 };
