@@ -28,7 +28,7 @@ function setup(count = 1) {
   function render() { cursor = 0; tree = componentExports.SettlementDocumentsEditor({ documents: docs, onChange: change, vehicleId: 1, onReadyChange: onReady }); pendingEffects.splice(0).forEach(fn => fn()); }
   function nodes() { const out = []; function walk(node) { if (Array.isArray(node)) return node.forEach(walk); if (!node || typeof node !== 'object') return; out.push(node); walk(node.props?.children); } walk(tree); return out; }
   render();
-  return { module, render, nodes, quotes, docs: () => docs, ready: () => ready, field: label => nodes().find(node => node.props?.['aria-label'] === label), async flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); render(); } };
+  return { module: componentExports, render, nodes, quotes, docs: () => docs, ready: () => ready, field: label => nodes().find(node => node.props?.['aria-label'] === label), async flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); render(); } };
 }
 const quote = (id, unit_value, metrics = { distance_km: 10 }) => ({ rate_card_id: id, rate_version: 1, concept: `T-${id}`, unit_value, quantity: 1, support: '', metrics });
 
