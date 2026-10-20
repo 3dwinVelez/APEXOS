@@ -21,6 +21,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-compras-rep-ordenes", label: "Ver reporte de ordenes de compra", description: "Analiza ordenes emitidas y pendientes", href: "/dashboard/compras/reportes/ordenes", module: "compras", keywords: "reporte ordenes compra pendientes abastecimiento" },
 
   // Contabilidad
+  { id: "fn-contab-pyg", label: "Ver PYG por vehiculo", description: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto", href: "/dashboard/contabilidad/pyg", module: "contabilidad", keywords: "pyg estado resultados utilidad gastos vehiculo placa centro costo presupuesto cumplimiento rentabilidad" },
   { id: "fn-contab-asientos", label: "Consultar asientos contables", description: "Revisa el registro contable y sus movimientos", href: "/dashboard/contabilidad/asientos", module: "contabilidad", keywords: "asiento contable libro diario comprobante registro movimiento" },
   { id: "fn-contab-cxp", label: "Gestionar cuentas por pagar", description: "Obligaciones con proveedores y pagos", href: "/dashboard/contabilidad/cuentas-por-pagar", module: "contabilidad", keywords: "cuentas por pagar cxp proveedor obligacion pago cartera" },
   { id: "fn-contab-estructura", label: "Configurar estructura contable", description: "Centros de costo, periodos y cierre", href: "/dashboard/contabilidad/estructura", module: "contabilidad", keywords: "estructura centro de costo periodo cierre configuracion" },
@@ -105,7 +106,6 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-transp-pod", label: "Confirmar entregas (POD)", description: "Evidencia de entrega al cliente", href: "/dashboard/transporte/pod", module: "transporte", keywords: "pod confirmar entrega evidencia firma remision" },
   { id: "fn-transp-tarifas", label: "Gestionar tarifas de transporte", description: "Tarifarios y costos de flete", href: "/dashboard/transporte/tarifas", module: "transporte", keywords: "tarifa tarifario flete costo transporte" },
   { id: "fn-transp-liquidaciones", label: "Liquidar transporte", description: "Preliquidar, ajustar, aprobar y contabilizar paquetes de flete", href: "/dashboard/transporte/liquidaciones", module: "transporte", keywords: "liquidacion liquidar paquete flete transportador cuenta cobro ajuste aprobacion contabilizar periodo" },
-  { id: "fn-transp-pyg", label: "Ver PYG por vehiculo", description: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto", href: "/dashboard/transporte/pyg", module: "transporte", keywords: "pyg estado resultados utilidad gastos vehiculo placa centro costo presupuesto cumplimiento rentabilidad" },
 
   // Ventas
   { id: "fn-ventas-facturas", label: "Consultar facturas de venta", description: "Facturas emitidas a clientes", href: "/dashboard/ventas/facturas", module: "ventas", keywords: "factura venta documento cliente emitida" },

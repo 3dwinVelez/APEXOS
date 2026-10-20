@@ -1,0 +1,179 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-pyg-relocation-20261020",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "1ede899220b876837f161527ae5f8d5309370f1b",
+  "base_commits": {
+    "develop": "74440d976fc07754dc96e70c5e473f2a70c17606"
+  },
+  "change_intent": {
+    "summary": "Trasladar PYG vehicular a Contabilidad con permisos coherentes y redireccion compatible",
+    "modules": [
+      "accounting",
+      "transport"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/transport-pyg/routes.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/pyg/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/contabilidad-nav.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/lib/moduleFunctions.ts",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/transport-pyg-local.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/accounting-pyg-relocation-local.js",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/accounting-pyg-relocation-20261020.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-pyg-relocation-20261020-scope.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-pyg-relocation-20261020-preqa.json",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/next.config.ts",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/command-palette-module-functions.test.mjs",
+      "status": "M"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/transport-pyg/routes.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/web/app/dashboard/contabilidad/page.tsx",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/app/dashboard/transporte/pyg/page.tsx",
+    "apps/web/components/contabilidad-nav.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "scripts/certifications/transport-pyg-local.js",
+    "scripts/certifications/accounting-pyg-relocation-local.js",
+    "docs/qa/certifications/accounting-pyg-relocation-20261020.md",
+    "docs/qa/manifests/accounting-pyg-relocation-20261020-scope.json",
+    "docs/qa/manifests/accounting-pyg-relocation-20261020-preqa.json",
+    "apps/web/next.config.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Consulta, presupuesto, configuracion y fuentes PYG",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    },
+    {
+      "name": "Navegacion y compatibilidad de URL",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    },
+    {
+      "name": "RBAC contable y aislamiento entre sociedades",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante: procede desde desarrollo y actualiza hasta la rama develop bajo las politicas del proyecto; conservar solo ramas existentes",
+    "approved_at": "2026-10-20T22:05:01.395Z"
+  },
+  "environment": "LOCAL",
+  "commit": "1ede899220b876837f161527ae5f8d5309370f1b",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-relocation-20261020.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-pyg-relocation-local.js",
+    "evidence": [
+      "../certifications/accounting-pyg-relocation-20261020.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-pyg-relocation-local.js",
+    "evidence": [
+      "../certifications/accounting-pyg-relocation-20261020.md"
+    ]
+  },
+  "pending_qa": [
+    "Verificar despliegue exacto en QA; no autoriza main"
+  ]
+}

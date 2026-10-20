@@ -8,7 +8,7 @@ const basePrisma = require("../../core/prisma");
 const { CONCEPT_CATALOG, DEFAULT_SOURCE_MAP } = require("./concept-catalog");
 const { buildReport, periodBounds } = require("./engine");
 
-const MODULE = "transport";
+const MODULE = "accounting";
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 function appError(statusCode, code, message) {
@@ -71,6 +71,14 @@ function assertPeriod(period) {
     throw appError(400, "PYG_PERIOD_INVALID", "El periodo debe tener formato YYYY-MM.");
   }
   return value;
+}
+
+async function listSourceConcepts(tenantId) {
+  return read(tenantId, (db, tenant) => db.pettyCashConcept.findMany({
+    where: { tenant_id: tenant, active: true },
+    select: { id: true, code: true, name: true, active: true },
+    orderBy: { code: "asc" }
+  }));
 }
 
 async function listConcepts(tenantId) {
@@ -279,4 +287,4 @@ async function saveConfig(tenantId, user, input = {}) {
   });
 }
 
-module.exports = { listConcepts, getReport, getBudgets, saveBudgets, getMapping, saveMapping, getConfig, saveConfig, ensureCatalog };
+module.exports = { listSourceConcepts, listConcepts, getReport, getBudgets, saveBudgets, getMapping, saveMapping, getConfig, saveConfig, ensureCatalog };

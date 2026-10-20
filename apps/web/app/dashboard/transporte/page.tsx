@@ -6,7 +6,7 @@ import { inspectFileSignature } from "@/lib/fileSignature";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Archive, Bell, Calculator, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Wallet, Wrench } from "lucide-react";
+import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Wallet, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -1040,8 +1040,7 @@ const transportWorkflows = [
     title: "4. Liquidar el costo",
     detail: "Cierra el costo real de cada transportador con tarifa congelada, ajustes soportados y aprobación trazable.",
     actions: [
-      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true },
-      { href: "/dashboard/transporte/pyg", title: "PYG por vehículo", detail: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto.", icon: Calculator }
+      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true }
     ]
   }
 ] as const;
