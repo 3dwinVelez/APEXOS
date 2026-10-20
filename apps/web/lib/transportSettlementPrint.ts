@@ -22,7 +22,22 @@ export async function captureSettlementAnnexes(root: HTMLElement, signal: AbortS
     const tiles = Array.from(stage.querySelectorAll<HTMLImageElement>(".leaflet-tile"));
     await Promise.all(tiles.map(tile => Promise.race([tile.decode().catch(() => undefined), new Promise(resolve => setTimeout(resolve, 10000))])));
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    if (stage.querySelector('.leaflet-container') && (!tiles.length || tiles.some(tile => !tile.complete || !tile.naturalWidth))) {
+    let missingTiles = !tiles.length || tiles.some(tile => !tile.complete || !tile.naturalWidth);
+    for (const tile of tiles) {
+      try {
+        if (!tile.complete || !tile.naturalWidth) throw Error("Tesela no disponible");
+        const canvas = document.createElement("canvas");
+        canvas.width = tile.naturalWidth; canvas.height = tile.naturalHeight;
+        const context = canvas.getContext("2d");
+        if (!context) throw Error("Canvas no disponible");
+        context.drawImage(tile, 0, 0);
+        tile.src = canvas.toDataURL("image/png");
+        await tile.decode();
+        tile.style.opacity = "1";
+      } catch { missingTiles = true; tile.style.visibility = "hidden"; }
+    }
+    stage.querySelectorAll<HTMLElement>(".leaflet-tile-pane, .leaflet-layer, .leaflet-tile-container").forEach(layer => { layer.style.opacity = "1"; });
+    if (stage.querySelector('.leaflet-container') && missingTiles) {
       const note = document.createElement("p");
       note.textContent = "Mapa base no disponible. Se conserva el recorrido y los valores del tarifario.";
       note.style.cssText = "padding:8px;color:#193342;background:#fff";
