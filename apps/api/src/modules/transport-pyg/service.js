@@ -20,7 +20,7 @@ function appError(statusCode, code, message) {
 
 function read(tenantId, fn) {
   if (!tenantId) throw appError(401, "PYG_TENANT_REQUIRED", "Empresa requerida.");
-  return basePrisma.runWithTenant(tenantId, () => fn(basePrisma, tenantId));
+  return basePrisma.runWithTenant(tenantId, async () => await fn(basePrisma, tenantId));
 }
 
 function write(tenantId, fn) {

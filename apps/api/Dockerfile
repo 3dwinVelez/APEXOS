@@ -9,6 +9,9 @@ COPY package*.json ./
 RUN npm install --omit=dev && chown -R apex:apex /app/node_modules
 COPY . .
 RUN npx prisma generate
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends chromium-sandbox \
+  && rm -rf /var/lib/apt/lists/*
 USER apex
 ENV PDF_BROWSER_EXECUTABLE=/usr/bin/chromium
 EXPOSE 3000

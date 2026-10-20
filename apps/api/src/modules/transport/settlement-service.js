@@ -47,7 +47,7 @@ function dateOrNull(value) {
 
 function read(tenantId, fn) {
   if (!tenantId) fail(401, "TMS_TENANT_REQUIRED", "Empresa requerida.");
-  return basePrisma.runWithTenant(tenantId, () => fn(basePrisma, tenantId));
+  return basePrisma.runWithTenant(tenantId, async () => await fn(basePrisma, tenantId));
 }
 
 function write(tenantId, fn) {
