@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 module.exports = async function ({ base, token, packageId, draftId, foreignId, output, check, tenantId, vehicleId }) {
   const headers = { authorization: `Bearer ${token}` };
-  const url = id => `${base}/transport/settlement-packages/${id}/invoice-pdf`;
+  const url = id => `${base}/transport/settlement-packages/${id}/invoice-report`;
   check('pdf_anonymous_denied', (await fetch(url(packageId))).status === 401);
   check('pdf_draft_denied', (await fetch(url(draftId), { headers })).status === 409);
   check('pdf_cross_tenant_denied', (await fetch(url(foreignId), { headers })).status === 404);
@@ -33,9 +33,9 @@ module.exports = async function ({ base, token, packageId, draftId, foreignId, o
   check('pdf_uses_frozen_rate_after_new_version', Number(report.annexes[0].definition.base_rate) === 500000 && report.package.accounted_total === '525000');
   check('pdf_contains_all_routes_clients_and_stores', report.package.items.length === 2 && report.package.items[0].metadata.destination_snapshots.length === 2 && report.package.items[0].metadata.customer_snapshot.name === customer.name && report.annexes.length === 2);
   const response = await fetch(url(packageId), { headers, signal: AbortSignal.timeout(180000) });
-  if (!response.ok) { const body = await response.text(); check('liquidated_pdf_generated', false, { status: response.status, body }); }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  check('liquidated_pdf_generated', response.status === 200 && bytes.subarray(0, 5).toString() === '%PDF-' && bytes.length > 10000, { bytes: bytes.length });
-  check('pdf_attachment_no_cache', response.headers.get('content-type').includes('application/pdf') && response.headers.get('content-disposition').includes('soporte-facturacion.pdf') && response.headers.get('cache-control') === 'no-store');
-  fs.writeFileSync(output, bytes);
+  if (!response.ok) { const body = await response.text(); check('liquidated_report_authorized', false, { status: response.status, body }); }
+  const payload = await response.json();
+  check('liquidated_report_authorized', response.status === 200 && payload.package.id === packageId && payload.annexes.length === 2);
+  check('report_no_cache', response.headers.get('cache-control') === 'no-store');
+  await require('./transport-settlement-browser-pdf-local')({ base, token, packageId, draftId, foreignId, output, check });
 };

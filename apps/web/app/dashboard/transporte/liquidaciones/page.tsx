@@ -300,15 +300,11 @@ export default function TransportSettlementsPage() {
   }
 
   async function downloadInvoicePdf() {
-    if (!selected || mutationRef.current) return;
-    mutationRef.current = true; setSaving(true); setError("");
-    try {
-      const pdf = await api<Blob>(`/api/v1/transport/settlement-packages/${selected.id}/invoice-pdf`, { cache: "no-store" });
-      const url = URL.createObjectURL(pdf); const link = document.createElement("a");
-      link.href = url; link.download = `${selected.code}-soporte-facturacion.pdf`; link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "No fue posible generar el PDF."); }
-    finally { mutationRef.current = false; setSaving(false); }
+    if (!selected || selected.status !== "liquidada") return;
+    setError("");
+    const view = window.open(`/print/transport-settlement?id=${selected.id}`, "_blank");
+    if (!view) { setError("Permite las ventanas emergentes para abrir el PDF de la liquidación."); return; }
+    view.opener = null;
   }
 
   async function createPackage(event: React.FormEvent<HTMLFormElement>) {

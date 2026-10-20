@@ -159,9 +159,9 @@ async function transportRoutes(fastify) {
   fastify.post("/transport/settlement-packages/:id/account", { schema: tmsSchemas.settlementAccountSchema, preHandler: requirePermission("transport", "account_settlements") }, (request) => settlement.accountSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/settlement-packages/:id/close", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "liquidate_settlements") }, (request) => settlement.closeSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/settlement-packages/:id/cancel", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.cancelSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
-  fastify.get("/transport/settlement-packages/:id/invoice-pdf", { preHandler: requirePermission("transport", "read") }, async (request, reply) => {
-    const result = await require("./settlement-report").settlementReportPdf(request.user?.tenant_id, request.params.id);
-    return reply.header("Content-Type", "application/pdf").header("Cache-Control", "no-store").header("Content-Disposition", `attachment; filename="${result.fileName.replace(/[^a-zA-Z0-9_.-]/g, "_")}"`).send(result.buffer);
+  fastify.get("/transport/settlement-packages/:id/invoice-report", { preHandler: requirePermission("transport", "read") }, async (request, reply) => {
+    const result = await require("./settlement-report").settlementReportData(request.user?.tenant_id, request.params.id);
+    return reply.header("Cache-Control", "no-store").send(result);
   });
   fastify.get("/transport/settlement-packages/:id/audit", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementAudit(request.user?.tenant_id, request.params.id));
 
