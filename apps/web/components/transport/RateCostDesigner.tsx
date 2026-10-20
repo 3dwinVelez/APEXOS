@@ -391,7 +391,7 @@ function RouteSimulator({ draft, onChange, sedes, readOnly = false }: { draft: R
         value={draft.sim_destination_label}
       />
       </div>
-      <RouteMap destination={destinationPosition} origin={originPosition} polyline={draft.sim_polyline} stops={draft.sim_stops.filter((stop) => stop.latitude != null && stop.longitude != null).map((stop) => [stop.latitude, stop.longitude] as [number, number])} />
+      <RouteMap readOnly={readOnly} destination={destinationPosition} origin={originPosition} polyline={draft.sim_polyline} stops={draft.sim_stops.filter((stop) => stop.latitude != null && stop.longitude != null).map((stop) => [stop.latitude, stop.longitude] as [number, number])} />
       </div>
       <div className={styles.routeMetrics}>
         <label><span><Gauge size={18} /> Distancia total</span><span className="flex items-center gap-1"><input aria-label="Distancia total en kilómetros" className="min-w-0 w-24 bg-transparent text-lg font-bold outline-none" inputMode="decimal" min="0" step="any" type="number" value={draft.billable_km} onChange={(event) => onChange({ billable_km: event.target.value, km_source: "manual", sim_manual_km: true })} /><strong>km</strong></span></label>
@@ -417,15 +417,15 @@ function RouteSimulator({ draft, onChange, sedes, readOnly = false }: { draft: R
   </section>;
 }
 
-function RouteMap({ origin, destination, stops, polyline }: { origin: [number, number] | null; destination: [number, number] | null; stops: [number, number][]; polyline: string | null }) {
+function RouteMap({ origin, destination, stops, polyline, readOnly = false }: { readOnly?: boolean; origin: [number, number] | null; destination: [number, number] | null; stops: [number, number][]; polyline: string | null }) {
   const decoded = useMemo(() => polyline ? decodeGooglePolyline(polyline) : [], [polyline]);
   const path = useMemo(() => decoded.length ? decoded : origin && destination ? [origin, ...stops, destination] : [], [decoded, origin, destination, stops]);
   const [satellite, setSatellite] = useState(false);
   const center = origin || destination || [4.65, -74.1];
   return <div className="relative h-80 overflow-hidden rounded-lg border border-line bg-surface-muted">
     <div className="absolute left-12 top-2 z-[500] flex overflow-hidden rounded-md border border-line bg-surface text-xs shadow"><button type="button" aria-pressed={!satellite} className={`px-3 py-2 ${!satellite ? "bg-[#102743] text-white" : ""}`} onClick={() => setSatellite(false)}>Mapa</button><button type="button" aria-pressed={satellite} className={`px-3 py-2 ${satellite ? "bg-[#102743] text-white" : ""}`} onClick={() => setSatellite(true)}>Satélite</button></div>
-    <MapContainer center={center} className="h-full w-full" zoom={7}>
-      <FitRoute points={path} />
+    <MapContainer center={center} className="h-full w-full" zoom={7} zoomAnimation={!readOnly} fadeAnimation={!readOnly}>
+      <FitRoute points={path} animate={!readOnly} />
       {satellite ? <TileLayer key="satellite" attribution="Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics" url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" /> : <TileLayer key="map" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />}
       {path.length ? <Polyline color="#2563eb" positions={path} weight={4} /> : null}
       {origin ? <CircleMarker center={origin} pathOptions={{ color: "#16a34a", fillColor: "#16a34a", fillOpacity: 0.9 }} radius={7}><Tooltip>Origen</Tooltip></CircleMarker> : null}
@@ -435,14 +435,15 @@ function RouteMap({ origin, destination, stops, polyline }: { origin: [number, n
   </div>;
 }
 
-function FitRoute({ points }: { points: [number, number][] }) {
+function FitRoute({ points, animate }: { points: [number, number][]; animate: boolean }) {
   const map = useMap();
   const pointsKey = JSON.stringify(points);
   useEffect(() => {
     const coordinates = JSON.parse(pointsKey) as [number, number][];
     map.invalidateSize();
-    if (coordinates.length) map.fitBounds(coordinates, { padding: [28, 28], maxZoom: 14 });
-  }, [map, pointsKey]);
+    if (coordinates.length) map.fitBounds(coordinates, { padding: [28, 28], maxZoom: 14, animate });
+    map.getContainer().dataset.routeMapReady = "true";
+  }, [map, pointsKey, animate]);
   return null;
 }
 

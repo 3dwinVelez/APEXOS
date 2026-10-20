@@ -14,13 +14,14 @@ export async function captureSettlementAnnexes(root: HTMLElement, signal: AbortS
   for (const stage of Array.from(root.querySelectorAll<HTMLElement>("[data-rate-capture]"))) {
     aborted();
     const mapStarted = Date.now();
-    while (stage.querySelector('.leaflet-container') && !stage.querySelector('.leaflet-tile') && Date.now() - mapStarted < 4000) {
+    while ((!stage.querySelector('.leaflet-container[data-route-map-ready="true"]') || !stage.querySelector('.leaflet-tile')) && Date.now() - mapStarted < 4000) {
       aborted();
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     // Las teselas pueden faltar por conectividad; no se omiten silenciosamente.
     const tiles = Array.from(stage.querySelectorAll<HTMLImageElement>(".leaflet-tile"));
     await Promise.all(tiles.map(tile => Promise.race([tile.decode().catch(() => undefined), new Promise(resolve => setTimeout(resolve, 10000))])));
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     if (stage.querySelector('.leaflet-container') && (!tiles.length || tiles.some(tile => !tile.complete || !tile.naturalWidth))) {
       const note = document.createElement("p");
       note.textContent = "Mapa base no disponible. Se conserva el recorrido y los valores del tarifario.";
