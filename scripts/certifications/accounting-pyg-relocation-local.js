@@ -75,6 +75,7 @@ async function main() {
   const page = fs.readFileSync(path.join(root, "apps/web/app/dashboard/contabilidad/pyg/page.tsx"), "utf8");
   check("page_uses_accounting_permissions_and_navigation", page.includes('hasStoredRolePermission("accounting", "write")') && page.includes("<ContabilidadNav />"));
   check("old_url_redirects", fs.readFileSync(path.join(root, "apps/web/app/dashboard/transporte/pyg/page.tsx"), "utf8").includes('redirect("/dashboard/contabilidad/pyg")'));
+  check("redirect_precedes_client_module_guard", fs.readFileSync(path.join(root, "apps/web/next.config.ts"), "utf8").includes('source: "/dashboard/transporte/pyg", destination: "/dashboard/contabilidad/pyg"'));
   check("transport_card_removed", !fs.readFileSync(path.join(root, "apps/web/app/dashboard/transporte/page.tsx"), "utf8").includes("/transporte/pyg"));
 }
 main().then(() => finish("passed")).catch(e => { console.error(e.message); return finish("failed", e.message); });
