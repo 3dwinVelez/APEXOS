@@ -166,9 +166,11 @@
     }
   ],
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "scope": "promotion_to_develop_for_qa",
-    "reason": "Usuario reitero: No crear ramas; conservar la promocion preparada. Desarrollo remoto contiene cambios ajenos al alcance puntual.",
+    "approved_by": "Usuario solicitante: actualizar develop usando exclusivamente desarrollo y develop existentes, sin crear ramas adicionales; procede",
+    "approved_at": "2026-10-20T21:41:32.468Z",
+    "reason": "Integracion puntual sobre target actual; avance normal de desarrollo remoto y PR desarrollo -> develop, conservando los pendientes en historial y checkout local",
     "authorization_flags": {
       "auxiliary_branch_promotion": false,
       "qa_deploy": true,
@@ -234,7 +236,6 @@
     ]
   },
   "pending_qa": [
-    "Via autorizada de promocion puntual sin incluir cambios ajenos",
     "Revalidar target, alcance y pre-QA antes de publicar",
     "Desplegar ambos servicios QA al mismo commit exacto; Railway nuevamente operativo",
     "Certificar flujo completo en QA antes de declarar solucionado"
