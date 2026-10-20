@@ -34,6 +34,8 @@ El DML es transaccional, restringe sociedad, sucursal e inventario esperado, y s
 
 ## Estado de promocion: BLOQUEADA
 
+Fuente puntual certificada: `91a676ece56412ed92256111edf3a962fedae072`, reconstruida encima de `develop` remoto `b9b977716bc4d442e1bc0cde59b5ae78ffb2d531` y conservada en la historia local de `desarrollo`. Las 46 verificaciones se repitieron en un checkout separado de ese commit y los hashes de fuentes coincidieron. El gate `qa:promotion:scope` aprobo el inventario exacto de 16 rutas. El gate `qa:preqa:evidence` rechazo correctamente la entrega por aprobacion pendiente y certificacion funcional visual incompleta. No se publico el candidato.
+
 El codigo no se ha publicado ni fusionado a `develop`. Se conserva la instruccion del usuario de **no crear ramas**. El remoto `desarrollo` contiene cambios fuera de este alcance y no puede promoverse completo. El candidato debe reconstruirse puntualmente encima del `develop` remoto actual, conservando sus cambios mas recientes, sin crear una rama no autorizada.
 
 Los manifiestos de esta entrega inventarian cada archivo y mantienen los gates pendientes. La certificacion visual incompleta bloquea el pre-QA; no se sustituye por pruebas unitarias ni compilacion. Adicionalmente, Railway reporta pausa general de nuevos builds: <https://status.railway.com>. No hay certificacion funcional del candidato desplegado en QA.
