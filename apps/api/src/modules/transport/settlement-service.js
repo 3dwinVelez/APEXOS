@@ -15,6 +15,8 @@
 const basePrisma = require("../../core/prisma");
 const E = require("./settlement-engine");
 const { partyRoleWhere } = require("../parties/roles");
+const { postSettlementIncomeTx, reverseSettlementIncomeTx } = require("./settlement-posting");
+const { invalidateVehicleAccounting } = require("./vehicle-accounting");
 
 async function listSettlementDestinations(tenantId) {
   return read(tenantId, db => db.transportDeliveryPoint.findMany({ where: { tenant_id: String(tenantId), active: true }, select: { id: true, code: true, name: true, address: true, city: true, customer_party_id: true }, orderBy: { name: "asc" } }));
@@ -22,6 +24,14 @@ async function listSettlementDestinations(tenantId) {
 
 async function listSettlementCustomers(tenantId) {
   return read(tenantId, db => db.party.findMany({ where: { tenant_id: String(tenantId), active: true, ...partyRoleWhere("customer") }, select: { id: true, name: true, tax_id: true }, orderBy: { name: "asc" } }));
+}
+
+async function listSettlementAccountingOptions(tenantId) {
+  return read(tenantId, async db => {
+    const accounts = await db.account.findMany({ where: { tenant_id: String(tenantId), active: true, allows_tx: true, type: { in: ["income", "asset"] } }, select: { code: true, name: true, type: true }, orderBy: { code: "asc" } });
+    const { isReceivableAccount } = require("../accounting/service");
+    return { income_accounts: accounts.filter(row => row.type === "income"), receivable_accounts: accounts.filter(isReceivableAccount) };
+  });
 }
 
 
@@ -356,7 +366,7 @@ async function createSettlementPackage(tenantId, user, input) {
         observation: input.observation || null,
         status: E.PACKAGE_STATUS.BORRADOR,
         version: 0,
-        metadata: { ...(input.metadata && typeof input.metadata === "object" ? input.metadata : {}), vehicle_id: vehicle?.id ?? null, vehicle_plate: vehicle?.plate ?? null, cost_center: vehicle?.plate ?? null, ...(vehicle ? { accounting_period: period.code, tariff_locked: true } : {}) },
+        metadata: { ...(input.metadata && typeof input.metadata === "object" ? input.metadata : {}), vehicle_id: vehicle?.id ?? null, vehicle_plate: vehicle?.plate ?? null, cost_center: vehicle?.cost_center || null, ...(vehicle ? { accounting_period: period.code, tariff_locked: true } : {}) },
         created_by: user?.id ?? null
       },
       include: PACKAGE_INCLUDE
@@ -447,7 +457,7 @@ async function saveSettlementDocuments(tenantId, user, id, input) {
     if (new Set(ids).size !== ids.length || ids.some(id => !pkg.items.some(item => item.id === id)) || pkg.items.some(item => !ids.includes(item.id))) fail(409, "TMS_DOCUMENT_IDS_INVALID", "Conserve todos los documentos existentes del paquete.");
     const before = { period_id: pkg.period_id, metadata: pkg.metadata, items: pkg.items };
     const accountingPeriod = pkg.metadata?.tariff_locked ? null : await automaticSettlementPeriod(tx, tenantId);
-    pkg.metadata = { ...pkg.metadata, vehicle_id: vehicle.id, vehicle_plate: vehicle.plate, cost_center: vehicle.plate, ...(accountingPeriod ? { tariff_locked: true, accounting_period: accountingPeriod.code } : {}) };
+    pkg.metadata = { ...pkg.metadata, vehicle_id: vehicle.id, vehicle_plate: vehicle.plate, cost_center: vehicle.cost_center || null, ...(accountingPeriod ? { tariff_locked: true, accounting_period: accountingPeriod.code } : {}) };
     await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data: { metadata: pkg.metadata, ...(accountingPeriod ? { period_id: accountingPeriod.id } : {}) } });
     const result = await persistSettlementItems(tx, tenantId, user, pkg, input, true);
     await audit(tx, user, "transport.settlement_package.documents_updated", ENTITY_PACKAGE, pkg.id, before, { metadata: pkg.metadata, items: result.items });
@@ -750,8 +760,8 @@ async function decideSettlementPackage(tenantId, user, id, input) {
 
 async function accountSettlementPackage(tenantId, user, id, input = {}) {
 
-  return write(tenantId, async (tx) => {
-    const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) }, include: { issues: true, accountings: true } });
+  const result = await write(tenantId, async (tx) => {
+    const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) }, include: { issues: true, accountings: true, items: true } });
     const accountingPeriod = pkg.metadata?.accounting_period || currentAccountingMonth();
     if (pkg.metadata?.tariff_locked && input.accounting_period && input.accounting_period !== accountingPeriod) fail(409, "TMS_PERIOD_LOCKED", "El periodo contable es automático y no puede modificarse.");
     const key = String(input.idempotency_key || "").trim() || E.accountingIdempotencyKey(pkg.code, accountingPeriod);
@@ -766,23 +776,16 @@ async function accountSettlementPackage(tenantId, user, id, input = {}) {
 
     E.assertAccountingAllowed({ status: pkg.status, issues: pkg.issues }); // RB-08 + RB-10
     E.assertVersionMatch(input.version, pkg.version);
-    if (!String(input.reference || "").trim()) fail(400, "TMS_SETTLEMENT_ACCOUNT_REFERENCE_REQUIRED", "La referencia contable es obligatoria.");
     E.assertPackageTransition(pkg.status, E.PACKAGE_STATUS.CONTABILIZADA);
     const amount = Number(pkg.approved_total);
-    let accounting;
-    try {
-      accounting = await tx.transportSettlementAccounting.create({ data: { tenant_id: String(tenantId), package_id: pkg.id, reference: input.reference || null, accounting_period: accountingPeriod, amount, idempotency_key: key, payload: input.payload && typeof input.payload === "object" ? input.payload : {}, created_by: user?.id ?? null } });
-    } catch (error) {
-      if (error?.code === "P2002") {
-        const raced = await tx.transportSettlementAccounting.findFirst({ where: { idempotency_key: key } });
-        return { ...packageView(pkg), accounting: raced ? accountingView(raced) : null, idempotent_replay: true };
-      }
-      throw error;
-    }
-    const updated = await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data: { status: E.PACKAGE_STATUS.CONTABILIZADA, accounted_total: amount, version: { increment: 1 } }, include: PACKAGE_INCLUDE });
+    const posting = await postSettlementIncomeTx(tx, tenantId, user, pkg, input, accountingPeriod);
+    const accounting = await tx.transportSettlementAccounting.create({ data: { tenant_id: String(tenantId), package_id: pkg.id, reference: posting.documents.map(document => document.number).join(", "), accounting_period: accountingPeriod, amount, idempotency_key: key, payload: posting, created_by: user?.id ?? null } });
+    const updated = await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data: { status: E.PACKAGE_STATUS.CONTABILIZADA, accounted_total: amount, metadata: { ...pkg.metadata, cost_center: posting.cost_center }, version: { increment: 1 } }, include: PACKAGE_INCLUDE });
     await audit(tx, user, "transport.settlement_package.accounted", ENTITY_PACKAGE, pkg.id, { status: pkg.status, accounted_total: Number(pkg.accounted_total) }, { status: updated.status, accounted_total: amount, reference: accounting.reference, accounting_period: accountingPeriod, idempotency_key: key });
     return { ...packageView(updated), accounting: accountingView(accounting), idempotent_replay: false };
   });
+  await invalidateVehicleAccounting(tenantId);
+  return result;
 }
 
 async function freezeSettlementTariffs(tx, tenantId, packageId) {
@@ -816,8 +819,9 @@ async function closeSettlementPackage(tenantId, user, id, input = {}) {
     E.assertVersionMatch(input.version, pkg.version);
     if (to === E.PACKAGE_STATUS.LIQUIDADA) { E.assertNoOpenBlockingIssues(pkg.issues, "liquidar"); await freezeSettlementTariffs(tx, tenantId, pkg.id); }
     if (to === E.PACKAGE_STATUS.REVERSADA && !String(input.reference || "").trim()) fail(400, "TMS_SETTLEMENT_REVERSAL_REFERENCE_REQUIRED", "La reversion formal exige una referencia del comprobante de reversa.");
+    const reversals = to === E.PACKAGE_STATUS.REVERSADA ? await reverseSettlementIncomeTx(tx, tenantId, user, pkg, input.reference) : [];
     const updated = await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data: { status: to, version: { increment: 1 } }, include: PACKAGE_INCLUDE });
-    await audit(tx, user, `transport.settlement_package.${to}`, ENTITY_PACKAGE, pkg.id, { status: pkg.status }, { status: updated.status, reference: input.reference || null });
+    await audit(tx, user, `transport.settlement_package.${to}`, ENTITY_PACKAGE, pkg.id, { status: pkg.status }, { status: updated.status, reference: input.reference || null, reversals });
     return packageView(updated);
   });
 }
@@ -853,6 +857,7 @@ async function simulateRate(tenantId, input) {
 }
 
 module.exports = {
+  listSettlementAccountingOptions,
   currentAccountingMonth, listSettlementDestinations, listSettlementCustomers, saveSettlementDocuments, listSettlementRateOptions, quoteSettlementCriterion,
   listSettlementTypes, saveSettlementType,
   listSettlementPeriods, saveSettlementPeriod,
