@@ -191,7 +191,7 @@ test("el concepto de la linea sugiere su IVA y exige los soportes que declara", 
 });
 
 test("los totales de la planilla son estimados, nunca la fuente", () => {
-  assert.match(gastos, /el servidor recalcula el IVA y el total desde la base/);
+  assert.match(gastos, /Los totales son una estimación y se confirman al guardar el comprobante/);
   assert.match(gastos, />Base<\/span>/);
   assert.match(gastos, />Total<\/span>/);
 });
@@ -199,16 +199,18 @@ test("los totales de la planilla son estimados, nunca la fuente", () => {
 test("la planilla auto-agrega la fila vacia y respeta el rango del backend (1 a 100)", () => {
   // Al llenar la ultima fila aparece la siguiente (libro caja), con tope de 100 lineas.
   assert.match(gastos, /next\.length < 100/);
-  assert.match(gastos, /nextLines\.length >= 100/);
+  // El avance de foco valida el tope antes de crear la fila: nunca llega a 101.
+  assert.match(gastos, /if \(lines\.length >= 100\) return lines;/);
+  assert.match(gastos, /setDraftLines\(\(lines\) => nextLinesForFocus\(lines, blankLine\)\)/);
   // Quitar lineas nunca deja la planilla sin filas: siempre queda al menos una vacia.
-  assert.match(gastos, /return next\.length \? next : \[\{ \.\.\.emptyLine \}\]/);
+  assert.match(gastos, /return next\.length \? next : \[blankLine\(\)\]/);
 });
 
 test("el registro es una planilla journal inline, no un modal de creacion", () => {
-  assert.match(gastos, /Nuevo comprobante/);
+  assert.match(gastos, /Digitar gastos/);
   assert.match(gastos, /draftLines/);
   assert.match(gastos, /focusNextCell/);
-  assert.match(gastos, /Contabilizar \$\{filledLines/);
+  assert.match(gastos, /Contabilizar gasto/);
   assert.match(gastos, /registerRef/);
   assert.match(gastos, /params\.set\("date_from", dateFrom\)/);
   assert.match(gastos, /RANGE_PRESETS/);
