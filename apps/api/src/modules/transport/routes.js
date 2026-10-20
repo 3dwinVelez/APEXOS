@@ -1,5 +1,5 @@
 const tenancy = require("../../middleware/tenancy");
-const { requirePermission } = require("../../middleware/rbac");
+const { requirePermission, requireAnyPermission } = require("../../middleware/rbac");
 const schemas = require("./schema");
 const service = require("./service");
 const tmsSchemas = require("./tms-schema");
@@ -71,16 +71,17 @@ async function transportRoutes(fastify) {
   fastify.post("/transport/delivery-points", { schema: tmsSchemas.deliveryPointSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveDeliveryPoint(request.user?.tenant_id, null, request.body)));
   fastify.put("/transport/delivery-points/:id", { schema: tmsSchemas.deliveryPointSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveDeliveryPoint(request.user?.tenant_id, request.params.id, request.body));
 
-  fastify.get("/transport/origins", { preHandler: requirePermission("transport", "read") }, (request) => tms.listOrigins(request.user?.tenant_id, request.query));
-  fastify.post("/transport/origins", { schema: tmsSchemas.originSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveOrigin(request.user?.tenant_id, null, request.body)));
-  fastify.put("/transport/origins/:id", { schema: tmsSchemas.originSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveOrigin(request.user?.tenant_id, request.params.id, request.body));
+  fastify.get("/transport/sedes", { preHandler: requirePermission("transport", "read") }, (request) => tms.listSedes(request.user?.tenant_id, request.query));
+  fastify.post("/transport/sedes", { schema: tmsSchemas.sedeSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveSede(request.user?.tenant_id, null, request.body)));
+  fastify.put("/transport/sedes/:id", { schema: tmsSchemas.sedeSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveSede(request.user?.tenant_id, request.params.id, request.body));
 
+  const ratesWrite = requireAnyPermission([{ module: "transport", action: "write" }, { module: "transport", action: "manage_rates" }]);
   fastify.get("/transport/rate-cards", { preHandler: requirePermission("transport", "read") }, (request) => tms.listRateCards(request.user?.tenant_id, request.query));
   fastify.post("/transport/rate-cards", { schema: tmsSchemas.rateCardSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.saveRateCard(request.user?.tenant_id, request.user, null, request.body)));
-  fastify.put("/transport/rate-cards/:id", { schema: tmsSchemas.rateCardSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.saveRateCard(request.user?.tenant_id, request.user, request.params.id, request.body));
-  fastify.post("/transport/rate-cards/:id/versions", { schema: tmsSchemas.rateCardSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.versionRateCard(request.user?.tenant_id, request.user, request.params.id, request.body)));
-  fastify.post("/transport/rate-cards/:id/activate", { preHandler: requirePermission("transport", "write") }, (request) => tms.activateRateCard(request.user?.tenant_id, request.params.id));
-  fastify.post("/transport/rate-cards/:id/deactivate", { preHandler: requirePermission("transport", "write") }, (request) => tms.deactivateRateCard(request.user?.tenant_id, request.params.id));
+  fastify.put("/transport/rate-cards/:id", { schema: tmsSchemas.rateCardSchema, preHandler: ratesWrite }, (request) => tms.saveRateCard(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/transport/rate-cards/:id/versions", { schema: tmsSchemas.rateCardSchema, preHandler: ratesWrite }, async (request, reply) => reply.code(201).send(await tms.versionRateCard(request.user?.tenant_id, request.user, request.params.id, request.body)));
+  fastify.post("/transport/rate-cards/:id/activate", { preHandler: ratesWrite }, (request) => tms.activateRateCard(request.user?.tenant_id, request.params.id));
+  fastify.post("/transport/rate-cards/:id/deactivate", { preHandler: ratesWrite }, (request) => tms.deactivateRateCard(request.user?.tenant_id, request.params.id));
 
   fastify.get("/transport/planning/workbench", { preHandler: requirePermission("transport", "read") }, (request) => tms.getPlanningWorkbench(request.user?.tenant_id));
   fastify.post("/transport/planning/evaluate", { schema: tmsSchemas.planningSchema, preHandler: requirePermission("transport", "write") }, (request) => tms.evaluatePlan(request.user?.tenant_id, request.body));
@@ -97,6 +98,9 @@ async function transportRoutes(fastify) {
     const probe = ["1", "true", "yes"].includes(String(request.query?.probe || "").toLowerCase());
     return connectionStatus({ probe });
   });
+
+  fastify.get("/transport/route-places", { preHandler: requirePermission("transport", "read") }, (request) => tms.searchRoutePlaces(request.user?.tenant_id, request.query?.term));
+  fastify.post("/transport/route-simulator", { schema: tmsSchemas.routeSimulatorSchema, preHandler: requirePermission("transport", "read") }, (request) => tms.simulateRoute(request.user?.tenant_id, request.body));
 
   fastify.get("/transport/needs", { preHandler: requirePermission("transport", "read") }, (request) => tms.listNeeds(request.user?.tenant_id, request.query));
   fastify.post("/transport/needs", { schema: tmsSchemas.needSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await tms.createNeed(request.user?.tenant_id, request.user, request.body)));
@@ -136,20 +140,29 @@ async function transportRoutes(fastify) {
 
   fastify.get("/transport/settlement-control-tower", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementControlTower(request.user?.tenant_id, request.query));
   fastify.get("/transport/settlement-vehicle-consolidation", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementVehicleConsolidation(request.user?.tenant_id, request.query));
+  fastify.get("/transport/settlement-rate-options", { preHandler: requirePermission("transport", "read") }, (request) => settlement.listSettlementRateOptions(request.user?.tenant_id, request.query));
+  fastify.post("/transport/settlement-criterion-quote", { schema: tmsSchemas.settlementCriterionQuoteSchema, preHandler: requirePermission("transport", "read") }, (request) => settlement.quoteSettlementCriterion(request.user?.tenant_id, request.body));
   fastify.get("/transport/settlement-packages", { preHandler: requirePermission("transport", "read") }, (request) => settlement.listSettlementPackages(request.user?.tenant_id, request.query));
   fastify.post("/transport/settlement-packages", { schema: tmsSchemas.settlementPackageCreateSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await settlement.createSettlementPackage(request.user?.tenant_id, request.user, request.body)));
   fastify.get("/transport/settlement-packages/:id", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementPackage(request.user?.tenant_id, request.params.id));
   fastify.patch("/transport/settlement-packages/:id", { schema: tmsSchemas.settlementPackageUpdateSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.updateSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.get("/transport/settlement-destinations", { preHandler: requirePermission("transport", "read") }, request => settlement.listSettlementDestinations(request.user?.tenant_id));
+  fastify.get("/transport/settlement-customers", { preHandler: requirePermission("transport", "read") }, request => settlement.listSettlementCustomers(request.user?.tenant_id));
+  fastify.put("/transport/settlement-packages/:id/documents", { schema: { body: { ...tmsSchemas.settlementItemsSchema.body, required: ["version", "vehicle_id", "items"], properties: { ...tmsSchemas.settlementItemsSchema.body.properties, vehicle_id: { type: "integer", minimum: 1 } } } }, preHandler: requirePermission("transport", "write") }, request => settlement.saveSettlementDocuments(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/settlement-packages/:id/items", { schema: tmsSchemas.settlementItemsSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await settlement.addSettlementItems(request.user?.tenant_id, request.user, request.params.id, request.body)));
   fastify.post("/transport/settlement-packages/:id/validate", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.validateSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/settlement-packages/:id/precalculate", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.precalculateSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/settlement-packages/:id/adjustments", { schema: tmsSchemas.settlementAdjustmentSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await settlement.addSettlementAdjustment(request.user?.tenant_id, request.user, request.params.id, request.body)));
   fastify.post("/transport/settlement-packages/:id/issues", { schema: tmsSchemas.settlementIssueSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await settlement.createSettlementIssue(request.user?.tenant_id, request.user, request.params.id, request.body)));
   fastify.post("/transport/settlement-packages/:id/submit", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.submitSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
-  fastify.post("/transport/settlement-packages/:id/decision", { schema: tmsSchemas.settlementDecisionSchema, preHandler: requirePermission("transport", "approve") }, (request) => settlement.decideSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
-  fastify.post("/transport/settlement-packages/:id/account", { schema: tmsSchemas.settlementAccountSchema, preHandler: requirePermission("transport", "approve") }, (request) => settlement.accountSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
-  fastify.post("/transport/settlement-packages/:id/close", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "approve") }, (request) => settlement.closeSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/transport/settlement-packages/:id/decision", { schema: tmsSchemas.settlementDecisionSchema, preHandler: requirePermission("transport", "approve_settlements") }, (request) => settlement.decideSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/transport/settlement-packages/:id/account", { schema: tmsSchemas.settlementAccountSchema, preHandler: requirePermission("transport", "account_settlements") }, (request) => settlement.accountSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.post("/transport/settlement-packages/:id/close", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "liquidate_settlements") }, (request) => settlement.closeSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/transport/settlement-packages/:id/cancel", { schema: tmsSchemas.settlementTransitionSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.cancelSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
+  fastify.get("/transport/settlement-packages/:id/invoice-report", { preHandler: requirePermission("transport", "read") }, async (request, reply) => {
+    const result = await require("./settlement-report").settlementReportData(request.user?.tenant_id, request.params.id);
+    return reply.header("Cache-Control", "no-store").send(result);
+  });
   fastify.get("/transport/settlement-packages/:id/audit", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementAudit(request.user?.tenant_id, request.params.id));
 
   fastify.post("/transport/settlement-issues/:id/resolve", { schema: tmsSchemas.settlementIssueResolveSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.resolveSettlementIssue(request.user?.tenant_id, request.user, request.params.id, request.body));
