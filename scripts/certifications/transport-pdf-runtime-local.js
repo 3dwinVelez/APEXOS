@@ -1,9 +1,10 @@
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 const image = process.env.LOCAL_PDF_IMAGE || 'apexos-transport-qa-local';
 if (!/^apexos-transport-qa-local(?::[a-z0-9.-]+)?$/.test(image)) throw Error('Solo imagen local de certificacion');
 const code = `(async()=>{const p=await import('puppeteer-core'); const b=await p.launch({executablePath:process.env.PDF_BROWSER_EXECUTABLE,headless:true,args:['--disable-dev-shm-usage']});try{const page=await b.newPage();await page.setContent('<html><body>APEXOS QA PDF</body></html>');const bytes=await page.pdf({format:'A4'});if(Buffer.from(bytes).subarray(0,4).toString()!=='%PDF')throw Error('PDF invalido');console.log(JSON.stringify({pdf:true,non_root:process.getuid()!==0,sandbox_disabled:false}));}finally{await b.close();}})().catch(e=>{console.error(e.message);process.exitCode=1;});`;
-const execution = spawnSync('docker', ['run', '--pull=never', '--rm', '--network', 'none', '--entrypoint', 'node', image, '-e', code], { encoding: 'utf8', timeout: 90000 });
+const execution = spawnSync('docker', ['run', '--pull=never', '--rm', '--network', 'none', '--security-opt', `seccomp=${path.resolve('infra/pdf-renderer/seccomp.json')}`, '--entrypoint', 'node', image, '-e', code], { encoding: 'utf8', timeout: 90000 });
 const result = { status: execution.status === 0 ? 'passed' : 'failed', environment: 'LOCAL_DOCKER', image, exit_code: execution.status, stdout: execution.stdout?.trim(), error: execution.status === 0 ? null : execution.stderr?.slice(-3000) };
 if (process.argv[2]) fs.writeFileSync(process.argv[2], JSON.stringify(result, null, 2));
 console.log(JSON.stringify(result));
