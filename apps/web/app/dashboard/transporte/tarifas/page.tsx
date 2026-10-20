@@ -13,7 +13,7 @@ import type { RateCostDraft, SedeOption } from "@/components/transport/RateCostD
 
 type Carrier = { id: number; legal_name: string };
 type VehicleOption = { id: number; plate: string; type?: string | null; ownership_type?: string | null; base_site?: string | null };
-type RateCard = {
+export type RateCard = {
   id: number; code: string; version: number; name: string; status: string; carrier_id?: number;
   destination_city?: string; destination_department?: string; destination_municipality?: string; service_level?: string; vehicle_type?: string;
   valid_from: string; valid_to: string; currency: string; base_rate: number; minimum_charge: number;

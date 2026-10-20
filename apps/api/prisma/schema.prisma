@@ -2061,7 +2061,7 @@ model TransportSettlementPackage {
   code             String
   period_id        Int?
   period           TransportSettlementPeriod?    @relation(fields: [period_id], references: [id], onDelete: SetNull)
-  carrier_id       Int
+  carrier_id       Int?
   carrier_code     String?
   carrier_name     String?
   type_id          Int?

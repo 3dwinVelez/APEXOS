@@ -1,5 +1,6 @@
 "use client";
 
+import { TransportAdminCatalog, type TransportAdminCatalogKey } from "@/components/transport/TransportAdminCatalog";
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api, fallbackAdminPermissionCatalog } from "@/lib/api";
@@ -255,11 +256,14 @@ const actionLabels: Record<string, string> = {
   manage_users: "Gestionar usuarios",
   manage_roles: "Gestionar roles",
   manage_rates: "Gestionar tarifarios",
+  approve_settlements: "Aprobar liquidaciones",
+  account_settlements: "Contabilizar liquidaciones",
+  liquidate_settlements: "Liquidar liquidaciones",
   edit_any_state: "Edicion especial"
 };
 
-const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles", "manage_rates"];
-const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles", "manage_rates"];
+const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles", "manage_rates", "approve_settlements", "account_settlements", "liquidate_settlements"];
+const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles", "manage_rates", "approve_settlements", "account_settlements", "liquidate_settlements"];
 const defaultRoleScopes: RoleScopes = { locations: [], areas: [], cost_centers: [], processes: [] };
 
 const emptyUser: UserForm = {
@@ -586,7 +590,9 @@ const categories: ConfigCategory[] = [
     icon: Truck,
     items: [
       { key: "vehiculos", title: "Vehiculos", description: "Flota, documentos y conductor autorizado.", status: "activo", modal: "info", href: "/dashboard/transporte" },
-      { key: "maestros-transporte", title: "Maestros de transporte", description: "Transportadoras, conductores, origenes operativos, puntos de entrega y tipos de liquidacion.", status: "activo", modal: "info", href: "/dashboard/administracion/maestros-transporte" },
+      { key: "transport_destinations", title: "Destinos / tiendas", description: "Destinos cubiertos por los paquetes de liquidacion y puntos de entrega.", status: "activo", modal: "masters" },
+      { key: "transport_settlement_types", title: "Tipos de liquidacion", description: "Politicas de soportes y aprobacion de liquidaciones.", status: "activo", modal: "masters" },
+      { key: "transport_carriers", title: "Transportadoras", description: "Transportadoras del maestro existente de la empresa.", status: "activo", modal: "masters" },
       { key: "rutas", title: "Rutas", description: "Planeacion y asignacion operativa.", status: "activo", modal: "info", href: "/dashboard/talento-humano/rutas" },
       { key: "marcaciones", title: "Marcaciones", description: "Reglas operativas de jornada y trazabilidad.", status: "activo", modal: "info", href: "/dashboard/talento-humano/marcacion" },
       { key: "almacenes-servicio", title: "Almacenes de servicio", description: "Catalogo usado en solicitudes externas y ordenes de servicio.", status: "configurado", modal: "masters" },
@@ -1146,6 +1152,7 @@ export default function AdministracionPage() {
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
+    if (item.key.startsWith("transport_")) setCatalogDraft(current => ({ ...current, catalog: item.key }));
     if (item.key === "almacenes-servicio") {
       setCatalogDraft((current) => ({ ...current, catalog: "service_stores", code: "", name: "", description: "" }));
     }
@@ -2053,7 +2060,15 @@ export default function AdministracionPage() {
     );
   }
 
+  useEffect(() => {
+    const catalog = new URLSearchParams(window.location.search).get("catalog");
+    if (["transport_destinations", "transport_settlement_types", "transport_carriers"].includes(catalog || "")) {
+      setCatalogDraft(current => ({ ...current, catalog: catalog! })); setActiveModal("masters");
+    }
+  }, []);
+
   function renderMasterCatalogManager() {
+    if (["transport_destinations", "transport_settlement_types", "transport_carriers"].includes(catalogDraft.catalog)) return <div className="space-y-4"><button type="button" className="text-sm text-apex underline" onClick={() => resetCatalogDraft("positions")}>Ver todos los maestros</button><TransportAdminCatalog key={catalogDraft.catalog} catalog={catalogDraft.catalog as TransportAdminCatalogKey} /></div>;
     const catalogGroups: Array<[string, Array<[string, string]>]> = [
       ["Usuarios y acceso", [
         ["user_types", "Tipos de usuario"],
@@ -2075,6 +2090,9 @@ export default function AdministracionPage() {
         ["vehicle_brands", "Marcas de vehiculo"],
         ["vehicle_lines", "Lineas de vehiculo"],
         ["vehicle_colors", "Colores de vehiculo"],
+        ["transport_destinations", "Destinos / tiendas"],
+        ["transport_settlement_types", "Tipos de liquidacion"],
+        ["transport_carriers", "Transportadoras"],
         ["vehicle_fuels", "Combustibles de vehiculo"],
         ["vehicle_body_types", "Carrocerias de vehiculo"],
         ["units_of_measure", "Unidades de medida"],

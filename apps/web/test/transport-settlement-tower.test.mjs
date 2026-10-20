@@ -5,7 +5,7 @@ import test from "node:test";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const page = fs.readFileSync(path.join(root, "apps/web/app/dashboard/transporte/liquidaciones/page.tsx"), "utf8");
-const masters = fs.readFileSync(path.join(root, "apps/web/components/transport/TransportMastersPanel.tsx"), "utf8");
+const masters = fs.readFileSync(path.join(root, "apps/web/components/transport/TransportAdminCatalog.tsx"), "utf8");
 
 test("la torre ofrece tres vistas: paquetes, semanas y vehiculos", () => {
   assert.match(page, /useState<"paquetes" \| "semanas" \| "vehiculos">\("paquetes"\)/);
@@ -32,8 +32,8 @@ test("la vista de vehiculos consume la consolidacion de ingresos", () => {
   assert.match(page, /guide_count/);
 });
 
-test("la escalera de etapas del prototipo se conserva", () => {
-  assert.match(page, /const PACKAGE_STEPS = \["Generado", "Validado", "Preliquidado", "Autorizado", "Contabilizado"\]/);
+test("la escalera prioriza las cuatro etapas operativas", () => {
+  assert.match(page, /const PACKAGE_STEPS = \["Creado", "Aprobado", "Contabilizado", "Liquidado"\]/);
   assert.match(page, /const STEP_BUCKETS/);
   assert.match(page, /packageSteps/);
 });
@@ -67,11 +67,11 @@ test("las transiciones criticas viajan con version del paquete", () => {
 });
 
 test("maestros expone la tarjeta de tipos de liquidacion con politica documental", () => {
-  assert.match(masters, /title="Tipos de liquidacion"/);
-  assert.match(masters, /\/api\/v1\/transport\/settlement-types/);
+  assert.match(masters, /title: "Tipos de liquidación"/);
+  assert.match(masters, /route: "settlement-types"/);
   assert.match(masters, /documentary_policy/);
   assert.match(masters, /value="alerta"/);
   assert.match(masters, /value="bloqueo"/);
   assert.match(masters, /requires_reinforced_approval/);
-  assert.match(masters, /row\.reserved \? "base" : "personalizado"/);
+  assert.match(masters, /!row\.reserved/);
 });

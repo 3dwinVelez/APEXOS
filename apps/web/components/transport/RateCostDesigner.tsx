@@ -50,7 +50,7 @@ const TARIFF_METHODS = [
   { id: "por_carga", label: "Por carga", desc: "Se cobra por peso o volumen transportado." },
 ] as const;
 
-export function RateCostDesigner({ draft, onChange, sedes }: { draft: RateCostDraft; onChange: (patch: Partial<RateCostDraft>) => void; sedes: SedeOption[] }) {
+export function RateCostDesigner({ draft, onChange, sedes, readOnly = false }: { draft: RateCostDraft; onChange: (patch: Partial<RateCostDraft>) => void; sedes: SedeOption[]; readOnly?: boolean }) {
   const currency = draft.currency || "COP";
 
   const setStopsEnabled = (enabled: boolean) => onChange(enabled
@@ -190,7 +190,7 @@ export function RateCostDesigner({ draft, onChange, sedes }: { draft: RateCostDr
     </div>
 
     <div className="space-y-4">
-      <RouteSimulator draft={draft} onChange={onChange} sedes={sedes} />
+      <RouteSimulator draft={draft} onChange={onChange} sedes={sedes} readOnly={readOnly} />
       <section data-cost-panel="fuel" className="rounded-xl border border-line bg-surface p-3">
         <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-content-strong"><Fuel size={13} /> Consumo estimado del vehículo</p>
         <p className="mb-3 text-xs text-content-muted">Solo referencia. Configura según tu vehículo.</p>
@@ -264,7 +264,7 @@ export function RateCostDesigner({ draft, onChange, sedes }: { draft: RateCostDr
   </div>;
 }
 
-function RouteSimulator({ draft, onChange, sedes }: { draft: RateCostDraft; onChange: (patch: Partial<RateCostDraft>) => void; sedes: SedeOption[] }) {
+function RouteSimulator({ draft, onChange, sedes, readOnly = false }: { draft: RateCostDraft; onChange: (patch: Partial<RateCostDraft>) => void; sedes: SedeOption[]; readOnly?: boolean }) {
   const [simStatus, setSimStatus] = useState<"idle" | "loading" | "error">("idle");
   const [simMessage, setSimMessage] = useState("");
   const simulationRequest = useRef({ id: 0 });
@@ -315,6 +315,7 @@ function RouteSimulator({ draft, onChange, sedes }: { draft: RateCostDraft; onCh
   }, [runSimulation]);
 
   useEffect(() => {
+    if (readOnly) return;
     const requests = simulationRequest.current;
     const { draft: currentDraft, onChange: update } = latestSimulation.current;
     const wasValid = previousCanSimulate.current;
@@ -326,7 +327,7 @@ function RouteSimulator({ draft, onChange, sedes }: { draft: RateCostDraft; onCh
     }
     const timer = setTimeout(() => { void runSimulationRef.current(); }, 700);
     return () => { clearTimeout(timer); requests.id++; };
-  }, [canSimulate, draft.sim_origin_kind, draft.sim_origin_sede_id, draft.sim_origin_lat, draft.sim_origin_lng, draft.sim_destination_lat, draft.sim_destination_lng, draft.sim_round_trip, stopsKey]);
+  }, [readOnly, canSimulate, draft.sim_origin_kind, draft.sim_origin_sede_id, draft.sim_origin_lat, draft.sim_origin_lng, draft.sim_destination_lat, draft.sim_destination_lng, draft.sim_round_trip, stopsKey]);
 
   const selectedSede = sedes.find((sede) => String(sede.id) === draft.sim_origin_sede_id);
   const originPosition: [number, number] | null = draft.sim_origin_kind === "sede"

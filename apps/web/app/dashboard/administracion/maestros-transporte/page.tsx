@@ -1,5 +1,5 @@
-import { TransportMastersPanel } from "@/components/transport/TransportMastersPanel";
+import { redirect } from "next/navigation";
 
 export default function TransportMastersConfigPage() {
-  return <TransportMastersPanel />;
+  redirect("/dashboard/administracion");
 }

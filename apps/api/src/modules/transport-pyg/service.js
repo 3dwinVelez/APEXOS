@@ -112,7 +112,9 @@ async function getReport(tenantId, query = {}) {
       FROM "TransportSettlementItem" i
       JOIN "TransportSettlementPackage" p ON p.id = i.package_id
       WHERE i.tenant_id = ${tenant}
-        AND i.service_date >= ${start}::date AND i.service_date <= ${end}::date
+        AND p.tenant_id = ${tenant}
+        AND ((p.metadata->>'accounting_period' IS NOT NULL AND p.metadata->>'accounting_period' = ${period})
+          OR (p.metadata->>'accounting_period' IS NULL AND i.service_date >= ${start}::date AND i.service_date <= ${end}::date))
         AND p.status IN ('aprobada', 'contabilizada', 'liquidada')
         AND i.vehicle_plate IS NOT NULL AND BTRIM(i.vehicle_plate) <> ''
       GROUP BY 1

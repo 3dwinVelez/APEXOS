@@ -175,7 +175,8 @@ test("el tarifario usa ModalFrame y selects alimentados por los maestros del mó
   assert.match(ratesSource, /import \{ api, isActiveMasterItem, loadVehicleMasterCatalogs \} from "@\/lib\/api";/);
   assert.match(ratesSource, /import type \{ VehicleMasterCatalogs \} from "@\/lib\/api";/);
   assert.match(ratesSource, /import \{ ModalFrame \} from "@\/components\/ui\/ModalFrame";/);
-  assert.match(ratesSource, /<ModalFrame maxWidth=\{wizardStep === 3 \? "md:max-w-6xl" : "md:max-w-3xl"\} onClose=\{closeWizard\} title=\{editing \? `Editar tarifario \$\{editing\.code\} · v\$\{editing\.version\}` : "Nuevo tarifario"\}>/);
+  assert.match(ratesSource, /wizardStep === 3 \? "md:max-w-\[1536px\]" : "md:max-w-3xl"/);
+  assert.match(ratesSource, /onClose=\{closeWizard\} title=\{editing \? `Editar tarifario \$\{editing\.code\} · v\$\{editing\.version\}` : "Nuevo tarifario"\}/);
   assert.doesNotMatch(ratesSource, /fixed inset-0 z-50 grid place-items-center/);
   assert.match(ratesSource, /loadVehicleMasterCatalogs\(\)/);
   assert.match(ratesSource, /<RateWizard carriers=\{carriers\} vehicles=\{vehicles\} masters=\{masters\}/);

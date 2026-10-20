@@ -4574,6 +4574,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     });
   }
   touchSession();
+  if (response.headers.get("content-type")?.includes("application/pdf")) return await response.blob() as T;
   const body = await response.json() as T;
   if (pathname === "/api/v1/hr/activity-types" && method === "GET") {
     const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());

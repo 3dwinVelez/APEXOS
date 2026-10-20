@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const operation = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/operacion/page.tsx"), "utf8");
-const masters = fs.readFileSync(path.resolve(directory, "../components/transport/TransportMastersPanel.tsx"), "utf8");
+const masters = fs.readFileSync(path.resolve(directory, "../components/transport/TransportAdminCatalog.tsx"), "utf8");
 const transportLayout = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/layout.tsx"), "utf8");
 const planning = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/planeacion/page.tsx"), "utf8");
 const planningMap = fs.readFileSync(path.resolve(directory, "../components/transport/PlanningRouteMap.tsx"), "utf8");
@@ -58,8 +58,9 @@ test("Transporte separa flota, operacion y maestros TMS", () => {
 test("los maestros TMS viven en Configuracion bajo su categoria", () => {
   const adminHub = fs.readFileSync(path.resolve(directory, "../app/dashboard/administracion/page.tsx"), "utf8");
   const redirectPage = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
-  assert.match(adminHub, /\/dashboard\/administracion\/maestros-transporte/);
-  assert.match(redirectPage, /redirect\("\/dashboard\/administracion\/maestros-transporte"\)/);
+  assert.match(adminHub, /key: "transport_destinations"/);
+  assert.doesNotMatch(adminHub, /key: "maestros-transporte"/);
+  assert.match(redirectPage, /redirect\("\/dashboard\/administracion"\)/);
 });
 test("POD expone KPIs, filtros y evidencia", () => { assert.match(pod, /\/transport\/pod\/stats/); assert.match(pod, /Primer intento/); assert.match(pod, /photos/); assert.match(pod, /signature/); });
 test("la operacion carga foto y firma POD como archivos", () => { assert.match(operation, /pod_photo/); assert.match(operation, /pod_signature_file/); assert.match(operation, /\/evidence/); assert.match(operation, /FormData/); });
@@ -242,9 +243,9 @@ test("la torre cubre demanda, viaje, entrega y liquidacion", () => {
 });
 
 test("los maestros consumen contratos tenant-first del TMS", () => {
-  assert.match(masters, /\/transport\/carriers/);
-  assert.match(masters, /\/transport\/drivers/);
+  assert.match(masters, /route: "carriers"/);
+  assert.doesNotMatch(masters, /route: "drivers"/);
   assert.match(masters, /\/transport\/delivery-points/);
-  assert.match(masters, /Direccion normalizada/);
-  assert.match(masters, /window_start/);
+  assert.match(masters, /Dirección/);
+  assert.match(masters, /TransportAdminCatalog/);
 });

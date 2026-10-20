@@ -66,6 +66,17 @@ function fail(statusCode, code, message, details) {
   throw new SettlementError(statusCode, code, message, details);
 }
 
+function nextSettlementPackageCode(codes = []) {
+  let maximum = 0n;
+  for (const code of codes) {
+    const match = /^LIQ-(\d+)$/i.exec(String(code));
+    if (match) { const value = BigInt(match[1]); if (value > maximum) maximum = value; }
+  }
+  const code = `LIQ-${String(maximum + 1n).padStart(6, "0")}`;
+  if (code.length > 40) fail(409, "TMS_SETTLEMENT_CODE_LIMIT", "Se agoto el rango del consecutivo de liquidaciones.");
+  return code;
+}
+
 function numberValue(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -330,6 +341,49 @@ function calculateItemAmount(rate, item = {}) {
   };
 }
 
+// Cobros pactados por documento: el soporte identifica el documento afectado,
+// no es una URL que el servidor deba descargar ni un importe confiado al cliente.
+function normalizeChargeCriteria(criteria) {
+  if (!Array.isArray(criteria) || !criteria.length || criteria.length > 50) fail(400, "TMS_SETTLEMENT_CRITERIA_REQUIRED", "Cada documento requiere entre 1 y 50 criterios de cobro.");
+  return criteria.map((entry) => {
+    const concept = String(entry?.concept || "").trim();
+    const support = String(entry?.support || "").trim();
+    const quantity = Number(entry?.quantity);
+    const unit_value = Number(entry?.unit_value);
+    if (!concept || concept.length > 160 || !support || support.length > 1000 || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1e6 || !Number.isFinite(unit_value) || unit_value < 0 || unit_value > 1e10) fail(400, "TMS_SETTLEMENT_CRITERION_INVALID", "Indique concepto, cantidad positiva, valor no negativo y soporte por criterio.");
+    const linked = entry?.rate_card_id != null;
+    if (linked && (!Number.isInteger(entry.rate_card_id) || entry.rate_card_id <= 0)) fail(400, "TMS_SETTLEMENT_RATE_INVALID", "Seleccione un tarifario valido.");
+    const metrics = {};
+    if (linked) for (const key of ["distance_km", "weight_kg", "volume_m3", "stop_count", "wait_minutes"]) {
+      if (entry.metrics?.[key] == null) continue;
+      const value = Number(entry.metrics[key]);
+      if (!Number.isFinite(value) || value < 0 || value > 1e9 || (key === "stop_count" && !Number.isInteger(value))) fail(400, "TMS_SETTLEMENT_RATE_METRICS_INVALID", "Las cantidades del servicio deben ser validas y no negativas.");
+      metrics[key] = value;
+    }
+    return { concept, support, quantity, unit_value: round2(unit_value), ...(linked ? { rate_card_id: entry.rate_card_id, ...(entry.rate_version != null ? { rate_version: entry.rate_version } : {}), metrics } : {}) };
+  });
+}
+
+function settlementRateMetrics(rate, supplied = {}) {
+  const simulation = rate.metadata?.simulation || {};
+  const validPoint = (point) => point?.latitude != null && point?.longitude != null;
+  const defaults = { distance_km: numberValue(simulation.distance_km), weight_kg: 1, volume_m3: 1, stop_count: (simulation.stops || []).filter(validPoint).length + (simulation.destination_latitude != null && simulation.destination_longitude != null ? 1 : 0), wait_minutes: 0 };
+  defaults.stop_count = defaults.stop_count || 1;
+  const metrics = { ...defaults, ...supplied };
+  for (const [field, coefficient] of [["distance_km", rate.price_per_km], ["weight_kg", rate.price_per_kg], ["volume_m3", rate.price_per_m3]]) {
+    if (numberValue(coefficient) > 0 && !(numberValue(metrics[field]) > 0)) fail(400, "TMS_SETTLEMENT_RATE_METRIC_REQUIRED", `La tarifa requiere ${field === "distance_km" ? "distancia en kilometros" : field === "weight_kg" ? "peso en kilogramos" : "volumen en metros cubicos"}.`);
+  }
+  return metrics;
+}
+
+function calculateChargeCriteria(criteria) {
+  const normalized = normalizeChargeCriteria(criteria);
+  const lines = normalized.map((entry) => ({ ...entry, amount: fromCents(Math.round(cents(entry.unit_value) * entry.quantity)) }));
+  const total = lines.reduce((sum, entry) => sum + cents(entry.amount), 0);
+  if (!Number.isSafeInteger(total) || total > 1e14) fail(400, "TMS_SETTLEMENT_CRITERIA_LIMIT", "El total excede el limite permitido.");
+  return { amount: fromCents(total), criteria: lines };
+}
+
 // ---- RB-07: totales separando calculado vs ajustado (nunca un unico campo opaco) ----
 function computeTotals(items = []) {
   let calculatedCents = 0;
@@ -478,6 +532,10 @@ function consolidateByVehicle(packages = []) {
 }
 
 module.exports = {
+  nextSettlementPackageCode,
+  settlementRateMetrics,
+  normalizeChargeCriteria,
+  calculateChargeCriteria,
   RESERVED_TYPE_CODES,
   PACKAGE_STATUS,
   PACKAGE_TRANSITIONS,

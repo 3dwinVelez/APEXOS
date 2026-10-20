@@ -14,6 +14,16 @@
 
 const basePrisma = require("../../core/prisma");
 const E = require("./settlement-engine");
+const { partyRoleWhere } = require("../parties/roles");
+
+async function listSettlementDestinations(tenantId) {
+  return read(tenantId, db => db.transportDeliveryPoint.findMany({ where: { tenant_id: String(tenantId), active: true }, select: { id: true, code: true, name: true, address: true, city: true, customer_party_id: true }, orderBy: { name: "asc" } }));
+}
+
+async function listSettlementCustomers(tenantId) {
+  return read(tenantId, db => db.party.findMany({ where: { tenant_id: String(tenantId), active: true, ...partyRoleWhere("customer") }, select: { id: true, name: true, tax_id: true }, orderBy: { name: "asc" } }));
+}
+
 
 const MODULE = "transport";
 const ENTITY_PACKAGE = "TransportSettlementPackage";
@@ -168,8 +178,10 @@ async function saveSettlementPeriod(tenantId, user, id, input) {
 
 // ---- Paquetes ----
 function packageWhere(query = {}) {
+  const stages = { creado: ["borrador", "validando", "preliquidada", "con_novedad", "en_revision", "rechazada"], aprobado: ["aprobada"], contabilizado: ["contabilizada"], liquidado: ["liquidada"] };
   return {
-    ...(query.status ? { status: query.status } : {}),
+    ...(query.status ? { status: stages[query.status] ? { in: stages[query.status] } : query.status } : {}),
+    ...(query.vehicle_id ? { metadata: { path: ["vehicle_id"], equals: Number(query.vehicle_id) } } : {}),
     ...(query.period_id ? { period_id: Number(query.period_id) } : {}),
     ...(query.carrier_id ? { carrier_id: Number(query.carrier_id) } : {}),
     ...(query.type_code ? { type_code: String(query.type_code).toUpperCase() } : {}),
@@ -202,6 +214,9 @@ async function getSettlementControlTower(tenantId, query = {}) {
     total_packages: packages.length,
     kpis: {
       draft_value: sum(byStatus(["borrador", "validando"]), "calculated_total"),
+      created_value: sum(byStatus(["borrador", "validando", "preliquidada", "con_novedad", "en_revision", "rechazada"]), "adjusted_total"),
+      liquidated_value: sum(byStatus(["liquidada"]), "accounted_total"),
+      accounted_pending_value: sum(byStatus(["contabilizada"]), "accounted_total"),
       pending_approval_value: sum(byStatus(["preliquidada", "con_novedad", "en_revision"]), "adjusted_total"),
       approved_value: sum(byStatus(["aprobada"]), "approved_total"),
       accounted_value: sum(byStatus(["contabilizada", "liquidada"]), "accounted_total"),
@@ -249,26 +264,91 @@ async function getSettlementVehicleConsolidation(tenantId, query = {}) {
 async function loadCarrier(tx, carrierId) {
   return tx.transportCarrier.findFirst({ where: { id: Number(carrierId), __includeInactive: true } });
 }
+async function loadSettlementVehicle(tx, id) {
+  const vehicle = await tx.vehicle.findFirst({ where: { id: Number(id) } });
+  if (!vehicle) fail(404, "TMS_SETTLEMENT_VEHICLE_NOT_FOUND", "El vehiculo no existe en la empresa activa.");
+  if (["retirado", "inactivo", "bloqueado"].includes(vehicle.status)) fail(409, "TMS_SETTLEMENT_VEHICLE_INACTIVE", "El vehiculo no esta habilitado para liquidar.");
+  return vehicle;
+}
+function rateAppliesToVehicle(rate, vehicle) {
+  if (!vehicle) return true;
+  if (rate.metadata?.vehicle_id != null && Number(rate.metadata.vehicle_id) !== vehicle.id) return false;
+  return !rate.vehicle_type || E.normalizeMatch(rate.vehicle_type) === E.normalizeMatch(vehicle.type);
+}
+
+async function listSettlementRateOptions(tenantId, query = {}) {
+  return read(tenantId, async (db) => {
+    const vehicle = query.vehicle_id ? await loadSettlementVehicle(db, query.vehicle_id) : null;
+    const rates = await db.transportRateCard.findMany({ where: { status: "activa" }, include: { carrier: true }, orderBy: [{ code: "asc" }, { version: "desc" }] });
+    return rates.filter(rate => rate.active !== false && (!rate.carrier_id || (rate.carrier?.tenant_id === tenantId && E.carrierEligibility(rate.carrier).eligible)) && rateAppliesToVehicle(rate, vehicle) && (!query.currency || rate.currency === query.currency)).map(rate => {
+      let metrics, calculation;
+      try { metrics = E.settlementRateMetrics(rate); calculation = E.calculateItemAmount(rate, { ...metrics, quantity: 1 }); } catch (error) { if (!(error instanceof E.SettlementError)) throw error; }
+      return { id: rate.id, code: rate.code, name: rate.name, version: rate.version, currency: rate.currency, valid_from: rate.valid_from, valid_to: rate.valid_to, unit_amount: calculation?.amount ?? null, components: calculation?.components ?? {}, default_metrics: metrics || { distance_km: 0, weight_kg: 1, volume_m3: 1, stop_count: 1, wait_minutes: 0 }, requires_distance: Number(rate.price_per_km) > 0, requires_weight: Number(rate.price_per_kg) > 0, requires_volume: Number(rate.price_per_m3) > 0, has_stops: Number(rate.price_per_stop) > 0, has_wait: E.rateCostConfig(rate).wait_rate_per_min > 0, route_description: [rate.metadata?.simulation?.origin_label, rate.metadata?.simulation?.destination_label].filter(Boolean).join(" → ") || rate.name };
+    });
+  });
+}
+
+async function resolveSettlementCriterion(tx, input, context) {
+  const rate = await tx.transportRateCard.findFirst({ where: { id: Number(input.rate_card_id) } });
+  if (!rate || rate.active === false || rate.status !== "activa") fail(422, "TMS_SETTLEMENT_SELECTED_RATE_UNAVAILABLE", "El tarifario seleccionado no esta activo en la empresa.");
+  if (rate.carrier_id != null) {
+    const carrier = await loadCarrier(tx, rate.carrier_id);
+    if (!carrier) fail(422, "TMS_SETTLEMENT_SELECTED_RATE_UNAVAILABLE", "El transportador del tarifario no esta disponible en la empresa.");
+    E.assertCarrierEligible(carrier);
+  }
+  if (!rateAppliesToVehicle(rate, context.vehicle)) fail(422, "TMS_SETTLEMENT_SELECTED_RATE_VEHICLE", "El tarifario no corresponde al vehiculo del paquete.");
+  const date = dateOrNull(context.service_date) || new Date();
+  if (!E.rateIsValidOn(rate, date)) fail(422, "TMS_SETTLEMENT_SELECTED_RATE_EXPIRED", "El tarifario no esta vigente para la fecha del servicio.");
+  if (context.currency && rate.currency !== context.currency) fail(422, "TMS_SETTLEMENT_SELECTED_RATE_CURRENCY", "La moneda del tarifario no coincide con la del paquete.");
+  if (input.rate_version != null && Number(input.rate_version) !== rate.version) fail(409, "TMS_SETTLEMENT_SELECTED_RATE_CHANGED", "La version del tarifario cambio. Seleccionelo nuevamente.");
+  const metrics = E.settlementRateMetrics(rate, context.lockTariff ? {} : input.metrics || {});
+  const calc = E.calculateItemAmount(rate, { ...metrics, quantity: 1 });
+  if (context.checkPrice && E.cents(input.unit_value) !== E.cents(calc.amount)) fail(409, "TMS_SETTLEMENT_SELECTED_RATE_PRICE_CHANGED", "El valor del tarifario cambio o no corresponde al calculado. Asigne nuevamente el flete.");
+  return { concept: `${rate.code} · ${rate.name}`.slice(0, 160), support: String(input.support || "").trim(), quantity: numberOr(input.quantity, 1), unit_value: calc.amount, rate_card_id: rate.id, rate_version: rate.version, rate_code: rate.code, metrics, rate_snapshot: { ...calc.snapshot, definition: JSON.parse(JSON.stringify({ ...rate, carrier: undefined })), components: calc.components, unit_amount: calc.amount, metrics, route_description: [rate.metadata?.simulation?.origin_label, rate.metadata?.simulation?.destination_label].filter(Boolean).join(" → ") || rate.name, assigned_at: new Date().toISOString() } };
+}
+
+async function quoteSettlementCriterion(tenantId, input) {
+  return read(tenantId, async (db) => {
+    const vehicle = input.vehicle_id ? await loadSettlementVehicle(db, input.vehicle_id) : null;
+    return resolveSettlementCriterion(db, input, { vehicle, currency: input.currency || "COP", service_date: input.service_date });
+  });
+}
+function currentAccountingMonth(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" }).formatToParts(date);
+  return `${parts.find(part => part.type === "year").value}-${parts.find(part => part.type === "month").value}`;
+}
+async function automaticSettlementPeriod(tx, tenantId) {
+  const code = currentAccountingMonth();
+  const [year, month] = code.split("-").map(Number);
+  const period = await tx.transportSettlementPeriod.upsert({ where: { tenant_id_code: { tenant_id: String(tenantId), code } }, create: { tenant_id: String(tenantId), code, name: `Periodo contable ${code}`, start_date: new Date(Date.UTC(year, month - 1, 1, 5)), end_date: new Date(Date.UTC(year, month, 1, 5) - 1), status: "abierto" }, update: {} });
+  if (period.status === "cerrado") fail(409, "TMS_ACCOUNTING_MONTH_CLOSED", "El periodo contable actual está cerrado.");
+  return period;
+}
+
 async function createSettlementPackage(tenantId, user, input) {
   return write(tenantId, async (tx) => {
-    const code = String(input.code || "").trim().toUpperCase();
-    if (!code) fail(400, "TMS_SETTLEMENT_PACKAGE_CODE_REQUIRED", "El codigo del paquete es obligatorio.");
-    if (!input.carrier_id) fail(400, "TMS_SETTLEMENT_CARRIER_REQUIRED", "El transportador es obligatorio.");
-    const carrier = await loadCarrier(tx, input.carrier_id);
-    if (!carrier) fail(404, "TMS_SETTLEMENT_CARRIER_NOT_FOUND", "El transportador no existe en la empresa activa.");
-    E.assertCarrierEligible(carrier); // RB-01
-    const period = input.period_id ? await tx.transportSettlementPeriod.findFirst({ where: { id: Number(input.period_id) } }) : null;
+    const vehicle = input.vehicle_id ? await loadSettlementVehicle(tx, input.vehicle_id) : null;
+    if (!vehicle && !input.carrier_id) fail(400, "TMS_SETTLEMENT_CARRIER_REQUIRED", "Seleccione un vehiculo.");
+    const carrier = !vehicle ? await loadCarrier(tx, input.carrier_id) : null;
+    if (!vehicle && !carrier) fail(404, "TMS_SETTLEMENT_CARRIER_NOT_FOUND", "El transportador no existe en la empresa activa.");
+    if (carrier) E.assertCarrierEligible(carrier); // Compatibilidad con paquetes anteriores.
+    if (vehicle && (!Array.isArray(input.items) || !input.items.length)) fail(400, "TMS_SETTLEMENT_ITEMS_REQUIRED", "Complete los documentos y criterios antes de crear el paquete.");
+    const period = vehicle ? await automaticSettlementPeriod(tx, tenantId) : input.period_id ? await tx.transportSettlementPeriod.findFirst({ where: { id: Number(input.period_id) } }) : null;
     if (input.period_id && !period) fail(404, "TMS_SETTLEMENT_PERIOD_NOT_FOUND", "El periodo no existe en la empresa activa.");
     if (period && period.status === "cerrado") fail(409, "TMS_SETTLEMENT_PERIOD_CLOSED", "El periodo esta cerrado; no admite paquetes nuevos.");
-    const typeCode = String(input.type_code || "TRANSPORTADOR").trim().toUpperCase();
+    const typeCode = vehicle ? "TRANSPORTADOR" : String(input.type_code || "TRANSPORTADOR").trim().toUpperCase();
     const type = await tx.transportSettlementType.findFirst({ where: { code: typeCode } });
+    // write() ya obtuvo el lock del tenant. La lectura y la reserva comparten
+    // transaccion: dos creadores no pueden tomar el mismo consecutivo.
+    const numbered = await tx.transportSettlementPackage.findMany({ where: { tenant_id: String(tenantId), code: { startsWith: "LIQ-", mode: "insensitive" } }, select: { code: true } });
+    const code = E.nextSettlementPackageCode(numbered.map(row => row.code));
     const pkg = await tx.transportSettlementPackage.create({
       data: {
         code,
         period_id: period ? period.id : null,
-        carrier_id: carrier.id,
-        carrier_code: carrier.code,
-        carrier_name: carrier.legal_name,
+        carrier_id: carrier?.id ?? null,
+        carrier_code: vehicle?.plate || carrier.code,
+        carrier_name: vehicle?.plate || carrier.legal_name,
         type_id: type ? type.id : null,
         type_code: typeCode,
         currency: String(input.currency || "COP").toUpperCase(),
@@ -276,12 +356,14 @@ async function createSettlementPackage(tenantId, user, input) {
         observation: input.observation || null,
         status: E.PACKAGE_STATUS.BORRADOR,
         version: 0,
-        metadata: input.metadata && typeof input.metadata === "object" ? input.metadata : {},
+        metadata: { ...(input.metadata && typeof input.metadata === "object" ? input.metadata : {}), vehicle_id: vehicle?.id ?? null, vehicle_plate: vehicle?.plate ?? null, cost_center: vehicle?.plate ?? null, ...(vehicle ? { accounting_period: period.code, tariff_locked: true } : {}) },
         created_by: user?.id ?? null
       },
       include: PACKAGE_INCLUDE
     });
-    await audit(tx, user, "transport.settlement_package.created", ENTITY_PACKAGE, pkg.id, null, { code: pkg.code, carrier_id: carrier.id, type_code: typeCode, status: pkg.status });
+    if (Array.isArray(input.items) && input.items.length) await persistSettlementItems(tx, tenantId, user, pkg, { items: input.items });
+    await audit(tx, user, "transport.settlement_package.created", ENTITY_PACKAGE, pkg.id, null, { code: pkg.code, carrier_id: carrier?.id ?? null, vehicle_id: vehicle?.id ?? null, type_code: typeCode, status: pkg.status });
+    if (input.items?.length) return packageView(await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: pkg.id }, include: PACKAGE_INCLUDE }));
     return packageView(pkg);
   });
 }
@@ -296,12 +378,16 @@ async function updateSettlementPackage(tenantId, user, id, input) {
     if (input.responsible_id !== undefined) data.responsible_id = input.responsible_id ? Number(input.responsible_id) : null;
     if (input.observation !== undefined) data.observation = input.observation || null;
     if (input.currency !== undefined) data.currency = String(input.currency).toUpperCase();
-    if (input.period_id !== undefined) {
+    if (pkg.metadata?.tariff_locked && input.period_id !== undefined && input.period_id !== pkg.period_id) fail(409, "TMS_PERIOD_LOCKED", "El periodo contable es automático y no puede modificarse.");
+    if (input.period_id !== undefined && !pkg.metadata?.tariff_locked) {
       const period = input.period_id ? await tx.transportSettlementPeriod.findFirst({ where: { id: Number(input.period_id) } }) : null;
       if (input.period_id && !period) fail(404, "TMS_SETTLEMENT_PERIOD_NOT_FOUND", "El periodo no existe en la empresa activa.");
       data.period_id = period ? period.id : null;
     }
-    if (input.metadata && typeof input.metadata === "object") data.metadata = { ...(pkg.metadata || {}), ...input.metadata };
+    if (input.metadata && typeof input.metadata === "object") {
+      const { vehicle_id, vehicle_plate, cost_center, accounting_period, tariff_locked, ...extra } = input.metadata;
+      data.metadata = { ...(pkg.metadata || {}), ...extra };
+    }
     const updated = await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data, include: PACKAGE_INCLUDE });
     await audit(tx, user, "transport.settlement_package.updated", ENTITY_PACKAGE, pkg.id, before, { responsible_id: updated.responsible_id, observation: updated.observation, period_id: updated.period_id, currency: updated.currency });
     return packageView(updated);
@@ -335,7 +421,7 @@ function itemData(input, tenantId) {
     stop_count: numberOr(input.stop_count, 1),
     reported_value: decimalOr(input.reported_value),
     observation: input.observation || null,
-    metadata: input.metadata && typeof input.metadata === "object" ? input.metadata : {}
+    metadata: { ...(input.metadata && typeof input.metadata === "object" ? input.metadata : {}), ...(input.charge_criteria ? { charge_criteria: E.normalizeChargeCriteria(input.charge_criteria) } : {}) }
   };
 }
 
@@ -344,13 +430,88 @@ async function addSettlementItems(tenantId, user, id, input) {
     const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) }, include: { items: true, issues: true } });
     E.assertEditable(pkg.status); // RB-11
     E.assertVersionMatch(input.version, pkg.version); // RB-12
+    return persistSettlementItems(tx, tenantId, user, pkg, input);
+  });
+}
+
+async function saveSettlementDocuments(tenantId, user, id, input) {
+  return write(tenantId, async tx => {
+    const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id), tenant_id: String(tenantId) }, include: { items: true, issues: true, adjustments: true } });
+    E.assertEditable(pkg.status);
+    if (!Number.isInteger(input.version)) fail(400, "TMS_VERSION_REQUIRED", "Recargue el paquete antes de guardar.");
+    E.assertVersionMatch(input.version, pkg.version);
+    if (pkg.adjustments.some(adjustment => !adjustment.item_id)) fail(409, "TMS_DOCUMENTS_HAVE_ADJUSTMENTS", "El paquete tiene ajustes auditados; revise sus ajustes antes de modificar los documentos.");
+    const vehicle = await loadSettlementVehicle(tx, input.vehicle_id);
+    if (pkg.metadata?.vehicle_id && vehicle.id !== pkg.metadata.vehicle_id) fail(409, "TMS_VEHICLE_IMMUTABLE", "Conserve el vehículo del paquete.");
+    const ids = (input.items || []).filter(item => item.id).map(item => item.id);
+    if (new Set(ids).size !== ids.length || ids.some(id => !pkg.items.some(item => item.id === id)) || pkg.items.some(item => !ids.includes(item.id))) fail(409, "TMS_DOCUMENT_IDS_INVALID", "Conserve todos los documentos existentes del paquete.");
+    const before = { period_id: pkg.period_id, metadata: pkg.metadata, items: pkg.items };
+    const accountingPeriod = pkg.metadata?.tariff_locked ? null : await automaticSettlementPeriod(tx, tenantId);
+    pkg.metadata = { ...pkg.metadata, vehicle_id: vehicle.id, vehicle_plate: vehicle.plate, cost_center: vehicle.plate, ...(accountingPeriod ? { tariff_locked: true, accounting_period: accountingPeriod.code } : {}) };
+    await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data: { metadata: pkg.metadata, ...(accountingPeriod ? { period_id: accountingPeriod.id } : {}) } });
+    const result = await persistSettlementItems(tx, tenantId, user, pkg, input, true);
+    await audit(tx, user, "transport.settlement_package.documents_updated", ENTITY_PACKAGE, pkg.id, before, { metadata: pkg.metadata, items: result.items });
+    return result;
+  });
+}
+
+async function persistSettlementItems(tx, tenantId, user, pkg, input, editing = false) {
     const incoming = Array.isArray(input.items) ? input.items : [];
     if (!incoming.length) fail(400, "TMS_SETTLEMENT_ITEMS_REQUIRED", "Debe aportar al menos un detalle.");
     if (incoming.length > 500) fail(400, "TMS_SETTLEMENT_ITEMS_TOO_MANY", "Maximo 500 detalles por operacion.");
-    const prepared = incoming.map((item) => itemData(item, tenantId));
+    const vehicle = pkg.metadata?.vehicle_id ? await loadSettlementVehicle(tx, pkg.metadata.vehicle_id) : null;
+    const prepared = [];
+    for (const item of incoming) {
+      if (vehicle && !item.charge_criteria) fail(400, "TMS_SETTLEMENT_CRITERIA_REQUIRED", "Cada documento requiere criterios de cobro y soporte.");
+      const destinationIds = item.delivery_point_ids || (item.delivery_point_id ? [item.delivery_point_id] : []);
+      if (!Array.isArray(destinationIds) || destinationIds.length > 500 || new Set(destinationIds).size !== destinationIds.length) fail(400, "TMS_DESTINATIONS_INVALID", "Seleccione destinos sin repetir.");
+      const destinations = [];
+      for (const destinationId of destinationIds) {
+        const point = await tx.transportDeliveryPoint.findFirst({ where: { id: Number(destinationId), tenant_id: String(tenantId), active: true } });
+        if (!point) fail(422, "TMS_DESTINATION_INVALID", "Seleccione destinos activos de la empresa.");
+        destinations.push(point);
+      }
+      const destination = destinations[0];
+      const linkedCustomers = [...new Set(destinations.map(point => point.customer_party_id).filter(Boolean))];
+      if (linkedCustomers.length > 1 || (item.customer_id && linkedCustomers.some(id => id !== item.customer_id))) fail(422, "TMS_DESTINATION_CUSTOMER_MISMATCH", "Los destinos deben corresponder al cliente del servicio.");
+      const customerId = item.customer_id || linkedCustomers[0];
+      const data = itemData({ ...item, guide_reference: item.guide_reference || (destination ? `LIQ-${pkg.id}-DEST-${destination.id}` : "") }, tenantId);
+      delete data.metadata.delivery_point_ids; delete data.metadata.destination_snapshots;
+      if (destination) {
+        data.destination_name = destination.name; data.destination_city = destination.city;
+        data.metadata.delivery_point_id = destination.id;
+        data.metadata.delivery_point_ids = destinations.map(point => point.id);
+        data.metadata.destination_snapshots = destinations.map(point => ({ id: point.id, code: point.code, name: point.name, address: point.address, city: point.city }));
+        data.metadata.destination_snapshot = data.metadata.destination_snapshots[0];
+      } else { delete data.metadata.delivery_point_id; delete data.metadata.destination_snapshot; }
+      if (customerId != null) {
+        const customer = await tx.party.findFirst({ where: { id: Number(customerId), tenant_id: String(tenantId), active: true, ...partyRoleWhere("customer") }, select: { id: true, name: true, tax_id: true } });
+        if (!customer) fail(422, "TMS_CUSTOMER_INVALID", "Seleccione un cliente activo de la empresa.");
+        data.service = customer.name;
+        data.metadata.customer_id = customer.id;
+        data.metadata.customer_snapshot = customer;
+      } else if (editing) fail(400, "TMS_CUSTOMER_REQUIRED", "Asigne el cliente del servicio a cada documento.");
+      else { delete data.metadata.customer_id; delete data.metadata.customer_snapshot; }
+
+      if (vehicle) { data.vehicle_plate = vehicle.plate; data.vehicle_type = vehicle.type; }
+      if (data.metadata.charge_criteria) {
+        if (data.metadata.charge_criteria.some(entry => !entry.rate_card_id)) fail(400, "TMS_SETTLEMENT_CRITERIA_RATE_REQUIRED", "Asigne un tarifario parametrizado a cada criterio de flete.");
+        const resolved = [];
+        for (const entry of data.metadata.charge_criteria) resolved.push(entry.rate_card_id ? await resolveSettlementCriterion(tx, entry, { vehicle, currency: pkg.currency, service_date: data.service_date, checkPrice: true, lockTariff: pkg.metadata?.tariff_locked === true }) : entry);
+        data.metadata.charge_criteria = resolved;
+        data.route_description = [...new Set(resolved.map(entry => entry.rate_snapshot?.route_description).filter(Boolean))].join(" / ");
+        const calc = E.calculateChargeCriteria(data.metadata.charge_criteria);
+        data.calculated_amount = calc.amount;
+        const previousAdjustments = editing ? (pkg.adjustments || []).filter(adjustment => adjustment.item_id === item.id).reduce((sum, adjustment) => sum + Number(adjustment.delta), 0) : 0;
+        data.adjusted_amount = E.round2(calc.amount + previousAdjustments);
+        if (data.adjusted_amount < 0) fail(409, "TMS_DOCUMENT_ADJUSTMENT_NEGATIVE", "Los ajustes existentes dejarían el documento con valor negativo.");
+        data.calculation_trace = { source: "document_criteria", criteria: resolved };
+      }
+      prepared.push(data);
+    }
 
     // RB-03: duplicidad intra-lote y contra otros paquetes vigentes del tenant.
-    const localDupes = E.detectDuplicateGuides(prepared, pkg.items.map((item) => item.guide_reference));
+    const localDupes = E.detectDuplicateGuides(prepared, pkg.items.filter(existing => !editing || !incoming.some(item => item.id === existing.id)).map((item) => item.guide_reference));
     if (localDupes.count) fail(409, "TMS_SETTLEMENT_DUPLICATE_GUIDE", "Hay guias duplicadas dentro del paquete.", { duplicates: localDupes.duplicates });
     if (!input.authorize_duplicate) {
       const otherGuides = await tx.transportSettlementItem.findMany({
@@ -365,14 +526,14 @@ async function addSettlementItems(tenantId, user, id, input) {
     }
 
     const created = [];
-    for (const data of prepared) {
-      created.push(await tx.transportSettlementItem.create({ data: { ...data, package_id: pkg.id } }));
+    for (const [index, data] of prepared.entries()) {
+      const itemId = editing ? incoming[index].id : null;
+      created.push(itemId ? await tx.transportSettlementItem.update({ where: { id: itemId }, data: { ...data, rate_card_id: null, rate_code: null, rate_version: null } }) : await tx.transportSettlementItem.create({ data: { ...data, package_id: pkg.id } }));
     }
     const totals = await recomputeTotals(tx, pkg.id);
     const updated = await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data: { version: { increment: 1 }, ...totals }, include: PACKAGE_INCLUDE });
     await audit(tx, user, "transport.settlement_package.items_added", ENTITY_PACKAGE, pkg.id, { item_count: pkg.items.length }, { item_count: updated.items.length, added: created.length });
     return packageView(updated);
-  });
 }
 
 async function recomputeTotals(tx, packageId) {
@@ -391,7 +552,7 @@ async function validateSettlementPackage(tenantId, user, id, input = {}) {
     const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) }, include: { items: true, issues: true } });
     E.assertPackageTransition(pkg.status, E.PACKAGE_STATUS.VALIDANDO);
     E.assertVersionMatch(input.version, pkg.version);
-    const carrier = await loadCarrier(tx, pkg.carrier_id);
+    const carrier = pkg.metadata?.vehicle_id ? await loadSettlementVehicle(tx, pkg.metadata.vehicle_id) : await loadCarrier(tx, pkg.carrier_id);
     const report = { carrier: null, documentary: null, duplicates: null, issues_created: [] };
 
     // RB-01
@@ -442,6 +603,12 @@ async function precalculateSettlementPackage(tenantId, user, id, input = {}) {
     const report = { resolved: [], rate_issues: [] };
 
     for (const item of pkg.items) {
+      if (item.metadata?.charge_criteria) {
+        const calc = E.calculateChargeCriteria(item.metadata.charge_criteria);
+        await tx.transportSettlementItem.update({ where: { id: item.id }, data: { calculated_amount: calc.amount, adjusted_amount: Number(item.adjusted_amount), approved_amount: 0, calculation_trace: { source: "document_criteria", criteria: item.metadata.charge_criteria } } });
+        report.resolved.push({ item_id: item.id, guide_reference: item.guide_reference, calculated_amount: calc.amount, source: "document_criteria" });
+        continue;
+      }
       const context = { carrier_id: pkg.carrier_id, service_date: item.service_date || new Date(), destination_city: item.destination_city, destination_municipality: item.destination_municipality, vehicle_type: item.vehicle_type, service_level: item.service_level };
       try {
         const { rate, trace } = E.resolveRate(rates, context);
@@ -479,6 +646,7 @@ async function precalculateSettlementPackage(tenantId, user, id, input = {}) {
 async function addSettlementAdjustment(tenantId, user, id, input) {
   return write(tenantId, async (tx) => {
     const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) }, include: { items: true } });
+    if (pkg.metadata?.tariff_locked) fail(409, "TMS_TARIFF_LOCKED", "Los valores provienen del tarifario. Actualice la tarifa en Costos y tarifas.");
     if (!["preliquidada", "con_novedad"].includes(pkg.status)) fail(409, "TMS_SETTLEMENT_ADJUSTMENT_NOT_ALLOWED", "Los ajustes solo aplican sobre un paquete preliquidado o con novedad.", { status: pkg.status });
     E.assertVersionMatch(input.version, pkg.version);
     const reason = String(input.reason || "").trim();
@@ -560,6 +728,7 @@ async function decideSettlementPackage(tenantId, user, id, input) {
 
     const type = pkg.type_id ? await tx.transportSettlementType.findFirst({ where: { id: pkg.type_id } }) : null;
     if (decision === "aprobada") {
+      if (!pkg.items.length) fail(409, "TMS_SETTLEMENT_NO_ITEMS", "No puede aprobar un paquete sin documentos.");
       E.assertNoOpenBlockingIssues(pkg.issues, "aprobar"); // RB-08
       if (type?.requires_reinforced_approval) E.assertSegregation({ createdBy: pkg.created_by, actorId: user?.id, enforce: true }); // RB-09
     }
@@ -580,17 +749,24 @@ async function decideSettlementPackage(tenantId, user, id, input) {
 }
 
 async function accountSettlementPackage(tenantId, user, id, input = {}) {
-  const accountingPeriod = input.accounting_period || null;
+
   return write(tenantId, async (tx) => {
     const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) }, include: { issues: true, accountings: true } });
+    const accountingPeriod = pkg.metadata?.accounting_period || currentAccountingMonth();
+    if (pkg.metadata?.tariff_locked && input.accounting_period && input.accounting_period !== accountingPeriod) fail(409, "TMS_PERIOD_LOCKED", "El periodo contable es automático y no puede modificarse.");
     const key = String(input.idempotency_key || "").trim() || E.accountingIdempotencyKey(pkg.code, accountingPeriod);
     // RB-10: idempotencia. Un reintento con la misma clave devuelve el resultado existente.
     const existingByKey = await tx.transportSettlementAccounting.findFirst({ where: { idempotency_key: key } });
-    if (existingByKey) return { ...packageView(pkg), accounting: accountingView(existingByKey), idempotent_replay: true };
+    if (existingByKey) {
+      if (existingByKey.package_id !== pkg.id) fail(409, "TMS_SETTLEMENT_ACCOUNT_KEY_CONFLICT", "La clave contable pertenece a otro paquete.");
+      return { ...packageView(pkg), accounting: accountingView(existingByKey), idempotent_replay: true };
+    }
     const existingForPackage = pkg.accountings[0];
     if (existingForPackage) return { ...packageView(pkg), accounting: accountingView(existingForPackage), idempotent_replay: true };
 
     E.assertAccountingAllowed({ status: pkg.status, issues: pkg.issues }); // RB-08 + RB-10
+    E.assertVersionMatch(input.version, pkg.version);
+    if (!String(input.reference || "").trim()) fail(400, "TMS_SETTLEMENT_ACCOUNT_REFERENCE_REQUIRED", "La referencia contable es obligatoria.");
     E.assertPackageTransition(pkg.status, E.PACKAGE_STATUS.CONTABILIZADA);
     const amount = Number(pkg.approved_total);
     let accounting;
@@ -609,12 +785,36 @@ async function accountSettlementPackage(tenantId, user, id, input = {}) {
   });
 }
 
+async function freezeSettlementTariffs(tx, tenantId, packageId) {
+  const items = await tx.transportSettlementItem.findMany({ where: { tenant_id: String(tenantId), package_id: packageId } });
+  for (const item of items) {
+    if (item.metadata?.charge_criteria?.length) {
+      let changed = false;
+      const criteria = [];
+      for (const entry of item.metadata.charge_criteria) {
+        const snapshot = entry.rate_snapshot || {};
+        let definition = snapshot.definition;
+        if (!definition && entry.rate_card_id) {
+          const rate = await tx.transportRateCard.findFirst({ where: { tenant_id: String(tenantId), id: Number(entry.rate_card_id), version: Number(entry.rate_version || snapshot.rate_version || 1) } });
+          if (rate) { definition = JSON.parse(JSON.stringify(rate)); changed = true; }
+        }
+        criteria.push(definition && !snapshot.definition ? { ...entry, rate_snapshot: { ...snapshot, definition, freeze_stage: "liquidation" } } : entry);
+      }
+      if (changed) await tx.transportSettlementItem.update({ where: { id: item.id }, data: { metadata: { ...item.metadata, charge_criteria: criteria } } });
+    } else if (item.rate_card_id && !item.metadata?.report_rate_snapshot?.definition) {
+      const rate = await tx.transportRateCard.findFirst({ where: { tenant_id: String(tenantId), id: item.rate_card_id, version: item.rate_version || 1 } });
+      if (rate) await tx.transportSettlementItem.update({ where: { id: item.id }, data: { metadata: { ...item.metadata, report_rate_snapshot: { ...(item.calculation_trace?.snapshot || {}), definition: JSON.parse(JSON.stringify(rate)), freeze_stage: "liquidation" } } } });
+    }
+  }
+}
+
 async function closeSettlementPackage(tenantId, user, id, input = {}) {
   return write(tenantId, async (tx) => {
-    const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) } });
+    const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) }, include: { issues: true } });
     const to = input.status === "reversada" ? E.PACKAGE_STATUS.REVERSADA : E.PACKAGE_STATUS.LIQUIDADA;
     E.assertPackageTransition(pkg.status, to);
     E.assertVersionMatch(input.version, pkg.version);
+    if (to === E.PACKAGE_STATUS.LIQUIDADA) { E.assertNoOpenBlockingIssues(pkg.issues, "liquidar"); await freezeSettlementTariffs(tx, tenantId, pkg.id); }
     if (to === E.PACKAGE_STATUS.REVERSADA && !String(input.reference || "").trim()) fail(400, "TMS_SETTLEMENT_REVERSAL_REFERENCE_REQUIRED", "La reversion formal exige una referencia del comprobante de reversa.");
     const updated = await tx.transportSettlementPackage.update({ where: { id: pkg.id }, data: { status: to, version: { increment: 1 } }, include: PACKAGE_INCLUDE });
     await audit(tx, user, `transport.settlement_package.${to}`, ENTITY_PACKAGE, pkg.id, { status: pkg.status }, { status: updated.status, reference: input.reference || null });
@@ -653,6 +853,7 @@ async function simulateRate(tenantId, input) {
 }
 
 module.exports = {
+  currentAccountingMonth, listSettlementDestinations, listSettlementCustomers, saveSettlementDocuments, listSettlementRateOptions, quoteSettlementCriterion,
   listSettlementTypes, saveSettlementType,
   listSettlementPeriods, saveSettlementPeriod,
   listSettlementPackages, getSettlementPackage, getSettlementControlTower,
