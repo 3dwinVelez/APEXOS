@@ -1,0 +1,1021 @@
+{
+  "change_id": "transport-browser-pdf-20261020",
+  "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+  "reviewed_commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-transporte-20261020",
+  "target_head": "6bae143dd454473ff53e86328756faa848a89da8",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario de esta conversacion",
+    "approved_at": "2026-10-20T15:28:21.043Z",
+    "recorded_at_note": "Registro de autorizaciones persistentes; no se inventa la fecha original de sus respuestas.",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "quality_gate_overridden": false,
+    "authorizations": [
+      "Si, aislar Transporte y abrir PR",
+      "replantea el modelo del pdf para no incurrir en gastos adicionales y que podamos subir la version actualizada hacia develop de manera correcta",
+      "Autorizar estas dos migraciones solo en QA"
+    ]
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-settlement-four-stages-local.js",
+    "evidence": [
+      "transport-settlement-20261020-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-services-protected-local.js",
+    "evidence": [
+      "transport-settlement-20261020-preqa.json"
+    ]
+  },
+  "result": "APTO CON OBSERVACIONES PARA PRE-QA; NO AUTORIZA MAIN",
+  "local_evidence": {
+    "suites": {
+      "functional": {
+        "status": "passed",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "4fabce90e5d9f5445153a324a7d787076b3044baaa40f8d1499c1189155b7f95",
+        "checks": [
+          {
+            "name": "anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tariff_catalog_requires_auth",
+            "status": "passed"
+          },
+          {
+            "name": "tariff_quote_requires_auth",
+            "status": "passed"
+          },
+          {
+            "name": "local_login",
+            "status": "passed"
+          },
+          {
+            "name": "existing_vehicle_master",
+            "status": "passed"
+          },
+          {
+            "name": "configured_rate_Flete",
+            "status": "passed"
+          },
+          {
+            "name": "configured_rate_Peajes",
+            "status": "passed"
+          },
+          {
+            "name": "configured_rate_Espera",
+            "status": "passed"
+          },
+          {
+            "name": "month_assigned_by_server_and_type_not_selectable",
+            "status": "passed"
+          },
+          {
+            "name": "route_description_comes_from_tariff",
+            "status": "passed"
+          },
+          {
+            "name": "period_change_denied",
+            "status": "passed"
+          },
+          {
+            "name": "month_fixture_validate",
+            "status": "passed"
+          },
+          {
+            "name": "month_fixture_precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "manual_adjustment_of_tariff_denied",
+            "status": "passed"
+          },
+          {
+            "name": "monthly_fixture_approved",
+            "status": "passed"
+          },
+          {
+            "name": "pyg_current_month_includes_package_despite_other_service_month",
+            "status": "passed"
+          },
+          {
+            "name": "pyg_service_month_not_affected",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_month_cannot_be_overridden",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_uses_assigned_month",
+            "status": "passed"
+          },
+          {
+            "name": "destination_customer_created",
+            "status": "passed"
+          },
+          {
+            "name": "store_1_created_in_master",
+            "status": "passed"
+          },
+          {
+            "name": "store_2_created_in_master",
+            "status": "passed"
+          },
+          {
+            "name": "store_3_created_in_master",
+            "status": "passed"
+          },
+          {
+            "name": "three_stores_available_in_package_catalog",
+            "status": "passed"
+          },
+          {
+            "name": "package_covers_three_stores_without_documents",
+            "status": "passed"
+          },
+          {
+            "name": "destination_and_customer_snapshots_are_authoritative",
+            "status": "passed"
+          },
+          {
+            "name": "three_informative_stores_one_route_charge",
+            "status": "passed"
+          },
+          {
+            "name": "reducing_stores_keeps_route_price",
+            "status": "passed"
+          },
+          {
+            "name": "adding_stores_keeps_route_price",
+            "status": "passed"
+          },
+          {
+            "name": "multiple_stores_persist_after_reopen",
+            "status": "passed"
+          },
+          {
+            "name": "unknown_destination_denied",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_destination_denied",
+            "status": "passed"
+          },
+          {
+            "name": "inactive_destination_denied",
+            "status": "passed"
+          },
+          {
+            "name": "historical_destination_snapshot_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "customer_created_in_sales_master",
+            "status": "passed"
+          },
+          {
+            "name": "same_sales_customer_in_transport",
+            "status": "passed"
+          },
+          {
+            "name": "legacy_package_has_no_vehicle",
+            "status": "passed"
+          },
+          {
+            "name": "unknown_customer_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "failed_conversion_rolls_back_vehicle_and_items",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_customer_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "legacy_converted_with_vehicle_customer_tariff_support",
+            "status": "passed"
+          },
+          {
+            "name": "stale_edit_denied",
+            "status": "passed"
+          },
+          {
+            "name": "missing_customer_on_edit_denied",
+            "status": "passed"
+          },
+          {
+            "name": "existing_document_updated_without_duplicate",
+            "status": "passed"
+          },
+          {
+            "name": "reopened_customer_and_corrected_support",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_validate",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_submit",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_approved",
+            "status": "passed"
+          },
+          {
+            "name": "approved_document_edit_denied",
+            "status": "passed"
+          },
+          {
+            "name": "document_change_audited",
+            "status": "passed"
+          },
+          {
+            "name": "invalid_second_document_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "atomic_rollback_no_empty_package",
+            "status": "passed"
+          },
+          {
+            "name": "empty_vehicle_package_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "created_complete",
+            "status": "passed"
+          },
+          {
+            "name": "code_generated_without_client_input",
+            "status": "passed"
+          },
+          {
+            "name": "failed_creation_does_not_consume_consecutive",
+            "status": "passed"
+          },
+          {
+            "name": "vehicle_and_cost_center_server_authority",
+            "status": "passed"
+          },
+          {
+            "name": "support_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "tariff_snapshot_frozen",
+            "status": "passed"
+          },
+          {
+            "name": "catalog_from_configured_rates",
+            "status": "passed"
+          },
+          {
+            "name": "forged_manual_price_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "free_freight_not_allowed",
+            "status": "passed"
+          },
+          {
+            "name": "composite_rate_created",
+            "status": "passed"
+          },
+          {
+            "name": "configured_extras_automatically_included",
+            "status": "passed"
+          },
+          {
+            "name": "vehicle_bound_tariff_rejects_other_plate",
+            "status": "passed"
+          },
+          {
+            "name": "configured_price_per_km",
+            "status": "passed"
+          },
+          {
+            "name": "configured_price_per_kg",
+            "status": "passed"
+          },
+          {
+            "name": "configured_price_per_m3",
+            "status": "passed"
+          },
+          {
+            "name": "expired_rate_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "unknown_rate_not_quoted",
+            "status": "passed"
+          },
+          {
+            "name": "currency_mismatch_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "stale_tariff_version_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_tariff_denied",
+            "status": "passed"
+          },
+          {
+            "name": "duplicate_document_other_package_denied",
+            "status": "passed"
+          },
+          {
+            "name": "new_tariff_version_after_assignment",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_vehicle_denied",
+            "status": "passed"
+          },
+          {
+            "name": "approval_cannot_skip_validation",
+            "status": "passed"
+          },
+          {
+            "name": "stale_version_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "validate",
+            "status": "passed"
+          },
+          {
+            "name": "precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "submit",
+            "status": "passed"
+          },
+          {
+            "name": "approved",
+            "status": "passed"
+          },
+          {
+            "name": "assigned_snapshot_survives_new_tariff_version",
+            "status": "passed"
+          },
+          {
+            "name": "approved_immutable",
+            "status": "passed"
+          },
+          {
+            "name": "account_reference_required",
+            "status": "passed"
+          },
+          {
+            "name": "accounted",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_idempotent",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_key_cannot_replay_other_package",
+            "status": "passed"
+          },
+          {
+            "name": "blocking_issue_prevents_liquidation",
+            "status": "passed"
+          },
+          {
+            "name": "issue_resolved_before_liquidation",
+            "status": "passed"
+          },
+          {
+            "name": "liquidated",
+            "status": "passed"
+          },
+          {
+            "name": "reopened_support_and_totals",
+            "status": "passed"
+          },
+          {
+            "name": "four_stages_audited",
+            "status": "passed"
+          },
+          {
+            "name": "inactive_rate_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "concurrent_creators_get_distinct_incremental_codes",
+            "status": "passed"
+          },
+          {
+            "name": "manual_code_does_not_override_sequence",
+            "status": "passed"
+          },
+          {
+            "name": "independent_sequence_per_tenant",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_draft_denied",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_cross_tenant_denied",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_customers",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_delivery-points",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_delivery-points",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_rate-cards",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_rate-cards",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_settlement-criterion-quote",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_settlement-criterion-quote",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_settlement-packages",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_validate",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_submit",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_decision",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_account",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_close",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_versions",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_uses_frozen_rate_after_new_version",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_contains_all_routes_clients_and_stores",
+            "status": "passed"
+          },
+          {
+            "name": "liquidated_report_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "report_no_cache",
+            "status": "passed"
+          },
+          {
+            "name": "report_limited_role_real_login",
+            "status": "passed"
+          },
+          {
+            "name": "report_role_without_permission_denied",
+            "status": "passed"
+          },
+          {
+            "name": "browser_two_captured_stage_four_images",
+            "status": "passed"
+          },
+          {
+            "name": "browser_detail_and_frozen_total",
+            "status": "passed"
+          },
+          {
+            "name": "browser_print_reauthorizes_and_dispatches",
+            "status": "passed"
+          },
+          {
+            "name": "browser_pdf_binary",
+            "status": "passed"
+          },
+          {
+            "name": "browser_draft_cannot_print",
+            "status": "passed"
+          },
+          {
+            "name": "browser_foreign_cannot_print",
+            "status": "passed"
+          },
+          {
+            "name": "browser_anonymous_cannot_print",
+            "status": "passed"
+          }
+        ]
+      },
+      "services": {
+        "status": "passed",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "43901c3c18fcb2fa4df116739d59490ca71f7f210ad6008d554d671c8ab7e28e",
+        "checks": [
+          {
+            "name": "login_user_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_limited_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_techUser_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_user_B",
+            "status": "passed"
+          },
+          {
+            "name": "login_limited_B",
+            "status": "passed"
+          },
+          {
+            "name": "login_techUser_B",
+            "status": "passed"
+          },
+          {
+            "name": "service_types_available",
+            "status": "passed"
+          },
+          {
+            "name": "internal_order_created",
+            "status": "passed"
+          },
+          {
+            "name": "internal_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_read_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_limited_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_assigned_technician_starts",
+            "status": "passed"
+          },
+          {
+            "name": "internal_start_persisted",
+            "status": "passed"
+          },
+          {
+            "name": "internal_limited_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_created",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_applied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_persists_without_losing_items",
+            "status": "passed"
+          },
+          {
+            "name": "internal_audit_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_history_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_order_created",
+            "status": "passed"
+          },
+          {
+            "name": "external_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_read_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_limited_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_assigned_technician_starts",
+            "status": "passed"
+          },
+          {
+            "name": "external_start_persisted",
+            "status": "passed"
+          },
+          {
+            "name": "external_limited_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_created",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_applied",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_persists_without_losing_items",
+            "status": "passed"
+          },
+          {
+            "name": "external_audit_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_history_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "tenant": {
+        "status": "passed",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "83829ca1e586b980741347009432ad2f29332651bca2cc6274b5a237c1a2c406",
+        "checks": [
+          {
+            "name": "tenant_0_package_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_period_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_carrier_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_own_package_read",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_foreign_detail_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_foreign_update_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_package_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_period_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_carrier_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_own_package_read",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_foreign_detail_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_foreign_update_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "platform": {
+        "status": "passed",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "44dfb364e66fee44295eec5953017b22da91cde9da3fa087e5d0a0c8aee5d75b",
+        "checks": [
+          {
+            "name": "session_login",
+            "status": "passed"
+          },
+          {
+            "name": "session_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "session_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "services_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "services_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "references_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "references_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "hr_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "hr_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "inventory_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "inventory_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "roles_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "roles_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "transport_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "transport_anonymous_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "migration": {
+        "status": "passed",
+        "commit": null,
+        "sha256": "12f3cf984907c916b9534500ee16f1475c89af444c1dc2b5510321d5b9edb460",
+        "checks": [
+          {
+            "name": "origin_fields_archived_before_removal",
+            "status": "passed"
+          },
+          {
+            "name": "unrelated_rate_metadata_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "existing_tenants_ids_and_activity_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportNeed_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportPlan_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportTrip_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "vehicle_package_without_legacy_carrier",
+            "status": "passed"
+          }
+        ]
+      },
+      "legacy": {
+        "status": "passed",
+        "checks": 69,
+        "sha256": "1b8c6f2991fe9a47dd4ac80abbed3d1d1f327ad8ed9ff72f81468089a69e9fbb"
+      }
+    },
+    "api_tests": {
+      "total": 717,
+      "passed": 715,
+      "failed": 0,
+      "skipped": 2,
+      "sha256": "b0da517f1acddf19b00b8b22c11f72e22496b3683111610ab1532c15e928ae57"
+    },
+    "web_broad_suite": {
+      "total": 523,
+      "passed": 522,
+      "failed": 1,
+      "classification": "Fallo preexistente reproducido en origin/develop: funciones ausentes para importar saldos y nuevo gasto. No se modifican esos modulos.",
+      "sha256": "c38b04a5f0ed75e6e234ce08dd86cf62d26662c099d3bb037cf44113d5e8064c",
+      "baseline_sha256": "951ff82cfdcecde7a2d34ca9a065bd08b1f1fa3f9d70d3dddeca4e4d9825d99f",
+      "baseline_commit": "6bae143dd454473ff53e86328756faa848a89da8"
+    },
+    "pdf": {
+      "pages": 3,
+      "annex_images": 2,
+      "historical_price": 500000,
+      "new_version_not_used": 700000,
+      "total": 525000,
+      "sha256": "9471ff622d636d0e160237cb9090dc299e53ceec93e4b6c49c10d8e4b13e830c",
+      "visual_review": "Detalle y capturas de etapa 4 revisados; mapas completos, marcadores estables y texto legible."
+    },
+    "build": {
+      "status": "passed",
+      "log_sha256": "68b0d6b59137f12342c2e80ed466387c2bb1717dff5ef38a0b7d406930c39219"
+    },
+    "lint": {
+      "status": "passed",
+      "scope": "Frontend completo antes de ajuste de captura; lint dirigido final de los tres archivos modificados."
+    },
+    "diagnostics": [
+      "La ejecucion amplia desde raiz tuvo cuatro fallos de cwd de tests HR; la ejecucion en apps/web elimina esos cuatro fallos.",
+      "Se corrigieron dos incompatibilidades del test de navegacion con aliases de maestros y query de catalogo; se mantienen sus aserciones y se prueba la redireccion real.",
+      "Una ejecucion bajo presion de memoria fallo el benchmark local de 100000 decisiones; repeticion sin cambiar producto ni umbral paso. El candidato final tiene 715 pruebas API aprobadas."
+    ]
+  },
+  "security": {
+    "status": "APTO CON OBSERVACIONES",
+    "scope": "Informe autenticado, solo liquidada, permisos y tenant en API; sin navegador servidor, sin URLs/HTML suministrados por cliente, sin credenciales en URL, capturas locales y reautorizacion al imprimir.",
+    "negative_controls": [
+      "401 anonimo",
+      "403 rol sin transport/read con login real",
+      "404 empresa ajena",
+      "409 no liquidada",
+      "400 ID invalido"
+    ],
+    "dependencies": "html-to-image 1.11.13 fijado, MIT, sin dependencias transitivas. Alertas anteriores de dependencias fuera del alcance no se presentan como resueltas."
+  },
+  "runtime_model": {
+    "generation": "navegador autenticado del usuario; Guardar como PDF del dialogo nativo",
+    "server_chromium": false,
+    "additional_infrastructure": false,
+    "new_secrets": false,
+    "server_pdf_endpoint_replaced_by": "invoice-report"
+  },
+  "qa_deployment": {
+    "status": "pending",
+    "backup_created": true,
+    "backup_sha256": "9e6cbda33bf0f10ee142bb762daf4bc25885dce4146bdc48de00491643ea00c2",
+    "restore_verification": {
+      "status": "passed",
+      "environment": "LOCAL_ISOLATED",
+      "image": "supabase/postgres:17.6.1.136",
+      "backup_sha256": "9e6cbda33bf0f10ee142bb762daf4bc25885dce4146bdc48de00491643ea00c2",
+      "restored_schema_data_constraints": true,
+      "owner_acl_note": "Restauracion con no-owner/no-acl en runtime Supabase local; no altera grants remotos.",
+      "dry_run_migrations": {
+        "status": "passed",
+        "environment": "LOCAL_RESTORED_QA",
+        "backup_sha256": "9e6cbda33bf0f10ee142bb762daf4bc25885dce4146bdc48de00491643ea00c2",
+        "rolled_back": true,
+        "checks": [
+          "existing_origins_ids_tenants_activity",
+          "rates_origin_archive",
+          "needs_relations",
+          "plans_relations",
+          "trips_relations",
+          "carrier_nullable"
+        ]
+      },
+      "initial_attempts": [
+        "PostgreSQL estandar no incluye supabase_vault.",
+        "Imagen compatible requiere supabase_admin como restaurador local.",
+        "Se corrigio la espera al arranque definitivo antes de restaurar; no se debilito ninguna asercion."
+      ]
+    },
+    "remote_migrations_executed": false,
+    "migrations": [
+      "20261016123000_sedes_replace_origins",
+      "20261019134505_transport_settlement_vehicle"
+    ],
+    "historical_migration_drift": {
+      "migration": "20260917120000_hr_workday_novelties_foundation",
+      "qa_matches_historical_commit": "d704110225c910dff7e20edc2bd17d868cefffd0",
+      "present_in_target_before_candidate": true,
+      "modified_by_candidate": false,
+      "checksum_history_not_rewritten": true
+    },
+    "production_accessed": false
+  },
+  "rollback": "Antes de QA: respaldo verificado y ventana coordinada para esquema/API/frontend; no ejecutar version anterior contra esquema nuevo. Produccion fuera de alcance."
+}

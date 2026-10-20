@@ -378,7 +378,7 @@ const adminPermissionCatalog = [
   { key: "compras", label: "Compras", group: "compras", module: "purchases", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download"] },
   { key: "ventas", label: "Ventas", group: "comercial", module: "sales", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import"] },
   { key: "logistica", label: "Logistica", group: "operacion", module: "transport", submodule: "logistics", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
-  { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "attach", "download", "configure"] },
+  { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "attach", "download", "configure", "manage_rates"] },
   { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
   { key: "importaciones", label: "Importaciones", group: "operacion", module: "purchases", submodule: "imports", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"] },
   { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"] },
@@ -4574,6 +4574,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     });
   }
   touchSession();
+  if (response.headers.get("content-type")?.includes("application/pdf")) return await response.blob() as T;
   const body = await response.json() as T;
   if (pathname === "/api/v1/hr/activity-types" && method === "GET") {
     const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
