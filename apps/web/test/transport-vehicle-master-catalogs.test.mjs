@@ -179,7 +179,7 @@ test("el tarifario usa ModalFrame y selects alimentados por los maestros del mó
   assert.match(ratesSource, /onClose=\{closeWizard\} title=\{editing \? `Editar tarifario \$\{editing\.code\} · v\$\{editing\.version\}` : "Nuevo tarifario"\}/);
   assert.doesNotMatch(ratesSource, /fixed inset-0 z-50 grid place-items-center/);
   assert.match(ratesSource, /loadVehicleMasterCatalogs\(\)/);
-  assert.match(ratesSource, /<RateWizard carriers=\{carriers\} vehicles=\{vehicles\} masters=\{masters\}/);
+  assert.match(ratesSource, /<RateWizard[^>]*carriers=\{carriers\} vehicles=\{vehicles\} masters=\{masters\}/);
   assert.doesNotMatch(ratesSource, /origins=|canCreateOrigin|onCreateOrigin|origin_id/);
   assert.match(ratesSource, /const code = departments\.find\(\(item\) => item\.name === departmentName\)\?\.code;/);
   assert.match(ratesSource, /item\.parent_code === code/);

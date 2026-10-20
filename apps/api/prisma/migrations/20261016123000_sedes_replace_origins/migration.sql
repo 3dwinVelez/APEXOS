@@ -14,6 +14,14 @@ ALTER TABLE sedes ALTER COLUMN latitude DROP NOT NULL;
 ALTER TABLE sedes ALTER COLUMN longitude DROP NOT NULL;
 
 -- 3. El tarifario deja de filtrar por origen (las tarifas aplican a todas las sedes)
+-- Conserva los datos anteriores antes de retirar columnas del contrato operativo.
+UPDATE "TransportRateCard"
+SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+  'legacy_origin_before_sedes', jsonb_build_object(
+    'origin_id', origin_id, 'origin_department', origin_department,
+    'origin_city', origin_city, 'origin_municipality', origin_municipality
+  )
+);
 ALTER TABLE "TransportRateCard" DROP CONSTRAINT "TransportRateCard_origin_id_fkey";
 ALTER TABLE "TransportRateCard" DROP COLUMN origin_id;
 ALTER TABLE "TransportRateCard" DROP COLUMN origin_department;
@@ -42,5 +50,4 @@ CROSS JOIN (VALUES
 ) AS d(code, name)
 WHERE NOT EXISTS (SELECT 1 FROM sedes s WHERE s.tenant_id = t.tenant_id AND s.code = d.code);
 
--- 6. Origenes de prueba/basura QA quedan inactivos (se conservan por historia, no se eliminan)
-UPDATE sedes SET active = false WHERE code LIKE 'QA-%' OR code LIKE 'TEST-%';
+-- No se cambia la actividad de registros existentes por su codigo.
