@@ -7,8 +7,10 @@ async function transportPygRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
 
-  const view = requirePermission("transport", "read");
-  const manage = requirePermission("transport", "write");
+  const view = requirePermission("accounting", "read");
+  const manage = requirePermission("accounting", "write");
+
+  fastify.get("/transport-pyg/source-concepts", { preHandler: view }, (request) => service.listSourceConcepts(request.user?.tenant_id));
 
   fastify.get("/transport-pyg/concepts", { preHandler: view }, (request) => service.listConcepts(request.user?.tenant_id));
   fastify.get("/transport-pyg/report", { preHandler: view }, (request) => service.getReport(request.user?.tenant_id, request.query));

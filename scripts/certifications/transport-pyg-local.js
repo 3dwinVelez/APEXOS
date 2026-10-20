@@ -463,11 +463,11 @@ async function main() {
     check("service_guards_tenant_and_lock", /runWithTenant/.test(serviceSrc) && /pg_advisory_xact_lock/.test(serviceSrc) && /auditLog\.create/.test(serviceSrc) && /split_part\(period/.test(serviceSrc), {});
     const routesSrc = fs.readFileSync(path.join(API, "src/modules/transport-pyg/routes.js"), "utf8");
     const guardedRoutes = (routesSrc.match(/preHandler: (view|manage)/g) || []).length;
-    check("routes_guarded_by_rbac", /requirePermission\("transport", "read"\)/.test(routesSrc) && /requirePermission\("transport", "write"\)/.test(routesSrc) && guardedRoutes >= 8, { guards: guardedRoutes });
+    check("routes_guarded_by_rbac", /requirePermission\("accounting", "read"\)/.test(routesSrc) && /requirePermission\("accounting", "write"\)/.test(routesSrc) && guardedRoutes >= 9, { guards: guardedRoutes });
     const schemaSrc = fs.readFileSync(path.join(API, "prisma/schema.prisma"), "utf8");
     check("schema_has_pyg_models", ["TransportPygConcept", "TransportPygBudget", "TransportPygSourceMap", "TransportPygConfig"].every((model) => schemaSrc.includes(`model ${model} `)), {});
     check("migration_file_present", fs.existsSync(path.join(API, "prisma/migrations/20261013120000_transport_pyg/migration.sql")), {});
-    check("web_page_present", fs.existsSync(path.join(ROOT, "apps/web/app/dashboard/transporte/pyg/page.tsx")), {});
+    check("web_page_present", fs.existsSync(path.join(ROOT, "apps/web/app/dashboard/contabilidad/pyg/page.tsx")), {});
 
     result.status = "passed";
     result.checks_passed = result.checks.filter((c) => c.ok).length;

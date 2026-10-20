@@ -15,7 +15,8 @@ const ITEMS = [
   { href: "/dashboard/contabilidad/iva", label: "IVA" },
   { href: "/dashboard/contabilidad/retenciones", label: "Retenciones" },
   { href: "/dashboard/contabilidad/estructura", label: "Estructura" },
-  { href: "/dashboard/contabilidad/reportes", label: "Reportes" }
+  { href: "/dashboard/contabilidad/reportes", label: "Reportes" },
+  { href: "/dashboard/contabilidad/pyg", label: "PYG por vehículo" }
 ];
 
 export function ContabilidadNav() {
