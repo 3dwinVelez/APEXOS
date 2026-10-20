@@ -1,0 +1,174 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-standard-chart-20261020",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-plan-cuentas-20261020",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "537e22e6a58d1f6f34d2f8b45f04857323da3b48"
+  },
+  "certified_commit": "537e22e6a58d1f6f34d2f8b45f04857323da3b48",
+  "target_head": "2f674b3b4bebfbe815fae8289bb9f5cd60ca2d08",
+  "base_commits": {
+    "develop": "2f674b3b4bebfbe815fae8289bb9f5cd60ca2d08"
+  },
+  "change_intent": {
+    "summary": "Plan estándar congelado de Cliente Piloto QA para sociedades existentes y futuras, con respaldo y ensayo previo",
+    "modules": [
+      "accounting",
+      "company-provisioning"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/accounting-puc-tree-local.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/accounting-standard-chart-local.js",
+      "status": "A"
+    },
+    {
+      "file": "supabase/migrations/20261020173515_standard_chart_piloto.sql",
+      "status": "A"
+    },
+    {
+      "file": "docs/accounting-standard-chart.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-standard-chart-20261020-scope.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-standard-chart-20261020-preqa.json",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "scripts/certifications/accounting-puc-tree-local.js",
+    "scripts/certifications/accounting-standard-chart-local.js",
+    "supabase/migrations/20261020173515_standard_chart_piloto.sql",
+    "docs/accounting-standard-chart.md",
+    "docs/qa/manifests/accounting-standard-chart-20261020-scope.json",
+    "docs/qa/manifests/accounting-standard-chart-20261020-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "scripts/certifications/accounting-puc-tree-local.js",
+    "scripts/certifications/accounting-standard-chart-local.js",
+    "supabase/migrations/20261020173515_standard_chart_piloto.sql",
+    "docs/accounting-standard-chart.md"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Conservación de cuentas y movimientos",
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    {
+      "name": "Jerarquía y padres del mismo tenant",
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    {
+      "name": "Sociedades existentes y nuevas por companies/Tenant",
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    {
+      "name": "RBAC y aislamiento",
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    {
+      "name": "Árbol PUC, auxiliares, numeración y saldos iniciales",
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante de APEXOS: procede tras autorización detallada de rama, PR, integración y migración QA",
+    "approved_at": "2026-10-20T13:03:28-05:00",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "qa_deploy": true,
+      "qa_remote_migration": true,
+      "production": false
+    }
+  },
+  "environment": "LOCAL",
+  "commit": "537e22e6a58d1f6f34d2f8b45f04857323da3b48",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../../accounting-standard-chart.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-standard-chart-local.js",
+    "evidence": [
+      "../../accounting-standard-chart.md"
+    ],
+    "scope": "API/PostgreSQL real y ensayo de snapshot QA en base local; comprobación visual CUA complementaria"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-puc-tree-local.js",
+    "evidence": [
+      "../../accounting-standard-chart.md"
+    ]
+  },
+  "pending_qa": [
+    "Onboarding de sociedad nueva desde UI de plataforma y Supabase Auth",
+    "Persistencia de sociedades existentes",
+    "Alineación de commit Railway y conservación del digest de movimientos"
+  ]
+}
