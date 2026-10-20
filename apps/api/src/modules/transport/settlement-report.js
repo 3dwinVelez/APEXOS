@@ -32,6 +32,14 @@ async function settlementReportData(tenantId, id) {
   });
 }
 
+function reportWebOrigin(value = process.env.PDF_WEB_ORIGIN || 'http://127.0.0.1:3001') {
+  let origin;
+  try { origin = new URL(value); } catch { fail(503, 'TMS_PDF_ORIGIN_INVALID', 'Origen interno PDF inválido.'); }
+  const internal = ['127.0.0.1', 'localhost', '[::1]'].includes(origin.hostname) || origin.hostname.endsWith('.railway.internal');
+  if (!internal || !['http:', 'https:'].includes(origin.protocol) || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) fail(503, 'TMS_PDF_ORIGIN_INVALID', 'El generador debe usar el servidor web interno.');
+  return origin;
+}
+
 let generating = false;
 async function settlementReportPdf(tenantId, id) {
   const data = await settlementReportData(tenantId, id);
@@ -43,10 +51,9 @@ async function settlementReportPdf(tenantId, id) {
     const candidates = [process.env.PDF_BROWSER_EXECUTABLE, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe', '/usr/bin/chromium', '/usr/bin/google-chrome'].filter(Boolean);
     const executablePath = candidates.find(candidate => fs.existsSync(candidate));
     if (!executablePath) fail(503, 'TMS_PDF_BROWSER_UNAVAILABLE', 'El generador PDF no tiene un navegador disponible.');
-    const origin = new URL(process.env.PDF_WEB_ORIGIN || 'http://127.0.0.1:3001');
-    if (!['127.0.0.1', 'localhost', '::1'].includes(origin.hostname)) fail(503, 'TMS_PDF_ORIGIN_INVALID', 'El generador debe usar el servidor web interno.');
+    const origin = reportWebOrigin();
     const puppeteer = await import('puppeteer-core');
-    browser = await puppeteer.launch({ executablePath, headless: true });
+    browser = await puppeteer.launch({ executablePath, headless: true, args: ['--disable-dev-shm-usage'] });
     const page = await browser.newPage();
     await page.evaluateOnNewDocument(() => { localStorage.setItem("apex_theme", "light"); });
     await page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "light" }]);
@@ -72,4 +79,4 @@ async function settlementReportPdf(tenantId, id) {
     return { buffer: Buffer.from(bytes), fileName: `${data.package.code}-soporte-facturacion.pdf` };
   } finally { try { if (browser) await browser.close(); } finally { generating = false; } }
 }
-module.exports = { settlementReportData, settlementReportPdf };
+module.exports = { settlementReportData, settlementReportPdf, reportWebOrigin };

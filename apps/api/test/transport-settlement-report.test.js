@@ -9,8 +9,16 @@ const db = {
 };
 const prismaPath = require.resolve('../src/core/prisma');
 require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true, exports: db };
-const { settlementReportData } = require('../src/modules/transport/settlement-report');
+const { settlementReportData, reportWebOrigin } = require('../src/modules/transport/settlement-report');
 const criterion = () => ({ concept: 'Ruta', rate_card_id: 7, rate_version: 1, quantity: 1, unit_value: 500000, rate_snapshot: { metrics: { distance_km: 48.6 }, definition: { id: 7, version: 1, code: 'RUTA-01', base_rate: 500000 } } });
+
+test('el renderizador solo acepta origen local o privado configurado y rechaza destinos arbitrarios', () => {
+  assert.equal(reportWebOrigin('http://localhost:3001').origin, 'http://localhost:3001');
+  assert.equal(reportWebOrigin('http://web-qa.railway.internal:3000').hostname, 'web-qa.railway.internal');
+  for (const url of ['https://example.com', 'http://web-qa.railway.internal.evil.com', 'file:///etc/passwd', 'http://user:secret@localhost:3001', 'http://localhost:3001/admin', 'http://localhost:3001?token=secret', 'invalid']) {
+    assert.throws(() => reportWebOrigin(url), error => error.statusCode === 503);
+  }
+});
 test('solo permite el formato de una liquidacion liquidada de la empresa autenticada', async () => {
   await assert.rejects(() => settlementReportData(null, 1), error => error.statusCode === 401);
   pkg = null;
