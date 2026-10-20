@@ -155,36 +155,6 @@ async function postOpeningBalancesWorkbook(tenantId, userId, buffer) {
 
 
 
-const PUC_CO = [
-  { code: "1105", name: "Caja", type: "asset" },
-  { code: "1110", name: "Bancos", type: "asset" },
-  { code: "1305", name: "Clientes", type: "asset" },
-  { code: "1330", name: "Anticipos y Avances", type: "asset" },
-  { code: "1435", name: "Inventarios", type: "asset" },
-  { code: "1524", name: "Equipo de Oficina", type: "asset" },
-  { code: "1540", name: "Flota y Equipo Transporte", type: "asset" },
-  { code: "2105", name: "Obligaciones Financieras", type: "liability" },
-  { code: "2205", name: "Proveedores", type: "liability" },
-  { code: "2335", name: "Costos y Gastos por Pagar", type: "liability" },
-  { code: "2365", name: "Retencion en la Fuente", type: "liability" },
-  { code: "2408", name: "IVA por Pagar", type: "liability" },
-  { code: "2610", name: "Obligaciones Laborales", type: "liability" },
-  { code: "3105", name: "Capital Social", type: "equity" },
-  { code: "3605", name: "Utilidad del Ejercicio", type: "equity" },
-  { code: "4135", name: "Ingresos por Ventas", type: "income" },
-  { code: "4175", name: "Ingresos por Servicios", type: "income" },
-  { code: "5105", name: "Costo de Ventas", type: "expense" },
-  { code: "5195", name: "Gastos de Inventario", type: "expense" },
-  { code: "5205", name: "Sueldos y Salarios", type: "expense" },
-  { code: "5210", name: "Horas Extras", type: "expense" },
-  { code: "5220", name: "Auxilio de Transporte", type: "expense" },
-  { code: "5260", name: "Aportes EPS", type: "expense" },
-  { code: "5270", name: "Aportes Pensiones", type: "expense" },
-  { code: "5290", name: "Aportes SENA ICBF CCF", type: "expense" },
-  { code: "5320", name: "Arrendamientos", type: "expense" },
-  { code: "5360", name: "Servicios Publicos", type: "expense" },
-  { code: "5395", name: "Otros Gastos", type: "expense" }
-];
 
 const TAX_ACCOUNT_PREFIXES = ["2365", "2367", "2368", "2408", "2410"];
 const RECEIVABLE_TYPES = ["invoice", "sale", "receivable"];
@@ -837,14 +807,15 @@ async function assertPeriodOpen(tenantId, date) {
 
 async function initChartOfAccounts(tenantId, country = "CO") {
   return prisma.runWithTenant(tenantId, async () => {
-    const plan = country === "CO" ? PUC_CO : PUC_CO;
-    const existing = await prisma.account.findMany({ select: { code: true } });
-    const existingCodes = new Set(existing.map((row) => row.code));
-    const missing = plan.filter((account) => !existingCodes.has(account.code));
-    if (missing.length) {
-      await prisma.account.createMany({
-        data: missing.map((account) => ({ code: account.code, name: account.name, type: account.type, allows_tx: true, active: true }))
-      });
+    // One versioned standard for both registration paths and explicit initialization.
+    // The database function serializes retries and preserves existing business fields.
+    try {
+      await prisma.$queryRaw`SELECT apexos_accounting_private.ensure_standard_chart(${tenantId}::text)`;
+    } catch (error) {
+      if (String(error.meta?.message || error.message || "").includes("STANDARD_CHART_CONFLICT")) {
+        throw appError(409, "STANDARD_CHART_CONFLICT", "El plan estándar tiene conflictos con tipos o padres existentes; no se aplicaron cambios.");
+      }
+      throw error;
     }
     const accounts = await prisma.account.findMany({ orderBy: { code: "asc" } });
     return accounts.map(accountDto);
