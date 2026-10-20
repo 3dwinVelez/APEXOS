@@ -258,7 +258,7 @@ function coordinatePath(stops: PlanningRouteStop[]) {
   return stops.map((stop) => `${stop.longitude},${stop.latitude}`).join(";");
 }
 
-function decodeGooglePolyline(encoded: string) {
+export function decodeGooglePolyline(encoded: string) {
   let index = 0;
   let latitude = 0;
   let longitude = 0;
