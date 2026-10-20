@@ -74,6 +74,9 @@ test("el buscador ofrece las funciones clave del modulo de talento humano", () =
 });
 
 test("los alias excluidos si son redirecciones y no destinos propios", () => {
+  for (const alias of ["transporte/maestros", "administracion/maestros-transporte"]) {
+    assert.match(read(`app/dashboard/${alias}/page.tsx`), /redirect\("\/dashboard\/administracion"\)/);
+  }
   assert.match(read("app/dashboard/configuracion/page.tsx"), /redirect\("\/dashboard\/administracion"\)/);
   assert.match(read("app/dashboard/talento-humano/mallas/page.tsx"), /export \{ default \} from "\.\.\/rutas\/page"/);
 });
