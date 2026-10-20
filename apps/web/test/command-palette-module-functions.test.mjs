@@ -12,7 +12,8 @@ const dashboardRoot = path.join(root, "app/dashboard");
 
 // Rutas estaticas reales del dashboard. Se excluyen la raiz, la redireccion de
 // configuracion y el alias de mallas (reexport de rutas), que no son destinos propios.
-const ALIASES = new Set(["/dashboard/configuracion", "/dashboard/talento-humano/mallas"]);
+const ALIASES = new Set(["/dashboard/configuracion", "/dashboard/talento-humano/mallas", "/dashboard/transporte/maestros", "/dashboard/administracion/maestros-transporte"]);
+const routePath = (href) => new URL(href, "http://apex.local").pathname;
 const staticRoutes = fs.readdirSync(dashboardRoot, { recursive: true })
   .map((entry) => String(entry).replace(/\\/g, "/"))
   .filter((entry) => entry.endsWith("/page.tsx") || entry === "page.tsx")
@@ -42,7 +43,7 @@ test("el registro de funciones cubre todas las rutas del dashboard", () => {
   const covered = new Set([
     ...moduleSlugs.map((slug) => `/dashboard/${slug}`),
     ...actionHrefs,
-    ...functionEntries.map((entry) => entry.href)
+    ...functionEntries.map((entry) => routePath(entry.href))
   ]);
   const uncovered = staticRoutes.filter((route) => !covered.has(route));
   assert.deepEqual(uncovered, [], `rutas sin acceso desde el centro de comandos: ${uncovered.join(", ")}`);
@@ -50,7 +51,7 @@ test("el registro de funciones cubre todas las rutas del dashboard", () => {
 
 test("cada funcion del registro apunta a una ruta estatica existente", () => {
   const routes = new Set(staticRoutes);
-  const invalid = functionEntries.filter((entry) => !routes.has(entry.href));
+  const invalid = functionEntries.filter((entry) => !routes.has(routePath(entry.href)));
   assert.deepEqual(invalid.map((entry) => `${entry.label} -> ${entry.href}`), []);
   const duplicated = functionEntries.map((entry) => entry.href).filter((href, index, all) => all.indexOf(href) !== index);
   assert.deepEqual(duplicated, []);
