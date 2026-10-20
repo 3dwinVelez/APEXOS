@@ -1,0 +1,171 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-standard-chart-20261020",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "change_intent": {
+    "summary": "Plan estándar congelado de Cliente Piloto QA para sociedades existentes y futuras, preservando cuentas y movimientos",
+    "modules": [
+      "accounting",
+      "company-provisioning"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/accounting-puc-tree-local.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/accounting-standard-chart-local.js",
+      "status": "A"
+    },
+    {
+      "file": "supabase/migrations/20261020173515_standard_chart_piloto.sql",
+      "status": "A"
+    },
+    {
+      "file": "docs/accounting-standard-chart.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/accounting-standard-chart-preqa-20261020.json",
+      "status": "A"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Cuentas y movimientos existentes",
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json"
+      ]
+    },
+    {
+      "name": "Jerarquía y padres del mismo tenant",
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json"
+      ]
+    },
+    {
+      "name": "Creación de sociedades por companies y Tenant",
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json"
+      ]
+    },
+    {
+      "name": "RBAC y aislamiento multiempresa",
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json",
+        "../../../.tmp/accounting-standard-chart-browser-certification.json"
+      ]
+    },
+    {
+      "name": "Árbol PUC y auxiliares",
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json"
+      ]
+    }
+  ],
+  "commit": "3123f3349caf31bbcc23a77b9a315674362323ff",
+  "commit_role": "functional_commit_certified_locally",
+  "candidate": {
+    "status": "local_scoped_projection_prepared_without_branch",
+    "target_baseline": "2f674b3b4bebfbe815fae8289bb9f5cd60ca2d08",
+    "evidence_binding": "Commit funcional y hashes de archivos en evidencia local; proyección exacta registrada en .tmp/accounting-standard-chart-promotion-candidate.json"
+  },
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json",
+        "../../../.tmp/accounting-standard-chart-browser-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json",
+        "../../../.tmp/accounting-standard-chart-browser-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-certification.json",
+        "../../../.tmp/accounting-standard-chart-tree-regression.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-tree-regression.json",
+        "../../../.tmp/accounting-standard-chart-regression.log"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "scope": "LOCAL login real, navegación al plan, guardado/reapertura/recarga y rechazo visible por RBAC; typecheck y regresión contable",
+      "evidence": [
+        "../../../.tmp/accounting-standard-chart-browser-certification.json",
+        "../../../.tmp/accounting-standard-chart-typecheck.log",
+        "../../../.tmp/accounting-standard-chart-regression.log"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-standard-chart-local.js",
+    "evidence": [
+      "../../../.tmp/accounting-standard-chart-certification.json",
+      "../../../.tmp/accounting-standard-chart-browser-certification.json"
+    ],
+    "scope": "LOCAL: flujo completo de plantilla y aprovisionamiento en API/PostgreSQL real, más comprobación visual CUA complementaria"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-puc-tree-local.js",
+    "evidence": [
+      "../../../.tmp/accounting-standard-chart-tree-regression.json"
+    ]
+  },
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": null,
+    "approved_at": null,
+    "note": "Autorización inicial de promover/migrar seguida por instrucción de no crear ramas y dejar preparada la promoción; no se inventa aprobación de publicación."
+  },
+  "promotion": {
+    "status": "held_by_user",
+    "reason": "Respuesta explícita: No crear ramas; dejar la promoción preparada. No se permite integrar los 12 archivos ajenos al plan.",
+    "remote_writes": "not_executed_held_by_user",
+    "main_release": "not_authorized"
+  },
+  "certified_commit": "3123f3349caf31bbcc23a77b9a315674362323ff",
+  "base_commits": {
+    "develop": "2f674b3b4bebfbe815fae8289bb9f5cd60ca2d08"
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "scripts/certifications/accounting-puc-tree-local.js",
+    "scripts/certifications/accounting-standard-chart-local.js",
+    "supabase/migrations/20261020173515_standard_chart_piloto.sql",
+    "docs/accounting-standard-chart.md",
+    "docs/qa/manifests/accounting-standard-chart-preqa-20261020.json"
+  ],
+  "pending_qa": [
+    "Onboarding completo UI + Supabase Auth con candidato desplegado",
+    "Verificar base QA, permisos del rol backend y recuperación antes de aplicar exclusivamente esta migración"
+  ]
+}
