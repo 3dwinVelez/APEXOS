@@ -35,7 +35,8 @@ function atomicMutation(fn) {
 }
 
 const { point, lineString, distance: turfDistance, buffer: turfBuffer, booleanPointInPolygon, pointToLineDistance } = require("@turf/turf");
-const { enrichRouteWithGoogle } = require("./route-intelligence");
+const { enrichRouteWithGoogle, geocodeCandidates, mergePlaceCandidates, simulateRoutePoints } = require("./route-intelligence");
+const { rateCostConfig } = require("./settlement-engine");
 
 
 
@@ -234,8 +235,11 @@ function deliveryPointData(input) {
 
 
 
-function originData(input) {
+function sedeData(input) {
 
+  if (input.latitude == null || input.longitude == null || input.latitude === "" || input.longitude === "") {
+    throw appError(400, "TMS_SEDE_COORDINATES_REQUIRED", "La sede requiere latitud y longitud validas para operar.");
+  }
   assertCoordinatePair(input.latitude, input.longitude);
 
   return {
@@ -267,10 +271,6 @@ function rateCardData(input) {
   return {
 
     code: normalizedCode(input.code), name: String(input.name || "").trim(), carrier_id: input.carrier_id || null,
-
-    origin_id: input.origin_id || null, origin_department: input.origin_department?.trim() || null,
-
-    origin_city: input.origin_city?.trim() || null, origin_municipality: input.origin_municipality?.trim() || null,
 
     destination_city: input.destination_city?.trim() || null, destination_department: input.destination_department?.trim() || null,
 
@@ -320,7 +320,7 @@ function haversineKm(a, b) {
 
 
 
-function optimizeStopOrder(origin, needs, options = {}) {
+function optimizeStopOrder(sede, needs, options = {}) {
 
   const roadFactor = Math.min(Math.max(numberValue(options.road_factor, 1.22), 1), 2);
 
@@ -330,7 +330,7 @@ function optimizeStopOrder(origin, needs, options = {}) {
 
   const legs = [];
 
-  let current = { latitude: origin.latitude, longitude: origin.longitude, label: origin.name, type: "origin" };
+  let current = { latitude: sede.latitude, longitude: sede.longitude, label: sede.name, type: "origin" };
 
   let distanceKm = 0;
 
@@ -366,15 +366,15 @@ function optimizeStopOrder(origin, needs, options = {}) {
 
   if (options.return_to_origin === true && ordered.length) {
 
-    const returnKm = haversineKm(current, origin) * roadFactor;
+    const returnKm = haversineKm(current, sede) * roadFactor;
 
     legs.push({
 
-      sequence: legs.length + 1, from: current.label, to: origin.name, need_id: null, distance_km: Number(returnKm.toFixed(2)),
+      sequence: legs.length + 1, from: current.label, to: sede.name, need_id: null, distance_km: Number(returnKm.toFixed(2)),
 
       from_coordinate: { latitude: Number(current.latitude), longitude: Number(current.longitude) },
 
-      to_coordinate: { latitude: Number(origin.latitude), longitude: Number(origin.longitude) }
+      to_coordinate: { latitude: Number(sede.latitude), longitude: Number(sede.longitude) }
 
     });
 
@@ -388,27 +388,37 @@ function optimizeStopOrder(origin, needs, options = {}) {
 
 
 
-function calculateRateQuote(rateCard, metrics) {
+function calculateRateQuote(rateCard, metrics = {}) {
+
+  // Configuracion aditiva de la etapa 4 (metadata); sin ella, aritmetica legacy.
+  const config = rateCostConfig(rateCard);
+  const stopCount = Math.max(0, numberValue(metrics.stop_count, 1));
 
   const components = {
 
     base: numberValue(rateCard.base_rate),
 
-    distance: numberValue(rateCard.price_per_km) * metrics.distance_km,
+    distance: numberValue(rateCard.price_per_km) * numberValue(metrics.distance_km),
 
-    weight: numberValue(rateCard.price_per_kg) * metrics.weight_kg,
+    weight: numberValue(rateCard.price_per_kg) * numberValue(metrics.weight_kg),
 
-    volume: numberValue(rateCard.price_per_m3) * metrics.volume_m3,
+    volume: numberValue(rateCard.price_per_m3) * numberValue(metrics.volume_m3),
 
-    stops: numberValue(rateCard.price_per_stop) * metrics.stop_count,
+    stops: numberValue(rateCard.price_per_stop) * Math.max(0, stopCount - config.stops_included),
 
     tolls: numberValue(rateCard.tolls_flat)
 
   };
 
+  const billableWaitMin = Math.max(0, numberValue(metrics.wait_minutes) - config.wait_included_min);
+  if (config.wait_rate_per_min > 0 && billableWaitMin > 0) components.wait_time = config.wait_rate_per_min * billableWaitMin;
+  if (config.load_unload_flat > 0) components.load_unload = config.load_unload_flat;
+  if (config.other_costs_amount > 0) components.other_costs = config.other_costs_amount;
+
   const beforeFuel = Object.values(components).reduce((sum, value) => sum + value, 0);
 
-  const fuel = beforeFuel * numberValue(rateCard.fuel_surcharge_pct) / 100;
+  // Combustible estimado (costo fijo del simulador) REEMPLAZA al recargo porcentual: nunca ambos.
+  const fuel = config.fuel_mode === "estimated" ? config.fuel_estimated_cost : beforeFuel * numberValue(rateCard.fuel_surcharge_pct) / 100;
 
   const calculated = beforeFuel + fuel;
 
@@ -422,7 +432,9 @@ function calculateRateQuote(rateCard, metrics) {
 
     components: Object.fromEntries(Object.entries({ ...components, fuel }).map(([key, value]) => [key, Number(value.toFixed(2))])),
 
-    minimum_applied: total > calculated, total: Number(total.toFixed(2)), carrier_score: numberValue(rateCard.carrier?.score), priority: rateCard.priority
+    minimum_applied: total > calculated, total: Number(total.toFixed(2)), carrier_score: numberValue(rateCard.carrier?.score), priority: rateCard.priority,
+
+    fuel_mode: config.fuel_mode, other_costs_label: config.other_costs_label || undefined
 
   };
 
@@ -546,9 +558,9 @@ async function saveDeliveryPoint(tenantId, id, input) {
 
 
 
-async function listOrigins(tenantId, query = {}) {
+async function listSedes(tenantId, query = {}) {
 
-  return prisma.runWithTenant(tenantId, () => prisma.transportOrigin.findMany({
+  return prisma.runWithTenant(tenantId, () => prisma.sede.findMany({
 
     where: { ...(query.city ? { city: { contains: query.city, mode: "insensitive" } } : {}), ...(query.include_inactive === "true" ? { __includeInactive: true } : {}) },
 
@@ -560,23 +572,137 @@ async function listOrigins(tenantId, query = {}) {
 
 
 
-async function saveOrigin(tenantId, id, input) {
+function normalizePlaceTerm(value) {
+
+  return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+}
+
+
+
+function searchRoutePlaces(tenantId, term) {
+
+  const query = String(term || "").trim();
+
+  const hasKey = Boolean(process.env.GOOGLE_ROUTES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_ROUTES_API_KEY);
+
+  if (query.length < 3) return { places: [], google_configured: hasKey };
+
+  const needle = normalizePlaceTerm(query);
+
+  const matchesTerm = (values) => values.some((value) => value && normalizePlaceTerm(value).includes(needle));
+
+  return Promise.all([
+
+    prisma.runWithTenant(tenantId, () => prisma.sede.findMany({ orderBy: [{ name: "asc" }], take: 100 })),
+
+    prisma.runWithTenant(tenantId, () => prisma.transportDeliveryPoint.findMany({ orderBy: [{ name: "asc" }], take: 200 })),
+
+    query.length >= 4 ? geocodeCandidates(query) : Promise.resolve({ candidates: [], configured: hasKey })
+
+  ]).then(([sedes, deliveryPoints, google]) => {
+
+    const internal = [
+
+      ...sedes
+
+        .filter((sede) => sede.latitude != null && sede.longitude != null && matchesTerm([sede.name, sede.code, sede.address, sede.city]))
+
+        .map((sede) => ({ label: `${sede.name}${sede.address ? ` — ${sede.address}` : ""}`, latitude: Number(sede.latitude), longitude: Number(sede.longitude), source: "sede", detail: sede.code })),
+
+      ...deliveryPoints
+
+        .filter((point) => point.latitude != null && point.longitude != null && matchesTerm([point.name, point.code, point.address, point.city]))
+
+        .map((point) => ({ label: `${point.name}${point.address ? ` — ${point.address}` : ""}`, latitude: Number(point.latitude), longitude: Number(point.longitude), source: "punto_entrega", detail: point.code }))
+
+    ].slice(0, 6);
+
+    return { places: mergePlaceCandidates(internal, google.candidates || []), google_configured: google.configured !== false, places_provider: google.provider || (hasKey ? "google" : "internal"), external_available: google.external_available || google.configured === true, message: google.message };
+
+  });
+
+}
+
+
+
+async function resolveSimulatorPoint(tenantId, point = {}, role) {
+
+  if (point.sede_id) {
+
+    const sede = await prisma.runWithTenant(tenantId, () => prisma.sede.findFirst({ where: { id: Number(point.sede_id) } }));
+
+    if (!sede || sede.latitude == null || sede.longitude == null) throw appError(422, "TMS_SIMULATOR_SEDE_WITHOUT_COORDINATES", `La sede del ${role} no tiene coordenadas; actualizala en Configuracion.`);
+
+    return { latitude: Number(sede.latitude), longitude: Number(sede.longitude), label: sede.name, source: "sede" };
+
+  }
+
+  if (Number.isFinite(Number(point.latitude)) && Number.isFinite(Number(point.longitude))) {
+
+    return { latitude: Number(point.latitude), longitude: Number(point.longitude), label: point.label || role, source: point.source || "manual" };
+
+  }
+
+  if (point.address) {
+
+    const geo = await geocodeCandidates(point.address);
+
+    const first = geo.candidates?.[0];
+
+    if (!first) throw appError(422, "TMS_SIMULATOR_POINT_NOT_FOUND", `No fue posible ubicar el ${role} "${point.address}".${geo.message ? ` ${geo.message}` : ""}`);
+
+    return { latitude: first.latitude, longitude: first.longitude, label: first.label, source: first.source };
+
+  }
+
+  throw appError(422, "TMS_SIMULATOR_POINT_REQUIRED", `El ${role} requiere coordenadas, una sede o una direccion.`);
+
+}
+
+
+
+async function simulateRoute(tenantId, input = {}) {
+
+  const [origin, destination] = await Promise.all([
+
+    resolveSimulatorPoint(tenantId, input.origin, "origen"),
+
+    resolveSimulatorPoint(tenantId, input.destination, "destino")
+
+  ]);
+
+  const intermediates = (input.intermediates || [])
+
+    .filter((point) => Number.isFinite(Number(point?.latitude)) && Number.isFinite(Number(point?.longitude)))
+
+    .map((point) => ({ latitude: Number(point.latitude), longitude: Number(point.longitude), label: point.label || "Parada" }));
+
+  const result = await simulateRoutePoints({ origin, destination, intermediates, round_trip: Boolean(input.round_trip) });
+
+  return { ...result, origin, destination, round_trip: Boolean(input.round_trip) };
+
+}
+
+
+
+async function saveSede(tenantId, id, input) {
 
   return prisma.runWithTenant(tenantId, async () => {
 
-    const data = originData(input);
+    const data = sedeData(input);
 
-    if (!data.code || !data.name || !data.address || !data.city) throw appError(400, "TMS_ORIGIN_REQUIRED", "Codigo, nombre, direccion y ciudad son obligatorios.");
+    if (!data.code || !data.name || !data.address || !data.city) throw appError(400, "TMS_SEDE_REQUIRED", "Codigo, nombre, direccion y ciudad son obligatorios.");
 
     if (id) {
 
-      await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(id) } });
+      await prisma.sede.findFirstOrThrow({ where: { id: Number(id), __includeInactive: true } });
 
-      return prisma.transportOrigin.update({ where: { id: Number(id) }, data });
+      return prisma.sede.update({ where: { id: Number(id) }, data });
 
     }
 
-    return prisma.transportOrigin.create({ data });
+    return prisma.sede.create({ data });
 
   });
 
@@ -592,11 +718,11 @@ async function listRateCards(tenantId, query = {}) {
 
       ...(query.status ? { status: query.status } : {}), ...(query.carrier_id ? { carrier_id: Number(query.carrier_id) } : {}),
 
-      ...(query.origin_id ? { origin_id: Number(query.origin_id) } : {}), ...(query.include_inactive === "true" ? { __includeInactive: true } : {})
+      ...(query.include_inactive === "true" ? { __includeInactive: true } : {})
 
     },
 
-    include: { carrier: true, origin: true }, orderBy: [{ code: "asc" }, { version: "desc" }], take: Math.min(numberValue(query.limit, 200), 500)
+    include: { carrier: true }, orderBy: [{ code: "asc" }, { version: "desc" }], take: Math.min(numberValue(query.limit, 200), 500)
 
   }));
 
@@ -608,13 +734,13 @@ async function activateRateCard(tenantId, id) {
 
   return prisma.runWithTenant(tenantId, async () => {
 
-    const rate = await prisma.transportRateCard.findFirstOrThrow({ where: { id: Number(id) }, include: { carrier: true, origin: true } });
+    const rate = await prisma.transportRateCard.findFirstOrThrow({ where: { id: Number(id) }, include: { carrier: true } });
 
     if (rate.valid_to < new Date()) throw appError(409, "TMS_RATE_EXPIRED", "No se puede activar un tarifario vencido.");
 
     await prisma.transportRateCard.updateMany({ where: { tenant_id: String(tenantId), code: rate.code, id: { not: rate.id } }, data: { status: "inactiva", active: false } });
 
-    return prisma.transportRateCard.update({ where: { id: rate.id }, data: { status: "activa", active: true }, include: { carrier: true, origin: true } });
+    return prisma.transportRateCard.update({ where: { id: rate.id }, data: { status: "activa", active: true }, include: { carrier: true } });
 
   });
 
@@ -646,8 +772,6 @@ async function saveRateCard(tenantId, user, id, input) {
 
     if (data.carrier_id) await prisma.transportCarrier.findFirstOrThrow({ where: { id: Number(data.carrier_id) } });
 
-    if (data.origin_id) await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(data.origin_id) } });
-
     let rate;
 
     if (id) {
@@ -656,13 +780,13 @@ async function saveRateCard(tenantId, user, id, input) {
 
       if (current.status !== "borrador") throw appError(409, "TMS_RATE_IMMUTABLE", "Un tarifario publicado no se edita; crea una nueva version.");
 
-      rate = await prisma.transportRateCard.update({ where: { id: current.id }, data, include: { carrier: true, origin: true } });
+      rate = await prisma.transportRateCard.update({ where: { id: current.id }, data, include: { carrier: true } });
 
     } else {
 
       const latest = await prisma.transportRateCard.aggregate({ where: { code: data.code }, _max: { version: true } });
 
-      rate = await prisma.transportRateCard.create({ data: { ...data, version: numberValue(latest._max.version, 0) + 1, status: "borrador", created_by: user?.id || null }, include: { carrier: true, origin: true } });
+      rate = await prisma.transportRateCard.create({ data: { ...data, version: numberValue(latest._max.version, 0) + 1, status: "borrador", created_by: user?.id || null }, include: { carrier: true } });
 
     }
 
@@ -678,7 +802,7 @@ async function versionRateCard(tenantId, user, id, input = {}) {
 
   return prisma.runWithTenant(tenantId, async () => {
 
-    const source = await prisma.transportRateCard.findFirstOrThrow({ where: { id: Number(id), __includeInactive: true }, include: { carrier: true, origin: true } });
+    const source = await prisma.transportRateCard.findFirstOrThrow({ where: { id: Number(id), __includeInactive: true }, include: { carrier: true } });
 
     const merged = {
 
@@ -726,7 +850,7 @@ async function createNeed(tenantId, user, input) {
 
     const point = await prisma.transportDeliveryPoint.findFirstOrThrow({ where: { id: Number(input.delivery_point_id) } });
 
-    const origin = input.origin_id ? await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(input.origin_id) } }) : null;
+    const sede = input.sede_id ? await prisma.sede.findFirstOrThrow({ where: { id: Number(input.sede_id) } }) : null;
 
     const validationErrors = needValidationErrors(input, point);
 
@@ -740,7 +864,7 @@ async function createNeed(tenantId, user, input) {
 
         code: normalizedCode(input.code), source_type: input.source_type, source_id: input.source_id || null, source_reference: input.source_reference || null,
 
-        sales_order_id: input.sales_order_id || null, origin_place_id: input.origin_place_id || null, origin_id: origin?.id || null, origin_name: origin?.name || input.origin_name,
+        sales_order_id: input.sales_order_id || null, origin_place_id: input.origin_place_id || null, sede_id: sede?.id || null, origin_name: sede?.name || input.origin_name,
 
         delivery_point_id: point.id, available_at: availableAt, due_at: dueAt, priority: input.priority || "normal", service_level: input.service_level || "normal",
 
@@ -784,13 +908,13 @@ async function getPlanningWorkbench(tenantId) {
 
     const needs = await prisma.transportNeed.findMany({
 
-      where: { status: "pendiente" }, include: { origin: true, delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }]
+      where: { status: "pendiente" }, include: { sede: true, delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }]
 
     });
 
     const plans = await prisma.transportPlan.findMany({
 
-      include: { origin: true, needs: { include: { delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }] } },
+      include: { sede: true, needs: { include: { delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }] } },
 
       orderBy: [{ due_date: "asc" }, { created_at: "desc" }]
 
@@ -804,11 +928,11 @@ async function getPlanningWorkbench(tenantId) {
 
       const day = need.due_at.toISOString().slice(0, 10);
 
-      const key = `${need.origin_id || "sin-origen"}|${need.service_level}|${need.required_vehicle_type || "cualquiera"}|${day}`;
+      const key = `${need.sede_id || "sin-sede"}|${need.service_level}|${need.required_vehicle_type || "cualquiera"}|${day}`;
 
       const group = grouped.get(key) || {
 
-        key, origin_id: need.origin_id, origin: need.origin, service_level: need.service_level,
+        key, sede_id: need.sede_id, sede: need.sede, service_level: need.service_level,
 
         required_vehicle_type: need.required_vehicle_type, due_date: day, need_ids: [], needs: [],
 
@@ -844,7 +968,7 @@ async function getPlanningWorkbench(tenantId) {
 
 
 
-const planInclude = { origin: true, needs: { include: { delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }] } };
+const planInclude = { sede: true, needs: { include: { delivery_point: true }, orderBy: [{ due_at: "asc" }, { priority: "asc" }] } };
 
 
 
@@ -922,7 +1046,9 @@ async function createPlan(tenantId, user, input) {
 
   return prisma.runWithTenant(tenantId, async () => {
 
-    const origin = await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(input.origin_id) } });
+    const sede = await prisma.sede.findFirstOrThrow({ where: { id: Number(input.sede_id) } });
+
+    if (sede.latitude == null || sede.longitude == null) throw appError(400, "TMS_SEDE_COORDINATES_REQUIRED", `La sede ${sede.name} requiere latitud y longitud para planear despachos.`);
 
     const code = normalizedCode(input.code) || await nextPlanCode();
 
@@ -934,7 +1060,7 @@ async function createPlan(tenantId, user, input) {
 
       data: {
 
-        code, name: String(input.name || "").trim() || code, origin_id: origin.id,
+        code, name: String(input.name || "").trim() || code, sede_id: sede.id,
 
         service_level: input.service_level || "normal",
 
@@ -1028,9 +1154,9 @@ async function addPlanNeeds(tenantId, id, input) {
 
     if (notPending.length) throw appError(409, "TMS_NEEDS_NOT_PLANNABLE", "Solo se pueden agregar pedidos completos y pendientes.", { codes: notPending.map((need) => need.code) });
 
-    const wrongOrigin = foundNeeds.filter((need) => need.origin_id && need.origin_id !== plan.origin_id);
+    const wrongSede = foundNeeds.filter((need) => need.sede_id && need.sede_id !== plan.sede_id);
 
-    if (wrongOrigin.length) throw appError(409, "TMS_INCOMPATIBLE_ORIGIN", "Todos los pedidos deben salir del origen del plan.", { codes: wrongOrigin.map((need) => need.code) });
+    if (wrongSede.length) throw appError(409, "TMS_INCOMPATIBLE_SEDE", "Todos los pedidos deben salir de la sede del plan.", { codes: wrongSede.map((need) => need.code) });
 
     await prisma.transportNeed.updateMany({ where: { tenant_id: String(tenantId), id: { in: needIds } }, data: { plan_id: plan.id } });
 
@@ -1092,9 +1218,7 @@ function rateApplies(rate, context) {
 
   const departments = new Set(context.needs.map((need) => normalizedMatch(need.delivery_point.department)));
 
-  return (!rate.origin_id || rate.origin_id === context.origin.id)
-
-    && (!rate.destination_city || (cities.size === 1 && cities.has(normalizedMatch(rate.destination_city))))
+  return (!rate.destination_city || (cities.size === 1 && cities.has(normalizedMatch(rate.destination_city))))
 
     && (!rate.destination_department || (departments.size === 1 && departments.has(normalizedMatch(rate.destination_department))))
 
@@ -1110,7 +1234,9 @@ async function evaluatePlan(tenantId, input) {
 
   return prisma.runWithTenant(tenantId, async () => {
 
-    const origin = await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(input.origin_id) } });
+    const sede = await prisma.sede.findFirstOrThrow({ where: { id: Number(input.sede_id) } });
+
+    if (sede.latitude == null || sede.longitude == null) throw appError(400, "TMS_SEDE_COORDINATES_REQUIRED", `La sede ${sede.name} requiere latitud y longitud para evaluar despachos.`);
 
     const needIds = input.need_ids.map(Number);
 
@@ -1120,13 +1246,13 @@ async function evaluatePlan(tenantId, input) {
 
     if (foundNeeds.some((need) => need.status !== "pendiente")) throw appError(409, "TMS_NEEDS_NOT_PLANNABLE", "El planeador solo recibe necesidades completas y pendientes.");
 
-    if (foundNeeds.some((need) => need.origin_id && need.origin_id !== origin.id)) throw appError(409, "TMS_INCOMPATIBLE_ORIGIN", "Las necesidades seleccionadas no pertenecen al mismo origen.");
+    if (foundNeeds.some((need) => need.sede_id && need.sede_id !== sede.id)) throw appError(409, "TMS_INCOMPATIBLE_SEDE", "Las necesidades seleccionadas no pertenecen a la misma sede.");
 
     if (foundNeeds.some((need) => need.delivery_point.latitude === null || need.delivery_point.longitude === null)) throw appError(409, "TMS_DESTINATION_COORDINATES_REQUIRED", "Todos los destinos necesitan coordenadas para optimizar la ruta.");
 
     const config = await getTmsConfig(tenantId);
 
-    const route = optimizeStopOrder(origin, foundNeeds, { road_factor: config.road_factor, ...input });
+    const route = optimizeStopOrder(sede, foundNeeds, { road_factor: config.road_factor, ...input });
 
     const totals = {
 
@@ -1170,11 +1296,11 @@ async function evaluatePlan(tenantId, input) {
 
     const rates = await prisma.transportRateCard.findMany({
 
-      where: { status: "activa", active: true, valid_from: { lte: now }, valid_to: { gte: now } }, include: { carrier: true, origin: true }
+      where: { status: "activa", active: true, valid_from: { lte: now }, valid_to: { gte: now } }, include: { carrier: true }
 
     });
 
-    const context = { origin, needs: foundNeeds, service_level: input.service_level || foundNeeds[0].service_level, vehicle_type: input.vehicle_type || vehicle?.type || foundNeeds[0].required_vehicle_type };
+    const context = { needs: foundNeeds, service_level: input.service_level || foundNeeds[0].service_level, vehicle_type: input.vehicle_type || vehicle?.type || foundNeeds[0].required_vehicle_type };
 
     const quotes = rates.filter((rate) => rateApplies(rate, context)).map((rate) => calculateRateQuote(rate, totals));
 
@@ -1208,7 +1334,7 @@ async function evaluatePlan(tenantId, input) {
 
     return {
 
-      generated_at: new Date().toISOString(), strategy, origin,
+      generated_at: new Date().toISOString(), strategy, sede,
 
       ordered_need_ids: route.ordered.map((need) => need.id), route: { ...route, ordered: undefined }, totals,
 
@@ -1259,7 +1385,7 @@ async function commitPlan(tenantId, user, input) {
 
   const trip = await createTrip(tenantId, user, {
 
-    ...input, origin_name: plan.origin.name, need_ids: plan.ordered_need_ids,
+    ...input, origin_name: plan.sede.name, need_ids: plan.ordered_need_ids,
 
     estimated_cost: quote.total, currency: quote.currency, planned_distance_km: plan.totals.distance_km,
 
@@ -1279,7 +1405,7 @@ async function getTrip(tenantId, id) {
 
     const trip = await prisma.transportTrip.findFirstOrThrow({
 
-      where: { id: Number(id) }, include: { origin: true, carrier: true, driver: true, needs: { include: { need: { include: { delivery_point: true, lines: true } } } }, stops: { include: { need: { include: { lines: true } }, delivery_point: true, attempts: { include: { pod: true }, orderBy: { attempt_number: "asc" } } }, orderBy: { sequence: "asc" } }, events: { orderBy: { occurred_at: "asc" } }, settlements: { include: { lines: true } } }
+      where: { id: Number(id) }, include: { sede: true, carrier: true, driver: true, needs: { include: { need: { include: { delivery_point: true, lines: true } } } }, stops: { include: { need: { include: { lines: true } }, delivery_point: true, attempts: { include: { pod: true }, orderBy: { attempt_number: "asc" } } }, orderBy: { sequence: "asc" } }, events: { orderBy: { occurred_at: "asc" } }, settlements: { include: { lines: true } } }
 
     });
 
@@ -1305,15 +1431,15 @@ async function createTrip(tenantId, user, input) {
 
     const needs = needIds.map((needId) => needsById.get(needId));
 
-    const origin = input.origin_id ? await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(input.origin_id) } }) : null;
+    const sede = input.sede_id ? await prisma.sede.findFirstOrThrow({ where: { id: Number(input.sede_id) } }) : null;
 
     const unavailable = needs.filter((need) => need.status !== "pendiente");
 
     if (unavailable.length) throw appError(409, "TMS_NEEDS_NOT_PLANNABLE", "Solo se pueden planificar necesidades completas y pendientes.", { codes: unavailable.map((need) => need.code) });
 
-    if (origin && needs.some((need) => need.origin_id && need.origin_id !== origin.id)) throw appError(409, "TMS_INCOMPATIBLE_ORIGIN", "Todas las necesidades deben coincidir con el origen del viaje.");
+    if (sede && needs.some((need) => need.sede_id && need.sede_id !== sede.id)) throw appError(409, "TMS_INCOMPATIBLE_SEDE", "Todas las necesidades deben coincidir con la sede del viaje.");
 
-    if (!origin && needs.some((need) => need.origin_name !== input.origin_name)) throw appError(409, "TMS_INCOMPATIBLE_ORIGIN", "Todas las necesidades deben coincidir con el origen del viaje.");
+    if (!sede && needs.some((need) => need.origin_name !== input.origin_name)) throw appError(409, "TMS_INCOMPATIBLE_SEDE", "Todas las necesidades deben coincidir con la sede del viaje.");
 
     const total = (field) => needs.reduce((sum, need) => sum + numberValue(need[field]), 0);
 
@@ -1321,7 +1447,7 @@ async function createTrip(tenantId, user, input) {
 
       data: {
 
-        code: normalizedCode(input.code), status: "planificado", origin_place_id: input.origin_place_id || null, origin_id: origin?.id || null, origin_name: origin?.name || input.origin_name,
+        code: normalizedCode(input.code), status: "planificado", origin_place_id: input.origin_place_id || null, sede_id: sede?.id || null, origin_name: sede?.name || input.origin_name,
 
         planned_departure: dateValue(input.planned_departure, "Salida planificada"), planned_arrival: dateValue(input.planned_arrival, "Llegada planificada"),
 
@@ -1357,7 +1483,7 @@ async function listTrips(tenantId, query = {}) {
 
     where: { ...(query.status ? { status: query.status } : {}), ...(query.date_from || query.date_to ? { planned_departure: { ...(query.date_from ? { gte: dateValue(query.date_from, "Desde") } : {}), ...(query.date_to ? { lte: dateValue(query.date_to, "Hasta") } : {}) } } : {}) },
 
-    include: { origin: true, carrier: true, driver: true, needs: true, stops: { orderBy: { sequence: "asc" } } }, orderBy: [{ planned_departure: "asc" }, { created_at: "desc" }], take: Math.min(numberValue(query.limit, 100), 200)
+    include: { sede: true, carrier: true, driver: true, needs: true, stops: { orderBy: { sequence: "asc" } } }, orderBy: [{ planned_departure: "asc" }, { created_at: "desc" }], take: Math.min(numberValue(query.limit, 100), 200)
 
   }));
 
@@ -1760,7 +1886,7 @@ function parseCsv(text) {
 
   if (!rows.length) return [];
 
-  const aliases = { pedido: "code", codigo_pedido: "code", orden: "code", origen: "origin_code", codigo_origen: "origin_code", destino: "delivery_point_code", punto_entrega: "delivery_point_code", codigo_destino: "delivery_point_code", disponible_desde: "available_at", fecha_disponible: "available_at", entregar_antes_de: "due_at", fecha_entrega: "due_at", peso_kg: "weight_kg", peso: "weight_kg", volumen_m3: "volume_m3", volumen: "volume_m3", prioridad: "priority", nivel_servicio: "service_level", referencia: "source_reference", pallets: "pallets", paquetes: "packages", valor_carga: "cargo_value", moneda: "currency", tipo_vehiculo: "required_vehicle_type" };
+  const aliases = { pedido: "code", codigo_pedido: "code", orden: "code", origen: "sede_code", codigo_origen: "sede_code", sede: "sede_code", codigo_sede: "sede_code", destino: "delivery_point_code", punto_entrega: "delivery_point_code", codigo_destino: "delivery_point_code", disponible_desde: "available_at", fecha_disponible: "available_at", entregar_antes_de: "due_at", fecha_entrega: "due_at", peso_kg: "weight_kg", peso: "weight_kg", volumen_m3: "volume_m3", volumen: "volume_m3", prioridad: "priority", nivel_servicio: "service_level", referencia: "source_reference", pallets: "pallets", paquetes: "packages", valor_carga: "cargo_value", moneda: "currency", tipo_vehiculo: "required_vehicle_type" };
 
   const headers = rows.shift().map((header) => { const normalized = normalizedMatch(header).replace(/\s+/g, "_"); return aliases[normalized] || normalized; });
 
@@ -1798,7 +1924,7 @@ async function ensureIntegratedDeliveryPoint(source, customer) {
   return prisma.transportDeliveryPoint.create({ data: { ...data, code } });
 }
 
-async function createIntegratedNeed(source, order, origin, user) {
+async function createIntegratedNeed(source, order, sede, user) {
   const point = await ensureIntegratedDeliveryPoint(source, order.customer);
   const sourceId = String(order.id);
   const existing = await prisma.transportNeed.findFirst({ where: { source_type: source, source_id: sourceId } });
@@ -1823,8 +1949,8 @@ async function createIntegratedNeed(source, order, origin, user) {
     source_id: sourceId,
     source_reference: sourceReference,
     sales_order_id: source === "commercial" ? order.id : null,
-    origin_id: origin?.id,
-    origin_name: origin?.name || "Origen por completar",
+    sede_id: sede?.id,
+    origin_name: sede?.name || "Sede por completar",
     delivery_point_id: point.id,
     available_at: order.date || order.order_date || new Date(),
     due_at: order.due_date || nextDeliveryDate(order.date || order.order_date),
@@ -1843,7 +1969,7 @@ async function syncConnectedOrders(tenantId, user) {
   return prisma.runWithTenant(tenantId, async () => {
     const tenant = await prisma.tenant.findUnique({ where: { id: String(tenantId) }, select: { active_modules: true } });
     const intake = transportIntakeMode(tenant?.active_modules);
-    const origin = await prisma.transportOrigin.findFirst({ where: { active: true }, orderBy: { id: "asc" } });
+    const sede = await prisma.sede.findFirst({ where: { active: true, latitude: { not: null }, longitude: { not: null } }, orderBy: { id: "asc" } });
     const candidates = [];
     if (intake.sources.includes("commercial")) {
       const orders = await prisma.commercialSalesOrder.findMany({
@@ -1860,7 +1986,7 @@ async function syncConnectedOrders(tenantId, user) {
       for (const order of orders) candidates.push({ source: "sales", order: { ...order, customer: order.party, lines: order.lines.map((line) => ({ ...line, sku: byId.get(line.item_id)?.code, unit_weight_kg: byId.get(line.item_id)?.weight_kg, unit_volume_m3: byId.get(line.item_id)?.volume_m3 })) } });
     }
     const results = [];
-    for (const candidate of candidates) results.push(await createIntegratedNeed(candidate.source, candidate.order, origin, user));
+    for (const candidate of candidates) results.push(await createIntegratedNeed(candidate.source, candidate.order, sede, user));
     return { ...intake, reviewed: candidates.length, created: results.filter((result) => result.created).length, existing: results.filter((result) => !result.created).length };
   });
 }
@@ -1871,7 +1997,7 @@ async function getOrder(tenantId, id) {
 
   return prisma.runWithTenant(tenantId, async () => {
 
-    const order = await prisma.transportNeed.findFirstOrThrow({ where: { id: Number(id) }, include: { origin: true, delivery_point: true, lines: true, trip_links: { include: { trip: { include: { stops: true, events: { orderBy: { occurred_at: "asc" } } } } } }, attempts: { include: { pod: true }, orderBy: { occurred_at: "asc" } } } });
+    const order = await prisma.transportNeed.findFirstOrThrow({ where: { id: Number(id) }, include: { sede: true, delivery_point: true, lines: true, trip_links: { include: { trip: { include: { stops: true, events: { orderBy: { occurred_at: "asc" } } } } } }, attempts: { include: { pod: true }, orderBy: { occurred_at: "asc" } } } });
 
     return { ...order, trip_links: order.trip_links.map((link) => ({ ...link, trip: { ...link.trip, events: link.trip.events.map((event) => ({ ...event, id: String(event.id) })) } })) };
 
@@ -1893,7 +2019,7 @@ async function updateOrder(tenantId, user, id, input) {
 
     const point = input.delivery_point_id ? await prisma.transportDeliveryPoint.findFirstOrThrow({ where: { id: Number(input.delivery_point_id) } }) : current.delivery_point;
 
-    const origin = input.origin_id ? await prisma.transportOrigin.findFirstOrThrow({ where: { id: Number(input.origin_id) } }) : current.origin;
+    const sede = input.sede_id ? await prisma.sede.findFirstOrThrow({ where: { id: Number(input.sede_id) } }) : current.sede;
 
     const availableAt = dateValue(merged.available_at, "Fecha disponible", true); const dueAt = dateValue(merged.due_at, "Fecha limite", true);
 
@@ -1901,7 +2027,7 @@ async function updateOrder(tenantId, user, id, input) {
 
     const errors = needValidationErrors(merged, point);
 
-    const updated = await prisma.transportNeed.update({ where: { id: current.id }, data: { code: normalizedCode(merged.code), source_reference: merged.source_reference || null, origin_id: origin?.id || null, origin_name: origin?.name || merged.origin_name, delivery_point_id: point.id, available_at: availableAt, due_at: dueAt, priority: merged.priority, service_level: merged.service_level, weight_kg: numberValue(merged.weight_kg), volume_m3: numberValue(merged.volume_m3), pallets: numberValue(merged.pallets), packages: numberValue(merged.packages), required_vehicle_type: merged.required_vehicle_type || null, cargo_value: numberValue(merged.cargo_value), currency: merged.currency || "COP", status: errors.length ? "incompleta" : "pendiente", validation_errors: errors, metadata: { ...(current.metadata || {}), ...(input.metadata || {}), last_edited_by: user?.id || null } } });
+    const updated = await prisma.transportNeed.update({ where: { id: current.id }, data: { code: normalizedCode(merged.code), source_reference: merged.source_reference || null, sede_id: sede?.id || null, origin_name: sede?.name || merged.origin_name, delivery_point_id: point.id, available_at: availableAt, due_at: dueAt, priority: merged.priority, service_level: merged.service_level, weight_kg: numberValue(merged.weight_kg), volume_m3: numberValue(merged.volume_m3), pallets: numberValue(merged.pallets), packages: numberValue(merged.packages), required_vehicle_type: merged.required_vehicle_type || null, cargo_value: numberValue(merged.cargo_value), currency: merged.currency || "COP", status: errors.length ? "incompleta" : "pendiente", validation_errors: errors, metadata: { ...(current.metadata || {}), ...(input.metadata || {}), last_edited_by: user?.id || null } } });
 
     return getOrder(tenantId, updated.id);
 
@@ -1953,7 +2079,7 @@ async function getOrderPod(tenantId, id) {
 
 async function importOrdersCsv(tenantId, user, input) {
 
-  const parsed = parseCsv(input.csv); const required = ["code", "origin_code", "delivery_point_code", "available_at", "due_at", "weight_kg", "volume_m3"];
+  const parsed = parseCsv(input.csv); const required = ["code", "sede_code", "delivery_point_code", "available_at", "due_at", "weight_kg", "volume_m3"];
 
   if (!parsed.length) throw appError(400, "TMS_EMPTY_CSV", "El archivo CSV no contiene filas de datos.");
 
@@ -1961,19 +2087,19 @@ async function importOrdersCsv(tenantId, user, input) {
 
   await prisma.runWithTenant(tenantId, async () => {
 
-    const origins = await prisma.transportOrigin.findMany(); const points = await prisma.transportDeliveryPoint.findMany();
+    const sedes = await prisma.sede.findMany(); const points = await prisma.transportDeliveryPoint.findMany();
 
-    const originByCode = new Map(origins.map((row) => [normalizedCode(row.code), row])); const pointByCode = new Map(points.map((row) => [normalizedCode(row.code), row]));
+    const sedeByCode = new Map(sedes.map((row) => [normalizedCode(row.code), row])); const pointByCode = new Map(points.map((row) => [normalizedCode(row.code), row]));
 
     for (const entry of parsed) {
 
-      const missing = required.filter((field) => !entry.data[field]); const origin = originByCode.get(normalizedCode(entry.data.origin_code)); const point = pointByCode.get(normalizedCode(entry.data.delivery_point_code));
+      const missing = required.filter((field) => !entry.data[field]); const sede = sedeByCode.get(normalizedCode(entry.data.sede_code)); const point = pointByCode.get(normalizedCode(entry.data.delivery_point_code));
 
-      if (missing.length || !origin || !point) { errors.push({ row: entry.row, missing, ...(origin ? {} : { origin_code: "no_encontrado" }), ...(point ? {} : { delivery_point_code: "no_encontrado" }) }); continue; }
+      if (missing.length || !sede || !point) { errors.push({ row: entry.row, missing, ...(sede ? {} : { sede_code: "no_encontrado" }), ...(point ? {} : { delivery_point_code: "no_encontrado" }) }); continue; }
 
       const knownFields = new Set([...required, "priority", "service_level", "source_reference", "source_type", "pallets", "packages", "cargo_value", "customer_freight", "currency", "required_vehicle_type", "temperature_min_c", "temperature_max_c"]);
       const customFields = Object.fromEntries(Object.entries(entry.data).filter(([key, value]) => !knownFields.has(key) && String(value || "").trim()));
-      prepared.push({ ...entry.data, source_type: entry.data.source_type || "excel", origin_id: origin.id, origin_name: origin.name, delivery_point_id: point.id, weight_kg: numberValue(entry.data.weight_kg), volume_m3: numberValue(entry.data.volume_m3), pallets: numberValue(entry.data.pallets), packages: numberValue(entry.data.packages), cargo_value: numberValue(entry.data.cargo_value), currency: entry.data.currency || "COP", metadata: { import_format: "xlsx", custom_fields: customFields } });
+      prepared.push({ ...entry.data, source_type: entry.data.source_type || "excel", sede_id: sede.id, origin_name: sede.name, delivery_point_id: point.id, weight_kg: numberValue(entry.data.weight_kg), volume_m3: numberValue(entry.data.volume_m3), pallets: numberValue(entry.data.pallets), packages: numberValue(entry.data.packages), cargo_value: numberValue(entry.data.cargo_value), currency: entry.data.currency || "COP", metadata: { import_format: "xlsx", custom_fields: customFields } });
 
     }
 
@@ -2417,7 +2543,7 @@ module.exports = {
 
   TRIP_TRANSITIONS, ATTEMPT_RESULTS, assertTripTransition, needValidationErrors, vehicleCapacityKg, haversineKm, optimizeStopOrder, calculateRateQuote, gpsPositionData, calculateLiveStatus, turfSpatialStatus, validRouteCoordinates, validatePodInput, validateAttemptInput,
 
-  getTmsConfig, saveTmsConfig, listCarriers, saveCarrier, listDrivers, saveDriver, listOrigins, saveOrigin, listDeliveryPoints, saveDeliveryPoint,
+  getTmsConfig, saveTmsConfig, listCarriers, saveCarrier, listDrivers, saveDriver, listSedes, saveSede, listDeliveryPoints, saveDeliveryPoint, searchRoutePlaces, simulateRoute,
 
   listRateCards, saveRateCard, versionRateCard, activateRateCard, deactivateRateCard, createNeed, listNeeds, getPlanningWorkbench, evaluatePlan, commitPlan,
 
