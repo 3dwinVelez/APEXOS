@@ -1,7 +1,7 @@
 {
-  "change_id": "transport-settlement-20261020-runtime-qa-blocked",
-  "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
-  "reviewed_commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
+  "change_id": "transport-browser-pdf-20261020",
+  "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+  "reviewed_commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
@@ -12,17 +12,17 @@
     "status": "approved",
     "scope": "promotion_to_develop_for_qa",
     "approved_by": "Usuario de esta conversacion",
-    "approved_at": "2026-10-20T14:37:03.777Z",
-    "timestamp_note": "Momento de registro de autorizaciones persistentes; no fecha original de las respuestas.",
+    "approved_at": "2026-10-20T15:28:21.043Z",
+    "recorded_at_note": "Registro de autorizaciones persistentes; no se inventa la fecha original de sus respuestas.",
     "authorization_flags": {
       "auxiliary_branch_promotion": true
     },
+    "quality_gate_overridden": false,
     "authorizations": [
       "Si, aislar Transporte y abrir PR",
-      "Si, preparar soporte de PDF para QA",
-      "Autorizar clave temporal y retirada"
-    ],
-    "quality_gate_overridden": false
+      "replantea el modelo del pdf para no incurrir en gastos adicionales y que podamos subir la version actualizada hacia develop de manera correcta",
+      "Autorizar estas dos migraciones solo en QA"
+    ]
   },
   "checks": {
     "functional": {
@@ -38,11 +38,10 @@
       ]
     },
     "support_scripts": {
-      "status": "failed",
+      "status": "passed",
       "evidence": [
         "transport-settlement-20261020-preqa.json"
-      ],
-      "reason": "Certificacion local aprobada; runtime administrado de QA rechaza namespaces requeridos por Chromium. Bloquea publicacion y promocion."
+      ]
     },
     "regression": {
       "status": "passed",
@@ -71,21 +70,13 @@
       "transport-settlement-20261020-preqa.json"
     ]
   },
-  "result": "NO APTO PARA PROMOCION",
-  "local_certification": {
-    "status": "passed",
-    "unit_regression": {
-      "total": 807,
-      "passed": 805,
-      "failed": 0,
-      "skipped": 2,
-      "artifact_sha256": "1f6812b36cfa2247fb5ed9fb75840354a34cef70831d2589aceac2e56357f60f"
-    },
+  "result": "APTO CON OBSERVACIONES PARA PRE-QA; NO AUTORIZA MAIN",
+  "local_evidence": {
     "suites": {
       "functional": {
         "status": "passed",
-        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
-        "artifact_sha256": "eddbe9dec3cc64173d5c908a722a125b43e9676d9b9c22d7231c032ed07a509e",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "4fabce90e5d9f5445153a324a7d787076b3044baaa40f8d1499c1189155b7f95",
         "checks": [
           {
             "name": "anonymous_denied",
@@ -560,11 +551,359 @@
             "status": "passed"
           },
           {
-            "name": "liquidated_pdf_generated",
+            "name": "liquidated_report_authorized",
             "status": "passed"
           },
           {
-            "name": "pdf_attachment_no_cache",
+            "name": "report_no_cache",
+            "status": "passed"
+          },
+          {
+            "name": "report_limited_role_real_login",
+            "status": "passed"
+          },
+          {
+            "name": "report_role_without_permission_denied",
+            "status": "passed"
+          },
+          {
+            "name": "browser_two_captured_stage_four_images",
+            "status": "passed"
+          },
+          {
+            "name": "browser_detail_and_frozen_total",
+            "status": "passed"
+          },
+          {
+            "name": "browser_print_reauthorizes_and_dispatches",
+            "status": "passed"
+          },
+          {
+            "name": "browser_pdf_binary",
+            "status": "passed"
+          },
+          {
+            "name": "browser_draft_cannot_print",
+            "status": "passed"
+          },
+          {
+            "name": "browser_foreign_cannot_print",
+            "status": "passed"
+          },
+          {
+            "name": "browser_anonymous_cannot_print",
+            "status": "passed"
+          }
+        ]
+      },
+      "services": {
+        "status": "passed",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "43901c3c18fcb2fa4df116739d59490ca71f7f210ad6008d554d671c8ab7e28e",
+        "checks": [
+          {
+            "name": "login_user_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_limited_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_techUser_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_user_B",
+            "status": "passed"
+          },
+          {
+            "name": "login_limited_B",
+            "status": "passed"
+          },
+          {
+            "name": "login_techUser_B",
+            "status": "passed"
+          },
+          {
+            "name": "service_types_available",
+            "status": "passed"
+          },
+          {
+            "name": "internal_order_created",
+            "status": "passed"
+          },
+          {
+            "name": "internal_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_read_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_limited_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_assigned_technician_starts",
+            "status": "passed"
+          },
+          {
+            "name": "internal_start_persisted",
+            "status": "passed"
+          },
+          {
+            "name": "internal_limited_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_created",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_applied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_persists_without_losing_items",
+            "status": "passed"
+          },
+          {
+            "name": "internal_audit_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_history_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_order_created",
+            "status": "passed"
+          },
+          {
+            "name": "external_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_read_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_limited_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_assigned_technician_starts",
+            "status": "passed"
+          },
+          {
+            "name": "external_start_persisted",
+            "status": "passed"
+          },
+          {
+            "name": "external_limited_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_created",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_applied",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_persists_without_losing_items",
+            "status": "passed"
+          },
+          {
+            "name": "external_audit_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_history_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "tenant": {
+        "status": "passed",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "83829ca1e586b980741347009432ad2f29332651bca2cc6274b5a237c1a2c406",
+        "checks": [
+          {
+            "name": "tenant_0_package_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_period_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_carrier_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_own_package_read",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_foreign_detail_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_foreign_update_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_package_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_period_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_carrier_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_own_package_read",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_foreign_detail_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_foreign_update_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "platform": {
+        "status": "passed",
+        "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+        "sha256": "44dfb364e66fee44295eec5953017b22da91cde9da3fa087e5d0a0c8aee5d75b",
+        "checks": [
+          {
+            "name": "session_login",
+            "status": "passed"
+          },
+          {
+            "name": "session_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "session_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "services_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "services_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "references_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "references_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "hr_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "hr_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "inventory_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "inventory_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "roles_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "roles_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "transport_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "transport_anonymous_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "migration": {
+        "status": "passed",
+        "commit": null,
+        "sha256": "12f3cf984907c916b9534500ee16f1475c89af444c1dc2b5510321d5b9edb460",
+        "checks": [
+          {
+            "name": "origin_fields_archived_before_removal",
+            "status": "passed"
+          },
+          {
+            "name": "unrelated_rate_metadata_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "existing_tenants_ids_and_activity_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportNeed_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportPlan_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportTrip_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "vehicle_package_without_legacy_carrier",
             "status": "passed"
           }
         ]
@@ -572,7 +911,7 @@
       "legacy": {
         "status": "passed",
         "commit": null,
-        "artifact_sha256": "ab90deb08b26e1546b799aee17b5c0c92be9b1d9df4c47d377b94e10cde7f2ad",
+        "sha256": "1b8c6f2991fe9a47dd4ac80abbed3d1d1f327ad8ed9ff72f81468089a69e9fbb",
         "checks": [
           {
             "name": "health_ok",
@@ -851,424 +1190,84 @@
             "status": "passed"
           }
         ]
-      },
-      "services": {
-        "status": "passed",
-        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
-        "artifact_sha256": "b5a770e3aec7b65bcf3772e34494287e8b857287423df3e0082d99795ca02634",
-        "checks": [
-          {
-            "name": "login_user_A",
-            "status": "passed"
-          },
-          {
-            "name": "login_limited_A",
-            "status": "passed"
-          },
-          {
-            "name": "login_techUser_A",
-            "status": "passed"
-          },
-          {
-            "name": "login_user_B",
-            "status": "passed"
-          },
-          {
-            "name": "login_limited_B",
-            "status": "passed"
-          },
-          {
-            "name": "login_techUser_B",
-            "status": "passed"
-          },
-          {
-            "name": "service_types_available",
-            "status": "passed"
-          },
-          {
-            "name": "internal_order_created",
-            "status": "passed"
-          },
-          {
-            "name": "internal_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "internal_foreign_read_denied",
-            "status": "passed"
-          },
-          {
-            "name": "internal_foreign_start_denied",
-            "status": "passed"
-          },
-          {
-            "name": "internal_limited_start_denied",
-            "status": "passed"
-          },
-          {
-            "name": "internal_assigned_technician_starts",
-            "status": "passed"
-          },
-          {
-            "name": "internal_start_persisted",
-            "status": "passed"
-          },
-          {
-            "name": "internal_limited_correction_denied",
-            "status": "passed"
-          },
-          {
-            "name": "internal_foreign_correction_denied",
-            "status": "passed"
-          },
-          {
-            "name": "internal_correction_created",
-            "status": "passed"
-          },
-          {
-            "name": "internal_correction_applied",
-            "status": "passed"
-          },
-          {
-            "name": "internal_correction_persists_without_losing_items",
-            "status": "passed"
-          },
-          {
-            "name": "internal_audit_preserved",
-            "status": "passed"
-          },
-          {
-            "name": "internal_foreign_history_denied",
-            "status": "passed"
-          },
-          {
-            "name": "external_order_created",
-            "status": "passed"
-          },
-          {
-            "name": "external_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "external_foreign_read_denied",
-            "status": "passed"
-          },
-          {
-            "name": "external_foreign_start_denied",
-            "status": "passed"
-          },
-          {
-            "name": "external_limited_start_denied",
-            "status": "passed"
-          },
-          {
-            "name": "external_assigned_technician_starts",
-            "status": "passed"
-          },
-          {
-            "name": "external_start_persisted",
-            "status": "passed"
-          },
-          {
-            "name": "external_limited_correction_denied",
-            "status": "passed"
-          },
-          {
-            "name": "external_foreign_correction_denied",
-            "status": "passed"
-          },
-          {
-            "name": "external_correction_created",
-            "status": "passed"
-          },
-          {
-            "name": "external_correction_applied",
-            "status": "passed"
-          },
-          {
-            "name": "external_correction_persists_without_losing_items",
-            "status": "passed"
-          },
-          {
-            "name": "external_audit_preserved",
-            "status": "passed"
-          },
-          {
-            "name": "external_foreign_history_denied",
-            "status": "passed"
-          }
-        ]
-      },
-      "tenant": {
-        "status": "passed",
-        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
-        "artifact_sha256": "4cdbb047321f50c66d9ce258bd181af789421ecd0139b26951e1b022ea8d061d",
-        "checks": [
-          {
-            "name": "tenant_0_package_list_only_own",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_0_period_list_only_own",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_0_carrier_list_only_own",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_0_own_package_read",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_0_foreign_detail_denied",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_0_foreign_update_denied",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_1_package_list_only_own",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_1_period_list_only_own",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_1_carrier_list_only_own",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_1_own_package_read",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_1_foreign_detail_denied",
-            "status": "passed"
-          },
-          {
-            "name": "tenant_1_foreign_update_denied",
-            "status": "passed"
-          }
-        ]
-      },
-      "migration": {
-        "status": "passed",
-        "commit": null,
-        "artifact_sha256": "12f3cf984907c916b9534500ee16f1475c89af444c1dc2b5510321d5b9edb460",
-        "checks": [
-          {
-            "name": "origin_fields_archived_before_removal",
-            "status": "passed"
-          },
-          {
-            "name": "unrelated_rate_metadata_preserved",
-            "status": "passed"
-          },
-          {
-            "name": "existing_tenants_ids_and_activity_preserved",
-            "status": "passed"
-          },
-          {
-            "name": "TransportNeed_foreign_key_preserved",
-            "status": "passed"
-          },
-          {
-            "name": "TransportPlan_foreign_key_preserved",
-            "status": "passed"
-          },
-          {
-            "name": "TransportTrip_foreign_key_preserved",
-            "status": "passed"
-          },
-          {
-            "name": "vehicle_package_without_legacy_carrier",
-            "status": "passed"
-          }
-        ]
-      },
-      "platform": {
-        "status": "passed",
-        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
-        "artifact_sha256": "19fb3eeec0f36660eab57570a0a0ba907d80834c43ce714bb5eb2bbaa64970d7",
-        "checks": [
-          {
-            "name": "session_login",
-            "status": "passed"
-          },
-          {
-            "name": "session_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "session_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "services_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "services_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "references_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "references_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "hr_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "hr_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "inventory_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "inventory_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "accounting_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "accounting_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "roles_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "roles_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "transport_authorized",
-            "status": "passed"
-          },
-          {
-            "name": "transport_anonymous_denied",
-            "status": "passed"
-          }
-        ]
-      },
-      "runtime": {
-        "status": "passed",
-        "commit": null,
-        "artifact_sha256": "b266c64c08a1a1685ff8f71d78acfdad776c66694490e21e9bb6cb7706e3e5ad",
-        "checks": []
-      },
-      "linux": {
-        "status": "passed",
-        "commit": null,
-        "artifact_sha256": "4b5b971dc7a9d3c162340ec1dfd2c4b66dc07c5e2e0eb4c556aa2bb6eb77d598",
-        "checks": [
-          {
-            "name": "two_tariff_liquidated_fixture",
-            "status": "passed"
-          },
-          {
-            "name": "linux_api_ready",
-            "status": "passed"
-          },
-          {
-            "name": "linux_real_login",
-            "status": "passed"
-          },
-          {
-            "name": "linux_pdf_anonymous_denied",
-            "status": "passed"
-          },
-          {
-            "name": "linux_full_liquidation_pdf",
-            "status": "passed"
-          },
-          {
-            "name": "linux_attachment_no_cache",
-            "status": "passed"
-          }
-        ]
-      },
-      "image": {
-        "status": "passed",
-        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
-        "artifact_sha256": "4de4d624a94019b53fd65ebd1ddec7e1d4fd3cfa1878433797fc9f63439969f0",
-        "checks": [],
-        "files": 14,
-        "mismatches": []
       }
     },
+    "api_tests": {
+      "total": 717,
+      "passed": 715,
+      "failed": 0,
+      "skipped": 2,
+      "sha256": "b0da517f1acddf19b00b8b22c11f72e22496b3683111610ab1532c15e928ae57"
+    },
+    "web_broad_suite": {
+      "total": 523,
+      "passed": 522,
+      "failed": 1,
+      "classification": "Fallo preexistente reproducido en origin/develop: funciones ausentes para importar saldos y nuevo gasto. No se modifican esos modulos.",
+      "sha256": "c38b04a5f0ed75e6e234ce08dd86cf62d26662c099d3bb037cf44113d5e8064c",
+      "baseline_sha256": "951ff82cfdcecde7a2d34ca9a065bd08b1f1fa3f9d70d3dddeca4e4d9825d99f",
+      "baseline_commit": "6bae143dd454473ff53e86328756faa848a89da8"
+    },
     "pdf": {
-      "status": "passed",
       "pages": 3,
       "annex_images": 2,
-      "artifact_sha256": "63219a5d3dd065ee4606e6c449d8eb7475bf971274bc8c028e76dfdf6f50b0f9",
-      "checks": [
-        "routes_clients_stores_amounts",
-        "two_landscape_captured_annexes",
-        "historical_price_preserved"
-      ]
+      "historical_price": 500000,
+      "new_version_not_used": 700000,
+      "total": 525000,
+      "sha256": "9471ff622d636d0e160237cb9090dc299e53ceec93e4b6c49c10d8e4b13e830c",
+      "visual_review": "Detalle y capturas de etapa 4 revisados; mapas completos, marcadores estables y texto legible."
     },
-    "chromium_sandbox": {
-      "namespace": true,
-      "pid_namespaces": true,
-      "network_namespaces": true,
-      "seccomp_bpf": true,
-      "no_sandbox": false
-    }
+    "build": {
+      "status": "passed",
+      "log_sha256": "68b0d6b59137f12342c2e80ed466387c2bb1717dff5ef38a0b7d406930c39219"
+    },
+    "lint": {
+      "status": "passed",
+      "scope": "Frontend completo antes de ajuste de captura; lint dirigido final de los tres archivos modificados."
+    },
+    "diagnostics": [
+      "La ejecucion amplia desde raiz tuvo cuatro fallos de cwd de tests HR; la ejecucion en apps/web elimina esos cuatro fallos.",
+      "Se corrigieron dos incompatibilidades del test de navegacion con aliases de maestros y query de catalogo; se mantienen sus aserciones y se prueba la redireccion real.",
+      "Una ejecucion bajo presion de memoria fallo el benchmark local de 100000 decisiones; repeticion sin cambiar producto ni umbral paso. El candidato final tiene 715 pruebas API aprobadas."
+    ]
   },
-  "qa_readonly_inspection": {
-    "project": "33726923-021d-47a7-a263-b8b287f164f1",
-    "environment": "97b0366d-a965-4356-88fd-f66dc45e83b9",
-    "service": "15c25be0-4ecd-49c8-87c1-da675c2b9d01",
-    "inspected_at": "2026-10-20T14:37:03.784Z",
-    "namespace_probe": {
-      "command": "unshare -U true",
-      "exit_code": 1,
-      "result": "unshare: unshare failed: Permission denied"
-    },
-    "process_security": {
-      "uid": 0,
-      "seccomp": 2,
-      "seccomp_filters": 3
-    },
-    "pending_candidate_migrations": [
+  "security": {
+    "status": "APTO CON OBSERVACIONES",
+    "scope": "Informe autenticado, solo liquidada, permisos y tenant en API; sin navegador servidor, sin URLs/HTML suministrados por cliente, sin credenciales en URL, capturas locales y reautorizacion al imprimir.",
+    "negative_controls": [
+      "401 anonimo",
+      "403 rol sin transport/read con login real",
+      "404 empresa ajena",
+      "409 no liquidada",
+      "400 ID invalido"
+    ],
+    "dependencies": "html-to-image 1.11.13 fijado, MIT, sin dependencias transitivas. Alertas anteriores de dependencias fuera del alcance no se presentan como resueltas."
+  },
+  "runtime_model": {
+    "generation": "navegador autenticado del usuario; Guardar como PDF del dialogo nativo",
+    "server_chromium": false,
+    "additional_infrastructure": false,
+    "new_secrets": false,
+    "server_pdf_endpoint_replaced_by": "invoice-report"
+  },
+  "qa_deployment": {
+    "status": "pending",
+    "backup_created": true,
+    "backup_sha256": "9e6cbda33bf0f10ee142bb762daf4bc25885dce4146bdc48de00491643ea00c2",
+    "restore_verification": "pending; restauracion estandar incompatible con extension administrada supabase_vault; se verifica con imagen compatible.",
+    "remote_migrations_executed": false,
+    "migrations": [
       "20261016123000_sedes_replace_origins",
       "20261019134505_transport_settlement_vehicle"
     ],
-    "remote_migrations_executed": false,
-    "remote_configuration_changed": false,
-    "production_accessed": false,
-    "temporary_ssh_key": {
-      "fingerprint": "SHA256:CiZrWGCx/EWZAmLvTZgcf/aR5YPrpEQiEhkmFdXcd8Q",
-      "registered": true,
-      "removed": true,
-      "removal_verified": "No SSH keys registered with Railway.",
-      "local_private_public_files_removed": true
-    }
+    "historical_migration_drift": {
+      "migration": "20260917120000_hr_workday_novelties_foundation",
+      "qa_matches_historical_commit": "d704110225c910dff7e20edc2bd17d868cefffd0",
+      "present_in_target_before_candidate": true,
+      "modified_by_candidate": false,
+      "checksum_history_not_rewritten": true
+    },
+    "production_accessed": false
   },
-  "blockers": [
-    "QA no permite los namespaces requeridos para Chromium con sandbox. Configurar un runtime de renderizado compatible y certificar alli el PDF completo antes de publicar/promover.",
-    "Migraciones remotas pendientes; no ejecutadas ni autorizadas independientemente.",
-    "QA funcional remoto del candidato pendiente."
-  ],
-  "publication": {
-    "pushed": false,
-    "pr_created": false,
-    "develop_merged": false,
-    "reason": "AGENTS.md prohibe publicar o promover con certificacion requerida pendiente/fallida; no se debilitan los controles del sandbox."
-  },
-  "next_step": "Preparar un runtime de renderizado compatible para QA dentro de una infraestructura expresamente autorizada; mantener privado el transporte de datos y repetir certificacion PDF y gates sobre candidato/target exactos."
+  "rollback": "Antes de QA: respaldo verificado y ventana coordinada para esquema/API/frontend; no ejecutar version anterior contra esquema nuevo. Produccion fuera de alcance."
 }
