@@ -1,32 +1,1274 @@
 {
-  "change_id": "transport-settlement-20261020-blocked",
-  "commit": "f0e3a9b92cfcb36e338d349cc557e24d2c42cb3a",
+  "change_id": "transport-settlement-20261020-runtime-qa-blocked",
+  "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
+  "reviewed_commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
+  "promotion_branch": "codex/qa-transporte-20261020",
+  "target_head": "6bae143dd454473ff53e86328756faa848a89da8",
   "qa_status": "pending",
   "approval": {
     "status": "approved",
     "scope": "promotion_to_develop_for_qa",
     "approved_by": "Usuario de esta conversacion",
-    "approved_at": "2026-10-20T03:00:00Z",
+    "approved_at": "2026-10-20T14:37:03.777Z",
+    "timestamp_note": "Momento de registro de autorizaciones persistentes; no fecha original de las respuestas.",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorizations": [
+      "Si, aislar Transporte y abrir PR",
+      "Si, preparar soporte de PDF para QA",
+      "Autorizar clave temporal y retirada"
+    ],
     "quality_gate_overridden": false
   },
   "checks": {
-    "functional": { "status": "failed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
-    "error": { "status": "passed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
-    "support_scripts": { "status": "failed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
-    "regression": { "status": "passed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
-    "platform_regression": { "status": "pending", "evidence": ["../transport-promotion-blocked-20261020.md"] }
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "failed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ],
+      "reason": "Certificacion local aprobada; runtime administrado de QA rechaza namespaces requeridos por Chromium. Bloquea publicacion y promocion."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    }
   },
   "certification": {
-    "status": "failed",
-    "script": "../../../scripts/certifications/transport-pdf-runtime-local.js",
-    "evidence": ["../transport-promotion-blocked-20261020.md"]
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-settlement-four-stages-local.js",
+    "evidence": [
+      "transport-settlement-20261020-preqa.json"
+    ]
   },
   "regression_certification": {
     "status": "passed",
-    "script": "../../../scripts/certifications/transport-platform-regression-local.js",
-    "evidence": ["../transport-promotion-blocked-20261020.md"]
-  }
+    "script": "../../../scripts/certifications/transport-services-protected-local.js",
+    "evidence": [
+      "transport-settlement-20261020-preqa.json"
+    ]
+  },
+  "result": "NO APTO PARA PROMOCION",
+  "local_certification": {
+    "status": "passed",
+    "unit_regression": {
+      "total": 807,
+      "passed": 805,
+      "failed": 0,
+      "skipped": 2,
+      "artifact_sha256": "1f6812b36cfa2247fb5ed9fb75840354a34cef70831d2589aceac2e56357f60f"
+    },
+    "suites": {
+      "functional": {
+        "status": "passed",
+        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
+        "artifact_sha256": "eddbe9dec3cc64173d5c908a722a125b43e9676d9b9c22d7231c032ed07a509e",
+        "checks": [
+          {
+            "name": "anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tariff_catalog_requires_auth",
+            "status": "passed"
+          },
+          {
+            "name": "tariff_quote_requires_auth",
+            "status": "passed"
+          },
+          {
+            "name": "local_login",
+            "status": "passed"
+          },
+          {
+            "name": "existing_vehicle_master",
+            "status": "passed"
+          },
+          {
+            "name": "configured_rate_Flete",
+            "status": "passed"
+          },
+          {
+            "name": "configured_rate_Peajes",
+            "status": "passed"
+          },
+          {
+            "name": "configured_rate_Espera",
+            "status": "passed"
+          },
+          {
+            "name": "month_assigned_by_server_and_type_not_selectable",
+            "status": "passed"
+          },
+          {
+            "name": "route_description_comes_from_tariff",
+            "status": "passed"
+          },
+          {
+            "name": "period_change_denied",
+            "status": "passed"
+          },
+          {
+            "name": "month_fixture_validate",
+            "status": "passed"
+          },
+          {
+            "name": "month_fixture_precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "manual_adjustment_of_tariff_denied",
+            "status": "passed"
+          },
+          {
+            "name": "monthly_fixture_approved",
+            "status": "passed"
+          },
+          {
+            "name": "pyg_current_month_includes_package_despite_other_service_month",
+            "status": "passed"
+          },
+          {
+            "name": "pyg_service_month_not_affected",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_month_cannot_be_overridden",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_uses_assigned_month",
+            "status": "passed"
+          },
+          {
+            "name": "destination_customer_created",
+            "status": "passed"
+          },
+          {
+            "name": "store_1_created_in_master",
+            "status": "passed"
+          },
+          {
+            "name": "store_2_created_in_master",
+            "status": "passed"
+          },
+          {
+            "name": "store_3_created_in_master",
+            "status": "passed"
+          },
+          {
+            "name": "three_stores_available_in_package_catalog",
+            "status": "passed"
+          },
+          {
+            "name": "package_covers_three_stores_without_documents",
+            "status": "passed"
+          },
+          {
+            "name": "destination_and_customer_snapshots_are_authoritative",
+            "status": "passed"
+          },
+          {
+            "name": "three_informative_stores_one_route_charge",
+            "status": "passed"
+          },
+          {
+            "name": "reducing_stores_keeps_route_price",
+            "status": "passed"
+          },
+          {
+            "name": "adding_stores_keeps_route_price",
+            "status": "passed"
+          },
+          {
+            "name": "multiple_stores_persist_after_reopen",
+            "status": "passed"
+          },
+          {
+            "name": "unknown_destination_denied",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_destination_denied",
+            "status": "passed"
+          },
+          {
+            "name": "inactive_destination_denied",
+            "status": "passed"
+          },
+          {
+            "name": "historical_destination_snapshot_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "customer_created_in_sales_master",
+            "status": "passed"
+          },
+          {
+            "name": "same_sales_customer_in_transport",
+            "status": "passed"
+          },
+          {
+            "name": "legacy_package_has_no_vehicle",
+            "status": "passed"
+          },
+          {
+            "name": "unknown_customer_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "failed_conversion_rolls_back_vehicle_and_items",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_customer_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "legacy_converted_with_vehicle_customer_tariff_support",
+            "status": "passed"
+          },
+          {
+            "name": "stale_edit_denied",
+            "status": "passed"
+          },
+          {
+            "name": "missing_customer_on_edit_denied",
+            "status": "passed"
+          },
+          {
+            "name": "existing_document_updated_without_duplicate",
+            "status": "passed"
+          },
+          {
+            "name": "reopened_customer_and_corrected_support",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_validate",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_submit",
+            "status": "passed"
+          },
+          {
+            "name": "edited_legacy_approved",
+            "status": "passed"
+          },
+          {
+            "name": "approved_document_edit_denied",
+            "status": "passed"
+          },
+          {
+            "name": "document_change_audited",
+            "status": "passed"
+          },
+          {
+            "name": "invalid_second_document_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "atomic_rollback_no_empty_package",
+            "status": "passed"
+          },
+          {
+            "name": "empty_vehicle_package_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "created_complete",
+            "status": "passed"
+          },
+          {
+            "name": "code_generated_without_client_input",
+            "status": "passed"
+          },
+          {
+            "name": "failed_creation_does_not_consume_consecutive",
+            "status": "passed"
+          },
+          {
+            "name": "vehicle_and_cost_center_server_authority",
+            "status": "passed"
+          },
+          {
+            "name": "support_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "tariff_snapshot_frozen",
+            "status": "passed"
+          },
+          {
+            "name": "catalog_from_configured_rates",
+            "status": "passed"
+          },
+          {
+            "name": "forged_manual_price_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "free_freight_not_allowed",
+            "status": "passed"
+          },
+          {
+            "name": "composite_rate_created",
+            "status": "passed"
+          },
+          {
+            "name": "configured_extras_automatically_included",
+            "status": "passed"
+          },
+          {
+            "name": "vehicle_bound_tariff_rejects_other_plate",
+            "status": "passed"
+          },
+          {
+            "name": "configured_price_per_km",
+            "status": "passed"
+          },
+          {
+            "name": "configured_price_per_kg",
+            "status": "passed"
+          },
+          {
+            "name": "configured_price_per_m3",
+            "status": "passed"
+          },
+          {
+            "name": "expired_rate_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "unknown_rate_not_quoted",
+            "status": "passed"
+          },
+          {
+            "name": "currency_mismatch_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "stale_tariff_version_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_tariff_denied",
+            "status": "passed"
+          },
+          {
+            "name": "duplicate_document_other_package_denied",
+            "status": "passed"
+          },
+          {
+            "name": "new_tariff_version_after_assignment",
+            "status": "passed"
+          },
+          {
+            "name": "cross_tenant_vehicle_denied",
+            "status": "passed"
+          },
+          {
+            "name": "approval_cannot_skip_validation",
+            "status": "passed"
+          },
+          {
+            "name": "stale_version_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "validate",
+            "status": "passed"
+          },
+          {
+            "name": "precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "submit",
+            "status": "passed"
+          },
+          {
+            "name": "approved",
+            "status": "passed"
+          },
+          {
+            "name": "assigned_snapshot_survives_new_tariff_version",
+            "status": "passed"
+          },
+          {
+            "name": "approved_immutable",
+            "status": "passed"
+          },
+          {
+            "name": "account_reference_required",
+            "status": "passed"
+          },
+          {
+            "name": "accounted",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_idempotent",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_key_cannot_replay_other_package",
+            "status": "passed"
+          },
+          {
+            "name": "blocking_issue_prevents_liquidation",
+            "status": "passed"
+          },
+          {
+            "name": "issue_resolved_before_liquidation",
+            "status": "passed"
+          },
+          {
+            "name": "liquidated",
+            "status": "passed"
+          },
+          {
+            "name": "reopened_support_and_totals",
+            "status": "passed"
+          },
+          {
+            "name": "four_stages_audited",
+            "status": "passed"
+          },
+          {
+            "name": "inactive_rate_rejected",
+            "status": "passed"
+          },
+          {
+            "name": "concurrent_creators_get_distinct_incremental_codes",
+            "status": "passed"
+          },
+          {
+            "name": "manual_code_does_not_override_sequence",
+            "status": "passed"
+          },
+          {
+            "name": "independent_sequence_per_tenant",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_draft_denied",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_cross_tenant_denied",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_customers",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_delivery-points",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_delivery-points",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_rate-cards",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_rate-cards",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_settlement-criterion-quote",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_settlement-criterion-quote",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_settlement-packages",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_validate",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_precalculate",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_submit",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_decision",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_account",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_close",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_fixture_versions",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_uses_frozen_rate_after_new_version",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_contains_all_routes_clients_and_stores",
+            "status": "passed"
+          },
+          {
+            "name": "liquidated_pdf_generated",
+            "status": "passed"
+          },
+          {
+            "name": "pdf_attachment_no_cache",
+            "status": "passed"
+          }
+        ]
+      },
+      "legacy": {
+        "status": "passed",
+        "commit": null,
+        "artifact_sha256": "ab90deb08b26e1546b799aee17b5c0c92be9b1d9df4c47d377b94e10cde7f2ad",
+        "checks": [
+          {
+            "name": "health_ok",
+            "status": "passed"
+          },
+          {
+            "name": "anonymous_blocked_401",
+            "status": "passed"
+          },
+          {
+            "name": "admin_login",
+            "status": "passed"
+          },
+          {
+            "name": "carrier_created",
+            "status": "passed"
+          },
+          {
+            "name": "rate_card_activated",
+            "status": "passed"
+          },
+          {
+            "name": "settlement_type_created",
+            "status": "passed"
+          },
+          {
+            "name": "settlement_types_include_reserved",
+            "status": "passed"
+          },
+          {
+            "name": "period_created",
+            "status": "passed"
+          },
+          {
+            "name": "package_created_borrador",
+            "status": "passed"
+          },
+          {
+            "name": "items_added",
+            "status": "passed"
+          },
+          {
+            "name": "second_package_created",
+            "status": "passed"
+          },
+          {
+            "name": "RB03_duplicate_guide_blocked",
+            "status": "passed"
+          },
+          {
+            "name": "validated_to_validando",
+            "status": "passed"
+          },
+          {
+            "name": "precalculated_to_preliquidada",
+            "status": "passed"
+          },
+          {
+            "name": "RB06_rate_snapshot_and_trace",
+            "status": "passed"
+          },
+          {
+            "name": "RB04_missing_rate_creates_blocking_issue",
+            "status": "passed"
+          },
+          {
+            "name": "RB08_blocking_issue_prevents_submit",
+            "status": "passed"
+          },
+          {
+            "name": "RB07_adjustment_records_before_after",
+            "status": "passed"
+          },
+          {
+            "name": "RB07_adjustment_requires_reason",
+            "status": "passed"
+          },
+          {
+            "name": "RB12_stale_version_conflict",
+            "status": "passed"
+          },
+          {
+            "name": "submitted_to_en_revision",
+            "status": "passed"
+          },
+          {
+            "name": "approved_fixes_approved_total",
+            "status": "passed"
+          },
+          {
+            "name": "RB11_approved_not_editable",
+            "status": "passed"
+          },
+          {
+            "name": "accounted_to_contabilizada",
+            "status": "passed"
+          },
+          {
+            "name": "RB10_accounting_idempotent_replay",
+            "status": "passed"
+          },
+          {
+            "name": "closed_to_liquidada",
+            "status": "passed"
+          },
+          {
+            "name": "audit_timeline_append_only",
+            "status": "passed"
+          },
+          {
+            "name": "control_tower_kpis",
+            "status": "passed"
+          },
+          {
+            "name": "rate_simulator_explains",
+            "status": "passed"
+          },
+          {
+            "name": "reinforced_package_created",
+            "status": "passed"
+          },
+          {
+            "name": "RB02_documentary_block_issue",
+            "status": "passed"
+          },
+          {
+            "name": "reinforced_precalculated",
+            "status": "passed"
+          },
+          {
+            "name": "reinforced_submitted",
+            "status": "passed"
+          },
+          {
+            "name": "RB09_segregation_blocks_creator_approval",
+            "status": "passed"
+          },
+          {
+            "name": "rejection_requires_comment",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_settlements_saved",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_settlements_no_implicit_stage_grants",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_settlements_round_trip",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_settlements_real_login",
+            "status": "passed"
+          },
+          {
+            "name": "role_account_settlements_saved",
+            "status": "passed"
+          },
+          {
+            "name": "role_account_settlements_no_implicit_stage_grants",
+            "status": "passed"
+          },
+          {
+            "name": "role_account_settlements_round_trip",
+            "status": "passed"
+          },
+          {
+            "name": "role_account_settlements_real_login",
+            "status": "passed"
+          },
+          {
+            "name": "role_liquidate_settlements_saved",
+            "status": "passed"
+          },
+          {
+            "name": "role_liquidate_settlements_no_implicit_stage_grants",
+            "status": "passed"
+          },
+          {
+            "name": "role_liquidate_settlements_round_trip",
+            "status": "passed"
+          },
+          {
+            "name": "role_liquidate_settlements_real_login",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_saved",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_no_implicit_stage_grants",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_round_trip",
+            "status": "passed"
+          },
+          {
+            "name": "role_approve_real_login",
+            "status": "passed"
+          },
+          {
+            "name": "stage_1_denies_role_0",
+            "status": "passed"
+          },
+          {
+            "name": "stage_2_denies_role_0",
+            "status": "passed"
+          },
+          {
+            "name": "stage_0_denies_role_1",
+            "status": "passed"
+          },
+          {
+            "name": "stage_2_denies_role_1",
+            "status": "passed"
+          },
+          {
+            "name": "stage_0_denies_role_2",
+            "status": "passed"
+          },
+          {
+            "name": "stage_1_denies_role_2",
+            "status": "passed"
+          },
+          {
+            "name": "stage_0_denies_role_3",
+            "status": "passed"
+          },
+          {
+            "name": "stage_1_denies_role_3",
+            "status": "passed"
+          },
+          {
+            "name": "stage_2_denies_role_3",
+            "status": "passed"
+          },
+          {
+            "name": "stage_0_authorized_independent_actor",
+            "status": "passed"
+          },
+          {
+            "name": "stage_1_authorized_independent_actor",
+            "status": "passed"
+          },
+          {
+            "name": "stage_2_authorized_independent_actor",
+            "status": "passed"
+          },
+          {
+            "name": "unit_suite_engine_pass",
+            "status": "passed"
+          },
+          {
+            "name": "engine_defines_state_machine_and_rbs",
+            "status": "passed"
+          },
+          {
+            "name": "service_writes_functional_audit",
+            "status": "passed"
+          },
+          {
+            "name": "routes_guarded_by_rbac",
+            "status": "passed"
+          },
+          {
+            "name": "schema_has_settlement_models",
+            "status": "passed"
+          },
+          {
+            "name": "web_page_present",
+            "status": "passed"
+          }
+        ]
+      },
+      "services": {
+        "status": "passed",
+        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
+        "artifact_sha256": "b5a770e3aec7b65bcf3772e34494287e8b857287423df3e0082d99795ca02634",
+        "checks": [
+          {
+            "name": "login_user_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_limited_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_techUser_A",
+            "status": "passed"
+          },
+          {
+            "name": "login_user_B",
+            "status": "passed"
+          },
+          {
+            "name": "login_limited_B",
+            "status": "passed"
+          },
+          {
+            "name": "login_techUser_B",
+            "status": "passed"
+          },
+          {
+            "name": "service_types_available",
+            "status": "passed"
+          },
+          {
+            "name": "internal_order_created",
+            "status": "passed"
+          },
+          {
+            "name": "internal_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_read_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_limited_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_assigned_technician_starts",
+            "status": "passed"
+          },
+          {
+            "name": "internal_start_persisted",
+            "status": "passed"
+          },
+          {
+            "name": "internal_limited_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_created",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_applied",
+            "status": "passed"
+          },
+          {
+            "name": "internal_correction_persists_without_losing_items",
+            "status": "passed"
+          },
+          {
+            "name": "internal_audit_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "internal_foreign_history_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_order_created",
+            "status": "passed"
+          },
+          {
+            "name": "external_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_read_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_limited_start_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_assigned_technician_starts",
+            "status": "passed"
+          },
+          {
+            "name": "external_start_persisted",
+            "status": "passed"
+          },
+          {
+            "name": "external_limited_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_correction_denied",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_created",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_applied",
+            "status": "passed"
+          },
+          {
+            "name": "external_correction_persists_without_losing_items",
+            "status": "passed"
+          },
+          {
+            "name": "external_audit_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "external_foreign_history_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "tenant": {
+        "status": "passed",
+        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
+        "artifact_sha256": "4cdbb047321f50c66d9ce258bd181af789421ecd0139b26951e1b022ea8d061d",
+        "checks": [
+          {
+            "name": "tenant_0_package_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_period_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_carrier_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_own_package_read",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_foreign_detail_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_0_foreign_update_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_package_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_period_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_carrier_list_only_own",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_own_package_read",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_foreign_detail_denied",
+            "status": "passed"
+          },
+          {
+            "name": "tenant_1_foreign_update_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "migration": {
+        "status": "passed",
+        "commit": null,
+        "artifact_sha256": "12f3cf984907c916b9534500ee16f1475c89af444c1dc2b5510321d5b9edb460",
+        "checks": [
+          {
+            "name": "origin_fields_archived_before_removal",
+            "status": "passed"
+          },
+          {
+            "name": "unrelated_rate_metadata_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "existing_tenants_ids_and_activity_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportNeed_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportPlan_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "TransportTrip_foreign_key_preserved",
+            "status": "passed"
+          },
+          {
+            "name": "vehicle_package_without_legacy_carrier",
+            "status": "passed"
+          }
+        ]
+      },
+      "platform": {
+        "status": "passed",
+        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
+        "artifact_sha256": "19fb3eeec0f36660eab57570a0a0ba907d80834c43ce714bb5eb2bbaa64970d7",
+        "checks": [
+          {
+            "name": "session_login",
+            "status": "passed"
+          },
+          {
+            "name": "session_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "session_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "services_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "services_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "references_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "references_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "hr_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "hr_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "inventory_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "inventory_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "accounting_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "roles_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "roles_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "transport_authorized",
+            "status": "passed"
+          },
+          {
+            "name": "transport_anonymous_denied",
+            "status": "passed"
+          }
+        ]
+      },
+      "runtime": {
+        "status": "passed",
+        "commit": null,
+        "artifact_sha256": "b266c64c08a1a1685ff8f71d78acfdad776c66694490e21e9bb6cb7706e3e5ad",
+        "checks": []
+      },
+      "linux": {
+        "status": "passed",
+        "commit": null,
+        "artifact_sha256": "4b5b971dc7a9d3c162340ec1dfd2c4b66dc07c5e2e0eb4c556aa2bb6eb77d598",
+        "checks": [
+          {
+            "name": "two_tariff_liquidated_fixture",
+            "status": "passed"
+          },
+          {
+            "name": "linux_api_ready",
+            "status": "passed"
+          },
+          {
+            "name": "linux_real_login",
+            "status": "passed"
+          },
+          {
+            "name": "linux_pdf_anonymous_denied",
+            "status": "passed"
+          },
+          {
+            "name": "linux_full_liquidation_pdf",
+            "status": "passed"
+          },
+          {
+            "name": "linux_attachment_no_cache",
+            "status": "passed"
+          }
+        ]
+      },
+      "image": {
+        "status": "passed",
+        "commit": "5bbba836c6e98577d77eff1812c4e3a7f5e4b2ab",
+        "artifact_sha256": "4de4d624a94019b53fd65ebd1ddec7e1d4fd3cfa1878433797fc9f63439969f0",
+        "checks": [],
+        "files": 14,
+        "mismatches": []
+      }
+    },
+    "pdf": {
+      "status": "passed",
+      "pages": 3,
+      "annex_images": 2,
+      "artifact_sha256": "63219a5d3dd065ee4606e6c449d8eb7475bf971274bc8c028e76dfdf6f50b0f9",
+      "checks": [
+        "routes_clients_stores_amounts",
+        "two_landscape_captured_annexes",
+        "historical_price_preserved"
+      ]
+    },
+    "chromium_sandbox": {
+      "namespace": true,
+      "pid_namespaces": true,
+      "network_namespaces": true,
+      "seccomp_bpf": true,
+      "no_sandbox": false
+    }
+  },
+  "qa_readonly_inspection": {
+    "project": "33726923-021d-47a7-a263-b8b287f164f1",
+    "environment": "97b0366d-a965-4356-88fd-f66dc45e83b9",
+    "service": "15c25be0-4ecd-49c8-87c1-da675c2b9d01",
+    "inspected_at": "2026-10-20T14:37:03.784Z",
+    "namespace_probe": {
+      "command": "unshare -U true",
+      "exit_code": 1,
+      "result": "unshare: unshare failed: Permission denied"
+    },
+    "process_security": {
+      "uid": 0,
+      "seccomp": 2,
+      "seccomp_filters": 3
+    },
+    "pending_candidate_migrations": [
+      "20261016123000_sedes_replace_origins",
+      "20261019134505_transport_settlement_vehicle"
+    ],
+    "remote_migrations_executed": false,
+    "remote_configuration_changed": false,
+    "production_accessed": false,
+    "temporary_ssh_key": {
+      "fingerprint": "SHA256:CiZrWGCx/EWZAmLvTZgcf/aR5YPrpEQiEhkmFdXcd8Q",
+      "registered": true,
+      "removed": true,
+      "removal_verified": "No SSH keys registered with Railway.",
+      "local_private_public_files_removed": true
+    }
+  },
+  "blockers": [
+    "QA no permite los namespaces requeridos para Chromium con sandbox. Configurar un runtime de renderizado compatible y certificar alli el PDF completo antes de publicar/promover.",
+    "Migraciones remotas pendientes; no ejecutadas ni autorizadas independientemente.",
+    "QA funcional remoto del candidato pendiente."
+  ],
+  "publication": {
+    "pushed": false,
+    "pr_created": false,
+    "develop_merged": false,
+    "reason": "AGENTS.md prohibe publicar o promover con certificacion requerida pendiente/fallida; no se debilitan los controles del sandbox."
+  },
+  "next_step": "Preparar un runtime de renderizado compatible para QA dentro de una infraestructura expresamente autorizada; mantener privado el transporte de datos y repetir certificacion PDF y gates sobre candidato/target exactos."
 }
