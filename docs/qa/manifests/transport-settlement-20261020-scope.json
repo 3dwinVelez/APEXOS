@@ -1,0 +1,658 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-browser-pdf-20261020",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-transporte-20261020",
+  "base_commits": {
+    "develop": "6bae143dd454473ff53e86328756faa848a89da8"
+  },
+  "target_head": "6bae143dd454473ff53e86328756faa848a89da8",
+  "certified_commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "ab0f0964f306ade8793ab1d3d7da069212b1d01c"
+  },
+  "certified_functional_paths": [
+    "apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql",
+    "apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/src/modules/transport/open-map-simulator.js",
+    "apps/api/src/modules/transport/route-intelligence.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/settlement-engine.js",
+    "apps/api/src/modules/transport/settlement-report.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/test/prisma-deferred-tenant-context.test.js",
+    "apps/api/test/transport-open-map-simulator.test.js",
+    "apps/api/test/transport-rate-cost-step.test.js",
+    "apps/api/test/transport-rates-rbac.test.js",
+    "apps/api/test/transport-settlement-accounting-month.test.js",
+    "apps/api/test/transport-settlement-code.test.js",
+    "apps/api/test/transport-settlement-criteria.test.js",
+    "apps/api/test/transport-settlement-engine.test.js",
+    "apps/api/test/transport-settlement-rbac.test.js",
+    "apps/api/test/transport-settlement-report.test.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/web/app/dashboard/administracion/maestros-transporte/page.tsx",
+    "apps/web/app/dashboard/administracion/page.tsx",
+    "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/maestros/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+    "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+    "apps/web/app/print/transport-settlement/page.tsx",
+    "apps/web/components/transport/PlanningRouteMap.tsx",
+    "apps/web/components/transport/RateCostDesigner.module.css",
+    "apps/web/components/transport/RateCostDesigner.tsx",
+    "apps/web/components/transport/SettlementDialog.module.css",
+    "apps/web/components/transport/SettlementDocumentsEditor.tsx",
+    "apps/web/components/transport/TransportAdminCatalog.tsx",
+    "apps/web/components/transport/TransportMastersPanel.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/transportRateSnapshot.ts",
+    "apps/web/lib/transportSettlementPrint.ts",
+    "apps/web/package.json",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/transport-rate-cost-interactions.test.mjs",
+    "apps/web/test/transport-rate-cost-step.test.mjs",
+    "apps/web/test/transport-settlement-tariff-interactions.test.mjs",
+    "apps/web/test/transport-settlement-tower.test.mjs",
+    "apps/web/test/transport-settlement-ui.test.mjs",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "apps/web/test/transport-vehicle-master-catalogs.test.mjs",
+    "config/qa.env.example",
+    "docs/qa/transport-browser-pdf-model-20261020.md",
+    "docs/qa/transport-central-masters-local-20261019.md",
+    "docs/qa/transport-period-tariff-lock-local-20261019.md",
+    "docs/qa/transport-rate-cost-local-review-20261017.md",
+    "docs/qa/transport-settlement-concise-form-local-20261019.md",
+    "docs/qa/transport-settlement-customer-documents-local-20261019.md",
+    "docs/qa/transport-settlement-destinations-local-20261019.md",
+    "docs/qa/transport-settlement-four-stages-local-20261019.md",
+    "docs/qa/transport-settlement-incremental-code-local-20261019.md",
+    "docs/qa/transport-settlement-linked-tariffs-local-20261019.md",
+    "docs/qa/transport-settlement-multiple-stores-local-20261019.md",
+    "docs/qa/transport-settlement-role-stages-local-20261019.md",
+    "docs/qa/transport-store-tags-local-20261019.md",
+    "package-lock.json",
+    "scripts/certifications/transport-central-masters-browser.mjs",
+    "scripts/certifications/transport-period-tariff-browser.mjs",
+    "scripts/certifications/transport-platform-regression-local.js",
+    "scripts/certifications/transport-rate-cost-browser.mjs",
+    "scripts/certifications/transport-rate-cost-local.js",
+    "scripts/certifications/transport-sedes-migration-local.js",
+    "scripts/certifications/transport-services-protected-local.js",
+    "scripts/certifications/transport-settlement-accounting-month-local.js",
+    "scripts/certifications/transport-settlement-browser-pdf-local.js",
+    "scripts/certifications/transport-settlement-destinations-local.js",
+    "scripts/certifications/transport-settlement-documents-local.js",
+    "scripts/certifications/transport-settlement-four-stages-browser.mjs",
+    "scripts/certifications/transport-settlement-four-stages-local.js",
+    "scripts/certifications/transport-settlement-packages-local.js",
+    "scripts/certifications/transport-settlement-pdf-local.js",
+    "scripts/certifications/transport-settlement-role-stages-local.js",
+    "scripts/certifications/transport-store-tags-browser.mjs",
+    "scripts/certifications/transport-tenant-context-local.js",
+    "scripts/certifications/verify-transport-settlement-pdf.py"
+  ],
+  "change_intent": {
+    "summary": "Promover cambios puntuales de Transporte y maestros administrativos con liquidacion y PDF en navegador, sin infraestructura adicional; preserva aislamiento y Servicios.",
+    "modules": [
+      "transport",
+      "administracion",
+      "transport-pyg",
+      "core/prisma tenant context",
+      "qa/certifications"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport-pyg/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/open-map-simulator.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/route-intelligence.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/settlement-engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-report.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/settlement-service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/tms-schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/tms-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/prisma-deferred-tenant-context.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-open-map-simulator.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-rate-cost-step.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-rates-rbac.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-accounting-month.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-code.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-criteria.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/transport-settlement-engine.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-rbac.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-report.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/transport-tms-foundation.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/administracion/maestros-transporte/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/liquidaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/maestros/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/operacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/planeacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/tarifas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/print/transport-settlement/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/PlanningRouteMap.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/RateCostDesigner.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/RateCostDesigner.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementDialog.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementDocumentsEditor.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportAdminCatalog.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportMastersPanel.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transportRateSnapshot.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transportSettlementPrint.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-cost-interactions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-cost-step.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-settlement-tariff-interactions.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-settlement-tower.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-settlement-ui.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-tms-ui.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-vehicle-master-catalogs.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "config/qa.env.example"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/transport-settlement-20261020-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/transport-settlement-20261020-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-browser-pdf-model-20261020.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-central-masters-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-period-tariff-lock-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-rate-cost-local-review-20261017.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-concise-form-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-customer-documents-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-destinations-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-four-stages-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-incremental-code-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-linked-tariffs-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-multiple-stores-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-role-stages-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-store-tags-local-20261019.md"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-central-masters-browser.mjs"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-period-tariff-browser.mjs"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-platform-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-rate-cost-browser.mjs"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-rate-cost-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-sedes-migration-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-services-protected-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-accounting-month-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-browser-pdf-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-destinations-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-documents-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-four-stages-browser.mjs"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-four-stages-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/transport-settlement-packages-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-pdf-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-settlement-role-stages-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-store-tags-browser.mjs"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-tenant-context-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/verify-transport-settlement-pdf.py"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql",
+    "apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/src/modules/transport/open-map-simulator.js",
+    "apps/api/src/modules/transport/route-intelligence.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/settlement-engine.js",
+    "apps/api/src/modules/transport/settlement-report.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/test/prisma-deferred-tenant-context.test.js",
+    "apps/api/test/transport-open-map-simulator.test.js",
+    "apps/api/test/transport-rate-cost-step.test.js",
+    "apps/api/test/transport-rates-rbac.test.js",
+    "apps/api/test/transport-settlement-accounting-month.test.js",
+    "apps/api/test/transport-settlement-code.test.js",
+    "apps/api/test/transport-settlement-criteria.test.js",
+    "apps/api/test/transport-settlement-engine.test.js",
+    "apps/api/test/transport-settlement-rbac.test.js",
+    "apps/api/test/transport-settlement-report.test.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/web/app/dashboard/administracion/maestros-transporte/page.tsx",
+    "apps/web/app/dashboard/administracion/page.tsx",
+    "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/maestros/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+    "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+    "apps/web/app/print/transport-settlement/page.tsx",
+    "apps/web/components/transport/PlanningRouteMap.tsx",
+    "apps/web/components/transport/RateCostDesigner.module.css",
+    "apps/web/components/transport/RateCostDesigner.tsx",
+    "apps/web/components/transport/SettlementDialog.module.css",
+    "apps/web/components/transport/SettlementDocumentsEditor.tsx",
+    "apps/web/components/transport/TransportAdminCatalog.tsx",
+    "apps/web/components/transport/TransportMastersPanel.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/transportRateSnapshot.ts",
+    "apps/web/lib/transportSettlementPrint.ts",
+    "apps/web/package.json",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/transport-rate-cost-interactions.test.mjs",
+    "apps/web/test/transport-rate-cost-step.test.mjs",
+    "apps/web/test/transport-settlement-tariff-interactions.test.mjs",
+    "apps/web/test/transport-settlement-tower.test.mjs",
+    "apps/web/test/transport-settlement-ui.test.mjs",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "apps/web/test/transport-vehicle-master-catalogs.test.mjs",
+    "config/qa.env.example",
+    "docs/qa/manifests/transport-settlement-20261020-preqa.json",
+    "docs/qa/manifests/transport-settlement-20261020-scope.json",
+    "docs/qa/transport-browser-pdf-model-20261020.md",
+    "docs/qa/transport-central-masters-local-20261019.md",
+    "docs/qa/transport-period-tariff-lock-local-20261019.md",
+    "docs/qa/transport-rate-cost-local-review-20261017.md",
+    "docs/qa/transport-settlement-concise-form-local-20261019.md",
+    "docs/qa/transport-settlement-customer-documents-local-20261019.md",
+    "docs/qa/transport-settlement-destinations-local-20261019.md",
+    "docs/qa/transport-settlement-four-stages-local-20261019.md",
+    "docs/qa/transport-settlement-incremental-code-local-20261019.md",
+    "docs/qa/transport-settlement-linked-tariffs-local-20261019.md",
+    "docs/qa/transport-settlement-multiple-stores-local-20261019.md",
+    "docs/qa/transport-settlement-role-stages-local-20261019.md",
+    "docs/qa/transport-store-tags-local-20261019.md",
+    "package-lock.json",
+    "scripts/certifications/transport-central-masters-browser.mjs",
+    "scripts/certifications/transport-period-tariff-browser.mjs",
+    "scripts/certifications/transport-platform-regression-local.js",
+    "scripts/certifications/transport-rate-cost-browser.mjs",
+    "scripts/certifications/transport-rate-cost-local.js",
+    "scripts/certifications/transport-sedes-migration-local.js",
+    "scripts/certifications/transport-services-protected-local.js",
+    "scripts/certifications/transport-settlement-accounting-month-local.js",
+    "scripts/certifications/transport-settlement-browser-pdf-local.js",
+    "scripts/certifications/transport-settlement-destinations-local.js",
+    "scripts/certifications/transport-settlement-documents-local.js",
+    "scripts/certifications/transport-settlement-four-stages-browser.mjs",
+    "scripts/certifications/transport-settlement-four-stages-local.js",
+    "scripts/certifications/transport-settlement-packages-local.js",
+    "scripts/certifications/transport-settlement-pdf-local.js",
+    "scripts/certifications/transport-settlement-role-stages-local.js",
+    "scripts/certifications/transport-store-tags-browser.mjs",
+    "scripts/certifications/transport-tenant-context-local.js",
+    "scripts/certifications/verify-transport-settlement-pdf.py"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Liquidacion creada/aprobada/contabilizada/liquidada y segregacion",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    {
+      "name": "Tarifarios congelados, cliente y tiendas informativas",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    {
+      "name": "Periodo contable/PYG y consecutivo por empresa",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    {
+      "name": "PDF navegador con detalle y dos capturas reales de etapa 4",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    {
+      "name": "Servicios: inicio interno/externo sincronizado, correccion administrativa, RBAC y aislamiento",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    {
+      "name": "Contexto Prisma diferido y concurrencia multiempresa",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    {
+      "name": "Sedes: integridad, relaciones y archivo de origen antes de retirar campos",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    },
+    {
+      "name": "Autenticacion y lecturas de plataforma adyacente",
+      "status": "passed",
+      "evidence": [
+        "transport-settlement-20261020-preqa.json"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario de esta conversacion",
+    "approved_at": "2026-10-20T15:28:21.043Z",
+    "recorded_at_note": "Registro de autorizaciones persistentes; no se inventa la fecha original de sus respuestas.",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "quality_gate_overridden": false,
+    "authorizations": [
+      "Si, aislar Transporte y abrir PR",
+      "replantea el modelo del pdf para no incurrir en gastos adicionales y que podamos subir la version actualizada hacia develop de manera correcta",
+      "Autorizar estas dos migraciones solo en QA"
+    ]
+  },
+  "excluded_scope": [
+    "privacidad",
+    "iniciador local Windows",
+    "renderizador Chromium de servidor y perfiles/overlay seccomp nunca publicados",
+    "produccion"
+  ],
+  "observations": "Fallo preexistente reproducido en origin/develop: funciones ausentes para importar saldos y nuevo gasto. No se modifican esos modulos."
+}
