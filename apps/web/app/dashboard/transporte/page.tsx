@@ -6,7 +6,7 @@ import { inspectFileSignature } from "@/lib/fileSignature";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Archive, Bell, Calculator, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Users, Wallet, Wrench } from "lucide-react";
+import { Archive, Bell, Calculator, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Wallet, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -1078,7 +1078,6 @@ const transportWorkflows = [
     actions: [
       { href: "/dashboard/transporte/flota", title: "Vehículos y documentos", detail: "Revisar capacidad, vigencias y disponibilidad de la flota.", icon: Truck },
       { href: "/dashboard/transporte/tarifas", title: "Costos y tarifas", detail: "Definir vigencias y reglas para calcular el costo del viaje.", icon: ReceiptText },
-      { href: "/dashboard/transporte/maestros", title: "Datos básicos", detail: "Gestionar transportadores, conductores, orígenes y destinos.", icon: Users },
       { href: "/dashboard/transporte/notificaciones", title: "Comunicaciones", detail: "Consultar los avisos registrados por la operación.", icon: Bell },
       { href: "/dashboard/transporte/configuracion", title: "Preferencias de transporte", detail: "Definir parámetros operativos y de comunicación.", icon: Settings }
     ]
