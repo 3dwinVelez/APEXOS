@@ -32,12 +32,8 @@ function Invoke-RepoGit {
   if ($GitArgs.Count -eq 1 -and $GitArgs[0] -match "\s") {
     $GitArgs = $GitArgs[0] -split "\s+"
   }
-  $previousErrorActionPreference = $ErrorActionPreference
-  $ErrorActionPreference = "Continue"
   $output = & git @GitArgs 2>&1
-  $exitCode = $LASTEXITCODE
-  $ErrorActionPreference = $previousErrorActionPreference
-  if ($exitCode -ne 0) {
+  if ($LASTEXITCODE -ne 0) {
     Stop-Blocked "Git no pudo completar una operacion segura." @($output)
   }
   return $output
@@ -193,9 +189,6 @@ function Ensure-Dependencies {
     Write-Host "Instalando dependencias con npm ci..." -ForegroundColor Cyan
     & npm ci
     if ($LASTEXITCODE -ne 0) { Stop-Blocked "npm ci fallo." }
-    Write-Host "Generando cliente Prisma..." -ForegroundColor Cyan
-    & npm run prisma:generate
-    if ($LASTEXITCODE -ne 0) { Stop-Blocked "prisma generate fallo." }
     New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
     Set-Content -LiteralPath $hashFile -Value $hash
   }
