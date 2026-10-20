@@ -205,6 +205,7 @@ const DEFAULT_ACCOUNTING_DOCUMENT_TYPES = [
   { code: "NCP", description: "Nota credito compra" },
   { code: "EM", description: "Entrada de mercancia" },
   { code: "FV", description: "Factura venta" },
+  { code: "LT", description: "Liquidacion de transporte - ingresos" },
   { code: "NCV", description: "Nota credito venta" },
   // Gastos Menores / Cajas Menores. Se agregan aditivo (sin tocar las entradas anteriores) porque
   // cnt_cabdoc tiene @@unique([tenant_id, document_type, document_number]) con numeracion global
@@ -318,12 +319,11 @@ async function getAccountingConfig(tenantId) {
 }
 
 async function updateAccountingConfig(tenantId, accounting) {
-  const config = await getTenantConfig(tenantId);
-  const updated = await prisma.tenant.update({
-    where: { id: tenantId },
-    data: { config: { ...config, accounting: { ...(config.accounting || {}), ...accounting } } },
-    select: { config: true }
-  });
+  const rows = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    return tx.$queryRaw`UPDATE "Tenant" SET config = jsonb_set(COALESCE(config, '{}'::jsonb), '{accounting}', COALESCE(config->'accounting', '{}'::jsonb) || ${JSON.stringify(accounting)}::jsonb, true) WHERE id = ${String(tenantId)} RETURNING config`;
+  }, COMPLEX_TRANSACTION_OPTIONS));
+  const updated = rows[0];
   invalidateTenantCache(tenantId).catch(() => undefined);
   return updated;
 }
@@ -686,38 +686,47 @@ async function saveOrganizationUnit(tenantId, data) {
   const name = String(data.name || "").trim();
   if (!code || !name) throw appError(400, "REQUIRED_ORG_UNIT", "Codigo y nombre son obligatorios");
 
-  const accounting = await getAccountingConfig(tenantId);
-  const tree = normalizeOrganizationTree(accounting, tenantId);
-  const active = data.active !== false;
-
-  if (type === "society") {
-    const row = { code, name, tenant_id: tenantId, active };
-    const societies = [...tree.societies.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, societies } });
-    return getOrganizationTree(tenantId);
-  }
-
-  if (type === "branch") {
-    const societyCode = normalizeCode(data.society_code);
-    if (!tree.societies.some((item) => item.code === societyCode && item.active !== false)) {
-      throw appError(400, "SOCIETY_REQUIRED", "La sucursal debe estar enlazada a una sociedad activa");
+  const result = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config || {};
+    const accounting = config.accounting || {};
+    async function persist(tree) {
+      await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, organization_tree: tree } } } });
+      return tree;
     }
-    const row = { code, name, society_code: societyCode, active };
-    const branches = [...tree.branches.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, branches } });
-    return getOrganizationTree(tenantId);
-  }
+    const tree = normalizeOrganizationTree(accounting, tenantId);
+    const active = data.active !== false;
+    if (type === "cost_center" && tree.cost_centers.some(row => row.code === code && row.vehicle_id)) throw appError(409, "VEHICLE_COST_CENTER_MANAGED", "El centro vehicular se administra desde la ficha del vehiculo");
 
-  const societyCode = normalizeCode(data.society_code);
-  const branchCode = normalizeCode(data.branch_code);
-  const branch = tree.branches.find((item) => item.code === branchCode && item.active !== false);
-  if (!branch || branch.society_code !== societyCode) {
-    throw appError(400, "BRANCH_REQUIRED", "El centro de costo debe estar enlazado a una sucursal de la sociedad seleccionada");
-  }
-  const row = { code, name, society_code: societyCode, branch_code: branchCode, active };
-  const costCenters = [...tree.cost_centers.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
-  await updateAccountingConfig(tenantId, { organization_tree: { ...tree, cost_centers: costCenters } });
-  return getOrganizationTree(tenantId);
+    if (type === "society") {
+      const row = { code, name, tenant_id: tenantId, active };
+      const societies = [...tree.societies.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+      return persist({ ...tree, societies });
+    }
+
+    if (type === "branch") {
+      const societyCode = normalizeCode(data.society_code);
+      if (!tree.societies.some((item) => item.code === societyCode && item.active !== false)) {
+        throw appError(400, "SOCIETY_REQUIRED", "La sucursal debe estar enlazada a una sociedad activa");
+      }
+      const row = { code, name, society_code: societyCode, active };
+      const branches = [...tree.branches.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+      return persist({ ...tree, branches });
+    }
+
+    const societyCode = normalizeCode(data.society_code);
+    const branchCode = normalizeCode(data.branch_code);
+    const branch = tree.branches.find((item) => item.code === branchCode && item.active !== false);
+    if (!branch || branch.society_code !== societyCode) {
+      throw appError(400, "BRANCH_REQUIRED", "El centro de costo debe estar enlazado a una sucursal de la sociedad seleccionada");
+    }
+    const row = { code, name, society_code: societyCode, branch_code: branchCode, active };
+    const costCenters = [...tree.cost_centers.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+    return persist({ ...tree, cost_centers: costCenters });
+  }, COMPLEX_TRANSACTION_OPTIONS));
+  await invalidateTenantCache(tenantId).catch(() => undefined);
+  return result;
 }
 
 async function countOrganizationAccountingReferences(tenantId, type, code) {
@@ -749,38 +758,47 @@ async function countOrganizationAccountingReferences(tenantId, type, code) {
 
 async function deleteOrganizationUnit(tenantId, type, codeInput) {
   const code = normalizeCode(codeInput);
-  const accounting = await getAccountingConfig(tenantId);
-  const tree = normalizeOrganizationTree(accounting, tenantId);
-  const references = await countOrganizationAccountingReferences(tenantId, type, code);
-  if (references > 0) {
-    throw appError(409, "ORG_UNIT_HAS_ACCOUNTING_RECORDS", "No se puede borrar porque tiene registros contables asociados");
-  }
-
-  if (type === "society") {
-    if (tree.branches.some((item) => item.society_code === code)) {
-      throw appError(409, "SOCIETY_HAS_BRANCHES", "No se puede borrar una sociedad con sucursales enlazadas");
+  const result = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config || {};
+    const accounting = config.accounting || {};
+    async function persist(tree) {
+      await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, organization_tree: tree } } } });
+      return tree;
     }
-    const societies = tree.societies.filter((item) => item.code !== code);
-    if (societies.length === tree.societies.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sociedad no encontrada");
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, societies } });
-    return getOrganizationTree(tenantId);
-  }
-
-  if (type === "branch") {
-    if (tree.cost_centers.some((item) => item.branch_code === code)) {
-      throw appError(409, "BRANCH_HAS_COST_CENTERS", "No se puede borrar una sucursal con centros de costo enlazados");
+    const tree = normalizeOrganizationTree(accounting, tenantId);
+    const references = await countOrganizationAccountingReferences(tenantId, type, code);
+    if (type === "cost_center" && tree.cost_centers.some(row => row.code === code && row.vehicle_id)) throw appError(409, "VEHICLE_COST_CENTER_MANAGED", "No se puede borrar un centro vinculado a un vehiculo");
+    if (references > 0) {
+      throw appError(409, "ORG_UNIT_HAS_ACCOUNTING_RECORDS", "No se puede borrar porque tiene registros contables asociados");
     }
-    const branches = tree.branches.filter((item) => item.code !== code);
-    if (branches.length === tree.branches.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sucursal no encontrada");
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, branches } });
-    return getOrganizationTree(tenantId);
-  }
 
-  if (type !== "cost_center") throw appError(400, "INVALID_ORG_UNIT_TYPE", "Tipo de estructura invalido");
-  const costCenters = tree.cost_centers.filter((item) => item.code !== code);
-  if (costCenters.length === tree.cost_centers.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Centro de costo no encontrado");
-  await updateAccountingConfig(tenantId, { organization_tree: { ...tree, cost_centers: costCenters } });
-  return getOrganizationTree(tenantId);
+    if (type === "society") {
+      if (tree.branches.some((item) => item.society_code === code)) {
+        throw appError(409, "SOCIETY_HAS_BRANCHES", "No se puede borrar una sociedad con sucursales enlazadas");
+      }
+      const societies = tree.societies.filter((item) => item.code !== code);
+      if (societies.length === tree.societies.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sociedad no encontrada");
+      return persist({ ...tree, societies });
+    }
+
+    if (type === "branch") {
+      if (tree.cost_centers.some((item) => item.branch_code === code)) {
+        throw appError(409, "BRANCH_HAS_COST_CENTERS", "No se puede borrar una sucursal con centros de costo enlazados");
+      }
+      const branches = tree.branches.filter((item) => item.code !== code);
+      if (branches.length === tree.branches.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sucursal no encontrada");
+      return persist({ ...tree, branches });
+    }
+
+    if (type !== "cost_center") throw appError(400, "INVALID_ORG_UNIT_TYPE", "Tipo de estructura invalido");
+    const costCenters = tree.cost_centers.filter((item) => item.code !== code);
+    if (costCenters.length === tree.cost_centers.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Centro de costo no encontrado");
+    return persist({ ...tree, cost_centers: costCenters });
+  }, COMPLEX_TRANSACTION_OPTIONS));
+  await invalidateTenantCache(tenantId).catch(() => undefined);
+  return result;
 }
 
 async function validateThirdPartyMasters(tenantId, data) {
@@ -2567,7 +2585,7 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   const postingDate = data.posting_date ? new Date(data.posting_date) : null;
   if (!postingDate || Number.isNaN(postingDate.getTime())) throw appError(400, "REQUIRED_POSTING_DATE", "La fecha de contabilizacion es obligatoria");
   const documentKind = data.document_kind === "credit_note" ? "credit_note" : "invoice";
-  const documentClass = documentKind === "credit_note" ? "NCV" : "FV";
+  const documentClass = options.transportSettlement === true ? "LT" : documentKind === "credit_note" ? "NCV" : "FV";
   const dueDateInput = data.due_date ? new Date(data.due_date) : null;
   const dueTerm = data.due_term ? normalizeCode(data.due_term).toUpperCase() : dueTermFromDates(postingDate, dueDateInput);
   const dueDate = dueDateInput && !Number.isNaN(dueDateInput.getTime()) ? dueDateInput : dueDateFromTerm(postingDate, dueTerm);
@@ -2579,8 +2597,14 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   if (!Array.isArray(data.ledger_lines) || data.ledger_lines.length < 1) throw appError(400, "MIN_CXC_LINES", "Se requiere al menos una contrapartida contable");
 
   await assertPeriodOpen(tenantId, postingDate);
-  const tree = await getOrganizationTree(tenantId);
+  let tree = await getOrganizationTree(tenantId);
   const period = periodFromDate(postingDate);
+  if (options.transportSettlement === true || options.freshAccounting === true) {
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config?.accounting || {};
+    if (config.periods?.[period]?.status === "closed") throw appError(423, "PERIOD_CLOSED", "El periodo contable esta cerrado");
+    tree = normalizeOrganizationTree(config, tenantId);
+  }
 
   const customer = await tx.party.findFirst({ where: { id: Number(data.customer_id), active: true, AND: [partyRoleWhere("customer")] } });
   if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado o inactivo");
@@ -2616,7 +2640,8 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   const debitBeforeAssociated = round(ledgerLines.reduce((sum, line) => sum + line.debit, 0));
   const creditBeforeAssociated = round(ledgerLines.reduce((sum, line) => sum + line.credit, 0));
   const difference = round(debitBeforeAssociated - creditBeforeAssociated);
-  if (Math.abs(difference) <= 0.01) throw appError(422, "EMPTY_CXC_BALANCE", "El documento no genera saldo para la cuenta asociada");
+  const emptyBalance = options.transportSettlement === true || options.freshAccounting === true ? Math.abs(difference) < 0.005 : Math.abs(difference) <= 0.01;
+  if (emptyBalance) throw appError(422, "EMPTY_CXC_BALANCE", "El documento no genera saldo para la cuenta asociada");
 
   // For receivables: customer owes us → debit in 1305 (inverted from CXP)
   if (difference > 0) {
@@ -2664,7 +2689,7 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
     const documentTypes = mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code").map((row) => ({ ...row, code: normalizeAccountingDocumentType(row.code) }));
     numbering = mergeNumbering(documentTypes, accounting.accounting_numbering).find((item) => item.document_type === documentClass && item.active !== false);
     if (!numbering) throw appError(400, "CXC_NUMBERING_NOT_FOUND", `La clase ${documentClass} no tiene numeracion activa. Configure en Contabilidad > Maestros > Numeracion`);
-    documentNumber = Number(numbering.next_number) || 1;
+    documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentClass, numbering);
     const prefix = normalizeCode(numbering.prefix || documentClass);
     number = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
     return { config, accounting, numbering, documentNumber, documentClass, documentKind, number, customerReference, postingDate, dueTerm, dueDate, headerText, societyCode, customer, associatedAccount, ledgerLines, subtotal, taxTotal, retentionTotal, total, totalDebit, totalCredit, period, firstBranch, firstCC };
@@ -2704,12 +2729,12 @@ async function simulateReceivableDocument(tenantId, data) {
   });
 }
 
-async function createReceivableDocumentTx(tx, tenantId, userId, data) {
+async function createReceivableDocumentTx(tx, tenantId, userId, data, options = {}) {
     await tx.$executeRawUnsafe(
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       `${tenantId}:accounting-numbering`
     );
-    const preview = await prepareReceivableDocument(tx, tenantId, data, { reserveNumber: true });
+    const preview = await prepareReceivableDocument(tx, tenantId, data, { reserveNumber: true, transportSettlement: options.transportSettlement === true, freshAccounting: options.freshAccounting === true });
     const cxc = await tx.cxcCabdoc.create({
       data: {
         document_kind: preview.documentKind,
@@ -2992,6 +3017,7 @@ async function registerPaymentReceivable(tenantId, userId, data) {
   await assertPeriodOpen(tenantId, date);
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
     // Build list of invoices to pay
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
     let invoices = [];
     if (cabdoc_ids.length > 0) {
       invoices = await tx.cxcCabdoc.findMany({

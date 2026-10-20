@@ -31,6 +31,7 @@ const vehicleSchema = {
       linked_company: { type: "string" },
       cost_center: { type: "string" },
       base_site: { type: "string" },
+      accounting_branch_code: { type: "string", maxLength: 40 },
       authorized_driver_id: { type: "integer" },
       authorized_driver_name: { type: "string" },
       authorized_driver_document: { type: "string" },

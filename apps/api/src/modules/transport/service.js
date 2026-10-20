@@ -1,4 +1,5 @@
 const prisma = require("../../core/prisma");
+const { ensureVehicleCenterTx, invalidateVehicleAccounting } = require("./vehicle-accounting");
 const { normalizeFileName } = require("../../security/policy");
 const {
   BUCKET,
@@ -150,7 +151,7 @@ function vehicleData(input) {
     status,
     active: !["retirado", "inactivo"].includes(status),
     deleted_at: status === "retirado" ? new Date() : null,
-    metadata: input.metadata || {}
+    metadata: { ...(input.metadata || {}), ...(input.accounting_branch_code ? { accounting_branch_code: input.accounting_branch_code } : {}) }
   };
 }
 
@@ -245,10 +246,10 @@ async function refreshVehicleMaster(vehicleId) {
   return serializeVehicle({ ...vehicle, ...master });
 }
 
-async function auditVehicle(user, vehicle, action, changes, reason = "") {
+async function auditVehicle(user, vehicle, action, changes, reason = "", client = prisma) {
   const rows = changes.length ? changes : [{ field: null, old_value: null, new_value: null }];
   const toJson = (value) => value === undefined ? null : JSON.parse(JSON.stringify(value));
-  await prisma.vehicleMasterAuditLog.createMany({
+  await client.vehicleMasterAuditLog.createMany({
     data: rows.map((change) => ({
       vehicle_id: vehicle.id,
       plate: vehicle.plate,
@@ -286,6 +287,10 @@ async function listVehicles(tenantId, query = {}) {
   });
 }
 
+async function getVehicleAccountingStructure(tenantId) {
+  return require("../accounting/service").getOrganizationTree(tenantId);
+}
+
 async function createVehicle(tenantId, user, input) {
   validateVehicleInput(input);
   return prisma.runWithTenant(tenantId, async () => {
@@ -307,8 +312,14 @@ async function createVehicle(tenantId, user, input) {
       error.statusCode = 409;
       throw error;
     }
-    const vehicle = await prisma.vehicle.create({ data });
-    await auditVehicle(user, vehicle, "created", [{ field: "plate", old_value: null, new_value: vehicle.plate }]);
+    const vehicle = await prisma.$transaction(async tx => {
+      await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+      const created = await tx.vehicle.create({ data });
+      const center = await ensureVehicleCenterTx(tx, tenantId, created);
+      await auditVehicle(user, created, "created", [{ field: "plate", old_value: null, new_value: created.plate }, { field: "cost_center", old_value: null, new_value: center.code }], "", tx);
+      return created;
+    });
+    await invalidateVehicleAccounting(tenantId);
     return refreshVehicleMaster(vehicle.id);
   });
 }
@@ -337,8 +348,15 @@ async function updateVehicle(tenantId, user, id, input) {
         throw error;
       }
     }
-    const updated = await prisma.vehicle.update({ where: { id: Number(id) }, data });
-    await auditVehicle(user, updated, "updated", criticalChanges(previous, updated), input.reason || "");
+    const updated = await prisma.$transaction(async tx => {
+      await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+      const saved = await tx.vehicle.update({ where: { id: Number(id) }, data });
+      const center = await ensureVehicleCenterTx(tx, tenantId, saved, previous);
+      saved.cost_center = center.code;
+      await auditVehicle(user, saved, "updated", criticalChanges(previous, saved), input.reason || "", tx);
+      return saved;
+    });
+    await invalidateVehicleAccounting(tenantId);
     return refreshVehicleMaster(updated.id);
   });
 }
@@ -351,6 +369,28 @@ async function getVehicle(tenantId, id) {
     });
     return serializeVehicle(vehicle);
   });
+}
+
+async function synchronizeVehicleCenters(tenantId, user, input = {}) {
+  const branchCode = String(input.branch_code || "").trim();
+  if (!branchCode) {
+    const error = new Error("Seleccione la sucursal contable para los vehiculos existentes.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const result = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    const vehicles = await tx.vehicle.findMany({ where: { tenant_id: String(tenantId), __includeInactive: true }, orderBy: { id: "asc" } });
+    const centers = [];
+    for (const vehicle of vehicles) {
+      const center = await ensureVehicleCenterTx(tx, tenantId, { ...vehicle, metadata: { ...vehicle.metadata, accounting_branch_code: branchCode } }, vehicle);
+      await auditVehicle(user, vehicle, "accounting_center_linked", [{ field: "cost_center", old_value: vehicle.cost_center, new_value: center.code }], `Sucursal contable ${branchCode}`, tx);
+      centers.push({ vehicle_id: vehicle.id, plate: vehicle.plate, cost_center: center.code, branch_code: center.branch_code });
+    }
+    return { synchronized: centers.length, centers };
+  }, { maxWait: 10000, timeout: 30000 }));
+  await invalidateVehicleAccounting(tenantId);
+  return result;
 }
 
 async function addVehicleDocument(tenantId, user, id, input) {
@@ -558,6 +598,8 @@ async function getVehicleDashboardMetrics(tenantId) {
 }
 
 module.exports = {
+  getVehicleAccountingStructure,
+  synchronizeVehicleCenters,
   listVehicles,
   createVehicle,
   updateVehicle,
