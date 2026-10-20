@@ -12,7 +12,8 @@ type Order = {
   status: string;
   source_type: string;
   source_reference?: string;
-  origin_id?: number | null;
+  sede_id?: number | null;
+  sede?: { name: string; city: string };
   origin_name: string;
   due_at: string;
   weight_kg: number;
@@ -26,8 +27,8 @@ type Plan = {
   id: number;
   code: string;
   name: string;
-  origin_id: number;
-  origin?: { name: string; city: string };
+  sede_id: number;
+  sede?: { name: string; city: string };
   service_level: string;
   due_date: string | null;
   status: string;
@@ -40,7 +41,7 @@ type Plan = {
   stop_count: number;
 };
 
-type Origin = { id: number; code: string; name: string; city: string };
+type Sede = { id: number; code: string; name: string; city: string };
 
 const planStatusLabels: Record<string, string> = { borrador: "Borrador", listo: "Listo para evaluar", confirmado: "Confirmado en viaje" };
 
@@ -76,6 +77,12 @@ type Intake = {
   existing?: number;
 };
 const requiredHeaders = ["pedido", "origen", "destino", "fecha_disponible", "fecha_entrega", "peso_kg", "volumen_m3"];
+const sedeHeaderAliases = ["origen", "sede", "codigo_sede"];
+
+function hasHeader(normalized: string[], header: string) {
+  if (header === "origen") return sedeHeaderAliases.some((alias) => normalized.includes(alias));
+  return normalized.includes(header);
+}
 
 function csvCell(value: unknown) {
   const text = value instanceof Date ? value.toISOString() : String(value ?? "").trim();
@@ -98,23 +105,23 @@ export default function TransportOrdersPage() {
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [origins, setOrigins] = useState<Origin[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
   const [planBusy, setPlanBusy] = useState(false);
-  const [planForm, setPlanForm] = useState({ name: "", origin_id: "", service_level: "normal", due_date: "" });
+  const [planForm, setPlanForm] = useState({ name: "", sede_id: "", service_level: "normal", due_date: "" });
   const [addingNeedId, setAddingNeedId] = useState<number | null>(null);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showExcelModal, setShowExcelModal] = useState(false);
   const canWrite = hasStoredRolePermission("transport", "write");
   const load = useCallback(async () => {
     try {
-      const [orderList, planList, originList] = await Promise.all([
+      const [orderList, planList, sedeList] = await Promise.all([
         api<Order[]>(`/api/v1/transport/orders${status ? `?status=${status}` : ""}`),
         api<Plan[]>("/api/v1/transport/plans"),
-        api<Origin[]>("/api/v1/transport/origins"),
+        api<Sede[]>("/api/v1/transport/sedes"),
       ]);
       setOrders(orderList);
       setPlans(planList);
-      setOrigins(originList);
+      setSedes(sedeList);
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -164,8 +171,8 @@ export default function TransportOrdersPage() {
 
   async function createPlan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!planForm.origin_id) {
-      setMessage("Selecciona un origen para el plan.");
+    if (!planForm.sede_id) {
+      setMessage("Selecciona una sede para el plan.");
       return;
     }
     setPlanBusy(true);
@@ -174,12 +181,12 @@ export default function TransportOrdersPage() {
         method: "POST",
         body: JSON.stringify({
           name: planForm.name,
-          origin_id: Number(planForm.origin_id),
+          sede_id: Number(planForm.sede_id),
           service_level: planForm.service_level || "normal",
           due_date: planForm.due_date || undefined,
         }),
       });
-      setPlanForm({ name: "", origin_id: "", service_level: "normal", due_date: "" });
+      setPlanForm({ name: "", sede_id: "", service_level: "normal", due_date: "" });
       setShowPlanModal(false);
       setMessage("Plan creado. Agrega pedidos para completarlo.");
       await load();
@@ -251,7 +258,7 @@ export default function TransportOrdersPage() {
 
   function compatiblePlans(order: Order) {
     return plans.filter(
-      (plan) => plan.status !== "confirmado" && (!order.origin_id || plan.origin_id === order.origin_id),
+      (plan) => plan.status !== "confirmado" && (!order.sede_id || plan.sede_id === order.sede_id),
     );
   }
 
@@ -274,10 +281,10 @@ export default function TransportOrdersPage() {
       for (let index = 1; index <= Math.min(sheet.rowCount, 20); index += 1) {
         const candidate = sheet.getRow(index).values as unknown[];
         const normalized = candidate.slice(1).map(normalizedHeader);
-        if (requiredHeaders.every((header) => normalized.includes(header))) { headerRow = index; headers = normalized; break; }
+        if (requiredHeaders.every((header) => hasHeader(normalized, header))) { headerRow = index; headers = normalized; break; }
       }
       if (!headerRow) throw new Error("No encontramos los encabezados obligatorios. Descarga la plantilla y conserva la fila de títulos.");
-      const missing = requiredHeaders.filter((header) => !headers.includes(header));
+      const missing = requiredHeaders.filter((header) => !hasHeader(headers, header));
       if (missing.length) throw new Error(`Faltan columnas obligatorias: ${missing.join(", ")}.`);
       const rows: string[][] = [];
       for (let index = headerRow + 1; index <= sheet.rowCount; index += 1) {
@@ -524,7 +531,7 @@ export default function TransportOrdersPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold">{plan.name} <span className="text-xs font-normal text-neutral-500">{plan.code}</span></p>
-                    <p className="text-xs text-neutral-500">{plan.origin?.name || "Origen"} · {plan.origin?.city || ""}{plan.due_date ? ` · Vence ${new Date(plan.due_date).toLocaleDateString()}` : ""}</p>
+                    <p className="text-xs text-neutral-500">{plan.sede?.name || "Sede"} · {plan.sede?.city || ""}{plan.due_date ? ` · Vence ${new Date(plan.due_date).toLocaleDateString()}` : ""}</p>
                   </div>
                   <span className={`rounded-md px-2 py-1 text-xs font-semibold ${plan.status === "confirmado" ? "bg-emerald-100 text-emerald-800" : plan.status === "listo" ? "bg-apex/10 text-apex" : "bg-paper text-neutral-600"}`}>{planStatusLabels[plan.status] || plan.status}</span>
                 </div>
@@ -574,14 +581,14 @@ export default function TransportOrdersPage() {
       {showPlanModal ? (
         <ModalFrame title="Nuevo plan de despacho" onClose={() => setShowPlanModal(false)} maxWidth="md:max-w-xl">
           <form className="space-y-4" onSubmit={(event) => void createPlan(event)}>
-            <p className="text-sm text-neutral-600">Agrupa pedidos que salen del mismo origen para evaluarlos juntos en el paso 2.</p>
+            <p className="text-sm text-neutral-600">Agrupa pedidos que salen de la misma sede para evaluarlos juntos en el paso 2.</p>
             <Field label="Nombre del plan" required>
               <input className="h-10 w-full rounded-md border border-line px-3 text-sm" onChange={(event) => setPlanForm((form) => ({ ...form, name: event.target.value }))} placeholder="Ej. Plan 1" required value={planForm.name} />
             </Field>
-            <Field label="Origen" required>
-              <select className="h-10 w-full rounded-md border border-line px-3 text-sm" onChange={(event) => setPlanForm((form) => ({ ...form, origin_id: event.target.value }))} required value={planForm.origin_id}>
-                <option value="">Selecciona un origen</option>
-                {origins.map((origin) => <option key={origin.id} value={origin.id}>{origin.name} ({origin.city})</option>)}
+            <Field label="Sede" required>
+              <select className="h-10 w-full rounded-md border border-line px-3 text-sm" onChange={(event) => setPlanForm((form) => ({ ...form, sede_id: event.target.value }))} required value={planForm.sede_id}>
+                <option value="">Selecciona una sede</option>
+                {sedes.map((sede) => <option key={sede.id} value={sede.id}>{sede.name} ({sede.city})</option>)}
               </select>
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -594,7 +601,7 @@ export default function TransportOrdersPage() {
             </div>
             <div className="flex justify-end gap-2">
               <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={() => setShowPlanModal(false)} type="button">Cancelar</button>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={planBusy || !planForm.origin_id}>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" disabled={planBusy || !planForm.sede_id}>
                 <Plus size={16} /> {planBusy ? "Creando…" : "Crear plan"}
               </button>
             </div>
@@ -606,7 +613,7 @@ export default function TransportOrdersPage() {
           <p className="text-sm text-neutral-600">Sigue estos tres pasos. No necesitas copiar datos ni conocer formatos técnicos.</p>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             <article className="rounded-md border border-line p-4"><span className="flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><Download size={17} /></span><h3 className="mt-3 font-semibold">1. Descarga la plantilla</h3><p className="mt-1 text-sm text-neutral-600">Incluye ejemplos, listas y una hoja con la explicación de cada campo.</p><a className="mt-3 inline-flex h-10 items-center rounded-md border border-apex px-4 text-sm font-semibold text-apex" download href="/plantillas/Plantilla_Pedidos_Transporte.xlsx">Descargar plantilla Excel</a></article>
-            <article className="rounded-md border border-line p-4"><span className="flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><FileSpreadsheet size={17} /></span><h3 className="mt-3 font-semibold">2. Diligencia los pedidos</h3><p className="mt-1 text-sm text-neutral-600">Una fila es un pedido. Las columnas verdes son obligatorias y las amarillas son opcionales.</p><details className="mt-3 text-sm"><summary className="cursor-pointer font-semibold text-apex">Ver campos y ejemplos</summary><div className="mt-2 space-y-2 text-neutral-600"><p><strong>Obligatorios:</strong> pedido, origen, destino, fechas, peso y volumen.</p><p><strong>Opcionales:</strong> prioridad, servicio, referencia, pallets, paquetes, valor, moneda y vehículo.</p><p>Puedes agregar columnas propias; APEX OS las conservará como datos personalizados del pedido.</p></div></details></article>
+            <article className="rounded-md border border-line p-4"><span className="flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><FileSpreadsheet size={17} /></span><h3 className="mt-3 font-semibold">2. Diligencia los pedidos</h3><p className="mt-1 text-sm text-neutral-600">Una fila es un pedido. Las columnas verdes son obligatorias y las amarillas son opcionales.</p><details className="mt-3 text-sm"><summary className="cursor-pointer font-semibold text-apex">Ver campos y ejemplos</summary><div className="mt-2 space-y-2 text-neutral-600"><p><strong>Obligatorios:</strong> pedido, sede, destino, fechas, peso y volumen.</p><p><strong>Opcionales:</strong> prioridad, servicio, referencia, pallets, paquetes, valor, moneda y vehículo.</p><p>Puedes agregar columnas propias; APEX OS las conservará como datos personalizados del pedido.</p></div></details></article>
             <article className="rounded-md border border-line p-4"><span className="flex h-9 w-9 items-center justify-center rounded-md bg-paper text-apex"><Upload size={17} /></span><h3 className="mt-3 font-semibold">3. Selecciona y valida</h3><p className="mt-1 text-sm text-neutral-600">Revisaremos todas las filas antes de agregar pedidos a Transporte.</p><label className="mt-3 inline-flex h-10 cursor-pointer items-center rounded-md bg-apex px-4 text-sm font-semibold text-white">{readingFile ? "Leyendo archivo…" : "Seleccionar Excel"}<input accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="sr-only" disabled={readingFile || !canWrite} onChange={(event) => void loadExcelFile(event)} type="file" /></label></article>
           </div>
           {fileName ? <div className="mt-4 flex items-center gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-3"><CheckCircle2 className="text-emerald-700" size={20} /><div><p className="font-semibold">{fileName}</p><p className="text-sm text-neutral-600">{fileRows} pedido{fileRows === 1 ? "" : "s"} encontrado{fileRows === 1 ? "" : "s"}. Valida el archivo para continuar.</p></div></div> : null}
@@ -629,7 +636,7 @@ export default function TransportOrdersPage() {
           </div>
           {result?.errors?.length ? (
             <pre className="mt-3 overflow-auto rounded-md bg-paper p-3 text-xs">
-              {result.errors.map((error) => `Fila ${String(error.row || "")}: revisa ${[...(Array.isArray(error.missing) ? error.missing : []), ...(error.origin_code ? ["origen"] : []), ...(error.delivery_point_code ? ["destino"] : [])].join(", ")}.`).join("\n")}
+              {result.errors.map((error) => `Fila ${String(error.row || "")}: revisa ${[...(Array.isArray(error.missing) ? error.missing : []), ...(error.sede_code ? ["sede"] : []), ...(error.delivery_point_code ? ["destino"] : [])].join(", ")}.`).join("\n")}
             </pre>
           ) : null}
         </ModalFrame>

@@ -52,7 +52,7 @@ type Point = {
 
 };
 
-type Origin = { id: number; code: string; name: string; city: string };
+type Sede = { id: number; code: string; name: string; city: string };
 
 type Need = {
 
@@ -60,7 +60,7 @@ type Need = {
 
   code: string;
 
-  origin_id?: number;
+  sede_id?: number;
 
   origin_name: string;
 
@@ -340,7 +340,7 @@ export default function TransportOperationPage() {
 
   const [points, setPoints] = useState<Point[]>([]);
 
-  const [origins, setOrigins] = useState<Origin[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
 
   const [carriers, setCarriers] = useState<Carrier[]>([]);
 
@@ -380,7 +380,7 @@ export default function TransportOperationPage() {
 
         pointRows,
 
-        originRows,
+        sedeRows,
 
         carrierRows,
 
@@ -396,7 +396,7 @@ export default function TransportOperationPage() {
 
         api<Point[]>("/api/v1/transport/delivery-points"),
 
-        api<Origin[]>("/api/v1/transport/origins"),
+        api<Sede[]>("/api/v1/transport/sedes"),
 
         api<Carrier[]>("/api/v1/transport/carriers"),
 
@@ -412,7 +412,7 @@ export default function TransportOperationPage() {
 
       setPoints(pointRows);
 
-      setOrigins(originRows);
+      setSedes(sedeRows);
 
       setCarriers(carrierRows);
 
@@ -482,9 +482,9 @@ export default function TransportOperationPage() {
 
     const data = new FormData(event.currentTarget);
 
-    const origin = origins.find(
+    const sede = sedes.find(
 
-      (row) => row.id === Number(data.get("origin_id")),
+      (row) => row.id === Number(data.get("sede_id")),
 
     );
 
@@ -500,9 +500,9 @@ export default function TransportOperationPage() {
 
         source_reference: data.get("source_reference"),
 
-        origin_id: origin?.id,
+        sede_id: sede?.id,
 
-        origin_name: origin?.name,
+        origin_name: sede?.name,
 
         delivery_point_id: Number(data.get("delivery_point_id")),
 
@@ -923,7 +923,7 @@ export default function TransportOperationPage() {
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-semibold" id="transport-next-action">{plannable.length ? `${plannable.length} pedidos están listos para crear un viaje` : tower.trips.length ? "Continúa con los viajes abiertos" : "Prepara el primer pedido para comenzar"}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{plannable.length ? "Agrúpalos y compara vehículo, ruta y costo antes de confirmar." : tower.trips.length ? "Abre un viaje para revisar asignación, recorrido, entrega o liquidación." : "Necesitas origen, destino, fecha, peso y volumen para poder planear."}</p>
+            <p className="mt-1 text-sm text-neutral-600">{plannable.length ? "Agrúpalos y compara vehículo, ruta y costo antes de confirmar." : tower.trips.length ? "Abre un viaje para revisar asignación, recorrido, entrega o liquidación." : "Necesitas sede, destino, fecha, peso y volumen para poder planear."}</p>
           </div>
           {canWrite ? <Link className="inline-flex h-10 items-center rounded-md bg-apex px-4 text-sm font-semibold text-white" href={plannable.length ? "/dashboard/transporte/planeacion" : tower.trips.length ? "#active-trips" : "/dashboard/transporte/ordenes"}>{plannable.length ? "Planear pedidos" : tower.trips.length ? "Ver viajes" : "Preparar pedido"}</Link> : null}
         </div>
@@ -1188,7 +1188,7 @@ export default function TransportOperationPage() {
 
               <NeedForm
 
-                origins={origins}
+                sedes={sedes}
 
                 points={points}
 
@@ -1256,7 +1256,7 @@ export default function TransportOperationPage() {
 
 function NeedForm({
 
-  origins,
+  sedes,
 
   points,
 
@@ -1264,7 +1264,7 @@ function NeedForm({
 
 }: {
 
-  origins: Origin[];
+  sedes: Sede[];
 
   points: Point[];
 
@@ -1294,17 +1294,17 @@ function NeedForm({
 
       <label className="text-sm">
 
-        <span className="mb-1 block font-medium">Origen operativo</span>
+        <span className="mb-1 block font-medium">Sede</span>
 
-        <select className={inputClass} name="origin_id" required>
+        <select className={inputClass} name="sede_id" required>
 
           <option value="">Seleccionar</option>
 
-          {origins.map((origin) => (
+          {sedes.map((sede) => (
 
-            <option key={origin.id} value={origin.id}>
+            <option key={sede.id} value={sede.id}>
 
-              {origin.code} · {origin.name}
+              {sede.code} · {sede.name}
 
             </option>
 

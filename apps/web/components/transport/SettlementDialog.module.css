@@ -1,0 +1,38 @@
+.dialog {
+  --surface: 255 255 255;
+  --surface-soft: 248 250 253;
+  --surface-muted: 240 245 253;
+  --color-line: 222 231 241;
+  --color-paper: 245 248 252;
+  --color-apex: 0 128 125;
+  --text-strong: 16 39 67;
+  --text-body: 28 52 81;
+  --text-muted: 106 128 163;
+  --text-subtle: 127 145 173;
+  color-scheme: light;
+  color: #172c43;
+  background: white;
+}
+
+/* El portal sale de los contenedores transformados del dashboard. */
+:global(div.fixed):has(> .dialog) {
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.dialog {
+  max-height: calc(100dvh - 2rem);
+  max-width: min(64rem, calc(100vw - 2rem));
+  border-radius: .85rem;
+}
+:global(div.fixed):has(> .nested) { z-index: 120; }
+.nested { max-width: min(30rem, calc(100vw - 2rem)); }
+.dialog.dialog :global(.text-white) { color: #fff !important; }
+.dialog.dialog :global(.bg-apex.text-white) { color: #fff !important; }
+.dialog.dialog :global(.bg-emerald-50) { background: #ecfdf5 !important; color: #065f46 !important; }
+.dialog.dialog :global(.bg-amber-50) { background: #fffbeb !important; color: #92400e !important; }
+.dialog.dialog :global(.bg-rose-50) { background: #fff1f2 !important; color: #9f1239 !important; }
+
+.dialog.dialog :global(.settlement-store-tag) { background: #e6f4f1 !important; color: #15574e !important; border-color: #b8dcd5 !important; }
+.dialog.dialog :global(.settlement-store-search),
+.dialog.dialog :global(.settlement-store-search:focus) { border: 0 !important; box-shadow: none !important; outline: none !important; }

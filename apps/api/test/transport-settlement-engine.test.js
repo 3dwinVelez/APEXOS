@@ -84,12 +84,12 @@ test("resolveRate picks the single highest-priority (lowest number) tariff", () 
   assert.equal(trace.selected.matched_by, "vigencia+contexto+prioridad");
 });
 
-test("geographic scope: origin and municipality participate in rate matching", () => {
-  const scoped = rate({ id: 1, code: "GEO", origin_department: "Antioquia", origin_city: "Medellin", origin_municipality: "Envigado", destination_municipality: "Barbosa" });
+test("geographic scope: destination municipality participates in rate matching and origin is wildcard (sede-agnostic)", () => {
+  const scoped = rate({ id: 1, code: "GEO", destination_municipality: "Barbosa" });
   const context = { origin_department: "antioquia", origin_city: "MEDELLIN ", origin_municipality: "envigado", destination_city: "Bogota", destination_municipality: "barbosa" };
   assert.equal(E.rateMatchesContext(scoped, context), true);
-  assert.equal(E.rateMatchesContext(scoped, { ...context, origin_municipality: "itagui" }), false);
-  assert.equal(E.rateMatchesContext(scoped, { ...context, origin_city: "Cali" }), false);
+  assert.equal(E.rateMatchesContext(scoped, { ...context, origin_municipality: "itagui" }), true);
+  assert.equal(E.rateMatchesContext(scoped, { ...context, origin_city: "Cali" }), true);
   assert.equal(E.rateMatchesContext(scoped, { ...context, destination_municipality: "soacha" }), false);
 });
 
@@ -110,7 +110,7 @@ test("resolveRate prefers the municipality-scoped rate and reports the context i
   const { rate: picked, trace } = E.resolveRate([generic, scoped], context);
   assert.equal(picked.id, 2);
   assert.equal(trace.context.destination_municipality, "envigado");
-  assert.equal(trace.context.origin_municipality, null);
+  assert.equal("origin_municipality" in trace.context, false);
   assert.throws(() => E.resolveRate([scoped], { carrier_id: 9, destination_municipality: "itagui" }), (e) => e.code === "TMS_SETTLEMENT_RATE_NOT_FOUND");
 });
 
