@@ -67,9 +67,11 @@ async function main() {
     await db.account.upsert({ where: { tenant_id_code: { tenant_id: primary.tenantId, code } }, update: { name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true }, create: { tenant_id: primary.tenantId, code, name, type, parent_id: null, level: code.length > 6 ? 5 : 3, active: true, allows_tx: true } });
   }
   const preview = await call("/api/v1/accounting/chart/tree/preview", { token: primary.token, method: "POST", body: { catalog } });
-  check("preview_real", preview.status === 200 && preview.payload.total_catalog_entries === 2502 && preview.payload.custom_links?.length === 5 && preview.payload.custom_parent_creates?.length === 1, { status: preview.status, creates: preview.payload.creates?.length, repairs: preview.payload.repairs?.length, custom_links: preview.payload.custom_links?.length, custom_parent_creates: preview.payload.custom_parent_creates?.length, conflicts: preview.payload.conflicts?.length });
+  // New tenants already contain the frozen standard, including 220505 and HEART.
+  // The five explicit fixture changes above must still be repaired by tree/apply.
+  check("preview_real", preview.status === 200 && preview.payload.total_catalog_entries === 2502 && preview.payload.custom_links?.length === 6 && preview.payload.custom_parent_creates?.length === 0 && preview.payload.creates?.length === 0 && preview.payload.repairs?.length === 5, { status: preview.status, creates: preview.payload.creates?.length, repairs: preview.payload.repairs?.length, custom_links: preview.payload.custom_links?.length, custom_parent_creates: preview.payload.custom_parent_creates?.length, conflicts: preview.payload.conflicts?.length });
   const applied = await call("/api/v1/accounting/chart/tree/apply", { token: primary.token, method: "POST", body: { catalog } });
-  check("apply_real", applied.status === 200 && (applied.payload.applied?.created || 0) + (applied.payload.applied?.repaired || 0) >= 2502, { status: applied.status, applied: applied.payload.applied });
+  check("apply_real", applied.status === 200 && applied.payload.applied?.created === 0 && applied.payload.applied?.repaired === 5, { status: applied.status, applied: applied.payload.applied });
   const second = await call("/api/v1/accounting/chart/tree/apply", { token: primary.token, method: "POST", body: { catalog } });
   check("apply_idempotent", second.status === 200 && second.payload.applied.created === 0 && second.payload.applied.repaired === 0, { status: second.status, applied: second.payload.applied });
   const accounts = await call("/api/v1/accounting/accounts?limit=1000", { token: primary.token });
