@@ -1,0 +1,87 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "gastos-entry-ux-20261020-preqa",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-gastos-ux-20261020",
+  "target_head": "806ec6340853ce1631476f09df75b1fcdb8351e7",
+  "commit": "2ad1feb509ab8758a6f366551a7fa029076c2392",
+  "target_baseline": "origin/develop@806ec6340853ce1631476f09df75b1fcdb8351e7",
+  "candidate": {
+    "status": "certified",
+    "reviewed_commit": "2ad1feb509ab8758a6f366551a7fa029076c2392",
+    "candidate_source": {
+      "branch": "desarrollo",
+      "commit": "2ad1feb509ab8758a6f366551a7fa029076c2392",
+      "provenance": {
+        "functional_commit": "1b036e4f4b645946b4dbdffe5e715d072fcf7906",
+        "first_parent_merge": "806ec6340853ce1631476f09df75b1fcdb8351e7"
+      }
+    },
+    "scope_manifest": "gastos-entry-ux-20261020-scope.json"
+  },
+  "change_intent": {
+    "summary": "Promueve a QA la captura compacta de gastos menores con teclado y repeticion, preservando el payload contable con IVA, anticipo y anulacion, RBAC e historial compartido opt-out y responsive.",
+    "modules": ["gastos-menores", "shared-field-history"]
+  },
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "usuario",
+    "approved_at": "2026-10-20T20:11:37Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "push_promotion_branch": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false
+    }
+  },
+  "checks": {
+    "functional": { "status": "passed", "evidence": ["../certifications/gastos-entry-ux-20261020.md"] },
+    "error": { "status": "passed", "evidence": ["../certifications/gastos-entry-ux-20261020.md"] },
+    "support_scripts": { "status": "passed", "evidence": ["../certifications/gastos-entry-ux-20261020.md"] },
+    "regression": { "status": "passed", "evidence": ["../certifications/gastos-entry-ux-20261020.md"] },
+    "platform_regression": { "status": "passed", "evidence": ["../certifications/gastos-entry-ux-20261020.md"] }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/gastos-menores-entry-ux-browser-local.js",
+    "evidence": ["../certifications/gastos-entry-ux-20261020.md"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/gastos-menores-entry-ux-browser-local.js",
+    "evidence": ["../certifications/gastos-entry-ux-20261020.md"]
+  },
+  "integrated_validation": {
+    "status": "passed",
+    "generated_at": "2026-10-20T20:25:36.168Z",
+    "commit": "2ad1feb509ab8758a6f366551a7fa029076c2392",
+    "checks": { "total": 65, "passed": 65, "failed": 0 },
+    "tests": { "api_web_units": 202, "governance_units": 3, "status": "passed" },
+    "build": { "status": "passed", "pages": 125 },
+    "runtime": {
+      "api_port": 3215,
+      "web_port": 3004,
+      "database_port": 55439,
+      "database": "isolated_local_postgresql",
+      "standard_chart": "existing_current_qa",
+      "standard_chart_rows": 2508
+    },
+    "governance_certification": {
+      "status": "passed",
+      "versioned": true,
+      "script": "../../../scripts/certifications/scoped-qa-governance-local.js"
+    },
+    "source_hashes_match_certified_commit": true,
+    "product_changes": false
+  },
+  "promotion": {
+    "status": "pending",
+    "authorization": "approved",
+    "promote_main": false
+  }
+}

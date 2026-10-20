@@ -1,8 +1,8 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { RefreshCw, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, RefreshCw, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { GastosMenoresNav } from "@/components/gastos-menores-nav";
@@ -81,7 +81,7 @@ type Concept = {
 };
 
 type VatMaster = { code: string; concept: string; percent: number; active: boolean };
-type Party = { id: number; code: string; name: string };
+type Party = { id: number; name: string; tax_id: string | null };
 type Advance = {
   id: number;
   box_id: number;
@@ -97,6 +97,8 @@ type OrgCostCenter = { code: string; name: string; active: boolean };
 type OrgTree = { societies: { code: string; name: string }[]; branches: OrgBranch[]; cost_centers: OrgCostCenter[] };
 
 type LineForm = {
+  // Identidad solo del cliente: el payload de la API se construye campo a campo.
+  row_key: string;
   concept_id: string;
   description: string;
   base_amount: string;
@@ -109,6 +111,7 @@ type LineForm = {
 type RangePreset = "hoy" | "semana" | "mes" | "";
 
 const emptyLine: LineForm = {
+  row_key: "",
   concept_id: "",
   description: "",
   base_amount: "",
@@ -117,6 +120,25 @@ const emptyLine: LineForm = {
   invoice_reference: "",
   cost_center_code: ""
 };
+
+let lineKeySeed = 0;
+
+function blankLine(): LineForm {
+  lineKeySeed += 1;
+  return { ...emptyLine, row_key: `line-${lineKeySeed}` };
+}
+
+function supplierLookupOption(row: Party): GastosLookupOption {
+  // Party expone tax_id opcional y no tiene code: solo se indexan textos presentes.
+  const aliases = [row.name, row.tax_id]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+  return {
+    value: String(row.id),
+    label: row.name,
+    search: aliases.join(" "),
+    aliases
+  };
+}
 
 const money = (value: number) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(value || 0);
 
@@ -159,6 +181,62 @@ function isLineEmpty(line: LineForm) {
   return !line.concept_id && !line.description.trim() && !line.base_amount && !line.supplier_party_id && !line.invoice_reference.trim() && !line.cost_center_code;
 }
 
+function lastFilledLineIndex(lines: LineForm[]) {
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (!isLineEmpty(lines[index])) return index;
+  }
+  return -1;
+}
+
+function repeatLineValues(source: LineForm, blank: LineForm): LineForm {
+  // Se repite el detalle y los soportes; el valor base siempre queda vacio para esta linea.
+  return {
+    ...blank,
+    concept_id: source.concept_id,
+    description: source.description,
+    vat_code: source.vat_code,
+    supplier_party_id: source.supplier_party_id,
+    invoice_reference: source.invoice_reference,
+    cost_center_code: source.cost_center_code
+  };
+}
+
+function buildRepeatedLines(lines: LineForm[], createBlank: () => LineForm): { lines: LineForm[]; targetIndex: number } {
+  const sourceIndex = lastFilledLineIndex(lines);
+  if (sourceIndex < 0) return { lines, targetIndex: -1 };
+  const emptyIndex = lines.findIndex((line, index) => index > sourceIndex && isLineEmpty(line));
+  const targetIndex = emptyIndex >= 0 ? emptyIndex : lines.length;
+  if (targetIndex >= 100) return { lines, targetIndex: -1 };
+  const repeated = repeatLineValues(lines[sourceIndex], createBlank());
+  const next = lines.slice(0, targetIndex);
+  next[targetIndex] = repeated;
+  if (!isLineEmpty(next[next.length - 1]) && next.length < 100) next.push(createBlank());
+  return { lines: next, targetIndex };
+}
+
+function nextLinesForFocus(lines: LineForm[], createBlank: () => LineForm): LineForm[] {
+  // El tope se valida antes de crear la fila: nunca debe existir una linea 101.
+  if (lines.length >= 100) return lines;
+  const last = lines[lines.length - 1];
+  if (!last || isLineEmpty(last)) return lines;
+  return [...lines, createBlank()];
+}
+
+function removeLineLookupErrors(current: Set<string>, lineKey: string) {
+  const next = new Set(current);
+  for (const field of ["concept", "vat", "supplier", "cost-center"]) next.delete(`${field}-${lineKey}`);
+  return next;
+}
+
+function supportDataVisible(showSupport: boolean, line: LineForm, concept: Concept | null, hasLookupError: boolean) {
+  // Un soporte con dato o error jamas se oculta con el toggle: solo se pliega si esta vacio.
+  return showSupport
+    || concept?.requires_supplier === true
+    || concept?.requires_invoice_reference === true
+    || Boolean(line.supplier_party_id || line.invoice_reference.trim() || line.cost_center_code)
+    || hasLookupError;
+}
+
 // Celdas de la planilla: mismo lenguaje visual de .control pero plano, para sensación de hoja
 // de cálculo. El foco dibuja el borde de acento.
 const CELL = "h-9 w-full border-0 bg-transparent px-2 text-sm outline-none ring-apex/40 placeholder:text-neutral-400 focus:ring-1 apex-cell";
@@ -190,10 +268,15 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   const [lookupErrors, setLookupErrors] = useState<Set<string>>(() => new Set());
   // Encabezado del comprobante en edición (la planilla queda siempre visible, sin modal).
   const [draft, setDraft] = useState({ date: today(), advance_id: "", description: "" });
-  const [draftLines, setDraftLines] = useState<LineForm[]>([{ ...emptyLine }]);
+  const [draftLines, setDraftLines] = useState<LineForm[]>(() => [blankLine()]);
+  // Los lookups conservan su estado por row_key aunque las filas cambien de posicion.
+  const [showSupport, setShowSupport] = useState(false);
   const [detail, setDetail] = useState<VoucherDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const registerRef = useRef<HTMLDivElement | null>(null);
+  const repeatFocusRef = useRef<number | null>(null);
+  const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const advanceFieldRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setAccess({
@@ -239,6 +322,15 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   useEffect(() => {
     if (access.ready && access.canRead) void load();
   }, [access.ready, access.canRead, load]);
+
+  useEffect(() => {
+    const index = repeatFocusRef.current;
+    if (index === null) return;
+    repeatFocusRef.current = null;
+    const input = registerRef.current?.querySelector<HTMLInputElement>(`[data-line-index="${index}"][data-field="base"]`);
+    input?.focus();
+    input?.select();
+  }, [draftLines]);
 
   const activeBoxes = useMemo(() => boxes.filter((row) => row.active !== false), [boxes]);
   const activeConcepts = useMemo(() => concepts.filter((row) => row.active !== false), [concepts]);
@@ -300,7 +392,7 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   ], [activeVats]);
   const supplierOptions = useMemo<GastosLookupOption[]>(() => [
     { value: "", label: "Sin proveedor", search: "sin proveedor" },
-    ...suppliers.map((row) => ({ value: String(row.id), label: row.name, search: `${row.code} ${row.name}`, aliases: [row.code, row.name] }))
+    ...suppliers.map((row) => supplierLookupOption(row))
   ], [suppliers]);
   const costCenterOptions = useMemo<GastosLookupOption[]>(() => [
     { value: "", label: "Sin centro", search: "sin centro" },
@@ -330,6 +422,10 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
   }, [draftLines, vatByCode]);
 
   const filledLines = useMemo(() => draftLines.filter((line) => !isLineEmpty(line)).length, [draftLines]);
+  const repeatSourceIndex = lastFilledLineIndex(draftLines);
+  const canRepeat = lookupErrors.size === 0
+    && repeatSourceIndex >= 0
+    && (draftLines.length < 100 || draftLines.slice(repeatSourceIndex + 1).some((line) => isLineEmpty(line)));
 
   if (!access.ready) {
     return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Gastos Menores...</div>;
@@ -351,30 +447,28 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
       const next = lines.map((line, position) => (position === index ? { ...line, ...patch } : line));
       // La planilla siempre ofrece una fila vacía al final: al empezar a llenar la ultima
       // fila aparece la siguiente, como en el libro caja de referencia.
-      if (index === next.length - 1 && !isLineEmpty(next[index]) && next.length < 100) next.push({ ...emptyLine });
+      if (index === next.length - 1 && !isLineEmpty(next[index]) && next.length < 100) next.push(blankLine());
       return next;
     });
   }
 
   function removeLine(index: number) {
-    const oldLength = draftLines.length;
+    const removedKey = draftLines[index]?.row_key;
     setError("");
     setDraftLines((lines) => {
       const next = lines.filter((_, position) => position !== index);
-      return next.length ? next : [{ ...emptyLine }];
+      return next.length ? next : [blankLine()];
     });
-    setLookupErrors((current) => {
-      const next = new Set(current);
-      for (const field of ["concept", "vat", "supplier", "cost-center"]) {
-        next.delete(`${field}-${index}`);
-        for (let position = index + 1; position < oldLength; position += 1) {
-          const from = `${field}-${position}`;
-          const to = `${field}-${position - 1}`;
-          if (next.has(from)) { next.delete(from); next.add(to); }
-        }
-      }
-      return next;
-    });
+    if (removedKey) setLookupErrors((current) => removeLineLookupErrors(current, removedKey));
+  }
+
+  function repeatPreviousLine() {
+    // Repetir reemplaza filas vacias: con una busqueda pendiente descartaria el texto tecleado.
+    if (lookupErrors.size > 0) return;
+    const result = buildRepeatedLines(draftLines, blankLine);
+    if (result.targetIndex < 0) return;
+    repeatFocusRef.current = result.targetIndex;
+    setDraftLines(result.lines);
   }
 
   function setLookupValidity(key: string, valid: boolean) {
@@ -403,10 +497,27 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
     focusNextInput(event.currentTarget);
   }
 
+  function focusDateInput() {
+    dateInputRef.current?.focus();
+  }
+
+  function focusAdvanceInput() {
+    const input = advanceFieldRef.current?.querySelector<HTMLInputElement>("input");
+    input?.focus();
+    input?.select();
+  }
+
+  function focusFirstLineCell() {
+    const first = registerRef.current?.querySelector<HTMLInputElement>("input:not([disabled])");
+    first?.focus();
+    first?.select();
+  }
+
   function focusNextInput(currentTarget: HTMLElement) {
     const root = registerRef.current;
     if (!root) return;
-    const cells = Array.from(root.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select"));
+    // Solo celdas realmente presentes en el DOM: los soportes plegados no participan del foco.
+    const cells = Array.from(root.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input:not([disabled]), select:not([disabled])"));
     const current = cells.indexOf(currentTarget as HTMLInputElement | HTMLSelectElement);
     const next = cells[current + 1];
     if (next) {
@@ -414,14 +525,9 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
       if (next instanceof HTMLInputElement) next.select();
       return;
     }
-    setDraftLines((lines) => {
-      const lastEmpty = isLineEmpty(lines[lines.length - 1] || emptyLine);
-      const nextLines = lastEmpty ? lines : [...lines, { ...emptyLine }];
-      if (nextLines.length >= 100) return nextLines;
-      return nextLines;
-    });
+    setDraftLines((lines) => nextLinesForFocus(lines, blankLine));
     window.setTimeout(() => {
-      const updated = registerRef.current?.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input, select");
+      const updated = registerRef.current?.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input:not([disabled]), select:not([disabled])");
       const first = updated?.[current + 1];
       if (first) {
         first.focus();
@@ -454,7 +560,7 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
 
   function resetDraft() {
     setDraft({ date: today(), advance_id: "", description: "" });
-    setDraftLines([{ ...emptyLine }]);
+    setDraftLines([blankLine()]);
     setLookupErrors(new Set());
   }
 
@@ -473,11 +579,11 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
       return;
     }
     const activeLookupKeys = new Set(["box", "advance"]);
-    draftLines.forEach((_, index) => {
-      activeLookupKeys.add(`concept-${index}`);
-      activeLookupKeys.add(`vat-${index}`);
-      activeLookupKeys.add(`supplier-${index}`);
-      activeLookupKeys.add(`cost-center-${index}`);
+    draftLines.forEach((line) => {
+      activeLookupKeys.add(`concept-${line.row_key}`);
+      activeLookupKeys.add(`vat-${line.row_key}`);
+      activeLookupKeys.add(`supplier-${line.row_key}`);
+      activeLookupKeys.add(`cost-center-${line.row_key}`);
     });
     const currentLookupErrors = [...lookupErrors].filter((key) => activeLookupKeys.has(key));
     if (currentLookupErrors.length) {
@@ -536,21 +642,42 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <header className="apex-section-card p-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-apex">Gastos Menores</p>
-            <h1 className="text-3xl font-semibold">{mode === "new" ? "Digitar gastos de caja" : "Registro de gastos de caja"}</h1>
-            <p className="mt-1 text-sm text-neutral-600">
-              Libro caja de egresos: digita las líneas directamente en la planilla y contabiliza el comprobante (documento GM) con IVA por línea.
-            </p>
+      {mode === "new" ? (
+        <header className="apex-section-card p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <Link className="inline-flex items-center gap-1 text-xs font-medium text-apex hover:underline" href="/dashboard/gastos-menores/gastos">
+                <ArrowLeft size={14} /> Volver a gastos
+              </Link>
+              <h1 className="mt-1 text-2xl font-semibold">Digitar gastos</h1>
+              <p className="mt-1 text-sm text-neutral-600">Registra cada gasto y contabiliza el comprobante al final.</p>
+            </div>
+            <button
+              className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-neutral-500 transition-colors hover:bg-paper hover:text-apex"
+              onClick={() => void load()}
+              type="button"
+            >
+              <RefreshCw size={14} /> Actualizar
+            </button>
           </div>
-          <button className="btn-secondary" onClick={() => void load()} type="button">
-            <RefreshCw size={16} /> Actualizar
-          </button>
-        </div>
-      </header>
-      <GastosMenoresNav />
+        </header>
+      ) : (
+        <header className="apex-section-card p-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-apex">Gastos Menores</p>
+              <h1 className="text-3xl font-semibold">Registro de gastos de caja</h1>
+              <p className="mt-1 text-sm text-neutral-600">
+                Libro caja de egresos: digita las líneas directamente en la planilla y contabiliza el comprobante (documento GM) con IVA por línea.
+              </p>
+            </div>
+            <button className="btn-secondary" onClick={() => void load()} type="button">
+              <RefreshCw size={16} /> Actualizar
+            </button>
+          </div>
+        </header>
+      )}
+      {mode !== "new" ? <GastosMenoresNav /> : null}
       {message ? (
         <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
           {message}{mode === "new" ? <Link className="ml-3 font-semibold underline" href="/dashboard/gastos-menores/gastos">Volver al listado</Link> : null}
@@ -633,103 +760,144 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
       </section> : null}
 
       {mode === "new" && access.canWrite ? (
-        <section className="apex-section-card p-4">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold">Nuevo comprobante</h2>
-              <p className="text-sm text-neutral-600">
-                {selectedBox ? `Caja ${selectedBox.code} - ${selectedBox.name}` : "Selecciona una caja de trabajo para registrar."}
-                {selectedBox?.require_advance ? " · Esta caja exige anticipo." : ""}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="w-64 text-sm">
-                <span className="mb-1 block text-neutral-600">Caja de trabajo</span>
-                <GastosLookup
-                  aria-label="Caja de trabajo"
-                  className="control pr-9"
-                  onClear={() => {
-                    setBoxFilter("");
-                    setDraft((current) => ({ ...current, advance_id: "" }));
-                    setLookupValidity("advance", true);
-                  }}
-                  onSelected={focusNextInput}
-                  onValidityChange={(valid) => setLookupValidity("box", valid)}
-                  onInvalid={(text) => setError(`No encontramos la caja ${text}. Selecciona una opción válida.`)}
-                  onResolve={(value) => {
-                    setError("");
-                    setBoxFilter(value);
-                    setDraft((current) => ({ ...current, advance_id: "" }));
-                    setLookupValidity("advance", true);
-                  }}
-                  options={boxOptions}
-                  placeholder="Código o nombre de caja"
-                  value={effectiveBoxId}
-                />
-              </label>
-              <label className="text-sm">
-                <span className="mb-1 block text-neutral-600">Fecha</span>
-                <input
-                  className="control"
-                  onChange={(event) => setDraft({ ...draft, date: event.target.value })}
-                  required
-                  type="date"
-                  value={draft.date}
-                />
-              </label>
-              <div className="w-64 text-sm">
-                <span className="mb-1 block text-neutral-600">{`Anticipo${selectedBox?.require_advance ? " (obligatorio)" : ""}`}</span>
-                <GastosLookup
-                  aria-label="Anticipo del comprobante"
-                  className="control pr-9"
-                  onClear={() => setDraft((current) => ({ ...current, advance_id: "" }))}
-                  onSelected={focusNextInput}
-                  resetToken={effectiveBoxId}
-                  onValidityChange={(valid) => setLookupValidity("advance", valid)}
-                  onInvalid={(text) => setError(`No encontramos el anticipo ${text}. Selecciona uno vigente para esta caja.`)}
-                  onResolve={(value) => { setError(""); setDraft((current) => ({ ...current, advance_id: value })); }}
-                  optional
-                  options={advanceOptions}
-                  placeholder="Número de anticipo"
-                  value={draft.advance_id}
-                />
-                <p className="mt-1 text-xs leading-snug text-neutral-500">
+        <section className="apex-section-card min-w-0 p-4" data-field-history="off">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,0.7fr)_minmax(0,1.3fr)]">
+            <label className="text-sm">
+              <span className="mb-1 block text-neutral-600">Caja de trabajo</span>
+              <GastosLookup
+                aria-label="Caja de trabajo"
+                className="control pr-9"
+                onClear={() => {
+                  setBoxFilter("");
+                  setDraft((current) => ({ ...current, advance_id: "" }));
+                  setLookupValidity("advance", true);
+                }}
+                onEnterResolved={focusDateInput}
+                onSelected={focusDateInput}
+                onValidityChange={(valid) => setLookupValidity("box", valid)}
+                onInvalid={(text) => setError(`No encontramos la caja ${text}. Selecciona una opción válida.`)}
+                onResolve={(value) => {
+                  setError("");
+                  setBoxFilter(value);
+                  setDraft((current) => ({ ...current, advance_id: "" }));
+                  setLookupValidity("advance", true);
+                }}
+                options={boxOptions}
+                placeholder="Código o nombre de caja"
+                value={effectiveBoxId}
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-neutral-600">Fecha</span>
+              <input
+                className="control"
+                onChange={(event) => setDraft({ ...draft, date: event.target.value })}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") return;
+                  event.preventDefault();
+                  focusAdvanceInput();
+                }}
+                ref={dateInputRef}
+                required
+                type="date"
+                value={draft.date}
+              />
+            </label>
+            <div className="text-sm" ref={advanceFieldRef}>
+              <span className="mb-1 block text-neutral-600">{`Anticipo${selectedBox?.require_advance ? " (obligatorio)" : ""}`}</span>
+              <GastosLookup
+                aria-label="Anticipo del comprobante"
+                className="control pr-9"
+                onClear={() => setDraft((current) => ({ ...current, advance_id: "" }))}
+                onEnterResolved={focusFirstLineCell}
+                onSelected={focusFirstLineCell}
+                resetToken={effectiveBoxId}
+                onValidityChange={(valid) => setLookupValidity("advance", valid)}
+                onInvalid={(text) => setError(`No encontramos el anticipo ${text}. Selecciona uno vigente para esta caja.`)}
+                onResolve={(value) => { setError(""); setDraft((current) => ({ ...current, advance_id: value })); }}
+                optional
+                options={advanceOptions}
+                placeholder="Número de anticipo"
+                value={draft.advance_id}
+              />
+              {selectedBox?.require_advance ? (
+                <p className="mt-1 text-xs font-medium text-amber-800">Esta caja exige un anticipo vigente.</p>
+              ) : (
+                <p className="mt-1 text-xs text-neutral-500">Opcional: sin anticipo se paga con el efectivo de la caja.</p>
+              )}
+              <details className="mt-1 text-xs text-neutral-500">
+                <summary className="cursor-pointer font-medium text-neutral-600 hover:text-apex">Ayuda</summary>
+                <p className="mt-1 leading-snug">
                   El anticipo es el fondo girado al custodio: cada gasto se descuenta de su saldo. Sin anticipo, el gasto sale del efectivo propio de la caja.
                 </p>
-                {selectedBox?.require_advance === true && boxAdvances.length === 0 ? (
-                  <p className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
-                    Esta caja exige anticipo pero no hay anticipos abiertos con saldo.{" "}
-                    <Link className="font-semibold underline" href="/dashboard/gastos-menores/anticipos">Gira un anticipo primero</Link>.
-                  </p>
-                ) : null}
-              </div>
-              <label className="min-w-56 flex-1 text-sm">
-                <span className="mb-1 block text-neutral-600">Descripción general (opcional)</span>
-                <input
-                  className="control"
-                  maxLength={500}
-                  onChange={(event) => setDraft({ ...draft, description: event.target.value })}
-                  value={draft.description}
-                />
-              </label>
+              </details>
+              {selectedBox?.require_advance === true && boxAdvances.length === 0 ? (
+                <p className="mt-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+                  Esta caja exige anticipo pero no hay anticipos abiertos con saldo.{" "}
+                  <Link className="font-semibold underline" href="/dashboard/gastos-menores/anticipos">Gira un anticipo primero</Link>.
+                </p>
+              ) : null}
             </div>
           </div>
 
-          <form onSubmit={save}>
-            <div className="overflow-x-auto rounded-md border border-line" ref={registerRef}>
-              <table className="w-full min-w-[1080px] border-collapse text-sm">
+          <details className="mt-3 rounded-md border border-line bg-paper/60 px-3 py-2">
+            <summary className="cursor-pointer text-sm font-medium text-neutral-600">
+              {draft.description.trim() ? "Observación agregada (editar)" : "Agregar observación"}
+            </summary>
+            <label className="mt-2 block text-sm">
+              <span className="mb-1 block text-neutral-600">Descripción general (opcional)</span>
+              <input
+                aria-label="Descripción general del comprobante"
+                className="control"
+                maxLength={500}
+                onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+                value={draft.description}
+              />
+            </label>
+          </details>
+
+          <form className="mt-4" onSubmit={save}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  className="btn-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!canRepeat || saving}
+                  onClick={repeatPreviousLine}
+                  title={lookupErrors.size > 0
+                    ? "Resuelve las búsquedas pendientes antes de repetir"
+                    : repeatSourceIndex < 0 ? "Completa una línea para repetir sus datos" : undefined}
+                  type="button"
+                >
+                  <Copy size={16} /> Repetir datos anteriores (sin valor)
+                </button>
+                <button
+                  aria-expanded={showSupport}
+                  className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${showSupport
+                    ? "border-apex bg-apex/10 text-apex"
+                    : "border-line bg-white text-neutral-600 hover:border-apex hover:text-apex"}`}
+                  onClick={() => setShowSupport((current) => !current)}
+                  type="button"
+                >
+                  <SlidersHorizontal size={16} /> {showSupport ? "Ocultar datos de soporte" : "Mostrar datos de soporte"}
+                </button>
+              </div>
+              <p className="text-xs text-neutral-500">Enter confirma y avanza; Enter en vacío abre el buscador; Tab a la siguiente celda.</p>
+            </div>
+            <div className="mt-2 max-w-full overflow-x-auto rounded-md border border-line" ref={registerRef}>
+              <table className="w-full min-w-[780px] border-collapse text-sm">
+                <caption className="sr-only">Planilla de gastos del comprobante</caption>
                 <thead>
                   <tr className="border-b bg-paper text-left text-xs uppercase text-neutral-500">
                     <th className="w-8 px-2 py-2 text-center">#</th>
-                    <th className="min-w-44 px-1 py-2">Concepto</th>
-                    <th className="min-w-48 px-1 py-2">Descripción</th>
-                    <th className="w-32 px-1 py-2 text-right">Base</th>
-                    <th className="min-w-36 px-1 py-2">IVA</th>
-                    <th className="min-w-40 px-1 py-2">Proveedor</th>
-                    <th className="min-w-32 px-1 py-2">Factura</th>
-                    <th className="min-w-40 px-1 py-2">C. costo</th>
-                    <th className="w-32 px-2 py-2 text-right">Total</th>
-                    <th className="w-10 px-1 py-2" />
+                    <th className="min-w-[11rem] px-1 py-2">Concepto</th>
+                    <th className="min-w-[10rem] px-1 py-2">Descripción</th>
+                    <th className="w-28 px-1 py-2 text-right">
+                      Valor base
+                      <span className="block text-[10px] font-normal normal-case text-neutral-400">antes de IVA</span>
+                    </th>
+                    <th className="min-w-[8rem] px-1 py-2">IVA</th>
+                    <th className="w-24 px-2 py-2 text-right">Total</th>
+                    <th className="w-9 px-1 py-2" />
                   </tr>
                 </thead>
                 <tbody>
@@ -739,124 +907,149 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
                     const percent = line.vat_code ? Number(vatByCode.get(line.vat_code)?.percent || 0) : 0;
                     const lineTotal = base + Math.round(base * (percent / 100));
                     const last = index === draftLines.length - 1;
+                    const lineKey = line.row_key;
+                    const supplierRequired = concept?.requires_supplier === true;
+                    const invoiceRequired = concept?.requires_invoice_reference === true;
+                    const hasSupportLookupError = lookupErrors.has(`supplier-${lineKey}`) || lookupErrors.has(`cost-center-${lineKey}`);
+                    const supportVisible = supportDataVisible(showSupport, line, concept, hasSupportLookupError);
                     return (
-                      <tr className={`border-b align-middle ${last ? "bg-emerald-50/40" : ""}`} key={index}>
-                        <td className="px-2 py-1 text-center text-xs text-neutral-400">{index + 1}</td>
-                        <td className="p-1">
-                          <GastosLookup
-                            aria-label={`Concepto línea ${index + 1}`}
-                            className={`${CELL} pr-8`}
-                            onClear={() => setLine(index, { concept_id: "", vat_code: "" })}
-                            onEnterResolved={focusNextCell}
-                            onSelected={focusNextInput}
-                            onValidityChange={(valid) => setLookupValidity(`concept-${index}`, valid)}
-                            onInvalid={(text) => setError(`No encontramos el concepto ${text}. Selecciona un concepto válido.`)}
-                            onResolve={(value) => { setError(""); pickConcept(index, value); }}
-                            options={conceptOptions}
-                            placeholder={last ? "+ agregar concepto" : "Código o nombre"}
-                            value={line.concept_id}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <input
-                            aria-label={`Descripción línea ${index + 1}`}
-                            className={CELL}
-                            maxLength={300}
-                            onChange={(event) => setLine(index, { description: event.target.value })}
-                            onKeyDown={focusNextCell}
-                            placeholder="Detalle del gasto"
-                            required={!isLineEmpty(line)}
-                            value={line.description}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <input
-                            aria-label={`Base línea ${index + 1}`}
-                            className={`${CELL} text-right`}
-                            min="0"
-                            onChange={(event) => setLine(index, { base_amount: event.target.value })}
-                            onKeyDown={focusNextCell}
-                            placeholder="0"
-                            required={!isLineEmpty(line)}
-                            type="number"
-                            value={line.base_amount}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <GastosLookup
-                            aria-label={`IVA línea ${index + 1}`}
-                            className={`${CELL} pr-8`}
-                            onClear={() => setLine(index, { vat_code: "" })}
-                            onEnterResolved={focusNextCell}
-                            onSelected={focusNextInput}
-                            onValidityChange={(valid) => setLookupValidity(`vat-${index}`, valid)}
-                            onInvalid={(text) => setError(`No encontramos el IVA ${text}. Selecciona una opción válida.`)}
-                            onResolve={(value) => { setError(""); setLine(index, { vat_code: value }); }}
-                            optional
-                            options={vatOptions}
-                            placeholder="Código IVA"
-                            value={line.vat_code}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <GastosLookup
-                            aria-label={`Proveedor línea ${index + 1}`}
-                            className={`${CELL} pr-8`}
-                            onClear={() => setLine(index, { supplier_party_id: "" })}
-                            onEnterResolved={focusNextCell}
-                            onSelected={focusNextInput}
-                            onValidityChange={(valid) => setLookupValidity(`supplier-${index}`, valid)}
-                            onInvalid={(text) => setError(`No encontramos el proveedor ${text}. Selecciona una opción válida.`)}
-                            onResolve={(value) => { setError(""); setLine(index, { supplier_party_id: value }); }}
-                            optional={concept?.requires_supplier !== true}
-                            options={supplierOptions}
-                            placeholder="NIT o nombre"
-                            value={line.supplier_party_id}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <input
-                            aria-label={`Factura línea ${index + 1}`}
-                            className={CELL}
-                            maxLength={100}
-                            onChange={(event) => setLine(index, { invoice_reference: event.target.value })}
-                            onKeyDown={focusNextCell}
-                            placeholder={concept?.requires_invoice_reference ? "Obligatoria" : "Ref."}
-                            required={concept?.requires_invoice_reference === true}
-                            value={line.invoice_reference}
-                          />
-                        </td>
-                        <td className="p-1">
-                          <GastosLookup
-                            aria-label={`Centro de costo línea ${index + 1}`}
-                            className={`${CELL} pr-8`}
-                            onClear={() => setLine(index, { cost_center_code: "" })}
-                            onEnterResolved={focusNextCell}
-                            onSelected={focusNextInput}
-                            onValidityChange={(valid) => setLookupValidity(`cost-center-${index}`, valid)}
-                            onInvalid={(text) => setError(`No encontramos el centro de costo ${text}. Selecciona una opción válida.`)}
-                            onResolve={(value) => { setError(""); setLine(index, { cost_center_code: value }); }}
-                            optional
-                            options={costCenterOptions}
-                            placeholder="Código o nombre"
-                            value={line.cost_center_code}
-                          />
-                        </td>
-                        <td className="px-2 py-1 text-right text-sm font-medium">{isLineEmpty(line) ? "--" : money(lineTotal)}</td>
-                        <td className="px-1 py-1 text-center">
-                          {draftLines.length > 1 ? (
-                            <button
-                              aria-label={`Quitar línea ${index + 1}`}
-                              className="rounded p-1 text-neutral-400 hover:bg-red-50 hover:text-red-600"
-                              onClick={() => removeLine(index)}
-                              tabIndex={-1}
-                              type="button"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          ) : null}
-                        </td>
-                      </tr>
+                      <Fragment key={lineKey}>
+                        <tr className={`border-b align-middle ${last ? "bg-emerald-50/40" : ""}`}>
+                          <td className="px-2 py-1 text-center text-xs text-neutral-400">{index + 1}</td>
+                          <td className="p-1">
+                            <GastosLookup
+                              aria-label={`Concepto línea ${index + 1}`}
+                              className={`${CELL} pr-8`}
+                              onClear={() => setLine(index, { concept_id: "", vat_code: "" })}
+                              onEnterResolved={focusNextCell}
+                              onSelected={focusNextInput}
+                              onValidityChange={(valid) => setLookupValidity(`concept-${lineKey}`, valid)}
+                              onInvalid={(text) => setError(`No encontramos el concepto ${text}. Selecciona un concepto válido.`)}
+                              onResolve={(value) => { setError(""); pickConcept(index, value); }}
+                              options={conceptOptions}
+                              placeholder={last ? "+ agregar concepto" : "Código o nombre"}
+                              value={line.concept_id}
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              aria-label={`Descripción línea ${index + 1}`}
+                              className={CELL}
+                              maxLength={300}
+                              onChange={(event) => setLine(index, { description: event.target.value })}
+                              onKeyDown={focusNextCell}
+                              placeholder="Detalle del gasto"
+                              required={!isLineEmpty(line)}
+                              value={line.description}
+                            />
+                          </td>
+                          <td className="p-1">
+                            <input
+                              aria-label={`Base línea ${index + 1}`}
+                              className={`${CELL} text-right`}
+                              data-field="base"
+                              data-line-index={index}
+                              min="0"
+                              onChange={(event) => setLine(index, { base_amount: event.target.value })}
+                              onKeyDown={focusNextCell}
+                              placeholder="0"
+                              required={!isLineEmpty(line)}
+                              type="number"
+                              value={line.base_amount}
+                            />
+                          </td>
+                          <td className="p-1">
+                            <GastosLookup
+                              aria-label={`IVA línea ${index + 1}`}
+                              className={`${CELL} pr-8`}
+                              onClear={() => setLine(index, { vat_code: "" })}
+                              onEnterResolved={focusNextCell}
+                              onSelected={focusNextInput}
+                              onValidityChange={(valid) => setLookupValidity(`vat-${lineKey}`, valid)}
+                              onInvalid={(text) => setError(`No encontramos el IVA ${text}. Selecciona una opción válida.`)}
+                              onResolve={(value) => { setError(""); setLine(index, { vat_code: value }); }}
+                              optional
+                              options={vatOptions}
+                              placeholder="Código IVA"
+                              value={line.vat_code}
+                            />
+                          </td>
+                          <td className="px-2 py-1 text-right text-sm font-medium">{isLineEmpty(line) ? "--" : money(lineTotal)}</td>
+                          <td className="px-1 py-1 text-center">
+                            {draftLines.length > 1 ? (
+                              <button
+                                aria-label={`Quitar línea ${index + 1}`}
+                                className="rounded p-1 text-neutral-400 hover:bg-red-50 hover:text-red-600"
+                                onClick={() => removeLine(index)}
+                                tabIndex={-1}
+                                type="button"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            ) : null}
+                          </td>
+                        </tr>
+                        {supportVisible ? (
+                          <tr className="border-b bg-paper/50 align-middle">
+                            <td className="p-0" colSpan={7}>
+                              <div className="mx-2 mb-2 grid gap-2 rounded-md border border-line bg-white p-2 sm:grid-cols-3">
+                                <div className="text-xs">
+                                  <span className="mb-1 block font-medium text-neutral-600">
+                                    Proveedor{supplierRequired ? <span className="text-red-600"> · obligatorio</span> : null}
+                                  </span>
+                                  <GastosLookup
+                                    aria-label={`Proveedor línea ${index + 1}`}
+                                    className="control pr-9"
+                                    onClear={() => setLine(index, { supplier_party_id: "" })}
+                                    onEnterResolved={focusNextCell}
+                                    onSelected={focusNextInput}
+                                    onValidityChange={(valid) => setLookupValidity(`supplier-${lineKey}`, valid)}
+                                    onInvalid={(text) => setError(`No encontramos el proveedor ${text}. Selecciona una opción válida.`)}
+                                    onResolve={(value) => { setError(""); setLine(index, { supplier_party_id: value }); }}
+                                    optional={concept?.requires_supplier !== true}
+                                    options={supplierOptions}
+                                    placeholder="NIT o nombre"
+                                    value={line.supplier_party_id}
+                                  />
+                                </div>
+                                <label className="text-xs">
+                                  <span className="mb-1 block font-medium text-neutral-600">
+                                    Factura{invoiceRequired ? <span className="text-red-600"> · obligatoria</span> : null}
+                                  </span>
+                                  <input
+                                    aria-label={`Factura línea ${index + 1}`}
+                                    aria-required={invoiceRequired}
+                                    className="control"
+                                    maxLength={100}
+                                    onChange={(event) => setLine(index, { invoice_reference: event.target.value })}
+                                    onKeyDown={focusNextCell}
+                                    placeholder={invoiceRequired ? "Obligatoria" : "Referencia"}
+                                    required={invoiceRequired}
+                                    value={line.invoice_reference}
+                                  />
+                                </label>
+                                <div className="text-xs">
+                                  <span className="mb-1 block font-medium text-neutral-600">Centro de costo</span>
+                                  <GastosLookup
+                                    aria-label={`Centro de costo línea ${index + 1}`}
+                                    className="control pr-9"
+                                    onClear={() => setLine(index, { cost_center_code: "" })}
+                                    onEnterResolved={focusNextCell}
+                                    onSelected={focusNextInput}
+                                    onValidityChange={(valid) => setLookupValidity(`cost-center-${lineKey}`, valid)}
+                                    onInvalid={(text) => setError(`No encontramos el centro de costo ${text}. Selecciona una opción válida.`)}
+                                    onResolve={(value) => { setError(""); setLine(index, { cost_center_code: value }); }}
+                                    optional
+                                    options={costCenterOptions}
+                                    placeholder="Código o nombre"
+                                    value={line.cost_center_code}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -867,27 +1060,31 @@ export function GastosMenoresWorkspace({ mode = "list" }: { mode?: "list" | "new
               return concept && (concept.requires_supplier || concept.requires_invoice_reference);
             }) ? (
               <p className="mt-2 text-xs text-amber-700">
-                Hay conceptos que exigen proveedor y/o referencia de factura: el servidor rechaza la línea si faltan.
+                Completa proveedor y factura en las líneas que los exigen antes de contabilizar.
               </p>
             ) : null}
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <button className="btn-secondary" onClick={resetDraft} type="button">
-                <Trash2 size={16} /> Limpiar planilla
-              </button>
-              <div className="flex items-center gap-4">
-                <div className="text-right text-sm">
-                  <p><span className="text-neutral-600">Base</span> <span className="ml-2 inline-block min-w-28 font-medium">{money(totals.subtotal)}</span></p>
-                  <p><span className="text-neutral-600">IVA</span> <span className="ml-2 inline-block min-w-28 font-medium">{money(totals.vat)}</span></p>
-                  <p className="text-base font-semibold"><span className="text-neutral-600">Total</span> <span className="ml-2 inline-block min-w-28">{money(totals.total)}</span></p>
-                </div>
+            <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                <span className="font-medium">{filledLines} línea{filledLines === 1 ? "" : "s"}</span>
+                <span className="text-neutral-500">Base</span>
+                <span className="font-medium">{money(totals.subtotal)}</span>
+                <span className="text-neutral-500">IVA</span>
+                <span className="font-medium">{money(totals.vat)}</span>
+                <span className="text-neutral-500">Total</span>
+                <span className="text-base font-semibold">{money(totals.total)}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="max-w-sm text-xs text-neutral-500">
+                  Al contabilizar se genera el movimiento contable. Los totales son una estimación y se confirman al guardar el comprobante.
+                </p>
                 <button className="btn-primary" disabled={saving || !effectiveBoxId || !filledLines || Boolean(selectedBox?.require_advance && !draft.advance_id)} type="submit">
-                  {saving ? "Contabilizando..." : `Contabilizar ${filledLines ? `${filledLines} línea${filledLines === 1 ? "" : "s"}` : "gasto"}`}
+                  {saving ? "Contabilizando..." : "Contabilizar gasto"}
+                </button>
+                <button className="text-xs font-medium text-neutral-500 underline-offset-2 hover:text-apex hover:underline" onClick={resetDraft} type="button">
+                  Limpiar planilla
                 </button>
               </div>
             </div>
-            <p className="mt-2 text-xs text-neutral-500">
-              El comprobante se contabiliza al momento (documento GM): lo que cubra el anticipo se imputa a su saldo y el resto se acredita a la cuenta de la caja. Los totales son estimados: el servidor recalcula el IVA y el total desde la base.
-            </p>
           </form>
         </section>
       ) : null}
