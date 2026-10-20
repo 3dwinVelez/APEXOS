@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const operation = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/operacion/page.tsx"), "utf8");
-const masters = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
+const masters = fs.readFileSync(path.resolve(directory, "../components/transport/TransportAdminCatalog.tsx"), "utf8");
 const transportLayout = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/layout.tsx"), "utf8");
 const planning = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/planeacion/page.tsx"), "utf8");
 const planningMap = fs.readFileSync(path.resolve(directory, "../components/transport/PlanningRouteMap.tsx"), "utf8");
@@ -50,9 +50,17 @@ test("Transporte organiza el trabajo por etapas sin navegación redundante", () 
 });
 
 test("Transporte separa flota, operacion y maestros TMS", () => {
-  for (const route of ["flota", "operacion", "maestros", "planeacion", "tarifas", "configuracion", "ordenes", "monitoreo", "notificaciones", "pod"]) {
+  for (const route of ["flota", "operacion", "planeacion", "tarifas", "configuracion", "ordenes", "monitoreo", "notificaciones", "pod"]) {
     assert.match(fleet, new RegExp(`/dashboard/transporte/${route}`));
   }
+  assert.doesNotMatch(fleet, /\/dashboard\/transporte\/maestros/);
+});
+test("los maestros TMS viven en Configuracion bajo su categoria", () => {
+  const adminHub = fs.readFileSync(path.resolve(directory, "../app/dashboard/administracion/page.tsx"), "utf8");
+  const redirectPage = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
+  assert.match(adminHub, /key: "transport_destinations"/);
+  assert.doesNotMatch(adminHub, /key: "maestros-transporte"/);
+  assert.match(redirectPage, /redirect\("\/dashboard\/administracion"\)/);
 });
 test("POD expone KPIs, filtros y evidencia", () => { assert.match(pod, /\/transport\/pod\/stats/); assert.match(pod, /Primer intento/); assert.match(pod, /photos/); assert.match(pod, /signature/); });
 test("la operacion carga foto y firma POD como archivos", () => { assert.match(operation, /pod_photo/); assert.match(operation, /pod_signature_file/); assert.match(operation, /\/evidence/); assert.match(operation, /FormData/); });
@@ -195,6 +203,29 @@ test("los tarifarios exponen vigencias, versiones y componentes de costo", () =>
   assert.match(rates, /fuel_surcharge_pct/);
 });
 
+test("el asistente de tarifarios define ambito solo por destino y aplica a nivel nacional desde cualquier sede", () => {
+  assert.doesNotMatch(rates, /\/api\/v1\/transport\/origins/);
+  assert.doesNotMatch(rates, /OriginQuickCreate|origin_id/);
+  assert.match(rates, /GeoCascade title="Destino"/);
+  assert.match(rates, /destinationScope/);
+  assert.match(rates, /Aplica a: <b>\{destinationScope\}<\/b>/);
+  assert.match(rates, /nacional, desde cualquier sede/);
+  assert.match(rates, /Red nacional/);
+});
+
+test("los tarifarios se editan desde el monitor con permiso dedicado manage_rates", () => {
+  const adminHub = fs.readFileSync(path.resolve(directory, "../app/dashboard/administracion/page.tsx"), "utf8");
+  const apiClient = fs.readFileSync(path.resolve(directory, "../lib/api.ts"), "utf8");
+  assert.match(rates, /Editar tarifario/);
+  assert.match(rates, /startEdit/);
+  assert.match(rates, /draftFromRate/);
+  assert.match(rates, /Guardar como nueva version/);
+  assert.match(rates, /method: "PUT"/);
+  assert.match(rates, /hasStoredRolePermission\("transport", "manage_rates"\)/);
+  assert.match(adminHub, /manage_rates: "Gestionar tarifarios"/);
+  assert.match(apiClient, /"configure", "manage_rates"/);
+});
+
 test("la torre cubre demanda, viaje, entrega y liquidacion", () => {
   assert.match(operation, /\/transport\/control-tower/);
   assert.match(operation, /\/transport\/needs/);
@@ -212,9 +243,9 @@ test("la torre cubre demanda, viaje, entrega y liquidacion", () => {
 });
 
 test("los maestros consumen contratos tenant-first del TMS", () => {
-  assert.match(masters, /\/transport\/carriers/);
-  assert.match(masters, /\/transport\/drivers/);
+  assert.match(masters, /route: "carriers"/);
+  assert.doesNotMatch(masters, /route: "drivers"/);
   assert.match(masters, /\/transport\/delivery-points/);
-  assert.match(masters, /Direccion normalizada/);
-  assert.match(masters, /window_start/);
+  assert.match(masters, /Dirección/);
+  assert.match(masters, /TransportAdminCatalog/);
 });

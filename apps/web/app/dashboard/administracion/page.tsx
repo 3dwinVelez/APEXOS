@@ -1,9 +1,11 @@
 "use client";
 
+import { TransportAdminCatalog, type TransportAdminCatalogKey } from "@/components/transport/TransportAdminCatalog";
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api, fallbackAdminPermissionCatalog } from "@/lib/api";
 import { loadModuleAccess } from "@/lib/moduleAccess";
+import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { MODULES } from "@/lib/modules";
 import { getUserDocumentUrl, uploadUserDocument } from "@/lib/supabaseStorage";
 import {
@@ -37,7 +39,7 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type InputHTMLAttributes } from "react";
 
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 
@@ -60,6 +62,18 @@ type Role = {
 };
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
 type MasterOption = { code: string; name: string; description?: string; active?: boolean; sort_order?: number; parent_code?: string | null };
+type SedeRow = {
+  id: number; code: string; name: string; address: string; city: string;
+  department?: string | null; country?: string;
+  latitude?: number | null; longitude?: number | null;
+  operation_start?: string | null; operation_end?: string | null;
+  service_minutes?: number; active: boolean;
+};
+type SedeDraft = {
+  code: string; name: string; address: string; city: string; department: string; country: string;
+  latitude: string; longitude: string; operation_start: string; operation_end: string; service_minutes: string;
+};
+const emptySedeDraft: SedeDraft = { code: "", name: "", address: "", city: "", department: "", country: "CO", latitude: "", longitude: "", operation_start: "", operation_end: "", service_minutes: "60" };
 type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceStore = { code: string; label: string; active?: boolean };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
@@ -144,7 +158,7 @@ type ConfigItem = {
   title: string;
   description: string;
   status: "configurado" | "pendiente" | "activo" | "restringido";
-  modal: "roles" | "users" | "masters" | "logs" | "info";
+  modal: "roles" | "users" | "masters" | "logs" | "info" | "sedes";
   href?: string;
 };
 type ConfigCategory = {
@@ -241,11 +255,15 @@ const actionLabels: Record<string, string> = {
   sensitive: "Sensible",
   manage_users: "Gestionar usuarios",
   manage_roles: "Gestionar roles",
+  manage_rates: "Gestionar tarifarios",
+  approve_settlements: "Aprobar liquidaciones",
+  account_settlements: "Contabilizar liquidaciones",
+  liquidate_settlements: "Liquidar liquidaciones",
   edit_any_state: "Edicion especial"
 };
 
-const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
-const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles"];
+const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles", "manage_rates", "approve_settlements", "account_settlements", "liquidate_settlements"];
+const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles", "manage_rates", "approve_settlements", "account_settlements", "liquidate_settlements"];
 const defaultRoleScopes: RoleScopes = { locations: [], areas: [], cost_centers: [], processes: [] };
 
 const emptyUser: UserForm = {
@@ -440,6 +458,40 @@ const CATALOG_PARENT_CONFIG: Record<string, { parentCatalog: Exclude<keyof UserM
   municipalities: { parentCatalog: "cities", fieldLabel: "Ciudad (padre)", emptyLabel: "Sin ciudad (uso general)", columnLabel: "Ciudad" }
 };
 
+const CATALOG_CREATE_LABELS: Record<string, string> = {
+  user_types: "tipo de usuario",
+  user_statuses: "estado de usuario",
+  document_types: "tipo de documento",
+  user_document_types: "tipo documental",
+  positions: "cargo",
+  areas: "area",
+  cost_centers: "centro de costo",
+  contract_types: "tipo de contrato",
+  work_shifts: "turno",
+  activity_types: "tipo de actividad",
+  vehicle_types: "tipo de vehiculo",
+  vehicle_categories: "categoria de vehiculo",
+  vehicle_brands: "marca de vehiculo",
+  vehicle_lines: "linea de vehiculo",
+  vehicle_colors: "color de vehiculo",
+  vehicle_fuels: "combustible de vehiculo",
+  vehicle_body_types: "carroceria de vehiculo",
+  units_of_measure: "unidad de medida",
+  service_levels: "nivel de servicio",
+  departments: "departamento",
+  cities: "ciudad",
+  municipalities: "municipio",
+  service_types: "tipo de servicio",
+  service_stores: "almacen de servicio",
+  satisfaction_questions: "pregunta de satisfaccion",
+  banks: "banco",
+  currencies: "moneda"
+};
+
+function catalogCreateLabel(catalog: string) {
+  return CATALOG_CREATE_LABELS[catalog] || "registro";
+}
+
 const defaultServiceTypes: ServiceType[] = [
   { code: "instalacion", label: "Instalacion", active: true },
   { code: "mantenimiento", label: "Mantenimiento", active: true },
@@ -514,7 +566,7 @@ const categories: ConfigCategory[] = [
     icon: Building2,
     items: [
       { key: "empresas", title: "Empresas y modulos", description: "Crear empresas, editar datos y habilitar modulos por compania.", status: "activo", modal: "info", href: "/dashboard/administracion/suscripciones" },
-      { key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones.", status: "pendiente", modal: "masters" },
+      { key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones.", status: "activo", modal: "sedes" },
       { key: "areas", title: "Areas y centros de costo", description: "Clasificacion para usuarios, nomina futura y costos.", status: "pendiente", modal: "masters" },
       { key: "parametros", title: "Maestros de plataforma", description: "Catalogos transversales para usuarios, documentos, sedes, turnos y bancos.", status: "configurado", modal: "masters" }
     ]
@@ -538,6 +590,9 @@ const categories: ConfigCategory[] = [
     icon: Truck,
     items: [
       { key: "vehiculos", title: "Vehiculos", description: "Flota, documentos y conductor autorizado.", status: "activo", modal: "info", href: "/dashboard/transporte" },
+      { key: "transport_destinations", title: "Destinos / tiendas", description: "Destinos cubiertos por los paquetes de liquidacion y puntos de entrega.", status: "activo", modal: "masters" },
+      { key: "transport_settlement_types", title: "Tipos de liquidacion", description: "Politicas de soportes y aprobacion de liquidaciones.", status: "activo", modal: "masters" },
+      { key: "transport_carriers", title: "Transportadoras", description: "Transportadoras del maestro existente de la empresa.", status: "activo", modal: "masters" },
       { key: "rutas", title: "Rutas", description: "Planeacion y asignacion operativa.", status: "activo", modal: "info", href: "/dashboard/talento-humano/rutas" },
       { key: "marcaciones", title: "Marcaciones", description: "Reglas operativas de jornada y trazabilidad.", status: "activo", modal: "info", href: "/dashboard/talento-humano/marcacion" },
       { key: "almacenes-servicio", title: "Almacenes de servicio", description: "Catalogo usado en solicitudes externas y ordenes de servicio.", status: "configurado", modal: "masters" },
@@ -774,11 +829,12 @@ function scoreUser(form: UserForm) {
   return Math.min(score, 100);
 }
 
-function Field({ label, value, onChange, type = "text", placeholder = "" }: { label: string; value: string; onChange: (value: string) => void; type?: string; placeholder?: string }) {
+type FieldExtraProps = Omit<InputHTMLAttributes<HTMLInputElement>, "label" | "value" | "onChange" | "type" | "placeholder">;
+function Field({ label, value, onChange, type = "text", placeholder = "", ...attrs }: { label: string; value: string; onChange: (value: string) => void; type?: string; placeholder?: string } & FieldExtraProps) {
   return (
     <label className="block text-sm">
       <span className="mb-1 block font-medium text-neutral-700">{label}</span>
-      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder={placeholder} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input {...attrs} className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder={placeholder} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
 }
@@ -842,7 +898,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 export default function AdministracionPage() {
   const initializedRole = useRef(false);
   const toastTimer = useRef<number | null>(null);
-  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | null>(null);
+  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | "sedes" | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -877,6 +933,12 @@ export default function AdministracionPage() {
   const [editingCatalogCode, setEditingCatalogCode] = useState<string | null>(null);
   const [catalogSaving, setCatalogSaving] = useState("");
   const [catalogNotice, setCatalogNotice] = useState<ToastState | null>(null);
+  const [sedeMasterRows, setSedeMasterRows] = useState<SedeRow[]>([]);
+  const [sedeMasterState, setSedeMasterState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [sedeDraft, setSedeDraft] = useState<SedeDraft>({ ...emptySedeDraft });
+  const [editingSedeId, setEditingSedeId] = useState<number | null>(null);
+  const [catalogEditorOpen, setCatalogEditorOpen] = useState(false);
+  const [sedeEditorOpen, setSedeEditorOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [userAccessSaving, setUserAccessSaving] = useState(false);
@@ -1090,8 +1152,13 @@ export default function AdministracionPage() {
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
+    if (item.key.startsWith("transport_")) setCatalogDraft(current => ({ ...current, catalog: item.key }));
     if (item.key === "almacenes-servicio") {
       setCatalogDraft((current) => ({ ...current, catalog: "service_stores", code: "", name: "", description: "" }));
+    }
+    if (item.key === "sedes") {
+      resetSedeDraft();
+      void loadSedeMasterRows();
     }
     setActiveModal(item.modal);
   }
@@ -1596,6 +1663,121 @@ export default function AdministracionPage() {
   function resetCatalogDraft(catalog = catalogDraft.catalog) {
     setCatalogDraft({ catalog, code: "", name: "", description: "", parent_code: "" });
     setEditingCatalogCode(null);
+    setCatalogEditorOpen(false);
+  }
+
+  function openCatalogCreator() {
+    setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "", parent_code: "" });
+    setEditingCatalogCode(null);
+    setCatalogEditorOpen(true);
+  }
+
+  function resetSedeDraft() {
+    setSedeDraft({ ...emptySedeDraft });
+    setEditingSedeId(null);
+  }
+
+  async function loadSedeMasterRows() {
+    setSedeMasterState("loading");
+    try {
+      const rows = await api<SedeRow[]>("/api/v1/transport/sedes?include_inactive=true");
+      setSedeMasterRows(rows);
+      setSedeMasterState("ready");
+    } catch {
+      setSedeMasterRows([]);
+      setSedeMasterState("error");
+    }
+  }
+
+  function editSedeRow(row: SedeRow) {
+    setSedeDraft({
+      code: row.code,
+      name: row.name,
+      address: row.address,
+      city: row.city,
+      department: row.department || "",
+      country: row.country || "CO",
+      latitude: row.latitude == null ? "" : String(row.latitude),
+      longitude: row.longitude == null ? "" : String(row.longitude),
+      operation_start: row.operation_start || "",
+      operation_end: row.operation_end || "",
+      service_minutes: row.service_minutes == null ? "60" : String(row.service_minutes)
+    });
+    setEditingSedeId(row.id);
+    setSedeEditorOpen(true);
+  }
+
+  async function saveSedeMaster() {
+    if (catalogSaving) return;
+    const code = sedeDraft.code.trim().toUpperCase().replace(/\s+/g, "-");
+    const name = sedeDraft.name.trim();
+    const address = sedeDraft.address.trim();
+    const city = sedeDraft.city.trim();
+    const latitude = Number(sedeDraft.latitude);
+    const longitude = Number(sedeDraft.longitude);
+    if (!code || !name || !address || !city) {
+      confirmCatalogAction("Datos requeridos", "Codigo, nombre, direccion y ciudad son obligatorios.", "warning");
+      return;
+    }
+    if (!sedeDraft.latitude.trim() || !sedeDraft.longitude.trim() || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+      confirmCatalogAction("Coordenadas requeridas", "Latitud y longitud son obligatorias para georreferenciar la sede.", "warning");
+      return;
+    }
+    setCatalogSaving(editingSedeId ? "save-sede" : "create-sede");
+    try {
+      const payload = {
+        code, name, address, city,
+        department: sedeDraft.department.trim() || null,
+        country: sedeDraft.country.trim() || "CO",
+        latitude, longitude,
+        operation_start: sedeDraft.operation_start || null,
+        operation_end: sedeDraft.operation_end || null,
+        service_minutes: Number(sedeDraft.service_minutes) > 0 ? Number(sedeDraft.service_minutes) : 60,
+        active: true
+      };
+      if (editingSedeId) {
+        await api(`/api/v1/transport/sedes/${editingSedeId}`, { method: "PUT", body: JSON.stringify(payload) });
+        confirmCatalogAction("Sede actualizada", `${name} quedo guardada correctamente.`);
+      } else {
+        await api("/api/v1/transport/sedes", { method: "POST", body: JSON.stringify(payload) });
+        confirmCatalogAction("Sede creada", `${name} quedo guardada correctamente.`);
+      }
+      resetSedeDraft();
+      setSedeEditorOpen(false);
+      await loadSedeMasterRows();
+    } catch (error) {
+      confirmCatalogAction("No se pudo guardar la sede", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
+  }
+
+  async function toggleSedeRow(row: SedeRow) {
+    if (catalogSaving) return;
+    if (row.latitude == null || row.longitude == null) {
+      confirmCatalogAction("Sede sin coordenadas", "Completa latitud y longitud de la sede antes de cambiar su estado.", "warning");
+      return;
+    }
+    setCatalogSaving(`toggle-sede:${row.id}`);
+    try {
+      await api(`/api/v1/transport/sedes/${row.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          code: row.code, name: row.name, address: row.address, city: row.city,
+          department: row.department || null, country: row.country || "CO",
+          latitude: row.latitude, longitude: row.longitude,
+          operation_start: row.operation_start || null, operation_end: row.operation_end || null,
+          service_minutes: row.service_minutes ?? 60,
+          active: !row.active
+        })
+      });
+      confirmCatalogAction(row.active ? "Sede inactivada" : "Sede activada", `${row.name} quedo ${row.active ? "inactiva" : "activa"}.`);
+      await loadSedeMasterRows();
+    } catch (error) {
+      confirmCatalogAction("No se pudo actualizar la sede", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   function editCatalogRow(item: MasterOption) {
@@ -1607,6 +1789,7 @@ export default function AdministracionPage() {
       parent_code: item.parent_code || ""
     });
     setEditingCatalogCode(item.code);
+    setCatalogEditorOpen(true);
   }
 
   async function toggleBaseCatalogItem(item: MasterOption) {
@@ -1877,7 +2060,15 @@ export default function AdministracionPage() {
     );
   }
 
+  useEffect(() => {
+    const catalog = new URLSearchParams(window.location.search).get("catalog");
+    if (["transport_destinations", "transport_settlement_types", "transport_carriers"].includes(catalog || "")) {
+      setCatalogDraft(current => ({ ...current, catalog: catalog! })); setActiveModal("masters");
+    }
+  }, []);
+
   function renderMasterCatalogManager() {
+    if (["transport_destinations", "transport_settlement_types", "transport_carriers"].includes(catalogDraft.catalog)) return <div className="space-y-4"><button type="button" className="text-sm text-apex underline" onClick={() => resetCatalogDraft("positions")}>Ver todos los maestros</button><TransportAdminCatalog key={catalogDraft.catalog} catalog={catalogDraft.catalog as TransportAdminCatalogKey} /></div>;
     const catalogGroups: Array<[string, Array<[string, string]>]> = [
       ["Usuarios y acceso", [
         ["user_types", "Tipos de usuario"],
@@ -1888,7 +2079,6 @@ export default function AdministracionPage() {
       ["Organizacion", [
         ["positions", "Cargos"],
         ["areas", "Areas"],
-        ["locations", "Sedes"],
         ["cost_centers", "Centros de costo"],
         ["contract_types", "Tipos de contrato"],
         ["work_shifts", "Turnos"],
@@ -1900,6 +2090,9 @@ export default function AdministracionPage() {
         ["vehicle_brands", "Marcas de vehiculo"],
         ["vehicle_lines", "Lineas de vehiculo"],
         ["vehicle_colors", "Colores de vehiculo"],
+        ["transport_destinations", "Destinos / tiendas"],
+        ["transport_settlement_types", "Tipos de liquidacion"],
+        ["transport_carriers", "Transportadoras"],
         ["vehicle_fuels", "Combustibles de vehiculo"],
         ["vehicle_body_types", "Carrocerias de vehiculo"],
         ["units_of_measure", "Unidades de medida"],
@@ -1937,6 +2130,7 @@ export default function AdministracionPage() {
         ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
       : selectedItems.map((item) => ({ ...item, active: item.active !== false }));
     const activeCatalogRows = catalogRows.filter((item) => item.active !== false).length;
+    const visibleCatalogRows = catalogRows.length;
     const parentOptions: Array<[string, string]> = (() => {
       if (!parentConfig) return [];
       const options: Array<[string, string]> = [["", parentConfig.emptyLabel]];
@@ -1954,12 +2148,13 @@ export default function AdministracionPage() {
     })();
     return (
       <div className="space-y-3">
-        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr] md:items-end">
+        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr_auto] md:items-end">
           <SelectField label="Catalogo maestro" value={catalogDraft.catalog} onChange={(value) => resetCatalogDraft(value)} optionGroups={catalogGroups} />
           <div>
             <p className="text-xs font-semibold uppercase text-neutral-500">{selectedCatalogLabel}</p>
-            <p className="mt-1 text-sm text-neutral-600"><span className="mr-2 inline-block rounded-full border border-line bg-white px-2 py-0.5 text-xs font-medium text-neutral-600">{selectedCatalogGroup}</span>{catalogRows.length} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
+            <p className="mt-1 text-sm text-neutral-600"><span className="mr-2 inline-block rounded-full border border-line bg-white px-2 py-0.5 text-xs font-medium text-neutral-600">{selectedCatalogGroup}</span>{visibleCatalogRows} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
           </div>
+          <Button onClick={openCatalogCreator} type="button"><Plus size={16} /> Nuevo {catalogCreateLabel(catalogDraft.catalog)}</Button>
         </div>
         {catalogNotice ? (
           <div className={`rounded-md border px-3 py-2 text-sm ${catalogNotice.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : catalogNotice.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : catalogNotice.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-sky-200 bg-sky-50 text-sky-900"}`} role="status">
@@ -1975,26 +2170,8 @@ export default function AdministracionPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <div className="rounded-md border border-line bg-white p-3">
-            <div className="grid gap-3">
-              <p className="text-sm font-semibold">{editingCatalogCode ? "Editar maestro" : "Nuevo maestro"}</p>
-              <Field label={isOperationalCatalog ? "Codigo" : "Codigo"} value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
-              <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
-              {parentConfig ? <SelectField label={parentConfig.fieldLabel} value={catalogDraft.parent_code} onChange={(value) => setCatalogDraft((current) => ({ ...current, parent_code: value }))} options={parentOptions} /> : null}
-              {!isOperationalCatalog ? <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /> : null}
-              <div className="grid gap-2">
-                <Button disabled={Boolean(catalogSaving)} onClick={saveCatalogItem} type="button">
-                  {catalogSaving === "create" || catalogSaving === "save" ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
-                  {catalogSaving === "create" ? "Creando..." : catalogSaving === "save" ? "Guardando..." : editingCatalogCode ? "Guardar cambios" : "Crear maestro"}
-                </Button>
-                {editingCatalogCode ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={Boolean(catalogSaving)} onClick={() => resetCatalogDraft()} type="button"><X size={16} /> Cancelar edicion</Button> : null}
-              </div>
-            </div>
-          </div>
-
-          <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
-            <table className="w-full min-w-[760px] text-sm">
+        <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
+          <table className="w-full min-w-[760px] text-sm">
             <thead className="sticky top-0 bg-white">
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
@@ -2038,7 +2215,133 @@ export default function AdministracionPage() {
             </tbody>
           </table>
           </div>
+        {catalogEditorOpen ? (
+          <ModalFrame
+            maxWidth="md:max-w-xl"
+            onClose={() => resetCatalogDraft()}
+            title={editingCatalogCode ? `Editar ${catalogDraft.name || editingCatalogCode}` : `Nuevo ${catalogCreateLabel(catalogDraft.catalog)}`}
+          >
+            <p className="mb-3 text-xs text-neutral-500">{selectedCatalogGroup} · {selectedCatalogLabel}. Completa los datos y guarda el registro.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
+              <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+              {parentConfig ? <SelectField label={parentConfig.fieldLabel} value={catalogDraft.parent_code} onChange={(value) => setCatalogDraft((current) => ({ ...current, parent_code: value }))} options={parentOptions} /> : null}
+              {!isOperationalCatalog ? <div className="sm:col-span-2"><Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /></div> : null}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button disabled={Boolean(catalogSaving)} onClick={saveCatalogItem} type="button">
+                {catalogSaving === "create" || catalogSaving === "save" ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                {catalogSaving === "create" ? "Creando..." : catalogSaving === "save" ? "Guardando..." : editingCatalogCode ? "Guardar cambios" : `Crear ${catalogCreateLabel(catalogDraft.catalog)}`}
+              </Button>
+              <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={Boolean(catalogSaving)} onClick={() => resetCatalogDraft()} type="button"><X size={16} /> Cancelar</Button>
+            </div>
+          </ModalFrame>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderSedesManager() {
+    const canWriteSedes = hasStoredRolePermission("transport", "write");
+    const activeSedeCount = sedeMasterRows.filter((row) => row.active).length;
+    return (
+      <div className="space-y-3">
+        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase text-neutral-500">Sedes operativas</p>
+            <p className="mt-1 text-sm text-neutral-600">{sedeMasterRows.length} registro(s), {activeSedeCount} activo(s). Cada sede es el punto de despacho georreferenciado que alimenta planeacion, tarifarios y liquidacion de Transporte.</p>
+          </div>
+          <Button onClick={() => { resetSedeDraft(); setSedeEditorOpen(true); }} type="button"><Plus size={16} /> Nueva sede</Button>
         </div>
+        {catalogNotice ? (
+          <div className={`rounded-md border px-3 py-2 text-sm ${catalogNotice.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : catalogNotice.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : catalogNotice.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-sky-200 bg-sky-50 text-sky-900"}`} role="status">
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0">
+                {catalogNotice.tone === "success" ? <Check size={16} /> : catalogNotice.tone === "error" || catalogNotice.tone === "warning" ? <AlertTriangle size={16} /> : <RefreshCw className={catalogSaving ? "animate-spin" : ""} size={16} />}
+              </span>
+              <span>
+                <span className="block font-semibold">{catalogNotice.title}</span>
+                {catalogNotice.detail ? <span className="mt-0.5 block">{catalogNotice.detail}</span> : null}
+              </span>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-3">
+          {sedeMasterState === "loading" || sedeMasterState === "idle" ? <p className="text-sm text-neutral-500">Cargando sedes...</p> : null}
+          {sedeMasterState === "error" ? <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">No fue posible cargar las sedes. Verifica el acceso de lectura al modulo de Transporte y reintenta.</p> : null}
+          {sedeMasterState === "ready" ? (
+            <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
+              <table className="w-full min-w-[820px] text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b border-line text-left text-xs text-neutral-500">
+                    <th className="px-3 py-2">Codigo</th>
+                    <th className="px-3 py-2">Nombre</th>
+                    <th className="px-3 py-2">Ubicacion</th>
+                    <th className="px-3 py-2">Horario</th>
+                    <th className="px-3 py-2">Estado</th>
+                    <th className="px-3 py-2 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sedeMasterRows.map((row) => (
+                    <tr className={`border-b border-line/70 ${editingSedeId === row.id ? "bg-apex/5" : ""}`} key={row.id}>
+                      <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
+                      <td className="px-3 py-2">{row.name}</td>
+                      <td className="px-3 py-2 text-neutral-600">{row.address} · {row.city}{row.latitude == null || row.longitude == null ? " · sin coordenadas" : ""}</td>
+                      <td className="px-3 py-2 text-neutral-600">{row.operation_start && row.operation_end ? `${row.operation_start} - ${row.operation_end}` : "-"}</td>
+                      <td className="px-3 py-2">
+                        <span className={`rounded-md px-2 py-1 text-xs font-semibold ${row.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{row.active ? "Activo" : "Inactivo"}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex justify-end gap-2">
+                          <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50" disabled={Boolean(catalogSaving) || !canWriteSedes} onClick={() => editSedeRow(row)} type="button"><Edit3 size={13} /></button>
+                          <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:cursor-wait disabled:opacity-50" disabled={Boolean(catalogSaving) || !canWriteSedes} onClick={() => void toggleSedeRow(row)} type="button">
+                            {catalogSaving === `toggle-sede:${row.id}` ? "Guardando..." : row.active ? "Inactivar" : "Activar"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!sedeMasterRows.length ? (
+                    <tr><td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={6}>No hay sedes configuradas.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+
+        {sedeEditorOpen ? (
+          <ModalFrame
+            maxWidth="md:max-w-3xl"
+            onClose={() => { setSedeEditorOpen(false); resetSedeDraft(); }}
+            title={editingSedeId ? `Editar sede ${sedeDraft.code}` : "Nueva sede"}
+          >
+            <p className="mb-3 text-xs text-neutral-500">Sede georreferenciada que alimenta planeacion, tarifarios y liquidacion de Transporte.</p>
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Codigo *" value={sedeDraft.code} onChange={(value) => setSedeDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "-") }))} />
+              <Field label="Nombre *" value={sedeDraft.name} onChange={(value) => setSedeDraft((current) => ({ ...current, name: value }))} />
+              <Field label="Direccion normalizada *" value={sedeDraft.address} onChange={(value) => setSedeDraft((current) => ({ ...current, address: value }))} />
+              <Field label="Ciudad *" value={sedeDraft.city} onChange={(value) => setSedeDraft((current) => ({ ...current, city: value }))} />
+              <Field label="Departamento/estado" value={sedeDraft.department} onChange={(value) => setSedeDraft((current) => ({ ...current, department: value }))} />
+              <Field label="Pais" value={sedeDraft.country} onChange={(value) => setSedeDraft((current) => ({ ...current, country: value }))} />
+              <Field label="Latitud *" step="any" type="number" value={sedeDraft.latitude} onChange={(value) => setSedeDraft((current) => ({ ...current, latitude: value }))} />
+              <Field label="Longitud *" step="any" type="number" value={sedeDraft.longitude} onChange={(value) => setSedeDraft((current) => ({ ...current, longitude: value }))} />
+              <Field label="Inicio operacion" type="time" value={sedeDraft.operation_start} onChange={(value) => setSedeDraft((current) => ({ ...current, operation_start: value }))} />
+              <Field label="Fin operacion" type="time" value={sedeDraft.operation_end} onChange={(value) => setSedeDraft((current) => ({ ...current, operation_end: value }))} />
+              <Field label="Preparacion (minutos)" type="number" value={sedeDraft.service_minutes} onChange={(value) => setSedeDraft((current) => ({ ...current, service_minutes: value }))} />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button disabled={Boolean(catalogSaving) || !canWriteSedes} onClick={() => void saveSedeMaster()} type="button">
+                {catalogSaving === "create-sede" || catalogSaving === "save-sede" ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                {catalogSaving === "create-sede" ? "Creando..." : catalogSaving === "save-sede" ? "Guardando..." : editingSedeId ? "Guardar cambios" : "Crear sede"}
+              </Button>
+              <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={Boolean(catalogSaving)} onClick={() => { setSedeEditorOpen(false); resetSedeDraft(); }} type="button"><X size={16} /> Cancelar</Button>
+              {!canWriteSedes ? <span className="text-xs text-neutral-500">Requieres permiso de escritura en Transporte para gestionar sedes.</span> : null}
+            </div>
+          </ModalFrame>
+        ) : null}
       </div>
     );
   }
@@ -2539,6 +2842,12 @@ export default function AdministracionPage() {
       {activeModal === "masters" ? (
         <ModalFrame title="Maestros de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-5xl">
           {renderMasterCatalogManager()}
+        </ModalFrame>
+      ) : null}
+
+      {activeModal === "sedes" ? (
+        <ModalFrame title="Sedes" onClose={() => setActiveModal(null)} maxWidth="md:max-w-5xl">
+          {renderSedesManager()}
         </ModalFrame>
       ) : null}
 

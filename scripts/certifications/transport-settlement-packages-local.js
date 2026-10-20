@@ -183,8 +183,10 @@ async function main() {
     check("RB06_rate_snapshot_and_trace", firstItem.rate_version === 1 && firstItem.rate_card_id === rate.payload.id && Boolean(firstItem.calculation_trace?.selected) && Array.isArray(firstItem.calculation_trace?.evaluated), { rate_version: firstItem.rate_version, rate_card_id: firstItem.rate_card_id, has_trace: Boolean(firstItem.calculation_trace?.selected) });
 
     // ---- Sin tarifa vigente => con_novedad + novedad bloqueante ----
+    // Fecha histórica deliberadamente fuera de vigencia: las tarifas globales del entorno
+    // pueden coincidir con cualquier ciudad actual, incluida Cali. No se alteran esos maestros.
     const pkgNoRate = await capture("/api/v1/transport/settlement-packages", { method: "POST", body: { code: `QA-LIQ-PKG3-${RUN_ID}`, carrier_id: carrierId, type_code: "TRANSPORTADOR" } });
-    await capture(`/api/v1/transport/settlement-packages/${pkgNoRate.payload.id}/items`, { method: "POST", body: { items: [{ guide_reference: `GUIA-${RUN_ID}-SINRATE`, destination_city: "Cali", vehicle_type: "camion", service_level: "normal", service_date: fromNow(-24), quantity: 1, distance_km: 10, stop_count: 1 }] } });
+    await capture(`/api/v1/transport/settlement-packages/${pkgNoRate.payload.id}/items`, { method: "POST", body: { items: [{ guide_reference: `GUIA-${RUN_ID}-SINRATE`, destination_city: "Cali", vehicle_type: "camion", service_level: "normal", service_date: "1900-01-01T00:00:00.000Z", quantity: 1, distance_km: 10, stop_count: 1 }] } });
     await capture(`/api/v1/transport/settlement-packages/${pkgNoRate.payload.id}/validate`, { method: "POST", body: {} });
     const noRate = await capture(`/api/v1/transport/settlement-packages/${pkgNoRate.payload.id}/precalculate`, { method: "POST", body: {} });
     check("RB04_missing_rate_creates_blocking_issue", noRate.status === 200 && noRate.payload.status === "con_novedad" && noRate.payload.issues.some((i) => i.category === "tarifa_inexistente" && i.blocking), { status: noRate.status, state: noRate.payload.status, issues: noRate.payload.issues?.map((i) => i.category) });
@@ -252,6 +254,8 @@ async function main() {
     check("RB09_segregation_blocks_creator_approval", segreg.status === 403 && segreg.payload.code === "TMS_SETTLEMENT_SEGREGATION_VIOLATION", { status: segreg.status, code: segreg.payload.code });
     const rejectNoComment = await capture(`/api/v1/transport/settlement-packages/${pkgRId}/decision`, { method: "POST", body: { decision: "rechazada" } });
     check("rejection_requires_comment", rejectNoComment.status === 400 && rejectNoComment.payload.code === "TMS_SETTLEMENT_REJECTION_REQUIRES_COMMENT", { status: rejectNoComment.status, code: rejectNoComment.payload.code });
+
+    await require('./transport-settlement-role-stages-local')({ apiUrl: API_URL, adminToken: TOKEN, login: login.payload, packageId: pkgRId, runId: RUN_ID, check });
 
     // ---- Suites unitarias versionadas ----
     const engineTest = spawnSync(process.execPath, ["--test", "test/transport-settlement-engine.test.js"], { cwd: API, encoding: "utf8" });

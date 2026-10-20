@@ -11,9 +11,10 @@ const moduleFunctions = fs.readFileSync(path.join(root, "apps/web/lib/moduleFunc
 test("la torre de liquidaciones consume los endpoints del dominio de liquidacion", () => {
   assert.match(page, /\/api\/v1\/transport\/settlement-control-tower/);
   assert.match(page, /\/api\/v1\/transport\/settlement-packages/);
-  assert.match(page, /\/api\/v1\/transport\/settlement-types/);
+  assert.doesNotMatch(page, /createDraft\.type_code/);
+  assert.match(page, /aria-label="Periodo contable automático"/);
   assert.match(page, /\/api\/v1\/transport\/settlement-periods/);
-  assert.match(page, /\/items`/);
+  assert.match(page, /\/documents`/);
   assert.match(page, /\/adjustments`/);
 });
 
@@ -29,7 +30,11 @@ test("la pagina expone el flujo de estados completo del paquete", () => {
 test("la pagina respeta permisos RBAC de lectura, escritura y aprobacion", () => {
   assert.match(page, /hasStoredRolePermission\("transport", "read"\)/);
   assert.match(page, /hasStoredRolePermission\("transport", "write"\)/);
-  assert.match(page, /hasStoredRolePermission\("transport", "approve"\)/);
+  assert.match(page, /hasStoredRolePermission\("transport", "approve_settlements"\)/);
+  assert.match(page, /hasStoredRolePermission\("transport", "account_settlements"\)/);
+  assert.match(page, /hasStoredRolePermission\("transport", "liquidate_settlements"\)/);
+  assert.match(page, /canAccount && pkg.status === "aprobada"/);
+  assert.match(page, /canLiquidate && pkg.status === "contabilizada"/);
 });
 
 test("los KPI de la torre cubren las cuatro etapas de valor", () => {
