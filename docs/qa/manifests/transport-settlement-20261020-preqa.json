@@ -1,0 +1,32 @@
+{
+  "change_id": "transport-settlement-20261020-blocked",
+  "commit": "f0e3a9b92cfcb36e338d349cc557e24d2c42cb3a",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario de esta conversacion",
+    "approved_at": "2026-10-20T03:00:00Z",
+    "quality_gate_overridden": false
+  },
+  "checks": {
+    "functional": { "status": "failed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
+    "error": { "status": "passed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
+    "support_scripts": { "status": "failed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
+    "regression": { "status": "passed", "evidence": ["../transport-promotion-blocked-20261020.md"] },
+    "platform_regression": { "status": "pending", "evidence": ["../transport-promotion-blocked-20261020.md"] }
+  },
+  "certification": {
+    "status": "failed",
+    "script": "../../../scripts/certifications/transport-pdf-runtime-local.js",
+    "evidence": ["../transport-promotion-blocked-20261020.md"]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-platform-regression-local.js",
+    "evidence": ["../transport-promotion-blocked-20261020.md"]
+  }
+}
