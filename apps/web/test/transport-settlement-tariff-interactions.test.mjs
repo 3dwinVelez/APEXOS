@@ -12,8 +12,8 @@ function setup(count = 1) {
   let cursor = 0, tree, docs, ready;
   const hooks = [], effects = [], pendingEffects = [], quotes = [];
   const rates = [1, 2].map(id => ({ id, code: `T-${id}`, name: `Tarifa ${id}`, version: 1, valid_from: '2020-01-01', valid_to: '2099-12-31', unit_amount: id * 100, default_metrics: { distance_km: 10 }, requires_distance: true, route_description: 'Origen → Destino' }));
-  const module = {};
-  vm.runInNewContext(compiled, { exports: module, crypto: { randomUUID }, require(name) {
+  const componentExports = {};
+  vm.runInNewContext(compiled, { exports: componentExports, crypto: { randomUUID }, require(name) {
     if (name === 'react') return {
       useRef(value) { const i = cursor++; return hooks[i] ||= { current: value }; },
       useState(value) { const i = cursor++; if (!(i in hooks)) hooks[i] = value; return [hooks[i], next => { hooks[i] = typeof next === 'function' ? next(hooks[i]) : next; }]; },
@@ -22,10 +22,10 @@ function setup(count = 1) {
     if (name === '@/lib/api') return { api(route, options) { if (route.includes('settlement-destinations')) return Promise.resolve([{ id: 7, code: 'T1', name: 'Tienda 1', city: 'Medellin' }]); if (route.includes('settlement-customers')) return Promise.resolve([{ id: 1, name: 'Cliente A' }, { id: 2, name: 'Cliente B' }]); if (route.includes('settlement-rate-options')) return Promise.resolve(rates); return new Promise(resolve => quotes.push({ payload: JSON.parse(options.body), resolve })); } };
     return require(name);
   } });
-  docs = Array.from({ length: count }, () => ({ ...module.newSettlementDocument(), customer_id: 1, delivery_point_id: 7, service: 'Cliente A' }));
+  docs = Array.from({ length: count }, () => ({ ...componentExports.newSettlementDocument(), customer_id: 1, delivery_point_id: 7, service: 'Cliente A' }));
   const change = value => { docs = value; render(); };
   const onReady = value => { ready = value; };
-  function render() { cursor = 0; tree = module.SettlementDocumentsEditor({ documents: docs, onChange: change, vehicleId: 1, onReadyChange: onReady }); pendingEffects.splice(0).forEach(fn => fn()); }
+  function render() { cursor = 0; tree = componentExports.SettlementDocumentsEditor({ documents: docs, onChange: change, vehicleId: 1, onReadyChange: onReady }); pendingEffects.splice(0).forEach(fn => fn()); }
   function nodes() { const out = []; function walk(node) { if (Array.isArray(node)) return node.forEach(walk); if (!node || typeof node !== 'object') return; out.push(node); walk(node.props?.children); } walk(tree); return out; }
   render();
   return { module, render, nodes, quotes, docs: () => docs, ready: () => ready, field: label => nodes().find(node => node.props?.['aria-label'] === label), async flush() { for (let i = 0; i < 8; i++) await Promise.resolve(); render(); } };
