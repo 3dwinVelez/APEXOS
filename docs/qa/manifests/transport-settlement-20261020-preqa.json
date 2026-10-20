@@ -910,286 +910,8 @@
       },
       "legacy": {
         "status": "passed",
-        "commit": null,
-        "sha256": "1b8c6f2991fe9a47dd4ac80abbed3d1d1f327ad8ed9ff72f81468089a69e9fbb",
-        "checks": [
-          {
-            "name": "health_ok",
-            "status": "passed"
-          },
-          {
-            "name": "anonymous_blocked_401",
-            "status": "passed"
-          },
-          {
-            "name": "admin_login",
-            "status": "passed"
-          },
-          {
-            "name": "carrier_created",
-            "status": "passed"
-          },
-          {
-            "name": "rate_card_activated",
-            "status": "passed"
-          },
-          {
-            "name": "settlement_type_created",
-            "status": "passed"
-          },
-          {
-            "name": "settlement_types_include_reserved",
-            "status": "passed"
-          },
-          {
-            "name": "period_created",
-            "status": "passed"
-          },
-          {
-            "name": "package_created_borrador",
-            "status": "passed"
-          },
-          {
-            "name": "items_added",
-            "status": "passed"
-          },
-          {
-            "name": "second_package_created",
-            "status": "passed"
-          },
-          {
-            "name": "RB03_duplicate_guide_blocked",
-            "status": "passed"
-          },
-          {
-            "name": "validated_to_validando",
-            "status": "passed"
-          },
-          {
-            "name": "precalculated_to_preliquidada",
-            "status": "passed"
-          },
-          {
-            "name": "RB06_rate_snapshot_and_trace",
-            "status": "passed"
-          },
-          {
-            "name": "RB04_missing_rate_creates_blocking_issue",
-            "status": "passed"
-          },
-          {
-            "name": "RB08_blocking_issue_prevents_submit",
-            "status": "passed"
-          },
-          {
-            "name": "RB07_adjustment_records_before_after",
-            "status": "passed"
-          },
-          {
-            "name": "RB07_adjustment_requires_reason",
-            "status": "passed"
-          },
-          {
-            "name": "RB12_stale_version_conflict",
-            "status": "passed"
-          },
-          {
-            "name": "submitted_to_en_revision",
-            "status": "passed"
-          },
-          {
-            "name": "approved_fixes_approved_total",
-            "status": "passed"
-          },
-          {
-            "name": "RB11_approved_not_editable",
-            "status": "passed"
-          },
-          {
-            "name": "accounted_to_contabilizada",
-            "status": "passed"
-          },
-          {
-            "name": "RB10_accounting_idempotent_replay",
-            "status": "passed"
-          },
-          {
-            "name": "closed_to_liquidada",
-            "status": "passed"
-          },
-          {
-            "name": "audit_timeline_append_only",
-            "status": "passed"
-          },
-          {
-            "name": "control_tower_kpis",
-            "status": "passed"
-          },
-          {
-            "name": "rate_simulator_explains",
-            "status": "passed"
-          },
-          {
-            "name": "reinforced_package_created",
-            "status": "passed"
-          },
-          {
-            "name": "RB02_documentary_block_issue",
-            "status": "passed"
-          },
-          {
-            "name": "reinforced_precalculated",
-            "status": "passed"
-          },
-          {
-            "name": "reinforced_submitted",
-            "status": "passed"
-          },
-          {
-            "name": "RB09_segregation_blocks_creator_approval",
-            "status": "passed"
-          },
-          {
-            "name": "rejection_requires_comment",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_settlements_saved",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_settlements_no_implicit_stage_grants",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_settlements_round_trip",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_settlements_real_login",
-            "status": "passed"
-          },
-          {
-            "name": "role_account_settlements_saved",
-            "status": "passed"
-          },
-          {
-            "name": "role_account_settlements_no_implicit_stage_grants",
-            "status": "passed"
-          },
-          {
-            "name": "role_account_settlements_round_trip",
-            "status": "passed"
-          },
-          {
-            "name": "role_account_settlements_real_login",
-            "status": "passed"
-          },
-          {
-            "name": "role_liquidate_settlements_saved",
-            "status": "passed"
-          },
-          {
-            "name": "role_liquidate_settlements_no_implicit_stage_grants",
-            "status": "passed"
-          },
-          {
-            "name": "role_liquidate_settlements_round_trip",
-            "status": "passed"
-          },
-          {
-            "name": "role_liquidate_settlements_real_login",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_saved",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_no_implicit_stage_grants",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_round_trip",
-            "status": "passed"
-          },
-          {
-            "name": "role_approve_real_login",
-            "status": "passed"
-          },
-          {
-            "name": "stage_1_denies_role_0",
-            "status": "passed"
-          },
-          {
-            "name": "stage_2_denies_role_0",
-            "status": "passed"
-          },
-          {
-            "name": "stage_0_denies_role_1",
-            "status": "passed"
-          },
-          {
-            "name": "stage_2_denies_role_1",
-            "status": "passed"
-          },
-          {
-            "name": "stage_0_denies_role_2",
-            "status": "passed"
-          },
-          {
-            "name": "stage_1_denies_role_2",
-            "status": "passed"
-          },
-          {
-            "name": "stage_0_denies_role_3",
-            "status": "passed"
-          },
-          {
-            "name": "stage_1_denies_role_3",
-            "status": "passed"
-          },
-          {
-            "name": "stage_2_denies_role_3",
-            "status": "passed"
-          },
-          {
-            "name": "stage_0_authorized_independent_actor",
-            "status": "passed"
-          },
-          {
-            "name": "stage_1_authorized_independent_actor",
-            "status": "passed"
-          },
-          {
-            "name": "stage_2_authorized_independent_actor",
-            "status": "passed"
-          },
-          {
-            "name": "unit_suite_engine_pass",
-            "status": "passed"
-          },
-          {
-            "name": "engine_defines_state_machine_and_rbs",
-            "status": "passed"
-          },
-          {
-            "name": "service_writes_functional_audit",
-            "status": "passed"
-          },
-          {
-            "name": "routes_guarded_by_rbac",
-            "status": "passed"
-          },
-          {
-            "name": "schema_has_settlement_models",
-            "status": "passed"
-          },
-          {
-            "name": "web_page_present",
-            "status": "passed"
-          }
-        ]
+        "checks": 69,
+        "sha256": "1b8c6f2991fe9a47dd4ac80abbed3d1d1f327ad8ed9ff72f81468089a69e9fbb"
       }
     },
     "api_tests": {
@@ -1254,7 +976,33 @@
     "status": "pending",
     "backup_created": true,
     "backup_sha256": "9e6cbda33bf0f10ee142bb762daf4bc25885dce4146bdc48de00491643ea00c2",
-    "restore_verification": "pending; restauracion estandar incompatible con extension administrada supabase_vault; se verifica con imagen compatible.",
+    "restore_verification": {
+      "status": "passed",
+      "environment": "LOCAL_ISOLATED",
+      "image": "supabase/postgres:17.6.1.136",
+      "backup_sha256": "9e6cbda33bf0f10ee142bb762daf4bc25885dce4146bdc48de00491643ea00c2",
+      "restored_schema_data_constraints": true,
+      "owner_acl_note": "Restauracion con no-owner/no-acl en runtime Supabase local; no altera grants remotos.",
+      "dry_run_migrations": {
+        "status": "passed",
+        "environment": "LOCAL_RESTORED_QA",
+        "backup_sha256": "9e6cbda33bf0f10ee142bb762daf4bc25885dce4146bdc48de00491643ea00c2",
+        "rolled_back": true,
+        "checks": [
+          "existing_origins_ids_tenants_activity",
+          "rates_origin_archive",
+          "needs_relations",
+          "plans_relations",
+          "trips_relations",
+          "carrier_nullable"
+        ]
+      },
+      "initial_attempts": [
+        "PostgreSQL estandar no incluye supabase_vault.",
+        "Imagen compatible requiere supabase_admin como restaurador local.",
+        "Se corrigio la espera al arranque definitivo antes de restaurar; no se debilito ninguna asercion."
+      ]
+    },
     "remote_migrations_executed": false,
     "migrations": [
       "20261016123000_sedes_replace_origins",
