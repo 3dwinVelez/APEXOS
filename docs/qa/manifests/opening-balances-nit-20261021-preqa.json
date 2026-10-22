@@ -1,0 +1,227 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "opening-balances-nit-20261021",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "853519a6ce74a974afceb7e2edf4cb4458c19b4f",
+  "target_head": "947f508b358c0a2c4f2c62d5d9867930cf1a6169",
+  "base_commit": "947f508b358c0a2c4f2c62d5d9867930cf1a6169",
+  "base_commits": {
+    "develop": "947f508b358c0a2c4f2c62d5d9867930cf1a6169"
+  },
+  "change_intent": {
+    "summary": "Corregir la asociacion de NIT y la fecha de corte en la importacion de saldos iniciales, preservando asiento balanceado, idempotencia y aislamiento por empresa",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/accounting-opening-balances.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/contabilidad-opening-balances.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/opening-balances-nit-browser-local.js",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/opening-balances-nit-20261020.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-nit-20261021-preqa.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-nit-20261021-scope.json",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx",
+    "apps/web/test/contabilidad-opening-balances.test.mjs",
+    "scripts/certifications/opening-balances-nit-browser-local.js",
+    "docs/qa/certifications/opening-balances-nit-20261020.md",
+    "docs/qa/manifests/opening-balances-nit-20261021-preqa.json",
+    "docs/qa/manifests/opening-balances-nit-20261021-scope.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Asociacion correcta de NIT con el tercero",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Tercero opcional sin afectar la importacion",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Aislamiento por empresa y permisos contables",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Asiento balanceado e idempotencia",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Fecha de corte UTC y plantilla de carga",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Regresion contable",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante: \"publica la correccion en QA\" (2026-10-21; autorizacion observada 2026-10-22T01:56:08Z)",
+    "approved_at": "2026-10-22T01:56:08Z",
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false,
+      "create_auxiliary_branch": false
+    }
+  },
+  "environment": "LOCAL",
+  "commit": "853519a6ce74a974afceb7e2edf4cb4458c19b4f",
+  "qa_status": "pending",
+  "promotion_status": "pending",
+  "deployment_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-10-22T02:05:51.848Z",
+    "checks": 54,
+    "source_hashes": 5,
+    "script": "../../../scripts/certifications/opening-balances-nit-browser-local.js",
+    "evidence": [
+      "../certifications/opening-balances-nit-20261020.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-10-22T02:05:51.848Z",
+    "tests": 30,
+    "script": "../../../scripts/certifications/opening-balances-nit-browser-local.js",
+    "evidence": [
+      "../certifications/opening-balances-nit-20261020.md"
+    ]
+  },
+  "integrated_validation": {
+    "status": "passed",
+    "completed_at": "2026-10-22T02:05:51.848Z",
+    "date": "2026-10-21",
+    "candidate": "853519a6ce74a974afceb7e2edf4cb4458c19b4f",
+    "snapshot": "isolated_git_checkout_of_certified_commit",
+    "api_port": 3216,
+    "web_port": 3006,
+    "database": "isolated_local_postgresql",
+    "database_port": 55439,
+    "source_hashes": 5,
+    "unit_regression": {
+      "status": "passed",
+      "tests": 30
+    },
+    "production_build": {
+      "status": "passed",
+      "framework": "Next.js 16.3.5",
+      "pages": 126,
+      "completed_at": "2026-10-22T02:05:51.848Z"
+    },
+    "browser_certification": {
+      "status": "passed",
+      "checks": 54,
+      "completed_at": "2026-10-22T02:05:51.848Z"
+    },
+    "generated_evidence": "docs/qa/evidence/opening-balances-error-20261020/integrated-20261021/browser-local.json"
+  },
+  "build": {
+    "status": "passed",
+    "framework": "Next.js 16.3.5",
+    "pages": 126,
+    "completed_at": "2026-10-22T02:05:51.848Z",
+    "evidence": [
+      "../certifications/opening-balances-nit-20261020.md"
+    ]
+  },
+  "provider_status": {
+    "provider": "Railway",
+    "status": "blocked",
+    "reason": "PlatformOutage",
+    "incident": "https://status.railway.com/incident/QH8L8B3E",
+    "detail": "Builds y despliegues pausados; la activacion remota queda bloqueada por el proveedor.",
+    "release_retry": "after_github_gates"
+  },
+  "pending_qa": [
+    "Promocion y despliegue en QA pendientes: push de desarrollo, PR/merge a develop y activacion remota",
+    "Railway reporta PlatformOutage (QH8L8B3E) con builds y despliegues pausados; la activacion remota esta bloqueada por el proveedor",
+    "El root reintentara el release despues de los gates de GitHub; este manifiesto no autoriza main"
+  ]
+}

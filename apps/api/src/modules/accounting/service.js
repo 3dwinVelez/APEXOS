@@ -40,6 +40,31 @@ function openingCents(value, rowNumber) {
   return cents;
 }
 
+const OPENING_BALANCE_PARTY_INT_MAX = 2147483647;
+
+function openingBalanceLegacyPartyId(value) {
+  if (!/^\d+$/.test(value) || value.length > 10) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 && id <= OPENING_BALANCE_PARTY_INT_MAX ? id : null;
+}
+
+async function resolveOpeningBalanceParty(client, rawValue, rowNumber) {
+  const value = String(rawValue ?? "").trim();
+  if (!value) return null;
+  const taxMatch = await client.party.findFirst({ where: { tax_id: value, active: true } });
+  if (taxMatch) return taxMatch;
+  const legacyId = openingBalanceLegacyPartyId(value);
+  if (legacyId !== null) {
+    // Un NIT numérico inactivo no debe resolver silenciosamente a otro tercero cuyo id interno coincida.
+    const inactiveTaxMatch = await client.party.findFirst({ where: { tax_id: value, __includeInactive: true } });
+    if (!inactiveTaxMatch) {
+      const legacyMatch = await client.party.findFirst({ where: { id: legacyId, active: true } });
+      if (legacyMatch) return legacyMatch;
+    }
+  }
+  throw appError(404, "OPENING_BALANCE_PARTY_NOT_FOUND", `Fila ${rowNumber}: tercero no encontrado o inactivo`);
+}
+
 async function createOpeningBalancesTemplate() {
   const ExcelJS = require("exceljs");
   const workbook = new ExcelJS.Workbook();
@@ -52,7 +77,12 @@ async function createOpeningBalancesTemplate() {
   sheet.getRow(4).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF146C63" } };
   sheet.getColumn(1).width = 18; sheet.getColumn(2).width = 16; sheet.getColumn(3).width = 18;
   sheet.getColumn(4).width = 16; sheet.getColumn(5).width = 18; sheet.getColumn(6).width = 18;
+  sheet.getColumn(1).numFmt = "yyyy-mm-dd";
+  sheet.getColumn(2).numFmt = "@";
+  sheet.getColumn(3).numFmt = "@";
+  sheet.getColumn(4).numFmt = "@";
   sheet.getColumn(5).numFmt = "#,##0.00";
+  sheet.getColumn(6).numFmt = "@";
   return workbook.xlsx.writeBuffer();
 }
 
@@ -96,10 +126,7 @@ async function prepareOpeningBalanceRows(client, tenantId, rows) {
     const center = activeRows(tree.cost_centers).find((item) => item.code === costCenterCode && item.branch_code === branchCode);
     if (!branch) throw appError(422, "OPENING_BALANCE_BRANCH_NOT_FOUND", `Fila ${row.excel_row}: sucursal ${branchCode} inexistente o inactiva`);
     if (!center || center.society_code !== branch.society_code) throw appError(422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND", `Fila ${row.excel_row}: centro de costo no pertenece a la sucursal`);
-    const partyValue = String(row.tercero ?? "").trim();
-    let party = null;
-    if (partyValue) party = await client.party.findFirst({ where: /^\d+$/.test(partyValue) ? { id: Number(partyValue), active: true } : { tax_id: partyValue, active: true } });
-    if (partyValue && !party) throw appError(404, "OPENING_BALANCE_PARTY_NOT_FOUND", `Fila ${row.excel_row}: tercero no encontrado o inactivo`);
+    const party = await resolveOpeningBalanceParty(client, row.tercero, row.excel_row);
     dates.add(date.toISOString().slice(0, 10)); societies.add(center.society_code); totalCents += cents;
     prepared.push({ excel_row: row.excel_row, date, account, account_code: accountCode, branch_code: branchCode, cost_center_code: costCenterCode, society_code: center.society_code, party_id: party?.id || null, party_tax_id: party?.tax_id || null, cents, movement: cents > 0 ? "debit" : "credit", amount: Math.abs(cents) / 100 });
   }
@@ -2540,6 +2567,8 @@ module.exports = {
   periodBounds,
   periodFromDate,
   accountNature,
+  openingBalanceLegacyPartyId,
+  resolveOpeningBalanceParty,
   // Numeracion contable: exportados aditivo para que los modulos que emiten documentos dentro de
   // SU propia transaccion (petty-cash, igual que createGoodsReceiptDocumentTx de este archivo)
   // reserven el numero con el candado advisory y el auto-sanado max(configurado, emitido+1)
