@@ -22,7 +22,8 @@ test("compras expone reporte de posiciones de OC con filtros y Excel", () => {
   assert.match(page, /downloadExcelWorkbook\("reporte-ordenes-compra\.xls"/);
   assert.match(page, /receivedQty \* unitCost/);
   assert.match(page, /pendingQty \* unitCost/);
-  assert.match(nav, /Reporte de OC/);
+  assert.match(nav, /label:"Reportes"/);
+  assert.match(nav, /\/dashboard\/compras\/reportes\/ordenes/);
   assert.match(service, /String\(query\.all\) === "true" \? 5000/);
   assert.match(service, /itemById\.get\(line\.item_id\)/);
 });
