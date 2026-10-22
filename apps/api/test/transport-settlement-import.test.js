@@ -44,6 +44,43 @@ test("rechaza macros, compresión excesiva y desbordes de filas o paquetes", asy
   await assert.rejects(importer.parseWorkbook(await fixture(Array.from({ length: 201 }, () => sample))), { code: "TMS_IMPORT_SHEET" });
   await assert.rejects(importer.parseWorkbook(await fixture(Array.from({ length: 31 }, (_, index) => ["P-" + index, ...sample.slice(1)]))), { code: "TMS_IMPORT_PACKAGE_LIMIT" });
 });
+test("rechaza contadores ZIP falsos antes de leer partes fuera de los límites", async () => {
+  const JSZip = require("jszip");
+  const zip = await JSZip.loadAsync(await fixture());
+  zip.file("xl/oversized.xml", "a".repeat(9 * 1024 * 1024));
+  const archive = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+  const end = archive.length - 22;
+  for (const count of [0, 1]) {
+    const altered = Buffer.from(archive);
+    altered.writeUInt16LE(count, end + 8);
+    altered.writeUInt16LE(count, end + 10);
+    await assert.rejects(importer.parseWorkbook(altered), { code: "TMS_IMPORT_ZIP" });
+  }
+});
+test("rechaza directorios ZIP inconsistentes y desplazamientos de lectura", async () => {
+  const archive = await fixture();
+  const end = archive.length - 22, directory = archive.readUInt32LE(end + 16);
+  for (const mutate of [
+    buffer => buffer.writeUInt16LE(0, end + 8),
+    buffer => buffer.writeUInt16LE(buffer.readUInt16LE(end + 10) + 1, end + 10),
+    buffer => buffer.writeUInt32LE(buffer.readUInt32LE(end + 12) - 1, end + 12),
+    buffer => buffer.writeUInt32LE(directory - 1, end + 16),
+    buffer => buffer.writeUInt32LE(directory, directory + 42),
+    buffer => buffer.writeUInt16LE(1, directory + 34)
+  ]) {
+    const altered = Buffer.from(archive);
+    mutate(altered);
+    await assert.rejects(importer.parseWorkbook(altered), { code: "TMS_IMPORT_ZIP" });
+  }
+});
+test("admite comentarios ZIP ordinarios pero rechaza un final ambiguo", async () => {
+  const JSZip = require("jszip");
+  const zip = await JSZip.loadAsync(await fixture());
+  const normal = await zip.generateAsync({ type: "nodebuffer", comment: "Plantilla de transporte" });
+  assert.equal((await importer.parseWorkbook(normal)).rows.length, 1);
+  const ambiguous = await zip.generateAsync({ type: "nodebuffer", comment: "PK\u0005\u0006" });
+  await assert.rejects(importer.parseWorkbook(ambiguous), { code: "TMS_IMPORT_ZIP" });
+});
 test("una operación compuesta comparte transacción y no admite saltar a otro tenant", async () => {
   const file = path.resolve(__dirname, "../src/modules/transport/settlement-service.js");
   const localRequire = createRequire(file); let transactions = 0;

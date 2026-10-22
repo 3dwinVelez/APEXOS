@@ -22,12 +22,12 @@ function fail(code, message, statusCode = 422) { throw Object.assign(new Error(m
 // Check the ZIP central directory before ExcelJS decompresses untrusted input.
 function checkWorkbookArchive(buffer) {
   if (!Buffer.isBuffer(buffer) || buffer.length < 22 || buffer.length > MAX_FILE_BYTES || buffer.readUInt32LE(0) !== 0x04034b50) fail("TMS_IMPORT_FILE", "Seleccione una plantilla .xlsx de máximo 2 MB.");
-  let end = buffer.length - 22;
-  while (end >= Math.max(0, buffer.length - 65557) && buffer.readUInt32LE(end) !== 0x06054b50) end--;
-  if (end < 0 || buffer.readUInt32LE(end) !== 0x06054b50 || end + 22 + buffer.readUInt16LE(end + 20) !== buffer.length) fail("TMS_IMPORT_ZIP", "El archivo Excel está dañado.");
+  const end = buffer.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  if (end < Math.max(0, buffer.length - 65557) || end + 22 > buffer.length || end + 22 + buffer.readUInt16LE(end + 20) !== buffer.length) fail("TMS_IMPORT_ZIP", "El archivo Excel está dañado.");
   const count = buffer.readUInt16LE(end + 10);
-  let cursor = buffer.readUInt32LE(end + 16), inflated = 0;
-  if (buffer.readUInt16LE(end + 4) || buffer.readUInt16LE(end + 6) || count > 200 || cursor >= end) fail("TMS_IMPORT_ZIP", "La estructura del archivo Excel no es válida.");
+  const directory = buffer.readUInt32LE(end + 16), directorySize = buffer.readUInt32LE(end + 12);
+  let cursor = directory, inflated = 0;
+  if (buffer.readUInt16LE(end + 4) || buffer.readUInt16LE(end + 6) || buffer.readUInt16LE(end + 8) !== count || !count || count > 200 || directory >= end || directory + directorySize !== end) fail("TMS_IMPORT_ZIP", "La estructura del archivo Excel no es válida.");
   for (let index = 0; index < count; index++) {
     if (cursor + 46 > end || buffer.readUInt32LE(cursor) !== 0x02014b50) fail("TMS_IMPORT_ZIP", "El archivo Excel está dañado.");
     const size = buffer.readUInt32LE(cursor + 24);
@@ -37,15 +37,17 @@ function checkWorkbookArchive(buffer) {
     const name = buffer.subarray(cursor + 46, cursor + 46 + length).toString("utf8");
     inflated += size;
     if ((buffer.readUInt16LE(cursor + 8) & 1) || size > 8 * 1024 * 1024 || inflated > 20 * 1024 * 1024 || /vbaProject|externalLinks|embeddings|\.\.\//i.test(name)) fail("TMS_IMPORT_ARCHIVE_LIMIT", "La plantilla contiene elementos no admitidos o supera el límite de lectura.");
-    if (local + 30 > buffer.length || buffer.readUInt32LE(local) !== 0x04034b50 || ![0, 8].includes(method)) fail("TMS_IMPORT_ZIP", "Compresión Excel no admitida.");
+    if (buffer.readUInt16LE(cursor + 34) || local + 30 > directory || buffer.readUInt32LE(local) !== 0x04034b50 || ![0, 8].includes(method)) fail("TMS_IMPORT_ZIP", "Compresión Excel no admitida.");
     const start = local + 30 + buffer.readUInt16LE(local + 26) + buffer.readUInt16LE(local + 28);
-    if (start + compressedSize > buffer.length) fail("TMS_IMPORT_ZIP", "El archivo Excel está dañado.");
+    if (start + compressedSize > directory) fail("TMS_IMPORT_ZIP", "El archivo Excel está dañado.");
     try {
       const content = method === 8 ? inflateRawSync(buffer.subarray(start, start + compressedSize), { maxOutputLength: 8 * 1024 * 1024 }) : buffer.subarray(start, start + compressedSize);
       if (content.length !== size) fail("TMS_IMPORT_ZIP", "El tamaño de una parte Excel no es válido.");
     } catch { fail("TMS_IMPORT_ZIP", "Una parte Excel está dañada o supera los límites de lectura."); }
     cursor += 46 + length + extra + comment;
   }
+  // JSZip reads every directory entry even when the declared count is smaller.
+  if (cursor !== end) fail("TMS_IMPORT_ZIP", "El directorio del archivo Excel está incompleto.");
 }
 
 function cellValue(cell) {
