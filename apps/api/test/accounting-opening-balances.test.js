@@ -10,7 +10,10 @@ const ExcelJS = require("exceljs");
 const {
   createOpeningBalancesTemplate,
   openingBalanceLegacyPartyId,
-  resolveOpeningBalanceParty
+  resolveOpeningBalanceParty,
+  matchOpeningBalanceCode,
+  resolveOpeningBalanceAccount,
+  resolveOpeningBalanceCenter
 } = require("../src/modules/accounting/service");
 
 const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/accounting/service.js"), "utf8");
@@ -160,4 +163,177 @@ test("plantilla real conserva texto en cuenta, centro, sucursal y tercero", asyn
   assert.equal(sheet.getColumn(4).numFmt, "@");
   assert.equal(sheet.getColumn(5).numFmt, "#,##0.00");
   assert.equal(sheet.getColumn(6).numFmt, "@");
+});
+
+function scopedAccountClient(accounts) {
+  const calls = [];
+  function matches(account, where) {
+    const filter = where.code;
+    if (filter && typeof filter === "object" && filter.mode === "insensitive") {
+      return account.code.toLowerCase() === String(filter.equals).toLowerCase();
+    }
+    return account.code === filter;
+  }
+  return {
+    calls,
+    account: {
+      async findFirst({ where }) {
+        calls.push({ op: "findFirst", where });
+        return accounts.find((account) => matches(account, where)) || null;
+      },
+      async findMany({ where, take }) {
+        calls.push({ op: "findMany", where, take });
+        return accounts.filter((account) => matches(account, where)).slice(0, take);
+      }
+    }
+  };
+}
+
+test("cuenta exacta tiene prioridad sobre una variante de mayusculas", async () => {
+  const exact = { id: 1, code: "130505HEART", active: true, allows_tx: true };
+  const variant = { id: 2, code: "130505heart", active: true, allows_tx: true };
+  const client = scopedAccountClient([variant, exact]);
+  assert.equal(await resolveOpeningBalanceAccount(client, "130505HEART", 12), exact);
+  assert.deepEqual(client.calls.map((call) => call.op), ["findFirst"]);
+  assert.deepEqual(client.calls[0].where, { code: "130505HEART", __includeInactive: true });
+});
+
+test("cuenta resuelve minusculas o mixtas al codigo canonico almacenado", async () => {
+  const canonical = { id: 3, code: "130505Heart", active: true, allows_tx: true };
+  const client = scopedAccountClient([canonical]);
+  assert.equal(await resolveOpeningBalanceAccount(client, "  130505heart  ", 13), canonical);
+  assert.deepEqual(client.calls, [
+    { op: "findFirst", where: { code: "130505heart", __includeInactive: true } },
+    { op: "findMany", where: { code: { equals: "130505heart", mode: "insensitive" }, __includeInactive: true }, take: 2 }
+  ]);
+});
+
+test("cuenta ambigua por mayusculas falla claramente sin elegir la primera", async () => {
+  const client = scopedAccountClient([
+    { id: 4, code: "220505CASE", active: true, allows_tx: true },
+    { id: 5, code: "220505case", active: true, allows_tx: true }
+  ]);
+  await assert.rejects(resolveOpeningBalanceAccount(client, "220505Case", 14), (error) => {
+    assert.equal(error.statusCode, 422);
+    assert.equal(error.code, "OPENING_BALANCE_AMBIGUOUS_CODE");
+    assert.match(error.message, /cuenta 220505Case/);
+    return true;
+  });
+  assert.deepEqual(client.calls.map((call) => call.op), ["findFirst", "findMany"]);
+});
+
+test("cuenta exacta inactiva no cae a una variante activa", async () => {
+  const client = scopedAccountClient([
+    { id: 6, code: "130505INACTIVO", active: false, allows_tx: true },
+    { id: 7, code: "130505inactivo", active: true, allows_tx: true }
+  ]);
+  await assert.rejects(resolveOpeningBalanceAccount(client, "130505INACTIVO", 15), (error) => {
+    assert.equal(error.statusCode, 404);
+    assert.equal(error.code, "OPENING_BALANCE_ACCOUNT_NOT_FOUND");
+    return true;
+  });
+  assert.deepEqual(client.calls.map((call) => call.op), ["findFirst"]);
+});
+
+test("cuenta exacta no transaccional se rechaza sin fallback", async () => {
+  const client = scopedAccountClient([{ id: 8, code: "130505SINMOV", active: true, allows_tx: false }]);
+  await assert.rejects(resolveOpeningBalanceAccount(client, "130505SINMOV", 16), (error) => {
+    assert.equal(error.statusCode, 404);
+    assert.equal(error.code, "OPENING_BALANCE_ACCOUNT_NOT_FOUND");
+    return true;
+  });
+  assert.deepEqual(client.calls.map((call) => call.op), ["findFirst"]);
+});
+
+test("sucursal y centro de costo aceptan mayusculas y minusculas con codigo canonico", () => {
+  const branch = { code: "NORTE", active: true };
+  const center = { code: "CC-ADMIN", active: true, branch_code: "NORTE" };
+  assert.equal(matchOpeningBalanceCode([branch], " norte ", { label: "sucursal", rowNumber: 17 }), branch);
+  assert.equal(matchOpeningBalanceCode([center], "cc-admin", { label: "centro de costo", rowNumber: 17 }), center);
+});
+
+test("sucursal conserva la coincidencia exacta aunque exista otra variante", () => {
+  const exact = { code: "Norte", active: true };
+  const variant = { code: "NORTE", active: true };
+  assert.equal(matchOpeningBalanceCode([variant, exact], " Norte ", { label: "sucursal", rowNumber: 18 }), exact);
+});
+
+test("sucursal o centro ambiguo por mayusculas falla claramente", () => {
+  assert.throws(
+    () => matchOpeningBalanceCode([{ code: "Mixta", active: true }, { code: "MIXTA", active: true }], "mixta", { label: "sucursal", rowNumber: 19 }),
+    (error) => {
+      assert.equal(error.statusCode, 422);
+      assert.equal(error.code, "OPENING_BALANCE_AMBIGUOUS_CODE");
+      assert.match(error.message, /sucursal mixta/);
+      return true;
+    }
+  );
+});
+
+test("la coincidencia insensible conserva inactivos para que el llamador los rechace", () => {
+  const inactive = { code: "SUR", active: false };
+  assert.equal(matchOpeningBalanceCode([inactive], "sur", { label: "sucursal", rowNumber: 20 }), inactive);
+});
+
+test("sucursal exacta no toma un centro enlazado a otra sucursal con distinta capitalizacion", () => {
+  const tree = {
+    branches: [
+      { code: "Bodega", active: true, society_code: "SOC-01" },
+      { code: "BODEGA", active: true, society_code: "SOC-01" }
+    ],
+    cost_centers: [{ code: "CC-BODEGA", branch_code: "BODEGA", society_code: "SOC-01", active: true }]
+  };
+  const exact = matchOpeningBalanceCode(tree.branches, "Bodega", { label: "sucursal", rowNumber: 21 });
+  assert.equal(exact.code, "Bodega");
+  assert.throws(() => resolveOpeningBalanceCenter(tree, exact, "cc-bodega", 21), (error) => {
+    assert.equal(error.statusCode, 422);
+    assert.equal(error.code, "OPENING_BALANCE_COST_CENTER_NOT_FOUND");
+    return true;
+  });
+  const other = matchOpeningBalanceCode(tree.branches, "BODEGA", { label: "sucursal", rowNumber: 21 });
+  assert.equal(resolveOpeningBalanceCenter(tree, other, "cc-bodega", 21), tree.cost_centers[0]);
+});
+
+test("centro de costo ambiguo por mayusculas falla claramente", () => {
+  const tree = {
+    branches: [{ code: "NORTE", active: true, society_code: "SOC-01" }],
+    cost_centers: [
+      { code: "CC-DUP", branch_code: "NORTE", society_code: "SOC-01", active: true },
+      { code: "cc-dup", branch_code: "NORTE", society_code: "SOC-01", active: true }
+    ]
+  };
+  const branch = matchOpeningBalanceCode(tree.branches, "norte", { label: "sucursal", rowNumber: 22 });
+  assert.throws(() => resolveOpeningBalanceCenter(tree, branch, "Cc-Dup", 22), (error) => {
+    assert.equal(error.statusCode, 422);
+    assert.equal(error.code, "OPENING_BALANCE_AMBIGUOUS_CODE");
+    assert.match(error.message, /centro de costo Cc-Dup/);
+    return true;
+  });
+});
+
+test("centro con sociedad almacenada distinta no se acepta", () => {
+  const tree = {
+    branches: [{ code: "NORTE", active: true, society_code: "SOC-01" }],
+    cost_centers: [{ code: "CC-ADMIN", branch_code: "NORTE", society_code: "soc-01", active: true }]
+  };
+  const branch = matchOpeningBalanceCode(tree.branches, "norte", { label: "sucursal", rowNumber: 23 });
+  assert.throws(() => resolveOpeningBalanceCenter(tree, branch, "cc-admin", 23), (error) => {
+    assert.equal(error.statusCode, 422);
+    assert.equal(error.code, "OPENING_BALANCE_COST_CENTER_NOT_FOUND");
+    return true;
+  });
+});
+
+test("saldos iniciales persisten y agrupan los codigos canonicos almacenados", () => {
+  assert.match(service, /account_code: account\.code, branch_code: branch\.code, cost_center_code: center\.code/);
+  assert.match(service, /const key = `\$\{row\.account_code\}\|\$\{row\.branch_code\}\|\$\{row\.cost_center_code\}\|\$\{row\.party_id \|\| ""\}`/);
+  assert.match(service, /tree\.cost_centers\.filter\(\(item\) => normalizeCode\(item\.branch_code\) === normalizeCode\(branch\.code\)\)/);
+  assert.match(service, /normalizeCode\(center\.society_code\) !== normalizeCode\(branch\.society_code\)/);
+});
+
+test("normalizeCode global sigue siendo solo trim para no alterar otros modulos", () => {
+  const definition = service.match(/function normalizeCode\(value\) \{[\s\S]*?\n\}/);
+  assert.ok(definition);
+  assert.match(definition[0], /String\(value \|\| ""\)\.trim\(\)/);
+  assert.doesNotMatch(definition[0], /toUpperCase|toLowerCase/);
 });

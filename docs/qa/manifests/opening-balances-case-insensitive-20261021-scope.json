@@ -1,0 +1,123 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "opening-balances-case-insensitive-20261021",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "a6c956df0c4d582b6e216c302a91a4ed1815efce",
+  "target_head": "b7db905f9294a136e57d827df5dd9cecb9edcb51",
+  "base_commit": "b7db905f9294a136e57d827df5dd9cecb9edcb51",
+  "base_commits": {
+    "develop": "b7db905f9294a136e57d827df5dd9cecb9edcb51"
+  },
+  "change_intent": {
+    "summary": "Resolver cuentas, sucursales y centros de costo sin distinguir mayusculas en la importacion de saldos iniciales, persistir codigos canonicos, exigir identidad almacenada exacta en la relacion sucursal-centro y certificar con reproduccion real del adjunto historico, preservando tercero opcional, asiento balanceado, duplicado UTC y aislamiento por empresa",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/accounting-opening-balances.test.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/opening-balances-nit-browser-local.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/opening-balances-attachment-local.js",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/opening-balances-case-insensitive-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-case-insensitive-20261021-preqa.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-case-insensitive-20261021-scope.json",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "scripts/certifications/opening-balances-nit-browser-local.js",
+    "scripts/certifications/opening-balances-attachment-local.js",
+    "docs/qa/certifications/opening-balances-case-insensitive-20261021.md",
+    "docs/qa/manifests/opening-balances-case-insensitive-20261021-preqa.json",
+    "docs/qa/manifests/opening-balances-case-insensitive-20261021-scope.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Resolucion insensible a mayusculas con codigos canonicos de cuenta, sucursal y centro",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Relacion sucursal-centro con identidad almacenada exacta",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Asociacion exacta de NIT y tercero opcional",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Aislamiento por empresa, RBAC y permisos contables",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Asiento balanceado, duplicado y fecha de corte UTC",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Reproduccion real del adjunto historico con validacion controlada sin 500",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Regresion completa de API y scripts de soporte",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante: \"puedes verificar que si suba el cambio a qa ambos lo de mayusculas y lo anterior\" (2026-10-21; autorizacion observada 2026-10-22T02:55:41Z)",
+    "approved_at": "2026-10-22T02:55:41Z",
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false,
+      "create_auxiliary_branch": false
+    }
+  }
+}
