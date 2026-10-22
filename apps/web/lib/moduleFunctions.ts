@@ -14,6 +14,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-apex-heart", label: "Ver Apex Heart", description: "Pulso ejecutivo: productividad, margen y alertas", href: "/dashboard/reportes/apex-heart", module: "reportes", keywords: "reportes indicadores kpi pulso margen gerencial control tablero" },
 
   // Compras
+  { id: "fn-compras-ordenes", label: "Consultar órdenes de compra", description: "Seguimiento de compras y entregas", href: "/dashboard/compras/ordenes", module: "compras", keywords: "orden compra compras proveedor entrega seguimiento" },
   { id: "fn-compras-facturas", label: "Ver facturas de compra", description: "Documentos de proveedor y su registro contable", href: "/dashboard/compras/facturas", module: "compras", keywords: "factura proveedor simulacion contable cuenta por pagar documento" },
   { id: "fn-compras-importaciones", label: "Gestionar importaciones", description: "Compras del exterior y nacionalizacion", href: "/dashboard/compras/importaciones", module: "compras", keywords: "importacion aduana nacionalizacion exterior comercio" },
   { id: "fn-compras-proveedores", label: "Gestionar proveedores", description: "Crea y consulta proveedores", href: "/dashboard/compras/proveedores", module: "compras", keywords: "proveedor tercero abastecimiento registrar crear" },
@@ -21,6 +22,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-compras-rep-ordenes", label: "Ver reporte de ordenes de compra", description: "Analiza ordenes emitidas y pendientes", href: "/dashboard/compras/reportes/ordenes", module: "compras", keywords: "reporte ordenes compra pendientes abastecimiento" },
 
   // Contabilidad
+  { id: "fn-contab-saldos-iniciales", label: "Importar saldos iniciales", description: "Cargue de saldos contables de apertura", href: "/dashboard/contabilidad/importar-saldos-iniciales", module: "contabilidad", keywords: "saldo apertura inicial importar contabilidad" },
   { id: "fn-contab-pyg", label: "Ver PYG por vehiculo", description: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto", href: "/dashboard/contabilidad/pyg", module: "contabilidad", keywords: "pyg estado resultados utilidad gastos vehiculo placa centro costo presupuesto cumplimiento rentabilidad" },
   { id: "fn-contab-asientos", label: "Consultar asientos contables", description: "Revisa el registro contable y sus movimientos", href: "/dashboard/contabilidad/asientos", module: "contabilidad", keywords: "asiento contable libro diario comprobante registro movimiento" },
   { id: "fn-contab-cxp", label: "Gestionar cuentas por pagar", description: "Obligaciones con proveedores y pagos", href: "/dashboard/contabilidad/cuentas-por-pagar", module: "contabilidad", keywords: "cuentas por pagar cxp proveedor obligacion pago cartera" },
@@ -40,6 +42,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-fact-documentos", label: "Consultar documentos de facturacion", description: "Facturas emitidas y sus consecutivos", href: "/dashboard/facturacion/documentos", module: "facturacion", keywords: "factura emitida documento consecutivo historial dian" },
 
   // Gastos Menores
+  { id: "fn-gm-nuevo-gasto", label: "Registrar gasto menor", description: "Crear un comprobante de caja menor", href: "/dashboard/gastos-menores/gastos/nuevo", module: "gastos-menores", keywords: "nuevo gasto menor registrar comprobante" },
   { id: "fn-gm-conceptos", label: "Gestionar conceptos de gasto menor", description: "Maestro de conceptos de egreso de caja menor", href: "/dashboard/gastos-menores/conceptos", module: "gastos-menores", keywords: "concepto gasto egreso caja menor maestro cuenta contable" },
   { id: "fn-gm-cajas", label: "Gestionar cajas menores", description: "Cajas, custodios, limites y anticipos", href: "/dashboard/gastos-menores/cajas", module: "gastos-menores", keywords: "caja menor custodio limite anticipo fondo efectivo" },
   { id: "fn-gm-anticipos", label: "Gestionar anticipos de caja menor", description: "Giros al custodio, liquidacion y reintegro", href: "/dashboard/gastos-menores/anticipos", module: "gastos-menores", keywords: "anticipo caja menor giro custodio liquidacion reintegro legalizar documento apc" },
