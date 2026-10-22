@@ -1,0 +1,68 @@
+{
+  "change_id": "local-modules-20261021",
+  "commit": null,
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "usuario solicitante en esta conversación",
+    "approved_at": "2026-10-21",
+    "subject_to_repository_gates": true
+  },
+  "checks": {
+    "functional": {
+      "status": "partial",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    "error": {
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    "regression": {
+      "status": "failed",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "partial",
+    "script": null,
+    "evidence": [
+      "../local-modules-release-blocked-20261021.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "failed",
+    "script": null,
+    "evidence": [
+      "../local-modules-release-blocked-20261021.md"
+    ]
+  },
+  "blocking_reasons": [
+    "Candidato sin commit; no se atribuyen los cambios locales a un SHA anterior.",
+    "Inventario y Compras cuentan con certificación UI de solo lectura; faltan altas y contabilización completas.",
+    "Regresión actual de Transporte: 22 pruebas, 20 aprobadas y 2 fallidas.",
+    "Diff anterior de 16 rutas fuera del alcance de esta conversación; prohibido merge de rama completo.",
+    "Security/release gate y regresión transversal del candidato pendientes."
+  ]
+}
