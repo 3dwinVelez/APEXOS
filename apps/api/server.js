@@ -400,4 +400,6 @@ if (require.main === module) {
     });
 }
 
-module.exports = build;
+module.exports = process.env.VERCEL === "1"
+  ? require("./src/core/serverlessHandler").createServerlessHandler(build)
+  : build;
