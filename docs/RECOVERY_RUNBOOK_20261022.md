@@ -65,10 +65,11 @@ usuario actual, SYSTEM o administradores locales.
 8. Verificar commits y despliegues reales. Revisar antes cualquier comando de
    predeploy: el API QA tiene configurado `prisma migrate deploy`; la autorizacion
    de rotar credenciales no autoriza migraciones remotas.
-9. Ejecutar certificacion funcional con usuarios aislados: login, renovacion,
-   consultas, escritura autorizada con limpieza, Storage, RBAC, aislamiento entre
-   empresas y regresion de los modulos activos. No reutilizar cuentas productivas
-   para sembrar fixtures en QA.
+9. Ejecutar la certificacion operacional con las dos cuentas provistas por el
+   usuario (local y QA/develop): login, renovacion, sesion y consultas de modulos.
+   El usuario excluyo expresamente otros roles del alcance de esta recuperacion.
+   No crear cuentas adicionales ni afirmar RBAC o aislamiento multiempresa
+   certificados por estas pruebas. No reutilizar cuentas productivas en QA.
 10. Revocar las claves antiguas por el mecanismo del emisor y comprobar su rechazo
     sin registrar valores. Las claves legacy `anon/service_role` estan acopladas;
     revisar el procedimiento actual de Supabase antes de deshabilitarlas.
@@ -124,6 +125,60 @@ certifica un despliegue WEB. Su resultado no autoriza promocion. La rama local
 `desarrollo` contiene otros cambios ajenos a la recuperacion frente a
 `origin/develop`; nunca fusionar toda la rama para publicar estas tres lineas.
 Preparar el candidato puntual contra el commit remoto vigente y certificarlo.
+
+## Respaldo cifrado y acceso operacional
+
+`scripts/security/recovery-backup.cjs` exporta PostgreSQL con pg_dump 17 y descarga
+los objetos de Storage de QA y produccion. Cada artefacto usa AES-256-GCM con
+nonce independiente; la clave del archivo se protege con DPAPI CurrentUser.
+Los dumps y objetos no se escriben en claro. El inventario de privilegios incluye
+roles y grants sin contrasenas. El manifiesto contiene identificadores opacos,
+tamanos y hashes; los nombres de objetos permanecen en indices cifrados.
+
+```powershell
+node scripts/security/recovery-backup.cjs "$env:USERPROFILE\.codex\private\APEXOS_CREDENCIALES_RECUPERACION_2026-10-22"
+node scripts/security/recovery-backup.cjs --verify "<directorio-absoluto-del-respaldo>"
+```
+
+El respaldo terminado de esta intervencion contiene dumps de ambos ambientes,
+123 objetos QA y 375 objetos PROD. Se verificaron 506 artefactos mediante hash,
+descifrado autenticado y tamano, ademas del catalogo pg_restore. Todavia no se ha
+ejecutado una restauracion completa en una base aislada. La clave DPAPI depende
+del usuario Windows y no constituye por si sola una estrategia de copia externa.
+
+`scripts/certifications/recovery-provided-access.cjs` recibe por stdin JSON con
+las cuentas `local` y `qa`, cada una con `email` y `password`; recibe como primer
+argumento una ruta privada para la evidencia. No persiste contrasenas ni tokens.
+El acceso operacional paso en local y Railway QA, pero el monitor WEB QA devuelve
+403; el script conserva ese fallo y termina con codigo 1. No certifica el incidente
+completo ni habilita una promocion por el exito de las consultas restantes.
+
+## Vercel: configuracion y adaptador HTTP
+
+`scripts/security/recovery-vercel-qa.cjs --plan|--apply <directorio-privado>` solo
+acepta Preview de la rama develop. Comprueba identidad QA y aplica variables
+especificas de esa rama. Separa JWT, base y Supabase de produccion. No cambia
+Production ni revoca variables globales. Reutilizar el codigo remoto existente
+no equivale a publicar las correcciones locales de esta recuperacion.
+
+La Preview con commit 807f7930 registra todos los modulos y la ruta health, pero
+termina en FUNCTION_INVOCATION_TIMEOUT tras 300 segundos. `server.js` exportaba
+una factoria de Fastify, que construye la app sin responder a req/res. En Vercel
+ahora exporta un adaptador Node que inicializa una vez, espera app.ready() y
+entrega las solicitudes al servidor Fastify. Fuera de Vercel conserva la factoria
+y el inicio HTTP existente. La publicacion de esta correccion esta pendiente.
+
+```powershell
+node --test apps/api/test/serverless-handler.test.js scripts/test/recovery-backup.test.cjs scripts/test/recovery-vercel-qa.test.cjs scripts/test/recovery-route-probe.test.js scripts/test/recovery-readiness.test.js scripts/test/recovery-vault.test.js
+```
+
+Las 23 pruebas pasaron, incluyendo HTTP real con Fastify, concurrencia, POST,
+404, error de bootstrap, cifrado y restricciones de ambiente. Adicionalmente,
+`scripts/certifications/recovery-serverless-local.cjs <evidencia-privada>` recibe
+la cuenta local por stdin y arranca la API real bajo el adaptador Vercel con base
+local y workers deshabilitados. Sus nueve controles de salud, login, sesion,
+consultas y renovacion pasaron. No certifica el runtime remoto ni reemplaza la
+certificacion funcional WEB y los gates de promocion.
 
 Antes de publicar cambios deben existir certificaciones versionadas del flujo
 completo y pasar los manifiestos de alcance/evidencia exigidos en AGENTS.md y
