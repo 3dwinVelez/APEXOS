@@ -6,7 +6,7 @@ import { inspectFileSignature } from "@/lib/fileSignature";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Archive, Bell, Calculator, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Wallet, Wrench } from "lucide-react";
+import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Wallet, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -85,6 +85,7 @@ type Vehicle = {
   owner_document?: string;
   linked_company?: string;
   cost_center?: string;
+  metadata?: { accounting_branch_code?: string };
   base_site: string;
   authorized_driver_id?: number;
   authorized_driver_name?: string;
@@ -145,6 +146,7 @@ const emptyVehicle = {
   owner_document: "",
   linked_company: "",
   cost_center: "",
+  accounting_branch_code: "",
   base_site: "",
   authorized_driver_id: 0,
   authorized_driver_name: "",
@@ -287,26 +289,14 @@ type OrgBranch = { code: string; name: string; society_code: string; active?: bo
 type OrgCostCenter = { code: string; name: string; society_code: string; branch_code: string; active?: boolean };
 type OrgTree = { societies: OrgSociety[]; branches: OrgBranch[]; cost_centers: OrgCostCenter[] };
 
-function orgUnitPairs(units: Array<{ code: string; name: string; active?: boolean }> | undefined, current: string, emptyLabel: string): Array<[string, string]> {
-  const pairs: Array<[string, string]> = [["", emptyLabel]];
-  const seen = new Set<string>();
-  for (const unit of units || []) {
-    if (unit.active === false) continue;
-    if (seen.has(unit.code)) continue;
-    seen.add(unit.code);
-    pairs.push([unit.code, `${unit.code} - ${unit.name}`]);
-  }
-  const trimmed = (current || "").trim();
-  if (trimmed && !seen.has(trimmed)) pairs.push([trimmed, `${trimmed} (actual)`]);
-  return pairs;
-}
-
 export function TransportFleetPage() {
   const [access, setAccess] = useState({ ready: false, canRead: false, canWrite: false, canReadHr: false });
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selected, setSelected] = useState<Vehicle | null>(null);
   const [form, setForm] = useState({ ...emptyVehicle });
+  const [syncBranch, setSyncBranch] = useState("");
+  const [syncingCenters, setSyncingCenters] = useState(false);
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [showEditor, setShowEditor] = useState(false);
   const [message, setMessage] = useState("");
@@ -331,14 +321,13 @@ export function TransportFleetPage() {
   const [orgCreator, setOrgCreator] = useState<"branch" | "">("");
   const [orgDraft, setOrgDraft] = useState({ society_code: "", code: "", name: "" });
   const [orgSaving, setOrgSaving] = useState(false);
-  const [newCostCenter, setNewCostCenter] = useState({ code: "", name: "" });
 
   useEffect(() => {
     let alive = true;
     loadVehicleMasterCatalogs()
       .then((catalogs) => { if (alive) setVehicleCatalogs(catalogs); })
       .catch(() => undefined);
-    api<OrgTree>("/api/v1/accounting/organization-tree")
+    api<OrgTree>("/api/v1/transport/vehicle-accounting-structure")
       .then((tree) => { if (alive) setOrgTree(tree); })
       .catch(() => undefined);
     return () => { alive = false; };
@@ -386,6 +375,7 @@ export function TransportFleetPage() {
     setForm({
       ...emptyVehicle,
       ...detail,
+      accounting_branch_code: detail.metadata?.accounting_branch_code || "",
       line: detail.line || detail.model || "",
       linked_at: dateOnly(detail.linked_at),
       unlinked_at: dateOnly(detail.unlinked_at),
@@ -449,42 +439,31 @@ export function TransportFleetPage() {
       setMessage(validation);
       return;
     }
-    const newCode = newCostCenter.code.trim();
-    const newName = newCostCenter.name.trim();
-    if ((newCode && !newName) || (!newCode && newName)) {
-      setMessage("Completa codigo y nombre del centro de costo o deja ambos vacios.");
-      return;
-    }
     setSaving(true);
     try {
-      let costCenterCode = form.cost_center.trim();
-      if (orgTree && newCode && newName) {
-        const branch = orgTree.branches.find((item) => item.code === form.base_site && item.active !== false);
-        if (!branch) {
-          setMessage("Selecciona una sucursal valida antes de crear el centro de costo.");
-          return;
-        }
-        const next = await api<OrgTree>("/api/v1/accounting/organization-tree", {
-          method: "POST",
-          body: JSON.stringify({ type: "cost_center", society_code: branch.society_code, branch_code: branch.code, code: newCode, name: newName })
-        });
-        setOrgTree(next);
-        costCenterCode = newCode;
-        setNewCostCenter({ code: "", name: "" });
-        setMessage(`Centro de costo ${newCode} creado en la estructura contable.`);
-      }
-      const payload = { ...vehiclePayload(form), cost_center: costCenterCode || null };
+      const payload = vehiclePayload(form);
       const saved = selected
         ? await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`, { method: "PUT", body: JSON.stringify(payload) })
         : await api<Vehicle>("/api/v1/transport/vehicles", { method: "POST", body: JSON.stringify(payload) });
       setSelected(saved);
-      setMessage("Ficha maestra vehicular guardada.");
       await load();
+      setMessage(`Ficha guardada. Centro de costo ${saved.cost_center} enlazado a la estructura contable.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el vehiculo.");
     } finally {
       setSaving(false);
     }
+  }
+
+  async function synchronizeCenters() {
+    if (!syncBranch || syncingCenters) return;
+    setSyncingCenters(true);
+    try {
+      const result = await api<{ synchronized: number }>("/api/v1/transport/vehicles/accounting-centers/synchronize", { method: "POST", body: JSON.stringify({ branch_code: syncBranch }) });
+      await load();
+      setMessage(`${result.synchronized} centros vehiculares enlazados a la sucursal ${syncBranch}.`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "No fue posible sincronizar los centros."); }
+    finally { setSyncingCenters(false); }
   }
 
   async function selectDocument(file?: File) {
@@ -625,11 +604,7 @@ export function TransportFleetPage() {
     if (form.year && !years.includes(String(form.year))) years.unshift(String(form.year));
     return years;
   })();
-  const branchesForSite = orgTree?.branches || [];
-  const sitePairs: Array<[string, string]> = orgTree
-    ? orgUnitPairs(branchesForSite, form.base_site, "Seleccionar sucursal")
-    : [["", "Seleccionar sede base"], ...catalogPairs(vehicleCatalogs?.locations, form.base_site)];
-  const costCenterPairs: Array<[string, string]> = [["", "Sin centro de costo"], ...catalogPairs(vehicleCatalogs?.costCenters, form.cost_center)];
+  const sitePairs: Array<[string, string]> = [["", "Seleccionar sede base"], ...catalogPairs(vehicleCatalogs?.locations, form.base_site)];
 
   function clearFilters() {
     setQuery("");
@@ -670,7 +645,6 @@ export function TransportFleetPage() {
       });
       setOrgTree(next);
       setField("base_site", next.branches.find((item) => item.code === code)?.code || code);
-      setNewCostCenter({ code: "", name: "" });
       setOrgCreator("");
       setOrgDraft({ society_code: "", code: "", name: "" });
       setMessage(`Sucursal ${code} creada en la estructura contable.`);
@@ -696,6 +670,7 @@ export function TransportFleetPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
+      {access.canWrite && hasStoredRolePermission("accounting", "write") ? <div className="apex-section-card flex flex-wrap items-end gap-3 p-4"><Select label="Sucursal contable para centros de vehiculos existentes" value={syncBranch} onChange={setSyncBranch} {...selectProps([["", "Seleccionar sucursal"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} /><button type="button" className="h-10 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={!syncBranch || syncingCenters} onClick={() => void synchronizeCenters()}>{syncingCenters ? "Sincronizando..." : "Sincronizar centros de costo"}</button><p className="w-full text-xs text-neutral-600">Crea los centros faltantes de la empresa en la sucursal elegida y conserva las sedes operativas. Los centros previamente vinculados a otra sucursal requieren revision.</p></div> : null}
       <header className="apex-section-card flex flex-wrap items-start justify-between gap-4 p-4">
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Maestro de flota</p>
@@ -849,30 +824,11 @@ export function TransportFleetPage() {
                 <Select
                   label="Sucursal base *"
                   value={form.base_site}
-                  onChange={(value) => setForm((current) => {
-                    const keepCost = orgTree ? orgTree.cost_centers.some((center) => center.code === current.cost_center && center.branch_code === value) : true;
-                    return { ...current, base_site: value, cost_center: keepCost ? current.cost_center : "" };
-                  })}
+                  onChange={(value) => setField("base_site", value)}
                   {...selectProps(sitePairs)}
                 />
-                {orgTree ? (
-                  <>
-                    <Input
-                      label="Codigo centro de costo"
-                      value={newCostCenter.code}
-                      onChange={(value) => setNewCostCenter((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "") }))}
-                      disabled={!form.base_site}
-                    />
-                    <Input
-                      label="Nombre centro de costo"
-                      value={newCostCenter.name}
-                      onChange={(value) => setNewCostCenter((current) => ({ ...current, name: value }))}
-                      disabled={!form.base_site}
-                    />
-                  </>
-                ) : (
-                  <Select label="Centro de costo" value={form.cost_center} onChange={(value) => setField("cost_center", value)} {...selectProps(costCenterPairs)} />
-                )}
+                <Select label="Sucursal contable" value={form.accounting_branch_code} onChange={(value) => setField("accounting_branch_code", value)} {...selectProps([["", "Seleccionar sucursal contable"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} />
+                <Input label="Centro de costo del vehiculo" value={form.cost_center || form.plate.toUpperCase()} onChange={() => undefined} disabled />
                 {orgTree ? (
                   <div className="rounded-md border border-line bg-paper p-3 md:col-span-2 xl:col-span-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -880,9 +836,7 @@ export function TransportFleetPage() {
                       <button className="h-8 rounded-md border border-line bg-white px-2 text-xs" onClick={openOrgCreator} type="button">+ Nueva sucursal</button>
                     </div>
                     <p className="mt-2 text-xs text-neutral-600">
-                      Selecciona la sucursal base y digita el codigo y nombre del centro de costo; al guardar el vehiculo el centro quedara creado en la estructura contable de esa sucursal.
-                      {!form.base_site ? " Primero elige la sucursal para habilitar la creacion del centro de costo." : ""}
-                      {selected && form.cost_center ? ` Centro actual: ${form.cost_center} (se reemplaza solo si digitas uno nuevo).` : ""}
+                      Al guardar se crea automaticamente el centro de costo del vehiculo en la sucursal contable seleccionada. La sede operativa y la sucursal contable se registran por separado. El codigo del centro se conserva para mantener su historial.
                     </p>
                     {orgCreator ? (
                       <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
@@ -1086,8 +1040,7 @@ const transportWorkflows = [
     title: "4. Liquidar el costo",
     detail: "Cierra el costo real de cada transportador con tarifa congelada, ajustes soportados y aprobación trazable.",
     actions: [
-      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true },
-      { href: "/dashboard/transporte/pyg", title: "PYG por vehículo", detail: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto.", icon: Calculator }
+      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true }
     ]
   }
 ] as const;

@@ -11,7 +11,8 @@ const actions = [
   { href: "/dashboard/contabilidad/iva", title: "IVA", detail: "Configurar tarifas activas para compras y ventas.", icon: ReceiptText },
   { href: "/dashboard/contabilidad/retenciones", title: "Retenciones", detail: "Administrar conceptos, bases y cuentas asociadas.", icon: ReceiptText },
   { href: "/dashboard/contabilidad/estructura", title: "Estructura", detail: "Mantener sociedades, sucursales y centros de costo.", icon: Building2 },
-  { href: "/dashboard/contabilidad/reportes", title: "Reportes", detail: "Consultar balance, resultados, mayor e impuestos.", icon: BarChart3 }
+  { href: "/dashboard/contabilidad/reportes", title: "Reportes", detail: "Consultar balance, resultados, mayor e impuestos.", icon: BarChart3 },
+  { href: "/dashboard/contabilidad/pyg", title: "PYG por vehículo", detail: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto.", icon: BarChart3 }
 ] as const;
 
 export default function ContabilidadPage() {

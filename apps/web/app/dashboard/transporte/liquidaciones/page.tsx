@@ -25,6 +25,8 @@ type Adjustment = { id: number; item_id?: number | null; before_value: number; d
 type Issue = { id: number; category: string; severity: string; blocking: boolean; status: string; description: string };
 type Approval = { id: number; level?: string | null; decision: string; from_status?: string | null; to_status?: string | null; comment?: string | null };
 type Accounting = { id: number; reference: string; amount: number; accounting_period?: string | null; idempotency_key: string };
+type AccountingOptions = { income_accounts: { code: string; name: string }[]; receivable_accounts: { code: string; name: string }[] };
+const emptyAccountDraft = { income_account_code: "", receivable_account_code: "", posting_date: "", due_date: "" };
 type SettlementPackage = {
   id: number; code: string; status: string; version: number; currency: string;
   metadata?: { vehicle_id?: number; vehicle_plate?: string; cost_center?: string; accounting_period?: string; tariff_locked?: boolean };
@@ -173,7 +175,16 @@ export default function TransportSettlementsPage() {
   const [decisionModal, setDecisionModal] = useState<"aprobada" | "rechazada" | null>(null);
   const [decisionComment, setDecisionComment] = useState("");
   const [accountModal, setAccountModal] = useState(false);
-  const [accountDraft, setAccountDraft] = useState({ reference: "", accounting_period: "", payment_date: "" });
+  const [accountDraft, setAccountDraft] = useState({ ...emptyAccountDraft });
+  const [accountOptions, setAccountOptions] = useState<AccountingOptions>({ income_accounts: [], receivable_accounts: [] });
+  useEffect(() => {
+    if (!accountModal) return;
+    let active = true;
+    setAccountOptions({ income_accounts: [], receivable_accounts: [] });
+    api<AccountingOptions>("/api/v1/transport/settlement-accounting-options").then(rows => { if (active) setAccountOptions(rows); }).catch(caught => { if (active) setError(caught instanceof Error ? caught.message : "No fue posible cargar las cuentas."); });
+    setAccountDraft({ ...emptyAccountDraft, posting_date: new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Bogota" }).format(new Date()) });
+    return () => { active = false; };
+  }, [accountModal]);
   const [vehicleDrill, setVehicleDrill] = useState<VehicleConsolidation | null>(null);
 
   const load = useCallback(async () => {
@@ -274,8 +285,8 @@ export default function TransportSettlementsPage() {
 
   async function submitAccounting() {
     if (!selected) return;
-    if (!accountDraft.reference.trim()) {
-      setError("La referencia contable es obligatoria.");
+    if (!accountDraft.income_account_code || !accountDraft.receivable_account_code || !accountDraft.posting_date) {
+      setError("Seleccione las cuentas de ingreso y deudor y la fecha de contabilizacion.");
       return;
     }
     if (mutationRef.current) return;
@@ -284,15 +295,14 @@ export default function TransportSettlementsPage() {
       await api(`/api/v1/transport/settlement-packages/${selected.id}/account`, {
         method: "POST",
         body: JSON.stringify({
-          reference: accountDraft.reference.trim(),
-
-          payload: accountDraft.payment_date ? { payment_date: accountDraft.payment_date } : {},
+          ...accountDraft,
+          due_date: accountDraft.due_date || accountDraft.posting_date,
           version: selected.version
         })
       });
-      setMessage("Paquete contabilizado (idempotente).");
+      setMessage("Ingresos contabilizados. Comprobantes LT y cuentas por cobrar generados por cliente.");
       setAccountModal(false);
-      setAccountDraft({ reference: "", accounting_period: "", payment_date: "" });
+      setAccountDraft({ ...emptyAccountDraft });
       await refreshSelected();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No fue posible contabilizar el paquete.");
@@ -694,15 +704,20 @@ export default function TransportSettlementsPage() {
             {error ? <p role="alert" className="text-sm text-rose-700">{error}</p> : null}
             <h2 className="text-xl font-semibold">Contabilizar paquete</h2>
             <p className="text-sm text-neutral-600">{selected?.code} · {selected?.carrier_name} · {money(selected?.approved_total, selected?.currency)}</p>
-            <label className="block text-sm"><span className="font-semibold">Referencia contable *</span>
-              <input autoFocus className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="CB-2026-00123" value={accountDraft.reference} onChange={(event) => setAccountDraft((d) => ({ ...d, reference: event.target.value }))} /></label>
+            <p className="text-sm text-neutral-600">Documento LT · Consecutivo automatico por empresa. Se genera una cuenta por cobrar por cada cliente de los documentos aprobados.</p>
+            <label className="block text-sm"><span className="font-semibold">Cuenta de ingreso *</span>
+              <select autoFocus className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={accountDraft.income_account_code} onChange={event => setAccountDraft(d => ({ ...d, income_account_code: event.target.value }))}><option value="">Seleccionar cuenta de ingreso</option>{accountOptions.income_accounts.map(row => <option key={row.code} value={row.code}>{row.code} · {row.name}</option>)}</select></label>
+            <label className="block text-sm"><span className="font-semibold">Cuenta por cobrar al cliente *</span>
+              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={accountDraft.receivable_account_code} onChange={event => setAccountDraft(d => ({ ...d, receivable_account_code: event.target.value }))}><option value="">Seleccionar cuenta deudora</option>{accountOptions.receivable_accounts.map(row => <option key={row.code} value={row.code}>{row.code} · {row.name}</option>)}</select></label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-sm"><span className="font-semibold">Periodo contable</span>
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" readOnly value={selected?.metadata?.accounting_period || new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Bogota", year: "numeric", month: "2-digit" }).format(new Date())} /></label>
-              <label className="block text-sm"><span className="font-semibold">Fecha de pago</span>
-                <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={accountDraft.payment_date} onChange={(event) => setAccountDraft((d) => ({ ...d, payment_date: event.target.value }))} /></label>
+              <label className="block text-sm"><span className="font-semibold">Fecha de contabilizacion *</span>
+                <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={accountDraft.posting_date} onChange={event => setAccountDraft(d => ({ ...d, posting_date: event.target.value }))} /></label>
+              <label className="block text-sm"><span className="font-semibold">Vencimiento de cartera</span>
+                <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" min={accountDraft.posting_date} value={accountDraft.due_date} onChange={event => setAccountDraft(d => ({ ...d, due_date: event.target.value }))} /></label>
             </div>
-            <p className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900"><Lock size={14} className="mt-0.5 shrink-0" /> Al contabilizar, el paquete queda bloqueado (estado contabilizada) y no podra modificarse; un reintento con la misma referencia es idempotente.</p>
+            <p className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900"><Lock size={14} className="mt-0.5 shrink-0" /> Al contabilizar se debita la cuenta por cobrar y se acredita el ingreso en el centro de costo del vehiculo. El paquete queda bloqueado; los reintentos conservan los mismos comprobantes. El cobro se registra posteriormente en Tesoreria.</p>
             <div className="flex justify-end gap-2">
               <button className="h-10 rounded-md border border-line px-4 text-sm font-semibold" onClick={() => setAccountModal(false)} type="button">Cancelar</button>
               <button className="h-10 rounded-md bg-apex px-4 text-sm font-semibold text-white" onClick={() => void submitAccounting()} type="button">Contabilizar</button>
@@ -769,7 +784,7 @@ export default function TransportSettlementsPage() {
           onClose={() => setSelected(null)} onAddItem={addItem} onAddAdjustment={addAdjustment}
           onTransition={transition}
           onOpenDecision={(decision) => { setDecisionComment(""); setDecisionModal(decision); }}
-          onOpenAccounting={() => { setAccountDraft({ reference: "", accounting_period: "", payment_date: "" }); setAccountModal(true); }}
+          onOpenAccounting={() => { setAccountDraft({ ...emptyAccountDraft }); setAccountModal(true); }}
           onClosePackage={() => void transition("close", { version: selected.version }, "Paquete cerrado como liquidado.")}
         />
       ) : null}

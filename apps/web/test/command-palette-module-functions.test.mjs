@@ -12,7 +12,7 @@ const dashboardRoot = path.join(root, "app/dashboard");
 
 // Rutas estaticas reales del dashboard. Se excluyen la raiz, la redireccion de
 // configuracion y el alias de mallas (reexport de rutas), que no son destinos propios.
-const ALIASES = new Set(["/dashboard/configuracion", "/dashboard/talento-humano/mallas", "/dashboard/transporte/maestros", "/dashboard/administracion/maestros-transporte"]);
+const ALIASES = new Set(["/dashboard/configuracion", "/dashboard/talento-humano/mallas", "/dashboard/transporte/maestros", "/dashboard/administracion/maestros-transporte", "/dashboard/transporte/pyg"]);
 const routePath = (href) => new URL(href, "http://apex.local").pathname;
 const staticRoutes = fs.readdirSync(dashboardRoot, { recursive: true })
   .map((entry) => String(entry).replace(/\\/g, "/"))
@@ -74,11 +74,19 @@ test("el buscador ofrece las funciones clave del modulo de talento humano", () =
 });
 
 test("los alias excluidos si son redirecciones y no destinos propios", () => {
+  assert.match(read("app/dashboard/transporte/pyg/page.tsx"), /redirect\("\/dashboard\/contabilidad\/pyg"\)/);
   for (const alias of ["transporte/maestros", "administracion/maestros-transporte"]) {
     assert.match(read(`app/dashboard/${alias}/page.tsx`), /redirect\("\/dashboard\/administracion"\)/);
   }
   assert.match(read("app/dashboard/configuracion/page.tsx"), /redirect\("\/dashboard\/administracion"\)/);
   assert.match(read("app/dashboard/talento-humano/mallas/page.tsx"), /export \{ default \} from "\.\.\/rutas\/page"/);
+});
+
+test("PYG pertenece exclusivamente al buscador de Contabilidad", () => {
+  const entries = functionEntries.filter((entry) => /\/pyg$/.test(routePath(entry.href)));
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].module, "contabilidad");
+  assert.equal(entries[0].href, "/dashboard/contabilidad/pyg");
 });
 
 test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => {
