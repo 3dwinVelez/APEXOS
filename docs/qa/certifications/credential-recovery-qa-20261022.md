@@ -41,6 +41,21 @@ Los tres fallos pertenecen a cobertura de frontend de otros modulos (Contabilida
 
 Evidencia privada (fuera del repositorio, ruta absoluta en el informe de promocion): corridas `candidate-1792702056349`, `candidate-e2e-serverless-1792701797637`, `candidate-route-probe-1792701833*`, `baseline-three-web-files-individual-1792702092*`.
 
+## Puertas de promocion y de CI ejecutadas sobre el candidato
+
+Todas en el worktree aislado, con el candidato ya commiteado:
+
+| Puerta | Comando | Resultado |
+| --- | --- | --- |
+| Manifiesto pre-QA | `node scripts/validate-preqa-promotion-evidence.js docs/qa/manifests/credential-recovery-qa-20261022-preqa.json` | `AUTORIZACION PRE-QA VALIDA: credential-recovery-qa-20261022`, salida 0 |
+| Manifiesto de alcance | `node scripts/validate-promotion-scope.js docs/qa/manifests/credential-recovery-qa-20261022-scope.json HEAD origin/develop` | `ALCANCE DE PROMOCION VALIDO: credential-recovery-qa-20261022 (21 rutas)`, salida 0 |
+| TypeCheck frontend | `npx -p typescript tsc --noEmit --project apps/web/tsconfig.json` | 0 errores, salida 0 |
+| Lint | `npm run lint` | 0 errores y 23 avisos preexistentes (Next/image, `window.location`, dependencias de hooks), salida 0 |
+| guard de rendimiento | `npm run performance:guard` | `targets=17 failures=0`, salida 0 |
+| Sintaxis del backend | `node --check apps/api/server.js` | sin errores |
+
+La rama `codex/qa-*` que exige `git-governance-guard ci-promotion` no aplica: este cambio se publica por el flujo `desarrollo -> develop` que la propia CI valida con `governance:ci` (origen `desarrollo`). No se modifico ninguna configuracion de CI.
+
 ## Capacidades protegidas
 
 1. Adaptador HTTP de Vercel que inicializa una unica instancia de Fastify, espera `ready()` y entrega la solicitud; fallo de arranque responde 503 generico sin filtrar excepciones.
@@ -53,7 +68,7 @@ Evidencia privada (fuera del repositorio, ruta absoluta en el informe de promoci
 
 ## Pendientes que esta certificacion NO cierra
 
-- No se publico, desplego ni promovio nada con esta evidenci; sigue pendiente el push y el PR `desarrollo -> develop`.
+- No se publico, desplego ni promovio nada con esta evidencia; sigue pendiente el push y el PR `desarrollo -> develop`.
 - El runtime Vercel QA del base `807f7930` devuelve `500 FUNCTION_INVOCATION_FAILED` (plugin `@fastify/cors` fuera de tiempo y decorador `corsPreflightEnabled` duplicado tras `Node.js process exited with exit status: 129`). El adaptador aqui certificado ataca esa causa, pero su correccion remota queda sin probar hasta desplegar el candidato.
 - La clave legacy `service_role` de Supabase QA sigue siendo aceptada (HTTP 200 en Auth administrativo junto con la clave nueva): la rotacion no esta cerrada y no se revoco nada.
 - Contrasena PostgreSQL/`DATABASE_URL` de QA sin rotar; consumidores de `SUPABASE_SERVICE_ROLE_KEY` con nombre exclusivo (`apps/api/src/modules/services/evidenceUploads.js`) sin migrar a `SUPABASE_SECRET_KEY`.
