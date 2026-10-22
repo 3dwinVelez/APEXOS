@@ -1,0 +1,108 @@
+# Recuperacion de credenciales APEXOS — 2026-10-22
+
+Este procedimiento no certifica un incidente resuelto. La disponibilidad publica,
+las pruebas unitarias y `recovery-readiness.js` no sustituyen la certificacion
+funcional completa ni autorizan publicar o promover ramas.
+
+## Objetivos y limites
+
+- Implementacion en `desarrollo`; promociones solamente `desarrollo -> develop -> main`.
+- QA: Railway `33726923-021d-47a7-a263-b8b287f164f1`, entorno
+  `97b0366d-a965-4356-88fd-f66dc45e83b9`, Supabase `jbirkghkekuifgfsgquq`.
+- Produccion: Railway `0afe38cc-6080-49d2-aa24-2d5625250ac2`, entorno
+  `7f4388a3-b254-4d64-ba49-434b16e41469`, Supabase `jzbwzmkidfthknsohhnr`.
+- Ambos entornos Railway se llaman `production`; usar siempre sus IDs completos.
+- El JWT propio de la API es independiente de las claves de Supabase. Cambiarlo
+  invalida los tokens firmados con el secreto anterior.
+- No revocar credenciales productivas con posible interrupcion, invalidar sesiones
+  masivamente ni promover a produccion sin aprobacion explicita del impacto.
+- No ejecutar migraciones, modificar RLS ni datos del negocio para rotar secretos.
+
+## Almacenamiento privado
+
+El inventario y las evidencias deben permanecer en una carpeta privada fuera del
+repositorio. Ningun valor anterior se agrega al inventario. No usar argumentos de
+procesos, consola, documentos planos ni historial para transferir secretos.
+
+`scripts/security/recovery-vault.ps1` cifra valores nuevos mediante Windows DPAPI
+`CurrentUser`, vinculados al entorno y nombre de variable. El archivo `.dpapi`
+se abre solamente bajo el contexto Windows que lo protegio; no es una exportacion
+portable ni reemplaza un gestor corporativo con recuperacion y respaldo.
+
+La carpeta debe existir previamente con ACL restringida al usuario y SYSTEM.
+Para ingresar una clave nueva sin mostrarla:
+
+```powershell
+powershell -NoProfile -File scripts/security/recovery-vault.ps1 -Action Store -Environment qa -Variable SUPABASE_SERVICE_ROLE_KEY -VaultRoot "$env:USERPROFILE\.codex\private\APEXOS_CREDENCIALES_RECUPERACION_2026-10-22" -PromptSecure
+```
+
+`-Action Verify` comprueba descifrado sin mostrar el secreto. `-Action UpdateEnv`
+actualiza solamente el archivo ignorado del entorno. `-Action ApplyRailway
+-Service api|web` envia el valor por stdin a la CLI de Railway y suprime la salida
+del proveedor. Requiere una sesion Railway valida. Esta accion solamente admite
+QA; produccion queda bloqueada por diseno. `-SkipDeploys` cambia variables sin
+actualizar procesos en ejecucion: no interpretar eso como aplicacion verificada.
+`-Action Generate -Variable JWT_SECRET` genera 48 bytes aleatorios mediante CSPRNG
+y los guarda cifrados; no modifica el emisor de sesiones ni sus consumidores.
+El helper rechaza carpetas con ACL que permita acceso a identidades distintas del
+usuario actual, SYSTEM o administradores locales.
+
+## Secuencia de QA
+
+1. Inventariar todos los consumidores antes de cambiar el emisor. Incluir WEB y
+   API: las rutas Next administrativas utilizan la clave privilegiada en servidor.
+2. Crear la clave nueva en el emisor mediante mecanismo soportado; conservar la
+   anterior temporalmente para evitar interrupcion durante la sustitucion.
+3. Guardar la clave nueva cifrada; verificar que descifra sin revelarla.
+4. Confirmar compatibilidad de los consumidores con las claves `sb_secret_`.
+   El codigo contiene accesos HTTP directos y SDK: verificar Auth administrativo,
+   REST y Storage con la clave nueva; no asumir compatibilidad por su nombre.
+5. Actualizar el archivo QA ignorado y ambos consumidores Railway QA. No usar la
+   configuracion QA local si la base o las URLs apuntan a localhost.
+6. Coordinar cambio de contrasena PostgreSQL y todas sus cadenas consumidoras.
+   Confirmar puerto, usuario de pooler, SSL y proceso de redeploy antes del cambio.
+7. Rotar el JWT propio de QA, sin reutilizarlo en desarrollo ni produccion.
+8. Verificar commits y despliegues reales. Revisar antes cualquier comando de
+   predeploy: el API QA tiene configurado `prisma migrate deploy`; la autorizacion
+   de rotar credenciales no autoriza migraciones remotas.
+9. Ejecutar certificacion funcional con usuarios aislados: login, renovacion,
+   consultas, escritura autorizada con limpieza, Storage, RBAC, aislamiento entre
+   empresas y regresion de los modulos activos. No reutilizar cuentas productivas
+   para sembrar fixtures en QA.
+10. Revocar las claves antiguas por el mecanismo del emisor y comprobar su rechazo
+    sin registrar valores. Las claves legacy `anon/service_role` estan acopladas;
+    revisar el procedimiento actual de Supabase antes de deshabilitarlas.
+11. Repetir certificacion con credenciales nuevas y guardar evidencia privada.
+
+## Produccion y recuperacion ante fallos
+
+Tras certificar QA, preparar una unica solicitud de aprobacion con secretos y
+consumidores exactos, impacto sobre sesiones, ventana estimada basada en los
+tiempos medidos en QA y acciones de recuperacion. Mantener los clientes antiguos
+operativos hasta actualizar todos los consumidores cuando el mecanismo lo admita.
+
+Si falla una credencial nueva, corregir consumidores o emitir otra credencial
+nueva. Nunca restaurar permanentemente una credencial potencialmente expuesta.
+La contrasena PostgreSQL exige coordinar la sustitucion con los procesos que
+mantienen conexiones. No prometer cero interrupcion sin evidencia en QA.
+
+Vercel debe quedar inventariado incluso si ya no recibe trafico. Un error 403 no
+demuestra que el proyecto este inactivo. Verificar deployments, variables y tokens
+del equipo antes de declarar que no existen consumidores adicionales.
+
+## Pruebas repetibles
+
+```powershell
+node --test scripts/test/recovery-readiness.test.js scripts/test/recovery-vault.test.js
+node scripts/security/recovery-readiness.js --environment qa --env-file config/qa.env --output "$env:USERPROFILE\.codex\private\APEXOS_CREDENCIALES_RECUPERACION_2026-10-22\qa-readiness.json"
+node scripts/security/recovery-readiness.js --environment production --env-file config/production.env --output "$env:USERPROFILE\.codex\private\APEXOS_CREDENCIALES_RECUPERACION_2026-10-22\production-readiness.json"
+```
+
+Readiness realiza solamente GET, rechaza configuracion cruzada antes de enviar
+credenciales, rechaza redirecciones y no imprime cuerpos del proveedor. Un exit 0
+solo acredita esas comprobaciones; siempre declara `complete_certification: false`.
+No ejecuta login, renovacion, escritura, aislamiento ni revocacion.
+
+Antes de publicar cambios deben existir certificaciones versionadas del flujo
+completo y pasar los manifiestos de alcance/evidencia exigidos en AGENTS.md y
+`docs/CHANGE_APPROVAL_QA_POLICY.md`. Este runbook no habilita omitirlos.
