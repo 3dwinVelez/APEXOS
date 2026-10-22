@@ -72,7 +72,7 @@ export default function WarehousesPage() {
     setLoading(true);
     setError("");
     try {
-      const salesAccess = await loadModuleAccess(MODULES.filter(module => module.slug === "ventas"));
+      const salesAccess = await loadModuleAccess(MODULES);
       const canReadCustomers = Boolean(salesAccess.bySlug.ventas) && hasStoredRolePermission("sales", "read");
       const [warehouseRows, orgTree, customerRows, masters] = await Promise.all([
         api<WarehouseRow[]>("/api/v1/inventory/warehouses?active=all"),
