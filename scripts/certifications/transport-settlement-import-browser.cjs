@@ -27,7 +27,7 @@ module.exports = async ({ base, output, operator, approver, accountant, account,
       await page.goto("http://localhost:3001/dashboard/transporte/liquidaciones", { waitUntil: "networkidle2", timeout: 60000 });
       return { page, context, rejectNextAccounting: () => { rejectNextAccounting = true; } };
     }
-    async function click(page, text) {
+    async function click(page, text) { await page.waitForFunction(t=>[...document.querySelectorAll('button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text);
       for (const button of await page.$$("button")) if (await button.evaluate((node, text) => node.textContent.trim() === text, text)) { await button.click(); return; }
       throw Error("Botón no encontrado: " + text);
     }

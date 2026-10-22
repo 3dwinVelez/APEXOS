@@ -18,7 +18,7 @@ async function main() {
     if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1'].includes(url.hostname)) request.abort();
     else request.continue();
   });
-  const click = async text => { const buttons = await page.$$('button'); for (const button of buttons) { if ((await button.evaluate(node => node.textContent.trim())) === text) { await button.click(); return; } } throw new Error(`Button not found: ${text}`); };
+  const click = async text => { await page.waitForFunction(t=>[...document.querySelectorAll('button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text); const buttons = await page.$$('button'); for (const button of buttons) { if ((await button.evaluate(node => node.textContent.trim())) === text) { await button.click(); return; } } throw new Error(`Button not found: ${text}`); };
   async function theme(value) {
     await page.evaluate(value => { document.documentElement.classList.toggle('dark', value === 'dark'); document.documentElement.dataset.theme = value; localStorage.setItem('apex_theme', value); }, value);
     await page.waitForFunction(value => getComputedStyle(document.documentElement).colorScheme === value, {}, value);
