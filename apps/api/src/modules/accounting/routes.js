@@ -1,6 +1,8 @@
 const tenancy = require("../../middleware/tenancy");
 const { requirePermission } = require("../../middleware/rbac");
 const service = require("./service");
+const pygInteractive = require("./pyg-interactive");
+const pygBudget = require("./pyg-budget");
 const schema = require("./schema");
 
 async function accountingRoutes(fastify) {
@@ -288,6 +290,21 @@ async function accountingRoutes(fastify) {
     schema: schema.thirdPartySchema,
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.saveThirdParty(request.user?.tenant_id, request.body, request.params.id));
+
+  fastify.get("/accounting/reports/pyg-interactive", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    return pygInteractive.getInteractivePyg(request.user?.tenant_id, request.query);
+  });
+
+  fastify.get("/accounting/reports/pyg-interactive/budgets", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => pygBudget.getPygBudgets(request.user?.tenant_id, request.query));
+
+  fastify.put("/accounting/reports/pyg-interactive/budgets", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => pygBudget.savePygBudgets(request.user?.tenant_id, request.user?.id, request.body));
 
 }
 
