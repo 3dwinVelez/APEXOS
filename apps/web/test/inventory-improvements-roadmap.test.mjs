@@ -9,9 +9,11 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("inventario organiza navegación por dominios sin fila extensa ni WMS visible", () => {
   const nav = read("components/inventory-nav.tsx");
-  for (const label of ["Resumen", "Maestros", "Existencias", "Movimientos", "Productos", "Nuevo producto", "Stock", "Kardex", "Traslados", "Ajustes"]) {
+  for (const label of ["Resumen", "Maestros", "Existencias", "Movimientos", "Productos", "Stock", "Kardex", "Traslados", "Ajustes"]) {
     assert.match(nav, new RegExp(label));
   }
+  assert.doesNotMatch(nav, /label: "Nuevo producto"|inventario\/productos\/nuevo/);
+  assert.match(nav, /activeGroup.items.length > 1/);
   assert.match(nav, /role="tablist"/);
   assert.match(nav, /aria-current/);
   assert.match(nav, /sm:hidden/);

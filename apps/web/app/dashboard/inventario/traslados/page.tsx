@@ -1,4 +1,5 @@
 "use client";
+import { InventorySearchSelect } from "@/components/inventory-ui";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -120,7 +121,7 @@ export default function TransfersPage() {
         <div>
           <p className="text-sm font-medium text-apex">Inventario</p>
           <h1 className="text-3xl font-semibold">Reporte de traslados</h1>
-          <p className="mt-1 text-sm text-neutral-600">
+          <p className="mt-1 text-sm text-content-body">
             Documentos en borrador, en tránsito y descargados.
           </p>
         </div>
@@ -142,7 +143,7 @@ export default function TransfersPage() {
           {message}
         </p>
       ) : null}
-      <section className="rounded-md border border-line bg-white p-4">
+      <section className="rounded-md border border-line bg-surface p-4">
         <div className="grid gap-3 md:grid-cols-6">
           <label className="text-sm">
             Desde
@@ -168,7 +169,7 @@ export default function TransfersPage() {
           </label>
           <label className="text-sm">
             Origen
-            <select
+            <InventorySearchSelect
               className="mt-1 h-10 w-full rounded-md border border-line px-2"
               value={filters.origin_place_id}
               onChange={(e) =>
@@ -181,11 +182,11 @@ export default function TransfersPage() {
                   {row.code} - {row.name}
                 </option>
               ))}
-            </select>
+            </InventorySearchSelect>
           </label>
           <label className="text-sm">
             Destino
-            <select
+            <InventorySearchSelect
               className="mt-1 h-10 w-full rounded-md border border-line px-2"
               value={filters.destination_place_id}
               onChange={(e) =>
@@ -198,11 +199,11 @@ export default function TransfersPage() {
                   {row.code} - {row.name}
                 </option>
               ))}
-            </select>
+            </InventorySearchSelect>
           </label>
           <label className="text-sm">
             Estado
-            <select
+            <InventorySearchSelect
               className="mt-1 h-10 w-full rounded-md border border-line px-2"
               value={filters.status}
               onChange={(e) =>
@@ -213,7 +214,7 @@ export default function TransfersPage() {
               <option value="draft">Borrador</option>
               <option value="in_transit">En tránsito</option>
               <option value="received">Descargado</option>
-            </select>
+            </InventorySearchSelect>
           </label>
           <button
             className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-apex text-sm text-apex"
@@ -224,10 +225,10 @@ export default function TransfersPage() {
           </button>
         </div>
       </section>
-      <section className="overflow-x-auto rounded-md border border-line bg-white">
+      <section className="overflow-x-auto rounded-md border border-line bg-surface">
         <table className="w-full min-w-[900px] text-sm">
           <thead>
-            <tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500">
+            <tr className="border-b border-line bg-paper text-left text-xs uppercase text-content-muted">
               <th className="px-3 py-2">Documento</th>
               <th className="px-3 py-2">Fecha</th>
               <th className="px-3 py-2">Origen</th>
@@ -284,7 +285,7 @@ export default function TransfersPage() {
             {!transfers.length ? (
               <tr>
                 <td
-                  className="px-3 py-8 text-center text-neutral-500"
+                  className="px-3 py-8 text-center text-content-muted"
                   colSpan={7}
                 >
                   No hay traslados con los filtros seleccionados.
@@ -300,12 +301,12 @@ export default function TransfersPage() {
           onMouseDown={() => setSelected(null)}
         >
           <section
-            className="max-h-[85vh] w-full max-w-4xl overflow-auto rounded-lg bg-white shadow-xl"
+            className="max-h-[85vh] w-full max-w-4xl overflow-auto rounded-lg bg-surface shadow-xl"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <header className="flex items-start justify-between border-b border-line p-4">
               <div>
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-content-muted">
                   Documento de traslado
                 </p>
                 <h2 className="text-xl font-semibold">{selected.number}</h2>
@@ -319,16 +320,16 @@ export default function TransfersPage() {
             <div className="grid gap-2 p-4 text-sm md:grid-cols-3">
               <p>
                 <strong>Creado:</strong> {formatDate(selected.created_at)}
-                <span className="block text-xs text-neutral-500">{selected.created_by_user?.name || selected.created_by_user?.email || "--"}</span>
+                <span className="block text-xs text-content-muted">{selected.created_by_user?.name || selected.created_by_user?.email || "--"}</span>
               </p>
               <p>
                 <strong>Despachado:</strong>{" "}
                 {formatDate(selected.dispatched_at)}
-                <span className="block text-xs text-neutral-500">{selected.dispatched_by_user?.name || selected.dispatched_by_user?.email || "--"}</span>
+                <span className="block text-xs text-content-muted">{selected.dispatched_by_user?.name || selected.dispatched_by_user?.email || "--"}</span>
               </p>
               <p>
                 <strong>Descargado:</strong> {formatDate(selected.received_at)}
-                <span className="block text-xs text-neutral-500">{selected.received_by_user?.name || selected.received_by_user?.email || "--"}</span>
+                <span className="block text-xs text-content-muted">{selected.received_by_user?.name || selected.received_by_user?.email || "--"}</span>
               </p>
               <p><strong>Sociedad:</strong> {selected.society_code}</p>
               <p className="md:col-span-2">
