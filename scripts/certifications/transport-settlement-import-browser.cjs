@@ -1,6 +1,8 @@
+const { webBase, localOrigin } = require('./local-certification-env.cjs');
 const assert = require("node:assert/strict");
 const path = require("node:path");
 module.exports = async ({ base, output, operator, approver, accountant, account, file, reference, check }) => {
+  base = localOrigin(base, 'browser API base');
   const puppeteer = require("puppeteer-core");
   const browser = await puppeteer.launch({ executablePath: "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", headless: true });
   try {
@@ -21,10 +23,10 @@ module.exports = async ({ base, output, operator, approver, accountant, account,
             request.continue({ url: base + url.pathname + url.search, postData: JSON.stringify(body) });
           } else request.continue({ url: base + url.pathname + url.search });
         }
-        else if (["http:", "https:"].includes(url.protocol) && !["localhost", "127.0.0.1"].includes(url.hostname)) request.abort();
+        else if (["http:", "https:"].includes(url.protocol) && ![base, webBase].includes(url.origin)) request.abort();
         else request.continue();
       });
-      await page.goto("http://localhost:3001/dashboard/transporte/liquidaciones", { waitUntil: "networkidle2", timeout: 60000 });
+      await page.goto(webBase + "/dashboard/transporte/liquidaciones", { waitUntil: "networkidle2", timeout: 60000 });
       return { page, context, rejectNextAccounting: () => { rejectNextAccounting = true; } };
     }
     async function click(page, text) { await page.waitForFunction(t=>[...document.querySelectorAll('button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text);

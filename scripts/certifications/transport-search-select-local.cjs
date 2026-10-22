@@ -1,4 +1,5 @@
 /* Local browser interaction certification. Synthetic fixtures; no API or database writes. */
+const appEnv = process.argv.includes('--app') ? require('./local-certification-env.cjs') : null;
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -89,15 +90,18 @@ async function main() {
     }
     check('no browser errors', errors.length === 0);
     if (process.argv.includes('--app')) {
+      const { apiBase, webBase } = appEnv;
       const app = await browser.newPage();
       await app.setRequestInterception(true);
       app.on('request', request => {
         const url = new URL(request.url());
         if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1'].includes(url.hostname)) request.abort();
+        else if (url.pathname.startsWith('/api/v1/')) request.continue({ url: apiBase + url.pathname + url.search });
+        else if (['http:', 'https:'].includes(url.protocol) && ![apiBase, webBase].includes(url.origin)) request.abort();
         else request.continue();
       });
-      await app.goto('http://localhost:3001/login', { waitUntil: 'domcontentloaded' });
-      const login = await fetch('http://localhost:3000/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: process.env.LOCAL_TMS_EMAIL || 'demo@apex.local', password: process.env.LOCAL_TMS_PASSWORD || 'test1234' }) });
+      await app.goto(webBase + '/login', { waitUntil: 'domcontentloaded' });
+      const login = await fetch(apiBase + '/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: process.env.LOCAL_TMS_EMAIL || 'demo@apex.local', password: process.env.LOCAL_TMS_PASSWORD || 'test1234' }) });
       assert.equal(login.status, 200, 'local API login');
       const session = await login.json();
       await app.evaluate(data => {
@@ -113,7 +117,7 @@ async function main() {
       }, session);
       for (const route of ['', '/ordenes', '/operacion', '/tarifas', '/liquidaciones', '/cubicaje', '/pod', '/notificaciones', '/configuracion']) {
         console.log('Checking local screen', route || '/');
-        await app.goto(`http://localhost:3001/dashboard/transporte${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
+        await app.goto(`${webBase}/dashboard/transporte${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
         check(`local app ${route || '/'}: authenticated`, !app.url().includes('/login'));
         const plain = await app.$$eval('select:not([aria-hidden=true]):not([aria-label=Idioma])', nodes => nodes.map(node => ({ name: node.name, label: node.getAttribute('aria-label'), className: node.className })));
         if (plain.length) console.log('Plain selects', route || '/', plain);

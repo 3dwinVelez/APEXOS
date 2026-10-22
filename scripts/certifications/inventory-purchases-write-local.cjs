@@ -1,8 +1,9 @@
 // Real local persistence certification. No remote DB, mocked responses or business records reused.
+const { certEnv } = require('./local-certification-env.cjs');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto'),assert=require('node:assert/strict'),{execFileSync}=require('node:child_process');
-const root=path.resolve(__dirname,'../..');require('../load-env')(path.join(root,'.env'));
-assert.ok(['localhost','127.0.0.1'].includes(new URL(process.env.DATABASE_URL).hostname),'LOCAL_DATABASE_REQUIRED');
-Object.assign(process.env,{NODE_ENV:'test',JWT_SECRET:crypto.randomBytes(32).toString('hex'),DISABLE_REDIS:'true',REDIS_DISABLED:'true',DISABLE_BACKGROUND_WORKERS:'true'});
+const root=path.resolve(__dirname,'../..');
+assert.ok(['localhost','127.0.0.1'].includes(new URL(certEnv.DATABASE_URL).hostname),'LOCAL_DATABASE_REQUIRED');
+Object.assign(process.env,certEnv,{NODE_ENV:'test',JWT_SECRET:crypto.randomBytes(32).toString('hex'),DISABLE_REDIS:'true',REDIS_DISABLED:'true',DISABLE_BACKGROUND_WORKERS:'true'});
 const output=fs.mkdtempSync(path.join(os.tmpdir(),'apex-inventory-purchases-write-')),run=crypto.randomBytes(5).toString('hex'),password=crypto.randomBytes(18).toString('hex');
 const evidence={environment:'LOCAL',head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),checks:[],screenshots:[]};let app,db,base;
 function check(name,result){evidence.checks.push({name,passed:!!result});assert.ok(result,name);console.log('PASS',name);}

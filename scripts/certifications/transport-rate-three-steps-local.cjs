@@ -1,4 +1,5 @@
 // Creates and versions one clearly identified QA tariff, exclusively on localhost.
+const { apiBase, webBase } = require('./local-certification-env.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const puppeteer = require('puppeteer-core');
@@ -7,19 +8,19 @@ const code = `QA-3STEP-${Date.now()}`;
 const checks = [];
 const check = (name, result) => { assert.ok(result, name); checks.push(name); };
 async function main() {
-  const session = await (await fetch('http://localhost:3000/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: process.env.LOCAL_TMS_EMAIL || 'demo@apex.local', password: process.env.LOCAL_TMS_PASSWORD || 'test1234' }) })).json();
+  const session = await (await fetch(apiBase + '/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: process.env.LOCAL_TMS_EMAIL || 'demo@apex.local', password: process.env.LOCAL_TMS_PASSWORD || 'test1234' }) })).json();
   assert.ok(session.token);
   const headers = { authorization: `Bearer ${session.token}` };
-  const list = async () => (await (await fetch('http://localhost:3000/api/v1/transport/rate-cards?include_inactive=true&limit=500', { headers })).json()).filter(row => row.code === code);
+  const list = async () => (await (await fetch(apiBase + '/api/v1/transport/rate-cards?include_inactive=true&limit=500', { headers })).json()).filter(row => row.code === code);
   const browser = await puppeteer.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1000 });
     await page.setRequestInterception(true);
-    page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1'].includes(url.hostname)) request.abort(); else request.continue(); });
-    await page.goto('http://localhost:3001/login', { waitUntil: 'domcontentloaded' });
+    page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1'].includes(url.hostname)) request.abort(); else if (url.pathname.startsWith('/api/v1/')) request.continue({ url: apiBase + url.pathname + url.search }); else if (['http:', 'https:'].includes(url.protocol) && ![apiBase, webBase].includes(url.origin)) request.abort(); else request.continue(); });
+    await page.goto(webBase + '/login', { waitUntil: 'domcontentloaded' });
     await page.evaluate(data => { const values = { token: data.token, auth_provider: 'local', user_email: data.user.email, role_name: data.user.role, apexos_company_role: data.user.role, apexos_company_id: data.tenant.company_id || data.tenant.id, tenant_active_modules: JSON.stringify(data.tenant.active_modules), role_permissions: JSON.stringify(data.user.role_permissions || []), role_metadata: JSON.stringify(data.user.role_metadata || {}), apex_theme: 'dark' }; for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value); }, session);
-    await page.goto('http://localhost:3001/dashboard/transporte/tarifas', { waitUntil: 'networkidle2' });
+    await page.goto(webBase + '/dashboard/transporte/tarifas', { waitUntil: 'networkidle2' });
     async function click(text) { await page.waitForFunction(t=>[...document.querySelectorAll('button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text); for (const button of await page.$$('button')) if (await button.evaluate((node, text) => node.textContent.trim() === text, text)) { await button.click(); return; } throw new Error(`Missing button ${text}`); }
     async function fill(name, value) { await page.$eval(`input[name="${name}"]`, (node, value) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(node, value); node.dispatchEvent(new Event('input', { bubbles: true })); }, value); }
     async function step(number) {

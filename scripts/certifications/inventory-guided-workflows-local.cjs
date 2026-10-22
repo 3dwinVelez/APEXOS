@@ -1,22 +1,23 @@
 // Local UI audit/certification. Business writes are blocked; no stock or accounting mutation.
+const { apiBase, webBase } = require('./local-certification-env.cjs');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto'),assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process'),puppeteer=require('puppeteer-core');
 const output=fs.mkdtempSync(path.join(os.tmpdir(),'apex-inventory-guided-'));
 const evidence={environment:'LOCAL_DESARROLLO',head:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),checks:[],screenshots:[]};
 function check(name,result){evidence.checks.push({name,passed:Boolean(result)});assert.ok(result,name);console.log('PASS',name);}
 async function main(){
- const login=await fetch('http://localhost:3000/api/v1/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:process.env.LOCAL_TMS_EMAIL||'demo@apex.local',password:process.env.LOCAL_TMS_PASSWORD||'test1234'})});assert.equal(login.status,200);const session=await login.json();const headers={authorization:`Bearer ${session.token}`};
- const items=(await(await fetch('http://localhost:3000/api/v1/inventory/items?all=true',{headers})).json()).data;assert.ok(items.length);
- const costHttp=await fetch('http://localhost:3000/api/v1/inventory/costs?all=true',{headers});const costResponse=await costHttp.json();assert.ok(costHttp.ok,'cost API '+costHttp.status+': '+(costResponse.message||costResponse.error||''));
- const families=await(await fetch('http://localhost:3000/api/v1/inventory/families?active=all',{headers})).json();
+ const login=await fetch(apiBase+'/api/v1/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:process.env.LOCAL_TMS_EMAIL||'demo@apex.local',password:process.env.LOCAL_TMS_PASSWORD||'test1234'})});assert.equal(login.status,200);const session=await login.json();const headers={authorization:`Bearer ${session.token}`};
+ const items=(await(await fetch(apiBase+'/api/v1/inventory/items?all=true',{headers})).json()).data;assert.ok(items.length);
+ const costHttp=await fetch(apiBase+'/api/v1/inventory/costs?all=true',{headers});const costResponse=await costHttp.json();assert.ok(costHttp.ok,'cost API '+costHttp.status+': '+(costResponse.message||costResponse.error||''));
+ const families=await(await fetch(apiBase+'/api/v1/inventory/families?active=all',{headers})).json();
  const browser=await puppeteer.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
  try{
   const page=await browser.newPage();const mutations=[],runtimeErrors=[];
   page.on('pageerror',error=>runtimeErrors.push(error.message));
   await page.setViewport({width:1440,height:1000});await page.setRequestInterception(true);
-  page.on('request',request=>{const url=new URL(request.url());if(['http:','https:'].includes(url.protocol)&&!['localhost','127.0.0.1'].includes(url.hostname))request.abort();else if(url.pathname.startsWith('/api/v1/')&&!['GET','OPTIONS'].includes(request.method())){mutations.push(url.pathname);request.abort();}else request.continue();});
+  page.on('request',request=>{const url=new URL(request.url());if(['http:','https:'].includes(url.protocol)&&!['localhost','127.0.0.1'].includes(url.hostname))request.abort();else if(url.pathname.startsWith('/api/v1/')&&!['GET','OPTIONS'].includes(request.method())){mutations.push(url.pathname);request.abort();}else if(url.pathname.startsWith('/api/v1/'))request.continue({url:apiBase+url.pathname+url.search});else if(['http:','https:'].includes(url.protocol)&&![apiBase,webBase].includes(url.origin))request.abort();else request.continue();});
   await page.evaluateOnNewDocument(data=>{const values={token:data.token,auth_provider:'local',user_email:data.user.email,role_name:data.user.role,apexos_company_role:data.user.role,apexos_company_id:data.tenant.company_id||data.tenant.id,tenant_active_modules:JSON.stringify(data.tenant.active_modules),role_permissions:JSON.stringify(data.user.role_permissions||[]),role_metadata:JSON.stringify(data.user.role_metadata||{}),apex_theme:'dark'};for(const[key,value]of Object.entries(values))localStorage.setItem(key,value);},session);
-  const go=async route=>{await page.goto('http://localhost:3001/dashboard/inventario'+route,{waitUntil:'networkidle2',timeout:60000});await page.waitForSelector('.inventory-workspace');await page.waitForSelector('.inventory-workspace h1',{visible:true,timeout:30000});};
+  const go=async route=>{await page.goto(webBase+'/dashboard/inventario'+route,{waitUntil:'networkidle2',timeout:60000});await page.waitForSelector('.inventory-workspace');await page.waitForSelector('.inventory-workspace h1',{visible:true,timeout:30000});};
   const click=async(text,scope='body')=>{await page.waitForFunction((t,s)=>[...document.querySelectorAll(s+' button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text,scope);for(const node of await page.$$(`${scope} button`))if(await node.evaluate((n,t)=>n.textContent.trim()===t&&n.getClientRects().length>0,text)){await node.click();return;}throw Error('Missing button '+text);};
   const fill=async(selector,value)=>{await page.$eval(selector,(node,value)=>{Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(node,value);node.dispatchEvent(new Event('input',{bubbles:true}));},value);};
   const shot=async name=>{const file=path.join(output,name+'.png');await page.screenshot({path:file});evidence.screenshots.push(file);};

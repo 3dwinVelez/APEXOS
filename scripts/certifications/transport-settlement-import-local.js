@@ -3,9 +3,9 @@ const fs = require("node:fs"), path = require("node:path"), os = require("node:o
 const assert = require("node:assert/strict");
 const { execFileSync } = require("node:child_process");
 const root = path.resolve(__dirname, "../..");
-require("../load-env")(path.join(root, ".env"));
-if (!["localhost", "127.0.0.1"].includes(new URL(process.env.DATABASE_URL).hostname)) throw Error("Certificación restringida a PostgreSQL local.");
-Object.assign(process.env, { NODE_ENV: "test", DISABLE_REDIS: "true", REDIS_DISABLED: "true", DISABLE_BACKGROUND_WORKERS: "true", JWT_SECRET: crypto.randomBytes(32).toString("hex") });
+const { certEnv } = require('./local-certification-env.cjs');
+if (!["localhost", "127.0.0.1"].includes(new URL(certEnv.DATABASE_URL).hostname)) throw Error("Certificación restringida a PostgreSQL local.");
+Object.assign(process.env, certEnv, { NODE_ENV: "test", DISABLE_REDIS: "true", REDIS_DISABLED: "true", DISABLE_BACKGROUND_WORKERS: "true", JWT_SECRET: crypto.randomBytes(32).toString("hex") });
 const output = fs.mkdtempSync(path.join(os.tmpdir(), "apex-settlement-import-"));
 const run = crypto.randomBytes(5).toString("hex"), password = "Local-Import-Cert-2026!";
 const checks = [];
