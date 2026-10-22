@@ -294,7 +294,7 @@ $apiPortBusy = Test-Port 3000
 $webPortBusy = Test-Port 3001
 $apiAlreadyRunning = $apiPortBusy -and (Test-HttpOk "http://localhost:3000/health")
 $webAlreadyRunning = $webPortBusy -and (Test-HttpOk "http://localhost:3001")
-if (($apiPortBusy -or $webPortBusy) -and -not ($apiAlreadyRunning -and $webAlreadyRunning)) {
+if (($apiPortBusy -and -not $apiAlreadyRunning) -or ($webPortBusy -and -not $webAlreadyRunning)) {
   $details = @()
   if ($apiPortBusy -and -not $apiAlreadyRunning) { $details += "Puerto 3000/API esta ocupado pero no responde salud local." }
   if ($webPortBusy -and -not $webAlreadyRunning) { $details += "Puerto 3001/Web esta ocupado pero no responde localmente." }
@@ -312,8 +312,12 @@ if ($LASTEXITCODE -ne 0) { Stop-Blocked "TypeScript fallo." }
 if (-not $CheckOnly -and -not $NoStart -and -not ($apiAlreadyRunning -and $webAlreadyRunning)) {
   Require-Command "docker"
   Start-LocalInfrastructure $repoRoot
-  Start-Terminal "APEXOS API - desarrollo" "npm run dev:api" $repoRoot
-  Start-Terminal "APEXOS WEB - desarrollo" "npm run dev:web" $repoRoot
+  if (-not $apiAlreadyRunning) {
+    Start-Terminal "APEXOS API - desarrollo" "npm run dev:api" $repoRoot
+  }
+  if (-not $webAlreadyRunning) {
+    Start-Terminal "APEXOS WEB - desarrollo" "npm run dev:web" $repoRoot
+  }
   Write-Host "Esperando que API y Web respondan..." -ForegroundColor Cyan
   $apiReady = Wait-HttpOk "http://localhost:3000/health"
   $webReady = Wait-HttpOk "http://localhost:3001/login"
