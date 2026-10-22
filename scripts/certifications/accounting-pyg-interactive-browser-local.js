@@ -64,6 +64,17 @@ const PERIOD_FEB = "2026-02";
 
 const screenshots = {};
 const shot = (name) => path.join(evidenceDir, `${name}-${suffix}.png`);
+const consoleLogs = [];
+const pageErrors = [];
+const failedRequests = [];
+const observedReports = [];
+const MAX_LOG_ENTRIES = 200;
+const MAX_TEXT_CHARS = 20000;
+
+function pushBounded(list, entry) {
+  list.push(entry);
+  if (list.length > MAX_LOG_ENTRIES) list.shift();
+}
 
 const SOURCE_FILES = {
   engine: "apps/api/src/modules/accounting/pyg-interactive.js",
@@ -284,6 +295,77 @@ function pygBudgetResponse(page, timeout = 60000) {
     const url = new URL(response.url());
     return url.pathname.endsWith("/api/v1/accounting/reports/pyg-interactive/budgets") && response.request().method() === "PUT";
   }, { timeout });
+}
+
+function attachDiagnostics(page) {
+  page.on("console", (message) => {
+    const type = message.type();
+    if (!["error", "warning", "warn"].includes(type)) return;
+    pushBounded(consoleLogs, { at: new Date().toISOString(), type, text: message.text().slice(0, 2000), url: page.url() });
+  });
+  page.on("pageerror", (error) => {
+    pushBounded(pageErrors, { at: new Date().toISOString(), message: String(error?.message || error).slice(0, 4000), stack: String(error?.stack || "").slice(0, 8000), url: page.url() });
+  });
+  page.on("requestfailed", (request) => {
+    pushBounded(failedRequests, { at: new Date().toISOString(), method: request.method(), url: request.url().slice(0, 2000), error: request.failure()?.errorText || "" });
+  });
+  page.on("response", (response) => {
+    const url = response.url();
+    if (!url.includes("/api/v1/accounting/reports/pyg-interactive")) return;
+    const request = response.request();
+    pushBounded(observedReports, {
+      at: new Date().toISOString(), method: request.method(), status: response.status(),
+      cache_control: response.headers()["cache-control"] || "", url: url.slice(0, 2000)
+    });
+  });
+}
+
+async function snapshotBrowserState(page, label) {
+  const captured = { label, at: new Date().toISOString(), url: null, title: null, screenshot: null, text_file: null, text: null, text_truncated: false, markers: null, matrix_probe: null, counts: null, error: null };
+  try { captured.url = page.url(); } catch (error) { captured.error = String(error?.message || error); }
+  try {
+    const file = shot(label);
+    await page.screenshot({ path: file, fullPage: false });
+    screenshots[label] = relative(file);
+    captured.screenshot = relative(file);
+  } catch (error) { captured.error = `${captured.error ? `${captured.error} | ` : ""}screenshot: ${String(error?.message || error)}`; }
+  try {
+    captured.title = await page.title();
+    const text = await page.$eval("body", (body) => body.innerText);
+    captured.text_truncated = text.length > MAX_TEXT_CHARS;
+    captured.text = text.slice(0, MAX_TEXT_CHARS);
+    const textFile = path.join(evidenceDir, `${label}-${suffix}.txt`);
+    fs.writeFileSync(textFile, text);
+    captured.text_file = relative(textFile);
+  } catch (error) { captured.error = `${captured.error ? `${captured.error} | ` : ""}text: ${String(error?.message || error)}`; }
+  try {
+    captured.markers = await page.evaluate(() => {
+      const text = document.body.innerText;
+      const matches = (needle) => text.includes(needle);
+      return {
+        view_contable: matches("Contable · PUC"), header_pyg_contable: matches("PYG Contable · PUC"),
+        tab_matriz: matches("Matriz interactiva"),
+        kpi_utilidad_neta: matches("Utilidad neta"),
+        kpi_utilidad_neta_case_insensitive: text.toLocaleLowerCase("es").includes("utilidad neta"),
+        cargando: matches("Construyendo la matriz contable"), vacio: matches("Sin movimiento contable"),
+        kpi_ingresos: matches("Ingresos"), boton_actualizar: matches("Actualizar")
+      };
+    });
+  } catch (error) { captured.error = `${captured.error ? `${captured.error} | ` : ""}markers: ${String(error?.message || error)}`; }
+  try {
+    captured.matrix_probe = await page.evaluate((period) => ({
+      heading_period: document.body.innerText.includes(`Matriz mensual · ${period}`),
+      tabs: [...document.querySelectorAll("button")].map((button) => (button.textContent || "").trim()).filter(Boolean).slice(0, 80),
+      h1: [...document.querySelectorAll("h1")].map((node) => (node.textContent || "").trim()),
+      h2: [...document.querySelectorAll("h2")].map((node) => (node.textContent || "").trim()).slice(0, 40),
+      main_view_buttons: [...document.querySelectorAll('nav[aria-label="Vista del PYG"] button')].map((button) => ({ text: (button.textContent || "").trim(), selected: button.className.includes("bg-apex") })),
+      month_inputs: [...document.querySelectorAll('input[type="month"]')].map((input) => input.value),
+      table_rows: document.querySelectorAll("table tbody tr").length,
+      alert_regions: [...document.querySelectorAll('[role="alert"]')].map((node) => (node.textContent || "").trim().slice(0, 500)).slice(0, 20)
+    }), PERIOD);
+  } catch (error) { captured.error = `${captured.error ? `${captured.error} | ` : ""}matrix_probe: ${String(error?.message || error)}`; }
+  captured.counts = { console: consoleLogs.length, page_errors: pageErrors.length, failed_requests: failedRequests.length, pyg_reports: observedReports.length };
+  return captured;
 }
 
 function moneyText(value) {
@@ -646,9 +728,12 @@ async function main() {
   // ---- Fase de navegador real ----
   let browser = null;
   let page = null;
+  let browserPhase = null;
+  const browserDiagnostics = { console: consoleLogs, page_errors: pageErrors, failed_requests: failedRequests, pyg_report_requests: observedReports, snapshots: [] };
   try {
     browser = await puppeteer.launch({ executablePath: browserPath, headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"] });
     page = await browser.newPage();
+    attachDiagnostics(page);
     await page.setViewport({ width: 1440, height: 900 });
     page.setDefaultTimeout(20000);
     page.setDefaultNavigationTimeout(60000);
@@ -660,7 +745,12 @@ async function main() {
     const firstResponse = await firstReport;
     check("browser_report_served_no_store", firstResponse.status() === 200 && String(firstResponse.headers()["cache-control"] || "").includes("no-store"), { status: firstResponse.status(), cache_control: firstResponse.headers()["cache-control"] });
 
-    await page.waitForFunction(() => document.body.innerText.includes("PYG Contable · PUC") && document.body.innerText.includes("Matriz interactiva") && document.body.innerText.includes("Utilidad neta"), { timeout: 45000 });
+    browserPhase = "matrix_labels_after_first_response";
+    const afterFirstResponse = await snapshotBrowserState(page, "diag-after-first-response");
+    browserDiagnostics.snapshots.push(afterFirstResponse);
+
+    // KPI "Utilidad neta" se renderiza con clase uppercase: innerText es "UTILIDAD NETA".
+    await page.waitForFunction(() => document.body.innerText.includes("PYG Contable · PUC") && document.body.innerText.includes("Matriz interactiva") && document.body.innerText.toLocaleLowerCase("es").includes("utilidad neta"), { timeout: 45000 });
     await clickButton(page, "Expandir todo");
     await page.waitForFunction((code) => document.body.innerText.includes(code), { timeout: 30000 }, income.code);
     const pageText = await page.$eval("body", (body) => body.innerText);
@@ -831,12 +921,23 @@ async function main() {
     screenshots.matrix_responsive = relative(shot("pyg-matrix-responsive"));
 
     check("screenshots_captured", Object.values(screenshots).every((file) => fs.existsSync(path.join(root, file)) && fs.statSync(path.join(root, file)).size > 0), { screenshots });
+    browserPhase = "completed";
+  } catch (error) {
+    browserPhase = browserPhase || "browser_phase";
+    if (page) {
+      await snapshotBrowserState(page, `diag-failure-${browserPhase}`)
+        .then((snapshot) => browserDiagnostics.snapshots.push(snapshot))
+        .catch((snapshotError) => { browserDiagnostics.snapshot_error = String(snapshotError?.stack || snapshotError); });
+    }
+    error.browserDiagnostics = browserDiagnostics;
+    error.failureCheckpoint = browserPhase;
+    throw error;
   } finally {
     if (browser) await browser.close().catch(() => undefined);
   }
 
   await db.$disconnect().catch(() => undefined);
-  return { tenant_a: tenantA.tenantId, tenant_b: tenantB.tenantId, accounts: { income: income.code, expense: expense.code, cost6: cost6.code, cost7: cost7.code }, screenshots };
+  return { tenant_a: tenantA.tenantId, tenant_b: tenantB.tenantId, accounts: { income: income.code, expense: expense.code, cost6: cost6.code, cost7: cost7.code }, screenshots, browser_diagnostics: browserDiagnostics };
 }
 
 function sectionByKeyOf(report) {
@@ -864,6 +965,7 @@ function writeEvidence(status, payload, sources) {
       "Registro permite nuevos tenants aislados; ejecutar desde la raiz del repositorio."
     ],
     checks,
+    browser_diagnostics: { console: consoleLogs, page_errors: pageErrors, failed_requests: failedRequests, pyg_report_requests: observedReports },
     ...payload
   };
   fs.mkdirSync(evidenceDir, { recursive: true });
@@ -877,5 +979,11 @@ main()
   .catch(async (error) => {
     await db.$disconnect().catch(() => undefined);
     const sources = (() => { try { return collectSources(); } catch { return {}; } })();
-    writeEvidence("failed", { error: String(error?.stack || error), screenshots }, sources);
+    const diagnostics = error?.browserDiagnostics || { console: consoleLogs, page_errors: pageErrors, failed_requests: failedRequests, pyg_report_requests: observedReports, snapshots: [] };
+    writeEvidence("failed", {
+      error: String(error?.stack || error),
+      failure_checkpoint: error?.failureCheckpoint || null,
+      screenshots,
+      browser_diagnostics: diagnostics
+    }, sources);
   });
