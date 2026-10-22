@@ -13,7 +13,6 @@ const GROUPS = [
     href: "/dashboard/inventario/productos",
     items: [
       { href: "/dashboard/inventario/productos", label: "Productos" },
-      { href: "/dashboard/inventario/productos/nuevo", label: "Nuevo producto" },
       { href: "/dashboard/inventario/familias", label: "Familias" },
       { href: "/dashboard/inventario/clasificaciones", label: "Clasificación" },
       { href: "/dashboard/inventario/bodegas", label: "Bodegas" }
@@ -48,11 +47,11 @@ function isActive(pathname: string, href: string) {
 
 export function InventoryNav() {
   const pathname = usePathname();
-  const activeGroup = GROUPS.find((group) => group.items.some((item) => isActive(pathname, item.href))) || GROUPS[0];
+  const activeGroup = GROUPS.find((group) => group.items.some((item) => isActive(pathname, item.href))) || (pathname === "/dashboard/inventario/reportes" ? GROUPS[2] : GROUPS[0]);
 
   return (
     <nav aria-label="Navegación de inventario" className="mb-4 space-y-3">
-      <div className="grid gap-2 sm:grid-cols-4" role="tablist" aria-label="Dominios de inventario">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="tablist" aria-label="Dominios de inventario">
         {GROUPS.map((group) => {
           const active = group.id === activeGroup.id;
           return (
@@ -73,7 +72,7 @@ export function InventoryNav() {
         })}
       </div>
 
-      <details className="group rounded-card border border-line bg-surface p-2 sm:hidden" open>
+      {activeGroup.items.length > 1 ? <><details className="group rounded-card border border-line bg-surface p-2 sm:hidden">
         <summary className="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-sm font-semibold text-content-strong">
           {activeGroup.label}
           <ChevronDown className="transition group-open:rotate-180" size={16} />
@@ -83,16 +82,17 @@ export function InventoryNav() {
 
       <div className="hidden rounded-card border border-line bg-surface p-2 sm:block">
         <InventorySubnav pathname={pathname} items={activeGroup.items} />
-      </div>
+      </div></> : null}
     </nav>
   );
 }
 
 function InventorySubnav({ pathname, items }: { pathname: string; items: ReadonlyArray<{ href: string; label: string }> }) {
+  const activeHref = items.filter(item => isActive(pathname, item.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
   return (
     <div className="flex flex-wrap gap-2" aria-label="Funciones del dominio activo">
       {items.map((item) => {
-        const active = isActive(pathname, item.href);
+        const active = item.href === activeHref;
         return (
           <Link
             aria-current={active ? "page" : undefined}

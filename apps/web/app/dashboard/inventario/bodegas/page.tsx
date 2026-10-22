@@ -1,12 +1,16 @@
 "use client";
+import { InventorySearchSelect } from "@/components/inventory-ui";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Building2, Pencil, Plus, Search, Trash2, Warehouse } from "lucide-react";
 import { api } from "@/lib/api";
+import { loadModuleAccess } from "@/lib/moduleAccess";
+import { MODULES } from "@/lib/modules";
+import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { InventoryNav } from "@/components/inventory-nav";
+import { InventoryGuidedForm } from "@/components/inventory-workflow";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { LATAM_COUNTRIES } from "@/lib/latam";
-import { Button } from "@/components/ui/button";
 import { showToast } from "@/components/system/ToastCenter";
 
 type Society = { code: string; name: string; active: boolean };
@@ -68,10 +72,12 @@ export default function WarehousesPage() {
     setLoading(true);
     setError("");
     try {
+      const salesAccess = await loadModuleAccess(MODULES);
+      const canReadCustomers = Boolean(salesAccess.bySlug.ventas) && hasStoredRolePermission("sales", "read");
       const [warehouseRows, orgTree, customerRows, masters] = await Promise.all([
         api<WarehouseRow[]>("/api/v1/inventory/warehouses?active=all"),
         api<OrganizationTree>("/api/v1/accounting/organization-tree"),
-        api<Customer[]>("/api/v1/sales/customers"),
+        canReadCustomers ? api<Customer[]>("/api/v1/sales/customers") : Promise.resolve([] as Customer[]),
         api<{locations:LocationMaster[]}>("/api/v1/accounting/third-party-masters")
       ]);
       setWarehouses(warehouseRows || []);
@@ -181,7 +187,7 @@ export default function WarehousesPage() {
         <div>
           <p className="text-sm font-medium text-apex">Inventario</p>
           <h1 className="text-3xl font-semibold">Maestro de bodegas</h1>
-          <p className="mt-1 text-sm text-neutral-600">Administra bodegas propias o en consignacion enlazadas a sociedad, sucursal y centro de costo.</p>
+          <p className="mt-1 text-sm text-content-body">Administra bodegas propias o en consignacion enlazadas a sociedad, sucursal y centro de costo.</p>
         </div>
         <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-medium text-white" onClick={openCreate} type="button">
           <Plus size={16} /> Nueva bodega
@@ -198,11 +204,11 @@ export default function WarehousesPage() {
         <Metric icon={Building2} label="Consignacion" value={stats.consignment} />
       </section>
 
-      <section className="rounded-md border border-line bg-white">
+      <section className="rounded-md border border-line bg-surface">
         <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
           <h2 className="text-base font-semibold">Bodegas registradas</h2>
           <label className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-2.5 text-neutral-400" size={16} />
+            <Search className="absolute left-3 top-2.5 text-content-muted" size={16} />
             <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar codigo, sociedad, ciudad..." value={query} onChange={(event) => setQuery(event.target.value)} />
           </label>
         </div>
@@ -210,18 +216,18 @@ export default function WarehousesPage() {
           {filtered.map((row) => (
             <article className="rounded-md border border-line bg-paper/40 p-4" key={row.id}>
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0"><p className="font-mono text-xs text-neutral-500">{row.code}</p><h3 className="font-medium">{row.name}</h3><p className="text-xs text-neutral-500">{[row.city, row.address].filter(Boolean).join(" · ") || "Sin direccion"}</p></div>
-                <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium ${row.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{row.active ? "Activa" : "Inactiva"}</span>
+                <div className="min-w-0"><p className="font-mono text-xs text-content-muted">{row.code}</p><h3 className="font-medium">{row.name}</h3><p className="text-xs text-content-muted">{[row.city, row.address].filter(Boolean).join(" · ") || "Sin direccion"}</p></div>
+                <span className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium ${row.active ? "bg-emerald-50 text-emerald-700" : "bg-surface-muted text-content-body"}`}>{row.active ? "Activa" : "Inactiva"}</span>
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <div><dt className="text-neutral-500">Tipo</dt><dd>{row.warehouse_type_label}</dd></div>
-                <div><dt className="text-neutral-500">Sociedad</dt><dd className="font-mono text-xs">{row.society_code}</dd></div>
-                <div><dt className="text-neutral-500">Sucursal</dt><dd className="font-mono text-xs">{row.branch_code}</dd></div>
-                <div><dt className="text-neutral-500">Ubicaciones</dt><dd>{row.locations_count}</dd></div>
+                <div><dt className="text-content-muted">Tipo</dt><dd>{row.warehouse_type_label}</dd></div>
+                <div><dt className="text-content-muted">Sociedad</dt><dd className="font-mono text-xs">{row.society_code}</dd></div>
+                <div><dt className="text-content-muted">Sucursal</dt><dd className="font-mono text-xs">{row.branch_code}</dd></div>
+                <div><dt className="text-content-muted">Ubicaciones</dt><dd>{row.locations_count}</dd></div>
               </dl>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-white text-sm" onClick={() => openEdit(row)} type="button"><Pencil size={14} /> Editar</button>
-                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-rose-200 bg-white text-sm text-rose-700 disabled:opacity-50" disabled={saving} onClick={() => remove(row)} type="button"><Trash2 size={14} /> Borrar</button>
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-surface text-sm" onClick={() => openEdit(row)} type="button"><Pencil size={14} /> Editar</button>
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-rose-200 bg-surface text-sm text-rose-700 disabled:opacity-50" disabled={saving} onClick={() => remove(row)} type="button"><Trash2 size={14} /> Borrar</button>
               </div>
             </article>
           ))}
@@ -229,7 +235,7 @@ export default function WarehousesPage() {
         <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-line text-left text-xs uppercase text-neutral-500">
+              <tr className="border-b border-line text-left text-xs uppercase text-content-muted">
                 <th className="px-4 py-3">Codigo</th>
                 <th className="px-4 py-3">Bodega</th>
                 <th className="px-4 py-3">Tipo</th>
@@ -243,14 +249,14 @@ export default function WarehousesPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr><td className="px-4 py-6 text-neutral-500" colSpan={10}>Cargando...</td></tr> : null}
-              {!loading && !filtered.length ? <tr><td className="px-4 py-6 text-neutral-500" colSpan={10}>No hay bodegas registradas.</td></tr> : null}
+              {loading ? <tr><td className="px-4 py-6 text-content-muted" colSpan={10}>Cargando...</td></tr> : null}
+              {!loading && !filtered.length ? <tr><td className="px-4 py-6 text-content-muted" colSpan={10}>No hay bodegas registradas.</td></tr> : null}
               {filtered.map((row) => (
                 <tr className="border-b border-line/70 last:border-0" key={row.id}>
                   <td className="px-4 py-3 font-mono text-xs">{row.code}</td>
                   <td className="px-4 py-3">
                     <p className="font-medium">{row.name}</p>
-                    <p className="text-xs text-neutral-500">{[row.city, row.address].filter(Boolean).join(" · ") || "Sin direccion"}</p>
+                    <p className="text-xs text-content-muted">{[row.city, row.address].filter(Boolean).join(" · ") || "Sin direccion"}</p>
                   </td>
                   <td className="px-4 py-3">{row.warehouse_type_label}</td>
                   <td className="px-4 py-3">{row.consignment_customer_name || "-"}</td>
@@ -259,16 +265,16 @@ export default function WarehousesPage() {
                   <td className="px-4 py-3 font-mono text-xs">{row.cost_center_code}</td>
                   <td className="px-4 py-3">{row.locations_count}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-md px-2 py-1 text-xs font-medium ${row.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
+                    <span className={`rounded-md px-2 py-1 text-xs font-medium ${row.active ? "bg-emerald-50 text-emerald-700" : "bg-surface-muted text-content-body"}`}>
                       {row.active ? "Activa" : "Inactiva"}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
-                      <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white hover:bg-paper" onClick={() => openEdit(row)} type="button" aria-label="Editar bodega">
+                      <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-paper" onClick={() => openEdit(row)} type="button" aria-label="Editar bodega">
                         <Pencil size={14} />
                       </button>
-                      <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 bg-white text-rose-700 hover:bg-rose-50 disabled:opacity-50" disabled={saving} onClick={() => remove(row)} type="button" aria-label="Borrar bodega">
+                      <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-rose-200 bg-surface text-rose-700 hover:bg-rose-50 disabled:opacity-50" disabled={saving} onClick={() => remove(row)} type="button" aria-label="Borrar bodega">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -281,9 +287,8 @@ export default function WarehousesPage() {
       </section>
 
       {modalOpen ? (
-        <ModalFrame title={form.id ? "Editar bodega" : "Nueva bodega"} onClose={() => setModalOpen(false)} maxWidth="md:max-w-3xl">
-          <form className="space-y-4" onSubmit={save}>
-            <div className="grid gap-3 md:grid-cols-2">
+        <ModalFrame title={form.id ? "Editar bodega" : "Nueva bodega"} onClose={() => { if (!saving) setModalOpen(false); }} maxWidth="md:!max-w-3xl">
+          <InventoryGuidedForm key={form.id || "new"} busy={saving} error={error} onSubmit={save} onCancel={() => setModalOpen(false)} submitLabel="Guardar bodega" steps={[{ title: "Datos de la bodega", description: "Identifique el almacén, su ubicación y el tipo de operación.", content: <>            <div className="grid gap-3 md:grid-cols-2">
               <label className="text-sm">Codigo
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm uppercase" value={form.code} onChange={(event) => setForm((current) => ({ ...current, code: event.target.value.toUpperCase() }))} required />
               </label>
@@ -291,63 +296,59 @@ export default function WarehousesPage() {
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} required />
               </label>
               <label className="text-sm">Tipo de bodega
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.warehouse_type} onChange={(event) => setForm((current) => ({ ...current, warehouse_type: event.target.value as WarehouseType }))} required>
+                <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.warehouse_type} onChange={(event) => setForm((current) => ({ ...current, warehouse_type: event.target.value as WarehouseType }))} required>
                   <option value="owned">Propia</option>
                   <option value="consignment">Consignacion</option>
-                </select>
+                </InventorySearchSelect>
               </label>
               <label className="text-sm">Pais
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value,city:"" }))}>{LATAM_COUNTRIES.map(row=><option key={row.code} value={row.code}>{row.name}</option>)}</select>
+                <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.country} onChange={(event) => setForm((current) => ({ ...current, country: event.target.value,city:"" }))}>{LATAM_COUNTRIES.map(row=><option key={row.code} value={row.code}>{row.name}</option>)}</InventorySearchSelect>
               </label>
               {form.warehouse_type === "consignment" ? (
                 <label className="text-sm">Cliente propietario
-                  <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.consignment_customer_id} onChange={(event) => setForm((current) => ({ ...current, consignment_customer_id: Number(event.target.value) }))} required>
-                    <option value={0}>Seleccionar cliente</option>
+                  <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.consignment_customer_id || ""} onChange={(event) => setForm((current) => ({ ...current, consignment_customer_id: Number(event.target.value) }))} required>
+                    <option value="">Seleccionar cliente</option>
                     {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.legal_name || customer.name}{customer.tax_id ? ` (${customer.tax_id})` : ""}</option>)}
-                  </select>
+                  </InventorySearchSelect>
                 </label>
               ) : null}
               <label className="text-sm">Ciudad
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}><option value="">Seleccionar</option>{locations.map(row=><option key={row.dane_code} value={row.city}>{row.city} - {row.department}</option>)}</select>
+                <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.city} onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}><option value="">Seleccionar</option>{locations.map(row=><option key={row.dane_code} value={row.city}>{row.city} - {row.department}</option>)}</InventorySearchSelect>
               </label>
               <label className="text-sm">Direccion
                 <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.address} onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))} />
               </label>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
+</> }, { title: "Unidad contable", description: "Asigne sociedad, sucursal y centro de costos. Revise la relación antes de guardar.", content: <>            <div className="grid gap-3 md:grid-cols-3">
               <label className="text-sm">Sociedad
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.society_code} onChange={(event) => setForm((current) => ({ ...current, society_code: event.target.value, branch_code: "", cost_center_code: "" }))} required>
+                <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.society_code} onChange={(event) => setForm((current) => ({ ...current, society_code: event.target.value, branch_code: "", cost_center_code: "" }))} required>
                   <option value="">Seleccionar</option>
                   {activeSocieties.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.name}</option>)}
-                </select>
+                </InventorySearchSelect>
               </label>
               <label className="text-sm">Sucursal
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.branch_code} onChange={(event) => setForm((current) => ({ ...current, branch_code: event.target.value, cost_center_code: "" }))} required>
+                <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.branch_code} onChange={(event) => setForm((current) => ({ ...current, branch_code: event.target.value, cost_center_code: "" }))} required>
                   <option value="">Seleccionar</option>
                   {activeBranches.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.name}</option>)}
-                </select>
+                </InventorySearchSelect>
               </label>
               <label className="text-sm">Centro de costo
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.cost_center_code} onChange={(event) => setForm((current) => ({ ...current, cost_center_code: event.target.value }))} required>
+                <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.cost_center_code} onChange={(event) => setForm((current) => ({ ...current, cost_center_code: event.target.value }))} required>
                   <option value="">Seleccionar</option>
                   {activeCostCenters.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.name}</option>)}
-                </select>
+                </InventorySearchSelect>
               </label>
             </div>
 
             <label className="block text-sm">Estado
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.active ? "true" : "false"} onChange={(event) => setForm((current) => ({ ...current, active: event.target.value === "true" }))}>
+              <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.active ? "true" : "false"} onChange={(event) => setForm((current) => ({ ...current, active: event.target.value === "true" }))}>
                 <option value="true">Activa</option>
                 <option value="false">Inactiva</option>
-              </select>
+              </InventorySearchSelect>
             </label>
 
-            <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <Button disabled={saving} onClick={() => setModalOpen(false)} type="button" variant="secondary">Cancelar</Button>
-              <Button loading={saving} type="submit">{saving ? "Guardando bodega…" : "Guardar"}</Button>
-            </div>
-          </form>
+</> }]} />
         </ModalFrame>
       ) : null}
     </div>
@@ -356,9 +357,9 @@ export default function WarehousesPage() {
 
 function Metric({ icon: Icon, label, value }: { icon: typeof Warehouse; label: string; value: number }) {
   return (
-    <div className="rounded-md border border-line bg-white p-3">
+    <div className="rounded-md border border-line bg-surface p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-neutral-500">{label}</p>
+        <p className="text-xs text-content-muted">{label}</p>
         <Icon size={15} className="text-apex" />
       </div>
       <p className="mt-1 text-2xl font-semibold">{value}</p>
