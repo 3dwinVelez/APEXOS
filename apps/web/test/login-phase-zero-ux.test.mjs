@@ -96,7 +96,7 @@ test("el feedback global ofrece toast accesible, cierre y reintento", () => {
 test("los ajustes de inventario bloquean doble envío y reintentan con la misma idempotencia", () => {
   const source = read("app/dashboard/inventario/ajustes/nuevo/page.tsx");
   assert.match(source, /if \(saving\) return/);
-  assert.match(source, /loading=\{saving\}/);
+  assert.match(source, /(?:loading|busy)=\{saving\}/);
   assert.match(source, /idempotency_key: idempotencyKey/);
   assert.match(source, /retry: \(\) => void submit\(idempotencyKey\)/);
   assert.match(source, /Ajuste contabilizado/);
@@ -105,7 +105,7 @@ test("los ajustes de inventario bloquean doble envío y reintentan con la misma 
 test("los traslados bloquean doble envío y reutilizan la idempotencia al reintentar", () => {
   const source = read("app/dashboard/inventario/traslados/nuevo/page.tsx");
   assert.match(source, /if \(saving\) return/);
-  assert.match(source, /loading=\{saving\}/);
+  assert.match(source, /(?:loading|busy)=\{saving\}/);
   assert.match(source, /idempotency_key: idempotencyKey/);
   assert.match(source, /createTransfer\(createAnother, idempotencyKey\)/);
   assert.match(source, /El stock salió de la bodega de origen y quedó en tránsito/);
@@ -125,7 +125,7 @@ test("el maestro de productos bloquea guardados simultáneos y comunica el resul
   const source = read("app/dashboard/inventario/productos/nuevo/page.tsx");
   assert.match(source, /if \(saving\) return/);
   assert.match(source, /if \(!selectedItem \|\| saving\) return/);
-  assert.match(source, /loading=\{saving\}/);
+  assert.match(source, /(?:loading|busy)=\{saving\}/);
   assert.match(source, /Producto creado/);
   assert.match(source, /Producto actualizado/);
   assert.match(source, /retry: \(\) => void updateSelectedItem\(patch\)/);
@@ -137,13 +137,13 @@ test("los maestros secundarios de inventario bloquean duplicados y notifican res
   const classifications = read("app/dashboard/inventario/clasificaciones/page.tsx");
   assert.match(families, /if \(saving\) return/);
   assert.match(families, /title: "Familia guardada"/);
-  assert.match(families, /loading=\{saving\}/);
+  assert.match(families, /(?:loading|busy)=\{saving\}/);
   assert.match(warehouses, /if \(saving\) return/);
   assert.match(warehouses, /title: "Bodega eliminada"/);
-  assert.match(warehouses, /loading=\{saving\}/);
+  assert.match(warehouses, /(?:loading|busy)=\{saving\}/);
   assert.match(classifications, /if \(saving\) return/);
   assert.match(classifications, /Clasificación actualizada/);
-  assert.match(classifications, /loading=\{saving\}/);
+  assert.match(classifications, /(?:loading|busy)=\{saving\}/);
 });
 
 test("compras y transporte ofrecen estados vacíos accionables", () => {

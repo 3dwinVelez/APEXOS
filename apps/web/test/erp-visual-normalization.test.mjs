@@ -35,7 +35,8 @@ test("la navegación diferencia acciones de alta y maestros fiscales activos", (
   const inventoryNav = read("apps/web/components/inventory-nav.tsx");
   const accountingNav = read("apps/web/components/contabilidad-nav.tsx");
   const salesNav = read("apps/web/components/ventas-nav.tsx");
-  assert.match(inventoryNav, /label: "Nuevo producto"/);
+  assert.doesNotMatch(inventoryNav, /label: "Nuevo producto"/);
+  assert.match(read("apps/web/app/dashboard/inventario/productos/page.tsx"), /Nuevo producto/);
   assert.match(inventoryNav, /label: "Maestros"/);
   assert.match(inventoryNav, /label: "Existencias"/);
   assert.match(inventoryNav, /label: "Movimientos"/);
@@ -109,12 +110,12 @@ test("compras elimina relleno y duplicidad sin retirar operaciones activas", () 
 
   assert.match(landing, /Herramientas activas de compras/);
   assert.match(landing, /<ActionCard/);
-  for (const href of ["/ordenes/nueva", "/ordenes/recibir", "/proveedores", "/facturas", "/importaciones", "/reportes/ordenes"]) {
+  for (const href of ["/ordenes", "/ordenes/recibir", "/proveedores", "/facturas", "/importaciones", "/reportes/ordenes"]) {
     assert.match(landing, new RegExp(href.replaceAll("/", "\\/")));
   }
   assert.doesNotMatch(landing, /ComprasNav|Workspaces principales|Panel operativo|Accion recomendada|Flujo conectado|<Kpi|<Step/);
 
-  for (const marker of ["Crear OC", "Ordenes", "Trazabilidad", "Guardar borrador", "Crear y aprobar", "/api/v1/purchases/orders"]) assert.match(order, new RegExp(marker.replaceAll("/", "\\/")));
+  for (const marker of ["Nueva orden", "Ver detalle", "Ver trazabilidad", "Guardar borrador", "Crear y aprobar", "/api/v1/purchases/orders"]) assert.match(order, new RegExp(marker.replaceAll("/", "\\/")));
   assert.doesNotMatch(order, /Centro de control|Plantillas rapidas|Pegar Excel|label="Importar"|assistantPanel/);
 
   for (const marker of ["Directorio", "Nuevo proveedor", "Crear proveedor", "Proveedor creado", "Categorias", "/api/v1/purchases/suppliers"]) assert.match(suppliers, new RegExp(marker.replaceAll("/", "\\/")));
