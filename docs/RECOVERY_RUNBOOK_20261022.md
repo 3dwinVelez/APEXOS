@@ -103,6 +103,28 @@ credenciales, rechaza redirecciones y no imprime cuerpos del proveedor. Un exit 
 solo acredita esas comprobaciones; siempre declara `complete_certification: false`.
 No ejecuta login, renovacion, escritura, aislamiento ni revocacion.
 
+## Compatibilidad de las rutas Services con claves nuevas
+
+Las rutas servidor de solicitudes publicas, monitor de ordenes y detalle de orden
+usaban `apikey: anonKey` con `Authorization: Bearer serviceRoleKey`. El gateway
+QA devuelve 401 cuando la segunda credencial es `sb_secret_`. Los accesos
+privilegiados deben enviar la credencial de servicio en ambas cabeceras; los
+accesos publicos y las sesiones de usuario conservan su credencial y token.
+
+La correccion local se valida mediante las funciones reales extraidas de las tres
+rutas y consultas de lectura contra Supabase QA:
+
+```powershell
+node --test scripts/test/recovery-route-probe.test.js
+node scripts/security/recovery-route-probe.js config/qa.env "$env:USERPROFILE\.codex\private\APEXOS_CREDENCIALES_RECUPERACION_2026-10-22\qa-route-compatibility.json"
+```
+
+Este probe no ejecuta los flujos de negocio, permisos y aislamiento completos ni
+certifica un despliegue WEB. Su resultado no autoriza promocion. La rama local
+`desarrollo` contiene otros cambios ajenos a la recuperacion frente a
+`origin/develop`; nunca fusionar toda la rama para publicar estas tres lineas.
+Preparar el candidato puntual contra el commit remoto vigente y certificarlo.
+
 Antes de publicar cambios deben existir certificaciones versionadas del flujo
 completo y pasar los manifiestos de alcance/evidencia exigidos en AGENTS.md y
 `docs/CHANGE_APPROVAL_QA_POLICY.md`. Este runbook no habilita omitirlos.
