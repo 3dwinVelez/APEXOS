@@ -12,7 +12,6 @@ const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: '
 assert.equal(execFileSync('git', ['diff', '--name-only', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), '', 'Commit tracked changes before certification');
 const output = fs.mkdtempSync(path.join(os.tmpdir(), 'apex-modules-release-'));
 const scripts = [
-  'release-local-regression.cjs',
   'inventory-purchases-write-local.cjs',
   'transport-settlement-import-local.js',
   'inventory-modern-ui-local.cjs',
@@ -25,7 +24,8 @@ const scripts = [
   'transport-theme-local.cjs',
   'transport-print-theme-local.cjs',
   'transport-rate-three-steps-local.cjs',
-  'transport-vehicle-consolidation-local.cjs'
+  'transport-vehicle-consolidation-local.cjs',
+  'release-local-regression.cjs'
 ];
 const evidence = { environment: 'LOCAL', head, status: 'running', started_at: new Date().toISOString(), results: [] };
 for (const script of scripts) {
