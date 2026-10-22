@@ -272,6 +272,7 @@ async function clickButton(page, label) {
 
 function pygReportResponse(page, timeout = 60000, period = null) {
   return page.waitForResponse((response) => {
+    if (response.request().method() !== "GET") return false;
     const url = new URL(response.url());
     if (!url.pathname.endsWith("/api/v1/accounting/reports/pyg-interactive")) return false;
     return period ? url.searchParams.get("period") === period : true;
