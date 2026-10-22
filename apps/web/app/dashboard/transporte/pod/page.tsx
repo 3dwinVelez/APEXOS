@@ -1,4 +1,5 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 
 import { api } from "@/lib/api";
 import { useCallback, useEffect, useState } from "react";
@@ -82,7 +83,7 @@ export default function TransportPodPage() {
           Evidencia TMS
         </p>
         <h1 className="mt-1 text-3xl font-semibold">Pruebas de entrega</h1>
-        <p className="mt-2 text-sm text-neutral-600">
+        <p className="mt-2 text-sm text-content-body">
           Receptores, firma, fotografías, ubicación y desempeño del primer
           intento.
         </p>
@@ -101,18 +102,18 @@ export default function TransportPodPage() {
           ["Primer intento", `${stats.first_attempt_pct}%`],
         ].map(([label, value]) => (
           <div
-            className="rounded-xl border border-line bg-white p-3"
+            className="rounded-xl border border-line bg-surface p-3"
             key={label}
           >
-            <p className="text-xs text-neutral-500">{label}</p>
+            <p className="text-xs text-content-muted">{label}</p>
             <p className="mt-1 text-2xl font-semibold">{value}</p>
           </div>
         ))}
       </div>
-      <section className="overflow-hidden rounded-xl border border-line bg-white">
+      <section className="overflow-hidden rounded-xl border border-line bg-surface">
         <div className="flex items-center justify-between border-b border-line p-4">
           <h2 className="font-semibold">Evidencias registradas</h2>
-          <select
+          <TransportSearchSelect
             className="rounded-md border border-line px-3 py-2 text-sm"
             onChange={(event) => setResult(event.target.value)}
             value={result}
@@ -121,7 +122,7 @@ export default function TransportPodPage() {
             <option value="completa">Completa</option>
             <option value="parcial">Parcial</option>
             <option value="rechazada">Rechazada</option>
-          </select>
+          </TransportSearchSelect>
         </div>
         <div className="divide-y divide-line">
           {rows.map((row) => (
@@ -131,7 +132,7 @@ export default function TransportPodPage() {
             >
               <div>
                 <strong>{row.need?.code || row.trip.code}</strong>
-                <p className="text-sm text-neutral-500">
+                <p className="text-sm text-content-muted">
                   {row.stop.delivery_point?.name} ·{" "}
                   {row.stop.delivery_point?.city}
                 </p>
@@ -147,7 +148,7 @@ export default function TransportPodPage() {
                 <p className="text-sm">
                   Receptor: {row.pod?.receiver_name || "--"}
                 </p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-content-muted">
                   {row.pod?.photos?.length || 0} fotos · firma{" "}
                   {row.pod?.signature ? "sí" : "no"}
                 </p>
@@ -171,7 +172,7 @@ export default function TransportPodPage() {
                   ) : null}
                 </div>
               </div>
-              <time className="text-xs text-neutral-500">
+              <time className="text-xs text-content-muted">
                 {new Date(row.occurred_at).toLocaleString()}
               </time>
             </article>

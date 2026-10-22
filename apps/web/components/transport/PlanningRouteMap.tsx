@@ -410,7 +410,7 @@ function RoutePopup({ route, scenario }: { route: RenderedVariant; scenario: Pla
     <div className="min-w-[240px] space-y-2 text-sm">
       <div>
         <p className="font-semibold">{route.label}</p>
-        <p className="text-xs text-neutral-500">{scenario.name}</p>
+        <p className="text-xs text-content-muted">{scenario.name}</p>
       </div>
       <div className="grid grid-cols-4 gap-2 text-xs">
         <span><strong className="block">{route.distance_km ?? scenario.distance_km} km</strong>distancia</span>
@@ -478,11 +478,11 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
   const activeVariant = selectedRoute?.variants.find((variant) => variant.id === activeVariantId) || selectedRoute?.variants[0];
 
   return (
-    <section className="overflow-hidden rounded-md border border-line bg-white">
+    <section className="overflow-hidden rounded-md border border-line bg-surface">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
         <div>
           <h3 className="font-semibold">Mapa de rutas y alternativas</h3>
-          <p className="mt-1 text-xs text-neutral-500">{status}</p>
+          <p className="mt-1 text-xs text-content-muted">{status}</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <span className="rounded-md bg-paper px-2 py-1 text-xs font-semibold text-apex">{selectedRoute?.variants.length || scenarios.length} ruta(s) con ETA visibles</span>
@@ -490,7 +490,7 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
         </div>
       </div>
       <div className="relative p-3">
-        <MapContainer center={[firstStop?.latitude || 4.65, firstStop?.longitude || -74.1]} className="h-[680px] min-h-[520px] w-full rounded-md" scrollWheelZoom zoom={12}>
+        <MapContainer center={[firstStop?.latitude || 4.65, firstStop?.longitude || -74.1]} className="transport-map h-[680px] min-h-[520px] w-full rounded-md" scrollWheelZoom zoom={12}>
           <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <FitBounds routes={routes} scenarios={scenarios} />
           {routes.map((route) => (
@@ -528,19 +528,19 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
           ))}
         </MapContainer>
         {selectedRoute?.variants.length ? <div className="pointer-events-none absolute left-5 top-5 z-[460] grid max-w-[360px] gap-2">
-          {selectedRoute.variants.map((variant, index) => <button className={`pointer-events-auto rounded-md border bg-white/95 px-3 py-2 text-left text-xs shadow-sm backdrop-blur ${activeVariant?.id === variant.id ? "border-apex ring-1 ring-apex" : "border-line"}`} key={variant.id} onClick={() => { setActiveVariantId(variant.id); onSelect?.(selectedRoute.id); }} type="button">
+          {selectedRoute.variants.map((variant, index) => <button className={`pointer-events-auto rounded-md border bg-surface/95 px-3 py-2 text-left text-xs shadow-sm backdrop-blur ${activeVariant?.id === variant.id ? "border-apex ring-1 ring-apex" : "border-line"}`} key={variant.id} onClick={() => { setActiveVariantId(variant.id); onSelect?.(selectedRoute.id); }} type="button">
             <span className="flex items-center justify-between gap-3">
               <strong className="inline-flex items-center gap-2 text-sm"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />{variant.label}</strong>
               <span className="rounded bg-paper px-2 py-0.5 font-semibold text-apex">{trafficLabel(variant.traffic_level)}</span>
             </span>
-            <span className="mt-1 block text-neutral-600">{variant.duration_min ?? selectedRoute.duration_min} min · {variant.distance_km ?? selectedRoute.distance_km} km{variant.delay_min ? ` · +${variant.delay_min} min` : ""} · {variant.issue_tags?.slice(0, 2).join(" · ")}</span>
+            <span className="mt-1 block text-content-body">{variant.duration_min ?? selectedRoute.duration_min} min · {variant.distance_km ?? selectedRoute.distance_km} km{variant.delay_min ? ` · +${variant.delay_min} min` : ""} · {variant.issue_tags?.slice(0, 2).join(" · ")}</span>
           </button>)}
-          {selectedRoute.variants.length < 2 ? <div className="pointer-events-auto rounded-md border border-amber-200 bg-amber-50/95 px-3 py-2 text-xs text-amber-900 shadow-sm backdrop-blur">
+          {selectedRoute.variants.length < 2 ? <div className="pointer-events-auto rounded-md border border-amber-200 bg-surface px-3 py-2 text-xs text-amber-900 shadow-sm backdrop-blur">
             Solo se pudo trazar {selectedRoute.variants.length} ruta para este escenario. Las alternativas se calculan sobre calles reales (OSRM/Google) con su propio tiempo estimado; nunca se dibujan rutas inventadas.
           </div> : null}
         </div> : null}
-        <div className="pointer-events-none absolute bottom-5 left-5 z-[460] flex flex-wrap gap-2 rounded-md bg-white/95 p-2 text-[11px] shadow-sm backdrop-blur">
-          <span className="font-semibold text-neutral-700">Condiciones:</span>
+        <div className="pointer-events-none absolute bottom-5 left-5 z-[460] flex flex-wrap gap-2 rounded-md bg-surface/95 p-2 text-[11px] shadow-sm backdrop-blur">
+          <span className="font-semibold text-content-body">Condiciones:</span>
           <span className="text-emerald-700">verde flujo</span>
           <span className="text-amber-700">ámbar velocidad reducida</span>
           <span className="text-rose-700">rojo tramo difícil/congestión</span>
@@ -548,11 +548,11 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
       </div>
       {selectedRoute?.variants.length ? <div className="border-t border-line px-4 py-3">
         <h4 className="text-sm font-semibold">Comparación de rutas</h4>
-        <p className="mt-1 text-xs text-neutral-500">Compara distancia, ETA, demora y tramos difíciles antes de confirmar el viaje. Selecciona una fila para resaltarla en el mapa.</p>
+        <p className="mt-1 text-xs text-content-muted">Compara distancia, ETA, demora y tramos difíciles antes de confirmar el viaje. Selecciona una fila para resaltarla en el mapa.</p>
         <div className="mt-2 overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-xs">
             <thead>
-              <tr className="border-b border-line text-neutral-500">
+              <tr className="border-b border-line text-content-muted">
                 <th className="py-2 pr-3 font-medium">Ruta</th>
                 <th className="py-2 pr-3 font-medium">Distancia</th>
                 <th className="py-2 pr-3 font-medium">ETA</th>
@@ -576,7 +576,7 @@ export default function PlanningRouteMap({ scenarios, selectedId, onSelect }: { 
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-[11px] text-neutral-500">Los tramos difíciles provienen de la velocidad real de la vía (OSRM). Obras y accidentes en vivo requieren Google Routes conectado desde el backend.</p>
+        <p className="mt-2 text-[11px] text-content-muted">Los tramos difíciles provienen de la velocidad real de la vía (OSRM). Obras y accidentes en vivo requieren Google Routes conectado desde el backend.</p>
       </div> : null}
     </section>
   );

@@ -383,6 +383,7 @@ async function checkSoD(tenantId, userId, newRoleName) {
 }
 
 module.exports = {
+  roleScopeViolation,
   requirePermission,
   requireExplicitPermission,
   requireAnyPermission,

@@ -1,0 +1,106 @@
+// Read-only functional certification against the running LOCAL development app.
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), crypto = require('node:crypto'), assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
+const puppeteer = require('puppeteer-core');
+const output = fs.mkdtempSync(path.join(os.tmpdir(), 'apex-vehicle-consolidation-'));
+const evidence = { environment: 'LOCAL_DESARROLLO', head: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), checks: [], screenshots: [] };
+function check(name, result) { evidence.checks.push({ name, passed: Boolean(result) }); assert.ok(result, name); console.log('PASS', name); }
+async function main() {
+  const login = await fetch('http://localhost:3000/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: process.env.LOCAL_TMS_EMAIL || 'demo@apex.local', password: process.env.LOCAL_TMS_PASSWORD || 'test1234' }) });
+  assert.equal(login.status, 200); const session = await login.json();
+  const headers = { authorization: `Bearer ${session.token}` };
+  const month = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit' }).format(new Date());
+  const endpoint = 'http://localhost:3000/api/v1/transport/settlement-vehicle-consolidation';
+  const data = await (await fetch(endpoint + '?period_code=' + month, { headers })).json();
+  check('server_reports_matched_count_and_partial_results', Number.isInteger(data.matched_packages) && data.has_more === (data.matched_packages > data.total_packages));
+  const future = await (await fetch(endpoint + '?period_code=2099-12', { headers })).json();
+  check('server_period_filter_excludes_other_periods', future.total_packages === 0 && future.matched_packages === 0);
+  const invalid = await fetch(endpoint + '?date_from=2026-02-30', { headers });
+  check('server_rejects_invalid_service_date', invalid.status === 400);
+  const vehicle = data.vehicles.find(row => row.packages.length > 8 && row.lines.length > 10); assert.ok(vehicle, 'Local dataset with multiple pages');
+  const day = vehicle.lines.find(line => line.service_date)?.service_date.slice(0, 10); assert.ok(day);
+  const dated = await (await fetch(endpoint + `?period_code=${month}&date_from=${day}&date_to=${day}&limit=300`, { headers })).json();
+  check('server_service_range_excludes_lines_outside_selected_day', dated.vehicles.length > 0 && dated.vehicles.every(vehicle => vehicle.lines.every(line => line.service_date?.slice(0, 10) === day)));
+  check('server_date_filtered_totals_reconcile_to_returned_documents', dated.totals.adjusted_total === Math.round(dated.vehicles.flatMap(vehicle => vehicle.lines).reduce((sum, line) => sum + Number(line.adjusted_amount), 0) * 100) / 100);
+  const browser = await puppeteer.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
+  try {
+    const page = await browser.newPage(); await page.setViewport({ width: 1440, height: 1000 });
+    const mutations = [];
+    await page.setRequestInterception(true); page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1'].includes(url.hostname)) request.abort(); else if (url.pathname.startsWith('/api/v1/') && !['GET', 'OPTIONS'].includes(request.method())) { mutations.push(url.pathname); request.abort(); } else request.continue(); });
+    await page.evaluateOnNewDocument(data => { const values = { token: data.token, auth_provider: 'local', user_email: data.user.email, role_name: data.user.role, apexos_company_role: data.user.role, apexos_company_id: data.tenant.company_id || data.tenant.id, tenant_active_modules: JSON.stringify(data.tenant.active_modules), role_permissions: JSON.stringify(data.user.role_permissions || []), role_metadata: JSON.stringify(data.user.role_metadata || {}), apex_theme: 'dark' }; for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value); }, session);
+    await page.goto('http://localhost:3001/dashboard/transporte/liquidaciones', { waitUntil: 'networkidle2', timeout: 60000 });
+    const click = async (text, scope = 'body') => { await page.waitForFunction((t,s)=>[...document.querySelectorAll(s+' button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text,scope); for (const node of await page.$$(`${scope} button`)) if (await node.evaluate((node, text) => node.textContent.trim() === text, text)) { await node.click(); return; } throw Error('Button missing: ' + text); };
+    const type = async (selector, value) => { await page.$eval(selector, (node, value) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(node, value); node.dispatchEvent(new Event('input', { bubbles: true })); }, value); };
+    const screenshot = async name => { const file = path.join(output, name + '.png'); await page.screenshot({ path: file }); evidence.screenshots.push(file); };
+    const panel = 'section[aria-label="Consolidado por vehículo"]';
+    await click('Vehiculos'); await page.waitForSelector(panel);
+    check('opens_with_current_accounting_period', await page.$eval('input[aria-label="Periodo contable"]', (node, month) => node.value === month, month));
+    const until = day;
+    await type('input[type="date"]', until);
+    await page.waitForFunction(value => document.body.textContent.includes('Desde ' + value) && !document.body.textContent.includes('Actualizando consolidado…'), {}, until);
+    check('service_date_controls_are_visible', (await page.$$('input[type="date"]')).length === 2);
+    const datedResponse = page.waitForResponse(response => response.request().method() === 'GET' && response.url().includes('/settlement-vehicle-consolidation?') && response.url().includes('date_to=' + day));
+    await page.$$eval('input[type="date"]', (nodes, day) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(nodes[1], day); nodes[1].dispatchEvent(new Event('input', { bubbles: true })); }, day);
+    const datedUI = await (await datedResponse).json();
+    await page.waitForFunction(count => document.querySelector('section[aria-label="Consolidado por vehículo"]')?.textContent.includes(`Resumen de ${count} paquetes del filtro actual`), {}, datedUI.total_packages);
+    check('ui_service_range_updates_server_summary', datedUI.vehicles.every(vehicle => vehicle.lines.every(line => line.service_date?.slice(0, 10) === day)));
+    await screenshot('vehicle-service-date-filters');
+    const historicalResponse = page.waitForResponse(response => response.request().method() === 'GET' && response.url().includes('/settlement-vehicle-consolidation?') && !response.url().includes('period_code=') && response.url().includes('date_to=' + day));
+    await page.focus('input[aria-label="Periodo contable"]'); await page.keyboard.type('histórico'); await page.keyboard.press('Enter'); await historicalResponse;
+    await page.waitForFunction(() => document.body.textContent.includes('Periodo: Histórico completo') && !document.body.textContent.includes('Actualizando consolidado…'));
+    check('historical_periods_require_explicit_selection_and_keep_service_range', true);
+    await click('Volver al periodo actual'); await page.waitForSelector(panel);
+    check('vehicle_summary_matches_api', await page.$eval(panel, (node, count) => node.textContent.includes(count + ' paquetes del filtro actual'), data.total_packages));
+    check('vehicle_cards_are_bounded', (await page.$$(`${panel} article`)).length === Math.min(8, data.vehicles.length));
+    await type(`${panel} input`, 'NO-EXISTE-PLACA'); await page.waitForFunction(() => document.body.textContent.includes('No hay vehículos que coincidan'));
+    check('vehicle_search_empty_result', true);
+    await type(`${panel} input`, vehicle.vehicle_plate);
+    await page.waitForSelector(`button[aria-label="Ver detalle de ${vehicle.vehicle_plate}"]`);
+    check('vehicle_search_selects_actual_plate', (await page.$$(`${panel} article`)).length === 1);
+    await page.click(`button[aria-label="Ver detalle de ${vehicle.vehicle_plate}"]`); await page.waitForSelector('[role="dialog"]');
+    const money = value => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(value || 0));
+    check('detail_financial_totals_match_api', await page.$eval('[role="dialog"]', (node, values) => values.every(value => node.textContent.includes(value)), [vehicle.calculated_total, vehicle.adjusted_total, vehicle.approved_total].map(money)));
+    check('initial_detail_renders_only_eight_packages', (await page.$$('[role="dialog"] article')).length === 8);
+    check('initial_documents_are_collapsed', (await page.$$('[role="dialog"] [id^="vehicle-package-"]')).length === 0);
+    const firstCode = await page.$eval('[role="dialog"] article button[aria-expanded]', node => node.textContent);
+    await click('Siguiente', '[role="dialog"] nav[aria-label="Páginas de paquetes"]');
+    check('package_pagination_changes_page', await page.$eval('[role="dialog"] article button[aria-expanded]', (node, first) => node.textContent !== first, firstCode));
+    const status = vehicle.packages[0].status, count = vehicle.packages.filter(pkg => pkg.status === status).length;
+    const labels = { borrador: 'Creado', validando: 'Validando', preliquidada: 'Preliquidada', con_novedad: 'Con novedad', en_revision: 'En revisión', rechazada: 'Rechazada', aprobada: 'Aprobada', contabilizada: 'Contabilizada', liquidada: 'Liquidada', reversada: 'Reversada', cancelada: 'Cancelada' };
+    await click(`${labels[status] || status} (${count})`, '[role="dialog"]');
+    const filteredAmount = vehicle.lines.filter(line => line.package_status === status).reduce((total, line) => total + Number(line.adjusted_amount), 0);
+    check('status_filtered_amount_matches_api_lines', await page.$eval('[role="dialog"] [role="status"]', (node, value) => node.textContent.includes(value), money(filteredAmount)));
+    check('status_tag_filters_and_resets_page', await page.$eval('[role="dialog"] nav[aria-label="Páginas de paquetes"]', node => node.textContent.includes('1–')) && (await page.$$('[role="dialog"] article')).length === Math.min(count, 8));
+    await type('[role="dialog"] input[type="search"]', 'NO-EXISTE-GUIA'); await page.waitForFunction(() => document.body.textContent.includes('No hay paquetes que coincidan'));
+    await click('Limpiar filtros', '[role="dialog"]'); check('clear_filters_restores_packages', (await page.$$('[role="dialog"] article')).length === 8);
+    const target = vehicle.packages.find(pkg => vehicle.lines.some(line => line.package_id === pkg.id && line.guide_reference)); assert.ok(target);
+    const lines = vehicle.lines.filter(line => line.package_id === target.id), guide = lines.find(line => line.guide_reference).guide_reference;
+    await type('[role="dialog"] input[type="search"]', guide);
+    await page.waitForFunction(code => [...document.querySelectorAll('[role="dialog"] article')].some(node => node.textContent.includes(code)), {}, target.code);
+    check('document_search_finds_parent_package', true);
+    const targetArticle = await (async () => { for (const node of await page.$$('[role="dialog"] article')) if (await node.evaluate((node, code) => node.textContent.includes(code), target.code)) return node; })();
+    await (await targetArticle.$('button[aria-expanded]')).click();
+    check('expansion_shows_actual_documents', await page.$eval(`#vehicle-package-${target.id}`, (node, guide) => node.textContent.includes(guide), guide));
+    check('document_rendering_is_bounded', (await page.$$(`#vehicle-package-${target.id} dl`)).length === Math.min(lines.length, 10));
+    for (const theme of ['dark', 'light']) {
+      await page.evaluate(theme => { document.documentElement.classList.toggle('dark', theme === 'dark'); document.documentElement.dataset.theme = theme; }, theme);
+      await screenshot(`vehicle-detail-${theme}`); await page.setViewport({ width: 390, height: 844 }); await screenshot(`vehicle-mobile-${theme}`);
+      check(`mobile_${theme}_does_not_overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.querySelector('[role="dialog"]').scrollWidth <= innerWidth));
+      await page.setViewport({ width: 1440, height: 1000 });
+    }
+    await page.click(`button[aria-label="Abrir ${target.code}"]`);
+    await page.waitForFunction(code => [...document.querySelectorAll('[role="dialog"]')].some(node => node.textContent.includes(code)), {}, target.code);
+    check('opens_real_package_without_stacked_dialogs', (await page.$$('[role="dialog"]')).length === 1 && !await page.$('[role="dialog"] input[type="search"]'));
+    await page.keyboard.press('Escape'); await page.waitForSelector('[role="dialog"]', { hidden: true });
+    const cardChip = await page.$(`${panel} article [aria-label^="Estados de"] button`); const chipText = await cardChip.evaluate(node => node.textContent.trim()); await cardChip.click(); await page.waitForSelector('[role="dialog"]');
+    check('card_state_tag_opens_filtered_detail', await page.$eval('[role="dialog"] button[aria-pressed="true"]', (node, text) => node.textContent.replace(/[()\s]/g, '') === text.replace(/[()\s]/g, ''), chipText));
+    await page.keyboard.press('Escape'); await page.waitForSelector('[role="dialog"]', { hidden: true });
+    await page.waitForFunction(() => document.activeElement?.closest('[aria-label^="Estados de"]'));
+    check('escape_closes_modal_and_restores_focus', await cardChip.evaluate(node => node === document.activeElement));
+    await type(`${panel} input`, ''); await screenshot('vehicles-overview-light');
+    check('readonly_flow_performed_no_mutations', mutations.length === 0);
+    evidence.api_summary = { vehicles: data.totals.vehicle_count, packages: data.total_packages, tested_vehicle_packages: vehicle.packages.length };
+  } finally { await browser.close(); }
+}
+main().then(() => finish('passed')).catch(error => { console.error(error.stack); finish('failed', error.message); });
+function finish(status, error) { evidence.status = status; if (error) evidence.error = error; evidence.source_sha256 = Object.fromEntries(['apps/web/components/transport/SettlementVehicleConsolidation.tsx', 'apps/web/app/dashboard/transporte/liquidaciones/page.tsx', 'apps/api/src/modules/transport/settlement-service.js', 'apps/api/src/modules/transport/settlement-filters.js'].map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')])); fs.writeFileSync(path.join(output, 'evidence.json'), JSON.stringify(evidence, null, 2)); console.log(JSON.stringify({ status, checks: evidence.checks.length, artifacts: output })); process.exitCode = status === 'passed' ? 0 : 1; }

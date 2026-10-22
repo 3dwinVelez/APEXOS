@@ -6,6 +6,7 @@ import test from "node:test";
 const root = path.resolve(import.meta.dirname, "../../..");
 const page = fs.readFileSync(path.join(root, "apps/web/app/dashboard/transporte/liquidaciones/page.tsx"), "utf8");
 const masters = fs.readFileSync(path.join(root, "apps/web/components/transport/TransportAdminCatalog.tsx"), "utf8");
+const vehicleView = fs.readFileSync(path.join(root, "apps/web/components/transport/SettlementVehicleConsolidation.tsx"), "utf8");
 
 test("la torre ofrece tres vistas: paquetes, semanas y vehiculos", () => {
   assert.match(page, /useState<"paquetes" \| "semanas" \| "vehiculos">\("paquetes"\)/);
@@ -25,11 +26,12 @@ test("la vista semanal gestiona periodos con apertura y cierre", () => {
 
 test("la vista de vehiculos consume la consolidacion de ingresos", () => {
   assert.match(page, /\/api\/v1\/transport\/settlement-vehicle-consolidation/);
-  assert.match(page, /Consolidacion de ingresos por vehiculo/);
-  assert.match(page, /Ver detalle/);
-  assert.match(page, /Consolidacion por vehiculo/);
-  assert.match(page, /vehicle_plate/);
-  assert.match(page, /guide_count/);
+  assert.match(page, /<SettlementVehicleConsolidation\b[^>]*data={consolidation}/);
+  assert.match(vehicleView, /Ingresos por vehículo/);
+  assert.match(vehicleView, /Ver detalle/);
+  assert.match(vehicleView, /Consolidado ·/);
+  assert.match(vehicleView, /vehicle_plate/);
+  assert.match(vehicleView, /guide_count/);
 });
 
 test("la escalera prioriza las cuatro etapas operativas", () => {
@@ -53,12 +55,15 @@ test("las decisiones exigen version optimista y motivo de rechazo", () => {
   assert.match(page, /version: selected\.version/);
 });
 
-test("la contabilizacion advierte el bloqueo y captura el pago", () => {
+test("la contabilizacion bloquea el paquete, conserva comprobantes y separa el cobro", () => {
   assert.match(page, /Contabilizar paquete/);
   assert.match(page, /no podra modificarse/);
-  assert.match(page, /idempotente/);
-  assert.match(page, /payment_date/);
-  assert.match(page, /Referencia contable/);
+  assert.match(page, /los reintentos conservan los mismos comprobantes/);
+  assert.match(page, /idempotency_key/);
+  assert.match(page, /accountDraft\.posting_date/);
+  assert.match(page, /ac\.reference/);
+  assert.match(page, /El cobro se registra posteriormente en Tesoreria/);
+  assert.doesNotMatch(page, /accountDraft\.payment_date/);
 });
 
 test("las transiciones criticas viajan con version del paquete", () => {

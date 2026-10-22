@@ -1,4 +1,5 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 
 import costStyles from "@/components/transport/RateCostDesigner.module.css";
 import { api, isActiveMasterItem, loadVehicleMasterCatalogs } from "@/lib/api";
@@ -50,7 +51,6 @@ const money = (value: number, currency = "COP") => new Intl.NumberFormat("es-CO"
 
 const WIZARD_STEPS = [
   { title: "Identificación", help: "Cómo reconocerás esta tarifa en los listados y en la liquidación." },
-  { title: "Ámbito geográfico", help: "Filtra a qué destino aplica la tarifa. Si lo dejas todo en \"cualquiera\", aplica a nivel nacional desde cualquier sede." },
   { title: "Transporte y vigencia", help: "Quién transporta (flota propia o terceros), qué tipo de operación cubre y durante qué fechas está vigente." },
   { title: "Cálculo del costo", help: "Elige el método de la tarifa principal, activa los costos adicionales que apliquen y usa el simulador para alimentar distancia y combustible. El resumen calcula en vivo y nunca baja del cobro mínimo." },
 ];
@@ -174,7 +174,7 @@ export default function TransportRatesPage() {
         {rates.map((rate) => <tr className="border-t border-line" key={rate.id}><td className="p-3"><p className="font-semibold">{rate.code} · v{rate.version}</p><p className="text-xs text-content-muted">{rate.name} · {rateTransporterLabel(rate)}</p></td><td><p>{rateDestinationLabel(rate)}</p><p className="text-xs text-content-muted">{rate.service_level || "Cualquier servicio"} · {rate.vehicle_type || "Cualquier vehículo"}</p></td><td><p>{new Date(rate.valid_from).toLocaleDateString()} – {new Date(rate.valid_to).toLocaleDateString()}</p><p className="text-xs text-content-muted">Mínimo {money(rate.minimum_charge, rate.currency)}</p></td><td><p>Base {money(rate.base_rate, rate.currency)} + {money(rate.price_per_km, rate.currency)}/km</p><p className="text-xs text-content-muted">kg {money(rate.price_per_kg, rate.currency)} · m³ {money(rate.price_per_m3, rate.currency)} · parada {money(rate.price_per_stop, rate.currency)}</p></td><td><span className={`rounded-full px-2 py-1 text-xs font-semibold ${rate.status === "activa" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{rate.status}</span></td><td><div className="flex justify-end gap-2 pr-3">{canEditRates ? <button aria-label="Editar tarifario" className="rounded-md border border-line p-2 text-apex" onClick={() => startEdit(rate)}><Pencil size={16} /></button> : null}{canEditRates && rate.status === "borrador" ? <button aria-label="Activar tarifario" className="rounded-md border border-line p-2 text-apex" onClick={() => void activate(rate)}><CheckCircle2 size={16} /></button> : null}{canEditRates ? <button aria-label="Crear nueva version" className="rounded-md border border-line p-2 text-apex" onClick={() => void version(rate)}><CopyPlus size={16} /></button> : null}</div></td></tr>)}
       </tbody></table></div>}
     </section>
-    {open ? <ModalFrame maxWidth={`${wizardStep === 3 ? "md:max-w-[1536px]" : "md:max-w-3xl"} ${wizardStep === 3 ? costStyles.modal : ""}`} onClose={closeWizard} title={editing ? `Editar tarifario ${editing.code} · v${editing.version}` : "Nuevo tarifario"}>
+    {open ? <ModalFrame maxWidth={`${wizardStep === 2 ? "md:max-w-[1536px]" : "md:max-w-3xl"} ${wizardStep === 2 ? costStyles.modal : ""}`} onClose={closeWizard} title={editing ? `Editar tarifario ${editing.code} · v${editing.version}` : "Nuevo tarifario"}>
       <RateWizard saving={saving} saveError={error} carriers={carriers} vehicles={vehicles} masters={masters} sedes={sedes} step={wizardStep} onStepChange={setWizardStep} initial={editing ? draftFromRate(editing, vehicles) : null} lockedCode={Boolean(editing)} submitLabel={editing ? (editing.status === "borrador" ? "Guardar cambios" : "Guardar como nueva version") : "Crear y activar"} onSubmit={editing ? updateRate : createRate} onCancel={closeWizard} />
     </ModalFrame> : null}
   </div>;
@@ -307,17 +307,6 @@ function RateWizard({ saving, saveError, carriers, vehicles, masters, sedes, ste
   const [draft, setDraft] = useState<RateDraft>(initial ?? emptyDraft);
   const set = (key: keyof RateDraft) => (value: string) => setDraft((previous) => ({ ...previous, [key]: value }));
 
-  const departments = (masters?.departments || []).filter(isActiveMasterItem);
-  const citiesForDepartment = (departmentName: string) => {
-    const code = departments.find((item) => item.name === departmentName)?.code;
-    return (masters?.cities || []).filter((item) => isActiveMasterItem(item) && (!code || item.parent_code === code));
-  };
-  const municipalitiesForCities = (cities: ReturnType<typeof citiesForDepartment>) => {
-    const codes = new Set(cities.map((item) => item.code));
-    return (masters?.municipalities || []).filter((item) => isActiveMasterItem(item) && (!codes.size || codes.has(item.parent_code)));
-  };
-  const destinationCities = citiesForDepartment(draft.destination_department);
-  const destinationMunicipalities = municipalitiesForCities(draft.destination_city ? destinationCities.filter((item) => item.name === draft.destination_city) : destinationCities);
   const serviceLevels = (masters?.serviceLevels || []).filter(isActiveMasterItem);
   const vehicleTypes = (masters?.types || []).filter(isActiveMasterItem);
   const currencies = (masters?.currencies || []).filter(isActiveMasterItem);
@@ -328,12 +317,12 @@ function RateWizard({ saving, saveError, carriers, vehicles, masters, sedes, ste
 
   const stepError = useMemo(() => {
     if (step === 0 && (!draft.code.trim() || !draft.name.trim())) return "Escribe el código y el nombre para continuar.";
-    if (step === 2) {
+    if (step === 1) {
       if (draft.transport_mode === "terceros" && !draft.carrier_id) return "Selecciona la transportadora de terceros para continuar.";
       if (!draft.valid_from || !draft.valid_to) return "Indica la vigencia (desde y hasta) para continuar.";
       if (draft.valid_from > draft.valid_to) return "La fecha \"desde\" no puede ser mayor que la \"hasta\".";
     }
-    if (step === 3) {
+    if (step === 2) {
       const unresolved = draft.sim_stops.some(stop => stop.label.trim() && (stop.latitude == null || stop.longitude == null));
       if (unresolved) return "Selecciona una sugerencia para cada parada o elimina las paradas incompletas.";
       if (draft.sim_destination_label.trim() && (draft.sim_destination_lat == null || draft.sim_destination_lng == null)) return "Selecciona el destino en las sugerencias para confirmar su ubicación.";
@@ -351,7 +340,6 @@ function RateWizard({ saving, saveError, carriers, vehicles, masters, sedes, ste
     onSubmit(draft);
   }
 
-  const destinationScope = geoScopeLabel([draft.destination_department, draft.destination_city, draft.destination_municipality]) || "cualquier destino";
   const lastStep = step === WIZARD_STEPS.length - 1;
 
   return <form onSubmit={handleSubmit}>
@@ -363,29 +351,18 @@ function RateWizard({ saving, saveError, carriers, vehicles, masters, sedes, ste
       </li>)}
     </ol>
 
-    <div className={step === 3 ? "sr-only" : "mb-1 flex items-center gap-2"}>
+    <div className={step === 2 ? "sr-only" : "mb-1 flex items-center gap-2"}>
       <h3 className="text-base font-semibold text-content-strong">{WIZARD_STEPS[step].title}</h3>
       <span className="text-xs text-content-muted">Paso {step + 1} de {WIZARD_STEPS.length}</span>
     </div>
-    <p className={step === 3 ? "sr-only" : "mb-4 text-sm text-content-muted"}>{WIZARD_STEPS[step].help}</p>
+    <p className={step === 2 ? "sr-only" : "mb-4 text-sm text-content-muted"}>{WIZARD_STEPS[step].help}</p>
 
     {step === 0 ? <div className="grid gap-3 sm:grid-cols-2">
       <Field label="Código de tarifa" name="code" value={draft.code} onChange={set("code")} placeholder="Ej: TRJ-AND-001" required autoFocus disabled={lockedCode} />
       <Field label="Nombre descriptivo" name="name" value={draft.name} onChange={set("name")} placeholder="Ej: Flete flota propia Bogotá → Medellín" required />
     </div> : null}
 
-    {step === 1 ? <div className="space-y-3">
-      <div className="rounded-xl border border-line bg-surface-muted p-3">
-        <GeoCascade title="Destino" department={draft.destination_department} city={draft.destination_city} municipality={draft.destination_municipality}
-          departments={departments} cities={destinationCities} municipalities={destinationMunicipalities}
-          onDepartment={(value) => setDraft((p) => ({ ...p, destination_department: value, destination_city: "", destination_municipality: "" }))}
-          onCity={(value) => setDraft((p) => ({ ...p, destination_city: value, destination_municipality: "" }))}
-          onMunicipality={set("destination_municipality")} />
-      </div>
-      <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Aplica a: <b>{destinationScope}</b>{!draft.destination_department ? " (nacional, desde cualquier sede)" : ""}.</p>
-    </div> : null}
-
-    {step === 2 ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {step === 1 ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <div className="sm:col-span-2 lg:col-span-3">
         <span className="mb-1 block text-sm font-medium">¿Quién transporta?</span>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -414,7 +391,7 @@ function RateWizard({ saving, saveError, carriers, vehicles, masters, sedes, ste
       <Select label="Moneda" name="currency" options={currencies.map((item) => [item.code, item.name])} value={draft.currency} onChange={set("currency")} />
     </div> : null}
 
-    {step === 3 ? <RateCostDesigner draft={draft} onChange={(patch) => setDraft((previous) => ({ ...previous, ...patch }))} sedes={sedes} /> : null}
+    {step === 2 ? <RateCostDesigner draft={draft} onChange={(patch) => setDraft((previous) => ({ ...previous, ...patch }))} sedes={sedes} /> : null}
 
     {saveError ? <p role="alert" className="mt-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{saveError}</p> : null}
     {stepError ? <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{stepError}</p> : null}
@@ -431,28 +408,6 @@ function RateWizard({ saving, saveError, carriers, vehicles, masters, sedes, ste
   </form>;
 }
 
-function GeoCascade({ title, department, city, municipality, departments, cities, municipalities, onDepartment, onCity, onMunicipality }: {
-  title: string; department: string; city: string; municipality: string;
-  departments: Array<{ code: string; name: string }>; cities: Array<{ code: string; name: string }>; municipalities: Array<{ code: string; name: string }>;
-  onDepartment: (value: string) => void; onCity: (value: string) => void; onMunicipality: (value: string) => void;
-}) {
-  return <div className="space-y-2">
-    <p className="text-xs font-bold uppercase tracking-wide text-apex">{title}</p>
-    <select aria-label={`Departamento ${title.toLowerCase()}`} className={`${inputClass} apex-select`} value={department} onChange={(event) => onDepartment(event.target.value)}>
-      <option value="">Cualquier departamento</option>
-      {departments.map((item) => <option key={item.code} value={item.name}>{item.name}</option>)}
-    </select>
-    <select aria-label={`Ciudad ${title.toLowerCase()}`} className={`${inputClass} apex-select`} value={city} onChange={(event) => onCity(event.target.value)}>
-      <option value="">Cualquier ciudad</option>
-      {cities.map((item) => <option key={item.code} value={item.name}>{item.name}</option>)}
-    </select>
-    <select aria-label={`Municipio ${title.toLowerCase()}`} className={`${inputClass} apex-select`} value={municipality} onChange={(event) => onMunicipality(event.target.value)}>
-      <option value="">Cualquier municipio</option>
-      {municipalities.map((item) => <option key={item.code} value={item.name}>{item.name}</option>)}
-    </select>
-  </div>;
-}
-
 function Field(props: { label: string; name: string; value: string; onChange: (value: string) => void; placeholder?: string; type?: string; required?: boolean; autoFocus?: boolean; disabled?: boolean }) {
   const { label, ...input } = props;
   return <label className="text-sm">
@@ -464,9 +419,9 @@ function Field(props: { label: string; name: string; value: string; onChange: (v
 function Select({ name, label, options, empty, value, onChange }: { name: string; label: string; options: Array<[string | number, string]>; empty?: string; value?: string; onChange?: (value: string) => void }) {
   return <label className="text-sm">
     <span className="mb-1 block font-medium">{label}</span>
-    <select className={`${inputClass} apex-select`} name={name} value={value} onChange={onChange ? (event) => onChange(event.target.value) : undefined}>
+    <TransportSearchSelect className={`${inputClass} apex-select`} name={name} value={value} onChange={onChange ? (event) => onChange(event.target.value) : undefined}>
       {empty !== undefined ? <option value="">{empty}</option> : null}
       {options.map(([optionValue, text]) => <option key={String(optionValue)} value={optionValue}>{text}</option>)}
-    </select>
+    </TransportSearchSelect>
   </label>;
 }

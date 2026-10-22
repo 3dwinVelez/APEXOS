@@ -1,0 +1,6 @@
+{
+  "sheet": "Liquidaciones",
+  "max_rows": 200,
+  "max_packages": 30,
+  "columns": ["paquete", "documento", "placa", "centro_costos", "cliente_documento", "fecha_servicio", "destinos_codigos", "tarifa_codigo", "tarifa_version", "cantidad_servicios", "soporte", "observacion"]
+}
