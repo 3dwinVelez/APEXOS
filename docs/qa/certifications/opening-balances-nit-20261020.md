@@ -40,3 +40,15 @@ No se cambiaron importes, signos, reglas de cuentas transaccionales, numeración
 Corrección local en `desarrollo`, base `b9b977716bc4d442e1bc0cde59b5ae78ffb2d531`. QA todavía ejecuta la versión que reproduce el fallo; no se hizo push, merge ni despliegue en esta tarea.
 
 La promoción posterior requiere autorización independiente, manifiesto pre-QA y alcance exacto contra el destino remoto vigente, siguiendo `desarrollo → develop → main`. Los cambios previos de Gastos, exportación PUC y workflow se preservaron y deben mantenerse fuera de una promoción puntual de este incidente.
+
+## Integración y publicación para QA (2026-10-21)
+
+La corrección se registró como commit funcional `de1ce90e` sobre `desarrollo`, limitado a los seis archivos del incidente. El 21 de octubre se integró el `develop` vigente (`947f508b`) en la rama local y se generó el candidato integrado `853519a6ce74a974afceb7e2edf4cb4458c19b4f`, preservando el historial funcional.
+
+- El diff neto contra `origin/develop` (`947f508b`) contiene únicamente seis archivos: servicio contable, pruebas API, pantalla de importación, pruebas web, script de certificación de navegador y este documento. Los dos manifiestos `docs/qa/manifests/opening-balances-nit-20261021-preqa.json` y `...-scope.json` se agregan para el gate pre-QA. No se incluyen archivos de Gastos, exportación PUC ni workflows.
+- Autorización del usuario: «publica la corrección en QA» (2026-10-21; observada 2026-10-22T01:56:08Z), alcance `promotion_to_develop_for_qa`. Autoriza push de `desarrollo`, merge a `develop` y despliegue en QA; no autoriza `main` ni ramas auxiliares.
+- La validación integrada aprobó sobre una copia Git temporal exacta del candidato, sin los cambios pendientes de Gastos ni PUC, con API en 3216, web en 3006 y PostgreSQL local en 55439. Las 30 pruebas unitarias y de regresión aprobaron.
+- La compilación de producción con webpack y TypeScript aprobó con 126 páginas. La certificación real de navegador aprobó las 54 comprobaciones; el JSON generado en `docs/qa/evidence/opening-balances-error-20261020/integrated-20261021/browser-local.json` registra `generated_at` `2026-10-22T02:05:51.848Z` y el commit `853519a6`. El root confirmó que los cinco hashes SHA-256 de fuentes coinciden con el snapshot y que `git diff --quiet HEAD` sobre las cinco rutas funcionales no reporta diferencias. Los resultados del 20 de octubre se mantienen como antecedente histórico y no se reutilizan para esta certificación.
+- Los manifiestos pre-QA y de alcance se actualizaron con los estados `passed` y los conteos reales. `qa_status` permanece `pending`; la promoción y el despliegue también permanecen pendientes.
+- Railway reporta `PlatformOutage` ([incidente QH8L8B3E](https://status.railway.com/incident/QH8L8B3E)) con builds y despliegues pausados. La activación remota está bloqueada por el proveedor; el root reintentará el release después de los gates de GitHub.
+- La evidencia generada no se versiona. Los archivos locales pendientes de Gastos, PUC y workflow se preservan fuera del alcance. La promoción solo puede avanzar después de aprobar los validadores pre-QA y de alcance; no requiere migraciones.

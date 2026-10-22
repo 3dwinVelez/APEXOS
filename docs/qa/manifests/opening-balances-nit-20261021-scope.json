@@ -1,0 +1,121 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "opening-balances-nit-20261021",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "853519a6ce74a974afceb7e2edf4cb4458c19b4f",
+  "target_head": "947f508b358c0a2c4f2c62d5d9867930cf1a6169",
+  "base_commit": "947f508b358c0a2c4f2c62d5d9867930cf1a6169",
+  "base_commits": {
+    "develop": "947f508b358c0a2c4f2c62d5d9867930cf1a6169"
+  },
+  "change_intent": {
+    "summary": "Corregir la asociacion de NIT y la fecha de corte en la importacion de saldos iniciales, preservando asiento balanceado, idempotencia y aislamiento por empresa",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/accounting-opening-balances.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/contabilidad-opening-balances.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/opening-balances-nit-browser-local.js",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/opening-balances-nit-20261020.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-nit-20261021-preqa.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-nit-20261021-scope.json",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx",
+    "apps/web/test/contabilidad-opening-balances.test.mjs",
+    "scripts/certifications/opening-balances-nit-browser-local.js",
+    "docs/qa/certifications/opening-balances-nit-20261020.md",
+    "docs/qa/manifests/opening-balances-nit-20261021-preqa.json",
+    "docs/qa/manifests/opening-balances-nit-20261021-scope.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Asociacion correcta de NIT con el tercero",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Tercero opcional sin afectar la importacion",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Aislamiento por empresa y permisos contables",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Asiento balanceado e idempotencia",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Fecha de corte UTC y plantilla de carga",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    },
+    {
+      "name": "Regresion contable",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-nit-20261020.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante: \"publica la correccion en QA\" (2026-10-21; autorizacion observada 2026-10-22T01:56:08Z)",
+    "approved_at": "2026-10-22T01:56:08Z",
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false,
+      "create_auxiliary_branch": false
+    }
+  }
+}
