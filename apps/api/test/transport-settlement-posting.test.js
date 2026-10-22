@@ -11,9 +11,26 @@ test("vehicle centre belongs to its accounting branch and preserves operational 
   assert.equal(center.branch_code, "200720");
   assert.equal(vehicle.base_site, "CEDI CALDAS");
 });
-test("unknown branch and manual centre collisions are rejected", () => {
+test("unknown branch and centres owned by other vehicles are rejected", () => {
   assert.throws(() => planVehicleCenter(tree, { ...vehicle, metadata: {} }), { code: "VEHICLE_ACCOUNTING_BRANCH_REQUIRED" });
-  assert.throws(() => planVehicleCenter({ ...tree, cost_centers: [{ code: "ABC123", branch_code: "200720", society_code: "SCJ" }] }, vehicle), { code: "VEHICLE_ACCOUNTING_CENTER_CONFLICT" });
+  assert.throws(() => planVehicleCenter({ ...tree, cost_centers: [{ code: "ABC123", vehicle_id: 99, branch_code: "200720", society_code: "SCJ" }] }, vehicle), { code: "VEHICLE_ACCOUNTING_CENTER_CONFLICT" });
+});
+
+test("legacy exact and spaced plate centres recover their actual branch without renaming", () => {
+  for (const code of ["ABC123", "ABC 123"]) {
+    const legacy = { ...tree, cost_centers: [{ code, name: "Centro historico", branch_code: "200720", society_code: "SCJ", active: true }] };
+    const center = planVehicleCenter(legacy, { ...vehicle, metadata: {} });
+    assert.equal(center.code, code); assert.equal(center.branch_code, "200720"); assert.equal(center.society_code, "SCJ"); assert.equal(center.vehicle_id, 1);
+  }
+});
+
+test("ambiguous, inactive and inconsistent legacy centres do not choose a default branch", () => {
+  assert.throws(() => planVehicleCenter({ ...tree, cost_centers: [{ code: "0001", branch_code: "200720", society_code: "SCJ" }] }, { ...vehicle, cost_center: "0001" }), { code: "VEHICLE_ACCOUNTING_CENTER_CONFLICT" });
+  const legacy = { code: "ABC 123", branch_code: "200720", society_code: "SCJ" };
+  for (const centres of [[{ ...legacy, active: false }], [legacy, { ...legacy, code: "AB C123" }], [{ ...legacy, society_code: "OTHER" }]]) {
+    assert.throws(() => planVehicleCenter({ ...tree, cost_centers: centres }, { ...vehicle, metadata: {} }), { code: "VEHICLE_ACCOUNTING_CENTER_CONFLICT" });
+  }
+  assert.throws(() => planVehicleCenter({ ...tree, branches: [{ ...tree.branches[0], active: false }], cost_centers: [legacy] }, { ...vehicle, metadata: {} }), { code: "VEHICLE_ACCOUNTING_BRANCH_REQUIRED" });
 });
 test("plate edits preserve the historical centre; moving its branch is rejected", () => {
   const owned = { ...tree, cost_centers: [planVehicleCenter(tree, vehicle)] };

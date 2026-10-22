@@ -73,22 +73,16 @@ test("la ficha vehicular consume los maestros con selects nativos y cascada marc
 
 test("la ficha enlaza sucursal y crea el centro de costo en la estructura contable", () => {
   assert.match(transportSource, /type OrgTree = \{ societies: OrgSociety\[\]; branches: OrgBranch\[\]; cost_centers: OrgCostCenter\[\] \}/);
-  assert.match(transportSource, /api<OrgTree>\("\/api\/v1\/accounting\/organization-tree"\)/);
-  assert.match(transportSource, /function orgUnitPairs\(/);
-  assert.match(transportSource, /orgUnitPairs\(branchesForSite, form\.base_site, "Seleccionar sucursal"\)/);
-  assert.match(transportSource, /const keepCost = orgTree \? orgTree\.cost_centers\.some\(\(center\) => center\.code === current\.cost_center && center\.branch_code === value\) : true/);
-  assert.match(transportSource, /\[\["", "Seleccionar sede base"\], \.\.\.catalogPairs\(vehicleCatalogs\?\.locations, form\.base_site\)\]/);
-  assert.match(transportSource, /const \[newCostCenter, setNewCostCenter\] = useState\(\{ code: "", name: "" \}\)/);
-  assert.match(transportSource, /label="Codigo centro de costo"/);
-  assert.match(transportSource, /label="Nombre centro de costo"/);
-  assert.match(transportSource, /disabled=\{!form\.base_site\}/);
-  assert.match(transportSource, /Completa codigo y nombre del centro de costo o deja ambos vacios\./);
-  assert.match(transportSource, /const branch = orgTree\.branches\.find\(\(item\) => item\.code === form\.base_site && item\.active !== false\)/);
-  assert.match(transportSource, /body: JSON\.stringify\(\{ type: "cost_center", society_code: branch\.society_code, branch_code: branch\.code, code: newCode, name: newName \}\)/);
-  assert.match(transportSource, /const payload = \{ \.\.\.vehiclePayload\(form\), cost_center: costCenterCode \|\| null \}/);
+  assert.match(transportSource, /api<OrgTree>\("\/api\/v1\/transport\/vehicle-accounting-structure"\)/);
+  assert.match(transportSource, /api<OrgTree>\("\/api\/v1\/accounting\/organization-tree", \{/);
+  assert.match(transportSource, /label="Sucursal contable" value=\{form\.accounting_branch_code\}/);
+  assert.match(transportSource, /setField\("accounting_branch_code", value\)/);
+  assert.match(transportSource, /label="Sucursal base \*"/);
+  assert.match(transportSource, /synchronizeCenters/);
+  assert.match(transportSource, /Sincronizar centros de costo/);
   assert.match(transportSource, /body: JSON\.stringify\(\{ type: "branch", society_code: societyCode, code, name \}\)/);
-  assert.match(transportSource, /\+ Nueva sucursal/);
-  assert.match(transportSource, /se reemplaza solo si digitas uno nuevo/);
+  assert.match(transportSource, /hasStoredRolePermission\("accounting", "write"\)/);
+  assert.match(transportSource, /Los centros previamente vinculados a otra sucursal requieren revision/);
 });
 
 test("año y unidad son seleccionables en la ficha", () => {
@@ -175,33 +169,21 @@ test("el tarifario usa ModalFrame y selects alimentados por los maestros del mó
   assert.match(ratesSource, /import \{ api, isActiveMasterItem, loadVehicleMasterCatalogs \} from "@\/lib\/api";/);
   assert.match(ratesSource, /import type \{ VehicleMasterCatalogs \} from "@\/lib\/api";/);
   assert.match(ratesSource, /import \{ ModalFrame \} from "@\/components\/ui\/ModalFrame";/);
-  assert.match(ratesSource, /wizardStep === 3 \? "md:max-w-\[1536px\]" : "md:max-w-3xl"/);
+  assert.match(ratesSource, /wizardStep === 2 \? "md:max-w-\[1536px\]" : "md:max-w-3xl"/);
   assert.match(ratesSource, /onClose=\{closeWizard\} title=\{editing \? `Editar tarifario \$\{editing\.code\} · v\$\{editing\.version\}` : "Nuevo tarifario"\}/);
   assert.doesNotMatch(ratesSource, /fixed inset-0 z-50 grid place-items-center/);
   assert.match(ratesSource, /loadVehicleMasterCatalogs\(\)/);
   assert.match(ratesSource, /<RateWizard[^>]*carriers=\{carriers\} vehicles=\{vehicles\} masters=\{masters\}/);
   assert.doesNotMatch(ratesSource, /origins=|canCreateOrigin|onCreateOrigin|origin_id/);
-  assert.match(ratesSource, /const code = departments\.find\(\(item\) => item\.name === departmentName\)\?\.code;/);
-  assert.match(ratesSource, /item\.parent_code === code/);
-  assert.match(ratesSource, /codes\.has\(item\.parent_code\)/);
-  assert.match(ratesSource, /onDepartment=\{\(value\) => setDraft\(\(p\) => \(\{ \.\.\.p, destination_department: value, destination_city: "", destination_municipality: "" \}\)\)\}/);
-  assert.match(ratesSource, /<GeoCascade title="Destino" department=\{draft\.destination_department\}/);
-  assert.doesNotMatch(ratesSource, /<GeoCascade title="Origen"/);
+  assert.doesNotMatch(ratesSource, /GeoCascade|Ámbito geográfico/);
   for (const name of ["vehicle_id", "carrier_id", "service_level", "vehicle_type", "currency"]) {
     assert.match(ratesSource, new RegExp(`<Select label="[^"]+" name="${name}"`), `${name} debe ser un select de maestros`);
   }
-  assert.match(ratesSource, /aria-label=\{`Departamento \$\{title\.toLowerCase\(\)\}`\}/);
-  assert.match(ratesSource, /aria-label=\{`Municipio \$\{title\.toLowerCase\(\)\}`\}/);
-  assert.match(ratesSource, /<option value="">Cualquier departamento<\/option>/);
-  assert.match(ratesSource, /<option value="">Cualquier ciudad<\/option>/);
-  assert.match(ratesSource, /<option value="">Cualquier municipio<\/option>/);
   assert.match(ratesSource, /empty="Cualquier servicio"/);
   assert.match(ratesSource, /empty="Cualquier vehículo"/);
   assert.match(ratesSource, /destination_city: draft\.destination_city, destination_department: draft\.destination_department, destination_municipality: draft\.destination_municipality,/);
   assert.doesNotMatch(ratesSource, /origin_department|rateOriginLabel/);
   assert.match(ratesSource, /function rateDestinationLabel\(rate: RateCard\)/);
-  assert.match(ratesSource, /Aplica a: <b>\{destinationScope\}<\/b>/);
-  assert.match(ratesSource, /nacional, desde cualquier sede/);
 });
 
 test("los maestros se agrupan por modulo para no perder al usuario", () => {

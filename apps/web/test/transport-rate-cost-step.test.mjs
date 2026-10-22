@@ -10,7 +10,7 @@ const designer = fs.readFileSync(path.join(root, "components/transport/RateCostD
 const page = fs.readFileSync(path.join(root, "app/dashboard/transporte/tarifas/page.tsx"), "utf8");
 const planningMap = fs.readFileSync(path.join(root, "components/transport/PlanningRouteMap.tsx"), "utf8");
 
-test("etapa 4 renderiza el layout de 3 columnas con los bloques del PRD", () => {
+test("etapa 3 renderiza el layout de 3 columnas con los bloques del PRD", () => {
   assert.match(designer, /lg:grid-cols-\[minmax\(280px,1\.1fr\)_minmax\(0,1\.65fr\)_minmax\(260px,\.8fr\)\]/);
   assert.match(designer, /Tarifa principal/);
   assert.match(designer, /Costos adicionales/);
@@ -41,7 +41,7 @@ test("resumen distingue cobrable vs referencial y respeta el cobro mínimo", () 
   assert.match(designer, /El cobro mínimo \(/);
   assert.match(designer, /solo el resumen superior alimenta el costo del servicio/);
   assert.match(designer, /Total del servicio/);
-  assert.match(designer, /#5be49b/, "total verde del panel oscuro");
+  assert.match(designer, /text-2xl text-apex/, "total destacado con el color del tema activo");
   assert.match(designer, /\$\{stopsCount\} paradas − \$\{num\(draft\.stops_included\)\} incl\. = \$\{extraStops\} extra/, "línea de paradas extra del caso de aceptación");
 });
 
@@ -94,14 +94,14 @@ test("draftFromRate infiere método y restaura la simulación", () => {
   assert.match(page, /fuel_mode: meta\.fuel_mode === "estimated" \? "estimated" : "surcharge"/);
 });
 
-test("pasos 1 a 3 del asistente quedan intactos y el paso 4 usa diseñador dedicado", () => {
+test("el asistente tiene tres etapas y el cálculo ocupa la última", () => {
   const steps = page.match(/title: "[^"]+"/g) || [];
-  assert.deepEqual(steps, ['title: "Identificación"', 'title: "Ámbito geográfico"', 'title: "Transporte y vigencia"', 'title: "Cálculo del costo"']);
+  assert.deepEqual(steps, ['title: "Identificación"', 'title: "Transporte y vigencia"', 'title: "Cálculo del costo"']);
   assert.match(page, /\{step === 0 \? <div className="grid gap-3 sm:grid-cols-2">/);
-  assert.match(page, /GeoCascade title="Destino"/);
-  assert.match(page, /\{step === 2 \? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">/);
-  assert.match(page, /\{step === 3 \? <RateCostDesigner draft=\{draft\}/);
-  assert.match(page, /wizardStep === 3 \? "md:max-w-\[1536px\]" : "md:max-w-3xl"/, "modal ensancha solo en la etapa 4");
+  assert.doesNotMatch(page, /GeoCascade|Ámbito geográfico/);
+  assert.match(page, /\{step === 1 \? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">/);
+  assert.match(page, /\{step === 2 \? <RateCostDesigner draft=\{draft\}/);
+  assert.match(page, /wizardStep === 2 \? "md:max-w-\[1536px\]" : "md:max-w-3xl"/, "modal ensancha solo en la etapa 3");
   assert.match(page, /stepError[\s\S]*?Escribe el código y el nombre para continuar\./);
   assert.match(page, /Selecciona la transportadora de terceros para continuar\./);
   assert.doesNotMatch(page, /calculateExample|function CostField|function ExampleInput/, "cálculo de ejemplo viejo eliminado");

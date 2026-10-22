@@ -54,7 +54,7 @@ export function createCertification(tab, { code, outputDir }) {
     const edit = lines.slice(start).find(line => /\d+ button Editar tarifario/.test(line));
     await tab.click(Number(edit.match(/(\d+) button/)[1]));
     await record("synthetic_fixture_identity", (await ax()).includes(`container Editar tarifario ${code} · v1`));
-    for (let step = 2; step <= 4; step++) { await click('Siguiente'); await record(`wizard_step_${step}`, normalized(await ax()).includes(`Paso ${step} de 4`)); }
+    for (let step = 2; step <= 3; step++) { await click('Siguiente'); await record(`wizard_step_${step}`, normalized(await ax()).includes(`Paso ${step} de 3`)); }
   }
   return {
     evidence,
@@ -122,7 +122,7 @@ export function createCertification(tab, { code, outputDir }) {
       await record(`${name}_captured_for_visual_review`, true, { width, height });
     },
     async finish({ visualReviewed = false } = {}) {
-      const required = ['synthetic_fixture_identity', 'wizard_step_4', 'cleared_route', 'real_road_route', 'reference_85000_plus_two_extra_stops', 'reorder_stops', 'satellite', 'route_details', 'unresolved_place_blocks_save', 'empty_stop_is_not_billed', 'per_km', 'per_kg', 'per_m3', 'fixed_no_hidden_costs', 'tolls', 'waiting', 'loading', 'others', 'fuel_reference_does_not_bill', 'fuel_formula', 'fuel_applied_once', 'save_finished', 'reopened_total', 'reopened_fuel_inputs', 'reopened_disabled_tolls', 'desktop_captured_for_visual_review', 'mobile_captured_for_visual_review'];
+      const required = ['synthetic_fixture_identity', 'wizard_step_3', 'cleared_route', 'real_road_route', 'reference_85000_plus_two_extra_stops', 'reorder_stops', 'satellite', 'route_details', 'unresolved_place_blocks_save', 'empty_stop_is_not_billed', 'per_km', 'per_kg', 'per_m3', 'fixed_no_hidden_costs', 'tolls', 'waiting', 'loading', 'others', 'fuel_reference_does_not_bill', 'fuel_formula', 'fuel_applied_once', 'save_finished', 'reopened_total', 'reopened_fuel_inputs', 'reopened_disabled_tolls', 'desktop_captured_for_visual_review', 'mobile_captured_for_visual_review'];
       if (evidence.checks.some(check => check.status !== 'passed') || required.some(name => !evidence.checks.some(check => check.name === name))) throw new Error('Incomplete or failed certification');
       await record('desktop_mobile_visual_review', visualReviewed, { mode: 'agent_visual_review_of_saved_screenshots' });
       evidence.completed_at = new Date().toISOString();

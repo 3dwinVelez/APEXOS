@@ -6,6 +6,7 @@ const tmsSchemas = require("./tms-schema");
 const tms = require("./tms-service");
 const tmsEvidence = require("./tms-evidence-storage");
 const settlement = require("./settlement-service");
+const settlementImport = require("./settlement-import");
 const { connectionStatus } = require("./route-intelligence");
 
 async function transportRoutes(fastify) {
@@ -146,6 +147,20 @@ async function transportRoutes(fastify) {
   fastify.post("/transport/settlement-criterion-quote", { schema: tmsSchemas.settlementCriterionQuoteSchema, preHandler: requirePermission("transport", "read") }, (request) => settlement.quoteSettlementCriterion(request.user?.tenant_id, request.body));
   fastify.get("/transport/settlement-packages", { preHandler: requirePermission("transport", "read") }, (request) => settlement.listSettlementPackages(request.user?.tenant_id, request.query));
   fastify.post("/transport/settlement-packages", { schema: tmsSchemas.settlementPackageCreateSchema, preHandler: requirePermission("transport", "write") }, async (request, reply) => reply.code(201).send(await settlement.createSettlementPackage(request.user?.tenant_id, request.user, request.body)));
+  const importPermissions = [requirePermission("transport", "read"), requirePermission("transport", "import")];
+  async function importFile(request) {
+    const file = await request.file({ limits: { fileSize: settlementImport.MAX_FILE_BYTES, files: 1, fields: 0, parts: 1 } });
+    if (!file || !String(file.filename || "").toLowerCase().endsWith(".xlsx")) throw Object.assign(new Error("Seleccione la plantilla .xlsx."), { statusCode: 415, code: "TMS_IMPORT_FILE" });
+    const buffer = await file.toBuffer();
+    if (file.file.truncated) throw Object.assign(new Error("Máximo 2 MB por archivo."), { statusCode: 413, code: "TMS_IMPORT_SIZE" });
+    return buffer;
+  }
+  fastify.get("/transport/settlement-import/catalogs", { preHandler: importPermissions }, request => settlementImport.catalogs(request.user.tenant_id, request.user));
+  fastify.post("/transport/settlement-import/validate", { preHandler: importPermissions }, async request => settlementImport.validate(request.user.tenant_id, request.user, await importFile(request)));
+  fastify.post("/transport/settlement-import/commit", { schema: { querystring: { type: "object", required: ["preview_hash"], properties: { preview_hash: { type: "string", pattern: "^[a-f0-9]{64}$" } } } }, preHandler: [...importPermissions, requirePermission("transport", "write")] }, async request => settlementImport.commit(request.user.tenant_id, request.user, await importFile(request), request.query.preview_hash));
+  const importBatchPackages = { type: "array", minItems: 1, maxItems: 30, items: { type: "object", additionalProperties: false, required: ["id", "version"], properties: { id: { type: "integer", minimum: 1 }, version: { type: "integer", minimum: 0 } } } };
+  fastify.post("/transport/settlement-import/approve", { schema: { body: { type: "object", additionalProperties: false, required: ["packages"], properties: { packages: importBatchPackages, comment: { type: "string", maxLength: 2000 } } } }, preHandler: requirePermission("transport", "approve_settlements") }, request => settlementImport.batch(request.user.tenant_id, request.user, "approve", request.body));
+  fastify.post("/transport/settlement-import/account", { schema: { body: { type: "object", additionalProperties: false, required: ["packages", "income_account_code", "receivable_account_code", "posting_date", "due_date"], properties: { packages: importBatchPackages, income_account_code: { type: "string", minLength: 1, maxLength: 40 }, receivable_account_code: { type: "string", minLength: 1, maxLength: 40 }, posting_date: { type: "string", format: "date" }, due_date: { type: "string", format: "date" } } } }, preHandler: requirePermission("transport", "account_settlements") }, request => settlementImport.batch(request.user.tenant_id, request.user, "account", request.body));
   fastify.get("/transport/settlement-packages/:id", { preHandler: requirePermission("transport", "read") }, (request) => settlement.getSettlementPackage(request.user?.tenant_id, request.params.id));
   fastify.patch("/transport/settlement-packages/:id", { schema: tmsSchemas.settlementPackageUpdateSchema, preHandler: requirePermission("transport", "write") }, (request) => settlement.updateSettlementPackage(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.get("/transport/settlement-destinations", { preHandler: requirePermission("transport", "read") }, request => settlement.listSettlementDestinations(request.user?.tenant_id));

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { api } from "@/lib/api";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RateCard } from "@/app/dashboard/transporte/tarifas/page";
 import { rateCostDraftFromSnapshot } from "@/lib/transportRateSnapshot";
 
@@ -15,6 +15,20 @@ type Report = {
 };
 const noChange = () => {};
 export default function SettlementPrintPage() {
+  // This document has its own paper palette, including the rasterized annexes.
+  // Do not persist it: the dashboard keeps the user's selected theme.
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const dark = html.classList.contains("dark");
+    const theme = html.getAttribute("data-theme");
+    html.classList.remove("dark");
+    html.setAttribute("data-theme", "light");
+    return () => {
+      html.classList.toggle("dark", dark);
+      if (theme === null) html.removeAttribute("data-theme");
+      else html.setAttribute("data-theme", theme);
+    };
+  }, []);
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState("");
   const [captures, setCaptures] = useState<Record<string, string>>({});
@@ -61,7 +75,7 @@ export default function SettlementPrintPage() {
     <div className="print-toolbar"><div><strong>PDF para facturar</strong><p>Selecciona «Guardar como PDF» en el destino de impresión.</p>{error ? <p role="alert">{error}</p> : <p role="status">{ready ? "Documento y anexos preparados." : "Preparando anexos…"}</p>}</div><button type="button" disabled={!ready} onClick={() => void printReport()}>Guardar / imprimir PDF</button>{error ? <button type="button" onClick={() => setAttempt(value => value + 1)}>Reintentar</button> : null}</div>
     <style>{`
       @page { size: A4 portrait; margin:14mm; } @page annex { size: A4 landscape; }
-      html,body {background:white!important;color:#193342!important;font:12px Arial,sans-serif!important;} body {margin:0!important;}
+      html,body {color-scheme:light;background:white!important;color:#193342!important;font:12px Arial,sans-serif!important;} body {margin:0!important;}
       .print-toolbar{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:14px;margin-bottom:18px;border:1px solid #cbdcdb;border-radius:8px;} .print-toolbar p{margin:4px 0;font-size:12px;} .print-toolbar button{background:#007f79;color:white;border:0;border-radius:6px;padding:10px;cursor:pointer;} .print-toolbar button:disabled{opacity:.5;cursor:wait;}
       .settlement-print {color:#193342;background:#fff;} .settlement-print * {box-sizing:border-box;}
       .report-header {display:flex;justify-content:space-between;gap:20px;background:#0c302d;color:white;padding:22px;border-bottom:5px solid #00857b;}
@@ -72,8 +86,7 @@ export default function SettlementPrintPage() {
       .stores {font-size:11px;color:#455e6b;padding-left:18px;} table {width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;margin:10px 0;} th {background:#126b62;color:#fff;text-align:left;padding:9px;} th:first-child{width:42%;} th:nth-child(2){width:8%;} th:nth-child(3),th:nth-child(4){width:20%;} th:last-child{width:10%;} td {overflow-wrap:anywhere;padding:9px;border-bottom:1px solid #e0e8e9;vertical-align:top;} tr {break-inside:avoid;} thead {display:table-header-group;}
       .amount {text-align:right;white-space:nowrap;} .support {font-size:10px;color:#526d79;margin-top:4px;} .grand-total {margin:20px 0 0 auto;width:65%;background:#0c302d;color:white;padding:18px;text-align:right;break-inside:avoid;} .grand-total strong {display:block;font-size:25px;margin-top:6px;color:#57e0bb;}
       .annex {page:annex;break-before:page;} .annex h2 {font-size:18px;margin:0 0 8px;color:#153c48;} .annex p {margin:5px 0 12px;font-size:11px;color:#536a76;} .rate-capture-image {width:100%;height:auto;max-height:167mm;object-fit:contain;object-position:top left;}
-      [data-rate-capture] {width:1536px;min-height:700px;background:white;pointer-events:none;color:#193342;--surface:255 255 255;--surface-soft:248 250 253;--color-paper:245 248 252;--color-line:222 231 241;--color-apex:0 128 125;--text-strong:16 39 67;--text-body:28 52 81;--text-muted:106 128 163;}
-      [data-rate-capture] [data-cost-panel="summary"] > p:first-child {color:#fff!important;}
+      [data-rate-capture] {width:1536px;min-height:700px;background:white;pointer-events:none;color:#193342;--surface:255 255 255;--surface-soft:248 250 253;--surface-muted:240 245 253;--color-paper:245 248 252;--color-line:222 231 241;--color-apex:0 128 125;--text-strong:16 39 67;--text-body:28 52 81;--text-muted:85 105 132;--text-subtle:85 105 132;}
       [data-rate-capture] fieldset {border:0;padding:0;margin:0;} .snapshot-title {padding:12px 18px;font:bold 20px Arial;color:#173f4a;background:#f0f6f7;}
       @media screen {.settlement-print {width:794px;margin:auto;padding:20px;}.annex {width:1080px;margin-top:32px;}} @media print {.settlement-print[data-pdf-ready="false"] > :not(style){display:none!important;} .settlement-print[data-pdf-ready="false"]::before{content:"Prepara el documento antes de imprimir.";} body > :not(.settlement-print){display:none!important;} .print-toolbar{display:none!important;} .settlement-print{width:auto;margin:0;padding:0;} .annex{width:auto;} }
     `}</style>
@@ -82,6 +95,6 @@ export default function SettlementPrintPage() {
     {pkg.items.map((item, index) => <section className="route-block" key={item.id}><h2>Recorrido {index + 1} · {item.metadata?.customer_snapshot?.name || item.service || "Cliente sin identificación histórica"}</h2><p><strong>Ruta:</strong> {item.route_description || "Sin descripción histórica"}</p><p><strong>Fecha del servicio:</strong> {date(item.service_date ? `${item.service_date.slice(0, 10)}T12:00:00Z` : undefined)}{item.metadata?.customer_snapshot?.tax_id ? ` · NIT cliente: ${item.metadata.customer_snapshot.tax_id}` : ""}</p><p><strong>Tiendas / lugares visitados</strong></p><ul className="stores">{(item.metadata?.destination_snapshots || (item.metadata?.destination_snapshot ? [item.metadata.destination_snapshot] : [])).map((point, pointIndex) => <li key={pointIndex}>{point.name} · {point.address} · {point.city}</li>)}</ul><table><thead><tr><th>Tarifario / concepto</th><th className="amount">Servicios</th><th className="amount">Valor unitario</th><th className="amount">Valor</th><th>Anexo</th></tr></thead><tbody>{item.criteria.map((row, rowIndex) => <tr key={rowIndex}><td>{row.concept}{row.support ? <div className="support">Soporte: {row.support}</div> : null}</td><td className="amount">{row.quantity}</td><td className="amount">{money(row.unit_value)}</td><td className="amount">{money(Math.round(Number(row.quantity) * Number(row.unit_value) * 100) / 100)}</td><td>{row.annex_id}</td></tr>)}</tbody></table><p className="amount"><strong>Total del recorrido: {money(item.adjusted_amount)}</strong></p></section>)}
     {pkg.adjustments.length ? <section><h2>Ajustes registrados</h2>{pkg.adjustments.map((entry, index) => <p key={index}>{entry.reason}: {money(entry.delta)}</p>)}</section> : null}
     {pkg.observation ? <p><strong>Observaciones:</strong> {pkg.observation}</p> : null}<div className="grand-total">TOTAL PARA FACTURAR<strong>{money(pkg.accounted_total)} {pkg.currency}</strong></div>
-    {report.annexes.map(annex => { const draft = annex.definition ? rateCostDraftFromSnapshot(annex.definition) : null; if (draft) { if (annex.metrics.distance_km != null) draft.billable_km = String(annex.metrics.distance_km); if (annex.metrics.weight_kg != null) draft.preview_load = String(annex.metrics.weight_kg); if (annex.metrics.volume_m3 != null && draft.load_unit === "m3") draft.preview_load = String(annex.metrics.volume_m3); if (annex.metrics.wait_minutes != null) draft.preview_wait_min = String(annex.metrics.wait_minutes); if (draft.sim_origin_lat != null) draft.sim_origin_kind = "custom"; } return <section className="annex" key={annex.id}><h2>Anexo {annex.id} · Tarifario {annex.code} · v{annex.version || "—"}</h2><p>{annex.provenance} · Valor unitario aplicado: {money(annex.unit_value)}</p>{captures[annex.id] ? <img className="rate-capture-image" src={captures[annex.id]} alt={`Captura de etapa 4: ${annex.code}`} /> : draft ? <div data-rate-capture={annex.id}><div className="snapshot-title">Etapa 4 · Cálculo del costo · {annex.code} · v{annex.version}</div><fieldset disabled><RateCostDesigner draft={draft} onChange={noChange} sedes={[]} readOnly /></fieldset></div> : <p>No es posible capturar la etapa 4 de esta versión histórica. No se ha sustituido por otra tarifa.</p>}</section>; })}
+    {report.annexes.map(annex => { const draft = annex.definition ? rateCostDraftFromSnapshot(annex.definition) : null; if (draft) { if (annex.metrics.distance_km != null) draft.billable_km = String(annex.metrics.distance_km); if (annex.metrics.weight_kg != null) draft.preview_load = String(annex.metrics.weight_kg); if (annex.metrics.volume_m3 != null && draft.load_unit === "m3") draft.preview_load = String(annex.metrics.volume_m3); if (annex.metrics.wait_minutes != null) draft.preview_wait_min = String(annex.metrics.wait_minutes); if (draft.sim_origin_lat != null) draft.sim_origin_kind = "custom"; } return <section className="annex" key={annex.id}><h2>Anexo {annex.id} · Tarifario {annex.code} · v{annex.version || "—"}</h2><p>{annex.provenance} · Valor unitario aplicado: {money(annex.unit_value)}</p>{captures[annex.id] ? <img className="rate-capture-image" src={captures[annex.id]} alt={`Captura del cálculo del costo: ${annex.code}`} /> : draft ? <div data-rate-capture={annex.id}><div className="snapshot-title">Cálculo del costo · {annex.code} · v{annex.version}</div><fieldset disabled><RateCostDesigner draft={draft} onChange={noChange} sedes={[]} readOnly /></fieldset></div> : <p>No es posible capturar el cálculo del costo de esta versión histórica. No se ha sustituido por otra tarifa.</p>}</section>; })}
   </main>;
 }

@@ -37,6 +37,10 @@ async function postSettlementIncomeTx(tx, tenantId, user, pkg, input, period) {
   const vehicle = await tx.vehicle.findFirst({ where: { tenant_id: String(tenantId), id: Number(pkg.metadata?.vehicle_id || 0) } });
   if (!vehicle) fail("TMS_ACCOUNTING_VEHICLE_REQUIRED", "La liquidacion debe identificar un vehiculo de la empresa.");
   const center = await ensureVehicleCenterTx(tx, tenantId, vehicle, vehicle);
+  const expectedCenter = pkg.metadata?.settlement_import?.center;
+  if (expectedCenter && ["code", "branch_code", "society_code"].some(key => center[key] !== expectedCenter[key])) {
+    fail("TMS_IMPORT_CENTER_CHANGED", "La asignación contable del vehículo cambió desde la importación. Revise el centro de costos antes de contabilizar.");
+  }
   const postingDate = String(input.posting_date || new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Bogota" }).format(new Date()));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(postingDate) || Number.isNaN(Date.parse(postingDate)) || postingDate.slice(0, 7) !== period) {
     fail("TMS_ACCOUNTING_DATE_PERIOD", "La fecha de contabilizacion debe pertenecer al periodo asignado a la liquidacion.");

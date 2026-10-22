@@ -14,6 +14,7 @@ function setup(count = 1) {
   const rates = [1, 2].map(id => ({ id, code: `T-${id}`, name: `Tarifa ${id}`, version: 1, valid_from: '2020-01-01', valid_to: '2099-12-31', unit_amount: id * 100, default_metrics: { distance_km: 10 }, requires_distance: true, route_description: 'Origen → Destino' }));
   const componentExports = {};
   vm.runInNewContext(compiled, { exports: componentExports, crypto: { randomUUID }, require(name) {
+    if (name === '@/components/transport/TransportSearchSelect') return { TransportSearchSelect: 'TransportSearchSelect' };
     if (name === 'react') return {
       useRef(value) { const i = cursor++; return hooks[i] ||= { current: value }; },
       useState(value) { const i = cursor++; if (!(i in hooks)) hooks[i] = value; return [hooks[i], next => { hooks[i] = typeof next === 'function' ? next(hooks[i]) : next; }]; },

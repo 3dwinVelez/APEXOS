@@ -13,6 +13,8 @@
 // salvaguarden en la base y no solo en la UI.
 
 const basePrisma = require("../../core/prisma");
+const { AsyncLocalStorage } = require("node:async_hooks");
+const settlementTransaction = new AsyncLocalStorage();
 const E = require("./settlement-engine");
 const { partyRoleWhere } = require("../parties/roles");
 const { postSettlementIncomeTx, reverseSettlementIncomeTx } = require("./settlement-posting");
@@ -62,10 +64,15 @@ function read(tenantId, fn) {
 
 function write(tenantId, fn) {
   if (!tenantId) fail(401, "TMS_TENANT_REQUIRED", "Empresa requerida.");
+  const current = settlementTransaction.getStore();
+  if (current) {
+    if (current.tenantId !== String(tenantId)) fail(403, "TMS_IMPORT_TENANT_MISMATCH", "Empresa no autorizada.");
+    return fn(current.tx, tenantId);
+  }
   return basePrisma.runWithTenant(tenantId, () =>
     basePrisma.$transaction(async (tx) => {
       await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtext($1))", `transport:${tenantId}`);
-      return fn(tx, tenantId);
+      return settlementTransaction.run({ tenantId: String(tenantId), tx }, () => fn(tx, tenantId));
     }, { maxWait: 10000, timeout: 25000 })
   );
 }
@@ -188,11 +195,14 @@ async function saveSettlementPeriod(tenantId, user, id, input) {
 
 // ---- Paquetes ----
 function packageWhere(query = {}) {
+  const range = require("./settlement-filters").settlementDateRange(query);
   const stages = { creado: ["borrador", "validando", "preliquidada", "con_novedad", "en_revision", "rechazada"], aprobado: ["aprobada"], contabilizado: ["contabilizada"], liquidado: ["liquidada"] };
   return {
     ...(query.status ? { status: stages[query.status] ? { in: stages[query.status] } : query.status } : {}),
     ...(query.vehicle_id ? { metadata: { path: ["vehicle_id"], equals: Number(query.vehicle_id) } } : {}),
     ...(query.period_id ? { period_id: Number(query.period_id) } : {}),
+    ...(query.period_code ? { period: { code: String(query.period_code) } } : {}),
+    ...(range ? { items: { some: { service_date: range } } } : {}),
     ...(query.carrier_id ? { carrier_id: Number(query.carrier_id) } : {}),
     ...(query.type_code ? { type_code: String(query.type_code).toUpperCase() } : {}),
     ...(query.responsible_id ? { responsible_id: Number(query.responsible_id) } : {})
@@ -243,11 +253,13 @@ async function getSettlementControlTower(tenantId, query = {}) {
 // "cuanto ingreso genera cada vehiculo" sin duplicar consultas ni crear un subsistema aparte.
 async function getSettlementVehicleConsolidation(tenantId, query = {}) {
   return read(tenantId, async (db) => {
-    const packages = await db.transportSettlementPackage.findMany({
-      where: packageWhere(query),
-      include: { items: true, period: { select: { code: true, start_date: true, end_date: true } } },
+    const range = require("./settlement-filters").settlementDateRange(query);
+    const where = packageWhere(query);
+    const [packages, matchedPackages] = await Promise.all([db.transportSettlementPackage.findMany({
+      where,
+      include: { items: range ? { where: { service_date: range } } : true, period: { select: { code: true, start_date: true, end_date: true } } },
       orderBy: { updated_at: "desc" }, take: Math.min(numberOr(query.limit, 200), 300)
-    });
+    }), db.transportSettlementPackage.count({ where })]);
     const vehicles = E.consolidateByVehicle(packages.map((pkg) => ({
       ...packageView(pkg),
       period_code: pkg.period?.code || null
@@ -256,6 +268,8 @@ async function getSettlementVehicleConsolidation(tenantId, query = {}) {
     return {
       generated_at: new Date().toISOString(),
       total_packages: packages.length,
+      matched_packages: matchedPackages,
+      has_more: matchedPackages > packages.length,
       totals: {
         vehicle_count: vehicles.length,
         line_count: vehicles.reduce((acc, vehicle) => acc + vehicle.line_count, 0),
@@ -336,6 +350,7 @@ async function automaticSettlementPeriod(tx, tenantId) {
 }
 
 async function createSettlementPackage(tenantId, user, input) {
+  if (input.metadata && Object.hasOwn(input.metadata, "settlement_import")) fail(400, "TMS_IMPORT_METADATA_RESERVED", "La trazabilidad de importación la asigna el servidor.");
   return write(tenantId, async (tx) => {
     const vehicle = input.vehicle_id ? await loadSettlementVehicle(tx, input.vehicle_id) : null;
     if (!vehicle && !input.carrier_id) fail(400, "TMS_SETTLEMENT_CARRIER_REQUIRED", "Seleccione un vehiculo.");
@@ -379,6 +394,7 @@ async function createSettlementPackage(tenantId, user, input) {
 }
 
 async function updateSettlementPackage(tenantId, user, id, input) {
+  if (input.metadata && Object.hasOwn(input.metadata, "settlement_import")) fail(400, "TMS_IMPORT_METADATA_RESERVED", "La trazabilidad de importación no puede modificarse.");
   return write(tenantId, async (tx) => {
     const pkg = await tx.transportSettlementPackage.findFirstOrThrow({ where: { id: Number(id) } });
     E.assertEditable(pkg.status); // RB-11
@@ -857,6 +873,7 @@ async function simulateRate(tenantId, input) {
 }
 
 module.exports = {
+  withSettlementTransaction: write,
   listSettlementAccountingOptions,
   currentAccountingMonth, listSettlementDestinations, listSettlementCustomers, saveSettlementDocuments, listSettlementRateOptions, quoteSettlementCriterion,
   listSettlementTypes, saveSettlementType,

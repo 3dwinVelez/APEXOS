@@ -203,13 +203,10 @@ test("los tarifarios exponen vigencias, versiones y componentes de costo", () =>
   assert.match(rates, /fuel_surcharge_pct/);
 });
 
-test("el asistente de tarifarios define ambito solo por destino y aplica a nivel nacional desde cualquier sede", () => {
+test("el asistente no incluye ámbito geográfico y conserva la lectura de tarifas históricas", () => {
   assert.doesNotMatch(rates, /\/api\/v1\/transport\/origins/);
   assert.doesNotMatch(rates, /OriginQuickCreate|origin_id/);
-  assert.match(rates, /GeoCascade title="Destino"/);
-  assert.match(rates, /destinationScope/);
-  assert.match(rates, /Aplica a: <b>\{destinationScope\}<\/b>/);
-  assert.match(rates, /nacional, desde cualquier sede/);
+  assert.doesNotMatch(rates, /GeoCascade|Ámbito geográfico/);
   assert.match(rates, /Red nacional/);
 });
 

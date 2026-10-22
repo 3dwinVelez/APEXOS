@@ -1,4 +1,5 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 
 
 
@@ -298,7 +299,7 @@ type EvidenceUpload = {
 
 const inputClass =
 
-  "h-10 w-full rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-apex";
+  "h-10 w-full rounded-md border border-line bg-surface px-3 text-sm outline-none focus:border-apex";
 
 const NEXT_STATUS: Record<string, string> = {
 
@@ -866,7 +867,7 @@ export default function TransportOperationPage() {
 
           <h1 className="mt-1 text-3xl font-semibold">Controlar viajes</h1>
 
-          <p className="mt-2 text-sm text-neutral-600">
+          <p className="mt-2 text-sm text-content-body">
 
             Revisa lo urgente, asigna recursos y lleva cada viaje hasta su entrega y liquidación.
 
@@ -878,7 +879,7 @@ export default function TransportOperationPage() {
 
           <button
 
-            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-md border border-line bg-white px-3 text-sm font-semibold"
+            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-md border border-line bg-surface px-3 text-sm font-semibold"
 
             onClick={() => void load()}
 
@@ -918,12 +919,12 @@ export default function TransportOperationPage() {
 
       ) : null}
 
-      <section className="rounded-md border border-line bg-white p-4" aria-labelledby="transport-next-action">
+      <section className="rounded-md border border-line bg-surface p-4" aria-labelledby="transport-next-action">
         <p className="text-xs font-semibold uppercase tracking-wide text-apex">Siguiente paso</p>
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-semibold" id="transport-next-action">{plannable.length ? `${plannable.length} pedidos están listos para crear un viaje` : tower.trips.length ? "Continúa con los viajes abiertos" : "Prepara el primer pedido para comenzar"}</h2>
-            <p className="mt-1 text-sm text-neutral-600">{plannable.length ? "Agrúpalos y compara vehículo, ruta y costo antes de confirmar." : tower.trips.length ? "Abre un viaje para revisar asignación, recorrido, entrega o liquidación." : "Necesitas sede, destino, fecha, peso y volumen para poder planear."}</p>
+            <p className="mt-1 text-sm text-content-body">{plannable.length ? "Agrúpalos y compara vehículo, ruta y costo antes de confirmar." : tower.trips.length ? "Abre un viaje para revisar asignación, recorrido, entrega o liquidación." : "Necesitas sede, destino, fecha, peso y volumen para poder planear."}</p>
           </div>
           {canWrite ? <Link className="inline-flex h-10 items-center rounded-md bg-apex px-4 text-sm font-semibold text-white" href={plannable.length ? "/dashboard/transporte/planeacion" : tower.trips.length ? "#active-trips" : "/dashboard/transporte/ordenes"}>{plannable.length ? "Planear pedidos" : tower.trips.length ? "Ver viajes" : "Preparar pedido"}</Link> : null}
         </div>
@@ -984,17 +985,17 @@ export default function TransportOperationPage() {
       </div>
 
       {tower.exceptions.length ? (
-        <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+        <section className="rounded-xl border border-amber-200 bg-warning/10 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold">Bandeja de excepciones</h2>
             <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">{tower.exceptions.length} pendientes</span>
           </div>
           <div className="space-y-2">
             {tower.exceptions.map((exception) => (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-white p-3 text-sm" key={`${exception.trip_id}-${exception.kind}`}>
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-surface p-3 text-sm" key={`${exception.trip_id}-${exception.kind}`}>
                 <div className="min-w-0">
                   <p className="font-semibold">{exception.code} · {exception.action}</p>
-                  <p className="text-xs text-neutral-600">{exception.message}</p>
+                  <p className="text-xs text-content-body">{exception.message}</p>
                 </div>
                 <span className={`rounded-md px-2 py-1 text-xs font-semibold ${exception.severity === "alta" ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-800"}`}>{exception.severity}</span>
               </div>
@@ -1005,7 +1006,7 @@ export default function TransportOperationPage() {
 
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
 
-        <section className="overflow-hidden rounded-md border border-line bg-white" id="active-trips">
+        <section className="overflow-hidden rounded-md border border-line bg-surface" id="active-trips">
 
           <div className="border-b border-line px-4 py-3">
 
@@ -1017,7 +1018,7 @@ export default function TransportOperationPage() {
 
             <table className="w-full text-left text-sm">
 
-              <thead className="bg-paper text-xs uppercase text-neutral-500">
+              <thead className="bg-paper text-xs uppercase text-content-muted">
 
                 <tr>
 
@@ -1045,7 +1046,7 @@ export default function TransportOperationPage() {
 
                       <p className="font-semibold">{trip.code}</p>
 
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-content-muted">
 
                         {trip.origin_name} · {trip.stops.length} paradas
 
@@ -1063,7 +1064,7 @@ export default function TransportOperationPage() {
 
                       {trip.vehicle_plate || "Sin asignar"}
 
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-content-muted">
 
                         {trip.driver?.name || "Sin conductor"}
 
@@ -1075,7 +1076,7 @@ export default function TransportOperationPage() {
 
                       {trip.total_weight_kg.toLocaleString()} kg
 
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-content-muted">
 
                         {trip.total_volume_m3} m3 · {trip.total_pallets} pallets
 
@@ -1107,11 +1108,11 @@ export default function TransportOperationPage() {
 
             </table>
 
-          </div> : <div className="px-4 py-8 text-center text-neutral-500"><p className="font-semibold text-neutral-800">No hay viajes abiertos</p><p className="mt-1 text-sm">Prepara pedidos y crea un plan para iniciar la operación.</p></div>}
+          </div> : <div className="px-4 py-8 text-center text-content-muted"><p className="font-semibold text-content-strong">No hay viajes abiertos</p><p className="mt-1 text-sm">Prepara pedidos y crea un plan para iniciar la operación.</p></div>}
 
         </section>
 
-        <section className="rounded-md border border-line bg-white p-4">
+        <section className="rounded-md border border-line bg-surface p-4">
 
           <h2 className="font-semibold">Demanda por planear</h2>
 
@@ -1131,7 +1132,7 @@ export default function TransportOperationPage() {
 
                 <p className="mt-1 text-sm">{need.delivery_point?.name}</p>
 
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-content-muted">
 
                   {need.weight_kg} kg · {need.volume_m3} m3 · vence{" "}
 
@@ -1152,7 +1153,7 @@ export default function TransportOperationPage() {
               </div>
 
             ))}
-            {!needs.some(need => ["pendiente", "incompleta"].includes(need.status)) ? <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">No hay pedidos pendientes. Cuando registres uno, aquí verás si está listo para planear o qué dato le falta.</p> : null}
+            {!needs.some(need => ["pendiente", "incompleta"].includes(need.status)) ? <p className="rounded-md bg-paper p-3 text-sm text-content-body">No hay pedidos pendientes. Cuando registres uno, aquí verás si está listo para planear o qué dato le falta.</p> : null}
 
           </div>
 
@@ -1162,7 +1163,7 @@ export default function TransportOperationPage() {
 
       {loading ? (
 
-        <p className="text-sm text-neutral-500">Actualizando operacion...</p>
+        <p className="text-sm text-content-muted">Actualizando operacion...</p>
 
       ) : null}
 
@@ -1170,7 +1171,7 @@ export default function TransportOperationPage() {
 
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/35 p-4">
 
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-auto rounded-xl bg-white p-5">
+          <div className="max-h-[92vh] w-full max-w-3xl overflow-auto rounded-xl bg-surface p-5">
 
             <div className="mb-4 flex justify-between">
 
@@ -1296,7 +1297,7 @@ function NeedForm({
 
         <span className="mb-1 block font-medium">Sede</span>
 
-        <select className={inputClass} name="sede_id" required>
+        <TransportSearchSelect className={inputClass} name="sede_id" required>
 
           <option value="">Seleccionar</option>
 
@@ -1310,7 +1311,7 @@ function NeedForm({
 
           ))}
 
-        </select>
+        </TransportSearchSelect>
 
       </label>
 
@@ -1318,7 +1319,7 @@ function NeedForm({
 
         <span className="mb-1 block font-medium">Punto de entrega</span>
 
-        <select className={inputClass} name="delivery_point_id" required>
+        <TransportSearchSelect className={inputClass} name="delivery_point_id" required>
 
           <option value="">Seleccionar</option>
 
@@ -1332,7 +1333,7 @@ function NeedForm({
 
           ))}
 
-        </select>
+        </TransportSearchSelect>
 
       </label>
 
@@ -1424,7 +1425,7 @@ function NeedForm({
 
         <span className="mb-1 block font-medium">Prioridad</span>
 
-        <select className={inputClass} name="priority">
+        <TransportSearchSelect className={inputClass} name="priority">
 
           <option>normal</option>
 
@@ -1432,7 +1433,7 @@ function NeedForm({
 
           <option>urgente</option>
 
-        </select>
+        </TransportSearchSelect>
 
       </label>
 
@@ -1440,7 +1441,7 @@ function NeedForm({
 
         <span className="mb-1 block font-medium">Servicio</span>
 
-        <select className={inputClass} name="service_level">
+        <TransportSearchSelect className={inputClass} name="service_level">
 
           <option>normal</option>
 
@@ -1448,7 +1449,7 @@ function NeedForm({
 
           <option>refrigerado</option>
 
-        </select>
+        </TransportSearchSelect>
 
       </label>
 
@@ -1486,7 +1487,7 @@ function TripForm({
 
         <span className="mb-1 block font-medium">Origen</span>
 
-        <select className={inputClass} name="origin_name" required>
+        <TransportSearchSelect className={inputClass} name="origin_name" required>
 
           <option value="">Seleccionar</option>
 
@@ -1496,7 +1497,7 @@ function TripForm({
 
           ))}
 
-        </select>
+        </TransportSearchSelect>
 
       </label>
 
@@ -1574,7 +1575,7 @@ function TripForm({
 
               </span>
 
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-content-muted">
 
                 {need.weight_kg} kg
 
@@ -1674,7 +1675,7 @@ function TripDrawer({
 
     <div className="fixed inset-0 z-50 flex justify-end bg-black/35">
 
-      <aside className="h-full w-full max-w-2xl overflow-auto bg-white p-5 shadow-xl">
+      <aside className="h-full w-full max-w-2xl overflow-auto bg-surface p-5 shadow-xl">
 
         <div className="flex justify-between">
 
@@ -1726,7 +1727,7 @@ function TripDrawer({
 
               <h3 className="font-semibold">Tracking operativo</h3>
 
-              <p className="text-xs text-neutral-500">
+              <p className="text-xs text-content-muted">
 
                 {tracking?.count || 0} posiciones cargadas en la vista
 
@@ -1802,7 +1803,7 @@ function TripDrawer({
 
           ) : (
 
-            <p className="mt-3 text-sm text-neutral-500">
+            <p className="mt-3 text-sm text-content-muted">
 
               El conductor todavía no ha sincronizado posiciones GPS.
 
@@ -1828,7 +1829,7 @@ function TripDrawer({
 
               <span className="mb-1 block">Transportadora</span>
 
-              <select className={inputClass} name="carrier_id">
+              <TransportSearchSelect className={inputClass} name="carrier_id">
 
                 <option value="">Flota propia</option>
 
@@ -1842,7 +1843,7 @@ function TripDrawer({
 
                 ))}
 
-              </select>
+              </TransportSearchSelect>
 
             </label>
 
@@ -1850,7 +1851,7 @@ function TripDrawer({
 
               <span className="mb-1 block">Vehiculo</span>
 
-              <select className={inputClass} name="vehicle_id" required>
+              <TransportSearchSelect className={inputClass} name="vehicle_id" required>
 
                 <option value="">Seleccionar</option>
 
@@ -1864,7 +1865,7 @@ function TripDrawer({
 
                 ))}
 
-              </select>
+              </TransportSearchSelect>
 
             </label>
 
@@ -1872,7 +1873,7 @@ function TripDrawer({
 
               <span className="mb-1 block">Conductor</span>
 
-              <select className={inputClass} name="driver_id" required>
+              <TransportSearchSelect className={inputClass} name="driver_id" required>
 
                 <option value="">Seleccionar</option>
 
@@ -1886,7 +1887,7 @@ function TripDrawer({
 
                 ))}
 
-              </select>
+              </TransportSearchSelect>
 
             </label>
 
@@ -1930,7 +1931,7 @@ function TripDrawer({
 
                     </p>
 
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-xs text-content-muted">
 
                       {stop.delivery_point?.address} ·{" "}
 
@@ -2000,7 +2001,7 @@ function TripDrawer({
 
                       Resultado
 
-                      <select className={inputClass} name="result">
+                      <TransportSearchSelect className={inputClass} name="result">
 
                         <option value="completa">Completa</option>
 
@@ -2018,7 +2019,7 @@ function TripDrawer({
 
                         <option value="averia">Averia</option>
 
-                      </select>
+                      </TransportSearchSelect>
 
                     </label>
 
@@ -2154,7 +2155,7 @@ function TripDrawer({
 
                   <div className="mt-3 rounded-md bg-paper p-3">
 
-                    <p className="text-xs font-semibold uppercase text-neutral-500">
+                    <p className="text-xs font-semibold uppercase text-content-muted">
 
                       Historial de intentos
 
@@ -2304,7 +2305,7 @@ function TripDrawer({
 
         {next ? (
 
-          <div className="sticky bottom-0 mt-6 flex justify-end border-t border-line bg-white py-4">
+          <div className="sticky bottom-0 mt-6 flex justify-end border-t border-line bg-surface py-4">
 
             <button
 
@@ -2364,9 +2365,9 @@ function Metric({
 
   return (
 
-    <div className="rounded-xl border border-line bg-white p-3">
+    <div className="rounded-xl border border-line bg-surface p-3">
 
-      <div className="flex items-center justify-between text-neutral-500">
+      <div className="flex items-center justify-between text-content-muted">
 
         <span className="text-xs font-medium">{label}</span>
 
@@ -2386,7 +2387,7 @@ function Status({ value }: { value: string }) {
 
   return (
 
-    <span className="inline-flex rounded-full bg-[#146C6312] px-2 py-1 text-xs font-semibold text-apex">
+    <span className="inline-flex rounded-full bg-apex/10 px-2 py-1 text-xs font-semibold text-apex">
 
       {value.replaceAll("_", " ")}
 
@@ -2402,7 +2403,7 @@ function Mini({ label, value }: { label: string; value: string }) {
 
     <div className="rounded-md bg-paper p-3">
 
-      <p className="text-xs text-neutral-500">{label}</p>
+      <p className="text-xs text-content-muted">{label}</p>
 
       <p className="mt-1 font-semibold">{value}</p>
 
