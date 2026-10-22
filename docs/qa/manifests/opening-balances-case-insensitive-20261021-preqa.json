@@ -1,0 +1,242 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "opening-balances-case-insensitive-20261021",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "a6c956df0c4d582b6e216c302a91a4ed1815efce",
+  "target_head": "b7db905f9294a136e57d827df5dd9cecb9edcb51",
+  "base_commit": "b7db905f9294a136e57d827df5dd9cecb9edcb51",
+  "base_commits": {
+    "develop": "b7db905f9294a136e57d827df5dd9cecb9edcb51"
+  },
+  "change_intent": {
+    "summary": "Resolver cuentas, sucursales y centros de costo sin distinguir mayusculas en la importacion de saldos iniciales, persistir codigos canonicos, exigir identidad almacenada exacta en la relacion sucursal-centro y certificar con reproduccion real del adjunto historico, preservando tercero opcional, asiento balanceado, duplicado UTC y aislamiento por empresa",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/accounting/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/accounting-opening-balances.test.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/opening-balances-nit-browser-local.js",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/opening-balances-attachment-local.js",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/opening-balances-case-insensitive-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-case-insensitive-20261021-preqa.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/opening-balances-case-insensitive-20261021-scope.json",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "scripts/certifications/opening-balances-nit-browser-local.js",
+    "scripts/certifications/opening-balances-attachment-local.js",
+    "docs/qa/certifications/opening-balances-case-insensitive-20261021.md",
+    "docs/qa/manifests/opening-balances-case-insensitive-20261021-preqa.json",
+    "docs/qa/manifests/opening-balances-case-insensitive-20261021-scope.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Resolucion insensible a mayusculas con codigos canonicos de cuenta, sucursal y centro",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Relacion sucursal-centro con identidad almacenada exacta",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Asociacion exacta de NIT y tercero opcional",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Aislamiento por empresa, RBAC y permisos contables",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Asiento balanceado, duplicado y fecha de corte UTC",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Reproduccion real del adjunto historico con validacion controlada sin 500",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    {
+      "name": "Regresion completa de API y scripts de soporte",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante: \"puedes verificar que si suba el cambio a qa ambos lo de mayusculas y lo anterior\" (2026-10-21; autorizacion observada 2026-10-22T02:55:41Z)",
+    "approved_at": "2026-10-22T02:55:41Z",
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false,
+      "create_auxiliary_branch": false
+    }
+  },
+  "environment": "LOCAL",
+  "commit": "a6c956df0c4d582b6e216c302a91a4ed1815efce",
+  "qa_status": "pending",
+  "promotion_status": "pending",
+  "deployment_status": "blocked",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-case-insensitive-20261021.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-10-22T02:55:19.970Z",
+    "checks": 80,
+    "source_hashes": 5,
+    "script": "../../../scripts/certifications/opening-balances-nit-browser-local.js",
+    "evidence": [
+      "../certifications/opening-balances-case-insensitive-20261021.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-10-22T02:55:19.970Z",
+    "tests": 44,
+    "script": "../../../scripts/certifications/opening-balances-nit-browser-local.js",
+    "evidence": [
+      "../certifications/opening-balances-case-insensitive-20261021.md"
+    ]
+  },
+  "integrated_validation": {
+    "status": "passed",
+    "completed_at": "2026-10-22T02:55:19.970Z",
+    "date": "2026-10-21",
+    "candidate": "a6c956df0c4d582b6e216c302a91a4ed1815efce",
+    "snapshot": "local_worktree_at_certified_commit_source_hashes",
+    "api_port": 3216,
+    "web_port": 3006,
+    "database": "loopback_postgresql",
+    "source_hashes": 5,
+    "unit_regression": {
+      "status": "passed",
+      "tests": 44
+    },
+    "production_build": {
+      "status": "reused",
+      "kind": "unchanged_frontend_build_reuse",
+      "framework": "Next.js 16.3.5",
+      "pages": 126,
+      "reused_from_candidate": "853519a6ce74a974afceb7e2edf4cb4458c19b4f",
+      "frontend_diff": "none_between_b7db905f_and_a6c956df",
+      "completed_at": null,
+      "detail": "No se genero una compilacion nueva; se reutiliza la compilacion de produccion de 126 paginas del candidato 853519a6, valida porque apps/web no tiene diferencias entre el destino b7db905f y el candidato a6c956df"
+    },
+    "browser_certification": {
+      "status": "passed",
+      "checks": 80,
+      "completed_at": "2026-10-22T02:55:19.970Z"
+    },
+    "attachment_reproduction": {
+      "status": "passed",
+      "checks": 34,
+      "completed_at": "2026-10-22T02:54:17.780Z",
+      "evidence": "../evidence/opening-balances-attachment-20261021/reproduction.json"
+    },
+    "generated_evidence": "docs/qa/evidence/opening-balances-case-insensitive-20261021/promotion/browser-local.json"
+  },
+  "build": {
+    "status": "reused",
+    "kind": "unchanged_frontend_build_reuse",
+    "framework": "Next.js 16.3.5",
+    "pages": 126,
+    "reused_from_candidate": "853519a6ce74a974afceb7e2edf4cb4458c19b4f",
+    "frontend_diff": "none_between_b7db905f_and_a6c956df",
+    "completed_at": null,
+    "detail": "Frontend sin cambios; se reutiliza la compilacion de produccion existente del candidato 853519a6 y no se genero un build nuevo",
+    "evidence": [
+      "../certifications/opening-balances-case-insensitive-20261021.md"
+    ]
+  },
+  "provider_status": {
+    "provider": "Railway",
+    "status": "blocked",
+    "reason": "PlatformOutage",
+    "incident": "https://status.railway.com/incident/QH8L8B3E",
+    "detail": "Builds y despliegues pausados; ultimo reporte oficial 02:19 UTC. La activacion remota de QA queda bloqueada por el proveedor aun si GitHub integra el cambio.",
+    "release_retry": "after_github_gates"
+  },
+  "pending_qa": [
+    "QA funcional pendiente: el cambio aun no esta desplegado en el entorno QA",
+    "Railway reporta PlatformOutage (QH8L8B3E) con builds pausados (ultimo reporte 02:19 UTC); el despliegue QA esta bloqueado por el proveedor incluso si el PR se integra en GitHub",
+    "La promocion a main no esta autorizada; este manifiesto solo certifica desarrollo -> develop para QA"
+  ]
+}

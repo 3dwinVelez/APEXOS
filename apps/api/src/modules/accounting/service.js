@@ -107,6 +107,42 @@ async function parseOpeningBalancesWorkbook(buffer) {
   return rows;
 }
 
+function openingCodeKey(value) {
+  return normalizeCode(value).toLowerCase();
+}
+
+function matchOpeningBalanceCode(rows, rawCode, { label, rowNumber }) {
+  const code = normalizeCode(rawCode);
+  const exact = rows.filter((item) => normalizeCode(item.code) === code);
+  const matches = exact.length ? exact : rows.filter((item) => openingCodeKey(item.code) === openingCodeKey(code));
+  if (matches.length > 1) throw appError(422, "OPENING_BALANCE_AMBIGUOUS_CODE", `Fila ${rowNumber}: ${label} ${code} coincide con mas de un codigo almacenado`);
+  return matches[0] || null;
+}
+
+function resolveOpeningBalanceCenter(tree, branch, rawCode, rowNumber) {
+  const centers = tree.cost_centers.filter((item) => normalizeCode(item.branch_code) === normalizeCode(branch.code));
+  const center = matchOpeningBalanceCode(centers, rawCode, { label: "centro de costo", rowNumber });
+  if (!center || center.active === false || normalizeCode(center.society_code) !== normalizeCode(branch.society_code)) throw appError(422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND", `Fila ${rowNumber}: centro de costo no pertenece a la sucursal`);
+  return center;
+}
+
+async function resolveOpeningBalanceAccount(client, rawCode, rowNumber) {
+  const code = normalizeCode(rawCode);
+  const exact = await client.account.findFirst({ where: { code, __includeInactive: true } });
+  if (exact) {
+    if (exact.active !== true || exact.allows_tx !== true) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${rowNumber}: cuenta ${code} inexistente, inactiva o no transaccional`);
+    return exact;
+  }
+  const variants = await client.account.findMany({
+    where: { code: { equals: code, mode: "insensitive" }, __includeInactive: true },
+    take: 2
+  });
+  if (variants.length > 1) throw appError(422, "OPENING_BALANCE_AMBIGUOUS_CODE", `Fila ${rowNumber}: cuenta ${code} coincide con mas de un codigo almacenado`);
+  const account = variants[0];
+  if (!account || account.active !== true || account.allows_tx !== true) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${rowNumber}: cuenta ${code} inexistente, inactiva o no transaccional`);
+  return account;
+}
+
 async function prepareOpeningBalanceRows(client, tenantId, rows) {
   const tree = await getOrganizationTree(tenantId);
   const prepared = [];
@@ -120,15 +156,13 @@ async function prepareOpeningBalanceRows(client, tenantId, rows) {
     const costCenterCode = normalizeCode(row.centro_costo);
     const cents = openingCents(row.saldo, row.excel_row);
     if (!accountCode || !branchCode || !costCenterCode || cents === 0) throw appError(422, "INVALID_OPENING_BALANCE_ROW", `Fila ${row.excel_row}: cuenta, sucursal, centro de costo y saldo distinto de cero son obligatorios`);
-    const account = await client.account.findFirst({ where: { code: accountCode, active: true, allows_tx: true } });
-    if (!account) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${row.excel_row}: cuenta ${accountCode} inexistente, inactiva o no transaccional`);
-    const branch = activeRows(tree.branches).find((item) => item.code === branchCode);
-    const center = activeRows(tree.cost_centers).find((item) => item.code === costCenterCode && item.branch_code === branchCode);
-    if (!branch) throw appError(422, "OPENING_BALANCE_BRANCH_NOT_FOUND", `Fila ${row.excel_row}: sucursal ${branchCode} inexistente o inactiva`);
-    if (!center || center.society_code !== branch.society_code) throw appError(422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND", `Fila ${row.excel_row}: centro de costo no pertenece a la sucursal`);
+    const account = await resolveOpeningBalanceAccount(client, accountCode, row.excel_row);
+    const branch = matchOpeningBalanceCode(tree.branches, branchCode, { label: "sucursal", rowNumber: row.excel_row });
+    if (!branch || branch.active === false) throw appError(422, "OPENING_BALANCE_BRANCH_NOT_FOUND", `Fila ${row.excel_row}: sucursal ${branchCode} inexistente o inactiva`);
+    const center = resolveOpeningBalanceCenter(tree, branch, costCenterCode, row.excel_row);
     const party = await resolveOpeningBalanceParty(client, row.tercero, row.excel_row);
     dates.add(date.toISOString().slice(0, 10)); societies.add(center.society_code); totalCents += cents;
-    prepared.push({ excel_row: row.excel_row, date, account, account_code: accountCode, branch_code: branchCode, cost_center_code: costCenterCode, society_code: center.society_code, party_id: party?.id || null, party_tax_id: party?.tax_id || null, cents, movement: cents > 0 ? "debit" : "credit", amount: Math.abs(cents) / 100 });
+    prepared.push({ excel_row: row.excel_row, date, account, account_code: account.code, branch_code: branch.code, cost_center_code: center.code, society_code: center.society_code, party_id: party?.id || null, party_tax_id: party?.tax_id || null, cents, movement: cents > 0 ? "debit" : "credit", amount: Math.abs(cents) / 100 });
   }
   if (dates.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_DATE", "Todas las filas deben usar una sola fecha de corte");
   if (societies.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_SOCIETY", "Todas las filas deben pertenecer a una sola sociedad");
@@ -2569,6 +2603,9 @@ module.exports = {
   accountNature,
   openingBalanceLegacyPartyId,
   resolveOpeningBalanceParty,
+  matchOpeningBalanceCode,
+  resolveOpeningBalanceAccount,
+  resolveOpeningBalanceCenter,
   // Numeracion contable: exportados aditivo para que los modulos que emiten documentos dentro de
   // SU propia transaccion (petty-cash, igual que createGoodsReceiptDocumentTx de este archivo)
   // reserven el numero con el candado advisory y el auto-sanado max(configurado, emitido+1)

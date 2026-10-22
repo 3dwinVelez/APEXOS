@@ -53,8 +53,24 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const SOCIETY = "SOC-01";
 const BRANCH = "001";
 const COST_CENTER = "001-1";
+const ALPHA_BRANCH = "NORTE";
+const ALPHA_COST_CENTER = "CC-ADMIN";
+const CROSS_BRANCH = "SUR";
+const CROSS_COST_CENTER = "CC-SUR";
+const INACTIVE_BRANCH = "SUR-INACTIVA";
+const INACTIVE_COST_CENTER = "CC-INACTIVO";
+const AMBIGUOUS_BRANCH_A = "Mixta";
+const AMBIGUOUS_BRANCH_B = "MIXTA";
+const CASE_DISTINCT_BRANCH_EXACT = "Bodega";
+const CASE_DISTINCT_BRANCH_OTHER = "BODEGA";
+const CASE_ONLY_COST_CENTER = "CC-BODEGA";
+const FOREIGN_BRANCH = "EXTRANJERA";
 const DEBIT_ACCOUNT = "130505HEART";
 const CREDIT_ACCOUNT = "220505HEART";
+const INACTIVE_ACCOUNT = "130505INACTIVO";
+const FOREIGN_ACCOUNT = "130505AJENA";
+const AMBIGUOUS_ACCOUNT_A = "130505CASEDUP";
+const AMBIGUOUS_ACCOUNT_B = "130505casedup";
 const EXACT_NIT = "900255181";
 const LONG_NIT = "900255181123456789";
 const MISSING_NIT = "900255199";
@@ -126,11 +142,11 @@ function columnsFor(sheet) {
   if (missing.length) throw new Error(`Faltan encabezados en la fila 4: ${missing.join(", ")}`);
   return columns;
 }
-function makeRows(date, debit, credit, tercero) {
-  const base = { fecha_corte: date, centro_costo: COST_CENTER, sucursal: BRANCH, tercero };
+function makeRows(date, debit, credit, tercero, unit = {}) {
+  const base = { fecha_corte: date, centro_costo: unit.costCenter ?? COST_CENTER, sucursal: unit.branch ?? BRANCH, tercero };
   return [
-    { ...base, cuenta: DEBIT_ACCOUNT, saldo: debit },
-    { ...base, cuenta: CREDIT_ACCOUNT, saldo: credit }
+    { ...base, cuenta: unit.debitAccount ?? DEBIT_ACCOUNT, saldo: debit },
+    { ...base, cuenta: unit.creditAccount ?? CREDIT_ACCOUNT, saldo: credit }
   ];
 }
 async function buildFixture(templateBuffer, rows, filename, date) {
@@ -201,7 +217,18 @@ async function seedFixture() {
   for (const unit of [
     { type: "society", code: SOCIETY, name: "Sociedad QA" },
     { type: "branch", code: BRANCH, name: "Sucursal QA", society_code: SOCIETY },
-    { type: "cost_center", code: COST_CENTER, name: "Centro QA", society_code: SOCIETY, branch_code: BRANCH }
+    { type: "cost_center", code: COST_CENTER, name: "Centro QA", society_code: SOCIETY, branch_code: BRANCH },
+    { type: "branch", code: ALPHA_BRANCH, name: "Sucursal Norte QA", society_code: SOCIETY },
+    { type: "cost_center", code: ALPHA_COST_CENTER, name: "Centro Administrativo QA", society_code: SOCIETY, branch_code: ALPHA_BRANCH },
+    { type: "branch", code: CROSS_BRANCH, name: "Sucursal Sur QA", society_code: SOCIETY },
+    { type: "cost_center", code: CROSS_COST_CENTER, name: "Centro Sur QA", society_code: SOCIETY, branch_code: CROSS_BRANCH },
+    { type: "branch", code: INACTIVE_BRANCH, name: "Sucursal inactiva QA", society_code: SOCIETY, active: false },
+    { type: "cost_center", code: INACTIVE_COST_CENTER, name: "Centro inactivo QA", society_code: SOCIETY, branch_code: ALPHA_BRANCH, active: false },
+    { type: "branch", code: AMBIGUOUS_BRANCH_A, name: "Sucursal ambigua A QA", society_code: SOCIETY },
+    { type: "branch", code: AMBIGUOUS_BRANCH_B, name: "Sucursal ambigua B QA", society_code: SOCIETY },
+    { type: "branch", code: CASE_DISTINCT_BRANCH_EXACT, name: "Sucursal relacion exacta QA", society_code: SOCIETY },
+    { type: "branch", code: CASE_DISTINCT_BRANCH_OTHER, name: "Sucursal relacion variante QA", society_code: SOCIETY },
+    { type: "cost_center", code: CASE_ONLY_COST_CENTER, name: "Centro solo variante QA", society_code: SOCIETY, branch_code: CASE_DISTINCT_BRANCH_OTHER }
   ]) {
     const orgResponse = await fetch(`${apiUrl}/api/v1/accounting/organization-tree`, {
       method: "POST",
@@ -213,7 +240,7 @@ async function seedFixture() {
     if (![200, 201].includes(orgResponse.status)) throw new Error(`org_tree_${unit.type}_failed status=${orgResponse.status} code=${body.code || ""}`.trim());
     orgStatuses.push(orgResponse.status);
   }
-  check("fixture_org_tree_configured_via_local_api", orgStatuses.every((status) => [200, 201].includes(status)), { society: SOCIETY, branch: BRANCH, cost_center: COST_CENTER });
+  check("fixture_org_tree_configured_via_local_api", orgStatuses.every((status) => [200, 201].includes(status)), { society: SOCIETY, branch: BRANCH, cost_center: COST_CENTER, alpha_branch: ALPHA_BRANCH, alpha_cost_center: ALPHA_COST_CENTER, cross_branch: CROSS_BRANCH, inactive_branch: INACTIVE_BRANCH, ambiguous_branches: [AMBIGUOUS_BRANCH_A, AMBIGUOUS_BRANCH_B], case_distinct_branches: [CASE_DISTINCT_BRANCH_EXACT, CASE_DISTINCT_BRANCH_OTHER], case_only_center: CASE_ONLY_COST_CENTER });
 
   const parentDebit = await db.account.findFirst({ where: { tenant_id: tenant.id, code: "130505" } })
     || await db.account.findFirst({ where: { tenant_id: tenant.id, code: "1305" } });
@@ -227,6 +254,15 @@ async function seedFixture() {
   const creditAccount = await upsertAccount(CREDIT_ACCOUNT, "Proveedores HEART QA", "liability", parentCredit);
   check("fixture_accounts_active_transactional", debitAccount.active && debitAccount.allows_tx && Boolean(debitAccount.parent_id) && creditAccount.active && creditAccount.allows_tx && Boolean(creditAccount.parent_id), { debit: DEBIT_ACCOUNT, credit: CREDIT_ACCOUNT, parent_debit: parentDebit?.code || null, parent_credit: parentCredit?.code || null });
 
+  async function createCaseAccount(code, name, active) {
+    const data = { name, type: "asset", parent_id: parentDebit?.id || null, level: parentDebit ? (parentDebit.level || 1) + 1 : 5, active, allows_tx: true };
+    return db.account.create({ data: { tenant_id: tenant.id, code, ...data } });
+  }
+  const inactiveAccount = await createCaseAccount(INACTIVE_ACCOUNT, "Cuenta inactiva QA", false);
+  const ambiguousAccountA = await createCaseAccount(AMBIGUOUS_ACCOUNT_A, "Cuenta ambigua A QA", true);
+  const ambiguousAccountB = await createCaseAccount(AMBIGUOUS_ACCOUNT_B, "Cuenta ambigua B QA", true);
+  check("fixture_case_sensitive_accounts_ready", inactiveAccount.active === false && ambiguousAccountA.code !== ambiguousAccountB.code && ambiguousAccountA.code.toLowerCase() === ambiguousAccountB.code.toLowerCase(), { inactive: INACTIVE_ACCOUNT, ambiguous: [AMBIGUOUS_ACCOUNT_A, AMBIGUOUS_ACCOUNT_B] });
+
   const exact = await db.party.create({ data: { tenant_id: tenant.id, type: "customer", name: "Cliente NIT exacto QA", tax_id: EXACT_NIT, active: true } });
   const longNit = await db.party.create({ data: { tenant_id: tenant.id, type: "supplier", name: "Proveedor NIT largo QA", tax_id: LONG_NIT, active: true } });
   const inactive = await db.party.create({ data: { tenant_id: tenant.id, type: "supplier", name: "Proveedor NIT inactivo QA", tax_id: INACTIVE_NIT, active: false } });
@@ -234,8 +270,26 @@ async function seedFixture() {
   const collisionTarget = await db.party.create({ data: { tenant_id: tenant.id, type: "customer", name: "Cliente colision id QA", tax_id: null, active: true } });
   const collisionNit = await db.party.create({ data: { tenant_id: tenant.id, type: "customer", name: "Cliente colision NIT QA", tax_id: String(collisionTarget.id), active: true } });
   const foreignTenant = await db.tenant.create({ data: { name: `Foreign Opening QA ${suffix}`, industry: "qa", country: "CO", timezone: "America/Bogota", currency: "COP" } });
+  const foreignConfig = foreignTenant.config && typeof foreignTenant.config === "object" ? foreignTenant.config : {};
+  await db.tenant.update({
+    where: { id: foreignTenant.id },
+    data: {
+      config: {
+        ...foreignConfig,
+        accounting: {
+          ...(foreignConfig.accounting || {}),
+          organization_tree: {
+            societies: [{ code: "SOC-AJENA", name: "Sociedad ajena QA", tenant_id: foreignTenant.id, active: true }],
+            branches: [{ code: FOREIGN_BRANCH, name: "Sucursal ajena QA", society_code: "SOC-AJENA", active: true }],
+            cost_centers: []
+          }
+        }
+      }
+    }
+  });
   const foreign = await db.party.create({ data: { tenant_id: foreignTenant.id, type: "supplier", name: "Tercero ajeno QA", tax_id: FOREIGN_NIT, active: true } });
-  check("fixture_parties_and_tenant_isolation_ready", exact.active && exact.tax_id === EXACT_NIT && longNit.tax_id === LONG_NIT && inactive.active === false && legacy.tax_id === null && collisionNit.tax_id === String(collisionTarget.id) && foreign.tenant_id === foreignTenant.id && foreign.tenant_id !== tenant.id, {
+  const foreignAccount = await db.account.create({ data: { tenant_id: foreignTenant.id, code: FOREIGN_ACCOUNT, name: "Cuenta ajena QA", type: "asset", active: true, allows_tx: true } });
+  check("fixture_parties_and_tenant_isolation_ready", exact.active && exact.tax_id === EXACT_NIT && longNit.tax_id === LONG_NIT && inactive.active === false && legacy.tax_id === null && collisionNit.tax_id === String(collisionTarget.id) && foreign.tenant_id === foreignTenant.id && foreign.tenant_id !== tenant.id && foreignAccount.tenant_id === foreignTenant.id && foreignAccount.tenant_id !== tenant.id, {
     exact_party_id: exact.id,
     long_party_id: longNit.id,
     inactive_party_id: inactive.id,
@@ -243,7 +297,9 @@ async function seedFixture() {
     collision_target_id: collisionTarget.id,
     collision_nit_party_id: collisionNit.id,
     foreign_tenant_id: foreignTenant.id,
-    foreign_party_id: foreign.id
+    foreign_party_id: foreign.id,
+    foreign_account_id: foreignAccount.id,
+    foreign_branch: FOREIGN_BRANCH
   });
 
   return {
@@ -258,7 +314,10 @@ async function seedFixture() {
     collisionTargetId: collisionTarget.id,
     collisionNitId: collisionNit.id,
     foreignTenantId: foreignTenant.id,
-    foreignPartyId: foreign.id
+    foreignPartyId: foreign.id,
+    foreignAccountId: foreignAccount.id,
+    inactiveAccountId: inactiveAccount.id,
+    ambiguousAccountIds: [ambiguousAccountA.id, ambiguousAccountB.id]
   };
 }
 
@@ -287,6 +346,10 @@ async function certifyApiEdges(fixture, files) {
     const result = await apiValidate(files[key], fixture.token);
     check(name, result.status >= 400 && result.status < 500 && result.body.code === "OPENING_BALANCE_PARTY_NOT_FOUND", { status: result.status, code: result.body.code });
   };
+  const expectCode = async (key, name, status, code) => {
+    const result = await apiValidate(files[key], fixture.token);
+    check(name, result.status === status && result.body.code === code, { status: result.status, code: result.body.code });
+  };
   await expectError("missing", "api_missing_party_controlled_4xx");
   await expectError("inactive", "api_inactive_party_controlled_4xx");
   await expectError("foreign", "api_foreign_tenant_party_controlled_4xx");
@@ -300,6 +363,27 @@ async function certifyApiEdges(fixture, files) {
 
   const long = await apiValidate(files.longNit, fixture.token);
   check("api_long_nit_exact_match", long.status === 200 && long.body.valid === true && (long.body.lines || []).length === 2 && long.body.lines.every((line) => line.party_id === fixture.longPartyId && line.party_tax_id === LONG_NIT), { status: long.status, party_ids: (long.body.lines || []).map((line) => line.party_id) });
+
+  const alpha = await apiValidate(files.alphaCase, fixture.token);
+  const alphaLines = alpha.body.lines || [];
+  const alphaDebit = alphaLines.find((line) => line.movement === "debit");
+  const alphaCredit = alphaLines.find((line) => line.movement === "credit");
+  check("api_case_insensitive_codes_use_canonical_values", alpha.status === 200 && alpha.body.valid === true && alphaLines.length === 2 && alphaDebit?.account_code === DEBIT_ACCOUNT && alphaDebit?.branch_code === ALPHA_BRANCH && alphaDebit?.cost_center_code === ALPHA_COST_CENTER && alphaDebit?.amount === 1000 && alphaCredit?.account_code === CREDIT_ACCOUNT && alphaCredit?.branch_code === ALPHA_BRANCH && alphaCredit?.cost_center_code === ALPHA_COST_CENTER && alphaCredit?.amount === 1000, { status: alpha.status, lines: alphaLines.map((line) => ({ account: line.account_code, branch: line.branch_code, center: line.cost_center_code, movement: line.movement, amount: line.amount })) });
+
+  const caseBranchValid = await apiValidate(files.caseBranchValid, fixture.token);
+  check("api_case_distinct_branch_relationship_valid", caseBranchValid.status === 200 && caseBranchValid.body.valid === true && (caseBranchValid.body.lines || []).length === 2 && caseBranchValid.body.lines.every((line) => line.branch_code === CASE_DISTINCT_BRANCH_OTHER && line.cost_center_code === CASE_ONLY_COST_CENTER), { status: caseBranchValid.status, lines: (caseBranchValid.body.lines || []).map((line) => ({ branch: line.branch_code, center: line.cost_center_code })) });
+  await expectCode("caseBranchRejected", "api_exact_branch_does_not_borrow_case_variant_center", 422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND");
+
+  await expectCode("invalidAccount", "api_invalid_account_rejected", 404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND");
+  await expectCode("inactiveAccount", "api_inactive_account_rejected", 404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND");
+  await expectCode("inactiveBranch", "api_inactive_branch_rejected", 422, "OPENING_BALANCE_BRANCH_NOT_FOUND");
+  await expectCode("invalidCenter", "api_invalid_center_rejected", 422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND");
+  await expectCode("inactiveCenter", "api_inactive_center_rejected", 422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND");
+  await expectCode("crossBranch", "api_cross_branch_center_rejected", 422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND");
+  await expectCode("foreignAccount", "api_foreign_tenant_account_rejected", 404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND");
+  await expectCode("foreignBranch", "api_foreign_tenant_branch_rejected", 422, "OPENING_BALANCE_BRANCH_NOT_FOUND");
+  await expectCode("ambiguousBranch", "api_ambiguous_branch_rejected", 422, "OPENING_BALANCE_AMBIGUOUS_CODE");
+  await expectCode("ambiguousAccount", "api_ambiguous_account_rejected", 422, "OPENING_BALANCE_AMBIGUOUS_CODE");
 
   const after = await counts(fixture.tenantId);
   check("api_edge_cases_write_no_ledger", after.docs === before.docs && after.ledger === before.ledger, { before, after });
@@ -386,13 +470,13 @@ async function readPreviewRows(page) {
   await page.waitForFunction(() => document.querySelectorAll("tbody tr").length === 2, { timeout: 20000 });
   return page.$$eval("tbody tr", (rows) => rows.map((row) => [...row.querySelectorAll("td")].map((cell) => cell.textContent.trim())));
 }
-function checkPreviewRows(rows, tercero, amountText) {
+function checkPreviewRows(rows, tercero, amountText, branch = BRANCH, costCenter = COST_CENTER) {
   const ok = rows.length === 2
     && rows[0][1] === DEBIT_ACCOUNT && rows[1][1] === CREDIT_ACCOUNT
-    && rows.every((row) => row[2] === BRANCH && row[3] === COST_CENTER && row[4] === tercero)
+    && rows.every((row) => row[2] === branch && row[3] === costCenter && row[4] === tercero)
     && rows[0][5] === "Débito" && rows[1][5] === "Crédito"
     && rows.every((row) => row[6].includes(amountText));
-  check("preview_rows_real_ui", ok, { tercero, rows });
+  check("preview_rows_real_ui", ok, { tercero, branch, costCenter, rows });
 }
 function localResponse(response) { return LOOPBACK.has(new URL(response.url()).hostname); }
 
@@ -442,7 +526,28 @@ async function buildFixtures(templateBuffer, fixture) {
     collision: { filename: `collision-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, String(fixture.collisionTargetId)) },
     legacy: { filename: `legacy-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, String(fixture.legacyPartyId)) },
     longNit: { filename: `long-nit-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, LONG_NIT) },
-    unknownLong: { filename: `unknown-long-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, "999999999999999999") }
+    unknownLong: { filename: `unknown-long-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, "999999999999999999") },
+    alphaCase: {
+      filename: `alpha-case-${suffix}.xlsx`,
+      date: EDGE_DATE,
+      rows: [
+        { fecha_corte: new Date(`${EDGE_DATE}T00:00:00.000Z`), cuenta: "130505heart", centro_costo: "cc-admin", sucursal: "nOrTe", saldo: 600, tercero: null },
+        { fecha_corte: new Date(`${EDGE_DATE}T00:00:00.000Z`), cuenta: "130505HEART", centro_costo: "CC-ADMIN", sucursal: "NORTE", saldo: 400, tercero: null },
+        { fecha_corte: new Date(`${EDGE_DATE}T00:00:00.000Z`), cuenta: "220505heart", centro_costo: "Cc-AdMiN", sucursal: "nOrTe", saldo: -1000, tercero: null }
+      ]
+    },
+    invalidAccount: { filename: `invalid-account-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { debitAccount: "130505NOEXISTE" }) },
+    inactiveAccount: { filename: `inactive-account-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { debitAccount: INACTIVE_ACCOUNT }) },
+    inactiveBranch: { filename: `inactive-branch-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: INACTIVE_BRANCH }) },
+    invalidCenter: { filename: `invalid-center-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: ALPHA_BRANCH, costCenter: "NO-EXISTE" }) },
+    inactiveCenter: { filename: `inactive-center-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: ALPHA_BRANCH, costCenter: INACTIVE_COST_CENTER }) },
+    crossBranch: { filename: `cross-branch-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: ALPHA_BRANCH, costCenter: CROSS_COST_CENTER }) },
+    foreignAccount: { filename: `foreign-account-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { debitAccount: FOREIGN_ACCOUNT }) },
+    foreignBranch: { filename: `foreign-branch-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: FOREIGN_BRANCH }) },
+    ambiguousBranch: { filename: `ambiguous-branch-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: "mixta" }) },
+    ambiguousAccount: { filename: `ambiguous-account-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { debitAccount: "130505CaseDup" }) },
+    caseBranchValid: { filename: `case-branch-valid-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: CASE_DISTINCT_BRANCH_OTHER, costCenter: CASE_ONLY_COST_CENTER }) },
+    caseBranchRejected: { filename: `case-branch-rejected-${suffix}.xlsx`, date: EDGE_DATE, rows: makeRows(new Date(`${EDGE_DATE}T00:00:00.000Z`), 500, -500, null, { branch: CASE_DISTINCT_BRANCH_EXACT, costCenter: CASE_ONLY_COST_CENTER }) }
   };
   const files = {};
   for (const [key, spec] of Object.entries(specs)) {
@@ -536,10 +641,69 @@ async function certifyBrowser(page, fixture, files) {
   after = await counts(fixture.tenantId);
   check("final_document_and_ledger_counts", after.docs === 2 && after.ledger === 4, after);
   check("screenshots_success_and_error_captured", [successShot, errorShot].every((file) => fs.existsSync(file) && fs.statSync(file).size > 0), { success: relative(successShot), error: relative(errorShot) });
+
+  const alphaPreview = await validateUi(page, files.alphaCase.file);
+  const alphaPreviewBody = await alphaPreview.json().catch(() => ({}));
+  const alphaPreviewLines = alphaPreviewBody.lines || [];
+  const alphaPreviewDebit = alphaPreviewLines.find((line) => line.movement === "debit");
+  const alphaPreviewCredit = alphaPreviewLines.find((line) => line.movement === "credit");
+  check("case_insensitive_preview_valid", alphaPreview.status() === 200 && localResponse(alphaPreview) && alphaPreviewBody.valid === true && String(alphaPreviewBody.posting_date).startsWith(EDGE_DATE) && alphaPreviewLines.length === 2 && alphaPreviewDebit?.account_code === DEBIT_ACCOUNT && alphaPreviewDebit?.amount === 1000 && alphaPreviewCredit?.account_code === CREDIT_ACCOUNT && alphaPreviewCredit?.amount === 1000 && alphaPreviewLines.every((line) => line.branch_code === ALPHA_BRANCH && line.cost_center_code === ALPHA_COST_CENTER), { status: alphaPreview.status(), posting_date: alphaPreviewBody.posting_date, lines: alphaPreviewLines.map((line) => ({ account: line.account_code, branch: line.branch_code, center: line.cost_center_code, amount: line.amount })) });
+  check("case_insensitive_preview_ui_date", (await page.$eval("body", (body) => body.innerText)).includes("29/12/2025"));
+  checkPreviewRows(await readPreviewRows(page), "--", "1.000", ALPHA_BRANCH, ALPHA_COST_CENTER);
+
+  const alphaConfirm = await confirmUi(page);
+  const alphaPostBody = await alphaConfirm.response.json().catch(() => ({}));
+  const alphaDocumentNumber = alphaPostBody.accounting_document?.full_number;
+  check("case_insensitive_post_ui_success", alphaConfirm.response.status() === 201 && localResponse(alphaConfirm.response) && Boolean(alphaDocumentNumber), { status: alphaConfirm.response.status(), document: alphaDocumentNumber });
+  await page.waitForFunction(() => document.body.innerText.includes("Saldos contabilizados en"), { timeout: 60000 });
+
+  const alphaDocument = await db.cntCabdoc.findFirst({ where: { tenant_id: fixture.tenantId, full_number: alphaDocumentNumber }, include: { lines: { orderBy: { line_no: "asc" } } } });
+  const alphaPersisted = alphaDocument?.lines || [];
+  check("case_insensitive_document_posted", Boolean(alphaDocument) && alphaDocument.status === "posted" && alphaDocument.society_code === SOCIETY && alphaDocument.posting_date.toISOString().slice(0, 10) === EDGE_DATE && alphaDocument.total_debit === 1000 && alphaDocument.total_credit === 1000 && alphaPersisted.length === 2, { document: alphaDocumentNumber, posting_date: alphaDocument?.posting_date?.toISOString().slice(0, 10), debit: alphaDocument?.total_debit, credit: alphaDocument?.total_credit, lines: alphaPersisted.length });
+  check("case_insensitive_canonical_codes_persisted", alphaPersisted.length === 2 && alphaPersisted[0].account_code === DEBIT_ACCOUNT && alphaPersisted[1].account_code === CREDIT_ACCOUNT && alphaPersisted.every((line) => line.branch_code === ALPHA_BRANCH && line.cost_center_code === ALPHA_COST_CENTER && line.party_id === null && line.party_tax_id === null), { lines: alphaPersisted.map((line) => ({ account: line.account_code, branch: line.branch_code, center: line.cost_center_code })) });
+  const alphaLedgerIds = alphaPersisted.map((line) => line.ledger_entry_id).filter(Boolean);
+  const alphaLedger = await db.ledgerEntry.findMany({ where: { tenant_id: fixture.tenantId, id: { in: alphaLedgerIds } } });
+  check("case_insensitive_ledger_posted_balanced", alphaLedger.length === 2 && alphaLedger.reduce((sum, entry) => sum + entry.debit, 0) === 1000 && alphaLedger.reduce((sum, entry) => sum + entry.credit, 0) === 1000 && alphaLedger.every((entry) => entry.date.toISOString().slice(0, 10) === EDGE_DATE && entry.period === "2025-12" && entry.tenant_id === fixture.tenantId), { entries: alphaLedger.map((entry) => ({ debit: entry.debit, credit: entry.credit, period: entry.period })) });
+  after = await counts(fixture.tenantId);
+  check("case_insensitive_post_counts", after.docs === 3 && after.ledger === 6, after);
+
+  await page.reload({ waitUntil: "networkidle2" });
+  await openOpeningPage(page);
+  const alphaDuplicateValidate = await validateUi(page, files.alphaCase.file);
+  check("case_insensitive_duplicate_still_validates", alphaDuplicateValidate.status() === 200, { status: alphaDuplicateValidate.status() });
+  const alphaDuplicate = await confirmUi(page);
+  const alphaDuplicateBody = await alphaDuplicate.response.json().catch(() => ({}));
+  await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("ya fue contabilizada"), { timeout: 30000 });
+  check("case_insensitive_duplicate_post_blocked", alphaDuplicate.response.status() === 409 && alphaDuplicateBody.code === "OPENING_BALANCES_ALREADY_POSTED", { status: alphaDuplicate.response.status(), code: alphaDuplicateBody.code });
+  after = await counts(fixture.tenantId);
+  check("case_insensitive_duplicate_writes_no_extra_document", after.docs === 3 && after.ledger === 6, after);
 }
 
 function safeFixture(fixture) {
-  return { tenant_id: fixture.tenantId, exact_nit: EXACT_NIT, long_nit: LONG_NIT, exact_party_id: fixture.exactPartyId, long_party_id: fixture.longPartyId, inactive_party_id: fixture.inactivePartyId, legacy_party_id: fixture.legacyPartyId, collision_target_id: fixture.collisionTargetId, collision_nit_party_id: fixture.collisionNitId, foreign_tenant_id: fixture.foreignTenantId, foreign_party_id: fixture.foreignPartyId };
+  return {
+    tenant_id: fixture.tenantId,
+    exact_nit: EXACT_NIT,
+    long_nit: LONG_NIT,
+    exact_party_id: fixture.exactPartyId,
+    long_party_id: fixture.longPartyId,
+    inactive_party_id: fixture.inactivePartyId,
+    legacy_party_id: fixture.legacyPartyId,
+    collision_target_id: fixture.collisionTargetId,
+    collision_nit_party_id: fixture.collisionNitId,
+    foreign_tenant_id: fixture.foreignTenantId,
+    foreign_party_id: fixture.foreignPartyId,
+    foreign_account_id: fixture.foreignAccountId,
+    inactive_account_id: fixture.inactiveAccountId,
+    ambiguous_account_ids: fixture.ambiguousAccountIds,
+    alpha_branch: ALPHA_BRANCH,
+    alpha_cost_center: ALPHA_COST_CENTER,
+    cross_branch: CROSS_BRANCH,
+    inactive_branch: INACTIVE_BRANCH,
+    foreign_branch: FOREIGN_BRANCH,
+    ambiguous_branches: [AMBIGUOUS_BRANCH_A, AMBIGUOUS_BRANCH_B],
+    case_distinct_branches: [CASE_DISTINCT_BRANCH_EXACT, CASE_DISTINCT_BRANCH_OTHER],
+    case_only_cost_center: CASE_ONLY_COST_CENTER
+  };
 }
 function fixtureEvidence(files) {
   return Object.fromEntries(Object.entries(files).map(([key, file]) => [key, { file: relative(file.file), date: file.date, bytes: file.buffer.length, sha256: file.sha256 }]));
