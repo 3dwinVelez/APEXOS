@@ -166,9 +166,73 @@ test("padre con movimiento propio suma una sola vez cada hoja", () => {
   assert.equal(root.name, "41750501 · Ingresos padre");
   assert.equal(root.actual, 1000);
   assert.equal(root.leaf_rows, 2);
-  const child = root.children.find((node) => node.code === "2");
+  const child = root.children.find((node) => node.code === "4175050101");
   assert.equal(child.actual, 700);
   assert.equal(child.leaf_rows, 1);
+});
+
+test("el code del nodo PUC es el codigo canonico aunque el id interno ordene al reves", () => {
+  /* Orden interno invertido: el id 1 lleva el codigo PUC mayor y el id 2 el menor. */
+  const accHigh = account(1, "41750501", "Ingresos operacionales", { parent_id: 2, level: 2 });
+  const accLow = account(2, "4175", "Ingresos");
+  const accChild = account(125757, "4175050101", "Ingresos subcuenta", { parent_id: 1, level: 3 });
+  const leaves = leavesOf(
+    leaf(2, 1000, 900, { budget_cents: 165000 }),
+    leaf(1, 200, 100, { budget_cents: 25000 }),
+    leaf(125757, 1400, 1200)
+  );
+  const built = pyg.buildMatrixTree({ leaves, accountsById: accountsById([accHigh, accLow, accChild]), dims: ["puc"], branchLabels: new Map(), centerLabels: new Map() });
+  assert.equal(built.nodes.length, 1, "ambas cuentas de ingresos cuelgan de la misma clase 4");
+  const root = built.nodes[0];
+  assert.equal(root.code, "4175");
+  assert.equal(root.name, "4175 · Ingresos");
+  assert.equal(root.account_id, 2);
+  assert.deepEqual(root.children.map((node) => node.code), ["41750501"], "el hijo unico se expone con su codigo PUC canonico");
+  const chainChild = root.children[0];
+  assert.equal(chainChild.code, "41750501");
+  assert.equal(chainChild.account_id, 1);
+  assert.equal(chainChild.name, "41750501 · Ingresos operacionales");
+  assert.deepEqual(chainChild.children.map((node) => node.code), ["4175050101"]);
+  const terminal = chainChild.children[0];
+  assert.equal(terminal.code, "4175050101");
+  assert.equal(terminal.account_id, 125757);
+  assert.equal(terminal.is_leaf, true);
+  const codes = flatten(built.nodes).map((node) => node.code);
+  assert.deepEqual(codes, ["4175", "41750501", "4175050101"]);
+  assert.ok(!codes.includes("1") && !codes.includes("125757"), "el id interno no debe exponerse como code");
+  assert.equal(root.actual, 2600);
+  assert.equal(root.prior, 2200);
+  assert.equal(root.budget, 1900, "presupuesto firmado se conserva sin cambios");
+  assert.equal(root.leaf_rows, 3);
+  assert.equal(chainChild.actual, 1600);
+  assert.equal(chainChild.prior, 1300);
+  assert.equal(chainChild.budget, 250);
+  assert.equal(chainChild.leaf_rows, 2);
+  assert.equal(terminal.actual, 1400);
+  assert.equal(terminal.budget, null);
+  assert.equal(root.key.split("/").pop(), "puc:2", "la llave estable sigue derivada del id interno");
+  assert.equal(chainChild.key.split("/").pop(), "puc:1");
+  assert.equal(terminal.key.split("/").pop(), "puc:125757");
+});
+
+test("hermanos sin padre se ordenan por codigo PUC canonico y no por id interno", () => {
+  /* Dos raices independientes: el id menor lleva el codigo PUC mayor. */
+  const accLow = account(1, "4190", "Otros ingresos");
+  const accHigh = account(2, "4110", "Ingresos comerciales");
+  const leaves = leavesOf(
+    leaf(1, 700, 300, { budget_cents: 77000 }),
+    leaf(2, 950, 400, { budget_cents: 88000 })
+  );
+  const built = pyg.buildMatrixTree({ leaves, accountsById: accountsById([accLow, accHigh]), dims: ["puc"], branchLabels: new Map(), centerLabels: new Map() });
+  assert.deepEqual(built.nodes.map((node) => node.code), ["4110", "4190"], "el orden visible sigue el codigo PUC");
+  assert.deepEqual(built.nodes.map((node) => node.account_id), [2, 1], "el account_id no se reordena con el code");
+  assert.deepEqual(built.nodes.map((node) => node.name), ["4110 · Ingresos comerciales", "4190 · Otros ingresos"]);
+  assert.equal(built.nodes[0].actual, 950);
+  assert.equal(built.nodes[1].actual, 700);
+  assert.equal(sumRoots(built.nodes, "actual"), 1650);
+  assert.equal(sumRoots(built.nodes, "prior"), 700);
+  assert.equal(sumRoots(built.nodes, "budget"), 1650);
+  assert.equal(flatten(built.nodes).every((node) => node.is_leaf), true);
 });
 
 test("rollup unico en jerarquia de tres niveles: cada hoja aporta una sola vez", () => {
@@ -275,11 +339,11 @@ test("estado de presupuesto por nodo considera los meses planeados por hoja en m
     centerLabels: new Map(),
     budgetPeriods: ["2026-01", "2026-02"]
   });
-  const incomeNode = built.nodes.find((node) => node.code === "1");
+  const incomeNode = built.nodes.find((node) => node.code === "41750501");
   assert.equal(incomeNode.budget_status, "complete");
   assert.deepEqual(incomeNode.budget_months_found, ["2026-01", "2026-02"]);
   assert.equal(incomeNode.budget_coverage, "full");
-  const expenseNode = built.nodes.find((node) => node.code === "2");
+  const expenseNode = built.nodes.find((node) => node.code === "510506");
   assert.equal(expenseNode.budget_status, "partial");
   assert.deepEqual(expenseNode.budget_months_found, ["2026-02"]);
   assert.equal(expenseNode.budget_coverage, "partial");
@@ -331,14 +395,14 @@ test("variacion nula con ano anterior en cero y presupuesto explicito cero disti
   );
   const built = pyg.buildMatrixTree({ leaves, accountsById: accountsById([acc1, acc2]), dims: ["puc"], branchLabels: new Map(), centerLabels: new Map() });
   assert.equal(built.nodes.length, 2);
-  const incomeNode = built.nodes.find((node) => node.code === "1");
+  const incomeNode = built.nodes.find((node) => node.code === "41750501");
   assert.equal(incomeNode.prior, 0);
   assert.equal(incomeNode.variation_pct, null);
   assert.equal(incomeNode.difference, 100);
   assert.equal(incomeNode.budget, 0);
   assert.equal(incomeNode.budget_status, "complete");
   assert.equal(incomeNode.budget_execution_pct, null);
-  const expenseNode = built.nodes.find((node) => node.code === "2");
+  const expenseNode = built.nodes.find((node) => node.code === "510506");
   assert.equal(expenseNode.actual, -40);
   assert.equal(expenseNode.budget, null);
   assert.equal(expenseNode.budget_status, "none");

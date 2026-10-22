@@ -324,7 +324,10 @@ function buildMatrixTree({ leaves, accountsById, dims, branchLabels, centerLabel
       if (dim === "puc") {
         const path = pucPathOf(account.id, accountsById, warnings, pathCache);
         for (const step of path) {
+          /* La llave estable sigue siendo el id interno; el code expuesto es el
+           * codigo PUC canonico que el reporte y el orden deben mostrar. */
           terminal = ensureNode(parentKey, parentList, "puc", String(step.id), () => ({
+            code: String(step.code),
             name: accountLabel(step),
             section: step.section,
             sectionOrder: sectionMeta(step.section).order,
