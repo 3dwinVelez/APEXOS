@@ -49,6 +49,8 @@ async function main() {
       await dashboard.setRequestInterception(true);
       dashboard.on('request', guardRequest);
       await dashboard.goto(webBase + '/login', { waitUntil: 'networkidle2' });
+      // El arranque del tema es un efecto del cliente: se espera a que la preferencia guardada este aplicada antes de auditar.
+      await dashboard.waitForFunction(expected => document.documentElement.dataset.theme === expected, { timeout: 60000 }, theme);
       assert.equal(await dashboard.evaluate(() => document.documentElement.classList.contains('dark')), theme === 'dark');
       checks.push(`${theme}: other tab keeps original theme`);
       await context.close();

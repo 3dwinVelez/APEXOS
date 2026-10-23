@@ -45,7 +45,10 @@ async function main() {
       console.log('Checking local theme', route || '/');
       await page.goto(`${webBase}/dashboard/transporte${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
       if (route === '/pyg' || route === '/maestros') {
-        check(`${route} retains central module redirect`, page.url().endsWith(route === '/pyg' ? '/dashboard/contabilidad/pyg' : '/dashboard/administracion'));
+        const destination = route === '/pyg' ? '/dashboard/contabilidad/pyg' : '/dashboard/administracion';
+        // La redirección del router de Aplicación se resuelve después de hidratar; se espera el destino real antes de auditar.
+        await page.waitForFunction(target => location.pathname === target, { timeout: 60000 }, destination);
+        check(`${route} retains central module redirect`, page.url().endsWith(destination));
         continue;
       }
       await page.waitForSelector('.transport-workspace');
