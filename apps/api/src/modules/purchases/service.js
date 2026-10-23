@@ -440,7 +440,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
     if (purchaseImport) await tx.purchaseImport.update({ where: { id: purchaseImport.id }, data: { status: "received", received_at: new Date() } });
 
     return { ...updated, accounting_document: accountingDocument };
-  }));
+  }, { maxWait: 5000, timeout: 30000 }));
 }
 
 async function getPurchaseOrderPrintData(tenantId, poId) {
