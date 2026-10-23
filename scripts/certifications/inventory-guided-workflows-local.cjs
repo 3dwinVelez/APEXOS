@@ -42,7 +42,9 @@ async function main(){
     await go(route);await page.waitForSelector('[role="dialog"]');
     check(route+' creation floats over consultation',await page.$eval('[aria-hidden="true"].pointer-events-none',node=>Boolean(node.querySelector('h1'))));
     if(route.includes('traslados')||route.includes('ajustes')) {await click('Continuar','[role="dialog"]');check(route+' empty header cannot advance',await page.$eval('[data-inventory-step="0"]',node=>!node.hidden));}
-    await shot(route.replaceAll('/','-')+'-floating');if(await page.$('[role="listbox"]')){await page.keyboard.press('Escape');await page.waitForSelector('[role="listbox"]',{hidden:true});}await page.keyboard.press('Escape');await page.waitForSelector('[role="dialog"]',{hidden:true});check(route+' close returns to consultation',!page.url().endsWith(route));
+    await shot(route.replaceAll('/','-')+'-floating');if(await page.$('[role="listbox"]')){await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('[role="listbox"]'),{timeout:30000});}await page.keyboard.press('Escape');
+    // El cierre con Escape navega desde el cliente: primero se espera la salida de la ruta y despues el modal oculto, con el presupuesto de 60 s que usa el resto del flujo.
+    await page.waitForFunction(target=>!location.pathname.endsWith(target),{timeout:60000},route);await page.waitForSelector('[role="dialog"]',{hidden:true,timeout:60000});check(route+' close returns to consultation',!page.url().endsWith(route));
   }
   await go('/productos/'+items[0].id);await click('Editar producto');await page.waitForSelector('[data-inventory-step]');check('existing product edits in guided modal',true);await click('Continuar','[role="dialog"]');await page.waitForSelector('[aria-label="Revisión del registro"]');await shot('product-edit-review');await click('Cancelar','[role="dialog"]');
   await go('/reportes');await click('Costos y valorización');check('reports separate views without stacking',await page.$eval('button[aria-pressed="true"]',node=>node.textContent.includes('Costos')));
