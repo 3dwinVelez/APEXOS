@@ -1,0 +1,105 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-pyg-interactive-20261023",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-pyg-interactive-20261023",
+  "certified_commit": "866497d14864aa1105ac94186af9a062300fc92b",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "866497d14864aa1105ac94186af9a062300fc92b"
+  },
+  "target_head": "85bcd75e136616d6c01e880c5e3f02e69c84ff2c",
+  "base_commit": "85bcd75e136616d6c01e880c5e3f02e69c84ff2c",
+  "base_commits": {
+    "develop": "85bcd75e136616d6c01e880c5e3f02e69c84ff2c"
+  },
+  "change_intent": {
+    "summary": "Certificar el PYG interactivo de Contabilidad: reporte LedgerEntry/PUC/metadata sin duplicados, presupuestos mensuales/YTD/por centro/auditoria, RBAC y aislamiento de sociedades, y vista vehicular preservada",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "certified_functional_paths": [
+    "docs/qa/certifications/accounting-pyg-interactive-20261022.md",
+    "scripts/certifications/accounting-pyg-interactive-browser-local.js"
+  ],
+  "expected_changes": [
+    { "file": "apps/api/src/modules/accounting/pyg-budget.js", "status": "A" },
+    { "file": "apps/api/src/modules/accounting/pyg-interactive.js", "status": "A" },
+    { "file": "apps/api/src/modules/accounting/routes.js", "status": "M" },
+    { "file": "apps/api/test/accounting-pyg-interactive.test.js", "status": "A" },
+    { "file": "apps/web/app/dashboard/contabilidad/page.tsx", "status": "M" },
+    { "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx", "status": "M" },
+    { "file": "apps/web/components/accounting/AccountingPyg.tsx", "status": "A" },
+    { "file": "apps/web/components/accounting/AccountingPygBudget.tsx", "status": "A" },
+    { "file": "apps/web/components/contabilidad-nav.tsx", "status": "M" },
+    { "file": "apps/web/test/accounting-pyg-interactive.test.mjs", "status": "A" },
+    { "file": "docs/qa/certifications/accounting-pyg-interactive-20261022.md", "status": "A" },
+    { "file": "scripts/certifications/accounting-pyg-interactive-browser-local.js", "status": "A" },
+    { "file": "docs/qa/manifests/accounting-pyg-interactive-20261023-scope.json", "status": "A" },
+    { "file": "docs/qa/manifests/accounting-pyg-interactive-20261023-preqa.json", "status": "A" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/pyg-budget.js",
+    "apps/api/src/modules/accounting/pyg-interactive.js",
+    "apps/api/src/modules/accounting/routes.js",
+    "apps/api/test/accounting-pyg-interactive.test.js",
+    "apps/web/app/dashboard/contabilidad/page.tsx",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/accounting/AccountingPyg.tsx",
+    "apps/web/components/accounting/AccountingPygBudget.tsx",
+    "apps/web/components/contabilidad-nav.tsx",
+    "apps/web/test/accounting-pyg-interactive.test.mjs",
+    "docs/qa/certifications/accounting-pyg-interactive-20261022.md",
+    "scripts/certifications/accounting-pyg-interactive-browser-local.js",
+    "docs/qa/manifests/accounting-pyg-interactive-20261023-scope.json",
+    "docs/qa/manifests/accounting-pyg-interactive-20261023-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Reporte PYG LedgerEntry/PUC/metadata sin duplicados",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    {
+      "name": "Presupuestos mensuales, YTD, por centro de costo y auditoria",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    {
+      "name": "RBAC contable y aislamiento entre sociedades (tenant)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    {
+      "name": "Vista vehicular PYG preservada",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante",
+    "approved_at": "2026-10-23T00:00:00.000Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": false
+    },
+    "authorized_actions": {
+      "push_auxiliary_branch": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "create_auxiliary_branch": false
+    }
+  }
+}
