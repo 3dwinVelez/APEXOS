@@ -266,3 +266,37 @@ Respuesta (solo arnés, en `scripts/certifications/local-certification-env.cjs`)
 Cobertura: `scripts/test/local-certification-env.test.js` 142/142, con el caso de dos caídas
 consecutivas (3 navegaciones, 2 esperas) y el caso de caídas persistentes (4 navegaciones y
 luego el fallo).
+
+## 11. El arranque local se bloqueaba por un tipo generado truncado, no por el producto
+
+La queja original («el ambiente local no arranca») se reprodujo con
+`scripts/windows/start-apexos-desarrollo.ps1 -CheckOnly`: el launcher abortaba en
+`Estado: BLOQUEADO / TypeScript fallo` sin más detalle. El error real era:
+
+```
+.next-dev/dev/types/routes.d.ts(211,3): error TS1109: Expression expected.
+.next-dev/dev/types/routes.d.ts(212,1): error TS1128: Declaration or statement expected.
+```
+
+Causa: `apps/web/tsconfig.typecheck.json` excluye `node_modules` y `.next`, pero no
+`.next-dev`, que es el directorio de salida que usa el desarrollo local
+(`apps/web/next-env.d.ts` importa `./.next-dev/dev/types/routes.d.ts`). Ese archivo es un
+artefacto regenerado por `next dev`; al morir un servidor de desarrollo a media escritura
+(el autocierre por umbral de memoria del hallazgo 8 y de la ronda r11, con un `.next-dev` de
+2.3 GB) quedó con una cola duplicada y truncada. El launcher interpretó la corrupción de la
+caché como un error de TypeScript del producto y se negó a arrancar. El código fuente no
+tenía ningún error.
+
+Solución aplicada (solo limpieza de caché, sin tocar el repositorio versionado):
+
+1. Respaldar y eliminar `apps/web/.next-dev/dev/types` (directorio ignorado por git).
+2. Levantar API y web normales (`npm run dev:api`, `npm run dev:web`); `next dev` regeneró
+   los tipos (12 224 bytes, terminación correcta).
+3. Repetir el chequeo del launcher: `Estado: LISTO`, con API `200` en `http://localhost:3000`
+   y frontend `200` en `http://localhost:3001`, sobre la infraestructura Docker local ya sana
+   (`infra-postgres-1` en 55432, redis, minio, brain).
+
+Deuda abierta, con alcance propio y sin autorizar aquí: conviene que el launcher distinga un
+tipo generado corrupto de un error real de TypeScript (por ejemplo, re-generar `.next-dev/dev/types`
+o señalar la ruta concreta en el mensaje de BLOQUEADO). Mientras no se haga, cualquier muerte
+brusca de `next dev` puede dejar el ambiente local inutilizable con un mensaje engañoso.
