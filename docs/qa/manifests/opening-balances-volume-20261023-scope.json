@@ -1,0 +1,105 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "opening-balances-volume-20261023",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-opening-volume-20261023",
+  "certified_commit": "4672d19ce26443ac2416dc6c9e46ae7faa21b003",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "4672d19ce26443ac2416dc6c9e46ae7faa21b003"
+  },
+  "target_head": "0d3dd7256f42d94c80d085a650307b6c03a64477",
+  "base_commit": "0d3dd7256f42d94c80d085a650307b6c03a64477",
+  "base_commits": {
+    "develop": "0d3dd7256f42d94c80d085a650307b6c03a64477"
+  },
+  "change_intent": {
+    "summary": "Validar la estructura de saldos iniciales (fecha unica, importes, sucursal/centro/sociedad) antes de consultar maestros y resolver cuentas y terceros por lotes, manteniendo archivo de 142 filas, duplicados, NIT opcional con prioridad y aislamiento entre sociedades",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "certified_functional_paths": [
+    "docs/qa/certifications/opening-balances-volume-20261023.md",
+    "scripts/certifications/opening-balances-volume-local.js",
+    "scripts/certifications/opening-balances-nit-browser-local.js"
+  ],
+  "expected_changes": [
+    { "file": "apps/api/src/modules/accounting/service.js", "status": "M" },
+    { "file": "apps/api/test/accounting-opening-balances.test.js", "status": "M" },
+    { "file": "scripts/certifications/opening-balances-volume-local.js", "status": "A" },
+    { "file": "docs/qa/certifications/opening-balances-volume-20261023.md", "status": "A" },
+    { "file": "docs/qa/manifests/opening-balances-volume-20261023-scope.json", "status": "A" },
+    { "file": "docs/qa/manifests/opening-balances-volume-20261023-preqa.json", "status": "A" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "scripts/certifications/opening-balances-volume-local.js",
+    "docs/qa/certifications/opening-balances-volume-20261023.md",
+    "docs/qa/manifests/opening-balances-volume-20261023-scope.json",
+    "docs/qa/manifests/opening-balances-volume-20261023-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Fecha unica de corte y validacion temprana antes de consultar maestros",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-volume-20261023.md"
+      ]
+    },
+    {
+      "name": "Volumen de 142 filas con entradas enlazadas en el mayor y balance comprobado",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-volume-20261023.md"
+      ]
+    },
+    {
+      "name": "Duplicados por hash sin documentos adicionales",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-volume-20261023.md"
+      ]
+    },
+    {
+      "name": "NIT opcional con prioridad exacta sobre identificador legacy y codigos canonicos sin distinguir mayusculas",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-volume-20261023.md"
+      ]
+    },
+    {
+      "name": "Aislamiento entre sociedades (tenant)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-volume-20261023.md"
+      ]
+    },
+    {
+      "name": "Regresion PUC y PYG",
+      "status": "passed",
+      "evidence": [
+        "../certifications/opening-balances-volume-20261023.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "pendiente",
+    "approved_at": null,
+    "authorization_flags": {
+      "auxiliary_branch_promotion": false
+    },
+    "authorized_actions": {
+      "push_auxiliary_branch": false,
+      "merge_develop": false,
+      "deploy_qa": false,
+      "create_auxiliary_branch": false,
+      "promote_main": false
+    }
+  }
+}
