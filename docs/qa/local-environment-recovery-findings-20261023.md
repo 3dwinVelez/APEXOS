@@ -197,3 +197,46 @@ Respuesta (solo arnés): la espera ahora exige que no quede ninguna fila `Cargan
 paginador reporte el total real (`de <conteo>`), usando el total que ya devolvió el API. La
 aserción de negocio no se tocó: el Excel debe seguir trayendo todas las posiciones filtradas.
 Verificación: 9/9 verificaciones en `%TEMP%\apex-purchases-reports-8nhYr8`.
+
+## 8. `next dev` se autocierra por umbral de memoria y deja un puerto muerto
+
+La novena corrida (`%TEMP%\apex-modules-release-17pwQS`) pasó los certificadores 1 al 8 y
+perdió el noveno (`transport-search-select-local.cjs`) con `net::ERR_CONNECTION_REFUSED at
+http://127.0.0.1:3311/dashboard/transporte/cubicaje`. La bitácora del frontend
+(`.tmp/isolated-web-r8.log`) registra en ese mismo instante
+`⚠ Server is approaching the used memory threshold, restarting...`: el propio `next dev`
+mata el proceso y su supervisor tarda unos segundos en volver a abrir el puerto. Con 7.8 GB
+de RAM la máquina deja entre 0.3 y 0.5 GB libres durante la corrida.
+
+No es un fallo del candidato: el navegador llegó a un puerto cerrado, no a una pantalla
+defectuosa. Respuesta (solo arnés):
+
+- `waitForLocalAppOrigin` en `scripts/certifications/local-certification-env.cjs` sondea el
+  origen y considera vivo cualquier código HTTP (incluso 404 o 500); la espera es acotada
+  (90 s por defecto) y devuelve `false` en lugar de colgarse.
+- `gotoLocalAppPage` la aplica antes del único reintento, y solo cuando el fallo es
+  `ERR_CONNECTION_REFUSED` / `ERR_EMPTY_RESPONSE` / `ECONNREFUSED`. Un `ERR_ABORTED` normal
+  conserva exactamente el comportamiento anterior: un reintento y nada más.
+- `scripts/certifications/local-modules-release.cjs` verifica API y frontend antes de cada
+  certificador y, si no reviven, cierra la ronda como `environment_failed` con los orígenes
+  muertos. Un ambiente caído queda contablemente separado de un fallo funcional.
+
+Cobertura: `scripts/test/local-certification-env.test.js` 142/142; las dos pruebas nuevas fijan
+que la espera ocurre una sola vez antes del reintento, que un origen que no revive no se
+reintenta a ciegas y que `ERR_ABORTED` no pasa por la sonda.
+
+## 9. El buscador de SKU de la orden exigía una opción antes de cargar el maestro
+
+La décima corrida (`%TEMP%\apex-modules-release-Ef170Y`) falló en
+`purchases-modern-ui-local.cjs` con `No real SKU available for certification` después de 73
+comprobaciones correctas. El modal de `/ordenes/nueva` se abre contra el catálogo que el
+cliente carga en vuelo (`GET /api/v1/inventory/items`, página 155-165 de la pantalla) y
+mientras llega muestra el aviso `No hay SKU que coincidan con la búsqueda.`; el certificador
+leía `button.text-left` en ese instante, es decir, contra un DOM todavía vacío. Bajo presión
+de memoria la transición cliente a cliente recompila la ruta y la ventana se ensancha, que es
+lo que hizo visible la carrera en esta ronda y no en la anterior.
+
+Respuesta (solo arnés): después de abrir el modal se espera el primer botón de opción o el
+aviso definitivo, con presupuesto de 60 s. La aserción de negocio no se suaviza: si el
+catálogo real no trae ningún SKU, el certificador sigue fallando. Verificación: 80/80
+comprobaciones en `%TEMP%\apex-purchases-modern-dtE6bM`.
