@@ -904,6 +904,8 @@ async function main() {
 
     await clickButton(page, "Matriz interactiva");
     await page.waitForFunction((period) => document.body.innerText.includes(`Matriz mensual · ${period}`), { timeout: 30000 }, PERIOD);
+    await clickButton(page, "Expandir todo");
+    await page.waitForFunction((code) => document.body.innerText.includes(code), { timeout: 30000 }, income.code);
     await page.waitForFunction(({ code, actual, budget }) => {
       const row = [...document.querySelectorAll("table tbody tr")].find((item) => (item.textContent || "").includes(code));
       return Boolean(row) && row.textContent.includes(actual) && row.textContent.includes(budget);
