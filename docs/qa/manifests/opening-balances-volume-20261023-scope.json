@@ -87,18 +87,18 @@
     }
   ],
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "scope": "promotion_to_develop_for_qa",
-    "approved_by": "pendiente",
-    "approved_at": null,
+    "approved_by": "Usuario solicitante: \"¿autorizas crear codex/qa-opening-volume-20261023, push de rama, crear/merge PR a develop y desplegar QA?\" - Respuesta: \"si\" (2026-10-24T03:02:09Z)",
+    "approved_at": "2026-10-24T03:02:09Z",
     "authorization_flags": {
-      "auxiliary_branch_promotion": false
+      "auxiliary_branch_promotion": true
     },
     "authorized_actions": {
-      "push_auxiliary_branch": false,
-      "merge_develop": false,
-      "deploy_qa": false,
-      "create_auxiliary_branch": false,
+      "push_auxiliary_branch": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "create_auxiliary_branch": true,
       "promote_main": false
     }
   }
