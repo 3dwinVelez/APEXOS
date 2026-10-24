@@ -1,4 +1,4 @@
-const { webBase, localOrigin } = require('./local-certification-env.cjs');
+const { webBase, localOrigin, gotoLocalAppPage } = require('./local-certification-env.cjs');
 const assert = require("node:assert/strict");
 const path = require("node:path");
 module.exports = async ({ base, output, operator, approver, accountant, account, file, reference, check }) => {
@@ -26,7 +26,7 @@ module.exports = async ({ base, output, operator, approver, accountant, account,
         else if (["http:", "https:"].includes(url.protocol) && ![base, webBase].includes(url.origin)) request.abort();
         else request.continue();
       });
-      await page.goto(webBase + "/dashboard/transporte/liquidaciones", { waitUntil: "networkidle2", timeout: 60000 });
+      await gotoLocalAppPage(page, webBase + "/dashboard/transporte/liquidaciones");
       return { page, context, rejectNextAccounting: () => { rejectNextAccounting = true; } };
     }
     async function click(page, text) { await page.waitForFunction(t=>[...document.querySelectorAll('button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text);

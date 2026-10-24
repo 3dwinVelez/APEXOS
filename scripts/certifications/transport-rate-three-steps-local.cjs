@@ -1,5 +1,5 @@
 // Creates and versions one clearly identified QA tariff, exclusively on localhost.
-const { apiBase, webBase } = require('./local-certification-env.cjs');
+const { apiBase, webBase, gotoLocalAppPage } = require('./local-certification-env.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const puppeteer = require('puppeteer-core');
@@ -20,7 +20,7 @@ async function main() {
     page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1'].includes(url.hostname)) request.abort(); else if (url.pathname.startsWith('/api/v1/')) request.continue({ url: apiBase + url.pathname + url.search }); else if (['http:', 'https:'].includes(url.protocol) && ![apiBase, webBase].includes(url.origin)) request.abort(); else request.continue(); });
     await page.goto(webBase + '/login', { waitUntil: 'domcontentloaded' });
     await page.evaluate(data => { const values = { token: data.token, auth_provider: 'local', user_email: data.user.email, role_name: data.user.role, apexos_company_role: data.user.role, apexos_company_id: data.tenant.company_id || data.tenant.id, tenant_active_modules: JSON.stringify(data.tenant.active_modules), role_permissions: JSON.stringify(data.user.role_permissions || []), role_metadata: JSON.stringify(data.user.role_metadata || {}), apex_theme: 'dark' }; for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value); }, session);
-    await page.goto(webBase + '/dashboard/transporte/tarifas', { waitUntil: 'networkidle2' });
+    await gotoLocalAppPage(page, webBase + '/dashboard/transporte/tarifas');
     async function click(text) { await page.waitForFunction(t=>[...document.querySelectorAll('button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text); for (const button of await page.$$('button')) if (await button.evaluate((node, text) => node.textContent.trim() === text, text)) { await button.click(); return; } throw new Error(`Missing button ${text}`); }
     async function fill(name, value) { await page.$eval(`input[name="${name}"]`, (node, value) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(node, value); node.dispatchEvent(new Event('input', { bubbles: true })); }, value); }
     async function step(number) {

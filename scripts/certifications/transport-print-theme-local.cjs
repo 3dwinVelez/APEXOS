@@ -1,5 +1,5 @@
 // Read-only local PDF regression using an already liquidated package.
-const { apiBase, webBase } = require('./local-certification-env.cjs');
+const { apiBase, webBase, gotoLocalAppPage } = require('./local-certification-env.cjs');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
 const assert = require('node:assert/strict');
 const puppeteer = require('puppeteer-core');
@@ -31,7 +31,7 @@ async function main() {
       await page.evaluateOnNewDocument(({ token, theme }) => { localStorage.setItem('token', token); localStorage.setItem('auth_provider', 'local'); localStorage.setItem('apex_theme', theme); }, { token: session.token, theme });
       await page.setRequestInterception(true);
       page.on('request', guardRequest);
-      await page.goto(`${webBase}/print/transport-settlement?id=${pkg.id}`, { waitUntil: 'networkidle2', timeout: 60000 });
+      await gotoLocalAppPage(page, `${webBase}/print/transport-settlement?id=${pkg.id}`);
       await page.waitForFunction(() => document.querySelector('[data-pdf-ready=true]') || document.querySelector('[role=alert]'), { timeout: 120000 });
       assert.ok(await page.$('[data-pdf-ready=true]'), await page.$eval('body', node => node.querySelector('[role=alert]')?.textContent || 'Print not ready'));
       assert.ok(await page.evaluate(() => !document.documentElement.classList.contains('dark') && getComputedStyle(document.documentElement).colorScheme === 'light'));
@@ -48,7 +48,7 @@ async function main() {
       const dashboard = await context.newPage();
       await dashboard.setRequestInterception(true);
       dashboard.on('request', guardRequest);
-      await dashboard.goto(webBase + '/login', { waitUntil: 'networkidle2' });
+      await gotoLocalAppPage(dashboard, webBase + '/login');
       // El arranque del tema es un efecto del cliente: se espera a que la preferencia guardada este aplicada antes de auditar.
       await dashboard.waitForFunction(expected => document.documentElement.dataset.theme === expected, { timeout: 60000 }, theme);
       assert.equal(await dashboard.evaluate(() => document.documentElement.classList.contains('dark')), theme === 'dark');

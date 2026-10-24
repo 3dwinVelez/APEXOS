@@ -1,5 +1,5 @@
 // Read-only functional certification against the running LOCAL development app.
-const { apiBase, webBase } = require('./local-certification-env.cjs');
+const { apiBase, webBase, gotoLocalAppPage } = require('./local-certification-env.cjs');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), crypto = require('node:crypto'), assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const puppeteer = require('puppeteer-core');
@@ -29,7 +29,7 @@ async function main() {
     const mutations = [];
     await page.setRequestInterception(true); page.on('request', request => { const url = new URL(request.url()); if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1'].includes(url.hostname)) request.abort(); else if (url.pathname.startsWith('/api/v1/') && !['GET', 'OPTIONS'].includes(request.method())) { mutations.push(url.pathname); request.abort(); } else if (url.pathname.startsWith('/api/v1/')) request.continue({ url: apiBase + url.pathname + url.search }); else if (['http:', 'https:'].includes(url.protocol) && ![apiBase, webBase].includes(url.origin)) request.abort(); else request.continue(); });
     await page.evaluateOnNewDocument(data => { const values = { token: data.token, auth_provider: 'local', user_email: data.user.email, role_name: data.user.role, apexos_company_role: data.user.role, apexos_company_id: data.tenant.company_id || data.tenant.id, tenant_active_modules: JSON.stringify(data.tenant.active_modules), role_permissions: JSON.stringify(data.user.role_permissions || []), role_metadata: JSON.stringify(data.user.role_metadata || {}), apex_theme: 'dark' }; for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value); }, session);
-    await page.goto(webBase + '/dashboard/transporte/liquidaciones', { waitUntil: 'networkidle2', timeout: 60000 });
+    await gotoLocalAppPage(page, webBase + '/dashboard/transporte/liquidaciones');
     const click = async (text, scope = 'body') => { await page.waitForFunction((t,s)=>[...document.querySelectorAll(s+' button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text,scope); for (const node of await page.$$(`${scope} button`)) if (await node.evaluate((node, text) => node.textContent.trim() === text, text)) { await node.click(); return; } throw Error('Button missing: ' + text); };
     const type = async (selector, value) => { await page.$eval(selector, (node, value) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(node, value); node.dispatchEvent(new Event('input', { bubbles: true })); }, value); };
     const screenshot = async name => { const file = path.join(output, name + '.png'); await page.screenshot({ path: file }); evidence.screenshots.push(file); };

@@ -175,3 +175,32 @@ test('the idle watcher ignores cached dev chunks and only releases when API requ
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /idle watcher ok/);
 });
+
+test('the shared navigation helper waits for API traffic and passes the response through', () => {
+  const result = exercise({}, `
+    const assert = require('node:assert/strict');
+    const { EventEmitter } = require('node:events');
+    const { gotoLocalAppPage } = require(${JSON.stringify(helper)});
+    class FakePage extends EventEmitter {
+      constructor() { super(); this.calls = []; }
+      goto(url, options) {
+        this.calls.push({ url, options });
+        const api = { url: () => 'http://127.0.0.1:3310/api/v1/auth/me' };
+        this.emit('request', api);
+        setTimeout(() => this.emit('requestfinished', api), 200);
+        return Promise.resolve({ status: () => 200, url });
+      }
+    }
+    (async () => {
+      const page = new FakePage();
+      const response = await gotoLocalAppPage(page, 'http://127.0.0.1:3311/dashboard/compras');
+      assert.deepEqual(page.calls[0].options, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      assert.equal(response.status(), 200, 'la navegacion debe conservar la respuesta para las aserciones HTTP');
+      await gotoLocalAppPage(page, 'http://127.0.0.1:3311/login');
+      assert.equal(page.listenerCount('request'), 1, 'un unico observador por pagina');
+      console.log('navigation helper ok');
+    })().catch(error => { console.error(error); process.exitCode = 1; });
+  `);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /navigation helper ok/);
+});

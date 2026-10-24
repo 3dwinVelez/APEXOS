@@ -58,4 +58,13 @@ function createApiIdleWatcher(page, timeout = 30000) {
   };
 }
 
-module.exports = { apiBase, webBase, target, certEnv, localOrigin, createApiIdleWatcher };
+const watchers = new WeakMap();
+
+async function gotoLocalAppPage(page, url, timeout = 60000) {
+  if (!watchers.has(page)) watchers.set(page, createApiIdleWatcher(page));
+  const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
+  await watchers.get(page).wait();
+  return response;
+}
+
+module.exports = { apiBase, webBase, target, certEnv, localOrigin, createApiIdleWatcher, gotoLocalAppPage };
