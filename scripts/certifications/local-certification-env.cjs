@@ -61,12 +61,12 @@ function createApiIdleWatcher(page, timeout = 30000) {
 
 function probeLocalAppOrigin(origin) {
   return fetch(origin + '/', { redirect: 'manual', signal: AbortSignal.timeout(3000) })
-    .then(response => response.status > 0, () => false);
+    .then(response => response.status >= 200 && response.status < 500, () => false);
 }
 
 // `next dev` se autocierra al acercarse al umbral de memoria de la maquina y su proceso supervisor
-// tarda unos segundos en volver a escuchar. Cualquier codigo HTTP (incluso 404 o 500) prueba que el
-// servidor revive; una excepcion de red prueba que aun no.
+// tarda unos segundos en volver a escuchar. Cualquier respuesta 2xx/3xx/4xx prueba que el servidor
+// ya atiende; 5xx o un fallo de red prueban que sigue en arranque.
 async function waitForLocalAppOrigin(origin, { probe = probeLocalAppOrigin, timeout = 90000, interval = 1000 } = {}) {
   const deadline = Date.now() + timeout;
   for (;;) {
@@ -77,6 +77,9 @@ async function waitForLocalAppOrigin(origin, { probe = probeLocalAppOrigin, time
 }
 
 const watchers = new WeakMap();
+// Bajo presion de memoria el servidor de desarrollo puede morir mas de una vez dentro de la misma
+// navegacion; se admiten tres recuperaciones acotadas y cada una queda registrada en la bitacora.
+const MAX_ORIGIN_RECOVERIES = 3;
 
 async function gotoLocalAppPage(page, url, timeout = 120000, lifecycle = {}) {
   const wait = lifecycle.waitForLocalAppOrigin ?? waitForLocalAppOrigin;
@@ -86,7 +89,7 @@ async function gotoLocalAppPage(page, url, timeout = 120000, lifecycle = {}) {
     await page.setBypassServiceWorker(true);
     watchers.set(page, createApiIdleWatcher(page));
   }
-  for (let attempt = 0; ; attempt++) {
+  for (let attempt = 0, recoveries = 0; ; attempt++) {
     try {
       const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
       await watchers.get(page).wait();
@@ -95,13 +98,17 @@ async function gotoLocalAppPage(page, url, timeout = 120000, lifecycle = {}) {
       // La maquina local tiene 8 GB: bajo presion el renderer aborta la navegacion o la ruta recompila mas
       // lento que el presupuesto. Una navegacion no conserva estado, asi que se admite un unico reintento;
       // las aserciones del certificador van despues y el fallo funcional no se enmascara.
-      if (attempt >= 1) throw error;
       // Si el origen dejo de escuchar, reintentar contra un puerto muerto solo devuelve el mismo
       // ERR_CONNECTION_REFUSED: primero se espera a que el servidor de desarrollo vuelva arriba.
-      if (/ERR_CONNECTION_REFUSED|ERR_EMPTY_RESPONSE|ECONNREFUSED/.test(String(error.message))) {
+      if (/ERR_CONNECTION_REFUSED|ERR_EMPTY_RESPONSE|ECONNREFUSED/.test(String(error.message)) && recoveries < MAX_ORIGIN_RECOVERIES) {
         const origin = new URL(url).origin;
+        recoveries++;
+        console.error(`[arnes] ${origin} perdio el puerto (${error.message}); recuperacion ${recoveries}/${MAX_ORIGIN_RECOVERIES} del servidor de desarrollo`);
         if (!await wait(origin, lifecycle)) throw new Error(`El servidor de ${origin} no volvio a escuchar despues de ${error.message}`);
+        watchers.get(page).reset();
+        continue;
       }
+      if (attempt >= 1) throw error;
       watchers.get(page).reset();
     }
   }

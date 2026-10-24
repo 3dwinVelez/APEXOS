@@ -266,6 +266,18 @@ test('the shared navigation helper waits for the origin to listen again before r
       setBypassServiceWorker() { return Promise.resolve(); }
       goto(url) { this.calls.push(url); return Promise.reject(new Error(this.reason + ' at ' + url)); }
     }
+    class RefuseThenAlivePage extends EventEmitter {
+      constructor(failures) { super(); this.failures = failures; this.calls = []; }
+      setBypassServiceWorker() { return Promise.resolve(); }
+      goto(url) {
+        this.calls.push(url);
+        if (this.calls.length <= this.failures) return Promise.reject(new Error('net::ERR_CONNECTION_REFUSED at ' + url));
+        const api = { url: () => 'http://127.0.0.1:3310/api/v1/auth/me' };
+        this.emit('request', api);
+        setTimeout(() => this.emit('requestfinished', api), 10);
+        return Promise.resolve({ status: () => 200, url });
+      }
+    }
     (async () => {
       const page = new DeadThenAlivePage();
       const seen = [];
@@ -277,6 +289,21 @@ test('the shared navigation helper waits for the origin to listen again before r
       assert.equal(response.status(), 200, 'la navegacion se completa una vez el servidor vuelve arriba');
       assert.deepEqual(seen, [{ origin: 'http://127.0.0.1:3311', interval: 5 }], 'se espera la vida del origen una sola vez antes del reintento');
       assert.equal(page.calls.length, 2);
+
+      const twice = new RefuseThenAlivePage(2);
+      let waits = 0;
+      const response2 = await gotoLocalAppPage(twice, 'http://127.0.0.1:3311/dashboard/inventario/bodegas', 120000, {
+        waitForLocalAppOrigin: async () => { waits++; return true; },
+      });
+      assert.equal(response2.status(), 200, 'el servidor de desarrollo puede morir mas de una vez dentro de la misma navegacion');
+      assert.equal(twice.calls.length, 3, 'cada muerte del puerto se recupera y se reintenta');
+      assert.equal(waits, 2, 'cada recuperacion espera el arranque antes de volver a navegar');
+
+      const crashing = new RefuseThenAlivePage(9);
+      await assert.rejects(() => gotoLocalAppPage(crashing, 'http://127.0.0.1:3311/login', 120000, {
+        waitForLocalAppOrigin: async () => true,
+      }), /ERR_CONNECTION_REFUSED/);
+      assert.equal(crashing.calls.length, 4, 'las recuperaciones tienen techo: un ambiente en bucle de caidas falla en lugar de prolongarse');
 
       const gone = new DeadThenAlivePage();
       await assert.rejects(() => gotoLocalAppPage(gone, 'http://127.0.0.1:3311/login', 120000,
