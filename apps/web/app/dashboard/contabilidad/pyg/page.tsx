@@ -10,6 +10,7 @@ import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
 import { formatRegionalMoney } from "@/lib/regionalFormat";
 import { downloadXlsxWorkbook, type XlsxReportSheet } from "@/lib/reportExports";
+import AccountingPyg from "@/components/accounting/AccountingPyg";
 import { AlertTriangle, BadgeDollarSign, Download, FileSpreadsheet, Fuel, Gauge, PieChart, RefreshCw, Scale, Settings2, Target, Truck, Wallet } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -53,6 +54,7 @@ const KIND_CLASS: Record<string, string> = {
 };
 
 export default function AccountingVehiclePygPage() {
+  const [mainView, setMainView] = useState<"contable" | "vehiculo">("contable");
   const [period, setPeriod] = useState(currentMonth());
   const [report, setReport] = useState<TransportPygReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function AccountingVehiclePygPage() {
     catch (value) { setError(value instanceof Error ? value.message : "No fue posible leer el PYG de transporte."); }
     finally { setLoading(false); }
   }, [period]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (mainView === "vehiculo") void load(); }, [load, mainView]);
 
   const selectedVehicle = useMemo(() => {
     if (!report?.vehicles.length) return null;
@@ -83,40 +85,52 @@ export default function AccountingVehiclePygPage() {
             <div className="flex gap-3">
               <span className="rounded-xl bg-apex p-3 text-white"><Scale /></span>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-apex">M-07 · Contabilidad · Rentabilidad de flota</p>
-                <h1 className="text-2xl font-semibold text-content-strong">PYG por Vehículo</h1>
-                <p className="text-sm text-content-muted">Estado de resultados por placa (centro de costo): ingresos liquidados, gastos operativos y utilidad contra presupuesto.</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-apex">M-07 · Contabilidad · Rentabilidad</p>
+                <h1 className="text-2xl font-semibold text-content-strong">{mainView === "contable" ? "PYG Contable · PUC" : "PYG por Vehículo"}</h1>
+                <p className="text-sm text-content-muted">{mainView === "contable" ? "Matriz interactiva del estado de resultados por cuenta PUC, sucursal y centro de costo: actual, año anterior y presupuesto, con desglose hasta el centro de costo." : "Estado de resultados por placa (centro de costo): ingresos liquidados, gastos operativos y utilidad contra presupuesto."}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-2">
-              <label className="text-xs text-content-muted">Periodo<input className="mt-1 block h-9 rounded-md border border-line bg-surface px-2 text-content-strong" onChange={(event) => setPeriod(event.target.value)} type="month" value={period} /></label>
-              <button aria-label="Actualizar" className="h-9 rounded-md border border-line bg-surface px-3" onClick={() => void load()} type="button"><RefreshCw size={16} /></button>
-              <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-50" disabled={!report} onClick={() => report && exportWorkbook(report)} type="button"><Download size={16} /> Excel</button>
+              <nav aria-label="Vista del PYG" className="flex gap-1 rounded-lg border border-line bg-surface p-1">
+                <button className={`rounded-md px-3 py-1.5 text-sm font-semibold ${mainView === "contable" ? "bg-apex text-white" : "text-content-muted hover:text-content-strong"}`} onClick={() => setMainView("contable")} type="button">Contable · PUC</button>
+                <button className={`rounded-md px-3 py-1.5 text-sm font-semibold ${mainView === "vehiculo" ? "bg-apex text-white" : "text-content-muted hover:text-content-strong"}`} onClick={() => setMainView("vehiculo")} type="button">Por vehículo</button>
+              </nav>
+              {mainView === "vehiculo" ? (
+                <>
+                  <label className="text-xs text-content-muted">Periodo<input className="mt-1 block h-9 rounded-md border border-line bg-surface px-2 text-content-strong" onChange={(event) => setPeriod(event.target.value)} type="month" value={period} /></label>
+                  <button aria-label="Actualizar" className="h-9 rounded-md border border-line bg-surface px-3" onClick={() => void load()} type="button"><RefreshCw size={16} /></button>
+                  <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-50" disabled={!report} onClick={() => report && exportWorkbook(report)} type="button"><Download size={16} /> Excel</button>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto p-2">{VIEWS.map(([key, label]) => <button className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${view === key ? "bg-apex text-white" : "text-content-muted hover:bg-surface-muted hover:text-content-strong"}`} key={key} onClick={() => setView(key)} type="button">{label}</button>)}</nav>
+        {mainView === "vehiculo" ? <nav className="flex gap-1 overflow-x-auto p-2">{VIEWS.map(([key, label]) => <button className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${view === key ? "bg-apex text-white" : "text-content-muted hover:bg-surface-muted hover:text-content-strong"}`} key={key} onClick={() => setView(key)} type="button">{label}</button>)}</nav> : null}
       </header>
 
-      {error ? <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">{error}</div> : null}
-      {loading || !report ? <div className="apex-section-card p-12 text-center text-content-muted">Construyendo el estado de resultados…</div> : (
+      {mainView === "contable" ? <AccountingPyg /> : (
         <>
-          {report.data_status.unmapped_total > 0 ? (
-            <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-300">
-              <AlertTriangle className="mt-0.5 shrink-0" size={18} />
-              <div><strong>Gastos sin clasificar: {money.format(report.data_status.unmapped_total)}.</strong> Existen líneas de caja menor con centro de costo (placa) cuyo concepto no está mapeado a una línea del PYG. Se incluyen en la fila dinámica “{rowOfCorporate(report, "GASTOS_SIN_CLASIFICAR")?.name || "GASTOS SIN CLASIFICAR"}”; ajusta el mapeo en Configuración para limpiar la lectura.</div>
-            </div>
-          ) : null}
-          {report.data_status.vehicle_count === 0 ? (
-            <div className="apex-section-card p-12 text-center text-content-muted">
-              <Truck className="mx-auto mb-3 text-content-subtle" size={32} />
-              <p className="font-semibold text-content-strong">No hay vehículos activos en la flota.</p>
-              <p className="text-sm">Crea los vehículos en Transporte → Vehículos y documentos para habilitar el PYG por placa.</p>
-            </div>
-          ) : view === "consolidado" ? <ConsolidatedView canWrite={canWrite} onConfig={() => setView("configuracion")} report={report} /> :
-            view === "vehiculos" ? <VehiclesView onSelectPlate={setSelectedPlate} report={report} selectedPlate={selectedVehicle?.plate || ""} /> :
-            view === "presupuesto" ? <BudgetsView canWrite={canWrite} onSaved={() => void load()} period={period} report={report} /> :
-            <ConfigView canWrite={canWrite} onSaved={() => void load()} report={report} />}
+          {error ? <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">{error}</div> : null}
+          {loading || !report ? <div className="apex-section-card p-12 text-center text-content-muted">Construyendo el estado de resultados…</div> : (
+            <>
+              {report.data_status.unmapped_total > 0 ? (
+                <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-300">
+                  <AlertTriangle className="mt-0.5 shrink-0" size={18} />
+                  <div><strong>Gastos sin clasificar: {money.format(report.data_status.unmapped_total)}.</strong> Existen líneas de caja menor con centro de costo (placa) cuyo concepto no está mapeado a una línea del PYG. Se incluyen en la fila dinámica “{rowOfCorporate(report, "GASTOS_SIN_CLASIFICAR")?.name || "GASTOS SIN CLASIFICAR"}”; ajusta el mapeo en Configuración para limpiar la lectura.</div>
+                </div>
+              ) : null}
+              {report.data_status.vehicle_count === 0 ? (
+                <div className="apex-section-card p-12 text-center text-content-muted">
+                  <Truck className="mx-auto mb-3 text-content-subtle" size={32} />
+                  <p className="font-semibold text-content-strong">No hay vehículos activos en la flota.</p>
+                  <p className="text-sm">Crea los vehículos en Transporte → Vehículos y documentos para habilitar el PYG por placa.</p>
+                </div>
+              ) : view === "consolidado" ? <ConsolidatedView canWrite={canWrite} onConfig={() => setView("configuracion")} report={report} /> :
+                view === "vehiculos" ? <VehiclesView onSelectPlate={setSelectedPlate} report={report} selectedPlate={selectedVehicle?.plate || ""} /> :
+                view === "presupuesto" ? <BudgetsView canWrite={canWrite} onSaved={() => void load()} period={period} report={report} /> :
+                <ConfigView canWrite={canWrite} onSaved={() => void load()} report={report} />}
+            </>
+          )}
         </>
       )}
     </div>

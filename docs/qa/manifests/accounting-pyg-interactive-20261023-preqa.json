@@ -1,0 +1,125 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-pyg-interactive-20261023",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-pyg-interactive-20261023",
+  "certified_commit": "866497d14864aa1105ac94186af9a062300fc92b",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "866497d14864aa1105ac94186af9a062300fc92b"
+  },
+  "target_head": "85bcd75e136616d6c01e880c5e3f02e69c84ff2c",
+  "base_commit": "85bcd75e136616d6c01e880c5e3f02e69c84ff2c",
+  "base_commits": {
+    "develop": "85bcd75e136616d6c01e880c5e3f02e69c84ff2c"
+  },
+  "change_intent": {
+    "summary": "Certificar el PYG interactivo de Contabilidad: reporte LedgerEntry/PUC/metadata sin duplicados, presupuestos mensuales/YTD/por centro/auditoria, RBAC y aislamiento de sociedades, y vista vehicular preservada",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "certified_functional_paths": [
+    "docs/qa/certifications/accounting-pyg-interactive-20261022.md",
+    "scripts/certifications/accounting-pyg-interactive-browser-local.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Reporte PYG LedgerEntry/PUC/metadata sin duplicados",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    {
+      "name": "Presupuestos mensuales, YTD, por centro de costo y auditoria",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    {
+      "name": "RBAC contable y aislamiento entre sociedades (tenant)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    {
+      "name": "Vista vehicular PYG preservada",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante: \"¿autorizas crear codex/qa-pyg-interactive-20261023, push de rama, crear/merge PR a develop y desplegar QA?\" - Respuesta: \"si autorizado\" (2026-10-24T02:18:24Z)",
+    "approved_at": "2026-10-24T02:18:24Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorized_actions": {
+      "push_auxiliary_branch": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "create_auxiliary_branch": true,
+      "promote_main": false
+    }
+  },
+  "environment": "LOCAL",
+  "commit": "866497d14864aa1105ac94186af9a062300fc92b",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-pyg-interactive-20261022.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-pyg-interactive-browser-local.js",
+    "evidence": [
+      "../certifications/accounting-pyg-interactive-20261022.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-pyg-interactive-browser-local.js",
+    "evidence": [
+      "../certifications/accounting-pyg-interactive-20261022.md"
+    ]
+  },
+  "pending_qa": [
+    "Verificar despliegue exacto en QA; no autoriza main"
+  ]
+}
