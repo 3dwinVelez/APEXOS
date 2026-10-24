@@ -143,30 +143,143 @@ async function resolveOpeningBalanceAccount(client, rawCode, rowNumber) {
   return account;
 }
 
+// Resuelve en memoria todas las cuentas de un archivo con una unica consulta insensible por lote,
+// preservando el precedente exacto > insensible y la ambiguedad. Devuelve la cuenta resuelta (aunque
+// inactiva o no transaccional) para que el llamador la rechace con el numero de fila correcto.
+// Reemplaza el N+1 de resolveOpeningBalanceAccount (findFirst/findMany por fila).
+// `entries` es una lista de { code, excel_row }; preserve el numero de fila en los errores.
+async function resolveOpeningBalanceAccountsBatched(client, entries) {
+  const result = new Map();
+  if (!entries.length) return result;
+  const codes = [...new Set(entries.map((entry) => entry.code))];
+  const accounts = await client.account.findMany({ where: { code: { in: codes, mode: "insensitive" }, __includeInactive: true } });
+  const byLower = new Map();
+  for (const account of accounts) {
+    const key = account.code.toLowerCase();
+    const bucket = byLower.get(key) || [];
+    bucket.push(account);
+    byLower.set(key, bucket);
+  }
+  for (const { code, excel_row } of entries) {
+    const bucket = byLower.get(code.toLowerCase()) || [];
+    const exact = bucket.filter((account) => account.code === code);
+    const variants = bucket.filter((account) => account.code !== code);
+    if (exact.length) {
+      result.set(code, exact[0]);
+    } else if (variants.length > 1) {
+      throw appError(422, "OPENING_BALANCE_AMBIGUOUS_CODE", `Fila ${excel_row}: cuenta ${code} coincide con mas de un codigo almacenado`);
+    } else {
+      result.set(code, variants[0] || null);
+    }
+  }
+  return result;
+}
+
+// Resuelve en memoria todos los terceros de un archivo con consultas por lote acotadas,
+// preservando el precedente NIT activo > id legacy, la no caida de un NIT numerico inactivo a otro
+// tercero por id, la opcionalidad y el alcance de tenant (inyectado por el middleware de prisma).
+async function resolveOpeningBalancePartiesBatched(client, rows) {
+  const values = [...new Set(rows.map((row) => String(row.tercero ?? "").trim()).filter(Boolean))];
+  const result = new Map();
+  if (!values.length) return result;
+
+  // 1) Terceros activos por tax_id exacto (equivalente al findFirst({ tax_id, active: true })).
+  const activeTax = await client.party.findMany({ where: { tax_id: { in: values }, active: true } });
+  for (const party of activeTax) {
+    if (party.tax_id && !result.has(party.tax_id)) result.set(party.tax_id, party);
+  }
+
+  // 2) Candidatos numericos legacy que aun no resolvieron por tax_id activo.
+  const unresolved = values.filter((value) => !result.has(value));
+  const legacyByValue = new Map();
+  const legacyValues = [];
+  for (const value of unresolved) {
+    const legacyId = openingBalanceLegacyPartyId(value);
+    if (legacyId !== null) { legacyByValue.set(value, legacyId); legacyValues.push(value); }
+  }
+
+  // 3) Bloqueo de fallback: si un NIT numerico existe inactivo por tax_id, no resuelve a otro id.
+  const blocked = new Set();
+  if (legacyValues.length) {
+    const inactiveTax = await client.party.findMany({ where: { tax_id: { in: legacyValues }, __includeInactive: true } });
+    for (const party of inactiveTax) {
+      if (party.tax_id && party.active !== true) blocked.add(party.tax_id);
+    }
+  }
+
+  // 4) Fallback a id interno legacy solo para candidatos numericos sin NIT (activo ni inactivo).
+  const fallbackValues = legacyValues.filter((value) => !blocked.has(value));
+  if (fallbackValues.length) {
+    const legacyIds = fallbackValues.map((value) => legacyByValue.get(value));
+    const legacyParties = await client.party.findMany({ where: { id: { in: legacyIds }, active: true } });
+    const byId = new Map(legacyParties.map((party) => [party.id, party]));
+    for (const value of fallbackValues) {
+      const match = byId.get(legacyByValue.get(value));
+      if (match) result.set(value, match);
+    }
+  }
+
+  return result;
+}
+
+function resolveOpeningBalancePartyBatched(partiesByValue, rawValue, rowNumber) {
+  const value = String(rawValue ?? "").trim();
+  if (!value) return null;
+  const party = partiesByValue.get(value);
+  if (!party) throw appError(404, "OPENING_BALANCE_PARTY_NOT_FOUND", `Fila ${rowNumber}: tercero no encontrado o inactivo`);
+  return party;
+}
+
 async function prepareOpeningBalanceRows(client, tenantId, rows) {
-  const tree = await getOrganizationTree(tenantId);
-  const prepared = [];
+  // Fase 0: validar fecha unica, montos y campos requeridos baratos ANTES de tocar la base de
+  // datos (getOrganizationTree / account / party). Un archivo con dos fechas de corte falla aqui
+  // con OPENING_BALANCE_SINGLE_DATE claro, sin gastar consultas ni agotar el timeout del cliente.
   const dates = new Set();
-  const societies = new Set();
   let totalCents = 0;
+  for (const row of rows) {
+    const date = openingDate(row.fecha_corte, row.excel_row);
+    const cents = openingCents(row.saldo, row.excel_row);
+    if (!normalizeCode(row.cuenta) || !normalizeCode(row.sucursal) || !normalizeCode(row.centro_costo) || cents === 0) throw appError(422, "INVALID_OPENING_BALANCE_ROW", `Fila ${row.excel_row}: cuenta, sucursal, centro de costo y saldo distinto de cero son obligatorios`);
+    dates.add(date.toISOString().slice(0, 10));
+    totalCents += cents;
+  }
+  if (dates.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_DATE", "Todas las filas deben usar una sola fecha de corte");
+  if (totalCents !== 0) throw appError(422, "OPENING_BALANCE_UNBALANCED", `Los saldos no cuadran por ${Math.abs(totalCents / 100).toFixed(2)}`);
+
+  const tree = await getOrganizationTree(tenantId);
+
+  // Fase 1: resolver sucursal/centro (sobre el arbol en memoria, ya validado el saldo), acumulando
+  // sociedad y montos. La sociedad unica se valida aqui, antes de tocar cuentas/terceros en lote.
+  const parsed = [];
+  const societies = new Set();
   for (const row of rows) {
     const date = openingDate(row.fecha_corte, row.excel_row);
     const accountCode = normalizeCode(row.cuenta);
     const branchCode = normalizeCode(row.sucursal);
     const costCenterCode = normalizeCode(row.centro_costo);
     const cents = openingCents(row.saldo, row.excel_row);
-    if (!accountCode || !branchCode || !costCenterCode || cents === 0) throw appError(422, "INVALID_OPENING_BALANCE_ROW", `Fila ${row.excel_row}: cuenta, sucursal, centro de costo y saldo distinto de cero son obligatorios`);
-    const account = await resolveOpeningBalanceAccount(client, accountCode, row.excel_row);
     const branch = matchOpeningBalanceCode(tree.branches, branchCode, { label: "sucursal", rowNumber: row.excel_row });
     if (!branch || branch.active === false) throw appError(422, "OPENING_BALANCE_BRANCH_NOT_FOUND", `Fila ${row.excel_row}: sucursal ${branchCode} inexistente o inactiva`);
     const center = resolveOpeningBalanceCenter(tree, branch, costCenterCode, row.excel_row);
-    const party = await resolveOpeningBalanceParty(client, row.tercero, row.excel_row);
-    dates.add(date.toISOString().slice(0, 10)); societies.add(center.society_code); totalCents += cents;
-    prepared.push({ excel_row: row.excel_row, date, account, account_code: account.code, branch_code: branch.code, cost_center_code: center.code, society_code: center.society_code, party_id: party?.id || null, party_tax_id: party?.tax_id || null, cents, movement: cents > 0 ? "debit" : "credit", amount: Math.abs(cents) / 100 });
+    societies.add(center.society_code);
+    parsed.push({ excel_row: row.excel_row, date, account_code: accountCode, branch_code: branch.code, cost_center_code: center.code, society_code: center.society_code, tercero: row.tercero, cents });
   }
-  if (dates.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_DATE", "Todas las filas deben usar una sola fecha de corte");
   if (societies.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_SOCIETY", "Todas las filas deben pertenecer a una sola sociedad");
-  if (totalCents !== 0) throw appError(422, "OPENING_BALANCE_UNBALANCED", `Los saldos no cuadran por ${Math.abs(totalCents / 100).toFixed(2)}`);
+
+  // Fase 2: resolucion por lote de cuentas y terceros (una consulta insensible y consultas
+  // acotadas por `in`/`id`, en vez de findFirst por fila).
+  const accountEntries = parsed.map((row) => ({ code: row.account_code, excel_row: row.excel_row }));
+  const accountsByCode = await resolveOpeningBalanceAccountsBatched(client, accountEntries);
+  const partiesByValue = await resolveOpeningBalancePartiesBatched(client, parsed);
+
+  // Fase 3: ensamble final.
+  const prepared = [];
+  for (const row of parsed) {
+    const account = accountsByCode.get(row.account_code);
+    if (!account || account.active !== true || account.allows_tx !== true) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${row.excel_row}: cuenta ${row.account_code} inexistente, inactiva o no transaccional`);
+    const party = resolveOpeningBalancePartyBatched(partiesByValue, row.tercero, row.excel_row);
+    prepared.push({ excel_row: row.excel_row, date: row.date, account, account_code: account.code, branch_code: row.branch_code, cost_center_code: row.cost_center_code, society_code: row.society_code, party_id: party?.id || null, party_tax_id: party?.tax_id || null, cents: row.cents, movement: row.cents > 0 ? "debit" : "credit", amount: Math.abs(row.cents) / 100 });
+  }
   const grouped = new Map();
   for (const row of prepared) {
     const key = `${row.account_code}|${row.branch_code}|${row.cost_center_code}|${row.party_id || ""}`;
@@ -2579,6 +2692,7 @@ module.exports = {
   getAccountingDocument,
   createAccountingDocument,
   createOpeningBalancesTemplate,
+  parseOpeningBalancesWorkbook,
   validateOpeningBalancesWorkbook,
   postOpeningBalancesWorkbook,
   createGoodsReceiptDocumentTx,
@@ -2603,9 +2717,13 @@ module.exports = {
   accountNature,
   openingBalanceLegacyPartyId,
   resolveOpeningBalanceParty,
+  resolveOpeningBalancePartiesBatched,
+  resolveOpeningBalancePartyBatched,
   matchOpeningBalanceCode,
   resolveOpeningBalanceAccount,
+  resolveOpeningBalanceAccountsBatched,
   resolveOpeningBalanceCenter,
+  prepareOpeningBalanceRows,
   // Numeracion contable: exportados aditivo para que los modulos que emiten documentos dentro de
   // SU propia transaccion (petty-cash, igual que createGoodsReceiptDocumentTx de este archivo)
   // reserven el numero con el candado advisory y el auto-sanado max(configurado, emitido+1)
