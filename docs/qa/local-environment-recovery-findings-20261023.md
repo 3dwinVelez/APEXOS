@@ -83,3 +83,38 @@ Decisión de alcance: la certificación local corre contra `next dev` (por eso e
 precalentamiento y el hallazgo 1). Sacar el componente compartido del módulo de ruta es un
 alcance separado, con sus propios certificadores; se dejó deliberadamente fuera de esta
 promoción para no ampliar el inventario de archivos sin evidencia.
+
+## 4. El service worker de la aplicación interfiere con la navegación de Puppeteer
+
+Síntoma observado en dos corridas del orquestador aislado, en certificadores distintos:
+
+- corrida 1 (`apex-modules-release-XOHLSk`): `transport-rate-three-steps-local.cjs` falló al
+  esperar `[data-cost-panel=summary]` con `Cannot find context with specified id`, es decir,
+  el documento se recargó a mitad del asistente.
+- corrida 2 (`apex-modules-release-7vx210`), con la API y el `next dev` reiniciados y con
+  bitácora del servidor: `purchases-modern-ui-local.cjs` pasó 18 comprobaciones y falló en la
+  navegación a `/dashboard/compras/ordenes` con `net::ERR_ABORTED`, aunque el servidor registró
+  `GET /dashboard/compras/ordenes 200 in 3.7s`. El mismo certificador había quedado `passed`
+  en la corrida 1 y el asistente de tarifario quedó `passed` en la corrida 2: el fallo rota
+  entre certificados, no se fija en una pantalla.
+
+Causa: `apps/web/public/sw.js` se registra desde `components/system/WorldClassToolkit.tsx`,
+llama `skipWaiting()` en `install` y `clients.claim()` en `activate`, e intercepta **todo** GET
+del mismo origen con estrategia red-first y respaldo de caché (incluida la lista `SHELL`
+`/`, `/login`, `/dashboard`, `/manifest.webmanifest`). Al adueñarse de los clientes a mitad de
+sesión, la navegación en curso la aborta el propio navegador y el contexto de ejecución de la
+página muere; la caché además puede servir un documento distinto del solicitado, lo que en un
+arnés de certificación se lee como un defecto funcional que no existe. Una sonda del asistente
+de tarifario reprodujo la recarga del mismo URL justo después de montar la pantalla.
+
+Corrección aplicada en el arnés, sin tocar el producto: `gotoLocalAppPage` ejecuta
+`page.setBypassServiceWorker(true)` la primera vez que se usa en cada página, de modo que las
+navegaciones del certificador van directas al `next dev` aislado. La restricción queda cubierta
+por la prueba unitaria «the shared navigation helper waits for API traffic and passes the
+response through» en `scripts/test/local-certification-env.test.js`, que exige exactamente una
+activación del esquive por página.
+
+Deuda declarada, fuera de este alcance: el service worker cachea documentos y assets también
+en desarrollo, y su respaldo `caches.match('/dashboard')` puede devolver otra pantalla cuando
+falla la red. Merece su propio alcance con criterios de caché por entorno y verificación en
+navegador antes de cambiarlo; en esta promoción el producto quedó intacto.

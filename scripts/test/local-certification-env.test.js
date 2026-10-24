@@ -182,7 +182,8 @@ test('the shared navigation helper waits for API traffic and passes the response
     const { EventEmitter } = require('node:events');
     const { gotoLocalAppPage } = require(${JSON.stringify(helper)});
     class FakePage extends EventEmitter {
-      constructor() { super(); this.calls = []; }
+      constructor() { super(); this.calls = []; this.bypasses = 0; }
+      setBypassServiceWorker(value) { this.bypasses += value === true ? 1 : 0; return Promise.resolve(); }
       goto(url, options) {
         this.calls.push({ url, options });
         const api = { url: () => 'http://127.0.0.1:3310/api/v1/auth/me' };
@@ -198,6 +199,7 @@ test('the shared navigation helper waits for API traffic and passes the response
       assert.equal(response.status(), 200, 'la navegacion debe conservar la respuesta para las aserciones HTTP');
       await gotoLocalAppPage(page, 'http://127.0.0.1:3311/login');
       assert.equal(page.listenerCount('request'), 1, 'un unico observador por pagina');
+      assert.equal(page.bypasses, 1, 'el esquiva el service worker una sola vez por pagina');
       console.log('navigation helper ok');
     })().catch(error => { console.error(error); process.exitCode = 1; });
   `);

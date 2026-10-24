@@ -61,7 +61,12 @@ function createApiIdleWatcher(page, timeout = 30000) {
 const watchers = new WeakMap();
 
 async function gotoLocalAppPage(page, url, timeout = 60000) {
-  if (!watchers.has(page)) watchers.set(page, createApiIdleWatcher(page));
+  if (!watchers.has(page)) {
+    // El service worker de la app hace skipWaiting y clients.claim, así que toma el control a mitad de sesión
+    // y aborta navegaciones de Puppeteer (ERR_ABORTED y contextos destruidos); el arnés lo deja fuera del camino.
+    await page.setBypassServiceWorker(true);
+    watchers.set(page, createApiIdleWatcher(page));
+  }
   const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
   await watchers.get(page).wait();
   return response;
