@@ -240,3 +240,29 @@ Respuesta (solo arnés): después de abrir el modal se espera el primer botón d
 aviso definitivo, con presupuesto de 60 s. La aserción de negocio no se suaviza: si el
 catálogo real no trae ningún SKU, el certificador sigue fallando. Verificación: 80/80
 comprobaciones en `%TEMP%\apex-purchases-modern-dtE6bM`.
+
+## 10. Una sola recuperacion del puerto no alcanza: el servidor murio dos veces en la misma navegacion
+
+La onceava corrida (`%TEMP%\apex-modules-release-NCnogy`) perdió
+`inventory-modern-ui-local.cjs` en `AUDIT /bodegas` con `net::ERR_CONNECTION_REFUSED`,
+después de 32 comprobaciones correctas y con la ruta precalentada (200 en 4.3 s en
+`.tmp/warm-r10.log`). La espera de vida del hallazgo 8 si se activó: el primer intento
+encontró el puerto cerrado, la sonda respondió y el reintento volvió a encontrar el puerto
+cerrado. Es decir, `next dev` entró en dos caídas consecutivas dentro de la misma navegación,
+algo que la ronda anterior no había mostrado.
+
+Respuesta (solo arnés, en `scripts/certifications/local-certification-env.cjs`):
+
+- Se admiten hasta tres recuperaciones acotadas por navegación (`MAX_ORIGIN_RECOVERIES`) y cada
+  una se registra en la bitácora del certificador con `[arnes] <origen> perdio el puerto ...`,
+  para que la evidencia muestre cuántas veces cayó el ambiente.
+- La sonda ya no acepta cualquier respuesta: 2xx/3xx/4xx prueban que el servidor atiende, pero
+  5xx o un fallo de red mantienen la espera. Durante el arranque de `next dev` la raíz responde
+  5xx y eso contaba como "vivo".
+- El techo sigue siendo explícito: un ambiente en bucle de caídas falla después de cuatro
+  navegaciones en lugar de prolongarse indefinidamente, y `ERR_ABORTED` conserva el reintento
+  único anterior.
+
+Cobertura: `scripts/test/local-certification-env.test.js` 142/142, con el caso de dos caídas
+consecutivas (3 navegaciones, 2 esperas) y el caso de caídas persistentes (4 navegaciones y
+luego el fallo).
