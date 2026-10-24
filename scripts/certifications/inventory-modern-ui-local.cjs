@@ -44,6 +44,9 @@ async function main(){
   const combo=await page.$('input[aria-label="Filtrar por estado de stock"]');await combo.focus();await page.keyboard.type('sc');await page.keyboard.press('Enter');
   check('initials select critical stock through original form control',await page.$eval('select[aria-label="Filtrar por estado de stock"]',node=>node.value==='critico'));
   await go('/reportes/costos');await page.waitForFunction(()=>document.body.textContent.includes('productos · Valor actual'));
+  // El resumen se pinta primero con "0 productos" y el aviso de carga, asi que el texto no prueba que la
+  // valorizacion llego; se espera el recuento real del API antes de comparar el total.
+  await page.waitForFunction(count=>{const texts=[...document.querySelectorAll('p[role="status"]')].map(node=>node.textContent);return !texts.some(text=>text.includes('Cargando valoriz'))&&texts.some(text=>text.startsWith(count+' productos'));},{timeout:60000},costResponse.data.length);
   await click('Sin existencias');check('cost state tags filter data',await page.$eval('[aria-label="Filtrar valorización"] button[aria-pressed="true"]',node=>node.textContent==='Sin existencias'));
   await click('Todos');
   const expectedRows=costResponse.data.reduce((count,row)=>count+Math.max(1,row.warehouse_rows.length),0);

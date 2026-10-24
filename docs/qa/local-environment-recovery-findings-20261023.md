@@ -153,3 +153,25 @@ Condición operativa para las corridas de certificación: la máquina no debe te
 pesadas además del arnés (API aislada, `next dev` aislado y un navegador por certificador).
 Con menos de 0.5 GB libres, los reintentos pueden no alcanzar y la evidencia saldrá mezclada
 con fallos de ambiente.
+
+## 6. La reconciliation de valorización se comparaba contra un DOM todavía vacío
+
+En la cuarta corrida, `scripts/certifications/inventory-modern-ui-local.cjs` pasó 101
+verificaciones y falló en `cost summary reconciles with filtered warehouse quantities and
+export values`. No fue una inconsistencia del producto: `/dashboard/inventario/reportes/costos`
+pinta el resumen antes de recibir datos (`0 productos · Valor actual del resultado: $ 0`,
+`apps/web/app/dashboard/inventario/reportes/page.tsx:502`) y el aviso `Cargando valorización…`
+vive en otro `<p role="status">` (misma línea 591). El certificador esperaba la cadena
+`productos · Valor actual`, que el marcador vacío ya satisface, y comparaba el total del API
+contra un DOM sin cargar.
+
+Medición directa en el ambiente aislado (`http://127.0.0.1:3311`, base
+`apexos_cert_recovery_f855022a`): la página y el payload concuerdan en
+`9 productos · $ 51.763.560` con la misma fórmula `warehouse_rows.qty × average_cost` que usa
+el certificador; el tráfico real muestra el `OPTIONS` 204 y el `GET` 200 de
+`/api/v1/inventory/costs?all=true`, sin error de red ni de consola.
+
+Respuesta del arnés (sin tocar el producto): la espera ahora exige que el aviso de carga
+desaparezca y que el recuento del resumen iguale el número de productos devueltos por el API,
+antes de comparar el total. Corrida de verificación: 111/111 verificaciones en
+`%TEMP%\apex-inventory-modern-cUfEwm`.
