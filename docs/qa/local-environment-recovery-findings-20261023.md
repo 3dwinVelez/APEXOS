@@ -35,7 +35,7 @@ dependa de `networkidle2` heredará esos tiempos como falsos fallos funcionales.
 
 **Síntoma.** `prisma migrate status` no podía determinar el estado: la base `apexos`
 (PostgreSQL Docker en 55432) no tenía la tabla `_prisma_migrations` porque el esquema local se
-maintuvo históricamente con `prisma db push`, no con `migrate deploy`.
+mantuvo históricamente con `prisma db push`, no con `migrate deploy`.
 
 **Recuperación.** Verificado primero que el esquema local ya contenía los objetos de las
 migraciones más recientes (`sedes` presente y `TransportOrigin` ausente,
