@@ -55,18 +55,19 @@
     }
   ],
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "scope": "promotion_to_develop_for_qa",
-    "approved_by": "Usuario solicitante",
-    "approved_at": "2026-10-23T00:00:00.000Z",
+    "approved_by": "Usuario solicitante: \"¿autorizas crear codex/qa-pyg-interactive-20261023, push de rama, crear/merge PR a develop y desplegar QA?\" - Respuesta: \"si autorizado\" (2026-10-24T02:18:24Z)",
+    "approved_at": "2026-10-24T02:18:24Z",
     "authorization_flags": {
-      "auxiliary_branch_promotion": false
+      "auxiliary_branch_promotion": true
     },
     "authorized_actions": {
       "push_auxiliary_branch": true,
       "merge_develop": true,
       "deploy_qa": true,
-      "create_auxiliary_branch": false
+      "create_auxiliary_branch": true,
+      "promote_main": false
     }
   },
   "environment": "LOCAL",
