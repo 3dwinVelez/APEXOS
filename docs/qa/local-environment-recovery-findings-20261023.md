@@ -1,0 +1,85 @@
+# Hallazgos del ambiente local — 2026-10-23
+
+Documento de evidencia. Cubre tres hallazgos confirmados durante la recuperación del
+ambiente local y la certificación aislada del bundle de módulos locales.
+
+## 1. `networkidle2` no es estable en la copia aislada con `next dev`
+
+**Síntoma.** `transport-search-select-local.cjs` y `transport-theme-local.cjs` agotaban el
+presupuesto de 60 s en rutas que ya estaban compiladas (`/dashboard/transporte`,
+`/dashboard/transporte/flota`), mientras el mismo HTML respondía en 0,2–1,8 s por HTTP.
+
+**Causa raíz (medida, no supuesta).** Con la misma interceptación de red que usan los
+certificadores, tres solicitudes quedaron abiertas de forma permanente y nunca emitieron
+respuesta: `_next/static/chunks/webpack.js?v=…`, `_next/static/chunks/main-app.js?v=…` y
+`_next/static/chunks/app/login/page.js`. Son chunks servidos desde la caché del navegador en
+la navegación siguiente a `/login`; Puppeteer dispara `request` pero no `response`, así que el
+contador de solicitudes en vuelo nunca baja de 3 y `networkidle2` (tolerancia de 2) no se
+cumple jamás. Los endpoints de API cerraron en 1–3 s y el registro de la API no muestra ni
+una respuesta por encima de 5 s, por lo que no es latencia de backend ni defecto de producto.
+
+**Corrección aplicada.** `scripts/certifications/local-certification-env.cjs` expone
+`createApiIdleWatcher(page)`, que solo observa el tráfico `/api/v1/` real y libera la página
+cuando esas solicitudes cierran. Los dos certificadores de Transporte navegan con
+`domcontentloaded`, esperan `.transport-workspace` y después el reposo de API, de modo que la
+auditoría de selects nativos y de tema ocurre sobre la pantalla ya hidratada y no de forma
+vacía. El comportamiento está cubierto por la prueba unitaria
+`scripts/test/local-certification-env.test.js` ("the idle watcher ignores cached dev chunks…").
+
+**Consecuencia operativa.** La suite debe precalentar las rutas de Aplicación antes de lanzar
+los navegadores: en esta corrida las compilaciones frías medidos por el propio `next dev`
+fueron de 6 s a 85 s por ruta (`/dashboard/compras/facturas` = 84,9 s). Un certificador que
+dependa de `networkidle2` heredará esos tiempos como falsos fallos funcionales.
+
+## 2. Estado de migraciones de la base local
+
+**Síntoma.** `prisma migrate status` no podía determinar el estado: la base `apexos`
+(PostgreSQL Docker en 55432) no tenía la tabla `_prisma_migrations` porque el esquema local se
+maintuvo históricamente con `prisma db push`, no con `migrate deploy`.
+
+**Recuperación.** Verificado primero que el esquema local ya contenía los objetos de las
+migraciones más recientes (`sedes` presente y `TransportOrigin` ausente,
+`transport_pyg_concepts` presente, `TransportSettlementPackage.carrier_id` anulable). Después
+se registraron las 62 migraciones con `prisma migrate resolve --applied`, operación de solos
+metadatos. `prisma migrate status` reporta ahora *Database schema is up to date* y
+`migrate deploy` queda como no-op.
+
+**Dos migraciones sí estaban pendientes de efecto (no solo de registro)** y se aplicó
+exactamente su SQL versionado, aditivo y no destructivo:
+
+- `20260919110000_time_route_kind_descanso` → `ALTER TABLE "TimeRoute" ADD COLUMN IF NOT EXISTS "kind" TEXT NOT NULL DEFAULT 'trabajo'` (la columna no existía localmente; el motor de liquidación la necesita para distinguir descanso de trabajo).
+- `20261014120000_accounting_opening_balances_nullable_party` → `ALTER TABLE "cnt_cuedoc" ALTER COLUMN "party_id" DROP NOT NULL` (sin esto, un saldo inicial sin contraparte revienta contra la base).
+
+**Deriva residual declarada, no corregida aquí.** `prisma migrate diff` entre la base y
+`schema.prisma` sigue reportando dos clases de diferencia:
+
+1. Tablas y claves foráneas `th_*` (Talento Humano y respaldo Supabase) que el esquema Prisma
+   no modela. `migrate diff` propone `DROP TABLE` sobre ellas; están fuera del alcance de
+   Prisma y **ningún `db push` debe ejecutarse contra esta base sin revisar eso**, porque
+   borraría datos operativos.
+2. Las columnas `created_at`/`updated_at` y defaults de `transport_pyg_*` son
+   `TIMESTAMPTZ(6)` en base (como las creó la migración SQL `20261013120000_transport_pyg`)
+   mientras `schema.prisma` las declara como `TIMESTAMP(3)`. La divergencia está en el
+   repositorio (migración vs modelo), no en la máquina local, y por tanto también existe en
+   QA/PROD. Alinearla requiere su propio cambio de esquema versionado con manifiesto de
+   alcance y certificadores nuevos; no se hizo en esta promoción.
+
+**Migraciones sin aplicar a la nube (pendientes de autorización explícita).** Las migraciones
+de `apps/api/prisma/migrations` y `supabase/migrations` no se aplicaron a QA ni a PROD en esta
+sesión; la política del repositorio exige autorización independiente para migraciones remotas.
+
+## 3. Bloqueo preexistente de `next build` (rutas tipadas)
+
+`next build` (Next 16.3.5) no compila en `desarrollo`, `develop` ni `main`.
+`apps/web/app/dashboard/transporte/page.tsx` declara `export function TransportFleetPage()`
+además de su `export default`, y la validación de rutas tipadas exige que un módulo de ruta
+exporte solo el default más la configuración permitida; el type-check del build falla con
+`Type '() => Element' is not assignable to type '{ [x: string]: never }'`. El patrón está
+byte-idéntico en `origin/develop` y `origin/main`, así que es deuda preexistente de
+producción —hipótesis principal del build roto en Vercel Production— y no una regresión del
+candidato de módulos locales.
+
+Decisión de alcance: la certificación local corre contra `next dev` (por eso existe el
+precalentamiento y el hallazgo 1). Sacar el componente compartido del módulo de ruta es un
+alcance separado, con sus propios certificadores; se dejó deliberadamente fuera de esta
+promoción para no ampliar el inventario de archivos sin evidencia.
