@@ -27,8 +27,10 @@ async function main(){
   const orders=await(await fetch(apiBase+'/api/v1/purchases/orders?all=true',{headers})).json();const invoices=await(await fetch(apiBase+'/api/v1/purchases/invoices/report?from_date=&to_date=',{headers})).json();assert.ok(Array.isArray(orders)&&Array.isArray(invoices));
   for(const [route,file,count,label] of [['/reportes/ordenes','reporte-ordenes-compra.xls',orders.reduce((n,o)=>n+o.lines.length,0),'Posiciones de compra en móvil'],['/reportes/facturas','facturas-compra.xlsx',invoices.length,'Facturas de compra en móvil']]){
     await go(route);
-    // El boton Excel exporta el estado ya cargado en el cliente: sin esta espera una lectura lenta produce un archivo solo con cabecera y la comprobacion queda expuesta a la carrera, no al negocio.
-    await page.waitForFunction(()=>document.querySelectorAll('table tbody tr').length>0,{timeout:30000});
+    // La tabla pinta una fila "Cargando ..." mientras llega el reporte, asi que "hay filas" no prueba que
+    // el cliente termino de cargar. Se espera el total real del paginador (`de <conteo>`) sin fila de carga;
+    // la comprobacion del archivo sigue siendo la misma: el Excel trae todas las posiciones filtradas.
+    await page.waitForFunction(count=>{const cargando=[...document.querySelectorAll('table tbody tr')].some(tr=>/Cargando/.test(tr.textContent));return !cargando&&[...document.querySelectorAll('nav[aria-label^="Páginas de"]')].some(nav=>nav.textContent.includes(' de '+count));},{timeout:60000},count);
     check(route+' page limits table to 25 rows',await page.$$eval('table tbody tr',nodes=>nodes.length<=25));
     await click('Excel');const target=path.join(output,file);for(let retry=0;retry<150&&!fs.existsSync(target);retry++)await new Promise(resolve=>setTimeout(resolve,100));assert.ok(fs.existsSync(target),'download '+file);
     if(file.endsWith('.xls'))check('order Excel includes entire filtered result',(fs.readFileSync(target,'utf8').match(/<Row>/g)||[]).length===count+1);else{const ExcelJS=require('exceljs'),book=new ExcelJS.Workbook();await book.xlsx.readFile(target);check('invoice Excel includes entire filtered result',book.worksheets[0].rowCount===count+1);}

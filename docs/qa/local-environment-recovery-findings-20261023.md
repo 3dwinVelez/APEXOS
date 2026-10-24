@@ -175,3 +175,25 @@ Respuesta del arnés (sin tocar el producto): la espera ahora exige que el aviso
 desaparezca y que el recuento del resumen iguale el número de productos devueltos por el API,
 antes de comparar el total. Corrida de verificación: 111/111 verificaciones en
 `%TEMP%\apex-inventory-modern-cUfEwm`.
+
+## 7. La reporteria de compras exportaba antes de que el cliente terminara de cargar
+
+`scripts/certifications/purchases-reports-local.cjs` falló en la quinta corrida
+(`%TEMP%\apex-modules-release-5jnUZ0`) en `invoice Excel includes entire filtered result`.
+Medición en el ambiente aislado: el API devolvía 4 posiciones
+(`/api/v1/purchases/invoices/report?from_date=&to_date=`, documentos `CP-000001`…`CP-000004`,
+todos `open`, contabilizados el 2026-07-31), el paginador marcaba `0–0 de 0` y el `.xlsx`
+salía con 1 fila (solo cabecera).
+
+La causa está en el arnés, no en la pantalla: las tablas de
+`/reportes/ordenes` y `/reportes/facturas` pintan una fila `Cargando órdenes...` mientras
+llega la respuesta, así que la espera `table tbody tr > 0` se satisfacía con ese marcador.
+Con 0 facturas en la base (corridas anteriores) el archivo coincidía por accidente con el
+recuento del API; en cuanto el certificador 1 de la misma corrida escribió facturas reales,
+la carrera dejó de ser invisible. El producto responde bien: a los 8 s la tabla muestra las
+4 filas y el paginador `1–4 de 4`.
+
+Respuesta (solo arnés): la espera ahora exige que no quede ninguna fila `Cargando` y que el
+paginador reporte el total real (`de <conteo>`), usando el total que ya devolvió el API. La
+aserción de negocio no se tocó: el Excel debe seguir trayendo todas las posiciones filtradas.
+Verificación: 9/9 verificaciones en `%TEMP%\apex-purchases-reports-8nhYr8`.
