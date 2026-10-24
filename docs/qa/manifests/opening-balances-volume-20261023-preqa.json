@@ -21,9 +21,10 @@
     ]
   },
   "certified_functional_paths": [
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
     "docs/qa/certifications/opening-balances-volume-20261023.md",
-    "scripts/certifications/opening-balances-volume-local.js",
-    "scripts/certifications/opening-balances-nit-browser-local.js"
+    "scripts/certifications/opening-balances-volume-local.js"
   ],
   "protected_capabilities": [
     {
