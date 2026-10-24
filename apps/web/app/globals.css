@@ -1480,7 +1480,27 @@ html.dark .platform-alert-close:hover {
 /* Shared information architecture for every Transport application. */
 .transport-workspace {
   min-width: 0;
+  color: rgb(var(--text-strong));
 }
+
+/* Map imagery keeps its cartographic palette; interactive surfaces inherit the app theme. */
+.transport-map.leaflet-container { background: rgb(var(--surface-muted)); }
+.transport-map.leaflet-container .leaflet-popup-content-wrapper,
+.transport-map.leaflet-container .leaflet-popup-tip,
+.transport-map.leaflet-container .leaflet-tooltip,
+.transport-map.leaflet-container .leaflet-bar a,
+.transport-map.leaflet-container .leaflet-control-attribution {
+  background: rgb(var(--surface));
+  color: rgb(var(--text-body));
+  border-color: rgb(var(--color-line));
+}
+.transport-map.leaflet-container .leaflet-bar a:hover { background: rgb(var(--surface-muted)); }
+.transport-map.leaflet-container .leaflet-control-attribution a,
+.transport-map.leaflet-container a.leaflet-popup-close-button { color: rgb(var(--color-apex)); }
+.transport-map.leaflet-container .leaflet-tooltip-top::before { border-top-color: rgb(var(--surface)); }
+.transport-map.leaflet-container .leaflet-tooltip-bottom::before { border-bottom-color: rgb(var(--surface)); }
+.transport-map.leaflet-container .leaflet-tooltip-left::before { border-left-color: rgb(var(--surface)); }
+.transport-map.leaflet-container .leaflet-tooltip-right::before { border-right-color: rgb(var(--surface)); }
 
 .transport-workspace > * {
   min-width: 0;
@@ -1520,33 +1540,6 @@ html.dark .platform-alert-close:hover {
 
 .transport-workspace :where(tbody tr:hover) {
   background: rgb(var(--color-apex) / 0.04);
-}
-
-html.dark .transport-planning-modal,
-html.dark .transport-planning-modal .bg-white {
-  background-color: #ffffff !important;
-  color: #17232d !important;
-}
-
-html.dark .transport-planning-modal .bg-paper {
-  background-color: #f5f7f5 !important;
-}
-
-html.dark .transport-planning-modal .text-neutral-500 {
-  color: #66746f !important;
-}
-
-html.dark .transport-planning-modal .text-neutral-600 {
-  color: #4d5b57 !important;
-}
-
-html.dark .transport-planning-modal .bg-amber-50 {
-  background-color: #fff7e6 !important;
-}
-
-html.dark .transport-planning-modal .text-amber-900,
-html.dark .transport-planning-modal .text-amber-700 {
-  color: #8a4b00 !important;
 }
 
 @media (max-width: 767px) {

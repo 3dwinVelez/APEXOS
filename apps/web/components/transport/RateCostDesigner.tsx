@@ -1,4 +1,5 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 
 import styles from "@/components/transport/RateCostDesigner.module.css";
 import { api } from "@/lib/api";
@@ -122,7 +123,7 @@ export function RateCostDesigner({ draft, onChange, sedes, readOnly = false }: {
             onClick={() => onChange({ tariff_method: method.id, price_per_km: method.id === "por_km" ? draft.price_per_km : "", price_per_kg: method.id === "por_carga" && draft.load_unit === "kg" ? draft.price_per_kg : "", price_per_m3: method.id === "por_carga" && draft.load_unit === "m3" ? draft.price_per_m3 : "" })}
             type="button"
           >
-            <span className={`block text-sm font-semibold ${draft.tariff_method === method.id ? "text-white" : "text-content-strong"}`}>{method.id === "fijo" ? <Coins className="mr-1 inline" size={18} /> : method.id === "por_km" ? <Route className="mr-1 inline" size={18} /> : <Box className="mr-1 inline" size={18} />}{method.label}</span>
+            <span className={`block text-sm font-semibold ${draft.tariff_method === method.id ? "text-inherit" : "text-content-strong"}`}>{method.id === "fijo" ? <Coins className="mr-1 inline" size={18} /> : method.id === "por_km" ? <Route className="mr-1 inline" size={18} /> : <Box className="mr-1 inline" size={18} />}{method.label}</span>
 
           </button>)}
         </div>
@@ -216,7 +217,7 @@ export function RateCostDesigner({ draft, onChange, sedes, readOnly = false }: {
           <div className="flex items-center gap-3"><input aria-label="Consumo extra porcentual" className="w-full accent-apex" max="50" min="0" onChange={(event) => onChange({ fuel_extra_pct: event.target.value })} type="range" value={draft.fuel_extra_pct} />
           <input aria-label="Ajuste adicional de consumo porcentual" className={`${inputClass} w-16 shrink-0`} min="0" max="50" type="number" value={draft.fuel_extra_pct} onChange={(event) => onChange({ fuel_extra_pct: String(Math.min(50, num(event.target.value))) })} /></div>
         </div>
-        </div><div className="rounded-xl bg-blue-50 p-3 text-slate-700 dark:bg-slate-800 dark:text-slate-200"><p className="mb-3 flex items-center gap-2 text-sm font-semibold"><Fuel size={18} /> Resultado del consumo</p>
+        </div><div className="rounded-xl bg-surface-muted p-3 text-content-body"><p className="mb-3 flex items-center gap-2 text-sm font-semibold"><Fuel size={18} /> Resultado del consumo</p>
         {fuelCalc ? <div className="text-xs leading-relaxed">
           <p className="flex justify-between gap-3"><span>Distancia facturable</span><span className="tabular-nums">{num(draft.billable_km)} km</span></p>
           <p title={`${num(draft.billable_km)} km ÷ ${num(draft.fuel_rendimiento)} km/L + ${num(draft.fuel_extra_pct)}%`} className="flex justify-between gap-3"><span>Consumo estimado</span><span className="tabular-nums">{fuelCalc.ajustado.toFixed(2)} litros</span></p>
@@ -238,16 +239,16 @@ export function RateCostDesigner({ draft, onChange, sedes, readOnly = false }: {
     </div>
 
     <div className="space-y-3">
-      <section data-cost-panel="summary" className="rounded-xl bg-[#102743] p-4 text-[#dbe6ff]">
-        <p className="mb-2 text-lg font-bold text-white">Resumen del cálculo</p>
-        <p className="mb-3 border-b border-[#38516d] pb-3 text-xs text-[#c0cede]">Costos configurados y resultado de la simulación.</p>
+      <section data-cost-panel="summary" className="rounded-xl bg-surface-muted p-4 text-content-strong">
+        <p className="mb-2 text-lg font-bold text-content-strong">Resumen del cálculo</p>
+        <p className="mb-3 border-b border-line pb-3 text-xs text-content-muted">Costos configurados y resultado de la simulación.</p>
         <div className="space-y-3 text-xs">
-          {calculation.lines.length ? calculation.lines.map((line) => <div className="flex items-center justify-between gap-3 border-b border-[#38516d]/60 pb-3" key={line.label}><span className="flex items-center gap-2"><SummaryIcon label={line.label} /><span>{line.label.includes(" paradas − ") ? <><span className="block">Paradas adicionales</span><small>{line.label}</small></> : line.label}</span></span><span className="tabular-nums font-bold">{money(line.value, currency)}</span></div>) : <p className="text-[#8fb4ff]">Sin componentes todavía: elige un método y activa los costos que apliquen.</p>}
-          <div className="flex justify-between gap-3 border-t border-[#2c3d63] pt-1"><span>Subtotal</span><span className="tabular-nums">{money(calculation.subtotal, currency)}</span></div>
+          {calculation.lines.length ? calculation.lines.map((line) => <div className="flex items-center justify-between gap-3 border-b border-line/60 pb-3" key={line.label}><span className="flex items-center gap-2"><SummaryIcon label={line.label} /><span>{line.label.includes(" paradas − ") ? <><span className="block">Paradas adicionales</span><small>{line.label}</small></> : line.label}</span></span><span className="tabular-nums font-bold">{money(line.value, currency)}</span></div>) : <p className="text-content-body">Sin componentes todavía: elige un método y activa los costos que apliquen.</p>}
+          <div className="flex justify-between gap-3 border-t border-line pt-1"><span>Subtotal</span><span className="tabular-nums">{money(calculation.subtotal, currency)}</span></div>
           <div className="flex justify-between gap-3"><span>{draft.fuel_mode === "estimated" ? "Combustible estimado (recargo % en 0)" : `Recargo de combustible ${draft.fuel_surcharge_pct || "0"}%`}</span><span className="tabular-nums">{money(calculation.fuel, currency)}</span></div>
-          <div className="border-t border-[#38516d] pt-4 text-base font-bold"><span>Total del servicio</span><span className="mt-2 block text-right text-2xl text-[#5be49b] tabular-nums">{money(calculation.total, currency)} {currency}</span></div>
+          <div className="border-t border-line pt-4 text-base font-bold"><span>Total del servicio</span><span className="mt-2 block text-right text-2xl text-apex tabular-nums">{money(calculation.total, currency)} {currency}</span></div>
         </div>
-        <p className={calculation.minimumApplied ? "mt-2 text-[11px] leading-snug text-[#8fb4ff]" : "sr-only"}>{calculation.minimumApplied
+        <p className={calculation.minimumApplied ? "mt-2 text-[11px] leading-snug text-content-body" : "sr-only"}>{calculation.minimumApplied
           ? `El cobro mínimo (${money(calculation.minimum, currency)}) es mayor que el cálculo: se cobraría el mínimo.`
           : `Por encima del cobro mínimo (${money(calculation.minimum, currency)}).`}</p>
       </section>
@@ -354,10 +355,10 @@ function RouteSimulator({ draft, onChange, sedes, readOnly = false }: { draft: R
       <div>
         <PlaceAutocomplete label="Origen" onText={(text) => onChange({ sim_origin_kind: "custom", sim_origin_sede_id: "", sim_origin_label: text, sim_origin_lat: null, sim_origin_lng: null })} onPick={(place) => onChange({ sim_origin_kind: "custom", sim_origin_sede_id: "", sim_origin_label: place.label, sim_origin_lat: place.latitude, sim_origin_lng: place.longitude })} placeholder="Dirección o sede de origen" value={draft.sim_origin_label} />
         <details className="mt-1 text-[11px] text-content-muted"><summary className="cursor-pointer">Seleccionar una sede registrada</summary>
-          <select aria-label="Sede de origen" className={`${inputClass} mt-1 apex-select`} onChange={(event) => { onChange({ sim_origin_kind: "sede" }); setOriginSede(event.target.value); }} value={draft.sim_origin_sede_id}>
+          <TransportSearchSelect aria-label="Sede de origen" className={`${inputClass} mt-1 apex-select`} onChange={(event) => { onChange({ sim_origin_kind: "sede" }); setOriginSede(event.target.value); }} value={draft.sim_origin_sede_id}>
             <option value="">Selecciona una sede…</option>
             {sedes.map((sede) => <option key={sede.id} value={sede.id}>{sede.name}{sede.city ? ` · ${sede.city}` : ""}</option>)}
-          </select>
+          </TransportSearchSelect>
         </details>
         {draft.sim_origin_kind === "sede" && draft.sim_origin_sede_id && selectedSede?.latitude == null ? <p className="mt-1 text-xs text-amber-700">La sede seleccionada no tiene coordenadas; regístralas en Configuración para simular.</p> : null}
       </div>
@@ -423,8 +424,8 @@ function RouteMap({ origin, destination, stops, polyline, readOnly = false }: { 
   const [satellite, setSatellite] = useState(false);
   const center = origin || destination || [4.65, -74.1];
   return <div className="relative h-80 overflow-hidden rounded-lg border border-line bg-surface-muted">
-    <div className="absolute left-12 top-2 z-[500] flex overflow-hidden rounded-md border border-line bg-surface text-xs shadow"><button type="button" aria-pressed={!satellite} className={`px-3 py-2 ${!satellite ? "bg-[#102743] text-white" : ""}`} onClick={() => setSatellite(false)}>Mapa</button><button type="button" aria-pressed={satellite} className={`px-3 py-2 ${satellite ? "bg-[#102743] text-white" : ""}`} onClick={() => setSatellite(true)}>Satélite</button></div>
-    <MapContainer center={center} className="h-full w-full" zoom={7} zoomAnimation={!readOnly} fadeAnimation={!readOnly}>
+    <div className="absolute left-12 top-2 z-[500] flex overflow-hidden rounded-md border border-line bg-surface text-xs shadow"><button type="button" aria-pressed={!satellite} className={`px-3 py-2 ${!satellite ? "bg-apex text-white" : ""}`} onClick={() => setSatellite(false)}>Mapa</button><button type="button" aria-pressed={satellite} className={`px-3 py-2 ${satellite ? "bg-apex text-white" : ""}`} onClick={() => setSatellite(true)}>Satélite</button></div>
+    <MapContainer center={center} className="transport-map h-full w-full" zoom={7} zoomAnimation={!readOnly} fadeAnimation={!readOnly}>
       <FitRoute points={path} animate={!readOnly} />
       {satellite ? <TileLayer crossOrigin={readOnly ? "anonymous" : false} key="satellite" attribution="Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics" url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" /> : <TileLayer crossOrigin={readOnly ? "anonymous" : false} key="map" attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />}
       {path.length ? <Polyline color="#2563eb" positions={path} weight={4} /> : null}
@@ -523,9 +524,9 @@ function ToggleBlock({ enabled, label, onToggle, children }: { enabled: boolean;
     <div className="flex items-center justify-between gap-2">
 
       <button aria-label={`Activar ${label}`} aria-pressed={enabled} className={`relative h-5 w-10 rounded-full transition-colors ${enabled ? "bg-apex" : "bg-line"}`} onClick={() => onToggle(!enabled)} type="button">
-        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${enabled ? "left-5" : "left-0.5"}`} />
+        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow transition-all ${enabled ? "left-5" : "left-0.5"}`} />
       </button>
-      <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-content-strong"><span className="rounded-lg bg-blue-50 p-2 text-blue-800 dark:bg-slate-800 dark:text-blue-300"><Icon size={19} /></span>{label}</span>
+      <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-content-strong"><span className="rounded-lg bg-surface-muted p-2 text-content-body"><Icon size={19} /></span>{label}</span>
       {compactField ? <div className="w-28 shrink-0">{compactField}</div> : null}
     </div>
     {enabled && (!compact || label === "Otros costos") ? <div className={`mt-2.5 grid gap-3 ${label === "Paradas adicionales" ? "grid-cols-2" : ""}`}>{compact && Array.isArray(children) ? children.filter(child => child !== compactChild) : children}</div> : null}

@@ -3,3 +3,8 @@ test("AE y AS son documentos multiposicion atomicos con motivo",()=>{const s=rea
 test("AE usa promedio o exige costo y AS bloquea saldo negativo",()=>{const s=read("apps/api/src/modules/inventory/service.js");assert.match(s,/function resolveAdjustmentCost/);assert.match(s,/documentType === "AE" && Number\(enteredCost \|\| 0\) > 0/);assert.match(s,/ADJUSTMENT_AVERAGE_COST_REQUIRED/);assert.match(s,/type: documentType === "AE" \? "in" : "out"/);assert.match(s,/INSUFFICIENT_LOCATION_STOCK/)});
 test("contabilizacion usa cuentas manuales de familia y clases AE AS",()=>{const s=read("apps/api/src/modules/inventory/service.js"),a=read("apps/api/src/modules/accounting/service.js");assert.match(s,/manual_in_account_code/);assert.match(s,/manual_out_account_code/);assert.match(a,/\["AE", "AS"\]/);assert.match(a,/createInventoryAdjustmentDocumentTx/)});
 test("frontend incluye creacion reporte detalle y navegacion",()=>{const nav=read("apps/web/components/inventory-nav.tsx"),form=read("apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx"),report=read("apps/web/app/dashboard/inventario/ajustes/page.tsx");assert.match(nav,/inventario\/ajustes/);assert.match(form,/Motivo obligatorio/);assert.match(form,/Contabilizar ajuste/);assert.match(report,/Reporte de ajustes/);assert.match(report,/Usuario/)});
+
+test("el esquema de producto conserva stock_max null como límite opcional",()=>{
+ const schema=require("../src/modules/inventory/schema");
+ assert.deepEqual(schema.createItemSchema.body.properties.stock_max.type,["number","null"]);
+});

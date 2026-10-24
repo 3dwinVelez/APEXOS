@@ -1,4 +1,5 @@
 "use client";
+import { InventorySearchSelect } from "@/components/inventory-ui";
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -134,14 +135,14 @@ const eventLabels: Record<WmsEvent, string> = {
 };
 
 const eventColors: Record<WmsEvent, string> = {
-  recibo: "bg-neutral-100 text-neutral-700",
-  almacen: "bg-neutral-100 text-neutral-700",
-  picking: "bg-neutral-100 text-neutral-700",
-  despacho: "bg-neutral-100 text-neutral-700",
-  conteo: "bg-neutral-100 text-neutral-700"
+  recibo: "bg-surface-muted text-content-body",
+  almacen: "bg-surface-muted text-content-body",
+  picking: "bg-surface-muted text-content-body",
+  despacho: "bg-surface-muted text-content-body",
+  conteo: "bg-surface-muted text-content-body"
 };
 
-const zoneColors = ["bg-neutral-100", "bg-neutral-200", "bg-neutral-300"];
+const zoneColors = ["bg-surface-muted", "bg-neutral-200", "bg-neutral-300"];
 
 const layerLabels: Record<LayoutLayer, string> = {
   estructura: "Estructura",
@@ -167,9 +168,9 @@ const layoutTools: { id: LayoutTool; label: string; hint: string }[] = [
 ];
 
 const initialZones: WarehouseZone[] = [
-  { id: 1, code: "REC", name: "Recibo", type: "recibo", occupancy: 48, x: 2, y: 8, w: 18, h: 20, color: "bg-neutral-100" },
+  { id: 1, code: "REC", name: "Recibo", type: "recibo", occupancy: 48, x: 2, y: 8, w: 18, h: 20, color: "bg-surface-muted" },
   { id: 2, code: "STG", name: "Staging inbound", type: "staging", occupancy: 64, x: 22, y: 8, w: 17, h: 20, color: "bg-neutral-200" },
-  { id: 3, code: "QAR", name: "Cuarentena", type: "cuarentena", occupancy: 31, x: 41, y: 8, w: 13, h: 20, color: "bg-neutral-100" },
+  { id: 3, code: "QAR", name: "Cuarentena", type: "cuarentena", occupancy: 31, x: 41, y: 8, w: 13, h: 20, color: "bg-surface-muted" },
   { id: 4, code: "RSV", name: "Reserva pallet", type: "reserva", occupancy: 76, x: 5, y: 34, w: 42, h: 36, color: "bg-neutral-200" },
   { id: 5, code: "PCK", name: "Forward picking", type: "picking", occupancy: 88, x: 52, y: 34, w: 20, h: 36, color: "bg-neutral-300" },
   { id: 6, code: "PAC", name: "Packing", type: "packing", occupancy: 82, x: 75, y: 52, w: 20, h: 18, color: "bg-neutral-300" },
@@ -529,7 +530,7 @@ export default function WmsPage() {
 
   function loadPreset(preset: "u" | "i") {
     setZones(preset === "u" ? initialZones : [
-      { id: 101, code: "REC", name: "Recibo norte", type: "recibo", occupancy: 42, x: 2, y: 8, w: 18, h: 84, color: "bg-neutral-100" },
+      { id: 101, code: "REC", name: "Recibo norte", type: "recibo", occupancy: 42, x: 2, y: 8, w: 18, h: 84, color: "bg-surface-muted" },
       { id: 102, code: "RSV", name: "Reserva central", type: "reserva", occupancy: 74, x: 25, y: 8, w: 34, h: 84, color: "bg-neutral-200" },
       { id: 103, code: "PCK", name: "Picking rápido", type: "picking", occupancy: 83, x: 62, y: 8, w: 16, h: 60, color: "bg-neutral-300" },
       { id: 104, code: "PAC", name: "Packing", type: "packing", occupancy: 68, x: 81, y: 8, w: 16, h: 28, color: "bg-neutral-200" },
@@ -659,7 +660,7 @@ export default function WmsPage() {
 
   return (
     <div className={`space-y-5 ${dark ? "text-white" : ""}`}>
-      <header className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+      <header className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-medium text-apex">Inventario · WMS operativo</p>
@@ -689,7 +690,7 @@ export default function WmsPage() {
           const Icon = item.icon;
           const active = view === item.id;
           return (
-            <button className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm ${active ? "border-apex bg-[#146C6312] text-apex" : dark ? "border-neutral-800 bg-neutral-950 text-neutral-200" : "border-line bg-white text-neutral-700"}`} key={item.id} onClick={() => setView(item.id)} type="button">
+            <button className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm ${active ? "border-apex bg-[#146C6312] text-apex" : dark ? "border-line bg-surface text-content-body" : "border-line bg-surface text-content-body"}`} key={item.id} onClick={() => setView(item.id)} type="button">
               <Icon size={16} />
               {item.label}
             </button>
@@ -701,11 +702,11 @@ export default function WmsPage() {
 
       {view === "motor" ? (
         <div className="space-y-5">
-          <section className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <section className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Motor operativo end-to-end</h2>
-                <p className="text-sm text-neutral-500">Documentos ERP entran, tareas móviles salen, confirmaciones regresan a inventario, facturación y trazabilidad.</p>
+                <p className="text-sm text-content-muted">Documentos ERP entran, tareas móviles salen, confirmaciones regresan a inventario, facturación y trazabilidad.</p>
               </div>
               <div className="grid gap-2 text-sm sm:grid-cols-4">
                 <MiniMetric label="Docs vivos" value="77" />
@@ -720,7 +721,7 @@ export default function WmsPage() {
                 <div className="rounded-md border border-line bg-paper p-3" key={step}>
                   <span className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-md bg-apex text-sm font-semibold text-white">{index + 1}</span>
                   <p className="text-sm font-semibold">{step}</p>
-                  <p className="mt-1 text-xs text-neutral-500">
+                  <p className="mt-1 text-xs text-content-muted">
                     {index === 0 ? "OC, ASN, pedido, factura, transferencia o conteo." : index === 1 ? "Agrupa, prioriza, asigna y optimiza recorridos." : index === 2 ? "Scanner, validación, excepción y confirmación." : "Movimiento, evento, KPI y trazabilidad."}
                   </p>
                 </div>
@@ -728,18 +729,18 @@ export default function WmsPage() {
             </div>
           </section>
 
-          <section className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <section className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-base font-semibold">Bandeja de documentos origen</h2>
-                <p className="text-sm text-neutral-500">El operario no ve documentos: el supervisor los convierte en trabajo operativo.</p>
+                <p className="text-sm text-content-muted">El operario no ve documentos: el supervisor los convierte en trabajo operativo.</p>
               </div>
               <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">ERP sincronizado</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[920px] text-sm">
                 <thead>
-                  <tr className="border-b border-line text-left text-neutral-600">
+                  <tr className="border-b border-line text-left text-content-body">
                     <th className="py-2 pr-3">Documento</th>
                     <th className="py-2 pr-3">Módulo origen</th>
                     <th className="py-2 pr-3">Tarea generada</th>
@@ -769,7 +770,7 @@ export default function WmsPage() {
           </section>
 
           <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-            <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+            <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
               <h2 className="mb-4 text-base font-semibold">Flujos operativos completos</h2>
               <div className="grid gap-3">
                 {operationalFlows.map((flow) => (
@@ -777,9 +778,9 @@ export default function WmsPage() {
                     <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                       <div>
                         <p className="text-sm font-semibold">{flow.title}</p>
-                        <p className="mt-1 text-xs text-neutral-500">Origen: {flow.origin}</p>
+                        <p className="mt-1 text-xs text-content-muted">Origen: {flow.origin}</p>
                       </div>
-                      <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700">{flow.erpEvent}</span>
+                      <span className="rounded-full bg-surface-muted px-2 py-1 text-xs text-content-body">{flow.erpEvent}</span>
                     </div>
                     <div className="mt-3 grid gap-3 md:grid-cols-3">
                       <FlowColumn title="Tareas" items={flow.tasks} />
@@ -792,7 +793,7 @@ export default function WmsPage() {
             </div>
 
             <div className="space-y-4">
-              <section className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+              <section className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
                 <h2 className="mb-3 text-base font-semibold">Motor central de tareas</h2>
                 <div className="grid gap-2">
                   {taskEngineRules.map((rule) => (
@@ -804,14 +805,14 @@ export default function WmsPage() {
                 </div>
               </section>
 
-              <section className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+              <section className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
                 <h2 className="mb-3 text-base font-semibold">Task interleaving</h2>
                 <div className="space-y-2 text-sm">
                   {["Putaway en RSV-A2", "Pick cercano PCK-A1", "Reposición pick face", "Conteo oportunista"].map((step, index) => (
                     <div className="flex items-center gap-2" key={step}>
                       <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-apex text-xs text-white">{index + 1}</span>
                       <span>{step}</span>
-                      {index < 3 ? <ArrowRight className="ml-auto text-neutral-400" size={15} /> : null}
+                      {index < 3 ? <ArrowRight className="ml-auto text-content-muted" size={15} /> : null}
                     </div>
                   ))}
                 </div>
@@ -820,7 +821,7 @@ export default function WmsPage() {
           </section>
 
           <section className="grid gap-4 xl:grid-cols-2">
-            <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+            <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
               <h2 className="mb-3 text-base font-semibold">Entidades listas para producción</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 <EntityCard title="WarehouseTask" fields={["type", "source_document", "priority", "status", "assigned_user", "warehouse_id", "location_from/to", "sku", "quantity", "lot/serial", "exceptions", "metadata"]} />
@@ -829,7 +830,7 @@ export default function WmsPage() {
               <div className="mt-4">
                 <p className="mb-2 text-sm font-medium">Estados</p>
                 <div className="flex flex-wrap gap-2">
-                  {taskStates.map((state) => <span className="rounded-full bg-neutral-100 px-2 py-1 text-xs text-neutral-700" key={state}>{state}</span>)}
+                  {taskStates.map((state) => <span className="rounded-full bg-surface-muted px-2 py-1 text-xs text-content-body" key={state}>{state}</span>)}
                 </div>
               </div>
               <div className="mt-4">
@@ -840,13 +841,13 @@ export default function WmsPage() {
               </div>
             </div>
 
-            <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+            <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
               <h2 className="mb-3 text-base font-semibold">APIs y eventos</h2>
               <div className="mb-4 max-h-72 overflow-auto rounded-md border border-line">
                 {wmsApis.map(([method, path, detail]) => (
                   <div className="grid grid-cols-[64px_1fr] gap-2 border-b border-line p-2 text-xs last:border-b-0" key={path}>
                     <span className="font-semibold text-apex">{method}</span>
-                    <span><strong>{path}</strong><br /><span className="text-neutral-500">{detail}</span></span>
+                    <span><strong>{path}</strong><br /><span className="text-content-muted">{detail}</span></span>
                   </div>
                 ))}
               </div>
@@ -870,30 +871,30 @@ export default function WmsPage() {
             {kpis.map((kpi) => {
               const Icon = kpi.icon;
               return (
-                <article className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`} key={kpi.label}>
+                <article className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`} key={kpi.label}>
                   <div className="mb-3 flex items-center justify-between">
                     <Icon className="text-apex" size={18} />
                     <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-700">{kpi.trend}</span>
                   </div>
                   <p className="text-2xl font-semibold">{kpi.value}</p>
-                  <p className="text-sm text-neutral-500">{kpi.label}</p>
+                  <p className="text-sm text-content-muted">{kpi.label}</p>
                 </article>
               );
             })}
           </section>
 
-          <section className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <section className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <h2 className="text-base font-semibold">Tareas por evento WMS</h2>
-                <p className="text-sm text-neutral-500">Recibo, almacén, picking, despacho y conteo con estados propios.</p>
+                <p className="text-sm text-content-muted">Recibo, almacén, picking, despacho y conteo con estados propios.</p>
               </div>
               <span className="inline-flex items-center gap-2 text-sm text-emerald-600"><Radio size={16} /> tiempo real</span>
             </div>
 
             <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
               {(["todos", "recibo", "almacen", "picking", "despacho", "conteo"] as const).map((event) => (
-                <button className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-md border px-3 text-sm ${eventFilter === event ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-white text-neutral-700"}`} key={event} onClick={() => setEventFilter(event)} type="button">
+                <button className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-md border px-3 text-sm ${eventFilter === event ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-surface text-content-body"}`} key={event} onClick={() => setEventFilter(event)} type="button">
                   <Filter size={14} />
                   {event === "todos" ? "Todos los eventos" : eventLabels[event]}
                 </button>
@@ -901,7 +902,7 @@ export default function WmsPage() {
             </div>
             <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
               {taskFilters.map((filter) => (
-                <button className={`h-9 shrink-0 rounded-md border px-3 text-sm ${taskFilter === filter.id ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-white text-neutral-700"}`} key={filter.id} onClick={() => setTaskFilter(filter.id)} type="button">
+                <button className={`h-9 shrink-0 rounded-md border px-3 text-sm ${taskFilter === filter.id ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-surface text-content-body"}`} key={filter.id} onClick={() => setTaskFilter(filter.id)} type="button">
                   {filter.label}
                 </button>
               ))}
@@ -909,29 +910,29 @@ export default function WmsPage() {
 
             <div className="mb-4 flex flex-col gap-3 rounded-md border border-line bg-paper p-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                <button className="h-9 rounded-md border border-line bg-white px-3 hover:bg-paper" onClick={selectFilteredTasks} type="button">
+                <button className="h-9 rounded-md border border-line bg-surface px-3 hover:bg-paper" onClick={selectFilteredTasks} type="button">
                   Seleccionar filtradas
                 </button>
-                <button className="h-9 rounded-md border border-line bg-white px-3 hover:bg-paper" onClick={() => setSelectedTaskIds([])} type="button">
+                <button className="h-9 rounded-md border border-line bg-surface px-3 hover:bg-paper" onClick={() => setSelectedTaskIds([])} type="button">
                   Limpiar
                 </button>
-                <span className="text-neutral-600">{selectedTaskIds.length} seleccionadas</span>
+                <span className="text-content-body">{selectedTaskIds.length} seleccionadas</span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-sm">
-                <select className="h-9 rounded-md border border-line bg-white px-2" value={bulkOperator} onChange={(event) => setBulkOperator(event.target.value)}>
+                <InventorySearchSelect className="h-9 rounded-md border border-line bg-surface px-2" value={bulkOperator} onChange={(event) => setBulkOperator(event.target.value)}>
                   {operators.map((operator) => <option key={operator}>{operator}</option>)}
-                </select>
+                </InventorySearchSelect>
                 <button className="h-9 rounded-md bg-apex px-3 text-white disabled:opacity-40" disabled={selectedTaskIds.length === 0} onClick={() => applyBulkPatch({ operator: bulkOperator })} type="button">
                   Asignar lote
                 </button>
-                <select className="h-9 rounded-md border border-line bg-white px-2" value={bulkStatus} onChange={(event) => setBulkStatus(event.target.value as TaskStatus)}>
+                <InventorySearchSelect className="h-9 rounded-md border border-line bg-surface px-2" value={bulkStatus} onChange={(event) => setBulkStatus(event.target.value as TaskStatus)}>
                   <option value="pendiente">Pendiente</option>
                   <option value="curso">En curso</option>
                   <option value="completa">Completa</option>
                   <option value="atrasada">Atrasada</option>
                   <option value="bloqueada">Bloqueada</option>
-                </select>
-                <button className="h-9 rounded-md border border-line bg-white px-3 hover:bg-paper disabled:opacity-40" disabled={selectedTaskIds.length === 0} onClick={() => applyBulkPatch({ status: bulkStatus })} type="button">
+                </InventorySearchSelect>
+                <button className="h-9 rounded-md border border-line bg-surface px-3 hover:bg-paper disabled:opacity-40" disabled={selectedTaskIds.length === 0} onClick={() => applyBulkPatch({ status: bulkStatus })} type="button">
                   Cambiar estado
                 </button>
               </div>
@@ -940,7 +941,7 @@ export default function WmsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1080px] text-sm">
                 <thead>
-                  <tr className="border-b border-line text-left text-neutral-600">
+                  <tr className="border-b border-line text-left text-content-body">
                     <th className="py-2 pr-3">Sel.</th>
                     <th className="py-2 pr-3">Evento</th>
                     <th className="py-2 pr-3">Tarea</th>
@@ -979,11 +980,11 @@ export default function WmsPage() {
 
       {view === "layout" ? (
         <section className="grid gap-4 xl:grid-cols-[1.45fr_0.55fr]">
-          <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <h2 className="text-base font-semibold">Diseñador 2D del almacén</h2>
-                <p className="text-sm text-neutral-500">Plano operativo para decidir dónde recibir, guardar, reponer, preparar y despachar.</p>
+                <p className="text-sm text-content-muted">Plano operativo para decidir dónde recibir, guardar, reponer, preparar y despachar.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm ${activeTool ? "border-apex bg-[#146C6312] text-apex" : "border-line hover:bg-paper"}`} onClick={() => setActiveTool((current) => current ? null : "zona")} type="button">
@@ -1012,7 +1013,7 @@ export default function WmsPage() {
               />
               <div className="flex items-center gap-2">
                 <button className="h-10 rounded-md border border-line px-3 text-sm hover:bg-paper" onClick={() => setLayoutZoom((value) => Math.max(75, value - 25))} type="button">-</button>
-                <span className="w-14 text-center text-sm text-neutral-600">{layoutZoom}%</span>
+                <span className="w-14 text-center text-sm text-content-body">{layoutZoom}%</span>
                 <button className="h-10 rounded-md border border-line px-3 text-sm hover:bg-paper" onClick={() => setLayoutZoom((value) => Math.min(175, value + 25))} type="button">+</button>
               </div>
             </div>
@@ -1020,7 +1021,7 @@ export default function WmsPage() {
             <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
               {(Object.keys(layerLabels) as LayoutLayer[]).map((layer) => (
                 <button
-                  className={`h-9 shrink-0 rounded-md border px-3 text-sm ${layers[layer] ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-white text-neutral-700"}`}
+                  className={`h-9 shrink-0 rounded-md border px-3 text-sm ${layers[layer] ? "border-apex bg-[#146C6312] text-apex" : "border-line bg-surface text-content-body"}`}
                   key={layer}
                   onClick={() => setLayers((current) => ({ ...current, [layer]: !current[layer] }))}
                   type="button"
@@ -1042,7 +1043,7 @@ export default function WmsPage() {
             />
 
             <button
-              className={`hidden relative min-h-[560px] w-full overflow-hidden rounded-md border text-left ${activeTool ? "cursor-crosshair ring-2 ring-apex/30" : "cursor-default"} ${dark ? "border-neutral-800 bg-neutral-900" : "border-line bg-[#f7f7f4]"}`}
+              className={`hidden relative min-h-[560px] w-full overflow-hidden rounded-md border text-left ${activeTool ? "cursor-crosshair ring-2 ring-apex/30" : "cursor-default"} ${dark ? "border-line bg-surface-muted" : "border-line bg-[#f7f7f4]"}`}
               onClick={(event) => {
                 if (!activeTool) return;
                 const rect = event.currentTarget.getBoundingClientRect();
@@ -1066,7 +1067,7 @@ export default function WmsPage() {
               <div className="absolute inset-x-0 top-0 h-8 border-b border-neutral-300/70 bg-white/55" />
               <div className="absolute inset-y-0 left-0 w-8 border-r border-neutral-300/70 bg-white/55" />
               <div className="absolute inset-0" style={{ transform: `scale(${layoutZoom / 100})`, transformOrigin: "top left" }}>
-              <div className="absolute left-3 top-3 z-20 rounded-md border border-line bg-white/95 px-3 py-2 text-xs text-neutral-700 shadow-sm">
+              <div className="absolute left-3 top-3 z-20 rounded-md border border-line bg-surface/95 px-3 py-2 text-xs text-content-body shadow-sm">
                 {activeTool ? `Coloca: ${layoutTools.find((tool) => tool.id === activeTool).label}` : selectedLocation ? `Siguiente: atender ${selectedLocation.code}` : "Busca, selecciona y ejecuta"}
               </div>
               {layers.estructura ? assets.map((asset) => (
@@ -1108,7 +1109,7 @@ export default function WmsPage() {
                 >
                   <span className="block text-xs font-semibold">{zone.code}</span>
                   <span className="block text-[11px] leading-tight">{zone.name}</span>
-                  <span className="absolute bottom-2 right-2 rounded border border-neutral-300 bg-white/80 px-1.5 py-0.5 text-[10px] text-neutral-700">{zone.occupancy}%</span>
+                  <span className="absolute bottom-2 right-2 rounded border border-neutral-300 bg-surface/80 px-1.5 py-0.5 text-[10px] text-content-body">{zone.occupancy}%</span>
                 </span>
               ))}
               {highlightedLocations.map((location) => (
@@ -1126,13 +1127,13 @@ export default function WmsPage() {
                 >
                   {layers.ocupacion ? <span className="absolute bottom-0 left-0 h-1 bg-apex/70" style={{ width: `${location.occupancy}%` }} /> : null}
                   {layers.productos ? <span className="absolute left-[3px] top-[2px] max-w-[92%] truncate text-[8px] font-semibold leading-none">{location.sku}</span> : null}
-                  {layers.tareas && location.activeTasks > 0 ? <span className="absolute -right-1 -top-1 h-3 min-w-3 rounded-full bg-neutral-950 px-1 text-center text-[8px] text-white">{location.activeTasks}</span> : null}
+                  {layers.tareas && location.activeTasks > 0 ? <span className="absolute -right-1 -top-1 h-3 min-w-3 rounded-full bg-surface px-1 text-center text-[8px] text-white">{location.activeTasks}</span> : null}
                   {layers.alertas && ["alerta", "bloqueada", "cuarentena"].includes(location.status) ? <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border border-white bg-amber-500" /> : null}
                   {layers.capacidad ? <span className="absolute bottom-1 right-1 text-[7px] font-bold">{location.occupancy}%</span> : null}
                 </span>
               ))}
               {zones.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-neutral-500">
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-content-muted">
                   {activeTool ? "Haz clic en el plano para crear el primer elemento." : "Activa Dibujar o carga un preset."}
                 </div>
               ) : null}
@@ -1140,16 +1141,16 @@ export default function WmsPage() {
             </button>
           </div>
 
-          <aside className={`space-y-3 rounded-md border p-3 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <aside className={`space-y-3 rounded-md border p-3 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <div>
               <h2 className="text-base font-semibold">Qué hacer ahora</h2>
-              <p className="text-sm text-neutral-500">{selectedLocation ? selectedLocation.product : "Selecciona una ubicación para ver el siguiente paso."}</p>
+              <p className="text-sm text-content-muted">{selectedLocation ? selectedLocation.product : "Selecciona una ubicación para ver el siguiente paso."}</p>
             </div>
             <div className="rounded-md border border-line bg-paper p-3 text-sm">
-              <p className="text-xs font-semibold uppercase text-neutral-500">Acción sugerida</p>
+              <p className="text-xs font-semibold uppercase text-content-muted">Acción sugerida</p>
               <p className="mt-1 font-medium">{selectedLocation ? nextLocationAction(selectedLocation) : "Buscar ubicación, SKU o tarea"}</p>
               {selectedLocation ? (
-                <p className="mt-1 text-xs text-neutral-500">{selectedLocation.code} · {selectedLocation.qty}/{selectedLocation.capacityUnits} unidades · {selectedLocation.activeTasks} tareas</p>
+                <p className="mt-1 text-xs text-content-muted">{selectedLocation.code} · {selectedLocation.qty}/{selectedLocation.capacityUnits} unidades · {selectedLocation.activeTasks} tareas</p>
               ) : null}
             </div>
             <div className="grid gap-2">
@@ -1181,7 +1182,7 @@ export default function WmsPage() {
 
       {view === "reglas" ? (
         <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <h2 className="mb-4 text-base font-semibold">{editingRuleId ? "Editar regla" : "Crear regla"}</h2>
             <div className="grid gap-3 md:grid-cols-2">
               <TextField label="Nombre" value={ruleForm.name} onChange={(value) => setRuleForm((current) => ({ ...current, name: value }))} />
@@ -1197,15 +1198,15 @@ export default function WmsPage() {
             </button>
           </div>
 
-          <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <h2 className="mb-4 text-base font-semibold">Reglas configuradas</h2>
             <div className="grid gap-3">
               {rules.map((rule) => (
-                <div className={`rounded-md border p-3 ${dark ? "border-neutral-800" : "border-line"}`} key={rule.id}>
+                <div className={`rounded-md border p-3 ${dark ? "border-line" : "border-line"}`} key={rule.id}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium">{rule.name}</p>
-                      <p className="mt-1 text-xs text-neutral-500">{eventLabels[rule.event]} · {rule.trigger} · agrupa por {rule.groupBy} · {rule.method}</p>
+                      <p className="mt-1 text-xs text-content-muted">{eventLabels[rule.event]} · {rule.trigger} · agrupa por {rule.groupBy} · {rule.method}</p>
                     </div>
                     <div className="flex gap-2">
                       <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => editRule(rule)} type="button" title="Editar">
@@ -1225,21 +1226,21 @@ export default function WmsPage() {
 
       {view === "conteo" ? (
         <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-          <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <h2 className="mb-4 text-base font-semibold">Métodos de control de inventario</h2>
             <div className="grid gap-3">
               {countMethods.map((method) => (
-                <div className={`rounded-md border p-3 ${dark ? "border-neutral-800" : "border-line"}`} key={method.id}>
+                <div className={`rounded-md border p-3 ${dark ? "border-line" : "border-line"}`} key={method.id}>
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium">{method.name}</p>
-                      <p className="text-xs text-neutral-500">{method.cadence}</p>
+                      <p className="text-xs text-content-muted">{method.cadence}</p>
                     </div>
-                    <button className={`rounded-full px-2 py-1 text-xs ${method.enabled ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`} onClick={() => setCountMethods((current) => current.map((item) => item.id === method.id ? { ...item, enabled: !item.enabled } : item))} type="button">
+                    <button className={`rounded-full px-2 py-1 text-xs ${method.enabled ? "bg-emerald-50 text-emerald-700" : "bg-surface-muted text-content-body"}`} onClick={() => setCountMethods((current) => current.map((item) => item.id === method.id ? { ...item, enabled: !item.enabled } : item))} type="button">
                       {method.enabled ? "activo" : "apagado"}
                     </button>
                   </div>
-                  <div className="mt-2 grid gap-2 text-xs text-neutral-500 md:grid-cols-2">
+                  <div className="mt-2 grid gap-2 text-xs text-content-muted md:grid-cols-2">
                     <span>Alcance: {method.scope}</span>
                     <span>Tolerancia: {method.tolerance}</span>
                   </div>
@@ -1248,13 +1249,13 @@ export default function WmsPage() {
             </div>
           </div>
 
-          <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <h2 className="mb-4 text-base font-semibold">Unidades de manipulación</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {handlingUnits.map((unit) => (
-                <div className={`rounded-md border p-3 ${dark ? "border-neutral-800" : "border-line"}`} key={unit.code}>
+                <div className={`rounded-md border p-3 ${dark ? "border-line" : "border-line"}`} key={unit.code}>
                   <p className="text-sm font-medium">{unit.name}</p>
-                  <p className="text-xs text-neutral-500">{unit.code} · {unit.use}</p>
+                  <p className="text-xs text-content-muted">{unit.code} · {unit.use}</p>
                   <p className="mt-1 text-xs font-medium">{unit.capacity}</p>
                 </div>
               ))}
@@ -1265,13 +1266,13 @@ export default function WmsPage() {
 
       {view === "mobile" ? (
         <section className="grid gap-4 xl:grid-cols-[0.65fr_1.35fr]">
-          <div className="mx-auto w-full max-w-sm rounded-[28px] border-8 border-neutral-900 bg-neutral-950 p-4 text-white shadow-xl">
+          <div className="mx-auto w-full max-w-sm rounded-[28px] border-8 border-neutral-900 bg-surface p-4 text-white shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <span className="text-sm font-semibold">APEX WMS</span>
               <span className="rounded-full bg-emerald-500 px-2 py-1 text-xs">offline ok</span>
             </div>
-            <div className="rounded-md bg-white p-3 text-neutral-900">
-              <p className="text-xs text-neutral-500">Evento actual</p>
+            <div className="rounded-md bg-surface p-3 text-content-strong">
+              <p className="text-xs text-content-muted">Evento actual</p>
               <p className="text-2xl font-semibold">Picking</p>
               <p className="text-sm">Tote T-004 · Cliente XXXXX</p>
             </div>
@@ -1279,11 +1280,11 @@ export default function WmsPage() {
               {mobileSteps.map((step) => {
                 const Icon = step.icon;
                 return (
-                  <div className="flex items-center gap-3 rounded-md bg-neutral-900 p-3" key={step.label}>
+                  <div className="flex items-center gap-3 rounded-md bg-surface-muted p-3" key={step.label}>
                     <Icon className="text-emerald-300" size={18} />
                     <div>
                       <p className="text-sm font-medium">{step.label}</p>
-                      <p className="text-xs text-neutral-400">{step.detail}</p>
+                      <p className="text-xs text-content-muted">{step.detail}</p>
                     </div>
                   </div>
                 );
@@ -1294,7 +1295,7 @@ export default function WmsPage() {
             </button>
           </div>
 
-          <div className={`rounded-md border p-4 ${dark ? "border-neutral-800 bg-neutral-950" : "border-line bg-white"}`}>
+          <div className={`rounded-md border p-4 ${dark ? "border-line bg-surface" : "border-line bg-surface"}`}>
             <h2 className="mb-4 text-base font-semibold">Flujo móvil por evento</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {[
@@ -1305,9 +1306,9 @@ export default function WmsPage() {
                 ["Conteo", "conteo ciego, conteo cíclico, tolerancias y ajuste controlado."],
                 ["Excepciones", "faltante, daño, bloqueo, peso distinto, unidad incompatible."]
               ].map(([title, detail]) => (
-                <div className={`rounded-md border p-3 ${dark ? "border-neutral-800" : "border-line"}`} key={title}>
+                <div className={`rounded-md border p-3 ${dark ? "border-line" : "border-line"}`} key={title}>
                   <p className="text-sm font-medium">{title}</p>
-                  <p className="mt-1 text-xs text-neutral-500">{detail}</p>
+                  <p className="mt-1 text-xs text-content-muted">{detail}</p>
                 </div>
               ))}
             </div>
@@ -1341,7 +1342,7 @@ export default function WmsPage() {
                     type="button"
                   >
                     <span className="block font-medium">{tool.label}</span>
-                    <span className="block text-xs text-neutral-500">{tool.hint}</span>
+                    <span className="block text-xs text-content-muted">{tool.hint}</span>
                   </button>
                 ))}
               </div>
@@ -1350,9 +1351,9 @@ export default function WmsPage() {
                 <div className="grid gap-2 sm:grid-cols-3">
                   <input className="h-10 rounded-md border border-line px-3 text-sm" value={newZone.code} onChange={(event) => setNewZone((current) => ({ ...current, code: event.target.value }))} placeholder="Código" />
                   <input className="h-10 rounded-md border border-line px-3 text-sm" value={newZone.name} onChange={(event) => setNewZone((current) => ({ ...current, name: event.target.value }))} placeholder="Nombre" />
-                  <select className="h-10 rounded-md border border-line px-3 text-sm" value={newZone.type} onChange={(event) => setNewZone((current) => ({ ...current, type: event.target.value }))}>
+                  <InventorySearchSelect className="h-10 rounded-md border border-line px-3 text-sm" value={newZone.type} onChange={(event) => setNewZone((current) => ({ ...current, type: event.target.value }))}>
                     {["recibo", "staging", "reserva", "picking", "packing", "despacho", "cuarentena", "devoluciones"].map((type) => <option key={type}>{type}</option>)}
-                  </select>
+                  </InventorySearchSelect>
                 </div>
                 <button className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm text-white" onClick={addZone} type="button">
                   <Plus size={16} />
@@ -1372,7 +1373,7 @@ export default function WmsPage() {
                   type="button"
                 >
                   <span className="block font-medium">{layerLabels[layer]}</span>
-                  <span className="block text-xs text-neutral-500">{layers[layer] ? "Visible en el mapa" : "Oculta"}</span>
+                  <span className="block text-xs text-content-muted">{layers[layer] ? "Visible en el mapa" : "Oculta"}</span>
                 </button>
               ))}
             </div>
@@ -1411,7 +1412,7 @@ export default function WmsPage() {
             <div className="grid gap-4 md:grid-cols-[0.9fr_1.1fr]">
               <div className="rounded-md border border-line p-3 text-sm">
                 <p className="font-semibold">{selectedLocation.code}</p>
-                <p className="mt-1 text-neutral-600">{selectedLocation.product}</p>
+                <p className="mt-1 text-content-body">{selectedLocation.product}</p>
                 <div className="mt-3 space-y-2">
                   <MetricRow label="SKU" value={selectedLocation.sku} />
                   <MetricRow label="Cantidad" value={`${selectedLocation.qty} und`} />
@@ -1465,21 +1466,21 @@ export default function WmsPage() {
 
 function WorkflowGuide({ guide }: { guide: { title: string; goal: string; steps: string[]; next: string } }) {
   return (
-    <section className="grid gap-3 rounded-md border border-line bg-white p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+    <section className="grid gap-3 rounded-md border border-line bg-surface p-4 lg:grid-cols-[1fr_auto] lg:items-center">
       <div>
         <p className="text-sm font-semibold text-apex">{guide.title}</p>
-        <p className="mt-1 text-sm text-neutral-600">{guide.goal}</p>
+        <p className="mt-1 text-sm text-content-body">{guide.goal}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {guide.steps.map((step, index) => (
-            <span className="inline-flex h-8 items-center gap-2 rounded-md border border-line bg-paper px-2.5 text-xs text-neutral-700" key={step}>
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-white text-[11px] font-semibold text-apex">{index + 1}</span>
+            <span className="inline-flex h-8 items-center gap-2 rounded-md border border-line bg-paper px-2.5 text-xs text-content-body" key={step}>
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-surface text-[11px] font-semibold text-apex">{index + 1}</span>
               {step}
             </span>
           ))}
         </div>
       </div>
       <div className="rounded-md border border-line bg-paper px-3 py-2 text-sm">
-        <span className="block text-xs font-semibold uppercase text-neutral-500">Siguiente</span>
+        <span className="block text-xs font-semibold uppercase text-content-muted">Siguiente</span>
         <span className="font-medium">{guide.next}</span>
       </div>
     </section>
@@ -1505,14 +1506,14 @@ function SmartWarehouseGrid({
       <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm font-semibold">Cuadrícula inteligente</p>
-          <p className="text-xs text-neutral-500">Cada casilla es una ubicación física. Filtra, selecciona y configura como piezas de LEGO.</p>
+          <p className="text-xs text-content-muted">Cada casilla es una ubicación física. Filtra, selecciona y configura como piezas de LEGO.</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
-          <LegendDot label="Libre" className="bg-white" />
+          <LegendDot label="Libre" className="bg-surface" />
           <LegendDot label="Ocupada" className="bg-neutral-300" />
           <LegendDot label="Llena" className="bg-neutral-600" />
           <LegendDot label="Alerta" className="bg-amber-300" />
-          <LegendDot label="Tarea" className="bg-neutral-950" />
+          <LegendDot label="Tarea" className="bg-surface" />
         </div>
       </div>
 
@@ -1520,8 +1521,8 @@ function SmartWarehouseGrid({
         <div className="space-y-3">
           <div className="grid grid-cols-[92px_1fr_120px] gap-2">
             <ZoneBlock label="Recibo" detail="Muelle + staging" location={quickFind(["REC", "STG"])} onSelectLocation={onSelectLocation} />
-            <div className="rounded-md border border-line bg-white p-2">
-              <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Reserva pallet</p>
+            <div className="rounded-md border border-line bg-surface p-2">
+              <p className="mb-2 text-xs font-semibold uppercase text-content-muted">Reserva pallet</p>
               <RackMatrix zoneLabel="RSV" zoneId={4} rows={4} cols={14} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
             </div>
             <ZoneBlock label="Cuarentena" detail="QA" location={quickFind(["QAR"])} onSelectLocation={onSelectLocation} />
@@ -1530,13 +1531,13 @@ function SmartWarehouseGrid({
           <AisleLabel label="Pasillo principal de tránsito seguro" />
 
           <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
-            <div className="rounded-md border border-line bg-white p-2">
-              <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Forward picking</p>
+            <div className="rounded-md border border-line bg-surface p-2">
+              <p className="mb-2 text-xs font-semibold uppercase text-content-muted">Forward picking</p>
               <RackMatrix zoneLabel="PCK" zoneId={5} rows={4} cols={12} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
             </div>
             <div className="space-y-3">
-              <div className="rounded-md border border-line bg-white p-2">
-                <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Packing / alistamiento</p>
+              <div className="rounded-md border border-line bg-surface p-2">
+                <p className="mb-2 text-xs font-semibold uppercase text-content-muted">Packing / alistamiento</p>
                 <RackMatrix zoneLabel="PAC" zoneId={6} rows={3} cols={6} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
               </div>
               <ZoneBlock label="Oficinas" detail="Soporte operativo" />
@@ -1545,8 +1546,8 @@ function SmartWarehouseGrid({
 
           <AisleLabel label="Pasillo de despacho" />
 
-          <div className="rounded-md border border-line bg-white p-2">
-            <p className="mb-2 text-xs font-semibold uppercase text-neutral-500">Despacho y rutas</p>
+          <div className="rounded-md border border-line bg-surface p-2">
+            <p className="mb-2 text-xs font-semibold uppercase text-content-muted">Despacho y rutas</p>
             <RackMatrix zoneLabel="DSP" zoneId={7} rows={2} cols={16} locationByCode={locationByCode} locations={locations} selectedLocationCode={selectedLocationCode} onSelectLocation={onSelectLocation} layers={layers} />
           </div>
         </div>
@@ -1554,7 +1555,7 @@ function SmartWarehouseGrid({
         <aside className="space-y-2">
           <DockLane title="Muelle despacho" location={quickFind(["DSP"])} onSelectLocation={onSelectLocation} />
           <DockLane title="Muelle recibo" location={quickFind(["REC", "STG"])} onSelectLocation={onSelectLocation} />
-          <div className="rounded-md border border-dashed border-neutral-400 bg-white p-3 text-xs text-neutral-600">
+          <div className="rounded-md border border-dashed border-neutral-400 bg-surface p-3 text-xs text-content-body">
             Las filas representan racks o bloques físicos. La codificación sigue zona, módulo, nivel y ubicación.
           </div>
         </aside>
@@ -1622,7 +1623,7 @@ function LocationCell({
   layers: Record<LayoutLayer, boolean>;
   onSelectLocation: (location: VisualLocation) => void;
 }) {
-  const className = location ? locationVisualClass(location, layers) : "border-neutral-300 bg-white text-neutral-400";
+  const className = location ? locationVisualClass(location, layers) : "border-neutral-300 bg-surface text-content-muted";
   return (
     <button
       className={`relative aspect-square min-h-8 rounded-sm border text-[9px] font-semibold leading-none transition hover:border-apex hover:bg-[#146C6312] ${className} ${selected ? "ring-2 ring-apex ring-offset-1" : ""}`}
@@ -1633,7 +1634,7 @@ function LocationCell({
     >
       <span className="absolute left-1 top-1">{cellShortCode(location?.code || code)}</span>
       {location && layers.ocupacion ? <span className="absolute inset-x-1 bottom-1 h-1 rounded bg-apex/70" style={{ width: `calc(${Math.max(8, location.occupancy)}% - 0.5rem)` }} /> : null}
-      {location && layers.tareas && location.activeTasks > 0 ? <span className="absolute -right-1 -top-1 h-3 min-w-3 rounded-full bg-neutral-950 px-1 text-[8px] text-white">{location.activeTasks}</span> : null}
+      {location && layers.tareas && location.activeTasks > 0 ? <span className="absolute -right-1 -top-1 h-3 min-w-3 rounded-full bg-surface px-1 text-[8px] text-white">{location.activeTasks}</span> : null}
       {location && layers.alertas && ["alerta", "bloqueada", "cuarentena"].includes(location.status) ? <span className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border border-white bg-amber-500" /> : null}
     </button>
   );
@@ -1642,14 +1643,14 @@ function LocationCell({
 function ZoneBlock({ label, detail, location, onSelectLocation }: { label: string; detail: string; location?: VisualLocation; onSelectLocation?: (location: VisualLocation) => void }) {
   return (
     <button
-      className="min-h-24 rounded-md border border-line bg-white p-2 text-left text-xs hover:border-apex disabled:hover:border-line"
+      className="min-h-24 rounded-md border border-line bg-surface p-2 text-left text-xs hover:border-apex disabled:hover:border-line"
       disabled={!location}
       onClick={() => location && onSelectLocation?.(location)}
       type="button"
     >
-      <span className="block font-semibold text-neutral-800">{label}</span>
-      <span className="mt-1 block text-neutral-500">{detail}</span>
-      {location ? <span className="mt-3 block rounded bg-paper px-2 py-1 font-medium text-neutral-700">{location.code}</span> : null}
+      <span className="block font-semibold text-content-strong">{label}</span>
+      <span className="mt-1 block text-content-muted">{detail}</span>
+      {location ? <span className="mt-3 block rounded bg-paper px-2 py-1 font-medium text-content-body">{location.code}</span> : null}
     </button>
   );
 }
@@ -1657,21 +1658,21 @@ function ZoneBlock({ label, detail, location, onSelectLocation }: { label: strin
 function DockLane({ title, location, onSelectLocation }: { title: string; location: VisualLocation; onSelectLocation: (location: VisualLocation) => void }) {
   return (
     <button
-      className="min-h-28 w-full rounded-md border border-line bg-white p-3 text-left text-xs hover:border-apex disabled:hover:border-line"
+      className="min-h-28 w-full rounded-md border border-line bg-surface p-3 text-left text-xs hover:border-apex disabled:hover:border-line"
       disabled={!location}
       onClick={() => location ? onSelectLocation(location) : undefined}
       type="button"
     >
       <span className="block font-semibold">{title}</span>
       <span className="mt-2 block h-10 rounded border-2 border-dashed border-neutral-300 bg-paper" />
-      <span className="mt-2 block text-neutral-500">{location ? nextLocationAction(location) : "Sin tarea activa"}</span>
+      <span className="mt-2 block text-content-muted">{location ? nextLocationAction(location) : "Sin tarea activa"}</span>
     </button>
   );
 }
 
 function AisleLabel({ label }: { label: string }) {
   return (
-    <div className="flex h-8 items-center justify-center rounded-md border border-dashed border-neutral-300 bg-white text-xs font-medium uppercase text-neutral-500">
+    <div className="flex h-8 items-center justify-center rounded-md border border-dashed border-neutral-300 bg-surface text-xs font-medium uppercase text-content-muted">
       {label}
     </div>
   );
@@ -1679,7 +1680,7 @@ function AisleLabel({ label }: { label: string }) {
 
 function LegendDot({ label, className }: { label: string; className: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-2 py-1">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1">
       <span className={`h-2.5 w-2.5 rounded-sm border border-neutral-300 ${className}`} />
       {label}
     </span>
@@ -1709,9 +1710,9 @@ function StatusBadge({ status }: { status: TaskStatus }) {
     bloqueada: "Bloqueada"
   };
   const classes: Record<TaskStatus, string> = {
-    pendiente: "bg-neutral-100 text-neutral-700",
-    curso: "bg-neutral-100 text-neutral-700",
-    completa: "bg-neutral-100 text-neutral-700",
+    pendiente: "bg-surface-muted text-content-body",
+    curso: "bg-surface-muted text-content-body",
+    completa: "bg-surface-muted text-content-body",
     atrasada: "bg-amber-50 text-amber-800",
     bloqueada: "bg-amber-50 text-amber-700"
   };
@@ -1722,7 +1723,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-line bg-paper px-3 py-2">
       <p className="text-lg font-semibold leading-none">{value}</p>
-      <p className="mt-1 text-xs text-neutral-500">{label}</p>
+      <p className="mt-1 text-xs text-content-muted">{label}</p>
     </div>
   );
 }
@@ -1730,10 +1731,10 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 function FlowColumn({ title, items }: { title: string; items: string[] }) {
   return (
     <div className="rounded-md bg-paper p-2">
-      <p className="mb-2 text-xs font-semibold text-neutral-600">{title}</p>
+      <p className="mb-2 text-xs font-semibold text-content-body">{title}</p>
       <div className="space-y-1">
         {items.map((item) => (
-          <p className="rounded-sm bg-white px-2 py-1 text-xs" key={item}>{item}</p>
+          <p className="rounded-sm bg-surface px-2 py-1 text-xs" key={item}>{item}</p>
         ))}
       </div>
     </div>
@@ -1746,7 +1747,7 @@ function EntityCard({ title, fields }: { title: string; fields: string[] }) {
       <p className="mb-2 text-sm font-semibold">{title}</p>
       <div className="flex flex-wrap gap-1">
         {fields.map((field) => (
-          <span className="rounded bg-paper px-2 py-1 text-[11px] text-neutral-700" key={field}>{field}</span>
+          <span className="rounded bg-paper px-2 py-1 text-[11px] text-content-body" key={field}>{field}</span>
         ))}
       </div>
     </div>
@@ -1755,7 +1756,7 @@ function EntityCard({ title, fields }: { title: string; fields: string[] }) {
 
 function BacklogCard({ title, items }: { title: string; items: string[] }) {
   return (
-    <section className="rounded-md border border-line bg-white p-4">
+    <section className="rounded-md border border-line bg-surface p-4">
       <h2 className="mb-3 text-base font-semibold">{title}</h2>
       <div className="grid gap-2">
         {items.map((item) => (
@@ -1772,7 +1773,7 @@ function BacklogCard({ title, items }: { title: string; items: string[] }) {
 function PanelButton({ icon: Icon, label, detail, disabled, onClick }: { icon: LucideIcon; label: string; detail: string; disabled?: boolean; onClick: () => void }) {
   return (
     <button
-      className="flex min-h-16 items-center gap-3 rounded-md border border-line bg-white p-3 text-left text-sm hover:bg-paper disabled:cursor-not-allowed disabled:opacity-45"
+      className="flex min-h-16 items-center gap-3 rounded-md border border-line bg-surface p-3 text-left text-sm hover:bg-paper disabled:cursor-not-allowed disabled:opacity-45"
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -1782,7 +1783,7 @@ function PanelButton({ icon: Icon, label, detail, disabled, onClick }: { icon: L
       </span>
       <span className="min-w-0">
         <span className="block font-medium">{label}</span>
-        <span className="block truncate text-xs text-neutral-500">{detail}</span>
+        <span className="block truncate text-xs text-content-muted">{detail}</span>
       </span>
     </button>
   );
@@ -1791,7 +1792,7 @@ function PanelButton({ icon: Icon, label, detail, disabled, onClick }: { icon: L
 function ConfigModalFrame({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <section className="max-h-[88vh] w-full max-w-4xl overflow-auto rounded-md border border-line bg-white p-4 shadow-2xl">
+      <section className="max-h-[88vh] w-full max-w-4xl overflow-auto rounded-md border border-line bg-surface p-4 shadow-2xl">
         <div className="mb-4 flex items-center justify-between gap-3 border-b border-line pb-3">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button className="h-9 rounded-md border border-line px-3 text-sm hover:bg-paper" onClick={onClose} type="button">
@@ -1817,16 +1818,16 @@ function SelectField({ label, value, options, onChange }: { label: string; value
   return (
     <label className="text-sm">
       {label}
-      <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
+      <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
-      </select>
+      </InventorySearchSelect>
     </label>
   );
 }
 
 function zoneVisualClass(zone: WarehouseZone, selected: boolean) {
   const selectedClass = selected ? "border-apex ring-2 ring-apex/30" : "border-neutral-300";
-  const occupancyClass = zone.occupancy >= 85 ? "bg-neutral-300 text-neutral-950" : zone.occupancy >= 65 ? "bg-neutral-200 text-neutral-900" : "bg-white text-neutral-800";
+  const occupancyClass = zone.occupancy >= 85 ? "bg-neutral-300 text-neutral-950" : zone.occupancy >= 65 ? "bg-neutral-200 text-content-strong" : "bg-surface text-content-strong";
   return `${selectedClass} ${occupancyClass}`;
 }
 
@@ -1842,27 +1843,27 @@ function nextLocationAction(location: VisualLocation) {
 
 function locationVisualClass(location: VisualLocation, layers: Record<LayoutLayer, boolean>) {
   if (layers.estado) {
-    if (location.status === "vacia") return "border-neutral-300 bg-white text-neutral-700";
-    if (location.status === "bloqueada") return "border-neutral-950 bg-neutral-900 text-white";
+    if (location.status === "vacia") return "border-neutral-300 bg-surface text-content-body";
+    if (location.status === "bloqueada") return "border-neutral-950 bg-surface-muted text-white";
     if (location.status === "cuarentena") return "border-amber-700 bg-amber-100 text-amber-950";
     if (location.status === "alerta") return "border-amber-600 bg-amber-200 text-neutral-950";
-    if (location.status === "llena") return "border-neutral-700 bg-neutral-500 text-white";
+    if (location.status === "llena") return "border-line bg-neutral-500 text-white";
   }
 
   if (layers.abc) {
-    if (location.abc === "A") return "border-neutral-950 bg-neutral-800 text-white";
+    if (location.abc === "A") return "border-neutral-950 bg-surface-muted text-white";
     if (location.abc === "B") return "border-neutral-600 bg-neutral-300 text-neutral-950";
-    return "border-neutral-400 bg-white text-neutral-700";
+    return "border-neutral-400 bg-surface text-content-body";
   }
 
   if (layers.ocupacion) {
-    if (location.occupancy === 0) return "border-neutral-300 bg-white text-neutral-700";
-    if (location.occupancy >= 90) return "border-neutral-800 bg-neutral-600 text-white";
+    if (location.occupancy === 0) return "border-neutral-300 bg-surface text-content-body";
+    if (location.occupancy >= 90) return "border-line bg-neutral-600 text-white";
     if (location.occupancy >= 60) return "border-neutral-500 bg-neutral-300 text-neutral-950";
-    return "border-neutral-300 bg-neutral-100 text-neutral-700";
+    return "border-neutral-300 bg-surface-muted text-content-body";
   }
 
-  return "border-neutral-400 bg-white text-neutral-700";
+  return "border-neutral-400 bg-surface text-content-body";
 }
 
 function NumberField({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (value: number) => void }) {
@@ -1888,25 +1889,25 @@ function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
         <span className="grid h-full grid-cols-6 gap-1">
           {Array.from({ length: 12 }, (_, index) => <span className="rounded-sm bg-white/70" key={index} />)}
         </span>
-        <span className="absolute -top-4 left-0 text-[10px] font-semibold text-neutral-700">{asset.label}</span>
+        <span className="absolute -top-4 left-0 text-[10px] font-semibold text-content-body">{asset.label}</span>
       </span>
     );
   }
 
   if (asset.kind === "camion") {
     return (
-      <span className="block h-full w-full rounded-sm bg-neutral-800 shadow-md">
+      <span className="block h-full w-full rounded-sm bg-surface-muted shadow-md">
         <span className="absolute right-0 top-0 h-full w-[28%] rounded-r-sm bg-neutral-500" />
-        <span className="absolute left-2 top-1/2 h-[46%] w-[52%] -translate-y-1/2 rounded-sm bg-white" />
-        <span className="absolute bottom-[-4px] left-[18%] h-2 w-2 rounded-full bg-neutral-950" />
-        <span className="absolute bottom-[-4px] right-[22%] h-2 w-2 rounded-full bg-neutral-950" />
+        <span className="absolute left-2 top-1/2 h-[46%] w-[52%] -translate-y-1/2 rounded-sm bg-surface" />
+        <span className="absolute bottom-[-4px] left-[18%] h-2 w-2 rounded-full bg-surface" />
+        <span className="absolute bottom-[-4px] right-[22%] h-2 w-2 rounded-full bg-surface" />
       </span>
     );
   }
 
   if (asset.kind === "muelle") {
     return (
-      <span className="flex h-full w-full items-center justify-center rounded-sm border-2 border-dashed border-neutral-700 bg-neutral-200 text-[10px] font-semibold text-neutral-700">
+      <span className="flex h-full w-full items-center justify-center rounded-sm border-2 border-dashed border-line bg-neutral-200 text-[10px] font-semibold text-content-body">
         DOCK
       </span>
     );
@@ -1916,9 +1917,9 @@ function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
     return (
       <span className="block h-full w-full">
         <span className="absolute bottom-1 left-1 h-[55%] w-[58%] rounded-sm bg-neutral-600" />
-        <span className="absolute right-1 top-1 h-[78%] w-[16%] bg-neutral-800" />
-        <span className="absolute bottom-0 left-1 h-2 w-2 rounded-full bg-neutral-950" />
-        <span className="absolute bottom-0 right-2 h-2 w-2 rounded-full bg-neutral-950" />
+        <span className="absolute right-1 top-1 h-[78%] w-[16%] bg-surface-muted" />
+        <span className="absolute bottom-0 left-1 h-2 w-2 rounded-full bg-surface" />
+        <span className="absolute bottom-0 right-2 h-2 w-2 rounded-full bg-surface" />
       </span>
     );
   }
@@ -1935,18 +1936,18 @@ function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
 
   if (asset.kind === "oficina") {
     return (
-      <span className="flex h-full w-full items-center justify-center rounded-sm border border-neutral-400 bg-white/90 text-[10px] font-semibold text-neutral-700 shadow-sm">
+      <span className="flex h-full w-full items-center justify-center rounded-sm border border-neutral-400 bg-surface/90 text-[10px] font-semibold text-content-body shadow-sm">
         {asset.label}
       </span>
     );
   }
 
   if (asset.kind === "puerta") {
-    return <span className="block h-full w-full rounded-sm bg-neutral-900 shadow-sm" />;
+    return <span className="block h-full w-full rounded-sm bg-surface-muted shadow-sm" />;
   }
 
   return (
-    <span className="flex h-full w-full items-center justify-center rounded-md border border-neutral-400 bg-white/80 text-[10px] font-semibold text-neutral-700">
+    <span className="flex h-full w-full items-center justify-center rounded-md border border-neutral-400 bg-surface/80 text-[10px] font-semibold text-content-body">
       {asset.label}
     </span>
   );
@@ -1955,7 +1956,7 @@ function LayoutAssetShape({ asset }: { asset: LayoutAsset }) {
 function MetricRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between border-b border-line pb-2">
-      <span className="text-neutral-500">{label}</span>
+      <span className="text-content-muted">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
   );

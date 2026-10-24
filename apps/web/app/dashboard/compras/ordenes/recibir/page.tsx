@@ -1,4 +1,5 @@
 "use client";
+import { PurchasePagination, PurchaseSearchSelect } from "@/components/purchases-ui";
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
@@ -38,6 +39,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function RecibirOCPage() {
+  const [page,setPage]=useState(1);
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
@@ -59,7 +61,7 @@ export default function RecibirOCPage() {
   const products = useMemo(() => [...new Map(orders.flatMap((row) => row.lines).filter((line) => line.item_id).map((line) => [line.item_id, { id: line.item_id!, name: line.description }])).values()], [orders]);
   const filteredOrders = useMemo(() => orders.filter((order) => {
     const date = String(order.date || order.metadata?.expected_at || "").slice(0, 10);
-    return (!filters.number || order.number.toLowerCase().includes(filters.number.toLowerCase()))
+  return (!filters.number || order.number.toLowerCase().includes(filters.number.toLowerCase()))
       && (!filters.from || date >= filters.from) && (!filters.to || date <= filters.to)
       && (!filters.status || order.status === filters.status)
       && (!filters.supplier || String(order.party?.id) === filters.supplier)
@@ -185,50 +187,53 @@ export default function RecibirOCPage() {
     }
   }
 
+  const currentPage=Math.min(page,Math.max(1,Math.ceil(filteredOrders.length/10)));
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-3xl font-semibold">Recepción de órdenes de compra</h1>
-        <p className="mt-1 text-sm text-neutral-600">Consulta lo solicitado y registra las unidades realmente recibidas por posición.</p>
+        <p className="mt-1 text-sm text-content-body">Consulta lo solicitado y registra las unidades realmente recibidas por posición.</p>
       </div>
       <ComprasNav />
       {error ? <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{ok}</p> : null}
 
-      <section className="rounded-lg border border-line bg-white p-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Resumen de recepciones">{[["", "Todas las órdenes", orders.length],["confirmed","Por recibir",orders.filter(o=>o.status==="confirmed").length],["partial","Entregas parciales",orders.filter(o=>o.status==="partial").length],["received","Completadas",orders.filter(o=>o.status==="received").length]].map(([value,label,count])=><button key={value} type="button" aria-pressed={filters.status===value} onClick={()=>{setFilters(f=>({...f,status:String(value)}));setPage(1)}} className={`rounded-xl border p-3 text-left ${filters.status===value?"border-apex bg-apex/10":"border-line bg-surface"}`}><span className="block text-sm text-content-muted">{label}</span><strong className="mt-1 block text-2xl">{count}</strong></button>)}</section>
+      <section className="rounded-lg border border-line bg-surface p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <div><h2 className="font-semibold">Buscar órdenes</h2><p className="text-xs text-neutral-500">Combina filtros para encontrar rápidamente una recepción.</p></div>
-          <button className="rounded-md border border-line px-3 py-2 text-sm" onClick={() => setFilters({ number: "", from: "", to: "", status: "", supplier: "", warehouse: "", product: "" })} type="button">Limpiar</button>
+          <div><h2 className="font-semibold">Buscar órdenes</h2><p className="text-xs text-content-muted">Combina filtros para encontrar rápidamente una recepción.</p></div>
+          <button className="shrink-0 whitespace-nowrap rounded-md border border-line px-3 py-2 text-sm" onClick={() => setFilters({ number: "", from: "", to: "", status: "", supplier: "", warehouse: "", product: "" })} type="button">Limpiar</button>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-2">
           <label className="text-sm">Número de OC<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, number: e.target.value }))} onKeyDown={e=>{if(e.key==="Enter"&&!filters.number.trim()){e.preventDefault();setOrderSearchOpen(true)}}} placeholder="Escribe una OC o Enter para buscar" value={filters.number} /></label>
-          <label className="text-sm">Fecha desde<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, from: e.target.value }))} type="date" value={filters.from} /></label>
-          <label className="text-sm">Fecha hasta<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, to: e.target.value }))} type="date" value={filters.to} /></label>
-          <label className="text-sm">Estado<select className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, status: e.target.value }))} value={filters.status}><option value="">Todos</option><option value="confirmed">Pendiente</option><option value="partial">Parcial</option><option value="received">Recibida</option></select></label>
-          <label className="text-sm">Proveedor<select className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, supplier: e.target.value }))} value={filters.supplier}><option value="">Todos</option>{suppliers.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-          <label className="text-sm">Bodega<select className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, warehouse: e.target.value }))} value={filters.warehouse}><option value="">Todas</option>{warehouses.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-          <label className="text-sm md:col-span-2">Producto<select className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, product: e.target.value }))} value={filters.product}><option value="">Todos los SKU</option>{products.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
-        </div>
-        <p className="mt-3 text-xs text-neutral-500">{filteredOrders.length} de {orders.length} órdenes encontradas</p>
-      </section>
-      {orderSearchOpen?<ModalFrame title="Buscar órdenes pendientes de ingreso" onClose={()=>setOrderSearchOpen(false)} maxWidth="md:max-w-6xl"><p className="mb-3 text-sm text-neutral-600">Los filtros de bodega, proveedor, fechas y estado se combinan. Selecciona una orden para recibirla.</p><div className="max-h-[60vh] overflow-auto rounded border border-line"><table className="w-full text-sm"><thead><tr className="border-b bg-paper text-left"><th className="p-3">OC</th><th>Proveedor</th><th>Bodega</th><th>Entrega</th><th>Estado</th><th></th></tr></thead><tbody>{filteredOrders.filter(o=>["confirmed","partial"].includes(o.status)).map(o=><tr className="border-b" key={o.id}><td className="p-3 font-mono">{o.number}</td><td>{o.party?.name}</td><td>{o.metadata?.warehouse_name}</td><td>{String(o.metadata?.expected_at||o.date).slice(0,10)}</td><td>{statusLabels[o.status]}</td><td><button className="btn-primary" onClick={()=>{setOrderSearchOpen(false);openReceipt(o)}}>Seleccionar</button></td></tr>)}</tbody></table></div></ModalFrame>:null}
+          <label className="text-sm">Estado<PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, status: e.target.value }))} value={filters.status}><option value="">Todos</option><option value="confirmed">Pendiente</option><option value="partial">Parcial</option><option value="received">Recibida</option></PurchaseSearchSelect></label>
 
-      <section className="space-y-3">
-        {filteredOrders.map((order) => {
+        </div>
+        <details className="mt-3 border-t border-line pt-3"><summary className="cursor-pointer text-sm font-medium text-apex">Filtros adicionales · Fechas, proveedor, bodega y producto</summary><div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">          <label className="text-sm">Fecha desde<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, from: e.target.value }))} type="date" value={filters.from} /></label>
+          <label className="text-sm">Fecha hasta<input className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, to: e.target.value }))} type="date" value={filters.to} /></label>
+          <label className="text-sm">Proveedor<PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, supplier: e.target.value }))} value={filters.supplier}><option value="">Todos</option>{suppliers.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</PurchaseSearchSelect></label>
+          <label className="text-sm">Bodega<PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, warehouse: e.target.value }))} value={filters.warehouse}><option value="">Todas</option>{warehouses.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</PurchaseSearchSelect></label>
+          <label className="text-sm md:col-span-2">Producto<PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3" onChange={(e) => setFilters((v) => ({ ...v, product: e.target.value }))} value={filters.product}><option value="">Todos los SKU</option>{products.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</PurchaseSearchSelect></label></div></details>
+        <p className="mt-3 text-xs text-content-muted">{filteredOrders.length} de {orders.length} órdenes encontradas</p>
+      </section>
+      {orderSearchOpen?<ModalFrame title="Buscar órdenes pendientes de ingreso" onClose={()=>setOrderSearchOpen(false)} maxWidth="md:!max-w-6xl"><p className="mb-3 text-sm text-content-body">Los filtros de bodega, proveedor, fechas y estado se combinan. Selecciona una orden para recibirla.</p><div className="max-h-[60vh] overflow-auto rounded border border-line"><table className="w-full text-sm"><thead><tr className="border-b bg-paper text-left"><th className="p-3">OC</th><th>Proveedor</th><th>Bodega</th><th>Entrega</th><th>Estado</th><th></th></tr></thead><tbody>{filteredOrders.filter(o=>["confirmed","partial"].includes(o.status)).map(o=><tr className="border-b" key={o.id}><td className="p-3 font-mono">{o.number}</td><td>{o.party?.name}</td><td>{o.metadata?.warehouse_name}</td><td>{String(o.metadata?.expected_at||o.date).slice(0,10)}</td><td>{statusLabels[o.status]}</td><td><button className="btn-primary" onClick={()=>{setOrderSearchOpen(false);openReceipt(o)}}>Seleccionar</button></td></tr>)}</tbody></table></div></ModalFrame>:null}
+
+      <section className="space-y-3" aria-label="Órdenes para recepción">
+        {!filteredOrders.length?<div className="rounded-xl border border-dashed border-line p-8 text-center"><h2 className="font-semibold">No hay órdenes con estos filtros</h2><p className="mt-1 text-sm text-content-muted">Cambie el estado o limpie los filtros para consultar otras entregas.</p></div>:null}
+        {filteredOrders.slice((currentPage-1)*10,currentPage*10).map((order) => {
           const expanded = expandedOrderId === order.id;
           const pendingLines = order.lines.filter((line) => Number(line.pending_quantity ?? line.qty) > 0);
           return (
-            <article className="rounded-lg border border-line bg-white" key={order.id}>
+            <article className="overflow-hidden rounded-xl border border-line bg-surface" key={order.id}>
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <button className="font-semibold text-apex underline-offset-2 hover:underline" onDoubleClick={() => setSelectedOrder(order)} title="Doble clic para ver el detalle de la orden" type="button">{order.number}</button>
-                    <span className="rounded-full bg-paper px-2 py-1 text-xs font-medium">{statusLabels[order.status] || order.status}</span>
+                    <button className="font-semibold text-apex underline-offset-2 hover:underline" onClick={() => setSelectedOrder(order)} onDoubleClick={() => setSelectedOrder(order)} title="Ver detalle de la orden" type="button">{order.number}</button>
+                    <span data-purchase-status={order.status} className="purchase-status">{statusLabels[order.status] || order.status}</span>
                   </div>
-                  <p className="mt-1 text-sm text-neutral-600">
-                    {order.party?.name || "Proveedor"} · {order.metadata?.warehouse_name || "Bodega destino"} · ${Number(order.total || 0).toLocaleString("es-CO")}
-                  </p>
-                  {order.receipt_accounting_documents?.length ? <div className="mt-2 flex flex-wrap items-center gap-2 text-xs"><span className="text-neutral-500">Documentos:</span>{order.receipt_accounting_documents.map((row) => <button className={`rounded border px-2 py-1 font-mono ${row.operation_type === "return" || row.is_reversal ? "border-rose-200 text-rose-700" : "border-emerald-200 text-emerald-700"}`} key={row.id} onDoubleClick={() => setSelectedAccountingDocument(row)} title="Doble clic para ver documento y contabilización" type="button">{row.operation_type === "return" || row.is_reversal ? "Devolución" : "Entrada"} {row.full_number}</button>)}</div> : null}
+                  <p className="mt-2 text-base font-semibold">{order.party?.name || "Proveedor"}</p>
+                  <p className="mt-1 text-sm text-content-muted">Destino: {order.metadata?.warehouse_name || "Bodega sin definir"}</p>
+                  {order.receipt_accounting_documents?.length ? <div className="mt-2 flex flex-wrap items-center gap-2 text-xs"><span className="text-content-muted">Documentos:</span>{order.receipt_accounting_documents.map((row) => <button className={`rounded border px-2 py-1 font-mono ${row.operation_type === "return" || row.is_reversal ? "border-rose-200 text-rose-700" : "border-emerald-200 text-emerald-700"}`} key={row.id} onClick={() => setSelectedAccountingDocument(row)} onDoubleClick={() => setSelectedAccountingDocument(row)} title="Ver documento y contabilización" type="button">{row.operation_type === "return" || row.is_reversal ? "Devolución" : "Entrada"} {row.full_number}</button>)}</div> : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {order.status !== "received" ? (
@@ -236,18 +241,19 @@ export default function RecibirOCPage() {
                       Registrar recepción
                     </button>
                   ) : null}
-                  <button className="rounded-md border border-rose-200 px-3 py-2 text-sm text-rose-700 hover:bg-rose-50" disabled={!order.lines.some((line) => Number(line.received_quantity || 0) > 0)} onClick={() => openReturn(order)} type="button">
+                  <button className="rounded-md border border-line px-3 py-2 text-sm text-content-muted hover:text-rose-700" disabled={!order.lines.some((line) => Number(line.received_quantity || 0) > 0)} onClick={() => openReturn(order)} type="button">
                     Devolver mercancía
                   </button>
                 </div>
               </div>
 
+              <div className="grid gap-3 border-t border-line bg-paper/40 px-4 py-3 sm:grid-cols-3"><div><p className="text-xs text-content-muted">Productos de la orden</p><p className="mt-1 text-sm font-semibold">{order.lines.length} posiciones</p></div><div><p className="text-xs text-content-muted">Falta recibir</p><p className="mt-1 text-sm font-semibold text-apex">{pendingLines.length} posiciones pendientes</p></div><div><p className="text-xs text-content-muted">Entrega esperada</p><p className="mt-1 text-sm font-semibold">{order.metadata?.expected_at?String(order.metadata.expected_at).slice(0,10):"Sin fecha definida"}</p></div></div>
               {expanded ? (
-                <ModalFrame title={`Recibir orden ${order.number}`} onClose={() => setExpandedOrderId(null)} maxWidth="md:max-w-6xl">
+                <ModalFrame title={`Recibir orden ${order.number}`} onClose={() => setExpandedOrderId(null)} maxWidth="md:!max-w-6xl">
                   <div className="mb-4 grid gap-2 rounded-md border border-line bg-paper p-3 text-sm sm:grid-cols-3">
-                    <p><span className="block text-xs text-neutral-500">Proveedor</span><strong>{order.party?.name || "--"}</strong></p>
-                    <p><span className="block text-xs text-neutral-500">Bodega destino</span><strong>{order.metadata?.warehouse_name || "--"}</strong></p>
-                    <p><span className="block text-xs text-neutral-500">Estado</span><strong>{statusLabels[order.status] || order.status}</strong></p>
+                    <p><span className="block text-xs text-content-muted">Proveedor</span><strong>{order.party?.name || "--"}</strong></p>
+                    <p><span className="block text-xs text-content-muted">Bodega destino</span><strong>{order.metadata?.warehouse_name || "--"}</strong></p>
+                    <p><span className="block text-xs text-content-muted">Estado</span><strong>{statusLabels[order.status] || order.status}</strong></p>
                   </div>
                   <label className="mb-4 flex w-fit cursor-pointer items-center gap-2 rounded-md border border-line bg-paper px-3 py-2 text-sm font-medium">
                     <input
@@ -260,7 +266,7 @@ export default function RecibirOCPage() {
                   </label>
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
-                      <thead className="bg-paper text-left text-xs uppercase text-neutral-600">
+                      <thead className="bg-paper text-left text-xs uppercase text-content-body">
                         <tr>
                           <th className="px-3 py-2">Posición / producto</th>
                           <th className="px-3 py-2 text-right">Pedido</th>
@@ -276,7 +282,7 @@ export default function RecibirOCPage() {
                             <tr className="border-t border-line" key={line.id}>
                               <td className="px-3 py-3">
                                 <p className="font-medium">{index + 1}. {line.description}</p>
-                                <p className="text-xs text-neutral-500">SKU #{line.item_id || "—"} · {line.unit || "UND"}</p>
+                                <p className="text-xs text-content-muted">SKU #{line.item_id || "—"} · {line.unit || "UND"}</p>
                               </td>
                               <td className="px-3 py-3 text-right">{Number(line.qty).toLocaleString("es-CO")}</td>
                               <td className="px-3 py-3 text-right">{Number(line.received_quantity || 0).toLocaleString("es-CO")}</td>
@@ -318,24 +324,25 @@ export default function RecibirOCPage() {
             </article>
           );
         })}
-        {filteredOrders.length === 0 ? <p className="rounded-md border border-line bg-white p-4 text-neutral-600">No hay órdenes que coincidan con los filtros.</p> : null}
+        {filteredOrders.length === 0 ? <p className="rounded-md border border-line bg-surface p-4 text-content-body">No hay órdenes que coincidan con los filtros.</p> : null}
       </section>
+      <PurchasePagination page={currentPage} total={filteredOrders.length} size={10} onChange={setPage} label="Páginas de recepciones" />
       {selectedOrder ? (
-        <ModalFrame title={`Orden de compra ${selectedOrder.number}`} onClose={() => setSelectedOrder(null)} maxWidth="md:max-w-6xl">
+        <ModalFrame title={`Orden de compra ${selectedOrder.number}`} onClose={() => setSelectedOrder(null)} maxWidth="md:!max-w-6xl">
           <div className="space-y-4">
             <section className="grid gap-3 rounded-md border border-line bg-paper p-3 text-sm md:grid-cols-4">
-              <p><span className="block text-xs text-neutral-500">Proveedor</span>{selectedOrder.party?.name || "--"}</p>
-              <p><span className="block text-xs text-neutral-500">Fecha</span>{new Date(selectedOrder.date).toLocaleString("es-CO")}</p>
-              <p><span className="block text-xs text-neutral-500">Bodega destino</span>{selectedOrder.metadata?.warehouse_name || "--"}</p>
-              <p><span className="block text-xs text-neutral-500">Estado</span>{statusLabels[selectedOrder.status] || selectedOrder.status}</p>
+              <p><span className="block text-xs text-content-muted">Proveedor</span>{selectedOrder.party?.name || "--"}</p>
+              <p><span className="block text-xs text-content-muted">Fecha</span>{new Date(selectedOrder.date).toLocaleString("es-CO")}</p>
+              <p><span className="block text-xs text-content-muted">Bodega destino</span>{selectedOrder.metadata?.warehouse_name || "--"}</p>
+              <p><span className="block text-xs text-content-muted">Estado</span>{statusLabels[selectedOrder.status] || selectedOrder.status}</p>
             </section>
             <section className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[720px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Pos.</th><th className="px-3 py-2">SKU / producto</th><th className="px-3 py-2 text-right">Pedido</th><th className="px-3 py-2 text-right">Recibido</th><th className="px-3 py-2 text-right">Pendiente</th></tr></thead><tbody>{selectedOrder.lines.map((line, index) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2">{index + 1}</td><td className="px-3 py-2"><span className="font-mono">{line.item_id || "--"}</span> · {line.description}</td><td className="px-3 py-2 text-right">{line.qty} {line.unit || "UND"}</td><td className="px-3 py-2 text-right">{line.received_quantity || 0}</td><td className="px-3 py-2 text-right">{line.pending_quantity ?? line.qty}</td></tr>)}</tbody></table></section>
-            {selectedOrder.receipt_accounting_documents?.length ? <section className="rounded-md border border-line p-3"><p className="mb-2 text-sm font-medium">Documentos de mercancía</p><div className="flex flex-wrap gap-2">{selectedOrder.receipt_accounting_documents.map((document) => <button className={`rounded-md border px-3 py-2 text-sm font-mono ${document.operation_type === "return" || document.is_reversal ? "border-rose-200 text-rose-700" : "border-emerald-200 text-emerald-700"}`} key={document.id} onDoubleClick={() => setSelectedAccountingDocument(document)} title="Doble clic para abrir el documento y su contabilización" type="button">{document.operation_type === "return" || document.is_reversal ? "Devolución" : "Entrada"} {document.full_number}</button>)}</div><p className="mt-2 text-xs text-neutral-500">Haz doble clic en el número para consultar su detalle.</p></section> : null}
+            {selectedOrder.receipt_accounting_documents?.length ? <section className="rounded-md border border-line p-3"><p className="mb-2 text-sm font-medium">Documentos de mercancía</p><div className="flex flex-wrap gap-2">{selectedOrder.receipt_accounting_documents.map((document) => <button className={`rounded-md border px-3 py-2 text-sm font-mono ${document.operation_type === "return" || document.is_reversal ? "border-rose-200 text-rose-700" : "border-emerald-200 text-emerald-700"}`} key={document.id} onDoubleClick={() => setSelectedAccountingDocument(document)} title="Doble clic para abrir el documento y su contabilización" type="button">{document.operation_type === "return" || document.is_reversal ? "Devolución" : "Entrada"} {document.full_number}</button>)}</div><p className="mt-2 text-xs text-content-muted">Haz doble clic en el número para consultar su detalle.</p></section> : null}
           </div>
         </ModalFrame>
       ) : null}
       {returnOrder ? (
-        <ModalFrame title={`Devolver mercancía - ${returnOrder.number}`} onClose={() => !saving && setReturnOrder(null)} maxWidth="md:max-w-4xl">
+        <ModalFrame title={`Devolver mercancía - ${returnOrder.number}`} onClose={() => !saving && setReturnOrder(null)} maxWidth="md:!max-w-4xl">
           <div className="space-y-4">
             <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Puedes devolver una o varias posiciones de forma parcial. Cada cantidad disminuirá el stock y quedará registrada en el kardex junto con su documento contable inverso.</div>
             <div className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[700px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Pos.</th><th className="px-3 py-2">Producto</th><th className="px-3 py-2 text-right">Disponible para devolver</th><th className="px-3 py-2 text-right">Devolver ahora</th></tr></thead><tbody>{returnOrder.lines.filter((line) => Number(line.received_quantity || 0) > 0).map((line, index) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2">{index + 1}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2 text-right font-medium">{Number(line.received_quantity || 0).toLocaleString("es-CO")} {line.unit || "UND"}</td><td className="px-3 py-2"><input aria-label={`Cantidad a devolver de ${line.description}`} className="ml-auto block h-10 w-32 rounded-md border border-line px-3 text-right" inputMode="decimal" max={Number(line.received_quantity || 0)} min="0" onBlur={(event) => { if (event.target.value === "") setReturnQuantities((current) => ({ ...current, [line.id]: "0" })); }} onChange={(event) => setReturnQuantities((current) => ({ ...current, [line.id]: event.target.value }))} step="any" type="number" value={returnQuantities[line.id] ?? ""} /></td></tr>)}</tbody></table></div>
@@ -345,11 +352,11 @@ export default function RecibirOCPage() {
         </ModalFrame>
       ) : null}
       {selectedAccountingDocument ? (
-        <ModalFrame title={`${selectedAccountingDocument.operation_type === "return" || selectedAccountingDocument.is_reversal ? "Devolución" : "Entrada"} ${selectedAccountingDocument.full_number}`} onClose={() => setSelectedAccountingDocument(null)} maxWidth="md:max-w-5xl">
+        <ModalFrame title={`${selectedAccountingDocument.operation_type === "return" || selectedAccountingDocument.is_reversal ? "Devolución" : "Entrada"} ${selectedAccountingDocument.full_number}`} onClose={() => setSelectedAccountingDocument(null)} maxWidth="md:!max-w-5xl">
           <div className="space-y-4">
-            <section className="grid gap-3 rounded-md border border-line bg-paper p-3 text-sm md:grid-cols-4"><p><span className="block text-xs text-neutral-500">Documento</span><strong>{selectedAccountingDocument.full_number}</strong></p><p><span className="block text-xs text-neutral-500">Tipo</span>{selectedAccountingDocument.operation_type === "return" || selectedAccountingDocument.is_reversal ? "Devolución de mercancía" : "Entrada de mercancía"}</p><p><span className="block text-xs text-neutral-500">Contabilización</span>{new Date(selectedAccountingDocument.posting_date).toLocaleString("es-CO")}</p><p><span className="block text-xs text-neutral-500">Usuario</span>{selectedAccountingDocument.created_by_user?.name || selectedAccountingDocument.created_by_user?.email || "--"}</p></section>
+            <section className="grid gap-3 rounded-md border border-line bg-paper p-3 text-sm md:grid-cols-4"><p><span className="block text-xs text-content-muted">Documento</span><strong>{selectedAccountingDocument.full_number}</strong></p><p><span className="block text-xs text-content-muted">Tipo</span>{selectedAccountingDocument.operation_type === "return" || selectedAccountingDocument.is_reversal ? "Devolución de mercancía" : "Entrada de mercancía"}</p><p><span className="block text-xs text-content-muted">Contabilización</span>{new Date(selectedAccountingDocument.posting_date).toLocaleString("es-CO")}</p><p><span className="block text-xs text-content-muted">Usuario</span>{selectedAccountingDocument.created_by_user?.name || selectedAccountingDocument.created_by_user?.email || "--"}</p></section>
             <p className="text-sm"><span className="font-medium">Concepto:</span> {selectedAccountingDocument.header_text || "--"}</p>
-            <section><h3 className="mb-2 text-sm font-semibold">Posiciones de mercancía</h3><div className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[650px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Producto</th><th className="px-3 py-2 text-right">Cantidad</th><th className="px-3 py-2 text-right">Costo unitario</th></tr></thead><tbody>{selectedAccountingDocument.operational_lines?.map((line) => <tr className="border-b border-line/70" key={line.movement_id}><td className="px-3 py-2 font-mono">{line.sku}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2 text-right">{Number(line.qty).toLocaleString("es-CO")} {line.unit}</td><td className="px-3 py-2 text-right">{Number(line.cost).toLocaleString("es-CO")}</td></tr>)}</tbody></table>{!selectedAccountingDocument.operational_lines?.length ? <p className="p-3 text-sm text-neutral-500">Este documento histórico no tiene movimientos físicos enlazados.</p> : null}</div></section>
+            <section><h3 className="mb-2 text-sm font-semibold">Posiciones de mercancía</h3><div className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[650px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">SKU</th><th className="px-3 py-2">Producto</th><th className="px-3 py-2 text-right">Cantidad</th><th className="px-3 py-2 text-right">Costo unitario</th></tr></thead><tbody>{selectedAccountingDocument.operational_lines?.map((line) => <tr className="border-b border-line/70" key={line.movement_id}><td className="px-3 py-2 font-mono">{line.sku}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2 text-right">{Number(line.qty).toLocaleString("es-CO")} {line.unit}</td><td className="px-3 py-2 text-right">{Number(line.cost).toLocaleString("es-CO")}</td></tr>)}</tbody></table>{!selectedAccountingDocument.operational_lines?.length ? <p className="p-3 text-sm text-content-muted">Este documento histórico no tiene movimientos físicos enlazados.</p> : null}</div></section>
             <section className="overflow-x-auto rounded-md border border-line"><table className="w-full min-w-[650px] text-sm"><thead><tr className="border-b border-line bg-paper text-left"><th className="px-3 py-2">Cuenta</th><th className="px-3 py-2">Descripción</th><th className="px-3 py-2 text-right">Débito</th><th className="px-3 py-2 text-right">Crédito</th></tr></thead><tbody>{selectedAccountingDocument.lines?.map((line) => <tr className="border-b border-line/70" key={line.id}><td className="px-3 py-2 font-mono">{line.account_code}</td><td className="px-3 py-2">{line.description}</td><td className="px-3 py-2 text-right">{Number(line.debit || 0).toLocaleString("es-CO")}</td><td className="px-3 py-2 text-right">{Number(line.credit || 0).toLocaleString("es-CO")}</td></tr>)}</tbody></table></section>
             <div className="flex justify-end text-sm font-semibold"><span>Débitos {Number(selectedAccountingDocument.total_debit || 0).toLocaleString("es-CO")} · Créditos {Number(selectedAccountingDocument.total_credit || 0).toLocaleString("es-CO")}</span></div>
           </div>

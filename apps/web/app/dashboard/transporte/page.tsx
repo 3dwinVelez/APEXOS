@@ -1,4 +1,5 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 
 import { api, isActiveMasterItem, loadVehicleMasterCatalogs } from "@/lib/api";
 import type { VehicleMasterCatalogs, VehicleMasterItem } from "@/lib/api";
@@ -242,7 +243,7 @@ function statusClass(status: string) {
   if (status === "apto_documentalmente") return "border-emerald-200 bg-emerald-50 text-emerald-800";
   if (status === "documento_proximo_a_vencer") return "border-amber-200 bg-amber-50 text-amber-800";
   if (status === "bloqueado_documental") return "border-red-200 bg-red-50 text-red-800";
-  return "border-line bg-paper text-neutral-700";
+  return "border-line bg-paper text-content-body";
 }
 
 function vehicleCompletion(source: object) {
@@ -656,7 +657,7 @@ export function TransportFleetPage() {
   }
 
   if (!access.ready) {
-    return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Transporte...</div>;
+    return <div className="rounded-md border border-line bg-surface p-6 text-sm text-content-body">Validando permisos de Transporte...</div>;
   }
 
   if (!access.canRead) {
@@ -670,36 +671,36 @@ export function TransportFleetPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      {access.canWrite && hasStoredRolePermission("accounting", "write") ? <div className="apex-section-card flex flex-wrap items-end gap-3 p-4"><Select label="Sucursal contable para centros de vehiculos existentes" value={syncBranch} onChange={setSyncBranch} {...selectProps([["", "Seleccionar sucursal"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} /><button type="button" className="h-10 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={!syncBranch || syncingCenters} onClick={() => void synchronizeCenters()}>{syncingCenters ? "Sincronizando..." : "Sincronizar centros de costo"}</button><p className="w-full text-xs text-neutral-600">Crea los centros faltantes de la empresa en la sucursal elegida y conserva las sedes operativas. Los centros previamente vinculados a otra sucursal requieren revision.</p></div> : null}
+      {access.canWrite && hasStoredRolePermission("accounting", "write") ? <div className="apex-section-card flex flex-wrap items-end gap-3 p-4"><Select label="Sucursal contable para centros de vehiculos existentes" value={syncBranch} onChange={setSyncBranch} {...selectProps([["", "Seleccionar sucursal"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} /><button type="button" className="h-10 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={!syncBranch || syncingCenters} onClick={() => void synchronizeCenters()}>{syncingCenters ? "Sincronizando..." : "Sincronizar centros de costo"}</button><p className="w-full text-xs text-content-body">Crea los centros faltantes de la empresa en la sucursal elegida y conserva las sedes operativas. Los centros previamente vinculados a otra sucursal requieren revision.</p></div> : null}
       <header className="apex-section-card flex flex-wrap items-start justify-between gap-4 p-4">
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Maestro de flota</p>
           <h1 className="mt-1 text-3xl font-semibold">Vehiculos</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Consulta el estado de cada placa, corrige documentos y mantén la flota lista para Planeacion.</p>
+          <p className="mt-2 max-w-3xl text-sm text-content-body">Consulta el estado de cada placa, corrige documentos y mantén la flota lista para Planeacion.</p>
         </div>
         {access.canWrite ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:bg-apex/90" onClick={newVehicle} type="button"><Plus size={17} /> Crear vehiculo</button> : null}
       </header>
 
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
-      <section className="overflow-hidden rounded-md border border-line bg-white" id="flota-maestra">
+      <section className="overflow-hidden rounded-md border border-line bg-surface" id="flota-maestra">
         <div className="border-b border-line p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Consulta de flota</h2>
-              <p className="text-sm text-neutral-600">Compara placas y abre una ficha solo cuando necesites actuar.</p>
+              <p className="text-sm text-content-body">Compara placas y abre una ficha solo cuando necesites actuar.</p>
             </div>
-            <div className="flex flex-wrap justify-end gap-2 text-xs font-semibold text-neutral-600">
+            <div className="flex flex-wrap justify-end gap-2 text-xs font-semibold text-content-body">
               <span className="rounded-md border border-line px-3 py-1.5">{filtered.length} de {vehicles.length} vehiculo(s)</span>
               <span className="rounded-md bg-emerald-50 px-3 py-1.5 text-emerald-700">{ready} aptos</span>
-              <span className={`rounded-md px-3 py-1.5 ${metrics.blocked + metrics.warning ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{metrics.blocked + metrics.warning} por revisar</span>
+              <span className={`rounded-md px-3 py-1.5 ${metrics.blocked + metrics.warning ? "bg-amber-50 text-amber-800" : "bg-paper text-content-body"}`}>{metrics.blocked + metrics.warning} por revisar</span>
               <span className="rounded-md bg-paper px-3 py-1.5">Score {metrics.avgScore}/100 · {scoreLabel(metrics.avgScore)}</span>
               {incomplete ? <span className="rounded-md bg-amber-50 px-3 py-1.5 text-amber-800">{incomplete} incompletas</span> : null}
             </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_repeat(4,minmax(150px,auto))]">
             <label className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-subtle" size={16} />
               <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar placa, marca, sede o conductor" value={query} onChange={(event) => setQuery(event.target.value)} />
             </label>
             <FilterSelect value={statusFilter} onChange={setStatusFilter} options={[
@@ -716,7 +717,7 @@ export function TransportFleetPage() {
             <FilterSelect value={sortBy} onChange={setSortBy} options={[["attention", "Prioridad documental"], ["plate", "Placa A-Z"], ["score_asc", "Menor score"], ["score_desc", "Mayor score"]]} />
           </div>
           {activeFilters ? (
-            <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button>
+            <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-content-body hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button>
           ) : null}
         </div>
 
@@ -724,7 +725,7 @@ export function TransportFleetPage() {
           {filtered.map((vehicle) => (
             <button className="rounded-md border border-line p-4 text-left hover:border-apex hover:bg-paper" key={vehicle.id} onClick={() => openVehicle(vehicle)} type="button">
               <div className="flex items-start justify-between gap-3">
-                <div><p className="text-xl font-semibold">{vehicle.plate}</p><p className="text-sm text-neutral-600">{vehicle.brand} {vehicle.line || vehicle.model || ""}</p></div>
+                <div><p className="text-xl font-semibold">{vehicle.plate}</p><p className="text-sm text-content-body">{vehicle.brand} {vehicle.line || vehicle.model || ""}</p></div>
                 <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(vehicle.master_status)}`}>{statusLabel(vehicle.master_status)}</span>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3"><Info label="Sede" value={vehicle.base_site || "-"} /><Info label="Conductor" value={vehicle.authorized_driver_name || "Sin asignar"} /><Info label="Propiedad" value={vehicle.ownership_type || "-"} /><Info label="Score" value={`${vehicle.master_score || 0}/100`} /></div>
@@ -735,44 +736,44 @@ export function TransportFleetPage() {
 
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
-            <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-content-muted">
               <tr><th className="px-4 py-3">Vehiculo</th><th className="px-4 py-3">Estado y completitud</th><th className="px-4 py-3">Sede y propiedad</th><th className="px-4 py-3">Conductor autorizado</th><th className="px-4 py-3">Vencimientos</th><th className="px-4 py-3 text-right">Accion</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {filtered.map((vehicle) => (
                 <tr className="hover:bg-paper/70" key={vehicle.id}>
-                  <td className="px-4 py-3"><p className="font-semibold">{vehicle.plate}</p><p className="text-xs text-neutral-500">{vehicle.brand || "-"} {vehicle.line || vehicle.model || ""} {vehicle.year ? `· ${vehicle.year}` : ""}</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{vehicle.plate}</p><p className="text-xs text-content-muted">{vehicle.brand || "-"} {vehicle.line || vehicle.model || ""} {vehicle.year ? `· ${vehicle.year}` : ""}</p></td>
                   <td className="min-w-52 px-4 py-3"><span className={`inline-flex rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(vehicle.master_status)}`}>{statusLabel(vehicle.master_status)}</span><CompletionBar className="mt-2" compact percent={vehicleCompletion(vehicle).percent} /></td>
-                  <td className="px-4 py-3"><p className="font-medium">{vehicle.base_site || "Sin sede"}</p><p className="text-xs capitalize text-neutral-500">{vehicle.ownership_type || "Sin propiedad"}</p></td>
-                  <td className="px-4 py-3"><p className="font-medium">{vehicle.authorized_driver_name || "Sin asignar"}</p><p className="text-xs text-neutral-500">{vehicle.authorized_driver_code || vehicle.authorized_driver_document || "Disponible para asignacion"}</p></td>
-                  <td className="px-4 py-3"><p>SOAT: <strong>{vehicle.dashboard_metrics?.soat_days_remaining ?? "--"} dias</strong></p><p className="text-xs text-neutral-500">Tec-mec: {vehicle.dashboard_metrics?.technical_review_days_remaining ?? "--"} dias</p></td>
-                  <td className="px-4 py-3 text-right"><button className="h-9 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-white" onClick={() => openVehicle(vehicle)} type="button">Abrir ficha</button></td>
+                  <td className="px-4 py-3"><p className="font-medium">{vehicle.base_site || "Sin sede"}</p><p className="text-xs capitalize text-content-muted">{vehicle.ownership_type || "Sin propiedad"}</p></td>
+                  <td className="px-4 py-3"><p className="font-medium">{vehicle.authorized_driver_name || "Sin asignar"}</p><p className="text-xs text-content-muted">{vehicle.authorized_driver_code || vehicle.authorized_driver_document || "Disponible para asignacion"}</p></td>
+                  <td className="px-4 py-3"><p>SOAT: <strong>{vehicle.dashboard_metrics?.soat_days_remaining ?? "--"} dias</strong></p><p className="text-xs text-content-muted">Tec-mec: {vehicle.dashboard_metrics?.technical_review_days_remaining ?? "--"} dias</p></td>
+                  <td className="px-4 py-3 text-right"><button className="h-9 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-surface" onClick={() => openVehicle(vehicle)} type="button">Abrir ficha</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {!filtered.length ? <div className="p-10 text-center"><Filter className="mx-auto text-neutral-300" size={28} /><p className="mt-3 text-sm font-semibold">No hay vehiculos con estos filtros</p><p className="mt-1 text-sm text-neutral-500">Limpia los filtros o crea una nueva ficha.</p></div> : null}
+        {!filtered.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay vehiculos con estos filtros</p><p className="mt-1 text-sm text-content-muted">Limpia los filtros o crea una nueva ficha.</p></div> : null}
       </section>
 
       {showEditor ? (
         <ModalFrame title={selected ? `Ficha vehicular · ${selected.plate}` : "Crear vehiculo"} onClose={() => setShowEditor(false)} maxWidth="md:max-w-6xl">
           <div className="space-y-4">
-            <div className="rounded-md border border-apex/20 bg-[#146C630D] p-4">
+            <div className="rounded-md border border-apex/20 bg-apex/5 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-apex shadow-sm">{tabIcon(activeTab, 20)}</span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface text-apex shadow-sm">{tabIcon(activeTab, 20)}</span>
                   <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-apex">{selected ? "Mantenimiento de ficha" : `Paso ${activeTabIndex + 1} de ${editorTabs.length}`}</p>
                   <h2 className="mt-1 text-lg font-semibold">{editorGuide(activeTab).title}</h2>
-                  <p className="mt-1 max-w-3xl text-sm text-neutral-600">{editorGuide(activeTab).detail}</p>
+                  <p className="mt-1 max-w-3xl text-sm text-content-body">{editorGuide(activeTab).detail}</p>
                   </div>
                 </div>
                 {selected ? <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(selected.master_status)}`}>{statusLabel(selected.master_status)}</span> : null}
               </div>
-              <div className="mt-4 rounded-md border border-white bg-white/80 p-3">
+              <div className="mt-4 rounded-md border border-white bg-surface/80 p-3">
                 <CompletionBar percent={formCompletion.percent} />
-                <p className="mt-2 text-xs text-neutral-600">
+                <p className="mt-2 text-xs text-content-body">
                   {formCompletion.missing.length
                     ? `Siguiente recomendado: ${formCompletion.missing.slice(0, 3).join(", ")}.`
                     : "La informacion principal del vehiculo esta completa."}
@@ -780,8 +781,8 @@ export function TransportFleetPage() {
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
                 {editorTabs.map((tab, index) => (
-                  <button className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-semibold ${activeTab === tab ? "border-apex bg-white text-apex" : "border-line bg-white/60 text-neutral-600 hover:bg-white"}`} key={tab} onClick={() => setActiveTab(tab)} type="button">
-                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${index < activeTabIndex ? "bg-emerald-100 text-emerald-700" : activeTab === tab ? "bg-apex text-white" : "bg-paper text-neutral-500"}`}>{index < activeTabIndex ? <CheckCircle2 size={15} /> : tabIcon(tab, 15)}</span>
+                  <button className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-semibold ${activeTab === tab ? "border-apex bg-surface text-apex" : "border-line bg-surface/60 text-content-body hover:bg-surface"}`} key={tab} onClick={() => setActiveTab(tab)} type="button">
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${index < activeTabIndex ? "bg-emerald-100 text-emerald-700" : activeTab === tab ? "bg-apex text-white" : "bg-paper text-content-muted"}`}>{index < activeTabIndex ? <CheckCircle2 size={15} /> : tabIcon(tab, 15)}</span>
                     <span><span className="block text-[10px] font-medium uppercase tracking-wide opacity-60">Etapa {index + 1}</span>{tab}</span>
                   </button>
                 ))}
@@ -832,10 +833,10 @@ export function TransportFleetPage() {
                 {orgTree ? (
                   <div className="rounded-md border border-line bg-paper p-3 md:col-span-2 xl:col-span-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs font-semibold uppercase text-neutral-500">Estructura contable enlazada</p>
-                      <button className="h-8 rounded-md border border-line bg-white px-2 text-xs" onClick={openOrgCreator} type="button">+ Nueva sucursal</button>
+                      <p className="text-xs font-semibold uppercase text-content-muted">Estructura contable enlazada</p>
+                      <button className="h-8 rounded-md border border-line bg-surface px-2 text-xs" onClick={openOrgCreator} type="button">+ Nueva sucursal</button>
                     </div>
-                    <p className="mt-2 text-xs text-neutral-600">
+                    <p className="mt-2 text-xs text-content-body">
                       Al guardar se crea automaticamente el centro de costo del vehiculo en la sucursal contable seleccionada. La sede operativa y la sucursal contable se registran por separado. El codigo del centro se conserva para mantener su historial.
                     </p>
                     {orgCreator ? (
@@ -894,7 +895,7 @@ export function TransportFleetPage() {
                   <div className="space-y-3">
                     <Select label="Tipo documental" value={documentDraft.document_type} onChange={(value) => setDocumentDraft((current) => ({ ...current, document_type: value }))} options={documentTypes.map(([value]) => value)} optionLabels={Object.fromEntries(documentTypes)} />
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-neutral-600" htmlFor="vehicle-document-file">Archivo (PDF, PNG, JPEG o WEBP · maximo 10 MB)</label>
+                      <label className="mb-1 block text-xs font-semibold text-content-body" htmlFor="vehicle-document-file">Archivo (PDF, PNG, JPEG o WEBP · maximo 10 MB)</label>
                       <input accept={DOCUMENT_ACCEPT} className="block w-full text-sm" id="vehicle-document-file" key={documentInputKey} type="file" onChange={(event) => selectDocument(event.target.files?.[0])} />
                     </div>
                     {documentFile ? <p className="rounded-md bg-paper p-2 text-xs font-semibold">{documentFile.name}{documentFile.size ? ` · ${formatFileSize(documentFile.size)}` : ""}</p> : null}
@@ -912,7 +913,7 @@ export function TransportFleetPage() {
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
                             <p className="font-semibold">{document.file_name}</p>
-                            <p className="text-xs text-neutral-500">{document.document_type} · v{document.version}</p>
+                            <p className="text-xs text-content-muted">{document.document_type} · v{document.version}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(document.document_status)}`}>{statusLabel(document.document_status)}</span>
@@ -921,10 +922,10 @@ export function TransportFleetPage() {
                             ) : null}
                           </div>
                         </div>
-                        <p className="mt-2 text-xs text-neutral-500">Vence: {dateOnly(document.expires_at) || "Sin vencimiento"}{document.mime_type ? ` · ${document.mime_type}` : ""}{document.file_size ? ` · ${formatFileSize(document.file_size)}` : ""}</p>
+                        <p className="mt-2 text-xs text-content-muted">Vence: {dateOnly(document.expires_at) || "Sin vencimiento"}{document.mime_type ? ` · ${document.mime_type}` : ""}{document.file_size ? ` · ${formatFileSize(document.file_size)}` : ""}</p>
                       </div>
                     ))}
-                    {!selected?.documents?.length ? <p className="text-sm text-neutral-500">Sin adjuntos aun. Guarda la ficha y carga documentos por placa.</p> : null}
+                    {!selected?.documents?.length ? <p className="text-sm text-content-muted">Sin adjuntos aun. Guarda la ficha y carga documentos por placa.</p> : null}
                   </div>
                 </div>
                 {documentPreview ? (
@@ -932,7 +933,7 @@ export function TransportFleetPage() {
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <h3 className="text-sm font-semibold">{documentPreview.document.file_name}</h3>
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-xs text-content-muted">
                           {documentPreview.loading
                             ? "Preparando vista previa..."
                             : documentPreview.source === "storage"
@@ -950,15 +951,15 @@ export function TransportFleetPage() {
                       </div>
                     </div>
                     {documentPreview.loading ? (
-                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">Cargando vista previa...</p>
+                      <p className="rounded-md bg-paper p-3 text-sm text-content-body">Cargando vista previa...</p>
                     ) : documentPreview.error ? (
-                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">{documentPreview.error}</p>
+                      <p className="rounded-md bg-paper p-3 text-sm text-content-body">{documentPreview.error}</p>
                     ) : documentPreview.mime_type.startsWith("image/") ? (
                       <img alt={documentPreview.document.file_name} className="max-h-[60vh] w-full rounded-md border border-line object-contain" src={documentPreview.url} />
                     ) : documentPreview.mime_type === "application/pdf" ? (
                       <iframe className="h-[60vh] w-full rounded-md border border-line" src={documentPreview.url} title={documentPreview.document.file_name} />
                     ) : (
-                      <p className="rounded-md bg-paper p-3 text-sm text-neutral-600">Este formato no tiene vista previa integrada. Usa &quot;Abrir en pestana&quot;.</p>
+                      <p className="rounded-md bg-paper p-3 text-sm text-content-body">Este formato no tiene vista previa integrada. Usa &quot;Abrir en pestana&quot;.</p>
                     )}
                   </div>
                 ) : null}
@@ -983,10 +984,10 @@ export function TransportFleetPage() {
                   {(selected?.audit_logs || []).map((entry) => (
                     <div className="rounded-md bg-paper p-3 text-sm" key={String(entry.id)}>
                       <p className="font-semibold">{entry.action} {entry.field ? `· ${entry.field}` : ""}</p>
-                      <p className="text-xs text-neutral-500">{new Date(entry.created_at).toLocaleString()}</p>
+                      <p className="text-xs text-content-muted">{new Date(entry.created_at).toLocaleString()}</p>
                     </div>
                   ))}
-                  {!selected?.audit_logs?.length ? <p className="text-sm text-neutral-500">La auditoria aparecera al crear, editar o adjuntar documentos.</p> : null}
+                  {!selected?.audit_logs?.length ? <p className="text-sm text-content-muted">La auditoria aparecera al crear, editar o adjuntar documentos.</p> : null}
                 </div>
               </div>
             ) : null}
@@ -997,7 +998,7 @@ export function TransportFleetPage() {
               <div className="flex flex-wrap gap-2">
                 {activeTabIndex > 0 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => moveEditor(-1)} type="button"><ChevronLeft size={16} /> Anterior</button> : null}
                 {activeTabIndex < editorTabs.length - 1 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex hover:bg-paper" onClick={() => moveEditor(1)} type="button">Siguiente <ChevronRight size={16} /></button> : null}
-                {access.canWrite ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : selected ? "Guardar cambios" : "Crear vehiculo"}</button> : <span className="inline-flex h-10 items-center rounded-md bg-paper px-3 text-sm font-semibold text-neutral-600">Consulta de solo lectura</span>}
+                {access.canWrite ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : selected ? "Guardar cambios" : "Crear vehiculo"}</button> : <span className="inline-flex h-10 items-center rounded-md bg-paper px-3 text-sm font-semibold text-content-body">Consulta de solo lectura</span>}
               </div>
             </div>
           </div>
@@ -1051,14 +1052,14 @@ export default function TransportHomePage() {
       <header className="apex-section-card p-4">
         <p className="text-sm font-medium text-apex">M-14 · Operación</p>
         <h1 className="text-3xl font-semibold">Transporte</h1>
-        <p className="mt-1 max-w-3xl text-sm text-neutral-600">Lleva los pedidos desde la preparación del viaje hasta la entrega y el control del costo.</p>
-        <p className="mt-3 text-sm font-semibold text-neutral-800">Empieza preparando los pedidos pendientes.</p>
+        <p className="mt-1 max-w-3xl text-sm text-content-body">Lleva los pedidos desde la preparación del viaje hasta la entrega y el control del costo.</p>
+        <p className="mt-3 text-sm font-semibold text-content-strong">Empieza preparando los pedidos pendientes.</p>
       </header>
       {transportWorkflows.map((workflow) => (
         <section aria-labelledby={`transport-${workflow.title.charAt(0)}`} className="space-y-2" key={workflow.title}>
           <div>
             <h2 className="text-lg font-semibold" id={`transport-${workflow.title.charAt(0)}`}>{workflow.title}</h2>
-            <p className="text-sm text-neutral-600">{workflow.detail}</p>
+            <p className="text-sm text-content-body">{workflow.detail}</p>
           </div>
           <div className="apex-dense-actions">
             {workflow.actions.map((action) => <ActionCard key={action.href} {...action} />)}
@@ -1075,10 +1076,10 @@ function CompletionBar({ percent, compact = false, className = "" }: { percent: 
   return (
     <div className={className}>
       <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="inline-flex items-center gap-1.5 font-semibold text-neutral-700"><ClipboardList size={compact ? 13 : 15} /> Completitud de ficha</span>
-        <span className="font-semibold text-neutral-600">{percent}%{compact ? "" : ` · ${label}`}</span>
+        <span className="inline-flex items-center gap-1.5 font-semibold text-content-body"><ClipboardList size={compact ? 13 : 15} /> Completitud de ficha</span>
+        <span className="font-semibold text-content-body">{percent}%{compact ? "" : ` · ${label}`}</span>
       </div>
-      <div className={`${compact ? "mt-1 h-1.5" : "mt-2 h-2"} overflow-hidden rounded-full bg-neutral-200`} role="progressbar" aria-label="Completitud de la ficha vehicular" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+      <div className={`${compact ? "mt-1 h-1.5" : "mt-2 h-2"} overflow-hidden rounded-full bg-line`} role="progressbar" aria-label="Completitud de la ficha vehicular" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
         <div className={`h-full rounded-full transition-all ${tone}`} style={{ width: `${percent}%` }} />
       </div>
     </div>
@@ -1098,7 +1099,7 @@ function tabIcon(tab: string, size = 16) {
 }
 
 function FilterSelect({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: [string, string][] }) {
-  return <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>{options.map(([option, label]) => <option key={option || label} value={option}>{label}</option>)}</select>;
+  return <TransportSearchSelect className="h-10 rounded-md border border-line bg-surface px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>{options.map(([option, label]) => <option key={option || label} value={option}>{label}</option>)}</TransportSearchSelect>;
 }
 
 function editorGuide(tab: string) {
@@ -1114,7 +1115,7 @@ function editorGuide(tab: string) {
 }
 
 function Info({ label, value }: { label: string; value: string | number }) {
-  return <div><p className="text-xs text-neutral-500">{label}</p><p className="font-semibold">{value}</p></div>;
+  return <div><p className="text-xs text-content-muted">{label}</p><p className="font-semibold">{value}</p></div>;
 }
 
 function FormGrid({ children }: { children: ReactNode }) {
@@ -1124,8 +1125,8 @@ function FormGrid({ children }: { children: ReactNode }) {
 function Input({ label, value, onChange, type = "text", disabled = false }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; disabled?: boolean }) {
   return (
     <label className="space-y-1 text-sm">
-      <span className="font-semibold text-neutral-700">{label}</span>
-      <input className="h-10 w-full rounded-md border border-line px-3 text-sm disabled:bg-neutral-100 disabled:text-neutral-500" type={type} value={value ?? ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} />
+      <span className="font-semibold text-content-body">{label}</span>
+      <input className="h-10 w-full rounded-md border border-line px-3 text-sm disabled:bg-surface-muted disabled:text-content-muted" type={type} value={value ?? ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} />
     </label>
   );
 }
@@ -1133,7 +1134,7 @@ function Input({ label, value, onChange, type = "text", disabled = false }: { la
 function Textarea({ label, value, onChange }: { label: string; value?: string; onChange: (value: string) => void }) {
   return (
     <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
-      <span className="font-semibold text-neutral-700">{label}</span>
+      <span className="font-semibold text-content-body">{label}</span>
       <textarea className="min-h-[72px] w-full rounded-md border border-line p-3 text-sm" value={value || ""} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
@@ -1142,10 +1143,10 @@ function Textarea({ label, value, onChange }: { label: string; value?: string; o
 function Select({ label, value, onChange, options, optionLabels = {} }: { label: string; value: string; onChange: (value: string) => void; options: string[]; optionLabels?: Record<string, string> }) {
   return (
     <label className="space-y-1 text-sm">
-      <span className="font-semibold text-neutral-700">{label}</span>
-      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
+      <span className="font-semibold text-content-body">{label}</span>
+      <TransportSearchSelect className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => <option key={option} value={option}>{optionLabels[option] || option}</option>)}
-      </select>
+      </TransportSearchSelect>
     </label>
   );
 }

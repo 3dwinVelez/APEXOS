@@ -32,11 +32,11 @@ const STRATEGIES = [
   { value: "priority", label: "Prioridad contractual" },
 ];
 
-const inputClass = "h-10 w-full rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-apex";
+const inputClass = "h-10 w-full rounded-md border border-line bg-surface px-3 text-sm outline-none focus:border-apex";
 const money = (value: number, currency = "COP") => new Intl.NumberFormat("es-CO", { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
 const PlanningRouteMap = dynamic(() => import("@/components/transport/PlanningRouteMap"), {
   ssr: false,
-  loading: () => <div className="grid h-[360px] place-items-center rounded-md border border-line bg-paper text-sm text-neutral-500">Cargando mapa vial...</div>,
+  loading: () => <div className="grid h-[360px] place-items-center rounded-md border border-line bg-paper text-sm text-content-muted">Cargando mapa vial...</div>,
 });
 
 export default function TransportPlanningPage() {
@@ -194,9 +194,9 @@ export default function TransportPlanningPage() {
   }
 
   return <div className="space-y-5">
-    <header className="rounded-md border border-line bg-white p-4">
+    <header className="rounded-md border border-line bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Decision logistica</p><h1 className="mt-1 text-3xl font-semibold">Planeador de transporte</h1><p className="mt-2 max-w-2xl text-sm text-neutral-600">Consolida demanda pendiente, evalúa escenarios por fila y confirma el viaje con rutas y costos comparables.</p></div>
+        <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Decision logistica</p><h1 className="mt-1 text-3xl font-semibold">Planeador de transporte</h1><p className="mt-2 max-w-2xl text-sm text-content-body">Consolida demanda pendiente, evalúa escenarios por fila y confirma el viaje con rutas y costos comparables.</p></div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <ProcessStep icon={ClipboardList} title="1. Elige un plan" active={!selection} />
@@ -207,17 +207,17 @@ export default function TransportPlanningPage() {
     {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p> : null}
     {error ? <p className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p> : null}
     <div className="space-y-4">
-      <section className="rounded-md border border-line bg-white">
+      <section className="rounded-md border border-line bg-surface">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4">
           <div className="flex items-center gap-3">
             <Sparkles className="text-apex" size={20} />
-            <div><h2 className="font-semibold">Monitor de planes de despacho</h2><p className="text-xs text-neutral-500">{workbench.planned_needs} pedidos en planes · {workbench.pending_needs} sin asignar · usa el botón de cada fila para evaluar</p></div>
+            <div><h2 className="font-semibold">Monitor de planes de despacho</h2><p className="text-xs text-content-muted">{workbench.planned_needs} pedidos en planes · {workbench.pending_needs} sin asignar · usa el botón de cada fila para evaluar</p></div>
           </div>
-          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-white px-3 text-sm font-semibold hover:bg-paper disabled:opacity-50" disabled={loading} onClick={() => void load()} type="button"><RefreshCw size={15} />{loading ? "Actualizando..." : "Actualizar demanda"}</button>
+          <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-semibold hover:bg-paper disabled:opacity-50" disabled={loading} onClick={() => void load()} type="button"><RefreshCw size={15} />{loading ? "Actualizando..." : "Actualizar demanda"}</button>
         </div>
         <div className="max-h-[520px] overflow-auto p-3">
           <div className="min-w-[1080px] overflow-hidden rounded-md border border-line">
-            <div className="grid grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] gap-3 border-b border-line bg-paper px-3 py-2 text-xs font-semibold uppercase text-neutral-500">
+            <div className="grid grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] gap-3 border-b border-line bg-paper px-3 py-2 text-xs font-semibold uppercase text-content-muted">
               <span>#</span><span>Plan / consolidación</span><span>Vence</span><span>Entregas</span><span>Peso</span><span>Volumen</span><span>Acción</span>
             </div>
           {workbench.plans.map((dispatchPlan) => {
@@ -225,9 +225,9 @@ export default function TransportPlanningPage() {
             const confirmed = dispatchPlan.status === "confirmado";
             const selectPlan = () => { const target = targetFromPlan(dispatchPlan); setSelection(target); closeScenarioMonitor(); };
             return (
-            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === rowKey ? "bg-emerald-50 text-apex" : "bg-white"}`} key={rowKey} role="button" tabIndex={0} onClick={selectPlan} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectPlan(); } }}>
+            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === rowKey ? "bg-emerald-50 text-apex" : "bg-surface"}`} key={rowKey} role="button" tabIndex={0} onClick={selectPlan} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectPlan(); } }}>
               <span className="grid h-8 w-8 place-items-center rounded-md bg-apex/10 text-xs font-semibold text-apex">{dispatchPlan.code}</span>
-              <span><span className="block font-semibold text-neutral-900">{dispatchPlan.name} <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${dispatchPlan.status === "confirmado" ? "bg-emerald-100 text-emerald-800" : dispatchPlan.status === "listo" ? "bg-apex/10 text-apex" : "bg-paper text-neutral-500"}`}>{dispatchPlan.status}</span></span><span className="mt-1 block text-xs text-neutral-600">{dispatchPlan.sede?.name || "Sede"} · {dispatchPlan.service_level}</span></span>
+              <span><span className="block font-semibold text-content-strong">{dispatchPlan.name} <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${dispatchPlan.status === "confirmado" ? "bg-emerald-100 text-emerald-800" : dispatchPlan.status === "listo" ? "bg-apex/10 text-apex" : "bg-paper text-content-muted"}`}>{dispatchPlan.status}</span></span><span className="mt-1 block text-xs text-content-body">{dispatchPlan.sede?.name || "Sede"} · {dispatchPlan.service_level}</span></span>
               <span>{dispatchPlan.due_date ? new Date(`${dispatchPlan.due_date}T12:00:00`).toLocaleDateString() : "—"}</span>
               <span>{dispatchPlan.stop_count} entrega(s)</span>
               <span>{dispatchPlan.total_weight_kg.toLocaleString()} kg</span>
@@ -239,9 +239,9 @@ export default function TransportPlanningPage() {
           {workbench.consolidation_groups.map((group, index) => {
             const selectGroup = () => { const target = targetFromGroup(group); setSelection(target); closeScenarioMonitor(); };
             return (
-            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === group.key ? "bg-emerald-50 text-apex" : "bg-white"}`} key={group.key} role="button" tabIndex={0} onClick={selectGroup} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectGroup(); } }}>
-              <span className="grid h-8 w-8 place-items-center rounded-md bg-paper text-sm font-semibold text-neutral-500">{index + 1}</span>
-              <span><span className="block font-semibold text-neutral-900">{group.sede?.name || "Sede por completar"} <span className="ml-1 rounded-md bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500">sin asignar</span></span><span className="mt-1 block text-xs text-neutral-600">{group.service_level}</span></span>
+            <div className={`grid cursor-pointer grid-cols-[64px_1.5fr_0.7fr_0.7fr_0.7fr_0.7fr_auto] items-center gap-3 border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-paper ${selection?.key === group.key ? "bg-emerald-50 text-apex" : "bg-surface"}`} key={group.key} role="button" tabIndex={0} onClick={selectGroup} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectGroup(); } }}>
+              <span className="grid h-8 w-8 place-items-center rounded-md bg-paper text-sm font-semibold text-content-muted">{index + 1}</span>
+              <span><span className="block font-semibold text-content-strong">{group.sede?.name || "Sede por completar"} <span className="ml-1 rounded-md bg-paper px-1.5 py-0.5 text-[10px] font-semibold text-content-muted">sin asignar</span></span><span className="mt-1 block text-xs text-content-body">{group.service_level}</span></span>
               <span>{new Date(`${group.due_date}T12:00:00`).toLocaleDateString()}</span>
               <span>{group.needs.length} entrega(s)</span>
               <span>{group.total_weight_kg.toLocaleString()} kg</span>
@@ -251,12 +251,12 @@ export default function TransportPlanningPage() {
           );
           })}
           </div>
-          {!workbench.plans.length && !workbench.consolidation_groups.length ? <p className="rounded-md bg-paper p-4 text-sm text-neutral-500">No hay planes ni demanda completa y pendiente para consolidar. Crea planes en <Link className="font-semibold text-apex" href="/dashboard/transporte/ordenes">Preparación de pedidos</Link>.</p> : null}
+          {!workbench.plans.length && !workbench.consolidation_groups.length ? <p className="rounded-md bg-paper p-4 text-sm text-content-muted">No hay planes ni demanda completa y pendiente para consolidar. Crea planes en <Link className="font-semibold text-apex" href="/dashboard/transporte/ordenes">Preparación de pedidos</Link>.</p> : null}
         </div>
       </section>
       <main className="space-y-4">
-        <section className="rounded-md border border-line bg-white p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">Parámetros bloqueados del escenario</h2><p className="mt-1 text-xs text-neutral-500">{selectedSummary}</p></div></div>
+        <section className="rounded-md border border-line bg-surface p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-semibold">Parámetros bloqueados del escenario</h2><p className="mt-1 text-xs text-content-muted">{selectedSummary}</p></div></div>
           {selection ? <ScenarioWorkbench target={selection} sedes={sedes} vehicles={vehicles} /> : <EmptyPlannerState />}
         </section>
       </main>
@@ -351,10 +351,10 @@ function PlanningModal({ children, onClose }: { children: ReactNode; onClose: ()
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
   return createPortal(<div className="fixed bottom-0 left-0 right-0 top-0 z-[9999] grid place-items-center overflow-y-auto bg-black/55 p-3 md:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section aria-label="Monitor de escenarios logísticos" aria-modal="true" className="transport-planning-modal max-h-[calc(100dvh-1.5rem)] w-full overflow-hidden rounded-md border border-line bg-[#ffffff] text-[#17232d] shadow-xl md:max-h-[calc(100dvh-3rem)] md:max-w-7xl [&_.bg-paper]:!bg-[#f5f7f5] [&_.bg-white]:!bg-[#ffffff] [&_.text-neutral-500]:!text-[#66746f] [&_.text-neutral-600]:!text-[#4d5b57]" role="dialog" onMouseDown={(event) => event.stopPropagation()}>
-        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-[#ffffff] px-4 py-3">
+      <section aria-label="Monitor de escenarios logísticos" aria-modal="true" className="transport-planning-modal max-h-[calc(100dvh-1.5rem)] w-full overflow-hidden rounded-md border border-line bg-surface text-content-strong shadow-xl md:max-h-[calc(100dvh-3rem)] md:max-w-7xl" role="dialog" onMouseDown={(event) => event.stopPropagation()}>
+        <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3">
           <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Revisión antes de crear viaje</p><h2 className="text-lg font-semibold">Monitor de escenarios logísticos</h2></div>
-          <button aria-label="Cerrar evaluación" className="grid h-10 w-10 place-items-center rounded-md border border-line hover:bg-[#f5f7f5]" onClick={onClose} type="button"><X size={18} /></button>
+          <button aria-label="Cerrar evaluación" className="grid h-10 w-10 place-items-center rounded-md border border-line hover:bg-surface-muted" onClick={onClose} type="button"><X size={18} /></button>
         </header>
         <div className="max-h-[calc(100dvh-6rem)] overflow-y-auto p-4">{children}</div>
       </section>
@@ -362,11 +362,11 @@ function PlanningModal({ children, onClose }: { children: ReactNode; onClose: ()
 }
 
 function ProcessStep({ icon: Icon, title, active }: { icon: typeof ClipboardList; title: string; active: boolean }) {
-  return <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold ${active ? "border-apex bg-emerald-50 text-apex" : "border-line bg-paper text-neutral-500"}`}><Icon size={14} />{title}</span>;
+  return <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-semibold ${active ? "border-apex bg-emerald-50 text-apex" : "border-line bg-paper text-content-muted"}`}><Icon size={14} />{title}</span>;
 }
 
 function EmptyPlannerState() {
-  return <div className="mt-4 rounded-md border border-dashed border-line p-4"><p className="font-semibold">Selecciona una consolidación</p><p className="mt-1 text-sm text-neutral-600">Elige una fila del monitor para revisar sus parámetros o usa su botón Evaluar escenarios para abrir el monitor directamente.</p></div>;
+  return <div className="mt-4 rounded-md border border-dashed border-line p-4"><p className="font-semibold">Selecciona una consolidación</p><p className="mt-1 text-sm text-content-body">Elige una fila del monitor para revisar sus parámetros o usa su botón Evaluar escenarios para abrir el monitor directamente.</p></div>;
 }
 
 function ScenarioWorkbench({ target, sedes, vehicles }: { target: EvalTarget; sedes: Sede[]; vehicles: Vehicle[] }) {
@@ -380,7 +380,7 @@ function ScenarioWorkbench({ target, sedes, vehicles }: { target: EvalTarget; se
 }
 
 function ReadOnlyParam({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-md bg-paper px-3 py-2"><p className="text-[11px] font-semibold uppercase text-neutral-500">{label}</p><p className="mt-1 truncate text-sm font-semibold">{value}</p></div>;
+  return <div className="rounded-md bg-paper px-3 py-2"><p className="text-[11px] font-semibold uppercase text-content-muted">{label}</p><p className="mt-1 truncate text-sm font-semibold">{value}</p></div>;
 }
 
 function PlanResult({ scenarios, selectedScenarioId, selectedQuote, onSelectQuote, onSelectScenario, onCommit, canWrite, committing }: { scenarios: Scenario[]; selectedScenarioId: string | null; selectedQuote: number | null; onSelectQuote: (id: number) => void; onSelectScenario: (id: string) => void; onCommit: (event: FormEvent<HTMLFormElement>) => void; canWrite: boolean; committing: boolean }) {
@@ -395,11 +395,11 @@ function PlanResult({ scenarios, selectedScenarioId, selectedQuote, onSelectQuot
       <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-apex">Ruta sugerida</p>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-          <div><h3 className="text-2xl font-semibold">{recommended.strategyLabel} · {recommended.vehicle?.plate || recommended.plan.capacity.plate || "Sin vehículo preasignado"}</h3><p className="mt-1 text-sm text-neutral-600">Mejor balance entre costo, tiempo estimado, distancia, capacidad y alertas. La recomendación se recalcula con todos los escenarios disponibles.</p></div>
+          <div><h3 className="text-2xl font-semibold">{recommended.strategyLabel} · {recommended.vehicle?.plate || recommended.plan.capacity.plate || "Sin vehículo preasignado"}</h3><p className="mt-1 text-sm text-content-body">Mejor balance entre costo, tiempo estimado, distancia, capacidad y alertas. La recomendación se recalcula con todos los escenarios disponibles.</p></div>
           <span className="rounded-md bg-apex px-3 py-2 text-sm font-semibold text-white">Recomendada</span>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2 rounded-md border border-line bg-white p-3 text-center">
+      <div className="grid grid-cols-3 gap-2 rounded-md border border-line bg-surface p-3 text-center">
         <MetricCompact label="Escenarios" value={`${scenarios.length}`} />
         <MetricCompact label="Con tarifa" value={`${scenarios.filter((scenario) => scenario.quote).length}`} />
         <MetricCompact label="Alertas" value={`${scenarios.reduce((sum, scenario) => sum + scenario.alerts.length, 0)}`} />
@@ -408,26 +408,26 @@ function PlanResult({ scenarios, selectedScenarioId, selectedQuote, onSelectQuot
     <RouteProviderNotice scenarios={visibleScenarios} />
     <RouteMap scenarios={visibleScenarios} selectedScenarioId={selected.id} onSelectScenario={onSelectScenario} />
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-5"><Metric label="Distancia" value={`${selected.plan.totals.distance_km} km`} /><Metric label="ETA estimada" value={`${Math.floor(selected.plan.planned_duration_minutes / 60)}h ${selected.plan.planned_duration_minutes % 60}m`} /><Metric label="Costo" value={selected.cost === null ? "Sin tarifa" : money(selected.cost, selected.quote?.currency)} /><Metric label="Costo/km" value={selected.costPerKm === null ? "Sin tarifa" : money(selected.costPerKm, selected.quote?.currency)} /><Metric label="Tráfico" value={trafficLabel(selected)} good={trafficLabel(selected) === "Bajo"} /></div>
-    <section className="rounded-md border border-line bg-white p-4">
+    <section className="rounded-md border border-line bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div><h3 className="font-semibold">Selecciona vehículo y compara 4 estrategias</h3><p className="mt-1 text-xs text-neutral-500">El mapa recalcula la lectura visual con el vehículo activo; cada tarjeta representa una estrategia operativa.</p></div>
-        <div className="flex flex-wrap gap-2">{vehicleKeys.map((scenario) => <button className={`rounded-md border px-3 py-2 text-sm font-semibold ${vehicleKey(scenario) === activeVehicleKey ? "border-apex bg-emerald-50 text-apex" : "border-line bg-white"}`} key={vehicleKey(scenario)} onClick={() => { setActiveVehicleKey(vehicleKey(scenario)); onSelectScenario(scenarios.find((item) => vehicleKey(item) === vehicleKey(scenario) && item.recommended)?.id || scenarios.find((item) => vehicleKey(item) === vehicleKey(scenario))?.id || scenario.id); }} type="button">{scenario.vehicle?.plate || scenario.plan.capacity.plate || "Sin vehículo"}</button>)}</div>
+        <div><h3 className="font-semibold">Selecciona vehículo y compara 4 estrategias</h3><p className="mt-1 text-xs text-content-muted">El mapa recalcula la lectura visual con el vehículo activo; cada tarjeta representa una estrategia operativa.</p></div>
+        <div className="flex flex-wrap gap-2">{vehicleKeys.map((scenario) => <button className={`rounded-md border px-3 py-2 text-sm font-semibold ${vehicleKey(scenario) === activeVehicleKey ? "border-apex bg-emerald-50 text-apex" : "border-line bg-surface"}`} key={vehicleKey(scenario)} onClick={() => { setActiveVehicleKey(vehicleKey(scenario)); onSelectScenario(scenarios.find((item) => vehicleKey(item) === vehicleKey(scenario) && item.recommended)?.id || scenarios.find((item) => vehicleKey(item) === vehicleKey(scenario))?.id || scenario.id); }} type="button">{scenario.vehicle?.plate || scenario.plan.capacity.plate || "Sin vehículo"}</button>)}</div>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-4">
         {visibleScenarios.map((scenario, index) => <ScenarioCard index={index + 1} key={scenario.id} scenario={scenario} selected={scenario.id === selected.id} onSelect={() => { onSelectScenario(scenario.id); if (scenario.quote) onSelectQuote(scenario.quote.rate_card_id); }} />)}
       </div>
     </section>
-    <section className="grid gap-3 rounded-md border border-line bg-white p-4 md:grid-cols-2">
-      <div><h3 className="font-semibold">Lectura rápida</h3><p className="mt-1 text-sm text-neutral-600">{selected.benefits[0] || "Escenario disponible para comparación."}</p>{selected.alerts[0] ? <p className="mt-1 text-sm text-amber-700">{selected.alerts[0]}</p> : null}</div>
-      <div><h3 className="font-semibold">Tarifa</h3><p className="mt-1 text-sm text-neutral-600">{selected.quote ? `${selected.quote.carrier_name} · ${money(selected.quote.total, selected.quote.currency)}` : "Sin tarifa activa para este escenario."}</p></div>
+    <section className="grid gap-3 rounded-md border border-line bg-surface p-4 md:grid-cols-2">
+      <div><h3 className="font-semibold">Lectura rápida</h3><p className="mt-1 text-sm text-content-body">{selected.benefits[0] || "Escenario disponible para comparación."}</p>{selected.alerts[0] ? <p className="mt-1 text-sm text-amber-700">{selected.alerts[0]}</p> : null}</div>
+      <div><h3 className="font-semibold">Tarifa</h3><p className="mt-1 text-sm text-content-body">{selected.quote ? `${selected.quote.carrier_name} · ${money(selected.quote.total, selected.quote.currency)}` : "Sin tarifa activa para este escenario."}</p></div>
     </section>
-    {selected.plan.quotes.length ? <form className="grid gap-3 rounded-md border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-4" onSubmit={onCommit}><div className="lg:col-span-4"><h3 className="font-semibold">Confirmar selección</h3><p className="text-xs text-neutral-500">Solo se crea el viaje del escenario seleccionado. Las demás opciones quedan como soporte de decisión visual.</p></div><Field name="code" label="Código de viaje" defaultValue={`VJ-${Date.now().toString().slice(-8)}`} required /><Field name="planned_departure" label="Salida planificada" type="datetime-local" /><Field name="planned_arrival" label="Llegada objetivo" type="datetime-local" /><label className="text-sm"><span className="mb-1 block font-medium">Tarifa seleccionada</span><input className={inputClass} readOnly value={selected.plan.quotes.find((quote) => quote.rate_card_id === selectedQuote)?.rate_code || selected.quote?.rate_code || ""} /></label><div className="flex justify-end lg:col-span-4"><button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!canWrite || committing || !selectedQuote || !selected.plan.capacity.feasible}><Truck size={17} />{committing ? "Creando viaje..." : "Confirmar escenario y crear viaje"}</button></div></form> : null}
+    {selected.plan.quotes.length ? <form className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-2 lg:grid-cols-4" onSubmit={onCommit}><div className="lg:col-span-4"><h3 className="font-semibold">Confirmar selección</h3><p className="text-xs text-content-muted">Solo se crea el viaje del escenario seleccionado. Las demás opciones quedan como soporte de decisión visual.</p></div><Field name="code" label="Código de viaje" defaultValue={`VJ-${Date.now().toString().slice(-8)}`} required /><Field name="planned_departure" label="Salida planificada" type="datetime-local" /><Field name="planned_arrival" label="Llegada objetivo" type="datetime-local" /><label className="text-sm"><span className="mb-1 block font-medium">Tarifa seleccionada</span><input className={inputClass} readOnly value={selected.plan.quotes.find((quote) => quote.rate_card_id === selectedQuote)?.rate_code || selected.quote?.rate_code || ""} /></label><div className="flex justify-end lg:col-span-4"><button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={!canWrite || committing || !selectedQuote || !selected.plan.capacity.feasible}><Truck size={17} />{committing ? "Creando viaje..." : "Confirmar escenario y crear viaje"}</button></div></form> : null}
   </div>;
 }
 
 function ScenarioCard({ scenario, selected, onSelect, index }: { scenario: Scenario; selected: boolean; onSelect: () => void; index: number }) {
-  return <button className={`w-full rounded-md border p-3 text-left ${selected ? "border-apex bg-emerald-50" : "border-line bg-white"}`} onClick={onSelect} type="button">
-    <div className="flex items-start gap-3"><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md text-xs font-bold ${scenario.recommended ? "bg-apex text-white" : "bg-paper text-apex"}`}>{index}</span><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><p className="font-semibold">{scenario.strategyLabel}</p><p className="text-xs text-neutral-500">{scenario.vehicle?.plate || scenario.plan.capacity.plate || "Sin vehículo"} · {scenario.plan.capacity.feasible ? "viable" : "excedida"}</p></div>{scenario.recommended ? <span className="rounded-md bg-apex px-2 py-1 text-xs font-semibold text-white">Mejor</span> : null}</div>
+  return <button className={`w-full rounded-md border p-3 text-left ${selected ? "border-apex bg-emerald-50" : "border-line bg-surface"}`} onClick={onSelect} type="button">
+    <div className="flex items-start gap-3"><span className={`grid h-8 w-8 shrink-0 place-items-center rounded-md text-xs font-bold ${scenario.recommended ? "bg-apex text-white" : "bg-paper text-apex"}`}>{index}</span><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><div><p className="font-semibold">{scenario.strategyLabel}</p><p className="text-xs text-content-muted">{scenario.vehicle?.plate || scenario.plan.capacity.plate || "Sin vehículo"} · {scenario.plan.capacity.feasible ? "viable" : "excedida"}</p></div>{scenario.recommended ? <span className="rounded-md bg-apex px-2 py-1 text-xs font-semibold text-white">Mejor</span> : null}</div>
     <div className="mt-3 grid grid-cols-3 gap-2 text-xs"><span><strong className="block text-sm">{scenario.cost === null ? "Sin tarifa" : money(scenario.cost, scenario.quote?.currency)}</strong>costo</span><span><strong className="block text-sm">{scenario.plan.totals.distance_km} km</strong>ruta</span><span><strong className="block text-sm">{trafficLabel(scenario)}</strong>tráfico</span></div>
     {scenario.alerts.length ? <p className="mt-3 rounded-md bg-amber-50 p-2 text-xs text-amber-900"><AlertTriangle className="mr-1 inline" size={14} />{scenario.alerts[0]}{scenario.alerts.length > 1 ? ` +${scenario.alerts.length - 1}` : ""}</p> : <p className="mt-3 rounded-md bg-emerald-50 p-2 text-xs text-apex">Sin alertas críticas.</p>}</div></div>
   </button>;
@@ -510,7 +510,7 @@ function RouteProviderNotice({ scenarios }: { scenarios: Scenario[] }) {
     }
   }, []);
   if (!intel) return null;
-  return <section className="rounded-md border border-line bg-white p-4">
+  return <section className="rounded-md border border-line bg-surface p-4">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h3 className="text-sm font-semibold">Conexión de rutas y tráfico</h3>
@@ -524,6 +524,6 @@ function RouteProviderNotice({ scenarios }: { scenarios: Scenario[] }) {
   </section>;
 }
 
-function Metric({ label, value, good }: { label: string; value: string; good?: boolean }) { return <div className="rounded-md border border-line bg-white p-3"><p className="text-xs text-neutral-500">{label}</p><p className={`mt-2 font-semibold ${good === false ? "text-rose-700" : good ? "text-emerald-700" : ""}`}>{value}</p></div>; }
-function MetricCompact({ label, value }: { label: string; value: string }) { return <div><p className="text-xs text-neutral-500">{label}</p><p className="mt-1 text-lg font-semibold">{value}</p></div>; }
+function Metric({ label, value, good }: { label: string; value: string; good?: boolean }) { return <div className="rounded-md border border-line bg-surface p-3"><p className="text-xs text-content-muted">{label}</p><p className={`mt-2 font-semibold ${good === false ? "text-rose-700" : good ? "text-emerald-700" : ""}`}>{value}</p></div>; }
+function MetricCompact({ label, value }: { label: string; value: string }) { return <div><p className="text-xs text-content-muted">{label}</p><p className="mt-1 text-lg font-semibold">{value}</p></div>; }
 function Field(props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) { const { label, ...input } = props; return <label className="text-sm"><span className="mb-1 block font-medium">{label}</span><input className={inputClass} {...input} /></label>; }

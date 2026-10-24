@@ -27,7 +27,7 @@ const TENANT_MODELS = new Set([
   "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
   "SalesInvoice", "SalesInvoiceLine", "CxcCabdoc", "CxcCuedoc", "CxcPayment", "RetentionMaster", "SkuValuation",
   "PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine",
-  "WarehouseTransfer", "WarehouseTransferLine",
+  "WarehouseTransfer", "WarehouseTransferLine", "InventoryAdjustment", "InventoryAdjustmentLine",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"

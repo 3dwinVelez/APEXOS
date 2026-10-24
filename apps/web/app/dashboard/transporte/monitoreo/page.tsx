@@ -8,7 +8,7 @@ import type { LiveUnit } from "@/components/tms-live-map";
 const LiveMap = dynamic(() => import("@/components/tms-live-map"), {
   ssr: false,
   loading: () => (
-    <div className="grid h-[560px] place-items-center rounded-xl bg-paper text-sm text-neutral-500">
+    <div className="grid h-[560px] place-items-center rounded-xl bg-paper text-sm text-content-muted">
       Cargando mapa...
     </div>
   ),
@@ -59,7 +59,7 @@ export default function TransportMonitoringPage() {
   }, [load]);
   if (!data)
     return (
-      <p className="text-sm text-neutral-500">Cargando monitoreo TMS...</p>
+      <p className="text-sm text-content-muted">Cargando monitoreo TMS...</p>
     );
   const unit = data.units.find((row) => row.trip_id === selected);
   return (
@@ -69,7 +69,7 @@ export default function TransportMonitoringPage() {
           Control de flota
         </p>
         <h1 className="mt-1 text-3xl font-semibold">Monitoreo en vivo</h1>
-        <p className="mt-2 text-sm text-neutral-600">
+        <p className="mt-2 text-sm text-content-body">
           Mapa OpenStreetMap, análisis Turf.js, ETA, geocercas y desviaciones.
           Actualización cada {data.refresh_seconds} segundos.
         </p>
@@ -82,10 +82,10 @@ export default function TransportMonitoringPage() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-7">
         {Object.entries(data.summary).map(([label, value]) => (
           <div
-            className="rounded-xl border border-line bg-white p-3"
+            className="rounded-xl border border-line bg-surface p-3"
             key={label}
           >
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-content-muted">
               {label.replaceAll("_", " ")}
             </p>
             <p className="mt-1 text-2xl font-semibold">{value}</p>
@@ -100,34 +100,34 @@ export default function TransportMonitoringPage() {
         />
         <aside className="space-y-3">
           {unit ? (
-            <section className="rounded-xl border border-line bg-white p-4">
+            <section className="rounded-xl border border-line bg-surface p-4">
               <h2 className="font-semibold">
                 {unit.vehicle_plate || unit.trip_code}
               </h2>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-content-muted">
                 {unit.status} · señal {unit.signal_status}
               </p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <dt className="text-neutral-500">ETA</dt>
+                  <dt className="text-content-muted">ETA</dt>
                   <dd>{unit.eta_minutes ?? "--"} min</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Distancia</dt>
+                  <dt className="text-content-muted">Distancia</dt>
                   <dd>{unit.distance_to_stop_km ?? "--"} km</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Desvío</dt>
+                  <dt className="text-content-muted">Desvío</dt>
                   <dd>{unit.route_deviation_m ?? "--"} m</dd>
                 </div>
                 <div>
-                  <dt className="text-neutral-500">Corredor</dt>
+                  <dt className="text-content-muted">Corredor</dt>
                   <dd>{unit.corridor_radius_m ?? "--"} m</dd>
                 </div>
               </dl>
             </section>
           ) : null}
-          <section className="rounded-xl border border-line bg-white p-4">
+          <section className="rounded-xl border border-line bg-surface p-4">
             <h2 className="font-semibold">Alertas activas</h2>
             <div className="mt-3 space-y-2">
               {data.alerts.map((alert, index) => (
@@ -141,7 +141,7 @@ export default function TransportMonitoringPage() {
                 </button>
               ))}
               {!data.alerts.length ? (
-                <p className="text-sm text-neutral-500">Sin alertas.</p>
+                <p className="text-sm text-content-muted">Sin alertas.</p>
               ) : null}
             </div>
           </section>

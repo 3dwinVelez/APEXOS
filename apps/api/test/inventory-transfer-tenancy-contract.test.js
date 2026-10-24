@@ -17,3 +17,10 @@ test("la bodega de consignacion persiste y presenta el cliente enlazado", () => 
   assert.match(source, /consignment_customer_id:\s*consignmentCustomerId \|\| null/);
   assert.match(source, /consignment_customer_name:/);
 });
+
+test("ajustes y posiciones reciben tenant_id y filtro multiempresa del middleware", () => {
+  const source = fs.readFileSync(path.join(root, "src/core/prisma.js"), "utf8");
+  assert.match(source, /TENANT_MODELS[\s\S]*"InventoryAdjustment"/);
+  assert.match(source, /TENANT_MODELS[\s\S]*"InventoryAdjustmentLine"/);
+  assert.match(source, /params\.args\.where = \{ \.\.\.params\.args\.where, tenant_id: tenantId \}/);
+});

@@ -1,0 +1,715 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "local-modules-20261021",
+  "status": "DRAFT_BLOCKED_NOT_FOR_PROMOTION",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "certified_commit": null,
+  "observed_worktree_head": "85fdbe81ee293e866ac8a6d06c5ff22d264c8874",
+  "base_commits": {
+    "develop": "947f508b358c0a2c4f2c62d5d9867930cf1a6169"
+  },
+  "change_intent": {
+    "summary": "Cambios locales solicitados en Transporte, Inventario y Compras; inventario preparatorio, no certificación de candidato",
+    "modules": [
+      "transport",
+      "inventory",
+      "purchases",
+      "shared-ui",
+      "rbac"
+    ]
+  },
+  "expected_changes": [
+    {
+      "file": "apps/api/src/middleware/rbac.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/routes.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/settlement-filters.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/transport/settlement-import-format.json",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/transport/settlement-import.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/transport/settlement-posting.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/settlement-service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport/vehicle-accounting.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/purchase-return-ui-contract.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/transport-settlement-filters.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/test/transport-settlement-import.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/test/transport-settlement-posting.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/facturas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/importaciones/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/layout.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/ordenes/page.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/proveedores/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/purchases.css",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/reportes/facturas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/ajustes/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/bodegas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/clasificaciones/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/familias/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/inventory.css",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/layout.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/productos/[id]/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/reportes/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/traslados/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/inventario/wms/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/configuracion/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/cubicaje/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/notificaciones/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/operacion/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/pod/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/globals.css",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/print/transport-settlement/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/compras-nav.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/inventory-nav.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/inventory-panel.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/inventory-ui.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/components/inventory-workflow.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/components/purchases-ui.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/components/transport/PlanningRouteMap.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/RateCostDesigner.module.css",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/RateCostDesigner.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/SettlementBulkImport.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/components/transport/SettlementDialog.module.css",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/SettlementDocumentsEditor.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/SettlementPreview.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/SettlementVehicleConsolidation.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/components/transport/TransportAdminCatalog.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/TransportSearchSelect.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/components/transport/TransportUI.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport/VehicleProfilePicker.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/public/plantillas/Plantilla_Liquidaciones_Transporte.xlsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/inventory-improvements-roadmap.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/transport-print-theme.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/transport-rate-cost-step.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/transport-rate-wizard-interactions.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/transport-search-select.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/transport-settlement-tariff-interactions.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/transport-settlement-tower.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/transport-theme.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/transport-tms-ui.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/transport-vehicle-master-catalogs.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "docs/qa/inventory-guided-workflows-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/inventory-modern-ui-audit-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/inventory-redundancy-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/local-modules-release-blocked-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/local-modules-20261021-preqa-blocked.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/local-modules-20261021-scope-draft.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/purchases-modern-ui-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/purchases-operator-readability-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-bulk-completion-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-legacy-centers-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-print-theme-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-rate-three-steps-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-search-select-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-settlement-import-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-theme-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-vehicle-consolidation-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/transport-vehicle-date-filters-local-20261021.md",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/inventory-guided-workflows-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/inventory-modern-ui-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/inventory-redundancy-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/purchases-modern-ui-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/purchases-operator-readability-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/purchases-reports-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-print-theme-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-rate-cost-browser.mjs",
+      "status": "M"
+    },
+    {
+      "file": "scripts/certifications/transport-rate-three-steps-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-search-select-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-settlement-import-browser.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-settlement-import-local.js",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-theme-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-vehicle-consolidation-local.cjs",
+      "status": "A"
+    },
+    {
+      "file": "scripts/templates/build-transport-settlement-template.mjs",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/settlement-filters.js",
+    "apps/api/src/modules/transport/settlement-import-format.json",
+    "apps/api/src/modules/transport/settlement-import.js",
+    "apps/api/src/modules/transport/settlement-posting.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/transport/vehicle-accounting.js",
+    "apps/api/test/purchase-return-ui-contract.test.js",
+    "apps/api/test/transport-settlement-filters.test.js",
+    "apps/api/test/transport-settlement-import.test.js",
+    "apps/api/test/transport-settlement-posting.test.js",
+    "apps/web/app/dashboard/compras/facturas/page.tsx",
+    "apps/web/app/dashboard/compras/importaciones/page.tsx",
+    "apps/web/app/dashboard/compras/layout.tsx",
+    "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/compras/ordenes/page.tsx",
+    "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx",
+    "apps/web/app/dashboard/compras/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/page.tsx",
+    "apps/web/app/dashboard/compras/purchases.css",
+    "apps/web/app/dashboard/compras/reportes/facturas/page.tsx",
+    "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/page.tsx",
+    "apps/web/app/dashboard/inventario/bodegas/page.tsx",
+    "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx",
+    "apps/web/app/dashboard/inventario/clasificaciones/page.tsx",
+    "apps/web/app/dashboard/inventario/familias/page.tsx",
+    "apps/web/app/dashboard/inventario/inventory.css",
+    "apps/web/app/dashboard/inventario/layout.tsx",
+    "apps/web/app/dashboard/inventario/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/[id]/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/page.tsx",
+    "apps/web/app/dashboard/inventario/reportes/page.tsx",
+    "apps/web/app/dashboard/inventario/stock/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/page.tsx",
+    "apps/web/app/dashboard/inventario/wms/page.tsx",
+    "apps/web/app/dashboard/transporte/configuracion/page.tsx",
+    "apps/web/app/dashboard/transporte/cubicaje/page.tsx",
+    "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/dashboard/transporte/notificaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+    "apps/web/app/dashboard/transporte/pod/page.tsx",
+    "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/print/transport-settlement/page.tsx",
+    "apps/web/components/compras-nav.tsx",
+    "apps/web/components/inventory-nav.tsx",
+    "apps/web/components/inventory-panel.tsx",
+    "apps/web/components/inventory-ui.tsx",
+    "apps/web/components/inventory-workflow.tsx",
+    "apps/web/components/purchases-ui.tsx",
+    "apps/web/components/transport/PlanningRouteMap.tsx",
+    "apps/web/components/transport/RateCostDesigner.module.css",
+    "apps/web/components/transport/RateCostDesigner.tsx",
+    "apps/web/components/transport/SettlementBulkImport.tsx",
+    "apps/web/components/transport/SettlementDialog.module.css",
+    "apps/web/components/transport/SettlementDocumentsEditor.tsx",
+    "apps/web/components/transport/SettlementPreview.tsx",
+    "apps/web/components/transport/SettlementVehicleConsolidation.tsx",
+    "apps/web/components/transport/TransportAdminCatalog.tsx",
+    "apps/web/components/transport/TransportSearchSelect.tsx",
+    "apps/web/components/transport/TransportUI.tsx",
+    "apps/web/components/transport/VehicleProfilePicker.tsx",
+    "apps/web/public/plantillas/Plantilla_Liquidaciones_Transporte.xlsx",
+    "apps/web/test/inventory-improvements-roadmap.test.mjs",
+    "apps/web/test/transport-print-theme.test.mjs",
+    "apps/web/test/transport-rate-cost-step.test.mjs",
+    "apps/web/test/transport-rate-wizard-interactions.test.mjs",
+    "apps/web/test/transport-search-select.test.mjs",
+    "apps/web/test/transport-settlement-tariff-interactions.test.mjs",
+    "apps/web/test/transport-settlement-tower.test.mjs",
+    "apps/web/test/transport-theme.test.mjs",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "apps/web/test/transport-vehicle-master-catalogs.test.mjs",
+    "docs/qa/inventory-guided-workflows-local-20261021.md",
+    "docs/qa/inventory-modern-ui-audit-local-20261021.md",
+    "docs/qa/inventory-redundancy-local-20261021.md",
+    "docs/qa/local-modules-release-blocked-20261021.md",
+    "docs/qa/manifests/local-modules-20261021-preqa-blocked.json",
+    "docs/qa/manifests/local-modules-20261021-scope-draft.json",
+    "docs/qa/purchases-modern-ui-local-20261021.md",
+    "docs/qa/purchases-operator-readability-local-20261021.md",
+    "docs/qa/transport-bulk-completion-local-20261021.md",
+    "docs/qa/transport-legacy-centers-local-20261021.md",
+    "docs/qa/transport-print-theme-local-20261021.md",
+    "docs/qa/transport-rate-three-steps-local-20261021.md",
+    "docs/qa/transport-search-select-local-20261021.md",
+    "docs/qa/transport-settlement-import-local-20261021.md",
+    "docs/qa/transport-theme-local-20261021.md",
+    "docs/qa/transport-vehicle-consolidation-local-20261021.md",
+    "docs/qa/transport-vehicle-date-filters-local-20261021.md",
+    "scripts/certifications/inventory-guided-workflows-local.cjs",
+    "scripts/certifications/inventory-modern-ui-local.cjs",
+    "scripts/certifications/inventory-redundancy-local.cjs",
+    "scripts/certifications/purchases-modern-ui-local.cjs",
+    "scripts/certifications/purchases-operator-readability-local.cjs",
+    "scripts/certifications/purchases-reports-local.cjs",
+    "scripts/certifications/transport-print-theme-local.cjs",
+    "scripts/certifications/transport-rate-cost-browser.mjs",
+    "scripts/certifications/transport-rate-three-steps-local.cjs",
+    "scripts/certifications/transport-search-select-local.cjs",
+    "scripts/certifications/transport-settlement-import-browser.cjs",
+    "scripts/certifications/transport-settlement-import-local.js",
+    "scripts/certifications/transport-theme-local.cjs",
+    "scripts/certifications/transport-vehicle-consolidation-local.cjs",
+    "scripts/templates/build-transport-settlement-template.mjs"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Carga, aprobación, contabilización y centros de costo de Transporte",
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    {
+      "name": "Altas y movimientos completos de Inventario",
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    {
+      "name": "Altas, aprobación, recepción y contabilización de Compras",
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    {
+      "name": "RBAC y aislamiento multiempresa",
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    },
+    {
+      "name": "Regresión funcional transversal",
+      "status": "pending",
+      "evidence": [
+        "../local-modules-release-blocked-20261021.md"
+      ]
+    }
+  ],
+  "prior_target_diff_outside_requested_scope": [
+    {
+      "status": "A",
+      "file": "apps/web/app/privacidad/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/accounting-pyg-relocation-deployed-20261020.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/accounting-standard-chart-deployment-blocked-20261020.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/accounting-standard-chart-preqa-20261020.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-income-accounting-deployed-20261020.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-promotion-blocked-20261020.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-promotion-ready-20261020.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-qa-runtime-intervention-plan.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-settlement-billing-pdf-local-20261019.md"
+    },
+    {
+      "status": "A",
+      "file": "infra/docker-compose.pdf-sandbox.yml"
+    },
+    {
+      "status": "A",
+      "file": "infra/pdf-renderer/PLAYWRIGHT-LICENSE.txt"
+    },
+    {
+      "status": "A",
+      "file": "infra/pdf-renderer/README.md"
+    },
+    {
+      "status": "A",
+      "file": "infra/pdf-renderer/seccomp.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-pdf-linux-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-pdf-runtime-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/windows/start-apexos-desarrollo.ps1"
+    }
+  ],
+  "excluded_local_artifacts": [
+    "outputs/01a15ec1-liquidaciones/Plantilla_Liquidaciones_Transporte.xlsx",
+    "outputs/01a15ec1-liquidaciones/Prueba_Liquidaciones_Datos_Locales.xlsx"
+  ],
+  "notes": [
+    "No existe commit candidato del trabajo sin confirmar. No usar HEAD como si certificara el worktree.",
+    "Las 16 rutas previas contra origin/develop no se autorizan por su existencia en desarrollo.",
+    "Plantilla pública XLSX es un recurso de la aplicación y requiere revisión del paquete; los Excel de prueba en outputs se excluyen.",
+    "No hay cambios de schema/migración/SQL/package.json/lockfiles entre HEAD y el trabajo solicitado. El historial anterior incluye infraestructura PDF y se bloquea por alcance."
+  ]
+}
