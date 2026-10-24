@@ -1,0 +1,76 @@
+{
+  "change_id": "local-modules-20261023",
+  "commit": "b15cd882f518ea9b492b9de9d40dfafa1286f5c1",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante (2026-10-23): \"recuperar el estado de migracion y completar la actualizacion bajo las politicas del proyecto sin perder ningun dato o commit de manera arbitraria\" sobre las ramas remotas desarrollo y develop. No autoriza main, ni migraciones remotas, ni omitir validaciones.",
+    "approved_at": "2026-10-24T04:19:26.626Z",
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": false,
+      "promote_main": false,
+      "create_auxiliary_branch": false,
+      "run_remote_migrations": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/local-modules-release-20261023.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/local-modules-release-20261023.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/local-modules-release-20261023.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/local-modules-release-20261023.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/local-modules-release-20261023.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-10-24T04:19:26.626Z",
+    "head": "b15cd882f518ea9b492b9de9d40dfafa1286f5c1",
+    "scripts": 14,
+    "script": "../../../scripts/certifications/local-modules-release.cjs",
+    "evidence": [
+      "../certifications/local-modules-release-20261023.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-10-24T04:19:26.626Z",
+    "api_tests": 794,
+    "api_failures": 0,
+    "web_tests": 567,
+    "web_failures": 0,
+    "script": "../../../scripts/certifications/release-local-regression.cjs",
+    "evidence": [
+      "../certifications/local-modules-release-20261023.md"
+    ]
+  }
+}
