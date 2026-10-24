@@ -11,8 +11,11 @@ const {
   createOpeningBalancesTemplate,
   openingBalanceLegacyPartyId,
   resolveOpeningBalanceParty,
+  resolveOpeningBalancePartiesBatched,
+  resolveOpeningBalancePartyBatched,
   matchOpeningBalanceCode,
   resolveOpeningBalanceAccount,
+  resolveOpeningBalanceAccountsBatched,
   resolveOpeningBalanceCenter
 } = require("../src/modules/accounting/service");
 
@@ -325,7 +328,8 @@ test("centro con sociedad almacenada distinta no se acepta", () => {
 });
 
 test("saldos iniciales persisten y agrupan los codigos canonicos almacenados", () => {
-  assert.match(service, /account_code: account\.code, branch_code: branch\.code, cost_center_code: center\.code/);
+  assert.match(service, /account_code: account\.code/);
+  assert.match(service, /branch_code: row\.branch_code, cost_center_code: row\.cost_center_code, society_code: row\.society_code/);
   assert.match(service, /const key = `\$\{row\.account_code\}\|\$\{row\.branch_code\}\|\$\{row\.cost_center_code\}\|\$\{row\.party_id \|\| ""\}`/);
   assert.match(service, /tree\.cost_centers\.filter\(\(item\) => normalizeCode\(item\.branch_code\) === normalizeCode\(branch\.code\)\)/);
   assert.match(service, /normalizeCode\(center\.society_code\) !== normalizeCode\(branch\.society_code\)/);
@@ -337,3 +341,136 @@ test("normalizeCode global sigue siendo solo trim para no alterar otros modulos"
   assert.match(definition[0], /String\(value \|\| ""\)\.trim\(\)/);
   assert.doesNotMatch(definition[0], /toUpperCase|toLowerCase/);
 });
+
+function batchAccountClient(accounts) {
+  const calls = [];
+  return {
+    calls,
+    account: {
+      async findMany({ where }) {
+        calls.push({ op: "findMany", where });
+        const codes = where.code.in;
+        const mode = where.code.mode;
+        return accounts.filter((account) => {
+          if (!codes.some((code) => mode === "insensitive" ? account.code.toLowerCase() === code.toLowerCase() : account.code === code)) return false;
+          if (where.__includeInactive !== true && where.active !== undefined && account.active !== where.active) return false;
+          if (where.__includeInactive !== true && where.active === undefined && account.active === false) return false;
+          return true;
+        });
+      }
+    }
+  };
+}
+
+function batchAccountEntries(codes) {
+  return codes.map((code, index) => ({ code, excel_row: index + 5 }));
+}
+
+test("resolucion por lote de cuentas usa una sola consulta insensible y preserva precedencia exacta", async () => {
+  const exact = { id: 1, code: "130505HEART", active: true, allows_tx: true };
+  const variant = { id: 2, code: "130505heart", active: true, allows_tx: true };
+  const client = batchAccountClient([variant, exact]);
+  const result = await resolveOpeningBalanceAccountsBatched(client, batchAccountEntries(["130505HEART", "130505unused"]));
+  assert.equal(result.get("130505HEART"), exact);
+  assert.equal(result.get("130505unused"), null);
+  assert.equal(client.calls.length, 1);
+  assert.equal(client.calls[0].op, "findMany");
+  assert.deepEqual(client.calls[0].where.code.in, ["130505HEART", "130505unused"]);
+  assert.equal(client.calls[0].where.code.mode, "insensitive");
+});
+
+test("resolucion por lote de cuentas conserva ambiguedad por mayusculas con numero de fila", async () => {
+  const client = batchAccountClient([
+    { id: 4, code: "220505CASE", active: true, allows_tx: true },
+    { id: 5, code: "220505case", active: true, allows_tx: true }
+  ]);
+  await assert.rejects(resolveOpeningBalanceAccountsBatched(client, batchAccountEntries(["220505Case"])), (error) => {
+    assert.equal(error.statusCode, 422);
+    assert.equal(error.code, "OPENING_BALANCE_AMBIGUOUS_CODE");
+    assert.match(error.message, /Fila 5: cuenta 220505Case/);
+    return true;
+  });
+});
+
+test("resolucion por lote de cuentas devuelve inactiva para que el llamador la rechace con fila", async () => {
+  const client = batchAccountClient([{ id: 6, code: "130505INACTIVO", active: false, allows_tx: true }]);
+  const result = await resolveOpeningBalanceAccountsBatched(client, batchAccountEntries(["130505INACTIVO"]));
+  assert.equal(result.get("130505INACTIVO").active, false);
+});
+
+function batchPartyClient(parties) {
+  const calls = [];
+  return {
+    calls,
+    party: {
+      async findMany({ where }) {
+        calls.push({ op: "findMany", where });
+        const match = (party) => {
+          if (where.tax_id && where.tax_id.in) {
+            if (!where.tax_id.in.some((v) => party.tax_id === v)) return false;
+          }
+          if (where.id && where.id.in) {
+            if (!where.id.in.some((v) => party.id === v)) return false;
+          }
+          if (where.active !== undefined && party.active !== where.active) return false;
+          if (where.__includeInactive !== true && where.active === undefined && party.active === false) return false;
+          return true;
+        };
+        return parties.filter(match);
+      }
+    }
+  };
+}
+
+function batchPartyRows(values) {
+  return values.map((tercero, index) => ({ tercero, excel_row: index + 1 }));
+}
+
+test("resolucion por lote de terceros prioriza NIT activo antes que id interno coincidente", async () => {
+  const taxParty = { id: 7, tax_id: "900255181", active: true };
+  const idCollision = { id: 900255181, tax_id: "OTRO", active: true };
+  const client = batchPartyClient([taxParty, idCollision]);
+  const result = await resolveOpeningBalancePartiesBatched(client, batchPartyRows(["900255181"]));
+  assert.equal(result.get("900255181"), taxParty);
+});
+
+test("resolucion por lote de terceros conserva fallback a id interno solo sin NIT", async () => {
+  const legacyParty = { id: 42, tax_id: null, active: true };
+  const client = batchPartyClient([legacyParty]);
+  const result = await resolveOpeningBalancePartiesBatched(client, batchPartyRows(["42"]));
+  assert.equal(result.get("42"), legacyParty);
+});
+
+test("resolucion por lote de terceros no cae de un NIT numerico inactivo a otro id", async () => {
+  const inactiveTax = { id: 3, tax_id: "900255181", active: false };
+  const unrelatedActiveId = { id: 900255181, tax_id: "OTRO", active: true };
+  const client = batchPartyClient([inactiveTax, unrelatedActiveId]);
+  const result = await resolveOpeningBalancePartiesBatched(client, batchPartyRows(["900255181"]));
+  assert.equal(result.has("900255181"), false);
+  assert.throws(() => resolveOpeningBalancePartyBatched(result, "900255181", 10), (error) => {
+    assert.equal(error.statusCode, 404);
+    assert.equal(error.code, "OPENING_BALANCE_PARTY_NOT_FOUND");
+    return true;
+  });
+});
+
+test("resolucion por lote de terceros mantiene opcionalidad en blanco", async () => {
+  const client = batchPartyClient([]);
+  const result = await resolveOpeningBalancePartiesBatched(client, batchPartyRows(["", null, "   "]));
+  assert.equal(result.size, 0);
+  assert.equal(resolveOpeningBalancePartyBatched(result, "", 1), null);
+  assert.equal(resolveOpeningBalancePartyBatched(result, null, 1), null);
+});
+
+test("resolucion por lote de terceros respeta minuto de consultas acotadas (una por lote)", async () => {
+  const parties = [
+    { id: 1, tax_id: "NIT-1", active: true },
+    { id: 2, tax_id: "NIT-2", active: true },
+    { id: 3, tax_id: "NIT-3", active: true }
+  ];
+  const client = batchPartyClient(parties);
+  await resolveOpeningBalancePartiesBatched(client, batchPartyRows(["NIT-1", "NIT-2", "NIT-3"]));
+  assert.equal(client.calls.length, 1);
+  assert.deepEqual(client.calls[0].where.tax_id.in, ["NIT-1", "NIT-2", "NIT-3"]);
+});
+
