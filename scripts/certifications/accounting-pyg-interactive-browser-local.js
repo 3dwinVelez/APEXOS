@@ -807,22 +807,44 @@ async function main() {
 
     await clickButton(page, "Presupuesto PUC");
     await page.waitForFunction(() => document.body.innerText.includes("Presupuesto mensual por cuenta PUC"), { timeout: 30000 });
-    await page.waitForFunction(() => document.querySelectorAll("table tbody tr").length >= 4, { timeout: 30000 });
-    const firstRow = await page.$("table tbody tr");
-    const accountInput = firstRow ? await firstRow.$('input[aria-label^="Buscar cuenta PUC"]') : null;
-    const branchSelect = firstRow ? await firstRow.$('select[aria-label="Sucursal"]') : null;
-    const centerSelect = firstRow ? await firstRow.$('select[aria-label="Centro de costo"]') : null;
+    // El editor ordena las filas por account_id, no por tipo: se localiza la
+    // tupla real (cuenta ingreso 4, SUC-NORTE, CC-NORTE-1) en el DOM en lugar de asumir la primera fila.
+    const budgetRowTuple = { code: income.code, branch: B1, center: C1 };
+    const matchBudgetRow = ({ code, branch, center }) => [...document.querySelectorAll("table tbody tr")].find((row) => {
+      const account = row.querySelector('input[aria-label^="Buscar cuenta PUC"]');
+      const branchSelect = row.querySelector('select[aria-label="Sucursal"]');
+      const centerSelect = row.querySelector('select[aria-label="Centro de costo"]');
+      return Boolean(account && branchSelect && centerSelect) && account.value === code && branchSelect.value === branch && centerSelect.value === center;
+    }) || null;
+    await page.waitForFunction(matchBudgetRow, { timeout: 30000 }, budgetRowTuple);
+    const rowHandle = await page.evaluateHandle(matchBudgetRow, budgetRowTuple);
+    const targetRow = rowHandle.asElement();
+    const accountInput = targetRow ? await targetRow.$('input[aria-label^="Buscar cuenta PUC"]') : null;
+    const branchSelect = targetRow ? await targetRow.$('select[aria-label="Sucursal"]') : null;
+    const centerSelect = targetRow ? await targetRow.$('select[aria-label="Centro de costo"]') : null;
     const initialRow = accountInput && branchSelect && centerSelect ? {
       account: await accountInput.evaluate((node) => node.value),
       branch: await branchSelect.evaluate((node) => node.value),
       center: await centerSelect.evaluate((node) => node.value)
     } : null;
-    check("browser_budget_editor_first_row_is_income_b1_c1", Boolean(initialRow) && initialRow.account === income.code && initialRow.branch === B1 && initialRow.center === C1, { row: initialRow, expected: { account: income.code, branch: B1, center: C1 } });
-    if (!initialRow || initialRow.account !== income.code || initialRow.branch !== B1 || initialRow.center !== C1) throw new Error("browser_budget_editor_first_row_mismatch");
+    check("browser_budget_editor_income_b1_c1_row_present", Boolean(initialRow) && initialRow.account === income.code && initialRow.branch === B1 && initialRow.center === C1, { row: initialRow, expected: { account: income.code, branch: B1, center: C1 } });
+    if (!initialRow || initialRow.account !== income.code || initialRow.branch !== B1 || initialRow.center !== C1) throw new Error("browser_budget_editor_income_b1_c1_row_mismatch");
 
-    await accountInput.click({ clickCount: 3 });
-    await page.keyboard.press("Backspace");
+    const clearField = async (input) => {
+      await input.click();
+      await page.keyboard.down("Control");
+      await page.keyboard.press("KeyA");
+      await page.keyboard.up("Control");
+      await page.keyboard.press("Backspace");
+      await page.waitForFunction((node) => node.isConnected && node.value === "", { timeout: 10000 }, input);
+    };
+    await clearField(accountInput);
     await accountInput.type(income.code);
+    try {
+      await page.waitForFunction((node, expected) => node.isConnected && node.value === expected, { timeout: 10000 }, accountInput, income.code);
+    } catch {
+      throw new Error(`browser_budget_editor_account_input_value_mismatch:${await accountInput.evaluate((node) => (node.isConnected ? node.value : "<detached>"))}`);
+    }
     await page.waitForSelector('[role="option"]', { visible: true, timeout: 20000 });
     const accountOptions = await page.$$('[role="option"]');
     const optionCodes = [];
@@ -835,16 +857,19 @@ async function main() {
     check("browser_budget_editor_option_matches_income_code", Boolean(selectedOption), { code: income.code, options: optionCodes });
     if (!selectedOption) throw new Error("browser_budget_editor_income_option_not_found");
     await selectedOption.click();
-    await page.waitForFunction(({ selector, code }) => {
-      const input = document.querySelector(selector);
-      return Boolean(input) && input.value === code && String(input.getAttribute("aria-label") || "").includes("seleccionada");
-    }, { timeout: 20000 }, { selector: 'table tbody tr:first-child input[aria-label^="Buscar cuenta PUC"]', code: income.code });
-    await page.select('table tbody tr:first-child select[aria-label="Sucursal"]', B1);
-    await page.select('table tbody tr:first-child select[aria-label="Centro de costo"]', C1);
-    const amountInput = await page.waitForSelector('table tbody tr:first-child input[aria-label="Valor mensual del presupuesto"]', { visible: true, timeout: 20000 });
-    await amountInput.click({ clickCount: 3 });
-    await page.keyboard.press("Backspace");
+    const rowLocator = 'table tbody tr input[aria-label^="Buscar cuenta PUC"]';
+    await page.waitForFunction(({ selector, code }) => [...document.querySelectorAll(selector)].some((input) => input.value === code && String(input.getAttribute("aria-label") || "").includes("seleccionada")), { timeout: 20000 }, { selector: rowLocator, code: income.code });
+    await branchSelect.select(B1);
+    await centerSelect.select(C1);
+    const amountInput = targetRow ? await targetRow.waitForSelector('input[aria-label="Valor mensual del presupuesto"]', { visible: true, timeout: 20000 }) : null;
+    if (!amountInput) throw new Error("browser_budget_editor_amount_input_not_found_in_row");
+    await clearField(amountInput);
     await amountInput.type("1200");
+    try {
+      await page.waitForFunction((node) => node.isConnected && node.value === "1200", { timeout: 10000 }, amountInput);
+    } catch {
+      throw new Error(`browser_budget_editor_amount_input_value_mismatch:${await amountInput.evaluate((node) => (node.isConnected ? node.value : "<detached>"))}`);
+    }
     const stagedRow = {
       account: await accountInput.evaluate((node) => node.value),
       branch: await branchSelect.evaluate((node) => node.value),
