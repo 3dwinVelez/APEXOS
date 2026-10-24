@@ -195,7 +195,7 @@ test('the shared navigation helper waits for API traffic and passes the response
     (async () => {
       const page = new FakePage();
       const response = await gotoLocalAppPage(page, 'http://127.0.0.1:3311/dashboard/compras');
-      assert.deepEqual(page.calls[0].options, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      assert.deepEqual(page.calls[0].options, { waitUntil: 'domcontentloaded', timeout: 120000 });
       assert.equal(response.status(), 200, 'la navegacion debe conservar la respuesta para las aserciones HTTP');
       await gotoLocalAppPage(page, 'http://127.0.0.1:3311/login');
       assert.equal(page.listenerCount('request'), 1, 'un unico observador por pagina');
@@ -205,4 +205,41 @@ test('the shared navigation helper waits for API traffic and passes the response
   `);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /navigation helper ok/);
+});
+
+test('the shared navigation helper retries one killed navigation without duplicating its watcher', () => {
+  const result = exercise({}, `
+    const assert = require('node:assert/strict');
+    const { EventEmitter } = require('node:events');
+    const { gotoLocalAppPage } = require(${JSON.stringify(helper)});
+    class FlakyPage extends EventEmitter {
+      constructor(failures) { super(); this.failures = failures; this.calls = []; }
+      setBypassServiceWorker() { return Promise.resolve(); }
+      goto(url, options) {
+        this.calls.push({ url, options });
+        if (this.calls.length <= this.failures) {
+          this.emit('request', { url: () => 'http://127.0.0.1:3310/api/v1/never-closed' });
+          return Promise.reject(new Error('net::ERR_ABORTED'));
+        }
+        const api = { url: () => 'http://127.0.0.1:3310/api/v1/auth/me' };
+        this.emit('request', api);
+        setTimeout(() => this.emit('requestfinished', api), 200);
+        return Promise.resolve({ status: () => 200, url });
+      }
+    }
+    (async () => {
+      const recovered = new FlakyPage(1);
+      const response = await gotoLocalAppPage(recovered, 'http://127.0.0.1:3311/dashboard/inventario/reportes');
+      assert.equal(recovered.calls.length, 2, 'la navegacion abortada se reintenta una vez');
+      assert.equal(response.status(), 200);
+      assert.equal(recovered.listenerCount('request'), 1, 'el reintento no acumula observadores');
+
+      const exhausted = new FlakyPage(9);
+      await assert.rejects(() => gotoLocalAppPage(exhausted, 'http://127.0.0.1:3311/login'), /ERR_ABORTED/);
+      assert.equal(exhausted.calls.length, 2, 'no se reintenta indefinidamente un fallo persistente');
+      console.log('navigation retry ok');
+    })().catch(error => { console.error(error); process.exitCode = 1; });
+  `);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /navigation retry ok/);
 });

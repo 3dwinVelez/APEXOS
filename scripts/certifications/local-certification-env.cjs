@@ -55,21 +55,32 @@ function createApiIdleWatcher(page, timeout = 30000) {
       }
       await new Promise(resolve => setTimeout(resolve, 250));
     },
+    reset() { pending.clear(); },
   };
 }
 
 const watchers = new WeakMap();
 
-async function gotoLocalAppPage(page, url, timeout = 60000) {
+async function gotoLocalAppPage(page, url, timeout = 120000) {
   if (!watchers.has(page)) {
-    // El service worker de la app hace skipWaiting y clients.claim, así que toma el control a mitad de sesión
-    // y aborta navegaciones de Puppeteer (ERR_ABORTED y contextos destruidos); el arnés lo deja fuera del camino.
+    // El service worker de la app hace skipWaiting y clients.claim, asi que toma el control a mitad de sesion
+    // y aborta navegaciones de Puppeteer (ERR_ABORTED y contextos destruidos); el arnes lo deja fuera del camino.
     await page.setBypassServiceWorker(true);
     watchers.set(page, createApiIdleWatcher(page));
   }
-  const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
-  await watchers.get(page).wait();
-  return response;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
+      await watchers.get(page).wait();
+      return response;
+    } catch (error) {
+      // La maquina local tiene 8 GB: bajo presion el renderer aborta la navegacion o la ruta recompila mas
+      // lento que el presupuesto. Una navegacion no conserva estado, asi que se admite un unico reintento;
+      // las aserciones del certificador van despues y el fallo funcional no se enmascara.
+      if (attempt >= 1) throw error;
+      watchers.get(page).reset();
+    }
+  }
 }
 
 module.exports = { apiBase, webBase, target, certEnv, localOrigin, createApiIdleWatcher, gotoLocalAppPage };

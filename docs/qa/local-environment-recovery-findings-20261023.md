@@ -118,3 +118,38 @@ Deuda declarada, fuera de este alcance: el service worker cachea documentos y as
 en desarrollo, y su respaldo `caches.match('/dashboard')` puede devolver otra pantalla cuando
 falla la red. Merece su propio alcance con criterios de caché por entorno y verificación en
 navegador antes de cambiarlo; en esta promoción el producto quedó intacto.
+
+## 5. Presión de memoria de la máquina local: los fallos rotaban entre certificadores
+
+Con el esquive del service worker activo, la tercera corrida falló en un certificador
+distinto otra vez (`inventory-modern-ui-local.cjs`, `TimeoutError: Navigation timeout of
+60000 ms exceeded` al entrar a `/dashboard/inventario/reportes`), y el servidor registró ese
+mismo documento sirviéndose en 3.5 s durante el recalentado y en 0.46 s al medirlo con `curl`
+después del fallo. La bitácora de `next dev` muestra además rutas que ya estaban compiladas
+volviendo a compilarse a mitad de suite (`○ Compiling /dashboard/inventario/ajustes ...` con
+10.3 s de respuesta).
+
+Medición del ambiente en ese momento: 7.8 GB de RAM visible con **0.3 GB libres**, 13 procesos
+de Node (1.4 GB), Qoder (0.9 GB), Chrome del usuario (0.9 GB) y **cero** instancias de Edge
+headless residuales, es decir, los certificadores sí liberaban sus navegadores. El patrón
+coherente con esos datos es agotamiento de recursos: el renderer mata o reinicia la navegación
+en curso del certificador que esté navegando, y el presupuesto de 60 s no alcanza cuando la
+ruta recompila bajo presión. No es un defecto de las pantallas: tres corridas, tres
+certificadores distintos, y cada uno de ellos había pasado en alguna de las otras corridas.
+
+Respuesta del arnés (sin tocar el producto):
+
+- Presupuesto de navegación subido a 120 s en `gotoLocalAppPage`.
+- Un único reintento por navegación, con reinicio del observador de tráfico para no heredar
+  peticiones colgadas del intento abortado. Una navegación no conserva estado, así que
+  reintentar no enmascara un fallo funcional: las aserciones van después y un fallo persistente
+  se reporta tras el segundo intento.
+- Cobertura en `scripts/test/local-certification-env.test.js`: 140 pruebas, incluida
+  «the shared navigation helper retries one killed navigation without duplicating its watcher»,
+  que exige el reintento único, que no se acumulen observadores y que un fallo persistente
+  revienta en dos intentos.
+
+Condición operativa para las corridas de certificación: la máquina no debe tener aplicaciones
+pesadas además del arnés (API aislada, `next dev` aislado y un navegador por certificador).
+Con menos de 0.5 GB libres, los reintentos pueden no alcanzar y la evidencia saldrá mezclada
+con fallos de ambiente.
