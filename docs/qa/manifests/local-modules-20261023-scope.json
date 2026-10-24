@@ -4,9 +4,9 @@
   "source_branch": "desarrollo",
   "target_branch": "develop",
   "promotion_branch": "desarrollo",
-  "certified_commit": "b15cd882f518ea9b492b9de9d40dfafa1286f5c1",
-  "target_head": "0d3dd7256f42d94c80d085a650307b6c03a64477",
-  "base_commit": "0d3dd7256f42d94c80d085a650307b6c03a64477",
+  "certified_commit": "dce85470ece5146ed048619dfd9eb56d0545c2cb",
+  "target_head": "759323c7fff3e5bb14374ae770284274a05ef1a0",
+  "base_commit": "759323c7fff3e5bb14374ae770284274a05ef1a0",
   "base_commits": [
     "develop"
   ],
@@ -417,6 +417,10 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/certifications/local-modules-release-20261023.md"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/inventory-guided-workflows-local-20261021.md"
     },
     {
@@ -446,6 +450,14 @@
     {
       "status": "A",
       "file": "docs/qa/manifests/local-modules-20261021-scope-draft.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/local-modules-20261023-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/local-modules-20261023-scope.json"
     },
     {
       "status": "A",
@@ -626,18 +638,6 @@
     {
       "status": "M",
       "file": "scripts/windows/start-apexos-desarrollo.ps1"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/certifications/local-modules-release-20261023.md"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/local-modules-20261023-scope.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/local-modules-20261023-preqa.json"
     }
   ],
   "allowed_paths": [
