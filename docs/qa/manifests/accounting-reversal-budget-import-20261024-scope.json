@@ -1,0 +1,143 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "accounting-reversal-budget-import-20261024",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-accounting-reversals-budget-20261024",
+  "certified_commit": "411d474d950d5f15ce6720a32e009a71110f0ea1",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "411d474d950d5f15ce6720a32e009a71110f0ea1"
+  },
+  "original_candidate_metadata": {
+    "commit": "432485d8092d371caed5d117f4b7a85a79d8ae24",
+    "branch": "desarrollo",
+    "local_desarrollo": "252599134cbd391116f0166820c3c62ec7217310",
+    "reconstruction": "Commit original reconstruido sobre el target QA vigente; el contenido de las 14 rutas funcionales certificadas y el inventario exacto de archivos son identicos al commit original, mientras que los arboles completos difieren porque se preservan los demas modulos del target vigente.",
+    "same_file_inventory": true
+  },
+  "target_head": "0b03f3fd01d14dce90ade11e2ea4f67cef576146",
+  "base_commit": "0b03f3fd01d14dce90ade11e2ea4f67cef576146",
+  "base_commits": {
+    "develop": "0b03f3fd01d14dce90ade11e2ea4f67cef576146"
+  },
+  "change_intent": {
+    "summary": "Agregar anulaciones contables controladas con documento inverso enlazado y auditoria, y la importacion de presupuesto mensual por Excel en PYG (validacion por fila, duplicados e insensibilidad a mayusculas, sin escrituras de libro) con pruebas de API, interfaz y certificacion de navegador local",
+    "modules": [
+      "accounting"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/accounting/pyg-budget-import.js",
+    "apps/api/src/modules/accounting/reversal.js",
+    "apps/api/src/modules/accounting/routes.js",
+    "apps/api/src/modules/accounting/schema.js",
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "apps/api/test/accounting-pyg-budget-import.test.js",
+    "apps/api/test/accounting-reversal.test.js",
+    "apps/web/app/dashboard/contabilidad/asientos/page.tsx",
+    "apps/web/components/accounting/AccountingPygBudget.tsx",
+    "apps/web/components/accounting/AccountingPygBudgetImport.tsx",
+    "apps/web/test/accounting-reversal-budget-import.test.mjs",
+    "docs/qa/certifications/accounting-reversal-budget-import-20261024.md",
+    "scripts/certifications/accounting-reversal-budget-import-browser-local.js"
+  ],
+  "expected_changes": [
+    { "file": "apps/api/src/modules/accounting/pyg-budget-import.js", "status": "A" },
+    { "file": "apps/api/src/modules/accounting/reversal.js", "status": "A" },
+    { "file": "apps/api/src/modules/accounting/routes.js", "status": "M" },
+    { "file": "apps/api/src/modules/accounting/schema.js", "status": "M" },
+    { "file": "apps/api/src/modules/accounting/service.js", "status": "M" },
+    { "file": "apps/api/test/accounting-opening-balances.test.js", "status": "M" },
+    { "file": "apps/api/test/accounting-pyg-budget-import.test.js", "status": "A" },
+    { "file": "apps/api/test/accounting-reversal.test.js", "status": "A" },
+    { "file": "apps/web/app/dashboard/contabilidad/asientos/page.tsx", "status": "M" },
+    { "file": "apps/web/components/accounting/AccountingPygBudget.tsx", "status": "M" },
+    { "file": "apps/web/components/accounting/AccountingPygBudgetImport.tsx", "status": "A" },
+    { "file": "apps/web/test/accounting-reversal-budget-import.test.mjs", "status": "A" },
+    { "file": "docs/qa/certifications/accounting-reversal-budget-import-20261024.md", "status": "A" },
+    { "file": "scripts/certifications/accounting-reversal-budget-import-browser-local.js", "status": "A" },
+    { "file": "docs/qa/manifests/accounting-reversal-budget-import-20261024-scope.json", "status": "A" },
+    { "file": "docs/qa/manifests/accounting-reversal-budget-import-20261024-preqa.json", "status": "A" }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/accounting/pyg-budget-import.js",
+    "apps/api/src/modules/accounting/reversal.js",
+    "apps/api/src/modules/accounting/routes.js",
+    "apps/api/src/modules/accounting/schema.js",
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "apps/api/test/accounting-pyg-budget-import.test.js",
+    "apps/api/test/accounting-reversal.test.js",
+    "apps/web/app/dashboard/contabilidad/asientos/page.tsx",
+    "apps/web/components/accounting/AccountingPygBudget.tsx",
+    "apps/web/components/accounting/AccountingPygBudgetImport.tsx",
+    "apps/web/test/accounting-reversal-budget-import.test.mjs",
+    "docs/qa/certifications/accounting-reversal-budget-import-20261024.md",
+    "scripts/certifications/accounting-reversal-budget-import-browser-local.js",
+    "docs/qa/manifests/accounting-reversal-budget-import-20261024-scope.json",
+    "docs/qa/manifests/accounting-reversal-budget-import-20261024-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Inversion de asientos manuales y saldos iniciales con auditoria y conservacion de fecha contable",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-reversal-budget-import-20261024.md"
+      ]
+    },
+    {
+      "name": "Origen no verificable y documentos no elegibles rechazados (fail closed)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-reversal-budget-import-20261024.md"
+      ]
+    },
+    {
+      "name": "Periodo cerrado y doble anulacion rechazados",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-reversal-budget-import-20261024.md"
+      ]
+    },
+    {
+      "name": "RBAC de escritura en Contabilidad y aislamiento entre tenants",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-reversal-budget-import-20261024.md"
+      ]
+    },
+    {
+      "name": "Presupuesto mensual por Excel con validacion por fila, insensibilidad a mayusculas, rechazo de duplicados y sin movimientos de libro",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-reversal-budget-import-20261024.md"
+      ]
+    },
+    {
+      "name": "Agregados, filtros y comparativo del año anterior en PYG",
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-reversal-budget-import-20261024.md"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicitante: \"publica en qa\" y autorizacion explicita de rama exacta \"si\" para codex/qa-accounting-reversals-budget-20261024 (observado 2026-10-24T14:01:25Z)",
+    "approved_at": "2026-10-24T14:01:25Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorized_actions": {
+      "create_auxiliary_branch": true,
+      "push_auxiliary_branch": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false
+    }
+  }
+}
