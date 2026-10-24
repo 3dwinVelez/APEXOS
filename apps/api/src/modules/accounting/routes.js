@@ -3,6 +3,8 @@ const { requirePermission } = require("../../middleware/rbac");
 const service = require("./service");
 const pygInteractive = require("./pyg-interactive");
 const pygBudget = require("./pyg-budget");
+const pygBudgetImport = require("./pyg-budget-import");
+const reversal = require("./reversal");
 const schema = require("./schema");
 
 async function accountingRoutes(fastify) {
@@ -200,6 +202,20 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request, reply) => reply.code(201).send(await service.createAccountingDocument(request.user?.tenant_id, request.user?.id, request.body)));
 
+  fastify.get("/accounting/documents/:id/reversal-eligibility", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => reversal.getReversalEligibility(request.user?.tenant_id, request.params.id));
+
+  fastify.post("/accounting/documents/:id/reverse", {
+    schema: schema.documentReversalSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await reversal.reverseAccountingDocument(
+    request.user?.tenant_id,
+    request.user?.id,
+    request.params.id,
+    request.body
+  )));
+
   fastify.get("/accounting/payables/documents", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listPayableDocuments(request.user?.tenant_id, request.query));
@@ -305,6 +321,32 @@ async function accountingRoutes(fastify) {
   fastify.put("/accounting/reports/pyg-interactive/budgets", {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => pygBudget.savePygBudgets(request.user?.tenant_id, request.user?.id, request.body));
+
+  fastify.get("/accounting/reports/pyg-interactive/budgets/template", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request, reply) => {
+    const buffer = await pygBudgetImport.createPygBudgetTemplate();
+    return reply.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", 'attachment; filename="plantilla-presupuesto-mensual.xlsx"').send(buffer);
+  });
+
+  fastify.post("/accounting/reports/pyg-interactive/budgets/validate", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "BUDGET_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx de presupuesto" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_BUDGET_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return pygBudgetImport.validatePygBudgetWorkbook(request.user?.tenant_id, await file.toBuffer());
+  });
+
+  fastify.post("/accounting/reports/pyg-interactive/budgets/import", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "BUDGET_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx de presupuesto" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_BUDGET_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return reply.code(201).send(await pygBudgetImport.importPygBudgetWorkbook(request.user?.tenant_id, request.user?.id, await file.toBuffer()));
+  });
 
 }
 
