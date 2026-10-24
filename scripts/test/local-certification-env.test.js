@@ -243,3 +243,82 @@ test('the shared navigation helper retries one killed navigation without duplica
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /navigation retry ok/);
 });
+
+test('the shared navigation helper waits for the origin to listen again before retrying a refused navigation', () => {
+  const result = exercise({}, `
+    const assert = require('node:assert/strict');
+    const { EventEmitter } = require('node:events');
+    const { gotoLocalAppPage } = require(${JSON.stringify(helper)});
+    class DeadThenAlivePage extends EventEmitter {
+      constructor() { super(); this.calls = []; }
+      setBypassServiceWorker() { return Promise.resolve(); }
+      goto(url) {
+        this.calls.push(url);
+        if (this.calls.length === 1) return Promise.reject(new Error('net::ERR_CONNECTION_REFUSED at ' + url));
+        const api = { url: () => 'http://127.0.0.1:3310/api/v1/auth/me' };
+        this.emit('request', api);
+        setTimeout(() => this.emit('requestfinished', api), 10);
+        return Promise.resolve({ status: () => 200, url });
+      }
+    }
+    class AlwaysRefusedPage extends EventEmitter {
+      constructor(reason) { super(); this.reason = reason; this.calls = []; }
+      setBypassServiceWorker() { return Promise.resolve(); }
+      goto(url) { this.calls.push(url); return Promise.reject(new Error(this.reason + ' at ' + url)); }
+    }
+    (async () => {
+      const page = new DeadThenAlivePage();
+      const seen = [];
+      const lifecycle = { interval: 5, waitForLocalAppOrigin: async (origin, options) => {
+        seen.push({ origin, interval: options.interval });
+        return true;
+      } };
+      const response = await gotoLocalAppPage(page, 'http://127.0.0.1:3311/dashboard/transporte/cubicaje', 120000, lifecycle);
+      assert.equal(response.status(), 200, 'la navegacion se completa una vez el servidor vuelve arriba');
+      assert.deepEqual(seen, [{ origin: 'http://127.0.0.1:3311', interval: 5 }], 'se espera la vida del origen una sola vez antes del reintento');
+      assert.equal(page.calls.length, 2);
+
+      const gone = new DeadThenAlivePage();
+      await assert.rejects(() => gotoLocalAppPage(gone, 'http://127.0.0.1:3311/login', 120000,
+        { waitForLocalAppOrigin: async () => false }), /no volvio a escuchar/);
+      assert.equal(gone.calls.length, 1, 'un origen que no revive se reporta como ambiente muerto, no se reintenta a ciegas');
+
+      const aborted = new AlwaysRefusedPage('net::ERR_ABORTED');
+      let touched = 0;
+      await assert.rejects(() => gotoLocalAppPage(aborted, 'http://127.0.0.1:3311/login', 120000, {
+        waitForLocalAppOrigin: async () => { touched++; return true; },
+      }), /ERR_ABORTED/);
+      assert.equal(touched, 0, 'un ERR_ABORTED normal no pasa por la espera de vida del origen');
+      assert.equal(aborted.calls.length, 2, 'el reintento unico anterior se conserva');
+      console.log('navigation liveness ok');
+    })().catch(error => { console.error(error); process.exitCode = 1; });
+  `);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /navigation liveness ok/);
+});
+
+test('the origin liveness wait polls until the server answers and gives up at its deadline', async () => {
+  const result = exercise({}, `
+    const assert = require('node:assert/strict');
+    const { waitForLocalAppOrigin } = require(${JSON.stringify(helper)});
+    (async () => {
+      const origin = 'http://127.0.0.1:3311';
+      const started = Date.now();
+      assert.equal(await waitForLocalAppOrigin(origin, { probe: async () => true, interval: 5 }), true, 'una respuesta prueba la vida del origen');
+      assert.ok(Date.now() - started < 100, 'no se duerme cuando el servidor ya escucha');
+
+      let calls = 0;
+      assert.equal(await waitForLocalAppOrigin(origin, { probe: async () => ++calls === 3, interval: 5, timeout: 5000 }), true,
+        'se reintenta la sonda hasta que el supervisor del servidor de desarrollo recupera el puerto');
+      assert.equal(calls, 3);
+
+      calls = 0;
+      assert.equal(await waitForLocalAppOrigin(origin, { probe: async () => { calls++; return false; }, interval: 20, timeout: 60 }), false,
+        'la espera se agota en lugar de colgarse');
+      assert.ok(calls >= 2 && calls <= 5, 'la espera acota sus sondas: ' + calls);
+      console.log('liveness wait ok');
+    })().catch(error => { console.error(error); process.exitCode = 1; });
+  `);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /liveness wait ok/);
+});
