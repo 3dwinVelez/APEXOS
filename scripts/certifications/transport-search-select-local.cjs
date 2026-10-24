@@ -100,6 +100,7 @@ async function main() {
         else if (['http:', 'https:'].includes(url.protocol) && ![apiBase, webBase].includes(url.origin)) request.abort();
         else request.continue();
       });
+      const appIdle = appEnv.createApiIdleWatcher(app);
       await app.goto(webBase + '/login', { waitUntil: 'domcontentloaded' });
       const login = await fetch(apiBase + '/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: process.env.LOCAL_TMS_EMAIL || 'demo@apex.local', password: process.env.LOCAL_TMS_PASSWORD || 'test1234' }) });
       assert.equal(login.status, 200, 'local API login');
@@ -117,7 +118,9 @@ async function main() {
       }, session);
       for (const route of ['', '/ordenes', '/operacion', '/tarifas', '/liquidaciones', '/cubicaje', '/pod', '/notificaciones', '/configuracion']) {
         console.log('Checking local screen', route || '/');
-        await app.goto(`${webBase}/dashboard/transporte${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
+        await app.goto(`${webBase}/dashboard/transporte${route}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+        await app.waitForSelector('.transport-workspace', { timeout: 60000 });
+        await appIdle.wait();
         check(`local app ${route || '/'}: authenticated`, !app.url().includes('/login'));
         const plain = await app.$$eval('select:not([aria-hidden=true]):not([aria-label=Idioma])', nodes => nodes.map(node => ({ name: node.name, label: node.getAttribute('aria-label'), className: node.className })));
         if (plain.length) console.log('Plain selects', route || '/', plain);

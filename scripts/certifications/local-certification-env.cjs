@@ -38,4 +38,24 @@ const target = { database, api: serviceTarget(apiBase), web: serviceTarget(webBa
 // Pin both DB variables before application loaders or children can fill missing values from .env.
 const certEnv = { ...process.env, DIRECT_URL: process.env.DIRECT_URL ?? process.env.DATABASE_URL };
 
-module.exports = { apiBase, webBase, target, certEnv, localOrigin };
+// En `next dev` los chunks servidos desde la cache del navegador disparan `request` sin `response`,
+// asi que networkidle2 nunca se cumple; se observa el trafico real de API en su lugar.
+function createApiIdleWatcher(page, timeout = 30000) {
+  const pending = new Set();
+  const tracks = url => { try { return new URL(url).pathname.startsWith('/api/v1/'); } catch { return false; } }
+  page.on('request', request => { if (tracks(request.url())) pending.add(request); });
+  page.on('requestfinished', request => pending.delete(request));
+  page.on('requestfailed', request => pending.delete(request));
+  return {
+    async wait() {
+      const deadline = Date.now() + timeout;
+      while (pending.size) {
+        if (Date.now() > deadline) throw new Error(`${pending.size} peticiones de API nunca cerraron`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      await new Promise(resolve => setTimeout(resolve, 250));
+    },
+  };
+}
+
+module.exports = { apiBase, webBase, target, certEnv, localOrigin, createApiIdleWatcher };

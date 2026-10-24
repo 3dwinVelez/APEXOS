@@ -1,5 +1,5 @@
 // Real local UI, read-only forms. Never saves a tariff, package or plan.
-const { apiBase, webBase } = require('./local-certification-env.cjs');
+const { apiBase, webBase, createApiIdleWatcher } = require('./local-certification-env.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -21,6 +21,7 @@ async function main() {
     else if (['http:', 'https:'].includes(url.protocol) && ![apiBase, webBase].includes(url.origin)) request.abort();
     else request.continue();
   });
+  const idle = createApiIdleWatcher(page);
   const click = async text => { await page.waitForFunction(t=>[...document.querySelectorAll('button')].some(n=>n.getClientRects().length&&!n.disabled&&n.textContent.trim()===t),{timeout:30000},text); const buttons = await page.$$('button'); for (const button of buttons) { if ((await button.evaluate(node => node.textContent.trim())) === text) { await button.click(); return; } } throw new Error(`Button not found: ${text}`); };
   async function theme(value) {
     await page.evaluate(value => { document.documentElement.classList.toggle('dark', value === 'dark'); document.documentElement.dataset.theme = value; localStorage.setItem('apex_theme', value); }, value);
@@ -43,15 +44,17 @@ async function main() {
     const routes = ['', '/flota', '/ordenes', '/operacion', '/planeacion', '/tarifas', '/liquidaciones', '/cubicaje', '/monitoreo', '/pod', '/pyg', '/notificaciones', '/configuracion', '/maestros'];
     for (const route of process.argv.includes('--dialogs-only') ? [] : routes) {
       console.log('Checking local theme', route || '/');
-      await page.goto(`${webBase}/dashboard/transporte${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
+      await page.goto(`${webBase}/dashboard/transporte${route}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
       if (route === '/pyg' || route === '/maestros') {
         const destination = route === '/pyg' ? '/dashboard/contabilidad/pyg' : '/dashboard/administracion';
         // La redirección del router de Aplicación se resuelve después de hidratar; se espera el destino real antes de auditar.
         await page.waitForFunction(target => location.pathname === target, { timeout: 60000 }, destination);
+        await idle.wait();
         check(`${route} retains central module redirect`, page.url().endsWith(destination));
         continue;
       }
       await page.waitForSelector('.transport-workspace');
+      await idle.wait();
       check(`${route || '/'} authenticated`, !page.url().includes('/login'));
       for (const value of ['dark', 'light']) {
         await theme(value);
@@ -60,7 +63,9 @@ async function main() {
         check(`${route || '/'} ${value}: inherited color scheme`, workspace.scheme === value);
       }
     }
-    await page.goto(webBase + '/dashboard/transporte/liquidaciones', { waitUntil: 'networkidle2' });
+    await page.goto(webBase + '/dashboard/transporte/liquidaciones', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForSelector('.transport-workspace');
+    await idle.wait();
     await click('Nuevo paquete'); await page.waitForSelector('[role=dialog]');
     for (const value of ['dark', 'light', 'dark']) {
       await theme(value);
@@ -76,7 +81,9 @@ async function main() {
     await snapshot('settlement-mobile-dark');
     await theme('light'); await snapshot('settlement-mobile-light');
     await page.setViewport({ width: 1440, height: 1000 });
-    await page.goto(webBase + '/dashboard/transporte/tarifas', { waitUntil: 'networkidle2' });
+    await page.goto(webBase + '/dashboard/transporte/tarifas', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForSelector('.transport-workspace');
+    await idle.wait();
     await click('Nuevo tarifario'); await page.waitForSelector('[role=dialog]');
     await page.type('input[name=code]', 'LOCAL-THEME-UNSAVED');
     await page.type('input[name=name]', 'Validación visual sin guardar');

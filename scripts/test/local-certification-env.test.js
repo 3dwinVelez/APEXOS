@@ -149,3 +149,29 @@ test('browser API argument accepts ephemeral loopback ports but never usual serv
   `);
   assert.equal(result.status, 0, result.stderr);
 });
+
+test('the idle watcher ignores cached dev chunks and only releases when API requests close', () => {
+  const result = exercise({}, `
+    const assert = require('node:assert/strict');
+    const { EventEmitter } = require('node:events');
+    const { createApiIdleWatcher } = require(${JSON.stringify(helper)});
+    const page = new EventEmitter();
+    const watcher = createApiIdleWatcher(page, 250);
+    const api = { url: () => 'http://127.0.0.1:3310/api/v1/transport/vehicles?include_retired=true' };
+    const chunk = { url: () => 'http://127.0.0.1:3311/_next/static/chunks/main-app.js' };
+    (async () => {
+      page.emit('request', chunk);
+      await watcher.wait();
+      page.emit('request', api);
+      let settled = false;
+      watcher.wait().then(() => { settled = true; }, () => {});
+      await new Promise(resolve => setTimeout(resolve, 600));
+      assert.equal(settled, false, 'una peticion de API abierta debe mantener la pagina ocupada');
+      page.emit('requestfailed', api);
+      await watcher.wait();
+      console.log('idle watcher ok');
+    })().catch(error => { console.error(error); process.exitCode = 1; });
+  `);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /idle watcher ok/);
+});
