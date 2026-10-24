@@ -39,7 +39,7 @@ async function main(){
   }
   await page.setViewport({width:1440,height:900});await page.click('a[href="/dashboard/inventario/productos/nuevo"]');await page.waitForSelector('[role="dialog"]');check('retained creation action opens wizard',await page.$eval('[role="dialog"]',node=>node.textContent.includes('Identificación')));
   await page.keyboard.press('Escape');await page.waitForSelector('[role="dialog"]',{hidden:true});check('closing creation returns to product list',page.url().endsWith('/productos'));
-  evidence.blocked_mutations=mutations;check('no business mutations: '+JSON.stringify(mutations),mutations.length===0);check('no browser runtime errors',runtimeErrors.length===0);
+  evidence.blocked_mutations=mutations;evidence.runtime_errors=runtimeErrors;check('no business mutations: '+JSON.stringify(mutations),mutations.length===0);check('no browser runtime errors: '+runtimeErrors.join(' | ').slice(0,400),runtimeErrors.length===0);
  }finally{await browser.close();}
 }
 main().then(()=>finish('passed')).catch(error=>{console.error(error.stack);finish('failed',error.message);});
