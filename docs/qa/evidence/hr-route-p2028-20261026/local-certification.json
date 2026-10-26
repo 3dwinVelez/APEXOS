@@ -3,7 +3,7 @@
   "certification": "hr-route-p2028-local",
   "environment": "LOCAL",
   "company": "SCJ",
-  "generated_at": "2026-10-26T14:09:24.488Z",
+  "generated_at": "2026-10-26T14:16:22.351Z",
   "api_commit": "unknown",
   "api_url": "http://127.0.0.1:3211",
   "operating_date": "2026-10-26",
@@ -80,7 +80,7 @@
       "name": "contention_7s_waited_beyond_old_default",
       "ok": true,
       "detail": {
-        "wait_observed_ms": 6765,
+        "wait_observed_ms": 6829,
         "note": "con el default de 5s esto era 500 P2028"
       }
     },
@@ -126,14 +126,14 @@
       "name": "control_latency_under_contention_budget",
       "ok": true,
       "detail": {
-        "latency_ms": 82
+        "latency_ms": 75
       }
     },
     {
       "name": "control_visible_in_monitor_get",
       "ok": true,
       "detail": {
-        "total": 139
+        "total": 141
       }
     },
     {
@@ -178,16 +178,16 @@
   ],
   "fixture": {
     "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
-    "admin_user_id": 697,
-    "admin_email": "qa.p28.admin.20261026140924@scj.test",
+    "admin_user_id": 698,
+    "admin_email": "qa.p28.admin.20261026141622@scj.test",
     "admin_role": "APEX_ADMIN",
     "operating_date": "2026-10-26",
     "persons": {
-      "survive": "qa.p28.survive.20261026140924@scj.test",
-      "busy": "qa.p28.busy.20261026140924@scj.test",
-      "control": "qa.p28.control.20261026140924@scj.test",
-      "serial": "qa.p28.serial.20261026140924@scj.test",
-      "bulk": "qa.p28.bulk.20261026140924@scj.test"
+      "survive": "qa.p28.survive.20261026141622@scj.test",
+      "busy": "qa.p28.busy.20261026141622@scj.test",
+      "control": "qa.p28.control.20261026141622@scj.test",
+      "serial": "qa.p28.serial.20261026141622@scj.test",
+      "bulk": "qa.p28.bulk.20261026141622@scj.test"
     },
     "lock_wait_ms": 25000
   },
@@ -195,13 +195,13 @@
     "contencion_7s": {
       "status": 200,
       "code": null,
-      "latency_ms": 6764,
-      "wait_observed_ms": 6765
+      "latency_ms": 6828,
+      "wait_observed_ms": 6829
     },
     "contencion_26s": {
       "status": 503,
       "code": "ROUTE_ASSIGNMENT_BUSY",
-      "latency_ms": 25282
+      "latency_ms": 25167
     },
     "serializacion": {
       "statuses": [
@@ -216,7 +216,7 @@
     "bulk": {
       "status": 200,
       "created": 2,
-      "latency_ms": 6671
+      "latency_ms": 6735
     }
   },
   "status": "passed",
@@ -237,7 +237,7 @@
       "status": 200,
       "code": null,
       "ok": true,
-      "latency_ms": 462,
+      "latency_ms": 255,
       "transport_error": null,
       "error": null
     },
@@ -249,7 +249,7 @@
       "status": 200,
       "code": null,
       "ok": true,
-      "latency_ms": 1013,
+      "latency_ms": 451,
       "transport_error": null,
       "error": null
     },
@@ -261,7 +261,7 @@
       "status": 200,
       "code": null,
       "ok": true,
-      "latency_ms": 6764,
+      "latency_ms": 6828,
       "transport_error": null,
       "error": null
     },
@@ -273,7 +273,7 @@
       "status": 503,
       "code": "ROUTE_ASSIGNMENT_BUSY",
       "ok": false,
-      "latency_ms": 25282,
+      "latency_ms": 25167,
       "transport_error": null,
       "error": "Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos."
     },
@@ -285,7 +285,7 @@
       "status": 200,
       "code": null,
       "ok": true,
-      "latency_ms": 82,
+      "latency_ms": 75,
       "transport_error": null,
       "error": null
     },
@@ -297,7 +297,7 @@
       "status": 200,
       "code": null,
       "ok": true,
-      "latency_ms": 73,
+      "latency_ms": 42,
       "transport_error": null,
       "error": null
     },
@@ -309,7 +309,7 @@
       "status": 200,
       "code": null,
       "ok": true,
-      "latency_ms": 93,
+      "latency_ms": 69,
       "transport_error": null,
       "error": null
     },
@@ -321,7 +321,7 @@
       "status": 409,
       "code": "MALLA_SOLAPADA",
       "ok": false,
-      "latency_ms": 306,
+      "latency_ms": 273,
       "transport_error": null,
       "error": "Ya existe una malla superpuesta para al menos una persona en la misma fecha."
     },
@@ -333,7 +333,7 @@
       "status": 200,
       "code": null,
       "ok": true,
-      "latency_ms": 6671,
+      "latency_ms": 6735,
       "transport_error": null,
       "error": null
     }

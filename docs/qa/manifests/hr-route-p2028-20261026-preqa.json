@@ -1,0 +1,88 @@
+{
+  "change_id": "hr-route-p2028-20261026",
+  "commit": "f2f6d7f52ca87b8c67f0922e2aac1953b46414d3",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": null,
+    "approved_at": null,
+    "blocking_reasons": [
+      "El responsable del proyecto no ha autorizado expresamente la promocion desarrollo -> develop de este cambio.",
+      "desarrollo esta por detras de develop en Contabilidad: la promocion exige reconstruir f2f6d7f5 y el commit de documentacion sobre el tip vigente de origin/develop y revalidar el manifiesto de alcance contra ese candidato, no contra la rama completa."
+    ],
+    "authorized_actions": {
+      "push_desarrollo": false,
+      "merge_develop": false,
+      "deploy_qa": false,
+      "promote_main": false,
+      "create_auxiliary_branch": false,
+      "run_remote_migrations": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../evidence/hr-route-p2028-20261026/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../evidence/hr-route-p2028-20261026/production-diagnosis.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../../../scripts/certifications/hr-route-p2028-local.js"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T14:16:22.351Z",
+    "head": "f2f6d7f52ca87b8c67f0922e2aac1953b46414d3",
+    "checks_total": 22,
+    "checks_passed": 22,
+    "script": "../../../scripts/certifications/hr-route-p2028-local.js",
+    "evidence": [
+      "../certifications/hr-route-p2028-20261026.md",
+      "../evidence/hr-route-p2028-20261026/local-certification.json",
+      "../evidence/hr-route-p2028-20261026/local-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T14:16:22.351Z",
+    "api_tests": 805,
+    "api_failures": 0,
+    "web_tests": 567,
+    "web_failures": 0,
+    "hr_suite_tests": 154,
+    "hr_suite_failures": 0,
+    "script": "../../../scripts/certifications/release-local-regression.cjs",
+    "evidence": [
+      "../certifications/hr-route-p2028-20261026.md"
+    ]
+  }
+}
