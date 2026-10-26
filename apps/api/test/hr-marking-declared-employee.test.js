@@ -88,7 +88,9 @@ function buildTx({ employees, capture }) {
     $executeRaw: async (strings, ...values) => {
       capture.raw.push({ sql: strings.join("?"), values });
     },
-    $queryRaw: async () => []
+    // El try-lock de la marcacion responde un booleano; sin esto el fake creeria que el
+    // alcance esta ocupado y la prueba moriria con 503 en lugar de marcar.
+    $queryRaw: async (strings) => (String(strings?.join ? strings.join("") : strings).includes("pg_try_advisory_xact_lock") ? [{ acquired: true }] : [])
   };
 }
 

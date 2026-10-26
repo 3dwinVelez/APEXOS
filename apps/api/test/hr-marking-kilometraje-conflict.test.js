@@ -78,6 +78,9 @@ function buildTx({ capturedSql, capturedValues = [], failKilometraje = false, ac
       capturedSql.push(sql);
       capturedValues.push(values);
       runRaw(sql);
+      // El try-lock responde un booleano: sin esto el reintento creeria que el renglon sigue
+      // ocupado y la salida moriria con 503 en lugar de escribir el kilometraje.
+      if (/pg_try_advisory_xact_lock/i.test(sql)) return [{ acquired: true }];
       if (/FROM th_jornada_kilometrajes/i.test(sql)) return activeMileageRow ? [activeMileageRow] : [];
       return [];
     },
@@ -119,7 +122,7 @@ test("FM-01: la salida vehicular sin renglon activo inserta kilometraje sin depe
     assert.equal(result.ok, true, "la salida vehicular debe cerrarse sin error");
     const joined = capturedSql.join("\n");
     const joinedValues = capturedValues.flat().map(String).join("\n");
-    assert.match(joined, /pg_advisory_xact_lock/, "debe serializar el renglon activo de kilometraje con lock");
+    assert.match(joined, /pg_try_advisory_xact_lock/, "debe serializar el renglon activo de kilometraje con lock acotado");
     assert.match(joinedValues, /^tenant-qa:kilometraje:\d+:\d+$/m, "el lock debe usar el alcance estable del renglon de kilometraje");
     assert.match(joined, /SELECT id FROM th_jornada_kilometrajes[\s\S]*active = true/, "debe buscar el renglon activo antes de escribir");
     assert.match(joined, /INSERT INTO th_jornada_kilometrajes/, "sin renglon activo debe insertar");
@@ -174,7 +177,8 @@ test("FM-01: el servicio resuelve kilometraje sin ON CONFLICT y sin tragar error
   const start = service.indexOf("if (dayMileage != null)");
   assert.ok(start >= 0, "debe existir el bloque de kilometraje del dia");
   const block = service.slice(start, start + 2200);
-  assert.match(block, /pg_advisory_xact_lock/);
+  assert.match(block, /await acquireBoundedScopeLocks\(tx, \[mileageLockScope\]/, "el renglon se serializa con el lock acotado compartido");
+  assert.match(block, /code: "MARCACION_CONCURRENCIA_TEMPORAL"/, "si el renglon esta ocupado, la salida rinde un 503 que el dispositivo reintenta");
   assert.match(block, /SELECT id FROM th_jornada_kilometrajes/);
   assert.match(block, /UPDATE th_jornada_kilometrajes/);
   assert.match(block, /INSERT INTO th_jornada_kilometrajes/);

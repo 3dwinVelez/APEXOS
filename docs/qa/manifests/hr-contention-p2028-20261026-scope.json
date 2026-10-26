@@ -1,0 +1,172 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-contention-p2028-20261026",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "732751132245b3b079567bbcd8e4f3259f835c1b",
+  "base_commit": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5",
+  "base_commits": [
+    "develop"
+  ],
+  "change_intent": {
+    "summary": "Cerrar en marcacion, kilometraje de jornada y ajuste de nomina el mismo defecto P2028 ya corregido en mallas: el advisory lock bloqueante moria contra el presupuesto de la transaccion y el operario recibia un 500 'Backend no disponible'. Se sustituye por un try-lock acotado con deadline compartido que rinde un 503 con codigo reintentable, se declara presupuesto explicito en el ajuste de nomina, el manejador global mapea todo 503 con codigo, la lista web de codigos reintentables queda alineada y se versiona el arnes de certificacion local con su evidencia.",
+    "modules": [
+      "hr",
+      "web-api-client",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-deferred-marking-offline.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-concurrency.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-declared-employee.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-kilometraje-conflict.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-adjustment-lock.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-contention-write-feedback.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-feedback.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-contention-p2028-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-contention-p2028-20261026.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-contention-p2028-20261026/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-contention-p2028-20261026/local-fixture.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-contention-p2028-20261026/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-contention-p2028-20261026-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-contention-p2028-20261026-scope.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/",
+    "apps/api/server.js",
+    "apps/api/test/",
+    "apps/web/lib/api.ts",
+    "apps/web/test/",
+    "docs/qa/certifications/",
+    "docs/qa/evidence/hr-contention-p2028-20261026/",
+    "docs/qa/manifests/",
+    "package.json",
+    "scripts/certifications/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Marcacion del operario (entrada/almuerzo/salida) y marcacion administrativa por empleado declarado, incluso bajo concurrencia sobre la misma persona y fecha",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Kilometraje de jornada en la salida con placa: la escritura y su renglon viven o mueren juntos",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Ajuste de nomina (novedad IBC) por su ruta real /api/v1/talento-humano/nomina/ajustes, visible en el listado que consume la pantalla",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Serializacion sin duplicados: dos escrituras concurrentes al mismo alcance dejan exactamente una marcacion y un renglon de kilometraje activo",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Mensaje amable del operario: los tres codigos de concurrencia se muestran como reintento con request_id y nunca como caida del backend; la cola offline de marcacion sigue tratando el 5xx como recuperable",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "RBAC y aislamiento multi-tenant de las tres escrituras certificadas (alcance del lock calculado por tenant)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Regresion completa de plataforma sin degradacion en otros modulos (API 810/810 y Web 580/580, cero omitidas)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../evidence/hr-contention-p2028-20261026/platform-regression.json"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto medido sobre la candidata reconstruida: git diff --name-status origin/develop..HEAD da 18 rutas, cero eliminaciones y accounting intacto (faltan: [], sobran: []). Son las 12 rutas del commit funcional 73275113 mas las 6 de certificacion y manifiestos.",
+    "reconstruction_required": "La promocion NO toma el tip de desarrollo como base de develop. Medido con git diff --name-status origin/develop..a442855e, la rama entera arrastra 35 rutas con 5 eliminaciones ajenas: 4 del modulo accounting del cambio accounting-reversal-budget-import-20261024 y docs/qa/evidence/hr-route-p2028-20261026/platform-regression.json. Esta candidata es el cherry-pick puntual de dae326af, 6dca9438, 930955ea y a442855e sobre 89e87b79, aplicado sin conflictos porque las 12 rutas funcionales son identicas entre la base de desarrollo y el tip de develop.",
+    "candidate_paths": {
+      "candidata_aplicada": "aux/promo-hr-contention-develop-20261026 sobre 89e87b79: 73275113 (funcional), d92be0fa (arnes y evidencia), 3ce6ca4b (certificacion y manifiestos) y 0aa9fc25 (medicion de la candidata). El commit posterior fija la evidencia y la firma pre-QA producidas en este propio checkout. Diff neto contra origin/develop: 18 rutas exactas.",
+      "merge_de_desarrollo_descartado": "Simulado sin tocar el repositorio con git merge-tree --write-tree origin/develop a442855e (arbol cfb7b003): 24 rutas y cero eliminaciones, pero 6 ajenas a este change y todas documentacion/evidencia del cambio previo hr-route-p2028-20261026, cuya version en develop es posterior. Fusionar la rama las sobreescribiria."
+    },
+    "out_of_scope_debt": "Hallazgo registrado y NO corregido: POST /api/v1/hr/payroll/adjustments y POST /api/v1/talento-humano/nomina/ajustes no llevan preHandler de permiso, y el RBAC compara el modulo literalmente; cualquier usuario autenticado del tenant puede crear ajustes de IBC. Mezclar un cambio de autorizacion en un fix de concurrencia violaria este inventario, asi que queda como deuda con decision pendiente del responsable.",
+    "remote_migrations": "No se aplicaron migraciones a QA ni PROD; la politica exige autorizacion independiente. Este cambio no requiere migracion alguna.",
+    "harness_and_limpieza": "scripts/certifications/hr-contention-p2028-local.js lleva el parche de limpieza del empleado espejo (QA-CNT-U...) que el alta del usuario administrador crea. No toca codigo de producto. El cliente Prisma convierte el borrado de Employee en desactivacion, asi que en la base de certificacion (clon desechable) quedan filas inactivas; las tablas de negocio verificaron 0 filas y en la base local compartida se eliminaron fisicamente los residuos de las corridas exploratorias.",
+    "recertificacion_en_el_candidato": "La evidencia de esta rama se volvio a producir sobre el propio checkout del candidato contra una base PostgreSQL aislada nueva (apexos_cert_cont2, 186 tablas): arnes 52/52 (corrida 20261026181509, terminada 2026-10-26T18:16:38.302Z, api_commit 0aa9fc25, mirror_employee_removed true, errores de limpieza []) y regresion de plataforma con release-local-regression.cjs en 875/875 API y 589/589 Web, cero fallidas y cero omitidas, con el evidence.json clavado en el mismo HEAD."
+  }
+}

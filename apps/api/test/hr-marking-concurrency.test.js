@@ -117,7 +117,7 @@ test("los endpoints self rechazan un horario alterno distinto al activo del dia"
 test("createPunch usa lock por empleado, idempotencia y opciones de transaccion resistentes", async () => {
   const current = employee();
   let transactionOptions;
-  let lockCalls = 0;
+  const lockScopes = [];
   let createdData;
   const tx = {
     employee: { findFirst: async () => current },
@@ -133,7 +133,17 @@ test("createPunch usa lock por empleado, idempotencia y opciones de transaccion 
     },
     gpsPing: { create: async () => ({}) },
     workSession: { findFirst: async () => null, create: async () => ({}), update: async () => ({}) },
-    $executeRaw: async () => { lockCalls += 1; }
+    $queryRaw: async (strings, ...values) => {
+      const sql = String(strings?.join ? strings.join("") : strings);
+      // El lock se pide con try-lock: si la prueba no devuelve el booleano, el reintento
+      // creeria que nunca adquirio el candado y la marcacion moriria con 503.
+      if (sql.includes("pg_try_advisory_xact_lock")) {
+        lockScopes.push(String(values[0]));
+        return [{ acquired: true }];
+      }
+      return [];
+    },
+    $executeRaw: async () => 0
   };
   const fakePrisma = {
     runWithTenant: (_tenantId, callback) => callback(),
@@ -154,13 +164,76 @@ test("createPunch usa lock por empleado, idempotencia y opciones de transaccion 
       idempotency_key: "qa-idempotency-0001"
     }, { id: 7, email: current.user.email });
     assert.equal(result.ok, true);
-    assert.equal(lockCalls, 1);
+    assert.equal(lockScopes.length, 1, "la marcacion serializa su propio alcance de dia");
+    assert.match(lockScopes[0], /^tenant-qa:41:12:/, "el alcance sigue siendo tenant, empleado, ruta y dia");
     assert.equal(createdData.idempotency_key, "qa-idempotency-0001");
     assert.deepEqual(transactionOptions, { maxWait: 10000, timeout: 20000 });
   } finally {
     loaded.restore();
   }
 });
+
+test("fix concurrencia: la marcacion espera el lock con deadline y rinde un 503 controlado", async () => {
+  const current = employee();
+  let attempts = 0;
+  const tx = {
+    employee: { findFirst: async () => current },
+    timeRoute: { findFirst: async () => ({ id: 12, tenant_id: "tenant-qa", employees: [current.code], vehicle_plate: "", end_time: "23:59", tolerance_minutes: 15 }) },
+    routePreoperationalChecklist: { findFirst: async () => null },
+    timePunch: { findFirst: async () => null, findMany: async () => [], create: async ({ data }) => ({ id: 91, ...data }) },
+    gpsPing: { create: async () => ({}) },
+    workSession: { findFirst: async () => null, create: async () => ({}), update: async () => ({}) },
+    $queryRaw: async (strings) => {
+      const sql = String(strings?.join ? strings.join("") : strings);
+      if (sql.includes("pg_try_advisory_xact_lock")) {
+        attempts += 1;
+        return [{ acquired: false }];
+      }
+      return [];
+    },
+    $executeRaw: async () => 0
+  };
+  const fakePrisma = {
+    runWithTenant: (_tenantId, callback) => callback(),
+    $transaction: async (callback) => callback(tx),
+    timePunch: { findFirst: async () => null }
+  };
+  const loaded = loadHrService(fakePrisma);
+  try {
+    loaded.service.__setContentionLockWaitMsForTests(120);
+    const started = Date.now();
+    await assert.rejects(
+      loaded.service.createPunch("tenant-qa", {
+        employee_id: current.id,
+        user_name: current.code,
+        route_id: 12,
+        type: "entrada",
+        punched_at: new Date().toISOString()
+      }, { id: 7, email: current.user.email }),
+      (error) => error.statusCode === 503 && error.code === "MARCACION_CONCURRENCIA_TEMPORAL",
+      "el candado ocupado debe rendirse con 503 del propio servicio, no con P2028"
+    );
+    assert.ok(Date.now() - started < 5_000, "la operacion queda acotada por el deadline compartido");
+    assert.ok(attempts > 1, "el lock se reintenta hasta el deadline");
+  } finally {
+    loaded.service.__setContentionLockWaitMsForTests(0);
+    loaded.restore();
+  }
+});
+
+test("fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante", () => {
+  const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/hr/service.js"), "utf8");
+  assert.doesNotMatch(
+    service,
+    /pg_advisory_xact_lock/,
+    "un lock bloqueante no puede avisar al operario: espera hasta que Prisma aborta y el error sale como 500"
+  );
+  assert.equal((service.match(/await acquireBoundedScopeLocks\(/g) || []).length, 4, "mallas, marcacion, kilometraje y ajuste de nomina");
+  const helper = service.slice(service.indexOf("async function acquireBoundedScopeLocks"));
+  assert.match(helper, /pg_try_advisory_xact_lock/);
+  assert.match(helper, /if \(Date\.now\(\) >= deadlineAt\) throw validationError\(message, 503, code\)/);
+});
+
 
 test("el contrato versiona idempotencia y evita reintentar validaciones permanentes", () => {
   const schema = fs.readFileSync(path.resolve(__dirname, "../prisma/schema.prisma"), "utf8");
