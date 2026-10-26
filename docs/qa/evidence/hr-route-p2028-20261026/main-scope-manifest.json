@@ -1,0 +1,112 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-route-p2028-20261026",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "tmp/hrp2028-main",
+  "certified_commit": "5e54729703b0074b3ea1ef786735b67117b755fe",
+  "base_commit": "432f65aae7df42efab08e77df477ac4bbd501a9f",
+  "base_commits": {
+    "main": "432f65aae7df42efab08e77df477ac4bbd501a9f"
+  },
+  "change_intent": {
+    "summary": "Correccion puntual de produccion para el 500 P2028 que impidio a adminsjc@apexos.local guardar horarios en la tenant SCJ: presupuesto explicito de transaccion en las tres escrituras de mallas, advisory lock de asignacion acotado que responde 503 ROUTE_ASSIGNMENT_BUSY controlado en vez de 500, y propagacion de ese codigo en el manejador global de errores. En el cliente, el fallo deja de presentarse como caida del backend: mensaje en lenguaje de operario que distingue leer de guardar y afirma que el trabajo no se perdio, reintento acotado del 503 dentro del modal, aviso visible dentro de la ventana y captura tecnica intacta en platform-logs. Incluye el arnes de certificacion local, su evidencia, el diagnostico de produccion y los manifiestos de esta promocion.",
+    "modules": [
+      "hr",
+      "web-client",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/server.js" },
+    { "status": "M", "file": "apps/api/src/modules/hr/service.js" },
+    { "status": "M", "file": "apps/api/test/hr-route-assignment-lock.test.js" },
+    { "status": "M", "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "M", "file": "apps/web/test/api-error-classification.test.mjs" },
+    { "status": "A", "file": "apps/web/test/hr-route-write-feedback.test.mjs" },
+    { "status": "A", "file": "docs/qa/certifications/hr-route-p2028-20261026.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-p2028-20261026/local-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-p2028-20261026/local-fixture.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-p2028-20261026/platform-regression.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-p2028-20261026/production-diagnosis.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-p2028-20261026/main-scope-manifest.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-route-p2028-20261026/qa-approval-evidence.json" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/hr-route-p2028-local.js" }
+  ],
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/modules/hr/",
+    "apps/api/test/",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/test/",
+    "docs/qa/certifications/",
+    "docs/qa/evidence/",
+    "package.json",
+    "scripts/certifications/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Crear y editar horarios (mallas) por el administrador de Talento Humano, incluso bajo concurrencia sobre la misma persona y fecha",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "Serializacion MALLA_SOLAPADA: dos escrituras concurrentes al mismo scope dejan exactamente una malla",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "Lectura del monitor de mallas (GET /api/v1/hr/routes) y creacion masiva por rango de fechas",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "local-fixture.json"
+      ]
+    },
+    {
+      "name": "RBAC hr:write y aislamiento multi-tenant en las escrituras certificadas",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Contrato FM-02 del cliente: todo error de API expone status, code y retryable a la cola offline y al panel de reintentos",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "platform-regression.json"
+      ]
+    },
+    {
+      "name": "Regresion completa de plataforma sin degradacion en otros modulos frente al baseline productivo",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "platform-regression.json"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto medido con `git diff --name-status origin/main tmp/hrp2028-main` sobre el candidato reconstruido por cherry-pick puntual de f2f6d7f5 + fffd12a1 + 8f2944b3 + 38ae2244 + 1278d318 sobre el baseline productivo 432f65aa, mas los dos manifiestos de esta promocion. Las 16 rutas son A o M; cero eliminaciones.",
+    "why_reconstructed": "main esta 619 rutas por detras de develop. Fusionar develop entero para llevar esta correccion habria promovido a produccion el tarifario de Transporte, gastos menores, sedes y el rediseño del tarifario, junto con migraciones de nube sin aplicar: exactamente lo que la politica prohibe para una correccion puntual. El candidato se reconstruyo sobre el tip vigente de origin/main, sin tomar un arbol viejo como baseline.",
+    "candidate_paths": {
+      "reconstruccion_puntual_aplicada": "tmp/hrp2028-main: e97e42ee (servidor), 3bf58b9d (cliente), b7358e03 (alcance del arnes en main), 5e547297 (helper generico del reintento). El tip final agrega evidencia y manifiestos de la corrida propia.",
+      "merge_de_desarrollo_o_develop_descartado": "Cualquier merge de rama completa arrastraria modulos ajenos al cambio; el diff neto se compare contra este inventario exacto y lo bloquearia."
+    },
+    "recertificacion_en_el_candidato": "La evidencia se volvio a producir sobre el propio checkout del candidato: arnes 24/24 (local-certification.json, corrida 2026-10-26T15:38:52.232Z) y replica del corredor de regresion con 0 fallas nuevas contra el baseline 432f65aa (platform-regression.json).",
+    "main_scope_debt": "La prueba de descanso con jornada de tipo `kind` y el corredor versionado release-local-regression.cjs no existen en main; el arnes del candidato se limito a las reglas que la rama tiene (commit b7358e03) y la regresion se midio con una replica del mismo comando sobre el candidato y sobre un worktree limpio de origin/main.",
+    "remote_migrations": "No se aplicaron migraciones a PROD; la politica exige autorizacion independiente y este cambio no requiere migracion alguna."
+  }
+}

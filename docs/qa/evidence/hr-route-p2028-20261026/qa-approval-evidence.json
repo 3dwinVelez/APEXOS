@@ -1,0 +1,78 @@
+{
+  "change_id": "hr-route-p2028-20261026",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "5e54729703b0074b3ea1ef786735b67117b755fe",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["local-certification.json", "../certifications/hr-route-p2028-20261026.md"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["local-certification.json", "production-diagnosis.md", "../certifications/hr-route-p2028-20261026.md"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["local-certification.json", "local-fixture.json"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": ["platform-regression.json", "../certifications/hr-route-p2028-20261026.md"]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": ["platform-regression.json", "../certifications/hr-route-p2028-20261026.md"]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-route-p2028-local.js",
+    "evidence": ["local-certification.json", "../certifications/hr-route-p2028-20261026.md"],
+    "command": "npm run qa:hr-route:p2028 -- --port=3211 --tenant=<demo> --employee=<demo> --date=<dia siguiente habil>",
+    "run_at": "2026-10-26T15:38:52.232Z",
+    "result": "24/24 chequeos pasados sobre el candidato 5e547297 con API Fastify real y PostgreSQL real (127.0.0.1:55432, base apexos_cert_p2028)"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-route-p2028-local.js",
+    "evidence": ["platform-regression.json", "local-certification.json", "../certifications/hr-route-p2028-20261026.md"],
+    "transversal_command": "node --test --test-concurrency=2 apps/api/test y apps/web/test con NODE_ENV=test, DISABLE_REDIS, REDIS_DISABLED, DISABLE_BACKGROUND_WORKERS y base apexos_cert_p2028",
+    "transversal_note": "release-local-regression.cjs no existe en el arbol de main, asi que se ejecuto esa replica con el mismo comando, flags y entorno dos veces: sobre el candidato 5e547297 y sobre un worktree limpio de origin/main (432f65aa). Resultado: API 419 pruebas (+3) con las mismas 2 fallas del baseline; web 380 pruebas (+8) con la misma 1 falla del baseline; 0 fallas nuevas. Las 3 fallas preexistentes son de ERP y Transporte, ajenas a Talento Humano, y sus archivos no aparecen en git diff --name-only origin/main HEAD. Typecheck del cliente: 0 errores.",
+    "hr_suite_command": "node --test apps/api/test/hr-*.test.js",
+    "hr_suite_result": "100/100 en el candidato (la prueba de descanso por tipo de jornada se excluyo porque depende del campo kind, inexistente en main; ver commit b7358e03)"
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/hr-route-p2028-local.js",
+    "evidence": ["local-certification.json", "local-fixture.json", "production-diagnosis.md", "../certifications/hr-route-p2028-20261026.md"],
+    "basis": "La novedad se diagnostico primero contra la empresa modelo: nyvora no reproduce el 500 porque no tiene dos ediciones simultaneas sobre la misma persona y fecha, y porque el codigo de lectura/escritura de mallas es identico entre main y desarrollo. Por eso la certificacion no se apoyo en nyvora sola sino en el arnes en vivo que fuerza la contingencia: el mismo flujo HTTP que el operario usa (POST /api/v1/hr/routes y /bulk) contra Postgres real con el advisory lock del scope ya tomado. Bloque B: con contencion de 7 s el POST responde 200 y persiste la malla (antes moria con P2028/500). Bloque C: con 26 s responde 503 ROUTE_ASSIGNMENT_BUSY a los 25214 ms con request_id y mensaje accionable, sin dejar escritura a medias. Bloque D: horario valido creado y visible en GET, persistido en TimeRoute. Bloque E: dos POST concurrentes al mismo scope dejan 200 + 409 MALLA_SOLAPADA con exactamente una malla. Bloque F: bulk con ambos locks tomados 7 s crea las 2 rutas del rango. El aislamiento multi-tenant se ejerce con runWithTenant y RLS en cada lectura y escritura del arnes."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "432f65aae7df42efab08e77df477ac4bbd501a9f",
+    "trigger": "cualquier falla al crear o editar mallas horarias en produccion tras la promocion (500 sin codigo, 503 ROUTE_ASSIGNMENT_BUSY permanente, malla duplicada o perdida), escritura a medias en TimeRoute, regresion del contrato FM-02 en el cliente, o cualquier falla nueva en las suites API/web medida contra 432f65aa"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_for_hr_route_p2028_contention_and_friendly_error",
+    "approved_by": "Edwin (lead APEXOS). Autorizacion expresa: 'procede con la intervencion que reqieres y migrala hacia todos los ambiente como una correcion puntual, usa una rama auxiliar si lo requieres para no contaminar otros cambios o funciones, al terminar de usarla elimina la rama temportal, en cuanto a los errores en pantalla corrijo no es ocultarle al cliente es mostrarlo de una manera mas amigable y entendible ... y no alarmar el cliente'",
+    "approved_at": "2026-10-26T15:52:00Z",
+    "authorization_basis": "El cambio atiende una incidencia productiva activa (adminsjc@apexos.local no puede guardar horarios desde 2026-10-26 01:25 UTC) y el lead autorizo recorrer desarrollo, develop y main como correccion puntual. La aprobacion funcional la otorga el lead sobre la certificacion local en vivo 24/24 del candidato, que ejercita el flujo completo por HTTP contra PostgreSQL real incluyendo los dos escenarios de contingencia; la verificacion en el ambiente QA de Railway queda pendiente de acceso y esta declarada mas abajo.",
+    "not_certified_by_this_gate": [
+      "Navegacion en navegador del modal con el reintento del 503: no se levanto el par API + next dev en esta intervencion (8 GB de RAM local y el servidor de desarrollo se autocierra). Hay evidencia de contrato de codigo, de typecheck en 0 errores y de HTTP real, pero no de pantalla.",
+      "Verificacion en el ambiente QA/PROD de Railway: sin acceso, queda programada despues del despliegue.",
+      "Reintegro del horario perdido por el cliente SJ C el 2026-10-26: la escritura nunca quedo a medias, pero el horario se debe capturar de nuevo con el operario.",
+      "Las otras tres escrituras con lock bloqueante en apps/api/src/modules/hr/service.js (marcacion y kilometraje) siguen usando pg_advisory_xact_lock sin deadline; quedan como seguimiento.",
+      "next build sigue bloqueado por las rutas tipadas en las tres ramas: condicion previa de main que este cambio no introduce ni resuelve."
+    ]
+  },
+  "evidence_notes": {
+    "baseline_comparacion": "main no contiene el corredor versionado de regresion, por eso platform-regression.json guarda los resultados del candidato y del baseline 432f65aa con su delta (api_tests_added 3, web_tests_added 8, new_failures 0) en lugar de un absolutos 100 por ciento.",
+    "sin_migraciones": "Esta correccion no agrega ni aplica migracion; no hay cambios de esquema que verificar en PROD."
+  }
+}

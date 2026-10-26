@@ -1,0 +1,82 @@
+{
+  "change_id": "hr-route-p2028-20261026",
+  "environment": "LOCAL",
+  "head": "5e54729703b0074b3ea1ef786735b67117b755fe",
+  "baseline_main": "432f65aae7df42efab08e77df477ac4bbd501a9f",
+  "status": "passed_vs_baseline",
+  "runner": "replica exacta de scripts/certifications/release-local-regression.cjs (ese script versionado aun no existe en main): mismos flags --test --test-concurrency=2, mismo entorno NODE_ENV=test/DISABLE_REDIS/REDIS_DISABLED/DISABLE_BACKGROUND_WORKERS/COMMERCIAL_*_INTEGRATION y base de certificacion apexos_cert_p2028 sobre 127.0.0.1:55432",
+  "verdict": "El candidato no introduce ninguna falla nueva: el conjunto de pruebas que fallan es identico al del baseline 432f65aa tomado con el mismo corredor. Las 3 fallas son deuda preexistente de main, ninguna toca Talento Humano.",
+  "results": {
+    "candidate": [
+      {
+        "name": "api",
+        "tests": 419,
+        "passed": 417,
+        "failed": 2,
+        "skipped": 0,
+        "failures": [
+          "inventario ofrece lista de productos filtrable y exportable",
+          "compras ventas IVA y retenciones reutilizan el control numerico"
+        ]
+      },
+      {
+        "name": "web",
+        "tests": 380,
+        "passed": 379,
+        "failed": 1,
+        "skipped": 0,
+        "failures": [
+          "Transporte organiza el trabajo por etapas sin navegación redundante"
+        ]
+      }
+    ],
+    "baseline_origin_main": [
+      {
+        "name": "api",
+        "tests": 416,
+        "passed": 414,
+        "failed": 2,
+        "skipped": 0,
+        "failures": [
+          "inventario ofrece lista de productos filtrable y exportable",
+          "compras ventas IVA y retenciones reutilizan el control numerico"
+        ]
+      },
+      {
+        "name": "web",
+        "tests": 372,
+        "passed": 371,
+        "failed": 1,
+        "skipped": 0,
+        "failures": [
+          "Transporte organiza el trabajo por etapas sin navegación redundante"
+        ]
+      }
+    ]
+  },
+  "preexisting_failures": [
+    {
+      "name": "inventario ofrece lista de productos filtrable y exportable",
+      "suite": "api",
+      "module": "Inventario/Compras (ERP)",
+      "reason": "falla igual en 432f65aa"
+    },
+    {
+      "name": "compras ventas IVA y retenciones reutilizan el control numerico",
+      "suite": "api",
+      "module": "Inventario/Compras (ERP)",
+      "reason": "falla igual en 432f65aa"
+    },
+    {
+      "name": "Transporte organiza el trabajo por etapas sin navegación redundante",
+      "suite": "web",
+      "module": "Transporte TMS",
+      "reason": "falla igual en 432f65aa; ademas el test y su pagina estan byte a byte identicos en el candidato (git diff origin/main HEAD no los lista)"
+    }
+  ],
+  "delta": {
+    "api_tests_added": 3,
+    "web_tests_added": 8,
+    "new_failures": 0
+  }
+}
