@@ -1,0 +1,89 @@
+{
+  "change_id": "main-tenant-context-als-20261026",
+  "environment": "LOCAL",
+  "branch_variant": "main",
+  "captured_at": "2026-10-26T22:35:00.000Z",
+  "defect": {
+    "summary": "En main, prisma.runWithTenant(<tenant>, fn) invocaba el callback con tenantStorage.run(store, fn). Cuando fn devuelve una promesa de forma sincrona (la forma mas usada en el arbol), AsyncLocalStorage sale del contexto en cuanto fn retorna, antes de que el middleware de inyeccion de tenant ($use) se ejecute en el microtask de Prisma. El resultado es que el middleware no ve el tenant y no inyecta ni el filtro en las lecturas ni el valor en las escrituras.",
+    "line_before": "if (property === \"runWithTenant\") return (tenantId, fn) => tenantStorage.run({ tenantId: normalizeTenantId(tenantId) }, fn);",
+    "line_after": "if (property === \"runWithTenant\") return (tenantId, fn) => tenantStorage.run({ tenantId: normalizeTenantId(tenantId) }, async () => await fn());",
+    "file": "apps/api/src/core/prisma.js:161"
+  },
+  "exposure_measured_on_main": {
+    "command_grep": "grep -rhoE \"runWithTenant\\([^,]+, *\\(\\) =>\" --include=*.js apps/api/src apps/api/server.js",
+    "call_sites_first_argument_form": 389,
+    "async_callback_sites": 281,
+    "sync_arrow_callback_sites": 103,
+    "note": "Los 103 sitios con callback sincrono son los que pierden el contexto: incluyen lecturas (findMany/findFirst) y escrituras. No es un detalle de estilo."
+  },
+  "rls_does_not_backstop_the_leak": {
+    "why_measured": "Para verificar si una politica de Row Level Security en Postgres cubria el contexto perdido.",
+    "query": "SELECT relname, relrowsecurity, relforcerowsecurity, (SELECT count(*) FROM pg_policy p WHERE p.polrelid=c.oid) FROM pg_class WHERE relname IN ('Employee','TimePunch','Tenant','AuditLog')",
+    "result": [
+      { "table": "AuditLog", "row_security": false, "force_row_security": false, "policies": 0 },
+      { "table": "Employee", "row_security": false, "force_row_security": false, "policies": 0 },
+      { "table": "Tenant", "row_security": false, "force_row_security": false, "policies": 0 },
+      { "table": "TimePunch", "row_security": false, "force_row_security": false, "policies": 0 }
+    ],
+    "migrations_search": "grep -rlE \"ROW LEVEL SECURITY|CREATE POLICY\" apps/api/prisma/migrations no devuelve archivos: el esquema versionado no declara RLS.",
+    "conclusion": "El middleware de Prisma es el unico filtro de tenant de las lecturas y el unico que fija data.tenant_id en las escrituras. Sin el contexto, una lectura con callback sincrono queda sin filtro entre empresas y una escritura depende de que el llamador haya declarado el tenant a mano."
+  },
+  "probe_1_contract_unitario": {
+    "script": "apps/api/test/core-tenant-context-propagation.test.js",
+    "command": "cd apps/api && NODE_ENV=test node --test test/core-tenant-context-propagation.test.js",
+    "needs_database": false,
+    "baseline_main_3ebe71f7": {
+      "tests": 4,
+      "pass": 2,
+      "fail": 2,
+      "failures": [
+        "runWithTenant propaga el tenant aunque el callback sea una funcion sincrona",
+        "el nucleo envuelve el callback del tenant en una funcion asincrona"
+      ],
+      "observed": "AssertionError: expected '7001', actual undefined: el middleware recibio params.args.data sin tenant_id"
+    },
+    "candidate_37768056": { "tests": 4, "pass": 4, "fail": 0, "repeated_after_harness_commit": true, "first_log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\als-candidate.log" }
+  },
+  "probe_2_harness_sin_atajo": {
+    "what_it_proves": "El arnes de contencion de main sembraba sus empleados y su malla declarando tenant_id a mano (workaround del commit 150a2248). Se levanto ese workaround en las dos escrituras de callback sincrono y se corro el mismo arnes, con la misma base y los mismos flags, contra el baseline y contra el candidato. Es la prueba en vivo del flujo completo: API Fastify real, HTTP real y PostgreSQL real.",
+    "modified_sites": [
+      "scripts/certifications/hr-contention-p2028-local.js:335 employee.create con callback sincrono",
+      "scripts/certifications/hr-contention-p2028-local.js:348 timeRoute.create con callback sincrono"
+    ],
+    "baseline_main_3ebe71f7": {
+      "outcome": "BLOQUEADA",
+      "checks_evaluated": "10/10 (los chequeos estaticos de codigo), aborta en el sembrado de datos",
+      "prisma_error": "Invalid `prisma.employee.create()` invocation in .../hr-contention-p2028-local.js:335:84 -> Argument `tenant_id` is missing.",
+      "api_state_before_abort": "Fastify real en 127.0.0.1:3212 con health OK y POST /api/v1/auth/login respondiendo 200",
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\probe-baseline.log"
+    },
+    "candidate_tip_37768056": {
+      "outcome": "APROBADA",
+      "checks": "42/42",
+      "run_id": "20261026223926",
+      "api_commit": "377680560db46688bc245ed36dacb359c0aa17eb",
+      "employees_seeded_without_declaring_tenant": { "punch": 636, "kilometraje": 637, "carrera": 638 },
+      "route_id": 373,
+      "tenant_id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
+      "cleanup": { "errors": [], "mirror_employee_removed": true },
+      "evidence_files": ["harness-no-workaround.json", "harness-no-workaround-fixture.json"],
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\probe-final.log"
+    },
+    "tenant_injection_verified_in_database": {
+      "query": "SELECT id, tenant_id, code FROM \"Employee\" WHERE id IN (636,637,638)",
+      "result": [
+        { "id": 636, "tenant_id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd", "code": "QA-CNT-PCH26223926" },
+        { "id": 637, "tenant_id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd", "code": "QA-CNT-KM26223926" },
+        { "id": 638, "tenant_id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd", "code": "QA-CNT-RAR26223926" }
+      ],
+      "conclusion": "Las tres filas quedaron en el tenant correcto sin que el llamador lo declarara: el middleware lo inyecto.",
+      "time_route": "El timeRoute sembrado por el mismo patron (callback sincrono, id 373 devuelto y usado por los bloques de kilometraje) quedo fisicamente purgado al terminar la corrida: SELECT ... WHERE id=373 no devuelve filas y th_jornada_kilometrajes queda en 0 filas para ese tenant. Su prueba de inyeccion es indirecta pero dura: la malla existio con el tenant del run y sobre ella se certifico el renglon de 42.5 km sin duplicados."
+    }
+  },
+  "probe_3_compatibilidad_de_retorno": {
+    "risk": "tenantStorage.run(store, async () => await fn()) siempre devuelve una promesa; la forma antigua devolvia el valor de fn tal cual. Un llamador que consumiera el resultado de forma sincrona se romperia.",
+    "method": "grep de los 389 sitios de runWithTenant en apps/api/src y server.js buscando asignaciones o consumos sin await, y revision de los wrappers (read/write de settlement-service, engine de workflows, fabric/platformLogs).",
+    "finding": "No existe ningun sitio `= prisma.runWithTenant(...)` sin await. Todos los callbacks devuelven una promesa de Prisma o una $transaction, incluido el `.then(packageView)` de apps/api/src/modules/transport/settlement-service.js:193. El unico cambio observable es un microtask adicional, y ninguna lectura del codigo lo consume sincronamente.",
+    "regression_evidence": "Corredor de plataforma completo sobre el arbol de main (platform-regression.json) con las mismas 3 fallas preexistentes que el baseline y cero fallas nuevas; suites de Talento Humano 102/102."
+  }
+}

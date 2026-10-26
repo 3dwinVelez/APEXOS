@@ -1,0 +1,645 @@
+{
+  "change_id": "hr-contention-p2028-20261026",
+  "certification": "hr-contention-p2028-local",
+  "environment": "LOCAL",
+  "branch_variant": "main",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-10-26T22:39:26.406Z",
+  "api_commit": "377680560db46688bc245ed36dacb359c0aa17eb",
+  "api_url": "http://127.0.0.1:3212",
+  "operating_date": "2026-10-26",
+  "scope": {
+    "defect": "Marcacion y kilometraje de jornada esperaban su advisory lock con pg_advisory_xact_lock bloqueante: al agotarse el presupuesto de la transaccion, Prisma abortaba y el operario veia 500 ERROR_INTERNO con P2028 ('Backend no disponible') sin que se le dijera que solo debia esperar unos segundos.",
+    "product_decision": "No se cambio ninguna regla de negocio ni el alcance del lock: la serializacion por empleado/dia y por ruta/kilometraje sigue siendo la misma. Solo se sustituyo el lock bloqueante por un try-lock con deadline compartido que rinde un 503 con codigo reintentable.",
+    "proven_by_live_execution": [
+      "contencion real de 18s sobre el scope de marcacion: 503 MARCACION_CONCURRENCIA_TEMPORAL con request_id, cero marcaciones escritas",
+      "lock de marcacion liberado a los 7s (el viejo default de 5s de Prisma): 200 y la marcacion queda persistida",
+      "contencion real sobre el scope de kilometraje de ruta vehicular: 503 con codigo y la salida no persiste ni marcacion ni renglon de kilometraje",
+      "kilometraje liberado: la salida guarda y el renglon activo de th_jornada_kilometrajes queda con el valor reportado",
+      "dos marcaciones concurrentes del mismo empleado/dia: 200 + 409 MARCACION_FUERA_DE_SECUENCIA con una sola marcacion persistida",
+      "ningun request del flujo certificado responde 500 ni P2028"
+    ],
+    "proven_by_code_level_assertion": [
+      "acquireBoundedScopeLocks usa pg_try_advisory_xact_lock con deadline y reintento acotado; ya no queda pg_advisory_xact_lock bloqueante en el servicio",
+      "createPunch pasa punchLockDeadlineAt al scope de marcacion y al de kilometraje, ambos con codigo MARCACION_CONCURRENCIA_TEMPORAL",
+      "server.js mapea todo 503 con codigo a fallo controlado (un codigo nuevo no cae al 500 generico)",
+      "apps/web/lib/api.ts lista los tres codigos como reintentables para el mensaje amable del operario",
+      "la tercera escritura de la ronda (ajuste de nomina IBC) NO existe en main: no esta createPayrollAdjustment ni la ruta /talento-humano/nomina/ajustes, y se comprueba en vez de suponer"
+    ],
+    "proven_by_versioned_unit_suites": [
+      "apps/api/test/hr-marking-concurrency.test.js",
+      "apps/api/test/hr-marking-kilometraje-conflict.test.js",
+      "apps/api/test/hr-deferred-marking-offline.test.js",
+      "apps/api/test/hr-marking-declared-employee.test.js",
+      "apps/web/test/hr-route-write-feedback.test.mjs",
+      "apps/web/test/hr-contention-write-feedback.test.mjs"
+    ],
+    "not_certified_in_this_branch": [
+      "la escritura de nomina (IBC) no existe en main: no hay flujo que certificar aqui. Se certifico en desarrollo y en develop, y subira a produccion junto con esa funcionalidad cuando se promueva."
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "377680560db46688bc245ed36dacb359c0aa17eb",
+        "health_commit": "unknown"
+      }
+    },
+    {
+      "name": "bounded_try_lock_helper_exists",
+      "ok": true,
+      "detail": {
+        "helper_found": true
+      }
+    },
+    {
+      "name": "no_blocking_advisory_lock_left",
+      "ok": true,
+      "detail": {
+        "blocking_occurrences": 0
+      }
+    },
+    {
+      "name": "helper_used_by_three_writes",
+      "ok": true,
+      "detail": {
+        "occurrences": 3,
+        "alcance": "mallas, marcacion y kilometraje: las tres escrituras con lock que existen en main"
+      }
+    },
+    {
+      "name": "contention_budget_declared",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "punch_scopes_share_deadline",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "payroll_adjustment_write_absent_in_main",
+      "ok": true,
+      "detail": {
+        "motivo": "main no tiene la escritura de nomina (IBC): no hay flujo que certificar ni codigo AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL que emitir"
+      }
+    },
+    {
+      "name": "busy_codes_emitted_by_main_declared",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "server_maps_any_coded_503",
+      "ok": true,
+      "detail": {
+        "generic_rule": true
+      }
+    },
+    {
+      "name": "web_lists_the_three_busy_codes",
+      "ok": true,
+      "detail": {
+        "linea": "const RETRYABLE_BUSY_CODES = [\"ROUTE_ASSIGNMENT_BUSY\", \"MARCACION_CONCURRENCIA_TEMPORAL\", \"AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL\"]"
+      }
+    },
+    {
+      "name": "fixture_employees_seeded",
+      "ok": true,
+      "detail": {
+        "ids": [
+          636,
+          637,
+          638
+        ]
+      }
+    },
+    {
+      "name": "fixture_vehicle_route_seeded",
+      "ok": true,
+      "detail": {
+        "route_id": 373,
+        "plate": "QACNT28"
+      }
+    },
+    {
+      "name": "punch_contention_returns_503",
+      "ok": true,
+      "detail": {
+        "status": 503,
+        "code": "MARCACION_CONCURRENCIA_TEMPORAL",
+        "error": "Otra marcacion se esta registrando para esta persona en este momento. Intente de nuevo en unos segundos."
+      }
+    },
+    {
+      "name": "punch_contention_busy_code",
+      "ok": true,
+      "detail": {
+        "code": "MARCACION_CONCURRENCIA_TEMPORAL"
+      }
+    },
+    {
+      "name": "punch_contention_never_500",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "punch_contention_exposes_request_id",
+      "ok": true,
+      "detail": {
+        "request_id": "req-3"
+      }
+    },
+    {
+      "name": "punch_contention_message_is_actionable",
+      "ok": true,
+      "detail": {
+        "message": "Otra marcacion se esta registrando para esta persona en este momento. Intente de nuevo en unos segundos."
+      }
+    },
+    {
+      "name": "punch_contention_gives_up_within_budget",
+      "ok": true,
+      "detail": {
+        "latency_ms": 15283,
+        "deadline_ms": 15000
+      }
+    },
+    {
+      "name": "punch_contention_nothing_persisted",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "punch_after_short_contention_succeeds",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "error": null
+      }
+    },
+    {
+      "name": "punch_waited_beyond_old_default",
+      "ok": true,
+      "detail": {
+        "wait_observed_ms": 6818,
+        "note": "con el default de 5s de Prisma esto era 500 P2028"
+      }
+    },
+    {
+      "name": "punch_persisted",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "punch_route_warmup_ok",
+      "ok": true,
+      "detail": {
+        "estados": [
+          {
+            "status": 200,
+            "code": null,
+            "error": null
+          },
+          {
+            "status": 200,
+            "code": null,
+            "error": null
+          },
+          {
+            "status": 200,
+            "code": null,
+            "error": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "mileage_contention_returns_503",
+      "ok": true,
+      "detail": {
+        "status": 503,
+        "code": "MARCACION_CONCURRENCIA_TEMPORAL",
+        "error": "Otra marcacion esta actualizando el kilometraje de esta ruta en este momento. Intente de nuevo en unos segundos."
+      }
+    },
+    {
+      "name": "mileage_contention_busy_code",
+      "ok": true,
+      "detail": {
+        "code": "MARCACION_CONCURRENCIA_TEMPORAL"
+      }
+    },
+    {
+      "name": "mileage_contention_never_500",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "mileage_contention_rolls_back_whole_transaction",
+      "ok": true,
+      "detail": {
+        "marcaciones": 3,
+        "kilometraje_activo": null
+      }
+    },
+    {
+      "name": "mileage_after_short_contention_succeeds",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "error": null
+      }
+    },
+    {
+      "name": "mileage_row_persisted",
+      "ok": true,
+      "detail": {
+        "mileage": {
+          "id": 37,
+          "value": "42.5",
+          "unit": "km",
+          "route_id": 373
+        }
+      }
+    },
+    {
+      "name": "mileage_no_duplicate_active_rows",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "concurrent_punch_one_wins_one_conflicts",
+      "ok": true,
+      "detail": {
+        "statuses": [
+          200,
+          409
+        ]
+      }
+    },
+    {
+      "name": "concurrent_punch_conflict_is_secuencia",
+      "ok": true,
+      "detail": {
+        "codes": [
+          null,
+          "MARCACION_FUERA_DE_SECUENCIA"
+        ]
+      }
+    },
+    {
+      "name": "concurrent_punch_no_duplicate_rows",
+      "ok": true,
+      "detail": {
+        "marcaciones": 1
+      }
+    },
+    {
+      "name": "no_500_during_certification",
+      "ok": true,
+      "detail": {
+        "errores": []
+      }
+    },
+    {
+      "name": "no_p2028_or_transport_failure",
+      "ok": true,
+      "detail": {
+        "errores": []
+      }
+    },
+    {
+      "name": "all_contention_failures_are_controlled_503",
+      "ok": true,
+      "detail": {
+        "cincocientos_tres": [
+          {
+            "step": "marcacion_contencion_18s",
+            "code": "MARCACION_CONCURRENCIA_TEMPORAL"
+          },
+          {
+            "step": "kilometraje_contencion_18s",
+            "code": "MARCACION_CONCURRENCIA_TEMPORAL"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unit_suite_green:api/hr-marking-concurrency.test.js",
+      "ok": true,
+      "detail": {
+        "pass": 8,
+        "fail": 0,
+        "exit": 0
+      }
+    },
+    {
+      "name": "unit_suite_green:api/hr-marking-kilometraje-conflict.test.js",
+      "ok": true,
+      "detail": {
+        "pass": 4,
+        "fail": 0,
+        "exit": 0
+      }
+    },
+    {
+      "name": "unit_suite_green:api/hr-deferred-marking-offline.test.js",
+      "ok": true,
+      "detail": {
+        "pass": 9,
+        "fail": 0,
+        "exit": 0
+      }
+    },
+    {
+      "name": "unit_suite_green:api/hr-marking-declared-employee.test.js",
+      "ok": true,
+      "detail": {
+        "pass": 6,
+        "fail": 0,
+        "exit": 0
+      }
+    },
+    {
+      "name": "unit_suite_green:web/hr-route-write-feedback.test.mjs",
+      "ok": true,
+      "detail": {
+        "pass": 9,
+        "fail": 0,
+        "exit": 0
+      }
+    },
+    {
+      "name": "unit_suite_green:web/hr-contention-write-feedback.test.mjs",
+      "ok": true,
+      "detail": {
+        "pass": 3,
+        "fail": 0,
+        "exit": 0
+      }
+    }
+  ],
+  "fixture": {
+    "tenant": {
+      "id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
+      "name": "Puebla Operaciones",
+      "modules": [
+        "m-17",
+        "m-26",
+        "m-14",
+        "m-22",
+        "m-19"
+      ]
+    },
+    "role": {
+      "id": 413,
+      "name": "QA Concurrencia Admin 20261026223926"
+    },
+    "admin_user": {
+      "id": 719,
+      "email": "qa.cnt28.admin.20261026223926@apex.test"
+    },
+    "employees": {
+      "punch": 636,
+      "kilometraje": 637,
+      "carrera": 638
+    },
+    "route": {
+      "id": 373,
+      "vehicle_plate": "QACNT28"
+    },
+    "contention_deadline_ms": 15000,
+    "hold_over_deadline_ms": 18000,
+    "hold_budgeted_ms": 7000
+  },
+  "observations": {
+    "marcacion_contencion": {
+      "status": 503,
+      "code": "MARCACION_CONCURRENCIA_TEMPORAL",
+      "latency_ms": 15283
+    },
+    "marcacion_espera": {
+      "status": 200,
+      "latency_ms": 6818,
+      "wait_observed_ms": 6818
+    },
+    "kilometraje_contencion": {
+      "status": 503,
+      "code": "MARCACION_CONCURRENCIA_TEMPORAL",
+      "latency_ms": 15076
+    },
+    "kilometraje_recuperado": {
+      "status": 200,
+      "latency_ms": 6691,
+      "mileage": {
+        "id": 37,
+        "value": 42.5
+      }
+    },
+    "serializacion": {
+      "estados": [
+        200,
+        409
+      ],
+      "codigos": [
+        null,
+        "MARCACION_FUERA_DE_SECUENCIA"
+      ]
+    }
+  },
+  "status": "passed",
+  "http_log": [
+    {
+      "step": "health",
+      "method": "GET",
+      "pathname": "/health",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 1358,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "login",
+      "method": "POST",
+      "pathname": "/api/v1/auth/login",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 932,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "marcacion_contencion_18s",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 503,
+      "code": "MARCACION_CONCURRENCIA_TEMPORAL",
+      "request_id": "req-3",
+      "latency_ms": 15283,
+      "transport_error": null,
+      "error": "Otra marcacion se esta registrando para esta persona en este momento. Intente de nuevo en unos segundos."
+    },
+    {
+      "step": "marcacion_espera_7s",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 6818,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "km_previa_entrada",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 200,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "km_previa_inicio_almuerzo",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 132,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "km_previa_fin_almuerzo",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 125,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "kilometraje_contencion_18s",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 503,
+      "code": "MARCACION_CONCURRENCIA_TEMPORAL",
+      "request_id": "req-8",
+      "latency_ms": 15076,
+      "transport_error": null,
+      "error": "Otra marcacion esta actualizando el kilometraje de esta ruta en este momento. Intente de nuevo en unos segundos."
+    },
+    {
+      "step": "kilometraje_espera_7s",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 6691,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "carrera_1",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "latency_ms": 123,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "step": "carrera_2",
+      "method": "POST",
+      "pathname": "/api/v1/hr/time-punches",
+      "status": 409,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "request_id": "req-b",
+      "latency_ms": 315,
+      "transport_error": null,
+      "error": "La siguiente marcacion permitida es inicio_almuerzo."
+    }
+  ],
+  "versioned_suites": {
+    "api/test/hr-marking-concurrency.test.js": {
+      "pass": 8,
+      "fail": 0,
+      "exit": 0
+    },
+    "api/test/hr-marking-kilometraje-conflict.test.js": {
+      "pass": 4,
+      "fail": 0,
+      "exit": 0
+    },
+    "api/test/hr-deferred-marking-offline.test.js": {
+      "pass": 9,
+      "fail": 0,
+      "exit": 0
+    },
+    "api/test/hr-marking-declared-employee.test.js": {
+      "pass": 6,
+      "fail": 0,
+      "exit": 0
+    },
+    "web/test/hr-route-write-feedback.test.mjs": {
+      "pass": 9,
+      "fail": 0,
+      "exit": 0
+    },
+    "web/test/hr-contention-write-feedback.test.mjs": {
+      "pass": 3,
+      "fail": 0,
+      "exit": 0
+    }
+  },
+  "summary": {
+    "checks_total": 42,
+    "checks_passed": 42,
+    "requests": 11,
+    "contention_deadline_ms": 15000
+  },
+  "mirror_employee_removed": true,
+  "cleanup": {
+    "routes_deleted": 1,
+    "employees_purged": [
+      {
+        "employee_id": 636,
+        "errors": []
+      },
+      {
+        "employee_id": 637,
+        "errors": []
+      },
+      {
+        "employee_id": 638,
+        "errors": []
+      },
+      {
+        "employee_id": 635,
+        "espejo_del_usuario": true,
+        "errors": []
+      }
+    ],
+    "user_deactivated": true,
+    "role_deactivated": true,
+    "errors": []
+  },
+  "finished_at": "2026-10-26T22:40:38.319Z"
+}

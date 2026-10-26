@@ -1,0 +1,100 @@
+{
+  "change_id": "main-tenant-context-als-20261026",
+  "environment": "LOCAL",
+  "branch_variant": "main",
+  "head": "377680560db46688bc245ed36dacb359c0aa17eb",
+  "baseline_main": "3ebe71f7a611409e3cbe853a513ed6847dd2d9f2",
+  "status": "passed_vs_baseline",
+  "runner": "replica exacta de scripts/certifications/release-local-regression.cjs (ese script versionado no existe en el arbol de main): enumera los archivos de prueba y los ejecuta con los mismos flags --test --test-concurrency=2 y el mismo entorno NODE_ENV=test, DISABLE_REDIS=true, REDIS_DISABLED=true, DISABLE_BACKGROUND_WORKERS=true y COMMERCIAL_LOCAL_INTEGRATION/COMMERCIAL_ROUTE_INTEGRATION contra 127.0.0.1:55432. Se corrio dos veces con el mismo script y los mismos flags: sobre el candidato 6f564426 (worktree .aux/promo-main-tenant); el tip final 37768056 solo agrega una modificacion en scripts/certifications/ (git diff --name-only 6f564426..37768056 devuelve esa unica ruta), asi que el arbol de producto y de pruebas medido es identico y sobre un worktree limpio del tip vigente de origin/main 3ebe71f7 (.aux/probe-main-als, sin el archivo de prueba nuevo).",
+  "verdict": "El candidato no introduce ninguna falla nueva: el conjunto de pruebas que fallan es identico al del baseline 3ebe71f7 medido con el mismo corredor. Las 3 fallas preexistentes son de Inventario/Compras (ERP) y Transporte TMS y ningun archivo de esos modulos aparece en git diff --name-status origin/main..HEAD (el diff del candidato son 3 rutas: el nucleo, la prueba de contrato y el arnes).",
+  "results": {
+    "candidate": [
+      {
+        "name": "api",
+        "tests": 425,
+        "passed": 423,
+        "failed": 2,
+        "skipped": 0,
+        "failures": [
+          "inventario ofrece lista de productos filtrable y exportable",
+          "compras ventas IVA y retenciones reutilizan el control numerico"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\corridor-candidato-main\\api.log"
+      },
+      {
+        "name": "web",
+        "tests": 384,
+        "passed": 383,
+        "failed": 1,
+        "skipped": 0,
+        "failures": [
+          "Transporte organiza el trabajo por etapas sin navegación redundante"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\corridor-candidato-main\\web.log"
+      }
+    ],
+    "baseline_origin_main": [
+      {
+        "name": "api",
+        "tests": 421,
+        "passed": 419,
+        "failed": 2,
+        "skipped": 0,
+        "failures": [
+          "inventario ofrece lista de productos filtrable y exportable",
+          "compras ventas IVA y retenciones reutilizan el control numerico"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\corridor-base-main\\api.log"
+      },
+      {
+        "name": "web",
+        "tests": 384,
+        "passed": 383,
+        "failed": 1,
+        "skipped": 0,
+        "failures": [
+          "Transporte organiza el trabajo por etapas sin navegación redundante"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\corridor-base-main\\web.log"
+      }
+    ]
+  },
+  "delta": {
+    "api_tests_added": 4,
+    "web_tests_added": 0,
+    "new_failures": 0,
+    "note": "Las 4 pruebas nuevas son exactamente las de apps/api/test/core-tenant-context-propagation.test.js (callback sincrono, callback asincrono, callback despues de un await y la asercion sobre la linea del nucleo). Ningun otro conteo cambia."
+  },
+  "preexisting_failures": [
+    {
+      "name": "inventario ofrece lista de productos filtrable y exportable",
+      "suite": "api",
+      "module": "Inventario/Compras (ERP)",
+      "reason": "falla igual en el baseline 3ebe71f7 tomado con el mismo corredor; el archivo no esta en el diff del candidato"
+    },
+    {
+      "name": "compras ventas IVA y retenciones reutilizan el control numerico",
+      "suite": "api",
+      "module": "Inventario/Compras (ERP)",
+      "reason": "falla igual en el baseline 3ebe71f7; el archivo no esta en el diff del candidato"
+    },
+    {
+      "name": "Transporte organiza el trabajo por etapas sin navegación redundante",
+      "suite": "web",
+      "module": "Transporte TMS",
+      "reason": "falla igual en el baseline 3ebe71f7; el test y su pagina estan identicos en el candidato"
+    }
+  ],
+  "targeted_suites": {
+    "core_test_command": "cd apps/api && NODE_ENV=test node --test test/core-tenant-context-propagation.test.js",
+    "core_test_result": "4 pruebas, 4 aprobadas, 0 fallidas sobre el candidato 6f564426 y repetidas 4/4 sobre el tip final 37768056. Sobre el baseline 3ebe71f7 con el mismo archivo copiado: 4 pruebas, 2 aprobadas, 2 fallidas.",
+    "hr_api_command": "cd apps/api && NODE_ENV=test DISABLE_REDIS=true REDIS_DISABLED=true node --test test/hr-*.test.js",
+    "hr_api_result": "102 pruebas, 102 aprobadas, 0 fallidas, 0 omitidas sobre el candidato 6f564426 (log C:\\Users\\mq1\\AppData\\Local\\Temp\\promo-hr-20261026\\hr-candidate.log)",
+    "live_certification_command": "node scripts/certifications/hr-contention-p2028-local.js (arnes de main, sin el workaround de tenant declarado a mano)",
+    "live_certification_result": "42/42 sobre el tip final 37768056 con API Fastify real en 127.0.0.1:3212 y PostgreSQL real en 127.0.0.1:55432; corrida 20261026223926 de 22:39:26Z a 22:40:38Z con api_commit clavado en 37768056, limpieza de 0 errores y empleado espejo purgado. Ver als-probe.json."
+  },
+  "client_typecheck": {
+    "command": "npx tsc --noEmit -p apps/web/tsconfig.json",
+    "result": "no aplica a esta candidata: el diff no toca ninguna ruta de apps/web; el unico cambio de codigo es apps/api/src/core/prisma.js (una linea) y el resto son pruebas y documentacion."
+  }
+}
