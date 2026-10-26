@@ -333,7 +333,7 @@ async function main() {
     const newEmployee = async (label) => {
       const code = `${CODE_PREFIX}${label}${RUN_ID.slice(-8)}`.slice(0, 24);
       const employee = await prisma.runWithTenant(tenant.id, () => prisma.employee.create({
-        data: { tenant_id: tenant.id, code, position: "Operario QA", department: "QA", salary_base: 1_300_000, hire_date: new Date(`${TODAY}T05:00:00.000Z`) }
+        data: { code, position: "Operario QA", department: "QA", salary_base: 1_300_000, hire_date: new Date(`${TODAY}T05:00:00.000Z`) }
       }));
       cleanup.employeeIds.push(employee.id);
       return employee;
@@ -347,7 +347,6 @@ async function main() {
 
     const kmRoute = await prisma.runWithTenant(tenant.id, () => prisma.timeRoute.create({
       data: {
-        tenant_id: tenant.id,
         date: new Date(`${TODAY}T05:00:00.000Z`),
         employees: [kmEmployee.code],
         start_time: "08:00",
