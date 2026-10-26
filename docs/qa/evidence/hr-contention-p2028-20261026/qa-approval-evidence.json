@@ -1,0 +1,81 @@
+{
+  "change_id": "hr-contention-p2028-20261026",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "commit": "150a2248adf7ce1c74f38efb6b62ddbcf337b641",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": ["local-certification.json", "../../certifications/hr-contention-p2028-20261026.md"]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": ["local-certification.json", "../../certifications/hr-contention-p2028-20261026.md"]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": ["local-certification.json", "local-fixture.json"]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": ["platform-regression.json", "../../certifications/hr-contention-p2028-20261026.md"]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": ["platform-regression.json", "../../certifications/hr-contention-p2028-20261026.md"]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-contention-p2028-local.js",
+    "evidence": ["local-certification.json", "../../certifications/hr-contention-p2028-20261026.md"],
+    "command": "DATABASE_URL=<clon local de certificacion> npm run certify:hr-contention-p2028:local",
+    "run_at": "2026-10-26T18:44:40.064Z",
+    "result": "42/42 chequeos pasados sobre el candidato 150a2248 con API Fastify real (127.0.0.1:3212) y PostgreSQL real (127.0.0.1:55432, base aislada apexos_cert_contention_main de 186 tablas), provocando la contencion desde una conexion PostgreSQL independiente con la misma primitiva del incidente"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-contention-p2028-local.js",
+    "evidence": ["platform-regression.json", "local-certification.json", "../../certifications/hr-contention-p2028-20261026.md"],
+    "transversal_command": "replica del corredor versionado: node --test --test-concurrency=2 sobre apps/api/test/*.test.js y apps/web/test/*.test.mjs con NODE_ENV=test, DISABLE_REDIS, REDIS_DISABLED y DISABLE_BACKGROUND_WORKERS, ejecutada sobre el candidato 150a2248 y sobre un worktree limpio de origin/main (f4aff8e3)",
+    "transversal_note": "release-local-regression.cjs no existe en el arbol de main, asi que se ejecuto esa replica con el mismo comando, flags y entorno dos veces. Resultado: API 421 pruebas (+2 sobre el baseline) con las mismas 2 fallas del baseline; Web 384 pruebas (+4) con la misma 1 falla del baseline; 0 fallas nuevas. Las 3 fallas preexistentes son de Inventario/Compras (ERP) y Transporte, ajenas a Talento Humano, y sus archivos no aparecen en git diff --name-status origin/main..HEAD. Suites enfocados: Talento Humano API 102/102 y Web 101/101. Typecheck del cliente: 0 errores.",
+    "hr_suite_command": "node --test apps/api/test/hr-*.test.js y node --test --experimental-strip-types apps/web/test/hr-*.test.mjs",
+    "hr_suite_result": "API 102/102 y Web 101/101 en el candidato. Las pruebas de la ronda de nomina IBC no corren aqui porque esa funcionalidad no existe en main; el arnes verifica su ausencia (chequeo payroll_adjustment_write_absent_in_main) en lugar de simularla."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/hr-contention-p2028-local.js",
+    "evidence": ["local-certification.json", "local-fixture.json", "../../certifications/hr-contention-p2028-20261026.md"],
+    "basis": "La empresa modelo NYVORA sirvio de referencia para el diagnostico: no reproduce el 500 porque no tiene dos ediciones simultaneas sobre la misma persona y el mismo dia, y el codigo de lectura/escritura de marcacion y kilometraje es identico entre main y desarrollo. Por eso la certificacion no se apoyo en nyvora sola sino en el arnes en vivo que fuerza la contingencia con el mismo flujo HTTP que usa el operario (POST /api/v1/hr/time-punches con y sin placa de ruta) contra Postgres real con el advisory lock del scope ya tomado. Bloque B: contencion de 18 s responde 503 MARCACION_CONCURRENCIA_TEMPORAL a los 15187 ms con request_id, mensaje accionable y cero marcaciones escritas. Bloque C: liberado el lock a los 7 s responde 200 tras 6839 ms y la marcacion queda persistida (con el viejo default de 5 s esto era 500 P2028). Bloque D: contencion del scope de kilometraje responde 503 y la transaccion se revuelve integra. Bloque E: liberado, la salida guarda y el renglon activo de th_jornada_kilometrajes queda con 42.5 km, sin duplicados. Bloque F: dos marcaciones concurrentes del mismo empleado/dia dejan 200 + 409 MARCACION_FUERA_DE_SECUENCIA con una sola marcacion. El aislamiento multi-tenant se ejerce con runWithTenant y RLS en cada lectura y escritura del arnes."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "f4aff8e3a41448a0df705dd8e6368741e3a7944e",
+    "trigger": "cualquier falla al registrar marcaciones o kilometraje de jornada en produccion tras la promocion (500 sin codigo, 503 MARCACION_CONCURRENCIA_TEMPORAL permanente, marcacion o renglon de kilometraje perdido o duplicado, salida que queda a medias), regresion del mensaje amable en el cliente, o cualquier falla nueva en las suites API/web medida contra f4aff8e3"
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_for_hr_marking_mileage_contention_and_friendly_error",
+    "approved_by": "Edwin (lead APEXOS). Autorizacion expresa: 'procede con mi autorizacion llevar las correciones hasta el ambiente main pasando por todos los protocolos, al final brindame un breve resumen de las actualizaciones', dentro de la autorizacion previa de correccion puntual: 'migrala hacia todos los ambiente como una correcion puntual, usa una rama auxiliar si lo requieres para no contaminar otros cambios o funciones, al terminar de usarla elimina la rama temportal, en cuanto a los errores en pantalla corrijo no es ocultarle al cliente es mostrarlo de una manera mas amigable y entendible ... y no alarmar el cliente'",
+    "approved_at": "2026-10-26T18:50:00Z",
+    "authorization_basis": "El cambio cierra en produccion el mismo defecto que ya provoco el incidente de mallas del 2026-10-26, ahora sobre la marcacion y el kilometraje del operario. La aprobacion funcional la otorga el lead sobre la certificacion local en vivo 42/42 del candidato, que ejercita el flujo completo por HTTP contra PostgreSQL real incluyendo los dos escenarios de contingencia y la serializacion; la promocion se recorre desarrollo -> develop -> main sin saltar puertas y la candidata se reconstruyo puntualmente sobre el tip vigente de main.",
+    "not_certified_by_this_gate": [
+      "Navegacion en navegador del flujo de marcacion mostrando el 503 amable: no se levanto el par API + next dev en esta intervencion (limitacion de RAM local ya documentada en la recuperacion del entorno). Hay evidencia de contrato de codigo, typecheck en 0 errores y HTTP real, pero no de pantalla.",
+      "Verificacion en el ambiente QA/PROD de Railway: se comprueba el despliegue y la salud despues del push; no se modifico Railway, Supabase ni la base de produccion, y no hay migraciones que aplicar.",
+      "El ajuste de nomina (novedad IBC) no puede quedar protegido en produccion con este push porque esa funcionalidad no existe en main. Su correccion ya esta certificada en desarrollo y develop (52/52) y subira junto con esa funcionalidad.",
+      "apps/api/src/core/prisma.js: main propaga el contexto de tenant de forma distinta a desarrollo (el arnes lo sufrio como 'Argument tenant_id is missing' y se corrigio en el arnes, commit 150a2248). Queda como hallazgo con su propia ronda, no se toco el nucleo en este change.",
+      "next build sigue bloqueado por las rutas tipadas en las tres ramas: condicion previa de main que este cambio no introduce ni resuelve.",
+      "Deuda de seguridad de las rutas de ajuste de nomina (sin preHandler de permiso) abierta en desarrollo/develop; no aplica en main porque esas rutas no existen."
+    ]
+  },
+  "evidence_notes": {
+    "baseline_comparacion": "main no contiene el corredor versionado de regresion, por eso platform-regression.json guarda los resultados del candidato y del baseline f4aff8e3 con su delta (api_tests_added 2, web_tests_added 4, new_failures 0) en lugar de un absolutos 100 por ciento.",
+    "certificacion_en_la_variante_main": "La ronda completa certifico 52 chequeos en desarrollo y develop; en main son 42 porque las 10 diferencias corresponden a la escritura de nomina IBC que no existe en esta rama. Ninguna diferencia se simulo: el arnes de main verifica la ausencia de esa escritura.",
+    "sin_migraciones": "Esta correccion no agrega ni aplica migracion; no hay cambios de esquema que verificar en PROD.",
+    "trazabilidad_del_commit_certificado": "El arnes reporta api_commit 150a2248, que ya contiene el fix funcional 89f02251, el alcance del arnes a main 571ce954 y el parche de sembrado 150a2248. La evidencia se volvio a producir sobre ese tip exacto (corrida 18:43:43Z a 18:44:40Z) para que no quede ninguna corrida a caballo entre dos commits."
+  }
+}

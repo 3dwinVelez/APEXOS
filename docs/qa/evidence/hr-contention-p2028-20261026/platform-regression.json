@@ -1,0 +1,98 @@
+{
+  "change_id": "hr-contention-p2028-20261026",
+  "environment": "LOCAL",
+  "branch_variant": "main",
+  "head": "150a2248adf7ce1c74f38efb6b62ddbcf337b641",
+  "baseline_main": "f4aff8e3a41448a0df705dd8e6368741e3a7944e",
+  "status": "passed_vs_baseline",
+  "runner": "replica exacta de scripts/certifications/release-local-regression.cjs (ese script versionado no existe en el arbol de main): enumera los archivos de prueba y los ejecuta con los mismos flags --test --test-concurrency=2 y el mismo entorno NODE_ENV=test/DISABLE_REDIS/REDIS_DISABLED/DISABLE_BACKGROUND_WORKERS contra 127.0.0.1:55432. Se corrio dos veces con el mismo script y los mismos flags: sobre el candidato 150a2248 y sobre un worktree limpio de origin/main (f4aff8e3).",
+  "verdict": "El candidato no introduce ninguna falla nueva: el conjunto de pruebas que fallan es identico al del baseline f4aff8e3 medido con el mismo corredor, y las 3 fallas preexistentes son de Inventario/Compras (ERP) y Transporte TMS. Ningun archivo de esos modulos aparece en git diff --name-status origin/main..HEAD.",
+  "results": {
+    "candidate": [
+      {
+        "name": "api",
+        "tests": 421,
+        "passed": 417,
+        "failed": 2,
+        "skipped": 2,
+        "failures": [
+          "inventario ofrece lista de productos filtrable y exportable",
+          "compras ventas IVA y retenciones reutilizan el control numerico"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\main-cand-reg2\\api.log"
+      },
+      {
+        "name": "web",
+        "tests": 384,
+        "passed": 383,
+        "failed": 1,
+        "skipped": 0,
+        "failures": [
+          "Transporte organiza el trabajo por etapas sin navegación redundante"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\main-cand-reg2\\web.log"
+      }
+    ],
+    "baseline_origin_main": [
+      {
+        "name": "api",
+        "tests": 419,
+        "passed": 415,
+        "failed": 2,
+        "skipped": 2,
+        "failures": [
+          "inventario ofrece lista de productos filtrable y exportable",
+          "compras ventas IVA y retenciones reutilizan el control numerico"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\main-base-reg\\api.log"
+      },
+      {
+        "name": "web",
+        "tests": 380,
+        "passed": 379,
+        "failed": 1,
+        "skipped": 0,
+        "failures": [
+          "Transporte organiza el trabajo por etapas sin navegación redundante"
+        ],
+        "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\main-base-reg\\web.log"
+      }
+    ]
+  },
+  "preexisting_failures": [
+    {
+      "name": "inventario ofrece lista de productos filtrable y exportable",
+      "suite": "api",
+      "module": "Inventario/Compras (ERP)",
+      "reason": "falla igual en el baseline f4aff8e3 tomado con el mismo corredor; el archivo no esta en el diff del candidato"
+    },
+    {
+      "name": "compras ventas IVA y retenciones reutilizan el control numerico",
+      "suite": "api",
+      "module": "Inventario/Compras (ERP)",
+      "reason": "falla igual en el baseline f4aff8e3; el archivo no esta en el diff del candidato"
+    },
+    {
+      "name": "Transporte organiza el trabajo por etapas sin navegación redundante",
+      "suite": "web",
+      "module": "Transporte TMS",
+      "reason": "falla igual en el baseline f4aff8e3; el test y su pagina estan identicos en el candidato (git diff --name-status origin/main..HEAD no los lista)"
+    }
+  ],
+  "delta": {
+    "api_tests_added": 2,
+    "web_tests_added": 4,
+    "new_failures": 0,
+    "note": "Las 6 pruebas nuevas son las de esta ronda: 2 en apps/api/test/hr-marking-concurrency.test.js (try-lock acotado y cero locks bloqueantes residuales en main) y 4 en la web (3 de apps/web/test/hr-contention-write-feedback.test.mjs, nuevo, mas 1 en hr-route-write-feedback.test.mjs)."
+  },
+  "targeted_suites": {
+    "hr_api_command": "node --test apps/api/test/hr-*.test.js con NODE_ENV=test, DISABLE_REDIS=true y REDIS_DISABLED=true",
+    "hr_api_result": "102 pruebas, 102 aprobadas, 0 fallidas, 0 omitidas (sobre el candidato 150a2248)",
+    "hr_web_command": "node --test --experimental-strip-types apps/web/test/hr-*.test.mjs",
+    "hr_web_result": "101 pruebas, 101 aprobadas, 0 fallidas, 0 omitidas (sobre el candidato 150a2248)"
+  },
+  "client_typecheck": {
+    "command": "npx tsc --noEmit -p apps/web/tsconfig.json",
+    "result": "0 errores sobre el candidato 150a2248"
+  }
+}
