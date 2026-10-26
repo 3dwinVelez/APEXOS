@@ -4,8 +4,8 @@
   "environment": "LOCAL",
   "branch_variant": "main",
   "database_url_host": "postgresql://***@localhost:55432/apexos",
-  "generated_at": "2026-10-26T22:39:26.406Z",
-  "api_commit": "377680560db46688bc245ed36dacb359c0aa17eb",
+  "generated_at": "2026-10-26T22:47:52.745Z",
+  "api_commit": "f6308325edc2b5cf7c3e57d05e6193a1e8ffb12e",
   "api_url": "http://127.0.0.1:3212",
   "operating_date": "2026-10-26",
   "scope": {
@@ -44,7 +44,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "commit": "377680560db46688bc245ed36dacb359c0aa17eb",
+        "commit": "f6308325edc2b5cf7c3e57d05e6193a1e8ffb12e",
         "health_commit": "unknown"
       }
     },
@@ -111,17 +111,26 @@
       "ok": true,
       "detail": {
         "ids": [
-          636,
-          637,
-          638
+          644,
+          645,
+          646
         ]
+      }
+    },
+    {
+      "name": "sync_read_stays_inside_tenant",
+      "ok": true,
+      "detail": {
+        "filas_leidas": 14,
+        "otros_tenants_visibles": [],
+        "tenant_del_run": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd"
       }
     },
     {
       "name": "fixture_vehicle_route_seeded",
       "ok": true,
       "detail": {
-        "route_id": 373,
+        "route_id": 375,
         "plate": "QACNT28"
       }
     },
@@ -164,7 +173,7 @@
       "name": "punch_contention_gives_up_within_budget",
       "ok": true,
       "detail": {
-        "latency_ms": 15283,
+        "latency_ms": 15291,
         "deadline_ms": 15000
       }
     },
@@ -186,7 +195,7 @@
       "name": "punch_waited_beyond_old_default",
       "ok": true,
       "detail": {
-        "wait_observed_ms": 6818,
+        "wait_observed_ms": 6773,
         "note": "con el default de 5s de Prisma esto era 500 P2028"
       }
     },
@@ -261,10 +270,10 @@
       "ok": true,
       "detail": {
         "mileage": {
-          "id": 37,
+          "id": 39,
           "value": "42.5",
           "unit": "km",
-          "route_id": 373
+          "route_id": 375
         }
       }
     },
@@ -398,20 +407,20 @@
       ]
     },
     "role": {
-      "id": 413,
-      "name": "QA Concurrencia Admin 20261026223926"
+      "id": 415,
+      "name": "QA Concurrencia Admin 20261026224752"
     },
     "admin_user": {
-      "id": 719,
-      "email": "qa.cnt28.admin.20261026223926@apex.test"
+      "id": 721,
+      "email": "qa.cnt28.admin.20261026224752@apex.test"
     },
     "employees": {
-      "punch": 636,
-      "kilometraje": 637,
-      "carrera": 638
+      "punch": 644,
+      "kilometraje": 645,
+      "carrera": 646
     },
     "route": {
-      "id": 373,
+      "id": 375,
       "vehicle_plate": "QACNT28"
     },
     "contention_deadline_ms": 15000,
@@ -422,23 +431,23 @@
     "marcacion_contencion": {
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
-      "latency_ms": 15283
+      "latency_ms": 15291
     },
     "marcacion_espera": {
       "status": 200,
-      "latency_ms": 6818,
-      "wait_observed_ms": 6818
+      "latency_ms": 6773,
+      "wait_observed_ms": 6773
     },
     "kilometraje_contencion": {
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
-      "latency_ms": 15076
+      "latency_ms": 15228
     },
     "kilometraje_recuperado": {
       "status": 200,
-      "latency_ms": 6691,
+      "latency_ms": 6879,
       "mileage": {
-        "id": 37,
+        "id": 39,
         "value": 42.5
       }
     },
@@ -462,7 +471,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 1358,
+      "latency_ms": 662,
       "transport_error": null,
       "error": null
     },
@@ -473,7 +482,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 932,
+      "latency_ms": 893,
       "transport_error": null,
       "error": null
     },
@@ -484,7 +493,7 @@
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
       "request_id": "req-3",
-      "latency_ms": 15283,
+      "latency_ms": 15291,
       "transport_error": null,
       "error": "Otra marcacion se esta registrando para esta persona en este momento. Intente de nuevo en unos segundos."
     },
@@ -495,7 +504,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 6818,
+      "latency_ms": 6773,
       "transport_error": null,
       "error": null
     },
@@ -506,7 +515,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 200,
+      "latency_ms": 157,
       "transport_error": null,
       "error": null
     },
@@ -517,7 +526,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 132,
+      "latency_ms": 103,
       "transport_error": null,
       "error": null
     },
@@ -528,7 +537,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 125,
+      "latency_ms": 102,
       "transport_error": null,
       "error": null
     },
@@ -539,7 +548,7 @@
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
       "request_id": "req-8",
-      "latency_ms": 15076,
+      "latency_ms": 15228,
       "transport_error": null,
       "error": "Otra marcacion esta actualizando el kilometraje de esta ruta en este momento. Intente de nuevo en unos segundos."
     },
@@ -550,7 +559,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 6691,
+      "latency_ms": 6879,
       "transport_error": null,
       "error": null
     },
@@ -561,7 +570,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 123,
+      "latency_ms": 120,
       "transport_error": null,
       "error": null
     },
@@ -572,7 +581,7 @@
       "status": 409,
       "code": "MARCACION_FUERA_DE_SECUENCIA",
       "request_id": "req-b",
-      "latency_ms": 315,
+      "latency_ms": 301,
       "transport_error": null,
       "error": "La siguiente marcacion permitida es inicio_almuerzo."
     }
@@ -610,8 +619,8 @@
     }
   },
   "summary": {
-    "checks_total": 42,
-    "checks_passed": 42,
+    "checks_total": 43,
+    "checks_passed": 43,
     "requests": 11,
     "contention_deadline_ms": 15000
   },
@@ -620,19 +629,19 @@
     "routes_deleted": 1,
     "employees_purged": [
       {
-        "employee_id": 636,
+        "employee_id": 644,
         "errors": []
       },
       {
-        "employee_id": 637,
+        "employee_id": 645,
         "errors": []
       },
       {
-        "employee_id": 638,
+        "employee_id": 646,
         "errors": []
       },
       {
-        "employee_id": 635,
+        "employee_id": 643,
         "espejo_del_usuario": true,
         "errors": []
       }
@@ -641,5 +650,5 @@
     "role_deactivated": true,
     "errors": []
   },
-  "finished_at": "2026-10-26T22:40:38.319Z"
+  "finished_at": "2026-10-26T22:48:53.864Z"
 }

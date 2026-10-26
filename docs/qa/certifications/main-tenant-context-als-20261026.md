@@ -1,7 +1,7 @@
 # Certificación `main-tenant-context-als-20261026` — contexto del tenant en el núcleo de `main`
 
 Rama destino: `main`. Baseline productivo: `3ebe71f7a611409e3cbe853a513ed6847dd2d9f2` (tip vigente de `origin/main`).
-Candidato: `377680560db46688bc245ed36dacb359c0aa17eb` (tip final), sobre el commit funcional `6f564426e5582db083ddaa5b0bcf43b28d25643d`, reconstruidos puntualmente sobre ese baseline en la rama auxiliar `aux-promo-main-tenant`.
+Candidato: `f6308325edc2b5cf7c3e57d05e6193a1e8ffb12e` (tip final), sobre el commit funcional `6f564426e5582db083ddaa5b0bcf43b28d25643d`, reconstruidos puntualmente sobre ese baseline en la rama auxiliar `aux-promo-main-tenant`.
 Entorno de certificación: LOCAL (PostgreSQL real `127.0.0.1:55432`, API Fastify real `127.0.0.1:3212`).
 
 ## Qué se corrigió
@@ -27,23 +27,35 @@ La corrección es una línea:
 2. **Row Level Security no respalda el hueco**: se consultó `pg_class`/`pg_policy` sobre `Employee`, `TimePunch`, `Tenant` y `AuditLog` en la base local — `relrowsecurity = false`, `relforcerowsecurity = false`, **0 políticas** en las cuatro. La búsqueda en `apps/api/prisma/migrations` de `ROW LEVEL SECURITY` o `CREATE POLICY` no devuelve archivos. El middleware de Prisma es el único filtro de tenant de las lecturas y el único que fija `data.tenant_id` en las escrituras.
 3. Consecuencia para el operario y para el cliente: una lectura con callback sincrónico en `main` queda **sin filtro entre empresas**, y una escritura solo funciona si el llamador declaró el tenant a mano. Esto último es exactamente lo que obligó a parchear el arnés de certificación en `main` (commit `150a2248` de la ronda anterior) con un `Argument 'tenant_id' is missing` que en `desarrollo` y `develop` nunca ocurrió.
 
+### La fuga, medida en vivo (no supuesta)
+
+Se ejecutó la misma lectura contra la base local —clon del esquema productivo, con 51 empresas con empleados— usando únicamente `SELECT`, sin escribir ni alterar datos. La consulta pedida fue `runWithTenant(<una empresa>, () => prisma.employee.findMany({ where: { active: true } }))`, es decir con callback sincrónico y sin declarar el tenant:
+
+| Núcleo | Filas devueltas | Empresas distintas en la respuesta |
+|---|---|---|
+| `main` actual (`3ebe71f7`) | 168 | **29** (28 ajenas) |
+| Candidato (`f6308325`) | 71 | **1** (solo la pedida) |
+
+Una sola lectura de la pantalla equivocada ya está mezclando empresas. Con eso dimensionado, el arnés quedó modificado para que esta comprobación no vuelva a pasar desapercibida: el chequeo 12 `sync_read_stays_inside_tenant` hace la misma pregunta dentro de la certificación, y por eso la corrida subió de 42 a 43 controles.
+
 El hallazgo se registró como deuda abierta en la certificación anterior (`main-scope-manifest.json` → `core_prisma_difference_not_ported`). Esta ronda la cierra.
 
 ## Pruebas y evidencia
 
-| # | Qué se ejercitó | Baseline `3ebe71f7` | Candidato `37768056` |
+| # | Qué se ejercitó | Baseline `3ebe71f7` | Candidato `f6308325` |
 |---|---|---|---|
 | 1 | Prueba de contrato versionada `apps/api/test/core-tenant-context-propagation.test.js` (4 casos, sin base de datos) | 2 pass / **2 fail** (el caso síncrono recibe `tenant_id` `undefined`; la aserción sobre la línea del núcleo falla) | **4 pass / 0 fail** |
-| 2 | Arnés en vivo de Talento Humano `scripts/certifications/hr-contention-p2028-local.js`, **con el `tenant_id` declarado a mano eliminado** de las dos escrituras de callback sincrónico | **BLOQUEADO**: 10/10 chequeos estáticos y aborta en el sembrado con `Invalid prisma.employee.create() ... Argument 'tenant_id' is missing.` (API Fastify real ya arriba y login 200) | **42/42 APROBADO**, corrida `20261026223926`, `api_commit` clavado en el tip final `37768056`, limpieza con 0 errores y empleado espejo purgado |
-| 3 | Verificación directa en base de datos del tenant inyectado | — | Empleados QA 636/637/638 con `tenant_id = 5ef4cb7d-…c4abd` (el del run) sin que el llamador lo declarara; la malla `373` sembrada igual quedó purgada al cerrar la corrida y `th_jornada_kilometrajes` en 0 filas para ese tenant |
+| 2 | Arnés en vivo de Talento Humano `scripts/certifications/hr-contention-p2028-local.js`, **con el `tenant_id` declarado a mano eliminado** de las dos escrituras de callback sincrónico | **BLOQUEADO**: 10/10 chequeos estáticos y aborta en el sembrado con `Invalid prisma.employee.create() ... Argument 'tenant_id' is missing.` (API Fastify real ya arriba y login 200) | **43/43 APROBADO**, corrida `20261026224752`, `api_commit` clavado en el tip final `f6308325`, limpieza con 0 errores y empleado espejo purgado |
+| 3 | Verificación directa en base de datos del tenant inyectado | — | Empleados QA 644/645/646 con `tenant_id = 5ef4cb7d-…c4abd` (el del run) sin que el llamador lo declarara; la malla `375` sembrada igual quedó purgada al cerrar la corrida y `th_jornada_kilometrajes` en 0 filas para ese tenant |
 | 4 | Regresión de plataforma completa sobre el árbol de `main`, dos veces con el mismo corredor | API 421 pruebas / 2 fallas; Web 384 / 1 falla | API **425** / **las mismas 2** fallas; Web **384** / **la misma 1** falla → **+4 pruebas, 0 fallas nuevas** |
 | 5 | Suites enfocados de Talento Humano en el candidato | — | API `hr-*.test.js` **102/102** |
+| 7 | Lectura sincrónica entre empresas contra datos reales multi-tenant (solo `SELECT`) | **168 filas de 29 empresas distintas** (28 ajenas) pidiendo una sola | 71 filas, **1 empresa** (la pedida), 0 ajenas |
 | 6 | Compatibilidad del valor de retorno (riesgo: la forma nueva siempre devuelve promesa) | — | Sin consumos sincrónicos: no hay `= prisma.runWithTenant(...)` sin `await` en todo el árbol, y los 389 callbacks devuelven una promesa de Prisma o una `$transaction` (incluido el `.then()` de `settlement-service.js:193`). El único efecto observable es un microtask adicional. |
 
 Evidencia versionada:
 
 - `docs/qa/evidence/main-tenant-context-als-20261026/als-probe.json` — los tres sondeos con comandos, conteos y salida exacta del error de Prisma.
-- `docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround.json` y `harness-no-workaround-fixture.json` — el 42/42 del arnés sin el atajo de tenant, producido sobre el propio candidato.
+- `docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround.json` y `harness-no-workaround-fixture.json` — el 43/43 del arnés sin el atajo de tenant, producido sobre el propio candidato.
 - `docs/qa/evidence/main-tenant-context-als-20261026/platform-regression.json` — corredor del candidato y del baseline con su delta.
 - `docs/qa/evidence/main-tenant-context-als-20261026/main-scope-manifest.json` y `qa-approval-evidence.json` — inventario exacto y puerta de aprobación.
 

@@ -10,7 +10,7 @@
     "main": "3ebe71f7a611409e3cbe853a513ed6847dd2d9f2"
   },
   "change_intent": {
-    "summary": "Cerrar en produccion el hueco de contexto de tenant que la ronda anterior dejo registrado como deuda. En main, prisma.runWithTenant invocaba el callback con tenantStorage.run(store, fn); con un callback sincrono (la forma de 103 de los 389 sitios del arbol) AsyncLocalStorage sale del contexto antes de que el middleware de inyeccion de tenant se ejecute, asi que las escrituras exigen tenant_id declarado a mano y las lecturas quedan sin filtro entre empresas, sin que RLS lo respalde. Se alinea el nucleo con la forma que ya tiene desarrollo (async () => await fn()), se versiona la prueba de contrato que fija el contrato de propagacion y se levanta el workaround con el que el arnes de contencion de main parcheaba el defecto, para que la certificacion exija el contexto al nucleo y no al sembrado.",
+    "summary": "Cerrar en produccion el hueco de contexto de tenant que la ronda anterior dejo registrado como deuda. En main, prisma.runWithTenant invocaba el callback con tenantStorage.run(store, fn); con un callback sincrono (la forma de 103 de los 389 sitios del arbol) AsyncLocalStorage sale del contexto antes de que el middleware de inyeccion de tenant se ejecute, asi que las escrituras exigen tenant_id declarado a mano y las lecturas quedan sin filtro entre empresas, sin que RLS lo respalde. Se alinea el nucleo con la forma que ya tiene desarrollo (async () => await fn()), se versiona la prueba de contrato que fija el contrato de propagacion, y se levanta el workaround del arnes de contencion para que la certificacion exija el contexto al nucleo: ahora el arnes siembra sin declarar el tenant y ademas comprueba que una lectura sincrona no vea otras empresas (43 controles). La fuga se midio contra datos reales multi-tenant con solo SELECT: la misma lectura devolvio 168 filas de 29 empresas sobre el baseline productivo y 71 filas de 1 empresa sobre el candidato.",
     "modules": [
       "core-tenant-context",
       "certification-harness",
@@ -18,16 +18,46 @@
     ]
   },
   "expected_changes": [
-    { "status": "M", "file": "apps/api/src/core/prisma.js" },
-    { "status": "A", "file": "apps/api/test/core-tenant-context-propagation.test.js" },
-    { "status": "M", "file": "scripts/certifications/hr-contention-p2028-local.js" },
-    { "status": "A", "file": "docs/qa/certifications/main-tenant-context-als-20261026.md" },
-    { "status": "A", "file": "docs/qa/evidence/main-tenant-context-als-20261026/als-probe.json" },
-    { "status": "A", "file": "docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround.json" },
-    { "status": "A", "file": "docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround-fixture.json" },
-    { "status": "A", "file": "docs/qa/evidence/main-tenant-context-als-20261026/platform-regression.json" },
-    { "status": "A", "file": "docs/qa/evidence/main-tenant-context-als-20261026/main-scope-manifest.json" },
-    { "status": "A", "file": "docs/qa/evidence/main-tenant-context-als-20261026/qa-approval-evidence.json" }
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/core-tenant-context-propagation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-contention-p2028-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/main-tenant-context-als-20261026.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-tenant-context-als-20261026/als-probe.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround-fixture.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-tenant-context-als-20261026/platform-regression.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-tenant-context-als-20261026/main-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/main-tenant-context-als-20261026/qa-approval-evidence.json"
+    }
   ],
   "allowed_paths": [
     "apps/api/src/core/prisma.js",
@@ -48,7 +78,16 @@
       ]
     },
     {
-      "name": "Marcacion del operario y kilometraje de jornada bajo concurrencia, con el arnes pidiendo el tenant al middleware en vez de declararlo: 42/42 en el tip final",
+      "name": "Aislamiento entre empresas en las lecturas con callback sincrono: una findMany dentro del ambito de un tenant no devuelve filas de otros tenants (medido con solo SELECT contra 51 empresas)",
+      "status": "passed",
+      "evidence": [
+        "../../certifications/main-tenant-context-als-20261026.md",
+        "als-probe.json",
+        "harness-no-workaround.json"
+      ]
+    },
+    {
+      "name": "Marcacion del operario y kilometraje de jornada bajo concurrencia, con el arnes pidiendo el tenant al middleware en vez de declararlo: 43/43 en el tip final",
       "status": "passed",
       "evidence": [
         "../../certifications/main-tenant-context-als-20261026.md",
@@ -93,16 +132,17 @@
   ],
   "notes": {
     "generation": "Inventario exacto medido con `git diff --name-status origin/main..HEAD` sobre el candidato: 10 rutas, 2 M y 8 A, cero eliminaciones. El diff de codigo de producto es UNA linea de apps/api/src/core/prisma.js; lo demas es la prueba de contrato, el arnes y la documentacion de esta ronda.",
-    "why_reconstructed": "Esta correccion nacio en desarrollo (commit 9dcef87c de la rama desarrollo, prueba ALS) y no puede llegar a main por fusion de rama: develop trae funcionalidad que main no tiene (ajuste de nomina IBC, tarifario, sedes, gastos menores) y migraciones de nube sin aplicar. La politica lo prohibe, asi que el candidato se reconstruyo con dos cherry-picks puntuales sobre el tip vigente de origin/main (3ebe71f7): 467dd967 (la prueba de contrato) y 6f564426 (la linea del nucleo), mas 37768056 (el arnes).",
+    "why_reconstructed": "Esta correccion nacio en desarrollo (commit 9dcef87c de la rama desarrollo, prueba ALS) y no puede llegar a main por fusion de rama: develop trae funcionalidad que main no tiene (ajuste de nomina IBC, tarifario, sedes, gastos menores) y migraciones de nube sin aplicar. La politica lo prohibe, asi que el candidato se reconstruyo con dos cherry-picks puntuales sobre el tip vigente de origin/main (3ebe71f7): 467dd967 (la prueba de contrato) y 6f564426 (la linea del nucleo), mas f6308325 (el arnes).",
     "candidate_paths": {
-      "reconstruccion_puntual_aplicada": "aux-promo-main-tenant sobre 3ebe71f7: 467dd967 test(api) + 6f564426 fix(core) + 37768056 test(qa). Ningun arbol viejo fue usado como baseline.",
+      "reconstruccion_puntual_aplicada": "aux-promo-main-tenant sobre 3ebe71f7: 467dd967 test(api) + 6f564426 fix(core) + f6308325 test(qa). Ningun arbol viejo fue usado como baseline.",
       "merge_de_develop_descartado": "Medido: fusionar develop entero arrastraria la funcionalidad de nomina IBC y modulos ajenos con sus migraciones, fuera de este inventario."
     },
-    "trazabilidad_del_commit_certificado": "El commit funcional certificado es 6f564426 y esta contenido en el candidato. La evidencia en vivo (42/42) y la prueba de contrato (4/4) se volvieron a producir sobre el tip final 37768056: git diff --name-only 6f564426..37768056 devuelve unicamente scripts/certifications/hr-contention-p2028-local.js, asi que el arbol de producto y de pruebas medido es el mismo y el arnes clavo api_commit 37768056. El corredor de plataforma se midio sobre 6f564426 y sobre el baseline limpio 3ebe71f7 con el mismo script y los mismos flags.",
-    "harness_dependency_note": "scripts/certifications/hr-contention-p2028-local.js es la variante main del arnes ya versionado por la ronda anterior; este cambio solo levanta las dos declaraciones manuales de tenant_id del sembrado (lineas 335 y 348) para que el arnes exija el contexto al nucleo. Con el defecto presente el arnes aborta con 'Argument `tenant_id` is missing'; con la correccion pasa 42/42. Alinea ademas la variante de main con la de desarrollo, que nunca declaro el tenant en esos sitios.",
+    "trazabilidad_del_commit_certificado": "El commit funcional certificado es 6f564426 y esta contenido en el candidato. La evidencia en vivo (43/43) y la prueba de contrato (4/4) se volvieron a producir sobre el tip final f6308325: git diff --name-only 6f564426..f6308325 devuelve unicamente scripts/certifications/hr-contention-p2028-local.js, asi que el arbol de producto y de pruebas medido es el mismo y el arnes clavo api_commit f6308325. El corredor de plataforma se midio sobre 6f564426 y sobre el baseline limpio 3ebe71f7 con el mismo script y los mismos flags.",
+    "harness_dependency_note": "scripts/certifications/hr-contention-p2028-local.js es la variante main del arnes ya versionado por la ronda anterior. Este cambio le hace dos cosas, ambas dentro del alcance declarado: (1) levanta las dos declaraciones manuales de tenant_id del sembrado (lineas 335 y 348) para que el arnes exija el contexto al nucleo, y (2) agrega el chequeo 12 sync_read_stays_inside_tenant, que corre la lectura sincrona sin where de tenant y falla si ve otras empresas. Con el defecto presente el arnes aborta con 'Argument `tenant_id` is missing' y, si se le declara el tenant a mano como antes, la lectura sale con 28 tenants ajenos: el arnes pasa a ser guardian del aislamiento. Alinea ademas la variante de main con la de desarrollo, que nunca declaro el tenant en esos sitios.",
     "evidence_no_touch_prev_change": "No se modifico docs/qa/evidence/hr-contention-p2028-20261026/: la corrida del arnes se volco a rutas nuevas dentro de docs/qa/evidence/main-tenant-context-als-20261026/ para no reescribir la evidencia ya certificada del cambio anterior.",
     "medicion_del_defecto": "Los conteos del documento (389 sitios de runWithTenant, 281 con callback asincrono, 103 con callback sincrono) se midieron con grep sobre apps/api/src y apps/api/server.js del propio candidato. La ausencia de respaldo de RLS se midio consultando pg_class y pg_policy para Employee, TimePunch, Tenant y AuditLog (relrowsecurity false, 0 politicas) y verificando que apps/api/prisma/migrations no declara ROW LEVEL SECURITY ni CREATE POLICY.",
     "out_of_scope_debt": "Deuda registrada y NO corregida por esta promocion: la deuda de permiso de escritura en las rutas de ajuste de nomina existe en desarrollo y develop y ya fue cerrada alli (commit 27d12a94), pero esas rutas no existen en main, asi que no hay nada que cerrar aqui. Queda pendiente verificar en navegador el aviso de concurrencia contra el arbol de main; la certificacion de navegador de esta ronda (22/22) se hizo sobre desarrollo/develop.",
-    "remote_migrations": "No se aplicaron migraciones a QA ni PROD; la politica exige autorizacion independiente y este cambio no requiere migracion alguna (no toca esquema)."
+    "remote_migrations": "No se aplicaron migraciones a QA ni PROD; la politica exige autorizacion independiente y este cambio no requiere migracion alguna (no toca esquema).",
+    "evidence_file_change_id": "harness-no-workaround.json conserva change_id 'hr-contention-p2028-20261026' porque es la salida literal del arnes de esa ronda, corrido sobre esta candidata con 43 controles y api_commit f6308325; se versiono con nombre nuevo justamente para no reescribir la evidencia del cambio anterior."
   }
 }
