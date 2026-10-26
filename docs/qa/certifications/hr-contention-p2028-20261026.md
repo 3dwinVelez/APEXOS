@@ -166,3 +166,22 @@ flujo hasta `main` el 2026-10-26. Esta hoja documenta `develop -> main`; el mism
   modifico Railway ni la base de produccion.
 - El ajuste de nomina (IBC) no puede quedar protegido en produccion con este push porque esa
   funcionalidad no esta en main; subira protegido junto con esa funcionalidad.
+
+## Salida literal de las puertas versionadas
+
+Ejecutadas sobre el candidato con evidencia `9c9a9db0` (codigo + arnes + evidencia) y revalidadas sobre
+el tip final de la candidata, que solo agrega esta hoja de salida literal. Direccion declarada en
+ambos manifiestos: `develop -> main`.
+
+```text
+$ npm run qa:approval:evidence -- docs/qa/evidence/hr-contention-p2028-20261026/qa-approval-evidence.json
+APROBACION QA VALIDA: hr-contention-p2028-20261026
+
+$ npm run qa:promotion:scope -- docs/qa/evidence/hr-contention-p2028-20261026/main-scope-manifest.json HEAD origin/main
+ALCANCE DE PROMOCION VALIDO: hr-contention-p2028-20261026 (17 rutas)
+```
+
+La puerta de alcance midio el diff neto contra el tip vigente de `origin/main` (`f4aff8e3`) y dio las
+17 rutas exactas del inventario, todas `A` o `M`, con `allowed_deletions: []` y las 7 capacidades
+protegidas en verde. El baseline declarado en el manifiesto coincide con el destino: si `main` se
+mueve antes del push, la puerta vuelve a bloquear y hay que revalidar contra el tip nuevo.
