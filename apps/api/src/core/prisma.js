@@ -158,7 +158,7 @@ function getPrismaClient() {
 
 const lazyPrisma = new Proxy({}, {
   get(_target, property) {
-    if (property === "runWithTenant") return (tenantId, fn) => tenantStorage.run({ tenantId: normalizeTenantId(tenantId) }, fn);
+    if (property === "runWithTenant") return (tenantId, fn) => tenantStorage.run({ tenantId: normalizeTenantId(tenantId) }, async () => await fn());
     if (property === "currentTenantId") return currentTenantId;
 
     const value = getPrismaClient()[property];
