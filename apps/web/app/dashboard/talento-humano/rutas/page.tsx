@@ -46,6 +46,7 @@ const DELETE_REASON_MIN = 12;
 
 const punchNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
 const ROUTES_LIST_LIMIT = 500;
+const ROUTE_BUSY_ERROR_CODE = "ROUTE_ASSIGNMENT_BUSY";
 const weekdayOptions = [
   { value: 1, label: "Lun" },
   { value: 2, label: "Mar" },
@@ -231,6 +232,29 @@ function conflictsFromError(error: unknown): RouteConflict[] {
   return Array.isArray(details?.conflicts) ? details.conflicts : [];
 }
 
+// El servidor ahora responde 503 ROUTE_ASSIGNMENT_BUSY cuando otra edicion del mismo dia esta en
+// curso: la peticion no se ejecuto a medias, asi que reintentarla es seguro y evita el 500 que
+// hacia perder el horario. El limite es fijo para no martillar el backend.
+const ROUTE_BUSY_RETRY_LIMIT = 2;
+const ROUTE_BUSY_RETRY_DELAY_MS = 1_500;
+
+function isBusyRouteWriteFailure(error: unknown) {
+  const failure = (error || {}) as { status?: number; code?: string };
+  return failure.code === ROUTE_BUSY_ERROR_CODE || Number(failure.status || 0) === 503;
+}
+
+async function runRouteWriteWithBusyRetry<T>(action: () => Promise<T>, onRetry: (attempt: number) => void): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await action();
+    } catch (error) {
+      if (!isBusyRouteWriteFailure(error) || attempt >= ROUTE_BUSY_RETRY_LIMIT) throw error;
+      onRetry(attempt + 1);
+      await new Promise((resolve) => setTimeout(resolve, ROUTE_BUSY_RETRY_DELAY_MS * (attempt + 1)));
+    }
+  }
+}
+
 function employeeAliasKeys(employee: Employee) {
   return [employeeValue(employee), employeeName(employee), employee.code]
     .filter(Boolean)
@@ -396,6 +420,7 @@ export default function RoutesPlanningPage() {
   const [loadingMonitor, setLoadingMonitor] = useState(false);
   const [savingRoute, setSavingRoute] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
+  const [saveNotice, setSaveNotice] = useState<{ tone: "info" | "error"; text: string } | null>(null);
   const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true, kind: "trabajo" });
   const [scheduleKind, setScheduleKind] = useState<"administrative" | "operational">("administrative");
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
@@ -531,6 +556,7 @@ export default function RoutesPlanningPage() {
     setBulk({ start_date: today, end_date: addDays(today, 4), weekdays: [1, 2, 3, 4, 5] });
     setBulkMode(false);
     setEditingRoute(null);
+    setSaveNotice(null);
   }
 
   function openRouteMonitor(route: RouteMonitor) {
@@ -674,10 +700,20 @@ export default function RoutesPlanningPage() {
       return;
     }
     setSavingRoute(true);
+    setSaveNotice(null);
     const savedMonitorDate = bulkMode && modal !== "edit" ? bulk.start_date : form.date;
+    // El aviso va dentro del modal: el banner de la pagina queda detras de la ventana emergente y el
+    // operario solo veia el toast tecnico del sistema.
+    const notifyBusyRetry = (attempt: number) => setSaveNotice({
+      tone: "info",
+      text: `Otra persona está guardando ese horario en este momento. Reintentamos automáticamente (${attempt} de ${ROUTE_BUSY_RETRY_LIMIT}). No repitas el registro.`
+    });
     try {
       if (modal === "edit" && editingRoute) {
-        await api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")) });
+        await runRouteWriteWithBusyRetry(
+          () => api<TimeRoute>(`/api/v1/hr/routes/${editingRoute.id}`, { method: "PATCH", body: JSON.stringify(routePayload(editingRoute.status || "active")), silentFailureAlert: true }),
+          notifyBusyRetry
+        );
         setMessage("Horario actualizado correctamente.");
         setMessageTone("success");
       } else {
@@ -687,23 +723,32 @@ export default function RoutesPlanningPage() {
         // Prevalidar contra el servidor antes de escribir: el 409 MALLA_SOLAPADA es una
         // regla legitima, pero sin este paso el operario solo veia una frase generica y
         // no sabia que persona ni que malla existente bloqueaba el guardado.
-        const prevalidation = await api<{ ok: boolean; results: Array<{ date: string; status: string; conflicts: RouteConflict[] }> }>(
-          "/api/v1/hr/routes/prevalidate",
-          { method: "POST", body: JSON.stringify(payload) }
+        const prevalidation = await runRouteWriteWithBusyRetry(
+          () => api<{ ok: boolean; results: Array<{ date: string; status: string; conflicts: RouteConflict[] }> }>(
+            "/api/v1/hr/routes/prevalidate",
+            { method: "POST", body: JSON.stringify(payload), silentFailureAlert: true }
+          ),
+          notifyBusyRetry
         );
         const conflicts = (prevalidation.results || []).flatMap((item) => (item.conflicts || []).map((conflict) => ({ ...conflict, date: conflict.date || item.date })));
         if (!prevalidation.ok && conflicts.length) {
           setValidationIssues(conflictLines(conflicts).map((line) => `Malla superpuesta: ${line} Quita esas personas del horario o ajusta las horas.`));
-          setMessage("El horario no se guardo: hay personas con malla superpuesta en la misma fecha.");
+          setMessage("El horario no se guardó: hay personas con malla superpuesta en la misma fecha.");
           setMessageTone("error");
           return;
         }
         if (bulkMode) {
-          const result = await api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify(payload) });
+          const result = await runRouteWriteWithBusyRetry(
+            () => api<{ created: number }>("/api/v1/hr/routes/bulk", { method: "POST", body: JSON.stringify(payload), silentFailureAlert: true }),
+            notifyBusyRetry
+          );
           setMessage(`${result.created || 0} horario(s) asignado(s) correctamente.`);
           setMessageTone("success");
         } else {
-          await api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(payload) });
+          await runRouteWriteWithBusyRetry(
+            () => api<TimeRoute>("/api/v1/hr/routes", { method: "POST", body: JSON.stringify(payload), silentFailureAlert: true }),
+            notifyBusyRetry
+          );
           setMessage("Horario asignado correctamente.");
           setMessageTone("success");
         }
@@ -711,11 +756,14 @@ export default function RoutesPlanningPage() {
       setMonitorDate(savedMonitorDate);
       resetForm();
       setModal(null);
+      setSaveNotice(null);
       await Promise.all([loadRoutes(), loadReferenceData(), loadEventSummaries(), loadMonitor(savedMonitorDate)]);
     } catch (error) {
-      const baseMessage = error instanceof Error ? error.message : "No fue posible guardar el horario.";
+      const baseMessage = error instanceof Error ? error.message : "No fue posible guardar el horario. Tu información sigue diligenciada: vuelve a intentarlo en unos segundos.";
       const lines = conflictLines(conflictsFromError(error));
-      setMessage(lines.length ? `${baseMessage} ${lines.join(" ")}` : baseMessage);
+      const friendly = lines.length ? `${baseMessage} ${lines.join(" ")}` : baseMessage;
+      setSaveNotice({ tone: "error", text: friendly });
+      setMessage(friendly);
       setMessageTone("error");
     } finally {
       setSavingRoute(false);
@@ -1229,6 +1277,14 @@ export default function RoutesPlanningPage() {
           <div className="mt-3">
             <PeoplePicker dayAssignmentLabel={(employee) => { const assignment = dayAssignmentFor(employee); return assignment ? `${formatHour(assignment.start_time)}-${formatHour(assignment.end_time)}` : ""; }} employees={employees} selected={form.employees} onChange={(next) => setForm((prev) => ({ ...prev, employees: next }))} />
           </div>
+          {saveNotice ? (
+            <div
+              className={`mt-4 rounded-md border p-3 text-sm ${saveNotice.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}
+              role={saveNotice.tone === "error" ? "alert" : "status"}
+            >
+              {saveNotice.text}
+            </div>
+          ) : null}
         </ModalFrame>
       ) : null}
 

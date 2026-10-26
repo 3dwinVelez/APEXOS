@@ -1,0 +1,99 @@
+{
+  "change_id": "hr-route-p2028-20261026",
+  "commit": "b592aea5443a9f847db692ea3530a7a9451fc778",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (responsable del proyecto). Autorizacion textual del 2026-10-26: \"procede con la intervencion que reqieres y migrala hacia todos los ambiente como una correcion puntual, usa una rama auxiliar si lo requieres para no contaminar otros cambios o funciones, al terminar de usarla elimina la rama temportal\" y, sobre el mensaje en pantalla: \"no es ocultarle al cliente es mostrarlo de una manera mas amigable y entendible ... y no alarmar el cliente\".",
+    "approved_at": "2026-10-26T15:25:30Z",
+    "blocking_reasons": [],
+    "resolved_blockers": [
+      "Autorizacion expresa del responsable: obtenida el 2026-10-26 (antes el manifiesto estaba en pending).",
+      "desarrollo esta por detras de develop en Contabilidad: resuelto reconstruyendo los cinco commits sobre 0bb834c3 en tmp/hrp2028-develop (b592aea5) y validando el inventario exacto de 16 rutas contra ese candidato, no contra la rama completa."
+    ],
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": true,
+      "create_auxiliary_branch": true,
+      "run_remote_migrations": false
+    },
+    "not_authorized": [
+      "Aplicar migraciones a QA o PROD: ninguna de estas rutas introduce migracion y la politica exige autorizacion independiente.",
+      "Fusion de rama completa desarrollo -> develop o develop -> main: el diff neto arrastra modulo Contabilidad y 619 rutas ajenas al cambio."
+    ]
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../evidence/hr-route-p2028-20261026/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../evidence/hr-route-p2028-20261026/production-diagnosis.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../../../scripts/certifications/hr-route-p2028-local.js"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../evidence/hr-route-p2028-20261026/platform-regression.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md",
+        "../evidence/hr-route-p2028-20261026/platform-regression.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T15:35:12.799Z",
+    "head": "b592aea5443a9f847db692ea3530a7a9451fc778",
+    "checks_total": 24,
+    "checks_passed": 24,
+    "script": "../../../scripts/certifications/hr-route-p2028-local.js",
+    "evidence": [
+      "../certifications/hr-route-p2028-20261026.md",
+      "../evidence/hr-route-p2028-20261026/local-certification.json",
+      "../evidence/hr-route-p2028-20261026/local-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T15:40:00Z",
+    "api_tests": 870,
+    "api_failures": 0,
+    "web_tests": 584,
+    "web_failures": 0,
+    "hr_suite_tests": 154,
+    "hr_suite_failures": 0,
+    "script": "../../../scripts/certifications/release-local-regression.cjs",
+    "evidence": [
+      "../certifications/hr-route-p2028-20261026.md",
+      "../evidence/hr-route-p2028-20261026/platform-regression.json"
+    ]
+  },
+  "not_certified_by_this_gate": [
+    "Navegacion real en navegador del modal de mallas (reintento 503 y aviso dentro de la ventana). La maquina local no levanto el par API+next dev durante esta intervencion; la evidencia es de contrato de codigo (apps/web/test/hr-route-write-feedback.test.mjs, 8 pruebas) y de ejecucion HTTP real contra la API. Debe verificarse en QA despues del despliegue de develop."
+  ]
+}

@@ -1,0 +1,364 @@
+{
+  "change_id": "hr-route-p2028-20261026",
+  "certification": "hr-route-p2028-local",
+  "environment": "LOCAL",
+  "company": "SCJ",
+  "generated_at": "2026-10-26T15:35:12.799Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3211",
+  "operating_date": "2026-10-26",
+  "scope": {
+    "defect": "POST /api/v1/hr/routes con 500 P2028: la transaccion de mallas expiraba (5s por defecto) esperando el advisory lock; el horario no se guardaba y el banner decia 'Backend no disponible'.",
+    "product_decision": "No se cambio ninguna regla de negocio (MALLA_SOLAPADA, descanso, medianoche). Solo se amplió el presupuesto de la transaccion y el lock paso a try-lock acotado con 503 controlado.",
+    "proven_by_live_execution": [
+      "contencion real de 7s sobre pg_try_advisory_xact_lock: el POST sobrevive y persiste la malla (antes: 500 P2028)",
+      "contencion real de 26s: 503 ROUTE_ASSIGNMENT_BUSY con mensaje accionable, nunca 500",
+      "horario valido creado por la API, devuelto por GET /api/v1/hr/routes y persistido en TimeRoute",
+      "dos POST concurrentes al mismo scope: 201 + 409 MALLA_SOLAPADA, una sola malla persistida",
+      "POST /hr/routes/bulk bajo contencion real de 7s crea las 2 rutas del rango"
+    ],
+    "proven_by_code_level_assertion": [
+      "ROUTE_ASSIGNMENT_TRANSACTION_OPTIONS { maxWait: 5000, timeout: 30000 } se pasa a las 3 transacciones de mallas",
+      "lockRouteAssignmentScopes usa pg_try_advisory_xact_lock con deadline y ya no pg_advisory_xact_lock bloqueante",
+      "server.js mapea ROUTE_ASSIGNMENT_BUSY a 503 junto a MARCACION_CONCURRENCIA_TEMPORAL"
+    ]
+  },
+  "checks": [
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "transaction_options_declared",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "transaction_options_applied_to_all_three_writes",
+      "ok": true,
+      "detail": {
+        "optionsCount": 3
+      }
+    },
+    {
+      "name": "try_lock_replaces_blocking_lock",
+      "ok": true,
+      "detail": {
+        "has_try_lock": true,
+        "still_blocking": false
+      }
+    },
+    {
+      "name": "busy_deadline_declared",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "busy_error_declared",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "server_maps_busy_to_503",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "contention_7s_post_succeeds",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "error": null
+      }
+    },
+    {
+      "name": "contention_7s_waited_beyond_old_default",
+      "ok": true,
+      "detail": {
+        "wait_observed_ms": 6796,
+        "note": "con el default de 5s esto era 500 P2028"
+      }
+    },
+    {
+      "name": "contention_7s_route_persisted",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "contention_26s_returns_503",
+      "ok": true,
+      "detail": {
+        "status": 503,
+        "code": "ROUTE_ASSIGNMENT_BUSY"
+      }
+    },
+    {
+      "name": "contention_26s_busy_code",
+      "ok": true,
+      "detail": {
+        "code": "ROUTE_ASSIGNMENT_BUSY"
+      }
+    },
+    {
+      "name": "busy_payload_exposes_request_id",
+      "ok": true,
+      "detail": {
+        "request_id": "req-4"
+      }
+    },
+    {
+      "name": "busy_payload_message_is_actionable",
+      "ok": true,
+      "detail": {
+        "message": "Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos."
+      }
+    },
+    {
+      "name": "contention_26s_never_500",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "contention_26s_nothing_persisted",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "control_post_succeeds",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "control_latency_under_contention_budget",
+      "ok": true,
+      "detail": {
+        "latency_ms": 72
+      }
+    },
+    {
+      "name": "control_visible_in_monitor_get",
+      "ok": true,
+      "detail": {
+        "total": 147
+      }
+    },
+    {
+      "name": "control_persisted",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "serialization_one_wins_one_conflicts",
+      "ok": true,
+      "detail": {
+        "statuses": [
+          200,
+          409
+        ]
+      }
+    },
+    {
+      "name": "serialization_conflict_is_malla_solapada",
+      "ok": true,
+      "detail": {
+        "codes": [
+          "MALLA_SOLAPADA",
+          null
+        ]
+      }
+    },
+    {
+      "name": "serialization_no_duplicates",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "bulk_under_contention_succeeds",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "created": 2,
+        "error": null
+      }
+    }
+  ],
+  "fixture": {
+    "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
+    "admin_user_id": 701,
+    "admin_email": "qa.p28.admin.20261026153512@scj.test",
+    "admin_role": "APEX_ADMIN",
+    "operating_date": "2026-10-26",
+    "persons": {
+      "survive": "qa.p28.survive.20261026153512@scj.test",
+      "busy": "qa.p28.busy.20261026153512@scj.test",
+      "control": "qa.p28.control.20261026153512@scj.test",
+      "serial": "qa.p28.serial.20261026153512@scj.test",
+      "bulk": "qa.p28.bulk.20261026153512@scj.test"
+    },
+    "lock_wait_ms": 25000
+  },
+  "observations": {
+    "contencion_7s": {
+      "status": 200,
+      "code": null,
+      "latency_ms": 6796,
+      "wait_observed_ms": 6796
+    },
+    "contencion_26s": {
+      "status": 503,
+      "code": "ROUTE_ASSIGNMENT_BUSY",
+      "latency_ms": 25242
+    },
+    "serializacion": {
+      "statuses": [
+        200,
+        409
+      ],
+      "codes": [
+        "MALLA_SOLAPADA",
+        null
+      ]
+    },
+    "bulk": {
+      "status": 200,
+      "created": 2,
+      "latency_ms": 6840
+    }
+  },
+  "status": "passed",
+  "summary": {
+    "checks_total": 24,
+    "checks_passed": 24,
+    "requests": 9
+  },
+  "cleanup": {
+    "deleted_candidates": 5
+  },
+  "request_log": [
+    {
+      "actor": "cert",
+      "step": "health",
+      "method": "GET",
+      "pathname": "/health",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "ok": true,
+      "latency_ms": 343,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "actor": "admin",
+      "step": "login",
+      "method": "POST",
+      "pathname": "/api/v1/auth/login",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "ok": true,
+      "latency_ms": 537,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "actor": "admin",
+      "step": "contencion_7s",
+      "method": "POST",
+      "pathname": "/api/v1/hr/routes",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "ok": true,
+      "latency_ms": 6796,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "actor": "admin",
+      "step": "contencion_26s",
+      "method": "POST",
+      "pathname": "/api/v1/hr/routes",
+      "status": 503,
+      "code": "ROUTE_ASSIGNMENT_BUSY",
+      "request_id": "req-4",
+      "ok": false,
+      "latency_ms": 25242,
+      "transport_error": null,
+      "error": "Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos."
+    },
+    {
+      "actor": "admin",
+      "step": "control",
+      "method": "POST",
+      "pathname": "/api/v1/hr/routes",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "ok": true,
+      "latency_ms": 72,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "actor": "",
+      "step": "control_get",
+      "method": "GET",
+      "pathname": "/api/v1/hr/routes?limit=500",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "ok": true,
+      "latency_ms": 51,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "actor": "admin",
+      "step": "serial_2",
+      "method": "POST",
+      "pathname": "/api/v1/hr/routes",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "ok": true,
+      "latency_ms": 101,
+      "transport_error": null,
+      "error": null
+    },
+    {
+      "actor": "admin",
+      "step": "serial_1",
+      "method": "POST",
+      "pathname": "/api/v1/hr/routes",
+      "status": 409,
+      "code": "MALLA_SOLAPADA",
+      "request_id": "req-7",
+      "ok": false,
+      "latency_ms": 331,
+      "transport_error": null,
+      "error": "Ya existe una malla superpuesta para al menos una persona en la misma fecha."
+    },
+    {
+      "actor": "admin",
+      "step": "bulk_contencion_7s",
+      "method": "POST",
+      "pathname": "/api/v1/hr/routes/bulk",
+      "status": 200,
+      "code": null,
+      "request_id": null,
+      "ok": true,
+      "latency_ms": 6840,
+      "transport_error": null,
+      "error": null
+    }
+  ]
+}
