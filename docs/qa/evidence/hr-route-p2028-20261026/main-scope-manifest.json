@@ -54,7 +54,7 @@
       "name": "Crear y editar horarios (mallas) por el administrador de Talento Humano, incluso bajo concurrencia sobre la misma persona y fecha",
       "status": "passed",
       "evidence": [
-        "../certifications/hr-route-p2028-20261026.md",
+        "../../certifications/hr-route-p2028-20261026.md",
         "local-certification.json"
       ]
     },
@@ -62,7 +62,7 @@
       "name": "Serializacion MALLA_SOLAPADA: dos escrituras concurrentes al mismo scope dejan exactamente una malla",
       "status": "passed",
       "evidence": [
-        "../certifications/hr-route-p2028-20261026.md",
+        "../../certifications/hr-route-p2028-20261026.md",
         "local-certification.json"
       ]
     },
@@ -70,7 +70,7 @@
       "name": "Lectura del monitor de mallas (GET /api/v1/hr/routes) y creacion masiva por rango de fechas",
       "status": "passed",
       "evidence": [
-        "../certifications/hr-route-p2028-20261026.md",
+        "../../certifications/hr-route-p2028-20261026.md",
         "local-fixture.json"
       ]
     },
@@ -78,14 +78,14 @@
       "name": "RBAC hr:write y aislamiento multi-tenant en las escrituras certificadas",
       "status": "passed",
       "evidence": [
-        "../certifications/hr-route-p2028-20261026.md"
+        "../../certifications/hr-route-p2028-20261026.md"
       ]
     },
     {
       "name": "Contrato FM-02 del cliente: todo error de API expone status, code y retryable a la cola offline y al panel de reintentos",
       "status": "passed",
       "evidence": [
-        "../certifications/hr-route-p2028-20261026.md",
+        "../../certifications/hr-route-p2028-20261026.md",
         "platform-regression.json"
       ]
     },
@@ -93,7 +93,7 @@
       "name": "Regresion completa de plataforma sin degradacion en otros modulos frente al baseline productivo",
       "status": "passed",
       "evidence": [
-        "../certifications/hr-route-p2028-20261026.md",
+        "../../certifications/hr-route-p2028-20261026.md",
         "platform-regression.json"
       ]
     }

@@ -7,11 +7,11 @@
   "checks": {
     "functional": {
       "status": "passed",
-      "evidence": ["local-certification.json", "../certifications/hr-route-p2028-20261026.md"]
+      "evidence": ["local-certification.json", "../../certifications/hr-route-p2028-20261026.md"]
     },
     "error": {
       "status": "passed",
-      "evidence": ["local-certification.json", "production-diagnosis.md", "../certifications/hr-route-p2028-20261026.md"]
+      "evidence": ["local-certification.json", "production-diagnosis.md", "../../certifications/hr-route-p2028-20261026.md"]
     },
     "support_scripts": {
       "status": "passed",
@@ -19,17 +19,17 @@
     },
     "regression": {
       "status": "passed",
-      "evidence": ["platform-regression.json", "../certifications/hr-route-p2028-20261026.md"]
+      "evidence": ["platform-regression.json", "../../certifications/hr-route-p2028-20261026.md"]
     },
     "platform_regression": {
       "status": "passed",
-      "evidence": ["platform-regression.json", "../certifications/hr-route-p2028-20261026.md"]
+      "evidence": ["platform-regression.json", "../../certifications/hr-route-p2028-20261026.md"]
     }
   },
   "certification": {
     "status": "passed",
     "script": "../../../../scripts/certifications/hr-route-p2028-local.js",
-    "evidence": ["local-certification.json", "../certifications/hr-route-p2028-20261026.md"],
+    "evidence": ["local-certification.json", "../../certifications/hr-route-p2028-20261026.md"],
     "command": "npm run qa:hr-route:p2028 -- --port=3211 --tenant=<demo> --employee=<demo> --date=<dia siguiente habil>",
     "run_at": "2026-10-26T15:38:52.232Z",
     "result": "24/24 chequeos pasados sobre el candidato 5e547297 con API Fastify real y PostgreSQL real (127.0.0.1:55432, base apexos_cert_p2028)"
@@ -37,7 +37,7 @@
   "regression_certification": {
     "status": "passed",
     "script": "../../../../scripts/certifications/hr-route-p2028-local.js",
-    "evidence": ["platform-regression.json", "local-certification.json", "../certifications/hr-route-p2028-20261026.md"],
+    "evidence": ["platform-regression.json", "local-certification.json", "../../certifications/hr-route-p2028-20261026.md"],
     "transversal_command": "node --test --test-concurrency=2 apps/api/test y apps/web/test con NODE_ENV=test, DISABLE_REDIS, REDIS_DISABLED, DISABLE_BACKGROUND_WORKERS y base apexos_cert_p2028",
     "transversal_note": "release-local-regression.cjs no existe en el arbol de main, asi que se ejecuto esa replica con el mismo comando, flags y entorno dos veces: sobre el candidato 5e547297 y sobre un worktree limpio de origin/main (432f65aa). Resultado: API 419 pruebas (+3) con las mismas 2 fallas del baseline; web 380 pruebas (+8) con la misma 1 falla del baseline; 0 fallas nuevas. Las 3 fallas preexistentes son de ERP y Transporte, ajenas a Talento Humano, y sus archivos no aparecen en git diff --name-only origin/main HEAD. Typecheck del cliente: 0 errores.",
     "hr_suite_command": "node --test apps/api/test/hr-*.test.js",
@@ -48,7 +48,7 @@
     "company": "NYVORA",
     "environment": "QA",
     "script": "../../../../scripts/certifications/hr-route-p2028-local.js",
-    "evidence": ["local-certification.json", "local-fixture.json", "production-diagnosis.md", "../certifications/hr-route-p2028-20261026.md"],
+    "evidence": ["local-certification.json", "local-fixture.json", "production-diagnosis.md", "../../certifications/hr-route-p2028-20261026.md"],
     "basis": "La novedad se diagnostico primero contra la empresa modelo: nyvora no reproduce el 500 porque no tiene dos ediciones simultaneas sobre la misma persona y fecha, y porque el codigo de lectura/escritura de mallas es identico entre main y desarrollo. Por eso la certificacion no se apoyo en nyvora sola sino en el arnes en vivo que fuerza la contingencia: el mismo flujo HTTP que el operario usa (POST /api/v1/hr/routes y /bulk) contra Postgres real con el advisory lock del scope ya tomado. Bloque B: con contencion de 7 s el POST responde 200 y persiste la malla (antes moria con P2028/500). Bloque C: con 26 s responde 503 ROUTE_ASSIGNMENT_BUSY a los 25214 ms con request_id y mensaje accionable, sin dejar escritura a medias. Bloque D: horario valido creado y visible en GET, persistido en TimeRoute. Bloque E: dos POST concurrentes al mismo scope dejan 200 + 409 MALLA_SOLAPADA con exactamente una malla. Bloque F: bulk con ambos locks tomados 7 s crea las 2 rutas del rango. El aislamiento multi-tenant se ejerce con runWithTenant y RLS en cada lectura y escritura del arnes."
   },
   "rollback_plan": {
