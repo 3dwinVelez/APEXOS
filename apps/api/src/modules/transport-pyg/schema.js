@@ -63,4 +63,44 @@ const configUpdateSchema = {
   }
 };
 
-module.exports = { budgetsUpdateSchema, mappingUpdateSchema, configUpdateSchema };
+const accountRangeSchema = {
+  type: "object",
+  required: ["start", "end"],
+  additionalProperties: false,
+  properties: {
+    start: { type: "string", pattern: "^\\d+$", minLength: 1, maxLength: 20 },
+    end: { type: "string", pattern: "^\\d+$", minLength: 1, maxLength: 20 }
+  }
+};
+
+const accountConceptSchema = {
+  type: "object",
+  required: ["code", "name", "section", "kind", "order"],
+  additionalProperties: false,
+  properties: {
+    code: { type: "string", pattern: "^[A-Za-z0-9_]{1,60}$" },
+    name: { type: "string", minLength: 1, maxLength: 120 },
+    section: { type: "string", enum: ["ingresos", "gastos_operativos", "no_operativos", "impuestos", "resultados", "informativa"] },
+    kind: { type: "string", enum: ["income", "expense", "subtotal_ingresos", "subtotal_gastos_operativos", "subtotal_utilidad_operacional", "subtotal_antes_de_impuestos", "subtotal_utilidad_neta", "tax", "informational"] },
+    order: { type: "integer", minimum: 1 },
+    ranges: { type: "array", maxItems: 100, items: accountRangeSchema },
+    exclusions: { type: "array", maxItems: 100, items: accountRangeSchema }
+  }
+};
+
+// La validacion exhaustiva (rangos coherentes, exclusiones dentro de rangos,
+// solapes efectivos, subtotales protegidos) la hace el servicio; este esquema
+// solo fija la forma del cuerpo.
+const accountConfigurationUpdateSchema = {
+  body: {
+    type: "object",
+    required: ["source"],
+    additionalProperties: false,
+    properties: {
+      source: { type: "string", enum: ["accounting", "operational"] },
+      concepts: { type: "array", maxItems: 100, items: accountConceptSchema }
+    }
+  }
+};
+
+module.exports = { budgetsUpdateSchema, mappingUpdateSchema, configUpdateSchema, accountConfigurationUpdateSchema };

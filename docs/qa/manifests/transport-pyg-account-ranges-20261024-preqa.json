@@ -1,0 +1,85 @@
+{
+  "change_id": "transport-pyg-account-ranges-20261024",
+  "commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "instruction": "Autorizar rama y promoción puntual",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "scope": "promotion_to_develop_for_qa",
+    "status": "approved",
+    "approved_at": "2026-10-26",
+    "approved_by": "manue"
+  },
+  "checks": {
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-account-ranges-20261024.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-account-ranges-20261024.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-account-ranges-20261024.md"
+      ]
+    },
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-account-ranges-20261024.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-account-ranges-20261024.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-pyg-account-ranges-browser-local.js",
+    "evidence": [
+      "../certifications/transport-pyg-account-ranges-20261024.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-pyg-account-ranges-browser-local.js",
+    "evidence": [
+      "../certifications/transport-pyg-account-ranges-20261024.md"
+    ]
+  },
+  "promotion_branch": "codex/qa-vehicle-pyg-ranges-20261026",
+  "target_head": "f7bd73a84da4f846a57fb82ec27be1a9f87c274a",
+  "validation_summary": {
+    "original_candidate": "3e7bcd0d",
+    "certified_commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
+    "completed_at_utc": "2026-10-26T18:38:48.754Z",
+    "artifact_sha256": "0dfa3b722e0a7f0c5211e663cc553339facd9a4cff47fd333b6b0bf2257c6442",
+    "browser_coverage_completed": true,
+    "production_build": "passed",
+    "evidence_policy": "Raw browser JSON, logs and screenshots remain local; reviewed certification is versioned.",
+    "typescript": "passed",
+    "integral_checks_passed": 65,
+    "web_unit_and_regression_tests_passed": 38,
+    "target_type_fix_preserved": "ApiRequestOptions",
+    "api_unit_tests_passed": 43,
+    "api_regression_tests_passed": 130,
+    "corrective_change": "Rename local CommonJS evaluator variable in component test; no application source changed after certified build.",
+    "certified_application_commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
+    "baseline_update": "Preserves HR contention changes already present in target f7bd73a8; no extra module is promoted.",
+    "lint": "passed: zero errors; prior 22 warnings"
+  }
+}
