@@ -11,26 +11,26 @@
     ]
   },
   "role": {
-    "id": 400,
-    "name": "QA Concurrencia Admin 20261026181509"
+    "id": 406,
+    "name": "QA Concurrencia Admin 20261026193550"
   },
   "admin_user": {
-    "id": 706,
-    "email": "qa.cnt28.admin.20261026181509@apex.test"
+    "id": 712,
+    "email": "qa.cnt28.admin.20261026193550@apex.test"
   },
   "employees": {
-    "punch": 595,
-    "kilometraje": 596,
-    "nomina": 597,
-    "carrera": 598
+    "punch": 610,
+    "kilometraje": 611,
+    "nomina": 612,
+    "carrera": 613
   },
   "route": {
-    "id": 367,
+    "id": 368,
     "vehicle_plate": "QACNT28"
   },
   "payroll_period_key": "mensual:2026-10-01:2026-10-31",
   "contention_deadline_ms": 15000,
   "hold_over_deadline_ms": 18000,
   "hold_budgeted_ms": 7000,
-  "run_id": "20261026181509"
+  "run_id": "20261026193550"
 }

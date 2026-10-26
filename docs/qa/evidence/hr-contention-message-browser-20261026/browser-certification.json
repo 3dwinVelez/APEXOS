@@ -1,0 +1,365 @@
+{
+  "change_id": "hr-contention-message-browser-20261026",
+  "certification": "hr-contention-message-browser-local",
+  "environment": "LOCAL",
+  "browser": "chrome-headless",
+  "frontend_served_by": "next start (produccion)",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "api_url": "http://127.0.0.1:3218",
+  "web_url": "http://127.0.0.1:3219",
+  "generated_at": "2026-10-26T19:34:50.003Z",
+  "certified_commit": "efaac0100a7cbe35c81971659b6b6d393987fc98",
+  "operating_date": "2026-10-26",
+  "scope": {
+    "defect": "La contencion P2028 ya devolvia 503 reintentable por HTTP, pero nunca se abrio un navegador para confirmar que el operario ve un aviso accionable y no una caida del backend.",
+    "product_decision": "No se modifico ninguna regla de negocio: se sostiene el advisory lock desde una conexion PostgreSQL independiente para provocar la misma contencion real que el fix ya sabe atender, y se lee el texto que la pantalla muestra.",
+    "proven_by_live_browser": [
+      "login real por pantalla con el usuario de certificacion",
+      "POST real de ajuste de nomina bajo lock sostenido: 503 AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL, nunca 500",
+      "banner visible: mensaje amable de edicion simultanea, sin 'Backend no disponible' y sin JSON crudo",
+      "el formulario conserva la seleccion despues del rechazo",
+      "liberado el lock, el mismo clic guarda y el aviso de exito aparece",
+      "el ajuste queda persistido una sola vez en th_nomina_ajustes",
+      "cero errores de consola y cero respuestas 500 o P2028 en la sesion"
+    ]
+  },
+  "checks": [
+    {
+      "name": "api_health_ok",
+      "ok": true,
+      "detail": {
+        "commit": "efaac0100a7cbe35c81971659b6b6d393987fc98",
+        "modules": 18
+      }
+    },
+    {
+      "name": "web_served_from_production_build",
+      "ok": true,
+      "detail": {
+        "build_id": "FfFtcLfC0iHKF7L8l6MEi",
+        "web_url": "http://127.0.0.1:3219"
+      }
+    },
+    {
+      "name": "adjustment_post_requires_session",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "real_browser_login",
+      "ok": true,
+      "detail": {
+        "path": "/dashboard"
+      }
+    },
+    {
+      "name": "browser_novelties_form_ready",
+      "ok": true,
+      "detail": {
+        "employee_id": 608
+      }
+    },
+    {
+      "name": "browser_employee_selected",
+      "ok": true,
+      "detail": {
+        "selected": "608"
+      }
+    },
+    {
+      "name": "contention_post_returns_503",
+      "ok": true,
+      "detail": {
+        "status": 503,
+        "code": "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL"
+      }
+    },
+    {
+      "name": "contention_busy_code",
+      "ok": true,
+      "detail": {
+        "code": "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL"
+      }
+    },
+    {
+      "name": "contention_never_500",
+      "ok": true,
+      "detail": {
+        "body": {
+          "error": "Otra correccion de nomina se esta guardando para esta persona en este momento. Intente de nuevo en unos segundos.",
+          "code": "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL",
+          "request_id": "req-i"
+        }
+      }
+    },
+    {
+      "name": "contention_gives_up_within_budget",
+      "ok": true,
+      "detail": {
+        "latency_ms": 15337,
+        "deadline_ms": 15000
+      }
+    },
+    {
+      "name": "browser_shows_friendly_busy_message",
+      "ok": true,
+      "detail": {
+        "fragmento": "Otra persona está guardando ese mismo registro en este momento. Espera unos segundos e inténtalo de nuevo: tu información no se perdió."
+      }
+    },
+    {
+      "name": "browser_message_reassures_work_is_kept",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "browser_never_announces_backend_crash",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "browser_never_shows_raw_json",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "browser_keeps_form_selection",
+      "ok": true,
+      "detail": {
+        "selected": "608"
+      }
+    },
+    {
+      "name": "contention_persisted_nothing",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "retry_after_release_succeeds",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "body": {
+          "id": 7,
+          "tenant_id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
+          "employee_id": 608,
+          "period_key": "quincena:2026-10-01:2026-10-15",
+          "adjustment_type": "manual",
+          "concept_code": "AJUSTE_MANUAL",
+          "description": "Ajuste",
+          "minutes": 0,
+          "amount": "0",
+          "taxable": true,
+          "status": "activo",
+          "metadata": {
+            "days": 0,
+            "paid_by": "",
+            "date_end": null,
+            "date_start": null
+          },
+          "created_by": 711,
+          "created_at": "2026-10-26T19:35:22.833Z"
+        }
+      }
+    },
+    {
+      "name": "browser_shows_success_after_retry",
+      "ok": true,
+      "detail": {
+        "fragmento": "Ajuste agregado. Ejecuta prueba o recalcula para verlo en la liquidacion."
+      }
+    },
+    {
+      "name": "adjustment_persisted_exactly_once",
+      "ok": true,
+      "detail": {
+        "employee_id": 608
+      }
+    },
+    {
+      "name": "session_had_no_500",
+      "ok": true,
+      "detail": {
+        "statuses_vistos": [
+          200,
+          503
+        ]
+      }
+    },
+    {
+      "name": "session_had_no_page_errors",
+      "ok": true,
+      "detail": {
+        "page_errors": []
+      }
+    },
+    {
+      "name": "session_had_no_console_errors",
+      "ok": true,
+      "detail": {
+        "console_errors": []
+      }
+    }
+  ],
+  "observations": {
+    "contencion": {
+      "status": 503,
+      "code": "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL",
+      "request_id": "req-i",
+      "latency_ms": 15337,
+      "server_message": "Otra correccion de nomina se esta guardando para esta persona en este momento. Intente de nuevo en unos segundos."
+    },
+    "reintento": {
+      "status": 200,
+      "id": 7
+    }
+  },
+  "network": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/cierres?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/liquidaciones?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/ajustes?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/liquidaciones?limit=500",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/empleados?active=true",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/liquidaciones?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/liquidaciones?limit=500",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/ajustes?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/cierres?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/talento-humano/nomina/ajustes",
+      "status": 503
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/platform-logs/client",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/talento-humano/nomina/ajustes",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/liquidaciones?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/liquidaciones?limit=500",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/ajustes?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/cierres?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/empleados?active=true",
+      "status": 200
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "status": "passed",
+  "fixture": {
+    "tenant": {
+      "id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
+      "name": "Puebla Operaciones"
+    },
+    "role": {
+      "id": 405,
+      "name": "QA Aviso Concurrencia 20261026193449"
+    },
+    "admin_user": {
+      "id": 711,
+      "email": "qa.brs28.admin.20261026193449@apex.test"
+    },
+    "employee": {
+      "id": 608,
+      "code": "QA-BRS-NOM26193449"
+    }
+  },
+  "cleanup": {
+    "employees_purged": [
+      {
+        "employee_id": 608,
+        "removed": true
+      }
+    ],
+    "mirror_employee_removed": true,
+    "user_deactivated": true,
+    "role_deactivated": true,
+    "errors": []
+  },
+  "finished_at": "2026-10-26T19:35:23.694Z"
+}
