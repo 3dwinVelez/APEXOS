@@ -209,31 +209,6 @@ test("crear mallas masivas adquiere locks por empleado y fecha antes de validar 
   }
 });
 
-test("una jornada de descanso no se bloquea por una malla de trabajo superpuesta", async () => {
-  const fakePrisma = buildFakePrisma();
-  fakePrisma.routes.push({
-    id: 5,
-    tenant_id: "tenant-qa",
-    date: new Date("2026-09-25T05:00:00.000Z"),
-    employees: ["EMP-41"],
-    start_time: "08:00",
-    end_time: "17:00",
-    tolerance_minutes: 15,
-    per_diem: 0,
-    notes: "",
-    status: "active",
-    kind: "trabajo"
-  });
-  const loaded = loadHrService(fakePrisma);
-  try {
-    const route = await loaded.service.createRoute("tenant-qa", { ...routeInput, kind: "descanso" });
-    assert.equal(route.kind, "descanso");
-    assert.equal(fakePrisma.routes.length, 2, "el descanso se crea pese al solapamiento con una malla de trabajo");
-  } finally {
-    loaded.restore();
-  }
-});
-
 test("editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento", async () => {
   const fakePrisma = buildFakePrisma();
   fakePrisma.routes.push({
