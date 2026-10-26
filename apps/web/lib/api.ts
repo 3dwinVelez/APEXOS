@@ -4449,18 +4449,29 @@ export function listApexHeartReportSchedules() { return api<ApexHeartReportSched
 export function saveApexHeartReportSchedule(input: Omit<ApexHeartReportSchedule, "id" | "next_run_at" | "last_run_at">) { return api<ApexHeartReportSchedule>("/api/v1/apex-heart/report-schedules", { method: "POST", body: JSON.stringify(input) }); }
 export function deleteApexHeartReportSchedule(id: number) { return api(`/api/v1/apex-heart/report-schedules/${id}`, { method: "DELETE" }); }
 
-export type TransportPygConcept = { code: string; name: string; section: string; kind: string; display_order: number; dynamic?: boolean };
-export type TransportPygRow = { code: string; name: string; section: string; kind: string; dynamic?: boolean; budget: number; actual: number; pct: number | null; cump: number | null };
+export type TransportPygConcept = { code: string; name: string; section: string; kind: string; display_order: number; dynamic?: boolean; has_accounts?: boolean; pending?: boolean; informational?: boolean };
+export type TransportPygCenterChild = { center_code: string; center_name: string; branch_code: string; branch_name: string; actual: number; budget: number | null; budget_coverage: "none" | "partial" | "full" };
+export type TransportPygAccountChild = { account_code: string; account_name: string; actual: number; budget: number | null; budget_coverage: "none" | "partial" | "full"; centers: TransportPygCenterChild[] };
+export type TransportPygRow = {
+  code: string; name: string; section: string; kind: string; dynamic?: boolean; budget: number | null; actual: number; pct: number | null; cump: number | null;
+  display_order?: number; pending?: boolean; pending_message?: string; informational?: boolean;
+  budget_coverage?: "none" | "partial" | "full"; children?: TransportPygAccountChild[];
+};
 export type TransportPygVehicle = {
   vehicle_id: number; plate: string; vehicle_label: string | null; driver_id: number | null;
+  center_code?: string | null; center_name?: string | null; branch_code?: string | null; branch_name?: string | null;
   income_actual: number; unmapped_expense: number; rows: TransportPygRow[];
 };
 export type TransportPygReport = {
   period: string; period_start: string; period_end: string; tax_percent: number;
+  source: "accounting" | "operational"; report_source?: "ledger" | "operational";
   concepts: TransportPygConcept[];
   vehicles: TransportPygVehicle[];
-  corporate: { income_actual: number; unmapped_expense: number; rows: TransportPygRow[] };
-  data_status: { vehicle_count: number; vehicles_with_income: number; unmapped_total: number };
+  corporate: { income_actual: number; unmapped_expense: number; rows: TransportPygRow[]; totals?: { totalIngresos?: { actual: number }; totalGastos?: { actual: number }; utilidadOp?: { actual: number }; antes?: { actual: number }; impuesto?: { actual: number }; neta?: { actual: number } } };
+  unassigned?: TransportPygVehicle | null;
+  warnings?: Array<{ code: string; message: string; detail?: unknown }>;
+  reconciliation?: { ledger_net: number; neta_actual: number; difference: number; informational_actual: number; note: string };
+  data_status: { vehicle_count: number; vehicles_with_income: number; unmapped_total: number; unassigned_centers?: number; unclassified_income?: number; unclassified_expense?: number };
 };
 export type TransportPygBudgets = { period: string; rows: Array<{ vehicle_id: number; concept_code: string; amount: number }> };
 export type TransportPygMapping = { rows: Array<{ source_type: string; source_code: string; pyg_concept_code: string; active: boolean }> };
@@ -4479,6 +4490,27 @@ export function saveTransportPygMapping(rows: TransportPygMapping["rows"]) {
 export function getTransportPygConfig() { return api<TransportPygConfig>("/api/v1/transport-pyg/config"); }
 export function saveTransportPygConfig(taxPercent: number) {
   return api<TransportPygConfig>("/api/v1/transport-pyg/config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tax_percent: taxPercent }) });
+}
+
+export type TransportPygAccountRange = { start: string; end: string };
+export type TransportPygAccountConcept = {
+  code: string; name: string; section: "ingresos" | "gastos_operativos" | "no_operativos" | "impuestos" | "resultados" | "informativa";
+  kind: "income" | "expense" | "subtotal_ingresos" | "subtotal_gastos_operativos" | "subtotal_utilidad_operacional" | "subtotal_antes_de_impuestos" | "subtotal_utilidad_neta" | "tax" | "informational";
+  order: number; ranges: TransportPygAccountRange[]; exclusions: TransportPygAccountRange[];
+};
+export type TransportPygAccountConfiguration = {
+  source: "accounting" | "operational";
+  has_config: boolean;
+  config: { source: "accounting" | "operational"; concepts: TransportPygAccountConcept[] } | null;
+  proposal: { source: "accounting"; label: string; concepts: TransportPygAccountConcept[] };
+  proposal_from: string;
+  proposal_label: string;
+};
+export function getTransportPygAccountConfiguration() {
+  return api<TransportPygAccountConfiguration>("/api/v1/transport-pyg/account-configuration");
+}
+export function saveTransportPygAccountConfiguration(input: { source: "accounting" | "operational"; concepts: TransportPygAccountConcept[] }) {
+  return api<{ ok: boolean; source: string; concepts: number }>("/api/v1/transport-pyg/account-configuration", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
 }
 
 async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {

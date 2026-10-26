@@ -2,6 +2,7 @@ const tenancy = require("../../middleware/tenancy");
 const { requirePermission } = require("../../middleware/rbac");
 const schemas = require("./schema");
 const service = require("./service");
+const accountConfigService = require("./account-config-service");
 
 async function transportPygRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
@@ -20,6 +21,8 @@ async function transportPygRoutes(fastify) {
   fastify.put("/transport-pyg/mapping", { schema: schemas.mappingUpdateSchema, preHandler: manage }, (request) => service.saveMapping(request.user?.tenant_id, request.user, request.body || {}));
   fastify.get("/transport-pyg/config", { preHandler: view }, (request) => service.getConfig(request.user?.tenant_id));
   fastify.put("/transport-pyg/config", { schema: schemas.configUpdateSchema, preHandler: manage }, (request) => service.saveConfig(request.user?.tenant_id, request.user, request.body || {}));
+  fastify.get("/transport-pyg/account-configuration", { preHandler: view }, (request) => accountConfigService.getAccountConfiguration(request.user?.tenant_id));
+  fastify.put("/transport-pyg/account-configuration", { schema: schemas.accountConfigurationUpdateSchema, preHandler: manage }, (request) => accountConfigService.saveAccountConfiguration(request.user?.tenant_id, request.user, request.body || {}));
 }
 
 module.exports = transportPygRoutes;

@@ -6,6 +6,7 @@ const test = require("node:test");
 
 const { CONCEPT_CATALOG, DEFAULT_SOURCE_MAP, UNMAPPED_CONCEPT } = require("../src/modules/transport-pyg/concept-catalog");
 const { buildReport, periodBounds, normalizePlate } = require("../src/modules/transport-pyg/engine");
+const accountConfig = require("../src/modules/transport-pyg/account-config");
 
 const PERIOD = "2026-08";
 
@@ -144,12 +145,33 @@ test("buildReport: porcentajes contra ingresos corporativos y cumplimiento nulo 
 
 // ---- Servicio con prisma falso: validaciones y agregacion SQL ----
 
+// pyg-interactive se require de forma lazy desde service.js; se inyecta un
+// stub por require.cache antes de cargar el servicio (sin importar el modulo
+// real, que arrastra tenantCache -> Redis y exige REDIS_URL) y se restaura al
+// terminar cada caso.
+const interactivePath = require.resolve("../src/modules/accounting/pyg-interactive");
+const interactiveStub = {
+  getInteractivePyg: async () => ({ nodes: [] }),
+  parseOrganizationTree: (config) => {
+    const source = config && typeof config === "object" ? config : {};
+    const accounting = source.accounting && typeof source.accounting === "object" ? source.accounting : source;
+    const tree = accounting.organization_tree && typeof accounting.organization_tree === "object" ? accounting.organization_tree : {};
+    return {
+      societies: Array.isArray(tree.societies) ? tree.societies : [],
+      branches: Array.isArray(tree.branches) ? tree.branches : [],
+      cost_centers: Array.isArray(tree.cost_centers) ? tree.cost_centers : []
+    };
+  }
+};
+
 function loadService(fakePrisma) {
   const prismaPath = require.resolve("../src/core/prisma");
   const servicePath = require.resolve("../src/modules/transport-pyg/service");
   const previousPrisma = require.cache[prismaPath];
   const previousService = require.cache[servicePath];
+  const previousInteractive = require.cache[interactivePath];
   require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true, exports: fakePrisma };
+  require.cache[interactivePath] = { id: interactivePath, filename: interactivePath, loaded: true, exports: interactiveStub };
   delete require.cache[servicePath];
   const service = require(servicePath);
   return {
@@ -159,6 +181,8 @@ function loadService(fakePrisma) {
       if (previousService) require.cache[servicePath] = previousService;
       if (previousPrisma) require.cache[prismaPath] = previousPrisma;
       else delete require.cache[prismaPath];
+      if (previousInteractive) require.cache[interactivePath] = previousInteractive;
+      else delete require.cache[interactivePath];
     }
   };
 }
@@ -170,11 +194,21 @@ function buildFakePrisma() {
     concepts: new Map(),
     maps: new Map(),
     config: null,
+    tenant: { id: "tenant-qa", config: {} },
+    activeTenantId: null,
     audit: [],
-    tenantContexts: []
+    tenantContexts: [],
+    conceptUpserts: []
   };
   const key = (...parts) => parts.join("||");
   const db = {
+    tenant: {
+      findUnique: async ({ where }) => {
+        state.tenantContexts.push(`tenant.findUnique:${where.id}`);
+        if (where.id !== state.tenant.id) return null;
+        return { id: state.tenant.id, config: state.tenant.config };
+      }
+    },
     vehicle: {
       findMany: async () => {
         state.tenantContexts.push("vehicle.findMany");
@@ -192,10 +226,14 @@ function buildFakePrisma() {
     },
     transportPygConcept: {
       upsert: async ({ where, update, create }) => {
-        state.concepts.set(where.tenant_id_code.code, { ...create, ...update });
-        return state.concepts.get(where.tenant_id_code.code);
+        state.conceptUpserts.push({ update });
+        const code = where.tenant_id_code.code;
+        const existing = state.concepts.get(code);
+        const next = existing ? { ...existing, ...update } : { ...create };
+        state.concepts.set(code, next);
+        return next;
       },
-      findMany: async () => CONCEPT_CATALOG.map((concept) => ({ ...concept, display_order: concept.order }))
+      findMany: async () => [...state.concepts.values()].sort((a, b) => a.display_order - b.display_order)
     },
     transportPygSourceMap: {
       findMany: async () => DEFAULT_SOURCE_MAP.map((row) => ({ ...row, active: true })),
@@ -217,6 +255,13 @@ function buildFakePrisma() {
         return state.config;
       }
     },
+    account: {
+      // El plan real solo se consume desde core/prisma; el servicio contable ya
+      // no re-filtra hojas por Account.type.
+      findMany: async () => {
+        throw new Error("db.account.findMany no debe consultarse desde el reporte PYG contable");
+      }
+    },
     auditLog: { create: async ({ data }) => { state.audit.push(data); return data; } },
     $queryRaw: async (strings, ...values) => {
       const sql = Array.isArray(strings) ? strings.join("?") : String(strings);
@@ -229,7 +274,7 @@ function buildFakePrisma() {
     },
     $executeRawUnsafe: async () => 1,
     runWithTenant: (tenantId, callback) => {
-      state.tenant = tenantId;
+      state.activeTenantId = tenantId;
       return callback();
     },
     $transaction: async (callback) => callback(db)
@@ -247,12 +292,249 @@ test("servicio: getReport agrega ingresos/gastos y devuelve el DTO con tenant co
     assert.equal(report.vehicles[0].income_actual, 19150000);
     assert.equal(report.vehicles[0].rows.find((row) => row.code === "GASTOS_PERSONAL").actual, 7803733);
     assert.equal(report.corporate.income_actual, 19150000);
-    assert.equal(fake.state.tenant, "tenant-qa");
+    assert.equal(fake.state.activeTenantId, "tenant-qa");
+    assert.equal(fake.state.tenant.id, "tenant-qa");
     // La siembra idempotente creo el catalogo completo y el mapping por defecto.
     assert.equal(fake.state.concepts.size, CONCEPT_CATALOG.length);
     assert.equal(fake.state.maps.size, DEFAULT_SOURCE_MAP.length);
   } finally {
     loaded.restore();
+  }
+});
+
+test("servicio: ensureCatalog no sobrescribe nombre, orden ni defaults del tenant", async () => {
+  const fake = buildFakePrisma();
+  fake.state.concepts.set("INGRESOS", { tenant_id: "tenant-qa", code: "INGRESOS", name: "INGRESOS AJUSTADOS", section: "ingresos", kind: "income", display_order: 99 });
+  const loaded = loadService(fake.db);
+  try {
+    const rows = await loaded.service.listConcepts("tenant-qa");
+    const ingresos = rows.find((row) => row.code === "INGRESOS");
+    assert.equal(ingresos.name, "INGRESOS AJUSTADOS");
+    assert.equal(ingresos.display_order, 99);
+    assert.ok(fake.state.conceptUpserts.every((entry) => Object.keys(entry.update).length === 0));
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: getReport con fuente contable usa el arbol interactivo y hojas limpias", async () => {
+  const fake = buildFakePrisma();
+  fake.state.tenant.config = {
+    accounting: {
+      vehicle_pyg: { source: "accounting", concepts: accountConfig.cloneProposal().concepts },
+      organization_tree: {
+        branches: [{ code: "B1", name: "Sucursal Norte" }],
+        cost_centers: [{ code: "ESQ294", name: "GOLIAT", branch_code: "B1", vehicle_id: 1 }]
+      }
+    }
+  };
+  const sourceNodes = [{
+    dimension: "puc",
+    code: "41450501",
+    name: "41450501 · INGRESOS FLETES 2026",
+    account_id: 11,
+    children: [{
+      dimension: "branch",
+      code: "B1",
+      name: "Sucursal Norte",
+      children: [{
+        dimension: "cost_center",
+        code: "B1|ESQ294",
+        name: "GOLIAT",
+        is_leaf: true,
+        amount_cents: 1915000000,
+        budget_rows: 1,
+        // Clase 4: el presupuesto se firma credit - debit (positivo).
+        budget_cents: 300000000,
+        budget_months_found: ["2026-08"],
+        children: []
+      }, {
+        dimension: "cost_center",
+        code: "B1|SINPRESU",
+        name: "Sin presupuesto",
+        is_leaf: true,
+        amount_cents: 50000,
+        budget_rows: 0,
+        budget_cents: 0,
+        budget_months: [],
+        children: []
+      }]
+    }]
+  }];
+  interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
+  const loaded = loadService(fake.db);
+  try {
+    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    assert.equal(report.source, "accounting");
+    const vehicle = report.vehicles.find((item) => item.plate === "ESQ 294");
+    const ingresos = vehicle.rows.find((row) => row.code === "INGRESOS");
+    assert.equal(ingresos.actual, 19150000);
+    assert.equal(ingresos.budget, 3000000);
+    assert.equal(ingresos.children.length, 1, "sin presupuesto no debe agregar una cuenta fantasma");
+    assert.equal(ingresos.children[0].account_name, "INGRESOS FLETES 2026", "sin prefijo de codigo, conservando numeros del nombre");
+    assert.equal(ingresos.children[0].budget, 3000000);
+    // El centro sin vehiculo no se pierde: va al bloque sin asignar y al consolidado.
+    assert.ok(report.unassigned);
+    assert.equal(report.unassigned.rows.find((row) => row.code === "INGRESOS").actual, 500);
+    assert.equal(report.corporate.totals.totalIngresos.actual, 19150500);
+    assert.equal(report.reconciliation.difference, 0);
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
+  }
+});
+
+test("servicio: el extractor limpia el prefijo del nombre y respeta budget_months_found", async () => {
+  const fake = buildFakePrisma();
+  fake.state.tenant.config = {
+    accounting: {
+      vehicle_pyg: { source: "accounting", concepts: accountConfig.cloneProposal().concepts },
+      organization_tree: { branches: [{ code: "B1", name: "Sucursal Norte" }], cost_centers: [] }
+    }
+  };
+  interactiveStub.getInteractivePyg = async () => ({
+    nodes: [
+      {
+        dimension: "puc",
+        code: "41450501",
+        name: "41450501 · INGRESOS 2026 FLETES",
+        account_id: 11,
+        children: [{
+          dimension: "branch",
+          code: "B1",
+          name: "Sucursal Norte",
+          children: [{
+            dimension: "cost_center",
+            code: "B1|ABC123",
+            name: "GOLIAT",
+            is_leaf: true,
+            amount_cents: 150000,
+            budget_rows: 1,
+            budget_cents: 250000,
+            budget_months: null,
+            budget_months_found: ["2026-08"],
+            children: []
+          }]
+        }]
+      },
+      {
+        dimension: "puc",
+        code: "41450502",
+        name: "41450502 INGRESOS SIN SEPARADOR",
+        account_id: 13,
+        children: [{
+          dimension: "branch",
+          code: "B1",
+          name: "Sucursal Norte",
+          children: [{
+            dimension: "cost_center",
+            code: "B1|ABC123",
+            name: "GOLIAT",
+            is_leaf: true,
+            amount_cents: 50000,
+            budget_rows: 0,
+            budget_cents: 0,
+            budget_months: [],
+            children: []
+          }]
+        }]
+      }
+    ],
+    warnings: [],
+    linkage: {}
+  });
+  const loaded = loadService(fake.db);
+  try {
+    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    // El centro ABC123 no tiene maestro en organization_tree: sus hojas caen al
+    // bloque sin vehiculo, y por eso se leen en el consolidado.
+    assert.ok(report.vehicles.every((item) => item.rows.find((row) => row.code === "INGRESOS").actual === 0));
+    assert.equal(report.unassigned.rows.find((row) => row.code === "INGRESOS").actual, 2000);
+    const ingresos = report.corporate.rows.find((row) => row.code === "INGRESOS");
+    assert.equal(ingresos.children.length, 2);
+    const conPresupuesto = ingresos.children.find((item) => item.account_code === "41450501");
+    const sinPresupuesto = ingresos.children.find((item) => item.account_code === "41450502");
+    // Se quita solo "<codigo> · "; los numeros propios del nombre se conservan.
+    assert.equal(conPresupuesto.account_name, "INGRESOS 2026 FLETES");
+    assert.equal(conPresupuesto.budget, 2500);
+    assert.equal(conPresupuesto.budget_coverage, "full");
+    // Sin separador no hay prefijo que quitar.
+    assert.equal(sinPresupuesto.account_name, "41450502 INGRESOS SIN SEPARADOR");
+    assert.equal(sinPresupuesto.budget, null);
+    assert.equal(sinPresupuesto.budget_coverage, "none");
+    // Presupuesto 0 con budget_rows 0 no debe convertirse en cero implicito.
+    assert.equal(ingresos.budget, 2500);
+    assert.equal(ingresos.actual, 2000);
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
+  }
+});
+
+test("servicio: configuracion guardada invalida cae a la propuesta con aviso", async () => {
+  const fake = buildFakePrisma();
+  fake.state.tenant.config = {
+    accounting: {
+      vehicle_pyg: { source: "accounting", concepts: [{ code: "", name: "", kind: "x", section: "x", order: 0 }] },
+      organization_tree: { branches: [], cost_centers: [] }
+    }
+  };
+  interactiveStub.getInteractivePyg = async () => ({ nodes: [], warnings: [], linkage: {} });
+  const loaded = loadService(fake.db);
+  try {
+    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    assert.equal(report.source, "accounting");
+    assert.ok(report.warnings.some((item) => item.code === "VEHICLE_PYG_CONFIG_FALLBACK"));
+    assert.equal(report.corporate.rows.length, accountConfig.EXCEL_PROPOSAL.concepts.length);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("servicio: los meses de presupuesto salen de budget_months_found", async () => {
+  const fake = buildFakePrisma();
+  fake.state.tenant.config = {
+    accounting: {
+      vehicle_pyg: { source: "accounting", concepts: accountConfig.cloneProposal().concepts },
+      organization_tree: { branches: [], cost_centers: [{ code: "ESQ294", name: "GOLIAT", branch_code: "B1", vehicle_id: 1 }] }
+    }
+  };
+  interactiveStub.getInteractivePyg = async () => ({
+    nodes: [{
+      dimension: "puc",
+      code: "41450501",
+      name: "41450501 · INGRESOS FLETES 2026",
+      account_id: 11,
+      children: [{
+        dimension: "branch",
+        code: "B1",
+        name: "Sucursal Norte",
+        children: [{
+          dimension: "cost_center",
+          code: "B1|ESQ294",
+          name: "GOLIAT",
+          is_leaf: true,
+          amount_cents: 100000,
+          budget_rows: 1,
+          budget_cents: 250000,
+          budget_months: null,
+          budget_months_found: ["2026-08"],
+          children: []
+        }]
+      }]
+    }],
+    warnings: [],
+    linkage: {}
+  });
+  const loaded = loadService(fake.db);
+  try {
+    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const vehicle = report.vehicles.find((item) => item.plate === "ESQ 294");
+    const account = vehicle.rows.find((row) => row.code === "INGRESOS").children[0];
+    assert.equal(account.budget_coverage, "full");
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
   }
 });
 
@@ -305,6 +587,132 @@ test("servicio: saveConfig persiste la tarifa del impuesto y valida el rango", a
     const config = await loaded.service.getConfig("tenant-qa");
     assert.equal(config.tax_percent, 3.5);
     await assert.rejects(() => loaded.service.saveConfig("tenant-qa", { id: 5 }, { tax_percent: 120 }), /entre 0 y 100/);
+  } finally {
+    loaded.restore();
+  }
+});
+
+// ---- Configuracion contable GET/PUT (runWithTenant real sin parametro) ----
+
+const redisConfigPath = require.resolve("../src/fabric/redisConfig");
+const tenantCachePath = require.resolve("../src/core/tenantCache");
+
+function loadAccountConfigService(fakePrisma) {
+  const prismaPath = require.resolve("../src/core/prisma");
+  const servicePath = require.resolve("../src/modules/transport-pyg/account-config-service");
+  const previous = {
+    prisma: require.cache[prismaPath],
+    service: require.cache[servicePath],
+    tenantCache: require.cache[tenantCachePath],
+    redis: require.cache[redisConfigPath]
+  };
+  require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true, exports: fakePrisma };
+  require.cache[tenantCachePath] = {
+    id: tenantCachePath,
+    filename: tenantCachePath,
+    loaded: true,
+    exports: { invalidateTenantCache: async () => undefined, getTenantConfig: async () => ({}) }
+  };
+  delete require.cache[servicePath];
+  const service = require(servicePath);
+  return {
+    service,
+    restore() {
+      delete require.cache[servicePath];
+      for (const [path, cached] of [[prismaPath, previous.prisma], [servicePath, previous.service], [tenantCachePath, previous.tenantCache], [redisConfigPath, previous.redis]]) {
+        if (cached) require.cache[path] = cached;
+        else delete require.cache[path];
+      }
+    }
+  };
+}
+
+// Reproduce core/prisma.js: runWithTenant NO entrega cliente al callback.
+function buildTenantPrisma(tenantConfig = {}) {
+  const state = { config: tenantConfig, updates: [], audits: [], scopes: [] };
+  const db = {
+    tenant: {
+      findUnique: async () => ({ id: "tenant-qa", config: state.config }),
+      update: async ({ data }) => {
+        state.updates.push(data);
+        state.config = data.config;
+        return { id: "tenant-qa", config: state.config };
+      }
+    },
+    auditLog: { create: async ({ data }) => { state.audits.push(data); return data; } },
+    $executeRawUnsafe: async () => 1,
+    $transaction: async (callback) => callback(db),
+    runWithTenant: (tenantId, callback) => {
+      state.scopes.push(tenantId);
+      return callback();
+    }
+  };
+  return { db, state };
+}
+
+test("config: GET no falla con runWithTenant sin parametro y no escribe", async () => {
+  const fake = buildTenantPrisma({ accounting: { vehicle_pyg: { source: "accounting", concepts: [{ code: "INGRESOS", name: "X", section: "ingresos", kind: "income", order: 1, ranges: [], exclusions: [] }] } } });
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    const config = await loaded.service.getAccountConfiguration("tenant-qa");
+    assert.equal(config.source, "accounting");
+    assert.equal(config.has_config, true);
+    assert.equal(config.config.concepts.length, 1);
+    assert.equal(config.proposal_from, "excel-presupuesto");
+    assert.deepEqual(fake.state.scopes, ["tenant-qa"]);
+    assert.equal(fake.state.updates.length, 0);
+    assert.equal(fake.state.audits.length, 0);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("config: GET sin tenant exige empresa y sin config devuelve propuesta", async () => {
+  const fake = buildTenantPrisma({});
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    await assert.rejects(() => loaded.service.getAccountConfiguration(null), /Empresa requerida/);
+    const config = await loaded.service.getAccountConfiguration("tenant-qa");
+    assert.equal(config.has_config, false);
+    assert.equal(config.config, null);
+    assert.equal(config.proposal.concepts.length, accountConfig.EXCEL_PROPOSAL.concepts.length);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("config: PUT conserva las demas claves del tenant config", async () => {
+  const fake = buildTenantPrisma({ locale: "es-CO", accounting: { organization_tree: { branches: [{ code: "B1" }] }, otros: 7 } });
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    const proposal = accountConfig.cloneProposal();
+    const result = await loaded.service.saveAccountConfiguration("tenant-qa", { id: 9 }, proposal);
+    assert.equal(result.ok, true);
+    assert.equal(result.concepts, proposal.concepts.length);
+    const stored = fake.state.config;
+    assert.equal(stored.locale, "es-CO");
+    assert.equal(stored.accounting.otros, 7);
+    assert.deepEqual(stored.accounting.organization_tree, { branches: [{ code: "B1" }] });
+    assert.equal(stored.accounting.vehicle_pyg.source, "accounting");
+    const audit = fake.state.audits.find((entry) => entry.action === "transport.pyg.account_config.updated");
+    assert.ok(audit);
+    assert.equal(audit.entity_id, "tenant-qa");
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("config: PUT rechaza rangos fuera del PYG sin escribir", async () => {
+  const fake = buildTenantPrisma({ accounting: { vehicle_pyg: { source: "operational" } } });
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    const invalid = accountConfig.cloneProposal();
+    invalid.concepts[0].ranges = [{ start: "14050101", end: "14050101" }];
+    await assert.rejects(
+      () => loaded.service.saveAccountConfiguration("tenant-qa", { id: 9 }, invalid),
+      (err) => err.statusCode === 400 && err.code === "PYG_ACCOUNT_CONFIG_INVALID" && err.detail.some((item) => item.code === "RANGE_CLASS_NOT_PYG")
+    );
+    assert.equal(fake.state.updates.length, 0);
   } finally {
     loaded.restore();
   }
