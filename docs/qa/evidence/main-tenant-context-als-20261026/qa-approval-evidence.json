@@ -8,11 +8,11 @@
   "checks": {
     "functional": {
       "status": "passed",
-      "evidence": ["als-probe.json", "harness-no-workaround.json", "../certifications/main-tenant-context-als-20261026.md"]
+      "evidence": ["als-probe.json", "harness-no-workaround.json", "../../certifications/main-tenant-context-als-20261026.md"]
     },
     "error": {
       "status": "passed",
-      "evidence": ["als-probe.json", "harness-no-workaround.json", "../certifications/main-tenant-context-als-20261026.md"]
+      "evidence": ["als-probe.json", "harness-no-workaround.json", "../../certifications/main-tenant-context-als-20261026.md"]
     },
     "support_scripts": {
       "status": "passed",
@@ -20,25 +20,25 @@
     },
     "regression": {
       "status": "passed",
-      "evidence": ["platform-regression.json", "als-probe.json", "../certifications/main-tenant-context-als-20261026.md"]
+      "evidence": ["platform-regression.json", "als-probe.json", "../../certifications/main-tenant-context-als-20261026.md"]
     },
     "platform_regression": {
       "status": "passed",
-      "evidence": ["platform-regression.json", "../certifications/main-tenant-context-als-20261026.md"]
+      "evidence": ["platform-regression.json", "../../certifications/main-tenant-context-als-20261026.md"]
     }
   },
   "certification": {
     "status": "passed",
-    "script": "../../../scripts/certifications/hr-contention-p2028-local.js",
-    "evidence": ["harness-no-workaround.json", "harness-no-workaround-fixture.json", "als-probe.json", "../certifications/main-tenant-context-als-20261026.md"],
+    "script": "../../../../scripts/certifications/hr-contention-p2028-local.js",
+    "evidence": ["harness-no-workaround.json", "harness-no-workaround-fixture.json", "als-probe.json", "../../certifications/main-tenant-context-als-20261026.md"],
     "command": "node scripts/certifications/hr-contention-p2028-local.js --output docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround.json --fixture-output docs/qa/evidence/main-tenant-context-als-20261026/harness-no-workaround-fixture.json  (arnes de main SIN las dos declaraciones manuales de tenant_id) + cd apps/api && NODE_ENV=test node --test test/core-tenant-context-propagation.test.js",
     "run_at": "2026-10-26T22:40:38.319Z",
     "result": "42/42 chequeos pasados sobre el tip final 37768056 (corrida 20261026223926, 22:39:26Z a 22:40:38Z) con API Fastify real en 127.0.0.1:3212 y PostgreSQL real en 127.0.0.1:55432, sembrando empleados y malla SIN declarar el tenant para que lo inyecte el middleware, y prueba de contrato del nucleo 4/4. Sobre el baseline productivo 3ebe71f7, con el mismo arnes y la misma base, la corrida aborta en el sembrado con 'Argument `tenant_id` is missing' despues de los 10 chequeos estaticos: el defecto esta reproducido y la correccion demostrada en el mismo flujo."
   },
   "regression_certification": {
     "status": "passed",
-    "script": "../../../scripts/certifications/hr-contention-p2028-local.js",
-    "evidence": ["platform-regression.json", "harness-no-workaround.json", "../certifications/main-tenant-context-als-20261026.md"],
+    "script": "../../../../scripts/certifications/hr-contention-p2028-local.js",
+    "evidence": ["platform-regression.json", "harness-no-workaround.json", "../../certifications/main-tenant-context-als-20261026.md"],
     "transversal_command": "replica del corredor versionado: node --test --test-concurrency=2 sobre apps/api/test/*.test.js y node --experimental-strip-types --test --test-concurrency=2 sobre apps/web/test/*.test.mjs con NODE_ENV=test, DISABLE_REDIS, REDIS_DISABLED, DISABLE_BACKGROUND_WORKERS y las banderas COMMERCIAL_*, ejecutada sobre el candidato 6f564426 y sobre un worktree limpio del tip vigente de origin/main (3ebe71f7).",
     "transversal_note": "release-local-regression.cjs no existe en el arbol de main, asi que se ejecuto esa replica con el mismo comando, flags y entorno dos veces. Resultado: API 425 pruebas (+4 sobre el baseline 421, exactamente las 4 de la prueba de contrato nueva) con las mismas 2 fallas preexistentes de Inventario/Compras; Web 384 pruebas con la misma 1 falla preexistente de Transporte; 0 fallas nuevas. Ningun archivo de esos modulos aparece en git diff --name-status origin/main..HEAD. Suite enfocado: Talento Humano API 102/102. El arbol de producto del tip final 37768056 es identico al medido (git diff --name-only 6f564426..37768056 solo lista el arnes).",
     "hr_suite_command": "cd apps/api && NODE_ENV=test DISABLE_REDIS=true REDIS_DISABLED=true node --test test/hr-*.test.js",
@@ -48,8 +48,8 @@
     "status": "passed",
     "company": "NYVORA",
     "environment": "QA",
-    "script": "../../../scripts/certifications/hr-contention-p2028-local.js",
-    "evidence": ["als-probe.json", "harness-no-workaround.json", "../certifications/main-tenant-context-als-20261026.md"],
+    "script": "../../../../scripts/certifications/hr-contention-p2028-local.js",
+    "evidence": ["als-probe.json", "harness-no-workaround.json", "../../certifications/main-tenant-context-als-20261026.md"],
     "basis": "NYVORA sigue siendo la empresa modelo de referencia, y su papel en esta ronda es de dimension, no de reproduccion: el defecto de main no se ve en su operacion diaria porque sus consultas de marcacion y kilometraje usan los sitios con callback asincrono (281 de 389), que si sostienen el contexto. Lo que se medir contra ella es la exposicion: los 103 sitios de callback sincrono incluyen lecturas findMany/findFirstOrThrow de Transporte, Comercial, Inventario, Ventas y Facturacion que, al perderse el contexto, se ejecutan sin filtro de tenant y sin respaldo de RLS (0 politicas en pg_policy y ninguna migracion que declare ROW LEVEL SECURITY). Por eso la certificacion NO se apoyo en nyvora ni en la operacion real: se certifico con el arnes en vivo que si fuerza el flujo afectado, sembrando empleados y malla sin declarar el tenant sobre PostgreSQL real, con API Fastify real y RBAC de un usuario administrador de pruebas, y con la verificacion directa en base de datos de que las 3 filas quedaron en el tenant del run. No se modifico dato alguno de NYVORA ni de ninguna empresa real: la corrida trabajo sobre el tenant de pruebas 5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd y purgo sus residuos (cleanup con 0 errores, empleado espejo eliminado, th_jornada_kilometrajes en 0 filas)."
   },
   "rollback_plan": {

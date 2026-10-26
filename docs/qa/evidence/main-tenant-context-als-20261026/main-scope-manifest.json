@@ -42,16 +42,16 @@
       "name": "Aislamiento multi-tenant del nucleo: runWithTenant sostiene el contexto del tenant para callback sincrono, asincrono y despues de un await, y no inventa un filtro cuando no hay ambito",
       "status": "passed",
       "evidence": [
-        "../certifications/main-tenant-context-als-20261026.md",
+        "../../certifications/main-tenant-context-als-20261026.md",
         "als-probe.json",
-        "../../../apps/api/test/core-tenant-context-propagation.test.js"
+        "../../../../apps/api/test/core-tenant-context-propagation.test.js"
       ]
     },
     {
       "name": "Marcacion del operario y kilometraje de jornada bajo concurrencia, con el arnes pidiendo el tenant al middleware en vez de declararlo: 42/42 en el tip final",
       "status": "passed",
       "evidence": [
-        "../certifications/main-tenant-context-als-20261026.md",
+        "../../certifications/main-tenant-context-als-20261026.md",
         "harness-no-workaround.json",
         "harness-no-workaround-fixture.json"
       ]
@@ -60,7 +60,7 @@
       "name": "Mensaje amable del operario (503 con codigo reintentable y request_id, nunca caida del backend) intacto sobre este candidato",
       "status": "passed",
       "evidence": [
-        "../certifications/main-tenant-context-als-20261026.md",
+        "../../certifications/main-tenant-context-als-20261026.md",
         "harness-no-workaround.json",
         "platform-regression.json"
       ]
@@ -69,7 +69,7 @@
       "name": "Mallas horarias ya en produccion (hr-route-p2028-20261026) y el resto de la contencion de la ronda anterior (hr-contention-p2028-20261026): sus suites siguen verdes y su evidencia versionada no fue modificada por este cambio",
       "status": "passed",
       "evidence": [
-        "../certifications/main-tenant-context-als-20261026.md",
+        "../../certifications/main-tenant-context-als-20261026.md",
         "platform-regression.json"
       ]
     },
@@ -77,7 +77,7 @@
       "name": "Compatibilidad del valor de retorno de runWithTenant en los 389 sitios del arbol (ningun consumo sincrono; transporte, comercial, inventario, ventas, facturacion y contabilidad siguen esperando promesa)",
       "status": "passed",
       "evidence": [
-        "../certifications/main-tenant-context-als-20261026.md",
+        "../../certifications/main-tenant-context-als-20261026.md",
         "als-probe.json",
         "platform-regression.json"
       ]
@@ -86,7 +86,7 @@
       "name": "Regresion completa de plataforma sobre el arbol de main sin degradacion frente al baseline productivo 3ebe71f7: API 425 con las mismas 2 fallas preexistentes, Web 384 con la misma 1 falla, 0 fallas nuevas",
       "status": "passed",
       "evidence": [
-        "../certifications/main-tenant-context-als-20261026.md",
+        "../../certifications/main-tenant-context-als-20261026.md",
         "platform-regression.json"
       ]
     }
