@@ -345,6 +345,19 @@ async function main() {
       ids: [punchEmployee.id, kmEmployee.id, raceEmployee.id]
     });
 
+    // Sondeo de aislamiento con la forma de callback que perdio el contexto en main:
+    // una lectura que NO declara el tenant solo debe ver las filas de su empresa si el
+    // middleware todavia tiene el ambito. Sin contexto el filtro nunca se inyecta.
+    const isolationProbe = await prisma.runWithTenant(tenant.id, () => prisma.employee.findMany({
+      where: { active: true }, select: { tenant_id: true }
+    }));
+    const foreignTenants = [...new Set(isolationProbe.map((row) => row.tenant_id).filter((id) => id !== tenant.id))];
+    check("sync_read_stays_inside_tenant", foreignTenants.length === 0, {
+      filas_leidas: isolationProbe.length,
+      otros_tenants_visibles: foreignTenants.slice(0, 8),
+      tenant_del_run: tenant.id
+    });
+
     const kmRoute = await prisma.runWithTenant(tenant.id, () => prisma.timeRoute.create({
       data: {
         date: new Date(`${TODAY}T05:00:00.000Z`),
