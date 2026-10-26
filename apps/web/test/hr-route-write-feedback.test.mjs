@@ -66,7 +66,9 @@ test("el aviso global se silencia solo cuando el llamador ya muestra el estado, 
 });
 
 test("guardar una malla reintenta el conflicto de concurrencia con limite fijo", () => {
-  const helper = functionBody(routesPage, "async function runRouteWriteWithBusyRetry(");
+  const helper = functionBody(routesPage, "async function runRouteWriteWithBusyRetry");
+  assert.match(routesPage, /async function runRouteWriteWithBusyRetry<T>\(action: \(\) => Promise<T>, onRetry: \(attempt: number\) => void\): Promise<T> \{/,
+    "el helper es generico: si devolviera unknown, los llamadores pierden el tipo de la respuesta (results/ok/created) y el typecheck se cae");
   assert.ok(routesPage.includes('const ROUTE_BUSY_ERROR_CODE = "ROUTE_ASSIGNMENT_BUSY"'));
   assert.match(routesPage, /const ROUTE_BUSY_RETRY_LIMIT = 2;/, "los reintentos son acotados");
   assert.match(helper, /attempt >= ROUTE_BUSY_RETRY_LIMIT/, "debe rendirse despues del limite");
