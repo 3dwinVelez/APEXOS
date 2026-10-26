@@ -1,0 +1,68 @@
+{
+  "change_id": "transport-pyg-account-ranges-20261024",
+  "commit": "3e7bcd0dfbbf86e71517a506173daf25afc6014f",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "approved_at": "2026-10-26",
+    "status": "approved",
+    "approved_by": "manue",
+    "instruction": "publica en qa",
+    "scope": "promotion_to_develop_for_qa"
+  },
+  "checks": {
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/transport-pyg-account-ranges-20261024/browser-local.json",
+        "../evidence/transport-pyg-account-ranges-20261024/local-checks-20261025.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/transport-pyg-account-ranges-20261024/browser-local.json",
+        "../evidence/transport-pyg-account-ranges-20261024/local-checks-20261025.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/transport-pyg-account-ranges-20261024/browser-local.json",
+        "../evidence/transport-pyg-account-ranges-20261024/local-checks-20261025.json"
+      ]
+    },
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/transport-pyg-account-ranges-20261024/browser-local.json",
+        "../evidence/transport-pyg-account-ranges-20261024/local-checks-20261025.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/transport-pyg-account-ranges-20261024/browser-local.json",
+        "../evidence/transport-pyg-account-ranges-20261024/local-checks-20261025.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-pyg-account-ranges-browser-local.js",
+    "evidence": [
+      "../evidence/transport-pyg-account-ranges-20261024/browser-local.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/transport-pyg-account-ranges-browser-local.js",
+    "evidence": [
+      "../evidence/transport-pyg-account-ranges-20261024/browser-local.json",
+      "../evidence/transport-pyg-account-ranges-20261024/api-regression.log",
+      "../evidence/transport-pyg-account-ranges-20261024/web-final-regression.log"
+    ]
+  }
+}
