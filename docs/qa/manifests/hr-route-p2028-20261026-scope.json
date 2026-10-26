@@ -1,0 +1,129 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-route-p2028-20261026",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "f2f6d7f52ca87b8c67f0922e2aac1953b46414d3",
+  "base_commit": "0bb834c329489d00d64f680afdd3c7438b89e461",
+  "base_commits": [
+    "develop"
+  ],
+  "change_intent": {
+    "summary": "Cerrar el 500 P2028 que impidio a adminsjc@apexos.local guardar horarios en produccion: presupuesto explicito de transaccion en las tres escrituras de mallas, advisory lock de asignacion acotado con 503 controlado y su propagacion en el manejador global de errores, mas el arnes de certificacion local y su evidencia versionada.",
+    "modules": [
+      "hr",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-route-assignment-lock.test.js"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-route-p2028-20261026.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/local-environment-recovery-findings-20261023.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-p2028-20261026/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-p2028-20261026/local-fixture.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-route-p2028-20261026/production-diagnosis.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-route-p2028-20261026-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-route-p2028-20261026-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-route-p2028-local.js"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/",
+    "apps/api/server.js",
+    "apps/api/test/",
+    "docs/qa/certifications/",
+    "docs/qa/evidence/",
+    "docs/qa/manifests/",
+    "package.json",
+    "scripts/certifications/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Crear y editar horarios (mallas) por el administrador de Talento Humano, incluso bajo concurrencia sobre la misma persona y fecha",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Serializacion MALLA_SOLAPADA: dos escrituras concurrentes al mismo scope dejan exactamente una malla",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Lectura del monitor de mallas (GET /api/v1/hr/routes) y creacion masiva por rango de fechas",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "RBAC hr:write y aislamiento multi-tenant en las escrituras certificadas",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    },
+    {
+      "name": "Regresion completa de plataforma sin degradacion en otros modulos",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-route-p2028-20261026.md"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto del commit funcional f2f6d7f5 mas el commit de documentacion y manifiestos, y la unica ruta ajena que el diff neto arrastra: docs/qa/local-environment-recovery-findings-20261023.md, modificada por el commit de documentacion ya existente en desarrollo (68052774). Ninguna ruta se agrega ni se retira a mano.",
+    "reconstruction_required": "desarrollo esta por detras de develop en Contabilidad. Promover la rama completa sin verificar el diff neto borraria el modulo accounting del cambio accounting-reversal-budget-import-20261024; antes de promover hay que validar este manifiesto contra el candidato real y no contra origin/develop..desarrollo.",
+    "candidate_paths": {
+      "merge_de_desarrollo": "Simulado sin tocar el repositorio con `git merge-tree --write-tree origin/develop <candidato>` (arbol 848f4b0e). Su diff neto contra origin/develop es exactamente este inventario: 12 rutas, cero eliminaciones, y los archivos de accounting de `accounting-reversal-budget-import-20261024` se conservan. Es el unico candidato que satisface la regla del validador de contener el commit funcional certificado.",
+      "reconstruccion_puntual": "Un cherry-pick de f2f6d7f5 y del commit de docs sobre 0bb834c3 produce 11 rutas (excluye la del hallazgo preexistente) pero crea SHA nuevos: el validador exige que el commit certificado este contenido en candidato o destino, asi que exige recertificar contra el SHA nuevo antes de promover."
+    },
+    "findings_doc_carried": "docs/qa/local-environment-recovery-findings-20261023.md se verifico aditiva: la version fusionada coincide con la de desarrollo y supera a la de develop en 34 lineas agregadas, sin perdida de contenido.",
+    "out_of_scope_debt": "offline-bootstrap.test.js exige DISABLE_REDIS en el entorno; se verifico preexistente en el HEAD 68052774 y no forma parte de este cambio.",
+    "remote_migrations": "No se aplicaron migraciones a QA ni PROD; la politica exige autorizacion independiente. Este cambio no requiere migracion alguna."
+  }
+}
