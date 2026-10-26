@@ -16,8 +16,11 @@ test("FM-02: apiInternal adjunta status y retryable en la rama 5xx", () => {
   const start = api.indexOf("async function apiInternal");
   assert.ok(start >= 0, "debe existir apiInternal");
   const body = api.slice(start);
-  const branch500 = body.slice(body.indexOf("if (response.status >= 500)"), body.indexOf("if (response.status >= 500)") + 600);
-  assert.match(branch500, /throw Object\.assign\(new Error\(message\), \{ status: response\.status, retryable: true \}\)/);
+  const branch500 = body.slice(body.indexOf("if (response.status >= 500)"), body.indexOf("if (response.status >= 500)") + 700);
+  // El contrato medido es que el error lleve status + retryable. Desde hr-route-p2028-20261026 el
+  // code y el request_id se adjuntan en una segunda asignacion, asi que el throw ya no es contiguo.
+  assert.match(branch500, /Object\.assign\(new Error\(message\), \{ status: response\.status, retryable: true \}\)/);
+  assert.match(branch500, /code: failure\.code, request_id: failure\.requestId/, "el 5xx tambien expone el codigo");
 });
 
 test("FM-02: apiInternal adjunta status, code y retryable selectivo en la rama 4xx", () => {
@@ -25,7 +28,9 @@ test("FM-02: apiInternal adjunta status, code y retryable selectivo en la rama 4
   const start = api.indexOf("async function apiInternal");
   const body = api.slice(start);
   const after500 = body.slice(body.indexOf("if (response.status >= 500)"));
-  const branch4xx = after500.slice(after500.indexOf("const body = await response.json()"), after500.indexOf("const body = await response.json()") + 700);
+  // apiInternal cierra el archivo: se toma la cola completa en lugar de una ventana fija, que el
+  // mensaje amable de hr-route-p2028-20261026 desplazaba fuera de los primeros 700 caracteres.
+  const branch4xx = after500.slice(after500.indexOf("const body = await response.json()"));
   assert.match(branch4xx, /status: response\.status/);
   assert.match(branch4xx, /code: typeof body\.code === "string" \? body\.code : ""/);
   assert.match(branch4xx, /retryable: response\.status === 408 \|\| response\.status === 429/);

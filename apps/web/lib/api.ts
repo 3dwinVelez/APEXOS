@@ -127,10 +127,75 @@ function isActiveEmployeeStatus(value: unknown) {
   return !["inactive", "inactivo", "suspendido", "suspended", "bloqueado", "retirado", "deleted", "false", "0"].includes(status);
 }
 
-function requestErrorMessage(path: string, status: number, detail: string) {
-  if (status >= 500) return `Error ${status} en ${path}. Backend no disponible${detail ? `: ${detail}` : ""}`;
-  if (status === 401) return `Sesion no autorizada en ${path}. Inicia sesion de nuevo.`;
-  return `Error ${status} en ${path}: ${detail || "La solicitud no pudo completarse."}`;
+const RETRYABLE_BUSY_CODES = ["ROUTE_ASSIGNMENT_BUSY", "MARCACION_CONCURRENCIA_TEMPORAL"];
+
+function isWriteRequest(method: string) {
+  return ["POST", "PATCH", "PUT", "DELETE"].includes(String(method || "GET").toUpperCase());
+}
+
+// El cuerpo de un 5xx es JSON del servidor ({ error, code, request_id }); si se muestra crudo, el
+// operario lee "{"error":"Error interno"...}" y reporta una caida que no existio.
+function readFailurePayload(raw: string) {
+  const text = String(raw || "").trim();
+  if (!text.startsWith("{")) return { code: "", requestId: "", detail: text };
+  try {
+    const body = JSON.parse(text) as { error?: string; message?: string; code?: string; request_id?: string };
+    return {
+      code: typeof body.code === "string" ? body.code : "",
+      requestId: typeof body.request_id === "string" ? body.request_id : "",
+      detail: body.error || body.message || text
+    };
+  } catch {
+    return { code: "", requestId: "", detail: text };
+  }
+}
+
+type FailureEnvelope = { code: string; requestId: string; detail: string };
+
+function failureFromJsonBody(body: { error?: string; message?: string; code?: string; request_id?: string } | null): FailureEnvelope {
+  const source = body || {};
+  return {
+    code: typeof source.code === "string" ? source.code : "",
+    requestId: typeof source.request_id === "string" ? source.request_id : "",
+    detail: source.error || source.message || ""
+  };
+}
+
+// Ventana corta de texto para el throw: la regresion FM-02 mide el contrato desde el literal.
+function friendlyFailure(path: string, status: number, method: string, failure: FailureEnvelope) {
+  return requestErrorMessage(path, status, failure.detail, method, failure.code, failure.requestId);
+}
+
+// Mensaje para el operario: que paso, si su trabajo se perdio y que hacer. El detalle tecnico queda
+// en la alerta global y en platform-logs, no en el banner.
+function requestErrorMessage(path: string, status: number, detail: string, method = "GET", code = "", requestId = "") {
+  const reference = requestId ? ` Referencia para soporte: ${requestId}.` : "";
+  const writing = isWriteRequest(method);
+  const action = writing ? "guardar" : "cargar";
+  const cleanDetail = String(detail || "").replace(/^\s*\{.*\}\s*$/, "").trim().slice(0, 240);
+  if (status === 401) return "Tu sesión venció. Inicia sesión de nuevo para continuar.";
+  if (status === 403) return writing ? "No tienes permiso para guardar este registro. Pide el acceso a tu administrador." : "No tienes permiso para ver esta información. Pide el acceso a tu administrador.";
+  if (status === 404) return writing ? "El registro que intentabas modificar ya no está disponible. Refresca la lista e inténtalo de nuevo." : `No encontramos la información solicitada en ${path}.`;
+  if (RETRYABLE_BUSY_CODES.includes(code)) {
+    return writing
+      ? "Otra persona está guardando ese mismo registro en este momento. Espera unos segundos e inténtalo de nuevo: tu información no se perdió."
+      : "El sistema está procesando otro movimiento sobre este mismo registro. Vuelve a intentar en unos segundos.";
+  }
+  if (status === 408 || status === 429) return writing ? `La solicitud tardó demasiado o se envió muchas veces seguidas. Espera unos segundos y vuelve a intentar${reference}` : "La respuesta tardó demasiado. Vuelve a intentar en unos segundos.";
+  if (status === 409) return writing ? `No se pudo guardar: ${cleanDetail || "ya existe un registro con esos datos."}${reference}` : `Este registro está en un estado que impide la operación: ${cleanDetail || "recarga la pantalla."}`;
+  if (status >= 500) {
+    return writing
+      ? `No fue posible ${action} la información en este momento. Puedes reintentar en unos segundos; si falla otra vez, avisa a soporte con la referencia.${reference}`
+      : `No fue posible ${action} esta información en este momento. La aplicación sigue funcionando: vuelve a intentar en unos segundos.${reference}`;
+  }
+  if (cleanDetail) return writing ? `Revisa la información: ${cleanDetail}${reference}` : `${cleanDetail}${reference}`;
+  return writing ? `No fue posible ${action} el registro. Revisa los datos e inténtalo de nuevo.${reference}` : `No fue posible completar la consulta.${reference}`;
+}
+
+type ApiRequestOptions = RequestInit & { silentFailureAlert?: boolean };
+
+function alertsAreSilenced(options: ApiRequestOptions) {
+  return options.silentFailureAlert === true;
 }
 
 function isPlatformLogsPath(path: string) {
@@ -289,21 +354,25 @@ export async function authorizedFetch(input: string, options: RequestInit = {}, 
   return response;
 }
 
-export async function authorizedJson<T>(input: string, options: RequestInit = {}): Promise<T> {
+export async function authorizedJson<T>(input: string, options: ApiRequestOptions = {}): Promise<T> {
+  const method = String(options.method || "GET");
+  const silenced = alertsAreSilenced(options);
   const response = await authorizedFetch(input, options);
   if (!response.ok) {
     if (response.status >= 500) {
-      const detail = await response.text().catch(() => "");
-      const message = requestErrorMessage(input, response.status, detail);
-      alertRequestFailure(input, response.status, detail);
-      reportClientFailure(input, response.status, detail, String(options.method || "GET"));
-      throw Object.assign(new Error(message), { status: response.status, retryable: true });
+      const failure = readFailurePayload(await response.text().catch(() => ""));
+      const message = friendlyFailure(input, response.status, method, failure);
+      if (!silenced) alertRequestFailure(input, response.status, failure.detail);
+      reportClientFailure(input, response.status, failure.detail, method);
+      const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
+      Object.assign(failureError, { code: failure.code, request_id: failure.requestId });
+      throw failureError;
     }
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
-    const message = requestErrorMessage(input, response.status, detail);
-    alertRequestFailure(input, response.status, detail);
-    reportClientFailure(input, response.status, detail, String(options.method || "GET"));
+    const message = friendlyFailure(input, response.status, method, failureFromJsonBody(body));
+    if (!silenced) alertRequestFailure(input, response.status, detail);
+    reportClientFailure(input, response.status, detail, method);
     throw Object.assign(new Error(message), {
       status: response.status,
       code: typeof body.code === "string" ? body.code : "",
@@ -4350,7 +4419,7 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
   return null;
 }
 
-export async function api<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
+export async function api<T>(path: string, options: ApiRequestOptions = {}, retried = false): Promise<T> {
   const method = String(options.method || "GET").toUpperCase();
   const bypassReadCache = options.cache === "no-store";
   const companyScope = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
@@ -4481,12 +4550,13 @@ export function saveTransportPygConfig(taxPercent: number) {
   return api<TransportPygConfig>("/api/v1/transport-pyg/config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tax_percent: taxPercent }) });
 }
 
-async function apiInternal<T>(path: string, options: RequestInit = {}, retried = false): Promise<T> {
+async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, retried = false): Promise<T> {
   assertActiveSession();
   await keepSessionAlive();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   let response: Response;
   const method = String(options.method || "GET").toUpperCase();
+  const silenced = alertsAreSilenced(options);
   const supabaseSession = isSupabaseSession();
   const companyId = typeof window !== "undefined" ? localStorage.getItem("apexos_company_id") || "" : "";
   const pathname = path.split("?")[0];
@@ -4511,7 +4581,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
 
   if (typeof window !== "undefined" && !HAS_CONFIGURED_API_URL) {
     const detail = "NEXT_PUBLIC_API_URL no esta configurada para este ambiente y la ruta no tiene fallback Supabase disponible.";
-    alertRequestFailure(path, null, detail);
+    if (!silenced) alertRequestFailure(path, null, detail);
     reportClientFailure(path, null, detail, String(options.method || "GET"));
     throw new Error("API de servicios no configurada en este ambiente. Revisa variables Railway o usa una ruta soportada por Supabase.");
   }
@@ -4528,7 +4598,7 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     });
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Backend no disponible.";
-    alertRequestFailure(path, null, detail);
+    if (!silenced) alertRequestFailure(path, null, detail);
     reportClientFailure(path, null, detail, String(options.method || "GET"));
     if (error instanceof Error) throw error;
     throw new Error("API no disponible. Revisa el servicio backend.");
@@ -4554,17 +4624,19 @@ async function apiInternal<T>(path: string, options: RequestInit = {}, retried =
     }
 
     if (response.status >= 500) {
-      const detail = await response.text().catch(() => "");
-      const message = requestErrorMessage(path, response.status, detail);
-      alertRequestFailure(path, response.status, detail);
-      reportClientFailure(path, response.status, detail, String(options.method || "GET"));
-      throw Object.assign(new Error(message), { status: response.status, retryable: true });
+      const failure = readFailurePayload(await response.text().catch(() => ""));
+      const message = friendlyFailure(path, response.status, method, failure);
+      if (!silenced) alertRequestFailure(path, response.status, failure.detail);
+      reportClientFailure(path, response.status, failure.detail, method);
+      const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
+      Object.assign(failureError, { code: failure.code, request_id: failure.requestId });
+      throw failureError;
     }
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
-    const message = requestErrorMessage(path, response.status, detail);
-    alertRequestFailure(path, response.status, detail);
+    const message = friendlyFailure(path, response.status, method, failureFromJsonBody(body));
+    if (!silenced) alertRequestFailure(path, response.status, detail);
     reportClientFailure(path, response.status, detail, String(options.method || "GET"));
     throw Object.assign(new Error(message), {
       status: response.status,

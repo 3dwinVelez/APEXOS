@@ -3,7 +3,7 @@
   "certification": "hr-route-p2028-local",
   "environment": "LOCAL",
   "company": "SCJ",
-  "generated_at": "2026-10-26T14:16:22.351Z",
+  "generated_at": "2026-10-26T14:58:57.208Z",
   "api_commit": "unknown",
   "api_url": "http://127.0.0.1:3211",
   "operating_date": "2026-10-26",
@@ -80,7 +80,7 @@
       "name": "contention_7s_waited_beyond_old_default",
       "ok": true,
       "detail": {
-        "wait_observed_ms": 6829,
+        "wait_observed_ms": 6782,
         "note": "con el default de 5s esto era 500 P2028"
       }
     },
@@ -105,6 +105,20 @@
       }
     },
     {
+      "name": "busy_payload_exposes_request_id",
+      "ok": true,
+      "detail": {
+        "request_id": "req-4"
+      }
+    },
+    {
+      "name": "busy_payload_message_is_actionable",
+      "ok": true,
+      "detail": {
+        "message": "Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos."
+      }
+    },
+    {
       "name": "contention_26s_never_500",
       "ok": true,
       "detail": {}
@@ -126,7 +140,7 @@
       "name": "control_latency_under_contention_budget",
       "ok": true,
       "detail": {
-        "latency_ms": 75
+        "latency_ms": 64
       }
     },
     {
@@ -179,15 +193,15 @@
   "fixture": {
     "tenant_id": "001346eb-ba7f-4103-b032-73a219f1333e",
     "admin_user_id": 698,
-    "admin_email": "qa.p28.admin.20261026141622@scj.test",
+    "admin_email": "qa.p28.admin.20261026145857@scj.test",
     "admin_role": "APEX_ADMIN",
     "operating_date": "2026-10-26",
     "persons": {
-      "survive": "qa.p28.survive.20261026141622@scj.test",
-      "busy": "qa.p28.busy.20261026141622@scj.test",
-      "control": "qa.p28.control.20261026141622@scj.test",
-      "serial": "qa.p28.serial.20261026141622@scj.test",
-      "bulk": "qa.p28.bulk.20261026141622@scj.test"
+      "survive": "qa.p28.survive.20261026145857@scj.test",
+      "busy": "qa.p28.busy.20261026145857@scj.test",
+      "control": "qa.p28.control.20261026145857@scj.test",
+      "serial": "qa.p28.serial.20261026145857@scj.test",
+      "bulk": "qa.p28.bulk.20261026145857@scj.test"
     },
     "lock_wait_ms": 25000
   },
@@ -195,13 +209,13 @@
     "contencion_7s": {
       "status": 200,
       "code": null,
-      "latency_ms": 6828,
-      "wait_observed_ms": 6829
+      "latency_ms": 6782,
+      "wait_observed_ms": 6782
     },
     "contencion_26s": {
       "status": 503,
       "code": "ROUTE_ASSIGNMENT_BUSY",
-      "latency_ms": 25167
+      "latency_ms": 25268
     },
     "serializacion": {
       "statuses": [
@@ -216,13 +230,13 @@
     "bulk": {
       "status": 200,
       "created": 2,
-      "latency_ms": 6735
+      "latency_ms": 6738
     }
   },
   "status": "passed",
   "summary": {
-    "checks_total": 22,
-    "checks_passed": 22,
+    "checks_total": 24,
+    "checks_passed": 24,
     "requests": 9
   },
   "cleanup": {
@@ -236,8 +250,9 @@
       "pathname": "/health",
       "status": 200,
       "code": null,
+      "request_id": null,
       "ok": true,
-      "latency_ms": 255,
+      "latency_ms": 2341,
       "transport_error": null,
       "error": null
     },
@@ -248,8 +263,9 @@
       "pathname": "/api/v1/auth/login",
       "status": 200,
       "code": null,
+      "request_id": null,
       "ok": true,
-      "latency_ms": 451,
+      "latency_ms": 424,
       "transport_error": null,
       "error": null
     },
@@ -260,8 +276,9 @@
       "pathname": "/api/v1/hr/routes",
       "status": 200,
       "code": null,
+      "request_id": null,
       "ok": true,
-      "latency_ms": 6828,
+      "latency_ms": 6782,
       "transport_error": null,
       "error": null
     },
@@ -272,8 +289,9 @@
       "pathname": "/api/v1/hr/routes",
       "status": 503,
       "code": "ROUTE_ASSIGNMENT_BUSY",
+      "request_id": "req-4",
       "ok": false,
-      "latency_ms": 25167,
+      "latency_ms": 25268,
       "transport_error": null,
       "error": "Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos."
     },
@@ -284,8 +302,9 @@
       "pathname": "/api/v1/hr/routes",
       "status": 200,
       "code": null,
+      "request_id": null,
       "ok": true,
-      "latency_ms": 75,
+      "latency_ms": 64,
       "transport_error": null,
       "error": null
     },
@@ -296,8 +315,9 @@
       "pathname": "/api/v1/hr/routes?limit=500",
       "status": 200,
       "code": null,
+      "request_id": null,
       "ok": true,
-      "latency_ms": 42,
+      "latency_ms": 49,
       "transport_error": null,
       "error": null
     },
@@ -308,8 +328,9 @@
       "pathname": "/api/v1/hr/routes",
       "status": 200,
       "code": null,
+      "request_id": null,
       "ok": true,
-      "latency_ms": 69,
+      "latency_ms": 58,
       "transport_error": null,
       "error": null
     },
@@ -320,8 +341,9 @@
       "pathname": "/api/v1/hr/routes",
       "status": 409,
       "code": "MALLA_SOLAPADA",
+      "request_id": "req-8",
       "ok": false,
-      "latency_ms": 273,
+      "latency_ms": 268,
       "transport_error": null,
       "error": "Ya existe una malla superpuesta para al menos una persona en la misma fecha."
     },
@@ -332,8 +354,9 @@
       "pathname": "/api/v1/hr/routes/bulk",
       "status": 200,
       "code": null,
+      "request_id": null,
       "ok": true,
-      "latency_ms": 6735,
+      "latency_ms": 6738,
       "transport_error": null,
       "error": null
     }
