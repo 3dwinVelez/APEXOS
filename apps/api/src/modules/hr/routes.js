@@ -191,7 +191,7 @@ async function hrRoutes(fastify) {
   fastify.delete("/hr/payroll/liquidations", { schema: schemas.payrollLiquidationDeleteSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.deletePayrollLiquidation(request.user?.tenant_id, request.body || {}));
   fastify.get("/hr/payroll/liquidations/:id/pdf", { preHandler: requirePermission("payroll", "read") }, sendPayrollPdf);
   fastify.get("/hr/payroll/adjustments", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayrollAdjustments(request.user?.tenant_id, request.query));
-  fastify.post("/hr/payroll/adjustments", { schema: schemas.payrollAdjustmentSchema }, (request) => service.createPayrollAdjustment(request.user?.tenant_id, request.body || {}, request.user));
+  fastify.post("/hr/payroll/adjustments", { schema: schemas.payrollAdjustmentSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.createPayrollAdjustment(request.user?.tenant_id, request.body || {}, request.user));
   fastify.post("/hr/payroll/external-workdays/import", { schema: schemas.payrollExternalWorkdaysImportSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.importExternalWorkdays(request.user?.tenant_id, request.body || {}, request.user));
   fastify.delete("/hr/payroll/external-workdays", { schema: schemas.payrollExternalWorkdaysDeleteSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.deleteExternalWorkdays(request.user?.tenant_id, request.body || {}));
   fastify.delete("/hr/payroll/adjustments/:id", { preHandler: requirePermission("payroll", "write") }, (request) => service.deletePayrollAdjustment(request.user?.tenant_id, request.params.id));
@@ -234,7 +234,7 @@ async function hrRoutes(fastify) {
   fastify.delete("/talento-humano/nomina/liquidaciones", { schema: schemas.payrollLiquidationDeleteSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.deletePayrollLiquidation(request.user?.tenant_id, request.body || {}));
   fastify.get("/talento-humano/nomina/liquidaciones/:id/pdf", { preHandler: requirePermission("payroll", "read") }, sendPayrollPdf);
   fastify.get("/talento-humano/nomina/ajustes", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayrollAdjustments(request.user?.tenant_id, request.query));
-  fastify.post("/talento-humano/nomina/ajustes", { schema: schemas.payrollAdjustmentSchema }, (request) => service.createPayrollAdjustment(request.user?.tenant_id, request.body || {}, request.user));
+  fastify.post("/talento-humano/nomina/ajustes", { schema: schemas.payrollAdjustmentSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.createPayrollAdjustment(request.user?.tenant_id, request.body || {}, request.user));
   fastify.post("/talento-humano/nomina/jornadas-externas/importar", { schema: schemas.payrollExternalWorkdaysImportSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.importExternalWorkdays(request.user?.tenant_id, request.body || {}, request.user));
   fastify.delete("/talento-humano/nomina/jornadas-externas", { schema: schemas.payrollExternalWorkdaysDeleteSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.deleteExternalWorkdays(request.user?.tenant_id, request.body || {}));
   fastify.delete("/talento-humano/nomina/ajustes/:id", { preHandler: requirePermission("payroll", "write") }, (request) => service.deletePayrollAdjustment(request.user?.tenant_id, request.params.id));
