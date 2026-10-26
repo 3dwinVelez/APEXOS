@@ -127,7 +127,7 @@ function isActiveEmployeeStatus(value: unknown) {
   return !["inactive", "inactivo", "suspendido", "suspended", "bloqueado", "retirado", "deleted", "false", "0"].includes(status);
 }
 
-const RETRYABLE_BUSY_CODES = ["ROUTE_ASSIGNMENT_BUSY", "MARCACION_CONCURRENCIA_TEMPORAL"];
+const RETRYABLE_BUSY_CODES = ["ROUTE_ASSIGNMENT_BUSY", "MARCACION_CONCURRENCIA_TEMPORAL", "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL"];
 
 function isWriteRequest(method: string) {
   return ["POST", "PATCH", "PUT", "DELETE"].includes(String(method || "GET").toUpperCase());

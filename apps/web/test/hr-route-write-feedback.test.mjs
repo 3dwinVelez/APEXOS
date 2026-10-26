@@ -41,6 +41,12 @@ test("el conflicto de edicion simultanea se explica y da la instruccion correcta
   assert.match(messageFor, /Otra persona está guardando/, "instruccion en lenguaje claro");
 });
 
+test("las tres escrituras concurrentes de Talento Humano comparten el mensaje amable", () => {
+  assert.match(api, /const RETRYABLE_BUSY_CODES = \[[^\]]*MARCACION_CONCURRENCIA_TEMPORAL/, "la marcacion ya tenia codigo y sigue reintentable");
+  assert.match(api, /const RETRYABLE_BUSY_CODES = \[[^\]]*AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL/, "el ajuste de nomina nuevo no puede quedar fuera de la lista");
+  assert.equal((api.match(/const RETRYABLE_BUSY_CODES = \[[^\]]*\]/)?.[0].match(/"/g) || []).length, 6, "tres codigos, sin duplicados");
+});
+
 test("la referencia de soporte llega al mensaje y el detalle tecnico deja de imprimirse crudo", () => {
   assert.match(messageFor, /Referencia para soporte: \$\{requestId\}/, "debe incluir request_id legible");
   assert.match(messageFor, /\.replace\(\/\^\\s\*\\{/, "un payload JSON no puede llegar como detalle al banner");

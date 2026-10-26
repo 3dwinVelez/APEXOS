@@ -1282,6 +1282,32 @@ function setRouteLockWaitMsForTests(value) {
   routeLockWaitMs = Number(value) > 0 ? Number(value) : 25_000;
 }
 
+// El lock de marcacion/kilometraje se espera dentro de una transaccion que ya tiene presupuesto,
+// pero con cinco intentos de 20 s el operario quedaba colgado casi dos minutos y el dispositivo
+// se rendia antes de recibir el 503. El presupuesto es compartido entre intentos.
+let contentionLockWaitMs = 15_000;
+
+function setContentionLockWaitMsForTests(value) {
+  contentionLockWaitMs = Number(value) > 0 ? Number(value) : 15_000;
+}
+
+// Un lock advisory bloqueante no puede avisar al operario: espera hasta que Prisma aborta la
+// transaccion y el error que sale es P2028 (500 "backend caido"). El try-lock con deadline
+// compartido permite rendirse a tiempo con un 503 que el cliente ya sabe reintentar.
+async function acquireBoundedScopeLocks(db, scopes, { deadlineAt, message, code }) {
+  for (const scope of scopes) {
+    for (;;) {
+      // $executeRaw solo devuelve el conteo de filas: el booleano del try-lock hay que
+      // leerlo con $queryRaw (o el reintento creeria adquirir el lock siempre).
+      const rows = await db.$queryRaw`SELECT pg_try_advisory_xact_lock(hashtextextended(${scope}, 0)) AS acquired`;
+      const value = Array.isArray(rows) ? rows[0]?.acquired : rows;
+      if (value === true || value === 1 || value === "1" || value === "t") break;
+      if (Date.now() >= deadlineAt) throw validationError(message, 503, code);
+      await db.$executeRaw`SELECT pg_sleep(${ROUTE_LOCK_RETRY_MS / 1000}::double precision)`;
+    }
+  }
+}
+
 async function lockRouteAssignmentScopes(db, tenantId, employees, dates) {
   const scopes = new Set();
   for (const date of dates) {
@@ -1291,20 +1317,11 @@ async function lockRouteAssignmentScopes(db, tenantId, employees, dates) {
       if (key) scopes.add(`${tenantId}:asignacion:${key}:${day}`);
     }
   }
-  const deadline = Date.now() + routeLockWaitMs;
-  for (const scope of scopes) {
-    for (;;) {
-      // $executeRaw solo devuelve el conteo de filas: el booleano del try-lock hay que
-      // leerlo con $queryRaw (o el reintento creeria adquirir el lock siempre).
-      const rows = await db.$queryRaw`SELECT pg_try_advisory_xact_lock(hashtextextended(${scope}, 0)) AS acquired`;
-      const value = Array.isArray(rows) ? rows[0]?.acquired : rows;
-      if (value === true || value === 1 || value === "1" || value === "t") break;
-      if (Date.now() >= deadline) {
-        throw validationError("Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos.", 503, "ROUTE_ASSIGNMENT_BUSY");
-      }
-      await db.$executeRaw`SELECT pg_sleep(${ROUTE_LOCK_RETRY_MS / 1000}::double precision)`;
-    }
-  }
+  await acquireBoundedScopeLocks(db, scopes, {
+    deadlineAt: Date.now() + routeLockWaitMs,
+    message: "Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos.",
+    code: "ROUTE_ASSIGNMENT_BUSY"
+  });
 }
 
 async function findRouteAssignmentConflicts(tenantId, { date, start_time, end_time, employees = [], excludeRouteId = null }, db = prisma) {
@@ -2240,6 +2257,7 @@ async function createPunch(tenantId, input, user, options = {}) {
   // El ambito lo fija el servidor, no el payload: un cliente de la ruta administrativa
   // no puede declararse self-service para esquivar la novedad de ajuste manual.
   const ownScope = options.scope === "own";
+  const punchLockDeadlineAt = Date.now() + contentionLockWaitMs;
   const idempotencyKey = String(input.idempotency_key || input.metadata?.idempotency_key || "").trim().slice(0, 120) || null;
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
@@ -2273,7 +2291,11 @@ async function createPunch(tenantId, input, user, options = {}) {
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
     const lockScope = `${tenantId}:${employee.id}:${route?.id || inputRouteId || "sin-horario"}:${startOfDay(punchedAt).toISOString()}`;
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${lockScope}, 0))`;
+    await acquireBoundedScopeLocks(tx, [lockScope], {
+      deadlineAt: punchLockDeadlineAt,
+      message: "Otra marcacion se esta registrando para esta persona en este momento. Intente de nuevo en unos segundos.",
+      code: "MARCACION_CONCURRENCIA_TEMPORAL"
+    });
     if (idempotencyKey) {
       const replayedPunch = await tx.timePunch.findFirst({ where: { tenant_id: tenantId, idempotency_key: idempotencyKey } });
       if (replayedPunch && replayedPunch.employee_id !== employee.id) {
@@ -2440,7 +2462,11 @@ async function createPunch(tenantId, input, user, options = {}) {
       // (columnas planas vs COALESCE), por lo que el upsert no puede inferirlo con
       // ON CONFLICT; se serializa el renglon activo con lock y se resuelve select/update/insert.
       const mileageLockScope = `${tenantId}:kilometraje:${mileageRouteId ?? "sin-ruta"}:${employee.id}`;
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${mileageLockScope}, 0))`;
+      await acquireBoundedScopeLocks(tx, [mileageLockScope], {
+        deadlineAt: punchLockDeadlineAt,
+        message: "Otra marcacion esta actualizando el kilometraje de esta ruta en este momento. Intente de nuevo en unos segundos.",
+        code: "MARCACION_CONCURRENCIA_TEMPORAL"
+      });
       const activeMileage = await tx.$queryRaw`
         SELECT id FROM th_jornada_kilometrajes
         WHERE tenant_id = ${tenantId}
@@ -3814,6 +3840,7 @@ async function listPayroll(tenantId, query = {}) {
 
 module.exports = {
   __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
+  __setContentionLockWaitMsForTests: setContentionLockWaitMsForTests,
   listSchedules,
   createSchedule,
   updateSchedule,
