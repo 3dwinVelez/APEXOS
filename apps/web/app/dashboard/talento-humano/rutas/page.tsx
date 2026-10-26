@@ -243,7 +243,7 @@ function isBusyRouteWriteFailure(error: unknown) {
   return failure.code === ROUTE_BUSY_ERROR_CODE || Number(failure.status || 0) === 503;
 }
 
-async function runRouteWriteWithBusyRetry(action: () => Promise<unknown>, onRetry: (attempt: number) => void) {
+async function runRouteWriteWithBusyRetry<T>(action: () => Promise<T>, onRetry: (attempt: number) => void): Promise<T> {
   for (let attempt = 0; ; attempt += 1) {
     try {
       return await action();
