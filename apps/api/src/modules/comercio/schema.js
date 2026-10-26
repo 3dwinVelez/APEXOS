@@ -27,6 +27,7 @@ const productBody = {
     cost: { type: "number", minimum: 0 },
     stock: { type: "integer", minimum: 0 },
     min_stock: { type: "integer", minimum: 0 },
+    active: { type: "boolean" },
     notes: { type: ["string", "null"], maxLength: 500 }
   }
 };
@@ -66,6 +67,7 @@ const customerBody = {
     phone: { type: ["string", "null"], maxLength: 30 },
     email: { type: ["string", "null"], maxLength: 160 },
     address: { type: ["string", "null"], maxLength: 300 },
+    active: { type: "boolean" },
     notes: { type: ["string", "null"], maxLength: 500 }
   }
 };
