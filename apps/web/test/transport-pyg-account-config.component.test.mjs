@@ -35,10 +35,10 @@ function compile(ts, file) {
 }
 
 function execute(origin, compiled, require) {
-  const module = { exports: {} };
+  const evaluatedModule = { exports: {} };
   const fn = new Function("exports", "require", "module", "__filename", "__dirname", compiled);
-  fn(module.exports, require, module, origin, path.dirname(origin));
-  return module.exports;
+  fn(evaluatedModule.exports, require, evaluatedModule, origin, path.dirname(origin));
+  return evaluatedModule.exports;
 }
 
 // require local inyectado en execute: sin parche global de Module._load, asi
