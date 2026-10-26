@@ -80,7 +80,9 @@ function txFor(current, route, capture) {
     gpsPing: { create: async () => ({}) },
     workSession: { findFirst: async () => null, create: async () => ({}), update: async () => ({}) },
     $executeRaw: async (strings, ...values) => { capture.raw.push({ sql: strings.join("?"), values }); },
-    $queryRaw: async () => []
+    // El try-lock de la marcacion responde un booleano; sin esto el fake creeria que el
+    // alcance esta ocupado y la prueba moriria con 503 en lugar de marcar.
+    $queryRaw: async (strings) => (String(strings?.join ? strings.join("") : strings).includes("pg_try_advisory_xact_lock") ? [{ acquired: true }] : [])
   };
 }
 
@@ -96,7 +98,7 @@ function prismaFor(current, routes, tx, capture) {
     timePunch: { findFirst: async () => null },
     $transaction: async (callback) => callback(tx),
     $executeRaw: async (strings, ...values) => { capture.raw.push({ sql: strings.join("?"), values }); },
-    $queryRaw: async () => []
+    $queryRaw: async (strings) => (String(strings?.join ? strings.join("") : strings).includes("pg_try_advisory_xact_lock") ? [{ acquired: true }] : [])
   };
 }
 
