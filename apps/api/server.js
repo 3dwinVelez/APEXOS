@@ -366,7 +366,7 @@ async function build() {
       const details = error.details && typeof error.details === "object" && !Array.isArray(error.details) ? error.details : undefined;
       return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId, ...(details ? { details } : {}) });
     }
-    if (error.statusCode === 503 && error.code === "MARCACION_CONCURRENCIA_TEMPORAL") {
+    if (error.statusCode === 503 && (error.code === "MARCACION_CONCURRENCIA_TEMPORAL" || error.code === "ROUTE_ASSIGNMENT_BUSY")) {
       return reply.code(503).send({ error: error.message, code: error.code, request_id: requestId });
     }
     if (error.statusCode === 400) return reply.code(400).send({ error: error.message, code: "VALIDACION", request_id: requestId });

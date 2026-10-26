@@ -998,7 +998,7 @@ async function createRoute(tenantId, input) {
           status: input.status || "active"
         }
       });
-    });
+    }, ROUTE_ASSIGNMENT_TRANSACTION_OPTIONS);
   });
 }
 
@@ -1030,7 +1030,7 @@ async function updateRoute(tenantId, id, input) {
           status: input.status || "active"
         }
       });
-    });
+    }, ROUTE_ASSIGNMENT_TRANSACTION_OPTIONS);
   });
 }
 
@@ -1269,6 +1269,19 @@ function routeEmployeeSet(route) {
   return new Set((Array.isArray(route?.employees) ? route.employees : []).map((item) => normalizeKey(item)));
 }
 
+// Escrituras de mallas bajo concurrencia (produccion 2026-10-26, adminsjc): con el timeout
+// por defecto de Prisma (5s), esperar el advisory lock de otra transaccion abortaba la
+// transaccion y el create() siguiente moria con P2028 -> 500. La transaccion dispone de
+// ROUTE_LOCK_WAIT_MS + holgura, y el lock pasa a try-lock con reintento para poder fallar
+// con 503 controlado (ROUTE_ASSIGNMENT_BUSY) en vez de P2028.
+const ROUTE_ASSIGNMENT_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 30_000 };
+let routeLockWaitMs = 25_000;
+const ROUTE_LOCK_RETRY_MS = 200;
+
+function setRouteLockWaitMsForTests(value) {
+  routeLockWaitMs = Number(value) > 0 ? Number(value) : 25_000;
+}
+
 async function lockRouteAssignmentScopes(db, tenantId, employees, dates) {
   const scopes = new Set();
   for (const date of dates) {
@@ -1278,8 +1291,19 @@ async function lockRouteAssignmentScopes(db, tenantId, employees, dates) {
       if (key) scopes.add(`${tenantId}:asignacion:${key}:${day}`);
     }
   }
+  const deadline = Date.now() + routeLockWaitMs;
   for (const scope of scopes) {
-    await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${scope}, 0))`;
+    for (;;) {
+      // $executeRaw solo devuelve el conteo de filas: el booleano del try-lock hay que
+      // leerlo con $queryRaw (o el reintento creeria adquirir el lock siempre).
+      const rows = await db.$queryRaw`SELECT pg_try_advisory_xact_lock(hashtextextended(${scope}, 0)) AS acquired`;
+      const value = Array.isArray(rows) ? rows[0]?.acquired : rows;
+      if (value === true || value === 1 || value === "1" || value === "t") break;
+      if (Date.now() >= deadline) {
+        throw validationError("Otra edicion de horario esta en curso para alguna de las personas seleccionadas. Intente de nuevo en unos segundos.", 503, "ROUTE_ASSIGNMENT_BUSY");
+      }
+      await db.$executeRaw`SELECT pg_sleep(${ROUTE_LOCK_RETRY_MS / 1000}::double precision)`;
+    }
   }
 }
 
@@ -1440,7 +1464,7 @@ async function createRoutesBulk(tenantId, input) {
         }));
       }
       return { created: routes.length, routes };
-    });
+    }, ROUTE_ASSIGNMENT_TRANSACTION_OPTIONS);
   });
 }
 
@@ -3789,6 +3813,7 @@ async function listPayroll(tenantId, query = {}) {
 }
 
 module.exports = {
+  __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
   listSchedules,
   createSchedule,
   updateSchedule,
