@@ -94,14 +94,14 @@
       "status": "passed",
       "evidence": [
         "../certifications/hr-contention-message-browser-20261026.md",
-        "../../apps/api/test/hr-payroll-adjustment-permission.test.js"
+        "../../../apps/api/test/hr-payroll-adjustment-permission.test.js"
       ]
     },
     {
       "name": "Ninguna ruta de Talento Humano pierde su guarda de autorizacion: el barrido estatico del modulo falla si aparece una ruta sin preHandler",
       "status": "passed",
       "evidence": [
-        "../../apps/api/test/hr-payroll-adjustment-permission.test.js"
+        "../../../apps/api/test/hr-payroll-adjustment-permission.test.js"
       ]
     },
     {
@@ -124,7 +124,7 @@
       "name": "Aislamiento multi-tenant del ajuste de nomina: el alcance del lock y la escritura se calculan por tenant y la prueba de contrato fija que runWithTenant propaga el tenant al ambito de Prisma",
       "status": "passed",
       "evidence": [
-        "../../apps/api/test/core-tenant-context-propagation.test.js",
+        "../../../apps/api/test/core-tenant-context-propagation.test.js",
         "../evidence/hr-contention-p2028-20261026/local-certification.json"
       ]
     },
