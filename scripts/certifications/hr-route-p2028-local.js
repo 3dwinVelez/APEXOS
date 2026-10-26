@@ -69,6 +69,14 @@ const PASSWORD = `Qa-P28-${crypto.randomBytes(6).toString("hex")}#26`;
 const TODAY = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 const SCJ_TENANT_ID = "001346eb-ba7f-4103-b032-73a219f1333e";
 
+function currentCommit() {
+  try {
+    return require("node:child_process").execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8", cwd: ROOT }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+
 const SURVIVE_PERSON = `qa.p28.survive.${RUN_ID}@scj.test`;
 const BUSY_PERSON = `qa.p28.busy.${RUN_ID}@scj.test`;
 const CONTROL_PERSON = `qa.p28.control.${RUN_ID}@scj.test`;
@@ -83,7 +91,7 @@ const result = {
   environment: "LOCAL",
   company: "SCJ",
   generated_at: new Date().toISOString(),
-  api_commit: "unknown",
+  api_commit: currentCommit(),
   api_url: API_URL,
   operating_date: TODAY,
   scope: {
@@ -133,6 +141,7 @@ async function capture(pathname, { token = "", method = "GET", body, actor = "",
   const entry = {
     actor, step, method, pathname, status,
     code: payload?.code || null,
+    request_id: payload?.request_id || null,
     ok: status >= 200 && status < 300 && !transportError,
     latency_ms: Date.now() - started,
     transport_error: transportError,
@@ -267,6 +276,10 @@ async function main() {
       result.observations.contencion_26s = { status: created.status, code: created.code, latency_ms: created.latency_ms };
       check("contention_26s_returns_503", created.status === 503, { status: created.status, code: created.code });
       check("contention_26s_busy_code", created.code === "ROUTE_ASSIGNMENT_BUSY", { code: created.code });
+      // El cliente decide el reintento por code y da la referencia al operario: sin estos dos campos
+      // la pantalla solo podria anunciar "backend no disponible".
+      check("busy_payload_exposes_request_id", Boolean(created.request_id), { request_id: created.request_id });
+      check("busy_payload_message_is_actionable", /Intente de nuevo/i.test(String(created.error || "")), { message: created.error });
       check("contention_26s_never_500", created.status !== 500 && created.code !== "ERROR_INTERNO");
       check("contention_26s_nothing_persisted", (await countRoutesForPerson(tenant.id, BUSY_PERSON, TODAY)) === 0);
     }
