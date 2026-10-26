@@ -1,25 +1,25 @@
 {
   "environment": "LOCAL",
-  "head": "dae326af3eb80e43793883e95b1156eb2bf9e273",
+  "head": "0aa9fc2550180c29cf6507abd22ec015dbe34959",
   "status": "passed",
   "results": [
     {
       "name": "api",
       "status": "passed",
-      "tests": 810,
-      "passed": 810,
+      "tests": 875,
+      "passed": 875,
       "failed": 0,
       "skipped": 0,
-      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-H5pILZ\\api.log"
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-YEg5Xf\\api.log"
     },
     {
       "name": "web",
       "status": "passed",
-      "tests": 580,
-      "passed": 580,
+      "tests": 589,
+      "passed": 589,
       "failed": 0,
       "skipped": 0,
-      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-H5pILZ\\web.log"
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-YEg5Xf\\web.log"
     }
   ]
 }
