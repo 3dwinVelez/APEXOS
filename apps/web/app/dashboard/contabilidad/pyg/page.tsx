@@ -4,23 +4,21 @@ import {
   api,
   getTransportPygBudgets, getTransportPygConfig, getTransportPygMapping, getTransportPygReport,
   saveTransportPygBudgets, saveTransportPygConfig, saveTransportPygMapping,
-  type TransportPygReport, type TransportPygRow, type TransportPygVehicle
+  type TransportPygAccountChild, type TransportPygReport, type TransportPygRow, type TransportPygVehicle
 } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
 import { formatRegionalMoney } from "@/lib/regionalFormat";
 import { downloadXlsxWorkbook, type XlsxReportSheet } from "@/lib/reportExports";
 import AccountingPyg from "@/components/accounting/AccountingPyg";
-import { AlertTriangle, BadgeDollarSign, Download, FileSpreadsheet, Fuel, Gauge, PieChart, RefreshCw, Scale, Settings2, Target, Truck, Wallet } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import TransportPygAccountConfig from "@/components/transport-pyg/TransportPygAccountConfig";
+import { KIND_LABELS } from "@/lib/transport-pyg-account-config";
+import { AlertTriangle, BadgeDollarSign, ChevronDown, ChevronRight, Download, FileSpreadsheet, Fuel, Gauge, PieChart, RefreshCw, Scale, Settings2, Target, Truck, Wallet } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 const money = { format: (value: number) => formatRegionalMoney(value) };
 const compact = new Intl.NumberFormat("es-CO", { notation: "compact", maximumFractionDigits: 1 });
 const percent = new Intl.NumberFormat("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const axis = { tick: { fill: "#94a3b8", fontSize: 11 }, axisLine: false, tickLine: false };
-const tooltip = { contentStyle: { background: "#0f1f2a", border: "1px solid #334155", borderRadius: 10, color: "#f8fafc" } };
-const CHART_COLORS = { income: "#14b8a6", expense: "#f59e0b", profit: "#38bdf8", loss: "#f43f5e" };
 const currentMonth = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`; };
 
 type View = "consolidado" | "vehiculos" | "presupuesto" | "configuracion";
@@ -76,6 +74,12 @@ export default function AccountingVehiclePygPage() {
     return report.vehicles.find((vehicle) => vehicle.plate === selectedPlate) || report.vehicles[0];
   }, [report, selectedPlate]);
 
+  const isAccounting = report?.source === "accounting";
+  // La vista contable no usa el presupuesto operativo por placa: el presupuesto
+  // viene del PYG Contable (Presupuesto PUC). La pestana se oculta en esa fuente.
+  const tabs = useMemo(() => (isAccounting ? VIEWS.filter(([key]) => key !== "presupuesto") : VIEWS), [isAccounting]);
+  const activeView: View = view === "presupuesto" && isAccounting ? "consolidado" : view;
+
   return (
     <div className="apex-workspace-shell space-y-4 text-content-body">
       <ContabilidadNav />
@@ -87,7 +91,7 @@ export default function AccountingVehiclePygPage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-apex">M-07 · Contabilidad · Rentabilidad</p>
                 <h1 className="text-2xl font-semibold text-content-strong">{mainView === "contable" ? "PYG Contable · PUC" : "PYG por Vehículo"}</h1>
-                <p className="text-sm text-content-muted">{mainView === "contable" ? "Matriz interactiva del estado de resultados por cuenta PUC, sucursal y centro de costo: actual, año anterior y presupuesto, con desglose hasta el centro de costo." : "Estado de resultados por placa (centro de costo): ingresos liquidados, gastos operativos y utilidad contra presupuesto."}</p>
+                <p className="text-sm text-content-muted">{mainView === "contable" ? "Matriz interactiva del estado de resultados por cuenta PUC, sucursal y centro de costo: actual, año anterior y presupuesto, con desglose hasta el centro de costo." : isAccounting ? "Estado de resultados por vehículo leído del libro contable con rangos PUC configurables: ingresos, gastos, subtotales y presupuesto del PYG Contable." : "Estado de resultados por placa (centro de costo): ingresos liquidados, gastos operativos y utilidad contra presupuesto."}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-2">
@@ -105,34 +109,56 @@ export default function AccountingVehiclePygPage() {
             </div>
           </div>
         </div>
-        {mainView === "vehiculo" ? <nav className="flex gap-1 overflow-x-auto p-2">{VIEWS.map(([key, label]) => <button className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${view === key ? "bg-apex text-white" : "text-content-muted hover:bg-surface-muted hover:text-content-strong"}`} key={key} onClick={() => setView(key)} type="button">{label}</button>)}</nav> : null}
+        {mainView === "vehiculo" ? <nav className="flex gap-1 overflow-x-auto p-2">{tabs.map(([key, label]) => <button className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${activeView === key ? "bg-apex text-white" : "text-content-muted hover:bg-surface-muted hover:text-content-strong"}`} key={key} onClick={() => setView(key)} type="button">{label}</button>)}</nav> : null}
       </header>
 
       {mainView === "contable" ? <AccountingPyg /> : (
         <>
           {error ? <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">{error}</div> : null}
-          {loading || !report ? <div className="apex-section-card p-12 text-center text-content-muted">Construyendo el estado de resultados…</div> : (
+          {!report ? <div className="apex-section-card p-12 text-center text-content-muted">Construyendo el estado de resultados…</div> : (
             <>
+              {loading ? <div aria-busy="true" role="status" className="rounded-xl border border-line bg-surface-muted/60 p-3 text-center text-xs text-content-muted">Actualizando…</div> : null}
+              {report.source === "accounting" && (report.warnings?.length || 0) > 0 ? (
+                <details className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-300">
+                  <summary className="flex cursor-pointer items-center gap-2 font-semibold"><AlertTriangle size={16} /> {report.warnings?.length} aviso(s) del PYG por vehículo (fuente contable)</summary>
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
+                    {report.warnings?.map((warning) => <li key={`${warning.code}-${warning.message}`}><strong>{warning.code}:</strong> {warning.message}</li>)}
+                  </ul>
+                </details>
+              ) : null}
               {report.data_status.unmapped_total > 0 ? (
                 <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-300">
                   <AlertTriangle className="mt-0.5 shrink-0" size={18} />
-                  <div><strong>Gastos sin clasificar: {money.format(report.data_status.unmapped_total)}.</strong> Existen líneas de caja menor con centro de costo (placa) cuyo concepto no está mapeado a una línea del PYG. Se incluyen en la fila dinámica “{rowOfCorporate(report, "GASTOS_SIN_CLASIFICAR")?.name || "GASTOS SIN CLASIFICAR"}”; ajusta el mapeo en Configuración para limpiar la lectura.</div>
+                  <div><strong>Gastos sin clasificar: {money.format(report.data_status.unmapped_total)}.</strong> {report.source === "accounting" ? "Existen cuentas del libro sin rango PUC asociado; se presentan en la fila dinámica “GASTOS SIN CLASIFICAR” y siguen dentro de la utilidad. Configura los Rangos PUC para limpiar la lectura." : "Existen líneas de caja menor con centro de costo (placa) cuyo concepto no está mapeado a una línea del PYG. Se incluyen en la fila dinámica “GASTOS SIN CLASIFICAR”; ajusta el mapeo en Configuración para limpiar la lectura."}</div>
                 </div>
               ) : null}
-              {report.data_status.vehicle_count === 0 ? (
-                <div className="apex-section-card p-12 text-center text-content-muted">
-                  <Truck className="mx-auto mb-3 text-content-subtle" size={32} />
-                  <p className="font-semibold text-content-strong">No hay vehículos activos en la flota.</p>
-                  <p className="text-sm">Crea los vehículos en Transporte → Vehículos y documentos para habilitar el PYG por placa.</p>
-                </div>
-              ) : view === "consolidado" ? <ConsolidatedView canWrite={canWrite} onConfig={() => setView("configuracion")} report={report} /> :
-                view === "vehiculos" ? <VehiclesView onSelectPlate={setSelectedPlate} report={report} selectedPlate={selectedVehicle?.plate || ""} /> :
-                view === "presupuesto" ? <BudgetsView canWrite={canWrite} onSaved={() => void load()} period={period} report={report} /> :
-                <ConfigView canWrite={canWrite} onSaved={() => void load()} report={report} />}
+              {activeView === "configuracion" ? <ConfigView canWrite={canWrite} onSaved={() => void load()} report={report} /> : (
+                <>
+                  {report.data_status.vehicle_count === 0 ? <NoVehiclesNotice onConfig={() => setView("configuracion")} /> : null}
+                  {activeView === "consolidado" ? <ConsolidatedView canWrite={canWrite} onConfig={() => setView("configuracion")} report={report} /> :
+                    activeView === "vehiculos" ? <VehiclesView onSelectPlate={setSelectedPlate} report={report} selectedPlate={selectedVehicle?.plate || ""} /> :
+                    <BudgetsView canWrite={canWrite} onSaved={() => void load()} period={period} report={report} />}
+                </>
+              )}
             </>
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function NoVehiclesNotice({ onConfig }: { onConfig: () => void }) {
+  return (
+    <div className="apex-section-card p-4 text-sm text-content-muted">
+      <div className="flex items-start gap-3">
+        <Truck className="mt-0.5 shrink-0 text-content-subtle" size={20} />
+        <div>
+          <p className="font-semibold text-content-strong">No hay vehículos activos en la flota.</p>
+          <p>Crea los vehículos en Transporte → Vehículos y documentos para habilitar el PYG por placa. Los centros de costo del libro sin vehículo siguen visibles en el consolidado, y los rangos PUC se pueden configurar en cualquier momento.</p>
+          <button className="mt-2 inline-flex items-center gap-2 rounded-md border border-apex px-3 py-2 text-sm font-semibold text-apex" onClick={onConfig} type="button"><Settings2 size={16} /> Configurar Rangos PUC</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -153,6 +179,14 @@ function PctCell({ value }: { value: number | null }) {
 }
 
 function StatementTable({ caption, rows, title }: { title: string; caption: string; rows: TransportPygRow[] }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (code: string) => setExpanded((current) => {
+    const next = new Set(current);
+    if (next.has(code)) next.delete(code); else next.add(code);
+    return next;
+  });
+  const hasDrill = rows.some((row) => (row.children?.length || 0) > 0);
+  const moneyCell = (value: number | null) => value == null ? <span className="text-content-subtle">—</span> : money.format(value);
   return (
     <section className="apex-section-card overflow-hidden">
       <div className="p-4"><h2 className="font-semibold text-content-strong">{title}</h2><p className="text-xs text-content-muted">{caption}</p></div>
@@ -164,21 +198,73 @@ function StatementTable({ caption, rows, title }: { title: string; caption: stri
           <tbody>
             {rows.map((row) => {
               const kindClass = KIND_CLASS[row.kind] || "";
+              const kindLabel = KIND_LABELS[row.kind];
               const negative = row.actual < 0;
+              const drill = row.children?.length ? true : false;
+              const open = drill && expanded.has(row.code);
               return (
-                <tr className={`border-t border-line ${kindClass.includes("bg-") ? kindClass : "hover:bg-surface-muted"} ${row.dynamic ? "bg-amber-500/5" : ""}`} key={row.code}>
-                  <td className={`px-3 py-2 ${kindClass}`}>{row.name}{row.dynamic ? <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">SIN MAPEAR</span> : null}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{money.format(row.budget)}</td>
-                  <td className={`px-3 py-2 text-right tabular-nums ${negative ? "text-red-400" : ""} ${row.kind.startsWith("subtotal") ? "font-bold" : ""}`}>{money.format(row.actual)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-content-muted"><PctCell value={row.pct} /></td>
-                  <td className="px-3 py-2 text-right"><CumpBadge row={row} /></td>
-                </tr>
+                <Fragment key={row.code}>
+                  <tr className={`border-t border-line ${kindClass.includes("bg-") ? kindClass : "hover:bg-surface-muted"} ${row.dynamic ? "bg-amber-500/5" : ""}`}>
+                    <td className={`px-3 py-2 ${kindClass}`}>
+                      {drill ? (
+                        <button aria-expanded={Boolean(open)} aria-label={`Desglosar ${row.name}`} className="inline-flex max-w-full items-center gap-1 text-left" onClick={() => toggle(row.code)} type="button">
+                          {open ? <ChevronDown className="shrink-0 text-content-muted" size={14} /> : <ChevronRight className="shrink-0 text-content-muted" size={14} />}
+                          <span className="truncate">{row.name}</span>
+                        </button>
+                      ) : row.name}
+                      {row.dynamic ? <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">SIN MAPEAR</span> : null}
+                      {kindLabel ? <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-content-subtle">{kindLabel}</span> : null}
+                      {row.pending ? <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400" title={row.pending_message || "Sin cuenta asociada"}>PENDIENTE</span> : null}
+                      {row.informational ? <span className="ml-2 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold text-content-muted" title="Fila informativa: no se resta de la utilidad neta">INFORMATIVA</span> : null}
+                      {row.budget_coverage === "partial" ? <span className="ml-2 rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold text-amber-400" title="Solo algunas cuentas del concepto tienen presupuesto">PRESUPUESTO PARCIAL</span> : null}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{moneyCell(row.budget)}</td>
+                    <td className={`px-3 py-2 text-right tabular-nums ${negative ? "text-red-400" : ""} ${row.kind.startsWith("subtotal") ? "font-bold" : ""}`}>{money.format(row.actual)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-content-muted"><PctCell value={row.pct} /></td>
+                    <td className="px-3 py-2 text-right"><CumpBadge row={row} /></td>
+                  </tr>
+                  {open ? (row.children || []).map((account) => <AccountDrillRow account={account} key={`${row.code}-${account.account_code}`} />) : null}
+                </Fragment>
               );
             })}
           </tbody>
         </table>
       </div>
+      {hasDrill ? <p className="border-t border-line p-2 text-[11px] text-content-muted">Haz clic en un concepto para desglosar por cuenta y centro de costo (solo nombres; los códigos se ven en Configuración → Rangos PUC).</p> : null}
     </section>
+  );
+}
+
+function AccountDrillRow({ account }: { account: TransportPygAccountChild }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Fragment>
+      <tr className="border-t border-line bg-surface-muted/40">
+        <td className="py-1.5 pl-10 pr-3 text-xs text-content-muted">
+          {account.centers.length ? (
+            <button aria-expanded={open} aria-label={`Desglosar ${account.account_name}`} className="inline-flex items-center gap-1 text-left" onClick={() => setOpen((value) => !value)} title={`Cuenta ${account.account_code}`} type="button">
+              {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              <span className="truncate font-medium text-content-strong">{account.account_name}</span>
+            </button>
+          ) : <span className="font-medium text-content-strong" title={`Cuenta ${account.account_code}`}>{account.account_name}</span>}
+          {account.budget_coverage === "partial" ? <span className="ml-2 text-[10px] font-bold text-amber-400">P</span> : null}
+        </td>
+        <td className="px-3 py-1.5 text-right text-xs tabular-nums text-content-muted">{account.budget == null ? "—" : money.format(account.budget)}</td>
+        <td className={`px-3 py-1.5 text-right text-xs tabular-nums ${account.actual < 0 ? "text-red-400" : ""}`}>{money.format(account.actual)}</td>
+        <td className="px-3 py-1.5" colSpan={2} />
+      </tr>
+      {open ? account.centers.map((center) => (
+        <tr className="border-t border-line/60 bg-surface-muted/20" key={`${account.account_code}-${center.center_code}-${center.branch_code}`}>
+          <td className="py-1.5 pl-16 pr-3 text-xs text-content-muted" title={`Centro ${center.center_code} · Sucursal ${center.branch_code}`}>
+            <span className="text-content-strong">{center.center_name}</span>
+            {center.branch_name ? <span className="ml-1 text-[10px] text-content-subtle">· {center.branch_name}</span> : null}
+          </td>
+          <td className="px-3 py-1.5 text-right text-xs tabular-nums text-content-muted">{center.budget == null ? "—" : money.format(center.budget)}</td>
+          <td className={`px-3 py-1.5 text-right text-xs tabular-nums ${center.actual < 0 ? "text-red-400" : ""}`}>{money.format(center.actual)}</td>
+          <td className="px-3 py-1.5" colSpan={2} />
+        </tr>
+      )) : null}
+    </Fragment>
   );
 }
 
@@ -187,58 +273,75 @@ function ConsolidatedView({ report, canWrite, onConfig }: { report: TransportPyg
   const utilidadOp = rowOfCorporate(report, "UTILIDAD_OPERACIONAL");
   const utilidadNeta = rowOfCorporate(report, "UTILIDAD_NETA");
   const impuesto = rowOfCorporate(report, "IMPUESTO_REGIMEN_SIMPLE");
-  const chartData = useMemo(() => report.vehicles
-    .filter((vehicle) => vehicle.income_actual > 0)
-    .map((vehicle) => ({
-      plate: vehicle.plate,
-      Ingresos: vehicle.income_actual,
-      Gastos: rowOf(vehicle, "TOTAL_GASTOS_OPERACIONALES")?.actual ?? 0,
-      "Utilidad neta": rowOf(vehicle, "UTILIDAD_NETA")?.actual ?? 0
-    }))
-    .sort((a, b) => b.Ingresos - a.Ingresos), [report]);
+  const isAccounting = report.source === "accounting";
+  const incomeDetail = `${report.data_status.vehicles_with_income}/${report.data_status.vehicle_count} vehículos con producción` + (isAccounting && report.data_status.unassigned_centers ? ` · ${report.data_status.unassigned_centers} bloque sin vehículo` : "");
   return (
     <div className="space-y-4">
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Kpi icon={<BadgeDollarSign size={18} />} label="Ingresos" value={money.format(report.corporate.income_actual)} detail={`${report.data_status.vehicles_with_income}/${report.data_status.vehicle_count} vehículos con producción`} />
-        <Kpi icon={<Fuel size={18} />} label="Gastos operacionales" value={money.format(gastos?.actual ?? 0)} detail={`Presupuesto ${money.format(gastos?.budget ?? 0)}`} />
+        <Kpi icon={<BadgeDollarSign size={18} />} label="Ingresos" value={money.format(report.corporate.income_actual)} detail={incomeDetail} />
+        <Kpi icon={<Fuel size={18} />} label="Gastos operacionales" value={money.format(gastos?.actual ?? 0)} detail={gastos?.budget == null ? "Sin presupuesto definido" : `Presupuesto ${money.format(gastos.budget)}`} />
         <Kpi icon={<Gauge size={18} />} label="Utilidad operacional" tone={(utilidadOp?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(utilidadOp?.actual ?? 0)} detail={`Margen ${report.corporate.income_actual ? percent.format(((utilidadOp?.actual ?? 0) / report.corporate.income_actual) * 100) : "—"}%`} />
-        <Kpi icon={<Wallet size={18} />} label="Impuesto régimen simple" value={money.format(impuesto?.actual ?? 0)} detail={`Tarifa ${percent.format(report.tax_percent)}% sobre ingresos`} />
+        <Kpi icon={<Wallet size={18} />} label="Impuesto régimen simple" value={money.format(impuesto?.actual ?? 0)} detail={isAccounting ? "Según cuentas 54* contabilizadas" : `Tarifa ${percent.format(report.tax_percent)}% sobre ingresos`} />
         <Kpi icon={<PieChart size={18} />} label="Utilidad neta" tone={(utilidadNeta?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(utilidadNeta?.actual ?? 0)} detail={`Cumplimiento presupuesto ${utilidadNeta?.cump != null ? percent.format(utilidadNeta.cump * 100) : "—"}%`} />
       </section>
-      <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-        <StatementTable caption={`Periodo ${report.period_start} a ${report.period_end} · consolidado de las ${report.data_status.vehicle_count} placas activas.`} rows={report.corporate.rows} title={`PYG corporativo · ${report.period}`} />
-        <section className="apex-section-card p-4">
-          <h2 className="font-semibold text-content-strong">Producción vs. costo por placa</h2>
-          <p className="mb-4 text-xs text-content-muted">Ingresos liquidados, gastos operativos y utilidad neta de cada centro de costo.</p>
-          {chartData.length ? (
-            <div className="h-[520px]"><ResponsiveContainer><ComposedChart data={chartData}><CartesianGrid stroke="#334155" strokeDasharray="3 3" /><XAxis dataKey="plate" {...axis} /><YAxis tickFormatter={(value) => compact.format(value)} {...axis} /><Tooltip {...tooltip} /><Legend /><Bar dataKey="Ingresos" fill={CHART_COLORS.income} /><Bar dataKey="Gastos" fill={CHART_COLORS.expense} /><Line dataKey="Utilidad neta" stroke={CHART_COLORS.profit} strokeWidth={3} dot={(props: unknown) => { const { cx, cy, payload } = props as { cx: number; cy: number; payload: { "Utilidad neta": number } }; return <circle cx={cx} cy={cy} fill={payload["Utilidad neta"] < 0 ? CHART_COLORS.loss : CHART_COLORS.profit} r={4} />; }} /></ComposedChart></ResponsiveContainer></div>
-          ) : <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-content-muted">Sin ingresos liquidados en el periodo. Aprueba paquetes de liquidación para poblar el PYG.</p>}
-          {canWrite ? <button className="mt-3 text-xs font-bold text-apex" onClick={onConfig} type="button">Ajustar tarifa de impuesto y mapeo de conceptos →</button> : null}
+      <StatementTable caption={`Periodo ${report.period_start} a ${report.period_end} · consolidado de las ${report.data_status.vehicle_count} placas activas${isAccounting ? " y de los centros sin vehículo" : ""} · ${isAccounting ? "leído del libro contable con rangos PUC" : "liquidaciones, caja menor y nómina"}.`} rows={report.corporate.rows} title={`PYG corporativo · ${report.period}`} />
+      {report.unassigned ? (
+        <StatementTable caption={`Centros de costo del libro sin vehículo asignado; se incluyen en el consolidado y no se asignan dos veces.`} rows={report.unassigned.rows} title="Sin vehículo / sin asignar" />
+      ) : null}
+      {report.reconciliation ? (
+        <section className="apex-section-card p-4 text-xs text-content-muted">
+          <h2 className="font-semibold text-content-strong">Reconciliación con el libro</h2>
+          <p className="mt-1">Neta del reporte {money.format(report.reconciliation.neta_actual)} · suma firmada del libro {money.format(report.reconciliation.ledger_net)} · diferencia {money.format(report.reconciliation.difference)}{report.reconciliation.informational_actual ? ` (depreciación informativa presentada sin restar: ${money.format(report.reconciliation.informational_actual)})` : ""}.</p>
+          <p>{report.reconciliation.note}</p>
         </section>
-      </div>
+      ) : null}
+      {canWrite ? (
+        <div className="flex flex-wrap gap-3">
+          <button className="inline-flex items-center gap-2 rounded-md border border-apex px-3 py-2 text-sm font-semibold text-apex" onClick={onConfig} type="button"><Settings2 size={16} /> {report.source === "accounting" ? "Configurar Rangos PUC" : "Ajustar tarifa de impuesto y mapeo de conceptos"}</button>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 function VehiclesView({ report, selectedPlate, onSelectPlate }: { report: TransportPygReport; selectedPlate: string; onSelectPlate: (plate: string) => void }) {
-  const vehicle = report.vehicles.find((item) => item.plate === selectedPlate) || report.vehicles[0];
+  const [localSelection, setLocalSelection] = useState<string>("");
+  const effectivePlate = localSelection || selectedPlate;
+  const unassignedSelected = report.unassigned ? effectivePlate === report.unassigned.plate : false;
+  const vehicle = unassignedSelected ? null : report.vehicles.find((item) => item.plate === effectivePlate) || report.vehicles[0];
   const utilidadNeta = vehicle ? rowOf(vehicle, "UTILIDAD_NETA") : undefined;
   const gridConcepts = report.corporate.rows;
   return (
     <div className="space-y-4">
       <div className="flex gap-2 overflow-x-auto pb-1">
         {report.vehicles.map((item) => (
-          <button className={`shrink-0 rounded-xl border px-3 py-2 text-left ${item.plate === vehicle?.plate ? "border-apex bg-apex/10" : "border-line hover:bg-surface-muted"}`} key={item.plate} onClick={() => onSelectPlate(item.plate)} type="button">
+          <button className={`shrink-0 rounded-xl border px-3 py-2 text-left ${item.plate === vehicle?.plate && !unassignedSelected ? "border-apex bg-apex/10" : "border-line hover:bg-surface-muted"}`} key={item.plate} onClick={() => { setLocalSelection(item.plate); onSelectPlate(item.plate); }} type="button">
             <span className="block text-sm font-bold text-content-strong">{item.plate}</span>
             <span className={`block text-xs font-semibold ${(rowOf(item, "UTILIDAD_NETA")?.actual ?? 0) < 0 ? "text-red-400" : "text-emerald-400"}`}>{money.format(rowOf(item, "UTILIDAD_NETA")?.actual ?? 0)}</span>
           </button>
         ))}
+        {report.unassigned ? (
+          <button className={`shrink-0 rounded-xl border px-3 py-2 text-left ${unassignedSelected ? "border-amber-400 bg-amber-400/10" : "border-dashed border-amber-500/40 hover:bg-surface-muted"}`} onClick={() => setLocalSelection(report.unassigned?.plate || "")} type="button">
+            <span className="block text-sm font-bold text-amber-400">Sin vehículo / sin asignar</span>
+            <span className="block text-xs font-semibold text-content-muted">{money.format(rowOf(report.unassigned, "TOTAL_INGRESOS")?.actual ?? 0)} de ingresos</span>
+          </button>
+        ) : null}
       </div>
-      {vehicle ? (
+      {unassignedSelected && report.unassigned ? (
         <>
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Kpi icon={<Truck size={18} />} label="Vehículo" value={vehicle.plate} detail={vehicle.vehicle_label || "Sin descripción adicional"} />
-            <Kpi icon={<BadgeDollarSign size={18} />} label="Ingresos" value={money.format(vehicle.income_actual)} detail={`Presupuesto ${money.format(rowOf(vehicle, "INGRESOS")?.budget ?? 0)}`} />
+            <Kpi icon={<Truck size={18} />} label="Bloque" value="Sin vehículo" detail="Centros de costo sin placa asignada" />
+            <Kpi icon={<BadgeDollarSign size={18} />} label="Ingresos" value={money.format(report.unassigned.income_actual)} detail={`Presupuesto ${rowOf(report.unassigned, "INGRESOS")?.budget == null ? "—" : money.format(rowOf(report.unassigned, "INGRESOS")?.budget ?? 0)}`} />
+            <Kpi icon={<Gauge size={18} />} label="Utilidad operacional" tone={(rowOf(report.unassigned, "UTILIDAD_OPERACIONAL")?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(rowOf(report.unassigned, "UTILIDAD_OPERACIONAL")?.actual ?? 0)} detail={`Gastos ${money.format(rowOf(report.unassigned, "TOTAL_GASTOS_OPERACIONALES")?.actual ?? 0)}`} />
+            <Kpi icon={<PieChart size={18} />} label="Utilidad neta" tone={(rowOf(report.unassigned, "UTILIDAD_NETA")?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(rowOf(report.unassigned, "UTILIDAD_NETA")?.actual ?? 0)} detail="Incluido en el consolidado corporativo" />
+          </section>
+          <StatementTable caption="Centros de costo del libro sin vehículo asignado; nunca se asignan dos veces ni desaparecen del consolidado." rows={report.unassigned.rows} title={`Sin vehículo / sin asignar · ${report.period}`} />
+        </>
+      ) : vehicle ? (
+        <>
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Kpi icon={<Truck size={18} />} label="Vehículo" value={vehicle.plate} detail={vehicle.vehicle_label || (vehicle.center_name ? `Centro ${vehicle.center_name}` : "Sin descripción adicional")} />
+            <Kpi icon={<BadgeDollarSign size={18} />} label="Ingresos" value={money.format(vehicle.income_actual)} detail={`Presupuesto ${rowOf(vehicle, "INGRESOS")?.budget == null ? "—" : money.format(rowOf(vehicle, "INGRESOS")?.budget ?? 0)}`} />
             <Kpi icon={<Gauge size={18} />} label="Utilidad operacional" tone={(rowOf(vehicle, "UTILIDAD_OPERACIONAL")?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(rowOf(vehicle, "UTILIDAD_OPERACIONAL")?.actual ?? 0)} detail={`Gastos ${money.format(rowOf(vehicle, "TOTAL_GASTOS_OPERACIONALES")?.actual ?? 0)}`} />
             <Kpi icon={<PieChart size={18} />} label="Utilidad neta" tone={(utilidadNeta?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(utilidadNeta?.actual ?? 0)} detail={vehicle.unmapped_expense > 0 ? `Sin clasificar ${money.format(vehicle.unmapped_expense)}` : `Impuesto ${money.format(rowOf(vehicle, "IMPUESTO_REGIMEN_SIMPLE")?.actual ?? 0)}`} />
           </section>
@@ -292,7 +395,11 @@ function BudgetsView({ report, period, canWrite, onSaved }: { report: TransportP
       setValues(next);
     }).catch(() => {
       const fromReport: Record<string, string> = {};
-      for (const vehicle of report.vehicles) for (const row of vehicle.rows) if ((row.kind === "income" || row.kind === "expense") && row.budget > 0) fromReport[`${vehicle.vehicle_id}:${row.code}`] = String(row.budget);
+      for (const vehicle of report.vehicles) for (const row of vehicle.rows) {
+        if (row.kind !== "income" && row.kind !== "expense") continue;
+        const budget = row.budget;
+        if (budget != null && budget > 0) fromReport[`${vehicle.vehicle_id}:${row.code}`] = String(budget);
+      }
       setValues(fromReport);
     });
   }, [period, report]);
@@ -400,49 +507,59 @@ function ConfigView({ report, canWrite, onSaved }: { report: TransportPygReport;
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_1.6fr]">
-      <section className="apex-section-card space-y-3 p-4">
-        <div><h2 className="font-semibold text-content-strong">Impuesto de régimen simple</h2><p className="text-xs text-content-muted">Porcentaje aplicado sobre los ingresos ejecutados de cada placa para calcular la línea de impuesto y la utilidad neta.</p></div>
-        <label className="block text-sm text-content-muted">Tarifa %<input className="mt-1 h-10 w-full rounded-md border border-line bg-surface px-3 text-content-strong" disabled={!canWrite} min={0} max={100} onChange={(event) => setTax(event.target.value)} step="0.01" type="number" value={tax} /></label>
-        {error ? <p className="text-xs text-red-600">{error}</p> : null}
-        {notice ? <p className="text-xs text-emerald-600">{notice}</p> : null}
-        {canWrite ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving} onClick={() => void saveTax()} type="button"><Settings2 size={16} />Guardar configuración</button> : null}
-      </section>
-      <section className="apex-section-card overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-          <div><h2 className="font-semibold text-content-strong">Mapeo de conceptos de caja menor</h2><p className="text-xs text-content-muted">Cada concepto de gasto de caja menor se imputa a una línea del PYG según la placa registrada en su centro de costo. Los conceptos sin mapeo alimentan la fila dinámica “GASTOS SIN CLASIFICAR”.</p></div>
-          {canWrite ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex hover:bg-paper disabled:opacity-50" disabled={saving} onClick={() => void saveMap()} type="button"><FileSpreadsheet size={16} /> Guardar mapeo</button> : null}
-        </div>
-        <div className="max-h-[460px] overflow-auto">
-          <table className="min-w-full text-sm">
-            <thead className="sticky top-0 bg-surface-muted text-xs uppercase text-content-muted">
-              <tr><th className="px-3 py-2 text-left">Origen</th><th className="px-3 py-2 text-left">Concepto de caja menor</th><th className="px-3 py-2 text-left">Línea del PYG</th></tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <tr className="border-t border-line" key={`${row.source_type}-${row.source_code}`}>
-                  <td className="px-3 py-2 text-xs text-content-muted">{row.source_type === "petty_cash_concept" ? "Caja menor" : row.source_type}</td>
-                  <td className="px-3 py-2 font-medium text-content-strong">
-                    {row.concept_name || row.source_code}
-                    {row.concept_name ? <span className="ml-2 text-xs font-normal text-content-muted">{row.source_code}</span> : null}
-                  </td>
-                  <td className="px-3 py-2">
-                    {canWrite ? (
-                      <select className="h-8 w-full max-w-xs rounded-md border border-line bg-surface px-2 text-xs text-content-strong" onChange={(event) => setRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, pyg_concept_code: event.target.value } : item))} value={row.pyg_concept_code}>
-                        <option value="">— Sin clasificar —</option>
-                        {conceptOptions.map((concept) => <option key={concept.code} value={concept.code}>{concept.name}</option>)}
-                      </select>
-                    ) : (
-                      <span className="text-xs">{row.pyg_concept_code ? conceptOptions.find((concept) => concept.code === row.pyg_concept_code)?.name || row.pyg_concept_code : "Sin clasificar"}</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!rows.length ? <tr><td className="px-3 py-6 text-center text-xs text-content-muted" colSpan={3}>Aún no hay conceptos de caja menor activos. Créalos en Gastos Menores para habilitar la clasificación.</td></tr> : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[1fr_1.6fr]">
+        <section className="apex-section-card space-y-3 p-4">
+          <div><h2 className="font-semibold text-content-strong">Impuesto de régimen simple</h2><p className="text-xs text-content-muted">{report.source === "accounting" ? "Tarifa de referencia mostrada en el reporte contable; el impuesto ejecutado se lee de las cuentas 54* contabilizadas (nunca se estima si la cuenta no tiene movimiento)." : "Porcentaje aplicado sobre los ingresos ejecutados de cada placa para calcular la línea de impuesto y la utilidad neta."}</p></div>
+          <label className="block text-sm text-content-muted">Tarifa %<input className="mt-1 h-10 w-full rounded-md border border-line bg-surface px-3 text-content-strong" disabled={!canWrite} min={0} max={100} onChange={(event) => setTax(event.target.value)} step="0.01" type="number" value={tax} /></label>
+          {error ? <p className="text-xs text-red-600">{error}</p> : null}
+          {notice ? <p className="text-xs text-emerald-600">{notice}</p> : null}
+          {canWrite ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving} onClick={() => void saveTax()} type="button"><Settings2 size={16} />Guardar configuración</button> : null}
+        </section>
+        {report.source === "operational" ? (
+          <section className="apex-section-card overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+              <div><h2 className="font-semibold text-content-strong">Mapeo de conceptos de caja menor</h2><p className="text-xs text-content-muted">Cada concepto de gasto de caja menor se imputa a una línea del PYG según la placa registrada en su centro de costo. Los conceptos sin mapeo alimentan la fila dinámica “GASTOS SIN CLASIFICAR”.</p></div>
+              {canWrite ? <button className="inline-flex h-9 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex hover:bg-paper disabled:opacity-50" disabled={saving} onClick={() => void saveMap()} type="button"><FileSpreadsheet size={16} /> Guardar mapeo</button> : null}
+            </div>
+            <div className="max-h-[460px] overflow-auto">
+              <table className="min-w-full text-sm">
+                <thead className="sticky top-0 bg-surface-muted text-xs uppercase text-content-muted">
+                  <tr><th className="px-3 py-2 text-left">Origen</th><th className="px-3 py-2 text-left">Concepto de caja menor</th><th className="px-3 py-2 text-left">Línea del PYG</th></tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr className="border-t border-line" key={`${row.source_type}-${row.source_code}`}>
+                      <td className="px-3 py-2 text-xs text-content-muted">{row.source_type === "petty_cash_concept" ? "Caja menor" : row.source_type}</td>
+                      <td className="px-3 py-2 font-medium text-content-strong">
+                        {row.concept_name || row.source_code}
+                        {row.concept_name ? <span className="ml-2 text-xs font-normal text-content-muted">{row.source_code}</span> : null}
+                      </td>
+                      <td className="px-3 py-2">
+                        {canWrite ? (
+                          <select className="h-8 w-full max-w-xs rounded-md border border-line bg-surface px-2 text-xs text-content-strong" onChange={(event) => setRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, pyg_concept_code: event.target.value } : item))} value={row.pyg_concept_code}>
+                            <option value="">— Sin clasificar —</option>
+                            {conceptOptions.map((concept) => <option key={concept.code} value={concept.code}>{concept.name}</option>)}
+                          </select>
+                        ) : (
+                          <span className="text-xs">{row.pyg_concept_code ? conceptOptions.find((concept) => concept.code === row.pyg_concept_code)?.name || row.pyg_concept_code : "Sin clasificar"}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!rows.length ? <tr><td className="px-3 py-6 text-center text-xs text-content-muted" colSpan={3}>Aún no hay conceptos de caja menor activos. Créalos en Gastos Menores para habilitar la clasificación.</td></tr> : null}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : (
+          <section className="apex-section-card p-4">
+            <div><h2 className="font-semibold text-content-strong">Presupuesto por vehículo (fuente contable)</h2><p className="text-xs text-content-muted">El presupuesto de cada fila proviene del almacén de Presupuesto PUC del PYG Contable (cuenta, sucursal y centro de costo). No se usa el presupuesto operativo por placa ni las líneas de esta sección; tampoco se estima impuesto si la cuenta mapeada sigue en cero.</p></div>
+            <p className="mt-2 rounded-lg border border-line bg-surface-muted/60 p-3 text-xs text-content-muted">Define o ajusta el presupuesto en Contabilidad → PYG → Presupuesto PUC. La cobertura se marca como completa, parcial o sin presupuesto según las cuentas de cada concepto.</p>
+          </section>
+        )}
+      </div>
+      <TransportPygAccountConfig canWrite={canWrite} onSaved={onSaved} />
     </div>
   );
 }
@@ -457,7 +574,7 @@ function exportWorkbook(report: TransportPygReport) {
   ];
   const statementRows = (rows: TransportPygRow[]) => rows.map((row) => ({
     concepto: row.name,
-    presupuesto: row.budget,
+    presupuesto: row.budget == null ? "" : row.budget,
     ejecutado: row.actual,
     porcentaje: row.pct == null ? "" : Math.round(row.pct * 10000) / 100,
     cumplimiento: row.cump == null ? "" : Math.round(row.cump * 10000) / 100
