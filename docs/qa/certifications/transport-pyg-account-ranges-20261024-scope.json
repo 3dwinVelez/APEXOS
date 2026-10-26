@@ -1,0 +1,185 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "transport-pyg-account-ranges-20261024",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-vehicle-pyg-ranges-20261026",
+  "target_head": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5",
+  "base_commit": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5",
+  "base_commits": {
+    "develop": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5"
+  },
+  "certified_commit": "d783b8f30e2bb514eabee02d997c55876accf925",
+  "candidate_source": {
+    "original_commit": "3e7bcd0d",
+    "commit": "d783b8f30e2bb514eabee02d997c55876accf925",
+    "traceability_merge": "7fef79ee",
+    "branch": "desarrollo"
+  },
+  "approval": {
+    "instruction": "Autorizar rama y promoción puntual",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "scope": "promotion_to_develop_for_qa",
+    "status": "approved",
+    "approved_at": "2026-10-26",
+    "approved_by": "manue"
+  },
+  "change_intent": {
+    "summary": "Configurar conceptos por rangos PUC inclusivos y exclusiones, orden y subtotales basados en presupuesto.xlsx, reporte contable por vehículo con drill de concepto a cuenta y centro por nombres, conservando el legado operativo.",
+    "modules": [
+      "transport-pyg",
+      "accounting",
+      "qa-evidence"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/transport-pyg/account-config-service.js",
+    "apps/api/src/modules/transport-pyg/account-config.js",
+    "apps/api/src/modules/transport-pyg/account-engine.js",
+    "apps/api/src/modules/transport-pyg/engine.js",
+    "apps/api/src/modules/transport-pyg/routes.js",
+    "apps/api/src/modules/transport-pyg/schema.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/test/transport-pyg-account-ranges.test.js",
+    "apps/api/test/transport-pyg-report.test.js",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/transport-pyg-account-config.ts",
+    "apps/web/test/transport-pyg-account-config.component.test.mjs",
+    "apps/web/test/transport-pyg-account-config.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-account-ranges-20261024.md",
+    "scripts/certifications/transport-pyg-account-ranges-browser-local.js"
+  ],
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/transport-pyg/account-config-service.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/account-config.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/account-engine.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/engine.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/routes.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/schema.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/transport-pyg-account-ranges.test.js",
+      "status": "A"
+    },
+    {
+      "file": "apps/api/test/transport-pyg-report.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/lib/api.ts",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/lib/transport-pyg-account-config.ts",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/transport-pyg-account-config.component.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/transport-pyg-account-config.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/transport-pyg-account-ranges-20261024.md",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-pyg-account-ranges-browser-local.js",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/transport-pyg-account-ranges-20261024-preqa.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/certifications/transport-pyg-account-ranges-20261024-scope.json",
+      "status": "A"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/transport-pyg/account-config-service.js",
+    "apps/api/src/modules/transport-pyg/account-config.js",
+    "apps/api/src/modules/transport-pyg/account-engine.js",
+    "apps/api/src/modules/transport-pyg/engine.js",
+    "apps/api/src/modules/transport-pyg/routes.js",
+    "apps/api/src/modules/transport-pyg/schema.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/test/transport-pyg-account-ranges.test.js",
+    "apps/api/test/transport-pyg-report.test.js",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/transport-pyg-account-config.ts",
+    "apps/web/test/transport-pyg-account-config.component.test.mjs",
+    "apps/web/test/transport-pyg-account-config.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-account-ranges-20261024.md",
+    "scripts/certifications/transport-pyg-account-ranges-browser-local.js",
+    "docs/qa/certifications/transport-pyg-account-ranges-20261024-preqa.json",
+    "docs/qa/certifications/transport-pyg-account-ranges-20261024-scope.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "status": "passed",
+      "name": "PUC_presupuesto_contable_reconciliacion_sin_duplicacion",
+      "evidence": [
+        "transport-pyg-account-ranges-20261024.md"
+      ]
+    },
+    {
+      "status": "passed",
+      "name": "RBAC_aislamiento_tenant_y_restauracion_operativa",
+      "evidence": [
+        "transport-pyg-account-ranges-20261024.md"
+      ]
+    },
+    {
+      "status": "passed",
+      "name": "configuracion_guardado_persistencia_y_drill_real",
+      "evidence": [
+        "transport-pyg-account-ranges-20261024.md"
+      ]
+    }
+  ]
+}
