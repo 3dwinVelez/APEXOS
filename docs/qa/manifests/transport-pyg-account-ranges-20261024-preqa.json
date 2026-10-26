@@ -19,31 +19,31 @@
     "support_scripts": {
       "status": "passed",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     },
     "error": {
       "status": "passed",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     },
     "platform_regression": {
       "status": "passed",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     },
     "functional": {
       "status": "passed",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     },
     "regression": {
       "status": "passed",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     }
   },
@@ -51,14 +51,14 @@
     "status": "passed",
     "script": "../../../scripts/certifications/transport-pyg-account-ranges-browser-local.js",
     "evidence": [
-      "transport-pyg-account-ranges-20261024.md"
+      "../certifications/transport-pyg-account-ranges-20261024.md"
     ]
   },
   "regression_certification": {
     "status": "passed",
     "script": "../../../scripts/certifications/transport-pyg-account-ranges-browser-local.js",
     "evidence": [
-      "transport-pyg-account-ranges-20261024.md"
+      "../certifications/transport-pyg-account-ranges-20261024.md"
     ]
   },
   "promotion_branch": "codex/qa-vehicle-pyg-ranges-20261026",

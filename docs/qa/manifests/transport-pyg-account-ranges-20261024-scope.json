@@ -128,11 +128,11 @@
       "status": "A"
     },
     {
-      "file": "docs/qa/certifications/transport-pyg-account-ranges-20261024-preqa.json",
+      "file": "docs/qa/manifests/transport-pyg-account-ranges-20261024-preqa.json",
       "status": "A"
     },
     {
-      "file": "docs/qa/certifications/transport-pyg-account-ranges-20261024-scope.json",
+      "file": "docs/qa/manifests/transport-pyg-account-ranges-20261024-scope.json",
       "status": "A"
     }
   ],
@@ -155,8 +155,8 @@
     "apps/web/test/transport-pyg-vehicle-page.test.mjs",
     "docs/qa/certifications/transport-pyg-account-ranges-20261024.md",
     "scripts/certifications/transport-pyg-account-ranges-browser-local.js",
-    "docs/qa/certifications/transport-pyg-account-ranges-20261024-preqa.json",
-    "docs/qa/certifications/transport-pyg-account-ranges-20261024-scope.json"
+    "docs/qa/manifests/transport-pyg-account-ranges-20261024-preqa.json",
+    "docs/qa/manifests/transport-pyg-account-ranges-20261024-scope.json"
   ],
   "allowed_deletions": [],
   "protected_capabilities": [
@@ -164,21 +164,21 @@
       "status": "passed",
       "name": "PUC_presupuesto_contable_reconciliacion_sin_duplicacion",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     },
     {
       "status": "passed",
       "name": "RBAC_aislamiento_tenant_y_restauracion_operativa",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     },
     {
       "status": "passed",
       "name": "configuracion_guardado_persistencia_y_drill_real",
       "evidence": [
-        "transport-pyg-account-ranges-20261024.md"
+        "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     }
   ]
