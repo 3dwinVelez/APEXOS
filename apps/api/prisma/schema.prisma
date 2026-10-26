@@ -3902,3 +3902,279 @@ model CommercialSalesOrderLine {
   @@index([sales_order_id])
   @@map("commercial_sales_order_lines")
 }
+
+// === COMERCIO (M-30) — herramienta autonoma para pequenos comerciantes ===
+// Modulo AISLADO: no tiene FK hacia modelos de otros modulos (ni Product, ni Party,
+// ni cnt_* del ERP). Todo lo que se necesita para operar el comercio propio vive en
+// las tablas comercio_*. Los snapshots (product_name, customer_name) garantizan que
+// el historial siga legible aunque se elimine el maestro.
+// Tenant: solo tenant_id TEXT; el aislamiento lo aplica core/prisma.js via runWithTenant.
+// Dinero: Decimal(18,2); cantidades: Int (unidades). Fechas de negocio: TIMESTAMP(3).
+
+// Producto del catalogo propio del comerciante (no comparte maestro con Inventario ERP).
+// code se autogenera por tenant (P-0001). photo_path apunta al objeto en el bucket
+// "comercio-assets" (clave interna, nunca URL); la URL firmada se pide al API.
+model ComercioProduct {
+  id         Int      @id @default(autoincrement())
+  tenant_id  String
+  code       String
+  name       String
+  category   String?
+  unit       String   @default("unidad")
+  price      Decimal  @db.Decimal(18, 2)
+  cost       Decimal  @db.Decimal(18, 2)
+  stock      Int      @default(0)
+  min_stock  Int      @default(0)
+  active     Boolean  @default(true)
+  notes      String?
+  photo_path String?
+  photo_mime String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("comercio_products")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active])
+  @@index([tenant_id, active, name])
+}
+
+// Cliente de mostrador (no es Party del CRM ni del ERP).
+// code autogenerado por tenant (C-0001). document admite CC/NIT sin maestro de tipos.
+model ComercioCustomer {
+  id         Int      @id @default(autoincrement())
+  tenant_id  String
+  code       String
+  name       String
+  document   String?
+  phone      String?
+  email      String?
+  address    String?
+  active     Boolean  @default(true)
+  notes      String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("comercio_customers")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, name])
+}
+
+// Venta de mostrador. payment_type: "cash" | "credit". status: "active" | "voided".
+// cost_total es snapshot del costo promedio al momento de vender (margen historico).
+// method: medio de pago del contado (Efectivo, Nequi, ...); libre, sin maestro.
+model ComercioSale {
+  id            Int       @id @default(autoincrement())
+  tenant_id     String
+  number        Int
+  full_number   String
+  date          DateTime
+  customer_id   Int?
+  customer_name String?
+  subtotal      Decimal   @db.Decimal(18, 2)
+  discount      Decimal   @default(0) @db.Decimal(18, 2)
+  total         Decimal   @db.Decimal(18, 2)
+  cost_total    Decimal   @default(0) @db.Decimal(18, 2)
+  payment_type  String
+  method        String?
+  status        String    @default("active")
+  note          String?
+  voided_at     DateTime?
+  void_reason   String?
+  created_by    Int?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  items         ComercioSaleItem[]
+
+  @@map("comercio_sales")
+  @@unique([tenant_id, number])
+  @@unique([tenant_id, full_number])
+  @@index([tenant_id, date])
+  @@index([tenant_id, status, date])
+  @@index([tenant_id, customer_id])
+}
+
+// Linea de venta con snapshot de producto y costo unitario promedio del momento.
+model ComercioSaleItem {
+  id           Int     @id @default(autoincrement())
+  tenant_id    String
+  sale_id      Int
+  sale         ComercioSale @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  line_number  Int
+  product_id   Int?
+  product_code String?
+  product_name String
+  quantity     Int
+  unit_price   Decimal @db.Decimal(18, 2)
+  unit_cost    Decimal @default(0) @db.Decimal(18, 2)
+  line_total   Decimal @db.Decimal(18, 2)
+
+  @@map("comercio_sale_items")
+  @@unique([tenant_id, sale_id, line_number])
+  @@index([tenant_id, sale_id])
+  @@index([tenant_id, product_id])
+}
+
+// Credito nacido de una venta a credito. financed_amount = total - down_payment.
+// frequency: "weekly" | "biweekly" | "monthly". status: "open" | "paid" | "voided".
+// La mora se deriva (cuota vencida no pagada), no se almacena.
+model ComercioCredit {
+  id                Int      @id @default(autoincrement())
+  tenant_id         String
+  number            Int
+  full_number       String
+  sale_id           Int?
+  customer_id       Int
+  customer_name     String
+  financed_amount   Decimal  @db.Decimal(18, 2)
+  down_payment      Decimal  @default(0) @db.Decimal(18, 2)
+  installment_count Int
+  frequency         String
+  first_due_date    DateTime
+  status            String   @default("open")
+  paid_at           DateTime?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  installments      ComercioInstallment[]
+  payments          ComercioPayment[]
+
+  @@map("comercio_credits")
+  @@unique([tenant_id, number])
+  @@unique([tenant_id, full_number])
+  @@index([tenant_id, customer_id])
+  @@index([tenant_id, status])
+  @@index([tenant_id, sale_id])
+}
+
+// Cuota del cronograma. paid_amount acumula abonos; status: "open" | "partial" | "paid".
+// La asignacion de abonos es oldest-first y queda trazada en comercio_payments.allocations.
+model ComercioInstallment {
+  id          Int       @id @default(autoincrement())
+  tenant_id   String
+  credit_id   Int
+  credit      ComercioCredit @relation(fields: [credit_id], references: [id], onDelete: Cascade)
+  number      Int
+  due_date    DateTime
+  amount      Decimal   @db.Decimal(18, 2)
+  paid_amount Decimal   @default(0) @db.Decimal(18, 2)
+  status      String    @default("open")
+  paid_at     DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  @@map("comercio_installments")
+  @@unique([tenant_id, credit_id, number])
+  @@index([tenant_id, credit_id])
+  @@index([tenant_id, due_date])
+}
+
+// Abono recibido sobre un credito. allocations es snapshot {installment_id: monto}
+// de como se repartio el abono entre cuotas (auditoria del reparto oldest-first).
+model ComercioPayment {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  credit_id   Int
+  credit      ComercioCredit @relation(fields: [credit_id], references: [id], onDelete: Cascade)
+  date        DateTime
+  amount      Decimal  @db.Decimal(18, 2)
+  method      String
+  note        String?
+  allocations Json?
+  created_by  Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("comercio_payments")
+  @@index([tenant_id, credit_id])
+  @@index([tenant_id, date])
+}
+
+// Compra de mercancía a un proveedor (texto libre, sin maestro de terceros).
+// Al registrar: costo promedio ponderado del producto y stock suben en la misma
+// transaccion, y se traza el movimiento de inventario.
+model ComercioPurchase {
+  id           Int      @id @default(autoincrement())
+  tenant_id    String
+  number       Int
+  full_number  String
+  date         DateTime
+  product_id   Int?
+  product_code String?
+  product_name String
+  supplier     String
+  quantity     Int
+  unit_cost    Decimal  @db.Decimal(18, 2)
+  total        Decimal  @db.Decimal(18, 2)
+  note         String?
+  created_by   Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("comercio_purchases")
+  @@unique([tenant_id, number])
+  @@unique([tenant_id, full_number])
+  @@index([tenant_id, date])
+  @@index([tenant_id, product_id])
+}
+
+// Gasto operativo del negocio (arriendo, servicios, ...). status: "active" | "voided".
+model ComercioExpense {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  number      Int
+  full_number String
+  date        DateTime
+  concept     String
+  category    String?
+  amount      Decimal  @db.Decimal(18, 2)
+  method      String?
+  note        String?
+  status      String   @default("active")
+  created_by  Int?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("comercio_expenses")
+  @@unique([tenant_id, number])
+  @@unique([tenant_id, full_number])
+  @@index([tenant_id, date])
+  @@index([tenant_id, status, date])
+}
+
+// Libro de inventario: cada cambio de stock queda trazado con stock_before/after.
+// reason: "initial" | "purchase" | "sale" | "sale_void" | "adjustment".
+// reference: documento que lo origino (V-0001, CMP-001, Ajuste: Merma, ...).
+model ComercioStockMovement {
+  id           Int      @id @default(autoincrement())
+  tenant_id    String
+  product_id   Int?
+  product_code String?
+  product_name String
+  change       Int
+  stock_before Int
+  stock_after  Int
+  reason       String
+  reference    String?
+  occurred_at  DateTime
+  created_by   Int?
+  created_at   DateTime @default(now())
+
+  @@map("comercio_stock_movements")
+  @@index([tenant_id, product_id, occurred_at])
+  @@index([tenant_id, occurred_at])
+}
+
+// Perfil operativo del comercio por tenant (1 fila). preferences_json guarda las
+// preferencias visuales (tema/colores/densidad) separadas de los datos del negocio.
+model ComercioSettings {
+  id               Int      @id @default(autoincrement())
+  tenant_id        String
+  store_name       String   @default("Mi negocio")
+  currency         String   @default("COP")
+  receipt_note     String?
+  preferences_json Json?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@map("comercio_settings")
+  @@unique([tenant_id])
+}
