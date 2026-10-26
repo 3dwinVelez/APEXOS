@@ -1,6 +1,6 @@
 {
   "change_id": "transport-pyg-account-ranges-20261024",
-  "commit": "d783b8f30e2bb514eabee02d997c55876accf925",
+  "commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
@@ -65,9 +65,9 @@
   "target_head": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5",
   "validation_summary": {
     "original_candidate": "3e7bcd0d",
-    "certified_commit": "d783b8f30e2bb514eabee02d997c55876accf925",
-    "completed_at_utc": "2026-10-26T18:11:11.126Z",
-    "artifact_sha256": "9c5cbd65c52b7317c0f2257f90bb5209a801b631b45b459a3811718f7273fd9f",
+    "certified_commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
+    "completed_at_utc": "2026-10-26T18:19:43.938Z",
+    "artifact_sha256": "3ab3354f980fb8e66e4303293c329995c241dd4a4f26a3057bc10961a7819e88",
     "browser_coverage_completed": true,
     "production_build": "passed",
     "evidence_policy": "Raw browser JSON, logs and screenshots remain local; reviewed certification is versioned.",
@@ -76,6 +76,8 @@
     "web_unit_and_regression_tests_passed": 38,
     "target_type_fix_preserved": "ApiRequestOptions",
     "api_unit_tests_passed": 43,
-    "api_regression_tests_passed": 130
+    "api_regression_tests_passed": 130,
+    "corrective_change": "Rename local CommonJS evaluator variable in component test; no application source changed after certified build.",
+    "certified_application_commit": "d783b8f30e2bb514eabee02d997c55876accf925"
   }
 }
