@@ -151,6 +151,10 @@ $ npm run qa:promotion:scope -- docs/qa/manifests/hr-contention-p2028-20261026-s
 ALCANCE DE PROMOCION INVALIDO: rutas fuera de alcance: D:apps/api/src/modules/accounting/pyg-budget-import.js, D:apps/api/src/modules/accounting/reversal.js, M:apps/api/src/modules/accounting/routes.js, M:apps/api/src/modules/accounting/schema.js, M:apps/api/src/modules/accounting/service.js, M:apps/web/app/dashboard/contabilidad/asientos/page.tsx, M:apps/web/components/accounting/AccountingPygBudget.tsx, D:apps/web/components/accounting/AccountingPygBudgetImport.tsx, M:docs/qa/evidence/hr-route-p2028-20261026/local-certification.json, M:docs/qa/evidence/hr-route-p2028-20261026/local-fixture.json, D:docs/qa/evidence/hr-route-p2028-20261026/platform-regression.json, M:docs/qa/local-environment-recovery-findings-20261023.md
 ```
 
+La misma puerta vuelta a ejecutar con el tip final de `desarrollo` como candidata
+(`... HEAD origin/develop`) devuelve **las mismas 12 rutas**: el set no cambia con los commits de
+documentacion, y ninguna de las 18 rutas de este change aparece como fuera de alcance.
+
 El manifiesto pre-QA **no** lleva una aprobacion inventada: sus 5 bloques de `checks`, su
 certificacion (52/52) y su regresion (API 810 / Web 580) pasan todas las verificaciones de
 existencias; lo unico que falta es la firma del responsable.
@@ -161,8 +165,13 @@ de mallas. Son 12 rutas fuera de alcance y **5 de ellas son eliminaciones** (4 d
 y la evidencia `platform-regression.json` del cambio `hr-route-p2028-20261026`). Tomar el tip de
 `desarrollo` como base de `develop` borraría ese trabajo, cosa que la política prohibe. La
 `reconstruccion_puntual` descrita en `../manifests/hr-contention-p2028-20261026-scope.json`
-aplica este change sobre el tip vigente de `develop`, deja el inventario exacto en 18 rutas con
-cero eliminaciones y obliga a recertificar contra el SHA nuevo.
+aplica este change sobre el tip vigente de `develop`: no toca los archivos del cambio previo, así que
+su inventario debe quedar en las 18 rutas exactas y cero eliminaciones — cifra que hay que medir con
+el validador contra la candidata real y recertificar contra el SHA nuevo que produzca. Como control,
+la fusión completa de `desarrollo` se simuló sin tocar el repositorio
+(`git merge-tree --write-tree origin/develop HEAD`, árbol `cfb7b003`): 24 rutas, cero eliminaciones y
+6 de ellas ajenas a este change, todas documentación/evidencia del cambio previo `hr-route-p2028-20261026`
+cuya versión en `develop` es posterior.
 
 El comando de alcance hay que volver a ejecutarlo contra el candidato final elegido: el arbol de la
 fusion cambia con cada commit adicional de `desarrollo`.
