@@ -577,8 +577,20 @@ async function main() {
         .catch((e) => cleanupErrors.push(`checklist ${routeId}: ${e.message}`));
       await prisma.runWithTenant(cleanup.tenantId, () => prisma.timeRoute.delete({ where: { id: routeId } })).catch((e) => cleanupErrors.push(`route ${routeId}: ${e.message}`));
     }
+    // El alta del usuario administrador crea un empleado espejo (Employee.user_id). Se localiza
+    // ANTES de desactivar al usuario porque el cliente con ambito de tenant solo ve activos, y se
+    // purga DESPUES porque updateUser vuelve a crearlo si ya no existe al desactivar.
+    const mirrorId = cleanup.userId ? await prisma.runWithTenant(cleanup.tenantId, () => prisma.employee.findFirst({
+      where: { tenant_id: cleanup.tenantId, user_id: cleanup.userId }, select: { id: true }
+    })).then((row) => (row ? row.id : null)).catch((e) => { cleanupErrors.push(`busqueda empleado espejo: ${e.message}`); return null; }) : null;
     if (cleanup.userId) await admin.setUserActive(cleanup.tenantId, cleanup.userId, false).catch((e) => cleanupErrors.push(`user: ${e.message}`));
     if (cleanup.roleId) await admin.setRoleActive(cleanup.tenantId, cleanup.roleId, false).catch((e) => cleanupErrors.push(`role: ${e.message}`));
+    if (mirrorId) {
+      const summary = await purgeCertificationEmployee(cleanup.tenantId, mirrorId).catch((e) => ({ errors: [`empleado espejo ${mirrorId}: ${e.message}`] }));
+      purged.push({ employee_id: mirrorId, espejo_del_usuario: true, errors: summary.errors });
+      cleanupErrors.push(...summary.errors);
+    }
+    result.mirror_employee_removed = Boolean(mirrorId);
     result.cleanup = { routes_deleted: cleanup.routeIds.length, employees_purged: purged, user_deactivated: Boolean(cleanup.userId), role_deactivated: Boolean(cleanup.roleId), errors: cleanupErrors };
     result.finished_at = new Date().toISOString();
     try {

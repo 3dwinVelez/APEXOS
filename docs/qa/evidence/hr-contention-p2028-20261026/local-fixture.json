@@ -1,0 +1,36 @@
+{
+  "tenant": {
+    "id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
+    "name": "Puebla Operaciones",
+    "modules": [
+      "m-17",
+      "m-26",
+      "m-14",
+      "m-22",
+      "m-19"
+    ]
+  },
+  "role": {
+    "id": 402,
+    "name": "QA Concurrencia Admin 20261026175829"
+  },
+  "admin_user": {
+    "id": 708,
+    "email": "qa.cnt28.admin.20261026175829@apex.test"
+  },
+  "employees": {
+    "punch": 605,
+    "kilometraje": 606,
+    "nomina": 607,
+    "carrera": 608
+  },
+  "route": {
+    "id": 369,
+    "vehicle_plate": "QACNT28"
+  },
+  "payroll_period_key": "mensual:2026-10-01:2026-10-31",
+  "contention_deadline_ms": 15000,
+  "hold_over_deadline_ms": 18000,
+  "hold_budgeted_ms": 7000,
+  "run_id": "20261026175829"
+}
