@@ -228,7 +228,10 @@ test("fix concurrencia: ninguna escritura de Talento Humano deja un lock bloquea
     /pg_advisory_xact_lock/,
     "un lock bloqueante no puede avisar al operario: espera hasta que Prisma aborta y el error sale como 500"
   );
-  assert.equal((service.match(/await acquireBoundedScopeLocks\(/g) || []).length, 4, "mallas, marcacion, kilometraje y ajuste de nomina");
+  // Version main: son 3 ambitos, no 4. El cuarto (ajuste de nomina IBC) no existe en esta rama:
+  // portar la prueba habria exigido llevar funcionalidad de negocio ajena a esta correccion
+  // puntual. Mismo criterio que el commit b7358e03 de la ronda anterior.
+  assert.equal((service.match(/await acquireBoundedScopeLocks\(/g) || []).length, 3, "mallas, marcacion y kilometraje: las tres escrituras con lock que hay en main");
   const helper = service.slice(service.indexOf("async function acquireBoundedScopeLocks"));
   assert.match(helper, /pg_try_advisory_xact_lock/);
   assert.match(helper, /if \(Date\.now\(\) >= deadlineAt\) throw validationError\(message, 503, code\)/);

@@ -6,7 +6,12 @@ import { fileURLToPath } from "node:url";
 
 // Certificacion UX de la ronda hr-contention-p2028-20261026. Las mallas ya recibieron el mensaje
 // amable; esta ronda baja el mismo patron a las otras dos escrituras de Talento Humano que esperaban
-// su advisory lock de forma bloqueante: la marcacion del operario y el ajuste de nomina (novedades IBC).
+// su advisory lock de forma bloqueante: la marcacion del operario y el kilometraje de jornada.
+//
+// Version de la rama main: apps/web/lib/api.ts se conserva igual que en desarrollo (los tres codigos
+// reintentables), pero aqui NO se prueba el formulario de ajuste de nomina de la pantalla: ese
+// formulario no existe en main y portarlo habria exigido llevar funcionalidad de negocio ajena a
+// esta correccion puntual. Mismo criterio que el commit b7358e03 de la ronda anterior.
 // Lo que no puede volver a pasar es que un "intente de nuevo en unos segundos" se vea como caida del
 // backend, ni que el dispositivo fuera de linea descarte la marcacion por tratar el 503 como rechazo
 // definitivo.
@@ -17,7 +22,6 @@ const read = (relative) => fs.readFileSync(path.resolve(here, relative), "utf8")
 const api = read("../lib/api.ts");
 const offline = read("../lib/hrOfflineMarking.ts");
 const markingPage = read("../app/dashboard/talento-humano/marcacion/page.tsx");
-const payrollPage = read("../app/dashboard/talento-humano/nomina/page.tsx");
 
 const messageFor = (() => {
   const start = api.indexOf("function requestErrorMessage(");
@@ -52,15 +56,6 @@ test("la marcacion del operario muestra el mensaje del servidor y no inventa una
   assert.match(markingPage, /Marcacion pendiente de confirmar: \$\{error\.message\}/, "el fallo transitorio se muestra como pendiente, no como error de fondo");
   assert.match(markingPage, /La marcacion quedo pendiente de confirmar: \$\{error\.message\}/, "el reintento en cola conserva el texto amable");
   assert.ok(!/Backend no disponible/i.test(markingPage), "la pantalla no puede anunciar backend caido por un lock tomado");
-});
-
-test("la pantalla de nomina muestra el mensaje amable del ajuste dentro del propio formulario", () => {
-  const submit = payrollPage.slice(payrollPage.indexOf("async function createAdjustment"));
-  const body = submit.slice(0, submit.indexOf("\n  }"));
-  assert.ok(body.length > 0, "debe existir el alta de ajuste de nomina");
-  assert.match(body, /err instanceof Error \? err\.message/, "el detalle tecnico lo da el pipeline compartido, no la pantalla");
-  assert.ok(body.includes("setAdjustmentError(errorMessage)"), "el fallo se muestra junto al formulario, no solo en un toast");
-  assert.ok(!/Backend no disponible/i.test(payrollPage), "la nomina no puede anunciar backend caido por un lock tomado");
 });
 
 test("el 503 de concurrencia no se descarta: la cola fuera de linea lo conserva para reintentar", () => {

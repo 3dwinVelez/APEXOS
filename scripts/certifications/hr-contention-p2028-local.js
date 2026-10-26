@@ -1,23 +1,29 @@
-// Certificacion extremo a extremo (LOCAL) de la contencion REAL en las tres escrituras
+// Certificacion extremo a extremo (LOCAL) de la contencion REAL en las escrituras
 // concurrentes de Talento Humano que quedaron con el mismo riesgo del incidente P2028:
-// marcacion, kilometraje de jornada y ajuste de nomina (novedades IBC).
+// marcacion y kilometraje de jornada.
+//
+// Version de la rama main: el arnes que se certifico en desarrollo/develop mide tambien el
+// ajuste de nomina (novedades IBC). Esa escritura NO EXISTE en main: no esta
+// createPayrollAdjustment, no esta la ruta /talento-humano/nomina/ajustes y la pantalla de
+// nomina no tiene el formulario de ajuste (ver el bloqueo explicito mas abajo). Portar esa
+// prueba habria exigido llevar funcionalidad de negocio ajena a esta correccion puntual, asi
+// que aqui se certifican las dos escrituras que main si tiene y se verifica que la tercera no
+// esta, en vez de simularla. La lista de codigos reintentables del cliente si se conserva
+// integra (tres codigos) para que el archivo no diverja entre ramas.
 //
 // Defecto que se cierra (heredado de POST /hr/routes, produccion 2026-10-26):
 // esas escrituras esperaban su advisory lock con pg_advisory_xact_lock (bloqueante, sin
 // aviso) dentro de transacciones cuyo presupuesto no lo soportaba. Al expirar, Prisma
 // abortaba la transaccion y el operario recibia 500 ERROR_INTERNO con P2028
 // "Transaction not found": la plataforma "se bloqueaba" sin decirle a nadie que solo
-// habia que esperar unos segundos. En el ajuste de nomina la transaccion ni siquiera
-// declaraba presupuesto (5s por defecto de Prisma).
+// habia que esperar unos segundos.
 //
 // Correccion certificada:
 //  1. acquireBoundedScopeLocks: pg_try_advisory_xact_lock con deadline compartido (15s)
 //     y reintento de 200ms; al agotarse rinde un 503 con codigo propio, nunca un 500.
 //  2. createPunch (marcacion y kilometraje) pasa ese deadline y conserva su presupuesto
 //     { maxWait: 10s, timeout: 20s }.
-//  3. createPayrollAdjustment declara PAYROLL_ADJUSTMENT_TRANSACTION_OPTIONS
-//     { maxWait: 5s, timeout: 30s } y su propio deadline.
-//  4. server.js mapea TODO 503 con codigo a un fallo controlado (no solo los conocidos),
+//  3. server.js mapea TODO 503 con codigo a un fallo controlado (no solo los conocidos),
 //     asi un codigo nuevo no degrada a 500 generico.
 //
 // Este script NO escribe en QA ni en produccion: levanta la API Fastify contra la base
@@ -25,7 +31,8 @@
 // conexion PostgreSQL independiente (la misma primitiva que provoco el incidente).
 //
 // Chequeos:
-//  A. nivel de codigo: helper try-lock, presupuestos declarados, regla 503 general.
+//  A. nivel de codigo: helper try-lock, presupuesto declarado, regla 503 general y ausencia
+//     verificada de la escritura de nomina en esta rama.
 //  B. marcacion bajo contencion REAL 18s: 503 MARCACION_CONCURRENCIA_TEMPORAL, cero
 //     marcaciones escritas, con request_id y mensaje accionable.
 //  C. marcacion con el lock liberado a los 7s (derriba del viejo limite de 5s del
@@ -34,14 +41,11 @@
 //     persiste (la transaccion se revuelve integra: ni marcacion ni renglon de kilometraje).
 //  E. control positivo del kilometraje: liberado el lock, la salida guarda y el renglon
 //     activo de th_jornada_kilometrajes queda con el valor reportado.
-//  F. ajuste de nomina bajo contencion REAL: 503 AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL y
-//     cero renglones en th_nomina_ajustes.
-//  G. control positivo del ajuste: liberado el lock, el ajuste se guarda y es visible.
-//  H. la serializacion no se rompio: dos marcaciones concurrentes al mismo empleado/dia
+//  F. la serializacion no se rompio: dos marcaciones concurrentes al mismo empleado/dia
 //     producen 200 + 409 MARCACION_FUERA_DE_SECUENCIA con UNA sola marcacion (el
 //     reintento con try-lock no duplica registros).
-//  I. Ningun 500, ningun P2028 y ninguna caida de backend durante todo el flujo.
-//  J. Suites unitarios versionados de API y Web en verde.
+//  G. Ningun 500, ningun P2028 y ninguna caida de backend durante todo el flujo.
+//  H. Suites unitarios versionados de API y Web en verde.
 //
 // Sale con codigo distinto de cero ante cualquier comprobacion fallida o parcial.
 
@@ -77,6 +81,7 @@ const prisma = require(path.join(API, "src/core/prisma"));
 const admin = require(path.join(API, "src/modules/admin/service"));
 
 const HR_SERVICE = path.join(API, "src/modules/hr/service.js");
+const HR_ROUTES = path.join(API, "src/modules/hr/routes.js");
 const SERVER = path.join(API, "server.js");
 const WEB_API = path.join(WEB, "lib/api.ts");
 
@@ -99,49 +104,48 @@ const HOLD_BUDGETED_MS = 7_000; // por encima del viejo default de 5s, dentro de
 const LEADER_DELAY_MS = 400; // margen para que el titular tome el lock antes del POST
 
 const TODAY = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
-const PERIOD_KEY = `mensual:${TODAY.slice(0, 8)}01:${TODAY.slice(0, 8)}31`;
 const HR_CODES = ["m-17", "talento-humano", "talento_humano", "hr"];
 
 const result = {
   change_id: CERT_ID,
   certification: "hr-contention-p2028-local",
   environment: "LOCAL",
+  branch_variant: "main",
   database_url_host: DATABASE_URL.replace(/\/\/[^@]*@/, "//***@"),
   generated_at: new Date().toISOString(),
   api_commit: "unknown",
   api_url: API_URL,
   operating_date: TODAY,
-  payroll_period_key: PERIOD_KEY,
   scope: {
     defect:
-      "Marcacion, kilometraje de jornada y ajuste de nomina esperaban su advisory lock con pg_advisory_xact_lock bloqueante: al agotarse el presupuesto de la transaccion, Prisma abortaba y el operario veia 500 ERROR_INTERNO con P2028 ('Backend no disponible') sin que se le dijera que solo debia esperar unos segundos.",
+      "Marcacion y kilometraje de jornada esperaban su advisory lock con pg_advisory_xact_lock bloqueante: al agotarse el presupuesto de la transaccion, Prisma abortaba y el operario veia 500 ERROR_INTERNO con P2028 ('Backend no disponible') sin que se le dijera que solo debia esperar unos segundos.",
     product_decision:
-      "No se cambio ninguna regla de negocio ni el alcance del lock: la serializacion por empleado/dia, por ruta/kilometraje y por empleado/IBC sigue siendo la misma. Solo se sustituyo el lock bloqueante por un try-lock con deadline compartido que rinde un 503 con codigo reintentable, y se declaro presupuesto explicito en el ajuste de nomina.",
+      "No se cambio ninguna regla de negocio ni el alcance del lock: la serializacion por empleado/dia y por ruta/kilometraje sigue siendo la misma. Solo se sustituyo el lock bloqueante por un try-lock con deadline compartido que rinde un 503 con codigo reintentable.",
     proven_by_live_execution: [
       "contencion real de 18s sobre el scope de marcacion: 503 MARCACION_CONCURRENCIA_TEMPORAL con request_id, cero marcaciones escritas",
       "lock de marcacion liberado a los 7s (el viejo default de 5s de Prisma): 200 y la marcacion queda persistida",
       "contencion real sobre el scope de kilometraje de ruta vehicular: 503 con codigo y la salida no persiste ni marcacion ni renglon de kilometraje",
       "kilometraje liberado: la salida guarda y el renglon activo de th_jornada_kilometrajes queda con el valor reportado",
-      "contencion real sobre el scope hr-ibc-adjustment: 503 AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL y cero renglones en th_nomina_ajustes",
-      "ajuste de nomina sin contencion: se guarda y es devuelto por GET /talento-humano/nomina/ajustes (la ruta que usa la pantalla de nomina)",
       "dos marcaciones concurrentes del mismo empleado/dia: 200 + 409 MARCACION_FUERA_DE_SECUENCIA con una sola marcacion persistida",
       "ningun request del flujo certificado responde 500 ni P2028"
     ],
     proven_by_code_level_assertion: [
       "acquireBoundedScopeLocks usa pg_try_advisory_xact_lock con deadline y reintento acotado; ya no queda pg_advisory_xact_lock bloqueante en el servicio",
       "createPunch pasa punchLockDeadlineAt al scope de marcacion y al de kilometraje, ambos con codigo MARCACION_CONCURRENCIA_TEMPORAL",
-      "createPayrollAdjustment cierra con PAYROLL_ADJUSTMENT_TRANSACTION_OPTIONS y su propio deadline AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL",
       "server.js mapea todo 503 con codigo a fallo controlado (un codigo nuevo no cae al 500 generico)",
-      "apps/web/lib/api.ts lista los tres codigos como reintentables para el mensaje amable del operario"
+      "apps/web/lib/api.ts lista los tres codigos como reintentables para el mensaje amable del operario",
+      "la tercera escritura de la ronda (ajuste de nomina IBC) NO existe en main: no esta createPayrollAdjustment ni la ruta /talento-humano/nomina/ajustes, y se comprueba en vez de suponer"
     ],
     proven_by_versioned_unit_suites: [
       "apps/api/test/hr-marking-concurrency.test.js",
       "apps/api/test/hr-marking-kilometraje-conflict.test.js",
-      "apps/api/test/hr-payroll-adjustment-lock.test.js",
       "apps/api/test/hr-deferred-marking-offline.test.js",
       "apps/api/test/hr-marking-declared-employee.test.js",
       "apps/web/test/hr-route-write-feedback.test.mjs",
       "apps/web/test/hr-contention-write-feedback.test.mjs"
+    ],
+    not_certified_in_this_branch: [
+      "la escritura de nomina (IBC) no existe en main: no hay flujo que certificar aqui. Se certifico en desarrollo y en develop, y subira a produccion junto con esa funcionalidad cuando se promueva."
     ]
   },
   checks: [],
@@ -201,9 +205,6 @@ function punchScope(tenantId, employeeId, routeId, dayISO = TODAY) {
 function mileageScope(tenantId, routeId, employeeId) {
   return `${tenantId}:kilometraje:${routeId}:${employeeId}`;
 }
-function payrollScope(tenantId, employeeId) {
-  return `hr-ibc-adjustment:${tenantId}:${employeeId}`;
-}
 
 // Sostiene el advisory lock desde una conexion independiente durante holdMs: la misma
 // primitiva que provoco el incidente, pero del lado del otro escritor.
@@ -226,15 +227,6 @@ async function activeMileageRow(tenantId, employeeId) {
       ORDER BY id DESC LIMIT 1
     `;
     return rows?.[0] || null;
-  });
-}
-async function countAdjustments(tenantId, employeeId) {
-  return prisma.runWithTenant(tenantId, async () => {
-    const rows = await prisma.$queryRaw`
-      SELECT COUNT(*)::int AS total FROM th_nomina_ajustes
-      WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND status = 'activo'
-    `;
-    return Number(rows?.[0]?.total || 0);
   });
 }
 
@@ -291,15 +283,19 @@ async function main() {
     check("no_blocking_advisory_lock_left", !/SELECT pg_advisory_xact_lock\(/.test(serviceSrc), {
       blocking_occurrences: (serviceSrc.match(/SELECT pg_advisory_xact_lock\(/g) || []).length
     });
-    check("helper_used_by_four_writes", (serviceSrc.match(/await acquireBoundedScopeLocks\(/g) || []).length === 4, {
-      occurrences: (serviceSrc.match(/await acquireBoundedScopeLocks\(/g) || []).length
+    check("helper_used_by_three_writes", (serviceSrc.match(/await acquireBoundedScopeLocks\(/g) || []).length === 3, {
+      occurrences: (serviceSrc.match(/await acquireBoundedScopeLocks\(/g) || []).length,
+      alcance: "mallas, marcacion y kilometraje: las tres escrituras con lock que existen en main"
     });
     check("contention_budget_declared", /let contentionLockWaitMs = 15_000/.test(serviceSrc));
     check("punch_scopes_share_deadline", serviceSrc.includes("const punchLockDeadlineAt = Date.now() + contentionLockWaitMs;")
       && (serviceSrc.match(/deadlineAt: punchLockDeadlineAt/g) || []).length === 2);
-    check("payroll_transaction_budget_declared", /const PAYROLL_ADJUSTMENT_TRANSACTION_OPTIONS = \{ maxWait: 5_000, timeout: 30_000 \}/.test(serviceSrc)
-      && serviceSrc.includes("}, PAYROLL_ADJUSTMENT_TRANSACTION_OPTIONS));"));
-    check("three_busy_codes_declared", ["ROUTE_ASSIGNMENT_BUSY", "MARCACION_CONCURRENCIA_TEMPORAL", "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL"]
+    const routesSrc = fs.readFileSync(HR_ROUTES, "utf8");
+    check("payroll_adjustment_write_absent_in_main", !serviceSrc.includes("createPayrollAdjustment")
+      && !routesSrc.includes("nomina/ajustes"), {
+      motivo: "main no tiene la escritura de nomina (IBC): no hay flujo que certificar ni codigo AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL que emitir"
+    });
+    check("busy_codes_emitted_by_main_declared", ["ROUTE_ASSIGNMENT_BUSY", "MARCACION_CONCURRENCIA_TEMPORAL"]
       .every((code) => serviceSrc.includes(`"${code}"`)));
     check("server_maps_any_coded_503", /error\.statusCode === 503 && error\.code/.test(serverSrc)
       && !/error\.code === "ROUTE_ASSIGNMENT_BUSY" \|\| error\.code === "MARCACION_CONCURRENCIA_TEMPORAL"/.test(serverSrc), {
@@ -318,7 +314,7 @@ async function main() {
 
     const role = await admin.createRole(tenant.id, {
       name: `QA Concurrencia Admin ${RUN_ID}`,
-      description: "Rol temporal de certificacion con hr:write y nomina para marcar, ajustar nomina y sostener concurrencia (se desactiva al final).",
+      description: "Rol temporal de certificacion con hr:write para marcar y sostener concurrencia (se desactiva al final).",
       permissions: { talento_humano: { view: true, edit: true }, nomina: { view: true, edit: true } }
     });
     cleanup.roleId = role.id;
@@ -344,10 +340,9 @@ async function main() {
     };
     const punchEmployee = await newEmployee("PCH");
     const kmEmployee = await newEmployee("KM");
-    const payrollEmployee = await newEmployee("NOM");
     const raceEmployee = await newEmployee("RAR");
-    check("fixture_employees_seeded", [punchEmployee, kmEmployee, payrollEmployee, raceEmployee].every((item) => Number.isInteger(item.id) && item.id > 0), {
-      ids: [punchEmployee.id, kmEmployee.id, payrollEmployee.id, raceEmployee.id]
+    check("fixture_employees_seeded", [punchEmployee, kmEmployee, raceEmployee].every((item) => Number.isInteger(item.id) && item.id > 0), {
+      ids: [punchEmployee.id, kmEmployee.id, raceEmployee.id]
     });
 
     const kmRoute = await prisma.runWithTenant(tenant.id, () => prisma.timeRoute.create({
@@ -371,9 +366,8 @@ async function main() {
       tenant: { id: tenant.id, name: tenant.name, modules: modulesOf(tenant) },
       role: { id: role.id, name: role.name },
       admin_user: { id: user.id, email: `${EMAIL_PREFIX}admin.${RUN_ID}@apex.test` },
-      employees: { punch: punchEmployee.id, kilometraje: kmEmployee.id, nomina: payrollEmployee.id, carrera: raceEmployee.id },
+      employees: { punch: punchEmployee.id, kilometraje: kmEmployee.id, carrera: raceEmployee.id },
       route: { id: kmRoute.id, vehicle_plate: kmRoute.vehicle_plate },
-      payroll_period_key: PERIOD_KEY,
       contention_deadline_ms: CONTENTION_DEADLINE_MS,
       hold_over_deadline_ms: HOLD_OVER_DEADLINE_MS,
       hold_budgeted_ms: HOLD_BUDGETED_MS
@@ -461,44 +455,7 @@ async function main() {
       `))?.[0]?.total === 1);
     }
 
-    // ---- F. Ajuste de nomina bajo contencion real: 503 con codigo propio ----
-    {
-      const scope = payrollScope(tenant.id, payrollEmployee.id);
-      const holder = holdScope(scope, HOLD_OVER_DEADLINE_MS);
-      await new Promise((resolve) => setTimeout(resolve, LEADER_DELAY_MS));
-      const busy = await capture("/api/v1/talento-humano/nomina/ajustes", {
-        token, method: "POST", step: "nomina_contencion_18s",
-        body: { employee_id: payrollEmployee.id, period_key: PERIOD_KEY, adjustment_type: "manual", concept_code: "AJUSTE_MANUAL", description: `qa contencion ${RUN_ID}`, amount: 50000, minutes: 480 }
-      });
-      await holder;
-      result.observations.nomina_contencion = { status: busy.status, code: busy.code, latency_ms: busy.latency_ms };
-      check("payroll_contention_returns_503", busy.status === 503, { status: busy.status, code: busy.code, error: busy.error });
-      check("payroll_contention_busy_code", busy.code === "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL", { code: busy.code });
-      check("payroll_contention_never_500", busy.status !== 500 && busy.code !== "ERROR_INTERNO" && !/P2028/i.test(String(busy.error || "")));
-      check("payroll_contention_exposes_request_id", Boolean(busy.request_id), { request_id: busy.request_id });
-      check("payroll_contention_message_is_actionable", /Intente de nuevo/i.test(String(busy.error || "")), { message: busy.error });
-      check("payroll_contention_nothing_persisted", (await countAdjustments(tenant.id, payrollEmployee.id)) === 0);
-    }
-
-    // ---- G. Ajuste de nomina liberado: se guarda y es visible para el listado ----
-    {
-      const scope = payrollScope(tenant.id, payrollEmployee.id);
-      const holder = holdScope(scope, HOLD_BUDGETED_MS);
-      await new Promise((resolve) => setTimeout(resolve, LEADER_DELAY_MS));
-      const created = await capture("/api/v1/talento-humano/nomina/ajustes", {
-        token, method: "POST", step: "nomina_espera_7s",
-        body: { employee_id: payrollEmployee.id, period_key: PERIOD_KEY, adjustment_type: "manual", concept_code: "AJUSTE_MANUAL", description: `qa contencion ok ${RUN_ID}`, amount: 50000, minutes: 480 }
-      });
-      await holder;
-      result.observations.nomina_recuperada = { status: created.status, latency_ms: created.latency_ms, id: created.payload?.id ?? null };
-      check("payroll_after_short_contention_succeeds", created.status === 200 || created.status === 201, { status: created.status, code: created.code, error: created.error });
-      check("payroll_adjustment_persisted", (await countAdjustments(tenant.id, payrollEmployee.id)) === 1);
-      const listed = await capture(`/api/v1/talento-humano/nomina/ajustes?period_key=${encodeURIComponent(PERIOD_KEY)}`, { token, step: "nomina_listado" });
-      const visible = Array.isArray(listed.payload) && listed.payload.some((row) => Number(row.employee_id) === payrollEmployee.id);
-      check("payroll_adjustment_visible_in_list", visible === true, { status: listed.status, total: Array.isArray(listed.payload) ? listed.payload.length : null });
-    }
-
-    // ---- H. La serializacion sigue intacta: concurrencia real no duplica marcaciones ----
+    // ---- F. La serializacion sigue intacta: concurrencia real no duplica marcaciones ----
     {
       const [first, second] = await Promise.all([
         punch({ employee_id: raceEmployee.id, user_name: raceEmployee.code, type: "entrada" }, "carrera_1"),
@@ -515,7 +472,7 @@ async function main() {
       });
     }
 
-    // ---- I. Ninguna caida de backend durante el flujo certificado ----
+    // ---- G. Ninguna caida de backend durante el flujo certificado ----
     const fiveHundreds = requestLog.filter((item) => item.status >= 500 && item.status !== 503);
     const crashes = requestLog.filter((item) => item.transport_error || /P2028|Transaction not found/i.test(String(item.error || "")));
     check("no_500_during_certification", fiveHundreds.length === 0, { errores: fiveHundreds });
@@ -525,11 +482,10 @@ async function main() {
     });
     result.http_log = requestLog;
 
-    // ---- J. Suites unitarios versionados ----
+    // ---- H. Suites unitarios versionados ----
     const unitSuites = [
       { cwd: API, file: "test/hr-marking-concurrency.test.js" },
       { cwd: API, file: "test/hr-marking-kilometraje-conflict.test.js" },
-      { cwd: API, file: "test/hr-payroll-adjustment-lock.test.js" },
       { cwd: API, file: "test/hr-deferred-marking-offline.test.js" },
       { cwd: API, file: "test/hr-marking-declared-employee.test.js" },
       { cwd: WEB, file: "test/hr-route-write-feedback.test.mjs" },
