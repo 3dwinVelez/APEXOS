@@ -320,8 +320,10 @@ async function nextNumberTx(tx, model, tenantId) {
 }
 
 async function nextCodeTx(tx, model, tenantId, prefix) {
+  // __includeInactive: el maestro archivado sigue ocupando su codigo (unique tenant+code);
+  // sin el flag el contador reinicia sobre filas inactivas y el alta nueva choca con P2002.
   const last = await tx[model].findFirst({
-    where: { tenant_id: tenantId, code: { startsWith: prefix } },
+    where: { tenant_id: tenantId, code: { startsWith: prefix }, __includeInactive: true },
     orderBy: { id: "desc" },
     select: { code: true }
   });

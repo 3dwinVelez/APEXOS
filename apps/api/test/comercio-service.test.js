@@ -104,11 +104,16 @@ function fakePrisma() {
 
   function delegate(model) {
     const rows = state.collections[model];
+    // Emula el middleware SOFT_DELETE de core/prisma.js: los maestros archivados (active=false)
+    // solo son visibles cuando el where trae __includeInactive: true. Sin esta semántica el
+    // arnés nunca vio la colisión de códigos al reactivar el conteo sobre filas inactivas.
+    const softMaster = model === "comercioProduct" || model === "comercioCustomer";
+    const keep = (row, where) => matches(row, where) && !(softMaster && row.active === false && where.__includeInactive !== true);
     return {
       findMany: async ({ where = {}, orderBy, take, skip, include } = {}) => {
         state.calls.push({ op: `${model}.findMany`, where });
         void include;
-        let out = sortRows(rows.filter((row) => matches(row, where)), orderBy);
+        let out = sortRows(rows.filter((row) => keep(row, where)), orderBy);
         if (skip) out = out.slice(skip);
         if (take !== undefined) out = out.slice(0, take);
         return out.map((row) => hydrate(model, structuredClone(row)));
@@ -116,12 +121,12 @@ function fakePrisma() {
       findFirst: async ({ where = {}, orderBy, include } = {}) => {
         state.calls.push({ op: `${model}.findFirst`, where });
         void include;
-        const out = sortRows(rows.filter((row) => matches(row, where)), orderBy);
+        const out = sortRows(rows.filter((row) => keep(row, where)), orderBy);
         return out.length ? hydrate(model, structuredClone(out[0])) : null;
       },
       count: async ({ where = {} } = {}) => {
         state.calls.push({ op: `${model}.count`, where });
-        return rows.filter((row) => matches(row, where)).length;
+        return rows.filter((row) => keep(row, where)).length;
       },
       create: async ({ data = {} } = {}) => {
         state.calls.push({ op: `${model}.create`, data });
@@ -435,6 +440,24 @@ test("createProduct: asigna codigo P-0001 y traza el movimiento inicial", async 
     const second = await service.createProduct(TENANT, 7, { name: "Bistec", price: 15000, cost: 11000 });
     assert.equal(second.code, "P-0002");
     assert.equal(second.stock, 0);
+  } finally { restore(); }
+});
+
+test("createProduct: el codigo no reinicia sobre productos archivados (unique tenant+code)", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    const first = await service.createProduct(TENANT, 7, { name: "Cafe", price: 18000, cost: 11000 });
+    assert.equal(first.code, "P-0001");
+    await service.setProductActive(TENANT, first.id, false);
+    // Si la numeracion ignorara los archivados, reiniciaria en P-0001 y colisionaria
+    // con el unique (tenant_id, code): en real eso es P2002/409 DUPLICADO.
+    const next = await service.createProduct(TENANT, 7, { name: "Tumo", price: 9000, cost: 5000 });
+    assert.equal(next.code, "P-0002");
+    const cust = await service.createCustomer(TENANT, { name: "Ana" });
+    await service.setCustomerActive(TENANT, cust.id, false);
+    const cust2 = await service.createCustomer(TENANT, { name: "Beto" });
+    assert.equal(cust2.code, "C-0002");
   } finally { restore(); }
 });
 
