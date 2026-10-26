@@ -70,6 +70,7 @@
     "certify:hr-schedule-write-integrity:local": "node scripts/certifications/hr-schedule-write-integrity-local.js --output=docs/qa/evidence/hr-schedule-write-integrity-20260920/local-simulation-certification.json",
     "certify:hr-route-p2028:local": "node scripts/certifications/hr-route-p2028-local.js --output=docs/qa/evidence/hr-route-p2028-20261026/local-certification.json",
     "certify:hr-contention-p2028:local": "node scripts/certifications/hr-contention-p2028-local.js --output=docs/qa/evidence/hr-contention-p2028-20261026/local-certification.json --fixture-output=docs/qa/evidence/hr-contention-p2028-20261026/local-fixture.json",
+    "certify:hr-contention-message-browser:local": "node scripts/certifications/hr-contention-message-browser-local.js --output=docs/qa/evidence/hr-contention-message-browser-20261026",
     "certify:hr-offline-deferred-marking:local": "node scripts/certifications/hr-offline-deferred-marking-local.js --output=docs/qa/evidence/hr-offline-deferred-marking-20260921/local-certification.json",
     "certify:transport-tms:local": "node scripts/certifications/transport-tms-local.js",
     "certify:transport-four-stage:local": "node scripts/certifications/transport-four-stage-functional-local.js",
