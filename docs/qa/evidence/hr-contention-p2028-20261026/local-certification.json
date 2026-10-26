@@ -3,8 +3,8 @@
   "certification": "hr-contention-p2028-local",
   "environment": "LOCAL",
   "database_url_host": "postgresql://***@localhost:55432/apexos",
-  "generated_at": "2026-10-26T19:35:50.950Z",
-  "api_commit": "efaac0100a7cbe35c81971659b6b6d393987fc98",
+  "generated_at": "2026-10-26T20:00:46.467Z",
+  "api_commit": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
   "api_url": "http://127.0.0.1:3212",
   "operating_date": "2026-10-26",
   "payroll_period_key": "mensual:2026-10-01:2026-10-31",
@@ -44,7 +44,7 @@
       "ok": true,
       "detail": {
         "status": 200,
-        "commit": "efaac0100a7cbe35c81971659b6b6d393987fc98",
+        "commit": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
         "health_commit": "unknown"
       }
     },
@@ -108,10 +108,10 @@
       "ok": true,
       "detail": {
         "ids": [
-          610,
-          611,
-          612,
-          613
+          622,
+          623,
+          624,
+          625
         ]
       }
     },
@@ -119,7 +119,7 @@
       "name": "fixture_vehicle_route_seeded",
       "ok": true,
       "detail": {
-        "route_id": 368,
+        "route_id": 370,
         "plate": "QACNT28"
       }
     },
@@ -162,7 +162,7 @@
       "name": "punch_contention_gives_up_within_budget",
       "ok": true,
       "detail": {
-        "latency_ms": 15140,
+        "latency_ms": 15099,
         "deadline_ms": 15000
       }
     },
@@ -184,7 +184,7 @@
       "name": "punch_waited_beyond_old_default",
       "ok": true,
       "detail": {
-        "wait_observed_ms": 6783,
+        "wait_observed_ms": 6745,
         "note": "con el default de 5s de Prisma esto era 500 P2028"
       }
     },
@@ -259,10 +259,10 @@
       "ok": true,
       "detail": {
         "mileage": {
-          "id": 32,
+          "id": 34,
           "value": "42.5",
           "unit": "km",
-          "route_id": 368
+          "route_id": 370
         }
       }
     },
@@ -471,21 +471,21 @@
       ]
     },
     "role": {
-      "id": 406,
-      "name": "QA Concurrencia Admin 20261026193550"
+      "id": 409,
+      "name": "QA Concurrencia Admin 20261026200046"
     },
     "admin_user": {
-      "id": 712,
-      "email": "qa.cnt28.admin.20261026193550@apex.test"
+      "id": 715,
+      "email": "qa.cnt28.admin.20261026200046@apex.test"
     },
     "employees": {
-      "punch": 610,
-      "kilometraje": 611,
-      "nomina": 612,
-      "carrera": 613
+      "punch": 622,
+      "kilometraje": 623,
+      "nomina": 624,
+      "carrera": 625
     },
     "route": {
-      "id": 368,
+      "id": 370,
       "vehicle_plate": "QACNT28"
     },
     "payroll_period_key": "mensual:2026-10-01:2026-10-31",
@@ -497,35 +497,35 @@
     "marcacion_contencion": {
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
-      "latency_ms": 15140
+      "latency_ms": 15099
     },
     "marcacion_espera": {
       "status": 200,
-      "latency_ms": 6783,
-      "wait_observed_ms": 6783
+      "latency_ms": 6745,
+      "wait_observed_ms": 6745
     },
     "kilometraje_contencion": {
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
-      "latency_ms": 15083
+      "latency_ms": 15217
     },
     "kilometraje_recuperado": {
       "status": 200,
-      "latency_ms": 6729,
+      "latency_ms": 6713,
       "mileage": {
-        "id": 32,
+        "id": 34,
         "value": 42.5
       }
     },
     "nomina_contencion": {
       "status": 503,
       "code": "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL",
-      "latency_ms": 15235
+      "latency_ms": 15149
     },
     "nomina_recuperada": {
       "status": 200,
-      "latency_ms": 6718,
-      "id": 8
+      "latency_ms": 6701,
+      "id": 11
     },
     "serializacion": {
       "estados": [
@@ -547,7 +547,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 272,
+      "latency_ms": 218,
       "transport_error": null,
       "error": null
     },
@@ -558,7 +558,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 474,
+      "latency_ms": 410,
       "transport_error": null,
       "error": null
     },
@@ -569,7 +569,7 @@
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
       "request_id": "req-3",
-      "latency_ms": 15140,
+      "latency_ms": 15099,
       "transport_error": null,
       "error": "Otra marcacion se esta registrando para esta persona en este momento. Intente de nuevo en unos segundos."
     },
@@ -580,7 +580,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 6783,
+      "latency_ms": 6745,
       "transport_error": null,
       "error": null
     },
@@ -591,7 +591,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 68,
+      "latency_ms": 73,
       "transport_error": null,
       "error": null
     },
@@ -602,7 +602,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 49,
+      "latency_ms": 52,
       "transport_error": null,
       "error": null
     },
@@ -613,7 +613,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 59,
+      "latency_ms": 58,
       "transport_error": null,
       "error": null
     },
@@ -624,7 +624,7 @@
       "status": 503,
       "code": "MARCACION_CONCURRENCIA_TEMPORAL",
       "request_id": "req-8",
-      "latency_ms": 15083,
+      "latency_ms": 15217,
       "transport_error": null,
       "error": "Otra marcacion esta actualizando el kilometraje de esta ruta en este momento. Intente de nuevo en unos segundos."
     },
@@ -635,7 +635,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 6729,
+      "latency_ms": 6713,
       "transport_error": null,
       "error": null
     },
@@ -646,7 +646,7 @@
       "status": 503,
       "code": "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL",
       "request_id": "req-a",
-      "latency_ms": 15235,
+      "latency_ms": 15149,
       "transport_error": null,
       "error": "Otra correccion de nomina se esta guardando para esta persona en este momento. Intente de nuevo en unos segundos."
     },
@@ -657,7 +657,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 6718,
+      "latency_ms": 6701,
       "transport_error": null,
       "error": null
     },
@@ -668,7 +668,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 27,
+      "latency_ms": 37,
       "transport_error": null,
       "error": null
     },
@@ -679,7 +679,7 @@
       "status": 200,
       "code": null,
       "request_id": null,
-      "latency_ms": 54,
+      "latency_ms": 56,
       "transport_error": null,
       "error": null
     },
@@ -690,7 +690,7 @@
       "status": 409,
       "code": "MARCACION_FUERA_DE_SECUENCIA",
       "request_id": "req-e",
-      "latency_ms": 261,
+      "latency_ms": 253,
       "transport_error": null,
       "error": "La siguiente marcacion permitida es inicio_almuerzo."
     }
@@ -743,23 +743,23 @@
     "routes_deleted": 1,
     "employees_purged": [
       {
-        "employee_id": 610,
+        "employee_id": 622,
         "errors": []
       },
       {
-        "employee_id": 611,
+        "employee_id": 623,
         "errors": []
       },
       {
-        "employee_id": 612,
+        "employee_id": 624,
         "errors": []
       },
       {
-        "employee_id": 613,
+        "employee_id": 625,
         "errors": []
       },
       {
-        "employee_id": 609,
+        "employee_id": 621,
         "espejo_del_usuario": true,
         "errors": []
       }
@@ -768,5 +768,5 @@
     "role_deactivated": true,
     "errors": []
   },
-  "finished_at": "2026-10-26T19:37:13.726Z"
+  "finished_at": "2026-10-26T20:02:08.702Z"
 }

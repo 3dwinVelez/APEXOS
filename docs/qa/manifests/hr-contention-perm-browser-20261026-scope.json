@@ -1,0 +1,149 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-contention-perm-browser-20261026",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
+  "base_commit": "8015ebf288fa0ea5c8d91f6c3cb7b44c1b1994ca",
+  "base_commits": [
+    "develop"
+  ],
+  "change_intent": {
+    "summary": "Cerrar las dos deudas que la ronda hr-contention-p2028-20261026 dejo declaradas en la certificacion y fijar por prueba el contrato del nucleo. (1) Las dos rutas POST de ajuste de nomina (IBC) no llevaban preHandler de permiso y el RBAC compara el modulo literalmente, asi que cualquier usuario autenticado del tenant podia crear una novedad de nomina; ahora exigen requirePermission('payroll','write') igual que sus rutas hermanas, con una prueba que ademas barre todas las rutas de Talento Humano y falla si alguna queda sin guarda. (2) El aviso amable de concurrencia no se habia visto nunca en navegador: se versiona un certificador que levanta la API real y el bundle de produccion (next build + next start), inicia sesion en Chrome y sostiene el advisory lock desde otra conexion de PostgreSQL, de modo que el 503 con codigo reintentable lo produce el servidor y no una simulacion, y verifica que el operario ve el texto amable, reintenta y guarda exactamente un registro. (3) Se fija con una prueba sin base de datos que runWithTenant propaga el alcance del tenant al ambito de Prisma cuando la funcion devuelve una promesa.",
+    "modules": [
+      "hr",
+      "api-core-tenant-context",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/core-tenant-context-propagation.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-adjustment-permission.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-contention-message-browser-20261026.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-contention-message-browser-20261026/01-aviso-concurrencia.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-contention-message-browser-20261026/02-guardado-tras-reintento.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-contention-message-browser-20261026/browser-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-contention-perm-browser-20261026/platform-regression.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/hr-contention-p2028-20261026/local-certification.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/evidence/hr-contention-p2028-20261026/local-fixture.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-contention-perm-browser-20261026-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-contention-perm-browser-20261026-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-contention-message-browser-local.js"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/test/",
+    "docs/qa/certifications/",
+    "docs/qa/evidence/hr-contention-message-browser-20261026/",
+    "docs/qa/evidence/hr-contention-perm-browser-20261026/",
+    "docs/qa/evidence/hr-contention-p2028-20261026/",
+    "docs/qa/manifests/",
+    "package.json",
+    "scripts/certifications/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Ajuste de nomina (novedad IBC) solo para roles con permiso de escritura de nomina: un rol sin el permiso recibe 403 PERMISO_DENEGADO por las dos rutas del mismo endpoint (/api/v1/hr/payroll/adjustments y /api/v1/talento-humano/nomina/ajustes)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-message-browser-20261026.md",
+        "../../apps/api/test/hr-payroll-adjustment-permission.test.js"
+      ]
+    },
+    {
+      "name": "Ninguna ruta de Talento Humano pierde su guarda de autorizacion: el barrido estatico del modulo falla si aparece una ruta sin preHandler",
+      "status": "passed",
+      "evidence": [
+        "../../apps/api/test/hr-payroll-adjustment-permission.test.js"
+      ]
+    },
+    {
+      "name": "Aviso amable de concurrencia en navegador real con bundle de produccion: el operario ve 'Otra persona esta guardando ese mismo registro...' con su request_id, nunca 'Backend no disponible' ni JSON crudo, el formulario conserva lo elegido y el reintento guarda exactamente un registro",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-message-browser-20261026.md",
+        "../evidence/hr-contention-message-browser-20261026/browser-certification.json"
+      ]
+    },
+    {
+      "name": "Contencion acotada sin regresion en las tres escrituras ya promovidas (marcacion, kilometraje de jornada, ajuste de nomina) y en las mallas horarias: 52/52 recertificados sobre este candidato",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../evidence/hr-contention-p2028-20261026/local-certification.json"
+      ]
+    },
+    {
+      "name": "Aislamiento multi-tenant del ajuste de nomina: el alcance del lock y la escritura se calculan por tenant y la prueba de contrato fija que runWithTenant propaga el tenant al ambito de Prisma",
+      "status": "passed",
+      "evidence": [
+        "../../apps/api/test/core-tenant-context-propagation.test.js",
+        "../evidence/hr-contention-p2028-20261026/local-certification.json"
+      ]
+    },
+    {
+      "name": "Regresion completa de plataforma sin degradacion en otros modulos (API y Web al 100%, cero omitidas)",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-message-browser-20261026.md",
+        "../evidence/hr-contention-perm-browser-20261026/platform-regression.json"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto del diff neto origin/develop..45626652 (11 rutas) mas las 3 rutas que esta misma ronda agrega: platform-regression.json y los dos manifiestos. Medido con `git diff --name-status 8015ebf2 45626652`, cero eliminaciones.",
+    "reconstruction_required": "No se puede promocionar la rama completa. Medido con `git diff --name-status origin/develop..9d8faa05` (tip de desarrollo), el diff neto trae 58 rutas con 24 eliminaciones: los certificadores y manifiestos de transport-pyg-account-ranges-20261024 y accounting-reversal-budget-import-20261024, que viven en develop (merge PR #70) y aun no en desarrollo. Fusionar la rama borraría trabajo certificado ajeno, y `allowed_deletions` esta vacio a proposito. La candidata es el cherry-pick puntual de los 4 commits de desarrollo (767bd8eb, 9dcef87c, efaac010, 9d8faa05) sobre 8015ebf2, que produce SHA nuevos y por eso la evidencia se reejecuto contra 45626652.",
+    "main_applicability": "Ninguno de los 4 commits es promocionable a main tal cual. Medido contra origin/main (3ebe71f7): las rutas /talento-humano/nomina/ajustes y /hr/payroll/adjustments y el servicio createPayrollAdjustment NO existen en main (la ronda anterior certifico su ausencia con payroll_adjustment_write_absent_in_main), asi que el candado de permiso y el certificador de navegador no tienen objeto alli. La prueba core-tenant-context-propagation.test.js, en cambio, fallaria contra main: su prisma.js:161 pasa `fn` directo mientras que desarrollo/develop usan `async () => await fn()`. Ese es el unico delta con posible efecto productivo y exige su propia candidata, su propio manifiesto y su propia certificacion en main; no viaja escondido dentro de este alcance.",
+    "evidence_reexecution": "La evidencia versionada se produjo sobre la candidata: `certify:hr-contention-p2028:local` (52/52), `certify:hr-contention-message-browser:local` (22/22, next build + next start + Chrome) y `release-local-regression.cjs` (API y Web), con certified_commit / head = 45626652. apps/web/next-env.d.ts se regenera con el build y se deja fuera del commit por ser generado.",
+    "harness_dependency_note": "El certificador de navegador exige apps/web/.next/BUILD_ID preexistente (no construye): si falta, aborta con PREREQUISITO y volca evidencia failed. Tambien depende de node_modules reales del worktree; Turbopack rechaza un enlace que apunta fuera de la raiz del proyecto, por eso la corrida se hizo en el arbol principal con la candidata checkouteada.",
+    "out_of_scope_debt": "Dos hallazgos registrados y NO corregidos en esta ronda: (1) el service worker de la app sigue cacheando documentos y assets en todos los entornos y su respaldo puede pintar otra pantalla (alcance propio, ya declarado); (2) en apps/web/lib/api.ts el aviso de concurrencia no incluye el request_id visible en el mensaje amable principal, solo en el alerta tecnica; es decision de UX, no un defecto funcional.",
+    "remote_migrations": "No se aplicaron migraciones a QA ni PROD; la politica exige autorizacion independiente. Este cambio no requiere migracion alguna."
+  }
+}

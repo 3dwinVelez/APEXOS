@@ -1,0 +1,123 @@
+{
+  "change_id": "hr-contention-perm-browser-20261026",
+  "commit": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (responsable del proyecto, git user de APEXOS)",
+    "approved_at": "2026-10-26T20:20:00.000Z",
+    "authorization_quote": "procede si ya tenemos todo listo y certificado para el empuje en ambas ramas develop y main",
+    "blocking_reasons": [],
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": false,
+      "promote_main": false,
+      "create_auxiliary_branch": true,
+      "run_remote_migrations": false
+    },
+    "notes": [
+      "Autoriza empujar desarrollo y llevar esta candidata a develop para QA funcional. main exige su propio manifiesto de aprobacion y, segun la medicion de este alcance, no recibe ninguno de estos 4 commits: la funcionalidad de ajuste de nomina no existe alli.",
+      "La promocion es un cherry-pick puntual de los 4 commits de desarrollo (767bd8eb, 9dcef87c, efaac010, 9d8faa05) sobre 8015ebf2. Fusionar la rama esta prohibido: el diff neto origin/develop..9d8faa05 trae 24 eliminaciones de certificadores y manifiestos de transport-pyg-account-ranges y accounting-reversal-budget-import que solo existen en develop.",
+      "El change no toca esquema: no hay migraciones que aplicar. Tampoco se autoriza el despliegue en QA ni migraciones remotas."
+    ]
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-message-browser-20261026.md",
+        "../evidence/hr-contention-message-browser-20261026/browser-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-message-browser-20261026.md",
+        "../evidence/hr-contention-message-browser-20261026/01-aviso-concurrencia.png",
+        "../evidence/hr-contention-p2028-20261026/local-fixture.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-message-browser-20261026.md",
+        "../../../scripts/certifications/hr-contention-message-browser-local.js",
+        "../../../apps/api/test/hr-payroll-adjustment-permission.test.js",
+        "../../../apps/api/test/core-tenant-context-propagation.test.js"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../evidence/hr-contention-p2028-20261026/local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-message-browser-20261026.md",
+        "../evidence/hr-contention-perm-browser-20261026/platform-regression.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T19:59:02.004Z",
+    "head": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
+    "checks_total": 22,
+    "checks_passed": 22,
+    "script": "../../../scripts/certifications/hr-contention-message-browser-local.js",
+    "evidence": [
+      "../certifications/hr-contention-message-browser-20261026.md",
+      "../evidence/hr-contention-message-browser-20261026/browser-certification.json",
+      "../evidence/hr-contention-message-browser-20261026/01-aviso-concurrencia.png",
+      "../evidence/hr-contention-message-browser-20261026/02-guardado-tras-reintento.png"
+    ],
+    "complementary_certifications": [
+      {
+        "name": "Contencion acotada de las tres escrituras de Talento Humano (marcacion, kilometraje, ajuste IBC)",
+        "status": "passed",
+        "completed_at": "2026-10-26T20:02:08.702Z",
+        "api_commit": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
+        "checks_total": 52,
+        "checks_passed": 52,
+        "script": "../../../scripts/certifications/hr-contention-p2028-local.js",
+        "evidence": [
+          "../evidence/hr-contention-p2028-20261026/local-certification.json",
+          "../evidence/hr-contention-p2028-20261026/local-fixture.json"
+        ]
+      },
+      {
+        "name": "Pruebas unitarias y de contrato nuevas (permiso de ajuste IBC y propagacion del tenant en runWithTenant)",
+        "status": "passed",
+        "detail": "7/7 con `node --test apps/api/test/hr-payroll-adjustment-permission.test.js apps/api/test/core-tenant-context-propagation.test.js` sobre la candidata; incluidas dentro de la regresion de plataforma (API 916/916).",
+        "evidence": [
+          "../../../apps/api/test/hr-payroll-adjustment-permission.test.js",
+          "../../../apps/api/test/core-tenant-context-propagation.test.js"
+        ]
+      }
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T20:15:00.000Z",
+    "api_tests": 916,
+    "api_failures": 0,
+    "api_skipped": 0,
+    "web_tests": 607,
+    "web_failures": 0,
+    "web_skipped": 0,
+    "head": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
+    "script": "../../../scripts/certifications/release-local-regression.cjs",
+    "evidence": [
+      "../evidence/hr-contention-perm-browser-20261026/platform-regression.json",
+      "../certifications/hr-contention-message-browser-20261026.md"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "environment": "LOCAL",
+  "head": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
+  "status": "passed",
+  "results": [
+    {
+      "name": "api",
+      "status": "passed",
+      "tests": 916,
+      "passed": 916,
+      "failed": 0,
+      "skipped": 0,
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-EdPh9Y\\api.log"
+    },
+    {
+      "name": "web",
+      "status": "passed",
+      "tests": 607,
+      "passed": 607,
+      "failed": 0,
+      "skipped": 0,
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-EdPh9Y\\web.log"
+    }
+  ]
+}
