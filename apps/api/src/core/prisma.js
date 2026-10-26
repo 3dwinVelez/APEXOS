@@ -27,6 +27,10 @@ const TENANT_MODELS = new Set([
   "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
   "SalesInvoice", "SalesInvoiceLine", "CxcCabdoc", "CxcCuedoc", "CxcPayment", "RetentionMaster", "SkuValuation",
   "PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine",
+  // Comercio (M-30): modulo aislado; sus once tablas viven solo en comercio_*.
+  "ComercioProduct", "ComercioCustomer", "ComercioSale", "ComercioSaleItem", "ComercioCredit",
+  "ComercioInstallment", "ComercioPayment", "ComercioPurchase", "ComercioExpense",
+  "ComercioStockMovement", "ComercioSettings",
   "WarehouseTransfer", "WarehouseTransferLine", "InventoryAdjustment", "InventoryAdjustmentLine",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
@@ -49,6 +53,10 @@ const SOFT_DELETE = new Set([
   // igual que CntCabdoc/CntCuedoc/TreasuryAdvance: son documentos contables inmutables que se
   // anulan por reverso (status = "cancelled"), nunca se borran.
   "PettyCashConcept", "PettyCashBox",
+  // Comercio: solo los maestros (productos y clientes) tienen `active`. Ventas, creditos,
+  // cuotas, abonos, compras y gastos son documentos que se anulan por status ('voided'),
+  // nunca se borran (mismo criterio que los comprobantes contables de caja menor).
+  "ComercioProduct", "ComercioCustomer",
   "Workflow", "CustomField", "EInvoiceConfig"
 ]);
 

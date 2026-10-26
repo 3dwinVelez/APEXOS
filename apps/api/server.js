@@ -31,7 +31,8 @@ const MODULES = [
   "sales-invoice",
   "accounts-receivable",
   "treasury",
-  "petty-cash"
+  "petty-cash",
+  "comercio"
 ];
 const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:3001", "http://127.0.0.1:3001"];
 
@@ -275,6 +276,7 @@ async function build() {
   registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });
   registerRoutes("treasury", require("./src/modules/treasury/routes"), { prefix: "/api/v1" });
   registerRoutes("petty-cash", require("./src/modules/petty-cash/routes"), { prefix: "/api/v1" });
+  registerRoutes("comercio", require("./src/modules/comercio/routes"), { prefix: "/api/v1" });
   registerRoutes("commercial-management", require("./src/modules/commercial-management/routes"), { prefix: "/api/v1" });
   registerRoutes("apex-heart", require("./src/modules/apex-heart/routes"), { prefix: "/api/v1" });
   registerRoutes("transport-pyg", require("./src/modules/transport-pyg/routes"), { prefix: "/api/v1" });
