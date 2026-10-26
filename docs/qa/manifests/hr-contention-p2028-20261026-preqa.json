@@ -1,0 +1,90 @@
+{
+  "change_id": "hr-contention-p2028-20261026",
+  "commit": "dae326af3eb80e43793883e95b1156eb2bf9e273",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": null,
+    "approved_at": null,
+    "blocking_reasons": [
+      "El responsable del proyecto no ha autorizado expresamente la promocion desarrollo -> develop de este cambio.",
+      "El alcance solo se cierra reconstruyendo dae326af y el commit de documentacion sobre el tip vigente de origin/develop: el diff neto de la rama arrastra 6 rutas de documentacion y evidencia del cambio previo hr-route-p2028-20261026 cuya version en develop es mas reciente que la de desarrollo."
+    ],
+    "authorized_actions": {
+      "push_desarrollo": false,
+      "merge_develop": false,
+      "deploy_qa": false,
+      "promote_main": false,
+      "create_auxiliary_branch": false,
+      "run_remote_migrations": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../evidence/hr-contention-p2028-20261026/local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../evidence/hr-contention-p2028-20261026/local-fixture.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../../../scripts/certifications/hr-contention-p2028-local.js"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../evidence/hr-contention-p2028-20261026/local-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-contention-p2028-20261026.md",
+        "../evidence/hr-contention-p2028-20261026/platform-regression.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T17:59:51.929Z",
+    "head": "dae326af3eb80e43793883e95b1156eb2bf9e273",
+    "checks_total": 52,
+    "checks_passed": 52,
+    "script": "../../../scripts/certifications/hr-contention-p2028-local.js",
+    "evidence": [
+      "../certifications/hr-contention-p2028-20261026.md",
+      "../evidence/hr-contention-p2028-20261026/local-certification.json",
+      "../evidence/hr-contention-p2028-20261026/local-fixture.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-10-26T18:01:27.000Z",
+    "api_tests": 810,
+    "api_failures": 0,
+    "web_tests": 580,
+    "web_failures": 0,
+    "hr_suite_tests": 43,
+    "hr_suite_failures": 0,
+    "script": "../../../scripts/certifications/release-local-regression.cjs",
+    "evidence": [
+      "../certifications/hr-contention-p2028-20261026.md"
+    ]
+  }
+}
