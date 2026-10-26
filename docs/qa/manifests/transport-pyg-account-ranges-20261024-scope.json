@@ -4,16 +4,16 @@
   "source_branch": "desarrollo",
   "target_branch": "develop",
   "promotion_branch": "codex/qa-vehicle-pyg-ranges-20261026",
-  "target_head": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5",
-  "base_commit": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5",
+  "target_head": "f7bd73a84da4f846a57fb82ec27be1a9f87c274a",
+  "base_commit": "f7bd73a84da4f846a57fb82ec27be1a9f87c274a",
   "base_commits": {
-    "develop": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5"
+    "develop": "f7bd73a84da4f846a57fb82ec27be1a9f87c274a"
   },
-  "certified_commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
+  "certified_commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
   "candidate_source": {
     "original_commit": "3e7bcd0d",
-    "commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
-    "traceability_merge": "c63bdfc",
+    "commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
+    "traceability_merge": "24d8085",
     "branch": "desarrollo"
   },
   "approval": {
@@ -35,7 +35,24 @@
     ]
   },
   "certified_functional_paths": [
-    "apps/web/test/transport-pyg-account-config.component.test.mjs"
+    "apps/api/server.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/api/test/hr-marking-concurrency.test.js",
+    "apps/api/test/hr-marking-declared-employee.test.js",
+    "apps/api/test/hr-marking-kilometraje-conflict.test.js",
+    "apps/api/test/hr-payroll-adjustment-lock.test.js",
+    "apps/web/lib/api.ts",
+    "apps/web/test/hr-contention-write-feedback.test.mjs",
+    "apps/web/test/hr-route-write-feedback.test.mjs",
+    "docs/qa/certifications/hr-contention-p2028-20261026.md",
+    "docs/qa/evidence/hr-contention-p2028-20261026/local-certification.json",
+    "docs/qa/evidence/hr-contention-p2028-20261026/local-fixture.json",
+    "docs/qa/evidence/hr-contention-p2028-20261026/platform-regression.json",
+    "docs/qa/manifests/hr-contention-p2028-20261026-preqa.json",
+    "docs/qa/manifests/hr-contention-p2028-20261026-scope.json",
+    "package.json",
+    "scripts/certifications/hr-contention-p2028-local.js"
   ],
   "expected_changes": [
     {
@@ -185,5 +202,5 @@
     "docs/qa/certifications/transport-pyg-account-ranges-20261024.md",
     "scripts/certifications/transport-pyg-account-ranges-browser-local.js"
   ],
-  "certified_application_commit": "d783b8f30e2bb514eabee02d997c55876accf925"
+  "certified_application_commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a"
 }

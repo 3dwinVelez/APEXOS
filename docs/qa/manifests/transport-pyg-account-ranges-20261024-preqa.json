@@ -1,6 +1,6 @@
 {
   "change_id": "transport-pyg-account-ranges-20261024",
-  "commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
+  "commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
@@ -62,12 +62,12 @@
     ]
   },
   "promotion_branch": "codex/qa-vehicle-pyg-ranges-20261026",
-  "target_head": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5",
+  "target_head": "f7bd73a84da4f846a57fb82ec27be1a9f87c274a",
   "validation_summary": {
     "original_candidate": "3e7bcd0d",
-    "certified_commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
-    "completed_at_utc": "2026-10-26T18:19:43.938Z",
-    "artifact_sha256": "3ab3354f980fb8e66e4303293c329995c241dd4a4f26a3057bc10961a7819e88",
+    "certified_commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
+    "completed_at_utc": "2026-10-26T18:38:48.754Z",
+    "artifact_sha256": "0dfa3b722e0a7f0c5211e663cc553339facd9a4cff47fd333b6b0bf2257c6442",
     "browser_coverage_completed": true,
     "production_build": "passed",
     "evidence_policy": "Raw browser JSON, logs and screenshots remain local; reviewed certification is versioned.",
@@ -78,6 +78,8 @@
     "api_unit_tests_passed": 43,
     "api_regression_tests_passed": 130,
     "corrective_change": "Rename local CommonJS evaluator variable in component test; no application source changed after certified build.",
-    "certified_application_commit": "d783b8f30e2bb514eabee02d997c55876accf925"
+    "certified_application_commit": "65d7d372ec5adab73faed8bba3a8f2bcf39d776a",
+    "baseline_update": "Preserves HR contention changes already present in target f7bd73a8; no extra module is promoted.",
+    "lint": "passed: zero errors; prior 22 warnings"
   }
 }
