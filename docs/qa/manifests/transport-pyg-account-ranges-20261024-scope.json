@@ -9,11 +9,11 @@
   "base_commits": {
     "develop": "89e87b7926d1bf775dc3ffe46bacd82effbdf2c5"
   },
-  "certified_commit": "d783b8f30e2bb514eabee02d997c55876accf925",
+  "certified_commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
   "candidate_source": {
     "original_commit": "3e7bcd0d",
-    "commit": "d783b8f30e2bb514eabee02d997c55876accf925",
-    "traceability_merge": "7fef79ee",
+    "commit": "91e43254c9fb4d3907eed020202aa1e5afabb9e4",
+    "traceability_merge": "c63bdfc",
     "branch": "desarrollo"
   },
   "approval": {
@@ -35,24 +35,7 @@
     ]
   },
   "certified_functional_paths": [
-    "apps/api/src/modules/transport-pyg/account-config-service.js",
-    "apps/api/src/modules/transport-pyg/account-config.js",
-    "apps/api/src/modules/transport-pyg/account-engine.js",
-    "apps/api/src/modules/transport-pyg/engine.js",
-    "apps/api/src/modules/transport-pyg/routes.js",
-    "apps/api/src/modules/transport-pyg/schema.js",
-    "apps/api/src/modules/transport-pyg/service.js",
-    "apps/api/test/transport-pyg-account-ranges.test.js",
-    "apps/api/test/transport-pyg-report.test.js",
-    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
-    "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
-    "apps/web/lib/api.ts",
-    "apps/web/lib/transport-pyg-account-config.ts",
-    "apps/web/test/transport-pyg-account-config.component.test.mjs",
-    "apps/web/test/transport-pyg-account-config.test.mjs",
-    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
-    "docs/qa/certifications/transport-pyg-account-ranges-20261024.md",
-    "scripts/certifications/transport-pyg-account-ranges-browser-local.js"
+    "apps/web/test/transport-pyg-account-config.component.test.mjs"
   ],
   "expected_changes": [
     {
@@ -181,5 +164,26 @@
         "../certifications/transport-pyg-account-ranges-20261024.md"
       ]
     }
-  ]
+  ],
+  "certified_application_paths": [
+    "apps/api/src/modules/transport-pyg/account-config-service.js",
+    "apps/api/src/modules/transport-pyg/account-config.js",
+    "apps/api/src/modules/transport-pyg/account-engine.js",
+    "apps/api/src/modules/transport-pyg/engine.js",
+    "apps/api/src/modules/transport-pyg/routes.js",
+    "apps/api/src/modules/transport-pyg/schema.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/test/transport-pyg-account-ranges.test.js",
+    "apps/api/test/transport-pyg-report.test.js",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/transport-pyg-account-config.ts",
+    "apps/web/test/transport-pyg-account-config.component.test.mjs",
+    "apps/web/test/transport-pyg-account-config.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-account-ranges-20261024.md",
+    "scripts/certifications/transport-pyg-account-ranges-browser-local.js"
+  ],
+  "certified_application_commit": "d783b8f30e2bb514eabee02d997c55876accf925"
 }
