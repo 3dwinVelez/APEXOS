@@ -4,7 +4,7 @@
   "source_branch": "desarrollo",
   "target_branch": "develop",
   "promotion_branch": "tmp/hrp2028-develop",
-  "certified_commit": "bdfad78b4b1d599daae55480da3f278f0dbadf67",
+  "certified_commit": "b592aea5443a9f847db692ea3530a7a9451fc778",
   "base_commit": "0bb834c329489d00d64f680afdd3c7438b89e461",
   "base_commits": {
     "develop": "0bb834c329489d00d64f680afdd3c7438b89e461"
@@ -148,13 +148,13 @@
     }
   ],
   "notes": {
-    "generation": "Inventario exacto medido con `git diff --name-status origin/develop tmp/hrp2028-develop` sobre el candidato reconstruido por cherry-pick puntual de f2f6d7f5 + fffd12a1 + 8f2944b3 + 38ae2244 sobre el baseline 0bb834c3. Las 16 rutas son A o M; cero eliminaciones.",
+    "generation": "Inventario exacto medido con `git diff --name-status origin/develop tmp/hrp2028-develop` sobre el candidato reconstruido por cherry-pick puntual de f2f6d7f5 + fffd12a1 + 8f2944b3 + 38ae2244 + 1278d318 sobre el baseline 0bb834c3. Las 16 rutas son A o M; cero eliminaciones.",
     "why_reconstructed": "origin/develop no es ancestro de desarrollo: desarrollo esta por detras en Contabilidad y fusionar la rama completa borraría el modulo accounting del cambio ya promovido accounting-reversal-budget-import-20261024 (4 rutas D). La unica forma de una correccion puntual es reconstruir los cuatro commits sobre el tip vigente de origin/develop, como exige la regla de recuperacion hacia adelante.",
     "candidate_paths": {
-      "reconstruccion_puntual_aplicada": "tmp/hrp2028-develop. Commit funcional certificado bdfad78b; el tip final agrega solo evidencia y manifiestos de la corrida propia.",
+      "reconstruccion_puntual_aplicada": "tmp/hrp2028-develop. Commit funcional certificado b592aea5; el tip final agrega solo evidencia y manifiestos de la corrida propia.",
       "merge_de_desarrollo_descartado": "Medido con `git merge-tree --write-tree origin/develop HEAD` antes de decidir: ese diff neto arrastraba 10 rutas de Contabilidad ajenas al cambio, incluidas 4 eliminaciones."
     },
-    "recertificacion_en_el_candidato": "La evidencia se volvio a producir sobre el propio checkout del candidato: arnes 24/24 (local-certification.json) y corredor de regresion versionado 870/870 en API y 584/584 en web, con head bdfad78b registrado en platform-regression.json.",
+    "recertificacion_en_el_candidato": "La evidencia se volvio a producir sobre el propio checkout del candidato: arnes 24/24 (local-certification.json) y corredor de regresion versionado 870/870 en API y 584/584 en web, con head b592aea5 registrado en platform-regression.json.",
     "out_of_scope_debt": "offline-bootstrap.test.js exige el entorno de certificacion (DISABLE_REDIS/REDIS_DISABLED). Falla al correr la suite cruda sin ese entorno, preexistente desde antes de este cambio, y pasa con el corredor versionado.",
     "remote_migrations": "No se aplicaron migraciones a QA ni PROD; la politica exige autorizacion independiente. Este cambio no requiere migracion alguna."
   }

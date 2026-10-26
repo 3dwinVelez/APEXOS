@@ -1,6 +1,6 @@
 {
   "environment": "LOCAL",
-  "head": "bdfad78b4b1d599daae55480da3f278f0dbadf67",
+  "head": "b592aea5443a9f847db692ea3530a7a9451fc778",
   "status": "passed",
   "results": [
     {
@@ -10,7 +10,7 @@
       "passed": 870,
       "failed": 0,
       "skipped": 0,
-      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-STzN4Y\\api.log"
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-3kU2UE\\api.log"
     },
     {
       "name": "web",
@@ -19,7 +19,7 @@
       "passed": 584,
       "failed": 0,
       "skipped": 0,
-      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-STzN4Y\\web.log"
+      "log": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apex-release-regression-3kU2UE\\web.log"
     }
   ]
 }

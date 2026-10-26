@@ -1,6 +1,6 @@
 {
   "change_id": "hr-route-p2028-20261026",
-  "commit": "bdfad78b4b1d599daae55480da3f278f0dbadf67",
+  "commit": "b592aea5443a9f847db692ea3530a7a9451fc778",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
@@ -13,7 +13,7 @@
     "blocking_reasons": [],
     "resolved_blockers": [
       "Autorizacion expresa del responsable: obtenida el 2026-10-26 (antes el manifiesto estaba en pending).",
-      "desarrollo esta por detras de develop en Contabilidad: resuelto reconstruyendo los cuatro commits sobre 0bb834c3 en tmp/hrp2028-develop (bdfad78b) y validando el inventario exacto de 16 rutas contra ese candidato, no contra la rama completa."
+      "desarrollo esta por detras de develop en Contabilidad: resuelto reconstruyendo los cinco commits sobre 0bb834c3 en tmp/hrp2028-develop (b592aea5) y validando el inventario exacto de 16 rutas contra ese candidato, no contra la rama completa."
     ],
     "authorized_actions": {
       "push_desarrollo": true,
@@ -67,8 +67,8 @@
   },
   "certification": {
     "status": "passed",
-    "completed_at": "2026-10-26T15:16:09.330Z",
-    "head": "bdfad78b4b1d599daae55480da3f278f0dbadf67",
+    "completed_at": "2026-10-26T15:35:12.799Z",
+    "head": "b592aea5443a9f847db692ea3530a7a9451fc778",
     "checks_total": 24,
     "checks_passed": 24,
     "script": "../../../scripts/certifications/hr-route-p2028-local.js",
@@ -80,7 +80,7 @@
   },
   "regression_certification": {
     "status": "passed",
-    "completed_at": "2026-10-26T15:20:00Z",
+    "completed_at": "2026-10-26T15:40:00Z",
     "api_tests": 870,
     "api_failures": 0,
     "web_tests": 584,
