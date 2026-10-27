@@ -163,6 +163,7 @@ const expenseBody = {
     concept: { type: "string", minLength: 1, maxLength: 160 },
     category: { type: ["string", "null"], maxLength: 80 },
     amount: { type: "number", minimum: 0 },
+    direction: { type: "string", enum: ["expense", "income"] },
     method: { type: ["string", "null"], maxLength: 60 },
     note: { type: ["string", "null"], maxLength: 500 },
     date: businessDate
@@ -176,6 +177,7 @@ const expenseUpdateBody = {
     concept: { type: "string", minLength: 1, maxLength: 160 },
     category: { type: ["string", "null"], maxLength: 80 },
     amount: { type: "number", minimum: 0 },
+    direction: { type: "string", enum: ["expense", "income"] },
     method: { type: ["string", "null"], maxLength: 60 },
     note: { type: ["string", "null"], maxLength: 500 },
     date: businessDate
@@ -189,8 +191,17 @@ const settingsBody = {
     store_name: { type: "string", minLength: 1, maxLength: 120 },
     currency: { type: "string", minLength: 1, maxLength: 8 },
     receipt_note: { type: ["string", "null"], maxLength: 300 },
+    catalog_enabled: { type: "boolean" },
+    catalog_whatsapp: { type: ["string", "null"], maxLength: 32 },
     preferences: { type: ["object", "null"] }
   }
+};
+
+const catalogCodeParams = {
+  type: "object",
+  required: ["code"],
+  properties: { code: { type: "string", pattern: "^[a-zA-Z0-9]{4,32}$", minLength: 4, maxLength: 32 } },
+  additionalProperties: false
 };
 
 module.exports = {
@@ -207,5 +218,6 @@ module.exports = {
   purchaseCreateSchema: { body: purchaseBody },
   expenseCreateSchema: { body: expenseBody },
   expenseUpdateSchema: { params: idParams, body: expenseUpdateBody },
-  settingsSchema: { body: settingsBody }
+  settingsSchema: { body: settingsBody },
+  catalogRouteSchema: { params: catalogCodeParams }
 };

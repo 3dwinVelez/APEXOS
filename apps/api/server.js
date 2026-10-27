@@ -277,6 +277,8 @@ async function build() {
   registerRoutes("treasury", require("./src/modules/treasury/routes"), { prefix: "/api/v1" });
   registerRoutes("petty-cash", require("./src/modules/petty-cash/routes"), { prefix: "/api/v1" });
   registerRoutes("comercio", require("./src/modules/comercio/routes"), { prefix: "/api/v1" });
+  // Vitrina publica Comercio: scope aparte para que no herede los hooks auth/tenancy del modulo.
+  registerRoutes("comercio-public", require("./src/modules/comercio/public-routes"), { prefix: "/api/v1" });
   registerRoutes("commercial-management", require("./src/modules/commercial-management/routes"), { prefix: "/api/v1" });
   registerRoutes("apex-heart", require("./src/modules/apex-heart/routes"), { prefix: "/api/v1" });
   registerRoutes("transport-pyg", require("./src/modules/transport-pyg/routes"), { prefix: "/api/v1" });

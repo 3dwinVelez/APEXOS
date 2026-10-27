@@ -12,6 +12,9 @@ const schema = require("./schema");
 const storage = require("./storage");
 
 async function comercioRoutes(fastify) {
+  // NOTA: la vitrina publica NO vive aqui. Los preHandler de este scope se herdan incluso
+  // por scopes hijos registrados antes del addHook, así que /public/... se registra en un
+  // scope raiz aparte (src/modules/comercio/public-routes.js via server.js).
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
   const read = requirePermission("comercio", "read");
@@ -25,6 +28,8 @@ async function comercioRoutes(fastify) {
   // --- Configuracion del comercio ---
   fastify.get("/comercio/settings", { preHandler: read }, (request) => service.getSettings(tenantOf(request)));
   fastify.put("/comercio/settings", { schema: schema.settingsSchema, preHandler: write }, (request) => service.updateSettings(tenantOf(request), request.body));
+  // Quemar el link publico actual y asignar uno nuevo (sin body: leccion FST_ERR_CTP_EMPTY_JSON_BODY).
+  fastify.post("/comercio/settings/catalog/regenerate", { preHandler: write }, (request) => service.regenerateCatalogCode(tenantOf(request)));
 
   // --- Maestros: productos ---
   fastify.get("/comercio/products", { preHandler: read }, (request) => service.listProducts(tenantOf(request), request.query));

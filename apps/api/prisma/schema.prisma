@@ -4128,6 +4128,9 @@ model ComercioExpense {
   amount      Decimal  @db.Decimal(18, 2)
   method      String?
   note        String?
+  // direction: "expense" (egreso operativo) | "income" (ingreso distinto de ventas,
+  // p. ej. recargas o servicios cobrados por fuera del catalogo).
+  direction   String   @default("expense")
   status      String   @default("active")
   created_by  Int?
   created_at  DateTime @default(now())
@@ -4171,6 +4174,9 @@ model ComercioSettings {
   store_name       String   @default("Mi negocio")
   currency         String   @default("COP")
   receipt_note     String?
+  catalog_enabled  Boolean  @default(false)
+  catalog_code     String?  @unique
+  catalog_whatsapp String?
   preferences_json Json?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
