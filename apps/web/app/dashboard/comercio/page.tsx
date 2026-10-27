@@ -8,11 +8,12 @@ import { ActionCard } from "@/components/ui/ActionCard";
 import { ComercioNav } from "@/components/comercio-nav";
 import { AccessDenied, ModuleHeader, describeError, money, useComercioAccess } from "@/components/comercio/shared";
 
-// Tablero del modulo Comercio: resumen del dia y del mes, alertas de stock y ultimos movimientos.
+// Tablero del modulo Comercio: cockpit financiero del mes (ingresos, egresos, resultado,
+// cartera), alertas de stock y ultimos movimientos.
 // Los totales los calcula el servidor (GET /comercio/dashboard); la UI solo los presenta.
 type Dashboard = {
-  today: { sales: number; gross_margin: number; expenses: number; cash_collected: number; receivable: number; overdue_receivable: number; inventory_value: number };
-  month: { sales: number; gross_margin: number; expenses: number; cash_collected: number; receivable: number; overdue_receivable: number; inventory_value: number; estimated_result: number };
+  today: { sales: number; gross_margin: number; expenses: number; income: number; cash_collected: number; receivable: number; overdue_receivable: number; inventory_value: number };
+  month: { sales: number; gross_margin: number; expenses: number; income: number; purchases: number; cost_of_goods: number; cash_collected: number; receivable: number; overdue_receivable: number; inventory_value: number; estimated_result: number };
   low_stock: { id: number; code: string; name: string; stock: number; min_stock: number }[];
   top_products: { product_name: string; quantity: number; revenue: number }[];
   cash_by_method: { method: string; total: number }[];
@@ -56,25 +57,34 @@ export default function ComercioHome() {
         <>
           <section aria-label="Resumen del dia" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="apex-section-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Ventas de hoy</p>
-              <p className="mt-1 text-2xl font-semibold">{money(data.today.sales)}</p>
-              <p className="mt-1 text-xs text-neutral-500">Mes: {money(data.month.sales)}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Ingresos del mes</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-700">{money(data.month.sales + data.month.income)}</p>
+              <p className="mt-1 text-xs text-neutral-500">Ventas: {money(data.month.sales)} · Otros ingresos: {money(data.month.income)}</p>
             </div>
             <div className="apex-section-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Margen bruto hoy</p>
-              <p className="mt-1 text-2xl font-semibold">{money(data.today.gross_margin)}</p>
-              <p className="mt-1 text-xs text-neutral-500">Resultado estimado del mes: {money(data.month.estimated_result)}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-red-500">Egresos del mes</p>
+              <p className="mt-1 text-2xl font-semibold text-red-600">{money(data.month.purchases + data.month.expenses)}</p>
+              <p className="mt-1 text-xs text-neutral-500">Compras: {money(data.month.purchases)} · Gastos: {money(data.month.expenses)}</p>
             </div>
             <div className="apex-section-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Cartera pendiente</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Resultado estimado mes</p>
+              <p className={`mt-1 text-2xl font-semibold ${data.month.estimated_result >= 0 ? "text-neutral-900" : "text-red-600"}`}>{money(data.month.estimated_result)}</p>
+              <p className="mt-1 text-xs text-neutral-500">Margen bruto ventas: {money(data.month.gross_margin)} · Costo mercancia vendida: {money(data.month.cost_of_goods)}</p>
+            </div>
+            <div className="apex-section-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">Cartera pendiente</p>
               <p className="mt-1 text-2xl font-semibold">{money(data.month.receivable)}</p>
               <p className="mt-1 text-xs text-neutral-500">{data.month.overdue_receivable > 0 ? `Vencido: ${money(data.month.overdue_receivable)}` : "Sin cuentas vencidas"}</p>
             </div>
-            <div className="apex-section-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Valor de inventario</p>
-              <p className="mt-1 text-2xl font-semibold">{money(data.month.inventory_value)}</p>
-              <p className="mt-1 text-xs text-neutral-500">Efectivo recaudado hoy: {money(data.today.cash_collected)}</p>
-            </div>
+          </section>
+
+          <section aria-label="Hoy" className="apex-section-card flex flex-wrap items-center gap-x-6 gap-y-1 px-4 py-3 text-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Hoy</p>
+            <p>Ventas: <span className="font-semibold">{money(data.today.sales)}</span></p>
+            <p>Ingresos extra: <span className="font-semibold text-emerald-700">{money(data.today.income)}</span></p>
+            <p>Gastos: <span className="font-semibold text-red-600">{money(data.today.expenses)}</span></p>
+            <p>Efectivo recaudado: <span className="font-semibold">{money(data.today.cash_collected)}</span></p>
+            <p>Inventario: <span className="font-semibold">{money(data.month.inventory_value)}</span></p>
           </section>
 
           {data.low_stock.length ? (

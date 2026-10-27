@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { Copy, Globe, RefreshCw, Save } from "lucide-react";
 import { api } from "@/lib/api";
 import { ComercioNav } from "@/components/comercio-nav";
 import { AccessDenied, Field, ModuleHeader, describeError, useComercioAccess } from "@/components/comercio/shared";
@@ -9,10 +9,15 @@ import { AccessDenied, Field, ModuleHeader, describeError, useComercioAccess } f
 // Configuracion del comercio (GET/PUT /api/v1/comercio/settings). Identidad del negocio y
 // nota pie del comprobante. Las preferencias visuales del HUD quedan en preferences_json,
 // separadas de los datos de negocio.
+// Vitrina publica: el toggle genera/revoca el link corto /tienda/<code>; el boton de
+// regenerar QUEMA el link anterior (los clientes deberan usar el nuevo).
 type Settings = {
   store_name: string;
   currency: string;
   receipt_note: string | null;
+  catalog_enabled: boolean;
+  catalog_code: string | null;
+  catalog_whatsapp: string | null;
   preferences: Record<string, unknown>;
   updated_at: string | null;
 };
@@ -21,8 +26,12 @@ export default function ComercioConfiguracionPage() {
   const access = useComercioAccess();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [form, setForm] = useState({ store_name: "", currency: "COP", receipt_note: "" });
+  const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const [confirmRegen, setConfirmRegen] = useState(false);
+  const [copied, setCopied] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -32,6 +41,7 @@ export default function ComercioConfiguracionPage() {
       const result = await api<Settings>("/api/v1/comercio/settings", { cache: "no-store" });
       setSettings(result);
       setForm({ store_name: result.store_name, currency: result.currency, receipt_note: result.receipt_note || "" });
+      setWhatsapp(result.catalog_whatsapp || "");
       setError("");
     } catch (caught) {
       setError(describeError(caught, "No fue posible cargar la configuracion."));
@@ -43,6 +53,54 @@ export default function ComercioConfiguracionPage() {
   useEffect(() => {
     if (access.ready && access.canRead) void load();
   }, [access.ready, access.canRead, load]);
+
+  async function saveCatalog(patch: Record<string, unknown>, doneMessage: string) {
+    setCatalogBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await api<Settings>("/api/v1/comercio/settings", { method: "PUT", body: JSON.stringify(patch) });
+      setSettings(result);
+      setWhatsapp(result.catalog_whatsapp || "");
+      setMessage(doneMessage);
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible actualizar la vitrina publica."));
+    } finally {
+      setCatalogBusy(false);
+    }
+  }
+
+  async function regenerateCode() {
+    if (!confirmRegen) {
+      setConfirmRegen(true);
+      return;
+    }
+    setConfirmRegen(false);
+    setCatalogBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await api<Settings>("/api/v1/comercio/settings/catalog/regenerate", { method: "POST", body: JSON.stringify({}) });
+      setSettings(result);
+      setMessage("Link regenerado. Comparte la nueva direccion: la anterior dejo de funcionar.");
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible regenerar el link."));
+    } finally {
+      setCatalogBusy(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!settings?.catalog_code) return;
+    const link = `${window.location.origin}/tienda/${settings.catalog_code}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied("Link copiado.");
+    } catch {
+      setCopied(link);
+    }
+    setTimeout(() => setCopied(""), 4000);
+  }
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -103,6 +161,54 @@ export default function ComercioConfiguracionPage() {
               <p className="text-xs text-neutral-500">Tu perfil solo puede consultar esta configuracion.</p>
             )}
           </form>
+        )}
+      </section>
+
+      <section aria-label="Vitrina publica" className="apex-section-card p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold"><Globe size={15} /> Vitrina publica</p>
+            <p className="mt-1 text-xs text-neutral-500">Link corto para que tus clientes vean productos, precios y disponibilidad, y te pidan por WhatsApp. Solo se muestran los productos activos; nunca el costo ni el stock.</p>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              checked={Boolean(settings?.catalog_enabled)}
+              disabled={!access.canWrite || catalogBusy || loading}
+              onChange={(event) => void saveCatalog({ catalog_enabled: event.target.checked }, event.target.checked ? "Vitrina activada: el link ya esta funcionando." : "Vitrina desactivada: el link publico no muestra nada.")}
+              type="checkbox"
+            />
+            <span className="font-medium">{settings?.catalog_enabled ? "Publicada" : "Privada"}</span>
+          </label>
+        </div>
+
+        {settings?.catalog_code ? (
+          <div className="mt-4 space-y-3">
+            <Field label="Link publico">
+              <div className="flex gap-2">
+                <input className="control flex-1 font-mono text-xs" readOnly value={`${typeof window === "undefined" ? "" : window.location.origin}/tienda/${settings.catalog_code}`} />
+                <button className="btn-secondary flex items-center gap-2 whitespace-nowrap px-3 text-xs" disabled={!access.canWrite || catalogBusy} onClick={() => void copyLink()} type="button"><Copy size={13} /> Copiar</button>
+                <button
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-md border px-3 text-xs ${confirmRegen ? "border-red-300 bg-red-50 text-red-700" : "border-line text-neutral-600 hover:bg-neutral-50"}`}
+                  disabled={!access.canWrite || catalogBusy}
+                  onBlur={() => setConfirmRegen(false)}
+                  onClick={() => void regenerateCode()}
+                  type="button"
+                >
+                  <RefreshCw size={13} /> {confirmRegen ? "Confirmar: quema el link actual" : "Regenerar"}
+                </button>
+              </div>
+            </Field>
+            {copied ? <p className="text-xs font-medium text-emerald-600">{copied.startsWith("http") ? copied : "Link copiado al portapapeles."}</p> : null}
+            <Field label="WhatsApp para pedidos (con codigo de pais, ej. +573001112233)">
+              <div className="flex gap-2">
+                <input className="control flex-1" disabled={!access.canWrite || catalogBusy} maxLength={32} onChange={(event) => setWhatsapp(event.target.value)} placeholder="+57..." value={whatsapp} />
+                <button className="btn-secondary flex items-center gap-2 whitespace-nowrap px-3 text-xs" disabled={!access.canWrite || catalogBusy} onClick={() => void saveCatalog({ catalog_whatsapp: whatsapp.trim() || null }, "WhatsApp de pedidos guardado.")} type="button"><Save size={13} /> Guardar</button>
+              </div>
+            </Field>
+            {!whatsapp.trim() ? <p className="text-xs text-amber-600">Sin numero de WhatsApp, la vitrina muestra los productos pero el boton de pedido queda deshabilitado.</p> : null}
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-neutral-500">Activa la vitrina para generar el primer link publico.</p>
         )}
       </section>
     </div>

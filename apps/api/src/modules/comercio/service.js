@@ -1300,7 +1300,10 @@ async function reportSummary(tenantId, query = {}) {
     const salesTotal = round2(sales.reduce((sum, row) => sum + num(row.total), 0));
     const costTotal = round2(sales.reduce((sum, row) => sum + num(row.cost_total), 0));
     const grossMargin = round2(salesTotal - costTotal);
-    const expensesTotal = round2(expenses.reduce((sum, row) => sum + num(row.amount), 0));
+    // La tabla comercio_expenses mezcla las dos direcciones: egresos operativos e
+    // ingresos fuera del catalogo. El resultado estimado suma los ingresos extra.
+    const expensesTotal = round2(expenses.filter((row) => row.direction !== EXPENSE_DIRECTION_INCOME).reduce((sum, row) => sum + num(row.amount), 0));
+    const incomeTotal = round2(expenses.filter((row) => row.direction === EXPENSE_DIRECTION_INCOME).reduce((sum, row) => sum + num(row.amount), 0));
     const purchasesTotal = round2(purchases.reduce((sum, row) => sum + num(row.total), 0));
 
     const today = todayBusiness();
@@ -1366,8 +1369,9 @@ async function reportSummary(tenantId, query = {}) {
         cost_of_goods: costTotal,
         gross_margin: grossMargin,
         expenses: expensesTotal,
+        income: incomeTotal,
         purchases: purchasesTotal,
-        estimated_result: round2(grossMargin - expensesTotal),
+        estimated_result: round2(grossMargin + incomeTotal - expensesTotal),
         receivable: round2(receivable),
         overdue_receivable: round2(overdueReceivable),
         inventory_value: inventoryValue,
