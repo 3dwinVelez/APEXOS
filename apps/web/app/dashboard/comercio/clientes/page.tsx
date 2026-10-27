@@ -9,7 +9,7 @@ import { AccessDenied, Check, Field, ModuleHeader, StatusPill, describeError, us
 
 // Maestro de clientes del Comercio (GET /api/v1/comercio/customers). Es un cliente propio
 // del modulo: no se mezcla con los Parties del ERP. Desactivar esta bloqueado si tiene
-// creditos vigentes (lo decide el servidor).
+// creditos vigentes (lo decide el servidor por el endpoint activate/deactivate, no por el PUT).
 type Customer = {
   id: number;
   code: string;
@@ -22,9 +22,9 @@ type Customer = {
   notes: string | null;
 };
 
-type CustomerForm = { name: string; document: string; phone: string; email: string; address: string; notes: string; active: boolean };
+type CustomerForm = { name: string; document: string; phone: string; email: string; address: string; notes: string };
 
-const emptyForm: CustomerForm = { name: "", document: "", phone: "", email: "", address: "", notes: "", active: true };
+const emptyForm: CustomerForm = { name: "", document: "", phone: "", email: "", address: "", notes: "" };
 
 export default function ComercioClientesPage() {
   const access = useComercioAccess();
@@ -77,8 +77,7 @@ export default function ComercioClientesPage() {
         phone: form.phone.trim() || undefined,
         email: form.email.trim() || undefined,
         address: form.address.trim() || undefined,
-        notes: form.notes.trim() || undefined,
-        active: form.active
+        notes: form.notes.trim() || undefined
       };
       if (editing) {
         await api(`/api/v1/comercio/customers/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
@@ -152,7 +151,7 @@ export default function ComercioClientesPage() {
                   <p className="mt-1 text-xs text-neutral-600">{customer.document || "Sin documento"} · {customer.phone || "Sin telefono"}</p>
                   {access.canWrite ? (
                     <div className="mt-3 flex gap-2">
-                      <button className="btn-secondary px-2 py-1 text-xs" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "", active: customer.active }); setEditorOpen(true); }} type="button">Editar</button>
+                      <button className="btn-secondary px-2 py-1 text-xs" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
                       <button className="btn-secondary px-2 py-1 text-xs" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
                     </div>
                   ) : null}
@@ -184,7 +183,7 @@ export default function ComercioClientesPage() {
                       {access.canWrite ? (
                         <td className="p-3 pr-3 text-right">
                           <div className="flex justify-end gap-1">
-                            <button className="btn-secondary px-2 py-1 text-xs" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "", active: customer.active }); setEditorOpen(true); }} type="button">Editar</button>
+                            <button className="btn-secondary px-2 py-1 text-xs" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
                             <button className="btn-secondary px-2 py-1 text-xs" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
                           </div>
                         </td>
@@ -224,9 +223,8 @@ export default function ComercioClientesPage() {
                   <textarea className="control" maxLength={500} onChange={(event) => setForm({ ...form, notes: event.target.value })} rows={2} value={form.notes} />
                 </Field>
               </div>
-              <Check checked={form.active} label="Cliente activo" onChange={(checked) => setForm({ ...form, active: checked })} />
             </div>
-            <p className="text-xs text-neutral-500">El codigo (C-0001...) lo asigna el servidor. Un cliente con creditos vigentes no puede desactivarse.</p>
+            <p className="text-xs text-neutral-500">El codigo (C-0001...) lo asigna el servidor. Para activar o desactivar usa el boton de la fila: un cliente con creditos vigentes no puede desactivarse.</p>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
               <button className="btn-secondary" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
               <button className="btn-primary" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar cliente"}</button>
