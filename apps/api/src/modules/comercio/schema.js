@@ -193,6 +193,8 @@ const settingsBody = {
     receipt_note: { type: ["string", "null"], maxLength: 300 },
     catalog_enabled: { type: "boolean" },
     catalog_whatsapp: { type: ["string", "null"], maxLength: 32 },
+    catalog_facebook: { type: ["string", "null"], maxLength: 200 },
+    catalog_instagram: { type: ["string", "null"], maxLength: 200 },
     preferences: { type: ["object", "null"] }
   }
 };

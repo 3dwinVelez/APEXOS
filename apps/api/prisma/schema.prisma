@@ -4177,6 +4177,8 @@ model ComercioSettings {
   catalog_enabled  Boolean  @default(false)
   catalog_code     String?  @unique
   catalog_whatsapp String?
+  catalog_facebook String?
+  catalog_instagram String?
   preferences_json Json?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt

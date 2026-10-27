@@ -3,7 +3,7 @@
 // Vitrina publica Comercio (client): grid de productos, chips de categoria, busqueda,
 // carrito de pedido y envio por WhatsApp. Diseno autocontenido (paleta neutra oscura +
 // acento esmeralda) para no depender del tema del visitante ni del shell del dashboard.
-import { MessageCircle, Minus, Plus, ShoppingBag, Store, Trash2, X } from "lucide-react";
+import { Facebook, Instagram, MessageCircle, Minus, Plus, ShoppingBag, Store, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { PublicCatalog, PublicCatalogItem } from "@/app/tienda/[code]/page";
 
@@ -19,6 +19,37 @@ function money(value: number, currency: string) {
 
 function whatsappDigits(value: string | null) {
   return String(value || "").replace(/\D/g, "");
+}
+
+// Fila de enlaces sociales de la vitrina: solo muestra lo que el comercio configuro.
+// WhatsApp usa el numero de pedidos (wa.me directo); Facebook/Instagram son URLs ya
+// normalizadas por el servidor (https). target _blank + rel noopener por seguridad.
+function SocialLinks({ catalog, className = "" }: { catalog: PublicCatalog; className?: string }) {
+  const wa = whatsappDigits(catalog.whatsapp);
+  const links: { key: string; label: string; href: string; icon: typeof Facebook }[] = [];
+  if (wa.length >= 7) links.push({ key: "whatsapp", label: "WhatsApp", href: `https://wa.me/${wa}`, icon: MessageCircle });
+  if (catalog.instagram) links.push({ key: "instagram", label: "Instagram", href: catalog.instagram, icon: Instagram });
+  if (catalog.facebook) links.push({ key: "facebook", label: "Facebook", href: catalog.facebook, icon: Facebook });
+  if (links.length === 0) return null;
+  return (
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+      {links.map((link) => {
+        const Icon = link.icon;
+        return (
+          <a
+            key={link.key}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={link.label}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 transition hover:border-emerald-500 hover:text-emerald-400"
+          >
+            <Icon className="h-4 w-4" />
+          </a>
+        );
+      })}
+    </div>
+  );
 }
 
 function buildWhatsAppUrl(catalog: PublicCatalog, lines: CartLine[]) {
@@ -77,6 +108,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
             <p className="mt-2 max-w-xl text-sm text-neutral-400">
               Escoge tus productos, arma el pedido y envialo por WhatsApp. Precios y disponibilidad al momento.
             </p>
+            <SocialLinks catalog={catalog} className="mt-4" />
           </div>
           <div className="w-full md:w-72">
             <input
@@ -122,8 +154,9 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         )}
       </section>
 
-      <footer className="mx-auto max-w-6xl px-5 pb-6 text-center text-xs text-neutral-600">
-        Tienda publicada con APEXOS Comercio
+      <footer className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 pb-8 text-center text-xs text-neutral-600">
+        <SocialLinks catalog={catalog} />
+        <p>{catalog.store_name} · Tienda publicada con APEXOS Comercio</p>
       </footer>
 
       {/* Barra fija de carrito (movil) / boton flotante (escritorio) */}

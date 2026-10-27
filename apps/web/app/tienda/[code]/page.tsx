@@ -19,6 +19,8 @@ export type PublicCatalog = {
   store_name: string;
   currency: string;
   whatsapp: string | null;
+  facebook: string | null;
+  instagram: string | null;
   categories: string[];
   items: PublicCatalogItem[];
 };

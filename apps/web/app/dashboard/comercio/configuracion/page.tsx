@@ -18,6 +18,8 @@ type Settings = {
   catalog_enabled: boolean;
   catalog_code: string | null;
   catalog_whatsapp: string | null;
+  catalog_facebook: string | null;
+  catalog_instagram: string | null;
   preferences: Record<string, unknown>;
   updated_at: string | null;
 };
@@ -27,6 +29,8 @@ export default function ComercioConfiguracionPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [form, setForm] = useState({ store_name: "", currency: "COP", receipt_note: "" });
   const [whatsapp, setWhatsapp] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [instagram, setInstagram] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [catalogBusy, setCatalogBusy] = useState(false);
@@ -42,6 +46,8 @@ export default function ComercioConfiguracionPage() {
       setSettings(result);
       setForm({ store_name: result.store_name, currency: result.currency, receipt_note: result.receipt_note || "" });
       setWhatsapp(result.catalog_whatsapp || "");
+      setFacebook(result.catalog_facebook || "");
+      setInstagram(result.catalog_instagram || "");
       setError("");
     } catch (caught) {
       setError(describeError(caught, "No fue posible cargar la configuracion."));
@@ -62,6 +68,8 @@ export default function ComercioConfiguracionPage() {
       const result = await api<Settings>("/api/v1/comercio/settings", { method: "PUT", body: JSON.stringify(patch) });
       setSettings(result);
       setWhatsapp(result.catalog_whatsapp || "");
+      setFacebook(result.catalog_facebook || "");
+      setInstagram(result.catalog_instagram || "");
       setMessage(doneMessage);
     } catch (caught) {
       setError(describeError(caught, "No fue posible actualizar la vitrina publica."));
@@ -206,6 +214,25 @@ export default function ComercioConfiguracionPage() {
               </div>
             </Field>
             {!whatsapp.trim() ? <p className="text-xs text-amber-600">Sin numero de WhatsApp, la vitrina muestra los productos pero el boton de pedido queda deshabilitado.</p> : null}
+
+            <div className="rounded-md border border-line bg-paper/40 p-3">
+              <p className="text-xs font-semibold text-neutral-600">Redes sociales de contacto</p>
+              <p className="mt-0.5 text-xs text-neutral-500">Aparecen como iconos en la vitrina (arriba y al pie). Puedes escribir solo el usuario o la URL completa; se guarda como enlace https.</p>
+              <div className="mt-3 space-y-3">
+                <Field label="Instagram (usuario o URL, ej. @mitienda o instagram.com/mitienda)">
+                  <div className="flex gap-2">
+                    <input className="control flex-1" disabled={!access.canWrite || catalogBusy} maxLength={200} onChange={(event) => setInstagram(event.target.value)} placeholder="instagram.com/mitienda" value={instagram} />
+                    <button className="btn-secondary flex items-center gap-2 whitespace-nowrap px-3 text-xs" disabled={!access.canWrite || catalogBusy} onClick={() => void saveCatalog({ catalog_instagram: instagram.trim() || null }, "Instagram guardado.")} type="button"><Save size={13} /> Guardar</button>
+                  </div>
+                </Field>
+                <Field label="Facebook (URL de la pagina, ej. facebook.com/mitienda)">
+                  <div className="flex gap-2">
+                    <input className="control flex-1" disabled={!access.canWrite || catalogBusy} maxLength={200} onChange={(event) => setFacebook(event.target.value)} placeholder="facebook.com/mitienda" value={facebook} />
+                    <button className="btn-secondary flex items-center gap-2 whitespace-nowrap px-3 text-xs" disabled={!access.canWrite || catalogBusy} onClick={() => void saveCatalog({ catalog_facebook: facebook.trim() || null }, "Facebook guardado.")} type="button"><Save size={13} /> Guardar</button>
+                  </div>
+                </Field>
+              </div>
+            </div>
           </div>
         ) : (
           <p className="mt-3 text-xs text-neutral-500">Activa la vitrina para generar el primer link publico.</p>
