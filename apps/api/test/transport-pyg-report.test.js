@@ -282,23 +282,211 @@ function buildFakePrisma() {
   return { db, state };
 }
 
-test("servicio: getReport agrega ingresos/gastos y devuelve el DTO con tenant correcto", async () => {
+test("servicio: getOperationalReport conserva el calculador legacy (caja menor, nomina, liquidacion)", async () => {
   const fake = buildFakePrisma();
   const loaded = loadService(fake.db);
   try {
-    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    const report = await loaded.service.getOperationalReport("tenant-qa", { period: PERIOD });
     assert.equal(report.period, PERIOD);
     assert.equal(report.tax_percent, 2.25);
+    assert.equal(report.source, "operational");
     assert.equal(report.vehicles[0].income_actual, 19150000);
     assert.equal(report.vehicles[0].rows.find((row) => row.code === "GASTOS_PERSONAL").actual, 7803733);
     assert.equal(report.corporate.income_actual, 19150000);
     assert.equal(fake.state.activeTenantId, "tenant-qa");
     assert.equal(fake.state.tenant.id, "tenant-qa");
-    // La siembra idempotente creo el catalogo completo y el mapping por defecto.
+    // La siembra idempotente del legacy (solo via getOperationalReport) crea el
+    // catalogo completo y el mapping por defecto.
     assert.equal(fake.state.concepts.size, CONCEPT_CATALOG.length);
     assert.equal(fake.state.maps.size, DEFAULT_SOURCE_MAP.length);
   } finally {
     loaded.restore();
+  }
+});
+
+test("servicio: getReport siempre lee el libro contable, incluso sin config ni fuente operativa", async () => {
+  const fake = buildFakePrisma();
+  // Sin vehicle_pyg guardado: getReport no puede delegar en fuente operativa.
+  fake.state.tenant.config = {
+    accounting: {
+      organization_tree: {
+        branches: [{ code: "B1", name: "Sucursal Norte" }],
+        cost_centers: [{ code: "ESQ294", name: "GOLIAT", branch_code: "B1", vehicle_id: 1 }]
+      }
+    }
+  };
+  const sourceNodes = [{
+    dimension: "puc",
+    code: "41450501",
+    name: "41450501 · INGRESOS FLETES 2026",
+    account_id: 11,
+    children: [{
+      dimension: "branch",
+      code: "B1",
+      name: "Sucursal Norte",
+      children: [{
+        dimension: "cost_center",
+        code: "B1|ESQ294",
+        name: "GOLIAT",
+        is_leaf: true,
+        amount_cents: 1915000000,
+        budget_rows: 1,
+        budget_cents: 300000000,
+        budget_months_found: ["2026-08"],
+        children: []
+      }]
+    }]
+  }];
+  interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
+  const loaded = loadService(fake.db);
+  try {
+    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    assert.equal(report.source, "accounting");
+    const vehicle = report.vehicles.find((item) => item.plate === "ESQ 294");
+    const ingresos = vehicle.rows.find((row) => row.code === "INGRESOS");
+    // Seed del catalogo operativo no debe ejecutarse en el GET del reporte.
+    assert.equal(fake.state.concepts.size, 0);
+    assert.equal(fake.state.maps.size, 0);
+    assert.equal(ingresos.actual, 19150000);
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
+  }
+});
+
+test("servicio: getReport con flag legacy operational sigue leyendo el libro, no Operational$raw", async () => {
+  const fake = buildFakePrisma();
+  fake.state.tenant.config = {
+    accounting: {
+      vehicle_pyg: { source: "operational", concepts: [] },
+      organization_tree: {
+        branches: [{ code: "B1", name: "Sucursal Norte" }],
+        cost_centers: [{ code: "ESQ294", name: "GOLIAT", branch_code: "B1", vehicle_id: 1 }]
+      }
+    }
+  };
+  const sourceNodes = [{
+    dimension: "puc",
+    code: "41450501",
+    name: "41450501 · INGRESOS FLETES 2026",
+    account_id: 11,
+    children: [{
+      dimension: "branch",
+      code: "B1",
+      name: "Sucursal Norte",
+      children: [{
+        dimension: "cost_center",
+        code: "B1|ESQ294",
+        name: "GOLIAT",
+        is_leaf: true,
+        amount_cents: 1234000,
+        budget_rows: 0,
+        budget_cents: 0,
+        budget_months: [],
+        children: []
+      }]
+    }]
+  }];
+  interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
+  const loaded = loadService(fake.db);
+  try {
+    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    assert.equal(report.source, "accounting");
+    assert.equal(report.report_source, "ledger");
+    assert.equal(report.vehicles.find((item) => item.plate === "ESQ 294").rows.find((row) => row.code === "INGRESOS").actual, 12340);
+    assert.equal(fake.state.concepts.size, 0, "el GET no debe sembrar catalogo operativo");
+    assert.equal(fake.state.maps.size, 0, "el GET no debe sembrar mapping operativo");
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
+  }
+});
+
+test("servicio: getReport pasa el mes solicitado exacto al lector contable", async () => {
+  const fake = buildFakePrisma();
+  fake.state.tenant.config = {
+    accounting: {
+      vehicle_pyg: { source: "accounting", concepts: accountConfig.cloneProposal().concepts },
+      organization_tree: { branches: [], cost_centers: [] }
+    }
+  };
+  const periodsSeen = [];
+  interactiveStub.getInteractivePyg = async (_tenantId, args) => {
+    periodsSeen.push(args.period);
+    return { nodes: [], warnings: [], linkage: {} };
+  };
+  const loaded = loadService(fake.db);
+  try {
+    await loaded.service.getReport("tenant-qa", { period: "2026-08" });
+    assert.deepEqual(periodsSeen, ["2026-08"], "el periodo pedido va exacto al lector, sin mes anterior ni periodo actual");
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
+  }
+});
+
+test("servicio: el libro firmado incluye resultados historicos importados y centros sin asignar", async () => {
+  const fake = buildFakePrisma();
+  fake.state.tenant.config = {
+    accounting: {
+      vehicle_pyg: { source: "accounting", concepts: accountConfig.cloneProposal().concepts },
+      organization_tree: {
+        branches: [{ code: "B1", name: "Sucursal Norte" }],
+        cost_centers: [{ code: "ESQ294", name: "GOLIAT", branch_code: "B1", vehicle_id: 1 }]
+      }
+    }
+  };
+  const sourceNodes = [{
+    dimension: "puc",
+    code: "41450501",
+    name: "41450501 · INGRESOS FLETES",
+    account_id: 11,
+    children: [{
+      dimension: "branch",
+      code: "B1",
+      name: "Sucursal Norte",
+      children: [
+        {
+          dimension: "cost_center",
+          code: "B1|ESQ294",
+          name: "GOLIAT",
+          is_leaf: true,
+          amount_cents: 1000000,
+          budget_rows: 0,
+          budget_cents: 0,
+          budget_months: [],
+          children: []
+        },
+        {
+          dimension: "cost_center",
+          code: "B1|HISTORICO",
+          name: "Centro historico importado",
+          is_leaf: true,
+          amount_cents: 250000,
+          budget_rows: 0,
+          budget_cents: 0,
+          budget_months: [],
+          children: []
+        }
+      ]
+    }]
+  }];
+  interactiveStub.getInteractivePyg = async () => ({ nodes: sourceNodes, warnings: [], linkage: {} });
+  const loaded = loadService(fake.db);
+  try {
+    const report = await loaded.service.getReport("tenant-qa", { period: PERIOD });
+    assert.equal(report.source, "accounting");
+    // El centro sin vehiculo (historico importado) no se pierde: aparece en el
+    // bloque sin asignar y en el consolidado firmado.
+    assert.ok(report.unassigned);
+    assert.equal(report.unassigned.rows.find((row) => row.code === "INGRESOS").actual, 2500);
+    assert.equal(report.corporate.totals.totalIngresos.actual, 12500);
+    // La reconciliacion firma la suma completa de hojas de resultado.
+    assert.equal(report.reconciliation.ledger_net, 12500);
+    assert.equal(report.reconciliation.difference, 0);
+  } finally {
+    loaded.restore();
+    interactiveStub.getInteractivePyg = async () => ({ nodes: [] });
   }
 });
 
@@ -716,4 +904,82 @@ test("config: PUT rechaza rangos fuera del PYG sin escribir", async () => {
   } finally {
     loaded.restore();
   }
+});
+
+test("config: GET con flag legacy operational reporta accounting efectivo y no escribe", async () => {
+  const legacyConcepts = [{ code: "INGRESOS", name: "INGRESOS", section: "ingresos", kind: "income", order: 1, ranges: [], exclusions: [] }];
+  const fake = buildTenantPrisma({ locale: "es-CO", accounting: { vehicle_pyg: { source: "operational", concepts: legacyConcepts }, otros: 3 } });
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    const config = await loaded.service.getAccountConfiguration("tenant-qa");
+    assert.equal(config.source, "accounting");
+    assert.equal(config.has_config, true);
+    assert.equal(config.config.source, "accounting");
+    assert.deepEqual(config.config.concepts, legacyConcepts);
+    // Ninguna escritura del tenant ni auditoria en un GET.
+    assert.equal(fake.state.updates.length, 0);
+    assert.equal(fake.state.audits.length, 0);
+    // El tenant config sigue intacto (sin normalizar ni persistir cambios).
+    assert.equal(fake.state.config.accounting.vehicle_pyg.source, "operational");
+    assert.equal(fake.state.config.locale, "es-CO");
+    assert.equal(fake.state.config.accounting.otros, 3);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("config: GET con conceptos legacy vacios usa propuesta sin escribir", async () => {
+  const original = { accounting: { vehicle_pyg: { source: "operational", concepts: [] }, otros: 7 } };
+  const fake = buildTenantPrisma(original);
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    const config = await loaded.service.getAccountConfiguration("tenant-qa");
+    assert.equal(config.source, "accounting");
+    assert.equal(config.has_config, false);
+    assert.equal(config.config, null);
+    assert.deepEqual(config.proposal.concepts, accountConfig.cloneProposal().concepts);
+    assert.deepEqual(fake.state.config, original);
+    assert.equal(fake.state.updates.length, 0);
+    assert.equal(fake.state.audits.length, 0);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("config: GET sin config devuelve propuesta accounting y sin config registrada", async () => {
+  const fake = buildTenantPrisma({});
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    const config = await loaded.service.getAccountConfiguration("tenant-qa");
+    assert.equal(config.source, "accounting");
+    assert.equal(config.has_config, false);
+    assert.equal(config.config, null);
+    assert.equal(config.proposal.source, "accounting");
+    assert.equal(config.proposal.concepts.length, accountConfig.EXCEL_PROPOSAL.concepts.length);
+    assert.equal(fake.state.updates.length, 0);
+    assert.equal(fake.state.audits.length, 0);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("config: PUT rechaza la fuente operativa de forma controlada sin escribir", async () => {
+  const fake = buildTenantPrisma({ accounting: { vehicle_pyg: { source: "accounting", concepts: [] } } });
+  const loaded = loadAccountConfigService(fake.db);
+  try {
+    await assert.rejects(
+      () => loaded.service.saveAccountConfiguration("tenant-qa", { id: 9 }, { source: "operational", concepts: [] }),
+      (err) => err.statusCode === 400 && err.code === "PYG_ACCOUNT_CONFIG_INVALID" && err.detail.some((item) => item.code === "SOURCE_INVALID")
+    );
+    assert.equal(fake.state.updates.length, 0);
+    assert.equal(fake.state.audits.length, 0);
+  } finally {
+    loaded.restore();
+  }
+});
+
+test("validacion: la fuente operativa se rechaza de forma controlada", () => {
+  const result = accountConfig.validateAccountConfig({ source: "operational", concepts: [] });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((item) => item.code === "SOURCE_INVALID"));
 });

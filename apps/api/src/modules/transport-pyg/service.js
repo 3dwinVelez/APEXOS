@@ -1,8 +1,8 @@
 // PYG por vehiculo (centro de costo = placa) - capa de servicio.
-// Fuentes reales del reporte:
-//   Ingresos: lineas de liquidacion (TransportSettlementItem) de paquetes aprobados+ con placa.
-//   Gastos:   caja menor (lineas con cost_center = placa clasificadas por mapping PYG),
-//             nomina bruta / PILA / provision de prestaciones del conductor autorizado.
+// Fuente del reporte en Contabilidad: siempre el libro contable (LedgerEntry)
+// via getAccountingReport, sin importar la fuente guardada. getOperationalReport
+// conserva el calculo legacy (liquidacion + caja menor + nomina) solo para las
+// pruebas de la unidad; no existe ruta HTTP operativa.
 // Todo corre dentro de prisma.runWithTenant; el SQL crudo siempre filtra tenant_id explicito.
 const basePrisma = require("../../core/prisma");
 const { CONCEPT_CATALOG, DEFAULT_SOURCE_MAP } = require("./concept-catalog");
@@ -108,14 +108,13 @@ async function listConcepts(tenantId) {
   });
 }
 
-async function getReport(tenantId, query = {}) {
+// Reporte operativo historico (liquidacion + caja menor + nomina). Ya no es la
+// fuente del GET de PYG en Contabilidad: getReport siempre lee el libro contable
+// (getAccountingReport). Se conserva como helper interno exportado solo para que
+// las pruebas legacy de la unidad sigan ejercitando la logica sin perder cobertura.
+async function getOperationalReport(tenantId, query = {}) {
   const period = assertPeriod(query.period);
   return read(tenantId, async (db, tenant) => {
-    const tenantRow = await db.tenant.findUnique({ where: { id: tenant }, select: { config: true } });
-    const vehiclePyg = tenantRow?.config?.accounting?.vehicle_pyg;
-    if (vehiclePyg?.source === "accounting") {
-      return getAccountingReport(db, tenant, period, vehiclePyg);
-    }
     await ensureCatalog(db, tenant);
     const { start, end } = periodBounds(period);
     const [vehicles, budgets, maps, config] = await Promise.all([
@@ -252,11 +251,12 @@ function extractInteractiveLeaves(nodes) {
   return leaves;
 }
 
-// La configuracion guardada siempre paso por el PUT validado; si alguien la
-// edito a mano y quedo invalida se usa la propuesta del Excel con aviso, sin
-// romper el reporte.
+// Sin configuracion guardada de conceptos no hay fallback que avisar: se usa la
+// propuesta del Excel en memoria (sin persistirla). Si la config guardada existe
+// pero es invalida, se cae a la propuesta con aviso para no romper el reporte.
 function resolveAccountingConcepts(vehiclePyg, warnings) {
   const stored = vehiclePyg && Array.isArray(vehiclePyg.concepts) ? vehiclePyg.concepts : [];
+  if (!stored.length) return cloneProposal().concepts;
   const result = validateAccountConfig({ source: "accounting", concepts: stored });
   if (result.ok) return result.normalized.concepts;
   warnings.push({
@@ -264,6 +264,20 @@ function resolveAccountingConcepts(vehiclePyg, warnings) {
     message: "La configuracion guardada de conceptos PYG es invalida; se muestra la propuesta del Excel. Guarde la configuracion para corregirla."
   });
   return cloneProposal().concepts;
+}
+
+// El GET del reporte PYG en Contabilidad siempre lee lo contabilizado en el
+// libro (LedgerEntry) para el mes calendario pedido, sin importar la fuente
+// guardada ni la preseleccion de fuente. No siembra catalogo ni escribe config:
+// la resolucion de conceptos parte del tenant config y, si falta, usa la
+// propuesta del Excel en memoria (sin persistirla).
+async function getReport(tenantId, query = {}) {
+  const period = assertPeriod(query.period);
+  return read(tenantId, async (db, tenant) => {
+    const tenantRow = await db.tenant.findUnique({ where: { id: tenant }, select: { config: true } });
+    const vehiclePyg = tenantRow?.config?.accounting?.vehicle_pyg || null;
+    return getAccountingReport(db, tenant, period, vehiclePyg);
+  });
 }
 
 async function getAccountingReport(db, tenantId, period, vehiclePyg) {
@@ -398,4 +412,4 @@ async function saveConfig(tenantId, user, input = {}) {
   });
 }
 
-module.exports = { listSourceConcepts, listConcepts, getReport, getBudgets, saveBudgets, getMapping, saveMapping, getConfig, saveConfig, ensureCatalog };
+module.exports = { listSourceConcepts, listConcepts, getReport, getOperationalReport, getBudgets, saveBudgets, getMapping, saveMapping, getConfig, saveConfig, ensureCatalog };

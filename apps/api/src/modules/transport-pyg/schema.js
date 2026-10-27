@@ -97,7 +97,7 @@ const accountConfigurationUpdateSchema = {
     required: ["source"],
     additionalProperties: false,
     properties: {
-      source: { type: "string", enum: ["accounting", "operational"] },
+      source: { type: "string", enum: ["accounting"] },
       concepts: { type: "array", maxItems: 100, items: accountConceptSchema }
     }
   }
