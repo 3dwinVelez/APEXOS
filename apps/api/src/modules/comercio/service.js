@@ -6,6 +6,7 @@
 // de $transaction se opera con ids ya validados por lecturas tenant-escopadas y los
 // updateMany incluyen tenant_id explicitamente (defensa en profundidad).
 // Documentos (ventas, creditos, compras, gastos) no se borran: se anulan por status.
+const crypto = require("node:crypto");
 const prisma = require("../../core/prisma");
 const storage = require("./storage");
 
@@ -23,6 +24,10 @@ const PAYMENT_CASH = "cash";
 const PAYMENT_CREDIT = "credit";
 const FREQUENCIES = new Set(["weekly", "biweekly", "monthly"]);
 const FREQUENCY_DAYS = { weekly: 7, biweekly: 14 };
+// Direccion de los movimientos "otros": ingreso fuera del catalogo o egreso operativo.
+const EXPENSE_DIRECTION_EXPENSE = "expense";
+const EXPENSE_DIRECTION_INCOME = "income";
+const EXPENSE_DIRECTIONS = new Set([EXPENSE_DIRECTION_EXPENSE, EXPENSE_DIRECTION_INCOME]);
 
 function appError(statusCode, code, message) {
   const error = new Error(message);
@@ -279,6 +284,7 @@ function expenseDto(row) {
     concept: row.concept,
     category: row.category || null,
     amount: num(row.amount),
+    direction: row.direction === EXPENSE_DIRECTION_INCOME ? EXPENSE_DIRECTION_INCOME : EXPENSE_DIRECTION_EXPENSE,
     method: row.method || null,
     note: row.note || null,
     status: row.status,
@@ -307,6 +313,9 @@ function settingsDto(row) {
     store_name: row.store_name,
     currency: row.currency || "COP",
     receipt_note: row.receipt_note || null,
+    catalog_enabled: Boolean(row.catalog_enabled),
+    catalog_code: row.catalog_code || null,
+    catalog_whatsapp: row.catalog_whatsapp || null,
     preferences: row.preferences_json && typeof row.preferences_json === "object" ? row.preferences_json : {},
     updated_at: row.updated_at ? row.updated_at.toISOString() : null
   };
@@ -348,6 +357,15 @@ function dateRangeWhere(query = {}, field = "date") {
 
 // === Configuracion del comercio ===
 
+// Alfabeto sin 0/1/i/l/o para que el codigo del link publico sea legible al copiarlo.
+const CATALOG_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+function randomCatalogCode(length = 8) {
+  const bytes = crypto.randomBytes(length);
+  let out = "";
+  for (const byte of bytes) out += CATALOG_ALPHABET[byte % CATALOG_ALPHABET.length];
+  return out;
+}
+
 async function getSettings(tenantId) {
   return prisma.runWithTenant(tenantId, async () => {
     const existing = await prisma.comercioSettings.findFirst({ where: {} });
@@ -373,6 +391,14 @@ async function updateSettings(tenantId, data) {
       payload.currency = currency.toUpperCase();
     }
     if (data.receipt_note !== undefined) payload.receipt_note = nullableText(data.receipt_note, 300);
+    if (data.catalog_whatsapp !== undefined) payload.catalog_whatsapp = nullableText(data.catalog_whatsapp, 32);
+    if (data.catalog_enabled !== undefined) {
+      const enable = Boolean(data.catalog_enabled);
+      payload.catalog_enabled = enable;
+      // Al activar sin codigo se genera el link corto; al desactivar se CONSERVA el codigo
+      // (revocacion sin quemar el link difundido; volver a activar lo reusa).
+      if (enable && !current.catalog_code) payload.catalog_code = randomCatalogCode();
+    }
     if (data.preferences !== undefined) {
       const prefs = data.preferences;
       if (prefs === null || (typeof prefs !== "object" || Array.isArray(prefs))) {
@@ -380,8 +406,64 @@ async function updateSettings(tenantId, data) {
       }
       payload.preferences_json = prefs;
     }
-    const updated = await prisma.comercioSettings.update({ where: { id: current.id }, data: payload });
+    const updated = await updateSettingsWithUniqueCode(current.id, payload);
     return settingsDto(updated);
+  });
+}
+
+// catalog_code es unico GLOBAL: el choque (improbable) se reintenta con otro codigo.
+async function updateSettingsWithUniqueCode(id, payload) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await prisma.comercioSettings.update({ where: { id }, data: payload });
+    } catch (error) {
+      if (error?.code === "P2002" && payload.catalog_code && attempt < 5) {
+        payload.catalog_code = randomCatalogCode();
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+// Regenerar quema el link anterior (el cliente difunde uno nuevo). Exige write.
+async function regenerateCatalogCode(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.comercioSettings.findFirst({ where: {} })
+      || await prisma.comercioSettings.create({ data: {} });
+    const updated = await updateSettingsWithUniqueCode(current.id, { catalog_code: randomCatalogCode() });
+    return settingsDto(updated);
+  });
+}
+
+// === Vitrina publica ===
+// Unica puerta: el codigo corto (globalmente unico). El lector anonimo NUNCA ve
+// tenant_id, costo, stock crudo ni ids internos; disponible/agotado se deriva del stock.
+async function publicCatalog(code) {
+  const clean = normalizeText(String(code || "")).toLowerCase();
+  if (!/^[a-z0-9]{4,32}$/.test(clean)) throw appError(404, "CATALOG_NOT_FOUND", "La tienda publica no esta disponible");
+  // Sin contexto de tenant: core/prisma.js no inyecta filtro y catalog_code es la clave.
+  const settings = await prisma.comercioSettings.findFirst({ where: { catalog_code: clean } });
+  if (!settings || !settings.catalog_enabled) throw appError(404, "CATALOG_NOT_FOUND", "La tienda publica no esta disponible");
+  return prisma.runWithTenant(settings.tenant_id, async () => {
+    // SOFT_DELETE ya limita a productos activos.
+    const rows = await prisma.comercioProduct.findMany({ orderBy: [{ category: "asc" }, { name: "asc" }] });
+    const items = rows.map((row) => ({
+      code: row.code,
+      name: row.name,
+      category: row.category || null,
+      unit: row.unit || "unidad",
+      price: num(row.price),
+      available: row.stock > 0,
+      photo_url: storage.publicViewUrl(row.photo_path)
+    }));
+    return {
+      store_name: settings.store_name,
+      currency: settings.currency || "COP",
+      whatsapp: settings.catalog_whatsapp || null,
+      categories: [...new Set(items.map((item) => item.category).filter(Boolean))].sort(),
+      items
+    };
   });
 }
 
@@ -1090,6 +1172,7 @@ async function listExpenses(tenantId, query = {}) {
     const where = dateRangeWhere(query);
     if (query.status === SALE_STATUS_VOIDED) where.status = SALE_STATUS_VOIDED;
     else if (query.status !== "all") where.status = "active";
+    if (EXPENSE_DIRECTIONS.has(normalizeText(query.direction))) where.direction = normalizeText(query.direction);
     const { take, skip } = parseLimitOffset(query);
     const [rows, total] = await Promise.all([
       prisma.comercioExpense.findMany({ where, orderBy: [{ date: "desc" }, { id: "desc" }], take, skip }),
@@ -1114,6 +1197,13 @@ function expensePayload(data, { partial = false } = {}) {
   }
   if (data.method !== undefined) payload.method = nullableText(data.method, 60);
   if (data.note !== undefined) payload.note = nullableText(data.note, 500);
+  if (data.direction !== undefined) {
+    const direction = normalizeText(data.direction);
+    if (!EXPENSE_DIRECTIONS.has(direction)) {
+      throw appError(400, "EXPENSE_DIRECTION_INVALID", "La direccion debe ser income o expense");
+    }
+    payload.direction = direction;
+  }
   return payload;
 }
 
@@ -1332,6 +1422,9 @@ module.exports = {
   // configuracion
   getSettings,
   updateSettings,
+  regenerateCatalogCode,
+  // vitrina publica
+  publicCatalog,
   // maestros
   listProducts,
   getProduct,

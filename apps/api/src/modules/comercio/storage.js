@@ -108,6 +108,18 @@ async function removeProductPhoto(storagePath) {
   return true;
 }
 
+// URL publica y estatica: la vitrina del cliente no puede depender de URLs firmadas
+// con TTL de 10 min. Exige que el bucket comercio-assets sea PUBLICO en Supabase
+// (paso de infra en la migracion a nube; sin credenciales locales devuelve null).
+function publicViewUrl(storagePath) {
+  const path = String(storagePath || "");
+  if (!path.startsWith(`${BUCKET}/`)) return null;
+  const url = String(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
+  if (!url) return null;
+  const objectPath = path.slice(BUCKET.length + 1);
+  return `${url}/storage/v1/object/public/${BUCKET}/${objectPath}`;
+}
+
 async function signedViewUrl(storagePath, expiresIn = SIGNED_URL_TTL_SECONDS) {
   const path = String(storagePath || "");
   if (!path.startsWith(`${BUCKET}/`)) {
@@ -136,5 +148,6 @@ module.exports = {
   validateProductImage,
   uploadProductPhoto,
   removeProductPhoto,
-  signedViewUrl
+  signedViewUrl,
+  publicViewUrl
 };
