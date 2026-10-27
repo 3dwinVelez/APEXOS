@@ -13,7 +13,7 @@ const landing = fs.readFileSync(path.join(root, "apps/web/app/dashboard/contabil
 
 test("la vista por defecto es la matriz contable PUC y la vista por vehiculo queda intacta", () => {
   assert.ok(page.includes('useState<"contable" | "vehiculo">("contable")'));
-  assert.ok(page.includes("<AccountingPyg />"));
+  assert.ok(page.includes("<AccountingPyg period={period} onPeriodChange={setPeriod} />"));
   assert.ok(page.includes('onClick={() => setMainView("vehiculo")}'));
   assert.ok(page.includes("PYG por Vehículo"));
   assert.ok(page.includes("getTransportPygReport"));
@@ -21,7 +21,7 @@ test("la vista por defecto es la matriz contable PUC y la vista por vehiculo que
   assert.ok(page.includes("PYG corporativo ·"));
   assert.ok(page.includes('hasStoredRolePermission("accounting", "write")'));
   assert.ok(page.includes("<ContabilidadNav />"));
-  assert.ok(page.includes('useEffect(() => { if (mainView === "vehiculo") void load(); }, [load, mainView]);'));
+  assert.ok(page.includes('useEffect(() => { if (mainView === "vehiculo") void load(period); }, [load, mainView, period]);'));
 });
 
 test("la matriz consulta sin cache, cancela peticiones viejas y refresca al foco y cada 60s solo visible", () => {

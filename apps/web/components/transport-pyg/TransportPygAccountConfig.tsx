@@ -7,11 +7,11 @@ import {
   type TransportPygAccountConfiguration
 } from "@/lib/api";
 import {
-  ACCOUNT_LENGTH_HINT, KIND_LABELS, KIND_SECTIONS, KINDS, LEDGER_PRODUCT_LABEL, PENDING_MESSAGE, SECTION_LABELS, SUBTOTAL_KINDS,
+  ACCOUNT_LENGTH_HINT, KIND_LABELS, KIND_SECTIONS, KINDS, PENDING_MESSAGE, SECTION_LABELS, SUBTOTAL_KINDS,
   conceptRowKey, validateAccountConcepts, validationErrorLabel,
   type AccountConceptDraft, type ConceptKind, type ConceptSection, type ConceptValidationError, type PucRange
 } from "@/lib/transport-pyg-account-config";
-import { AlertTriangle, FileSpreadsheet, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, FileSpreadsheet, Plus, Save, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type RemoteState = TransportPygAccountConfiguration | null;
@@ -55,7 +55,6 @@ function SectionOf({ concept, onChange, canWrite }: { concept: AccountConceptDra
 export default function TransportPygAccountConfig({ canWrite, onSaved }: { canWrite: boolean; onSaved: () => void }) {
   const [remote, setRemote] = useState<RemoteState>(null);
   const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState<"accounting" | "operational">("operational");
   const [concepts, setConcepts] = useState<AccountConceptDraft[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,7 +66,6 @@ export default function TransportPygAccountConfig({ canWrite, onSaved }: { canWr
     try {
       const next = await getTransportPygAccountConfiguration();
       setRemote(next);
-      setSource(next.source);
       const stored = next.config && next.config.concepts?.length ? next.config.concepts.map(toDraft) : next.proposal.concepts.map(toDraft);
       setConcepts(stored);
       setDirty(false);
@@ -92,15 +90,12 @@ export default function TransportPygAccountConfig({ canWrite, onSaved }: { canWr
     return map;
   }, [validation]);
 
-  const activeSource = remote?.source || "operational";
-
   function useExcelProposal() {
-    if (!window.confirm("¿Reemplazar el borrador actual con la estructura del Excel (hoja Resumen de presupuesto.xlsx)? No se guarda hasta que confirmes.")) return;
+    if (!window.confirm("¿Reemplazar el borrador actual (incluidos los cambios sin guardar) por la estructura del Excel (hoja Resumen de presupuesto.xlsx)? Se sobrescribe el borrador personalizado y no se guarda hasta que confirmes.")) return;
     if (!remote?.proposal) return;
     setConcepts(remote.proposal.concepts.map(toDraft));
-    setSource("accounting");
     setDirty(true);
-    setNotice("Propuesta del Excel cargada en el borrador. Revisa y guarda para activarla.");
+    setNotice("Propuesta del Excel cargada en el borrador (sin guardar). Revisa y guarda para aplicarla.");
     setError("");
   }
 
@@ -157,34 +152,13 @@ export default function TransportPygAccountConfig({ canWrite, onSaved }: { canWr
     }
     setSaving(true); setError(""); setNotice("");
     try {
-      await saveTransportPygAccountConfiguration({ source, concepts: toPayload(concepts) });
-      setNotice(source === "accounting" ? "Estructura contable guardada: el reporte por vehículo ahora lee el libro con estos rangos PUC." : "Fuente operativa histórica restaurada.");
+      await saveTransportPygAccountConfiguration({ source: "accounting", concepts: toPayload(concepts) });
+      setNotice("Agrupación de cuentas guardada: el reporte por vehículo sigue leyendo el libro contable con estos rangos PUC.");
       setDirty(false);
       onSaved();
       await load();
     } catch (value) {
       setError(value instanceof Error ? value.message : "No fue posible guardar la configuración de rangos PUC.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function restoreOperational() {
-    if (dirty) {
-      setError("Tienes cambios sin guardar en el borrador. Guárdalos antes de volver a la fuente operativa para no perderlos.");
-      setNotice("");
-      return;
-    }
-    if (!window.confirm("¿Volver a la fuente operativa histórica (liquidaciones, caja menor, nómina)? Los rangos guardados dejarán de aplicarse pero se conservan en la configuración de rangos PUC.")) return;
-    setSaving(true); setError(""); setNotice("");
-    try {
-      await saveTransportPygAccountConfiguration({ source: "operational", concepts: toPayload(concepts) });
-      setNotice("Fuente operativa histórica restaurada; los rangos PUC guardados se conservan para cuando vuelvas a usar la estructura contable.");
-      setDirty(false);
-      onSaved();
-      await load();
-    } catch (value) {
-      setError(value instanceof Error ? value.message : "No fue posible restaurar la fuente operativa.");
     } finally {
       setSaving(false);
     }
@@ -196,23 +170,16 @@ export default function TransportPygAccountConfig({ canWrite, onSaved }: { canWr
     <section className="apex-section-card space-y-4 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-content-strong">Rangos PUC · Estructura contable del PYG por vehículo</h2>
+          <h2 className="font-semibold text-content-strong">Rangos PUC · Agrupación de cuentas del PYG por vehículo</h2>
           <p className="text-xs text-content-muted">
-            {activeSource === "accounting"
-              ? `Fuente activa: ${LEDGER_PRODUCT_LABEL}. El reporte agrupa cada cuenta por los rangos configurados aquí; los subtotales se calculan con fórmulas conocidas por sección.`
-              : `Fuente activa: operativa histórica (liquidaciones, caja menor, nómina). Usa «Usar estructura del Excel» para pasar al ${LEDGER_PRODUCT_LABEL}.`}
+            Fuente: libro contable. El reporte usa los asientos publicados del período consultado. Aquí defines cómo se agrupan las cuentas en conceptos, secciones y subtotales.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`rounded-full border px-3 py-1 text-xs font-bold ${activeSource === "accounting" ? "border-apex/40 bg-apex/10 text-apex" : "border-line bg-surface-muted text-content-muted"}`}>
-            {activeSource === "accounting" ? "FUENTE: ESTRUCTURA CONTABLE" : "FUENTE: OPERATIVA HISTÓRICA"}
-          </span>
+          <span className="rounded-full border border-apex/40 bg-apex/10 px-3 py-1 text-xs font-bold text-apex">FUENTE: LIBRO CONTABLE (ASIENTOS)</span>
           {canWrite ? (
             <>
-              <button className="inline-flex h-9 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex disabled:opacity-50" disabled={saving || !remote} onClick={useExcelProposal} type="button"><FileSpreadsheet size={16} /> Usar estructura del Excel</button>
-              {activeSource === "accounting" ? (
-                <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-content-muted disabled:opacity-50" disabled={saving} onClick={() => void restoreOperational()} type="button"><RotateCcw size={16} /> Volver a fuente operativa</button>
-              ) : null}
+              <button className="inline-flex h-9 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex disabled:opacity-50" disabled={saving || !remote} onClick={useExcelProposal} type="button"><FileSpreadsheet size={16} /> Restablecer propuesta del Excel</button>
               <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-50" disabled={saving || !canWrite} onClick={() => void save()} type="button"><Save size={16} /> {saving ? "Guardando…" : dirty ? "Guardar cambios" : "Guardar"}</button>
             </>
           ) : null}
@@ -222,7 +189,7 @@ export default function TransportPygAccountConfig({ canWrite, onSaved }: { canWr
       <div className="rounded-lg border border-line bg-surface-muted/60 p-3 text-xs text-content-muted">
         <p>{ACCOUNT_LENGTH_HINT}</p>
         <p className="mt-1">Un rango es inclusivo (inicio y fin incluidos) y solo compara cuentas de su misma longitud. Las exclusiones deben caer dentro de algún rango del mismo concepto. No se admite solape entre conceptos: desambigua con exclusiones. Los conceptos sin rangos aparecen como “{PENDING_MESSAGE}”.</p>
-        {activeSource === "accounting" ? <p className="mt-1 font-semibold text-content-strong">Los presupuestos de esta vista provienen de Presupuesto PUC (PYG Contable), por cuenta/sucursal/centro; el presupuesto operativo por placa no se usa.</p> : null}
+        <p className="mt-1 font-semibold text-content-strong">Los presupuestos de esta vista provienen de Presupuesto PUC (PYG Contable), por cuenta/sucursal/centro; el presupuesto operativo por placa no se usa.</p>
       </div>
 
       {error ? <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400"><AlertTriangle className="mt-0.5 shrink-0" size={16} /><span>{error}</span></div> : null}

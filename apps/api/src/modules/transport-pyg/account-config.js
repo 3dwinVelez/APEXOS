@@ -362,12 +362,10 @@ function overlapIssues(concepts) {
 function validateAccountConfig(input) {
   const errors = [];
   const source = String((input && input.source) || "").trim().toLowerCase();
-  if (source !== "accounting" && source !== "operational") {
-    errors.push(error(null, "SOURCE_INVALID", "La fuente debe ser accounting u operational."));
+  if (source !== "accounting") {
+    errors.push(error(null, "SOURCE_INVALID", "La fuente debe ser accounting."));
   }
   const rawConcepts = input && Array.isArray(input.concepts) ? input.concepts : [];
-  // La fuente operativa historica no exige conceptos: guardar solo
-  // { source: "operational" } es la forma explicita de volver a ella.
   if (source === "accounting" && !rawConcepts.length) errors.push(error(null, "CONCEPTS_REQUIRED", "Debe enviar al menos un concepto."));
   if (rawConcepts.length > MAX_CONCEPTS) errors.push(error(null, "CONCEPTS_TOO_MANY", `Maximo ${MAX_CONCEPTS} conceptos.`));
 
