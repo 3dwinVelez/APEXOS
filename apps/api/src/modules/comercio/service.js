@@ -44,6 +44,25 @@ function nullableText(value, max = 500) {
   return text || null;
 }
 
+// Enlace social: se acepta con o sin esquema (facebook.com/x o https://facebook.com/x)
+// y se normaliza a https. Vacio = null (se quita de la vitrina). Rechaza cualquier cosa
+// que no sea http(s) para no publicar javascript:/data: en los enlaces de la vitrina.
+function normalizeSocialUrl(value, label) {
+  const text = normalizeText(value).slice(0, 200);
+  if (!text) return null;
+  const withScheme = /^https?:\/\//i.test(text) ? text : `https://${text}`;
+  let url;
+  try {
+    url = new URL(withScheme);
+  } catch {
+    throw appError(400, "SETTINGS_SOCIAL_INVALID", `El enlace de ${label} no es valido`);
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw appError(400, "SETTINGS_SOCIAL_INVALID", `El enlace de ${label} debe ser una direccion web (http/https)`);
+  }
+  return url.toString();
+}
+
 // Fecha de negocio: "YYYY-MM-DD" se almacena al mediodia UTC para que el dia calendario
 // sea identico en UTC y en America/Bogota (UTC-5) y la serializacion no corra fechas.
 function businessDateToUtc(value) {
@@ -316,6 +335,8 @@ function settingsDto(row) {
     catalog_enabled: Boolean(row.catalog_enabled),
     catalog_code: row.catalog_code || null,
     catalog_whatsapp: row.catalog_whatsapp || null,
+    catalog_facebook: row.catalog_facebook || null,
+    catalog_instagram: row.catalog_instagram || null,
     preferences: row.preferences_json && typeof row.preferences_json === "object" ? row.preferences_json : {},
     updated_at: row.updated_at ? row.updated_at.toISOString() : null
   };
@@ -392,6 +413,8 @@ async function updateSettings(tenantId, data) {
     }
     if (data.receipt_note !== undefined) payload.receipt_note = nullableText(data.receipt_note, 300);
     if (data.catalog_whatsapp !== undefined) payload.catalog_whatsapp = nullableText(data.catalog_whatsapp, 32);
+    if (data.catalog_facebook !== undefined) payload.catalog_facebook = normalizeSocialUrl(data.catalog_facebook, "Facebook");
+    if (data.catalog_instagram !== undefined) payload.catalog_instagram = normalizeSocialUrl(data.catalog_instagram, "Instagram");
     if (data.catalog_enabled !== undefined) {
       const enable = Boolean(data.catalog_enabled);
       payload.catalog_enabled = enable;
@@ -461,6 +484,8 @@ async function publicCatalog(code) {
       store_name: settings.store_name,
       currency: settings.currency || "COP",
       whatsapp: settings.catalog_whatsapp || null,
+      facebook: settings.catalog_facebook || null,
+      instagram: settings.catalog_instagram || null,
       categories: [...new Set(items.map((item) => item.category).filter(Boolean))].sort(),
       items
     };
