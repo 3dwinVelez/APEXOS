@@ -11,7 +11,7 @@ const ITEMS = [
   { href: "/dashboard/comercio/cartera", label: "Cartera" },
   { href: "/dashboard/comercio/clientes", label: "Clientes" },
   { href: "/dashboard/comercio/compras", label: "Compras" },
-  { href: "/dashboard/comercio/gastos", label: "Gastos" },
+  { href: "/dashboard/comercio/gastos", label: "Ingresos y egresos" },
   { href: "/dashboard/comercio/reportes", label: "Reportes" },
   { href: "/dashboard/comercio/configuracion", label: "Configuracion" }
 ];
