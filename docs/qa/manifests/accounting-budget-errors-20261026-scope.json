@@ -1,0 +1,98 @@
+{
+  "promotion_branch": "codex/qa-budget-errors-20261026",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "c7f1c17baa78b8a509c0b8c51644ae88ac75528c"
+  },
+  "scope_schema_version": 2,
+  "change_id": "accounting-budget-errors-20261026",
+  "approval": {
+    "approved_at": "2026-10-26",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "manue",
+    "instruction": "Autorizar publicación puntual en QA",
+    "status": "approved",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/components/accounting/AccountingPygBudgetImport.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/accounting-pyg-budget-errors.component.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/accounting-budget-errors-20261026.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/accounting-reversal-budget-import-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/accounting-budget-errors-20261026-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/accounting-budget-errors-20261026-scope.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ],
+      "status": "passed",
+      "name": "errores_excel_145_filas_filtros_y_teclado"
+    },
+    {
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ],
+      "status": "passed",
+      "name": "importacion_valida_conflicto_al_confirmar_y_comparativo_puc"
+    },
+    {
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ],
+      "status": "passed",
+      "name": "anulacion_origen_periodos_permisos_y_aislamiento"
+    }
+  ],
+  "certified_commit": "c7f1c17baa78b8a509c0b8c51644ae88ac75528c",
+  "source_branch": "desarrollo",
+  "allowed_paths": [
+    "apps/web/components/accounting/AccountingPygBudgetImport.tsx",
+    "apps/web/test/accounting-pyg-budget-errors.component.test.mjs",
+    "docs/qa/certifications/accounting-budget-errors-20261026.md",
+    "scripts/certifications/accounting-reversal-budget-import-browser-local.js",
+    "docs/qa/manifests/accounting-budget-errors-20261026-preqa.json",
+    "docs/qa/manifests/accounting-budget-errors-20261026-scope.json"
+  ],
+  "target_branch": "develop",
+  "certified_functional_paths": [
+    "apps/web/components/accounting/AccountingPygBudgetImport.tsx",
+    "apps/web/test/accounting-pyg-budget-errors.component.test.mjs",
+    "docs/qa/certifications/accounting-budget-errors-20261026.md",
+    "scripts/certifications/accounting-reversal-budget-import-browser-local.js"
+  ],
+  "target_head": "46fc1524dc1b16a9ec4a0c1f37333c7868d4d2d6",
+  "change_intent": {
+    "summary": "Mostrar fila y motivos de errores de presupuesto fuera del scroll, filtro automático Solo errores, selección de todas las filas y bloqueo de confirmación con errores.",
+    "modules": [
+      "accounting",
+      "qa-evidence"
+    ]
+  },
+  "base_commit": "46fc1524dc1b16a9ec4a0c1f37333c7868d4d2d6",
+  "base_commits": {
+    "develop": "46fc1524dc1b16a9ec4a0c1f37333c7868d4d2d6"
+  }
+}

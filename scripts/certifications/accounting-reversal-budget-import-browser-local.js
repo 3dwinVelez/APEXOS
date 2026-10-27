@@ -90,6 +90,7 @@ const SOURCE_FILES = {
   api_unit_reversal: "apps/api/test/accounting-reversal.test.js",
   api_unit_budget_import: "apps/api/test/accounting-pyg-budget-import.test.js",
   web_unit: "apps/web/test/accounting-reversal-budget-import.test.mjs",
+  web_budget_errors_unit: "apps/web/test/accounting-pyg-budget-errors.component.test.mjs",
   script: "scripts/certifications/accounting-reversal-budget-import-browser-local.js"
 };
 
@@ -789,22 +790,76 @@ async function main() {
       await closeCdp();
     }
 
+    // Reproduce un error al final de una plantilla de 145 filas del mismo mes.
+    browserPhase = "budget_errors_visible_without_scrolling_table";
+    const errorFixtureRows = [];
+    for (let index = 1; index <= 144; index += 1) {
+      // Respeta el límite real de 200 peticiones/minuto durante el fixture grande.
+      await sleep(450);
+      const center = `ERR-${String(index).padStart(3, "0")}`;
+      const created = await apiCall("POST", "/accounting/organization-tree", tenantA.token, { type: "cost_center", code: center, name: `Centro prueba errores ${index}`, society_code: SOCIETY, branch_code: B1 });
+      if (![200, 201].includes(created.status)) throw new Error(`error_fixture_center_failed:${index}:${created.status}`);
+      errorFixtureRows.push({ ...budgetRow("2026-09", income.code, index), centro_costo: center });
+    }
+    errorFixtureRows.push(budgetRow("2026-09", "49999999", -1));
+    const errorWorkbookPath = path.join(evidenceDir, `budget-errors-145-${suffix}.xlsx`);
+    fs.writeFileSync(errorWorkbookPath, await buildBudgetWorkbook(errorFixtureRows));
+    const errorInput = await page.waitForSelector('input[type="file"][accept=".xlsx"]', { visible: true });
+    await errorInput.uploadFile(errorWorkbookPath);
+    const errorValidation = page.waitForResponse((response) => response.url().includes("/budgets/validate") && response.request().method() === "POST", { timeout: 60000 });
+    errorValidation.catch(() => undefined);
+    await clickButton(page, "Validar plantilla");
+    const invalidResponse = await errorValidation;
+    const invalidPreview = await invalidResponse.json();
+    check("browser_budget_late_error_real_validation", invalidResponse.status() === 200 && invalidPreview.totals?.valid_rows === 144 && invalidPreview.totals?.error_rows === 1 && invalidPreview.rows?.[144]?.excel_row === 149 && invalidPreview.rows[144].errors.length >= 2, { totals: invalidPreview.totals });
+    const errorSummary = '[role="alert"][aria-label="Errores de la plantilla de presupuesto"]';
+    const previewTable = 'table[aria-label="Filas de la plantilla de presupuesto"]';
+    await page.waitForSelector(errorSummary, { visible: true });
+    const summaryText = await page.$eval(errorSummary, (node) => node.textContent);
+    const visibleRows = await page.$$eval(`${previewTable} tbody tr`, (rows) => rows.map((row) => row.cells[0].textContent.trim()));
+    const summaryOutsideScroll = await page.$eval(errorSummary, (node) => {
+      for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+        if (parent.classList.contains("max-h-80")) return false;
+      }
+      return true;
+    });
+    const confirmDisabled = await page.evaluate(() => [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Confirmar importación")?.disabled);
+    check("browser_budget_error_summary_has_excel_row_and_every_reason", summaryText.includes("149") && invalidPreview.rows[144].errors.every((issue) => summaryText.includes(issue.message)) && summaryOutsideScroll, { visible_rows: visibleRows });
+    check("browser_budget_errors_filter_default_and_confirm_blocked", visibleRows.length === 1 && visibleRows[0] === "149" && confirmDisabled === true);
+    await page.$eval(errorSummary, (node) => node.scrollIntoView({ block: "center" }));
+    await page.screenshot({ path: shot("budget-errors-summary"), fullPage: false });
+    screenshots.budget_errors_summary = relative(shot("budget-errors-summary"));
+    await clickButton(page, "Todas las filas (145)");
+    const allRows = await page.$$eval(`${previewTable} tbody tr`, (rows) => rows.map((row) => row.cells[0].textContent.trim()));
+    check("browser_budget_all_rows_preserve_excel_order", allRows.length === 145 && allRows[0] === "5" && allRows[144] === "149");
+    await page.evaluate(() => [...document.querySelectorAll("button")].find((node) => node.textContent.trim() === "Solo errores (1)")?.focus());
+    await page.keyboard.press("Enter");
+    await page.waitForFunction((selector) => document.querySelectorAll(`${selector} tbody tr`).length === 1, { timeout: 15000 }, previewTable);
+    check("browser_budget_errors_filter_operable_by_keyboard", true);
+    const untouchedSeptember = await apiCall("GET", "/accounting/reports/pyg-interactive/budgets?period=2026-09", tenantA.token);
+    check("browser_budget_invalid_preview_writes_nothing", untouchedSeptember.status === 200 && untouchedSeptember.body?.rows?.length === 0);
+
+    browserPhase = "budget_valid_file_after_errors";
     const browserWorkbook = await buildBudgetWorkbook([budgetRow(PERIOD_2026_08, income.code, 400)]);
     const browserUploadPath = path.join(evidenceDir, `budget-import-browser-${suffix}.xlsx`);
     fs.writeFileSync(browserUploadPath, browserWorkbook);
     const fileInput = await page.waitForSelector('input[type="file"][accept=".xlsx"]', { visible: true, timeout: 30000 });
     await fileInput.uploadFile(browserUploadPath);
+    check("browser_budget_file_change_clears_previous_error_summary", await page.$(errorSummary) === null);
 
     const validateResponse = page.waitForResponse((response) => response.url().includes("/api/v1/accounting/reports/pyg-interactive/budgets/validate") && response.request().method() === "POST", { timeout: 30000 });
+    validateResponse.catch(() => undefined);
     await clickButton(page, "Validar plantilla");
     const validateBrowser = await validateResponse;
     const validateBrowserBody = await validateBrowser.json().catch(() => ({}));
     check("browser_budget_validate_preview_visible", validateBrowser.status() === 200 && validateBrowserBody.valid === true && validateBrowserBody.periods?.join(",") === PERIOD_2026_08, { status: validateBrowser.status(), totals: validateBrowserBody.totals });
     await page.waitForFunction(() => document.body.innerText.includes("Validación correcta"), { timeout: 30000 });
+    check("browser_budget_valid_file_shows_all_rows", await page.$(errorSummary) === null && (await page.$$(`${previewTable} tbody tr`)).length === 1);
     await page.screenshot({ path: shot("rv-budget-validate-preview"), fullPage: false });
     screenshots.budget_validate_preview = relative(shot("rv-budget-validate-preview"));
 
     const importResponse = page.waitForResponse((response) => response.url().includes("/api/v1/accounting/reports/pyg-interactive/budgets/import") && response.request().method() === "POST", { timeout: 30000 });
+    importResponse.catch(() => undefined);
     await clickButton(page, "Confirmar importación");
     const importBrowser = await importResponse;
     check("browser_budget_confirm_dialog_and_import", importBrowser.status() === 201 && dialogs.some((dialog) => dialog.message.includes("no sobrescribe")), { status: importBrowser.status(), dialogs: dialogs.map((dialog) => dialog.message) });
@@ -818,6 +873,36 @@ async function main() {
     check("browser_budget_imported_period_in_store", augustBudgets.body?.rows?.length === 1 && augustIncome?.amount === 400, { rows: augustBudgets.body?.rows });
     const augustReport = await apiCall("GET", `/accounting/reports/pyg-interactive?period=${PERIOD_2026_08}&mode=month`, tenantA.token);
     check("browser_budget_imported_in_matrix", sectionByKeyOf(augustReport.body).ingresos4?.budget === 400, { budget: sectionByKeyOf(augustReport.body).ingresos4?.budget });
+
+    // Conflicto real entre validar y confirmar: otra carga registra la misma tupla.
+    browserPhase = "budget_confirm_conflict_exposes_row_errors";
+    const conflictWorkbook = await buildBudgetWorkbook([budgetRow("2026-10", income.code, 111)]);
+    const conflictPath = path.join(evidenceDir, `budget-confirm-conflict-${suffix}.xlsx`);
+    fs.writeFileSync(conflictPath, conflictWorkbook);
+    await (await page.waitForSelector('input[type="file"][accept=".xlsx"]')).uploadFile(conflictPath);
+    const conflictValidation = page.waitForResponse((response) => response.url().includes("/budgets/validate") && response.request().method() === "POST", { timeout: 30000 });
+    conflictValidation.catch(() => undefined);
+    await clickButton(page, "Validar plantilla");
+    const conflictPreview = await (await conflictValidation).json();
+    check("browser_budget_conflict_starts_with_valid_preview", conflictPreview.valid === true);
+    await page.waitForFunction(() => [...document.querySelectorAll("button")].some((button) => button.textContent.trim() === "Confirmar importación" && !button.disabled));
+    const concurrentWorkbook = await buildBudgetWorkbook([budgetRow("2026-10", income.code, 222)]);
+    const concurrentImport = await apiFile("POST", "/accounting/reports/pyg-interactive/budgets/import", tenantA.token, concurrentWorkbook, "budget-concurrent.xlsx");
+    check("browser_budget_concurrent_import_fixture_created", concurrentImport.status === 201);
+    const conflictResponse = page.waitForResponse((response) => response.url().includes("/budgets/import") && response.request().method() === "POST", { timeout: 30000 });
+    conflictResponse.catch(() => undefined);
+    await clickButton(page, "Confirmar importación");
+    const rejectedImport = await conflictResponse;
+    await page.waitForSelector(errorSummary, { visible: true });
+    const conflictState = await page.evaluate((selector) => ({
+      summary: document.querySelector(selector)?.textContent,
+      onlyErrors: [...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Solo errores (1)")?.getAttribute("aria-pressed"),
+      blocked: [...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "Confirmar importación")?.disabled
+    }), errorSummary);
+    check("browser_budget_confirm_error_visible_and_import_blocked", rejectedImport.status() >= 400 && conflictState.summary?.includes("Fila 5") && conflictState.summary?.includes("ya existe") && conflictState.onlyErrors === "true" && conflictState.blocked === true, conflictState);
+    await page.$eval(errorSummary, (node) => node.scrollIntoView({ block: "center" }));
+    await page.screenshot({ path: shot("budget-confirm-errors"), fullPage: false });
+    screenshots.budget_confirm_errors = relative(shot("budget-confirm-errors"));
 
     // Comparativo renderizado en la matriz real: mismo periodo importado, cabecera
     // Actual/Año anterior/Presupuesto, fila de la cuenta 4 desde el DOM de NodeRows y
@@ -1011,7 +1096,7 @@ async function main() {
     await page.screenshot({ path: shot("rv-budget-readonly"), fullPage: false });
     screenshots.budget_readonly = relative(shot("rv-budget-readonly"));
 
-    check("screenshots_captured", Object.values(screenshots).every((file) => fs.existsSync(path.join(root, file)) && fs.statSync(path.join(root, file)).size > 0), { screenshots });
+    check("screenshots_captured", ["budget_errors_summary", "budget_confirm_errors", "budget_import_success", "budget_readonly"].every((key) => Boolean(screenshots[key])) && Object.values(screenshots).every((file) => fs.existsSync(path.join(root, file)) && fs.statSync(path.join(root, file)).size > 0), { screenshots });
     browserPhase = "completed";
   } catch (error) {
     browserPhase = browserPhase || "browser_phase";
@@ -1043,6 +1128,7 @@ function writeEvidence(status, payload, sources) {
     version: 2,
     certification: "accounting-reversal-budget-import-browser-local",
     status: checks.some((item) => !item.ok) ? "failed" : status,
+    browser_coverage_completed: status === "passed" && checks.every((item) => item.ok) && checks.some((item) => item.name === "screenshots_captured" && item.ok),
     generated_at: new Date().toISOString(),
     commit: commitHash(),
     scope: "local_only_browser_api_prisma",
