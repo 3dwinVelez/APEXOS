@@ -1,0 +1,82 @@
+{
+  "commit": "3d7acb17904c1d0de84fad7b17f11eba8f48563a",
+  "change_id": "transport-pyg-ledger-only-20261026",
+  "target_branch": "develop",
+  "certification": {
+    "status": "passed",
+    "evidence": [
+      "../certifications/transport-pyg-ledger-only-20261026.md"
+    ],
+    "script": "../../../scripts/certifications/transport-pyg-ledger-only-browser-local.js"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "evidence": [
+      "../certifications/transport-pyg-ledger-only-20261026.md"
+    ],
+    "script": "../../../scripts/certifications/transport-pyg-ledger-only-browser-local.js"
+  },
+  "validation_summary": {
+    "typescript": "passed",
+    "lint": "zero errors; two existing api client warnings",
+    "evidence_policy": "Raw browser JSON, logs and screenshots remain local; reviewed certification and this summary are versioned.",
+    "browser_coverage_completed": true,
+    "completed_at_utc": "2026-10-27T01:34:46.149Z",
+    "web_tests_passed": 42,
+    "baseline_preserved": "813ddfd8468a1a4c9321d122d21d96080eb4c0a7",
+    "production_build": "passed",
+    "artifact_sha256": "c9a0a1f4f69278beb48cb1eade62c3c05ce9f39bd630043d7a01b54a98e237d5",
+    "integral_checks_passed": 61,
+    "certified_application_commit": "3d7acb17904c1d0de84fad7b17f11eba8f48563a",
+    "web_source_hashes_match_build": true,
+    "original_candidate": "95e8169e",
+    "api_tests_passed": 189
+  },
+  "approval": {
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "status": "approved",
+    "approved_by": "manue",
+    "approved_at": "2026-10-26",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "Autorizar rama y publicación puntual en QA; Autorizar integración local y recertificación"
+  },
+  "target_head": "813ddfd8468a1a4c9321d122d21d96080eb4c0a7",
+  "environment": "LOCAL",
+  "checks": {
+    "error": {
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "status": "passed"
+    },
+    "support_scripts": {
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "status": "passed"
+    },
+    "functional": {
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "status": "passed"
+    },
+    "regression": {
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "status": "passed"
+    },
+    "platform_regression": {
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "status": "passed"
+    }
+  },
+  "qa_status": "pending",
+  "source_branch": "desarrollo",
+  "promotion_branch": "codex/qa-pyg-ledger-only-20261026"
+}
