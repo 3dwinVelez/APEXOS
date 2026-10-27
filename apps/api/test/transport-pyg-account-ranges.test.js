@@ -82,8 +82,9 @@ test("validacion: nombre, tipo/seccion, orden y fuente", () => {
   assert.ok(validateAccountConfig(badOrder).errors.some((item) => item.code === "CONCEPT_ORDER_INVALID"));
   assert.ok(validateAccountConfig({ source: "nada", concepts: [] }).errors.some((item) => item.code === "SOURCE_INVALID"));
   assert.ok(validateAccountConfig({ source: "accounting", concepts: [] }).errors.some((item) => item.code === "CONCEPTS_REQUIRED"));
-  // Volver a la fuente operativa no exige conceptos.
-  assert.equal(validateAccountConfig({ source: "operational", concepts: [] }).ok, true);
+  // La fuente operativa historica ya no se puede guardar: solo accounting.
+  assert.equal(validateAccountConfig({ source: "operational", concepts: [] }).ok, false);
+  assert.ok(validateAccountConfig({ source: "operational", concepts: [] }).errors.some((item) => item.code === "SOURCE_INVALID"));
 });
 
 test("validacion: rangos invertidos, longitudes mixtas, duplicados y exclusiones", () => {

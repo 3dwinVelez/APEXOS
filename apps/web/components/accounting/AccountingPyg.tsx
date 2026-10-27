@@ -108,8 +108,12 @@ function pruneToSearch(nodes: PygNode[], query: string): PygNode[] {
   return nodes.map(keep).filter((node): node is PygNode => node !== null);
 }
 
-export default function AccountingPyg() {
-  const [period, setPeriod] = useState(currentMonth());
+export default function AccountingPyg({ period, onPeriodChange }: { period?: string; onPeriodChange?: (value: string) => void } = {}) {
+  const [internalPeriod, setInternalPeriod] = useState(currentMonth());
+  const effectivePeriod = period ?? internalPeriod;
+  const setPeriodValue = useCallback((value: string) => {
+    if (onPeriodChange) onPeriodChange(value); else setInternalPeriod(value);
+  }, [onPeriodChange]);
   const [mode, setMode] = useState<"month" | "ytd">("month");
   const [dims, setDims] = useState<DimKey[]>(["puc", "branch", "cost_center"]);
   const [branch, setBranch] = useState("");
@@ -125,12 +129,12 @@ export default function AccountingPyg() {
   const requestRef = useRef<AbortController | null>(null);
 
   const buildUrl = useCallback(() => {
-    const params = new URLSearchParams({ period, mode });
+    const params = new URLSearchParams({ period: effectivePeriod, mode });
     for (const dim of dims) params.append("dimensions", dim);
     if (branch) params.set("branch", branch);
     if (center) params.set("cost_center", center);
     return `/api/v1/accounting/reports/pyg-interactive?${params.toString()}`;
-  }, [period, mode, dims, branch, center]);
+  }, [effectivePeriod, mode, dims, branch, center]);
 
   const fetchReport = useCallback(async (signal?: AbortSignal) => {
     return api<PygReport>(buildUrl(), { cache: "no-store", ...(signal ? { signal } : {}) });
@@ -290,7 +294,7 @@ export default function AccountingPyg() {
       <section className="apex-section-card overflow-hidden">
         <div className="border-b border-line bg-surface-muted p-4">
           <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-            <label className="text-xs text-content-muted">Periodo<input className="mt-1 block h-9 rounded-md border border-line bg-surface px-2 text-content-strong" onChange={(event) => setPeriod(event.target.value)} type="month" value={period} /></label>
+            <label className="text-xs text-content-muted">Periodo<input className="mt-1 block h-9 rounded-md border border-line bg-surface px-2 text-content-strong" onChange={(event) => setPeriodValue(event.target.value)} type="month" value={effectivePeriod} /></label>
             <label className="text-xs text-content-muted">Rango
               <select className="mt-1 block h-9 rounded-md border border-line bg-surface px-2 text-content-strong" onChange={(event) => setMode(event.target.value as "month" | "ytd")} value={mode}>
                 <option value="month">Mes</option>
@@ -336,7 +340,7 @@ export default function AccountingPyg() {
         </nav>
       </section>
 
-      {tab === "presupuesto" ? <AccountingPygBudget defaultPeriod={report?.period || period} onSaved={() => void refresh()} /> : null}
+      {tab === "presupuesto" ? <AccountingPygBudget defaultPeriod={report?.period || effectivePeriod} onSaved={() => void refresh()} /> : null}
 
       {tab === "matriz" ? (
         <>

@@ -25,6 +25,9 @@ function storedVehiclePyg(config) {
 }
 
 // GET: estado actual + propuesta del Excel. No cambia nada del tenant.
+// El PYG en Contabilidad siempre lee el libro contable: la fuente efectiva se
+// normaliza a "accounting" incluso si el tenant aun guarda el flag legacy
+// "operational". Las claves guardadas (conceptos y resto de config) se preservan.
 async function getAccountConfiguration(tenantId) {
   if (!tenantId) throw appError(401, "PYG_TENANT_REQUIRED", "Empresa requerida.");
   // runWithTenant solo abre el contexto de tenant via AsyncLocalStorage y no
@@ -34,9 +37,9 @@ async function getAccountConfiguration(tenantId) {
     const stored = storedVehiclePyg(tenant?.config);
     const concepts = stored && Array.isArray(stored.concepts) ? stored.concepts : [];
     return {
-      source: stored?.source === "accounting" ? "accounting" : "operational",
-      has_config: Boolean(stored && stored.source === "accounting"),
-      config: stored ? { source: stored.source, concepts } : null,
+      source: "accounting",
+      has_config: concepts.length > 0,
+      config: concepts.length > 0 ? { source: "accounting", concepts } : null,
       proposal: cloneProposal(),
       proposal_from: PROPOSAL_FROM,
       proposal_label: EXCEL_PROPOSAL.label
