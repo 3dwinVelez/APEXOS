@@ -194,9 +194,11 @@ function effectiveDiscountPercent(product, campaign) {
 
 // === Serializacion ===
 
-function productDto(row) {
+function productDto(row, campaign) {
   const discountPercent = round2(num(row.discount_percent));
-  const priceFinal = discountedPrice(row.price, discountPercent);
+  // price_final es solo el descuento propio del producto (lo que se edita en el maestro);
+  // sale_price es lo que el mostrador factura hoy, con la campana ya ponderada.
+  const salePercent = effectiveDiscountPercent(row, campaign);
   return {
     id: row.id,
     code: row.code,
@@ -205,7 +207,9 @@ function productDto(row) {
     unit: row.unit || "unidad",
     price: num(row.price),
     discount_percent: discountPercent,
-    price_final: priceFinal,
+    price_final: discountedPrice(row.price, discountPercent),
+    sale_price: discountedPrice(row.price, salePercent),
+    sale_discount_percent: salePercent,
     cost: num(row.cost),
     stock: row.stock,
     min_stock: row.min_stock,
@@ -582,6 +586,10 @@ async function publicCatalog(code) {
 
 async function listProducts(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
+    // La campana de la vitrina también rebaja el precio del mostrador, así que el listado
+    // la lee junto con los productos: Vender muestra exactamente lo que va a facturar.
+    const settingsRow = await prisma.comercioSettings.findFirst({ where: {} });
+    const campaign = catalogCampaign(settingsRow);
     const rows = await prisma.comercioProduct.findMany({
       where: query.include_inactive === "true" ? { __includeInactive: true } : {},
       orderBy: [{ active: "desc" }, { name: "asc" }]
@@ -594,7 +602,7 @@ async function listProducts(tenantId, query = {}) {
       return true;
     });
     const { take, skip } = parseLimitOffset(query);
-    return { items: filtered.slice(skip, skip + take).map(productDto), total: filtered.length };
+    return { items: filtered.slice(skip, skip + take).map((row) => productDto(row, campaign)), total: filtered.length };
   });
 }
 

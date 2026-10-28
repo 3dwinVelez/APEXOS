@@ -10,7 +10,7 @@ import { AccessDenied, Check, Field, ModuleHeader, describeError, money, todayIS
 // Punto de venta del Comercio. El precio y el costo los fija el servidor desde el producto;
 // aqui solo se arma el carrito (producto + cantidad). La venta a credito genera el cronograma
 // de cuotas sin interes en el backend.
-type Product = { id: number; code: string; name: string; unit: string; price: number; stock: number; active: boolean; low_stock: boolean };
+type Product = { id: number; code: string; name: string; unit: string; price: number; sale_price: number; sale_discount_percent: number; stock: number; active: boolean; low_stock: boolean };
 type Customer = { id: number; code: string; name: string; phone: string | null; active: boolean };
 type Sale = {
   id: number; full_number: string; date: string; subtotal: number; discount: number; total: number;
@@ -82,7 +82,9 @@ export default function ComercioVenderPage() {
         return current.map((line) => (line.product_id === product.id ? { ...line, quantity: line.quantity + 1 } : line));
       }
       if (product.stock < 1) return current;
-      return [...current, { product_id: product.id, name: product.name, code: product.code, unit: product.unit, price: product.price, stock: product.stock, quantity: 1 }];
+      // El precio del carrito es el que el servidor va a facturar (sale_price): incluye el
+      // descuento del producto y la campana vigente, asi el ticket preview cierra igual.
+      return [...current, { product_id: product.id, name: product.name, code: product.code, unit: product.unit, price: product.sale_price, stock: product.stock, quantity: 1 }];
     });
   }
 
@@ -170,7 +172,15 @@ export default function ComercioVenderPage() {
                     >
                       <p className="truncate text-sm font-medium">{product.name}</p>
                       <p className="font-mono text-xs text-neutral-500">{product.code} · stock {product.stock}</p>
-                      <p className="mt-1 text-sm font-semibold">{money(product.price)}</p>
+                      <p className="mt-1 flex flex-wrap items-baseline gap-2 text-sm font-semibold">
+                        <span>{money(product.sale_price)}</span>
+                        {product.sale_discount_percent > 0 ? (
+                          <>
+                            <span className="text-xs font-normal text-neutral-500 line-through">{money(product.price)}</span>
+                            <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">-{product.sale_discount_percent}%</span>
+                          </>
+                        ) : null}
+                      </p>
                     </button>
                   </li>
                 ))}
@@ -207,7 +217,7 @@ export default function ComercioVenderPage() {
                 <input className="control" max={todayISO()} onChange={(event) => setDate(event.target.value)} type="date" value={date} />
               </Field>
               <Field label="Descuento">
-                <input className="control" min={0} onChange={(event) => setDiscount(event.target.value)} step="1" type="number" value={discount} />
+                <input className="control" min={0} onChange={(event) => setDiscount(event.target.value)} step="0.01" type="number" value={discount} />
               </Field>
             </div>
 
@@ -241,7 +251,7 @@ export default function ComercioVenderPage() {
                     </select>
                   </Field>
                   <Field label="Pago inicial">
-                    <input className="control" min={0} onChange={(event) => setDownPayment(event.target.value)} step="1" type="number" value={downPayment} />
+                    <input className="control" min={0} onChange={(event) => setDownPayment(event.target.value)} step="0.01" type="number" value={downPayment} />
                   </Field>
                   <Field label="Numero de cuotas">
                     <input className="control" max={60} min={1} onChange={(event) => setInstallmentCount(event.target.value)} type="number" value={installmentCount} />
