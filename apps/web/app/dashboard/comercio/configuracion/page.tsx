@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Copy, Globe, RefreshCw, Save } from "lucide-react";
 import { api } from "@/lib/api";
-import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, useComercioAccess } from "@/components/comercio/shared";
+import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, useComercioAccess } from "@/components/comercio/shared";
 
 // Configuracion del comercio (GET/PUT /api/v1/comercio/settings). Identidad del negocio y
 // nota pie del comprobante. Las preferencias visuales del HUD quedan en preferences_json,
@@ -187,19 +187,17 @@ export default function ComercioConfiguracionPage() {
   const campaignActiveNow = savedPercent > 0
     && (!settings?.catalog_promo_start || settings.catalog_promo_start <= today)
     && (!settings?.catalog_promo_end || settings.catalog_promo_end >= today);
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Datos del negocio para el comprobante y la operacion diaria. Afecta solo a este tenant." title="Configuracion del comercio" />
-      {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Configuracion" subtitle="Datos del negocio para el comprobante y la operacion diaria. Afecta solo a este tenant." title="Configuracion del comercio" />
+      <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card p-4">
         {loading || !settings ? (
-          <p className="text-sm text-neutral-600">Cargando configuracion...</p>
+          <p className="text-sm text-content-body">Cargando configuracion...</p>
         ) : (
           <form className="max-w-2xl space-y-4" onSubmit={save}>
             <Field label="Nombre del negocio">
@@ -211,16 +209,16 @@ export default function ComercioConfiguracionPage() {
             <Field label="Pie del comprobante (opcional)">
               <textarea className="control" disabled={!access.canWrite} maxLength={300} onChange={(event) => setForm({ ...form, receipt_note: event.target.value })} rows={3} value={form.receipt_note} />
             </Field>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-content-muted">
               Las preferencias de tema, letra y disposicion del HUD se guardan en el dispositivo (preferences_json), separadas de los datos de negocio.
               {settings.updated_at ? ` Ultima actualizacion: ${settings.updated_at.slice(0, 10)}.` : ""}
             </p>
             {access.canWrite ? (
               <div className="flex justify-end border-t border-line pt-4">
-                <button className="btn-primary flex items-center gap-2" disabled={saving} type="submit"><Save size={14} /> {saving ? "Guardando..." : "Guardar configuracion"}</button>
+                <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" disabled={saving} type="submit"><Save size={14} /> {saving ? "Guardando..." : "Guardar configuracion"}</button>
               </div>
             ) : (
-              <p className="text-xs text-neutral-500">Tu perfil solo puede consultar esta configuracion.</p>
+              <p className="text-xs text-content-muted">Tu perfil solo puede consultar esta configuracion.</p>
             )}
           </form>
         )}
@@ -230,7 +228,7 @@ export default function ComercioConfiguracionPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="flex items-center gap-2 text-sm font-semibold"><Globe size={15} /> Vitrina publica</p>
-            <p className="mt-1 text-xs text-neutral-500">Link corto para que tus clientes vean productos, precios y disponibilidad, y te pidan por WhatsApp. Solo se muestran los productos activos; nunca el costo ni el stock.</p>
+            <p className="mt-1 text-xs text-content-muted">Link corto para que tus clientes vean productos, precios y disponibilidad, y te pidan por WhatsApp. Solo se muestran los productos activos; nunca el costo ni el stock.</p>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -248,9 +246,9 @@ export default function ComercioConfiguracionPage() {
             <Field label="Link publico">
               <div className="flex gap-2">
                 <input className="control flex-1 font-mono text-xs" readOnly value={`${typeof window === "undefined" ? "" : window.location.origin}/tienda/${settings.catalog_code}`} />
-                <button className="btn-secondary flex items-center gap-2 whitespace-nowrap px-3 text-xs" disabled={!access.canWrite || catalogBusy} onClick={() => void copyLink()} type="button"><Copy size={13} /> Copiar</button>
+                <button className="h-7 min-h-0 apex-secondary-action flex items-center gap-2 whitespace-nowrap px-3 text-xs font-semibold" disabled={!access.canWrite || catalogBusy} onClick={() => void copyLink()} type="button"><Copy size={13} /> Copiar</button>
                 <button
-                  className={`flex items-center gap-2 whitespace-nowrap rounded-md border px-3 text-xs ${confirmRegen ? "border-red-300 bg-red-50 text-red-700" : "border-line text-neutral-600 hover:bg-neutral-50"}`}
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-md border px-3 text-xs ${confirmRegen ? "border-red-300 bg-error/10 text-error" : "border-line text-content-body hover:bg-surface-muted"}`}
                   disabled={!access.canWrite || catalogBusy}
                   onBlur={() => setConfirmRegen(false)}
                   onClick={() => void regenerateCode()}
@@ -260,7 +258,7 @@ export default function ComercioConfiguracionPage() {
                 </button>
               </div>
             </Field>
-            {copied ? <p className="text-xs font-medium text-emerald-600">{copied.startsWith("http") ? copied : "Link copiado al portapapeles."}</p> : null}
+            {copied ? <p className="text-xs font-medium text-success">{copied.startsWith("http") ? copied : "Link copiado al portapapeles."}</p> : null}
             {/* Un solo formulario para todo lo de la vitrina (frase, contacto, redes y
                 campana): evita un boton de guardar por campo. */}
             <form className="space-y-3" onSubmit={saveVitrine}>
@@ -270,11 +268,11 @@ export default function ComercioConfiguracionPage() {
               <Field label="WhatsApp para pedidos (con codigo de pais, ej. +573001112233)">
                 <input className="control" disabled={!access.canWrite || catalogBusy} maxLength={32} onChange={(event) => setWhatsapp(event.target.value)} placeholder="+57..." value={whatsapp} />
               </Field>
-              {!whatsapp.trim() ? <p className="text-xs text-amber-600">Sin numero de WhatsApp, la vitrina muestra los productos pero el boton de pedido queda deshabilitado.</p> : null}
+              {!whatsapp.trim() ? <p className="text-xs text-warning">Sin numero de WhatsApp, la vitrina muestra los productos pero el boton de pedido queda deshabilitado.</p> : null}
 
-              <div className="rounded-md border border-line bg-paper/40 p-3">
-                <p className="text-xs font-semibold text-neutral-600">Redes sociales de contacto</p>
-                <p className="mt-0.5 text-xs text-neutral-500">Aparecen como iconos en la vitrina (arriba y al pie). Puedes escribir solo el usuario o la URL completa; se guarda como enlace https.</p>
+              <div className="apex-section-card-muted/40 p-3">
+                <p className="text-xs font-semibold text-content-body">Redes sociales de contacto</p>
+                <p className="mt-0.5 text-xs text-content-muted">Aparecen como iconos en la vitrina (arriba y al pie). Puedes escribir solo el usuario o la URL completa; se guarda como enlace https.</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <Field label="Instagram (usuario o URL)">
                     <input className="control" disabled={!access.canWrite || catalogBusy} maxLength={200} onChange={(event) => setInstagram(event.target.value)} placeholder="instagram.com/mitienda" value={instagram} />
@@ -285,14 +283,14 @@ export default function ComercioConfiguracionPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border border-line bg-paper/40 p-3">
+              <div className="apex-section-card-muted/40 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-neutral-600">Campana de descuentos de la vitrina</p>
+                  <p className="text-xs font-semibold text-content-body">Campana de descuentos de la vitrina</p>
                   <StatusPill tone={campaignActiveNow ? "warn" : "muted"}>
                     {campaignActiveNow ? `Vigente hoy -${savedPercent}%` : "Sin campana vigente"}
                   </StatusPill>
                 </div>
-                <p className="mt-0.5 text-xs text-neutral-500">
+                <p className="mt-0.5 text-xs text-content-muted">
                   El porcentaje rebaja el precio de lista en toda la vitrina y en el mostrador. Si un producto tiene un descuento propio mayor, ese producto conserva el suyo: los descuentos nunca se suman.
                 </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -313,15 +311,15 @@ export default function ComercioConfiguracionPage() {
 
               {access.canWrite ? (
                 <div className="flex justify-end">
-                  <button className="btn-primary flex items-center gap-2" disabled={catalogBusy} type="submit"><Save size={13} /> {catalogBusy ? "Guardando..." : "Guardar vitrina"}</button>
+                  <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" disabled={catalogBusy} type="submit"><Save size={13} /> {catalogBusy ? "Guardando..." : "Guardar vitrina"}</button>
                 </div>
               ) : (
-                <p className="text-xs text-neutral-500">Tu perfil solo puede consultar la vitrina.</p>
+                <p className="text-xs text-content-muted">Tu perfil solo puede consultar la vitrina.</p>
               )}
             </form>
           </div>
         ) : (
-          <p className="mt-3 text-xs text-neutral-500">Activa la vitrina para generar el primer link publico.</p>
+          <p className="mt-3 text-xs text-content-muted">Activa la vitrina para generar el primer link publico.</p>
         )}
       </section>
     </div>

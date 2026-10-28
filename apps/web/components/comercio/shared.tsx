@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { ShieldOff } from "lucide-react";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
+import { formatRegionalMoney } from "@/lib/regionalFormat";
+import { Alert, Badge, EmptyState, Skeleton } from "@/components/ui/feedback";
 
-// Utilidades compartidas del modulo Comercio (M-30). Los estilos reutilizan las clases
-// globales de la plataforma (apex-section-card, control, btn-primary) para que el modulo
-// se vea igual que Gastos Menores y demas modulos en escritorio y movil.
+// Primitivas compartidas del modulo Comercio (M-30). Usan los tokens de la plataforma
+// (surface, line, content-*) para que el modulo se lea igual que Gastos Menores o
+// Transporte en tema claro y oscuro, sin colores literales que el tema no puede invertir.
 
-export const money = (value: number) =>
-  new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value) || 0);
+export const money = (value: number) => formatRegionalMoney(Number(value) || 0);
 
 export function describeError(caught: unknown, fallback: string) {
   if (caught instanceof Error) {
@@ -33,52 +35,83 @@ export function useComercioAccess(): ComercioAccess {
   return access;
 }
 
+/**
+ * Estado comun mientras se valida el permiso y cuando el perfil no tiene Comercio.
+ * Cada pantalla lo usa al inicio del render para no repetir su propio bloqueo.
+ */
+export function comercioGate(access: ComercioAccess): ReactNode | null {
+  if (!access.ready) {
+    return (
+      <div aria-busy="true" aria-label="Validando permisos de Comercio" className="apex-workspace-shell space-y-4">
+        <Skeleton className="h-28 rounded-card" />
+        <Skeleton className="h-12 rounded-card" />
+        <Skeleton className="h-72 rounded-card" />
+      </div>
+    );
+  }
+  if (!access.canRead) return <AccessDenied />;
+  return null;
+}
+
 export function AccessDenied() {
   return (
-    <section className="rounded-md border border-amber-200 bg-amber-50 p-6">
-      <h1 className="text-xl font-semibold text-amber-950">Comercio no disponible para este perfil</h1>
-      <p className="mt-2 text-sm text-amber-900">
-        Este modulo es autonomo y usa sus propios permisos (Comercio). Solicita acceso de lectura al rol administrador.
-      </p>
-    </section>
+    <div className="apex-workspace-shell">
+      <section className="apex-section-card">
+        <EmptyState
+          description="Este modulo es autonomo y usa sus propios permisos (Comercio). Solicita acceso de lectura al rol administrador."
+          icon={<ShieldOff size={22} />}
+          title="Comercio no disponible para este perfil"
+        />
+      </section>
+    </div>
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ children, hint, label }: { children: ReactNode; hint?: string; label: string }) {
   return (
-    <label className="text-sm">
-      <span className="mb-1 block text-neutral-600">{label}</span>
+    <label className="grid gap-1.5 text-sm font-medium text-content-strong">
+      <span>{label}</span>
       {children}
+      {hint ? <span className="text-xs font-normal text-content-muted">{hint}</span> : null}
     </label>
   );
 }
 
 export function Check({ checked, label, onChange }: { checked: boolean; label: string; onChange: (checked: boolean) => void }) {
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <input checked={checked} onChange={(event) => onChange(event.target.checked)} type="checkbox" />
+    <label className="inline-flex items-center gap-2 text-sm text-content-body">
+      <input checked={checked} className="h-4 w-4 rounded border-line text-apex focus:ring-apex/30" onChange={(event) => onChange(event.target.checked)} type="checkbox" />
       {label}
     </label>
   );
 }
 
-export function StatusPill({ tone, children }: { tone: "ok" | "warn" | "bad" | "muted"; children: ReactNode }) {
-  const classes = {
-    ok: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    warn: "border-amber-200 bg-amber-50 text-amber-800",
-    bad: "border-red-200 bg-red-50 text-red-700",
-    muted: "border-line bg-neutral-100 text-neutral-600"
-  }[tone];
-  return <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${classes}`}>{children}</span>;
+const pillTones = { ok: "success", warn: "warning", bad: "error", muted: "neutral" } as const;
+
+export function StatusPill({ children, tone }: { children: ReactNode; tone: keyof typeof pillTones }) {
+  return <Badge tone={pillTones[tone]}>{children}</Badge>;
 }
 
-export function ModuleHeader({ title, subtitle }: { title: string; subtitle: string }) {
+export function ModuleHeader({ actions, eyebrow = "M-30 · Comercial", subtitle, title }: { actions?: ReactNode; eyebrow?: string; subtitle: string; title: string }) {
   return (
-    <header className="apex-section-card p-4">
-      <p className="text-sm font-medium text-apex">M-30 · Comercial</p>
-      <h1 className="text-3xl font-semibold">{title}</h1>
-      <p className="mt-1 text-sm text-neutral-600">{subtitle}</p>
+    <header className="apex-section-card flex flex-wrap items-end justify-between gap-3 p-4">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-apex">{eyebrow}</p>
+        <h1 className="text-3xl font-semibold">{title}</h1>
+        <p className="mt-1 max-w-3xl text-sm text-content-body">{subtitle}</p>
+      </div>
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
+  );
+}
+
+/** Avisos de la pantalla: el error manda y usa role="alert"; el confirmacion es transitorio. */
+export function ComercioMessages({ error, message }: { error?: string; message?: string }) {
+  return (
+    <>
+      {error ? <Alert tone="error" title="No fue posible completar la accion">{error}</Alert> : null}
+      {message ? <Alert tone="success">{message}</Alert> : null}
+    </>
   );
 }
 

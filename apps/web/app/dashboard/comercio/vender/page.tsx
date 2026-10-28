@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AccessDenied, Check, Field, ModuleHeader, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { Check, ComercioMessages, Field, ModuleHeader, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Punto de venta del Comercio. El precio y el costo los fija el servidor desde el producto;
 // aqui solo se arma el carrito (producto + cantidad). La venta a credito genera el cronograma
@@ -137,27 +137,25 @@ export default function ComercioVenderPage() {
       setSaving(false);
     }
   }
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Venta rapida en Mostrador o a credito con cuotas sin interes. Los precios los fija el servidor: la pantalla es solo el carrito." title="Vender" />
-      {loadError ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{loadError}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Ventas" subtitle="Venta rapida en Mostrador o a credito con cuotas sin interes. Los precios los fija el servidor: la pantalla es solo el carrito." title="Vender" />
+      <ComercioMessages error={loadError || error} />
 
       {!ready ? (
-        <div className="apex-section-card p-6 text-sm text-neutral-600">Cargando catalogo...</div>
+        <div className="apex-section-card p-6 text-sm text-content-body">Cargando catalogo...</div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <section aria-label="Catalogo" className="apex-section-card p-4">
             <label className="relative block">
-              <ShoppingBag className="absolute left-3 top-3 text-neutral-400" size={16} />
+              <ShoppingBag className="absolute left-3 top-3 text-content-muted" size={16} />
               <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto por nombre o codigo" value={query} />
             </label>
             {visibleProducts.length === 0 ? (
-              <p className="mt-4 text-sm text-neutral-500">No hay productos que coincidan. Registra productos en la pestana Productos.</p>
+              <p className="mt-4 text-sm text-content-muted">No hay productos que coincidan. Registra productos en la pestana Productos.</p>
             ) : (
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {visibleProducts.map((product) => (
@@ -169,13 +167,13 @@ export default function ComercioVenderPage() {
                       type="button"
                     >
                       <p className="truncate text-sm font-medium">{product.name}</p>
-                      <p className="font-mono text-xs text-neutral-500">{product.code} · stock {product.stock}</p>
+                      <p className="font-mono text-xs text-content-muted">{product.code} · stock {product.stock}</p>
                       <p className="mt-1 flex flex-wrap items-baseline gap-2 text-sm font-semibold">
                         <span>{money(product.sale_price)}</span>
                         {product.sale_discount_percent > 0 ? (
                           <>
-                            <span className="text-xs font-normal text-neutral-500 line-through">{money(product.price)}</span>
-                            <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-700">-{product.sale_discount_percent}%</span>
+                            <span className="text-xs font-normal text-content-muted line-through">{money(product.price)}</span>
+                            <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-[11px] font-semibold text-success">-{product.sale_discount_percent}%</span>
                           </>
                         ) : null}
                       </p>
@@ -189,14 +187,14 @@ export default function ComercioVenderPage() {
           <form aria-label="Carrito y pago" className="apex-section-card space-y-4 p-4" onSubmit={submit}>
             <h2 className="text-sm font-semibold">Carrito ({cart.length})</h2>
             {cart.length === 0 ? (
-              <p className="rounded-md border border-dashed border-line p-4 text-center text-sm text-neutral-500">Toca un producto para agregarlo.</p>
+              <p className="rounded-md border border-dashed border-line p-4 text-center text-sm text-content-muted">Toca un producto para agregarlo.</p>
             ) : (
               <ul className="divide-y divide-line text-sm">
                 {cart.map((line) => (
                   <li className="flex items-center gap-2 py-2" key={line.product_id}>
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{line.name}</p>
-                      <p className="text-xs text-neutral-500">{money(line.price)} c/u</p>
+                      <p className="text-xs text-content-muted">{money(line.price)} c/u</p>
                     </div>
                     <div className="flex items-center gap-1">
                       <button className="rounded border border-line p-1" onClick={() => changeQuantity(line.product_id, -1)} type="button" aria-label={`Quitar una unidad de ${line.name}`}><Minus size={12} /></button>
@@ -204,7 +202,7 @@ export default function ComercioVenderPage() {
                       <button className="rounded border border-line p-1" disabled={line.quantity >= line.stock} onClick={() => changeQuantity(line.product_id, 1)} type="button" aria-label={`Agregar una unidad de ${line.name}`}><Plus size={12} /></button>
                     </div>
                     <span className="w-24 text-right font-semibold">{money(line.price * line.quantity)}</span>
-                    <button className="text-neutral-400 hover:text-red-600" onClick={() => setCart((current) => current.filter((item) => item.product_id !== line.product_id))} type="button" aria-label={`Eliminar ${line.name} del carrito`}><Trash2 size={14} /></button>
+                    <button className="text-content-muted hover:text-error" onClick={() => setCart((current) => current.filter((item) => item.product_id !== line.product_id))} type="button" aria-label={`Eliminar ${line.name} del carrito`}><Trash2 size={14} /></button>
                   </li>
                 ))}
               </ul>
@@ -264,7 +262,7 @@ export default function ComercioVenderPage() {
                   <Field label="Primer vencimiento">
                     <input className="control" onChange={(event) => setFirstDue(event.target.value)} type="date" value={firstDue} />
                   </Field>
-                  <p className="text-xs text-neutral-500 self-end">
+                  <p className="text-xs text-content-muted self-end">
                     Financiado: {money(Math.max(0, total - Number(downPayment || 0)))} en {installmentCount} cuota(s).
                   </p>
                 </div>
@@ -275,13 +273,13 @@ export default function ComercioVenderPage() {
               <input className="control" maxLength={500} onChange={(event) => setNote(event.target.value)} value={note} />
             </Field>
 
-            <div className="rounded-md bg-paper p-3 text-sm">
+            <div className="rounded-md bg-surface-muted p-3 text-sm">
               <div className="flex justify-between"><span>Subtotal</span><span>{money(subtotal)}</span></div>
               <div className="flex justify-between"><span>Descuento</span><span>-{money(discountValue)}</span></div>
               <div className="mt-1 flex justify-between border-t border-line pt-1 text-base font-semibold"><span>Total</span><span>{money(total)}</span></div>
             </div>
 
-            <button className="btn-primary w-full" disabled={saving || !cart.length || !access.canWrite} type="submit">
+            <button className="inline-flex items-center apex-primary-action w-full px-4 text-sm font-semibold gap-2" disabled={saving || !cart.length || !access.canWrite} type="submit">
               {saving ? "Registrando..." : isCredit ? "Vender a credito" : "Vender ahora"}
             </button>
           </form>
@@ -293,8 +291,8 @@ export default function ComercioVenderPage() {
           <div className="space-y-3 text-sm">
             <div className="text-center">
               <p className="text-lg font-semibold">{receipt.full_number}</p>
-              <p className="text-xs text-neutral-500">{receipt.date} · {receipt.payment_type === "credit" ? "Credito" : `Pago: ${receipt.method}`}</p>
-              {receipt.customer_name ? <p className="text-xs text-neutral-500">Cliente: {receipt.customer_name}</p> : null}
+              <p className="text-xs text-content-muted">{receipt.date} · {receipt.payment_type === "credit" ? "Credito" : `Pago: ${receipt.method}`}</p>
+              {receipt.customer_name ? <p className="text-xs text-content-muted">Cliente: {receipt.customer_name}</p> : null}
             </div>
             <ul className="divide-y divide-line">
               {receipt.items.map((item) => (
@@ -304,20 +302,20 @@ export default function ComercioVenderPage() {
                 </li>
               ))}
             </ul>
-            <div className="rounded-md bg-paper p-3">
+            <div className="rounded-md bg-surface-muted p-3">
               <div className="flex justify-between"><span>Subtotal</span><span>{money(receipt.subtotal)}</span></div>
               <div className="flex justify-between"><span>Descuento</span><span>-{money(receipt.discount)}</span></div>
               <div className="flex justify-between font-semibold"><span>Total</span><span>{money(receipt.total)}</span></div>
             </div>
             {receipt.credit_full_number ? (
-              <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <p className="rounded-md border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
                 Se abrio el credito {receipt.credit_full_number}. Consulta el plan de cuotas y registra abonos en la pestaña Cartera.
               </p>
             ) : null}
-            {receipt.note ? <p className="text-xs text-neutral-500">Nota: {receipt.note}</p> : null}
+            {receipt.note ? <p className="text-xs text-content-muted">Nota: {receipt.note}</p> : null}
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="btn-secondary" onClick={() => window.print()} type="button">Imprimir</button>
-              <button className="btn-primary" onClick={() => setReceipt(null)} type="button">Cerrar</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => window.print()} type="button">Imprimir</button>
+              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" onClick={() => setReceipt(null)} type="button">Cerrar</button>
             </div>
           </div>
         </ModalFrame>

@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { HandCoins, RefreshCw, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Cartera del Comercio (GET /api/v1/comercio/credits). El saldo, el vencimiento y los
 // totales los calcula el servidor; el abono se reparte oldest-first entre cuotas.
@@ -91,31 +91,29 @@ export default function ComercioCarteraPage() {
       setSaving(false);
     }
   }
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Creditos con cuotas sin interes. Los abonos se aplican primero a la cuota mas antigua vencida." title="Cartera" />
-      {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Cartera" subtitle="Creditos con cuotas sin interes. Los abonos se aplican primero a la cuota mas antigua vencida." title="Cartera" />
+      <ComercioMessages error={error} message={message} />
 
       <section aria-label="Totales de cartera" className="grid gap-3 sm:grid-cols-2">
         <div className="apex-section-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Saldo total pendiente</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Saldo total pendiente</p>
           <p className="mt-1 text-2xl font-semibold">{money(totals.outstanding)}</p>
         </div>
         <div className="apex-section-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Cartera vencida</p>
-          <p className={`mt-1 text-2xl font-semibold ${totals.overdue > 0 ? "text-red-700" : ""}`}>{money(totals.overdue)}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Cartera vencida</p>
+          <p className={`mt-1 text-2xl font-semibold ${totals.overdue > 0 ? "text-error" : ""}`}>{money(totals.overdue)}</p>
         </div>
       </section>
 
-      <section className="rounded-md border border-line bg-white">
+      <section className="apex-section-card">
         <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-[minmax(0,1fr)_220px_auto] sm:items-end">
           <label className="relative block">
-            <Search className="absolute left-3 top-3 text-neutral-400" size={16} />
+            <Search className="absolute left-3 top-3 text-content-muted" size={16} />
             <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por numero de credito o cliente" value={query} />
           </label>
           <select className="control apex-select" onChange={(event) => setStatus(event.target.value)} value={status}>
@@ -125,13 +123,13 @@ export default function ComercioCarteraPage() {
             <option value="voided">Anulados</option>
             <option value="all">Todos</option>
           </select>
-          <button className="btn-secondary flex items-center gap-2" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
+          <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
         </div>
 
         {loading ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Cargando cartera...</p>
+          <p className="p-8 text-center text-sm text-content-muted">Cargando cartera...</p>
         ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-neutral-500">No hay creditos en esta vista.</p>
+          <p className="p-8 text-center text-sm text-content-muted">No hay creditos en esta vista.</p>
         ) : (
           <>
             <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
@@ -144,7 +142,7 @@ export default function ComercioCarteraPage() {
                         {credit.status === "paid" ? "Pagado" : credit.status === "voided" ? "Anulado" : credit.overdue ? "Vencido" : "Vigente"}
                       </StatusPill>
                     </div>
-                    <p className="mt-1 text-xs text-neutral-500">{credit.customer_name || "Sin nombre"} · saldo {money(credit.balance)}</p>
+                    <p className="mt-1 text-xs text-content-muted">{credit.customer_name || "Sin nombre"} · saldo {money(credit.balance)}</p>
                   </button>
                 </li>
               ))}
@@ -152,7 +150,7 @@ export default function ComercioCarteraPage() {
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
-                  <tr className="border-b bg-paper text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
                     <th className="p-3">Credito</th>
                     <th>Cliente</th>
                     <th className="text-right">Financiado</th>
@@ -182,9 +180,9 @@ export default function ComercioCarteraPage() {
                       </td>
                       <td className="p-3 pr-3 text-right">
                         <div className="flex justify-end gap-1">
-                          <button className="btn-secondary px-2 py-1 text-xs" onClick={() => setDetail(credit)} type="button">Ver</button>
+                          <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => setDetail(credit)} type="button">Ver</button>
                           {access.canWrite && credit.status === "open" && credit.balance > 0 ? (
-                            <button className="btn-primary px-2 py-1 text-xs" onClick={() => { setPayTarget(credit); setPayForm({ amount: String(credit.balance), method: "Efectivo", date: todayISO(), note: "" }); }} type="button">Abonar</button>
+                            <button className="h-7 min-h-0 inline-flex items-center apex-primary-action px-2 py-1 text-xs font-semibold" onClick={() => { setPayTarget(credit); setPayForm({ amount: String(credit.balance), method: "Efectivo", date: todayISO(), note: "" }); }} type="button">Abonar</button>
                           ) : null}
                         </div>
                       </td>
@@ -200,13 +198,13 @@ export default function ComercioCarteraPage() {
       {detail ? (
         <ModalFrame maxWidth="md:max-w-3xl" onClose={() => setDetail(null)} title={`Credito ${detail.full_number}`}>
           <div className="space-y-4 text-sm">
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-content-muted">
               {detail.customer_name || "Sin nombre"} · financiado {money(detail.financed_amount)} en {detail.installment_count} cuota(s) {detail.frequency === "weekly" ? "semanal" : detail.frequency === "monthly" ? "mensual" : "quincenal"} · primer vencimiento {detail.first_due_date || "--"}
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b text-left text-xs uppercase text-content-muted">
                     <th className="py-1">#</th><th>Vence</th><th className="text-right">Cuota</th><th className="text-right">Pagado</th><th className="text-right">Pendiente</th><th>Estado</th>
                   </tr>
                 </thead>
@@ -214,7 +212,7 @@ export default function ComercioCarteraPage() {
                   {detail.installments.map((item) => (
                     <tr className="border-b" key={item.id}>
                       <td className="py-1 font-mono">{item.number}</td>
-                      <td className={item.status !== "paid" && item.due_date && item.due_date < todayISO() ? "font-semibold text-red-700" : ""}>{item.due_date}</td>
+                      <td className={item.status !== "paid" && item.due_date && item.due_date < todayISO() ? "font-semibold text-error" : ""}>{item.due_date}</td>
                       <td className="text-right">{money(item.amount)}</td>
                       <td className="text-right">{money(item.paid_amount)}</td>
                       <td className="text-right">{money(item.pending)}</td>
@@ -226,7 +224,7 @@ export default function ComercioCarteraPage() {
             </div>
             {detail.payments.length ? (
               <div>
-                <h3 className="text-xs font-semibold uppercase text-neutral-500">Abonos registrados</h3>
+                <h3 className="text-xs font-semibold uppercase text-content-muted">Abonos registrados</h3>
                 <ul className="mt-1 divide-y divide-line text-sm">
                   {detail.payments.map((payment) => (
                     <li className="flex justify-between py-1" key={payment.id}>
@@ -236,14 +234,14 @@ export default function ComercioCarteraPage() {
                   ))}
                 </ul>
               </div>
-            ) : <p className="text-xs text-neutral-500">Sin abonos registrados todavia.</p>}
+            ) : <p className="text-xs text-content-muted">Sin abonos registrados todavia.</p>}
             <div className="flex justify-end gap-2 border-t border-line pt-4">
               {access.canWrite && detail.status === "open" && detail.balance > 0 ? (
-                <button className="btn-primary flex items-center gap-1" onClick={() => { setPayTarget(detail); setPayForm({ amount: String(detail.balance), method: "Efectivo", date: todayISO(), note: "" }); }} type="button">
+                <button className="apex-primary-action flex items-center gap-1 px-4 text-sm font-semibold" onClick={() => { setPayTarget(detail); setPayForm({ amount: String(detail.balance), method: "Efectivo", date: todayISO(), note: "" }); }} type="button">
                   <HandCoins size={14} /> Registrar abono
                 </button>
               ) : null}
-              <button className="btn-secondary" onClick={() => setDetail(null)} type="button">Cerrar</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setDetail(null)} type="button">Cerrar</button>
             </div>
           </div>
         </ModalFrame>
@@ -271,10 +269,10 @@ export default function ComercioCarteraPage() {
                 <input className="control" maxLength={500} onChange={(event) => setPayForm({ ...payForm, note: event.target.value })} value={payForm.note} />
               </Field>
             </div>
-            <p className="text-xs text-neutral-500">El abono se aplica automaticamente a la cuota mas antigua pendiente. Si cubre todo el saldo, el credito queda pagado.</p>
+            <p className="text-xs text-content-muted">El abono se aplica automaticamente a la cuota mas antigua pendiente. Si cubre todo el saldo, el credito queda pagado.</p>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="btn-secondary" onClick={() => setPayTarget(null)} type="button">Cancelar</button>
-              <button className="btn-primary" disabled={saving} type="submit">{saving ? "Registrando..." : "Registrar abono"}</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setPayTarget(null)} type="button">Cancelar</button>
+              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Registrando..." : "Registrar abono"}</button>
             </div>
           </form>
         </ModalFrame>

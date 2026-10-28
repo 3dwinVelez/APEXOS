@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AccessDenied, Field, ModuleHeader, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { ComercioMessages, Field, ModuleHeader, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Compras de mercancia (POST /api/v1/comercio/purchases). Cada compra recalcula el costo
 // promedio ponderado del producto y suma stock con su movimiento trazado.
@@ -92,30 +92,28 @@ export default function ComercioComprasPage() {
       setSaving(false);
     }
   }
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Registro de compras por producto: sube el stock y ajusta el costo promedio con el que se calcula el margen de cada venta." title="Compras de mercancia" />
-      {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Inventario" subtitle="Registro de compras por producto: sube el stock y ajusta el costo promedio con el que se calcula el margen de cada venta." title="Compras de mercancia" />
+      <ComercioMessages error={error} message={message} />
 
-      <section className="rounded-md border border-line bg-white">
+      <section className="apex-section-card">
         <div className="flex items-center justify-between border-b border-line p-4">
-          <p className="text-sm text-neutral-600">{purchases.length} compra(s) registradas</p>
+          <p className="text-sm text-content-body">{purchases.length} compra(s) registradas</p>
           <div className="flex gap-2">
-            <button className="btn-secondary flex items-center gap-2" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
+            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
             {access.canWrite ? (
-              <button className="btn-primary flex items-center gap-2" onClick={() => { setForm({ ...emptyForm, date: todayISO() }); setEditorOpen(true); }} type="button"><Plus size={14} /> Nueva compra</button>
+              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setForm({ ...emptyForm, date: todayISO() }); setEditorOpen(true); }} type="button"><Plus size={14} /> Nueva compra</button>
             ) : null}
           </div>
         </div>
         {loading ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Cargando compras...</p>
+          <p className="p-8 text-center text-sm text-content-muted">Cargando compras...</p>
         ) : purchases.length === 0 ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Sin compras. Registra la primera para surtir tu inventario.</p>
+          <p className="p-8 text-center text-sm text-content-muted">Sin compras. Registra la primera para surtir tu inventario.</p>
         ) : (
           <>
             <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
@@ -123,10 +121,10 @@ export default function ComercioComprasPage() {
                 <li className="rounded-md border border-line p-3" key={purchase.id}>
                   <div className="flex justify-between">
                     <span className="font-mono text-sm font-semibold">{purchase.full_number}</span>
-                    <span className="text-xs text-neutral-500">{purchase.date}</span>
+                    <span className="text-xs text-content-muted">{purchase.date}</span>
                   </div>
                   <p className="mt-1 text-sm">{purchase.quantity} x {purchase.product_name}</p>
-                  <p className="text-xs text-neutral-500">{purchase.supplier} · {money(purchase.unit_cost)} c/u</p>
+                  <p className="text-xs text-content-muted">{purchase.supplier} · {money(purchase.unit_cost)} c/u</p>
                   <p className="mt-1 text-base font-semibold">{money(purchase.total)}</p>
                 </li>
               ))}
@@ -134,7 +132,7 @@ export default function ComercioComprasPage() {
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
-                  <tr className="border-b bg-paper text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
                     <th className="p-3">Numero</th>
                     <th>Fecha</th>
                     <th>Producto</th>
@@ -196,15 +194,15 @@ export default function ComercioComprasPage() {
               </div>
             </div>
             {previewCost !== null && selectedProduct ? (
-              <p className="rounded-md bg-paper p-3 text-sm">
+              <p className="rounded-md bg-surface-muted p-3 text-sm">
                 Costo promedio: {money(selectedProduct.cost)} → <span className="font-semibold">{money(previewCost)}</span> · nuevo stock: {selectedProduct.stock + quantity}
               </p>
             ) : (
-              <p className="text-xs text-neutral-500">El costo promedio ponderado se recalcula en el servidor con (stock x costo actual + cantidad x costo nuevo) / (stock + cantidad).</p>
+              <p className="text-xs text-content-muted">El costo promedio ponderado se recalcula en el servidor con (stock x costo actual + cantidad x costo nuevo) / (stock + cantidad).</p>
             )}
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="btn-secondary" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
-              <button className="btn-primary" disabled={saving} type="submit">{saving ? "Guardando..." : "Registrar compra"}</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
+              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Registrar compra"}</button>
             </div>
           </form>
         </ModalFrame>

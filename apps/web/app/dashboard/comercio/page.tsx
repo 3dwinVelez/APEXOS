@@ -24,7 +24,7 @@ import {
 import { api } from "@/lib/api";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { Alert, EmptyState, Skeleton } from "@/components/ui/feedback";
-import { AccessDenied, describeError, money, useComercioAccess } from "@/components/comercio/shared";
+import { comercioGate, describeError, money, useComercioAccess } from "@/components/comercio/shared";
 
 type Dashboard = {
   today: { sales: number; gross_margin: number; expenses: number; income: number; cash_collected: number; receivable: number; overdue_receivable: number; inventory_value: number };
@@ -87,9 +87,8 @@ export default function ComercioHome() {
   useEffect(() => {
     if (access.ready && access.canRead) void load();
   }, [access.ready, access.canRead, load]);
-
-  if (!access.ready) return <div className="apex-workspace-shell space-y-4"><Skeleton className="h-24" /><Skeleton className="h-40" /></div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   const incomeMonth = data ? data.month.sales + data.month.income : 0;
   const expenseMonth = data ? data.month.purchases + data.month.expenses : 0;
