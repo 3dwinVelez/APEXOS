@@ -176,8 +176,10 @@ function catalogCampaign(settings, now = new Date()) {
   return {
     label: nullableText(settings?.catalog_promo_label, 80),
     percent: active ? percent : 0,
-    start: start && !Number.isNaN(start.getTime()) ? start.toISOString() : null,
-    end: end && !Number.isNaN(end.getTime()) ? end.toISOString() : null,
+    // La ventana se publica en fecha de negocio (AAAA-MM-DD), no en ISO con hora: la
+    // vitrina imprime la vigencia tal como el comercio la capturo.
+    start: toBusinessDate(start),
+    end: toBusinessDate(end),
     active
   };
 }

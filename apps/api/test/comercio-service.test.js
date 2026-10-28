@@ -285,6 +285,10 @@ test("catalogCampaign: vigente solo con porcentaje > 0 y dentro de la ventana in
   assert.equal(catalogCampaign({ ...base, catalog_promo_start: now.toISOString() }, now).active, true);
   assert.equal(catalogCampaign({ ...base, catalog_promo_end: now.toISOString() }, now).active, true);
   assert.equal(catalogCampaign(null, now).percent, 0);
+  // La vigencia se publica en fecha de negocio, nunca con hora ISO (la vitrina la imprime tal cual).
+  assert.equal(catalogCampaign({ ...base, catalog_promo_start: "2026-10-20T12:00:00Z", catalog_promo_end: new Date("2026-11-11T12:00:00Z") }, now).start, "2026-10-20");
+  assert.equal(catalogCampaign({ ...base, catalog_promo_end: new Date("2026-11-11T12:00:00Z") }, now).end, "2026-11-11");
+  assert.equal(catalogCampaign(base, now).start, null);
 });
 
 test("effectiveDiscountPercent: gana el mayor entre el producto y la campana (nunca se acumulan)", () => {

@@ -10,17 +10,33 @@ export type PublicCatalogItem = {
   name: string;
   category: string | null;
   unit: string;
+  // price llega con el descuento ya aplicado; base_price es el precio de lista (se tacha).
   price: number;
+  base_price: number;
+  discount_percent: number;
+  description: string | null;
+  featured: boolean;
   available: boolean;
   photo_url: string | null;
 };
 
+// Campana de vitrina configurada por el comercio (descuento global vigente).
+export type PublicCatalogPromo = {
+  label: string | null;
+  percent: number;
+  start: string | null;
+  end: string | null;
+  active: boolean;
+};
+
 export type PublicCatalog = {
   store_name: string;
+  tagline: string | null;
   currency: string;
   whatsapp: string | null;
   facebook: string | null;
   instagram: string | null;
+  promo: PublicCatalogPromo;
   categories: string[];
   items: PublicCatalogItem[];
 };
