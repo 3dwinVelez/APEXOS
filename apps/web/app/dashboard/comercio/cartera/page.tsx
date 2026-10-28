@@ -1,10 +1,13 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { HandCoins, RefreshCw, Search } from "lucide-react";
+import { Download, HandCoins, RefreshCw, Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { Button } from "@/components/ui/button";
+import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Cartera del Comercio (GET /api/v1/comercio/credits). El saldo, el vencimiento y los
 // totales los calcula el servidor; el abono se reparte oldest-first entre cuotas.
@@ -28,6 +31,14 @@ type Credit = {
   installments: Installment[];
   payments: Payment[];
 };
+
+// Etiqueta unica del estado de un credito: la usan el buscador, la tabla y la exportacion
+// para que los tres digan exactamente lo mismo.
+function creditState(credit: Credit): { label: string; tone: "ok" | "warn" | "bad" | "muted" } {
+  if (credit.status === "paid") return { label: "Pagado", tone: "ok" };
+  if (credit.status === "voided") return { label: "Anulado", tone: "muted" };
+  return credit.overdue ? { label: "Vencido", tone: "bad" } : { label: "Vigente", tone: "warn" };
+}
 
 export default function ComercioCarteraPage() {
   const access = useComercioAccess();
@@ -64,11 +75,103 @@ export default function ComercioCarteraPage() {
     if (access.ready && access.canRead) void load();
   }, [access.ready, access.canRead, load]);
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return credits;
-    return credits.filter((row) => `${row.full_number} ${row.customer_name || ""}`.toLowerCase().includes(needle));
-  }, [credits, query]);
+  const filtered = useMemo(() => credits.filter((row) => matchesQuery(
+    query,
+    row.full_number,
+    row.customer_name || "",
+    creditState(row).label,
+    row.installments.map((item) => item.status).join(" ")
+  )), [credits, query]);
+
+  const hasFilters = Boolean(query.trim() || status !== "open");
+
+  function clearFilters() {
+    setQuery("");
+    setStatus("open");
+  }
+
+  function exportCredits(rows: Credit[]) {
+    downloadExcelWorkbook("comercio-cartera.xls", [{
+      name: "Cartera",
+      columns: [
+        { key: "number", label: "Credito" },
+        { key: "customer", label: "Cliente", width: 200 },
+        { key: "financed", label: "Financiado" },
+        { key: "down", label: "Inicial" },
+        { key: "paid", label: "Abonado" },
+        { key: "balance", label: "Saldo" },
+        { key: "quota", label: "Cuotas pagadas" },
+        { key: "first_due", label: "Primer vencimiento" },
+        { key: "state", label: "Estado" }
+      ],
+      rows: rows.map((row) => {
+        const state = creditState(row);
+        return {
+          number: row.full_number,
+          customer: row.customer_name || "",
+          financed: Number(row.financed_amount),
+          down: Number(row.down_payment),
+          paid: Number(row.paid_total),
+          balance: Number(row.balance),
+          quota: `${row.installments.filter((item) => item.status === "paid").length}/${row.installment_count}`,
+          first_due: row.first_due_date || "",
+          state: state.label
+        };
+      })
+    }]);
+  }
+
+  const columns: DataColumn<Credit>[] = [
+    { className: "font-mono font-semibold", cell: (row) => row.full_number, header: "Credito", hideable: false, id: "number", sortValue: (row) => row.id },
+    {
+      cell: (row) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{row.customer_name || "Sin nombre"}</p>
+          <p className="text-xs text-content-muted">{row.installment_count} cuota(s) {row.frequency === "weekly" ? "semanal" : row.frequency === "monthly" ? "mensual" : "quincenal"}</p>
+        </div>
+      ),
+      header: "Cliente",
+      hideable: false,
+      id: "customer",
+      sortValue: (row) => row.customer_name || ""
+    },
+    { className: "text-right", cell: (row) => money(row.financed_amount), header: "Financiado", id: "financed", sortValue: (row) => Number(row.financed_amount) },
+    { className: "text-right", cell: (row) => <span className="text-content-muted">{money(row.down_payment)}</span>, header: "Inicial", id: "down", sortValue: (row) => Number(row.down_payment) },
+    { className: "text-right", cell: (row) => <span className="text-success">{money(row.paid_total)}</span>, header: "Abonado", id: "paid", sortValue: (row) => Number(row.paid_total) },
+    { className: "text-right", cell: (row) => <span className="font-semibold">{money(row.balance)}</span>, header: "Saldo", id: "balance", sortValue: (row) => Number(row.balance) },
+    {
+      cell: (row) => {
+        const paid = row.installments.filter((item) => item.status === "paid").length;
+        return (
+          <div className="min-w-28">
+            <p className="text-xs text-content-muted">{paid}/{row.installment_count} cuotas</p>
+            <span aria-label={`${paid} de ${row.installment_count} cuotas pagadas`} aria-valuemax={row.installment_count} aria-valuemin={0} aria-valuenow={paid} className="mt-1 block h-1.5 rounded-full bg-surface-muted" role="progressbar">
+              <span className="block h-1.5 rounded-full bg-apex" style={{ width: `${row.installment_count ? Math.round((paid / row.installment_count) * 100) : 0}%` }} />
+            </span>
+          </div>
+        );
+      },
+      header: "Avance",
+      id: "progress",
+      sortValue: (row) => (row.installment_count ? row.installments.filter((item) => item.status === "paid").length / row.installment_count : 0)
+    },
+    {
+      cell: (row) => {
+        const state = creditState(row);
+        return <StatusPill tone={state.tone}>{state.label}</StatusPill>;
+      },
+      header: "Estado",
+      id: "state",
+      sortValue: (row) => (row.status === "open" ? (row.overdue ? 0 : 1) : 2)
+    },
+    {
+      className: "text-right",
+      cell: (row) => <Button onClick={() => setDetail(row)} size="compact" variant="secondary"><Search size={12} /> Ver</Button>,
+      header: "Acciones",
+      hideable: false,
+      id: "action"
+    }
+  ];
 
   async function savePayment(event: FormEvent) {
     event.preventDefault();
@@ -111,88 +214,68 @@ export default function ComercioCarteraPage() {
       </section>
 
       <section className="apex-section-card">
-        <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-[minmax(0,1fr)_220px_auto] sm:items-end">
-          <label className="relative block">
-            <Search className="absolute left-3 top-3 text-content-muted" size={16} />
-            <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por numero de credito o cliente" value={query} />
-          </label>
-          <select className="control apex-select" onChange={(event) => setStatus(event.target.value)} value={status}>
-            <option value="open">Vigentes</option>
-            <option value="overdue">Vencidos</option>
-            <option value="paid">Pagados</option>
-            <option value="voided">Anulados</option>
-            <option value="all">Todos</option>
-          </select>
-          <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
+        <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_13rem] lg:items-end">
+          <Field hint="Ignora acentos: busca por numero, cliente o estado" label="Buscar">
+            <span className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
+              <input aria-label="Buscar creditos por numero, cliente o estado" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="CRD-0001, cliente o vencido" value={query} />
+            </span>
+          </Field>
+          <Field label="Vista">
+            <select className="control apex-select" onChange={(event) => setStatus(event.target.value)} value={status}>
+              <option value="open">Vigentes</option>
+              <option value="overdue">Vencidos</option>
+              <option value="paid">Pagados</option>
+              <option value="voided">Anulados</option>
+              <option value="all">Todos</option>
+            </select>
+          </Field>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost"><X size={12} /> Limpiar filtros</Button> : null}
+            <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} credito(s) · saldo {money(filtered.reduce((sum, row) => sum + Number(row.balance || 0), 0))}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button disabled={!filtered.length} onClick={() => exportCredits(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
+            <Button onClick={() => void load()} size="compact" variant="secondary"><RefreshCw size={14} /> Actualizar</Button>
+          </div>
         </div>
 
-        {loading ? (
-          <p className="p-8 text-center text-sm text-content-muted">Cargando cartera...</p>
-        ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-content-muted">No hay creditos en esta vista.</p>
-        ) : (
-          <>
-            <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-              {filtered.map((credit) => (
-                <li className="rounded-md border border-line p-3" key={credit.id}>
-                  <button className="w-full text-left" onClick={() => setDetail(credit)} type="button">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-sm font-semibold">{credit.full_number}</span>
-                      <StatusPill tone={credit.status === "paid" ? "ok" : credit.status === "voided" ? "muted" : credit.overdue ? "bad" : "warn"}>
-                        {credit.status === "paid" ? "Pagado" : credit.status === "voided" ? "Anulado" : credit.overdue ? "Vencido" : "Vigente"}
-                      </StatusPill>
-                    </div>
-                    <p className="mt-1 text-xs text-content-muted">{credit.customer_name || "Sin nombre"} · saldo {money(credit.balance)}</p>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead>
-                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
-                    <th className="p-3">Credito</th>
-                    <th>Cliente</th>
-                    <th className="text-right">Financiado</th>
-                    <th className="text-right">Inicial</th>
-                    <th className="text-right">Abonado</th>
-                    <th className="text-right">Saldo</th>
-                    <th>Cuotas</th>
-                    <th>Estado</th>
-                    <th className="pr-3 text-right">Accion</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((credit) => (
-                    <tr className="border-b" key={credit.id}>
-                      <td className="p-3 font-mono font-semibold">{credit.full_number}</td>
-                      <td className="p-3">{credit.customer_name || "--"}</td>
-                      <td className="p-3 text-right">{money(credit.financed_amount)}</td>
-                      <td className="p-3 text-right">{money(credit.down_payment)}</td>
-                      <td className="p-3 text-right">{money(credit.paid_total)}</td>
-                      <td className="p-3 text-right font-semibold">{money(credit.balance)}</td>
-                      <td className="p-3">{credit.installments.filter((item) => item.status === "paid").length}/{credit.installment_count}</td>
-                      <td className="p-3">
-                        {credit.status === "paid" ? <StatusPill tone="ok">Pagado</StatusPill>
-                          : credit.status === "voided" ? <StatusPill tone="muted">Anulado</StatusPill>
-                          : credit.overdue ? <StatusPill tone="bad">Vencido</StatusPill>
-                          : <StatusPill tone="warn">Vigente</StatusPill>}
-                      </td>
-                      <td className="p-3 pr-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => setDetail(credit)} type="button">Ver</button>
-                          {access.canWrite && credit.status === "open" && credit.balance > 0 ? (
-                            <button className="h-7 min-h-0 inline-flex items-center apex-primary-action px-2 py-1 text-xs font-semibold" onClick={() => { setPayTarget(credit); setPayForm({ amount: String(credit.balance), method: "Efectivo", date: todayISO(), note: "" }); }} type="button">Abonar</button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+        {!loading && filtered.length ? (
+          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {filtered.map((credit) => (
+              <li className="rounded-md border border-line p-3" key={credit.id}>
+                <button className="w-full text-left" onClick={() => setDetail(credit)} type="button">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm font-semibold">{credit.full_number}</span>
+                    <StatusPill tone={creditState(credit).tone}>{creditState(credit).label}</StatusPill>
+                  </div>
+                  <p className="mt-1 text-xs text-content-muted">{credit.customer_name || "Sin nombre"} · saldo {money(credit.balance)}</p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <div className="hidden p-4 lg:block">
+          <SmartDataTable
+            bulkActions={(selected, clear) => (
+              <>
+                <Button onClick={() => exportCredits(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+              </>
+            )}
+            columns={columns}
+            emptyDetail={credits.length ? "Cambia la vista o limpia el buscador: en Todos tambien aparecen los pagados y anulados." : "Las ventas a credito con cuotas aparecen aqui automaticamente."}
+            emptyTitle={credits.length ? "Ningun credito con estos filtros" : "Aun no hay creditos"}
+            loading={loading}
+            pageSize={12}
+            rowKey={(row) => row.id}
+            rows={filtered}
+            storageKey="comercio-cartera"
+          />
+        </div>
       </section>
 
       {detail ? (

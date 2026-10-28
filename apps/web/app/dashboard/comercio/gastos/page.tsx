@@ -1,10 +1,13 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Ban, Plus, RefreshCw } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Ban, Download, Plus, RefreshCw, Search, TrendingDown, TrendingUp, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { Button } from "@/components/ui/button";
+import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Movimientos "otros" del Comercio (GET /api/v1/comercio/expenses): egresos operativos
 // (direction=expense) e ingresos fuera del catalogo (direction=income, p. ej. recargas).
@@ -34,6 +37,8 @@ export default function ComercioGastosPage() {
   const [message, setMessage] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [directionFilter, setDirectionFilter] = useState<"" | "income" | "expense">("");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
@@ -62,6 +67,86 @@ export default function ComercioGastosPage() {
   const active = expenses.filter((row) => row.status === "active");
   const incomeTotal = active.filter((row) => row.direction === "income").reduce((sum, row) => sum + row.amount, 0);
   const expenseTotal = active.filter((row) => row.direction === "expense").reduce((sum, row) => sum + row.amount, 0);
+
+  const categories = useMemo(() => [...new Set(expenses.map((row) => row.category || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")), [expenses]);
+
+  const filtered = useMemo(() => expenses.filter((row) => {
+    if (category && (row.category || "") !== category) return false;
+    return matchesQuery(query, row.full_number, row.concept, row.category || "", row.method || "", row.note || "");
+  }), [expenses, category, query]);
+
+  const hasFilters = Boolean(query.trim() || category);
+
+  function clearFilters() {
+    setQuery("");
+    setCategory("");
+  }
+
+  const netFiltered = useMemo(() => filtered
+    .filter((row) => row.status === "active")
+    .reduce((sum, row) => sum + (row.direction === "income" ? 1 : -1) * Number(row.amount || 0), 0), [filtered]);
+
+  function exportExpenses(rows: Expense[]) {
+    downloadExcelWorkbook("comercio-ingresos-egresos.xls", [{
+      name: "Movimientos",
+      columns: [
+        { key: "number", label: "Numero" },
+        { key: "date", label: "Fecha" },
+        { key: "concept", label: "Concepto", width: 220 },
+        { key: "category", label: "Categoria" },
+        { key: "direction", label: "Direccion" },
+        { key: "method", label: "Medio" },
+        { key: "amount", label: "Valor" },
+        { key: "state", label: "Estado" },
+        { key: "note", label: "Nota", width: 200 }
+      ],
+      rows: rows.map((row) => ({
+        number: row.full_number,
+        date: row.date,
+        concept: row.concept,
+        category: row.category || "",
+        direction: row.direction === "income" ? "Ingreso" : "Egreso",
+        method: row.method || "",
+        amount: Number(row.amount),
+        state: row.status === "active" ? "Activo" : "Anulado",
+        note: row.note || ""
+      }))
+    }]);
+  }
+
+  const columns: DataColumn<Expense>[] = [
+    { className: "font-mono", cell: (row) => row.full_number, header: "Numero", hideable: false, id: "number", sortValue: (row) => row.id },
+    { cell: (row) => row.date, header: "Fecha", id: "date", sortValue: (row) => row.date },
+    {
+      cell: (row) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{row.concept}</p>
+          {row.note ? <p className="truncate text-xs text-content-muted">{row.note}</p> : null}
+        </div>
+      ),
+      header: "Concepto",
+      hideable: false,
+      id: "concept",
+      sortValue: (row) => row.concept
+    },
+    { cell: (row) => row.category || "--", header: "Categoria", id: "category", sortValue: (row) => row.category || "" },
+    { cell: (row) => row.method || "--", header: "Medio", id: "method", sortValue: (row) => row.method || "" },
+    {
+      className: "text-right",
+      cell: (row) => <span className={`font-semibold ${row.direction === "income" ? "text-success" : "text-error"}`}>{row.direction === "income" ? "+" : "-"}{money(row.amount)}</span>,
+      header: "Valor",
+      id: "amount",
+      sortValue: (row) => Number(row.amount)
+    },
+    { cell: (row) => (row.status === "active" ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Anulado</StatusPill>), header: "Estado", id: "state", sortValue: (row) => (row.status === "active" ? 1 : 0) },
+    {
+      className: "text-right",
+      cell: (row) => (access.canWrite ? <Button onClick={() => openEditor(row)} size="compact" variant="secondary"><Search size={12} /> Ficha</Button> : null),
+      header: "Acciones",
+      hideable: false,
+      id: "action"
+    }
+  ];
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -125,35 +210,47 @@ export default function ComercioGastosPage() {
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
-        <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-4">
-            <p className="text-sm text-content-body">Ingresos: <span className="font-semibold text-success">+{money(incomeTotal)}</span></p>
-            <p className="text-sm text-content-body">Egresos: <span className="font-semibold text-error">-{money(expenseTotal)}</span></p>
+        <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_minmax(13rem,16rem)_auto] lg:items-end">
+          <Field label="Buscar">
+            <span className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
+              <input aria-label="Buscar movimientos por numero, concepto, categoria o medio de pago" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Numero, concepto, categoria o medio" value={query} />
+            </span>
+          </Field>
+          <Field hint={categories.length ? `${categories.length} categorias en movimiento` : undefined} label="Categoria">
+            <select className="control apex-select" onChange={(event) => setCategory(event.target.value)} value={category}>
+              <option value="">Todas</option>
+              {categories.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </Field>
+          <div className="flex flex-wrap items-center gap-3 pb-2 text-sm lg:pb-0">
             <div className="flex gap-1" role="group" aria-label="Filtro por direccion">
               <FilterChip label="Todos" active={directionFilter === ""} onClick={() => setDirectionFilter("")} />
-              <FilterChip label="Ingresos" active={directionFilter === "income"} onClick={() => setDirectionFilter("income")} />
-              <FilterChip label="Egresos" active={directionFilter === "expense"} onClick={() => setDirectionFilter("expense")} />
+              <FilterChip icon={<TrendingUp size={12} />} label="Ingresos" active={directionFilter === "income"} onClick={() => setDirectionFilter("income")} />
+              <FilterChip icon={<TrendingDown size={12} />} label="Egresos" active={directionFilter === "expense"} onClick={() => setDirectionFilter("expense")} />
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input checked={showAll} onChange={(event) => setShowAll(event.target.checked)} type="checkbox" /> Ver anulados
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
-            {access.canWrite ? (
-              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setEditing(null); setForm(emptyForm); setEditorOpen(true); }} type="button"><Plus size={14} /> Nuevo movimiento</button>
-            ) : null}
+            <Check checked={showAll} label="Ver anulados" onChange={setShowAll} />
           </div>
         </div>
-        {loading ? (
-          <p className="p-8 text-center text-sm text-content-muted">Cargando movimientos...</p>
-        ) : expenses.length === 0 ? (
-          <p className="p-8 text-center text-sm text-content-muted">Sin movimientos registrados.</p>
-        ) : (
-          <>
-            <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-              {expenses.map((expense) => (
-                <li className="rounded-md border border-line p-3" key={expense.id}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost"><X size={12} /> Limpiar filtros</Button> : null}
+            <span>Ingresos: <span className="font-semibold text-success">+{money(incomeTotal)}</span></span>
+            <span>Egresos: <span className="font-semibold text-error">-{money(expenseTotal)}</span></span>
+            <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {expenses.length} movimientos · neto {money(netFiltered)}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button disabled={!filtered.length} onClick={() => exportExpenses(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
+            <Button onClick={() => void load()} size="compact" variant="secondary"><RefreshCw size={14} /> Actualizar</Button>
+            {access.canWrite ? <Button onClick={() => { setEditing(null); setForm(emptyForm); setEditorOpen(true); }} size="compact"><Plus size={14} /> Nuevo movimiento</Button> : null}
+          </div>
+        </div>
+
+        {!loading && filtered.length ? (
+          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {filtered.map((expense) => {
+              const cardBody = (
+                <>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{expense.concept}</p>
@@ -162,56 +259,38 @@ export default function ComercioGastosPage() {
                     <StatusPill tone={expense.status === "active" ? "ok" : "muted"}>{expense.status === "active" ? "Activo" : "Anulado"}</StatusPill>
                   </div>
                   <p className={`mt-1 text-lg font-semibold ${expense.direction === "income" ? "text-success" : "text-error"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</p>
-                  {access.canWrite && expense.status === "active" ? (
-                    <div className="mt-2 flex gap-2">
-                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => openEditor(expense)} type="button">Editar</button>
-                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => setVoidTarget(expense)} type="button">Anular</button>
-                    </div>
-                  ) : null}
+                  {access.canWrite ? <p className="mt-2 text-xs font-medium text-apex">Abrir ficha</p> : null}
+                </>
+              );
+              return (
+                <li className="rounded-md border border-line p-3" key={expense.id}>
+                  {access.canWrite ? (
+                    <button className="block w-full text-left" onClick={() => openEditor(expense)} type="button">{cardBody}</button>
+                  ) : cardBody}
                 </li>
-              ))}
-            </ul>
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[760px] text-sm">
-                <thead>
-                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
-                    <th className="p-3">Numero</th>
-                    <th>Fecha</th>
-                    <th>Concepto</th>
-                    <th>Categoria</th>
-                    <th>Medio</th>
-                    <th className="text-right">Valor</th>
-                    <th>Estado</th>
-                    {access.canWrite ? <th className="pr-3 text-right">Acciones</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map((expense) => (
-                    <tr className="border-b" key={expense.id}>
-                      <td className="p-3 font-mono">{expense.full_number}</td>
-                      <td className="p-3">{expense.date}</td>
-                      <td className="p-3 font-medium">{expense.concept}</td>
-                      <td className="p-3">{expense.category || "--"}</td>
-                      <td className="p-3">{expense.method || "--"}</td>
-                      <td className={`p-3 text-right font-semibold ${expense.direction === "income" ? "text-success" : "text-error"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</td>
-                      <td className="p-3">{expense.status === "active" ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Anulado</StatusPill>}</td>
-                      {access.canWrite ? (
-                        <td className="p-3 pr-3 text-right">
-                          {expense.status === "active" ? (
-                            <div className="flex justify-end gap-1">
-                              <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => openEditor(expense)} type="button">Editar</button>
-                              <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => setVoidTarget(expense)} type="button">Anular</button>
-                            </div>
-                          ) : null}
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+              );
+            })}
+          </ul>
+        ) : null}
+
+        <div className="hidden p-4 lg:block">
+          <SmartDataTable
+            bulkActions={(selected, clear) => (
+              <>
+                <Button onClick={() => exportExpenses(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+              </>
+            )}
+            columns={columns}
+            emptyDetail={expenses.length ? "Cambia el filtro de direccion o limpia el buscador para volver a ver movimientos." : "Registra el primer ingreso o egreso para llevar el caja del dia a dia."}
+            emptyTitle={expenses.length ? "Ningun movimiento con estos filtros" : "Aun no hay movimientos"}
+            loading={loading}
+            pageSize={12}
+            rowKey={(row) => row.id}
+            rows={filtered}
+            storageKey="comercio-movimientos"
+          />
+        </div>
       </section>
 
       {editorOpen ? (
@@ -221,8 +300,8 @@ export default function ComercioGastosPage() {
               <div className="sm:col-span-2">
                 <Field label="Tipo de movimiento">
                   <div className="flex gap-2">
-                    <button className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${form.direction === "expense" ? "border-red-300 bg-error/10 text-error" : "border-line text-content-body"}`} onClick={() => setForm({ ...form, direction: "expense" })} type="button">Egreso</button>
-                    <button className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${form.direction === "income" ? "border-emerald-300 bg-success/10 text-success" : "border-line text-content-body"}`} onClick={() => setForm({ ...form, direction: "income" })} type="button">Ingreso</button>
+                    <button className={`flex-1 rounded-control border px-3 py-2 text-sm font-medium transition-colors ${form.direction === "expense" ? "border-error/40 bg-error/10 text-error" : "border-line text-content-body hover:bg-surface-muted"}`} onClick={() => setForm({ ...form, direction: "expense" })} type="button">Egreso</button>
+                    <button className={`flex-1 rounded-control border px-3 py-2 text-sm font-medium transition-colors ${form.direction === "income" ? "border-success/40 bg-success/10 text-success" : "border-line text-content-body hover:bg-surface-muted"}`} onClick={() => setForm({ ...form, direction: "income" })} type="button">Ingreso</button>
                   </div>
                 </Field>
               </div>
@@ -254,9 +333,16 @@ export default function ComercioGastosPage() {
                 </Field>
               </div>
             </div>
-            <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
-              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar movimiento"}</button>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
+              {editing && editing.status === "active" && access.canWrite ? (
+                <Button disabled={saving} onClick={() => { setEditorOpen(false); setVoidTarget(editing); }} type="button" variant="danger">
+                  <Ban size={14} /> Anular movimiento
+                </Button>
+              ) : <span />}
+              <div className="flex gap-2">
+                <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
+                <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar movimiento"}</button>
+              </div>
             </div>
           </form>
         </ModalFrame>
@@ -277,13 +363,15 @@ export default function ComercioGastosPage() {
   );
 }
 
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FilterChip({ active, icon, label, onClick }: { active: boolean; icon?: ReactNode; label: string; onClick: () => void }) {
   return (
     <button
-      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${active ? "border-line bg-surface-muted text-white" : "border-line text-content-body hover:bg-surface-muted"}`}
+      aria-pressed={active}
+      className={`inline-flex min-h-9 items-center gap-1.5 rounded-control border px-3 text-xs font-semibold transition-colors ${active ? "border-apex/40 bg-apex/10 text-apex" : "border-line text-content-body hover:bg-surface-muted"}`}
       onClick={onClick}
       type="button"
     >
+      {icon}
       {label}
     </button>
   );

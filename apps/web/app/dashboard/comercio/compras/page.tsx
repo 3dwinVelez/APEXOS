@@ -1,10 +1,14 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Download, Plus, RefreshCw, Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { ComercioMessages, Field, ModuleHeader, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { Button } from "@/components/ui/button";
+import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { ComercioMessages, Field, ModuleHeader, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Compras de mercancia (POST /api/v1/comercio/purchases). Cada compra recalcula el costo
 // promedio ponderado del producto y suma stock con su movimiento trazado.
@@ -33,6 +37,8 @@ export default function ComercioComprasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [query, setQuery] = useState("");
+  const [productId, setProductId] = useState("");
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -58,6 +64,68 @@ export default function ComercioComprasPage() {
   useEffect(() => {
     if (access.ready && access.canRead) void load();
   }, [access.ready, access.canRead, load]);
+
+  const filtered = useMemo(() => purchases.filter((row) => {
+    if (productId && String(row.product_id) !== productId) return false;
+    return matchesQuery(query, row.full_number, row.product_code || "", row.product_name, row.supplier, row.note || "");
+  }), [purchases, query, productId]);
+
+  const hasFilters = Boolean(query.trim() || productId);
+
+  function clearFilters() {
+    setQuery("");
+    setProductId("");
+  }
+
+  const purchasedUnits = useMemo(() => filtered.reduce((sum, row) => sum + Number(row.quantity || 0), 0), [filtered]);
+  const purchasedTotal = useMemo(() => filtered.reduce((sum, row) => sum + Number(row.total || 0), 0), [filtered]);
+
+  function exportPurchases(rows: Purchase[]) {
+    downloadExcelWorkbook("comercio-compras.xls", [{
+      name: "Compras",
+      columns: [
+        { key: "number", label: "Numero" },
+        { key: "date", label: "Fecha" },
+        { key: "product", label: "Producto", width: 220 },
+        { key: "supplier", label: "Proveedor", width: 180 },
+        { key: "quantity", label: "Cantidad" },
+        { key: "unit_cost", label: "Costo unitario" },
+        { key: "total", label: "Total" },
+        { key: "note", label: "Nota", width: 200 }
+      ],
+      rows: rows.map((row) => ({
+        number: row.full_number,
+        date: row.date,
+        product: `${row.product_code ? `${row.product_code} - ` : ""}${row.product_name}`,
+        supplier: row.supplier,
+        quantity: Number(row.quantity),
+        unit_cost: Number(row.unit_cost),
+        total: Number(row.total),
+        note: row.note || ""
+      }))
+    }]);
+  }
+
+  const columns: DataColumn<Purchase>[] = [
+    { className: "font-mono font-semibold", cell: (row) => row.full_number, header: "Numero", hideable: false, id: "number", sortValue: (row) => row.id },
+    { cell: (row) => row.date, header: "Fecha", id: "date", sortValue: (row) => row.date },
+    {
+      cell: (row) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{row.product_name}</p>
+          {row.product_code ? <p className="font-mono text-xs text-content-muted">{row.product_code}</p> : null}
+        </div>
+      ),
+      header: "Producto",
+      hideable: false,
+      id: "product",
+      sortValue: (row) => row.product_name
+    },
+    { cell: (row) => <span className="truncate">{row.supplier}</span>, header: "Proveedor", id: "supplier", sortValue: (row) => row.supplier },
+    { className: "text-right", cell: (row) => row.quantity, header: "Cantidad", id: "quantity", sortValue: (row) => Number(row.quantity) },
+    { className: "text-right", cell: (row) => money(row.unit_cost), header: "Costo unit.", id: "unit_cost", sortValue: (row) => Number(row.unit_cost) },
+    { className: "text-right", cell: (row) => <span className="font-semibold">{money(row.total)}</span>, header: "Total", id: "total", sortValue: (row) => Number(row.total) }
+  ];
 
   const selectedProduct = products.find((row) => String(row.id) === form.product_id) || null;
   const quantity = Number(form.quantity || 0);
@@ -101,64 +169,66 @@ export default function ComercioComprasPage() {
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
-        <div className="flex items-center justify-between border-b border-line p-4">
-          <p className="text-sm text-content-body">{purchases.length} compra(s) registradas</p>
-          <div className="flex gap-2">
-            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
-            {access.canWrite ? (
-              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setForm({ ...emptyForm, date: todayISO() }); setEditorOpen(true); }} type="button"><Plus size={14} /> Nueva compra</button>
-            ) : null}
+        <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_minmax(16rem,20rem)] lg:items-end">
+          <Field label="Buscar">
+            <span className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
+              <input aria-label="Buscar compras por numero, producto o proveedor" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Numero, producto o proveedor" value={query} />
+            </span>
+          </Field>
+          <Field hint={products.length ? `${products.length} productos activos en el catalogo` : undefined} label="Producto">
+            <select className="control apex-select" onChange={(event) => setProductId(event.target.value)} value={productId}>
+              <option value="">Todos los productos</option>
+              {products.map((product) => <option key={product.id} value={String(product.id)}>{product.code} - {product.name}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost"><X size={12} /> Limpiar filtros</Button> : null}
+            <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {purchases.length} compras · {purchasedUnits} unidades · {money(purchasedTotal)}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button disabled={!filtered.length} onClick={() => exportPurchases(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
+            <Button onClick={() => void load()} size="compact" variant="secondary"><RefreshCw size={14} /> Actualizar</Button>
+            {access.canWrite ? <Button onClick={() => { setForm({ ...emptyForm, date: todayISO() }); setEditorOpen(true); }} size="compact"><Plus size={14} /> Nueva compra</Button> : null}
           </div>
         </div>
-        {loading ? (
-          <p className="p-8 text-center text-sm text-content-muted">Cargando compras...</p>
-        ) : purchases.length === 0 ? (
-          <p className="p-8 text-center text-sm text-content-muted">Sin compras. Registra la primera para surtir tu inventario.</p>
-        ) : (
-          <>
-            <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-              {purchases.map((purchase) => (
-                <li className="rounded-md border border-line p-3" key={purchase.id}>
-                  <div className="flex justify-between">
-                    <span className="font-mono text-sm font-semibold">{purchase.full_number}</span>
-                    <span className="text-xs text-content-muted">{purchase.date}</span>
-                  </div>
-                  <p className="mt-1 text-sm">{purchase.quantity} x {purchase.product_name}</p>
-                  <p className="text-xs text-content-muted">{purchase.supplier} · {money(purchase.unit_cost)} c/u</p>
-                  <p className="mt-1 text-base font-semibold">{money(purchase.total)}</p>
-                </li>
-              ))}
-            </ul>
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[820px] text-sm">
-                <thead>
-                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
-                    <th className="p-3">Numero</th>
-                    <th>Fecha</th>
-                    <th>Producto</th>
-                    <th>Proveedor</th>
-                    <th className="text-right">Cantidad</th>
-                    <th className="text-right">Costo unit.</th>
-                    <th className="text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purchases.map((purchase) => (
-                    <tr className="border-b" key={purchase.id}>
-                      <td className="p-3 font-mono font-semibold">{purchase.full_number}</td>
-                      <td className="p-3">{purchase.date}</td>
-                      <td className="p-3">{purchase.product_name}</td>
-                      <td className="p-3">{purchase.supplier}</td>
-                      <td className="p-3 text-right">{purchase.quantity}</td>
-                      <td className="p-3 text-right">{money(purchase.unit_cost)}</td>
-                      <td className="p-3 text-right font-semibold">{money(purchase.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+
+        {!loading && filtered.length ? (
+          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {filtered.map((purchase) => (
+              <li className="rounded-md border border-line p-3" key={purchase.id}>
+                <div className="flex justify-between">
+                  <span className="font-mono text-sm font-semibold">{purchase.full_number}</span>
+                  <span className="text-xs text-content-muted">{purchase.date}</span>
+                </div>
+                <p className="mt-1 text-sm">{purchase.quantity} x {purchase.product_name}</p>
+                <p className="text-xs text-content-muted">{purchase.supplier} · {money(purchase.unit_cost)} c/u</p>
+                <p className="mt-1 text-base font-semibold">{money(purchase.total)}</p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <div className="hidden p-4 lg:block">
+          <SmartDataTable
+            bulkActions={(selected, clear) => (
+              <>
+                <Button onClick={() => exportPurchases(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+              </>
+            )}
+            columns={columns}
+            emptyDetail={purchases.length ? "Ajusta el buscador o cambia el producto para volver a ver compras." : "Registra la primera compra para surtir el inventario y fijar el costo promedio."}
+            emptyTitle={purchases.length ? "Ninguna compra con estos filtros" : "Aun no hay compras"}
+            loading={loading}
+            pageSize={12}
+            rowKey={(row) => row.id}
+            rows={filtered}
+            storageKey="comercio-compras"
+          />
+        </div>
       </section>
 
       {editorOpen ? (
@@ -167,12 +237,12 @@ export default function ComercioComprasPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <Field label="Producto">
-                  <select className="control apex-select" onChange={(event) => setForm({ ...form, product_id: event.target.value })} required value={form.product_id}>
+                  <TransportSearchSelect aria-label="Buscar el producto comprado por codigo o nombre" className="control w-full" onChange={(event) => setForm({ ...form, product_id: event.target.value })} required value={form.product_id}>
                     <option value="">Seleccione el producto comprado</option>
                     {products.map((product) => (
                       <option key={product.id} value={String(product.id)}>{product.code} - {product.name} (stock {product.stock}, costo {money(product.cost)})</option>
                     ))}
-                  </select>
+                  </TransportSearchSelect>
                 </Field>
               </div>
               <Field label="Cantidad">

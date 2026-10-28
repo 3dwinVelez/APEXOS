@@ -1,15 +1,16 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { Minus, Plus, Search, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { Check, ComercioMessages, Field, ModuleHeader, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
+import { Check, ComercioMessages, Field, ModuleHeader, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Punto de venta del Comercio. El precio y el costo los fija el servidor desde el producto;
 // aqui solo se arma el carrito (producto + cantidad). La venta a credito genera el cronograma
 // de cuotas sin interes en el backend.
-type Product = { id: number; code: string; name: string; unit: string; price: number; sale_price: number; sale_discount_percent: number; stock: number; active: boolean; low_stock: boolean };
+type Product = { id: number; code: string; name: string; category: string | null; unit: string; price: number; sale_price: number; sale_discount_percent: number; stock: number; active: boolean; low_stock: boolean };
 type Customer = { id: number; code: string; name: string; phone: string | null; active: boolean };
 type Sale = {
   id: number; full_number: string; date: string; subtotal: number; discount: number; total: number;
@@ -30,6 +31,8 @@ export default function ComercioVenderPage() {
   const [ready, setReady] = useState(false);
 
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState("");
   const [isCredit, setIsCredit] = useState(false);
@@ -63,11 +66,16 @@ export default function ComercioVenderPage() {
     if (access.ready && access.canRead && !ready) void load();
   }, [access.ready, access.canRead, ready, load]);
 
-  const visibleProducts = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return products.slice(0, 24);
-    return products.filter((row) => `${row.name} ${row.code}`.toLowerCase().includes(needle)).slice(0, 24);
-  }, [products, query]);
+  const categories = useMemo(() => [...new Set(products.map((row) => row.category || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")), [products]);
+
+  const matchingProducts = useMemo(() => products.filter((row) => {
+    if (category && (row.category || "") !== category) return false;
+    return matchesQuery(query, row.name, row.code, row.category || "", row.unit);
+  }), [products, query, category]);
+
+  // El mostrador no necesita el catalogo completo en DOM: 24 tarjetas alcanza para elegir;
+  // "Ver todo el catalogo" sube el techo a 120 cuando el cajero lo pide.
+  const visibleProducts = showAll ? matchingProducts.slice(0, 120) : matchingProducts.slice(0, 24);
 
   const subtotal = cart.reduce((sum, line) => sum + line.price * line.quantity, 0);
   const discountValue = Math.max(0, Number(discount || 0));
@@ -150,24 +158,44 @@ export default function ComercioVenderPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
           <section aria-label="Catalogo" className="apex-section-card p-4">
-            <label className="relative block">
-              <ShoppingBag className="absolute left-3 top-3 text-content-muted" size={16} />
-              <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto por nombre o codigo" value={query} />
-            </label>
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)]">
+              <Field label="Buscar">
+                <span className="relative block">
+                  <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
+                  <input aria-label="Buscar producto por nombre, codigo, categoria o unidad" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, codigo o categoria" value={query} />
+                </span>
+              </Field>
+              <Field hint={categories.length ? `${categories.length} categorias disponibles` : undefined} label="Categoria">
+                <select className="control apex-select" onChange={(event) => setCategory(event.target.value)} value={category}>
+                  <option value="">Todas</option>
+                  {categories.map((name) => <option key={name} value={name}>{name}</option>)}
+                </select>
+              </Field>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2 text-xs text-content-muted">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <Check checked={showAll} label="Ver todo el catalogo" onChange={setShowAll} />
+                <span aria-live="polite" className="font-semibold text-content-body">{visibleProducts.length} de {matchingProducts.length} productos</span>
+              </div>
+              <span>Toca una tarjeta para agregarla al carrito. El precio lo fija el servidor.</span>
+            </div>
             {visibleProducts.length === 0 ? (
-              <p className="mt-4 text-sm text-content-muted">No hay productos que coincidan. Registra productos en la pestana Productos.</p>
+              <p className="mt-4 text-sm text-content-muted">
+                No hay productos que coincidan con la busqueda.{" "}
+                <button className="font-semibold text-apex underline underline-offset-2" onClick={() => { setQuery(""); setCategory(""); }} type="button">Limpiar la busqueda</button>
+              </p>
             ) : (
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {visibleProducts.map((product) => (
                   <li key={product.id}>
                     <button
-                      className="w-full rounded-md border border-line p-3 text-left transition hover:border-apex disabled:opacity-40"
+                      className="w-full rounded-control border border-line p-3 text-left transition-colors hover:border-apex disabled:opacity-40"
                       disabled={product.stock < 1 || !access.canWrite}
                       onClick={() => addToCart(product)}
                       type="button"
                     >
                       <p className="truncate text-sm font-medium">{product.name}</p>
-                      <p className="font-mono text-xs text-content-muted">{product.code} · stock {product.stock}</p>
+                      <p className="font-mono text-xs text-content-muted">{product.code} · {product.category || "Sin categoria"} · stock {product.stock}</p>
                       <p className="mt-1 flex flex-wrap items-baseline gap-2 text-sm font-semibold">
                         <span>{money(product.sale_price)}</span>
                         {product.sale_discount_percent > 0 ? (
@@ -177,6 +205,7 @@ export default function ComercioVenderPage() {
                           </>
                         ) : null}
                       </p>
+                      {product.low_stock ? <p className="mt-1 text-[11px] font-semibold text-warning">Stock bajo: queda(n) {product.stock}</p> : null}
                     </button>
                   </li>
                 ))}
@@ -239,12 +268,12 @@ export default function ComercioVenderPage() {
               ) : (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <Field label="Cliente">
-                    <select className="control apex-select" onChange={(event) => setCustomerId(event.target.value)} required value={customerId}>
+                    <TransportSearchSelect aria-label="Buscar el cliente por codigo o nombre" className="control w-full" onChange={(event) => setCustomerId(event.target.value)} required value={customerId}>
                       <option value="">Seleccione un cliente</option>
                       {customers.map((customer) => (
                         <option key={customer.id} value={String(customer.id)}>{customer.code} - {customer.name}</option>
                       ))}
-                    </select>
+                    </TransportSearchSelect>
                   </Field>
                   <Field label="Pago inicial">
                     <input className="control" min={0} onChange={(event) => setDownPayment(event.target.value)} step="0.01" type="number" value={downPayment} />
