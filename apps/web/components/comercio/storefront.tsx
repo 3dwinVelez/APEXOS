@@ -1,13 +1,18 @@
 "use client";
 
-// Vitrina publica Comercio (client): grid de productos, chips de categoria, busqueda,
-// carrito de pedido y envio por WhatsApp. Diseno autocontenido (paleta neutra oscura +
-// acento esmeralda) para no depender del tema del visitante ni del shell del dashboard.
-import { Facebook, Instagram, MessageCircle, Minus, Plus, ShoppingBag, Store, Trash2, X } from "lucide-react";
-import { useMemo, useState } from "react";
+// Vitrina publica Comercio (client): escaparate por categorias, secciones de producto,
+// busqueda, consulta/reserva por WhatsApp producto a producto, carrito con datos del
+// comprador y bloque de contacto. Diseno autocontenido (paleta neutra oscura + acento
+// esmeralda) para no depender del tema del visitante ni del shell del dashboard.
+import { Facebook, Instagram, MessageCircle, Minus, Plus, Search, ShoppingBag, Store, Trash2, Users, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import type { PublicCatalog, PublicCatalogItem } from "@/app/tienda/[code]/page";
 
 type CartLine = { item: PublicCatalogItem; quantity: number };
+
+type CategoryGroup = { name: string; label: string; items: PublicCatalogItem[] };
+
+const OTHER_LABEL = "Otros productos";
 
 function money(value: number, currency: string) {
   try {
@@ -19,6 +24,10 @@ function money(value: number, currency: string) {
 
 function whatsappDigits(value: string | null) {
   return String(value || "").replace(/\D/g, "");
+}
+
+function waHref(digits: string, message: string) {
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
 // Fila de enlaces sociales de la vitrina: solo muestra lo que el comercio configuro.
@@ -52,16 +61,31 @@ function SocialLinks({ catalog, className = "" }: { catalog: PublicCatalog; clas
   );
 }
 
-function buildWhatsAppUrl(catalog: PublicCatalog, lines: CartLine[]) {
+// Mensaje del pedido: renglon por linea (cantidad, producto, referencia, categoria,
+// subtotal) mas nombre del comprador y requerimiento de factura si aplica.
+function buildOrderUrl(catalog: PublicCatalog, lines: CartLine[], buyerName: string, needsInvoice: boolean) {
   const digits = whatsappDigits(catalog.whatsapp);
-  // Cada renglon del pedido: cantidad, producto, referencia, categoria y subtotal.
   const rows = lines.map((line) => {
     const cat = line.item.category ? ` · ${line.item.category}` : "";
     return `• ${line.quantity}x ${line.item.name} (${line.item.code}${cat}) — ${money(line.item.price * line.quantity, catalog.currency)}`;
   });
   const total = lines.reduce((sum, line) => sum + line.item.price * line.quantity, 0);
-  const message = `¡Hola, ${catalog.store_name}! Quiero hacer este pedido:\n\n${rows.join("\n")}\n\nTotal estimado: ${money(total, catalog.currency)}`;
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+  const name = buyerName.trim();
+  const head = name ? `¡Hola, ${catalog.store_name}! Soy ${name}. Quiero hacer este pedido:` : `¡Hola, ${catalog.store_name}! Quiero hacer este pedido:`;
+  const extras: string[] = [];
+  if (name) extras.push(`Nombre: ${name}`);
+  if (needsInvoice) extras.push("Requiero factura");
+  const footer = `Total estimado: ${money(total, catalog.currency)}${extras.length ? `\n\n${extras.join("\n")}` : ""}`;
+  return waHref(digits, `${head}\n\n${rows.join("\n")}\n\n${footer}`);
+}
+
+// Mensaje de interes/reserva de un producto individual (boton "Consultar").
+function buildInterestUrl(catalog: PublicCatalog, item: PublicCatalogItem) {
+  const digits = whatsappDigits(catalog.whatsapp);
+  const cat = item.category ? ` · ${item.category}` : "";
+  const stock = item.available ? "Disponible" : "Agotado";
+  const message = `¡Hola, ${catalog.store_name}! Estoy interesado en ${item.name} (Ref. ${item.code}${cat}) — ${money(item.price, catalog.currency)}/${item.unit}. Estado: ${stock}. ¿Me confirmas disponibilidad y me ayuda a reservarlo?`;
+  return waHref(digits, message);
 }
 
 export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
@@ -69,15 +93,36 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [buyerName, setBuyerName] = useState("");
+  const [needsInvoice, setNeedsInvoice] = useState(false);
+
+  const matchesFilter = useCallback((item: PublicCatalogItem) => {
+    if (category === null) return true;
+    if (category === OTHER_LABEL) return !item.category || !catalog.categories.includes(item.category);
+    return item.category === category;
+  }, [category, catalog.categories]);
 
   const items = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return catalog.items.filter((item) => {
-      if (category && item.category !== category) return false;
+      if (!matchesFilter(item)) return false;
       if (!needle) return true;
       return item.name.toLowerCase().includes(needle) || item.code.toLowerCase().includes(needle) || (item.category || "").toLowerCase().includes(needle);
     });
-  }, [catalog.items, category, query]);
+  }, [catalog.items, matchesFilter, query]);
+
+  // Grupos por categoria para el escaparate y las secciones. Las categorias declaradas
+  // van primero con su portada; los productos sin categoria forman "Otros productos".
+  const groups: CategoryGroup[] = useMemo(() => {
+    const result: CategoryGroup[] = catalog.categories.map((name) => ({
+      name,
+      label: name,
+      items: catalog.items.filter((item) => item.category === name),
+    }));
+    const uncategorized = catalog.items.filter((item) => !item.category || !catalog.categories.includes(item.category));
+    if (uncategorized.length > 0) result.push({ name: "", label: OTHER_LABEL, items: uncategorized });
+    return result.filter((group) => group.items.length > 0);
+  }, [catalog.categories, catalog.items]);
 
   const lines: CartLine[] = useMemo(() => Object.entries(cart)
     .map(([code, quantity]) => {
@@ -89,6 +134,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
   const totalUnits = lines.reduce((sum, line) => sum + line.quantity, 0);
   const totalAmount = lines.reduce((sum, line) => sum + line.item.price * line.quantity, 0);
   const hasWhatsApp = whatsappDigits(catalog.whatsapp).length >= 7;
+  const isBrowsingAll = category === null && query.trim() === "";
 
   function setQuantity(item: PublicCatalogItem, quantity: number) {
     setCart((current) => {
@@ -100,10 +146,10 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 pb-28 text-neutral-100 md:pb-10">
+    <main className="min-h-screen bg-neutral-950 pb-28 text-neutral-100 md:pb-12">
       {/* Hero */}
       <header className="relative overflow-hidden border-b border-neutral-800 bg-gradient-to-br from-emerald-600/25 via-neutral-950 to-neutral-950">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-10 md:flex-row md:items-end md:justify-between md:py-14">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-5 py-10 md:flex-row md:items-end md:justify-between md:py-14">
           <div>
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-emerald-400">
               <Store className="h-4 w-4" /> Tienda abierta
@@ -112,44 +158,108 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
             <p className="mt-2 max-w-xl text-sm text-neutral-400">
               Escoge tus productos, arma el pedido y envialo por WhatsApp. Precios y disponibilidad al momento.
             </p>
-            <SocialLinks catalog={catalog} className="mt-4" />
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {hasWhatsApp ? (
+                <a
+                  href={`https://wa.me/${whatsappDigits(catalog.whatsapp)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+                >
+                  <MessageCircle className="h-4 w-4" /> Escríbenos por WhatsApp
+                </a>
+              ) : null}
+              <SocialLinks catalog={catalog} />
+            </div>
           </div>
           <div className="w-full md:w-72">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Buscar producto o referencia..."
-              className="w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-2.5 text-sm outline-none placeholder:text-neutral-500 focus:border-emerald-500"
-            />
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Buscar producto o referencia..."
+                className="w-full rounded-xl border border-neutral-700 bg-neutral-900 py-2.5 pl-9 pr-4 text-sm outline-none placeholder:text-neutral-500 focus:border-emerald-500"
+              />
+            </div>
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-neutral-500">
+              <Users className="h-3.5 w-3.5" /> {catalog.items.length} producto{catalog.items.length === 1 ? "" : "s"} · {groups.filter((g) => g.name).length} categoria{groups.filter((g) => g.name).length === 1 ? "" : "s"}
+            </p>
           </div>
         </div>
       </header>
 
-      {/* Chips de categoria */}
-      {catalog.categories.length > 0 ? (
-        <div className="mx-auto max-w-6xl px-5 pt-5">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <Chip label="Todos" active={category === null} onClick={() => setCategory(null)} />
-            {catalog.categories.map((name) => (
-              <Chip key={name} label={name} active={category === name} onClick={() => setCategory(category === name ? null : name)} />
+      {/* Escaparate de categorias (solo navegando sin filtros) */}
+      {isBrowsingAll && groups.length > 1 ? (
+        <section aria-label="Categorias" className="mx-auto max-w-6xl px-5 pt-6">
+          <p className="text-sm font-semibold text-neutral-300">Explora por categoria</p>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {groups.map((group) => (
+              <CategoryCard
+                key={group.label}
+                group={group}
+                active={false}
+                onSelect={() => setCategory(group.name || OTHER_LABEL)}
+              />
             ))}
           </div>
-        </div>
+        </section>
       ) : null}
 
-      {/* Grid */}
+      {/* Chips de categoria (atajo de filtrado) */}
+      <div className="mx-auto max-w-6xl px-5 pt-5">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <Chip label="Todos" active={category === null} onClick={() => setCategory(null)} />
+          {catalog.categories.map((name) => (
+            <Chip key={name} label={name} active={category === name} onClick={() => setCategory(category === name ? null : name)} />
+          ))}
+          {groups.some((g) => !g.name) ? (
+            <Chip label={OTHER_LABEL} active={category === OTHER_LABEL} onClick={() => setCategory(category === OTHER_LABEL ? null : OTHER_LABEL)} />
+          ) : null}
+        </div>
+      </div>
+
+      {/* Productos */}
       <section className="mx-auto max-w-6xl px-5 py-6">
         {items.length === 0 ? (
           <p className="rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center text-sm text-neutral-400">
             {catalog.items.length === 0 ? "Esta tienda aun no tiene productos publicados." : "Ningun producto coincide con la busqueda."}
           </p>
+        ) : isBrowsingAll && groups.length > 1 ? (
+          // Secciones agrupadas por categoria
+          <div className="space-y-10">
+            {groups.map((group) => (
+              <div key={group.label}>
+                <div className="mb-3 flex items-center justify-between gap-3 border-b border-neutral-800 pb-2">
+                  <p className="flex items-baseline gap-2 text-base font-bold">
+                    {group.label}
+                    <span className="text-xs font-normal text-neutral-500">{group.items.length} producto{group.items.length === 1 ? "" : "s"}</span>
+                  </p>
+                  <button type="button" onClick={() => setCategory(group.name || OTHER_LABEL)} className="text-xs font-semibold text-emerald-400 hover:text-emerald-300">Ver solo esta seccion</button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
+                  {group.items.map((item) => (
+                    <ProductCard
+                      key={item.code}
+                      item={item}
+                      catalog={catalog}
+                      hasWhatsApp={hasWhatsApp}
+                      quantity={cart[item.code] || 0}
+                      onQuantity={(quantity) => setQuantity(item, quantity)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
             {items.map((item) => (
               <ProductCard
                 key={item.code}
                 item={item}
-                currency={catalog.currency}
+                catalog={catalog}
+                hasWhatsApp={hasWhatsApp}
                 quantity={cart[item.code] || 0}
                 onQuantity={(quantity) => setQuantity(item, quantity)}
               />
@@ -158,9 +268,31 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         )}
       </section>
 
-      <footer className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 pb-8 text-center text-xs text-neutral-600">
-        <SocialLinks catalog={catalog} />
-        <p>{catalog.store_name} · Tienda publicada con APEXOS Comercio</p>
+      {/* Bloque de contacto */}
+      <section aria-label="Contacto" className="mx-auto max-w-6xl px-5 pb-4">
+        <div className="rounded-2xl border border-neutral-800 bg-gradient-to-br from-neutral-900 to-neutral-950 p-6 text-center">
+          <p className="text-lg font-bold">¿Dudas, reservas o facturacion?</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-neutral-400">
+            Escríbenos y te confirmamos disponibilidad, apartamos tu pedido o te facturamos como necesites.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            {hasWhatsApp ? (
+              <a
+                href={waHref(whatsappDigits(catalog.whatsapp), `¡Hola, ${catalog.store_name}! Quiero más información sobre sus productos.`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              >
+                <MessageCircle className="h-4 w-4" /> {catalog.whatsapp}
+              </a>
+            ) : null}
+            <SocialLinks catalog={catalog} />
+          </div>
+        </div>
+      </section>
+
+      <footer className="mx-auto max-w-6xl px-5 pb-8 text-center text-xs text-neutral-600">
+        {catalog.store_name} · Tienda publicada con APEXOS Comercio
       </footer>
 
       {/* Barra fija de carrito (movil) / boton flotante (escritorio) */}
@@ -209,6 +341,21 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
                   </button>
                 </div>
               ))}
+              {/* Datos del comprador: se anexan al mensaje de WhatsApp */}
+              <div className="mt-4 space-y-3 rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Tus datos</p>
+                <input
+                  value={buyerName}
+                  onChange={(event) => setBuyerName(event.target.value)}
+                  maxLength={80}
+                  placeholder="Nombre para el pedido (opcional)"
+                  className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none placeholder:text-neutral-500 focus:border-emerald-500"
+                />
+                <label className="flex items-center gap-2 text-sm text-neutral-300">
+                  <input checked={needsInvoice} onChange={(event) => setNeedsInvoice(event.target.checked)} type="checkbox" className="h-4 w-4 accent-emerald-600" />
+                  Requiero factura
+                </label>
+              </div>
             </div>
             <div className="border-t border-neutral-800 px-5 py-4">
               <div className="mb-3 flex items-center justify-between text-sm">
@@ -217,7 +364,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
               </div>
               {hasWhatsApp ? (
                 <a
-                  href={buildWhatsAppUrl(catalog, lines)}
+                  href={buildOrderUrl(catalog, lines, buyerName, needsInvoice)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
@@ -234,6 +381,36 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         </div>
       ) : null}
     </main>
+  );
+}
+
+// Tarjeta de categoria: portada (foto del primer producto con imagen o inicial),
+// nombre y conteo. Al hacer clic filtra la grilla por esa categoria.
+function CategoryCard({ group, onSelect }: { group: CategoryGroup; active: boolean; onSelect: () => void }) {
+  const cover = group.items.find((item) => item.photo_url)?.photo_url || null;
+  const availableCount = group.items.filter((item) => item.available).length;
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 text-left transition hover:border-emerald-500"
+    >
+      {cover ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={cover} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-60 transition group-hover:scale-105 group-hover:opacity-70" />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-600/20 via-neutral-900 to-neutral-950">
+          <span className="text-4xl font-black text-neutral-700">{group.label.slice(0, 1).toUpperCase()}</span>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/30 to-transparent" />
+      <div className="relative p-3">
+        <p className="text-sm font-bold leading-tight">{group.label}</p>
+        <p className="mt-0.5 text-[11px] text-neutral-300">
+          {group.items.length} producto{group.items.length === 1 ? "" : "s"} · {availableCount} disponible{availableCount === 1 ? "" : "s"}
+        </p>
+      </div>
+    </button>
   );
 }
 
@@ -261,9 +438,10 @@ function Stepper({ quantity, onChange }: { quantity: number; onChange: (quantity
   );
 }
 
-function ProductCard({ item, currency, quantity, onQuantity }: {
+function ProductCard({ item, catalog, hasWhatsApp, quantity, onQuantity }: {
   item: PublicCatalogItem;
-  currency: string;
+  catalog: PublicCatalog;
+  hasWhatsApp: boolean;
   quantity: number;
   onQuantity: (quantity: number) => void;
 }) {
@@ -285,7 +463,7 @@ function ProductCard({ item, currency, quantity, onQuantity }: {
         <p className="text-sm font-medium leading-snug">{item.name}</p>
         <p className="text-xs text-neutral-500">Ref. {item.code}</p>
         <div className="mt-auto flex items-center justify-between pt-2">
-          <p className="text-sm font-bold">{money(item.price, currency)} <span className="text-[10px] font-normal text-neutral-500">/{item.unit}</span></p>
+          <p className="text-sm font-bold">{money(item.price, catalog.currency)} <span className="text-[10px] font-normal text-neutral-500">/{item.unit}</span></p>
           {item.available ? (
             quantity > 0 ? (
               <Stepper quantity={quantity} onChange={onQuantity} />
@@ -296,6 +474,16 @@ function ProductCard({ item, currency, quantity, onQuantity }: {
             )
           ) : null}
         </div>
+        {hasWhatsApp ? (
+          <a
+            href={buildInterestUrl(catalog, item)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-semibold text-neutral-300 transition hover:border-emerald-500 hover:text-emerald-400"
+          >
+            <MessageCircle className="h-3.5 w-3.5" /> Consultar por WhatsApp
+          </a>
+        ) : null}
       </div>
     </article>
   );
