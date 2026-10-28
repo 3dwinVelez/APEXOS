@@ -7,7 +7,7 @@ process.env.DISABLE_REDIS = "true";
 const comercio = require("../src/modules/comercio/service");
 const schemaModule = require("../src/modules/comercio/schema");
 
-const { buildInstallmentSchedule, allocateInstallments, weightedAverageCost, normalizeDiscountPercent, discountedPrice, catalogCampaign, effectiveDiscountPercent } = comercio;
+const { buildInstallmentSchedule, allocateInstallments, weightedAverageCost, normalizeDiscountPercent, discountedPrice, promotionActive, bestPromotionFor, storefrontBanner, effectiveDiscountPercent, renderPromotionMessage } = comercio;
 
 // === Mini motor en memoria con el subconjunto de Prisma que usa el servicio ===
 
@@ -77,27 +77,57 @@ function fakePrisma() {
       comercioPayment: [],
       comercioPurchase: [],
       comercioExpense: [],
-      comercioStockMovement: []
+      comercioStockMovement: [],
+      comercioPromotion: [],
+      comercioPromotionCategory: [],
+      comercioPromotionProduct: [],
+      comercioPromotionSend: []
     }
   };
   const relations = {
     comercioSale: { items: ["comercioSaleItem", "sale_id"] },
     comercioCredit: { installments: ["comercioInstallment", "credit_id"], payments: ["comercioPayment", "credit_id"] },
-    comercioPayment: { credit: ["comercioCredit", "id"] }
+    comercioPayment: { credit: ["comercioCredit", "id"] },
+    comercioPromotion: {
+      categories: ["comercioPromotionCategory", "promotion_id"],
+      products: ["comercioPromotionProduct", "promotion_id"]
+    }
   };
   const defaults = {
-    comercioSettings: { store_name: "Mi comercio", currency: "COP", receipt_note: null, catalog_promo_percent: 0, preferences_json: {} },
+    comercioSettings: { store_name: "Mi comercio", currency: "COP", receipt_note: null, preferences_json: {} },
     comercioProduct: { code: "", name: "", category: null, unit: "unidad", price: 0, discount_percent: 0, cost: 0, stock: 0, min_stock: 0, active: true, notes: null, photo_path: null, photo_mime: null, catalog_featured: false },
     comercioCustomer: { code: "", name: "", document: null, phone: null, email: null, address: null, active: true, notes: null },
-    comercioInstallment: { number: 1, due_date: null, amount: 0, paid_amount: 0, status: "open", paid_at: null }
+    comercioInstallment: { number: 1, due_date: null, amount: 0, paid_amount: 0, status: "open", paid_at: null },
+    comercioPromotion: { scope: "all", status: "draft", start_date: null, end_date: null, message: null, created_by: null }
   };
 
-  function hydrate(model, row) {
-    const include = relations[model];
-    if (!include) return row;
+  // Unicidades que el servicio espera de la migracion (send por promocion+cliente,
+  // segmentos por promocion+destino).
+  function duplicated(rows, model, row) {
+    if (model === "comercioPromotionSend") {
+      return rows.some((item) => item.promotion_id === row.promotion_id && item.customer_id === row.customer_id);
+    }
+    if (model === "comercioPromotionCategory") {
+      return rows.some((item) => item.promotion_id === row.promotion_id && item.category === row.category);
+    }
+    if (model === "comercioPromotionProduct") {
+      return rows.some((item) => item.promotion_id === row.promotion_id && item.product_id === row.product_id);
+    }
+    return false;
+  }
+
+  function hydrate(model, row, include = {}) {
+    const rels = relations[model];
     const out = { ...row };
-    for (const [rel, [targetModel, foreignKey]] of Object.entries(include)) {
-      out[rel] = state.collections[targetModel].filter((item) => item[foreignKey] === row.id);
+    if (rels) {
+      for (const [rel, [targetModel, foreignKey]] of Object.entries(rels)) {
+        out[rel] = state.collections[targetModel].filter((item) => item[foreignKey] === row.id);
+      }
+    }
+    if (include._count?.select?.sends) {
+      out._count = {
+        sends: state.collections.comercioPromotionSend.filter((item) => item.promotion_id === row.id).length
+      };
     }
     return out;
   }
@@ -112,17 +142,15 @@ function fakePrisma() {
     return {
       findMany: async ({ where = {}, orderBy, take, skip, include } = {}) => {
         state.calls.push({ op: `${model}.findMany`, where });
-        void include;
         let out = sortRows(rows.filter((row) => keep(row, where)), orderBy);
         if (skip) out = out.slice(skip);
         if (take !== undefined) out = out.slice(0, take);
-        return out.map((row) => hydrate(model, structuredClone(row)));
+        return out.map((row) => hydrate(model, structuredClone(row), include));
       },
       findFirst: async ({ where = {}, orderBy, include } = {}) => {
         state.calls.push({ op: `${model}.findFirst`, where });
-        void include;
         const out = sortRows(rows.filter((row) => keep(row, where)), orderBy);
-        return out.length ? hydrate(model, structuredClone(out[0])) : null;
+        return out.length ? hydrate(model, structuredClone(out[0]), include) : null;
       },
       count: async ({ where = {} } = {}) => {
         state.calls.push({ op: `${model}.count`, where });
@@ -140,6 +168,26 @@ function fakePrisma() {
         };
         rows.push(created);
         return hydrate(model, structuredClone(created));
+      },
+      createMany: async ({ data = [], skipDuplicates = false } = {}) => {
+        state.calls.push({ op: `${model}.createMany`, data });
+        const list = Array.isArray(data) ? data : [data];
+        let count = 0;
+        for (const entry of list) {
+          const row = { id: ++state.sequence, tenant_id: TENANT, created_at: new Date(), ...structuredClone(entry) };
+          if (skipDuplicates && duplicated(rows, model, row)) continue;
+          rows.push(row);
+          count += 1;
+        }
+        return { count };
+      },
+      deleteMany: async ({ where = {} } = {}) => {
+        state.calls.push({ op: `${model}.deleteMany`, where });
+        const before = rows.length;
+        for (let index = rows.length - 1; index >= 0; index -= 1) {
+          if (matches(rows[index], where)) rows.splice(index, 1);
+        }
+        return { count: before - rows.length };
       },
       update: async ({ where = {}, data = {} } = {}) => {
         state.calls.push({ op: `${model}.update`, where, data });
@@ -273,29 +321,62 @@ test("discountedPrice: aplica el porcentaje sobre el precio de lista y redondea 
   assert.equal(discountedPrice(0, 50), 0);
 });
 
-test("catalogCampaign: vigente solo con porcentaje > 0 y dentro de la ventana inclusiva", () => {
+test("promotionActive: estado, porcentaje y ventana inclusiva", () => {
   const now = new Date("2026-10-28T12:00:00Z");
-  const base = { catalog_promo_percent: 30, catalog_promo_label: "Fin de mes" };
-  assert.equal(catalogCampaign(base, now).active, true);
-  assert.equal(catalogCampaign(base, now).percent, 30);
-  assert.equal(catalogCampaign({ ...base, catalog_promo_percent: 0 }, now).active, false);
-  assert.equal(catalogCampaign({ ...base, catalog_promo_start: "2026-11-01T12:00:00Z" }, now).active, false);
-  assert.equal(catalogCampaign({ ...base, catalog_promo_end: "2026-10-01T12:00:00Z" }, now).active, false);
+  const base = { name: "Fin de mes", scope: "all", status: "active", percent: 30 };
+  assert.equal(promotionActive(base, now), true);
+  assert.equal(promotionActive({ ...base, status: "draft" }, now), false);
+  assert.equal(promotionActive({ ...base, status: "paused" }, now), false);
+  assert.equal(promotionActive({ ...base, percent: 0 }, now), false);
+  assert.equal(promotionActive({ ...base, start_date: "2026-11-01T12:00:00Z" }, now), false);
+  assert.equal(promotionActive({ ...base, end_date: "2026-10-01T12:00:00Z" }, now), false);
   // Extremos inclusivos y ventana abierta por un lado.
-  assert.equal(catalogCampaign({ ...base, catalog_promo_start: now.toISOString() }, now).active, true);
-  assert.equal(catalogCampaign({ ...base, catalog_promo_end: now.toISOString() }, now).active, true);
-  assert.equal(catalogCampaign(null, now).percent, 0);
-  // La vigencia se publica en fecha de negocio, nunca con hora ISO (la vitrina la imprime tal cual).
-  assert.equal(catalogCampaign({ ...base, catalog_promo_start: "2026-10-20T12:00:00Z", catalog_promo_end: new Date("2026-11-11T12:00:00Z") }, now).start, "2026-10-20");
-  assert.equal(catalogCampaign({ ...base, catalog_promo_end: new Date("2026-11-11T12:00:00Z") }, now).end, "2026-11-11");
-  assert.equal(catalogCampaign(base, now).start, null);
+  assert.equal(promotionActive({ ...base, start_date: now.toISOString() }, now), true);
+  assert.equal(promotionActive({ ...base, end_date: now.toISOString() }, now), true);
+  assert.equal(promotionActive(null, now), false);
 });
 
-test("effectiveDiscountPercent: gana el mayor entre el producto y la campana (nunca se acumulan)", () => {
-  assert.equal(effectiveDiscountPercent({ discount_percent: 10 }, { percent: 20 }), 20);
-  assert.equal(effectiveDiscountPercent({ discount_percent: 40 }, { percent: 20 }), 40);
-  assert.equal(effectiveDiscountPercent({ discount_percent: 5 }, { percent: 0, active: false }), 5);
-  assert.equal(effectiveDiscountPercent({}, null), 0);
+test("bestPromotionFor: respeta alcance y gana el mayor descuento sin sumar", () => {
+  const now = new Date("2026-10-28T12:00:00Z");
+  const promotions = [
+    { id: 1, name: "Toda la tienda", scope: "all", status: "active", percent: 10 },
+    { id: 2, name: "Ropa", scope: "categories", status: "active", percent: 25, categories: [{ category: "Ropa" }] },
+    { id: 3, name: "Gorra", scope: "products", status: "active", percent: 40, products: [{ product_id: 7 }] },
+    { id: 4, name: "Pausada", scope: "all", status: "paused", percent: 80 }
+  ];
+  assert.equal(bestPromotionFor({ id: 1, category: "Ferreteria" }, promotions, now).percent, 10);
+  assert.equal(bestPromotionFor({ id: 2, category: "Ropa" }, promotions, now).percent, 25);
+  assert.equal(bestPromotionFor({ id: 7, category: "Ropa" }, promotions, now).percent, 40);
+  assert.equal(bestPromotionFor({ id: 8, category: null }, [], now).percent, 0);
+  // El producto conserva su propio descuento cuando es mayor; nunca se acumulan.
+  assert.equal(effectiveDiscountPercent({ id: 7, category: "Ropa", discount_percent: 15 }, promotions, now), 40);
+  assert.equal(effectiveDiscountPercent({ id: 8, category: "Ferreteria", discount_percent: 35 }, promotions, now), 35);
+  assert.equal(effectiveDiscountPercent({ id: 9, discount_percent: 0 }, promotions, now), 10);
+  assert.equal(effectiveDiscountPercent({}, null, now), 0);
+});
+
+test("storefrontBanner: anuncia solo promociones de toda la tienda y manda el mayor", () => {
+  const now = new Date("2026-10-28T12:00:00Z");
+  const banner = storefrontBanner([
+    { id: 1, name: "General", scope: "all", status: "active", percent: 10, start_date: "2026-10-20T12:00:00Z", end_date: new Date("2026-11-11T12:00:00Z") },
+    { id: 2, name: "Refuerzo", scope: "all", status: "active", percent: 20 },
+    { id: 3, name: "Ropa", scope: "categories", status: "active", percent: 50, categories: [{ category: "Ropa" }] }
+  ], now);
+  assert.equal(banner.active, true);
+  assert.equal(banner.percent, 20);
+  assert.equal(banner.label, "Refuerzo");
+  assert.equal(storefrontBanner([], now).active, false);
+  assert.equal(storefrontBanner([{ id: 3, name: "Ropa", scope: "categories", status: "active", percent: 50 }], now).percent, 0);
+});
+
+test("renderPromotionMessage: personaliza marcadores y cae en un texto por defecto", () => {
+  const rendered = renderPromotionMessage("Hola {cliente}, {negocio} tiene {promo} con {descuento}: {enlace}", {
+    customerName: "Maria", storeName: "La Estacion", promotionName: "Fin de mes", percent: 15, link: "https://tienda.test/tienda/abc"
+  });
+  assert.equal(rendered, "Hola Maria, La Estacion tiene Fin de mes con 15%: https://tienda.test/tienda/abc");
+  const fallback = renderPromotionMessage(null, { customerName: "Ana", storeName: "Mi negocio", promotionName: "Promo", percent: 10, link: "" });
+  assert.match(fallback, /Hola Ana/);
+  assert.match(fallback, /10%/);
 });
 
 test("createSale: cobra el precio con el descuento del producto, no el de lista", async () => {
@@ -314,24 +395,44 @@ test("createSale: cobra el precio con el descuento del producto, no el de lista"
   } finally { restore(); }
 });
 
-test("createSale: la campana de vitrina vigente manda sobre el descuento del producto dentro de su ventana", async () => {
+test("createSale: la promocion vigente manda sobre el descuento del producto dentro de su ventana", async () => {
   const prisma = fakePrisma();
   const { service, restore } = loadComercioService(prisma);
   try {
-    prisma.state.collections.comercioSettings.push({
-      id: 1, tenant_id: TENANT, store_name: "Mi comercio", catalog_promo_percent: 30, catalog_promo_label: "Noviembre",
-      catalog_promo_start: new Date("2026-11-01T12:00:00Z"), catalog_promo_end: new Date("2026-11-30T12:00:00Z")
+    prisma.state.collections.comercioPromotion.push({
+      id: 1, tenant_id: TENANT, name: "Noviembre", scope: "all", percent: 30, status: "active",
+      start_date: new Date("2026-11-01T12:00:00Z"), end_date: new Date("2026-11-30T12:00:00Z")
     });
     prisma.state.collections.comercioProduct.push(
       { id: 1, tenant_id: TENANT, code: "P-0001", name: "Balon", price: 50000, discount_percent: 10, cost: 30000, stock: 5, min_stock: 0, active: true },
       { id: 2, tenant_id: TENANT, code: "P-0002", name: "Red", price: 50000, discount_percent: 60, cost: 30000, stock: 5, min_stock: 0, active: true }
     );
     const dentro = await service.createSale(TENANT, 7, { date: "2026-11-05", items: [{ product_id: 1, quantity: 1 }], payment_type: "cash" });
-    assert.equal(dentro.items[0].unit_price, 35000, "campana 30% supera al descuento propio de 10%");
+    assert.equal(dentro.items[0].unit_price, 35000, "promocion 30% supera al descuento propio de 10%");
     const mayor = await service.createSale(TENANT, 7, { date: "2026-11-05", items: [{ product_id: 2, quantity: 1 }], payment_type: "cash" });
     assert.equal(mayor.items[0].unit_price, 20000, "el descuento propio de 60% sigue siendo el mayor");
     const fuera = await service.createSale(TENANT, 7, { date: "2026-12-05", items: [{ product_id: 1, quantity: 1 }], payment_type: "cash" });
-    assert.equal(fuera.items[0].unit_price, 45000, "campana vencida: solo aplica el descuento del producto");
+    assert.equal(fuera.items[0].unit_price, 45000, "promocion vencida: solo aplica el descuento del producto");
+  } finally { restore(); }
+});
+
+test("createSale: una promocion segmentada solo rebaja los productos de su alcance", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    prisma.state.collections.comercioPromotion.push({
+      id: 1, tenant_id: TENANT, name: "Solo ropa", scope: "categories", percent: 20, status: "active",
+      start_date: null, end_date: null
+    });
+    prisma.state.collections.comercioPromotionCategory.push({ id: 1, tenant_id: TENANT, promotion_id: 1, category: "Ropa" });
+    prisma.state.collections.comercioProduct.push(
+      { id: 1, tenant_id: TENANT, code: "P-0001", name: "Camisa", category: "Ropa", price: 40000, discount_percent: 0, cost: 20000, stock: 5, min_stock: 0, active: true },
+      { id: 2, tenant_id: TENANT, code: "P-0002", name: "Taladro", category: "Ferreteria", price: 40000, discount_percent: 0, cost: 20000, stock: 5, min_stock: 0, active: true }
+    );
+    const ropa = await service.createSale(TENANT, 7, { items: [{ product_id: 1, quantity: 1 }], payment_type: "cash" });
+    assert.equal(ropa.items[0].unit_price, 32000);
+    const ferreteria = await service.createSale(TENANT, 7, { items: [{ product_id: 2, quantity: 1 }], payment_type: "cash" });
+    assert.equal(ferreteria.items[0].unit_price, 40000, "fuera del alcance se cobra el precio de lista");
   } finally { restore(); }
 });
 
@@ -350,7 +451,7 @@ test("updateProduct: persiste descuento y destacado; el DTO expone el precio fin
   } finally { restore(); }
 });
 
-test("listProducts: sale_price es el precio del mostrador con la campana ya ponderada", async () => {
+test("listProducts: sale_price es el precio del mostrador con la mejor promocion ponderada", async () => {
   const prisma = fakePrisma();
   const { service, restore } = loadComercioService(prisma);
   try {
@@ -358,60 +459,137 @@ test("listProducts: sale_price es el precio del mostrador con la campana ya pond
     await service.createProduct(TENANT, 7, { name: "Sin descuento", price: 10000, cost: 5000 });
     await service.createProduct(TENANT, 7, { name: "Con descuento propio", price: 10000, cost: 5000, discount_percent: 25 });
 
-    // Sin campana: el mostrador cobra el precio final del maestro.
+    // Sin promociones: el mostrador cobra el precio final del maestro.
     let list = (await service.listProducts(TENANT, {})).items;
     assert.equal(byName(list, "Sin descuento").sale_price, 10000);
     assert.equal(byName(list, "Con descuento propio").sale_price, 7500);
 
-    // Campana del 10% vigente (sin ventana): rebaja lo que no tiene descuento propio,
+    // Promocion del 10% vigente (sin ventana): rebaja lo que no tiene descuento propio,
     // pero nunca se acumula con el 25% del producto.
-    await service.updateSettings(TENANT, { catalog_promo_label: "Liquidacion", catalog_promo_percent: 10 });
+    const promo = await service.createPromotion(TENANT, 7, { name: "Liquidacion", percent: 10, status: "active" });
     list = (await service.listProducts(TENANT, {})).items;
     assert.equal(byName(list, "Sin descuento").sale_discount_percent, 10);
     assert.equal(byName(list, "Sin descuento").sale_price, 9000);
+    assert.equal(byName(list, "Sin descuento").sale_promotion, "Liquidacion");
     assert.equal(byName(list, "Sin descuento").price_final, 10000, "price_final sigue siendo solo el descuento del producto");
     assert.equal(byName(list, "Con descuento propio").sale_discount_percent, 25);
     assert.equal(byName(list, "Con descuento propio").sale_price, 7500);
+    assert.equal(byName(list, "Con descuento propio").sale_promotion, null);
 
-    // Campana fuera de ventana: vuelve el precio propio.
-    await service.updateSettings(TENANT, { catalog_promo_start: "2099-01-01" });
+    // Promocion fuera de ventana: vuelve el precio propio.
+    await service.updatePromotion(TENANT, promo.id, { start_date: "2099-01-01" });
     list = (await service.listProducts(TENANT, {})).items;
     assert.equal(byName(list, "Sin descuento").sale_price, 10000);
   } finally { restore(); }
 });
 
-test("updateSettings: valida el porcentaje y la ventana de la campana", async () => {
+test("updateSettings: deja de manejar campanas (ahora viven en Promociones)", async () => {
   const prisma = fakePrisma();
   const { service, restore } = loadComercioService(prisma);
   try {
-    const saved = await service.updateSettings(TENANT, {
-      catalog_tagline: "Todo para tu vuelta",
-      catalog_promo_label: "Black weekend",
-      catalog_promo_percent: 20,
-      catalog_promo_start: "2026-11-06",
-      catalog_promo_end: "2026-11-09"
-    });
+    const saved = await service.updateSettings(TENANT, { catalog_tagline: "Todo para tu vuelta" });
     assert.equal(saved.catalog_tagline, "Todo para tu vuelta");
-    assert.equal(saved.catalog_promo_percent, 20);
-    assert.equal(saved.catalog_promo_start, "2026-11-06");
-    assert.equal(saved.catalog_promo_end, "2026-11-09");
-    await expectError(service.updateSettings(TENANT, { catalog_promo_percent: 95 }), "DISCOUNT_PERCENT_INVALID");
-    await expectError(service.updateSettings(TENANT, { catalog_promo_start: "2026-11-10", catalog_promo_end: "2026-11-01" }), "SETTINGS_PROMO_RANGE_INVALID");
-    // Limpiar la campana deja de aplicar descuentos.
-    const cleared = await service.updateSettings(TENANT, { catalog_promo_percent: 0, catalog_promo_label: null });
-    assert.equal(cleared.catalog_promo_percent, 0);
-    assert.equal(cleared.catalog_promo_label, null);
+    assert.equal("catalog_promo_percent" in saved, false);
+    assert.equal("catalog_promo_label" in saved, false);
   } finally { restore(); }
 });
 
-test("publicCatalog: expone precio final, precio de lista, descuento y campana sin filtrar costo ni stock", async () => {
+test("promociones: valida alcance, ventana y activacion; edita segmentos", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    await service.createProduct(TENANT, 7, { name: "Gorra", category: "Ropa", price: 20000, cost: 9000 });
+    await expectError(service.createPromotion(TENANT, 7, { name: "", percent: 10 }), "PROMOTION_NAME_INVALID");
+    await expectError(service.createPromotion(TENANT, 7, { name: "Mala", percent: 95 }), "DISCOUNT_PERCENT_INVALID");
+    await expectError(service.createPromotion(TENANT, 7, {
+      name: "Rango", percent: 10, start_date: "2026-11-10", end_date: "2026-11-01"
+    }), "PROMOTION_RANGE_INVALID");
+    await expectError(service.createPromotion(TENANT, 7, {
+      name: "Activa sin descuento", percent: 0, status: "active"
+    }), "PROMOTION_PERCENT_REQUIRED");
+    await expectError(service.createPromotion(TENANT, 7, {
+      name: "Categorias vacias", percent: 10, status: "active", scope: "categories"
+    }), "PROMOTION_SCOPE_EMPTY");
+    await expectError(service.createPromotion(TENANT, 7, {
+      name: "Producto inexistente", percent: 10, status: "active", scope: "products", product_ids: [99]
+    }), "PROMOTION_PRODUCT_NOT_FOUND");
+
+    const promo = await service.createPromotion(TENANT, 7, {
+      name: "Fin de mes", percent: 15, status: "active", scope: "categories", categories: ["Ropa", "Ropa", ""],
+      start_date: "2026-10-01", end_date: "2026-11-30", message: "Hola {cliente}: {descuento} en {negocio}"
+    });
+    assert.equal(promo.scope, "categories");
+    assert.deepEqual(promo.categories, ["Ropa"], "las categorias se deduplican y las vacias se descartan");
+    assert.equal(promo.start_date, "2026-10-01");
+    assert.equal(promo.active, true);
+
+    const paused = await service.setPromotionStatus(TENANT, promo.id, "paused");
+    assert.equal(paused.active, false);
+    const archived = await service.setPromotionStatus(TENANT, promo.id, "archived");
+    assert.equal(archived.status, "archived");
+    await expectError(service.updatePromotion(TENANT, promo.id, { name: "Otra" }), "PROMOTION_ARCHIVED");
+    await expectError(service.setPromotionStatus(TENANT, promo.id, "active"), "PROMOTION_ARCHIVED");
+    await expectError(service.deletePromotion(TENANT, promo.id), "PROMOTION_NOT_DRAFT");
+
+    const draft = await service.setPromotionStatus(TENANT, promo.id, "draft");
+    const updated = await service.updatePromotion(TENANT, draft.id, { scope: "all", name: "Todo el local" });
+    assert.equal(updated.scope, "all");
+    assert.deepEqual(updated.categories, [], "cambiar a alcance total limpia los segmentos");
+    const deleted = await service.deletePromotion(TENANT, updated.id);
+    assert.equal(deleted.deleted, true);
+    assert.equal(prisma.state.collections.comercioPromotion.length, 0);
+  } finally { restore(); }
+});
+
+test("audiencia y envio: personaliza por cliente con WhatsApp y evita repetir envios", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    prisma.state.collections.comercioSettings.push({
+      id: 1, tenant_id: TENANT, store_name: "La Estacion", catalog_enabled: true, catalog_code: "estacion"
+    });
+    prisma.state.collections.comercioCustomer.push(
+      { id: 1, tenant_id: TENANT, code: "C-0001", name: "Ana", phone: "+57 300 111 2233", active: true },
+      { id: 2, tenant_id: TENANT, code: "C-0002", name: "Beto", phone: null, active: true },
+      { id: 3, tenant_id: TENANT, code: "C-0003", name: "Carla", phone: "3009998877", active: true }
+    );
+    const promo = await service.createPromotion(TENANT, 7, {
+      name: "Fin de mes", percent: 15, status: "active", message: "Hola {cliente}, {promo} con {descuento}: {enlace}"
+    });
+
+    const audience = await service.promotionAudience(TENANT, promo.id, { base_url: "http://localhost:3001" });
+    assert.equal(audience.totals.audience, 2, "solo clientes con WhatsApp valido");
+    assert.equal(audience.totals.pending, 2);
+    assert.equal(audience.items[0].message, "Hola Ana, Fin de mes con 15%: http://localhost:3001/tienda/estacion");
+    assert.match(audience.items[0].wa_url, /^https:\/\/wa\.me\/573001112233\?text=/);
+
+    const first = await service.registerPromotionSends(TENANT, 7, promo.id, {
+      customer_ids: [1, 3, 2], base_url: "http://localhost:3001"
+    });
+    assert.equal(first.registered, 2);
+    assert.equal(first.without_phone, 1);
+    const again = await service.registerPromotionSends(TENANT, 7, promo.id, { customer_ids: [1] });
+    assert.equal(again.registered, 0, "no duplica el envio al mismo cliente");
+    assert.equal(again.skipped, 1);
+
+    const pending = await service.promotionAudience(TENANT, promo.id, { pending: "true" });
+    assert.equal(pending.totals.sent, 2);
+    assert.equal(pending.totals.pending, 0);
+    assert.equal(pending.items.length, 0);
+    await expectError(service.promotionAudience(TENANT, promo.id, { base_url: "javascript:alert(1)" }), "PROMOTION_BASE_URL_INVALID");
+  } finally { restore(); }
+});
+
+test("publicCatalog: expone precio final, precio de lista, descuento y banner sin filtrar costo ni stock", async () => {
   const prisma = fakePrisma();
   const { service, restore } = loadComercioService(prisma);
   try {
     prisma.state.collections.comercioSettings.push({
       id: 1, tenant_id: TENANT, store_name: "La Estacion", currency: "COP", catalog_enabled: true, catalog_code: "estacion",
-      catalog_whatsapp: "+573001112233", catalog_tagline: "Ropa, ferreteria y mas",
-      catalog_promo_percent: 25, catalog_promo_label: "Liquidacion", catalog_promo_start: null, catalog_promo_end: null
+      catalog_whatsapp: "+573001112233", catalog_tagline: "Ropa, ferreteria y mas"
+    });
+    prisma.state.collections.comercioPromotion.push({
+      id: 1, tenant_id: TENANT, name: "Liquidacion", scope: "all", percent: 25, status: "active", start_date: null, end_date: null
     });
     prisma.state.collections.comercioProduct.push(
       { id: 1, tenant_id: TENANT, code: "P-0001", name: "Gorra", category: "Ropa", unit: "unidad", price: 20000, discount_percent: 0, cost: 9000, stock: 3, min_stock: 0, active: true, notes: "Ajustable", photo_path: "ropa/gorra.png", catalog_featured: true },
@@ -427,13 +605,13 @@ test("publicCatalog: expone precio final, precio de lista, descuento y campana s
     assert.deepEqual(catalog.categories, ["Ferreteria", "Ropa"]);
     const gorra = catalog.items.find((item) => item.code === "P-0001");
     assert.equal(gorra.base_price, 20000);
-    assert.equal(gorra.price, 15000, "la campana de tienda aplica sobre el producto sin descuento propio");
+    assert.equal(gorra.price, 15000, "la promocion de tienda aplica sobre el producto sin descuento propio");
     assert.equal(gorra.discount_percent, 25);
     assert.equal(gorra.featured, true);
     assert.equal(gorra.description, "Ajustable");
     assert.equal(gorra.photo_url, "https://public.test/ropa/gorra.png");
     const martillo = catalog.items.find((item) => item.code === "P-0002");
-    assert.equal(martillo.price, 8000, "gana el descuento mayor (50% sobre la campana de 25%)");
+    assert.equal(martillo.price, 8000, "gana el descuento mayor (50% sobre la promocion de 25%)");
     assert.equal(martillo.available, false);
     assert.equal(catalog.items.find((item) => item.code === "P-0003"), undefined, "un producto archivado no se publica");
     const raw = JSON.stringify(catalog);
@@ -673,15 +851,23 @@ test("esquemas Fastify: el body de venta rechaza propiedades desconocidas", () =
   assert.equal(schemaModule.productUpdateSchema.body.properties.stock, undefined, "el stock no se edita por PUT /products/:id");
 });
 
-test("esquemas Fastify: descuentan y campana son propiedades escribibles con techo de 90", () => {
+test("esquemas Fastify: descuentos y promociones son propiedades escribibles con techo de 90", () => {
   for (const body of [schemaModule.productCreateSchema.body, schemaModule.productUpdateSchema.body]) {
     assert.equal(body.properties.discount_percent.maximum, 90);
     assert.equal(body.properties.catalog_featured.type, "boolean");
   }
   const settings = schemaModule.settingsSchema.body.properties;
-  assert.equal(settings.catalog_promo_percent.maximum, 90);
-  assert.deepEqual(settings.catalog_promo_start.type, ["string", "null"]);
-  assert.equal(settings.catalog_promo_end.pattern, "^\\d{4}-\\d{2}-\\d{2}$");
+  assert.equal(settings.catalog_promo_percent, undefined, "las campanas ya no se editan en Configuracion");
   assert.equal(settings.catalog_tagline.maxLength, 160);
   assert.equal(settings.catalog_foo, undefined, "el body de configuracion sigue siendo cerrado");
+
+  const promotion = schemaModule.promotionCreateSchema.body;
+  assert.equal(promotion.additionalProperties, false);
+  assert.deepEqual(promotion.required, ["name", "percent"]);
+  assert.equal(promotion.properties.percent.maximum, 90);
+  assert.deepEqual(promotion.properties.scope.enum, ["all", "categories", "products"]);
+  assert.deepEqual(promotion.properties.start_date.type, ["string", "null"]);
+  assert.equal(promotion.properties.end_date.pattern, "^\\d{4}-\\d{2}-\\d{2}$");
+  assert.equal(schemaModule.promotionStatusSchema.body.properties.status.enum.includes("archived"), true);
+  assert.equal(schemaModule.promotionSendSchema.body.properties.customer_ids.maxItems, 500);
 });

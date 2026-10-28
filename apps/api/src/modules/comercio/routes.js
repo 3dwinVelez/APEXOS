@@ -31,6 +31,17 @@ async function comercioRoutes(fastify) {
   // Quemar el link publico actual y asignar uno nuevo (sin body: leccion FST_ERR_CTP_EMPTY_JSON_BODY).
   fastify.post("/comercio/settings/catalog/regenerate", { preHandler: write }, (request) => service.regenerateCatalogCode(tenantOf(request)));
 
+  // --- Promociones y campanas ---
+  // Varias pueden convivir; el precio de vitrina y mostrador toma la mejor aplicable.
+  fastify.get("/comercio/promotions", { preHandler: read }, (request) => service.listPromotions(tenantOf(request)));
+  fastify.get("/comercio/promotions/:id", { schema: schema.idParamSchema, preHandler: read }, (request) => service.getPromotion(tenantOf(request), request.params.id));
+  fastify.post("/comercio/promotions", { schema: schema.promotionCreateSchema, preHandler: write }, async (request, reply) => reply.code(201).send(await service.createPromotion(tenantOf(request), userOf(request), request.body)));
+  fastify.put("/comercio/promotions/:id", { schema: schema.promotionUpdateSchema, preHandler: write }, (request) => service.updatePromotion(tenantOf(request), request.params.id, request.body));
+  fastify.post("/comercio/promotions/:id/status", { schema: schema.promotionStatusSchema, preHandler: write }, (request) => service.setPromotionStatus(tenantOf(request), request.params.id, request.body.status));
+  fastify.delete("/comercio/promotions/:id", { schema: schema.idParamSchema, preHandler: write }, (request) => service.deletePromotion(tenantOf(request), request.params.id));
+  fastify.get("/comercio/promotions/:id/audience", { schema: schema.promotionAudienceSchema, preHandler: read }, (request) => service.promotionAudience(tenantOf(request), request.params.id, request.query));
+  fastify.post("/comercio/promotions/:id/sends", { schema: schema.promotionSendSchema, preHandler: write }, (request) => service.registerPromotionSends(tenantOf(request), userOf(request), request.params.id, request.body));
+
   // --- Maestros: productos ---
   fastify.get("/comercio/products", { preHandler: read }, (request) => service.listProducts(tenantOf(request), request.query));
   fastify.get("/comercio/products/:id", { schema: schema.idParamSchema, preHandler: read }, (request) => service.getProduct(tenantOf(request), request.params.id));

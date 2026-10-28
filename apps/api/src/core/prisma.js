@@ -27,10 +27,11 @@ const TENANT_MODELS = new Set([
   "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
   "SalesInvoice", "SalesInvoiceLine", "CxcCabdoc", "CxcCuedoc", "CxcPayment", "RetentionMaster", "SkuValuation",
   "PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine",
-  // Comercio (M-30): modulo aislado; sus once tablas viven solo en comercio_*.
+  // Comercio (M-30): modulo aislado; sus tablas viven solo en comercio_*.
   "ComercioProduct", "ComercioCustomer", "ComercioSale", "ComercioSaleItem", "ComercioCredit",
   "ComercioInstallment", "ComercioPayment", "ComercioPurchase", "ComercioExpense",
   "ComercioStockMovement", "ComercioSettings",
+  "ComercioPromotion", "ComercioPromotionCategory", "ComercioPromotionProduct", "ComercioPromotionSend",
   "WarehouseTransfer", "WarehouseTransferLine", "InventoryAdjustment", "InventoryAdjustmentLine",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
@@ -76,7 +77,10 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
-  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem", "TransportPlan"
+  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem", "TransportPlan",
+  // Promociones: se archivan por status; solo el borrador se elimina fisicamente y sus
+  // categorias/productos/envios caen por ON DELETE CASCADE en la misma operacion.
+  "ComercioPromotion", "ComercioPromotionCategory", "ComercioPromotionProduct", "ComercioPromotionSend"
 ]);
 
 function currentTenantId() {

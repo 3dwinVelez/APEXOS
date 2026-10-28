@@ -4184,19 +4184,91 @@ model ComercioSettings {
   catalog_whatsapp String?
   catalog_facebook String?
   catalog_instagram String?
-  // Eslogan corto de la vitrina y campana de descuentos de toda la tienda. El
-  // porcentaje de campana compite con el descuento del producto: gana el mayor.
-  catalog_tagline      String?
-  catalog_promo_label  String?
-  catalog_promo_percent Decimal @default(0) @db.Decimal(5, 2)
-  catalog_promo_start  DateTime?
-  catalog_promo_end    DateTime?
+  // Eslogan corto de la vitrina. Las campanas de descuento ya no viven aqui: cada
+  // una es una fila de comercio_promotions (varias a la vez, con audiencia y envio).
+  catalog_tagline  String?
   preferences_json Json?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
   @@map("comercio_settings")
   @@unique([tenant_id])
+}
+
+// Promocion de vitrina y mostrador (M-30). Reemplaza la campana unica que vivia en
+// comercio_settings. Varias pueden estar activas: el cliente siempre paga el mejor
+// precio, es decir el mayor entre su descuento propio y el de las promociones que le
+// aplican (nunca se suman). scope: "all" | "categories" | "products".
+// status: "draft" | "active" | "paused" | "archived".
+model ComercioPromotion {
+  id         Int      @id @default(autoincrement())
+  tenant_id  String
+  name       String
+  scope      String   @default("all")
+  percent    Decimal  @db.Decimal(5, 2)
+  status     String   @default("draft")
+  start_date DateTime?
+  end_date   DateTime?
+  // Plantilla del mensaje de WhatsApp. Admite {cliente}, {negocio}, {promo},
+  // {descuento} y {enlace}; se personaliza por cliente al abrir wa.me.
+  message    String?
+  created_by Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  categories ComercioPromotionCategory[]
+  products   ComercioPromotionProduct[]
+  sends      ComercioPromotionSend[]
+
+  @@map("comercio_promotions")
+  @@index([tenant_id, status])
+  @@index([tenant_id, start_date])
+}
+
+// Categorias alcanzadas por una promocion scope="categories".
+model ComercioPromotionCategory {
+  id           Int               @id @default(autoincrement())
+  tenant_id    String
+  promotion_id Int
+  promotion    ComercioPromotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  category     String
+
+  @@map("comercio_promotion_categories")
+  @@unique([tenant_id, promotion_id, category])
+}
+
+// Productos alcanzados por una promocion scope="products". product_code es snapshot
+// para que la audiencia siga siendo legible aunque el producto se archive.
+model ComercioPromotionProduct {
+  id           Int               @id @default(autoincrement())
+  tenant_id    String
+  promotion_id Int
+  promotion    ComercioPromotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  product_id   Int
+  product_code String?
+
+  @@map("comercio_promotion_products")
+  @@unique([tenant_id, promotion_id, product_id])
+}
+
+// Bitacora de envio por cliente. El operador abre wa.me con el mensaje ya escrito y
+// confirma el envio: sent_at deja constancia y evita repetir el mismo mensaje. La
+// unicidad por promocion+cliente es la que sostiene el control de repetidos.
+model ComercioPromotionSend {
+  id            Int               @id @default(autoincrement())
+  tenant_id     String
+  promotion_id  Int
+  promotion     ComercioPromotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  customer_id   Int
+  customer_name String
+  phone         String
+  message       String?
+  sent_at       DateTime          @default(now())
+  created_by    Int?
+  created_at    DateTime          @default(now())
+
+  @@map("comercio_promotion_sends")
+  @@unique([tenant_id, promotion_id, customer_id])
+  @@index([tenant_id, promotion_id, sent_at])
 }
 
 // Recepcion y asignacion de facturas electronicas (M-07 Contabilidad).
