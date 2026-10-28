@@ -7,21 +7,28 @@
 // Diseno autocontenido (paleta neutra oscura + acento esmeralda, ofertas en rosa) para no
 // depender del tema del visitante ni del shell del dashboard.
 import {
+  ArrowLeftRight,
   ArrowRight,
+  Banknote,
+  Check,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
   Eye,
   Facebook,
   Instagram,
   MessageCircle,
   Minus,
+  Percent,
   Plus,
   Search,
+  Smartphone,
   ShoppingBag,
   Sparkles,
   Store,
   Tags,
   Trash2,
+  Truck,
   X
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -52,6 +59,76 @@ const SORTS: { id: SortKind; label: string }[] = [
   { id: "precio_desc", label: "Precio: mayor a menor" },
   { id: "nombre", label: "Nombre A-Z" }
 ];
+
+// Datos del comprador. Este es el unico formulario que estructura el mensaje de WhatsApp:
+// el comercio lee nombre, contacto, pago, financiacion, entrega y factura sin tener que
+// preguntar nada. Todo es opcional salvo que el visitante quiera una respuesta rapida.
+type Buyer = {
+  name: string;
+  phone: string;
+  payment: string;
+  financing: "no" | "cuotas";
+  installments: string;
+  delivery: "tienda" | "envio";
+  city: string;
+  address: string;
+  invoice: boolean;
+  document: string;
+  note: string;
+};
+
+const PAYMENT_OPTIONS: { id: string; icon: typeof Banknote }[] = [
+  { id: "Efectivo", icon: Banknote },
+  { id: "Nequi", icon: Smartphone },
+  { id: "Tarjeta", icon: CreditCard },
+  { id: "Transferencia", icon: ArrowLeftRight },
+  { id: "Contra entrega", icon: Truck }
+];
+
+const INSTALLMENT_OPTIONS = ["2", "3", "6", "12"];
+
+const emptyBuyer: Buyer = {
+  name: "",
+  phone: "",
+  payment: "",
+  financing: "no",
+  installments: "3",
+  delivery: "tienda",
+  city: "",
+  address: "",
+  invoice: false,
+  document: "",
+  note: ""
+};
+
+const fieldClass = "w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none transition placeholder:text-neutral-500 focus:border-emerald-500";
+
+function orderStorageKey() {
+  return `apex-comercio-pedido:${window.location.pathname}`;
+}
+
+// Datos clave para que el pedido llegue accionable: quien es, como responderle, como paga
+// y donde entrega. La direccion solo cuenta si pidio envio a domicilio.
+function buyerChecks(buyer: Buyer) {
+  return [
+    { label: "nombre", ok: buyer.name.trim().length >= 3 },
+    { label: "WhatsApp", ok: whatsappDigits(buyer.phone).length >= 7 },
+    { label: "medio de pago", ok: Boolean(buyer.payment) },
+    {
+      label: "direccion",
+      ok: buyer.delivery === "tienda" || Boolean(buyer.city.trim() || buyer.address.trim())
+    }
+  ];
+}
+
+// Resumen corto que el visitante ve antes de enviar, para confirmar que envio lo que creyo.
+function describeOrder(buyer: Buyer) {
+  const parts = [buyer.delivery === "envio" ? "Envio a domicilio" : "Retiro en la tienda"];
+  parts.push(buyer.payment ? `Pago: ${buyer.payment}` : "Pago por definir");
+  if (buyer.financing === "cuotas") parts.push(`Financiado en ${buyer.installments || "-"} cuotas`);
+  if (buyer.invoice) parts.push("Con factura");
+  return parts.join(" · ");
+}
 
 function money(value: number, currency: string) {
   try {
@@ -111,37 +188,65 @@ function SocialLinks({ catalog, className = "" }: { catalog: PublicCatalog; clas
 }
 
 // Mensaje del pedido: renglon por linea (cantidad, producto, referencia, categoria, precio
-// pagado y subtotal) mas nombre del comprador, factura y ahorro total si aplica.
-function buildOrderUrl(catalog: PublicCatalog, lines: CartLine[], buyerName: string, needsInvoice: boolean) {
+// pagado y subtotal), el total con el ahorro, y el bloque "Datos del pedido" que arma el
+// formulario del carrito. El comercio recibe todo listo para atender sin repreguntar.
+function buildOrderUrl(catalog: PublicCatalog, lines: CartLine[], buyer: Buyer) {
   const digits = whatsappDigits(catalog.whatsapp);
+  const currency = catalog.currency;
   const rows = lines.map((line) => {
     const cat = line.item.category ? ` · ${line.item.category}` : "";
-    const before = hasDiscount(line.item) ? ` (antes ${money(line.item.base_price, catalog.currency)})` : "";
-    return `• ${line.quantity}x ${line.item.name} (${line.item.code}${cat}) — ${money(line.item.price, catalog.currency)} c/u${before} = ${money(line.item.price * line.quantity, catalog.currency)}`;
+    const before = hasDiscount(line.item) ? ` (antes ${money(line.item.base_price, currency)})` : "";
+    return `• ${line.quantity}x ${line.item.name} (${line.item.code}${cat}) — ${money(line.item.price, currency)} c/u${before} = ${money(line.item.price * line.quantity, currency)}`;
   });
   const total = lines.reduce((sum, line) => sum + line.item.price * line.quantity, 0);
   const saved = lines.reduce((sum, line) => sum + (line.item.base_price - line.item.price) * line.quantity, 0);
-  const name = buyerName.trim();
+  const name = buyer.name.trim();
   const head = name
-    ? `¡Hola, ${catalog.store_name}! Soy ${name}. Quiero hacer este pedido:`
+    ? `¡Hola, ${catalog.store_name}! Soy ${name}. Quiero confirmar este pedido:`
     : `¡Hola, ${catalog.store_name}! Quiero hacer este pedido:`;
-  const extras: string[] = [];
-  if (name) extras.push(`Nombre: ${name}`);
-  if (needsInvoice) extras.push("Requiero factura");
-  if (saved > 0.5) extras.push(`Ahorro por descuentos: ${money(saved, catalog.currency)}`);
-  const footer = `Total estimado: ${money(total, catalog.currency)}${extras.length ? `\n\n${extras.join("\n")}` : ""}`;
-  return waHref(digits, `${head}\n\n${rows.join("\n")}\n\n${footer}`);
+
+  const totals = [`Total estimado: ${money(total, currency)}`];
+  if (saved > 0.5) totals.push(`Ahorro con descuentos: ${money(saved, currency)}`);
+
+  const data: string[] = [];
+  if (name) data.push(`Nombre: ${name}`);
+  if (buyer.phone.trim()) data.push(`WhatsApp de contacto: ${buyer.phone.trim()}`);
+  if (buyer.payment) data.push(`Medio de pago: ${buyer.payment}`);
+  if (buyer.financing === "cuotas") {
+    const count = Number(buyer.installments) || 0;
+    data.push(count > 0
+      ? `Financiacion: si, ${count} cuotas de aprox. ${money(total / count, currency)}`
+      : "Financiacion: si, quiero cuotas");
+  }
+  if (buyer.delivery === "envio") {
+    const where = [buyer.city.trim(), buyer.address.trim()].filter(Boolean).join(" - ");
+    data.push(`Entrega: envio a domicilio${where ? ` (${where})` : ", me confirmas cobertura"}`);
+  } else {
+    data.push("Entrega: retiro en la tienda");
+  }
+  if (buyer.invoice) data.push(`Factura: si${buyer.document.trim() ? `, documento ${buyer.document.trim()}` : ""}`);
+  if (buyer.note.trim()) data.push(`Notas: ${buyer.note.trim()}`);
+
+  const message = [
+    `${head}\n\n${rows.join("\n")}`,
+    totals.join("\n"),
+    `Datos del pedido\n${data.join("\n")}`
+  ].join("\n\n");
+  return waHref(digits, message);
 }
 
-// Mensaje de interes/reserva de un producto individual (incluye el descuento vigente).
-function buildInterestUrl(catalog: PublicCatalog, item: PublicCatalogItem) {
+// Mensaje de interes/reserva de un producto individual (aprovecha los datos ya escritos
+// en el carrito para que el comercio sepa con quien hablar desde el primer mensaje).
+function buildInterestUrl(catalog: PublicCatalog, item: PublicCatalogItem, buyer?: Buyer) {
   const digits = whatsappDigits(catalog.whatsapp);
   const cat = item.category ? ` · ${item.category}` : "";
   const price = hasDiscount(item)
     ? `${money(item.price, catalog.currency)} (antes ${money(item.base_price, catalog.currency)}, ${discountLabel(item.discount_percent)} de descuento)`
     : `${money(item.price, catalog.currency)}`;
   const state = item.available ? "Disponible" : "Agotado";
-  const message = `¡Hola, ${catalog.store_name}! Estoy interesado en ${item.name} (Ref. ${item.code}${cat}) — ${price}/${item.unit}. Estado: ${state}. ¿Me confirmas disponibilidad y me ayudas a reservarlo?`;
+  const who = buyer?.name.trim() ? ` Soy ${buyer.name.trim()}.` : "";
+  const contact = buyer && whatsappDigits(buyer.phone).length >= 7 ? ` Mi WhatsApp: ${buyer.phone.trim()}.` : "";
+  const message = `¡Hola, ${catalog.store_name}!${who} Estoy interesado en ${item.name} (Ref. ${item.code}${cat}) — ${price}/${item.unit}. Estado: ${state}.${contact} ¿Me confirmas disponibilidad y me ayudas a reservarlo?`;
   return waHref(digits, message);
 }
 
@@ -176,8 +281,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [quick, setQuick] = useState<PublicCatalogItem | null>(null);
-  const [buyerName, setBuyerName] = useState("");
-  const [needsInvoice, setNeedsInvoice] = useState(false);
+  const [buyer, setBuyer] = useState<Buyer>(emptyBuyer);
 
   const promo: PublicCatalogPromo = catalog.promo || EMPTY_PROMO;
   const hasWhatsApp = whatsappDigits(catalog.whatsapp).length >= 7;
@@ -192,6 +296,34 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Los datos del comprador quedan en el dispositivo: el visitante que vuelve a la vitrina
+  // solo toca los productos y envia, sin reescribir su nombre ni su celular. El guardado esta
+  // condicionado a que la restauracion ya termino: si escribe en el mismo montaje, pisa el
+  // pedido guardado con el estado vacio y la siguiente recarga no encuentra nada.
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(orderStorageKey());
+      if (raw) setBuyer({ ...emptyBuyer, ...(JSON.parse(raw) as Partial<Buyer>) });
+    } catch {
+      /* sin almacenamiento disponible: se llena el formulario en memoria */
+    }
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      window.localStorage.setItem(orderStorageKey(), JSON.stringify(buyer));
+    } catch {
+      /* almacenamiento bloqueado: el pedido igual se puede enviar */
+    }
+  }, [buyer, restored]);
+
+  function setField<K extends keyof Buyer>(key: K, value: Buyer[K]) {
+    setBuyer((current) => ({ ...current, [key]: value }));
+  }
 
   const offers = useMemo(() => catalog.items.filter(hasDiscount), [catalog.items]);
 
@@ -266,6 +398,10 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
   const totalUnits = lines.reduce((sum, line) => sum + line.quantity, 0);
   const totalAmount = lines.reduce((sum, line) => sum + line.item.price * line.quantity, 0);
   const totalSaved = lines.reduce((sum, line) => sum + (line.item.base_price - line.item.price) * line.quantity, 0);
+
+  // Barra de progreso y etiqueta "Falta ..." del formulario del carrito.
+  const checks = useMemo(() => buyerChecks(buyer), [buyer]);
+  const missing = checks.filter((check) => !check.ok).map((check) => check.label);
 
   // Con busqueda activa se retira el escaparate editorial y todo el alto va al listado.
   const browsing = !searchResults;
@@ -607,21 +743,152 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
                 </div>
               ))}
 
-              {/* Datos del comprador: se anexan al mensaje de WhatsApp */}
-              <div className="mt-4 space-y-3 rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Tus datos</p>
-                <input
-                  value={buyerName}
-                  onChange={(event) => setBuyerName(event.target.value)}
-                  maxLength={80}
-                  placeholder="Nombre para el pedido (opcional)"
-                  aria-label="Nombre para el pedido"
-                  className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none placeholder:text-neutral-500 focus:border-emerald-500"
-                />
-                <label className="flex items-center gap-2 text-sm text-neutral-300">
-                  <input checked={needsInvoice} onChange={(event) => setNeedsInvoice(event.target.checked)} type="checkbox" className="h-4 w-4 accent-emerald-600" />
-                  Requiero factura
-                </label>
+              {/* Datos del pedido: este formulario es la estructura del mensaje de WhatsApp. */}
+              <div className="mt-4 space-y-4 rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Datos del pedido</p>
+                  <span className={`text-[11px] font-bold ${missing.length === 0 ? "text-emerald-400" : "text-neutral-500"}`}>
+                    {missing.length === 0 ? "Todo listo para enviar" : `Falta: ${missing.join(", ")}`}
+                  </span>
+                </div>
+                <div
+                  aria-valuemax={checks.length}
+                  aria-valuemin={0}
+                  aria-valuenow={checks.filter((check) => check.ok).length}
+                  role="progressbar"
+                  className="h-1.5 overflow-hidden rounded-full bg-neutral-800"
+                >
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-[width] duration-500"
+                    style={{ width: `${(checks.filter((check) => check.ok).length / checks.length) * 100}%` }}
+                  />
+                </div>
+
+                <FormRow label="Nombre completo">
+                  <input
+                    aria-label="Nombre completo"
+                    autoComplete="name"
+                    className={fieldClass}
+                    inputMode="text"
+                    maxLength={80}
+                    onChange={(event) => setField("name", event.target.value)}
+                    placeholder="Como te llama el comercio"
+                    value={buyer.name}
+                  />
+                </FormRow>
+
+                <FormRow hint={buyer.phone && whatsappDigits(buyer.phone).length < 7 ? "Faltan digitos" : "Para confirmarte disponibilidad"} label="Tu WhatsApp">
+                  <input
+                    aria-label="WhatsApp de contacto"
+                    autoComplete="tel"
+                    className={fieldClass}
+                    inputMode="tel"
+                    maxLength={20}
+                    onChange={(event) => setField("phone", event.target.value)}
+                    placeholder="+57 300 111 2233"
+                    value={buyer.phone}
+                  />
+                </FormRow>
+
+                <FormRow label="¿Como vas a pagar?">
+                  <ChoiceChips
+                    options={PAYMENT_OPTIONS.map((option) => ({ id: option.id, icon: option.icon }))}
+                    value={buyer.payment}
+                    onChange={(id) => setField("payment", id)}
+                  />
+                </FormRow>
+
+                <FormRow label="¿Requiere financiacion?">
+                  <ChoiceChips
+                    options={[
+                      { id: "no", label: "No, pago completo", icon: Check },
+                      { id: "cuotas", label: "Si, por cuotas", icon: Percent }
+                    ]}
+                    value={buyer.financing}
+                    onChange={(id) => setField("financing", id === "cuotas" ? "cuotas" : "no")}
+                  />
+                </FormRow>
+
+                {buyer.financing === "cuotas" ? (
+                  <FormRow hint={Number(buyer.installments) > 0 ? `aprox. ${money(totalAmount / Number(buyer.installments), catalog.currency)} c/u` : undefined} label="Numero de cuotas">
+                    <ChoiceChips options={INSTALLMENT_OPTIONS.map((count) => ({ id: count, label: `${count} cuotas` }))} value={buyer.installments} onChange={(id) => setField("installments", id)} />
+                  </FormRow>
+                ) : null}
+
+                <FormRow label="¿Retiras o te lo enviamos?">
+                  <ChoiceChips
+                    options={[
+                      { id: "tienda", label: "Retiro en la tienda", icon: Store },
+                      { id: "envio", label: "Envio a domicilio", icon: Truck }
+                    ]}
+                    value={buyer.delivery}
+                    onChange={(id) => setField("delivery", id === "envio" ? "envio" : "tienda")}
+                  />
+                </FormRow>
+
+                {buyer.delivery === "envio" ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <FormRow label="Ciudad">
+                      <input
+                        aria-label="Ciudad de entrega"
+                        autoComplete="address-level2"
+                        className={fieldClass}
+                        maxLength={60}
+                        onChange={(event) => setField("city", event.target.value)}
+                        placeholder="Medellin"
+                        value={buyer.city}
+                      />
+                    </FormRow>
+                    <FormRow label="Direccion">
+                      <input
+                        aria-label="Direccion de entrega"
+                        autoComplete="street-address"
+                        className={fieldClass}
+                        maxLength={90}
+                        onChange={(event) => setField("address", event.target.value)}
+                        placeholder="Cra 70 #42-11"
+                        value={buyer.address}
+                      />
+                    </FormRow>
+                  </div>
+                ) : null}
+
+                <FormRow label="Facturacion">
+                  <ChoiceChips
+                    options={[
+                      { id: "no", label: "No necesito factura", icon: Check },
+                      { id: "si", label: "Requiero factura", icon: Tags }
+                    ]}
+                    value={buyer.invoice ? "si" : "no"}
+                    onChange={(id) => setField("invoice", id === "si")}
+                  />
+                </FormRow>
+
+                {buyer.invoice ? (
+                  <FormRow hint="CC, CE o NIT con el que sale la factura">
+                    <input
+                      aria-label="Documento para facturar"
+                      className={fieldClass}
+                      inputMode="text"
+                      maxLength={25}
+                      onChange={(event) => setField("document", event.target.value)}
+                      placeholder="Documento 1020304050"
+                      value={buyer.document}
+                    />
+                  </FormRow>
+                ) : null}
+
+                <FormRow hint={`${buyer.note.length}/160`} label="Notas para el comercio (opcional)">
+                  <textarea
+                    aria-label="Notas para el comercio"
+                    className={`${fieldClass} resize-none`}
+                    maxLength={160}
+                    onChange={(event) => setField("note", event.target.value)}
+                    placeholder="Horario para entregar, marca que prefieres, color..."
+                    rows={2}
+                    value={buyer.note}
+                  />
+                </FormRow>
               </div>
             </div>
             <div className="space-y-2 border-t border-neutral-800 px-5 py-4">
@@ -635,9 +902,12 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
                   <span>-{money(totalSaved, catalog.currency)}</span>
                 </div>
               ) : null}
+              {lines.length > 0 ? (
+                <p className="text-[11px] font-semibold text-neutral-400">{describeOrder(buyer)}</p>
+              ) : null}
               {hasWhatsApp ? (
                 <a
-                  href={buildOrderUrl(catalog, lines, buyerName, needsInvoice)}
+                  href={buildOrderUrl(catalog, lines, buyer)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 ${lines.length === 0 ? "pointer-events-none opacity-40" : ""}`}
@@ -659,12 +929,50 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         <QuickView
           item={quick}
           catalog={catalog}
+          buyer={buyer}
           hasWhatsApp={hasWhatsApp}
           quantity={cart[quick.code] || 0}
           onQuantity={(quantity) => setQuantity(quick, quantity)}
           onClose={() => setQuick(null)}
         />
       ) : null}
+    </div>
+  );
+}
+
+// Fila del formulario del carrito: etiqueta arriba, ayuda abajo, control en el medio.
+function FormRow({ label, hint, children }: { label?: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      {label ? <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-400">{label}</p> : null}
+      {children}
+      {hint ? <p className="text-[11px] text-neutral-500">{hint}</p> : null}
+    </div>
+  );
+}
+
+type ChipOption = { id: string; label?: string; icon?: typeof Banknote };
+
+// Opciones de un toque: se tilda la eleccion y el mensaje de WhatsApp se reescribe solo.
+function ChoiceChips({ options, value, onChange }: { options: ChipOption[]; value: string; onChange: (id: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option) => {
+        const Icon = option.icon;
+        const selected = option.id === value;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(option.id)}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold transition active:scale-95 ${selected ? "border-emerald-500 bg-emerald-600 text-white" : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-neutral-500"}`}
+          >
+            {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+            {option.label || option.id}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1007,9 +1315,10 @@ function ProductCard({ item, catalog, hasWhatsApp, accent, quantity, onQuantity,
   );
 }
 
-function QuickView({ item, catalog, hasWhatsApp, quantity, onQuantity, onClose }: {
+function QuickView({ item, catalog, buyer, hasWhatsApp, quantity, onQuantity, onClose }: {
   item: PublicCatalogItem;
   catalog: PublicCatalog;
+  buyer: Buyer;
   hasWhatsApp: boolean;
   quantity: number;
   onQuantity: (quantity: number) => void;
@@ -1084,7 +1393,7 @@ function QuickView({ item, catalog, hasWhatsApp, quantity, onQuantity, onClose }
             ) : null}
             {hasWhatsApp ? (
               <a
-                href={buildInterestUrl(catalog, item)}
+                href={buildInterestUrl(catalog, item, buyer)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl border border-neutral-700 px-4 py-3 text-sm font-bold text-neutral-100 transition hover:border-emerald-500 hover:text-emerald-300"
