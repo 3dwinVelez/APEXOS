@@ -15,6 +15,13 @@ const idParams = {
 
 const businessDate = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$", minLength: 10, maxLength: 10 };
 
+// Descuento porcentual (producto o campana de la vitrina): el techo de 90 lo valida el
+// servicio con su error de negocio; el schema corta los absurdos de entrada.
+const discountPercent = { type: "number", minimum: 0, maximum: 90 };
+
+// Ventana de la campana: fecha de negocio AAAA-MM-DD o null (sin limite por ese lado).
+const promoDate = { type: ["string", "null"], pattern: "^\\d{4}-\\d{2}-\\d{2}$", minLength: 10, maxLength: 10 };
+
 const productBody = {
   type: "object",
   required: ["name", "price", "cost"],
@@ -28,6 +35,8 @@ const productBody = {
     stock: { type: "integer", minimum: 0 },
     min_stock: { type: "integer", minimum: 0 },
     active: { type: "boolean" },
+    discount_percent: discountPercent,
+    catalog_featured: { type: "boolean" },
     notes: { type: ["string", "null"], maxLength: 500 }
   }
 };
@@ -43,6 +52,8 @@ const productUpdateBody = {
     cost: { type: "number", minimum: 0 },
     min_stock: { type: "integer", minimum: 0 },
     active: { type: "boolean" },
+    discount_percent: discountPercent,
+    catalog_featured: { type: "boolean" },
     notes: { type: ["string", "null"], maxLength: 500 }
   }
 };
@@ -195,6 +206,11 @@ const settingsBody = {
     catalog_whatsapp: { type: ["string", "null"], maxLength: 32 },
     catalog_facebook: { type: ["string", "null"], maxLength: 200 },
     catalog_instagram: { type: ["string", "null"], maxLength: 200 },
+    catalog_tagline: { type: ["string", "null"], maxLength: 160 },
+    catalog_promo_label: { type: ["string", "null"], maxLength: 80 },
+    catalog_promo_percent: discountPercent,
+    catalog_promo_start: promoDate,
+    catalog_promo_end: promoDate,
     preferences: { type: ["object", "null"] }
   }
 };

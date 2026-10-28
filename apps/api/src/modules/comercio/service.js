@@ -144,9 +144,57 @@ function weightedAverageCost(stock, currentCost, quantity, unitCost) {
   return round2((s * (Number(currentCost) || 0) + q * (Number(unitCost) || 0)) / (s + q));
 }
 
+// Descuento porcentual parametrizable (producto o campana de toda la tienda). Se
+// limita a 0-90%: un descuento mayor distorsiona el margen y suele ser un error de
+// digitacion, no una decision comercial.
+const MAX_DISCOUNT_PERCENT = 90;
+function normalizeDiscountPercent(value, label = "el descuento") {
+  if (value === undefined || value === null || value === "") return 0;
+  const percent = Number(value);
+  if (!Number.isFinite(percent) || percent < 0 || percent > MAX_DISCOUNT_PERCENT) {
+    throw appError(400, "DISCOUNT_PERCENT_INVALID", `${label} debe ser un numero entre 0 y ${MAX_DISCOUNT_PERCENT}`);
+  }
+  return round2(percent);
+}
+
+// Precio final tras aplicar el porcentaje vigente.
+function discountedPrice(basePrice, percent) {
+  const pct = Math.min(MAX_DISCOUNT_PERCENT, Math.max(0, Number(percent) || 0));
+  return round2(num(basePrice) * (1 - pct / 100));
+}
+
+// Campana de descuentos de la vitrina: vigente solo con porcentaje > 0 y dentro de la
+// ventana (los extremos son inclusivos; una fecha ausente no limita por ese lado).
+function catalogCampaign(settings, now = new Date()) {
+  const percent = round2(num(settings?.catalog_promo_percent));
+  const start = settings?.catalog_promo_start ? new Date(settings.catalog_promo_start) : null;
+  const end = settings?.catalog_promo_end ? new Date(settings.catalog_promo_end) : null;
+  const timestamp = now instanceof Date ? now.getTime() : new Date(now).getTime();
+  const active = percent > 0
+    && (!start || Number.isNaN(start.getTime()) || timestamp >= start.getTime())
+    && (!end || Number.isNaN(end.getTime()) || timestamp <= end.getTime());
+  return {
+    label: nullableText(settings?.catalog_promo_label, 80),
+    percent: active ? percent : 0,
+    start: start && !Number.isNaN(start.getTime()) ? start.toISOString() : null,
+    end: end && !Number.isNaN(end.getTime()) ? end.toISOString() : null,
+    active
+  };
+}
+
+// Porcentaje efectivo de un producto: gana el mayor entre su propio descuento y la
+// campana activa, para no aplicar dos descuentos sobre el mismo precio de lista.
+function effectiveDiscountPercent(product, campaign) {
+  const own = round2(num(product?.discount_percent));
+  const promo = Number(campaign?.percent) || 0;
+  return Math.max(own, promo);
+}
+
 // === Serializacion ===
 
 function productDto(row) {
+  const discountPercent = round2(num(row.discount_percent));
+  const priceFinal = discountedPrice(row.price, discountPercent);
   return {
     id: row.id,
     code: row.code,
@@ -154,12 +202,15 @@ function productDto(row) {
     category: row.category || null,
     unit: row.unit || "unidad",
     price: num(row.price),
+    discount_percent: discountPercent,
+    price_final: priceFinal,
     cost: num(row.cost),
     stock: row.stock,
     min_stock: row.min_stock,
     active: row.active,
     notes: row.notes || null,
     has_photo: Boolean(row.photo_path),
+    catalog_featured: Boolean(row.catalog_featured),
     low_stock: row.stock <= row.min_stock,
     created_at: row.created_at ? row.created_at.toISOString() : null,
     updated_at: row.updated_at ? row.updated_at.toISOString() : null
@@ -337,6 +388,11 @@ function settingsDto(row) {
     catalog_whatsapp: row.catalog_whatsapp || null,
     catalog_facebook: row.catalog_facebook || null,
     catalog_instagram: row.catalog_instagram || null,
+    catalog_tagline: row.catalog_tagline || null,
+    catalog_promo_label: row.catalog_promo_label || null,
+    catalog_promo_percent: round2(num(row.catalog_promo_percent)),
+    catalog_promo_start: toBusinessDate(row.catalog_promo_start),
+    catalog_promo_end: toBusinessDate(row.catalog_promo_end),
     preferences: row.preferences_json && typeof row.preferences_json === "object" ? row.preferences_json : {},
     updated_at: row.updated_at ? row.updated_at.toISOString() : null
   };
@@ -415,6 +471,22 @@ async function updateSettings(tenantId, data) {
     if (data.catalog_whatsapp !== undefined) payload.catalog_whatsapp = nullableText(data.catalog_whatsapp, 32);
     if (data.catalog_facebook !== undefined) payload.catalog_facebook = normalizeSocialUrl(data.catalog_facebook, "Facebook");
     if (data.catalog_instagram !== undefined) payload.catalog_instagram = normalizeSocialUrl(data.catalog_instagram, "Instagram");
+    if (data.catalog_tagline !== undefined) payload.catalog_tagline = nullableText(data.catalog_tagline, 160);
+    if (data.catalog_promo_label !== undefined) payload.catalog_promo_label = nullableText(data.catalog_promo_label, 80);
+    if (data.catalog_promo_percent !== undefined) {
+      payload.catalog_promo_percent = normalizeDiscountPercent(data.catalog_promo_percent, "El descuento de la campana");
+    }
+    if (data.catalog_promo_start !== undefined) {
+      payload.catalog_promo_start = normalizeText(data.catalog_promo_start) ? businessDateToUtc(data.catalog_promo_start) : null;
+    }
+    if (data.catalog_promo_end !== undefined) {
+      payload.catalog_promo_end = normalizeText(data.catalog_promo_end) ? businessDateToUtc(data.catalog_promo_end) : null;
+    }
+    const start = payload.catalog_promo_start !== undefined ? payload.catalog_promo_start : current.catalog_promo_start;
+    const end = payload.catalog_promo_end !== undefined ? payload.catalog_promo_end : current.catalog_promo_end;
+    if (start && end && new Date(end) < new Date(start)) {
+      throw appError(400, "SETTINGS_PROMO_RANGE_INVALID", "El fin de la campana no puede ser anterior a su inicio");
+    }
     if (data.catalog_enabled !== undefined) {
       const enable = Boolean(data.catalog_enabled);
       payload.catalog_enabled = enable;
@@ -471,21 +543,33 @@ async function publicCatalog(code) {
   return prisma.runWithTenant(settings.tenant_id, async () => {
     // SOFT_DELETE ya limita a productos activos.
     const rows = await prisma.comercioProduct.findMany({ orderBy: [{ category: "asc" }, { name: "asc" }] });
-    const items = rows.map((row) => ({
-      code: row.code,
-      name: row.name,
-      category: row.category || null,
-      unit: row.unit || "unidad",
-      price: num(row.price),
-      available: row.stock > 0,
-      photo_url: storage.publicViewUrl(row.photo_path)
-    }));
+    const campaign = catalogCampaign(settings);
+    const items = rows.map((row) => {
+      // El visitante ve el precio final (descuento aplicado); el precio de lista se
+      // publica tachado para que el ahorro sea visible. notes es la descripcion corta.
+      const percent = effectiveDiscountPercent(row, campaign);
+      return {
+        code: row.code,
+        name: row.name,
+        category: row.category || null,
+        unit: row.unit || "unidad",
+        price: discountedPrice(row.price, percent),
+        base_price: num(row.price),
+        discount_percent: percent,
+        description: nullableText(row.notes, 500),
+        featured: Boolean(row.catalog_featured),
+        available: row.stock > 0,
+        photo_url: storage.publicViewUrl(row.photo_path)
+      };
+    });
     return {
       store_name: settings.store_name,
+      tagline: settings.catalog_tagline || null,
       currency: settings.currency || "COP",
       whatsapp: settings.catalog_whatsapp || null,
       facebook: settings.catalog_facebook || null,
       instagram: settings.catalog_instagram || null,
+      promo: campaign,
       categories: [...new Set(items.map((item) => item.category).filter(Boolean))].sort(),
       items
     };
@@ -556,6 +640,8 @@ function productPayload(data, { partial = false } = {}) {
   }
   if (data.active !== undefined) payload.active = data.active !== false;
   if (data.notes !== undefined) payload.notes = nullableText(data.notes, 500);
+  if (data.discount_percent !== undefined) payload.discount_percent = normalizeDiscountPercent(data.discount_percent, "El descuento del producto");
+  if (data.catalog_featured !== undefined) payload.catalog_featured = data.catalog_featured === true;
   return payload;
 }
 
@@ -802,6 +888,10 @@ async function createSale(tenantId, userId, data) {
     if (discount < 0) throw appError(400, "SALE_DISCOUNT_INVALID", "El descuento no puede ser negativo");
 
     // Descuento atomo por producto: si el stock cambia en paralelo, la venta falla limpia.
+    // El precio cobrado es el final (descuento del producto o campana vigente, el mayor),
+    // igual que la vitrina: lo que ve el cliente es lo que factura el mostrador.
+    const settingsRow = await tx.comercioSettings.findFirst({ where: { tenant_id: tenantId } });
+    const campaign = catalogCampaign(settingsRow, date);
     const lines = [];
     for (const [productId, quantity] of merged.entries()) {
       const product = await findProductTx(tx, tenantId, productId);
@@ -816,7 +906,7 @@ async function createSale(tenantId, userId, data) {
       lines.push({
         product,
         quantity,
-        unit_price: num(product.price),
+        unit_price: discountedPrice(product.price, effectiveDiscountPercent(product, campaign)),
         unit_cost: num(product.cost),
         stock_before: product.stock,
         stock_after: after.stock
@@ -1446,6 +1536,10 @@ module.exports = {
   buildInstallmentSchedule,
   allocateInstallments,
   weightedAverageCost,
+  normalizeDiscountPercent,
+  discountedPrice,
+  catalogCampaign,
+  effectiveDiscountPercent,
   businessDateToUtc,
   toBusinessDate,
   // configuracion

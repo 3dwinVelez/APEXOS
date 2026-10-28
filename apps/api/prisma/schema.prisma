@@ -3922,6 +3922,9 @@ model ComercioProduct {
   category   String?
   unit       String   @default("unidad")
   price      Decimal  @db.Decimal(18, 2)
+  // Descuento comercial del producto (0-90%). El precio de lista no se toca: la
+  // vitrina y la venta de mostrador derivan el precio final de price * (1 - pct/100).
+  discount_percent Decimal @default(0) @db.Decimal(5, 2)
   cost       Decimal  @db.Decimal(18, 2)
   stock      Int      @default(0)
   min_stock  Int      @default(0)
@@ -3929,6 +3932,8 @@ model ComercioProduct {
   notes      String?
   photo_path String?
   photo_mime String?
+  // El comercio decide qué productos encabezan los rieles de la vitrina publica.
+  catalog_featured Boolean @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -4179,6 +4184,13 @@ model ComercioSettings {
   catalog_whatsapp String?
   catalog_facebook String?
   catalog_instagram String?
+  // Eslogan corto de la vitrina y campana de descuentos de toda la tienda. El
+  // porcentaje de campana compite con el descuento del producto: gana el mayor.
+  catalog_tagline      String?
+  catalog_promo_label  String?
+  catalog_promo_percent Decimal @default(0) @db.Decimal(5, 2)
+  catalog_promo_start  DateTime?
+  catalog_promo_end    DateTime?
   preferences_json Json?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
