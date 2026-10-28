@@ -43,6 +43,14 @@ function start() {
     });
   });
 
+  if (String(process.env.MAILBOX_INGEST_ENABLED || "").toLowerCase() === "true") {
+    const configured = Number(process.env.MAILBOX_INGEST_INTERVAL_MINUTES || 15);
+    const minutes = Number.isInteger(configured) && configured >= 1 && configured <= 59 ? configured : 15;
+    cron.schedule(`*/${minutes} * * * *`, () => {
+      runOnce("ingestMailboxAttachments", () => require("../modules/mailbox/ingest-runner").runScheduled());
+    });
+  }
+
   // Recepcion de facturas por IMAP: cada empresa decide su intervalo; esta
   // pasada solo dispara las configuraciones habilitadas que ya vencieron.
   cron.schedule("*/5 * * * *", () => {

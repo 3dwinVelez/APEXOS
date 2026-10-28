@@ -104,6 +104,9 @@
     "workflow:promote-main": "node scripts/branch-workflow.js promote-main",
     "lint": "npm --workspace apps/web run lint",
     "prisma:validate": "npx prisma validate --schema apps/api/prisma/schema.prisma",
+    "mail:login": "node apps/api/scripts/graph-mail-login.js",
+    "mail:ingest": "node apps/api/scripts/mailbox-ingest.js",
+    "test:mailbox": "node --test apps/api/test/mailbox-graph-ingest.test.js apps/api/test/mailbox-imap-ingest.test.js",
     "brain:dev": "cd services/brain && uvicorn main:app --reload --port 8000"
   },
   "devDependencies": {
