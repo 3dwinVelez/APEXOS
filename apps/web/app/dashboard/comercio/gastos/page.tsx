@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Ban, Plus, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Movimientos "otros" del Comercio (GET /api/v1/comercio/expenses): egresos operativos
 // (direction=expense) e ingresos fuera del catalogo (direction=income, p. ej. recargas).
@@ -116,21 +116,19 @@ export default function ComercioGastosPage() {
       setSaving(false);
     }
   }
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Ingresos distintos de ventas (recargas, servicios) y egresos del dia a dia (arriendo, servicios, transporte). Entran al resultado estimado de los reportes." title="Ingresos y egresos" />
-      {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Caja" subtitle="Ingresos distintos de ventas (recargas, servicios) y egresos del dia a dia (arriendo, servicios, transporte). Entran al resultado estimado de los reportes." title="Ingresos y egresos" />
+      <ComercioMessages error={error} message={message} />
 
-      <section className="rounded-md border border-line bg-white">
+      <section className="apex-section-card">
         <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-4">
-            <p className="text-sm text-neutral-600">Ingresos: <span className="font-semibold text-emerald-600">+{money(incomeTotal)}</span></p>
-            <p className="text-sm text-neutral-600">Egresos: <span className="font-semibold text-red-600">-{money(expenseTotal)}</span></p>
+            <p className="text-sm text-content-body">Ingresos: <span className="font-semibold text-success">+{money(incomeTotal)}</span></p>
+            <p className="text-sm text-content-body">Egresos: <span className="font-semibold text-error">-{money(expenseTotal)}</span></p>
             <div className="flex gap-1" role="group" aria-label="Filtro por direccion">
               <FilterChip label="Todos" active={directionFilter === ""} onClick={() => setDirectionFilter("")} />
               <FilterChip label="Ingresos" active={directionFilter === "income"} onClick={() => setDirectionFilter("income")} />
@@ -141,16 +139,16 @@ export default function ComercioGastosPage() {
             </label>
           </div>
           <div className="flex gap-2">
-            <button className="btn-secondary flex items-center gap-2" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
+            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
             {access.canWrite ? (
-              <button className="btn-primary flex items-center gap-2" onClick={() => { setEditing(null); setForm(emptyForm); setEditorOpen(true); }} type="button"><Plus size={14} /> Nuevo movimiento</button>
+              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setEditing(null); setForm(emptyForm); setEditorOpen(true); }} type="button"><Plus size={14} /> Nuevo movimiento</button>
             ) : null}
           </div>
         </div>
         {loading ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Cargando movimientos...</p>
+          <p className="p-8 text-center text-sm text-content-muted">Cargando movimientos...</p>
         ) : expenses.length === 0 ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Sin movimientos registrados.</p>
+          <p className="p-8 text-center text-sm text-content-muted">Sin movimientos registrados.</p>
         ) : (
           <>
             <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
@@ -159,15 +157,15 @@ export default function ComercioGastosPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{expense.concept}</p>
-                      <p className="font-mono text-xs text-neutral-500">{expense.full_number} · {expense.date}</p>
+                      <p className="font-mono text-xs text-content-muted">{expense.full_number} · {expense.date}</p>
                     </div>
                     <StatusPill tone={expense.status === "active" ? "ok" : "muted"}>{expense.status === "active" ? "Activo" : "Anulado"}</StatusPill>
                   </div>
-                  <p className={`mt-1 text-lg font-semibold ${expense.direction === "income" ? "text-emerald-600" : "text-red-600"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</p>
+                  <p className={`mt-1 text-lg font-semibold ${expense.direction === "income" ? "text-success" : "text-error"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</p>
                   {access.canWrite && expense.status === "active" ? (
                     <div className="mt-2 flex gap-2">
-                      <button className="btn-secondary px-2 py-1 text-xs" onClick={() => openEditor(expense)} type="button">Editar</button>
-                      <button className="btn-secondary px-2 py-1 text-xs" onClick={() => setVoidTarget(expense)} type="button">Anular</button>
+                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => openEditor(expense)} type="button">Editar</button>
+                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => setVoidTarget(expense)} type="button">Anular</button>
                     </div>
                   ) : null}
                 </li>
@@ -176,7 +174,7 @@ export default function ComercioGastosPage() {
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[760px] text-sm">
                 <thead>
-                  <tr className="border-b bg-paper text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
                     <th className="p-3">Numero</th>
                     <th>Fecha</th>
                     <th>Concepto</th>
@@ -195,14 +193,14 @@ export default function ComercioGastosPage() {
                       <td className="p-3 font-medium">{expense.concept}</td>
                       <td className="p-3">{expense.category || "--"}</td>
                       <td className="p-3">{expense.method || "--"}</td>
-                      <td className={`p-3 text-right font-semibold ${expense.direction === "income" ? "text-emerald-600" : "text-red-600"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</td>
+                      <td className={`p-3 text-right font-semibold ${expense.direction === "income" ? "text-success" : "text-error"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</td>
                       <td className="p-3">{expense.status === "active" ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Anulado</StatusPill>}</td>
                       {access.canWrite ? (
                         <td className="p-3 pr-3 text-right">
                           {expense.status === "active" ? (
                             <div className="flex justify-end gap-1">
-                              <button className="btn-secondary px-2 py-1 text-xs" onClick={() => openEditor(expense)} type="button">Editar</button>
-                              <button className="btn-secondary px-2 py-1 text-xs" onClick={() => setVoidTarget(expense)} type="button">Anular</button>
+                              <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => openEditor(expense)} type="button">Editar</button>
+                              <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => setVoidTarget(expense)} type="button">Anular</button>
                             </div>
                           ) : null}
                         </td>
@@ -223,8 +221,8 @@ export default function ComercioGastosPage() {
               <div className="sm:col-span-2">
                 <Field label="Tipo de movimiento">
                   <div className="flex gap-2">
-                    <button className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${form.direction === "expense" ? "border-red-300 bg-red-50 text-red-700" : "border-line text-neutral-600"}`} onClick={() => setForm({ ...form, direction: "expense" })} type="button">Egreso</button>
-                    <button className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${form.direction === "income" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-line text-neutral-600"}`} onClick={() => setForm({ ...form, direction: "income" })} type="button">Ingreso</button>
+                    <button className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${form.direction === "expense" ? "border-red-300 bg-error/10 text-error" : "border-line text-content-body"}`} onClick={() => setForm({ ...form, direction: "expense" })} type="button">Egreso</button>
+                    <button className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${form.direction === "income" ? "border-emerald-300 bg-success/10 text-success" : "border-line text-content-body"}`} onClick={() => setForm({ ...form, direction: "income" })} type="button">Ingreso</button>
                   </div>
                 </Field>
               </div>
@@ -257,8 +255,8 @@ export default function ComercioGastosPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="btn-secondary" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
-              <button className="btn-primary" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar movimiento"}</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
+              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar movimiento"}</button>
             </div>
           </form>
         </ModalFrame>
@@ -267,10 +265,10 @@ export default function ComercioGastosPage() {
       {voidTarget ? (
         <ModalFrame onClose={() => setVoidTarget(null)} title={`Anular movimiento ${voidTarget.full_number}`}>
           <div className="space-y-4">
-            <p className="text-sm text-neutral-600">{voidTarget.concept} · {money(voidTarget.amount)}. El movimiento queda como anulado en el historial y sale de los totales.</p>
+            <p className="text-sm text-content-body">{voidTarget.concept} · {money(voidTarget.amount)}. El movimiento queda como anulado en el historial y sale de los totales.</p>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="btn-secondary" onClick={() => setVoidTarget(null)} type="button">Cancelar</button>
-              <button className="btn-primary flex items-center gap-1" disabled={saving} onClick={() => void voidExpense()} type="button"><Ban size={14} /> {saving ? "Anulando..." : "Confirmar anulacion"}</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setVoidTarget(null)} type="button">Cancelar</button>
+              <button className="apex-primary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={saving} onClick={() => void voidExpense()} type="button"><Ban size={14} /> {saving ? "Anulando..." : "Confirmar anulacion"}</button>
             </div>
           </div>
         </ModalFrame>
@@ -282,7 +280,7 @@ export default function ComercioGastosPage() {
 function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
-      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${active ? "border-neutral-800 bg-neutral-800 text-white" : "border-line text-neutral-600 hover:bg-neutral-50"}`}
+      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${active ? "border-line bg-surface-muted text-white" : "border-line text-content-body hover:bg-surface-muted"}`}
       onClick={onClick}
       type="button"
     >

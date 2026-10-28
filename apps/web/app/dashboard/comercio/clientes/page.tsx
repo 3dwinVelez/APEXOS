@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AccessDenied, Check, Field, ModuleHeader, StatusPill, describeError, useComercioAccess } from "@/components/comercio/shared";
+import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, useComercioAccess } from "@/components/comercio/shared";
 
 // Maestro de clientes del Comercio (GET /api/v1/comercio/customers). Es un cliente propio
 // del modulo: no se mezcla con los Parties del ERP. Desactivar esta bloqueado si tiene
@@ -103,37 +103,35 @@ export default function ComercioClientesPage() {
       setError(describeError(caught, "No fue posible cambiar el estado del cliente."));
     }
   }
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Directorio propio del comercio para ventas a credito y seguimiento de cartera." title="Clientes" />
-      {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Maestros" subtitle="Directorio propio del comercio para ventas a credito y seguimiento de cartera." title="Clientes" />
+      <ComercioMessages error={error} message={message} />
 
-      <section className="rounded-md border border-line bg-white">
+      <section className="apex-section-card">
         <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
             <label className="relative block max-w-md flex-1">
-              <Users className="absolute left-3 top-3 text-neutral-400" size={16} />
+              <Users className="absolute left-3 top-3 text-content-muted" size={16} />
               <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, codigo, documento o telefono" value={query} />
             </label>
             <Check checked={showInactive} label="Ver inactivos" onChange={setShowInactive} />
           </div>
           <div className="flex gap-2">
-            <button className="btn-secondary flex items-center gap-2" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
+            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
             {access.canWrite ? (
-              <button className="btn-primary flex items-center gap-2" onClick={() => { setEditing(null); setForm(emptyForm); setEditorOpen(true); }} type="button"><Plus size={14} /> Nuevo cliente</button>
+              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setEditing(null); setForm(emptyForm); setEditorOpen(true); }} type="button"><Plus size={14} /> Nuevo cliente</button>
             ) : null}
           </div>
         </div>
 
         {loading ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Cargando clientes...</p>
+          <p className="p-8 text-center text-sm text-content-muted">Cargando clientes...</p>
         ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Sin clientes. Crea el primero para poder vender a credito.</p>
+          <p className="p-8 text-center text-sm text-content-muted">Sin clientes. Crea el primero para poder vender a credito.</p>
         ) : (
           <>
             <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
@@ -142,15 +140,15 @@ export default function ComercioClientesPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{customer.name}</p>
-                      <p className="font-mono text-xs text-neutral-500">{customer.code}</p>
+                      <p className="font-mono text-xs text-content-muted">{customer.code}</p>
                     </div>
                     <StatusPill tone={customer.active ? "ok" : "muted"}>{customer.active ? "Activo" : "Inactivo"}</StatusPill>
                   </div>
-                  <p className="mt-1 text-xs text-neutral-600">{customer.document || "Sin documento"} · {customer.phone || "Sin telefono"}</p>
+                  <p className="mt-1 text-xs text-content-body">{customer.document || "Sin documento"} · {customer.phone || "Sin telefono"}</p>
                   {access.canWrite ? (
                     <div className="mt-3 flex gap-2">
-                      <button className="btn-secondary px-2 py-1 text-xs" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
-                      <button className="btn-secondary px-2 py-1 text-xs" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
+                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
+                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
                     </div>
                   ) : null}
                 </li>
@@ -159,7 +157,7 @@ export default function ComercioClientesPage() {
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
-                  <tr className="border-b bg-paper text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
                     <th className="p-3">Codigo</th>
                     <th>Nombre</th>
                     <th>Documento</th>
@@ -181,8 +179,8 @@ export default function ComercioClientesPage() {
                       {access.canWrite ? (
                         <td className="p-3 pr-3 text-right">
                           <div className="flex justify-end gap-1">
-                            <button className="btn-secondary px-2 py-1 text-xs" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
-                            <button className="btn-secondary px-2 py-1 text-xs" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
+                            <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
+                            <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
                           </div>
                         </td>
                       ) : null}
@@ -222,10 +220,10 @@ export default function ComercioClientesPage() {
                 </Field>
               </div>
             </div>
-            <p className="text-xs text-neutral-500">El codigo (C-0001...) lo asigna el servidor. Para activar o desactivar usa el boton de la fila: un cliente con creditos vigentes no puede desactivarse.</p>
+            <p className="text-xs text-content-muted">El codigo (C-0001...) lo asigna el servidor. Para activar o desactivar usa el boton de la fila: un cliente con creditos vigentes no puede desactivarse.</p>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="btn-secondary" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
-              <button className="btn-primary" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar cliente"}</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
+              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar cliente"}</button>
             </div>
           </form>
         </ModalFrame>

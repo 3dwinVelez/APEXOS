@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ban, RefreshCw, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Historial de ventas (GET /api/v1/comercio/sales). Las ventas no se borran: se anulan
 // con permiso approve y el servidor devuelve el stock al inventario.
@@ -89,20 +89,18 @@ export default function ComercioVentasPage() {
       setSaving(false);
     }
   }
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Toda venta queda congelada con su precio, costo y cliente. Las anulaciones devuelven stock y requieren permiso de aprobacion." title="Ventas" />
-      {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Ventas" subtitle="Toda venta queda congelada con su precio, costo y cliente. Las anulaciones devuelven stock y requieren permiso de aprobacion." title="Ventas" />
+      <ComercioMessages error={error} message={message} />
 
-      <section className="rounded-md border border-line bg-white">
+      <section className="apex-section-card">
         <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-2 lg:grid-cols-5">
           <label className="relative block lg:col-span-2">
-            <Search className="absolute left-3 top-3 text-neutral-400" size={16} />
+            <Search className="absolute left-3 top-3 text-content-muted" size={16} />
             <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por numero, cliente o producto" value={query} />
           </label>
           <Field label="Desde">
@@ -117,14 +115,14 @@ export default function ComercioVentasPage() {
               <option value="active">Activas</option>
               <option value="voided">Anuladas</option>
             </select>
-            <button className="btn-secondary flex items-center gap-2 px-3" onClick={() => void load()} type="button" aria-label="Actualizar"><RefreshCw size={14} /></button>
+            <button className="apex-secondary-action flex items-center gap-2 px-3 text-sm font-semibold" onClick={() => void load()} type="button" aria-label="Actualizar"><RefreshCw size={14} /></button>
           </div>
         </div>
 
         {loading ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Cargando ventas...</p>
+          <p className="p-8 text-center text-sm text-content-muted">Cargando ventas...</p>
         ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Sin ventas en el rango seleccionado.</p>
+          <p className="p-8 text-center text-sm text-content-muted">Sin ventas en el rango seleccionado.</p>
         ) : (
           <>
             <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
@@ -137,7 +135,7 @@ export default function ComercioVentasPage() {
                         {sale.status === "voided" ? "Anulada" : sale.payment_type === "credit" ? "Credito" : sale.method || "Contado"}
                       </StatusPill>
                     </div>
-                    <p className="mt-1 text-xs text-neutral-500">{sale.date} · {sale.customer_name || "Sin cliente"} · {sale.items.length} linea(s)</p>
+                    <p className="mt-1 text-xs text-content-muted">{sale.date} · {sale.customer_name || "Sin cliente"} · {sale.items.length} linea(s)</p>
                     <p className="mt-1 text-lg font-semibold">{money(sale.total)}</p>
                   </button>
                 </li>
@@ -146,7 +144,7 @@ export default function ComercioVentasPage() {
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[860px] text-sm">
                 <thead>
-                  <tr className="border-b bg-paper text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
                     <th className="p-3">Numero</th>
                     <th>Fecha</th>
                     <th>Cliente</th>
@@ -170,7 +168,7 @@ export default function ComercioVentasPage() {
                       <td className="p-3 text-right font-semibold">{money(sale.total)}</td>
                       <td className="p-3">{sale.status === "voided" ? <StatusPill tone="bad">Anulada</StatusPill> : <StatusPill tone="ok">Activa</StatusPill>}</td>
                       <td className="p-3 pr-3 text-right">
-                        <button className="btn-secondary px-2 py-1 text-xs" onClick={() => setDetail(sale)} type="button">Ver</button>
+                        <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => setDetail(sale)} type="button">Ver</button>
                       </td>
                     </tr>
                   ))}
@@ -184,14 +182,14 @@ export default function ComercioVentasPage() {
       {detail ? (
         <ModalFrame maxWidth="md:max-w-2xl" onClose={() => setDetail(null)} title={`Venta ${detail.full_number}`}>
           <div className="space-y-3 text-sm">
-            <p className="text-xs text-neutral-500">{detail.date} · {detail.payment_type === "credit" ? "Credito" : detail.method || "Contado"} · {detail.customer_name || "Sin cliente"}</p>
+            <p className="text-xs text-content-muted">{detail.date} · {detail.payment_type === "credit" ? "Credito" : detail.method || "Contado"} · {detail.customer_name || "Sin cliente"}</p>
             {detail.status === "voided" && detail.void_reason ? (
-              <p className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">Anulada: {detail.void_reason}</p>
+              <p className="rounded-md border border-error/30 bg-error/10 p-2 text-xs text-error">Anulada: {detail.void_reason}</p>
             ) : null}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b text-left text-xs uppercase text-content-muted">
                     <th className="py-1">#</th><th>Producto</th><th className="text-right">Cant</th><th className="text-right">Precio</th><th className="text-right">Total</th>
                   </tr>
                 </thead>
@@ -208,18 +206,18 @@ export default function ComercioVentasPage() {
                 </tbody>
               </table>
             </div>
-            <div className="rounded-md bg-paper p-3">
+            <div className="rounded-md bg-surface-muted p-3">
               <div className="flex justify-between"><span>Subtotal</span><span>{money(detail.subtotal)}</span></div>
               <div className="flex justify-between"><span>Descuento</span><span>-{money(detail.discount)}</span></div>
               <div className="flex justify-between font-semibold"><span>Total</span><span>{money(detail.total)}</span></div>
             </div>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
               {access.canApprove && detail.status === "active" ? (
-                <button className="btn-secondary flex items-center gap-1 text-red-700" onClick={() => { setVoidTarget(detail); setVoidReason(""); }} type="button">
+                <button className="apex-secondary-action flex items-center gap-1 text-error px-4 text-sm font-semibold" onClick={() => { setVoidTarget(detail); setVoidReason(""); }} type="button">
                   <Ban size={14} /> Anular venta
                 </button>
               ) : null}
-              <button className="btn-primary" onClick={() => setDetail(null)} type="button">Cerrar</button>
+              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" onClick={() => setDetail(null)} type="button">Cerrar</button>
             </div>
           </div>
         </ModalFrame>
@@ -228,7 +226,7 @@ export default function ComercioVentasPage() {
       {voidTarget ? (
         <ModalFrame onClose={() => setVoidTarget(null)} title={`Anular venta ${voidTarget.full_number}`}>
           <div className="space-y-4">
-            <p className="text-sm text-neutral-600">
+            <p className="text-sm text-content-body">
               La venta queda en estado &quot;anulada&quot; y las cantidades regresan al inventario con su propio movimiento.
               Si era a credito y ya tiene abonos, el sistema bloqueara la anulacion.
             </p>
@@ -236,8 +234,8 @@ export default function ComercioVentasPage() {
               <input className="control" maxLength={300} onChange={(event) => setVoidReason(event.target.value)} placeholder="Ej. Error de digitacion" value={voidReason} />
             </Field>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="btn-secondary" onClick={() => setVoidTarget(null)} type="button">Cancelar</button>
-              <button className="btn-primary" disabled={saving} onClick={() => void voidSale()} type="button">{saving ? "Anulando..." : "Confirmar anulacion"}</button>
+              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setVoidTarget(null)} type="button">Cancelar</button>
+              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} onClick={() => void voidSale()} type="button">{saving ? "Anulando..." : "Confirmar anulacion"}</button>
             </div>
           </div>
         </ModalFrame>

@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Camera, ChevronRight, PackageSearch, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { AccessDenied, Check, Field, ModuleHeader, StatusPill, describeError, money, useComercioAccess } from "@/components/comercio/shared";
+import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, money, useComercioAccess } from "@/components/comercio/shared";
 
 // Maestro de productos del Comercio (GET /api/v1/comercio/products). El stock nunca se
 // edita por el formulario: solo por ajustes, compras o ventas, todo trazado en movimientos.
@@ -222,21 +222,19 @@ export default function ComercioProductosPage() {
       setPhotoBusy(false);
     }
   }
-
-  if (!access.ready) return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Comercio...</div>;
-  if (!access.canRead) return <AccessDenied />;
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Productos con precio de lista, descuento, costo promedio y stock propio del comercio. El mismo precio final se usa en la vitrina publica y en el mostrador." title="Productos" />
-      {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+      <ModuleHeader eyebrow="M-30 · Inventario" subtitle="Productos con precio de lista, descuento, costo promedio y stock propio del comercio. El mismo precio final se usa en la vitrina publica y en el mostrador." title="Productos" />
+      <ComercioMessages error={error} message={message} />
 
-      <section className="rounded-md border border-line bg-white">
+      <section className="apex-section-card">
         <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
             <label className="relative block max-w-md flex-1">
-              <PackageSearch className="absolute left-3 top-3 text-neutral-400" size={16} />
+              <PackageSearch className="absolute left-3 top-3 text-content-muted" size={16} />
               <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por codigo, nombre o categoria" value={query} />
             </label>
             <div className="flex items-center gap-3 text-sm">
@@ -245,22 +243,22 @@ export default function ComercioProductosPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button className="btn-secondary flex items-center gap-2" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
+            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
             {access.canWrite ? (
-              <button className="btn-primary flex items-center gap-2" onClick={() => openEditor(null)} type="button">
+              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => openEditor(null)} type="button">
                 <Plus size={14} /> Nuevo producto
               </button>
             ) : null}
           </div>
         </div>
-        <p className="border-b border-line px-4 py-2 text-xs text-neutral-500">
+        <p className="border-b border-line px-4 py-2 text-xs text-content-muted">
           El precio final lista solo el descuento del producto. Si hay campana de vitrina (Configuracion), la vitrina y el mostrador usan el porcentaje mayor entre los dos.
         </p>
 
         {loading ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Cargando productos...</p>
+          <p className="p-8 text-center text-sm text-content-muted">Cargando productos...</p>
         ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-neutral-500">Sin productos que mostrar. Crea el primero con el boton &quot;Nuevo producto&quot;.</p>
+          <p className="p-8 text-center text-sm text-content-muted">Sin productos que mostrar. Crea el primero con el boton &quot;Nuevo producto&quot;.</p>
         ) : (
           <>
             {/* Movil: toda la tarjeta es el acceso a la ficha. Escritorio: una sola accion por fila. */}
@@ -271,7 +269,7 @@ export default function ComercioProductosPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate font-medium">{product.name}</p>
-                        <p className="font-mono text-xs text-neutral-500">{product.code}</p>
+                        <p className="font-mono text-xs text-content-muted">{product.code}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <StatusPill tone={product.low_stock ? "warn" : "ok"}>{product.stock} {product.unit}</StatusPill>
@@ -282,13 +280,13 @@ export default function ComercioProductosPage() {
                       <span>{money(product.price_final)}</span>
                       {product.discount_percent > 0 ? (
                         <>
-                          <span className="text-xs font-normal text-neutral-500 line-through">{money(product.price)}</span>
-                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">-{product.discount_percent}%</span>
+                          <span className="text-xs font-normal text-content-muted line-through">{money(product.price)}</span>
+                          <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">-{product.discount_percent}%</span>
                         </>
                       ) : null}
-                      {product.catalog_featured ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Vitrina</span> : null}
+                      {product.catalog_featured ? <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning">Vitrina</span> : null}
                     </p>
-                    <p className="text-xs text-neutral-500">Costo: {money(product.cost)} · Min: {product.min_stock}</p>
+                    <p className="text-xs text-content-muted">Costo: {money(product.cost)} · Min: {product.min_stock}</p>
                     {access.canWrite ? <p className="mt-2 flex items-center gap-1 text-xs font-medium text-apex"><ChevronRight size={12} /> Abrir ficha</p> : null}
                   </>
                 );
@@ -306,7 +304,7 @@ export default function ComercioProductosPage() {
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
-                  <tr className="border-b bg-paper text-left text-xs uppercase text-neutral-500">
+                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
                     <th className="p-3">Codigo</th>
                     <th>Producto</th>
                     <th>Categoria</th>
@@ -325,27 +323,27 @@ export default function ComercioProductosPage() {
                       <td className="p-3 font-mono">{product.code}</td>
                       <td className="p-3 font-medium">
                         {product.name}
-                        {product.catalog_featured ? <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Vitrina</span> : null}
+                        {product.catalog_featured ? <span className="ml-2 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning">Vitrina</span> : null}
                       </td>
                       <td className="p-3">{product.category || "--"}</td>
                       <td className="p-3 text-right">
                         <span className="font-semibold">{money(product.price_final)}</span>
                         {product.discount_percent > 0 ? (
-                          <span className="mt-0.5 block text-xs leading-tight text-neutral-500">
+                          <span className="mt-0.5 block text-xs leading-tight text-content-muted">
                             <span className="line-through">{money(product.price)}</span> <span className="font-semibold text-rose-600">-{product.discount_percent}%</span>
                           </span>
                         ) : null}
                       </td>
                       <td className="p-3 text-right">{money(product.cost)}</td>
                       <td className="p-3 text-right">
-                        <span className={product.low_stock ? "font-semibold text-amber-700" : ""}>{product.stock}</span>
+                        <span className={product.low_stock ? "font-semibold text-warning" : ""}>{product.stock}</span>
                       </td>
-                      <td className="p-3 text-right text-neutral-500">{product.min_stock}</td>
+                      <td className="p-3 text-right text-content-muted">{product.min_stock}</td>
                       <td className="p-3">{product.has_photo ? "Si" : "--"}</td>
                       <td className="p-3">{product.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>}</td>
                       {access.canWrite ? (
                         <td className="p-3 pr-3 text-right">
-                          <button className="btn-secondary flex items-center gap-1 px-2 py-1 text-xs" onClick={() => openEditor(product)} type="button"><Pencil size={12} /> Ficha</button>
+                          <button className="h-7 min-h-0 apex-secondary-action flex items-center gap-1 px-2 py-1 text-xs font-semibold" onClick={() => openEditor(product)} type="button"><Pencil size={12} /> Ficha</button>
                         </td>
                       ) : null}
                     </tr>
@@ -383,7 +381,7 @@ export default function ComercioProductosPage() {
                 </Field>
                 {/* Descuento y destacado: el precio de lista nunca se reescribe, la vitrina
                     y el mostrador derivan el precio final del porcentaje. */}
-                <div className="rounded-md border border-line bg-paper/50 p-4 md:col-span-2">
+                <div className="apex-section-card-muted/50 p-4 md:col-span-2">
                   <h3 className="text-sm font-semibold">Descuento y vitrina</h3>
                   <div className="mt-3 flex flex-wrap items-end gap-4">
                     <div className="w-40">
@@ -392,18 +390,18 @@ export default function ComercioProductosPage() {
                       </Field>
                     </div>
                     <p className="text-sm">
-                      <span className="text-neutral-500">Precio final: </span>
+                      <span className="text-content-muted">Precio final: </span>
                       <span className="font-semibold">{money(finalPriceOf(Number(form.price || 0), cleanPercent(form.discount_percent)))}</span>
                       {cleanPercent(form.discount_percent) > 0 ? (
                         <>
-                          <span className="ml-2 text-xs text-neutral-500 line-through">{money(Number(form.price || 0))}</span>
+                          <span className="ml-2 text-xs text-content-muted line-through">{money(Number(form.price || 0))}</span>
                           <span className="ml-2 text-xs font-semibold text-rose-600">-{cleanPercent(form.discount_percent)}%</span>
                         </>
                       ) : null}
                     </p>
                     <Check checked={form.catalog_featured} label="Destacar en la vitrina" onChange={(checked) => setForm({ ...form, catalog_featured: checked })} />
                   </div>
-                  <p className="mt-2 text-xs text-neutral-500">
+                  <p className="mt-2 text-xs text-content-muted">
                     El descuento se aplica sobre el precio de lista y rige en la vitrina y en el mostrador. Si la campana de la configuracion tiene un porcentaje mayor, se usa ese: los descuentos nunca se suman.
                   </p>
                 </div>
@@ -426,15 +424,15 @@ export default function ComercioProductosPage() {
                 </div>
                 <Check checked={form.active} label="Producto activo" onChange={(checked) => setForm({ ...form, active: checked })} />
               </div>
-              <p className="text-xs text-neutral-500">El codigo lo asigna el servidor (P-0001, P-0002...). El costo se recalcula solo con cada compra de mercancia y la nota se muestra como descripcion en la ficha publica.</p>
+              <p className="text-xs text-content-muted">El codigo lo asigna el servidor (P-0001, P-0002...). El costo se recalcula solo con cada compra de mercancia y la nota se muestra como descripcion en la ficha publica.</p>
               <div className="flex justify-end gap-2 border-t border-line pt-4">
-                <button className="btn-secondary" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
-                <button className="btn-primary" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar producto"}</button>
+                <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
+                <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar producto"}</button>
               </div>
             </form>
 
             {editing ? (
-              <section className="rounded-md border border-line bg-paper/50 p-4">
+              <section className="apex-section-card-muted/50 p-4">
                 <h3 className="text-sm font-semibold">Ajustar stock ({editing.stock} {editing.unit})</h3>
                 <form className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end" onSubmit={applyAdjust}>
                   <Field label="Cantidad contejada">
@@ -443,33 +441,33 @@ export default function ComercioProductosPage() {
                   <Field label="Motivo del ajuste">
                     <input className="control" maxLength={60} onChange={(event) => setAdjustForm({ ...adjustForm, reason: event.target.value })} value={adjustForm.reason} />
                   </Field>
-                  <button className="btn-secondary flex items-center gap-1" disabled={adjustBusy} type="submit">{adjustBusy ? "Aplicando..." : "Aplicar ajuste"}</button>
+                  <button className="apex-secondary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={adjustBusy} type="submit">{adjustBusy ? "Aplicando..." : "Aplicar ajuste"}</button>
                 </form>
-                <p className="mt-2 text-xs text-neutral-500">El ajuste queda trazado como movimiento de inventario. Si otro usuario modifico el stock mientras tanto, el guardado se rechaza y se debe repetir el conteo.</p>
+                <p className="mt-2 text-xs text-content-muted">El ajuste queda trazado como movimiento de inventario. Si otro usuario modifico el stock mientras tanto, el guardado se rechaza y se debe repetir el conteo.</p>
               </section>
             ) : null}
 
             {editing ? (
-              <section className="rounded-md border border-line bg-paper/50 p-4">
+              <section className="apex-section-card-muted/50 p-4">
                 <h3 className="text-sm font-semibold">Fotografia del producto</h3>
                 <div className="mt-3 grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] sm:items-start">
                   {photoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img alt={`Foto de ${editing.name}`} className="max-h-56 w-full rounded-md border border-line object-contain" src={photoUrl} />
                   ) : (
-                    <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed border-line p-4 text-center text-sm text-neutral-500">Sin fotografia.</p>
+                    <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed border-line p-4 text-center text-sm text-content-muted">Sin fotografia.</p>
                   )}
                   <form className="space-y-3" onSubmit={uploadPhoto}>
                     <Field label="Nueva foto (PNG, JPEG o WEBP, max 5 MB)">
                       <input accept="image/png,image/jpeg,image/webp" capture="environment" className="control" onChange={(event) => setPhotoFile(event.target.files?.[0] || null)} type="file" />
                     </Field>
                     <div className="flex flex-wrap gap-2">
-                      <button className="btn-primary flex items-center gap-1" disabled={photoBusy || !photoFile} type="submit"><Camera size={14} /> {photoBusy ? "Subiendo..." : "Subir foto"}</button>
+                      <button className="apex-primary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={photoBusy || !photoFile} type="submit"><Camera size={14} /> {photoBusy ? "Subiendo..." : "Subir foto"}</button>
                       {editing.has_photo ? (
-                        <button className="btn-secondary flex items-center gap-1" disabled={photoBusy} onClick={() => void removePhoto()} type="button"><Trash2 size={14} /> Quitar foto</button>
+                        <button className="apex-secondary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={photoBusy} onClick={() => void removePhoto()} type="button"><Trash2 size={14} /> Quitar foto</button>
                       ) : null}
                     </div>
-                    <p className="text-xs text-neutral-500">En moviles la camara queda disponible gracias al capture del campo. La imagen se almacena en el bucket comercio-assets con ruta aislada por tenant.</p>
+                    <p className="text-xs text-content-muted">En moviles la camara queda disponible gracias al capture del campo. La imagen se almacena en el bucket comercio-assets con ruta aislada por tenant.</p>
                   </form>
                 </div>
               </section>
