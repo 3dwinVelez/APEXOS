@@ -1,6 +1,7 @@
 const tenancy = require("../../middleware/tenancy");
 const { requirePermission } = require("../../middleware/rbac");
 const service = require("./service");
+const receivedInvoices = require("./received-invoices/routes");
 const pygInteractive = require("./pyg-interactive");
 const pygBudget = require("./pyg-budget");
 const schema = require("./schema");
@@ -306,6 +307,7 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => pygBudget.savePygBudgets(request.user?.tenant_id, request.user?.id, request.body));
 
+  await receivedInvoices(fastify);
 }
 
 module.exports = accountingRoutes;

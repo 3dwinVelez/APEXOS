@@ -42,6 +42,12 @@ function start() {
       if (admin.processBilling) await admin.processBilling();
     });
   });
+
+  // Recepcion de facturas por IMAP: cada empresa decide su intervalo; esta
+  // pasada solo dispara las configuraciones habilitadas que ya vencieron.
+  cron.schedule("*/5 * * * *", () => {
+    runOnce("syncReceivedInvoiceMailbox", () => require("../modules/accounting/received-invoices/mailbox").runScheduled());
+  });
 }
 
 module.exports = { start };

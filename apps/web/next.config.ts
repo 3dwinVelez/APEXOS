@@ -46,6 +46,8 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               `connect-src 'self' https: wss:${apiOrigin ? ` ${apiOrigin}` : ""}${wsOrigin ? ` ${wsOrigin}` : ""}`,
               "font-src 'self' data:",
+              "frame-src 'self' blob:",
+              "object-src 'self' blob:",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'"

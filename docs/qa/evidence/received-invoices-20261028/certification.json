@@ -1,0 +1,373 @@
+{
+  "suite": "received-invoices-local",
+  "executed_at": "2026-10-28T18:37:54.432Z",
+  "tenant_id": "invoices-cert-2670daed3c",
+  "total": 34,
+  "passed": 34,
+  "failed": 0,
+  "checks": [
+    {
+      "status": "passed",
+      "body": {
+        "duplicate": false,
+        "email_id": 32,
+        "status": "processed",
+        "invoices": [
+          {
+            "id": 23,
+            "status": "created",
+            "full_number": "FV-2026-000123",
+            "total": 1190000,
+            "needs_review": false
+          }
+        ],
+        "errors": [],
+        "rejected": [],
+        "summary": {
+          "created": 1,
+          "duplicates": 0,
+          "failed": 0
+        }
+      },
+      "name": "ZIP con XML y PDF se procesa y crea la factura"
+    },
+    {
+      "name": "El resumen reporta una factura creada sin errores",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "body": {
+        "data": [
+          {
+            "id": 23,
+            "full_number": "FV-2026-000123",
+            "invoice_number": "000123",
+            "prefix": "FV-2026",
+            "cufe": "3f1c9a2b7d4e6f8a1c3b5d7e9f0a2c4b6d8e0f1a3c5b7d9e1f3a5c7b9d0e2f4a",
+            "issuer_name": "Distribuciones Andinas SAS",
+            "issuer_tax_id": "900123456",
+            "receiver_name": "Comercializadora Aurora SAS",
+            "issue_date": "2026-10-20T12:00:00.000Z",
+            "reception_date": "2026-10-28T18:37:50.281Z",
+            "total": 1190000,
+            "currency": "COP",
+            "processing_status": "pending_assignment",
+            "assignment_status": "unassigned",
+            "leader_assignment_status": "pending",
+            "invoice_status": "Pendiente de asignación",
+            "responsible_user_id": null,
+            "responsible_name": null,
+            "segment": null,
+            "needs_review": false,
+            "review_reasons": [],
+            "validation_issues": [],
+            "pdf_available": true,
+            "xml_available": true,
+            "extraction_source": "xml",
+            "dian_validation_status": null,
+            "supplier": {
+              "id": 23,
+              "name": "Distribuciones Andinas SAS",
+              "tax_id": "900123456"
+            },
+            "email": {
+              "id": 32,
+              "subject": "facturas.zip",
+              "from_address": null,
+              "zip_file_name": "facturas.zip",
+              "received_at": "2026-10-28T18:37:49.739Z"
+            },
+            "processing_label": "Pendiente de asignación",
+            "assignment_label": "Sin asignar",
+            "leader_label": "Pendiente del líder"
+          }
+        ],
+        "meta": {
+          "page": 1,
+          "page_size": 25,
+          "total": 1,
+          "pages": 1
+        }
+      },
+      "name": "La bandeja lista la factura con numero, proveedor, NIT y total"
+    },
+    {
+      "name": "Los filtros por NIT, numero y proveedor encuentran la factura",
+      "status": "passed"
+    },
+    {
+      "received": 1,
+      "pending_assignment": 1,
+      "assigned": 0,
+      "processed": 0,
+      "review": 0,
+      "errors": 0,
+      "unresolved_errors": 0,
+      "total_amount": 1190000,
+      "name": "Los indicadores reflejan recibidas y pendientes",
+      "status": "passed"
+    },
+    {
+      "invoice": {
+        "full_number": "FV-2026-000123",
+        "total": 1190000,
+        "issues": []
+      },
+      "name": "El detalle expone datos fiscales extraidos del XML",
+      "status": "passed"
+    },
+    {
+      "name": "El detalle incluye documentos XML y PDF mas el historial",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "contentType": "application/xml",
+      "head": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Invoice xmlns=\"urn:oasis:names:specification:ubl:schema:xsd:Invoice-2\">\n  <UBLVe",
+      "name": "El XML original se descarga con su tipo y contenido"
+    },
+    {
+      "name": "El PDF original se descarga para el visor",
+      "status": "passed"
+    },
+    {
+      "name": "La busqueda de responsables devuelve usuarios activos",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "name": "La asignacion actualiza estado, responsable y bitacora"
+    },
+    {
+      "status": "passed",
+      "body": {
+        "error": "Sin permiso para esta acción",
+        "code": "PERMISO_DENEGADO",
+        "details": {
+          "module": "accounting",
+          "action": "approve"
+        }
+      },
+      "name": "Aprobar exige el permiso contable de aprobacion"
+    },
+    {
+      "status": "passed",
+      "name": "La aprobacion del lider deja la factura procesada"
+    },
+    {
+      "status": "passed",
+      "name": "Una factura ya aprobada no se aprueba dos veces"
+    },
+    {
+      "name": "El mismo ZIP no se procesa dos veces",
+      "status": "passed"
+    },
+    {
+      "count": 1,
+      "name": "El reintento no duplica la factura en la base",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "comparison": {
+        "issues": [
+          {
+            "code": "PDF_TOTAL_NO_ENCONTRADO",
+            "field": "total",
+            "message": "No se localizó el total de la factura en el texto del PDF; confirme que correspondan.",
+            "severity": "warning"
+          },
+          {
+            "code": "PDF_TOTAL_DIFERENTE",
+            "field": "total",
+            "message": "El total del PDF (1090000) difiere del XML (1190000).",
+            "severity": "critical"
+          }
+        ],
+        "available": true,
+        "file_name": "FV-2026-000124.pdf",
+        "pdf_total": 1090000,
+        "page_count": 1,
+        "pdf_number": "FV-2026-000124"
+      },
+      "issues": [
+        {
+          "code": "PDF_TOTAL_NO_ENCONTRADO",
+          "field": "total",
+          "message": "No se localizó el total de la factura en el texto del PDF; confirme que correspondan.",
+          "severity": "warning"
+        },
+        {
+          "code": "PDF_TOTAL_DIFERENTE",
+          "field": "total",
+          "message": "El total del PDF (1090000) difiere del XML (1190000).",
+          "severity": "critical"
+        }
+      ],
+      "name": "Una diferencia XML/PDF deja la factura en revision con alerta critica"
+    },
+    {
+      "name": "El lider puede devolver una asignacion con motivo",
+      "status": "passed"
+    },
+    {
+      "name": "Una factura devuelta se puede reasignar",
+      "status": "passed"
+    },
+    {
+      "name": "La revision aceptada habilita la asignacion",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "body": {
+        "duplicate": false,
+        "email_id": 34,
+        "status": "processed",
+        "invoices": [
+          {
+            "id": 25,
+            "status": "created",
+            "full_number": "FV-2026-000125",
+            "total": 500000,
+            "needs_review": true
+          }
+        ],
+        "errors": [],
+        "rejected": [],
+        "summary": {
+          "created": 1,
+          "duplicates": 0,
+          "failed": 0
+        }
+      },
+      "name": "Un ZIP solo con PDF extrae datos y los marca para revision"
+    },
+    {
+      "body": {
+        "error": "El archivo no es un ZIP valido.",
+        "code": "ZIP_NO_ES_ZIP",
+        "request_id": "req-m"
+      },
+      "name": "Un archivo que no es ZIP se rechaza con error claro",
+      "status": "passed"
+    },
+    {
+      "body": {
+        "error": "El ZIP no contiene archivos XML o PDF reconocibles.",
+        "code": "ZIP_SIN_DOCUMENTOS",
+        "request_id": "req-n",
+        "details": {
+          "rejected": []
+        }
+      },
+      "name": "Un ZIP sin XML o PDF se rechaza y explica el motivo",
+      "status": "passed"
+    },
+    {
+      "name": "La bitacora de correos registra cada lote procesado",
+      "status": "passed"
+    },
+    {
+      "name": "La bitacora de errores registra los lotes rechazados",
+      "status": "passed"
+    },
+    {
+      "name": "El historial global conserva usuario, accion y fecha",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "name": "Otra empresa no puede ver la factura"
+    },
+    {
+      "name": "La bandeja de otra empresa queda vacia",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "name": "La configuracion IMAP valida el nombre de la variable secreta"
+    },
+    {
+      "body": {
+        "id": 5,
+        "tenant_id": "invoices-cert-2670daed3c",
+        "provider": "imap",
+        "host": "imap.example.com",
+        "port": 993,
+        "secure": true,
+        "username": "facturas@example.com",
+        "password_env_key": "INVOICE_IMAP_PASSWORD",
+        "folder": "INBOX",
+        "polling_minutes": 15,
+        "enabled": false,
+        "last_synced_at": null,
+        "last_error": null,
+        "created_at": "2026-10-28T18:37:53.655Z",
+        "updated_at": "2026-10-28T18:37:53.655Z",
+        "configured": true,
+        "password_configured": false,
+        "env_fallback": false
+      },
+      "name": "La configuracion IMAP se guarda sin exponer la contrasena",
+      "status": "passed"
+    },
+    {
+      "body": {
+        "error": "No hay contrasena IMAP configurada. Define la variable de entorno INVOICE_IMAP_PASSWORD en el servidor.",
+        "code": "INVOICE_MAIL_PASSWORD_MISSING",
+        "request_id": "req-v"
+      },
+      "name": "Sincronizar sin contrasena falla con un mensaje accionable",
+      "status": "passed"
+    },
+    {
+      "body": {
+        "status": "processed",
+        "duplicate": false,
+        "email_id": 32,
+        "archive_reference": "invoice-documents/invoices-cert-2670daed3c/2026/10/d1d5a90f047b698a-facturas.zip",
+        "invoices": [
+          {
+            "id": 23,
+            "status": "duplicate",
+            "full_number": "FV-2026-000123"
+          }
+        ],
+        "errors": [],
+        "rejected": [],
+        "summary": {
+          "created": 0,
+          "duplicates": 1,
+          "failed": 0
+        }
+      },
+      "name": "Reprocesar conserva una sola factura y reporta el duplicado",
+      "status": "passed"
+    },
+    {
+      "invoices": 3,
+      "documents": 5,
+      "name": "La base queda sin duplicados y conserva todos los originales",
+      "status": "passed"
+    },
+    {
+      "supplier": {
+        "id": 23,
+        "tenant_id": "invoices-cert-2670daed3c",
+        "tax_id": "900123456",
+        "name": "Distribuciones Andinas SAS",
+        "email": null,
+        "metadata": {},
+        "active": true,
+        "created_at": "2026-10-28T18:37:50.188Z",
+        "updated_at": "2026-10-28T18:37:52.404Z"
+      },
+      "supplier_invoice_id": 23,
+      "supplier_count": 1,
+      "name": "El proveedor se reutiliza por NIT",
+      "status": "passed"
+    }
+  ]
+}

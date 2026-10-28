@@ -34,7 +34,11 @@ const TENANT_MODELS = new Set([
   "WarehouseTransfer", "WarehouseTransferLine", "InventoryAdjustment", "InventoryAdjustmentLine",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
-  "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"
+  "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig",
+  // Recepcion y asignacion de facturas electronicas (Contabilidad).
+  "InvoiceSupplier", "InvoiceRecipient", "ReceivedInvoice", "ReceivedInvoiceDocument",
+  "ReceivedInvoiceAssignment", "ReceivedInvoiceChangeLog", "InvoiceProcessedEmail",
+  "InvoiceProcessingError", "InvoiceMailConfig"
 ]);
 
 const WRITE_OPS = new Set(["create", "createMany", "upsert"]);
@@ -57,7 +61,10 @@ const SOFT_DELETE = new Set([
   // cuotas, abonos, compras y gastos son documentos que se anulan por status ('voided'),
   // nunca se borran (mismo criterio que los comprobantes contables de caja menor).
   "ComercioProduct", "ComercioCustomer",
-  "Workflow", "CustomField", "EInvoiceConfig"
+  "Workflow", "CustomField", "EInvoiceConfig",
+  // Proveedores y receptores son maestros; facturas, documentos y bitacoras son
+  // documentos inmutables (se anulan por estado, nunca se borran).
+  "InvoiceSupplier", "InvoiceRecipient"
 ]);
 
 // Modelos que pueden ser borrados físicamente (no tienen campo `active` o es intencional)
