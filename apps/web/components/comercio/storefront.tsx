@@ -54,7 +54,11 @@ function SocialLinks({ catalog, className = "" }: { catalog: PublicCatalog; clas
 
 function buildWhatsAppUrl(catalog: PublicCatalog, lines: CartLine[]) {
   const digits = whatsappDigits(catalog.whatsapp);
-  const rows = lines.map((line) => `• ${line.quantity}x ${line.item.name} (${line.item.code}) — ${money(line.item.price * line.quantity, catalog.currency)}`);
+  // Cada renglon del pedido: cantidad, producto, referencia, categoria y subtotal.
+  const rows = lines.map((line) => {
+    const cat = line.item.category ? ` · ${line.item.category}` : "";
+    return `• ${line.quantity}x ${line.item.name} (${line.item.code}${cat}) — ${money(line.item.price * line.quantity, catalog.currency)}`;
+  });
   const total = lines.reduce((sum, line) => sum + line.item.price * line.quantity, 0);
   const message = `¡Hola, ${catalog.store_name}! Quiero hacer este pedido:\n\n${rows.join("\n")}\n\nTotal estimado: ${money(total, catalog.currency)}`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
