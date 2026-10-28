@@ -20,6 +20,21 @@ export function describeError(caught: unknown, fallback: string) {
   return fallback;
 }
 
+/**
+ * Buscador del modulo: ignora acentos y mayusculas y exige que TODOS los terminos
+ * aparezcan en el registro, asi "cafe 250" encuentra "Café serrano 250 g".
+ */
+export function normalized(value: unknown) {
+  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+}
+
+export function matchesQuery(query: string, ...fields: Array<string | number | null | undefined>) {
+  const needle = normalized(query);
+  if (!needle) return true;
+  const haystack = fields.map(normalized).join(" ");
+  return needle.split(/\s+/).every((term) => haystack.includes(term));
+}
+
 export type ComercioAccess = { ready: boolean; canRead: boolean; canWrite: boolean; canApprove: boolean };
 
 export function useComercioAccess(): ComercioAccess {

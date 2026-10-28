@@ -248,7 +248,7 @@ export default function ComercioConfiguracionPage() {
                 <input className="control flex-1 font-mono text-xs" readOnly value={`${typeof window === "undefined" ? "" : window.location.origin}/tienda/${settings.catalog_code}`} />
                 <button className="h-7 min-h-0 apex-secondary-action flex items-center gap-2 whitespace-nowrap px-3 text-xs font-semibold" disabled={!access.canWrite || catalogBusy} onClick={() => void copyLink()} type="button"><Copy size={13} /> Copiar</button>
                 <button
-                  className={`flex items-center gap-2 whitespace-nowrap rounded-md border px-3 text-xs ${confirmRegen ? "border-red-300 bg-error/10 text-error" : "border-line text-content-body hover:bg-surface-muted"}`}
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-control border px-3 text-xs ${confirmRegen ? "border-error/40 bg-error/10 text-error" : "border-line text-content-body hover:bg-surface-muted"}`}
                   disabled={!access.canWrite || catalogBusy}
                   onBlur={() => setConfirmRegen(false)}
                   onClick={() => void regenerateCode()}

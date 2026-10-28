@@ -1,10 +1,13 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Camera, ChevronRight, PackageSearch, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Camera, ChevronRight, Download, PackageSearch, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, money, useComercioAccess } from "@/components/comercio/shared";
+import { Button } from "@/components/ui/button";
+import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, money, useComercioAccess } from "@/components/comercio/shared";
 
 // Maestro de productos del Comercio (GET /api/v1/comercio/products). El stock nunca se
 // edita por el formulario: solo por ajustes, compras o ventas, todo trazado en movimientos.
@@ -64,6 +67,7 @@ export default function ComercioProductosPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
   const [lowOnly, setLowOnly] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
 
@@ -98,15 +102,101 @@ export default function ComercioProductosPage() {
     if (access.ready && access.canRead) void load();
   }, [access.ready, access.canRead, load]);
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return products.filter((row) => {
-      if (!showInactive && !row.active) return false;
-      if (lowOnly && !row.low_stock) return false;
-      if (needle && !`${row.name} ${row.code} ${row.category || ""}`.toLowerCase().includes(needle)) return false;
-      return true;
-    });
-  }, [products, query, lowOnly, showInactive]);
+  const categories = useMemo(() => [...new Set(products.map((row) => row.category || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")), [products]);
+
+  const filtered = useMemo(() => products.filter((row) => {
+    if (!showInactive && !row.active) return false;
+    if (lowOnly && !row.low_stock) return false;
+    if (category && row.category !== category) return false;
+    return matchesQuery(query, row.code, row.name, row.category || "", row.unit);
+  }), [products, query, category, lowOnly, showInactive]);
+
+  const hasFilters = Boolean(query.trim() || category || lowOnly || showInactive);
+
+  function clearFilters() {
+    setQuery("");
+    setCategory("");
+    setLowOnly(false);
+    setShowInactive(false);
+  }
+
+  function exportProducts(rows: Product[]) {
+    downloadExcelWorkbook("comercio-productos.xls", [{
+      name: "Productos",
+      columns: [
+        { key: "code", label: "Codigo" },
+        { key: "name", label: "Producto", width: 220 },
+        { key: "category", label: "Categoria" },
+        { key: "unit", label: "Unidad" },
+        { key: "list_price", label: "Precio de lista" },
+        { key: "discount", label: "Descuento %" },
+        { key: "final_price", label: "Precio final" },
+        { key: "cost", label: "Costo promedio" },
+        { key: "stock", label: "Stock" },
+        { key: "min_stock", label: "Minimo" },
+        { key: "state", label: "Estado" }
+      ],
+      rows: rows.map((row) => ({
+        code: row.code,
+        name: row.name,
+        category: row.category || "",
+        unit: row.unit,
+        list_price: Number(row.price),
+        discount: Number(row.discount_percent),
+        final_price: Number(row.price_final),
+        cost: Number(row.cost),
+        stock: Number(row.stock),
+        min_stock: Number(row.min_stock),
+        state: row.active ? "Activo" : "Inactivo"
+      }))
+    }]);
+  }
+
+  const columns: DataColumn<Product>[] = [
+    { className: "font-mono", cell: (row) => row.code, header: "Codigo", hideable: false, id: "code", sortValue: (row) => row.code },
+    {
+      cell: (row) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{row.name}</p>
+          <p className="text-xs text-content-muted">{row.unit}{row.has_photo ? " · con foto" : ""}{row.catalog_featured ? " · vitrina" : ""}</p>
+        </div>
+      ),
+      header: "Producto",
+      hideable: false,
+      id: "name",
+      sortValue: (row) => row.name
+    },
+    { cell: (row) => row.category || "--", header: "Categoria", id: "category", sortValue: (row) => row.category || "" },
+    {
+      className: "text-right",
+      cell: (row) => (
+        <div className="leading-tight">
+          <span className="font-semibold">{money(row.price_final)}</span>
+          {row.discount_percent > 0 ? <span className="block text-xs text-content-muted"><span className="line-through">{money(row.price)}</span> -{row.discount_percent}%</span> : null}
+        </div>
+      ),
+      header: "Precio final",
+      id: "price",
+      sortValue: (row) => Number(row.price_final)
+    },
+    { className: "text-right", cell: (row) => money(row.cost), header: "Costo", id: "cost", sortValue: (row) => Number(row.cost) },
+    {
+      className: "text-right",
+      cell: (row) => <StatusPill tone={row.low_stock ? "warn" : "ok"}>{row.stock} {row.unit}</StatusPill>,
+      header: "Stock",
+      id: "stock",
+      sortValue: (row) => Number(row.stock)
+    },
+    { className: "text-right", cell: (row) => <span className="text-content-muted">{row.min_stock}</span>, header: "Minimo", id: "min", sortValue: (row) => Number(row.min_stock) },
+    { cell: (row) => (row.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>), header: "Estado", id: "state", sortValue: (row) => (row.active ? 1 : 0) },
+    {
+      className: "text-right",
+      cell: (row) => (access.canWrite ? <Button onClick={() => openEditor(row)} size="compact" variant="secondary"><Pencil size={12} /> Ficha</Button> : null),
+      header: "Acciones",
+      hideable: false,
+      id: "action"
+    }
+  ];
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -231,38 +321,38 @@ export default function ComercioProductosPage() {
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
-        <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="relative block max-w-md flex-1">
-              <PackageSearch className="absolute left-3 top-3 text-content-muted" size={16} />
-              <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por codigo, nombre o categoria" value={query} />
-            </label>
-            <div className="flex items-center gap-3 text-sm">
-              <Check checked={lowOnly} label="Solo por reponer" onChange={setLowOnly} />
-              <Check checked={showInactive} label="Ver inactivos" onChange={setShowInactive} />
-            </div>
+        <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_13rem_auto_auto] lg:items-end">
+          <Field label="Buscar">
+            <span className="relative block">
+              <PackageSearch className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
+              <input aria-label="Buscar productos por codigo, nombre, categoria o unidad" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Codigo, nombre, categoria o unidad" value={query} />
+            </span>
+          </Field>
+          <Field hint={categories.length ? `${categories.length} categorias en el catalogo` : undefined} label="Categoria">
+            <select className="control apex-select" onChange={(event) => setCategory(event.target.value)} value={category}>
+              <option value="">Todas</option>
+              {categories.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </Field>
+          <div className="flex flex-wrap items-center gap-3 pb-2 text-sm lg:pb-0">
+            <Check checked={lowOnly} label="Solo por reponer" onChange={setLowOnly} />
+            <Check checked={showInactive} label="Ver inactivos" onChange={setShowInactive} />
           </div>
-          <div className="flex gap-2">
-            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
-            {access.canWrite ? (
-              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => openEditor(null)} type="button">
-                <Plus size={14} /> Nuevo producto
-              </button>
-            ) : null}
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost">Limpiar filtros</Button> : null}
+            <Button disabled={!filtered.length} onClick={() => exportProducts(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
+            <Button onClick={() => void load()} size="compact" variant="secondary"><RefreshCw size={14} /> Actualizar</Button>
+            {access.canWrite ? <Button onClick={() => openEditor(null)} size="compact"><Plus size={14} /> Nuevo producto</Button> : null}
           </div>
         </div>
-        <p className="border-b border-line px-4 py-2 text-xs text-content-muted">
-          El precio final lista solo el descuento del producto. Si hay campana de vitrina (Configuracion), la vitrina y el mostrador usan el porcentaje mayor entre los dos.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
+          <span>El precio final lista solo el descuento del producto. Si hay campana de vitrina (Configuracion), la vitrina y el mostrador usan el porcentaje mayor entre los dos.</span>
+          <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {products.length} productos</span>
+        </div>
 
-        {loading ? (
-          <p className="p-8 text-center text-sm text-content-muted">Cargando productos...</p>
-        ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-content-muted">Sin productos que mostrar. Crea el primero con el boton &quot;Nuevo producto&quot;.</p>
-        ) : (
-          <>
-            {/* Movil: toda la tarjeta es el acceso a la ficha. Escritorio: una sola accion por fila. */}
-            <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+        {!loading && filtered.length ? (
+          /* Movil: toda la tarjeta es el acceso a la ficha. Escritorio: una sola accion por fila. */
+          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
               {filtered.map((product) => {
                 const cardBody = (
                   <>
@@ -300,59 +390,27 @@ export default function ComercioProductosPage() {
                   </li>
                 );
               })}
-            </ul>
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead>
-                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
-                    <th className="p-3">Codigo</th>
-                    <th>Producto</th>
-                    <th>Categoria</th>
-                    <th className="text-right">Precio final</th>
-                    <th className="text-right">Costo</th>
-                    <th className="text-right">Stock</th>
-                    <th className="text-right">Minimo</th>
-                    <th>Foto</th>
-                    <th>Estado</th>
-                    {access.canWrite ? <th className="pr-3 text-right">Acciones</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((product) => (
-                    <tr className="border-b" key={product.id}>
-                      <td className="p-3 font-mono">{product.code}</td>
-                      <td className="p-3 font-medium">
-                        {product.name}
-                        {product.catalog_featured ? <span className="ml-2 rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning">Vitrina</span> : null}
-                      </td>
-                      <td className="p-3">{product.category || "--"}</td>
-                      <td className="p-3 text-right">
-                        <span className="font-semibold">{money(product.price_final)}</span>
-                        {product.discount_percent > 0 ? (
-                          <span className="mt-0.5 block text-xs leading-tight text-content-muted">
-                            <span className="line-through">{money(product.price)}</span> <span className="font-semibold text-rose-600">-{product.discount_percent}%</span>
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="p-3 text-right">{money(product.cost)}</td>
-                      <td className="p-3 text-right">
-                        <span className={product.low_stock ? "font-semibold text-warning" : ""}>{product.stock}</span>
-                      </td>
-                      <td className="p-3 text-right text-content-muted">{product.min_stock}</td>
-                      <td className="p-3">{product.has_photo ? "Si" : "--"}</td>
-                      <td className="p-3">{product.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>}</td>
-                      {access.canWrite ? (
-                        <td className="p-3 pr-3 text-right">
-                          <button className="h-7 min-h-0 apex-secondary-action flex items-center gap-1 px-2 py-1 text-xs font-semibold" onClick={() => openEditor(product)} type="button"><Pencil size={12} /> Ficha</button>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+          </ul>
+        ) : null}
+
+        <div className="hidden p-4 lg:block">
+          <SmartDataTable
+            bulkActions={(selected, clear) => (
+              <>
+                <Button onClick={() => exportProducts(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+              </>
+            )}
+            columns={columns}
+            emptyDetail={products.length ? "Ajusta o limpia los filtros para volver a ver productos." : "Crea el primer producto para tener vitrina, mostrador y stock propio."}
+            emptyTitle={products.length ? "Ningun producto con estos filtros" : "Aun no tienes productos"}
+            loading={loading}
+            pageSize={12}
+            rowKey={(row) => row.id}
+            rows={filtered}
+            storageKey="comercio-productos"
+          />
+        </div>
       </section>
 
       {editorOpen ? (

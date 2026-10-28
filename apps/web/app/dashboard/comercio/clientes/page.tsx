@@ -1,10 +1,13 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, RefreshCw, Users } from "lucide-react";
+import { Download, Plus, RefreshCw, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, useComercioAccess } from "@/components/comercio/shared";
+import { Button } from "@/components/ui/button";
+import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, useComercioAccess } from "@/components/comercio/shared";
 
 // Maestro de clientes del Comercio (GET /api/v1/comercio/customers). Es un cliente propio
 // del modulo: no se mezcla con los Parties del ERP. Desactivar esta bloqueado si tiene
@@ -56,14 +59,76 @@ export default function ComercioClientesPage() {
     if (access.ready && access.canRead) void load();
   }, [access.ready, access.canRead, load]);
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return customers.filter((row) => {
-      if (!showInactive && !row.active) return false;
-      if (needle && !`${row.name} ${row.code} ${row.document || ""} ${row.phone || ""}`.toLowerCase().includes(needle)) return false;
-      return true;
-    });
-  }, [customers, query, showInactive]);
+  const filtered = useMemo(() => customers.filter((row) => {
+    if (!showInactive && !row.active) return false;
+    return matchesQuery(query, row.code, row.name, row.document || "", row.phone || "", row.email || "", row.address || "");
+  }), [customers, query, showInactive]);
+
+  const hasFilters = Boolean(query.trim() || showInactive);
+
+  function clearFilters() {
+    setQuery("");
+    setShowInactive(false);
+  }
+
+  function exportCustomers(rows: Customer[]) {
+    downloadExcelWorkbook("comercio-clientes.xls", [{
+      name: "Clientes",
+      columns: [
+        { key: "code", label: "Codigo" },
+        { key: "name", label: "Nombre", width: 220 },
+        { key: "document", label: "Documento" },
+        { key: "phone", label: "Telefono" },
+        { key: "email", label: "Correo" },
+        { key: "address", label: "Direccion", width: 200 },
+        { key: "state", label: "Estado" }
+      ],
+      rows: rows.map((row) => ({
+        code: row.code,
+        name: row.name,
+        document: row.document || "",
+        phone: row.phone || "",
+        email: row.email || "",
+        address: row.address || "",
+        state: row.active ? "Activo" : "Inactivo"
+      }))
+    }]);
+  }
+
+  function openEditor(customer: Customer | null) {
+    setEditing(customer);
+    setForm(customer
+      ? { name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }
+      : emptyForm);
+    setEditorOpen(true);
+  }
+
+  const columns: DataColumn<Customer>[] = [
+    { className: "font-mono", cell: (row) => row.code, header: "Codigo", hideable: false, id: "code", sortValue: (row) => row.code },
+    {
+      cell: (row) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{row.name}</p>
+          {row.address ? <p className="truncate text-xs text-content-muted">{row.address}</p> : null}
+        </div>
+      ),
+      header: "Nombre",
+      hideable: false,
+      id: "name",
+      sortValue: (row) => row.name
+    },
+    { cell: (row) => row.document || "--", header: "Documento", id: "document", sortValue: (row) => row.document || "" },
+    { cell: (row) => row.phone || "--", header: "Telefono", id: "phone", sortValue: (row) => row.phone || "" },
+    { cell: (row) => row.email || "--", header: "Correo", id: "email", sortValue: (row) => row.email || "" },
+    { cell: (row) => (row.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>), header: "Estado", id: "state", sortValue: (row) => (row.active ? 1 : 0) },
+    {
+      className: "text-right",
+      cell: (row) => (access.canWrite ? <Button onClick={() => openEditor(row)} size="compact" variant="secondary"><Users size={12} /> Ficha</Button> : null),
+      header: "Acciones",
+      hideable: false,
+      id: "action"
+    }
+  ];
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -98,6 +163,8 @@ export default function ComercioClientesPage() {
     setError("");
     try {
       await api(`/api/v1/comercio/customers/${customer.id}/${customer.active ? "deactivate" : "activate"}`, { method: "POST" });
+      setMessage(`Cliente ${customer.code} ${customer.active ? "desactivado" : "reactivado"}.`);
+      setEditorOpen(false);
       await load();
     } catch (caught) {
       setError(describeError(caught, "No fue posible cambiar el estado del cliente."));
@@ -112,31 +179,32 @@ export default function ComercioClientesPage() {
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
-        <div className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="relative block max-w-md flex-1">
-              <Users className="absolute left-3 top-3 text-content-muted" size={16} />
-              <input className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, codigo, documento o telefono" value={query} />
-            </label>
+        <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto] lg:items-end">
+          <Field label="Buscar">
+            <span className="relative block">
+              <Users className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
+              <input aria-label="Buscar clientes por codigo, nombre, documento, telefono o correo" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, codigo, documento o telefono" value={query} />
+            </span>
+          </Field>
+          <div className="flex items-center gap-3 pb-2 text-sm lg:pb-0">
             <Check checked={showInactive} label="Ver inactivos" onChange={setShowInactive} />
           </div>
-          <div className="flex gap-2">
-            <button className="apex-secondary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => void load()} type="button"><RefreshCw size={14} /> Actualizar</button>
-            {access.canWrite ? (
-              <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" onClick={() => { setEditing(null); setForm(emptyForm); setEditorOpen(true); }} type="button"><Plus size={14} /> Nuevo cliente</button>
-            ) : null}
+          <div className="flex items-center gap-2 lg:justify-end">
+            <Button disabled={!filtered.length} onClick={() => exportCustomers(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
+            <Button onClick={() => void load()} size="compact" variant="secondary"><RefreshCw size={14} /> Actualizar</Button>
           </div>
+          {access.canWrite ? <Button onClick={() => openEditor(null)} size="compact"><Plus size={14} /> Nuevo cliente</Button> : null}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
+          {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost">Limpiar filtros</Button> : <span>Un cliente con creditos vigentes no se puede desactivar; el servidor lo bloquea.</span>}
+          <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {customers.length} clientes</span>
         </div>
 
-        {loading ? (
-          <p className="p-8 text-center text-sm text-content-muted">Cargando clientes...</p>
-        ) : filtered.length === 0 ? (
-          <p className="p-8 text-center text-sm text-content-muted">Sin clientes. Crea el primero para poder vender a credito.</p>
-        ) : (
-          <>
-            <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-              {filtered.map((customer) => (
-                <li className="rounded-md border border-line p-3" key={customer.id}>
+        {!loading && filtered.length ? (
+          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {filtered.map((customer) => {
+              const cardBody = (
+                <>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{customer.name}</p>
@@ -145,52 +213,39 @@ export default function ComercioClientesPage() {
                     <StatusPill tone={customer.active ? "ok" : "muted"}>{customer.active ? "Activo" : "Inactivo"}</StatusPill>
                   </div>
                   <p className="mt-1 text-xs text-content-body">{customer.document || "Sin documento"} · {customer.phone || "Sin telefono"}</p>
+                  {customer.email ? <p className="truncate text-xs text-content-muted">{customer.email}</p> : null}
+                  {access.canWrite ? <p className="mt-2 text-xs font-medium text-apex">Abrir ficha</p> : null}
+                </>
+              );
+              return (
+                <li className="rounded-md border border-line p-3" key={customer.id}>
                   {access.canWrite ? (
-                    <div className="mt-3 flex gap-2">
-                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
-                      <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
-                    </div>
-                  ) : null}
+                    <button className="block w-full text-left" onClick={() => openEditor(customer)} type="button">{cardBody}</button>
+                  ) : cardBody}
                 </li>
-              ))}
-            </ul>
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[820px] text-sm">
-                <thead>
-                  <tr className="border-b bg-surface-muted text-left text-xs uppercase text-content-muted">
-                    <th className="p-3">Codigo</th>
-                    <th>Nombre</th>
-                    <th>Documento</th>
-                    <th>Telefono</th>
-                    <th>Correo</th>
-                    <th>Estado</th>
-                    {access.canWrite ? <th className="pr-3 text-right">Acciones</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((customer) => (
-                    <tr className="border-b" key={customer.id}>
-                      <td className="p-3 font-mono">{customer.code}</td>
-                      <td className="p-3 font-medium">{customer.name}</td>
-                      <td className="p-3">{customer.document || "--"}</td>
-                      <td className="p-3">{customer.phone || "--"}</td>
-                      <td className="p-3">{customer.email || "--"}</td>
-                      <td className="p-3">{customer.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>}</td>
-                      {access.canWrite ? (
-                        <td className="p-3 pr-3 text-right">
-                          <div className="flex justify-end gap-1">
-                            <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => { setEditing(customer); setForm({ name: customer.name, document: customer.document || "", phone: customer.phone || "", email: customer.email || "", address: customer.address || "", notes: customer.notes || "" }); setEditorOpen(true); }} type="button">Editar</button>
-                            <button className="h-7 min-h-0 inline-flex items-center apex-secondary-action px-2 py-1 text-xs font-semibold" onClick={() => void toggleActive(customer)} type="button">{customer.active ? "Desactivar" : "Activar"}</button>
-                          </div>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
+              );
+            })}
+          </ul>
+        ) : null}
+
+        <div className="hidden p-4 lg:block">
+          <SmartDataTable
+            bulkActions={(selected, clear) => (
+              <>
+                <Button onClick={() => exportCustomers(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+              </>
+            )}
+            columns={columns}
+            emptyDetail={customers.length ? "Ajusta o limpia los filtros para volver a ver clientes." : "Crea el primer cliente para poder vender a credito."}
+            emptyTitle={customers.length ? "Ningun cliente con estos filtros" : "Aun no tienes clientes"}
+            loading={loading}
+            pageSize={12}
+            rowKey={(row) => row.id}
+            rows={filtered}
+            storageKey="comercio-clientes"
+          />
+        </div>
       </section>
 
       {editorOpen ? (
@@ -220,10 +275,17 @@ export default function ComercioClientesPage() {
                 </Field>
               </div>
             </div>
-            <p className="text-xs text-content-muted">El codigo (C-0001...) lo asigna el servidor. Para activar o desactivar usa el boton de la fila: un cliente con creditos vigentes no puede desactivarse.</p>
-            <div className="flex justify-end gap-2 border-t border-line pt-4">
-              <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
-              <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar cliente"}</button>
+            <p className="text-xs text-content-muted">El codigo (C-0001...) lo asigna el servidor. Desactivar deja el cliente fuera de ventas y de la vitrina, pero conserva su historial; un cliente con creditos vigentes no se desactiva.</p>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
+              {editing && access.canWrite ? (
+                <Button disabled={saving} onClick={() => void toggleActive(editing)} type="button" variant="secondary">
+                  {editing.active ? "Desactivar cliente" : "Reactivar cliente"}
+                </Button>
+              ) : <span />}
+              <div className="flex gap-2">
+                <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
+                <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar cliente"}</button>
+              </div>
             </div>
           </form>
         </ModalFrame>
