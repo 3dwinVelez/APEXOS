@@ -256,7 +256,7 @@ export default function ComercioCarteraPage() {
           <form className="space-y-4" onSubmit={savePayment}>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label={`Valor del abono (saldo ${money(payTarget.balance)})`}>
-                <input className="control" max={payTarget.balance} min={1} onChange={(event) => setPayForm({ ...payForm, amount: event.target.value })} required step="1" type="number" value={payForm.amount} />
+                <input className="control" max={payTarget.balance} min={1} onChange={(event) => setPayForm({ ...payForm, amount: event.target.value })} required step="0.01" type="number" value={payForm.amount} />
               </Field>
               <Field label="Fecha">
                 <input className="control" max={todayISO()} onChange={(event) => setPayForm({ ...payForm, date: event.target.value })} type="date" value={payForm.date} />

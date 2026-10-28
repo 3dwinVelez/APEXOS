@@ -239,7 +239,7 @@ export default function ComercioGastosPage() {
                 <input className="control" maxLength={80} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Servicios, Arriendo..." value={form.category} />
               </Field>
               <Field label="Valor">
-                <input className="control" min={1} onChange={(event) => setForm({ ...form, amount: event.target.value })} required step="1" type="number" value={form.amount} />
+                <input className="control" min={1} onChange={(event) => setForm({ ...form, amount: event.target.value })} required step="0.01" type="number" value={form.amount} />
               </Field>
               <Field label="Fecha">
                 <input className="control" max={todayISO()} onChange={(event) => setForm({ ...form, date: event.target.value })} type="date" value={form.date} />
