@@ -1475,7 +1475,9 @@ html.dark .platform-alert-close:hover {
 }
 
 .btn-primary { background: rgb(var(--color-apex, 20 108 99)); color: white; }
-.btn-secondary { border: 1px solid rgb(var(--color-line, 217 223 221)); background: white; }
+/* Los botones secundarios siguen la superficie del tema: un blanco fijo deja la etiqueta
+   casi invisible en modo oscuro, donde el texto heredado tambien es claro. */
+.btn-secondary { border: 1px solid rgb(var(--color-line, 217 223 221)); background: rgb(var(--surface, 255 255 255)); color: rgb(var(--text-strong, 23 33 43)); }
 
 /* Shared information architecture for every Transport application. */
 .transport-workspace {
