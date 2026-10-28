@@ -350,6 +350,36 @@ test("updateProduct: persiste descuento y destacado; el DTO expone el precio fin
   } finally { restore(); }
 });
 
+test("listProducts: sale_price es el precio del mostrador con la campana ya ponderada", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    const byName = (items, name) => items.find((item) => item.name === name);
+    await service.createProduct(TENANT, 7, { name: "Sin descuento", price: 10000, cost: 5000 });
+    await service.createProduct(TENANT, 7, { name: "Con descuento propio", price: 10000, cost: 5000, discount_percent: 25 });
+
+    // Sin campana: el mostrador cobra el precio final del maestro.
+    let list = (await service.listProducts(TENANT, {})).items;
+    assert.equal(byName(list, "Sin descuento").sale_price, 10000);
+    assert.equal(byName(list, "Con descuento propio").sale_price, 7500);
+
+    // Campana del 10% vigente (sin ventana): rebaja lo que no tiene descuento propio,
+    // pero nunca se acumula con el 25% del producto.
+    await service.updateSettings(TENANT, { catalog_promo_label: "Liquidacion", catalog_promo_percent: 10 });
+    list = (await service.listProducts(TENANT, {})).items;
+    assert.equal(byName(list, "Sin descuento").sale_discount_percent, 10);
+    assert.equal(byName(list, "Sin descuento").sale_price, 9000);
+    assert.equal(byName(list, "Sin descuento").price_final, 10000, "price_final sigue siendo solo el descuento del producto");
+    assert.equal(byName(list, "Con descuento propio").sale_discount_percent, 25);
+    assert.equal(byName(list, "Con descuento propio").sale_price, 7500);
+
+    // Campana fuera de ventana: vuelve el precio propio.
+    await service.updateSettings(TENANT, { catalog_promo_start: "2099-01-01" });
+    list = (await service.listProducts(TENANT, {})).items;
+    assert.equal(byName(list, "Sin descuento").sale_price, 10000);
+  } finally { restore(); }
+});
+
 test("updateSettings: valida el porcentaje y la ventana de la campana", async () => {
   const prisma = fakePrisma();
   const { service, restore } = loadComercioService(prisma);
