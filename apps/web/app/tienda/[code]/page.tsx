@@ -41,16 +41,29 @@ export type PublicCatalog = {
   items: PublicCatalogItem[];
 };
 
+// La vitrina se sirve a clientes: un reinicio breve del API no debe convertirla en una
+// pantalla de error. Se guarda el ultimo catalogo bueno y solo se usa cuando la consulta
+// falla; pasada la ventana de gracia se prefiere el aviso honesto.
+const FALLBACK_TTL_MS = 10 * 60 * 1000;
+const catalogFallback = new Map<string, { at: number; data: PublicCatalog }>();
+
 async function fetchCatalog(code: string): Promise<{ status: "ok" | "closed" | "unavailable"; data?: PublicCatalog }> {
   const origin = String(process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "").replace(/\/+$/, "");
   if (!origin) return { status: "unavailable" };
+  const cached = catalogFallback.get(code);
+  const fallback = cached && Date.now() - cached.at < FALLBACK_TTL_MS ? cached.data : null;
   try {
     const response = await fetch(`${origin}/api/v1/public/comercio/catalog/${encodeURIComponent(code)}`, { cache: "no-store" });
-    if (response.status === 404) return { status: "closed" };
-    if (!response.ok) return { status: "unavailable" };
-    return { status: "ok", data: await response.json() as PublicCatalog };
+    if (response.status === 404) {
+      catalogFallback.delete(code);
+      return { status: "closed" };
+    }
+    if (!response.ok) return fallback ? { status: "ok", data: fallback } : { status: "unavailable" };
+    const data = await response.json() as PublicCatalog;
+    catalogFallback.set(code, { at: Date.now(), data });
+    return { status: "ok", data };
   } catch {
-    return { status: "unavailable" };
+    return fallback ? { status: "ok", data: fallback } : { status: "unavailable" };
   }
 }
 
