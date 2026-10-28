@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Copy, Globe, RefreshCw, Save } from "lucide-react";
 import { api } from "@/lib/api";
-import { ComercioNav } from "@/components/comercio-nav";
 import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, useComercioAccess } from "@/components/comercio/shared";
 
 // Configuracion del comercio (GET/PUT /api/v1/comercio/settings). Identidad del negocio y
@@ -195,7 +194,6 @@ export default function ComercioConfiguracionPage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <ModuleHeader subtitle="Datos del negocio para el comprobante y la operacion diaria. Afecta solo a este tenant." title="Configuracion del comercio" />
-      <ComercioNav />
       {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 

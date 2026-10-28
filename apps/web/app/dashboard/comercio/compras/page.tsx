@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
-import { ComercioNav } from "@/components/comercio-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { AccessDenied, Field, ModuleHeader, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
@@ -100,7 +99,6 @@ export default function ComercioComprasPage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <ModuleHeader subtitle="Registro de compras por producto: sube el stock y ajusta el costo promedio con el que se calcula el margen de cada venta." title="Compras de mercancia" />
-      <ComercioNav />
       {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 
