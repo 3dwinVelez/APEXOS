@@ -9,6 +9,8 @@ import { AccessDenied, Check, Field, ModuleHeader, StatusPill, describeError, mo
 
 // Maestro de productos del Comercio (GET /api/v1/comercio/products). El stock nunca se
 // edita por el formulario: solo por ajustes, compras o ventas, todo trazado en movimientos.
+// El descuento tampoco reescribe el precio: price es el precio de lista y price_final es
+// el que cobra la vitrina y el mostrador.
 type Product = {
   id: number;
   code: string;
@@ -16,12 +18,15 @@ type Product = {
   category: string | null;
   unit: string;
   price: number;
+  discount_percent: number;
+  price_final: number;
   cost: number;
   stock: number;
   min_stock: number;
   active: boolean;
   notes: string | null;
   has_photo: boolean;
+  catalog_featured: boolean;
   low_stock: boolean;
 };
 
@@ -33,11 +38,25 @@ type ProductForm = {
   cost: string;
   stock: string;
   min_stock: string;
+  discount_percent: string;
   notes: string;
   active: boolean;
+  catalog_featured: boolean;
 };
 
-const emptyForm: ProductForm = { name: "", category: "", unit: "unidad", price: "", cost: "", stock: "", min_stock: "0", notes: "", active: true };
+const emptyForm: ProductForm = { name: "", category: "", unit: "unidad", price: "", cost: "", stock: "", min_stock: "0", discount_percent: "0", notes: "", active: true, catalog_featured: false };
+
+const MAX_DISCOUNT = 90;
+
+// Espejo del calculo del servidor (apps/api .../comercio/service.js: discountedPrice).
+function finalPriceOf(price: number, percent: number) {
+  const pct = Math.min(MAX_DISCOUNT, Math.max(0, percent));
+  return Math.round((price * (1 - pct / 100) + Number.EPSILON) * 100) / 100;
+}
+
+function cleanPercent(value: string) {
+  return Math.min(MAX_DISCOUNT, Math.max(0, Number(value || 0) || 0));
+}
 
 export default function ComercioProductosPage() {
   const access = useComercioAccess();
@@ -102,6 +121,8 @@ export default function ComercioProductosPage() {
         price: Number(form.price || 0),
         cost: Number(form.cost || 0),
         min_stock: Number(form.min_stock || 0),
+        discount_percent: cleanPercent(form.discount_percent),
+        catalog_featured: form.catalog_featured,
         notes: form.notes.trim() || undefined,
         active: form.active
       };
@@ -125,7 +146,7 @@ export default function ComercioProductosPage() {
   function openEditor(product: Product | null) {
     setEditing(product);
     setForm(product
-      ? { name: product.name, category: product.category || "", unit: product.unit, price: String(product.price), cost: String(product.cost), stock: "", min_stock: String(product.min_stock), notes: product.notes || "", active: product.active }
+      ? { name: product.name, category: product.category || "", unit: product.unit, price: String(product.price), cost: String(product.cost), stock: "", min_stock: String(product.min_stock), discount_percent: String(product.discount_percent), notes: product.notes || "", active: product.active, catalog_featured: product.catalog_featured }
       : emptyForm);
     setAdjustForm({ new_stock: product ? String(product.stock) : "", reason: "Conteo fisico" });
     setPhotoFile(null);
@@ -208,7 +229,7 @@ export default function ComercioProductosPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader subtitle="Productos con precio de venta, costo promedio y stock propio del comercio. La foto se guarda en el bucket aislamiento por tenant." title="Productos" />
+      <ModuleHeader subtitle="Productos con precio de lista, descuento, costo promedio y stock propio del comercio. El mismo precio final se usa en la vitrina publica y en el mostrador." title="Productos" />
       <ComercioNav />
       {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
@@ -234,6 +255,9 @@ export default function ComercioProductosPage() {
             ) : null}
           </div>
         </div>
+        <p className="border-b border-line px-4 py-2 text-xs text-neutral-500">
+          El precio final lista solo el descuento del producto. Si hay campana de vitrina (Configuracion), la vitrina y el mostrador usan el porcentaje mayor entre los dos.
+        </p>
 
         {loading ? (
           <p className="p-8 text-center text-sm text-neutral-500">Cargando productos...</p>
@@ -256,7 +280,16 @@ export default function ComercioProductosPage() {
                         {!product.active ? <StatusPill tone="muted">Inactivo</StatusPill> : null}
                       </div>
                     </div>
-                    <p className="mt-2 text-sm font-semibold">{money(product.price)}</p>
+                    <p className="mt-2 flex flex-wrap items-baseline gap-2 text-sm font-semibold">
+                      <span>{money(product.price_final)}</span>
+                      {product.discount_percent > 0 ? (
+                        <>
+                          <span className="text-xs font-normal text-neutral-500 line-through">{money(product.price)}</span>
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">-{product.discount_percent}%</span>
+                        </>
+                      ) : null}
+                      {product.catalog_featured ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Vitrina</span> : null}
+                    </p>
                     <p className="text-xs text-neutral-500">Costo: {money(product.cost)} · Min: {product.min_stock}</p>
                     {access.canWrite ? <p className="mt-2 flex items-center gap-1 text-xs font-medium text-apex"><ChevronRight size={12} /> Abrir ficha</p> : null}
                   </>
@@ -279,7 +312,7 @@ export default function ComercioProductosPage() {
                     <th className="p-3">Codigo</th>
                     <th>Producto</th>
                     <th>Categoria</th>
-                    <th className="text-right">Precio</th>
+                    <th className="text-right">Precio final</th>
                     <th className="text-right">Costo</th>
                     <th className="text-right">Stock</th>
                     <th className="text-right">Minimo</th>
@@ -292,9 +325,19 @@ export default function ComercioProductosPage() {
                   {filtered.map((product) => (
                     <tr className="border-b" key={product.id}>
                       <td className="p-3 font-mono">{product.code}</td>
-                      <td className="p-3 font-medium">{product.name}</td>
+                      <td className="p-3 font-medium">
+                        {product.name}
+                        {product.catalog_featured ? <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Vitrina</span> : null}
+                      </td>
                       <td className="p-3">{product.category || "--"}</td>
-                      <td className="p-3 text-right font-semibold">{money(product.price)}</td>
+                      <td className="p-3 text-right">
+                        <span className="font-semibold">{money(product.price_final)}</span>
+                        {product.discount_percent > 0 ? (
+                          <span className="mt-0.5 block text-xs leading-tight text-neutral-500">
+                            <span className="line-through">{money(product.price)}</span> <span className="font-semibold text-rose-600">-{product.discount_percent}%</span>
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="p-3 text-right">{money(product.cost)}</td>
                       <td className="p-3 text-right">
                         <span className={product.low_stock ? "font-semibold text-amber-700" : ""}>{product.stock}</span>
@@ -333,11 +376,39 @@ export default function ComercioProductosPage() {
                   <input className="control" maxLength={20} onChange={(event) => setForm({ ...form, unit: event.target.value })} value={form.unit} />
                 </Field>
                 <Field label="Precio de venta">
-                  <input className="control" min={0} onChange={(event) => setForm({ ...form, price: event.target.value })} required step="1" type="number" value={form.price} />
+                  <input className="control" min={0} onChange={(event) => setForm({ ...form, price: event.target.value })} required step="0.01" type="number" value={form.price} />
                 </Field>
                 <Field label="Costo unitario">
-                  <input className="control" min={0} onChange={(event) => setForm({ ...form, cost: event.target.value })} required step="1" type="number" value={form.cost} />
+                  {/* El costo promedio sale de las compras y si tiene centavos: step=1
+                      bloqueaba el guardado de cualquier producto con costo decimal. */}
+                  <input className="control" min={0} onChange={(event) => setForm({ ...form, cost: event.target.value })} required step="0.01" type="number" value={form.cost} />
                 </Field>
+                {/* Descuento y destacado: el precio de lista nunca se reescribe, la vitrina
+                    y el mostrador derivan el precio final del porcentaje. */}
+                <div className="rounded-md border border-line bg-paper/50 p-4 md:col-span-2">
+                  <h3 className="text-sm font-semibold">Descuento y vitrina</h3>
+                  <div className="mt-3 flex flex-wrap items-end gap-4">
+                    <div className="w-40">
+                      <Field label={`Descuento (0 a ${MAX_DISCOUNT}%)`}>
+                        <input className="control" max={MAX_DISCOUNT} min={0} onChange={(event) => setForm({ ...form, discount_percent: event.target.value })} step="0.5" type="number" value={form.discount_percent} />
+                      </Field>
+                    </div>
+                    <p className="text-sm">
+                      <span className="text-neutral-500">Precio final: </span>
+                      <span className="font-semibold">{money(finalPriceOf(Number(form.price || 0), cleanPercent(form.discount_percent)))}</span>
+                      {cleanPercent(form.discount_percent) > 0 ? (
+                        <>
+                          <span className="ml-2 text-xs text-neutral-500 line-through">{money(Number(form.price || 0))}</span>
+                          <span className="ml-2 text-xs font-semibold text-rose-600">-{cleanPercent(form.discount_percent)}%</span>
+                        </>
+                      ) : null}
+                    </p>
+                    <Check checked={form.catalog_featured} label="Destacar en la vitrina" onChange={(checked) => setForm({ ...form, catalog_featured: checked })} />
+                  </div>
+                  <p className="mt-2 text-xs text-neutral-500">
+                    El descuento se aplica sobre el precio de lista y rige en la vitrina y en el mostrador. Si la campana de la configuracion tiene un porcentaje mayor, se usa ese: los descuentos nunca se suman.
+                  </p>
+                </div>
                 {editing ? (
                   <Field label="Stock actual (se ajusta abajo)">
                     <input className="control" disabled type="number" value={editing.stock} />
@@ -351,13 +422,13 @@ export default function ComercioProductosPage() {
                   <input className="control" min={0} onChange={(event) => setForm({ ...form, min_stock: event.target.value })} type="number" value={form.min_stock} />
                 </Field>
                 <div className="md:col-span-2">
-                  <Field label="Notas">
+                  <Field label="Notas (descripcion en la vitrina)">
                     <textarea className="control" maxLength={500} onChange={(event) => setForm({ ...form, notes: event.target.value })} rows={2} value={form.notes} />
                   </Field>
                 </div>
                 <Check checked={form.active} label="Producto activo" onChange={(checked) => setForm({ ...form, active: checked })} />
               </div>
-              <p className="text-xs text-neutral-500">El codigo lo asigna el servidor (P-0001, P-0002...). El costo se recalcula solo con cada compra de mercancia.</p>
+              <p className="text-xs text-neutral-500">El codigo lo asigna el servidor (P-0001, P-0002...). El costo se recalcula solo con cada compra de mercancia y la nota se muestra como descripcion en la ficha publica.</p>
               <div className="flex justify-end gap-2 border-t border-line pt-4">
                 <button className="btn-secondary" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
                 <button className="btn-primary" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar producto"}</button>
