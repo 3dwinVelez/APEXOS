@@ -183,7 +183,7 @@ export default function ComercioComprasPage() {
                 <input className="control" min={1} onChange={(event) => setForm({ ...form, quantity: event.target.value })} required type="number" value={form.quantity} />
               </Field>
               <Field label="Costo unitario de la compra">
-                <input className="control" min={0} onChange={(event) => setForm({ ...form, unit_cost: event.target.value })} required step="1" type="number" value={form.unit_cost} />
+                <input className="control" min={0} onChange={(event) => setForm({ ...form, unit_cost: event.target.value })} required step="0.01" type="number" value={form.unit_cost} />
               </Field>
               <Field label="Proveedor">
                 <input className="control" maxLength={160} onChange={(event) => setForm({ ...form, supplier: event.target.value })} required value={form.supplier} />
