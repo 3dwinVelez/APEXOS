@@ -7,7 +7,7 @@ process.env.DISABLE_REDIS = "true";
 const comercio = require("../src/modules/comercio/service");
 const schemaModule = require("../src/modules/comercio/schema");
 
-const { buildInstallmentSchedule, allocateInstallments, weightedAverageCost } = comercio;
+const { buildInstallmentSchedule, allocateInstallments, weightedAverageCost, normalizeDiscountPercent, discountedPrice, catalogCampaign, effectiveDiscountPercent } = comercio;
 
 // === Mini motor en memoria con el subconjunto de Prisma que usa el servicio ===
 
@@ -86,8 +86,8 @@ function fakePrisma() {
     comercioPayment: { credit: ["comercioCredit", "id"] }
   };
   const defaults = {
-    comercioSettings: { store_name: "Mi comercio", currency: "COP", receipt_note: null, preferences_json: {} },
-    comercioProduct: { code: "", name: "", category: null, unit: "unidad", price: 0, cost: 0, stock: 0, min_stock: 0, active: true, notes: null, photo_path: null, photo_mime: null },
+    comercioSettings: { store_name: "Mi comercio", currency: "COP", receipt_note: null, catalog_promo_percent: 0, preferences_json: {} },
+    comercioProduct: { code: "", name: "", category: null, unit: "unidad", price: 0, discount_percent: 0, cost: 0, stock: 0, min_stock: 0, active: true, notes: null, photo_path: null, photo_mime: null, catalog_featured: false },
     comercioCustomer: { code: "", name: "", document: null, phone: null, email: null, address: null, active: true, notes: null },
     comercioInstallment: { number: 1, due_date: null, amount: 0, paid_amount: 0, status: "open", paid_at: null }
   };
@@ -175,7 +175,11 @@ function loadComercioService(prisma) {
   require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true, exports: prisma };
   require.cache[storagePath] = {
     id: storagePath, filename: storagePath, loaded: true,
-    exports: { MAX_BYTES: 5 * 1024 * 1024, validateProductImage: () => ({ extension: "png", mime: "image/png" }) }
+    exports: {
+      MAX_BYTES: 5 * 1024 * 1024,
+      validateProductImage: () => ({ extension: "png", mime: "image/png" }),
+      publicViewUrl: (path) => (path ? `https://public.test/${path}` : null)
+    }
   };
   delete require.cache[servicePath];
   const service = require(servicePath);
@@ -246,6 +250,163 @@ test("weightedAverageCost: promedio ponderado y casos borde", () => {
   assert.equal(weightedAverageCost(0, 100, 5, 120), 120);
   assert.equal(weightedAverageCost(0, 100, 0, 120), 120);
   assert.equal(weightedAverageCost(3, 1000, 7, 1), Math.round((3 * 1000 + 7 * 1) / 10 * 100) / 100);
+});
+
+// === Descuentos parametrizables ===
+
+test("normalizeDiscountPercent: techo 90%, vacio es cero y el fuera de rango se rechaza", () => {
+  assert.equal(normalizeDiscountPercent(undefined), 0);
+  assert.equal(normalizeDiscountPercent(""), 0);
+  assert.equal(normalizeDiscountPercent(null), 0);
+  assert.equal(normalizeDiscountPercent("25"), 25);
+  assert.equal(normalizeDiscountPercent(12.5), 12.5);
+  for (const bad of [-1, 90.5, 100, "abc"]) {
+    assert.throws(() => normalizeDiscountPercent(bad), (error) => error.code === "DISCOUNT_PERCENT_INVALID", `debia rechazar ${bad}`);
+  }
+});
+
+test("discountedPrice: aplica el porcentaje sobre el precio de lista y redondea a centavos", () => {
+  assert.equal(discountedPrice(18000, 0), 18000);
+  assert.equal(discountedPrice(18000, 25), 13500);
+  assert.equal(discountedPrice(1990, 10), 1791);
+  assert.equal(discountedPrice(10000, 33.33), 6667);
+  assert.equal(discountedPrice(0, 50), 0);
+});
+
+test("catalogCampaign: vigente solo con porcentaje > 0 y dentro de la ventana inclusiva", () => {
+  const now = new Date("2026-10-28T12:00:00Z");
+  const base = { catalog_promo_percent: 30, catalog_promo_label: "Fin de mes" };
+  assert.equal(catalogCampaign(base, now).active, true);
+  assert.equal(catalogCampaign(base, now).percent, 30);
+  assert.equal(catalogCampaign({ ...base, catalog_promo_percent: 0 }, now).active, false);
+  assert.equal(catalogCampaign({ ...base, catalog_promo_start: "2026-11-01T12:00:00Z" }, now).active, false);
+  assert.equal(catalogCampaign({ ...base, catalog_promo_end: "2026-10-01T12:00:00Z" }, now).active, false);
+  // Extremos inclusivos y ventana abierta por un lado.
+  assert.equal(catalogCampaign({ ...base, catalog_promo_start: now.toISOString() }, now).active, true);
+  assert.equal(catalogCampaign({ ...base, catalog_promo_end: now.toISOString() }, now).active, true);
+  assert.equal(catalogCampaign(null, now).percent, 0);
+});
+
+test("effectiveDiscountPercent: gana el mayor entre el producto y la campana (nunca se acumulan)", () => {
+  assert.equal(effectiveDiscountPercent({ discount_percent: 10 }, { percent: 20 }), 20);
+  assert.equal(effectiveDiscountPercent({ discount_percent: 40 }, { percent: 20 }), 40);
+  assert.equal(effectiveDiscountPercent({ discount_percent: 5 }, { percent: 0, active: false }), 5);
+  assert.equal(effectiveDiscountPercent({}, null), 0);
+});
+
+test("createSale: cobra el precio con el descuento del producto, no el de lista", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    prisma.state.collections.comercioProduct.push(
+      { id: 1, tenant_id: TENANT, code: "P-0001", name: "Zapato", unit: "unidad", price: 100000, discount_percent: 25, cost: 60000, stock: 4, min_stock: 0, active: true }
+    );
+    const sale = await service.createSale(TENANT, 7, { items: [{ product_id: 1, quantity: 2 }], payment_type: "cash" });
+    assert.equal(sale.items[0].unit_price, 75000);
+    assert.equal(sale.subtotal, 150000);
+    assert.equal(sale.total, 150000);
+    // El costo sigue siendo el real: el descuento sale del margen, no del costo.
+    assert.equal(sale.cost_total, 120000);
+  } finally { restore(); }
+});
+
+test("createSale: la campana de vitrina vigente manda sobre el descuento del producto dentro de su ventana", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    prisma.state.collections.comercioSettings.push({
+      id: 1, tenant_id: TENANT, store_name: "Mi comercio", catalog_promo_percent: 30, catalog_promo_label: "Noviembre",
+      catalog_promo_start: new Date("2026-11-01T12:00:00Z"), catalog_promo_end: new Date("2026-11-30T12:00:00Z")
+    });
+    prisma.state.collections.comercioProduct.push(
+      { id: 1, tenant_id: TENANT, code: "P-0001", name: "Balon", price: 50000, discount_percent: 10, cost: 30000, stock: 5, min_stock: 0, active: true },
+      { id: 2, tenant_id: TENANT, code: "P-0002", name: "Red", price: 50000, discount_percent: 60, cost: 30000, stock: 5, min_stock: 0, active: true }
+    );
+    const dentro = await service.createSale(TENANT, 7, { date: "2026-11-05", items: [{ product_id: 1, quantity: 1 }], payment_type: "cash" });
+    assert.equal(dentro.items[0].unit_price, 35000, "campana 30% supera al descuento propio de 10%");
+    const mayor = await service.createSale(TENANT, 7, { date: "2026-11-05", items: [{ product_id: 2, quantity: 1 }], payment_type: "cash" });
+    assert.equal(mayor.items[0].unit_price, 20000, "el descuento propio de 60% sigue siendo el mayor");
+    const fuera = await service.createSale(TENANT, 7, { date: "2026-12-05", items: [{ product_id: 1, quantity: 1 }], payment_type: "cash" });
+    assert.equal(fuera.items[0].unit_price, 45000, "campana vencida: solo aplica el descuento del producto");
+  } finally { restore(); }
+});
+
+test("updateProduct: persiste descuento y destacado; el DTO expone el precio final", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    const created = await service.createProduct(TENANT, 7, { name: "Jugo", price: 9000, cost: 5000, discount_percent: 15, catalog_featured: true });
+    assert.equal(created.discount_percent, 15);
+    assert.equal(created.price_final, 7650);
+    assert.equal(created.catalog_featured, true);
+    assert.equal(created.price, 9000, "el precio de lista no se reescribe");
+    const updated = await service.updateProduct(TENANT, 7, created.id, { discount_percent: 0 });
+    assert.equal(updated.price_final, 9000);
+    await expectError(service.updateProduct(TENANT, 7, created.id, { discount_percent: 95 }), "DISCOUNT_PERCENT_INVALID");
+  } finally { restore(); }
+});
+
+test("updateSettings: valida el porcentaje y la ventana de la campana", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    const saved = await service.updateSettings(TENANT, {
+      catalog_tagline: "Todo para tu vuelta",
+      catalog_promo_label: "Black weekend",
+      catalog_promo_percent: 20,
+      catalog_promo_start: "2026-11-06",
+      catalog_promo_end: "2026-11-09"
+    });
+    assert.equal(saved.catalog_tagline, "Todo para tu vuelta");
+    assert.equal(saved.catalog_promo_percent, 20);
+    assert.equal(saved.catalog_promo_start, "2026-11-06");
+    assert.equal(saved.catalog_promo_end, "2026-11-09");
+    await expectError(service.updateSettings(TENANT, { catalog_promo_percent: 95 }), "DISCOUNT_PERCENT_INVALID");
+    await expectError(service.updateSettings(TENANT, { catalog_promo_start: "2026-11-10", catalog_promo_end: "2026-11-01" }), "SETTINGS_PROMO_RANGE_INVALID");
+    // Limpiar la campana deja de aplicar descuentos.
+    const cleared = await service.updateSettings(TENANT, { catalog_promo_percent: 0, catalog_promo_label: null });
+    assert.equal(cleared.catalog_promo_percent, 0);
+    assert.equal(cleared.catalog_promo_label, null);
+  } finally { restore(); }
+});
+
+test("publicCatalog: expone precio final, precio de lista, descuento y campana sin filtrar costo ni stock", async () => {
+  const prisma = fakePrisma();
+  const { service, restore } = loadComercioService(prisma);
+  try {
+    prisma.state.collections.comercioSettings.push({
+      id: 1, tenant_id: TENANT, store_name: "La Estacion", currency: "COP", catalog_enabled: true, catalog_code: "estacion",
+      catalog_whatsapp: "+573001112233", catalog_tagline: "Ropa, ferreteria y mas",
+      catalog_promo_percent: 25, catalog_promo_label: "Liquidacion", catalog_promo_start: null, catalog_promo_end: null
+    });
+    prisma.state.collections.comercioProduct.push(
+      { id: 1, tenant_id: TENANT, code: "P-0001", name: "Gorra", category: "Ropa", unit: "unidad", price: 20000, discount_percent: 0, cost: 9000, stock: 3, min_stock: 0, active: true, notes: "Ajustable", photo_path: "ropa/gorra.png", catalog_featured: true },
+      { id: 2, tenant_id: TENANT, code: "P-0002", name: "Martillo", category: "Ferreteria", unit: "unidad", price: 16000, discount_percent: 50, cost: 8000, stock: 0, min_stock: 0, active: true, notes: null, photo_path: null },
+      // Archivado: la vitrina nunca lo publica.
+      { id: 3, tenant_id: TENANT, code: "P-0003", name: "Retirado", category: "Ropa", unit: "unidad", price: 5000, discount_percent: 0, cost: 1000, stock: 4, min_stock: 0, active: false }
+    );
+    const catalog = await service.publicCatalog("estacion");
+    assert.equal(catalog.tagline, "Ropa, ferreteria y mas");
+    assert.equal(catalog.promo.active, true);
+    assert.equal(catalog.promo.percent, 25);
+    assert.equal(catalog.promo.label, "Liquidacion");
+    assert.deepEqual(catalog.categories, ["Ferreteria", "Ropa"]);
+    const gorra = catalog.items.find((item) => item.code === "P-0001");
+    assert.equal(gorra.base_price, 20000);
+    assert.equal(gorra.price, 15000, "la campana de tienda aplica sobre el producto sin descuento propio");
+    assert.equal(gorra.discount_percent, 25);
+    assert.equal(gorra.featured, true);
+    assert.equal(gorra.description, "Ajustable");
+    assert.equal(gorra.photo_url, "https://public.test/ropa/gorra.png");
+    const martillo = catalog.items.find((item) => item.code === "P-0002");
+    assert.equal(martillo.price, 8000, "gana el descuento mayor (50% sobre la campana de 25%)");
+    assert.equal(martillo.available, false);
+    assert.equal(catalog.items.find((item) => item.code === "P-0003"), undefined, "un producto archivado no se publica");
+    const raw = JSON.stringify(catalog);
+    assert.ok(!raw.includes("cost"), "el catalogo publico no revela costos");
+    assert.ok(!raw.includes("stock"), "el catalogo publico no revela existencias");
+    assert.ok(!raw.includes(TENANT), "el catalogo publico no revela el tenant");
+  } finally { restore(); }
 });
 
 // === Flujo de documentos con prisma falso ===
@@ -476,4 +637,17 @@ test("setCustomerActive: no desactiva clientes con creditos vigentes", async () 
 test("esquemas Fastify: el body de venta rechaza propiedades desconocidas", () => {
   assert.equal(schemaModule.saleCreateSchema.body.additionalProperties, false);
   assert.equal(schemaModule.productUpdateSchema.body.properties.stock, undefined, "el stock no se edita por PUT /products/:id");
+});
+
+test("esquemas Fastify: descuentan y campana son propiedades escribibles con techo de 90", () => {
+  for (const body of [schemaModule.productCreateSchema.body, schemaModule.productUpdateSchema.body]) {
+    assert.equal(body.properties.discount_percent.maximum, 90);
+    assert.equal(body.properties.catalog_featured.type, "boolean");
+  }
+  const settings = schemaModule.settingsSchema.body.properties;
+  assert.equal(settings.catalog_promo_percent.maximum, 90);
+  assert.deepEqual(settings.catalog_promo_start.type, ["string", "null"]);
+  assert.equal(settings.catalog_promo_end.pattern, "^\\d{4}-\\d{2}-\\d{2}$");
+  assert.equal(settings.catalog_tagline.maxLength, 160);
+  assert.equal(settings.catalog_foo, undefined, "el body de configuracion sigue siendo cerrado");
 });
