@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
-import { ComercioNav } from "@/components/comercio-nav";
 import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Reportes del Comercio (GET /api/v1/comercio/reports/summary). Todos los agregados los
@@ -86,7 +85,6 @@ export default function ComercioReportesPage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <ModuleHeader subtitle="Resultado del periodo: ventas, margen, gastos, cartera y caja por medio de pago. Rango de fechas incluido." title="Reportes" />
-      <ComercioNav />
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 
       <section className="apex-section-card grid gap-3 p-4 sm:grid-cols-[220px_220px_auto] sm:items-end">

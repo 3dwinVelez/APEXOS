@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ban, RefreshCw, Search } from "lucide-react";
 import { api } from "@/lib/api";
-import { ComercioNav } from "@/components/comercio-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
@@ -97,7 +96,6 @@ export default function ComercioVentasPage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <ModuleHeader subtitle="Toda venta queda congelada con su precio, costo y cliente. Las anulaciones devuelven stock y requieren permiso de aprobacion." title="Ventas" />
-      <ComercioNav />
       {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 

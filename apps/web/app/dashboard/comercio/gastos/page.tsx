@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Ban, Plus, RefreshCw } from "lucide-react";
 import { api } from "@/lib/api";
-import { ComercioNav } from "@/components/comercio-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { AccessDenied, Field, ModuleHeader, StatusPill, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
@@ -124,7 +123,6 @@ export default function ComercioGastosPage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <ModuleHeader subtitle="Ingresos distintos de ventas (recargas, servicios) y egresos del dia a dia (arriendo, servicios, transporte). Entran al resultado estimado de los reportes." title="Ingresos y egresos" />
-      <ComercioNav />
       {message ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{message}</p> : null}
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 

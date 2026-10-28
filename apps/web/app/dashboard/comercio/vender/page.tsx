@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { ComercioNav } from "@/components/comercio-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { AccessDenied, Check, Field, ModuleHeader, describeError, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
@@ -145,7 +144,6 @@ export default function ComercioVenderPage() {
   return (
     <div className="apex-workspace-shell space-y-4">
       <ModuleHeader subtitle="Venta rapida en Mostrador o a credito con cuotas sin interes. Los precios los fija el servidor: la pantalla es solo el carrito." title="Vender" />
-      <ComercioNav />
       {loadError ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{loadError}</p> : null}
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
 
