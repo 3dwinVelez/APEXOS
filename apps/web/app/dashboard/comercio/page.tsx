@@ -30,7 +30,7 @@ type Dashboard = {
   today: { sales: number; gross_margin: number; expenses: number; income: number; cash_collected: number; receivable: number; overdue_receivable: number; inventory_value: number };
   month: { sales: number; gross_margin: number; expenses: number; income: number; purchases: number; cost_of_goods: number; cash_collected: number; receivable: number; overdue_receivable: number; inventory_value: number; estimated_result: number };
   low_stock: { id: number; code: string; name: string; stock: number; min_stock: number }[];
-  top_products: { product_name: string; quantity: number; revenue: number }[];
+  top_products: { product_id: number | null; product_name: string; quantity: number; revenue: number }[];
   cash_by_method: { method: string; total: number }[];
   recent_sales: { id: number; full_number: string; date: string; total: number; payment_type: string; customer_name: string | null; status: string }[];
   recent_movements: { id: number; product_name: string; change: number; stock_after: number; reason: string; occurred_at: string }[];
@@ -190,7 +190,7 @@ export default function ComercioHome() {
           {data && data.top_products.length ? (
             <ul className="mt-2 divide-y divide-line text-sm">
               {data.top_products.slice(0, 6).map((product, index) => (
-                <li className="flex items-center gap-3 py-2" key={product.product_name}>
+                <li className="flex items-center gap-3 py-2" key={product.product_id ?? `${product.product_name}-${index}`}>
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-apex/10 text-xs font-bold text-apex">{index + 1}</span>
                   <span className="min-w-0 flex-1 truncate text-content-body">{product.product_name}</span>
                   <span className="text-xs text-content-muted">{product.quantity} u</span>
