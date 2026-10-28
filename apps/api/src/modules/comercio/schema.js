@@ -207,11 +207,64 @@ const settingsBody = {
     catalog_facebook: { type: ["string", "null"], maxLength: 200 },
     catalog_instagram: { type: ["string", "null"], maxLength: 200 },
     catalog_tagline: { type: ["string", "null"], maxLength: 160 },
-    catalog_promo_label: { type: ["string", "null"], maxLength: 80 },
-    catalog_promo_percent: discountPercent,
-    catalog_promo_start: promoDate,
-    catalog_promo_end: promoDate,
     preferences: { type: ["object", "null"] }
+  }
+};
+
+// Promocion: nombre + porcentaje obligatorios en el alta. El alcance decide si se
+// guardan categorias o product_ids; el servicio descarta el segmento que no aplica.
+const promotionFields = {
+  name: { type: "string", minLength: 1, maxLength: 120 },
+  scope: { type: "string", enum: ["all", "categories", "products"] },
+  percent: discountPercent,
+  status: { type: "string", enum: ["draft", "active", "paused"] },
+  start_date: promoDate,
+  end_date: promoDate,
+  message: { type: ["string", "null"], maxLength: 1000 },
+  categories: { type: "array", maxItems: 50, items: { type: "string", minLength: 1, maxLength: 80 } },
+  product_ids: { type: "array", maxItems: 500, items: { type: "integer", minimum: 1 } }
+};
+
+const promotionBody = {
+  type: "object",
+  required: ["name", "percent"],
+  additionalProperties: false,
+  properties: promotionFields
+};
+
+const promotionUpdateBody = {
+  type: "object",
+  additionalProperties: false,
+  properties: promotionFields
+};
+
+const promotionStatusBody = {
+  type: "object",
+  required: ["status"],
+  additionalProperties: false,
+  properties: { status: { type: "string", enum: ["draft", "active", "paused", "archived"] } }
+};
+
+const promotionSendBody = {
+  type: "object",
+  required: ["customer_ids"],
+  additionalProperties: false,
+  properties: {
+    customer_ids: { type: "array", minItems: 1, maxItems: 500, items: { type: "integer", minimum: 1 } },
+    base_url: { type: ["string", "null"], maxLength: 200 }
+  }
+};
+
+// Querystring de la audiencia. Fastify entrega strings: limit/offset se parsean en el servicio.
+const promotionAudienceQuery = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    q: { type: "string", maxLength: 120 },
+    pending: { type: "string", enum: ["true", "false"] },
+    base_url: { type: "string", maxLength: 200 },
+    limit: { type: "string", pattern: "^\\d{1,4}$" },
+    offset: { type: "string", pattern: "^\\d{1,6}$" }
   }
 };
 
@@ -237,5 +290,10 @@ module.exports = {
   expenseCreateSchema: { body: expenseBody },
   expenseUpdateSchema: { params: idParams, body: expenseUpdateBody },
   settingsSchema: { body: settingsBody },
-  catalogRouteSchema: { params: catalogCodeParams }
+  catalogRouteSchema: { params: catalogCodeParams },
+  promotionCreateSchema: { body: promotionBody },
+  promotionUpdateSchema: { params: idParams, body: promotionUpdateBody },
+  promotionStatusSchema: { params: idParams, body: promotionStatusBody },
+  promotionSendSchema: { params: idParams, body: promotionSendBody },
+  promotionAudienceSchema: { params: idParams, querystring: promotionAudienceQuery }
 };

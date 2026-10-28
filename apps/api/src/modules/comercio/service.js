@@ -163,42 +163,104 @@ function discountedPrice(basePrice, percent) {
   return round2(num(basePrice) * (1 - pct / 100));
 }
 
-// Campana de descuentos de la vitrina: vigente solo con porcentaje > 0 y dentro de la
-// ventana (los extremos son inclusivos; una fecha ausente no limita por ese lado).
-function catalogCampaign(settings, now = new Date()) {
-  const percent = round2(num(settings?.catalog_promo_percent));
-  const start = settings?.catalog_promo_start ? new Date(settings.catalog_promo_start) : null;
-  const end = settings?.catalog_promo_end ? new Date(settings.catalog_promo_end) : null;
+// === Promociones ===
+// Varias promociones pueden convivir (toda la tienda, por categoria o por producto).
+// Regla comercial confirmada: el cliente paga el MEJOR precio; nunca se suman dos
+// descuentos sobre el mismo precio de lista.
+const PROMOTION_STATUSES = new Set(["draft", "active", "paused", "archived"]);
+const PROMOTION_SCOPES = new Set(["all", "categories", "products"]);
+const DEFAULT_PROMOTION_MESSAGE = "Hola {cliente}, en {negocio} tenemos {promo} con {descuento} de descuento. Mira el catalogo aqui: {enlace}";
+
+// Vigencia: los extremos son inclusivos y una fecha ausente no limita por ese lado.
+function promotionWithinWindow(promotion, now = new Date()) {
+  const start = promotion?.start_date ? new Date(promotion.start_date) : null;
+  const end = promotion?.end_date ? new Date(promotion.end_date) : null;
   const timestamp = now instanceof Date ? now.getTime() : new Date(now).getTime();
-  const active = percent > 0
-    && (!start || Number.isNaN(start.getTime()) || timestamp >= start.getTime())
+  return (!start || Number.isNaN(start.getTime()) || timestamp >= start.getTime())
     && (!end || Number.isNaN(end.getTime()) || timestamp <= end.getTime());
+}
+
+function promotionActive(promotion, now = new Date()) {
+  const percent = round2(num(promotion?.percent));
+  return Boolean(promotion)
+    && promotion.status === "active"
+    && percent > 0
+    && promotionWithinWindow(promotion, now);
+}
+
+// Una promocion aplica a un producto si su alcance lo cubre. Se aceptan tanto las filas
+// de Prisma ({category}, {product_id}) como valores sueltos, util para pruebas puras.
+function promotionAppliesTo(promotion, product) {
+  if (!promotion || !product) return false;
+  if (promotion.scope === "all") return true;
+  if (promotion.scope === "categories") {
+    const category = normalizeText(product.category);
+    if (!category) return false;
+    return (promotion.categories || []).some((entry) => normalizeText(entry?.category ?? entry) === category);
+  }
+  if (promotion.scope === "products") {
+    return (promotion.products || []).some((entry) => Number(entry?.product_id ?? entry) === Number(product.id));
+  }
+  return false;
+}
+
+// Mejor promocion aplicable: la de mayor porcentaje (empate: la primera, ya ordenada por
+// id). Devuelve { percent, name } para poder explicar el descuento en la interfaz.
+function bestPromotionFor(product, promotions = [], now = new Date()) {
+  let best = { percent: 0, name: null };
+  for (const promotion of Array.isArray(promotions) ? promotions : []) {
+    if (!promotionActive(promotion, now)) continue;
+    if (!promotionAppliesTo(promotion, product)) continue;
+    const percent = round2(num(promotion.percent));
+    if (percent > best.percent) best = { percent, name: promotion.name || null };
+  }
+  return best;
+}
+
+// Porcentaje efectivo de venta: gana el mayor entre el descuento propio del producto y
+// la mejor promocion aplicable.
+function effectiveDiscountPercent(product, promotions = [], now = new Date()) {
+  const own = round2(num(product?.discount_percent));
+  return Math.max(own, bestPromotionFor(product, promotions, now).percent);
+}
+
+// Banner de la vitrina: solo una promocion de alcance total se puede anunciar como
+// descuento general. Si hay varias, manda la de mayor porcentaje.
+function storefrontBanner(promotions = [], now = new Date()) {
+  const allStore = promotions
+    .filter((promotion) => promotion.scope === "all" && promotionActive(promotion, now))
+    .sort((a, b) => round2(num(b.percent)) - round2(num(a.percent)));
+  const best = allStore[0];
+  if (!best) return { label: null, percent: 0, start: null, end: null, active: false };
   return {
-    label: nullableText(settings?.catalog_promo_label, 80),
-    percent: active ? percent : 0,
-    // La ventana se publica en fecha de negocio (AAAA-MM-DD), no en ISO con hora: la
-    // vitrina imprime la vigencia tal como el comercio la capturo.
-    start: toBusinessDate(start),
-    end: toBusinessDate(end),
-    active
+    label: best.name || null,
+    percent: round2(num(best.percent)),
+    start: toBusinessDate(best.start_date),
+    end: toBusinessDate(best.end_date),
+    active: true
   };
 }
 
-// Porcentaje efectivo de un producto: gana el mayor entre su propio descuento y la
-// campana activa, para no aplicar dos descuentos sobre el mismo precio de lista.
-function effectiveDiscountPercent(product, campaign) {
-  const own = round2(num(product?.discount_percent));
-  const promo = Number(campaign?.percent) || 0;
-  return Math.max(own, promo);
+// Promociones vigentes con sus segmentos, en una sola consulta. El lector de la vitrina
+// corre dentro del tenant del catalog_code; el listado y la venta, dentro del suyo.
+async function loadActivePromotions(client, now = new Date()) {
+  const rows = await client.comercioPromotion.findMany({
+    where: { status: "active" },
+    include: { categories: true, products: true },
+    orderBy: [{ percent: "desc" }, { id: "asc" }]
+  });
+  return rows.filter((row) => promotionActive(row, now));
 }
+
 
 // === Serializacion ===
 
-function productDto(row, campaign) {
+function productDto(row, promotions = []) {
   const discountPercent = round2(num(row.discount_percent));
   // price_final es solo el descuento propio del producto (lo que se edita en el maestro);
-  // sale_price es lo que el mostrador factura hoy, con la campana ya ponderada.
-  const salePercent = effectiveDiscountPercent(row, campaign);
+  // sale_price es lo que el mostrador factura hoy, con la mejor promocion ya ponderada.
+  const best = bestPromotionFor(row, promotions);
+  const salePercent = effectiveDiscountPercent(row, promotions);
   return {
     id: row.id,
     code: row.code,
@@ -210,6 +272,8 @@ function productDto(row, campaign) {
     price_final: discountedPrice(row.price, discountPercent),
     sale_price: discountedPrice(row.price, salePercent),
     sale_discount_percent: salePercent,
+    // Nombre de la promocion que explica el descuento de mostrador (si aplica).
+    sale_promotion: best.percent > discountPercent ? best.name : null,
     cost: num(row.cost),
     stock: row.stock,
     min_stock: row.min_stock,
@@ -395,10 +459,6 @@ function settingsDto(row) {
     catalog_facebook: row.catalog_facebook || null,
     catalog_instagram: row.catalog_instagram || null,
     catalog_tagline: row.catalog_tagline || null,
-    catalog_promo_label: row.catalog_promo_label || null,
-    catalog_promo_percent: round2(num(row.catalog_promo_percent)),
-    catalog_promo_start: toBusinessDate(row.catalog_promo_start),
-    catalog_promo_end: toBusinessDate(row.catalog_promo_end),
     preferences: row.preferences_json && typeof row.preferences_json === "object" ? row.preferences_json : {},
     updated_at: row.updated_at ? row.updated_at.toISOString() : null
   };
@@ -478,21 +538,6 @@ async function updateSettings(tenantId, data) {
     if (data.catalog_facebook !== undefined) payload.catalog_facebook = normalizeSocialUrl(data.catalog_facebook, "Facebook");
     if (data.catalog_instagram !== undefined) payload.catalog_instagram = normalizeSocialUrl(data.catalog_instagram, "Instagram");
     if (data.catalog_tagline !== undefined) payload.catalog_tagline = nullableText(data.catalog_tagline, 160);
-    if (data.catalog_promo_label !== undefined) payload.catalog_promo_label = nullableText(data.catalog_promo_label, 80);
-    if (data.catalog_promo_percent !== undefined) {
-      payload.catalog_promo_percent = normalizeDiscountPercent(data.catalog_promo_percent, "El descuento de la campana");
-    }
-    if (data.catalog_promo_start !== undefined) {
-      payload.catalog_promo_start = normalizeText(data.catalog_promo_start) ? businessDateToUtc(data.catalog_promo_start) : null;
-    }
-    if (data.catalog_promo_end !== undefined) {
-      payload.catalog_promo_end = normalizeText(data.catalog_promo_end) ? businessDateToUtc(data.catalog_promo_end) : null;
-    }
-    const start = payload.catalog_promo_start !== undefined ? payload.catalog_promo_start : current.catalog_promo_start;
-    const end = payload.catalog_promo_end !== undefined ? payload.catalog_promo_end : current.catalog_promo_end;
-    if (start && end && new Date(end) < new Date(start)) {
-      throw appError(400, "SETTINGS_PROMO_RANGE_INVALID", "El fin de la campana no puede ser anterior a su inicio");
-    }
     if (data.catalog_enabled !== undefined) {
       const enable = Boolean(data.catalog_enabled);
       payload.catalog_enabled = enable;
@@ -537,6 +582,439 @@ async function regenerateCatalogCode(tenantId) {
   });
 }
 
+// === Promociones: CRUD, audiencia y envio ===
+
+function whatsappDigits(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function normalizePromotionName(value) {
+  const name = nullableText(value, 120);
+  if (!name) throw appError(400, "PROMOTION_NAME_INVALID", "La promocion necesita un nombre");
+  return name;
+}
+
+function normalizePromotionScope(value) {
+  const scope = normalizeText(value || "all").toLowerCase();
+  if (!PROMOTION_SCOPES.has(scope)) {
+    throw appError(400, "PROMOTION_SCOPE_INVALID", "El alcance debe ser all, categories o products");
+  }
+  return scope;
+}
+
+function normalizePromotionStatus(value) {
+  const status = normalizeText(value || "draft").toLowerCase();
+  if (!PROMOTION_STATUSES.has(status)) {
+    throw appError(400, "PROMOTION_STATUS_INVALID", "El estado debe ser draft, active, paused o archived");
+  }
+  return status;
+}
+
+function normalizePromotionCategories(values) {
+  const list = Array.isArray(values) ? values : [];
+  const categories = [...new Set(list.map((value) => nullableText(value, 80)).filter(Boolean))];
+  if (categories.length > 50) throw appError(400, "PROMOTION_CATEGORIES_LIMIT", "Maximo 50 categorias por promocion");
+  return categories;
+}
+
+function normalizeIdList(values, max, code, message) {
+  const list = Array.isArray(values) ? values : [];
+  const ids = [...new Set(list.map((value) => Number(value)).filter((id) => Number.isInteger(id) && id > 0))];
+  if (ids.length > max) throw appError(400, code, message);
+  return ids;
+}
+
+function normalizePromotionMessage(value) {
+  return nullableText(value, 1000);
+}
+
+function normalizePromotionDates(startValue, endValue) {
+  const start = normalizeText(startValue) ? businessDateToUtc(startValue) : null;
+  const end = normalizeText(endValue) ? businessDateToUtc(endValue) : null;
+  if (start && end && end < start) {
+    throw appError(400, "PROMOTION_RANGE_INVALID", "El fin de la promocion no puede ser anterior a su inicio");
+  }
+  return { start, end };
+}
+
+// Una promocion activa debe tener descuento real y, si es segmentada, al menos un
+// destino. Evita publicar una campana que no descuenta nada.
+function assertPromotionCanBeActive({ scope, percent, status, categories, products }) {
+  if (status !== "active") return;
+  if (!(round2(num(percent)) > 0)) {
+    throw appError(400, "PROMOTION_PERCENT_REQUIRED", "Una promocion activa necesita un porcentaje mayor a cero");
+  }
+  if (scope === "categories" && !categories.length) {
+    throw appError(400, "PROMOTION_SCOPE_EMPTY", "Selecciona al menos una categoria para esta promocion");
+  }
+  if (scope === "products" && !products.length) {
+    throw appError(400, "PROMOTION_SCOPE_EMPTY", "Selecciona al menos un producto para esta promocion");
+  }
+}
+
+async function resolvePromotionProducts(client, productIds) {
+  if (!productIds.length) return [];
+  const rows = await client.comercioProduct.findMany({ where: { id: { in: productIds } } });
+  if (rows.length !== productIds.length) {
+    throw appError(404, "PROMOTION_PRODUCT_NOT_FOUND", "Alguno de los productos seleccionados ya no esta disponible");
+  }
+  return rows;
+}
+
+function promotionDto(row, { audience = 0 } = {}) {
+  return {
+    id: row.id,
+    name: row.name,
+    scope: row.scope,
+    percent: round2(num(row.percent)),
+    status: row.status,
+    start_date: toBusinessDate(row.start_date),
+    end_date: toBusinessDate(row.end_date),
+    message: row.message || null,
+    active: promotionActive(row),
+    categories: (row.categories || []).map((entry) => entry.category).sort(),
+    products: (row.products || []).map((entry) => ({
+      product_id: entry.product_id,
+      product_code: entry.product_code || null,
+      product_name: entry.product_name || null
+    })),
+    sent_count: Number(row._count?.sends ?? row.sends?.length ?? 0),
+    audience,
+    created_at: row.created_at ? row.created_at.toISOString() : null,
+    updated_at: row.updated_at ? row.updated_at.toISOString() : null
+  };
+}
+
+async function countPromotionAudience(client) {
+  // Solo clientes con un numero utilizable para WhatsApp.
+  const customers = await client.comercioCustomer.findMany({ select: { id: true, phone: true } });
+  return customers.filter((row) => whatsappDigits(row.phone).length >= 7).length;
+}
+
+async function loadPromotion(client, id) {
+  const promotionId = Number(id);
+  if (!Number.isInteger(promotionId) || promotionId <= 0) {
+    throw appError(404, "PROMOTION_NOT_FOUND", "Promocion no encontrada");
+  }
+  const promotion = await client.comercioPromotion.findFirst({
+    where: { id: promotionId },
+    include: { categories: true, products: true }
+  });
+  if (!promotion) throw appError(404, "PROMOTION_NOT_FOUND", "Promocion no encontrada");
+  return promotion;
+}
+
+async function listPromotions(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const [rows, audience] = await Promise.all([
+      prisma.comercioPromotion.findMany({
+        include: { categories: true, products: true, _count: { select: { sends: true } } },
+        orderBy: { id: "desc" }
+      }),
+      countPromotionAudience(prisma)
+    ]);
+    return { items: rows.map((row) => promotionDto(row, { audience })), audience };
+  });
+}
+
+async function getPromotion(tenantId, id) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const promotion = await loadPromotion(prisma, id);
+    const [sends, audience] = await Promise.all([
+      prisma.comercioPromotionSend.findMany({ where: { promotion_id: promotion.id }, orderBy: { sent_at: "desc" }, take: 200 }),
+      countPromotionAudience(prisma)
+    ]);
+    return {
+      ...promotionDto(promotion, { audience }),
+      sends: sends.map((row) => ({
+        customer_id: row.customer_id,
+        customer_name: row.customer_name,
+        phone: row.phone,
+        message: row.message || null,
+        sent_at: row.sent_at ? row.sent_at.toISOString() : null
+      }))
+    };
+  });
+}
+
+async function createPromotion(tenantId, userId, data = {}) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const name = normalizePromotionName(data.name);
+    const scope = normalizePromotionScope(data.scope);
+    const percent = normalizeDiscountPercent(data.percent, "El descuento de la promocion");
+    const status = normalizePromotionStatus(data.status || "draft");
+    const { start, end } = normalizePromotionDates(data.start_date, data.end_date);
+    const categories = normalizePromotionCategories(data.categories);
+    const productIds = normalizeIdList(data.product_ids, 500, "PROMOTION_PRODUCTS_LIMIT", "Maximo 500 productos por promocion");
+    const productRows = scope === "products" ? await resolvePromotionProducts(tx, productIds) : [];
+    assertPromotionCanBeActive({ scope, percent, status, categories, products: productRows });
+
+    const created = await tx.comercioPromotion.create({
+      data: {
+        tenant_id: tenantId,
+        name,
+        scope,
+        percent,
+        status,
+        start_date: start,
+        end_date: end,
+        message: normalizePromotionMessage(data.message),
+        created_by: userId || null
+      }
+    });
+    if (scope === "categories" && categories.length) {
+      await tx.comercioPromotionCategory.createMany({
+        data: categories.map((category) => ({ tenant_id: tenantId, promotion_id: created.id, category }))
+      });
+    }
+    if (scope === "products" && productRows.length) {
+      await tx.comercioPromotionProduct.createMany({
+        data: productRows.map((row) => ({
+          tenant_id: tenantId,
+          promotion_id: created.id,
+          product_id: row.id,
+          product_code: row.code
+        }))
+      });
+    }
+    const saved = await loadPromotion(tx, created.id);
+    return promotionDto(saved, { audience: await countPromotionAudience(tx) });
+  }));
+}
+
+async function updatePromotion(tenantId, id, data = {}) {
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    const current = await loadPromotion(tx, id);
+    if (current.status === "archived" && !(data.status === "draft" && Object.keys(data).length === 1)) {
+      throw appError(409, "PROMOTION_ARCHIVED", "La promocion esta archivada: restáurala antes de editarla");
+    }
+    const name = data.name !== undefined ? normalizePromotionName(data.name) : current.name;
+    const scope = data.scope !== undefined ? normalizePromotionScope(data.scope) : current.scope;
+    const percent = data.percent !== undefined
+      ? normalizeDiscountPercent(data.percent, "El descuento de la promocion")
+      : round2(num(current.percent));
+    const status = data.status !== undefined ? normalizePromotionStatus(data.status) : current.status;
+    const start = data.start_date !== undefined ? normalizeText(data.start_date) ? businessDateToUtc(data.start_date) : null : current.start_date;
+    const end = data.end_date !== undefined ? normalizeText(data.end_date) ? businessDateToUtc(data.end_date) : null : current.end_date;
+    if (start && end && new Date(end) < new Date(start)) {
+      throw appError(400, "PROMOTION_RANGE_INVALID", "El fin de la promocion no puede ser anterior a su inicio");
+    }
+    const categories = data.categories !== undefined
+      ? normalizePromotionCategories(data.categories)
+      : (current.categories || []).map((entry) => entry.category);
+    const currentProductIds = (current.products || []).map((entry) => entry.product_id);
+    const productIds = data.product_ids !== undefined ? normalizeIdList(data.product_ids, 500, "PROMOTION_PRODUCTS_LIMIT", "Maximo 500 productos por promocion") : currentProductIds;
+    const productRows = scope === "products"
+      ? (data.product_ids !== undefined ? await resolvePromotionProducts(tx, productIds) : (current.products || []))
+      : [];
+    assertPromotionCanBeActive({ scope, percent, status, categories, products: productRows });
+
+    const updated = await tx.comercioPromotion.update({
+      where: { id: current.id },
+      data: {
+        name,
+        scope,
+        percent,
+        status,
+        start_date: start,
+        end_date: end,
+        message: data.message !== undefined ? normalizePromotionMessage(data.message) : current.message
+      }
+    });
+
+    // Los segmentos se reemplazan solo cuando cambian (scope o listas): el update no
+    // pisa selecciones que el cliente no envio.
+    const segmentsChanged = data.scope !== undefined || data.categories !== undefined || data.product_ids !== undefined;
+    if (segmentsChanged) {
+      await tx.comercioPromotionCategory.deleteMany({ where: { tenant_id: tenantId, promotion_id: current.id } });
+      await tx.comercioPromotionProduct.deleteMany({ where: { tenant_id: tenantId, promotion_id: current.id } });
+      if (scope === "categories" && categories.length) {
+        await tx.comercioPromotionCategory.createMany({
+          data: categories.map((category) => ({ tenant_id: tenantId, promotion_id: current.id, category }))
+        });
+      }
+      if (scope === "products" && productRows.length) {
+        await tx.comercioPromotionProduct.createMany({
+          data: productRows.map((row) => ({
+            tenant_id: tenantId,
+            promotion_id: current.id,
+            product_id: row.product_id ?? row.id,
+            product_code: row.product_code ?? row.code ?? null
+          }))
+        });
+      }
+    }
+    return promotionDto(await loadPromotion(tx, updated.id), { audience: await countPromotionAudience(tx) });
+  }));
+}
+
+async function setPromotionStatus(tenantId, id, status) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await loadPromotion(prisma, id);
+    const next = normalizePromotionStatus(status);
+    if (current.status === "archived" && next !== "draft") {
+      throw appError(409, "PROMOTION_ARCHIVED", "Una promocion archivada solo puede restaurarse como borrador");
+    }
+    assertPromotionCanBeActive({
+      scope: current.scope,
+      percent: round2(num(current.percent)),
+      status: next,
+      categories: (current.categories || []).map((entry) => entry.category),
+      products: current.products || []
+    });
+    const updated = await prisma.comercioPromotion.update({ where: { id: current.id }, data: { status: next } });
+    return promotionDto(await loadPromotion(prisma, updated.id), { audience: await countPromotionAudience(prisma) });
+  });
+}
+
+async function deletePromotion(tenantId, id) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await loadPromotion(prisma, id);
+    if (current.status !== "draft") {
+      throw appError(409, "PROMOTION_NOT_DRAFT", "Solo se puede eliminar una promocion en borrador; archiva las demas");
+    }
+    await prisma.comercioPromotion.deleteMany({ where: { tenant_id: tenantId, id: current.id } });
+    return { deleted: true, id: current.id };
+  });
+}
+
+function normalizeStoreBaseUrl(value) {
+  const raw = normalizeText(value).slice(0, 200) || normalizeText(process.env.PUBLIC_STORE_BASE_URL);
+  if (!raw) return "";
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw appError(400, "PROMOTION_BASE_URL_INVALID", "La direccion de la tienda debe ser una URL http(s)");
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw appError(400, "PROMOTION_BASE_URL_INVALID", "La direccion de la tienda debe ser una URL http(s)");
+  }
+  return url.origin;
+}
+
+// Plantilla del mensaje de WhatsApp: se personaliza por cliente al abrir wa.me.
+function renderPromotionMessage(template, { customerName, storeName, promotionName, percent, link }) {
+  const text = normalizeText(template) || DEFAULT_PROMOTION_MESSAGE;
+  const percentText = `${round2(num(percent))}%`;
+  return text
+    .replaceAll("{cliente}", normalizeText(customerName) || "cliente")
+    .replaceAll("{negocio}", normalizeText(storeName) || "nuestro negocio")
+    .replaceAll("{promo}", normalizeText(promotionName) || "nuestra promocion")
+    .replaceAll("{descuento}", percentText)
+    .replaceAll("{enlace}", normalizeText(link));
+}
+
+async function promotionAudience(tenantId, id, query = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const promotion = await loadPromotion(prisma, id);
+    const [settings, customers, sends] = await Promise.all([
+      prisma.comercioSettings.findFirst({ where: {} }),
+      prisma.comercioCustomer.findMany({ orderBy: { name: "asc" } }),
+      prisma.comercioPromotionSend.findMany({ where: { promotion_id: promotion.id } })
+    ]);
+    const baseUrl = normalizeStoreBaseUrl(query.base_url);
+    const catalogCode = settings?.catalog_enabled ? settings.catalog_code : null;
+    const link = catalogCode ? `${baseUrl}/tienda/${catalogCode}` : baseUrl;
+    const template = promotion.message || DEFAULT_PROMOTION_MESSAGE;
+    const storeName = settings?.store_name || "Mi negocio";
+    const sentByCustomer = new Map(sends.map((row) => [row.customer_id, row]));
+
+    const audience = customers.filter((row) => whatsappDigits(row.phone).length >= 7);
+    const items = audience.map((customer) => {
+      const sent = sentByCustomer.get(customer.id) || null;
+      const message = renderPromotionMessage(template, {
+        customerName: customer.name,
+        storeName,
+        promotionName: promotion.name,
+        percent: promotion.percent,
+        link
+      });
+      return {
+        id: customer.id,
+        code: customer.code,
+        name: customer.name,
+        phone: customer.phone,
+        phone_digits: whatsappDigits(customer.phone),
+        sent: Boolean(sent),
+        sent_at: sent?.sent_at ? sent.sent_at.toISOString() : null,
+        message,
+        wa_url: `https://wa.me/${whatsappDigits(customer.phone)}?text=${encodeURIComponent(message)}`
+      };
+    });
+
+    const search = normalizeText(query.q).toLowerCase();
+    const pendingOnly = String(query.pending || "").toLowerCase() === "true";
+    const filtered = items.filter((item) => {
+      if (pendingOnly && item.sent) return false;
+      if (search && !`${item.name} ${item.code} ${item.phone}`.toLowerCase().includes(search)) return false;
+      return true;
+    });
+    const { take, skip } = parseLimitOffset(query, 200, 500);
+    return {
+      promotion: promotionDto(promotion, { audience: items.length }),
+      base_url: baseUrl || null,
+      link: link || null,
+      message_template: template,
+      totals: {
+        audience: items.length,
+        sent: items.filter((item) => item.sent).length,
+        pending: items.filter((item) => !item.sent).length
+      },
+      total: filtered.length,
+      items: filtered.slice(skip, skip + take)
+    };
+  });
+}
+
+// Marca como enviados los clientes seleccionados. El envio real lo hace el operador
+// desde wa.me; aqui queda la constancia que evita repetir el mensaje.
+async function registerPromotionSends(tenantId, userId, id, data = {}) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const promotion = await loadPromotion(prisma, id);
+    if (!promotionActive(promotion)) {
+      throw appError(409, "PROMOTION_NOT_ACTIVE", "Solo se puede enviar una promocion activa y vigente");
+    }
+    const customerIds = normalizeIdList(data.customer_ids, 500, "PROMOTION_AUDIENCE_LIMIT", "Maximo 500 clientes por envio");
+    if (!customerIds.length) throw appError(400, "PROMOTION_AUDIENCE_EMPTY", "Selecciona al menos un cliente con WhatsApp");
+    const [settings, customers] = await Promise.all([
+      prisma.comercioSettings.findFirst({ where: {} }),
+      prisma.comercioCustomer.findMany({ where: { id: { in: customerIds } } })
+    ]);
+    const baseUrl = normalizeStoreBaseUrl(data.base_url);
+    const catalogCode = settings?.catalog_enabled ? settings.catalog_code : null;
+    const link = catalogCode ? `${baseUrl}/tienda/${catalogCode}` : baseUrl;
+    const storeName = settings?.store_name || "Mi negocio";
+    const template = promotion.message || DEFAULT_PROMOTION_MESSAGE;
+    const rows = customers
+      .filter((customer) => whatsappDigits(customer.phone).length >= 7)
+      .map((customer) => ({
+        tenant_id: tenantId,
+        promotion_id: promotion.id,
+        customer_id: customer.id,
+        customer_name: customer.name,
+        phone: customer.phone,
+        message: renderPromotionMessage(template, {
+          customerName: customer.name,
+          storeName,
+          promotionName: promotion.name,
+          percent: promotion.percent,
+          link
+        }),
+        sent_at: new Date(),
+        created_by: userId || null
+      }));
+    if (!rows.length) throw appError(400, "PROMOTION_AUDIENCE_EMPTY", "Los clientes seleccionados no tienen un WhatsApp valido");
+    const created = await prisma.comercioPromotionSend.createMany({ data: rows, skipDuplicates: true });
+    return {
+      registered: created.count,
+      skipped: rows.length - created.count,
+      invalid_customers: customerIds.length - customers.length,
+      without_phone: customers.length - rows.length
+    };
+  });
+}
+
 // === Vitrina publica ===
 // Unica puerta: el codigo corto (globalmente unico). El lector anonimo NUNCA ve
 // tenant_id, costo, stock crudo ni ids internos; disponible/agotado se deriva del stock.
@@ -549,11 +1027,11 @@ async function publicCatalog(code) {
   return prisma.runWithTenant(settings.tenant_id, async () => {
     // SOFT_DELETE ya limita a productos activos.
     const rows = await prisma.comercioProduct.findMany({ orderBy: [{ category: "asc" }, { name: "asc" }] });
-    const campaign = catalogCampaign(settings);
+    const promotions = await loadActivePromotions(prisma);
     const items = rows.map((row) => {
-      // El visitante ve el precio final (descuento aplicado); el precio de lista se
+      // El visitante ve el precio final (mejor descuento aplicable); el precio de lista se
       // publica tachado para que el ahorro sea visible. notes es la descripcion corta.
-      const percent = effectiveDiscountPercent(row, campaign);
+      const percent = effectiveDiscountPercent(row, promotions);
       return {
         code: row.code,
         name: row.name,
@@ -575,7 +1053,7 @@ async function publicCatalog(code) {
       whatsapp: settings.catalog_whatsapp || null,
       facebook: settings.catalog_facebook || null,
       instagram: settings.catalog_instagram || null,
-      promo: campaign,
+      promo: storefrontBanner(promotions),
       categories: [...new Set(items.map((item) => item.category).filter(Boolean))].sort(),
       items
     };
@@ -586,10 +1064,9 @@ async function publicCatalog(code) {
 
 async function listProducts(tenantId, query = {}) {
   return prisma.runWithTenant(tenantId, async () => {
-    // La campana de la vitrina también rebaja el precio del mostrador, así que el listado
+    // La promocion vigente también rebaja el precio del mostrador, así que el listado
     // la lee junto con los productos: Vender muestra exactamente lo que va a facturar.
-    const settingsRow = await prisma.comercioSettings.findFirst({ where: {} });
-    const campaign = catalogCampaign(settingsRow);
+    const promotions = await loadActivePromotions(prisma);
     const rows = await prisma.comercioProduct.findMany({
       where: query.include_inactive === "true" ? { __includeInactive: true } : {},
       orderBy: [{ active: "desc" }, { name: "asc" }]
@@ -602,7 +1079,7 @@ async function listProducts(tenantId, query = {}) {
       return true;
     });
     const { take, skip } = parseLimitOffset(query);
-    return { items: filtered.slice(skip, skip + take).map((row) => productDto(row, campaign)), total: filtered.length };
+    return { items: filtered.slice(skip, skip + take).map((row) => productDto(row, promotions)), total: filtered.length };
   });
 }
 
@@ -898,10 +1375,9 @@ async function createSale(tenantId, userId, data) {
     if (discount < 0) throw appError(400, "SALE_DISCOUNT_INVALID", "El descuento no puede ser negativo");
 
     // Descuento atomo por producto: si el stock cambia en paralelo, la venta falla limpia.
-    // El precio cobrado es el final (descuento del producto o campana vigente, el mayor),
+    // El precio cobrado es el final (descuento del producto o mejor promocion vigente),
     // igual que la vitrina: lo que ve el cliente es lo que factura el mostrador.
-    const settingsRow = await tx.comercioSettings.findFirst({ where: { tenant_id: tenantId } });
-    const campaign = catalogCampaign(settingsRow, date);
+    const promotions = await loadActivePromotions(tx, date);
     const lines = [];
     for (const [productId, quantity] of merged.entries()) {
       const product = await findProductTx(tx, tenantId, productId);
@@ -916,7 +1392,7 @@ async function createSale(tenantId, userId, data) {
       lines.push({
         product,
         quantity,
-        unit_price: discountedPrice(product.price, effectiveDiscountPercent(product, campaign)),
+        unit_price: discountedPrice(product.price, effectiveDiscountPercent(product, promotions, date)),
         unit_cost: num(product.cost),
         stock_before: product.stock,
         stock_after: after.stock
@@ -1548,14 +2024,28 @@ module.exports = {
   weightedAverageCost,
   normalizeDiscountPercent,
   discountedPrice,
-  catalogCampaign,
+  promotionWithinWindow,
+  promotionActive,
+  promotionAppliesTo,
+  bestPromotionFor,
+  storefrontBanner,
   effectiveDiscountPercent,
+  renderPromotionMessage,
   businessDateToUtc,
   toBusinessDate,
   // configuracion
   getSettings,
   updateSettings,
   regenerateCatalogCode,
+  // promociones
+  listPromotions,
+  getPromotion,
+  createPromotion,
+  updatePromotion,
+  setPromotionStatus,
+  deletePromotion,
+  promotionAudience,
+  registerPromotionSends,
   // vitrina publica
   publicCatalog,
   // maestros

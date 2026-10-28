@@ -4184,17 +4184,320 @@ model ComercioSettings {
   catalog_whatsapp String?
   catalog_facebook String?
   catalog_instagram String?
-  // Eslogan corto de la vitrina y campana de descuentos de toda la tienda. El
-  // porcentaje de campana compite con el descuento del producto: gana el mayor.
-  catalog_tagline      String?
-  catalog_promo_label  String?
-  catalog_promo_percent Decimal @default(0) @db.Decimal(5, 2)
-  catalog_promo_start  DateTime?
-  catalog_promo_end    DateTime?
+  // Eslogan corto de la vitrina. Las campanas de descuento ya no viven aqui: cada
+  // una es una fila de comercio_promotions (varias a la vez, con audiencia y envio).
+  catalog_tagline  String?
   preferences_json Json?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
   @@map("comercio_settings")
   @@unique([tenant_id])
+}
+
+// Promocion de vitrina y mostrador (M-30). Reemplaza la campana unica que vivia en
+// comercio_settings. Varias pueden estar activas: el cliente siempre paga el mejor
+// precio, es decir el mayor entre su descuento propio y el de las promociones que le
+// aplican (nunca se suman). scope: "all" | "categories" | "products".
+// status: "draft" | "active" | "paused" | "archived".
+model ComercioPromotion {
+  id         Int      @id @default(autoincrement())
+  tenant_id  String
+  name       String
+  scope      String   @default("all")
+  percent    Decimal  @db.Decimal(5, 2)
+  status     String   @default("draft")
+  start_date DateTime?
+  end_date   DateTime?
+  // Plantilla del mensaje de WhatsApp. Admite {cliente}, {negocio}, {promo},
+  // {descuento} y {enlace}; se personaliza por cliente al abrir wa.me.
+  message    String?
+  created_by Int?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  categories ComercioPromotionCategory[]
+  products   ComercioPromotionProduct[]
+  sends      ComercioPromotionSend[]
+
+  @@map("comercio_promotions")
+  @@index([tenant_id, status])
+  @@index([tenant_id, start_date])
+}
+
+// Categorias alcanzadas por una promocion scope="categories".
+model ComercioPromotionCategory {
+  id           Int               @id @default(autoincrement())
+  tenant_id    String
+  promotion_id Int
+  promotion    ComercioPromotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  category     String
+
+  @@map("comercio_promotion_categories")
+  @@unique([tenant_id, promotion_id, category])
+}
+
+// Productos alcanzados por una promocion scope="products". product_code es snapshot
+// para que la audiencia siga siendo legible aunque el producto se archive.
+model ComercioPromotionProduct {
+  id           Int               @id @default(autoincrement())
+  tenant_id    String
+  promotion_id Int
+  promotion    ComercioPromotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  product_id   Int
+  product_code String?
+
+  @@map("comercio_promotion_products")
+  @@unique([tenant_id, promotion_id, product_id])
+}
+
+// Bitacora de envio por cliente. El operador abre wa.me con el mensaje ya escrito y
+// confirma el envio: sent_at deja constancia y evita repetir el mismo mensaje. La
+// unicidad por promocion+cliente es la que sostiene el control de repetidos.
+model ComercioPromotionSend {
+  id            Int               @id @default(autoincrement())
+  tenant_id     String
+  promotion_id  Int
+  promotion     ComercioPromotion @relation(fields: [promotion_id], references: [id], onDelete: Cascade)
+  customer_id   Int
+  customer_name String
+  phone         String
+  message       String?
+  sent_at       DateTime          @default(now())
+  created_by    Int?
+  created_at    DateTime          @default(now())
+
+  @@map("comercio_promotion_sends")
+  @@unique([tenant_id, promotion_id, customer_id])
+  @@index([tenant_id, promotion_id, sent_at])
+}
+
+// Recepcion y asignacion de facturas electronicas (M-07 Contabilidad).
+// El XML es la fuente de verdad fiscal; el PDF es el soporte visual. La clave
+// dedupe_key (CUFE/CUDE o emisor+prefijo+numero) evita registrar dos veces la
+// misma factura aunque llegue en correos o ZIP distintos.
+
+model InvoiceSupplier {
+  id         Int      @id @default(autoincrement())
+  tenant_id  String
+  tax_id     String
+  name       String
+  email      String?
+  metadata   Json     @default("{}")
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  invoices   ReceivedInvoice[]
+
+  @@map("invoice_suppliers")
+  @@unique([tenant_id, tax_id])
+  @@index([tenant_id, name])
+}
+
+model InvoiceRecipient {
+  id         Int      @id @default(autoincrement())
+  tenant_id  String
+  tax_id     String
+  name       String
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  invoices   ReceivedInvoice[]
+
+  @@map("invoice_recipients")
+  @@unique([tenant_id, tax_id])
+}
+
+model InvoiceProcessedEmail {
+  id                        Int      @id @default(autoincrement())
+  tenant_id                 String
+  source                    String   @default("imap")
+  mailbox                   String?
+  message_key               String
+  internet_message_id       String?
+  subject                   String?
+  from_address              String?
+  received_at               DateTime?
+  attachment_count          Int      @default(0)
+  processed_attachment_count Int     @default(0)
+  invoice_count             Int      @default(0)
+  status                    String   @default("received")
+  error_message             String?
+  raw_size_bytes            Int?
+  zip_file_name             String?
+  created_at                DateTime @default(now())
+  processed_at              DateTime?
+  invoices                  ReceivedInvoice[]
+  documents                 ReceivedInvoiceDocument[]
+
+  @@map("invoice_processed_emails")
+  @@unique([tenant_id, message_key])
+  @@index([tenant_id, status, created_at])
+}
+
+model ReceivedInvoice {
+  id                      Int       @id @default(autoincrement())
+  tenant_id               String
+  email_id                Int?
+  email                   InvoiceProcessedEmail? @relation(fields: [email_id], references: [id], onDelete: SetNull)
+  supplier_id             Int?
+  supplier                InvoiceSupplier? @relation(fields: [supplier_id], references: [id], onDelete: SetNull)
+  recipient_id            Int?
+  recipient               InvoiceRecipient? @relation(fields: [recipient_id], references: [id], onDelete: SetNull)
+  document_type           String    @default("invoice")
+  document_type_label     String?
+  cufe                    String?
+  prefix                  String?
+  invoice_number          String
+  full_number             String
+  issue_date              DateTime?
+  reception_date          DateTime  @default(now())
+  issuer_tax_id           String?
+  issuer_name             String?
+  receiver_tax_id         String?
+  receiver_name           String?
+  subtotal                Float     @default(0)
+  iva                     Float     @default(0)
+  ica                     Float     @default(0)
+  inc                     Float     @default(0)
+  tax_total               Float     @default(0)
+  total                   Float     @default(0)
+  currency                String?
+  dian_validation_status  String?
+  extraction_source       String    @default("xml")
+  extraction_metadata     Json      @default("{}")
+  processing_status       String    @default("pending_assignment")
+  assignment_status       String    @default("unassigned")
+  invoice_status          String    @default("Pendiente de asignación")
+  group_name              String?
+  cost_center             String?
+  responsible_user_id     Int?
+  responsible_name        String?
+  leader_assignment_status String   @default("pending")
+  segment                 String?
+  assignment_detail       String?
+  observations            String?
+  notification_emails     Json      @default("[]")
+  needs_review            Boolean   @default(false)
+  review_reasons          Json      @default("[]")
+  validation_issues       Json      @default("[]")
+  pdf_available           Boolean   @default(false)
+  xml_available           Boolean   @default(false)
+  source_archive          String?
+  dedupe_key              String
+  assigned_by             Int?
+  assigned_at             DateTime?
+  approved_by             Int?
+  approved_at             DateTime?
+  last_action_by          Int?
+  last_action_at          DateTime?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+  documents               ReceivedInvoiceDocument[]
+  assignments             ReceivedInvoiceAssignment[]
+  change_logs             ReceivedInvoiceChangeLog[]
+
+  @@map("invoice_received")
+  @@unique([tenant_id, dedupe_key])
+  @@index([tenant_id, processing_status, created_at])
+  @@index([tenant_id, assignment_status])
+  @@index([tenant_id, issue_date])
+  @@index([tenant_id, supplier_id])
+  @@index([tenant_id, responsible_user_id])
+  @@index([tenant_id, invoice_number])
+}
+
+model ReceivedInvoiceDocument {
+  id               Int      @id @default(autoincrement())
+  tenant_id        String
+  invoice_id       Int?
+  invoice          ReceivedInvoice? @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  email_id         Int?
+  email            InvoiceProcessedEmail? @relation(fields: [email_id], references: [id], onDelete: SetNull)
+  document_type    String
+  file_name        String
+  mime_type        String
+  storage_reference String
+  size_bytes       Int      @default(0)
+  checksum_sha256  String
+  page_count       Int?
+  is_primary       Boolean  @default(false)
+  metadata         Json     @default("{}")
+  created_at       DateTime @default(now())
+
+  @@map("invoice_documents")
+  @@index([tenant_id, invoice_id])
+  @@index([tenant_id, checksum_sha256])
+}
+
+model ReceivedInvoiceAssignment {
+  id                      Int      @id @default(autoincrement())
+  tenant_id               String
+  invoice_id              Int
+  invoice                 ReceivedInvoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  responsible_user_id     Int?
+  responsible_name        String?
+  segment                 String?
+  leader_assignment_status String  @default("pending")
+  assignment_status       String
+  detail                  String?
+  observations            String?
+  assigned_by             Int?
+  assigned_at             DateTime @default(now())
+  created_at              DateTime @default(now())
+
+  @@map("invoice_assignments")
+  @@index([tenant_id, invoice_id, created_at])
+}
+
+model ReceivedInvoiceChangeLog {
+  id         Int      @id @default(autoincrement())
+  tenant_id  String
+  invoice_id Int
+  invoice    ReceivedInvoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  user_id    Int?
+  action     String
+  changes    Json     @default("{}")
+  note       String?
+  created_at DateTime @default(now())
+
+  @@map("invoice_change_logs")
+  @@index([tenant_id, invoice_id, created_at])
+}
+
+model InvoiceProcessingError {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String
+  email_id    Int?
+  document_id Int?
+  invoice_id  Int?
+  code        String
+  message     String
+  detail      Json     @default("{}")
+  resolved    Boolean  @default(false)
+  resolved_by Int?
+  resolved_at DateTime?
+  created_at  DateTime @default(now())
+
+  @@map("invoice_processing_errors")
+  @@index([tenant_id, resolved, created_at])
+}
+
+model InvoiceMailConfig {
+  id               Int      @id @default(autoincrement())
+  tenant_id        String   @unique
+  provider         String   @default("imap")
+  host             String?
+  port             Int      @default(993)
+  secure           Boolean  @default(true)
+  username         String?
+  password_env_key String   @default("INVOICE_IMAP_PASSWORD")
+  folder           String   @default("INBOX")
+  polling_minutes  Int      @default(15)
+  enabled          Boolean  @default(false)
+  last_synced_at   DateTime?
+  last_error       String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@map("invoice_mail_configs")
 }

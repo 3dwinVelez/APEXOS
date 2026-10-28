@@ -1,6 +1,6 @@
 "use client";
 
-// Portafolio del modulo Comercio (M-30): cockpit del mes + las 9 aplicaciones agrupadas por
+// Portafolio del modulo Comercio (M-30): cockpit del mes + las 10 aplicaciones agrupadas por
 // workflow, igual que Transporte y Gastos Menores. La navegacion dentro del modulo es esta
 // rejilla, no una barra de pestañas: el sidebar solo enlaza la raiz del modulo.
 // Los unicos calculos que hace la UI son las sumas de ingreso/egreso del mes; el resto de
@@ -13,6 +13,7 @@ import {
   BarChart3,
   Boxes,
   HandCoins,
+  Megaphone,
   Package,
   Receipt,
   Settings2,
@@ -61,7 +62,8 @@ const COMERCIO_APPS = [
     actions: [
       { href: "/dashboard/comercio/gastos", title: "Ingresos y egresos", detail: "Movimientos de caja por direccion, medio y responsable.", icon: BarChart3 },
       { href: "/dashboard/comercio/reportes", title: "Reportes", detail: "Tendencia diaria, margen, rankings y exportacion a Excel.", icon: TrendingUp },
-      { href: "/dashboard/comercio/configuracion", title: "Configuracion", detail: "Datos del negocio, redes, WhatsApp y campana de descuentos.", icon: Settings2 }
+      { href: "/dashboard/comercio/promociones", title: "Promociones", detail: "Campanas con vigencia, segmentos y envio por WhatsApp.", icon: Megaphone },
+      { href: "/dashboard/comercio/configuracion", title: "Configuracion", detail: "Datos del negocio, redes, WhatsApp y vitrina publica.", icon: Settings2 }
     ]
   }
 ] as const;
