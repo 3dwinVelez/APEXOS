@@ -280,6 +280,9 @@ function productDto(row, promotions = []) {
     active: row.active,
     notes: row.notes || null,
     has_photo: Boolean(row.photo_path),
+    // La lista del maestro tambien muestra la miniatura; en local es la ruta estatica
+    // del catalogo demo y en la nube la URL publica del bucket comercio-assets.
+    photo_url: storage.publicViewUrl(row.photo_path),
     catalog_featured: Boolean(row.catalog_featured),
     low_stock: row.stock <= row.min_stock,
     created_at: row.created_at ? row.created_at.toISOString() : null,
