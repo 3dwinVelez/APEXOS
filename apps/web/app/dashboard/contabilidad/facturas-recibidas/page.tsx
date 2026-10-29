@@ -10,6 +10,7 @@ import {
 import { api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
+import { CostCenterSelect, type CostCenterOption } from "@/components/cost-center-select";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form-controls";
 import { Alert, Badge, EmptyState, Skeleton } from "@/components/ui/feedback";
@@ -62,7 +63,7 @@ type Responsible = { id: number; name: string; email: string; role_name?: string
 type EmailRow = { id: number; source: string; subject: string | null; from_address: string | null; received_at: string | null; zip_file_name: string | null; status: string; invoice_count: number; processed_attachment_count: number; attachment_count: number; error_message: string | null; created_at: string };
 type ErrorRow = { id: number; code: string; message: string; resolved: boolean; created_at: string; invoice_id: number | null; email_id: number | null };
 type UploadResult = { duplicate: boolean; status: string; summary?: { created: number; duplicates: number; failed: number }; invoices?: Array<{ id: number; full_number: string; total: number | string }>; errors?: Array<{ code: string; message: string }>; rejected?: Array<{ file_name: string; reason: string }> };
-type MailConfig = { provider: string; host: string | null; port: number; secure: boolean; username: string | null; password_env_key: string; folder: string; polling_minutes: number; enabled: boolean; configured: boolean; password_configured: boolean; last_synced_at: string | null; last_error: string | null; env_fallback: boolean };
+type MailConfig = { provider: string; host: string | null; port: number; secure: boolean; username: string | null; password_env_key: string; folder: string; polling_seconds: number; enabled: boolean; configured: boolean; password_configured: boolean; last_synced_at: string | null; last_error: string | null; env_fallback: boolean };
 
 const PROCESSING_TONE: Record<string, Tone> = {
   received: "neutral", processing: "info", pending_assignment: "warning",
@@ -402,6 +403,7 @@ type InvoiceDetail = {
   segment: string | null;
   assignment_detail: string | null;
   segments: string[];
+  cost_centers: CostCenterOption[];
   documents: InvoiceDocument[];
 };
 
@@ -662,6 +664,7 @@ function AssignCostCenterModal({ invoice, responsibles, onClose, onDone }: {
   async function submit() {
     const person = responsibles.find((user) => String(user.id) === responsibleId);
     if (!person) { setError("Selecciona el responsable de la factura."); return; }
+    const center = (detail?.cost_centers || []).find((item) => item.code === costCenter);
     setBusy(true);
     setError("");
     try {
@@ -670,11 +673,11 @@ function AssignCostCenterModal({ invoice, responsibles, onClose, onDone }: {
         body: JSON.stringify({
           responsible_user_id: person.id,
           segment: segment || undefined,
-          cost_center: costCenter.trim() || undefined,
+          cost_center: costCenter || null,
           assignment_detail: note.trim() || undefined
         })
       });
-      onDone(`Factura ${invoice.full_number} asignada a ${person.name}${costCenter.trim() ? ` · centro de costo ${costCenter.trim()}` : ""}.`);
+      onDone(`Factura ${invoice.full_number} asignada a ${person.name}${center ? ` · centro de costo ${center.code} · ${center.name}` : costCenter ? ` · centro de costo ${costCenter}` : ""}.`);
     } catch (caught) {
       setError(describeError(caught, "No fue posible asignar la factura."));
     } finally {
@@ -702,7 +705,7 @@ function AssignCostCenterModal({ invoice, responsibles, onClose, onDone }: {
               {responsibles.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
             </Select>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Input label="Centro de costo" onChange={(event) => setCostCenter(event.target.value)} value={costCenter} />
+              <CostCenterSelect centers={detail.cost_centers || []} onChange={setCostCenter} value={costCenter} />
               <Select label="Segmento" onChange={(event) => setSegment(event.target.value)} value={segment}>
                 <option value="">Sin segmento</option>
                 {(detail.segments || []).map((item) => <option key={item} value={item}>{item}</option>)}
@@ -710,6 +713,13 @@ function AssignCostCenterModal({ invoice, responsibles, onClose, onDone }: {
             </div>
             <Input label="Detalle de la asignación" onChange={(event) => setNote(event.target.value)} value={note} />
             <p className="text-xs text-content-muted">La asignación queda auditada con responsable, segmento, centro de costo y fecha.</p>
+            {(detail.cost_centers || []).length ? null : (
+              <p className="text-xs text-content-muted">
+                Registra los centros en{" "}
+                <Link className="font-semibold text-apex hover:underline" href="/dashboard/contabilidad/estructura">Contabilidad · Estructura</Link>{" "}
+                para asignarlos desde aquí.
+              </p>
+            )}
           </>
         ) : !error ? <Skeleton className="h-32 w-full" /> : null}
         {error ? <Alert tone="error">{error}</Alert> : null}
@@ -765,7 +775,7 @@ function UploadModal({ onClose, onDone }: { onClose: () => void; onDone: (result
 
 function MailConfigModal({ onClose, onSynced }: { onClose: () => void; onSynced: (message: string) => void }) {
   const [config, setConfig] = useState<MailConfig | null>(null);
-  const [form, setForm] = useState({ host: "", port: "993", secure: true, username: "", password_env_key: "INVOICE_IMAP_PASSWORD", folder: "INBOX", polling_minutes: "15", enabled: true });
+  const [form, setForm] = useState({ host: "", port: "993", secure: true, username: "", password_env_key: "INVOICE_IMAP_PASSWORD", folder: "INBOX", polling_seconds: "30", enabled: true });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -781,7 +791,7 @@ function MailConfigModal({ onClose, onSynced }: { onClose: () => void; onSynced:
         username: loaded.username || "",
         password_env_key: loaded.password_env_key || "INVOICE_IMAP_PASSWORD",
         folder: loaded.folder || "INBOX",
-        polling_minutes: String(loaded.polling_minutes || 15),
+        polling_seconds: String(loaded.polling_seconds || 30),
         enabled: Boolean(loaded.enabled)
       }));
     }).catch((caught) => setError(describeError(caught, "No fue posible consultar la configuración del buzón.")));
@@ -795,7 +805,7 @@ function MailConfigModal({ onClose, onSynced }: { onClose: () => void; onSynced:
         body: JSON.stringify({
           provider: "imap", host: form.host, port: Number(form.port), secure: form.secure,
           username: form.username, password_env_key: form.password_env_key, folder: form.folder,
-          polling_minutes: Number(form.polling_minutes), enabled: form.enabled
+          polling_seconds: Number(form.polling_seconds), enabled: form.enabled
         })
       });
       setConfig(saved);
@@ -835,7 +845,7 @@ function MailConfigModal({ onClose, onSynced }: { onClose: () => void; onSynced:
           <Input label="Usuario" onChange={(event) => setForm({ ...form, username: event.target.value })} placeholder="facturas@empresa.com" value={form.username} />
           <Input hint="Ej.: INVOICE_IMAP_PASSWORD" label="Variable de entorno de la contraseña" onChange={(event) => setForm({ ...form, password_env_key: event.target.value })} value={form.password_env_key} />
           <Input label="Carpeta" onChange={(event) => setForm({ ...form, folder: event.target.value })} value={form.folder} />
-          <Input label="Intervalo (minutos)" onChange={(event) => setForm({ ...form, polling_minutes: event.target.value })} type="number" value={form.polling_minutes} />
+          <Input hint="El job revisa el buzón cada 30 s; el intervalo se redondea al siguiente ciclo." label="Intervalo (segundos)" max={3600} min={10} onChange={(event) => setForm({ ...form, polling_seconds: event.target.value })} type="number" value={form.polling_seconds} />
         </div>
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2"><input checked={form.secure} onChange={(event) => setForm({ ...form, secure: event.target.checked })} type="checkbox" /> Conexión segura TLS</label>

@@ -12,6 +12,8 @@ const {
 const { readDocument } = require("./storage");
 const { ingestArchive } = require("./ingest");
 const { appError } = require("./errors");
+const { buildCostCenterOptions, resolveCostCenterCode } = require("./cost-centers");
+const accounting = require("../service");
 
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
@@ -282,8 +284,21 @@ async function getInvoice(id) {
     assignment_label: ASSIGNMENT_LABELS[invoice.assignment_status] || invoice.assignment_status,
     leader_label: LEADER_LABELS[invoice.leader_assignment_status] || invoice.leader_assignment_status,
     segments: SEGMENTS,
+    cost_centers: await listCostCenters(invoice.tenant_id),
     errors: unresolvedErrors
   };
+}
+
+async function listCostCenters(tenantId) {
+  const tree = await accounting.getOrganizationTree(tenantId);
+  return buildCostCenterOptions(tree);
+}
+
+async function resolveCostCenterInput(tenantId, value, current = null) {
+  if (value === undefined) return undefined;
+  if (value === null || !String(value).trim()) return null;
+  if (current && String(value).trim().toLowerCase() === String(current).trim().toLowerCase()) return current;
+  return resolveCostCenterCode(await listCostCenters(tenantId), value);
 }
 
 async function getDocumentFile(id, documentId) {
@@ -310,11 +325,11 @@ function assertNotFinalized(invoice) {
   }
 }
 
-function assignmentUpdate(invoice, payload, user) {
+function assignmentUpdate(invoice, payload, user, costCenter = undefined) {
   const emailList = normalizeEmails(payload.notification_emails);
   return {
     group_name: cleanText(payload.group_name, 160) ?? invoice.group_name,
-    cost_center: cleanText(payload.cost_center, 120) ?? invoice.cost_center,
+    cost_center: costCenter === undefined ? invoice.cost_center : costCenter,
     segment: cleanText(payload.segment, 80) ?? invoice.segment,
     assignment_detail: cleanText(payload.assignment_detail, 600) ?? invoice.assignment_detail,
     observations: cleanText(payload.observations, 1000) ?? invoice.observations,
@@ -345,7 +360,8 @@ async function assignInvoice(id, user, payload = {}) {
   if (payload.segment && !SEGMENTS.includes(String(payload.segment))) {
     throw appError("El segmento indicado no es valido.", "INVOICE_SEGMENT_INVALID", 422);
   }
-  const data = assignmentUpdate(invoice, payload, user);
+  const costCenter = await resolveCostCenterInput(invoice.tenant_id, payload.cost_center, invoice.cost_center);
+  const data = assignmentUpdate(invoice, payload, user, costCenter);
   const updated = await prisma.receivedInvoice.update({
     where: { id: invoice.id },
     data: {
@@ -469,7 +485,8 @@ async function returnInvoice(id, user, payload = {}) {
 async function updateAdministrative(id, user, payload = {}) {
   const invoice = await findInvoice(id);
   assertNotFinalized(invoice);
-  const data = assignmentUpdate(invoice, payload, user);
+  const costCenter = await resolveCostCenterInput(invoice.tenant_id, payload.cost_center, invoice.cost_center);
+  const data = assignmentUpdate(invoice, payload, user, costCenter);
   const changes = {};
   for (const field of ["group_name", "cost_center", "segment", "assignment_detail", "observations"]) {
     if (payload[field] !== undefined && data[field] !== invoice[field]) {
@@ -544,6 +561,7 @@ async function reprocessInvoice(id, user) {
   await changeLog(invoice.id, user, "reprocessed", {
     email_id: result.email_id,
     created: result.summary.created,
+    completed: result.summary.completed || 0,
     duplicates: result.summary.duplicates,
     failed: result.summary.failed
   }, "Reprocesamiento del ZIP original solicitado por el usuario.");

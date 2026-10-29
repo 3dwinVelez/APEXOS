@@ -303,7 +303,7 @@ async function main() {
     check("La configuracion IMAP valida el nombre de la variable secreta", invalidConfig.status === 400, { status: invalidConfig.status });
     const savedConfig = await json(running, token, "PUT", "/accounting/received-invoices/mail-config", {
       host: "imap.example.com", port: 993, secure: true, username: "facturas@example.com",
-      password_env_key: "INVOICE_IMAP_PASSWORD", folder: "INBOX", polling_minutes: 15, enabled: false
+      password_env_key: "INVOICE_IMAP_PASSWORD", folder: "INBOX", polling_seconds: 30, enabled: false
     });
     check("La configuracion IMAP se guarda sin exponer la contrasena", savedConfig.status === 200
       && savedConfig.body.host === "imap.example.com"

@@ -322,6 +322,9 @@ async function build() {
     require("./src/fabric/crons").start();
     bootLog("Started cron jobs");
   }
+  // La extraccion de facturas por IMAP no depende de Redis y debe correr
+  // aunque los workers de cola esten deshabilitados.
+  require("./src/fabric/crons").startReceivedInvoiceExtraction();
   bootLog("Finished background workers");
 
   bootLog("Registering health route");

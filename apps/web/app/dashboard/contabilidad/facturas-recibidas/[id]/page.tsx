@@ -10,6 +10,7 @@ import {
 import { api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
+import { CostCenterSelect, costCenterLabel, type CostCenterOption } from "@/components/cost-center-select";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/form-controls";
 import { Alert, Badge, Skeleton } from "@/components/ui/feedback";
@@ -43,7 +44,12 @@ type Invoice = {
   currency: string | null;
   dian_validation_status: string | null;
   extraction_source: string | null;
-  extraction_metadata: { pdf_comparison?: { page_count?: number; available?: boolean } | null } | null;
+  source_archive: string | null;
+  extraction_metadata: {
+    pdf_comparison?: { page_count?: number; available?: boolean } | null;
+    iva_percents?: number[] | null;
+    cufe_validation?: { valid?: boolean } | null;
+  } | null;
   processing_status: string;
   assignment_status: string;
   leader_assignment_status: string;
@@ -64,6 +70,7 @@ type Invoice = {
   responsible_name: string | null;
   approved_at: string | null;
   segments: string[];
+  cost_centers: CostCenterOption[];
   documents: Doc[];
   assignments: Assignment[];
   change_logs: Log[];
@@ -76,7 +83,8 @@ const PROCESSING_TONE: Record<string, Tone> = { received: "neutral", processing:
 const ACTION_LABEL: Record<string, string> = {
   received: "Factura recibida", assigned: "Asignación realizada", approved: "Aprobada por el líder",
   returned: "Devuelta por el líder", updated: "Datos administrativos actualizados",
-  review_accepted: "Revisión aceptada", review_rejected: "Revisión rechazada", reprocessed: "ZIP reprocesado"
+  review_accepted: "Revisión aceptada", review_rejected: "Revisión rechazada", reprocessed: "ZIP reprocesado",
+  documents_attached: "Documentos vinculados"
 };
 
 function money(value: number | string | null | undefined, currency = "COP") {
@@ -149,8 +157,11 @@ export default function FacturaRecibidaDetallePage() {
     );
   }
 
-  async function run(path: string, body?: unknown, successText?: string) {
-    setBusy(true);
+  const xmlCount = invoice.documents.filter((doc) => doc.document_type === "xml").length;
+  const pdfCount = invoice.documents.filter((doc) => doc.document_type === "pdf").length;
+  const ivaPercents = invoice.extraction_metadata?.iva_percents || [];
+
+  async function run(path: string, body?: unknown, successText?: string) {    setBusy(true);
     setError("");
     setMessage("");
     try {
@@ -189,6 +200,24 @@ export default function FacturaRecibidaDetallePage() {
           <span>· Fuente {invoice.extraction_source === "pdf" ? "PDF" : "XML"}</span>
           <span>· Email {invoice.email?.subject || invoice.email?.zip_file_name || "--"}</span>
         </div>
+        <dl className="grid grid-cols-2 gap-2 border-t border-line pt-3 sm:grid-cols-4">
+          <div className="rounded-card border border-line bg-surface-muted px-3 py-2">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-content-muted">Total factura</dt>
+            <dd className="mt-0.5 font-mono text-base font-semibold text-apex">{money(invoice.total, invoice.currency || "COP")}</dd>
+          </div>
+          <div className="rounded-card border border-line bg-surface-muted px-3 py-2">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-content-muted">Centro de costo</dt>
+            <dd className="mt-0.5 truncate text-sm font-medium text-content-strong" title={costCenterLabel(invoice.cost_centers, invoice.cost_center)}>{costCenterLabel(invoice.cost_centers, invoice.cost_center)}</dd>
+          </div>
+          <div className="rounded-card border border-line bg-surface-muted px-3 py-2">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-content-muted">Responsable</dt>
+            <dd className="mt-0.5 truncate text-sm font-medium text-content-strong">{invoice.responsible_name || "Sin responsable"}</dd>
+          </div>
+          <div className="rounded-card border border-line bg-surface-muted px-3 py-2">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-content-muted">Documentos</dt>
+            <dd className="mt-0.5 text-sm font-medium text-content-strong">{invoice.documents.length ? `${xmlCount} XML · ${pdfCount} PDF` : "Sin adjuntos"}</dd>
+          </div>
+        </dl>
       </header>
 
       <ContabilidadNav />
@@ -197,7 +226,7 @@ export default function FacturaRecibidaDetallePage() {
       {message ? <Alert tone="success">{message}</Alert> : null}
       {invoice.needs_review ? <ReviewBanner invoice={invoice} busy={busy} onResolve={run} /> : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="min-w-0 space-y-4">
           <section className="apex-section-card p-4">
             <div className="flex items-center justify-between gap-2">
@@ -206,24 +235,39 @@ export default function FacturaRecibidaDetallePage() {
             </div>
             <dl className="mt-3 grid gap-3 sm:grid-cols-2">
               <Field label="Número completo" value={invoice.full_number} mono />
-              <Field label="CUFE / CUDE" value={invoice.cufe || "--"} mono />
               <Field label="Fecha de emisión" value={formatDateTime(invoice.issue_date)} />
-              <Field label="Estado DIAN" value={invoice.dian_validation_status || "Sin validación reportada"} />
               <Field label="Emisor" value={invoice.issuer_name || ""} />
               <Field label="NIT emisor" value={invoice.issuer_tax_id || ""} mono />
               <Field label="Receptor" value={invoice.receiver_name || ""} />
               <Field label="NIT receptor" value={invoice.receiver_tax_id || ""} mono />
+              <div className="min-w-0 sm:col-span-2">
+                <dt className="text-xs font-medium uppercase tracking-wide text-content-muted">CUFE / CUDE</dt>
+                <dd className="mt-0.5 flex flex-wrap items-start gap-2">
+                  <span className="min-w-0 break-all font-mono text-xs text-content-strong">{invoice.cufe || "--"}</span>
+                  {invoice.extraction_metadata?.cufe_validation ? (
+                    <Badge tone={invoice.extraction_metadata.cufe_validation.valid ? "success" : "error"}>
+                      {invoice.extraction_metadata.cufe_validation.valid ? "Estructura válida" : "CUFE inválido"}
+                    </Badge>
+                  ) : null}
+                </dd>
+              </div>
+              <Field label="Estado DIAN" value={invoice.dian_validation_status || "Sin validación reportada"} />
+              <Field label="Origen de extracción" value={invoice.extraction_source === "pdf" ? "PDF con texto" : "XML DIAN"} />
             </dl>
-            <div className="mt-4 grid grid-cols-2 gap-2 rounded-card border border-line bg-surface-muted p-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-3">
               {[
                 ["Subtotal", invoice.subtotal], ["IVA", invoice.iva], ["ICA", invoice.ica],
                 ["INC", invoice.inc], ["Impuestos", invoice.tax_total], ["Total", invoice.total]
-              ].map(([label, value]) => (
-                <div key={String(label)}>
-                  <p className="text-xs uppercase tracking-wide text-content-muted">{label}</p>
-                  <p className={`font-mono text-sm ${label === "Total" ? "font-semibold text-apex" : "text-content-strong"}`}>{money(value as number | string, invoice.currency || "COP")}</p>
-                </div>
-              ))}
+              ].map(([label, value]) => {
+                const isTotal = label === "Total";
+                const isIva = label === "IVA";
+                return (
+                  <div className={`flex items-center justify-between gap-2 px-3 py-2 ${isTotal ? "bg-apex/10" : "bg-surface-muted"}`} key={String(label)}>
+                    <span className="text-[11px] uppercase tracking-wide text-content-muted">{isIva && ivaPercents.length ? `IVA (${ivaPercents.map((percent) => `${percent}%`).join(" · ")})` : label}</span>
+                    <span className={`font-mono text-sm ${isTotal ? "font-semibold text-apex" : "text-content-strong"}`}>{money(value as number | string, invoice.currency || "COP")}</span>
+                  </div>
+                );
+              })}
             </div>
             {invoice.validation_issues?.length ? (
               <div className="mt-3 space-y-1">
@@ -248,12 +292,21 @@ export default function FacturaRecibidaDetallePage() {
           <section className="apex-section-card p-4">
             <h2 className="font-semibold text-content-strong">Acciones del documento</h2>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Button disabled={busy || invoice.processing_status === "processed"} onClick={() => void run("/reprocess", undefined, "ZIP reprocesado; revisa la bandeja de facturas.")} type="button" variant="secondary"><RefreshCw size={16} /> Reprocesar ZIP</Button>
+              <Button
+                disabled={busy || invoice.processing_status === "processed" || !invoice.source_archive}
+                onClick={() => void run("/reprocess", undefined, "ZIP reprocesado; revisa la bandeja de facturas.")}
+                title={invoice.source_archive ? "Reprocesar el ZIP original" : "La factura no conserva el ZIP original"}
+                type="button"
+                variant="secondary"
+              ><RefreshCw size={16} /> Reprocesar ZIP</Button>
               <Button disabled={busy || invoice.processing_status === "processed"} onClick={() => {
                 if (!window.confirm("¿Aprobar esta factura como líder? La acción queda auditada y no admite cambios posteriores.")) return;
                 void run("/approve", { observations: invoice.observations || undefined }, "Factura aprobada por el líder.");
               }} type="button" variant="primary"><CheckCircle2 size={16} /> Aprobar</Button>
             </div>
+            {!invoice.source_archive ? (
+              <p className="mt-2 text-xs text-content-muted">Esta factura no conserva el ZIP original, así que no admite reproceso. Si necesitas los documentos, vuelve a procesarla desde la bandeja.</p>
+            ) : null}
             {invoice.errors.length ? (
               <div className="mt-3 space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Errores sin resolver</p>
@@ -330,9 +383,16 @@ function AdministrativePanel({ invoice, busy, onSaved, onMessage, onError }: { i
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <Input disabled={locked} label="Grupo / área" onChange={(event) => setForm({ ...form, group_name: event.target.value })} value={form.group_name} />
-        <Input disabled={locked} label="Centro de costo" onChange={(event) => setForm({ ...form, cost_center: event.target.value })} value={form.cost_center} />
+        <CostCenterSelect centers={invoice.cost_centers} disabled={locked} onChange={(value) => setForm({ ...form, cost_center: value })} value={form.cost_center} />
         <Input className="sm:col-span-2" disabled={locked} hint="Separa varios correos con coma." label="Correos de notificación" onChange={(event) => setForm({ ...form, notification_emails: event.target.value })} value={form.notification_emails} />
         <Textarea className="sm:col-span-2" disabled={locked} label="Observaciones" onChange={(event) => setForm({ ...form, observations: event.target.value })} value={form.observations} />
+        {invoice.cost_centers.length ? null : (
+          <p className="text-xs text-content-muted sm:col-span-2">
+            Registra sociedades, sucursales y centros en{" "}
+            <Link className="font-semibold text-apex hover:underline" href="/dashboard/contabilidad/estructura">Contabilidad · Estructura</Link>{" "}
+            para poder asignarlos a las facturas.
+          </p>
+        )}
       </div>
       <div className="mt-3 flex items-center justify-between gap-2">
         <p className="text-xs text-content-muted">Los valores fiscales no se editan: provienen del XML/PDF original.</p>
@@ -463,12 +523,16 @@ function HistoryPanel({ invoice }: { invoice: Invoice }) {
 }
 
 function DocumentViewer({ invoice }: { invoice: Invoice }) {
-  const [activeId, setActiveId] = useState<number | null>(invoice.documents[0]?.id ?? null);
-  const active = invoice.documents.find((doc) => doc.id === activeId) || invoice.documents[0] || null;
+  const preferred = useMemo(
+    () => invoice.documents.find((doc) => doc.document_type === "pdf") || invoice.documents[0] || null,
+    [invoice.documents]
+  );
+  const [activeId, setActiveId] = useState<number | null>(preferred?.id ?? null);
+  const active = invoice.documents.find((doc) => doc.id === activeId) || preferred;
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
   const [page, setPage] = useState(1);
-  const [zoom, setZoom] = useState(100);
+  const [zoom, setZoom] = useState<number | "fit">("fit");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const urlRef = useRef("");
@@ -476,15 +540,22 @@ function DocumentViewer({ invoice }: { invoice: Invoice }) {
 
   const pages = Math.max(1, Number(invoice.extraction_metadata?.pdf_comparison?.page_count || 1));
 
+  useEffect(() => {
+    if (!invoice.documents.some((doc) => doc.id === activeId)) setActiveId(preferred?.id ?? null);
+  }, [invoice.documents, activeId, preferred]);
+
   const load = useCallback(async (docId: number | null) => {
-    const doc = invoice.documents.find((item) => item.id === docId) || invoice.documents[0] || null;
-    if (!doc) return;
+    const doc = invoice.documents.find((item) => item.id === docId) || preferred;
     const seq = ++loadSeq.current;
     setLoading(true);
     setError("");
     setText("");
     if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = ""; }
     setUrl("");
+    if (!doc) {
+      setLoading(false);
+      return;
+    }
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
       const response = await fetch(`${API_BASE_URL}/api/v1/accounting/received-invoices/${invoice.id}/documents/${doc.id}/file`, {
@@ -506,7 +577,7 @@ function DocumentViewer({ invoice }: { invoice: Invoice }) {
     } finally {
       if (seq === loadSeq.current) setLoading(false);
     }
-  }, [invoice.id, invoice.documents]);
+  }, [invoice.id, invoice.documents, preferred]);
 
   useEffect(() => { void load(activeId); }, [activeId, load]);
   useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
@@ -530,52 +601,97 @@ function DocumentViewer({ invoice }: { invoice: Invoice }) {
 
   const iframeSrc = useMemo(() => {
     if (!url) return "";
-    const suffix = `#page=${page}&zoom=${zoom}`;
-    return url.includes("#") ? `${url.split("#")[0]}${suffix}` : `${url}${suffix}`;
+    const zoomParam = zoom === "fit" ? "page-width" : zoom;
+    return `${url.includes("#") ? url.split("#")[0] : url}#page=${page}&zoom=${zoomParam}&toolbar=0&navpanes=0`;
   }, [url, page, zoom]);
 
-  return (
-    <section className="apex-section-card overflow-hidden">
-      <div className="border-b border-line p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-semibold text-content-strong">Visor de documentos</h2>
-          <div className="flex flex-wrap items-center gap-1">
-            <Button aria-label="Alejar" disabled={!active || !url || zoom <= 50} onClick={() => setZoom((value) => Math.max(50, value - 25))} size="compact" type="button" variant="ghost"><Minus size={16} /></Button>
-            <span className="min-w-12 text-center text-xs text-content-muted">{zoom}%</span>
-            <Button aria-label="Acercar" disabled={!active || !url || zoom >= 200} onClick={() => setZoom((value) => Math.min(200, value + 25))} size="compact" type="button" variant="ghost"><Plus size={16} /></Button>
-            <Button aria-label="Página anterior" disabled={!active || !url || page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} size="compact" type="button" variant="ghost">Pág. {page}</Button>
-            <Button aria-label="Página siguiente" disabled={!active || !url || page >= pages} onClick={() => setPage((value) => Math.min(pages, value + 1))} size="compact" type="button" variant="ghost">Sig.</Button>
-          </div>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {invoice.documents.map((doc) => (
-            <button className={`inline-flex items-center gap-1 rounded-control border px-2 py-1 text-xs font-semibold ${doc.id === active?.id ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body"}`} key={doc.id} onClick={() => { setActiveId(doc.id); setPage(1); setZoom(100); }} type="button">
-              {doc.document_type === "xml" ? <FileCode2 size={14} /> : <FileText size={14} />} {doc.document_type.toUpperCase()} · {formatBytes(doc.size_bytes)}
-            </button>
-          ))}
-        </div>
-      </div>
+  const isPdf = active?.document_type === "pdf";
+  const hasDocuments = invoice.documents.length > 0;
 
-      {active ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2 text-xs text-content-muted">
-          <span className="min-w-0 truncate">{active.file_name}</span>
-          <div className="flex gap-1">
+  return (
+    <section aria-label="Visor de documentos" className="apex-section-card overflow-hidden">
+      <div className="border-b border-line p-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-content-strong">Visor de documentos</h2>
+              {hasDocuments ? <Badge tone="neutral">{invoice.documents.length} {invoice.documents.length === 1 ? "archivo" : "archivos"}</Badge> : null}
+            </div>
+            <p className="mt-0.5 truncate text-xs text-content-muted">
+              {active ? `${active.file_name} · ${formatBytes(active.size_bytes)}` : "Sin documentos adjuntos a la factura."}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button disabled={!active} onClick={() => void download()} size="compact" type="button" variant="ghost"><Download size={16} /> Descargar</Button>
             <Button disabled={!url} onClick={() => window.open(url, "_blank", "noopener,noreferrer")} size="compact" type="button" variant="ghost"><ExternalLink size={16} /> Abrir</Button>
-            <Button onClick={() => void download()} size="compact" type="button" variant="ghost"><Download size={16} /> Descargar</Button>
           </div>
         </div>
-      ) : null}
+
+        {hasDocuments ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div aria-label="Documentos de la factura" className="flex flex-wrap gap-1" role="tablist">
+              {invoice.documents.map((doc) => {
+                const selected = doc.id === active?.id;
+                return (
+                  <button
+                    aria-selected={selected}
+                    className={`inline-flex items-center gap-1 rounded-control border px-2.5 py-1 text-xs font-semibold ${selected ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body hover:bg-surface-muted"}`}
+                    key={doc.id}
+                    onClick={() => { setActiveId(doc.id); setPage(1); setZoom("fit"); }}
+                    role="tab"
+                    type="button"
+                  >
+                    {doc.document_type === "xml" ? <FileCode2 size={14} /> : <FileText size={14} />} {doc.document_type.toUpperCase()} · {formatBytes(doc.size_bytes)}
+                  </button>
+                );
+              })}
+            </div>
+            {isPdf && url ? (
+              <div className="flex flex-wrap items-center gap-1">
+                {pages > 1 ? (
+                  <>
+                    <Button aria-label="Página anterior" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} size="compact" type="button" variant="ghost">Anterior</Button>
+                    <span className="min-w-14 text-center text-xs text-content-muted">{page} / {pages}</span>
+                    <Button aria-label="Página siguiente" disabled={page >= pages} onClick={() => setPage((value) => Math.min(pages, value + 1))} size="compact" type="button" variant="ghost">Siguiente</Button>
+                    <span aria-hidden className="mx-1 h-5 w-px bg-line" />
+                  </>
+                ) : null}
+                <Button aria-label="Alejar" disabled={zoom !== "fit" && zoom <= 50} onClick={() => setZoom((value) => value === "fit" ? 75 : Math.max(50, value - 25))} size="compact" type="button" variant="ghost"><Minus size={16} /></Button>
+                <span className="min-w-12 text-center text-xs text-content-muted">{zoom === "fit" ? "Ajuste" : `${zoom}%`}</span>
+                <Button aria-label="Acercar" disabled={zoom !== "fit" && zoom >= 200} onClick={() => setZoom((value) => value === "fit" ? 125 : Math.min(200, value + 25))} size="compact" type="button" variant="ghost"><Plus size={16} /></Button>
+                <Button disabled={zoom === "fit"} onClick={() => setZoom("fit")} size="compact" type="button" variant="ghost">Ajustar</Button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {error ? <div className="p-3"><Alert tone="error">{error}</Alert></div> : null}
       {loading ? <div className="p-4"><Skeleton className="h-[60vh] w-full" /></div> : null}
-      {!loading && text ? (
-        <pre className="max-h-[70vh] overflow-auto bg-surface-muted p-3 text-xs text-content-body">{text}</pre>
+
+      {!loading && !hasDocuments ? (
+        <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 p-8 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface-muted text-content-muted"><FileText size={22} /></div>
+          <div>
+            <h3 className="text-sm font-semibold text-content-strong">Sin documentos almacenados</h3>
+            <p className="mx-auto mt-1 max-w-sm text-xs text-content-muted">Esta factura se registró sin XML ni PDF. Vuelve a procesar sus archivos desde la bandeja para conservar los documentos.</p>
+          </div>
+          <Link className="inline-flex items-center gap-1 text-sm font-semibold text-apex hover:underline" href="/dashboard/contabilidad/facturas-recibidas">Ir a la bandeja <ExternalLink size={14} /></Link>
+        </div>
       ) : null}
-      {!loading && url ? (
-        <iframe className="h-[70vh] w-full border-0 bg-surface-muted" key={iframeSrc} src={iframeSrc} title={`Visor ${active?.file_name || "documento"}`} />
+
+      {!loading && hasDocuments && text ? (
+        <pre className="max-h-[72vh] min-h-[460px] overflow-auto bg-surface-muted p-4 font-mono text-xs leading-relaxed text-content-body">{text}</pre>
       ) : null}
-      {!loading && !text && !url && !error ? <div className="p-6 text-center text-sm text-content-muted">Selecciona un documento para visualizarlo.</div> : null}
-      {!invoice.documents.length ? <div className="p-6 text-center text-sm text-content-muted">La factura no tiene documentos almacenados.</div> : null}
+      {!loading && hasDocuments && url ? (
+        <iframe
+          className="block h-[72vh] min-h-[460px] w-full border-0 bg-surface-muted"
+          key={iframeSrc}
+          src={iframeSrc}
+          title={isPdf ? `PDF de la factura ${invoice.full_number}` : `Documento ${active?.file_name || ""}`}
+        />
+      ) : null}
+      {!loading && hasDocuments && !text && !url && !error ? <div className="p-6 text-center text-sm text-content-muted">Selecciona un documento para visualizarlo.</div> : null}
     </section>
   );
 }

@@ -129,6 +129,25 @@ test("un XML suelto viaja con su PDF hermano y todo entra por el motor unificado
   );
 });
 
+test("syncFolder reporta facturas existentes completadas con documentos", async () => {
+  const folder = makeTempFolder();
+  fs.writeFileSync(path.join(folder, "legado.xml"), invoiceXml({ number: "LEGADO" }));
+  const ingest = async () => ({
+    status: "processed",
+    duplicate: false,
+    invoices: [{ id: 7, status: "completed", full_number: "LEGADO", documents: ["legado.xml"] }],
+    errors: [],
+    rejected: [],
+    summary: { created: 0, completed: 1, duplicates: 0, failed: 0 }
+  });
+
+  const summary = await syncFolder({ config: baseConfig(folder), ingest });
+
+  assert.equal(summary.completed, 1);
+  assert.equal(summary.inserted, 0);
+  assert.equal(summary.duplicates, 0);
+});
+
 test("syncFolder aisla fallos y omite metadatos ignorados", async () => {
   const folder = makeTempFolder();
   fs.writeFileSync(path.join(folder, "mala.xml"), invoiceXml({ number: "MALA" }));

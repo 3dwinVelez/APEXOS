@@ -112,6 +112,7 @@ async function syncFolder({ config, ingest = ingestArchive, log = () => {} } = {
     tenant_id: config.tenantId,
     scanned: sources.length,
     inserted: 0,
+    completed: 0,
     duplicates: 0,
     failed: []
   };
@@ -141,6 +142,7 @@ async function syncFolder({ config, ingest = ingestArchive, log = () => {} } = {
         attachmentCount: 1
       });
       summary.inserted += result.summary?.created || 0;
+      summary.completed += result.summary?.completed || 0;
       summary.duplicates += result.summary?.duplicates || 0;
       summary.failed.push(...failureEntries(result, label));
       log("[invoice-sync] fuente procesada", {
@@ -148,6 +150,7 @@ async function syncFolder({ config, ingest = ingestArchive, log = () => {} } = {
         archive: archive.archiveName,
         status: result.status,
         created: result.summary?.created || 0,
+        completed: result.summary?.completed || 0,
         duplicates: result.summary?.duplicates || 0,
         failed: result.summary?.failed || 0
       });

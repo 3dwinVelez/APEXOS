@@ -49,7 +49,7 @@ const assignBody = {
     responsible_name: { type: "string", maxLength: 160 },
     segment: { type: "string", enum: SEGMENTS },
     group_name: { type: "string", maxLength: 160 },
-    cost_center: { type: "string", maxLength: 120 },
+    cost_center: { type: ["string", "null"], maxLength: 120 },
     assignment_detail: { type: "string", maxLength: 600 },
     observations: { type: "string", maxLength: 1000 },
     notification_emails: {
@@ -115,7 +115,7 @@ const mailConfigBody = {
     username: { type: "string", maxLength: 320 },
     password_env_key: { type: "string", pattern: "^[A-Z][A-Z0-9_]{2,60}$" },
     folder: { type: "string", maxLength: 120 },
-    polling_minutes: { type: "integer", minimum: 1, maximum: 1440 },
+    polling_seconds: { type: "integer", minimum: 10, maximum: 3600 },
     enabled: { type: "boolean" }
   }
 };

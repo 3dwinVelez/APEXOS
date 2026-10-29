@@ -21,7 +21,7 @@ test("la configuracion IMAP aplica valores seguros por defecto", () => {
   assert.equal(config.secure, true);
   assert.equal(config.folder, "INBOX");
   assert.equal(config.password_env_key, "INVOICE_IMAP_PASSWORD");
-  assert.equal(config.polling_minutes, 15);
+  assert.equal(config.polling_seconds, 30);
   assert.equal(config.enabled, false);
 });
 
@@ -41,7 +41,8 @@ test("la configuracion IMAP rechaza host, puerto, carpeta e intervalo invalidos"
   assert.throws(() => validateMailConfig({ host: "imap empresa", username: "facturas@empresa.com" }), (error) => error.code === "INVOICE_MAIL_CONFIG_INVALID");
   assert.throws(() => validateMailConfig({ host: "imap.empresa.com", username: "facturas@empresa.com", port: 70000 }), (error) => error.code === "INVOICE_MAIL_CONFIG_INVALID");
   assert.throws(() => validateMailConfig({ host: "imap.empresa.com", username: "facturas@empresa.com", folder: "INBOX\u0001" }), (error) => error.code === "INVOICE_MAIL_CONFIG_INVALID");
-  assert.throws(() => validateMailConfig({ host: "imap.empresa.com", username: "facturas@empresa.com", polling_minutes: 0 }), (error) => error.code === "INVOICE_MAIL_CONFIG_INVALID");
+  assert.throws(() => validateMailConfig({ host: "imap.empresa.com", username: "facturas@empresa.com", polling_seconds: 5 }), (error) => error.code === "INVOICE_MAIL_CONFIG_INVALID");
+  assert.throws(() => validateMailConfig({ host: "imap.empresa.com", username: "facturas@empresa.com", polling_seconds: 3601 }), (error) => error.code === "INVOICE_MAIL_CONFIG_INVALID");
 });
 
 test("el modulo solo lee correo por IMAP y no por SMTP ni Graph", () => {

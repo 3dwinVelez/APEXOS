@@ -1,0 +1,165 @@
+{
+  "suite": "received-invoices-imap-job",
+  "mode": "local",
+  "executed_at": "2026-10-29T15:23:32.935Z",
+  "tenant_id": "job-invoices-b8e4865e20",
+  "cron_expression": "*/30 * * * * *",
+  "polling_seconds": 30,
+  "transport": "imap simulado en el cliente de red; planificador, parseo, almacenamiento e insercion reales",
+  "total": 6,
+  "passed": 6,
+  "failed": 0,
+  "ticks": [
+    "2026-10-29T15:24:00.028Z",
+    "2026-10-29T15:24:30.022Z"
+  ],
+  "runs": [
+    {
+      "at": "2026-10-29T15:24:00.028Z",
+      "results": [
+        {
+          "tenant_id": "job-invoices-b8e4865e20",
+          "messages": 1,
+          "pending": 1,
+          "attachments": 1,
+          "created": 1,
+          "duplicates": 0,
+          "failed": 0,
+          "results": [
+            {
+              "uid": 41,
+              "file": "FV-JOB-000123.zip",
+              "status": "processed",
+              "invoices": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "at": "2026-10-29T15:24:30.022Z",
+      "results": [
+        {
+          "tenant_id": "job-invoices-b8e4865e20",
+          "messages": 0,
+          "pending": 0,
+          "attachments": 0,
+          "created": 0,
+          "duplicates": 0,
+          "failed": 0,
+          "results": []
+        }
+      ]
+    }
+  ],
+  "fetched_uids": [
+    41
+  ],
+  "checks": [
+    {
+      "name": "El job usa la expresion de produccion cada 30 segundos",
+      "status": "passed",
+      "details": {
+        "expression": "*/30 * * * * *",
+        "valid": true
+      }
+    },
+    {
+      "name": "La primera corrida del job extrae el XML del correo e inserta la factura",
+      "status": "passed",
+      "details": {
+        "invoice": {
+          "full_number": "FV-2026-000123",
+          "total": 1190000,
+          "cufe": "3f1c9a2b7d4e6f8a1c3b5d7e9f0a2c4b6d8e0f1a3c5b7d9e1f3a5c7b9d0e2f4a"
+        },
+        "firstRun": {
+          "tenant_id": "job-invoices-b8e4865e20",
+          "messages": 1,
+          "pending": 1,
+          "attachments": 1,
+          "created": 1,
+          "duplicates": 0,
+          "failed": 0,
+          "results": [
+            {
+              "uid": 41,
+              "file": "FV-JOB-000123.zip",
+              "status": "processed",
+              "invoices": 1
+            }
+          ]
+        },
+        "ticks": [
+          "2026-10-29T15:24:00.028Z",
+          "2026-10-29T15:24:30.022Z"
+        ]
+      }
+    },
+    {
+      "name": "La factura conserva el XML y el PDF extraidos del ZIP del correo",
+      "status": "passed",
+      "details": {
+        "documents": [
+          {
+            "type": "xml",
+            "name": "FV-2026-000123.xml"
+          },
+          {
+            "type": "pdf",
+            "name": "FV-2026-000123.pdf"
+          }
+        ],
+        "storedReadable": [
+          {
+            "type": "xml",
+            "bytes": 1976
+          },
+          {
+            "type": "pdf",
+            "bytes": 1054
+          }
+        ]
+      }
+    },
+    {
+      "name": "El job vuelve a consultar el buzon en el siguiente ciclo de 30 segundos",
+      "status": "passed",
+      "details": {
+        "ticks": [
+          "2026-10-29T15:24:00.028Z",
+          "2026-10-29T15:24:30.022Z"
+        ],
+        "gapMs": 29994
+      }
+    },
+    {
+      "name": "La segunda consulta no duplica la factura ni vuelve a descargar el correo",
+      "status": "passed",
+      "details": {
+        "invoiceCount": 1,
+        "fetched": [
+          41
+        ],
+        "secondRun": {
+          "tenant_id": "job-invoices-b8e4865e20",
+          "messages": 0,
+          "pending": 0,
+          "attachments": 0,
+          "created": 0,
+          "duplicates": 0,
+          "failed": 0,
+          "results": []
+        }
+      }
+    },
+    {
+      "name": "El buzon registra la ultima consulta sin errores",
+      "status": "passed",
+      "details": {
+        "last_synced_at": "2026-10-29T15:24:30.034Z",
+        "last_error": null
+      }
+    }
+  ]
+}

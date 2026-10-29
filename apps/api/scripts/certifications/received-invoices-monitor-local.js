@@ -59,6 +59,7 @@ const password = "CertMonitor#2026";
 const responsibleName = "Analista de Costos Monitor";
 const INVOICE_A = "FV-MON-000901";
 const INVOICE_B = "FV-MON-000902";
+const INVOICE_REPAIRED = "FV-MON-REPARADA";
 const COST_CENTER = "CC-MON-901";
 
 const checks = [];
@@ -90,7 +91,21 @@ async function reachable(url) {
 }
 
 async function seed() {
-  const config = { accounting: { organization_tree: { societies: [], branches: [], cost_centers: [] } } };
+  const config = {
+    accounting: {
+      organization_tree: {
+        societies: [{ code: "SOC-01", name: "Sociedad monitor", active: true, tenant_id: tenantId }],
+        branches: [{ code: "BR-MON", name: "Sucursal monitor", active: true, society_code: "SOC-01" }],
+        cost_centers: [{
+          code: COST_CENTER,
+          name: "Centro certificado monitor",
+          active: true,
+          branch_code: "BR-MON",
+          society_code: "SOC-01"
+        }]
+      }
+    }
+  };
   await db.tenant.create({
     data: { id: tenantId, name: "Monitor facturas recibidas", active_modules: ["M-07"], config, country: "CO", currency: "COP" }
   });
@@ -158,6 +173,14 @@ async function shot(page, name, fullPage = true) {
   }
 }
 
+// Chrome no compone el visor PDF en capturas fullPage; se centra el visor y se
+// captura el viewport para que el PDF quede en la evidencia.
+async function shotViewport(page, name) {
+  await page.evaluate(() => document.querySelector('section[aria-label="Visor de documentos"]')?.scrollIntoView({ block: "center" }));
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  await page.screenshot({ path: path.join(shotDir, `${name}.png`), fullPage: false });
+}
+
 async function loginThroughUi(page) {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     await page.goto(`${WEB_URL}/login`, { waitUntil: "networkidle2" }).catch(() => {});
@@ -223,11 +246,36 @@ async function modalControlByLabel(page, labelText) {
     if (!dialog) return null;
     const label = [...dialog.querySelectorAll("label")]
       .find((item) => item.querySelector("span")?.textContent?.trim() === needle);
-    return label?.querySelector("input, textarea, select") || null;
+    return label?.querySelector('input[role="combobox"]') || label?.querySelector("input, textarea, select") || null;
   }, labelText);
   const element = handle.asElement();
   if (!element) throw new Error(`No se encontro el control "${labelText}" en el modal.`);
   return element;
+}
+
+// Los buscadores inteligentes mantienen un <select> oculto como autoridad del
+// formulario; el usuario escribe en el input[role="combobox"] y elige la opcion
+// del listbox que se pinta en un portal fuera del modal.
+async function searchInModal(page, labelText, query, optionNeedle, shotName) {
+  const element = await modalControlByLabel(page, labelText);
+  if (await element.evaluate((node) => node.getAttribute("role")) !== "combobox") {
+    throw new Error(`El control "${labelText}" no usa el buscador inteligente.`);
+  }
+  await element.click();
+  await element.type(query, { delay: 20 });
+  await page.waitForFunction((needle) => [...document.querySelectorAll('[role="option"]')]
+    .some((option) => option.innerText.includes(needle)), { timeout: 15000 }, optionNeedle);
+  const filtered = await page.evaluate(() => [...document.querySelectorAll('[role="option"]')]
+    .map((option) => option.innerText.trim()));
+  if (shotName) await shot(page, shotName, false);
+  const picked = await page.evaluate((needle) => {
+    const option = [...document.querySelectorAll('[role="option"]')]
+      .find((item) => item.innerText.includes(needle));
+    option?.click();
+    return Boolean(option);
+  }, optionNeedle);
+  if (!picked) throw new Error(`No se pudo elegir la opcion "${optionNeedle}" en "${labelText}".`);
+  return filtered;
 }
 
 async function typeInModal(page, labelText, value) {
@@ -441,6 +489,48 @@ async function main() {
   });
   await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 30000 });
 
+  // D1. El buzon declara el intervalo en segundos y la API publica el mismo valor.
+  const mailConfig = await page.evaluate(async ({ apiUrl }) => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${apiUrl}/api/v1/accounting/received-invoices/mail-config`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+    return { status: response.status, body: await response.json().catch(() => null) };
+  }, { apiUrl: API_URL });
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll("button")].find((item) => item.innerText.trim() === "Buzón IMAP");
+    button?.scrollIntoView({ block: "center" });
+    button?.click();
+  });
+  await waitText(page, "Buzón IMAP de facturas");
+  await page.waitForFunction(() => Boolean(document.querySelector('[role="dialog"] input[type="number"]')), { timeout: 30000 });
+  const pollingField = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const label = [...(dialog?.querySelectorAll("label") || [])]
+      .find((item) => item.querySelector("span")?.textContent?.trim() === "Intervalo (segundos)");
+    const input = label?.querySelector("input");
+    return {
+      value: input?.value || null,
+      min: input?.getAttribute("min") || null,
+      max: input?.getAttribute("max") || null,
+      text: label?.innerText || ""
+    };
+  });
+  const mailConfigValue = mailConfig.body?.polling_seconds;
+  check("El buzon configura el intervalo en segundos y la API devuelve el mismo valor",
+    mailConfig.status === 200
+    && Number(mailConfigValue) >= 10
+    && pollingField.value === String(mailConfigValue)
+    && pollingField.min === "10" && pollingField.max === "3600"
+    && /cada 30 s/.test(pollingField.text),
+    { http_status: mailConfig.status, polling_seconds: mailConfigValue, pollingField, body: mailConfig.body });
+  await shot(page, "02b-monitor-buzon-segundos", false);
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll('[role="dialog"] button')].find((item) => item.innerText.trim() === "Cerrar");
+    button?.click();
+  });
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 30000 });
+
   // E. Asignar centro de costo desde el monitor.
   await page.evaluate((number) => {
     const buttons = [...document.querySelectorAll(`button[aria-label="Asignar centro de costo a ${number}"]`)];
@@ -460,9 +550,34 @@ async function main() {
   });
   await page.waitForFunction(() => Boolean(document.querySelector('[role="dialog"] select')), { timeout: 60000 });
   await selectInModal(page, "Responsable", String(seeded.responsibleId));
-  await typeInModal(page, "Centro de costo", COST_CENTER);
+  const centerMatches = await searchInModal(page, "Centro de costo", "certificado", COST_CENTER, "03-monitor-buscador-centro-costo");
   await selectInModal(page, "Segmento", "Contable");
   await typeInModal(page, "Detalle de la asignación", "Centro de costo certificado desde el monitor.");
+  const centerField = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const label = [...(dialog?.querySelectorAll("label") || [])]
+      .find((item) => item.querySelector("span")?.textContent?.trim() === "Centro de costo");
+    const select = label?.querySelector("select");
+    const input = label?.querySelector('input[role="combobox"]');
+    return {
+      value: select?.value || null,
+      display: input?.value || null,
+      role: input?.getAttribute("role") || null,
+      options: select ? [...select.options].map((option) => ({ value: option.value, text: option.textContent })) : []
+    };
+  });
+  check("El buscador inteligente del modal filtra los centros de costo de la estructura",
+    centerField.role === "combobox"
+    && centerMatches.length === 1
+    && centerMatches[0].includes("Centro certificado monitor"),
+    { centerMatches, centerField });
+  check("El buscador inteligente asigna el centro de costo real del maestro",
+    centerField.value === COST_CENTER
+    && String(centerField.display || "").includes(COST_CENTER)
+    && String(centerField.display || "").includes("Centro certificado monitor")
+    && centerField.options.some((option) => option.value === COST_CENTER && option.text.includes("Centro certificado monitor")),
+    centerField);
+  await shot(page, "03-monitor-centro-costo", false);
   await page.waitForFunction(() => {
     const dialog = document.querySelector('[role="dialog"]');
     const button = dialog && [...dialog.querySelectorAll("button")].find((item) => item.innerText.trim() === "Asignar");
@@ -484,7 +599,37 @@ async function main() {
     { assignedRow });
   await shot(page, "03-monitor-asignada");
 
+  // E1. La API publica el maestro de la estructura y rechaza codigos que no existen.
+  // La peticion invalida se hace desde Node para que el rechazo esperado no cuente
+  // como error de consola ni como respuesta fallida del modulo en la sesion.
+  const token = await page.evaluate(() => localStorage.getItem("token"));
+  const detailResponse = await fetch(`${API_URL}/api/v1/accounting/received-invoices/${contractRow.id}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  const detailBody = await detailResponse.json();
+  const rejectedResponse = await fetch(`${API_URL}/api/v1/accounting/received-invoices/${contractRow.id}`, {
+    method: "PATCH",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), "Content-Type": "application/json" },
+    body: JSON.stringify({ cost_center: "CC-FUERA-DE-ESTRUCTURA" })
+  });
+  const centerContract = {
+    status: detailResponse.status,
+    centers: detailBody.cost_centers || [],
+    rejectedStatus: rejectedResponse.status,
+    rejectedBody: await rejectedResponse.json()
+  };
+  check("La API publica el maestro de centros de costo y rechaza codigos fuera de la estructura",
+    centerContract.status === 200
+    && centerContract.centers.some((item) => item.code === COST_CENTER && item.branch_name === "Sucursal monitor")
+    && centerContract.rejectedStatus === 422
+    && centerContract.rejectedBody?.code === "INVOICE_COST_CENTER_INVALID",
+    centerContract);
+
   // F. Abrir la factura completa desde el monitor.
+  const detailPdfResponsePromise = page.waitForResponse(
+    (response) => response.url().includes("/documents/") && response.url().endsWith("/file") && response.request().method() === "GET",
+    { timeout: 90000 }
+  );
   await page.evaluate((number) => {
     const link = [...document.querySelectorAll(`a[aria-label="Abrir factura ${number}"]`)]
       .find((item) => item.getBoundingClientRect().width > 0);
@@ -492,17 +637,176 @@ async function main() {
   }, INVOICE_A);
   await page.waitForFunction(() => /\/facturas-recibidas\/\d+$/.test(new URL(location.href).pathname), { timeout: 90000 });
   await waitText(page, "Datos fiscales");
+  const detailPdfResponse = await detailPdfResponsePromise;
+  await page.waitForFunction((number) => {
+    const frame = document.querySelector(`iframe[title="PDF de la factura ${number}"]`);
+    return Boolean(frame && frame.getAttribute("src")?.startsWith("blob:") && frame.getBoundingClientRect().height > 300);
+  }, { timeout: 90000 }, INVOICE_A);
+  const detailViewer = await page.evaluate(() => {
+    const section = document.querySelector('section[aria-label="Visor de documentos"]');
+    const frame = section?.querySelector('iframe[title^="PDF de la factura"]');
+    return {
+      text: section?.innerText || "",
+      width: frame?.getBoundingClientRect().width || 0,
+      height: frame?.getBoundingClientRect().height || 0
+    };
+  });
+  check("El visor de la factura abre el PDF autenticado por defecto",
+    detailPdfResponse.status() === 200
+    && String(detailPdfResponse.headers()["content-type"] || "").includes("application/pdf")
+    && detailViewer.width > 300 && detailViewer.height > 300
+    && !detailViewer.text.includes("Sin documentos almacenados")
+    && !detailViewer.text.includes("Selecciona un documento"),
+    { status: detailPdfResponse.status(), contentType: detailPdfResponse.headers()["content-type"], viewer: detailViewer });
   const detailText = await page.evaluate(() => document.body.innerText);
   const detailCostCenter = await page.evaluate(() => {
     const label = [...document.querySelectorAll("label")]
       .find((item) => item.querySelector("span")?.textContent?.trim() === "Centro de costo");
-    return label?.querySelector("input")?.value || null;
+    const input = label?.querySelector('input[role="combobox"]');
+    return {
+      value: label?.querySelector("select")?.value || null,
+      display: input?.value || null,
+      role: input?.getAttribute("role") || null
+    };
   });
-  check("La factura abierta desde el monitor conserva emisor, CUFE y centro de costo",
+  check("La factura abierta desde el monitor conserva emisor, CUFE y centro de costo del maestro",
     detailText.includes(INVOICE_A) && detailText.includes(invoiceA.cufe)
-    && detailText.includes("Distribuciones Andinas SAS") && detailCostCenter === COST_CENTER,
+    && detailText.includes("Distribuciones Andinas SAS")
+    && detailCostCenter.value === COST_CENTER && detailCostCenter.role === "combobox"
+    && String(detailCostCenter.display || "").includes("Centro certificado monitor"),
     { detailCostCenter, url: page.url() });
   await shot(page, "04-factura-desde-monitor");
+  await shotViewport(page, "05-visor-pdf-factura");
+
+  // F1. La pestana XML muestra el contenido extraido, no un panel vacio.
+  await page.evaluate(() => {
+    const tab = [...document.querySelectorAll('[role="tab"]')].find((item) => item.innerText.includes("XML"));
+    tab?.click();
+  });
+  await page.waitForFunction(() => {
+    const pre = document.querySelector('section[aria-label="Visor de documentos"] pre');
+    return Boolean(pre && pre.innerText.length > 200 && pre.innerText.includes("<"));
+  }, { timeout: 60000 });
+  const xmlPreview = await page.evaluate(() => document.querySelector('section[aria-label="Visor de documentos"] pre')?.innerText || "");
+  check("El visor muestra el XML extraido al seleccionar su pestana", xmlPreview.length > 200 && xmlPreview.includes("Invoice"), { length: xmlPreview.length });
+
+  // F2. Factura heredada sin documentos: estado vacio claro y sin reproceso posible.
+  const legacy = await db.receivedInvoice.create({
+    data: {
+      tenant_id: tenantId,
+      full_number: "FV-MON-LEGADO",
+      invoice_number: "FV-MON-LEGADO",
+      cufe: hexCufe("FV-MON-LEGADO"),
+      issuer_name: "Proveedor heredado sin archivos SAS",
+      issuer_tax_id: "900999888",
+      receiver_name: "Comercializadora Aurora SAS",
+      receiver_tax_id: "901555777",
+      subtotal: 100000,
+      total: 100000,
+      currency: "COP",
+      processing_status: "pending_assignment",
+      dedupe_key: `cufe:${hexCufe("FV-MON-LEGADO")}`,
+      issue_date: new Date("2026-10-27T12:00:00.000Z"),
+      extraction_metadata: { iva_percents: [], cufe_validation: { valid: true } }
+    }
+  });
+  await page.goto(`${WEB_URL}/dashboard/contabilidad/facturas-recibidas/${legacy.id}`, { waitUntil: "networkidle2" });
+  await waitText(page, "Datos fiscales");
+  await waitText(page, "Sin documentos almacenados");
+  const legacyViewer = await page.evaluate(() => {
+    const section = document.querySelector('section[aria-label="Visor de documentos"]');
+    const reprocess = [...document.querySelectorAll("button")].find((button) => button.innerText.includes("Reprocesar ZIP"));
+    return {
+      text: section?.innerText || "",
+      reprocessDisabled: Boolean(reprocess?.disabled),
+      hasBandejaLink: Boolean([...document.querySelectorAll("a")].find((link) => link.innerText.includes("Ir a la bandeja")))
+    };
+  });
+  check("La factura sin documentos explica el estado y no ofrece reproceso sin ZIP",
+    legacyViewer.text.includes("Sin documentos almacenados")
+    && !legacyViewer.text.includes("Selecciona un documento")
+    && legacyViewer.reprocessDisabled
+    && legacyViewer.hasBandejaLink,
+    legacyViewer);
+  await shot(page, "06-factura-sin-documentos");
+
+  // F3. Factura heredada sin documentos: al reencontrar su XML y PDF en la
+  // carpeta se vinculan los documentos a la fila existente, sin duplicarla.
+  const repairFolder = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-repair-folder-"));
+  const repaired = monitorInvoice({
+    number: INVOICE_REPAIRED,
+    issuerTaxId: "900999777",
+    issuerName: "Proveedor heredado recuperado SAS",
+    subtotal: 176470,
+    iva: 33530,
+    total: 210000
+  }, INVOICE_REPAIRED);
+  const legacyRow = await db.receivedInvoice.create({
+    data: {
+      tenant_id: tenantId,
+      full_number: INVOICE_REPAIRED,
+      invoice_number: INVOICE_REPAIRED,
+      cufe: repaired.cufe,
+      issuer_name: repaired.issuerName,
+      issuer_tax_id: repaired.issuerTaxId,
+      receiver_name: repaired.receiverName,
+      receiver_tax_id: repaired.receiverTaxId,
+      subtotal: repaired.subtotal,
+      iva: repaired.iva,
+      total: repaired.total,
+      currency: "COP",
+      processing_status: "pending_assignment",
+      dedupe_key: `cufe:${repaired.cufe}`,
+      issue_date: new Date("2026-10-27T12:00:00.000Z"),
+      extraction_metadata: { iva_percents: [19], cufe_validation: { valid: true } }
+    }
+  });
+  fs.writeFileSync(path.join(repairFolder, `${INVOICE_REPAIRED}.xml`), buildInvoiceXml(repaired));
+  fs.writeFileSync(path.join(repairFolder, `${INVOICE_REPAIRED}.pdf`), buildInvoicePdf(repaired));
+
+  const repairRun = await syncFolder({ config: { tenantId, folder: repairFolder } });
+  const repairedRow = await db.receivedInvoice.findUnique({ where: { id: legacyRow.id }, include: { documents: true } });
+  check("La carpeta vincula XML y PDF a una factura heredada sin crear duplicados",
+    repairRun.scanned === 1 && repairRun.inserted === 0 && repairRun.completed === 1 && repairRun.duplicates === 0
+    && repairedRow.documents.length === 2
+    && repairedRow.pdf_available && repairedRow.xml_available
+    && Boolean(repairedRow.source_archive) && Boolean(repairedRow.email_id),
+    { repairRun, documents: repairedRow.documents.map((item) => item.document_type) });
+
+  const attachedLog = await db.receivedInvoiceChangeLog.findFirst({
+    where: { invoice_id: legacyRow.id, action: "documents_attached" }
+  });
+  const repairRerun = await syncFolder({ config: { tenantId, folder: repairFolder } });
+  const documentsAfterRerun = await db.receivedInvoiceDocument.count({ where: { invoice_id: legacyRow.id } });
+  const repairedCount = await db.receivedInvoice.count({ where: { tenant_id: tenantId, full_number: INVOICE_REPAIRED } });
+  check("El completado de documentos es idempotente y queda auditado",
+    Boolean(attachedLog) && repairRerun.completed === 0 && repairRerun.inserted === 0
+    && repairRerun.duplicates === 1 && documentsAfterRerun === 2 && repairedCount === 1,
+    { repairRerun, documentsAfterRerun, repairedCount, audit: attachedLog?.action || null });
+
+  await page.goto(`${WEB_URL}/dashboard/contabilidad/facturas-recibidas/${legacyRow.id}`, { waitUntil: "networkidle2" });
+  await waitText(page, "Datos fiscales");
+  await page.waitForFunction((number) => {
+    const frame = document.querySelector(`iframe[title="PDF de la factura ${number}"]`);
+    return Boolean(frame && frame.getAttribute("src")?.startsWith("blob:") && frame.getBoundingClientRect().height > 300);
+  }, { timeout: 90000 }, INVOICE_REPAIRED);
+  const repairedViewer = await page.evaluate(() => {
+    const section = document.querySelector('section[aria-label="Visor de documentos"]');
+    const frame = section?.querySelector('iframe[title^="PDF de la factura"]');
+    return {
+      text: section?.innerText || "",
+      tabs: [...document.querySelectorAll('[role="tab"]')].map((tab) => tab.innerText.trim()),
+      frameHeight: frame?.getBoundingClientRect().height || 0
+    };
+  });
+  check("La factura reparada previsualiza su PDF en el visor",
+    !repairedViewer.text.includes("Sin documentos almacenados")
+    && repairedViewer.tabs.some((tab) => tab.includes("XML"))
+    && repairedViewer.tabs.some((tab) => tab.includes("PDF"))
+    && repairedViewer.frameHeight > 300,
+    repairedViewer);
+  await shotViewport(page, "07-factura-reparada");
+  results.repair = { invoice_id: legacyRow.id, run: repairRun, rerun: repairRerun, documents: documentsAfterRerun };
 
   // G. Auditoria persistida de la asignacion.
   const refreshed = await db.receivedInvoice.findUnique({ where: { id: storedA.id } });

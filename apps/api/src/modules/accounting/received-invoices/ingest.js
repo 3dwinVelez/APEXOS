@@ -188,6 +188,24 @@ async function upsertRecipient(draft) {
   });
 }
 
+function checksumOf(bytes) {
+  return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+
+// Una factura puede existir antes que sus documentos (filas heredadas del job
+// de carpeta). Al reencontrar el mismo dedupe se completan los archivos
+// faltantes en lugar de crear una factura duplicada.
+function missingDocuments(existing, files) {
+  const known = new Set((existing || []).map((doc) => doc.checksum_sha256).filter(Boolean));
+  const seen = new Set();
+  return (files || []).filter((file) => {
+    const checksum = checksumOf(file.bytes);
+    if (known.has(checksum) || seen.has(checksum)) return false;
+    seen.add(checksum);
+    return true;
+  });
+}
+
 async function storeDocuments({ invoiceId, storedFiles, extractionSource }) {
   const stored = [];
   const primaryFile = extractionSource === "xml"
@@ -211,11 +229,86 @@ async function storeDocuments({ invoiceId, storedFiles, extractionSource }) {
   return stored;
 }
 
+async function attachDocuments({ invoice, tenantId, emailId, files, draft, sourceArchive }) {
+  const existing = await prisma.receivedInvoiceDocument.findMany({
+    where: { invoice_id: invoice.id },
+    select: { id: true, document_type: true, is_primary: true, checksum_sha256: true }
+  });
+  const missing = missingDocuments(existing, files);
+  if (!missing.length) return { attached: [] };
+
+  const storedFiles = [];
+  for (const file of missing) {
+    storedFiles.push({ file, saved: await putDocument({ tenantId, fileName: file.file_name, bytes: file.bytes, kind: file.kind }) });
+  }
+  const documents = await storeDocuments({
+    invoiceId: invoice.id,
+    storedFiles,
+    extractionSource: draft?.extraction_source || "xml"
+  });
+
+  const needsPrimary = !existing.some((doc) => doc.is_primary) && !documents.some((doc) => doc.is_primary);
+  if (needsPrimary) {
+    const primary = documents.find((doc) => doc.document_type === "xml") || documents[0];
+    await prisma.receivedInvoiceDocument.update({ where: { id: primary.id }, data: { is_primary: true } });
+  }
+
+  const metadata = invoice.extraction_metadata && typeof invoice.extraction_metadata === "object"
+    ? invoice.extraction_metadata
+    : {};
+  const knownNames = Array.isArray(metadata.documents) ? metadata.documents : [];
+  await prisma.receivedInvoice.update({
+    where: { id: invoice.id },
+    data: {
+      email_id: invoice.email_id ?? emailId ?? null,
+      source_archive: invoice.source_archive || sourceArchive || null,
+      xml_available: Boolean(invoice.xml_available) || missing.some((file) => file.kind === "xml"),
+      pdf_available: Boolean(invoice.pdf_available) || missing.some((file) => file.kind === "pdf"),
+      extraction_metadata: {
+        ...metadata,
+        archive: metadata.archive ?? sourceArchive ?? null,
+        documents: [...knownNames, ...missing.map((file) => file.file_name)],
+        pdf_comparison: metadata.pdf_comparison ?? draft?.pdf_comparison ?? null,
+        iva_percents: metadata.iva_percents ?? draft?.iva_percents ?? []
+      }
+    }
+  });
+
+  await prisma.receivedInvoiceChangeLog.create({
+    data: {
+      invoice_id: invoice.id,
+      action: "documents_attached",
+      changes: {
+        archive: sourceArchive || null,
+        documents: documents.map((document) => ({ id: document.id, file_name: document.file_name, document_type: document.document_type }))
+      },
+      note: "Se vincularon los documentos de la factura desde el archivo recibido."
+    }
+  });
+
+  return { attached: documents };
+}
+
 async function createInvoice({ tenantId, emailId, draft, files, sourceArchive }) {
   const primary = files.find((file) => file.kind === "xml") || files[0];
   const dedupeKey = dedupeKeyFor(draft, primary);
   const existing = await prisma.receivedInvoice.findFirst({ where: { dedupe_key: dedupeKey } });
-  if (existing) return { status: "duplicate", invoice: existing, dedupe_key: dedupeKey };
+  if (existing) {
+    const completion = await attachDocuments({
+      invoice: existing,
+      tenantId,
+      emailId,
+      files,
+      draft,
+      sourceArchive
+    });
+    return {
+      status: completion.attached.length ? "completed" : "duplicate",
+      invoice: existing,
+      documents: completion.attached,
+      dedupe_key: dedupeKey
+    };
+  }
 
   const supplier = await upsertSupplier(draft);
   const recipient = await upsertRecipient(draft);
@@ -360,7 +453,7 @@ async function ingestArchive(options) {
         invoices: existing.map((invoice) => ({ ...invoice, status: "duplicate" })),
         errors: [],
         rejected: [],
-        summary: { created: 0, duplicates: existing.length, failed: 0 }
+        summary: { created: 0, completed: 0, duplicates: existing.length, failed: 0 }
       };
     }
     const email = emailResult.email;
@@ -369,7 +462,7 @@ async function ingestArchive(options) {
       ? (await putDocument({ tenantId, fileName: archiveTitle(archiveName), bytes: archiveBuffer, kind: "zip" })).storage_reference
       : null;
 
-    const summary = { created: 0, duplicates: 0, failed: 0 };
+    const summary = { created: 0, completed: 0, duplicates: 0, failed: 0 };
     const invoices = [];
     const errors = [];
     const groups = pairDocuments(inspected.files);
@@ -431,6 +524,14 @@ async function ingestArchive(options) {
         if (result.status === "duplicate") {
           summary.duplicates += 1;
           invoices.push({ id: result.invoice.id, status: "duplicate", full_number: result.invoice.full_number });
+        } else if (result.status === "completed") {
+          summary.completed += 1;
+          invoices.push({
+            id: result.invoice.id,
+            status: "completed",
+            full_number: result.invoice.full_number,
+            documents: result.documents.map((document) => document.file_name)
+          });
         } else {
           summary.created += 1;
           invoices.push({
@@ -489,6 +590,7 @@ async function ingestArchive(options) {
 
 module.exports = {
   ingestArchive,
+  missingDocuments,
   pairDocuments,
   normalizedBase,
   similarity,

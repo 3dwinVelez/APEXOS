@@ -4492,7 +4492,9 @@ model InvoiceMailConfig {
   username         String?
   password_env_key String   @default("INVOICE_IMAP_PASSWORD")
   folder           String   @default("INBOX")
-  polling_minutes  Int      @default(15)
+  // La columna fisica conserva el nombre historico; el valor se expresa en
+  // segundos para que el job pueda consultar el buzon cada 30 s.
+  polling_seconds  Int      @default(30) @map("polling_minutes")
   enabled          Boolean  @default(false)
   last_synced_at   DateTime?
   last_error       String?

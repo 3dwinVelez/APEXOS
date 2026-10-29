@@ -7,7 +7,13 @@ const { appError } = require("./errors");
 
 const DEFAULT_PORT = 993;
 const DEFAULT_FOLDER = "INBOX";
-const DEFAULT_POLLING_MINUTES = 15;
+const DEFAULT_POLLING_SECONDS = 30;
+const MIN_POLLING_SECONDS = 10;
+const MAX_POLLING_SECONDS = 3600;
+// El planificador dispara cada 30 s; esta gracia absorbe el desfase entre el
+// arranque de una consulta y el siguiente tick sin acortar el intervalo real.
+const SCHEDULE_GRACE_MS = 5000;
+const RETRY_FAILED_AFTER_MS = 10 * 60 * 1000;
 const MAX_MESSAGES_PER_SYNC = 50;
 const PASSWORD_KEY_PATTERN = /^[A-Z][A-Z0-9_]{2,60}$/;
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
@@ -59,9 +65,17 @@ function validateMailConfig(payload = {}, current = {}) {
     username,
     password_env_key: passwordEnvKey,
     folder,
-    polling_minutes: positiveInt(payload.polling_minutes ?? current.polling_minutes, DEFAULT_POLLING_MINUTES, 1, 1440, "El intervalo de consulta"),
+    polling_seconds: positiveInt(payload.polling_seconds ?? current.polling_seconds, DEFAULT_POLLING_SECONDS, MIN_POLLING_SECONDS, MAX_POLLING_SECONDS, "El intervalo de consulta"),
     enabled: payload.enabled === undefined ? Boolean(current.enabled) : Boolean(payload.enabled)
   };
+}
+
+function envPollingSeconds() {
+  const configured = Number(process.env.INVOICE_IMAP_POLL_SECONDS);
+  if (Number.isInteger(configured) && configured > 0) return configured;
+  const legacyMinutes = Number(process.env.INVOICE_IMAP_POLLING_MINUTES);
+  if (Number.isInteger(legacyMinutes) && legacyMinutes > 0) return legacyMinutes * 60;
+  return DEFAULT_POLLING_SECONDS;
 }
 
 function envFallback() {
@@ -74,7 +88,7 @@ function envFallback() {
     username: process.env.INVOICE_IMAP_USER || "",
     password_env_key: "INVOICE_IMAP_PASSWORD",
     folder: process.env.INVOICE_IMAP_FOLDER || DEFAULT_FOLDER,
-    polling_minutes: Number(process.env.INVOICE_IMAP_POLLING_MINUTES || DEFAULT_POLLING_MINUTES),
+    polling_seconds: envPollingSeconds(),
     enabled: String(process.env.INVOICE_IMAP_ENABLED || "").toLowerCase() === "true",
     last_synced_at: null,
     last_error: null,
@@ -98,7 +112,7 @@ async function getMailConfig() {
       username: null,
       password_env_key: "INVOICE_IMAP_PASSWORD",
       folder: DEFAULT_FOLDER,
-      polling_minutes: DEFAULT_POLLING_MINUTES,
+      polling_seconds: DEFAULT_POLLING_SECONDS,
       enabled: false,
       configured: false,
       password_configured: Boolean(process.env.INVOICE_IMAP_PASSWORD),
@@ -257,7 +271,27 @@ async function processAttachment({ config, uidValidity, uid, parsed, attachment 
 
 const RUNNING_TENANTS = new Set();
 
-async function syncMailbox({ tenantId, limit = 20, trigger = "manual" } = {}) {
+// Con una consulta cada 30 s no se puede volver a descargar el buzon completo.
+// Los UID ya procesados se omiten; los fallos se reintentan despues de un
+// enfriamiento para no martillar un correo que siempre falla.
+function processedUidSet(rows = [], uidValidity = "0", now = Date.now()) {
+  const prefix = `imap:${String(uidValidity || "0")}:`;
+  const skip = new Set();
+  for (const row of rows) {
+    const key = String(row?.message_key || "");
+    if (!key.startsWith(prefix)) continue;
+    const uid = key.slice(prefix.length).split(":")[0];
+    if (!uid) continue;
+    const status = String(row.status || "");
+    const processedAt = row.processed_at ? new Date(row.processed_at).getTime() : 0;
+    const retriable = (status === "error" || status === "processing")
+      && (!processedAt || now - processedAt >= RETRY_FAILED_AFTER_MS);
+    if (!retriable) skip.add(uid);
+  }
+  return skip;
+}
+
+async function syncMailbox({ tenantId, limit = 20, trigger = "manual", createClient = clientFor } = {}) {
   if (!tenantId) throw appError("Falta la empresa para sincronizar el correo.", "INVOICE_TENANT_INVALID", 400);
   if (RUNNING_TENANTS.has(tenantId)) {
     throw appError("Ya hay una sincronizacion en curso para esta empresa.", "INVOICE_MAIL_SYNC_RUNNING", 409);
@@ -274,17 +308,39 @@ async function syncMailbox({ tenantId, limit = 20, trigger = "manual" } = {}) {
     const folder = config.folder || DEFAULT_FOLDER;
     const maxMessages = Math.min(MAX_MESSAGES_PER_SYNC, Math.max(1, Number(limit) || 20));
     RUNNING_TENANTS.add(tenantId);
-    const client = clientFor(config, password);
-    const summary = { messages: 0, attachments: 0, created: 0, duplicates: 0, failed: 0, results: [] };
+    const client = createClient(config, password);
+    const summary = { messages: 0, pending: 0, attachments: 0, created: 0, duplicates: 0, failed: 0, results: [] };
     try {
+      // El intervalo se mide desde el inicio de la consulta para que un
+      // procesamiento largo no empuje la siguiente corrida a 60 s.
+      if (config.id) {
+        await prisma.invoiceMailConfig.update({
+          where: { id: config.id },
+          data: { last_synced_at: new Date() }
+        }).catch(() => {});
+      }
       await client.connect();
       const lock = await client.getMailboxLock(folder);
       try {
         const since = new Date(Date.now() - 7 * 86400000);
         const uids = await client.search({ since }, { uid: true });
-        const selected = (Array.isArray(uids) ? uids : []).slice(-maxMessages);
-        const uidValidity = client.mailbox?.uidValidity || "0";
-        for (const uid of selected) {
+        const uidValidity = String(client.mailbox?.uidValidity || "0");
+        const mailbox = `${config.username}@${config.host}`;
+        const processed = await prisma.invoiceProcessedEmail.findMany({
+          where: {
+            mailbox,
+            message_key: { startsWith: `imap:${uidValidity}:` },
+            OR: [{ processed_at: { gte: since } }, { processed_at: null }]
+          },
+          select: { message_key: true, status: true, processed_at: true }
+        });
+        const skip = processedUidSet(processed, uidValidity);
+        const pending = (Array.isArray(uids) ? uids : [])
+          .filter((uid) => !skip.has(String(uid)))
+          .sort((left, right) => Number(left) - Number(right))
+          .slice(0, maxMessages);
+        summary.pending = pending.length;
+        for (const uid of pending) {
           const message = await client.fetchOne(uid, { uid: true, source: true }, { uid: true });
           if (!message?.source) continue;
           summary.messages += 1;
@@ -314,16 +370,20 @@ async function syncMailbox({ tenantId, limit = 20, trigger = "manual" } = {}) {
       } finally {
         lock.release();
       }
-      await prisma.invoiceMailConfig.update({
-        where: { id: config.id },
-        data: { last_synced_at: new Date(), last_error: null }
-      }).catch(() => {});
+      if (config.id) {
+        await prisma.invoiceMailConfig.update({
+          where: { id: config.id },
+          data: { last_error: null }
+        }).catch(() => {});
+      }
       return summary;
     } catch (error) {
-      await prisma.invoiceMailConfig.update({
-        where: { id: config.id },
-        data: { last_synced_at: new Date(), last_error: String(error.message).slice(0, 500) }
-      }).catch(() => {});
+      if (config.id) {
+        await prisma.invoiceMailConfig.update({
+          where: { id: config.id },
+          data: { last_error: String(error.message).slice(0, 500) }
+        }).catch(() => {});
+      }
       throw error;
     } finally {
       RUNNING_TENANTS.delete(tenantId);
@@ -332,18 +392,37 @@ async function syncMailbox({ tenantId, limit = 20, trigger = "manual" } = {}) {
   });
 }
 
+function pollingSecondsFor(config = {}) {
+  const value = Number(config.polling_seconds ?? DEFAULT_POLLING_SECONDS);
+  if (!Number.isInteger(value)) return DEFAULT_POLLING_SECONDS;
+  return Math.min(MAX_POLLING_SECONDS, Math.max(MIN_POLLING_SECONDS, value));
+}
+
+// El cron dispara cada 30 s; cada buzon decide si ya le toca segun su
+// intervalo. La gracia evita perder un tick por milisegundos de desfase.
+function dueConfigs(configs = [], now = Date.now()) {
+  return configs.filter((config) => {
+    if (config.enabled === false) return false;
+    if (!config.last_synced_at) return true;
+    const dueAt = new Date(config.last_synced_at).getTime() + pollingSecondsFor(config) * 1000 - SCHEDULE_GRACE_MS;
+    return now >= dueAt;
+  });
+}
+
 // Recorre las empresas con buzon habilitado sin contexto de tenant: el cron no
 // tiene empresa activa y debe operar cada configuracion en su propio contexto.
-async function runScheduled() {
-  const configs = await prisma.invoiceMailConfig.findMany({ where: { enabled: true } });
+async function runScheduled({ tenantId = null, now = Date.now(), sync = syncMailbox } = {}) {
+  const configs = await prisma.invoiceMailConfig.findMany({
+    where: { enabled: true, ...(tenantId ? { tenant_id: tenantId } : {}) }
+  });
   const results = [];
-  for (const config of configs) {
-    const dueAt = config.last_synced_at
-      ? new Date(config.last_synced_at).getTime() + Math.max(1, config.polling_minutes) * 60000
-      : 0;
-    if (dueAt > Date.now()) continue;
+  for (const config of dueConfigs(configs, now)) {
     try {
-      const summary = await prisma.runWithTenant(config.tenant_id, () => syncMailbox({ tenantId: config.tenant_id, trigger: "scheduled" }));
+      const summary = await prisma.runWithTenant(config.tenant_id, () => sync({
+        tenantId: config.tenant_id,
+        limit: MAX_MESSAGES_PER_SYNC,
+        trigger: "scheduled"
+      }));
       results.push({ tenant_id: config.tenant_id, ...summary });
     } catch (error) {
       results.push({ tenant_id: config.tenant_id, error: error.message });
@@ -361,5 +440,10 @@ module.exports = {
   validateMailConfig,
   zipAttachments,
   messageKeyFor,
-  isZipAttachment
+  isZipAttachment,
+  processedUidSet,
+  dueConfigs,
+  pollingSecondsFor,
+  DEFAULT_POLLING_SECONDS,
+  SCHEDULE_GRACE_MS
 };

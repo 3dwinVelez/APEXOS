@@ -2,6 +2,10 @@ const cron = require("node-cron");
 let started = false;
 const running = {};
 
+// Extraccion de XML de facturas desde el buzon IMAP. Cada buzon aplica su
+// propio intervalo (por defecto 30 s); el tick es la cadencia maxima.
+const RECEIVED_INVOICE_CRON = "*/30 * * * * *";
+
 async function runOnce(name, fn) {
   if (running[name]) {
     console.warn(`[cron] ${name} skipped — previous execution still running`);
@@ -60,12 +64,21 @@ function start() {
     });
   }
 
-  // Recepcion de facturas por IMAP: cada empresa decide su intervalo; esta
-  // pasada solo dispara las configuraciones habilitadas que ya vencieron.
-  cron.schedule("*/5 * * * *", () => {
-    runOnce("syncReceivedInvoiceMailbox", () => require("../modules/accounting/received-invoices/mailbox").runScheduled());
+  // Recepcion de facturas por IMAP: el buzon se consulta cada 30 s.
+  startReceivedInvoiceExtraction();
+}
+
+let invoiceStarted = false;
+
+// La consulta IMAP no usa Redis ni colas: debe correr aunque los workers de
+// BullMQ esten deshabilitados en el entorno.
+function startReceivedInvoiceExtraction() {
+  if (invoiceStarted) return;
+  invoiceStarted = true;
+  cron.schedule(RECEIVED_INVOICE_CRON, () => {
+    runOnce("extractReceivedInvoiceXml", () => require("../modules/accounting/received-invoices/mailbox").runScheduled());
   });
 }
 
-module.exports = { start };
+module.exports = { start, startReceivedInvoiceExtraction, RECEIVED_INVOICE_CRON };
 
