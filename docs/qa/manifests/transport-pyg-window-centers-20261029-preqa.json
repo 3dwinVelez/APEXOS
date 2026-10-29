@@ -68,14 +68,10 @@
   "approval": {
     "status": "approved",
     "approved_at": "2026-10-29",
-    "pending_authorizations": [
-      "crear codex/qa-pyg-window-centers-20261029",
-      "integracion local puntual con develop y publicacion por PR"
-    ],
     "scope": "promotion_to_develop_for_qa",
-    "instruction": "listo dile que continue para que desplegar todo esto a qa",
+    "instruction": "Autorizar rama y publicación puntual en QA",
     "authorization_flags": {
-      "auxiliary_branch_promotion": false
+      "auxiliary_branch_promotion": true
     },
     "approved_by": "manue"
   },
