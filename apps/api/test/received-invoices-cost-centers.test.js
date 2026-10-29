@@ -1,6 +1,11 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { buildCostCenterOptions, resolveCostCenterCode } = require("../src/modules/accounting/received-invoices/cost-centers");
+const {
+  buildCostCenterOptions,
+  matchesCostCenterCode,
+  normalizeCostCenterCode,
+  resolveCostCenterCode
+} = require("../src/modules/accounting/received-invoices/cost-centers");
 
 const tree = {
   societies: [{ code: "SOC-01", name: "Sociedad principal" }],
@@ -55,6 +60,20 @@ test("resolveCostCenterCode rechaza centros fuera de la estructura", () => {
     () => resolveCostCenterCode(options, "CC-03"),
     (error) => error.code === "INVOICE_COST_CENTER_INVALID" && error.statusCode === 422
   );
+});
+
+test("normalizeCostCenterCode compacta el codigo para buscarlo sin separadores", () => {
+  assert.equal(normalizeCostCenterCode("JYX 457"), "JYX457");
+  assert.equal(normalizeCostCenterCode(" esq-294 "), "ESQ294");
+  assert.equal(normalizeCostCenterCode(null), "");
+});
+
+test("matchesCostCenterCode encuentra el centro aunque se escriba compacto", () => {
+  assert.equal(matchesCostCenterCode("JYX 457", "jyx457"), true);
+  assert.equal(matchesCostCenterCode("JYX 457", "457"), true);
+  assert.equal(matchesCostCenterCode("JYX 457", "ESQ294"), false);
+  assert.equal(matchesCostCenterCode("JYX 457", "   "), false);
+  assert.equal(matchesCostCenterCode("ESQ 294", "esq294"), true);
 });
 
 test("resolveCostCenterCode conserva un valor heredado que el usuario no cambia", () => {

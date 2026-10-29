@@ -11,7 +11,7 @@ const approve = { preHandler: requirePermission("accounting", "approve") };
 
 async function receivedInvoiceRoutes(fastify) {
   fastify.get(BASE, { ...read, schema: { querystring: schema.listQuery } }, async (request) => (
-    request.runWithTenant(() => service.listInvoices(request.query))
+    request.runWithTenant(() => service.listInvoices(request.query, request.user?.tenant_id))
   ));
 
   fastify.get(`${BASE}/summary`, { ...read, schema: { querystring: schema.listQuery } }, async (request) => (

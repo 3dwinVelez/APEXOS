@@ -16,6 +16,7 @@ const listQuery = {
     supplier: { type: "string", maxLength: 160 },
     nit: { type: "string", maxLength: 40 },
     number: { type: "string", maxLength: 80 },
+    cost_center: { type: "string", maxLength: 120 },
     supplier_id: { type: "integer", minimum: 1 },
     responsible_user_id: { type: "integer", minimum: 1 },
     segment: { type: "string", enum: SEGMENTS },

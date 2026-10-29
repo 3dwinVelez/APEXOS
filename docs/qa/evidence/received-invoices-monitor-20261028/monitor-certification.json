@@ -1,12 +1,12 @@
 {
   "suite": "received-invoices-monitor",
   "mode": "headless",
-  "executed_at": "2026-10-29T17:33:35.339Z",
-  "tenant_id": "monitor-invoices-2c649a2d41",
+  "executed_at": "2026-10-29T18:48:42.453Z",
+  "tenant_id": "monitor-invoices-36ba4cd83b",
   "api": "http://127.0.0.1:3000",
   "web": "http://127.0.0.1:3001",
-  "total": 27,
-  "passed": 27,
+  "total": 28,
+  "passed": 28,
   "failed": 0,
   "checks": [
     {
@@ -21,8 +21,8 @@
     },
     {
       "firstRun": {
-        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-CNiSH4",
-        "tenant_id": "monitor-invoices-2c649a2d41",
+        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-5nPw4f",
+        "tenant_id": "monitor-invoices-36ba4cd83b",
         "scanned": 2,
         "inserted": 2,
         "completed": 0,
@@ -34,8 +34,8 @@
     },
     {
       "secondRun": {
-        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-CNiSH4",
-        "tenant_id": "monitor-invoices-2c649a2d41",
+        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-5nPw4f",
+        "tenant_id": "monitor-invoices-36ba4cd83b",
         "scanned": 2,
         "inserted": 0,
         "completed": 0,
@@ -99,7 +99,7 @@
         {
           "number": "FV-MON-000902",
           "source": "folder",
-          "message_key": "folder:zip:552de299b714e0cd64f615aa6a2d8085a0742d2d634cef5a216c807b4f267b0c"
+          "message_key": "folder:zip:a32fbb5f4ce5f2f0d1af76b71af8819082580cb81f43ef543e9d38530fd11eb0"
         }
       ],
       "name": "Las filas conservan el origen de carpeta y la clave de deduplicacion del motor",
@@ -127,7 +127,7 @@
         "iva": 95000,
         "receiver": "901555777",
         "metadata": {
-          "archive": "invoice-documents/monitor-invoices-2c649a2d41/2026/10/9f40f16ba1994ce1-FV-MON-000901.zip",
+          "archive": "invoice-documents/monitor-invoices-36ba4cd83b/2026/10/1dee6adcbc08022d-FV-MON-000901.zip",
           "documents": [
             "FV-MON-000901.xml",
             "FV-MON-000901.pdf"
@@ -172,7 +172,7 @@
       "pdfStatus": 200,
       "contentType": "application/pdf",
       "pdfState": {
-        "src": "blob:http://127.0.0.1:3001/f84019a4-4a98-4911-a5d0-79abab5112f8",
+        "src": "blob:http://127.0.0.1:3001/722b493c-6a6f-41be-a7f4-eaeb2a4c71bf",
         "height": 700
       },
       "name": "El monitor abre el PDF autenticado de la factura",
@@ -266,9 +266,20 @@
       "rejectedBody": {
         "error": "El centro de costo indicado no existe o esta inactivo en la estructura contable.",
         "code": "INVOICE_COST_CENTER_INVALID",
-        "request_id": "req-39k"
+        "request_id": "req-de"
       },
       "name": "La API publica el maestro de centros de costo y rechaza codigos fuera de la estructura"
+    },
+    {
+      "status": "passed",
+      "total": 1,
+      "rows": [
+        {
+          "number": "FV-MON-000901",
+          "cost_center": "CC-MON-901"
+        }
+      ],
+      "name": "El filtro por centro de costo compacta el codigo y deja solo las facturas asignadas"
     },
     {
       "status": "passed",
@@ -286,7 +297,7 @@
         "display": "CC-MON-901 · Centro certificado monitor · Sucursal monitor",
         "role": "combobox"
       },
-      "url": "http://127.0.0.1:3001/dashboard/contabilidad/facturas-recibidas/238",
+      "url": "http://127.0.0.1:3001/dashboard/contabilidad/facturas-recibidas/250",
       "name": "La factura abierta desde el monitor conserva emisor, CUFE y centro de costo del maestro",
       "status": "passed"
     },
@@ -304,8 +315,8 @@
     },
     {
       "repairRun": {
-        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-jmBWxC",
-        "tenant_id": "monitor-invoices-2c649a2d41",
+        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-JsHtWp",
+        "tenant_id": "monitor-invoices-36ba4cd83b",
         "scanned": 1,
         "inserted": 0,
         "completed": 1,
@@ -321,8 +332,8 @@
     },
     {
       "repairRerun": {
-        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-jmBWxC",
-        "tenant_id": "monitor-invoices-2c649a2d41",
+        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-JsHtWp",
+        "tenant_id": "monitor-invoices-36ba4cd83b",
         "scanned": 1,
         "inserted": 0,
         "completed": 0,
@@ -357,7 +368,7 @@
         "responsible_name": "Analista de Costos Monitor",
         "assignment_detail": null,
         "notification_emails": [],
-        "responsible_user_id": 927
+        "responsible_user_id": 935
       },
       "name": "La asignacion queda auditada con responsable, centro de costo y sin segmento heredado",
       "status": "passed"
@@ -368,6 +379,8 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Connecting to 'http://localhost:54321/auth/v1/token?grant_type=password' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Fetch API cannot load http://localhost:54321/auth/v1/token?grant_type=password. Refused to connect because it violates the document's Content Security Policy.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
@@ -395,6 +408,7 @@
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\02b-monitor-buzon-segundos.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\03-detalle-centro-costo.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\03-monitor-asignada.png",
+    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\03b-monitor-filtro-centro-costo.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\04-factura-desde-monitor.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\05-visor-pdf-factura.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\06-factura-sin-documentos.png",
@@ -415,105 +429,112 @@
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked."
   ],
   "bad_api_responses": [],
   "document_responses": [
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 204,
       "contentType": ""
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
-      "status": 200,
-      "contentType": "application/pdf"
-    },
-    {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
-      "status": 200,
-      "contentType": "application/pdf"
-    },
-    {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
-      "status": 200,
-      "contentType": "application/pdf"
-    },
-    {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 204,
       "contentType": ""
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/431/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/430/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
       "status": 204,
       "contentType": ""
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/238/documents/430/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
+      "status": 204,
+      "contentType": ""
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
+      "status": 200,
+      "contentType": "application/pdf"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
+      "status": 200,
+      "contentType": "application/pdf"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/451/file",
+      "status": 200,
+      "contentType": "application/pdf"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/450/file",
+      "status": 204,
+      "contentType": ""
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/250/documents/450/file",
       "status": 200,
       "contentType": "application/xml"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/241/documents/435/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/253/documents/455/file",
       "status": 204,
       "contentType": ""
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/241/documents/435/file",
-      "status": 204,
-      "contentType": ""
-    },
-    {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/241/documents/435/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/253/documents/455/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/241/documents/435/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/253/documents/455/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/241/documents/435/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/253/documents/455/file",
       "status": 200,
       "contentType": "application/pdf"
     }
   ],
   "pipeline": {
     "first_run": {
-      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-CNiSH4",
-      "tenant_id": "monitor-invoices-2c649a2d41",
+      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-5nPw4f",
+      "tenant_id": "monitor-invoices-36ba4cd83b",
       "scanned": 2,
       "inserted": 2,
       "completed": 0,
@@ -521,8 +542,8 @@
       "failed": []
     },
     "second_run": {
-      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-CNiSH4",
-      "tenant_id": "monitor-invoices-2c649a2d41",
+      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-5nPw4f",
+      "tenant_id": "monitor-invoices-36ba4cd83b",
       "scanned": 2,
       "inserted": 0,
       "completed": 0,
@@ -531,13 +552,13 @@
     },
     "invoices": [
       {
-        "id": 238,
+        "id": 250,
         "number": "FV-MON-000901",
         "status": "pending_assignment",
         "documents": 2
       },
       {
-        "id": 239,
+        "id": 251,
         "number": "FV-MON-000902",
         "status": "pending_assignment",
         "documents": 2
@@ -545,7 +566,7 @@
     ]
   },
   "database": {
-    "invoice_id": 238,
+    "invoice_id": 250,
     "cost_center": "CC-MON-901",
     "segment": null,
     "responsible": "Analista de Costos Monitor",
@@ -553,10 +574,10 @@
     "change_log_cost_center": "CC-MON-901"
   },
   "repair": {
-    "invoice_id": 241,
+    "invoice_id": 253,
     "run": {
-      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-jmBWxC",
-      "tenant_id": "monitor-invoices-2c649a2d41",
+      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-JsHtWp",
+      "tenant_id": "monitor-invoices-36ba4cd83b",
       "scanned": 1,
       "inserted": 0,
       "completed": 1,
@@ -564,8 +585,8 @@
       "failed": []
     },
     "rerun": {
-      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-jmBWxC",
-      "tenant_id": "monitor-invoices-2c649a2d41",
+      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-repair-folder-JsHtWp",
+      "tenant_id": "monitor-invoices-36ba4cd83b",
       "scanned": 1,
       "inserted": 0,
       "completed": 0,
@@ -574,5 +595,5 @@
     },
     "documents": 2
   },
-  "finished_at": "2026-10-29T17:34:11.306Z"
+  "finished_at": "2026-10-29T18:49:23.205Z"
 }

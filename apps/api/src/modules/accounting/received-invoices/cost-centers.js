@@ -30,6 +30,18 @@ function findCostCenter(options, code) {
   return (options || []).find((row) => row.code.toLowerCase() === value) || null;
 }
 
+// El maestro guarda separadores en el codigo ("ESQ 294"); la busqueda del
+// monitor compara el codigo compactado para que "esq294" tambien lo encuentre.
+function normalizeCostCenterCode(value) {
+  return String(value || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
+}
+
+function matchesCostCenterCode(code, term) {
+  const needle = normalizeCostCenterCode(term);
+  if (!needle) return false;
+  return normalizeCostCenterCode(code).includes(needle);
+}
+
 // `current` permite conservar un valor heredado (texto libre anterior al maestro)
 // cuando el usuario no lo cambia; cualquier valor nuevo debe existir en la estructura.
 function resolveCostCenterCode(options, value, current = null) {
@@ -48,4 +60,10 @@ function resolveCostCenterCode(options, value, current = null) {
   return match.code;
 }
 
-module.exports = { buildCostCenterOptions, findCostCenter, resolveCostCenterCode };
+module.exports = {
+  buildCostCenterOptions,
+  findCostCenter,
+  normalizeCostCenterCode,
+  matchesCostCenterCode,
+  resolveCostCenterCode
+};

@@ -12,7 +12,11 @@ const {
 const { readDocument } = require("./storage");
 const { ingestArchive } = require("./ingest");
 const { appError } = require("./errors");
-const { buildCostCenterOptions, resolveCostCenterCode } = require("./cost-centers");
+const {
+  buildCostCenterOptions,
+  matchesCostCenterCode,
+  resolveCostCenterCode
+} = require("./cost-centers");
 const accounting = require("../service");
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -169,7 +173,7 @@ async function summary(query = {}) {
   };
 }
 
-async function listInvoices(query = {}) {
+async function listInvoices(query = {}, tenantId = null) {
   const { page, pageSize, skip, take } = pagination(query);
   const where = {};
   const from = parseDate(query.from, "Fecha inicial");
@@ -188,6 +192,10 @@ async function listInvoices(query = {}) {
   if (query.number) where.full_number = { contains: String(query.number).trim(), mode: "insensitive" };
   if (query.supplier) where.issuer_name = { contains: String(query.supplier).trim(), mode: "insensitive" };
   if (query.segment) where.segment = String(query.segment);
+  if (query.cost_center) {
+    const filter = await costCenterFilter(query.cost_center, tenantId);
+    if (filter) where.AND = [filter];
+  }
   if (query.needs_review === "true") where.needs_review = true;
   if (query.q) {
     const term = String(query.q).trim();
@@ -292,6 +300,19 @@ async function getInvoice(id) {
 async function listCostCenters(tenantId) {
   const tree = await accounting.getOrganizationTree(tenantId);
   return buildCostCenterOptions(tree);
+}
+
+// El monitor busca centros de costo con texto libre: se combina la coincidencia
+// directa sobre el codigo guardado con los codigos del maestro compactados, para
+// que "esq294" tambien encuentre "ESQ 294".
+async function costCenterFilter(term, tenantId) {
+  const text = String(term || "").trim();
+  if (!text) return null;
+  const clauses = [{ cost_center: { contains: text, mode: "insensitive" } }];
+  const options = tenantId ? await listCostCenters(tenantId) : [];
+  const codes = options.filter((row) => matchesCostCenterCode(row.code, text)).map((row) => row.code);
+  if (codes.length) clauses.push({ cost_center: { in: codes } });
+  return clauses.length === 1 ? clauses[0] : { OR: clauses };
 }
 
 async function resolveCostCenterInput(tenantId, value, current = null) {

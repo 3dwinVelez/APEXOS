@@ -126,7 +126,7 @@ function Kpi({ icon, label, value, hint, tone }: { icon: ReactNode; label: strin
 }
 
 export default function FacturasRecibidasPage() {
-  const [filters, setFilters] = useState({ q: "", from: "", to: "", issue_from: "", issue_to: "", nit: "", number: "", supplier: "", processing_status: "", assignment_status: "", responsible_user_id: "" });
+  const [filters, setFilters] = useState({ q: "", from: "", to: "", issue_from: "", issue_to: "", nit: "", number: "", supplier: "", cost_center: "", processing_status: "", assignment_status: "", responsible_user_id: "" });
   const [applied, setApplied] = useState(filters);
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<InvoiceRow[]>([]);
@@ -190,7 +190,7 @@ export default function FacturasRecibidasPage() {
     setApplied(filters);
   }
   function clearFilters() {
-    const empty = { q: "", from: "", to: "", issue_from: "", issue_to: "", nit: "", number: "", supplier: "", processing_status: "", assignment_status: "", responsible_user_id: "" };
+    const empty = { q: "", from: "", to: "", issue_from: "", issue_to: "", nit: "", number: "", supplier: "", cost_center: "", processing_status: "", assignment_status: "", responsible_user_id: "" };
     setFilters(empty);
     setApplied(empty);
     setPage(1);
@@ -232,7 +232,7 @@ export default function FacturasRecibidasPage() {
 
       {tab === "monitor" ? (
         <form className="apex-section-card space-y-3 p-3" onSubmit={applyFilters}>
-          <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_180px_180px]">
+          <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_170px_170px_200px]">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
               <input aria-label="Buscar factura" className="h-10 w-full rounded-md border border-line bg-surface pl-9 pr-3 text-sm text-content-strong outline-none focus:border-apex" onChange={(event) => setFilters({ ...filters, q: event.target.value })} placeholder="Buscar por número, proveedor, NIT o CUFE" value={filters.q} />
@@ -243,6 +243,7 @@ export default function FacturasRecibidasPage() {
             <Select aria-label="Estado de asignación" onChange={(event) => setFilters({ ...filters, assignment_status: event.target.value })} value={filters.assignment_status}>
               {ASSIGNMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </Select>
+            <Input aria-label="Centro de costo" onChange={(event) => setFilters({ ...filters, cost_center: event.target.value })} placeholder="Centro de costo · ej. ESQ294" value={filters.cost_center} />
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <Input label="Recepción desde" onChange={(event) => setFilters({ ...filters, from: event.target.value })} type="date" value={filters.from} />

@@ -442,7 +442,7 @@ async function main() {
     && pdfState.src?.startsWith("blob:") && pdfState.height > 100,
     { pdfStatus: pdfResponse.status(), contentType: pdfResponse.headers()["content-type"], pdfState });
   await page.evaluate(() => document.querySelector("iframe")?.scrollIntoView({ block: "center" }));
-  await new Promise((resolve) => setTimeout(resolve, 600));
+  await new Promise((resolve) => setTimeout(resolve, 2500));
   await shot(page, "02-monitor-pdf", false);
   await page.evaluate(() => {
     const button = [...document.querySelectorAll('[role="dialog"] button')].find((item) => item.innerText.trim() === "Cerrar");
@@ -597,6 +597,38 @@ async function main() {
     && centerContract.rejectedStatus === 422
     && centerContract.rejectedBody?.code === "INVOICE_COST_CENTER_INVALID",
     centerContract);
+
+  // E2. El filtro por centro de costo del monitor acepta el codigo compacto.
+  const costCenterFilter = await controlByAria(page, "Centro de costo");
+  await costCenterFilter.click({ clickCount: 3 });
+  await page.keyboard.press("Backspace");
+  await costCenterFilter.type("ccmon901", { delay: 20 });
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll("button")].find((item) => item.innerText.includes("Aplicar filtros"));
+    button?.click();
+  });
+  await page.waitForFunction(({ number, other, costCenter }) => {
+    const rows = [...document.querySelectorAll('section[aria-label="Monitor de facturas extraídas"] table tbody tr')];
+    return rows.length === 1 && rows[0].innerText.includes(number) && rows[0].innerText.includes(costCenter)
+      && !rows[0].innerText.includes(other);
+  }, { timeout: 60000 }, { number: INVOICE_A, other: INVOICE_B, costCenter: COST_CENTER });
+  const filteredContract = await fetch(`${API_URL}/api/v1/accounting/received-invoices?cost_center=ccmon901`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  const filteredBody = await filteredContract.json();
+  check("El filtro por centro de costo compacta el codigo y deja solo las facturas asignadas",
+    filteredContract.status === 200
+    && filteredBody.meta?.total === 1
+    && filteredBody.data?.[0]?.full_number === INVOICE_A
+    && filteredBody.data?.[0]?.cost_center === COST_CENTER,
+    { status: filteredContract.status, total: filteredBody.meta?.total, rows: filteredBody.data?.map((row) => ({ number: row.full_number, cost_center: row.cost_center })) });
+  await shot(page, "03b-monitor-filtro-centro-costo");
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll("button")].find((item) => item.innerText.trim() === "Limpiar");
+    button?.click();
+  });
+  await page.waitForFunction((other) => [...document.querySelectorAll("table tbody tr")]
+    .some((row) => row.innerText.includes(other)), { timeout: 60000 }, INVOICE_B);
 
   // F. Abrir la factura completa desde el monitor.
   const detailPdfResponsePromise = page.waitForResponse(

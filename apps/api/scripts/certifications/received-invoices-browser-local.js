@@ -234,8 +234,11 @@ async function main() {
   const demoZipFilename = path.basename(demoZip);
 
   // A. Login real por la pantalla de acceso.
-  await loginThroughUi(page);
+  await page.goto(`${WEB_URL}/login`, { waitUntil: "networkidle2" });
+  await page.waitForSelector('input[name="email"]', { timeout: 90000 });
+  await new Promise((resolve) => setTimeout(resolve, 800));
   await shot(page, "01-login");
+  await loginThroughUi(page);
   check("El lider inicia sesion por la pantalla real de acceso", page.url().includes("/dashboard"), { url: page.url() });
 
   // B. Navegacion desde Contabilidad hasta la bandeja.
@@ -493,6 +496,26 @@ async function main() {
     && finalRow.includes(COST_CENTER) && finalRow.includes("Procesada") && finalRow.includes("Asignada"),
     { finalRow });
   await shot(page, "07-monitor-final");
+
+  // L. El filtro por centro de costo acepta el codigo compacto ("esq294").
+  const costCenterFilter = await page.$('input[aria-label="Centro de costo"]');
+  if (!costCenterFilter) throw new Error("No se encontro el filtro por centro de costo.");
+  await costCenterFilter.click({ clickCount: 3 });
+  await page.keyboard.press("Backspace");
+  await costCenterFilter.type("esq294", { delay: 20 });
+  await clickButton(page, "Aplicar filtros");
+  await page.waitForFunction((costCenter) => {
+    const rows = [...document.querySelectorAll("table tbody tr")];
+    return rows.length === 1 && rows[0].innerText.includes("FV-2026-000123") && rows[0].innerText.includes(costCenter);
+  }, { timeout: 60000 }, COST_CENTER);
+  const filteredCostCenterRow = await page.$eval("table tbody tr", (row) => row.innerText);
+  check("El filtro por centro de costo acepta el codigo compacto y deja solo las facturas asignadas",
+    filteredCostCenterRow.includes(COST_CENTER) && !filteredCostCenterRow.includes("FV-2026-000124"),
+    { filteredCostCenterRow });
+  await shot(page, "08-monitor-filtro-centro-costo");
+  await clickButton(page, "Limpiar");
+  await page.waitForFunction(() => [...document.querySelectorAll("table tbody tr")]
+    .some((row) => row.innerText.includes("FV-2026-000124")), { timeout: 60000 });
 
   check("La sesion completa no registro errores de consola propios del modulo", consoleErrors.length === 0, { consoleErrors, environmentNoise });
   check("Ninguna llamada del modulo respondio con error durante la sesion", badApiResponses.length === 0, { badApiResponses });
