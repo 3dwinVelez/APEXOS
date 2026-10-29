@@ -1,8 +1,10 @@
 const crypto = require("node:crypto");
+const JSZip = require("jszip");
 const { ImapFlow } = require("imapflow");
 const { simpleParser } = require("mailparser");
 const prisma = require("../../../core/prisma");
 const { ingestArchive } = require("./ingest");
+const { EMAIL_STATUS } = require("./constants");
 const { appError } = require("./errors");
 
 const DEFAULT_PORT = 993;
@@ -193,6 +195,52 @@ function zipAttachments(attachments = []) {
     }));
 }
 
+function safeFileName(value, fallback) {
+  return String(value || fallback || "adjunto").replace(/[\\/]/g, "_").slice(0, 160);
+}
+
+// El tipo se decide por contenido: un XML empieza con la declaracion o el nodo
+// raiz y un PDF con su firma. La extension solo se usa para nombrar el archivo.
+function singleKind(attachment) {
+  const content = attachment?.content;
+  if (!content || !content.length) return null;
+  const bytes = Buffer.from(content);
+  if (bytes.subarray(0, 5).toString("latin1") === "%PDF-") return "pdf";
+  const head = bytes.subarray(0, 1024).toString("utf8").replace(/^\uFEFF/, "").trimStart();
+  if (head.startsWith("<?xml") || /<(Invoice|CreditNote|DebitNote)\b/i.test(head)) return "xml";
+  return null;
+}
+
+function singleAttachments(attachments = []) {
+  return attachments
+    .map((attachment) => ({ attachment, kind: singleKind(attachment) }))
+    .filter(({ kind }) => kind)
+    .map(({ attachment, kind }) => ({
+      kind,
+      fileName: safeFileName(attachment.filename, `factura.${kind}`),
+      bytes: Buffer.from(attachment.content),
+      size: Number(attachment.size) || attachment.content.length
+    }));
+}
+
+function checksumOfBuffer(bytes) {
+  return crypto.createHash("sha256").update(Buffer.from(bytes || "")).digest("hex");
+}
+
+// Los XML/PDF sueltos se empacan para reutilizar la misma tuberia del ZIP. La
+// fecha fija hace que el archivo generado sea identico entre corridas y la
+// clave del mensaje no cambie.
+async function packAttachments(files) {
+  const zip = new JSZip();
+  for (const file of files) zip.file(file.fileName, file.bytes, { date: new Date(0) });
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
+function checksumOfFiles(files) {
+  const parts = files.map((file) => `${file.kind}:${checksumOfBuffer(file.bytes)}`).sort();
+  return crypto.createHash("sha256").update(parts.join(":")).digest("hex");
+}
+
 async function connectionStatus(config) {
   const password = passwordFor(config);
   const client = clientFor(config, password);
@@ -237,7 +285,7 @@ async function recordFailure({ config, messageKey, subject, fromAddress, receive
 }
 
 async function processAttachment({ config, uidValidity, uid, parsed, attachment }) {
-  const checksum = crypto.createHash("sha256").update(attachment.bytes).digest("hex");
+  const checksum = attachment.checksum || checksumOfBuffer(attachment.bytes);
   const messageKey = messageKeyFor({ uidValidity, uid, checksum });
   const receivedAt = parsed.date || new Date();
   const fromAddress = parsed.from?.value?.[0]?.address || null;
@@ -270,6 +318,31 @@ async function processAttachment({ config, uidValidity, uid, parsed, attachment 
 }
 
 const RUNNING_TENANTS = new Set();
+
+// Un correo sin facturas (boletines, alertas, notificaciones) tambien se
+// registra como procesado. Si no, quedaria pendiente para siempre y cada
+// consulta volveria a descargarlo ocupando el cupo del ciclo.
+async function recordWithoutInvoice({ config, messageKey, parsed, attachmentCount }) {
+  const data = {
+    source: "imap",
+    mailbox: `${config.username}@${config.host}`,
+    message_key: messageKey,
+    subject: parsed?.subject || null,
+    from_address: parsed?.from?.value?.[0]?.address || null,
+    received_at: parsed?.date ? new Date(parsed.date) : new Date(),
+    attachment_count: Number(attachmentCount) || 0,
+    processed_attachment_count: Number(attachmentCount) || 0,
+    invoice_count: 0,
+    status: EMAIL_STATUS.PROCESSED,
+    error_message: null,
+    zip_file_name: null,
+    processed_at: new Date()
+  };
+  const existing = await prisma.invoiceProcessedEmail.findFirst({ where: { message_key: messageKey } });
+  return existing
+    ? prisma.invoiceProcessedEmail.update({ where: { id: existing.id }, data })
+    : prisma.invoiceProcessedEmail.create({ data });
+}
 
 // Con una consulta cada 30 s no se puede volver a descargar el buzon completo.
 // Los UID ya procesados se omiten; los fallos se reintentan despues de un
@@ -309,7 +382,7 @@ async function syncMailbox({ tenantId, limit = 20, trigger = "manual", createCli
     const maxMessages = Math.min(MAX_MESSAGES_PER_SYNC, Math.max(1, Number(limit) || 20));
     RUNNING_TENANTS.add(tenantId);
     const client = createClient(config, password);
-    const summary = { messages: 0, pending: 0, attachments: 0, created: 0, duplicates: 0, failed: 0, results: [] };
+    const summary = { messages: 0, pending: 0, attachments: 0, created: 0, duplicates: 0, ignored: 0, failed: 0, results: [] };
     try {
       // El intervalo se mide desde el inicio de la consulta para que un
       // procesamiento largo no empuje la siguiente corrida a 60 s.
@@ -352,9 +425,29 @@ async function syncMailbox({ tenantId, limit = 20, trigger = "manual", createCli
             summary.results.push({ uid, status: "error", message: "No fue posible leer el mensaje." });
             continue;
           }
-          for (const attachment of zipAttachments(parsed.attachments)) {
+          const tenantConfig = { ...config, tenant_id: tenantId };
+          const zips = zipAttachments(parsed.attachments);
+          const singles = zips.length ? [] : singleAttachments(parsed.attachments);
+          if (!zips.length && !singles.length) {
+            // Correo sin facturas: se marca procesado para no re-descargarlo.
+            await recordWithoutInvoice({
+              config: tenantConfig,
+              messageKey: messageKeyFor({ uidValidity, uid, checksum: checksumOfBuffer(message.source) }),
+              parsed,
+              attachmentCount: Array.isArray(parsed.attachments) ? parsed.attachments.length : 0
+            });
+            summary.ignored += 1;
+            summary.results.push({ uid, status: "sin_factura" });
+            continue;
+          }
+          const archives = zips.length ? zips : [{
+            fileName: `${safeFileName(String(singles[0].fileName).replace(/\.(xml|pdf)$/i, ""), `correo-${uid}`)}.zip`,
+            bytes: await packAttachments(singles),
+            checksum: checksumOfFiles(singles)
+          }];
+          for (const attachment of archives) {
             summary.attachments += 1;
-            const result = await processAttachment({ config: { ...config, tenant_id: tenantId }, uidValidity, uid, parsed, attachment });
+            const result = await processAttachment({ config: tenantConfig, uidValidity, uid, parsed, attachment });
             if (result.status === "created" || result.status === "processed" || result.status === "processed_with_errors") {
               summary.created += result.summary?.created || 0;
               summary.duplicates += result.summary?.duplicates || 0;
@@ -439,6 +532,9 @@ module.exports = {
   runScheduled,
   validateMailConfig,
   zipAttachments,
+  singleAttachments,
+  packAttachments,
+  checksumOfFiles,
   messageKeyFor,
   isZipAttachment,
   processedUidSet,

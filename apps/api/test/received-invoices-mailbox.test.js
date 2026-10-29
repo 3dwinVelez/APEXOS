@@ -8,7 +8,7 @@ process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://apex@localh
 const storageDir = fs.mkdtempSync(path.join(os.tmpdir(), "apexos-invoice-storage-test-"));
 process.env.INVOICE_LOCAL_STORAGE_DIR = storageDir;
 
-const { validateMailConfig, messageKeyFor, isZipAttachment, zipAttachments } = require("../src/modules/accounting/received-invoices/mailbox");
+const { validateMailConfig, messageKeyFor, isZipAttachment, zipAttachments, singleAttachments, packAttachments, checksumOfFiles } = require("../src/modules/accounting/received-invoices/mailbox");
 const storage = require("../src/modules/accounting/received-invoices/storage");
 
 test.after(() => fs.rmSync(storageDir, { recursive: true, force: true }));
@@ -79,6 +79,31 @@ test("los adjuntos ZIP se normalizan y descartan los que no lo son", () => {
   assert.equal(attachments[0].fileName, ".._facturas_facturas.zip");
   assert.ok(Buffer.isBuffer(attachments[0].bytes));
   assert.equal(attachments[0].size, zip.length);
+});
+
+test("un XML o PDF suelto se reconoce por contenido y no por la extension", () => {
+  const singles = singleAttachments([
+    { filename: "factura.xml", content: Buffer.from("<?xml version=\"1.0\"?><Invoice><ID>FV-1</ID></Invoice>") },
+    { filename: "sin-extension", content: Buffer.from("%PDF-1.4\n%...") },
+    { filename: "foto.png", content: Buffer.from([0x89, 0x50, 0x4e, 0x47]) },
+    { filename: "nota.txt", content: Buffer.from("Hola mundo") }
+  ]);
+  assert.deepEqual(singles.map((file) => file.kind), ["xml", "pdf"]);
+  assert.equal(singles[0].fileName, "factura.xml");
+  assert.ok(Buffer.isBuffer(singles[0].bytes));
+});
+
+test("el ZIP generado con XML y PDF sueltos es identico entre corridas", async () => {
+  const files = singleAttachments([
+    { filename: "FV-9.xml", content: Buffer.from("<Invoice><ID>FV-9</ID></Invoice>") },
+    { filename: "FV-9.pdf", content: Buffer.from("%PDF-1.4\n%%EOF") }
+  ]);
+  const first = await packAttachments(files);
+  const second = await packAttachments(files);
+  assert.equal(checksumOfFiles(files), checksumOfFiles(files));
+  assert.equal(first.equals(second), true);
+  assert.equal(isZipAttachment({ filename: "FV-9.zip", content: first }), true);
+  assert.equal(zipAttachments([{ filename: "FV-9.zip", content: first }]).length, 1);
 });
 
 test("la referencia de almacenamiento acepta solo el tenant activo y tipos permitidos", () => {

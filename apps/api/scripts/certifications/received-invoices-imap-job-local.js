@@ -30,14 +30,13 @@ const cron = require("node-cron");
 const { syncMailbox, runScheduled, DEFAULT_POLLING_SECONDS } = require("../../src/modules/accounting/received-invoices/mailbox");
 const { RECEIVED_INVOICE_CRON } = require("../../src/fabric/crons");
 const storage = require("../../src/modules/accounting/received-invoices/storage");
-const { buildDemoZip, CUFE } = require("../../test/fixtures/received-invoices/demo-archive");
+const { buildDemoZip, buildInvoiceXml, buildInvoicePdf, CUFE } = require("../../test/fixtures/received-invoices/demo-archive");
 
 const evidenceDir = path.resolve(ROOT, "docs/qa/evidence/received-invoices-imap-job-20261029");
 const suffix = crypto.randomBytes(5).toString("hex");
 const tenantId = `job-invoices-${suffix}`;
 const passwordKey = "INVOICE_IMAP_CERT_PASSWORD";
 const uidValidity = 9001;
-const messageUid = 41;
 const checks = [];
 const ticks = [];
 const runs = [];
@@ -64,35 +63,89 @@ async function waitFor(probe, timeoutMs, label) {
   throw new Error(`Tiempo de espera agotado esperando: ${label}`);
 }
 
-// Correo MIME real con el ZIP de demostracion como adjunto en base64.
-async function buildMessageSource() {
-  const zip = await buildDemoZip();
-  const base64 = zip.toString("base64").replace(/(.{76})/g, "$1\r\n");
+// Tres correos reales en MIME: uno con ZIP, uno sin adjuntos (boletin) y uno
+// con XML/PDF sueltos. El buzon real trae esa mezcla y el job debe avanzar en
+// todos los casos sin re-descargar nada.
+const ZIP_UID = 41;
+const EMPTY_UID = 42;
+const DIRECT_UID = 43;
+const DIRECT_NUMBER = "FV-2026-000124";
+const DIRECT_CUFE = crypto.createHash("sha384").update(DIRECT_NUMBER).digest("hex");
+
+function mimeMessage({ subject, messageId, contentType, body }) {
   return Buffer.from([
     "From: Proveedor Certificado <proveedor@cert.local>",
     "To: facturas@cert.local",
-    "Subject: Factura electronica certificada",
+    `Subject: ${subject}`,
     "Date: Thu, 29 Oct 2026 12:00:00 -0500",
-    `Message-ID: <job-cert-${suffix}@cert.local>`,
+    `Message-ID: <${messageId}@cert.local>`,
     "MIME-Version: 1.0",
-    'Content-Type: multipart/mixed; boundary="apexos-cert"',
+    `Content-Type: ${contentType}`,
     "",
-    "--apexos-cert",
-    "Content-Type: text/plain; charset=utf-8",
-    "",
-    "Adjunto la factura electronica del periodo.",
-    "--apexos-cert",
-    'Content-Type: application/zip; name="FV-JOB-000123.zip"',
-    'Content-Disposition: attachment; filename="FV-JOB-000123.zip"',
-    "Content-Transfer-Encoding: base64",
-    "",
-    base64,
-    "--apexos-cert--",
-    ""
+    body
   ].join("\r\n"), "utf8");
 }
 
-function fakeClientFactory(source) {
+async function buildMessages() {
+  const zip = await buildDemoZip();
+  const base64 = zip.toString("base64").replace(/(.{76})/g, "$1\r\n");
+  const sources = new Map();
+  sources.set(ZIP_UID, mimeMessage({
+    subject: "Factura electronica certificada",
+    messageId: `job-cert-zip-${suffix}`,
+    contentType: 'multipart/mixed; boundary="apexos-cert"',
+    body: [
+      "--apexos-cert",
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      "Adjunto la factura electronica del periodo.",
+      "--apexos-cert",
+      'Content-Type: application/zip; name="FV-JOB-000123.zip"',
+      'Content-Disposition: attachment; filename="FV-JOB-000123.zip"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      base64,
+      "--apexos-cert--",
+      ""
+    ].join("\r\n")
+  }));
+  sources.set(EMPTY_UID, mimeMessage({
+    subject: "Boletin informativo sin adjuntos",
+    messageId: `job-cert-empty-${suffix}`,
+    contentType: "text/plain; charset=utf-8",
+    body: "Novedades de la semana. Este correo no trae facturas."
+  }));
+  const xml = buildInvoiceXml({ number: DIRECT_NUMBER, cufe: DIRECT_CUFE, subtotal: 500000, iva: 95000, total: 595000 });
+  const pdf = buildInvoicePdf({ number: DIRECT_NUMBER, cufe: DIRECT_CUFE, subtotal: 500000, iva: 95000, total: 595000 });
+  sources.set(DIRECT_UID, mimeMessage({
+    subject: `Factura electronica ${DIRECT_NUMBER} adjunta sin ZIP`,
+    messageId: `job-cert-direct-${suffix}`,
+    contentType: 'multipart/mixed; boundary="apexos-direct"',
+    body: [
+      "--apexos-direct",
+      "Content-Type: text/plain; charset=utf-8",
+      "",
+      "Factura adjunta como XML y PDF.",
+      "--apexos-direct",
+      'Content-Type: application/xml; name="FV-DIRECTA-000124.xml"',
+      'Content-Disposition: attachment; filename="FV-DIRECTA-000124.xml"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      Buffer.from(xml, "utf8").toString("base64").replace(/(.{76})/g, "$1\r\n"),
+      "--apexos-direct",
+      'Content-Type: application/pdf; name="FV-DIRECTA-000124.pdf"',
+      'Content-Disposition: attachment; filename="FV-DIRECTA-000124.pdf"',
+      "Content-Transfer-Encoding: base64",
+      "",
+      pdf.toString("base64").replace(/(.{76})/g, "$1\r\n"),
+      "--apexos-direct--",
+      ""
+    ].join("\r\n")
+  }));
+  return sources;
+}
+
+function fakeClientFactory(sources) {
   return () => ({
     mailbox: null,
     async connect() {},
@@ -101,11 +154,11 @@ function fakeClientFactory(source) {
       return { release() {} };
     },
     async search() {
-      return [messageUid];
+      return [...sources.keys()];
     },
     async fetchOne(uid) {
       fetched.push(uid);
-      return Number(uid) === messageUid ? { source } : null;
+      return sources.has(Number(uid)) ? { source: sources.get(Number(uid)) } : null;
     },
     async logout() {}
   });
@@ -155,7 +208,7 @@ async function cleanup() {
 
 async function main() {
   const startedAt = new Date().toISOString();
-  const source = await buildMessageSource();
+  const sources = await buildMessages();
   await seed();
 
   check("El job usa la expresion de produccion cada 30 segundos",
@@ -164,7 +217,7 @@ async function main() {
 
   // El callback del cron usa el mismo runScheduled de produccion; solo se
   // sustituye el cliente IMAP por uno local que entrega el MIME preparado.
-  const createClient = fakeClientFactory(source);
+  const createClient = fakeClientFactory(sources);
   task = cron.schedule(RECEIVED_INVOICE_CRON, async () => {
     const at = new Date().toISOString();
     ticks.push(at);
@@ -179,20 +232,46 @@ async function main() {
     }
   });
 
-  const invoice = await waitFor(
-    () => db.receivedInvoice.findFirst({ where: { tenant_id: tenantId } }),
-    45000,
-    "primera corrida del job"
-  );
-  await waitFor(() => db.invoiceProcessedEmail.findFirst({ where: { tenant_id: tenantId, status: "processed" } }), 15000, "correo procesado");
+  const invoices = await waitFor(async () => {
+    const rows = await db.receivedInvoice.findMany({ where: { tenant_id: tenantId } });
+    return rows.length >= 2 ? rows : null;
+  }, 45000, "primera corrida del job");
+  await waitFor(async () => {
+    const row = await db.invoiceProcessedEmail.findFirst({ where: { tenant_id: tenantId, status: "processed", invoice_count: 0 } });
+    return row || null;
+  }, 15000, "correo sin factura registrado");
+  const invoice = invoices.find((row) => row.full_number === "FV-2026-000123");
+  const directInvoice = invoices.find((row) => row.full_number === DIRECT_NUMBER);
   const firstRun = runs.find((entry) => entry.results?.length)?.results[0] || {};
-  check("La primera corrida del job extrae el XML del correo e inserta la factura",
-    invoice.full_number === "FV-2026-000123"
-    && invoice.cufe === CUFE
-    && Number(invoice.total) === 1190000
-    && firstRun.created === 1
-    && firstRun.pending === 1,
-    { invoice: { full_number: invoice.full_number, total: invoice.total, cufe: invoice.cufe }, firstRun, ticks });
+  check("La primera corrida del job extrae el XML del correo e inserta las facturas",
+    Boolean(invoice) && invoice.cufe === CUFE && Number(invoice.total) === 1190000
+    && Boolean(directInvoice) && directInvoice.cufe === DIRECT_CUFE && Number(directInvoice.total) === 595000
+    && firstRun.created === 2
+    && firstRun.pending === 3
+    && firstRun.ignored === 1,
+    {
+      invoices: invoices.map((row) => ({ number: row.full_number, total: row.total })),
+      firstRun, ticks
+    });
+
+  check("El correo con XML y PDF sueltos se procesa sin exigir ZIP",
+    Boolean(directInvoice)
+    && directInvoice.xml_available === true
+    && directInvoice.pdf_available === true
+    && directInvoice.extraction_source === "xml",
+    { direct: directInvoice && {
+      number: directInvoice.full_number,
+      xml: directInvoice.xml_available,
+      pdf: directInvoice.pdf_available,
+      source: directInvoice.extraction_source
+    } });
+
+  const emptyEmail = await db.invoiceProcessedEmail.findFirst({
+    where: { tenant_id: tenantId, invoice_count: 0, attachment_count: 0 }
+  });
+  check("El correo sin facturas queda procesado y no se vuelve a descargar",
+    Boolean(emptyEmail) && emptyEmail.status === "processed" && Boolean(emptyEmail.processed_at),
+    { emptyEmail: emptyEmail && { subject: emptyEmail.subject, status: emptyEmail.status, attachments: emptyEmail.attachment_count } });
 
   const documents = await db.receivedInvoiceDocument.findMany({ where: { invoice_id: invoice.id } });
   const storedReadable = [];
@@ -227,9 +306,9 @@ async function main() {
   const secondRun = runs[1]?.results?.[0] || {};
   const invoiceCount = await db.receivedInvoice.count({ where: { tenant_id: tenantId } });
   const config = await db.invoiceMailConfig.findUnique({ where: { tenant_id: tenantId } });
-  check("La segunda consulta no duplica la factura ni vuelve a descargar el correo",
-    invoiceCount === 1
-    && fetched.length === 1
+  check("La segunda consulta no duplica facturas ni vuelve a descargar correos",
+    invoiceCount === 2
+    && fetched.length === sources.size
     && secondRun.pending === 0
     && secondRun.created === 0,
     { invoiceCount, fetched, secondRun });
