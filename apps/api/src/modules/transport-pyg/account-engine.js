@@ -214,6 +214,145 @@ function accountKeyOf(leaf) {
   return `${leaf.account_id}|${normalizeCode(leaf.branch || "")}|${normalizeCode(leaf.center || "")}`;
 }
 
+// Tupla hoja -> centro de costo de la hoja TODOSCC del Excel: el centro y la
+// sucursal identifican la columna; los centros repetidos en sucursales distintas
+// quedan como columnas separadas.
+function centerKeyOf(leaf) {
+  return `${normalizeCode(leaf.center || "")}|${normalizeCode(leaf.branch || "")}`;
+}
+
+function newAccountNode(leaf) {
+  return {
+    account_id: leaf.account_id,
+    account_code: String(leaf.account_code || ""),
+    account_name: String(leaf.account_name || leaf.account_code || ""),
+    actual_cents: 0,
+    budget_cents: null,
+    budget_leafs: 0,
+    total_leafs: 0,
+    centers: new Map()
+  };
+}
+
+function newCenterNode(leaf) {
+  return {
+    center_code: String(leaf.center || ""),
+    center_name: String(leaf.center_name || leaf.center || "Sin centro de costo"),
+    branch_code: String(leaf.branch || ""),
+    branch_name: String(leaf.branch_name || leaf.branch || ""),
+    actual_cents: 0,
+    budget_cents: null,
+    budget_leafs: 0,
+    total_leafs: 0
+  };
+}
+
+// Suma una hoja al agregado del concepto (importe, presupuesto y desglose por
+// cuenta/centro). Compartido por el bloque por vehiculo y el bloque por centro.
+function accumulateLeaf(aggregate, leaf, kind) {
+  const signed = leaf.actual_cents || 0;
+  const hasBudget = leaf.budget_cents !== null && leaf.budget_cents !== undefined;
+  const display = signedDisplay(kind, signed);
+  const budgetDisplay = hasBudget ? signedDisplay(kind, leaf.budget_cents) : null;
+
+  aggregate.actual_cents += cents(display);
+  if (budgetDisplay !== null) {
+    aggregate.budget_cents = (aggregate.budget_cents || 0) + cents(budgetDisplay);
+    aggregate.budget_leafs += 1;
+  }
+  aggregate.total_leafs += 1;
+
+  let account = aggregate.accounts.get(leaf.account_id);
+  if (!account) {
+    account = newAccountNode(leaf);
+    aggregate.accounts.set(leaf.account_id, account);
+  }
+  account.actual_cents += cents(display);
+  if (budgetDisplay !== null) {
+    account.budget_cents = (account.budget_cents || 0) + cents(budgetDisplay);
+    account.budget_leafs += 1;
+  }
+  account.total_leafs += 1;
+
+  const centerKey = centerKeyOf(leaf);
+  let center = account.centers.get(centerKey);
+  if (!center) {
+    center = newCenterNode(leaf);
+    account.centers.set(centerKey, center);
+  }
+  center.actual_cents += cents(display);
+  if (budgetDisplay !== null) {
+    center.budget_cents = (center.budget_cents || 0) + cents(budgetDisplay);
+    center.budget_leafs += 1;
+  }
+  center.total_leafs += 1;
+}
+
+// Reparte las hojas entre centros de costo sin mirar el vehiculo: es la lectura
+// paralela del Excel (hoja TODOSCC) y no altera la asignacion por placa ni el
+// consolidado. Deduplica la misma tupla cuenta/sucursal/centro una sola vez.
+function buildCenterBuckets({ concepts, leaves }) {
+  const conceptByCode = new Map(concepts.map((concept) => [concept.code, concept]));
+  const buckets = new Map();
+  const seenLeafKeys = new Set();
+
+  function holderFor(leaf) {
+    const key = centerKeyOf(leaf);
+    let holder = buckets.get(key);
+    if (!holder) {
+      holder = {
+        key,
+        center_code: String(leaf.center || ""),
+        center_name: String(leaf.center_name || leaf.center || "Sin centro de costo"),
+        branch_code: String(leaf.branch || ""),
+        branch_name: String(leaf.branch_name || leaf.branch || ""),
+        concepts: new Map(),
+        dynamic: []
+      };
+      buckets.set(key, holder);
+    }
+    return holder;
+  }
+
+  for (const leaf of leaves || []) {
+    const tupleKey = accountKeyOf(leaf);
+    if (seenLeafKeys.has(tupleKey)) continue;
+    seenLeafKeys.add(tupleKey);
+    const holder = holderFor(leaf);
+    const conceptCode = matchAccountCode(leaf.account_code, concepts);
+    if (!conceptCode) {
+      const signed = leaf.actual_cents || 0;
+      const hasBudget = leaf.budget_cents !== null && leaf.budget_cents !== undefined;
+      if (signed === 0 && !hasBudget) continue;
+      const dynamic = unclassifiedConceptOf(leaf);
+      holder.dynamic.push({ code: dynamic.code, kind: dynamic.kind, section: dynamic.section, name: dynamic.name, leaf });
+      continue;
+    }
+    const concept = conceptByCode.get(conceptCode);
+    if (!concept || isSubtotalKind(concept.kind)) continue;
+    let aggregate = holder.concepts.get(conceptCode);
+    if (!aggregate) {
+      aggregate = newConceptAggregate(concept.code, concept.kind, concept.section, concept.name);
+      holder.concepts.set(conceptCode, aggregate);
+    }
+    accumulateLeaf(aggregate, leaf, concept.kind);
+  }
+
+  for (const holder of buckets.values()) {
+    for (const entry of holder.dynamic) {
+      let aggregate = holder.concepts.get(entry.code);
+      if (!aggregate) {
+        aggregate = newConceptAggregate(entry.code, entry.kind, entry.section, entry.name);
+        aggregate.dynamic = true;
+        holder.concepts.set(entry.code, aggregate);
+      }
+      accumulateLeaf(aggregate, entry.leaf, entry.kind);
+    }
+  }
+
+  return buckets;
+}
+
 function buildBuckets({ concepts, leaves, vehicles, tree, warnings, period }) {
   const byCenterCode = centerAssignments(tree);
   const conceptByCode = new Map(concepts.map((concept) => [concept.code, concept]));
@@ -258,120 +397,19 @@ function buildBuckets({ concepts, leaves, vehicles, tree, warnings, period }) {
       aggregate = newConceptAggregate(concept.code, concept.kind, concept.section, concept.name);
       holder.concepts.set(conceptCode, aggregate);
     }
-    const display = signedDisplay(concept.kind, signed);
-    const budgetDisplay = hasBudget ? signedDisplay(concept.kind, leaf.budget_cents) : null;
-    aggregate.actual_cents += cents(display);
-    if (budgetDisplay !== null) {
-      aggregate.budget_cents = (aggregate.budget_cents || 0) + cents(budgetDisplay);
-      aggregate.budget_leafs += 1;
-    }
-    aggregate.total_leafs += 1;
-
-    let account = aggregate.accounts.get(leaf.account_id);
-    if (!account) {
-      account = {
-        account_id: leaf.account_id,
-        account_code: String(leaf.account_code || ""),
-        account_name: String(leaf.account_name || leaf.account_code || ""),
-        actual_cents: 0,
-        budget_cents: null,
-        budget_leafs: 0,
-        total_leafs: 0,
-        centers: new Map()
-      };
-      aggregate.accounts.set(leaf.account_id, account);
-    }
-    account.actual_cents += cents(display);
-    if (budgetDisplay !== null) {
-      account.budget_cents = (account.budget_cents || 0) + cents(budgetDisplay);
-      account.budget_leafs += 1;
-    }
-    account.total_leafs += 1;
-
-    const centerKey = `${normalizeCode(leaf.center || "")}|${normalizeCode(leaf.branch || "")}`;
-    let center = account.centers.get(centerKey);
-    if (!center) {
-      center = {
-        center_code: String(leaf.center || ""),
-        center_name: String(leaf.center_name || leaf.center || "Sin centro de costo"),
-        branch_code: String(leaf.branch || ""),
-        branch_name: String(leaf.branch_name || leaf.branch || ""),
-        actual_cents: 0,
-        budget_cents: null,
-        budget_leafs: 0,
-        total_leafs: 0
-      };
-      account.centers.set(centerKey, center);
-    }
-    center.actual_cents += cents(display);
-    if (budgetDisplay !== null) {
-      center.budget_cents = (center.budget_cents || 0) + cents(budgetDisplay);
-      center.budget_leafs += 1;
-    }
-    center.total_leafs += 1;
+    accumulateLeaf(aggregate, leaf, concept.kind);
   }
 
   // Las hojas dinamicas (sin clasificar) se agregan al agregado del concepto dinamico.
   for (const holder of buckets.values()) {
     for (const entry of holder.dynamic) {
-      const leaf = entry.leaf;
-      const signed = leaf.actual_cents || 0;
-      const hasBudget = leaf.budget_cents !== null && leaf.budget_cents !== undefined;
       let aggregate = holder.concepts.get(entry.code);
       if (!aggregate) {
         aggregate = newConceptAggregate(entry.code, entry.kind, entry.section, entry.name);
         aggregate.dynamic = true;
         holder.concepts.set(entry.code, aggregate);
       }
-      const display = signedDisplay(entry.kind, signed);
-      const budgetDisplay = hasBudget ? signedDisplay(entry.kind, leaf.budget_cents) : null;
-      aggregate.actual_cents += cents(display);
-      if (budgetDisplay !== null) {
-        aggregate.budget_cents = (aggregate.budget_cents || 0) + cents(budgetDisplay);
-        aggregate.budget_leafs += 1;
-      }
-      aggregate.total_leafs += 1;
-      let account = aggregate.accounts.get(leaf.account_id);
-      if (!account) {
-        account = {
-          account_id: leaf.account_id,
-          account_code: String(leaf.account_code || ""),
-          account_name: String(leaf.account_name || leaf.account_code || ""),
-          actual_cents: 0,
-          budget_cents: null,
-          budget_leafs: 0,
-          total_leafs: 0,
-          centers: new Map()
-        };
-        aggregate.accounts.set(leaf.account_id, account);
-      }
-      account.actual_cents += cents(display);
-      if (budgetDisplay !== null) {
-        account.budget_cents = (account.budget_cents || 0) + cents(budgetDisplay);
-        account.budget_leafs += 1;
-      }
-      account.total_leafs += 1;
-      const centerKey = `${normalizeCode(leaf.center || "")}|${normalizeCode(leaf.branch || "")}`;
-      let center = account.centers.get(centerKey);
-      if (!center) {
-        center = {
-          center_code: String(leaf.center || ""),
-          center_name: String(leaf.center_name || leaf.center || "Sin centro de costo"),
-          branch_code: String(leaf.branch || ""),
-          branch_name: String(leaf.branch_name || leaf.branch || ""),
-          actual_cents: 0,
-          budget_cents: null,
-          budget_leafs: 0,
-          total_leafs: 0
-        };
-        account.centers.set(centerKey, center);
-      }
-      center.actual_cents += cents(display);
-      if (budgetDisplay !== null) {
-        center.budget_cents = (center.budget_cents || 0) + cents(budgetDisplay);
-        center.budget_leafs += 1;
-      }
-      center.total_leafs += 1;
+      accumulateLeaf(aggregate, entry.leaf, entry.kind);
     }
   }
 
@@ -738,6 +776,84 @@ function buildAccountingReport({ period, concepts, vehicles, tree, leaves, inter
     if (ingresosRow) ingresosRow.pct = pct(ingresosRow.actual, corporateIncome);
   }
 
+  // Lectura paralela por centro de costo (hoja TODOSCC del Excel): una columna
+  // por centro con la misma estructura de conceptos. No altera la asignacion por
+  // placa ni el consolidado: cada hoja cae en un solo centro.
+  const centerEntries = [];
+  for (const holder of buildCenterBuckets({ concepts, leaves }).values()) {
+    // En el Excel el % de cada fila de ingreso del centro (configurada o sin
+    // clasificar) va contra el ingreso total propio del centro: el subtotal
+    // TOTAL_INGRESOS es 100% de ese total, mientras la fila configurada INGRESOS
+    // solo es 100% cuando no hay ingresos sin clasificar (p. ej. 83.33% si parte
+    // del ingreso cae en cuentas sin concepto).
+    const ownIncome = round2([...holder.concepts.values()]
+      .filter((aggregate) => aggregate.kind === "income" && aggregate.section === "ingresos")
+      .reduce((sum, aggregate) => sum + aggregate.actual_cents, 0) / 100);
+    const report = buildBucketReport({ concepts, holder, corporateIncome: ownIncome, dynamicCatalog });
+    centerEntries.push({
+      center_code: holder.center_code,
+      center_name: holder.center_name,
+      branch_code: holder.branch_code,
+      branch_name: holder.branch_name,
+      plate: null,
+      vehicle_label: null,
+      income_actual: report.totals ? report.totals.totalIngresos.actual : 0,
+      unmapped_expense: report.unmappedExpense,
+      rows: report.rows,
+      totals: report.totals
+    });
+  }
+
+  // Un centro con vehiculo activo pero sin movimiento conserva su columna en
+  // cero. Con sucursal conocida la columna es la tupla exacta centro+sucursal:
+  // si el libro no la trae se crea en cero y se agrega a las columnas existentes
+  // (nunca reemplaza la de otra sucursal). Solo cuando la sucursal del vehiculo
+  // es desconocida se acepta un respaldo por codigo unico sin sucursal.
+  const centersByCode = new Map();
+  for (const entry of centerEntries) {
+    const code = normalizeCode(entry.center_code);
+    if (!code) continue;
+    const list = centersByCode.get(code) || [];
+    list.push(entry);
+    centersByCode.set(code, list);
+  }
+  for (const vehicle of vehicles || []) {
+    const info = vehicleCenterInfo(vehicle, tree);
+    const code = normalizeCode(info.center_code);
+    if (!code) continue;
+    const infoBranch = normalizeCode(info.branch_code);
+    const candidates = centersByCode.get(code) || [];
+    let entry = null;
+    if (infoBranch) {
+      entry = candidates.find((item) => normalizeCode(item.branch_code) === infoBranch) || null;
+    } else if (candidates.length === 1 && !normalizeCode(candidates[0].branch_code)) {
+      entry = candidates[0];
+    }
+    if (!entry) {
+      const report = buildBucketReport({ concepts, holder: { concepts: new Map() }, corporateIncome: 0, dynamicCatalog });
+      entry = {
+        center_code: info.center_code,
+        center_name: info.center_name || info.center_code,
+        branch_code: info.branch_code,
+        branch_name: branchNameOf(info.branch_code, tree),
+        plate: null,
+        vehicle_label: null,
+        income_actual: 0,
+        unmapped_expense: 0,
+        rows: report.rows,
+        totals: report.totals
+      };
+      const list = centersByCode.get(code) || [];
+      list.push(entry);
+      centersByCode.set(code, list);
+      centerEntries.push(entry);
+    }
+    entry.plate = entry.plate || vehicle.plate;
+    entry.vehicle_label = entry.vehicle_label || ([vehicle.brand, vehicle.line].filter(Boolean).join(" ") || null);
+  }
+  centerEntries.sort((a, b) => String(a.center_name || a.center_code).localeCompare(String(b.center_name || b.center_code), undefined, { numeric: true })
+    || String(a.branch_code).localeCompare(String(b.branch_code)));
+
   // Consolidado corporativo: suma de todos los bloques (vehiculos + sin asignar),
   // incluyendo el desglose por cuenta y centro para el drill de nombres.
   const corporateAggregates = new Map();
@@ -843,6 +959,7 @@ function buildAccountingReport({ period, concepts, vehicles, tree, leaves, inter
     vehicles_with_income: allBuckets.filter((entry) => entry.vehicle_id !== null && entry.income_actual > 0).length,
     unmapped_total: corporateUnmapped,
     unassigned_centers: unassignedEntry ? 1 : 0,
+    centers_count: centerEntries.length,
     unclassified_income: round2(allBuckets.reduce((sum, entry) => sum + entry.rows.filter((row) => row.dynamic && row.kind === "income").reduce((inner, row) => inner + row.actual, 0), 0)),
     unclassified_expense: round2(allBuckets.reduce((sum, entry) => sum + entry.rows.filter((row) => row.dynamic && row.kind === "expense").reduce((inner, row) => inner + row.actual, 0), 0))
   };
@@ -865,6 +982,7 @@ function buildAccountingReport({ period, concepts, vehicles, tree, leaves, inter
       informational: concept.kind === "informational"
     })),
     vehicles: allBuckets.filter((entry) => entry.vehicle_id !== null),
+    centers: centerEntries,
     unassigned: unassignedEntry,
     corporate: {
       income_actual: corporateIncome,

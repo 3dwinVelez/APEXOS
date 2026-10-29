@@ -4531,16 +4531,22 @@ export type TransportPygVehicle = {
   center_code?: string | null; center_name?: string | null; branch_code?: string | null; branch_name?: string | null;
   income_actual: number; unmapped_expense: number; rows: TransportPygRow[];
 };
+export type TransportPygCenter = {
+  center_code: string; center_name: string; branch_code: string; branch_name: string;
+  plate: string | null; vehicle_label: string | null;
+  income_actual: number; unmapped_expense: number; rows: TransportPygRow[];
+};
 export type TransportPygReport = {
   period: string; period_start: string; period_end: string; tax_percent: number;
   source: "accounting" | "operational"; report_source?: "ledger" | "operational";
   concepts: TransportPygConcept[];
   vehicles: TransportPygVehicle[];
+  centers?: TransportPygCenter[];
   corporate: { income_actual: number; unmapped_expense: number; rows: TransportPygRow[]; totals?: { totalIngresos?: { actual: number }; totalGastos?: { actual: number }; utilidadOp?: { actual: number }; antes?: { actual: number }; impuesto?: { actual: number }; neta?: { actual: number } } };
   unassigned?: TransportPygVehicle | null;
   warnings?: Array<{ code: string; message: string; detail?: unknown }>;
   reconciliation?: { ledger_net: number; neta_actual: number; difference: number; informational_actual: number; note: string };
-  data_status: { vehicle_count: number; vehicles_with_income: number; unmapped_total: number; unassigned_centers?: number; unclassified_income?: number; unclassified_expense?: number };
+  data_status: { vehicle_count: number; vehicles_with_income: number; unmapped_total: number; unassigned_centers?: number; centers_count?: number; unclassified_income?: number; unclassified_expense?: number };
 };
 export type TransportPygBudgets = { period: string; rows: Array<{ vehicle_id: number; concept_code: string; amount: number }> };
 export type TransportPygMapping = { rows: Array<{ source_type: string; source_code: string; pyg_concept_code: string; active: boolean }> };

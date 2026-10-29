@@ -19,13 +19,21 @@ import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
 import { WorldClassToolkit } from "@/components/system/WorldClassToolkit";
 import { FieldProductivity } from "@/components/system/FieldProductivity";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
+import { PYG_EXPANDED_PATH } from "@/lib/pyg-expanded";
 import { ChevronDown, Clock3, SlidersHorizontal } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+// "checking" es el estado inicial idéntico en servidor y cliente (sin leer window/almacenamiento
+// en el render) para evitar desajustes de hidratación. Se resuelve en un efecto al montar.
 type ChromeMode = "checking" | "standard" | "marking_only";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [mode, setMode] = useState<ChromeMode>("checking");
+  // Modo derivado de la ruta exacta de la vista ampliada; nunca se congela ni usa prefijos amplios,
+  // así una navegación SPA a otra ruta restaura el sidebar.
+  const expanded = pathname === PYG_EXPANDED_PATH;
 
   useEffect(() => {
     const markingOnly = isMarkingOnlyAccess();
@@ -34,7 +42,11 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (mode === "checking") {
-    return <main className="min-h-screen bg-paper p-6 text-sm text-neutral-600">Validando perfil de acceso...</main>;
+    return (
+      <div aria-busy="true" className="apex-app-gradient min-h-screen md:flex">
+        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6" id="apex-main-content" tabIndex={-1} />
+      </div>
+    );
   }
 
   if (mode === "marking_only") {
@@ -53,6 +65,19 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="mx-auto min-w-0 max-w-lg overflow-x-hidden p-3 pb-8 sm:p-4">
+          <RouteAccessGuard>{children}</RouteAccessGuard>
+        </main>
+      </div>
+    );
+  }
+
+  // Ventana ampliada del PYG (abierta desde «Abrir en otra ventana»): sin sidebar ni chrome de
+  // workspace, pero conservando autenticación y el guard de módulo/permisos. Se evalúa después
+  // del modo de acceso inicial para no evadir checking ni marking_only.
+  if (expanded) {
+    return (
+      <div className="apex-app-gradient min-h-screen">
+        <main className="min-h-screen overflow-x-hidden p-3 sm:p-4" id="apex-main-content" tabIndex={-1}>
           <RouteAccessGuard>{children}</RouteAccessGuard>
         </main>
       </div>
