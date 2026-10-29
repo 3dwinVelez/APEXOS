@@ -60,6 +60,27 @@ test("el consolidado muestra el bloque sin vehículo aunque no haya placas activ
   assert.match(match[1], /<StatementTable caption=\{`Centros de costo del libro sin vehículo asignado/);
 });
 
+test("por vehículo conserva un único estado individual sin matriz comparativa ni columnas laterales", () => {
+  const body = functionBody("VehiclesView");
+  assert.match(body, /<StatementTable caption=\{`Estado de resultados de la placa \$\{vehicle\.plate\}/);
+  assert.match(body, /rows=\{vehicle\.rows\} title=\{`PYG \$\{vehicle\.plate\} · \$\{report\.period\}`\} \/>/);
+  assert.doesNotMatch(body, /MatrixTable|gridConcepts|xl:grid-cols-\[1\.2fr_1fr\]/);
+  assert.doesNotMatch(page, /Matriz de ejecutados por placa|function MatrixTable\(/);
+});
+
+test("la vista individual mantiene selección de placas, indicadores, sin asignar y desglose contable", () => {
+  const body = functionBody("VehiclesView");
+  assert.match(body, /report\.vehicles\.map\(\(item\) =>/);
+  assert.match(body, /setLocalSelection\(item\.plate\); onSelectPlate\(item\.plate\)/);
+  assert.match(body, /label="Vehículo" value=\{vehicle\.plate\}/);
+  assert.match(body, /label="Ingresos" value=\{money\.format\(vehicle\.income_actual\)\}/);
+  assert.match(body, /label="Utilidad operacional"/);
+  assert.match(body, /label="Utilidad neta"/);
+  assert.match(body, /rows=\{report\.unassigned\.rows\}/);
+  assert.match(functionBody("StatementTable"), /<AccountDrillRow account=\{account\}/);
+  assert.match(functionBody("AccountDrillRow"), /account\.centers\.map/);
+});
+
 test("la configuracion guarda siempre fuente contable y no ofrece cambiar de fuente", () => {
   assert.match(component, /saveTransportPygAccountConfiguration\(\{ source: "accounting", concepts: toPayload\(concepts\) \}\)/);
   assert.doesNotMatch(component, /source: "operational"/);

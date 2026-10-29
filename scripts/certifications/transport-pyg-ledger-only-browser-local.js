@@ -1108,6 +1108,39 @@ async function main() {
     await page.screenshot({ path: shot("pyg-accounting-drill"), fullPage: false });
     screenshots.accounting_drill = relative(shot("pyg-accounting-drill"));
 
+    browserPhase = "pyg_single_vehicle_full_width";
+    await clickTab(page, "Por vehículo");
+    await clickButton(page, V1_PLATE);
+    await page.waitForFunction((plate) => document.body.innerText.includes(`PYG ${plate} · 2026-08`), { timeout: 15000 }, V1_PLATE);
+    const vehicleLayout = await page.evaluate((plate) => {
+      const heading = [...document.querySelectorAll("h2")].find((node) => node.textContent.trim() === `PYG ${plate} · 2026-08`);
+      const section = heading?.closest("section");
+      return {
+        hasComparison: document.body.innerText.includes("Matriz de ejecutados por placa"),
+        statementTables: [...document.querySelectorAll("table")].filter((table) => table.querySelector("thead")?.textContent.toLowerCase().includes("cumplimiento")).length,
+        width: section?.getBoundingClientRect().width || 0,
+        availableWidth: section?.parentElement?.getBoundingClientRect().width || 0
+      };
+    }, V1_PLATE);
+    let vehicleTables = await readStatementTables(page);
+    check("browser_single_vehicle_full_width_without_plate_matrix", !vehicleLayout.hasComparison && vehicleLayout.statementTables === 1 && vehicleLayout.width > 0 && vehicleLayout.width >= vehicleLayout.availableWidth * 0.98, vehicleLayout);
+    check("browser_single_vehicle_values_match_ledger", parseRegionalAmount(statementRow(vehicleTables, 0, "UTILIDAD NETA")?.actual, rowOf(v1, "UTILIDAD_NETA").actual).ok);
+    await page.click('button[aria-label="Desglosar INGRESOS SERVICIO ESPECIAL"]');
+    await page.waitForSelector('button[aria-label="Desglosar Servicio transporte QA"]');
+    await page.click('button[aria-label="Desglosar Servicio transporte QA"]');
+    await page.waitForFunction((plate) => document.body.innerText.includes(`Vehiculo ${plate}`), { timeout: 15000 }, V1_PLATE);
+    check("browser_single_vehicle_drill_preserved", true);
+    await page.screenshot({ path: shot("pyg-single-vehicle"), fullPage: false });
+    screenshots.single_vehicle = relative(shot("pyg-single-vehicle"));
+    await clickButton(page, V2_PLATE);
+    await page.waitForFunction((plate) => document.body.innerText.includes(`PYG ${plate} · 2026-08`), { timeout: 15000 }, V2_PLATE);
+    vehicleTables = await readStatementTables(page);
+    check("browser_switch_vehicle_preserves_individual_values", vehicleTables.length === 1 && parseRegionalAmount(statementRow(vehicleTables, 0, "UTILIDAD NETA")?.actual, rowOf(v2, "UTILIDAD_NETA").actual).ok);
+    await clickButton(page, "Sin vehículo / sin asignar");
+    await page.waitForFunction(() => [...document.querySelectorAll("h2")].some((node) => node.textContent.includes("Sin vehículo / sin asignar · 2026-08")), { timeout: 15000 });
+    vehicleTables = await readStatementTables(page);
+    check("browser_single_unassigned_block_preserved", vehicleTables.length === 1 && !await page.evaluate(() => document.body.innerText.includes("Matriz de ejecutados por placa")));
+
     // Configuracion: fuente fija ledger, sin activacion de fuente ni
     // restauracion operativa. La propuesta del Excel ya es el borrador por
     // defecto (no existe boton "Usar estructura del Excel").
@@ -1302,7 +1335,7 @@ async function main() {
         && parseRegionalAmount(finalNeta?.actual, 2465000).ok,
       { loading_during_assert: loadingMarker, final_neta: finalNeta });
 
-    check("screenshots_captured", ["accounting_drill", "config_ledger_only", "config_saved", "stale_guard"].every((key) => screenshots[key] && fs.existsSync(path.join(root, screenshots[key])) && fs.statSync(path.join(root, screenshots[key])).size > 0), { screenshots });
+    check("screenshots_captured", ["accounting_drill", "single_vehicle", "config_ledger_only", "config_saved", "stale_guard"].every((key) => screenshots[key] && fs.existsSync(path.join(root, screenshots[key])) && fs.statSync(path.join(root, screenshots[key])).size > 0), { screenshots });
     browserPhase = "completed";
   } catch (error) {
     browserPhase = browserPhase || "browser_phase";

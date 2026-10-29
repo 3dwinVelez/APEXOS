@@ -1,0 +1,99 @@
+{
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-single-vehicle-20261028.md",
+    "scripts/certifications/transport-pyg-ledger-only-browser-local.js"
+  ],
+  "change_id": "transport-pyg-single-vehicle-20261028",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-pyg-vehicle-page.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/transport-pyg-single-vehicle-20261028.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/transport-pyg-ledger-only-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/transport-pyg-single-vehicle-20261028-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/transport-pyg-single-vehicle-20261028-scope.json"
+    }
+  ],
+  "base_commits": {
+    "develop": "4e5804cd6face1ac1db134fb53315b1a05d185fd"
+  },
+  "protected_capabilities": [
+    {
+      "name": "pyg_individual_ancho_seleccion_kpis_y_desglose",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ],
+      "status": "passed"
+    },
+    {
+      "name": "bloque_sin_vehiculo_consolidado_presupuesto_y_configuracion",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ],
+      "status": "passed"
+    },
+    {
+      "name": "libro_mes_exacto_permisos_aislamiento_respuestas_tardias_y_actualizacion",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ],
+      "status": "passed"
+    }
+  ],
+  "allowed_deletions": [],
+  "approval": {
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "manue",
+    "scope": "promotion_to_develop_for_qa",
+    "status": "approved",
+    "approved_at": "2026-10-28",
+    "instruction": "Autorizar publicación puntual en QA"
+  },
+  "certified_commit": "e95cd636a48c596e45b43a6c93d2e0b52d2d72cc",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "e95cd636a48c596e45b43a6c93d2e0b52d2d72cc"
+  },
+  "change_intent": {
+    "summary": "Retirar matriz lateral de ejecutados por placa y presentar solo el PYG individual a todo el ancho, conservando selección, indicadores, desglose y bloque sin vehículo.",
+    "modules": [
+      "transport-pyg",
+      "accounting",
+      "qa-evidence"
+    ]
+  },
+  "target_branch": "develop",
+  "base_commit": "4e5804cd6face1ac1db134fb53315b1a05d185fd",
+  "allowed_paths": [
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-single-vehicle-20261028.md",
+    "scripts/certifications/transport-pyg-ledger-only-browser-local.js",
+    "docs/qa/manifests/transport-pyg-single-vehicle-20261028-preqa.json",
+    "docs/qa/manifests/transport-pyg-single-vehicle-20261028-scope.json"
+  ],
+  "promotion_branch": "codex/qa-single-vehicle-20261028",
+  "source_branch": "desarrollo",
+  "scope_schema_version": 2,
+  "target_head": "4e5804cd6face1ac1db134fb53315b1a05d185fd"
+}
