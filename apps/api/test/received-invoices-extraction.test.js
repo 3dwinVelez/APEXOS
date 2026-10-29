@@ -20,11 +20,31 @@ test("el XML UBL se extrae completo y sin marcas de revision", () => {
   assert.equal(parsed.draft.receiver_tax_id, "901555777");
   assert.equal(parsed.draft.subtotal, 1000000);
   assert.equal(parsed.draft.iva, 190000);
+  assert.deepEqual(parsed.draft.iva_percents, [19]);
   assert.equal(parsed.draft.total, 1190000);
   assert.equal(parsed.draft.currency, "COP");
   assert.equal(parsed.draft.issue_date.toISOString().slice(0, 10), "2026-10-20");
+  assert.equal(parsed.draft.cufe_validation.valid, true);
   assert.equal(parsed.draft.needs_review, false);
   assert.deepEqual(parsed.draft.missing_fields, []);
+});
+
+test("el CUFE se valida estructuralmente y un formato inválido exige revisión", () => {
+  const invalid = parseInvoiceXml(buildInvoiceXml({ cufe: "xyz" }));
+  assert.equal(invalid.draft.cufe_validation.valid, false);
+  assert.ok(invalid.draft.validation_issues.some((issue) => issue.code === "CUFE_INVALIDO" && issue.severity === "critical"));
+  assert.equal(invalid.draft.needs_review, true);
+
+  const missing = parseInvoiceXml(buildInvoiceXml({ cufe: "" }));
+  assert.equal(missing.draft.cufe, null);
+  assert.ok(missing.draft.validation_issues.some((issue) => issue.code === "CUFE_NO_IDENTIFICADO" && issue.severity === "critical"));
+  assert.equal(missing.draft.needs_review, true);
+});
+
+test("el NIT se normaliza sin digito de verificacion", () => {
+  const parsed = parseInvoiceXml(buildInvoiceXml({ issuerTaxId: "900123456-7", receiverTaxId: "901.555.777-2" }));
+  assert.equal(parsed.draft.issuer_tax_id, "900123456");
+  assert.equal(parsed.draft.receiver_tax_id, "901555777");
 });
 
 test("el XML incompleto queda marcado para revision y no inventa datos", () => {

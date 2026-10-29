@@ -4,10 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, ArrowRight, CheckCircle2, FileText, Inbox,
-  RefreshCw, Search, Settings2, Upload, X
+  AlertTriangle, ArrowRight, CheckCircle2, Eye, FileText, Inbox,
+  Monitor, RefreshCw, Search, Settings2, Upload, UserCog, X
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { API_BASE_URL } from "@/lib/apiBaseUrl";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form-controls";
@@ -15,23 +16,45 @@ import { Alert, Badge, EmptyState, Skeleton } from "@/components/ui/feedback";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 
 type Tone = "neutral" | "success" | "warning" | "error" | "info";
+type ExtractionMetadata = {
+  iva_percents?: number[];
+  cufe_validation?: { valid: boolean; format?: string | null; length?: number; scheme_name?: string | null } | null;
+  pdf_comparison?: { page_count?: number } | null;
+  line_count?: number;
+  missing_fields?: string[];
+  archive?: string | null;
+} | null;
 type InvoiceRow = {
   id: number;
   full_number: string;
+  document_type: string;
+  document_type_label: string | null;
+  cufe: string | null;
   issuer_name: string | null;
   issuer_tax_id: string | null;
+  receiver_name: string | null;
+  receiver_tax_id: string | null;
   issue_date: string | null;
   reception_date: string;
+  subtotal: number | string;
+  iva: number | string;
+  tax_total: number | string;
   total: number | string;
   currency: string | null;
   processing_status: string;
   assignment_status: string;
   processing_label: string;
   assignment_label: string;
+  invoice_status: string;
+  responsible_user_id: number | null;
   responsible_name: string | null;
+  group_name: string | null;
+  cost_center: string | null;
+  segment: string | null;
   needs_review: boolean;
   pdf_available: boolean;
   xml_available: boolean;
+  extraction_metadata: ExtractionMetadata;
 };
 type Summary = { received: number; pending_assignment: number; assigned: number; processed: number; review: number; errors: number; unresolved_errors: number; total_amount: number | string };
 type Meta = { page: number; page_size: number; total: number; pages: number };
@@ -117,7 +140,9 @@ export default function FacturasRecibidasPage() {
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [mailOpen, setMailOpen] = useState(false);
-  const [tab, setTab] = useState<"inbox" | "emails" | "errors">("inbox");
+  const [tab, setTab] = useState<"inbox" | "monitor" | "emails" | "errors">("inbox");
+  const [pdfInvoice, setPdfInvoice] = useState<InvoiceRow | null>(null);
+  const [assignTarget, setAssignTarget] = useState<InvoiceRow | null>(null);
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -198,47 +223,50 @@ export default function FacturasRecibidasPage() {
       </section>
 
       <nav aria-label="Secciones del módulo" className="flex flex-wrap gap-2">
-        {([["inbox", "Bandeja"], ["emails", "Correos procesados"], ["errors", "Errores"]] as const).map(([key, label]) => (
+        {([["inbox", "Bandeja"], ["monitor", "Monitor"], ["emails", "Correos procesados"], ["errors", "Errores"]] as const).map(([key, label]) => (
           <button className={`rounded-md border px-3 py-2 text-sm ${tab === key ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body"}`} key={key} onClick={() => setTab(key)} type="button">{label}</button>
         ))}
       </nav>
 
+      {tab === "inbox" || tab === "monitor" ? (
+        <form className="apex-section-card space-y-3 p-3" onSubmit={applyFilters}>
+          <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_180px_180px]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
+              <input aria-label="Buscar factura" className="h-10 w-full rounded-md border border-line bg-surface pl-9 pr-3 text-sm text-content-strong outline-none focus:border-apex" onChange={(event) => setFilters({ ...filters, q: event.target.value })} placeholder="Buscar por número, proveedor, NIT o CUFE" value={filters.q} />
+            </div>
+            <Select aria-label="Estado de procesamiento" onChange={(event) => setFilters({ ...filters, processing_status: event.target.value })} value={filters.processing_status}>
+              {PROCESSING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </Select>
+            <Select aria-label="Estado de asignación" onChange={(event) => setFilters({ ...filters, assignment_status: event.target.value })} value={filters.assignment_status}>
+              {ASSIGNMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </Select>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Input label="Recepción desde" onChange={(event) => setFilters({ ...filters, from: event.target.value })} type="date" value={filters.from} />
+            <Input label="Recepción hasta" onChange={(event) => setFilters({ ...filters, to: event.target.value })} type="date" value={filters.to} />
+            <Input label="Emisión desde" onChange={(event) => setFilters({ ...filters, issue_from: event.target.value })} type="date" value={filters.issue_from} />
+            <Input label="Emisión hasta" onChange={(event) => setFilters({ ...filters, issue_to: event.target.value })} type="date" value={filters.issue_to} />
+            <Input label="NIT proveedor" onChange={(event) => setFilters({ ...filters, nit: event.target.value })} value={filters.nit} />
+            <Input label="Número de factura" onChange={(event) => setFilters({ ...filters, number: event.target.value })} value={filters.number} />
+            <Input label="Proveedor" onChange={(event) => setFilters({ ...filters, supplier: event.target.value })} value={filters.supplier} />
+            <Select label="Responsable" onChange={(event) => setFilters({ ...filters, responsible_user_id: event.target.value })} value={filters.responsible_user_id}>
+              <option value="">Todos los responsables</option>
+              {responsibles.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
+            </Select>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-content-muted">{hasFilters ? "Filtros activos en la vista." : "Sin filtros: se muestran las facturas más recientes."}</p>
+            <div className="flex gap-2">
+              {hasFilters ? <Button onClick={clearFilters} type="button" variant="ghost"><X size={16} /> Limpiar</Button> : null}
+              <Button type="submit" variant="secondary"><Search size={16} /> Aplicar filtros</Button>
+            </div>
+          </div>
+        </form>
+      ) : null}
+
       {tab === "inbox" ? (
         <>
-          <form className="apex-section-card space-y-3 p-3" onSubmit={applyFilters}>
-            <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_180px_180px]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
-                <input aria-label="Buscar factura" className="h-10 w-full rounded-md border border-line bg-surface pl-9 pr-3 text-sm text-content-strong outline-none focus:border-apex" onChange={(event) => setFilters({ ...filters, q: event.target.value })} placeholder="Buscar por número, proveedor, NIT o CUFE" value={filters.q} />
-              </div>
-              <Select aria-label="Estado de procesamiento" onChange={(event) => setFilters({ ...filters, processing_status: event.target.value })} value={filters.processing_status}>
-                {PROCESSING_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </Select>
-              <Select aria-label="Estado de asignación" onChange={(event) => setFilters({ ...filters, assignment_status: event.target.value })} value={filters.assignment_status}>
-                {ASSIGNMENT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-              </Select>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <Input label="Recepción desde" onChange={(event) => setFilters({ ...filters, from: event.target.value })} type="date" value={filters.from} />
-              <Input label="Recepción hasta" onChange={(event) => setFilters({ ...filters, to: event.target.value })} type="date" value={filters.to} />
-              <Input label="Emisión desde" onChange={(event) => setFilters({ ...filters, issue_from: event.target.value })} type="date" value={filters.issue_from} />
-              <Input label="Emisión hasta" onChange={(event) => setFilters({ ...filters, issue_to: event.target.value })} type="date" value={filters.issue_to} />
-              <Input label="NIT proveedor" onChange={(event) => setFilters({ ...filters, nit: event.target.value })} value={filters.nit} />
-              <Input label="Número de factura" onChange={(event) => setFilters({ ...filters, number: event.target.value })} value={filters.number} />
-              <Input label="Proveedor" onChange={(event) => setFilters({ ...filters, supplier: event.target.value })} value={filters.supplier} />
-              <Select label="Responsable" onChange={(event) => setFilters({ ...filters, responsible_user_id: event.target.value })} value={filters.responsible_user_id}>
-                <option value="">Todos los responsables</option>
-                {responsibles.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
-              </Select>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-content-muted">{hasFilters ? "Filtros activos sobre la bandeja." : "Sin filtros: se muestran las facturas más recientes."}</p>
-              <div className="flex gap-2">
-                {hasFilters ? <Button onClick={clearFilters} type="button" variant="ghost"><X size={16} /> Limpiar</Button> : null}
-                <Button type="submit" variant="secondary"><Search size={16} /> Aplicar filtros</Button>
-              </div>
-            </div>
-          </form>
 
           <section className="apex-section-card overflow-hidden">
             <div className="hidden overflow-x-auto md:block">
@@ -324,6 +352,18 @@ export default function FacturasRecibidasPage() {
         </>
       ) : null}
 
+      {tab === "monitor" ? (
+        <MonitorPanel
+          loading={loading}
+          meta={meta}
+          onAssign={setAssignTarget}
+          onPage={setPage}
+          onPreviewPdf={setPdfInvoice}
+          page={page}
+          rows={rows}
+        />
+      ) : null}
+
       {tab === "emails" ? <EmailsPanel /> : null}
       {tab === "errors" ? <ErrorsPanel onResolved={() => { setMessage("Error marcado como resuelto."); void load(); }} /> : null}
 
@@ -337,7 +377,344 @@ export default function FacturasRecibidasPage() {
       ) : null}
 
       {mailOpen ? <MailConfigModal onClose={() => setMailOpen(false)} onSynced={(text) => { setMailOpen(false); setMessage(text); void load(); }} /> : null}
+
+      {pdfInvoice ? <InvoicePdfModal invoice={pdfInvoice} onClose={() => setPdfInvoice(null)} /> : null}
+
+      {assignTarget ? (
+        <AssignCostCenterModal
+          invoice={assignTarget}
+          responsibles={responsibles}
+          onClose={() => setAssignTarget(null)}
+          onDone={(text) => { setAssignTarget(null); setMessage(text); void load(); }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+type InvoiceDocument = { id: number; document_type: string; file_name: string; size_bytes: number; is_primary: boolean };
+type InvoiceDetail = {
+  full_number: string;
+  processing_status: string;
+  responsible_user_id: number | null;
+  responsible_name: string | null;
+  cost_center: string | null;
+  segment: string | null;
+  assignment_detail: string | null;
+  segments: string[];
+  documents: InvoiceDocument[];
+};
+
+function cufeStatus(row: InvoiceRow) {
+  if (!row.cufe) return { label: "No informado", tone: "warning" as Tone };
+  const validation = row.extraction_metadata?.cufe_validation;
+  if (!validation) return { label: "Sin validar", tone: "neutral" as Tone };
+  return validation.valid
+    ? { label: validation.format ? `Válido · ${validation.format}` : "Válido", tone: "success" as Tone }
+    : { label: "Inválido", tone: "error" as Tone };
+}
+
+function ivaPercents(row: InvoiceRow) {
+  const percents = row.extraction_metadata?.iva_percents;
+  return Array.isArray(percents) ? percents.filter((value) => Number.isFinite(Number(value))) : [];
+}
+
+function MonitorPanel({ rows, loading, meta, page, onPage, onPreviewPdf, onAssign }: {
+  rows: InvoiceRow[];
+  loading: boolean;
+  meta: Meta;
+  page: number;
+  onPage: (page: number) => void;
+  onPreviewPdf: (invoice: InvoiceRow) => void;
+  onAssign: (invoice: InvoiceRow) => void;
+}) {
+  const stats = useMemo(() => ({
+    cufe: rows.filter((row) => row.extraction_metadata?.cufe_validation?.valid).length,
+    withIva: rows.filter((row) => Number(row.iva) > 0).length,
+    withoutCostCenter: rows.filter((row) => !row.cost_center).length,
+    pdf: rows.filter((row) => row.pdf_available).length
+  }), [rows]);
+
+  return (
+    <section aria-label="Monitor de facturas extraídas" className="apex-section-card overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-line p-3">
+        <div>
+          <div className="flex items-center gap-2"><Monitor className="text-apex" size={18} /><h2 className="font-semibold text-content-strong">Monitor de extracción</h2></div>
+          <p className="mt-1 text-xs text-content-muted">Datos obtenidos del XML/PDF, validación del CUFE, IVA y centro de costo de la vista actual.</p>
+        </div>
+        <div className="flex flex-wrap gap-3 text-xs text-content-muted">
+          <span><strong className="text-content-strong">{rows.length}</strong> en la vista</span>
+          <span><strong className="text-success">{stats.cufe}</strong> con CUFE validado</span>
+          <span><strong className="text-content-strong">{stats.withIva}</strong> con IVA</span>
+          <span><strong className="text-warning">{stats.withoutCostCenter}</strong> sin centro de costo</span>
+          <span><strong className="text-content-strong">{stats.pdf}</strong> con PDF</span>
+        </div>
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[1080px] text-sm">
+          <thead>
+            <tr className="border-b border-line bg-surface-muted text-left text-xs uppercase tracking-wide text-content-muted">
+              <th className="px-2 py-2">Factura</th>
+              <th className="px-2 py-2">Emisor</th>
+              <th className="px-2 py-2">Receptor</th>
+              <th className="px-2 py-2">Emisión</th>
+              <th className="px-2 py-2 text-right">IVA</th>
+              <th className="px-2 py-2 text-right">Total</th>
+              <th className="px-2 py-2">CUFE</th>
+              <th className="px-2 py-2">Centro de costo</th>
+              <th className="sticky right-0 z-10 border-l border-line bg-surface-muted px-2 py-2 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? Array.from({ length: 4 }).map((_, index) => (
+              <tr className="border-b border-line" key={`monitor-skeleton-${index}`}>
+                {Array.from({ length: 9 }).map((__, cell) => <td className="px-2 py-3" key={cell}><Skeleton className="h-4 w-full" /></td>)}
+              </tr>
+            )) : rows.map((row) => {
+              const cufe = cufeStatus(row);
+              const percents = ivaPercents(row);
+              return (
+                <tr className="border-b border-line last:border-0 hover:bg-surface-muted/60" key={row.id}>
+                  <td className="px-2 py-2">
+                    <Link aria-label={`Abrir factura ${row.full_number}`} className="whitespace-nowrap font-mono font-semibold text-apex hover:underline" href={`/dashboard/contabilidad/facturas-recibidas/${row.id}`}>{row.full_number}</Link>
+                    <div className="mt-0.5 flex flex-wrap gap-1 text-[10px] uppercase text-content-muted">
+                      <span>{row.document_type_label || row.document_type}</span>
+                      {row.xml_available ? <span>· XML</span> : null}
+                      {row.pdf_available ? <span>· PDF</span> : null}
+                    </div>
+                  </td>
+                  <td className="max-w-[170px] px-2 py-2">
+                    <p className="truncate text-content-strong" title={row.issuer_name || ""}>{row.issuer_name || "(sin nombre)"}</p>
+                    <p className="font-mono text-xs text-content-muted">{row.issuer_tax_id || "--"}</p>
+                  </td>
+                  <td className="max-w-[150px] px-2 py-2">
+                    <p className="truncate text-content-body" title={row.receiver_name || ""}>{row.receiver_name || "(sin nombre)"}</p>
+                    <p className="font-mono text-xs text-content-muted">{row.receiver_tax_id || "--"}</p>
+                  </td>
+                  <td className="whitespace-nowrap px-2 py-2">{formatDate(row.issue_date)}</td>
+                  <td className="px-2 py-2 text-right">
+                    <p className="font-mono">{Number(row.iva) > 0 ? money(row.iva, row.currency || "COP") : "Sin IVA"}</p>
+                    {percents.length ? <p className="text-xs text-content-muted">{percents.map((value) => `${value}%`).join(" · ")}</p> : null}
+                  </td>
+                  <td className="whitespace-nowrap px-2 py-2 text-right font-mono font-semibold">{money(row.total, row.currency || "COP")}</td>
+                  <td className="max-w-[140px] px-2 py-2">
+                    <p className="truncate font-mono text-xs text-content-body" title={row.cufe || ""}>{row.cufe || "--"}</p>
+                    <Badge tone={cufe.tone}>{cufe.label}</Badge>
+                  </td>
+                  <td className="px-2 py-2">
+                    <p className="whitespace-nowrap text-content-strong">{row.cost_center || "Sin asignar"}</p>
+                    <p className="text-xs text-content-muted">{row.responsible_name || "Sin responsable"}{row.segment ? ` · ${row.segment}` : ""}</p>
+                  </td>
+                  <td className="sticky right-0 border-l border-line bg-surface px-2 py-2">
+                    <div className="flex justify-end gap-1">
+                      <Button aria-label={`Ver PDF de ${row.full_number}`} disabled={!row.pdf_available} onClick={() => onPreviewPdf(row)} size="compact" type="button" variant="ghost"><Eye size={16} /> PDF</Button>
+                      <Button aria-label={`Asignar centro de costo a ${row.full_number}`} disabled={row.processing_status === "processed"} onClick={() => onAssign(row)} size="compact" type="button" variant="secondary"><UserCog size={16} /> Asignar</Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="divide-y divide-line md:hidden">
+        {loading ? Array.from({ length: 3 }).map((_, index) => <div className="p-4" key={index}><Skeleton className="h-24 w-full" /></div>) : rows.map((row) => {
+          const cufe = cufeStatus(row);
+          const percents = ivaPercents(row);
+          return (
+            <article className="p-4" key={row.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <Link className="font-mono text-sm font-semibold text-apex" href={`/dashboard/contabilidad/facturas-recibidas/${row.id}`}>{row.full_number}</Link>
+                  <p className="truncate text-sm text-content-strong">{row.issuer_name || "(sin nombre)"}</p>
+                  <p className="text-xs text-content-muted">NIT {row.issuer_tax_id || "--"} · {formatDate(row.issue_date)}</p>
+                </div>
+                <p className="shrink-0 font-mono text-sm font-semibold">{money(row.total, row.currency || "COP")}</p>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-1">
+                <Badge tone={cufe.tone}>{cufe.label}</Badge>
+                <Badge>{Number(row.iva) > 0 ? `IVA ${percents.length ? `${percents.map((value) => `${value}%`).join(" · ")} · ` : ""}${money(row.iva, row.currency || "COP")}` : "Sin IVA"}</Badge>
+                <Badge tone={row.cost_center ? "info" : "warning"}>{row.cost_center || "Sin centro de costo"}</Badge>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1">
+                <Button aria-label={`Ver PDF de ${row.full_number}`} disabled={!row.pdf_available} onClick={() => onPreviewPdf(row)} size="compact" type="button" variant="secondary"><Eye size={16} /> PDF</Button>
+                <Button aria-label={`Asignar centro de costo a ${row.full_number}`} disabled={row.processing_status === "processed"} onClick={() => onAssign(row)} size="compact" type="button"><UserCog size={16} /> Asignar</Button>
+                <Link aria-label={`Abrir factura ${row.full_number}`} className="inline-flex h-9 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold text-apex hover:border-apex" href={`/dashboard/contabilidad/facturas-recibidas/${row.id}`}>Abrir <ArrowRight size={14} /></Link>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {!loading && !rows.length ? (
+        <EmptyState
+          description="Carga un ZIP, sincroniza el buzón o ejecuta la carpeta monitoreada para ver los datos extraídos."
+          icon={<Monitor size={22} />}
+          title="Aún no hay facturas para monitorear"
+        />
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-2 text-sm">
+        <span className="text-content-muted">{meta.total} factura(s) · página {meta.page} de {meta.pages}</span>
+        <div className="flex gap-2">
+          <Button disabled={page <= 1 || loading} onClick={() => onPage(Math.max(1, page - 1))} size="compact" type="button" variant="secondary">Anterior</Button>
+          <Button disabled={page >= meta.pages || loading} onClick={() => onPage(page + 1)} size="compact" type="button" variant="secondary">Siguiente</Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InvoicePdfModal({ invoice, onClose }: { invoice: InvoiceRow; onClose: () => void }) {
+  const [url, setUrl] = useState("");
+  const [document, setDocument] = useState<InvoiceDocument | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl = "";
+    setLoading(true);
+    setError("");
+    api<InvoiceDetail>(`/api/v1/accounting/received-invoices/${invoice.id}`, { cache: "no-store" })
+      .then(async (detail) => {
+        const pdf = detail.documents.find((item) => item.document_type === "pdf" && item.is_primary)
+          || detail.documents.find((item) => item.document_type === "pdf");
+        if (!pdf) throw new Error("Esta factura no tiene PDF adjunto.");
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        const response = await fetch(`${API_BASE_URL}/api/v1/accounting/received-invoices/${invoice.id}/documents/${pdf.id}/file`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (!response.ok) throw new Error("No fue posible abrir el PDF de la factura.");
+        objectUrl = URL.createObjectURL(await response.blob());
+        if (cancelled) { URL.revokeObjectURL(objectUrl); return; }
+        setDocument(pdf);
+        setUrl(objectUrl);
+      })
+      .catch((caught) => { if (!cancelled) setError(describeError(caught, "No fue posible abrir el PDF.")); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [invoice.id]);
+
+  function download() {
+    if (!url || !document) return;
+    const anchor = documentAnchor(url, document.file_name);
+    anchor.click();
+  }
+
+  return (
+    <ModalFrame
+      footer={(
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button disabled={!url} onClick={download} type="button" variant="secondary">Descargar PDF</Button>
+          <Button onClick={onClose} type="button" variant="ghost">Cerrar</Button>
+        </div>
+      )}
+      maxWidth="md:max-w-5xl"
+      onClose={onClose}
+      title={`PDF · ${invoice.full_number}`}
+    >
+      {loading ? <Skeleton className="h-[70vh] w-full" /> : null}
+      {error ? <Alert tone="error">{error}</Alert> : null}
+      {url ? <iframe className="h-[70vh] w-full rounded-md border border-line bg-surface" src={url} title={`PDF de la factura ${invoice.full_number}`} /> : null}
+    </ModalFrame>
+  );
+}
+
+function documentAnchor(url: string, fileName: string) {
+  const anchor = window.document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName || "factura.pdf";
+  return anchor;
+}
+
+function AssignCostCenterModal({ invoice, responsibles, onClose, onDone }: {
+  invoice: InvoiceRow;
+  responsibles: Responsible[];
+  onClose: () => void;
+  onDone: (message: string) => void;
+}) {
+  const [detail, setDetail] = useState<InvoiceDetail | null>(null);
+  const [responsibleId, setResponsibleId] = useState(invoice.responsible_user_id ? String(invoice.responsible_user_id) : "");
+  const [costCenter, setCostCenter] = useState(invoice.cost_center || "");
+  const [segment, setSegment] = useState(invoice.segment || "");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    api<InvoiceDetail>(`/api/v1/accounting/received-invoices/${invoice.id}`, { cache: "no-store" })
+      .then((loaded) => {
+        if (cancelled) return;
+        setDetail(loaded);
+        setResponsibleId(loaded.responsible_user_id ? String(loaded.responsible_user_id) : "");
+        setCostCenter(loaded.cost_center || "");
+        setSegment(loaded.segment || "");
+        setNote(loaded.assignment_detail || "");
+      })
+      .catch((caught) => { if (!cancelled) setError(describeError(caught, "No fue posible cargar la factura.")); });
+    return () => { cancelled = true; };
+  }, [invoice.id]);
+
+  async function submit() {
+    const person = responsibles.find((user) => String(user.id) === responsibleId);
+    if (!person) { setError("Selecciona el responsable de la factura."); return; }
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/api/v1/accounting/received-invoices/${invoice.id}/assign`, {
+        method: "POST",
+        body: JSON.stringify({
+          responsible_user_id: person.id,
+          segment: segment || undefined,
+          cost_center: costCenter.trim() || undefined,
+          assignment_detail: note.trim() || undefined
+        })
+      });
+      onDone(`Factura ${invoice.full_number} asignada a ${person.name}${costCenter.trim() ? ` · centro de costo ${costCenter.trim()}` : ""}.`);
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible asignar la factura."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalFrame
+      footer={(
+        <div className="flex justify-end gap-2">
+          <Button onClick={onClose} type="button" variant="ghost">Cancelar</Button>
+          <Button disabled={busy || !responsibleId || !detail} loading={busy} onClick={() => void submit()} type="button">Asignar</Button>
+        </div>
+      )}
+      onClose={onClose}
+      title={`Asignar centro de costo · ${invoice.full_number}`}
+    >
+      <div className="space-y-3 text-sm">
+        <p className="text-content-body">{invoice.issuer_name || "(proveedor sin nombre)"} · NIT {invoice.issuer_tax_id || "--"} · Total {money(invoice.total, invoice.currency || "COP")}</p>
+        {detail ? (
+          <>
+            <Select label="Responsable" onChange={(event) => setResponsibleId(event.target.value)} value={responsibleId}>
+              <option value="">Selecciona un responsable</option>
+              {responsibles.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
+            </Select>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input label="Centro de costo" onChange={(event) => setCostCenter(event.target.value)} value={costCenter} />
+              <Select label="Segmento" onChange={(event) => setSegment(event.target.value)} value={segment}>
+                <option value="">Sin segmento</option>
+                {(detail.segments || []).map((item) => <option key={item} value={item}>{item}</option>)}
+              </Select>
+            </div>
+            <Input label="Detalle de la asignación" onChange={(event) => setNote(event.target.value)} value={note} />
+            <p className="text-xs text-content-muted">La asignación queda auditada con responsable, segmento, centro de costo y fecha.</p>
+          </>
+        ) : !error ? <Skeleton className="h-32 w-full" /> : null}
+        {error ? <Alert tone="error">{error}</Alert> : null}
+      </div>
+    </ModalFrame>
   );
 }
 

@@ -145,8 +145,40 @@ function toDate(value) {
 function normalizeTaxId(value) {
   const raw = textOf(value);
   if (!raw) return null;
-  const compact = raw.toUpperCase().replace(/[\s.]/g, "").replace(/-/g, "");
+  // El NIT puede venir con digito de verificacion ("900123456-7"); se conserva
+  // solo la parte base para que emisor y receptor sean comparables entre vias.
+  const withoutCheckDigit = raw.split("-")[0];
+  const compact = withoutCheckDigit.toUpperCase().replace(/[\s.]/g, "");
   return compact || null;
+}
+
+// Validacion estructural (sin consultar la DIAN): longitud y alfabeto del
+// CUFE/CUDE. Acepta hex SHA-384 de 96 caracteres y su representacion base64.
+function validateCufe(value, schemeName = null) {
+  if (!value) return { valid: false, reason: "CUFE_NO_ENCONTRADO", checks: [] };
+  const text = String(value).trim();
+  const isHex96 = /^[0-9a-f]{96}$/i.test(text);
+  const isBase64Sha384 = !isHex96 && /^[A-Za-z0-9+/]{64}={0,2}$/.test(text);
+  const scheme = schemeName ? String(schemeName).toUpperCase() : null;
+  const checks = [
+    { check: "longitud", ok: text.length === 96 || text.length === 64, detail: `${text.length} caracteres` },
+    { check: "formato", ok: isHex96 || isBase64Sha384, detail: isHex96 ? "hex SHA-384" : isBase64Sha384 ? "base64 SHA-384" : "no reconocido" }
+  ];
+  if (scheme) {
+    checks.push({
+      check: "esquema",
+      ok: scheme.includes("SHA384") || scheme.includes("CUFE") || scheme.includes("CUDE"),
+      detail: scheme
+    });
+  }
+  return {
+    valid: checks.every((item) => item.ok),
+    cufe: text,
+    format: isHex96 ? "hex" : isBase64Sha384 ? "base64" : "unknown",
+    length: text.length,
+    scheme_name: scheme,
+    checks
+  };
 }
 
 function splitInvoiceNumber(raw, prefixHint) {
@@ -186,6 +218,9 @@ function normalizeDraft(draft) {
     ica: roundMoney(draft.ica) ?? 0,
     inc: roundMoney(draft.inc) ?? 0,
     tax_total: roundMoney(draft.tax_total) ?? 0,
+    iva_percents: Array.isArray(draft.iva_percents) ? draft.iva_percents : [],
+    cufe_scheme: draft.cufe_scheme || null,
+    cufe_validation: draft.cufe_validation || null,
     total: roundMoney(draft.total),
     currency: draft.currency ? String(draft.currency).trim().toUpperCase() : null,
     dian_validation_status: draft.dian_validation_status || null,
@@ -215,7 +250,14 @@ function finalizeDraft(input) {
   check("total", draft.total, "TOTAL_NO_IDENTIFICADO", "Total de la factura", "critical");
   if (!draft.cufe) {
     missing.push("cufe");
-    issues.push(issue("CUFE_NO_IDENTIFICADO", "CUFE/CUDE no identificado; el control de duplicados usará emisor y número.", "cufe", "warning"));
+    issues.push(issue("CUFE_NO_IDENTIFICADO", "CUFE/CUDE no identificado; el control de duplicados usará emisor y número.", "cufe", "critical"));
+  } else if (draft.cufe_validation && draft.cufe_validation.valid === false) {
+    issues.push(issue(
+      "CUFE_INVALIDO",
+      `El CUFE/CUDE no tiene un formato reconocible (${draft.cufe_validation.length || 0} caracteres).`,
+      "cufe",
+      "critical"
+    ));
   }
 
   if (draft.subtotal !== null && draft.total !== null && draft.subtotal > 0) {
@@ -298,22 +340,27 @@ function taxBreakdown(invoice) {
   let ica = 0;
   let inc = 0;
   let taxTotal = 0;
+  const ivaPercents = new Set();
   for (const totalNode of asArray(invoice.TaxTotal)) {
     const declared = toAmount(textOf(child(totalNode, "TaxAmount")));
     if (declared !== null) taxTotal += declared;
     for (const subtotal of asArray(child(totalNode, "TaxSubtotal"))) {
+      const schemeId = textOf(at(subtotal, "TaxCategory.TaxScheme.ID"));
       const scheme = textOf(at(subtotal, "TaxCategory.TaxScheme.Name"))
-        || textOf(at(subtotal, "TaxCategory.TaxScheme.ID"))
+        || schemeId
         || textOf(at(subtotal, "TaxCategory.Name"))
         || "";
       const amount = toAmount(textOf(child(subtotal, "TaxAmount"))) || 0;
-      if (/IVA/i.test(scheme)) iva += amount;
-      else if (/ICA/i.test(scheme)) ica += amount;
+      if (/IVA/i.test(scheme) || schemeId === "01") {
+        iva += amount;
+        const percent = Number(textOf(at(subtotal, "TaxCategory.Percent")));
+        if (Number.isFinite(percent)) ivaPercents.add(Math.round(percent * 100) / 100);
+      } else if (/ICA/i.test(scheme)) ica += amount;
       else if (/INC|CONSUMO|IEPS/i.test(scheme)) inc += amount;
     }
   }
   if (!taxTotal) taxTotal = iva + ica + inc;
-  return { iva, ica, inc, tax_total: taxTotal };
+  return { iva, ica, inc, tax_total: taxTotal, iva_percents: [...ivaPercents].sort((left, right) => left - right) };
 }
 
 function parseUbl(root, kind) {
@@ -333,9 +380,15 @@ function parseUbl(root, kind) {
   if (total === null && subtotal !== null) total = roundMoney(subtotal + totals.tax_total);
   if ((total === null || total === 0) && taxInclusive) total = taxInclusive;
 
+  const uuidNode = child(root, "UUID");
+  const cufe = textOf(uuidNode) || textOf(deepFind(root, "UUID"));
+  const cufeScheme = attrOf(uuidNode, "schemeName");
+
   const draft = {
     document_type: kind,
-    cufe: textOf(child(root, "UUID")) || textOf(deepFind(root, "UUID")),
+    cufe,
+    cufe_scheme: cufeScheme,
+    cufe_validation: validateCufe(cufe, cufeScheme),
     prefix: number.prefix,
     invoice_number: number.number,
     full_number: number.full,
@@ -349,6 +402,7 @@ function parseUbl(root, kind) {
     ica: totals.ica,
     inc: totals.inc,
     tax_total: totals.tax_total,
+    iva_percents: totals.iva_percents,
     total,
     currency: textOf(child(root, "DocumentCurrencyCode")) || textOf(deepFind(root, "DocumentCurrencyCode")),
     dian_validation_status: null,
@@ -382,12 +436,16 @@ function parseCfdi(root) {
   let iva = 0;
   let inc = 0;
   let taxTotal = 0;
+  const ivaPercents = new Set();
   for (const traslado of asArray(at(impuestos, "Traslados.Traslado"))) {
     const code = attrOf(traslado, "Impuesto");
     const amount = toAmount(attrOf(traslado, "Importe")) || 0;
     taxTotal += amount;
-    if (code === "002") iva += amount;
-    else if (code === "003") inc += amount;
+    if (code === "002") {
+      iva += amount;
+      const rate = Number(attrOf(traslado, "TasaOCuota"));
+      if (Number.isFinite(rate)) ivaPercents.add(Math.round(rate * 10000) / 100);
+    } else if (code === "003") inc += amount;
   }
   const declaredTax = toAmount(attrOf(impuestos, "TotalImpuestosTrasladados"));
   if (declaredTax !== null) taxTotal = declaredTax;
@@ -410,6 +468,7 @@ function parseCfdi(root) {
     ica: 0,
     inc,
     tax_total: taxTotal,
+    iva_percents: [...ivaPercents].sort((left, right) => left - right),
     total,
     currency: attrOf(root, "Moneda"),
     dian_validation_status: uuid ? "Timbrado (SAT)" : null,
@@ -445,6 +504,7 @@ function parseGeneric(root) {
     ica: 0,
     inc: 0,
     tax_total: toAmount(value(["TaxTotal", "TotalTaxes", "TotalImpuestos"])) || 0,
+    iva_percents: [],
     total,
     currency: value(["Currency", "Moneda", "DocumentCurrencyCode"]),
     dian_validation_status: null,
@@ -524,5 +584,6 @@ module.exports = {
   splitInvoiceNumber,
   toAmount,
   toDate,
-  roundMoney
+  roundMoney,
+  validateCufe
 };

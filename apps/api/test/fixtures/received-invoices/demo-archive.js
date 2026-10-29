@@ -60,6 +60,7 @@ function buildInvoiceXml(options = {}) {
       <TaxableAmount>${data.subtotal.toFixed(2)}</TaxableAmount>
       <TaxAmount>${data.iva.toFixed(2)}</TaxAmount>
       <TaxCategory>
+        <Percent>19.00</Percent>
         <TaxScheme><ID>01</ID><Name>IVA</Name></TaxScheme>
       </TaxCategory>
     </TaxSubtotal>

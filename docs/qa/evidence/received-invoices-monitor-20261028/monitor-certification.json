@@ -1,0 +1,319 @@
+{
+  "suite": "received-invoices-monitor",
+  "mode": "headless",
+  "executed_at": "2026-10-29T03:15:49.883Z",
+  "tenant_id": "monitor-invoices-f181024d4f",
+  "api": "http://127.0.0.1:3000",
+  "web": "http://127.0.0.1:3001",
+  "total": 17,
+  "passed": 17,
+  "failed": 0,
+  "checks": [
+    {
+      "apiUp": true,
+      "webUp": true,
+      "name": "La API local y el frontend estan disponibles",
+      "status": "passed"
+    },
+    {
+      "name": "El tenant de certificacion tiene lider y responsable activos",
+      "status": "passed"
+    },
+    {
+      "firstRun": {
+        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-7dTnkb",
+        "tenant_id": "monitor-invoices-f181024d4f",
+        "scanned": 2,
+        "inserted": 2,
+        "duplicates": 0,
+        "failed": []
+      },
+      "name": "La carpeta procesa XML con PDF hermano y ZIP por la tuberia unificada",
+      "status": "passed"
+    },
+    {
+      "secondRun": {
+        "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-7dTnkb",
+        "tenant_id": "monitor-invoices-f181024d4f",
+        "scanned": 2,
+        "inserted": 0,
+        "duplicates": 2,
+        "failed": []
+      },
+      "name": "Una segunda corrida de la carpeta no duplica facturas",
+      "status": "passed"
+    },
+    {
+      "invoices": [
+        {
+          "number": "FV-MON-000901",
+          "documents": [
+            "xml",
+            "pdf"
+          ]
+        },
+        {
+          "number": "FV-MON-000902",
+          "documents": [
+            "xml",
+            "pdf"
+          ]
+        }
+      ],
+      "name": "La tuberia unificada conserva las dos facturas con XML y PDF",
+      "status": "passed"
+    },
+    {
+      "metadata": [
+        {
+          "number": "FV-MON-000901",
+          "iva_percents": [
+            19
+          ],
+          "cufe_valid": true,
+          "status": "pending_assignment",
+          "needs_review": false
+        },
+        {
+          "number": "FV-MON-000902",
+          "iva_percents": [
+            19
+          ],
+          "cufe_valid": true,
+          "status": "pending_assignment",
+          "needs_review": false
+        }
+      ],
+      "name": "La extraccion guarda IVA 19%, CUFE valido y deja las facturas pendientes de asignacion",
+      "status": "passed"
+    },
+    {
+      "provenance": [
+        {
+          "number": "FV-MON-000901",
+          "source": "folder",
+          "message_key": "folder:xml:59b2f16ac79ef050277c6cdd5ee3da5f1a15e3706d1b90e4c65e80860c36b5fe"
+        },
+        {
+          "number": "FV-MON-000902",
+          "source": "folder",
+          "message_key": "folder:zip:af325eb889606a166fd6285fef99ec8ead40f198b949287fb23931b302aba841"
+        }
+      ],
+      "name": "Las filas conservan el origen de carpeta y la clave de deduplicacion del motor",
+      "status": "passed"
+    },
+    {
+      "rowA": "FV-MON-000901\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n | \n\nDistribuciones Andinas SAS\n\n900123456\n\n | \n\nComercializadora Aurora SAS\n\n901555777\n\n | 27/10/2026 | \n\n$ 95.000\n\n19%\n\n | $ 595.000 | \n\n3e067322d20539a83795ea94cb66b5b18cea4b9e5007b05ffdcb8a2f61919061f9a366dc639c3600532a4899b321bfbb\n\nVálido · hex | \n\nSin asignar\n\nSin responsable\n\n | \nPDF\nAsignar",
+      "name": "El monitor muestra IVA 19% y CUFE valido de la factura extraida",
+      "status": "passed"
+    },
+    {
+      "rowA": "FV-MON-000901\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n | \n\nDistribuciones Andinas SAS\n\n900123456\n\n | \n\nComercializadora Aurora SAS\n\n901555777\n\n | 27/10/2026 | \n\n$ 95.000\n\n19%\n\n | $ 595.000 | \n\n3e067322d20539a83795ea94cb66b5b18cea4b9e5007b05ffdcb8a2f61919061f9a366dc639c3600532a4899b321bfbb\n\nVálido · hex | \n\nSin asignar\n\nSin responsable\n\n | \nPDF\nAsignar",
+      "name": "El monitor muestra NIT emisor/receptor y el centro de costo pendiente",
+      "status": "passed"
+    },
+    {
+      "monitorText": "Monitor de extracción\n\nDatos obtenidos del XML/PDF, validación del CUFE, IVA y centro de costo de la vista actual.\n\n2 en la vista\n2 con CUFE validado\n2 con IVA\n2 sin centro de costo\n2 con PDF\n\n2 registros\n\n▥ Columnas\nFACTURA\tEMISOR\tRECEPTOR\tEMISIÓN\tIVA\tTOTAL\tCUFE\tCENTRO DE COSTO\tACCIONES\nFV-MON-000902\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n\t\n\nInsumos del Pacifico SAS\n\n901777333\n\n\t\n\nComercializadora Aurora SAS\n\n901555777\n\n\t27/10/2026\t\n\n$ 57.000\n\n19%\n\n\t$ 357.000\t\n\nd9990be7a9ddddce9cfa417a7ec5b09ce52b22dd5fb924610504e013d6060cf56d85a8b5e98976feeb4464c99777339f\n\nVálido · hex\t\n\nSin asignar\n\nSin responsable\n\n\t\nPDF\nAsignar\n\nFV-MON-000901\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n\t\n\nDistribuciones Andinas SAS\n\n900123456\n\n\t\n\nComercializadora Aurora SAS\n\n901555777\n\n\t27/10/2026\t\n\n$ 95.000\n\n19%\n\n\t$ 595.000\t\n\n3e067322d20539a83795ea94cb66b5b18cea4b9e5007b05ffdcb8a2f61919061f9a366dc639c3600532a4899b321bfbb\n\nVálido · hex\t\n\nSin asignar\n\nSin responsable\n\n\t\nPDF\nAsignar\n2 factura(s) · página 1 de 1\nAnterior\nSiguiente",
+      "name": "El resumen del monitor cuenta las dos facturas con CUFE validado",
+      "status": "passed"
+    },
+    {
+      "status": "passed",
+      "row": {
+        "number": "FV-MON-000901",
+        "iva": 95000,
+        "receiver": "901555777",
+        "metadata": {
+          "archive": "invoice-documents/monitor-invoices-f181024d4f/2026/10/12a42a9a63781a9f-FV-MON-000901.zip",
+          "documents": [
+            "FV-MON-000901.xml",
+            "FV-MON-000901.pdf"
+          ],
+          "line_count": 1,
+          "iva_percents": [
+            19
+          ],
+          "missing_fields": [],
+          "pdf_comparison": {
+            "issues": [],
+            "available": true,
+            "file_name": "FV-MON-000901.pdf",
+            "pdf_total": null,
+            "page_count": 1,
+            "pdf_number": null
+          },
+          "cufe_validation": {
+            "cufe": "3e067322d20539a83795ea94cb66b5b18cea4b9e5007b05ffdcb8a2f61919061f9a366dc639c3600532a4899b321bfbb",
+            "valid": true,
+            "checks": [
+              {
+                "ok": true,
+                "check": "longitud",
+                "detail": "96 caracteres"
+              },
+              {
+                "ok": true,
+                "check": "formato",
+                "detail": "hex SHA-384"
+              }
+            ],
+            "format": "hex",
+            "length": 96,
+            "scheme_name": null
+          }
+        }
+      },
+      "name": "El listado de la API entrega IVA, CUFE, receptor y metadatos al monitor"
+    },
+    {
+      "pdfStatus": 200,
+      "contentType": "application/pdf",
+      "pdfState": {
+        "src": "blob:http://127.0.0.1:3001/c9ee90e3-f0e5-49d4-9bae-c4958eb82833",
+        "height": 700
+      },
+      "name": "El monitor abre el PDF autenticado de la factura",
+      "status": "passed"
+    },
+    {
+      "assignedRow": "FV-MON-000901\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n | \n\nDistribuciones Andinas SAS\n\n900123456\n\n | \n\nComercializadora Aurora SAS\n\n901555777\n\n | 27/10/2026 | \n\n$ 95.000\n\n19%\n\n | $ 595.000 | \n\n3e067322d20539a83795ea94cb66b5b18cea4b9e5007b05ffdcb8a2f61919061f9a366dc639c3600532a4899b321bfbb\n\nVálido · hex | \n\nCC-MON-901\n\nAnalista de Costos Monitor · Contable\n\n | \nPDF\nAsignar",
+      "name": "La asignacion desde el monitor deja centro de costo y responsable visibles",
+      "status": "passed"
+    },
+    {
+      "detailCostCenter": "CC-MON-901",
+      "url": "http://127.0.0.1:3001/dashboard/contabilidad/facturas-recibidas/68",
+      "name": "La factura abierta desde el monitor conserva emisor, CUFE y centro de costo",
+      "status": "passed"
+    },
+    {
+      "cost_center": "CC-MON-901",
+      "segment": "Contable",
+      "responsible": "Analista de Costos Monitor",
+      "history": 1,
+      "change_log": {
+        "segment": "Contable",
+        "group_name": null,
+        "cost_center": "CC-MON-901",
+        "responsible_name": "Analista de Costos Monitor",
+        "assignment_detail": "Centro de costo certificado desde el monitor.",
+        "notification_emails": [],
+        "responsible_user_id": 824
+      },
+      "name": "La asignacion queda auditada con responsable, segmento y centro de costo",
+      "status": "passed"
+    },
+    {
+      "consoleErrors": [],
+      "environmentNoise": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Connecting to 'http://localhost:54321/auth/v1/token?grant_type=password' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+        "Fetch API cannot load http://localhost:54321/auth/v1/token?grant_type=password. Refused to connect because it violates the document's Content Security Policy.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked."
+      ],
+      "name": "La sesion no registro errores de consola propios del modulo",
+      "status": "passed"
+    },
+    {
+      "badApiResponses": [],
+      "name": "Ninguna llamada del modulo respondio con error durante la sesion",
+      "status": "passed"
+    }
+  ],
+  "screenshots": [
+    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\01-monitor-extraccion.png",
+    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\02-monitor-pdf.png",
+    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\03-monitor-asignada.png",
+    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-monitor-20261028\\screenshots\\04-factura-desde-monitor.png"
+  ],
+  "console_errors": [],
+  "environment_noise": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Connecting to 'http://localhost:54321/auth/v1/token?grant_type=password' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Fetch API cannot load http://localhost:54321/auth/v1/token?grant_type=password. Refused to connect because it violates the document's Content Security Policy.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked."
+  ],
+  "bad_api_responses": [],
+  "document_responses": [
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/68/documents/127/file",
+      "status": 204,
+      "contentType": ""
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/68/documents/127/file",
+      "status": 204,
+      "contentType": ""
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/68/documents/127/file",
+      "status": 200,
+      "contentType": "application/pdf"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/68/documents/127/file",
+      "status": 200,
+      "contentType": "application/pdf"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/68/documents/126/file",
+      "status": 204,
+      "contentType": ""
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/68/documents/126/file",
+      "status": 204,
+      "contentType": ""
+    }
+  ],
+  "pipeline": {
+    "first_run": {
+      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-7dTnkb",
+      "tenant_id": "monitor-invoices-f181024d4f",
+      "scanned": 2,
+      "inserted": 2,
+      "duplicates": 0,
+      "failed": []
+    },
+    "second_run": {
+      "folder": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-monitor-folder-7dTnkb",
+      "tenant_id": "monitor-invoices-f181024d4f",
+      "scanned": 2,
+      "inserted": 0,
+      "duplicates": 2,
+      "failed": []
+    },
+    "invoices": [
+      {
+        "id": 68,
+        "number": "FV-MON-000901",
+        "status": "pending_assignment",
+        "documents": 2
+      },
+      {
+        "id": 69,
+        "number": "FV-MON-000902",
+        "status": "pending_assignment",
+        "documents": 2
+      }
+    ]
+  },
+  "database": {
+    "invoice_id": 68,
+    "cost_center": "CC-MON-901",
+    "segment": "Contable",
+    "responsible": "Analista de Costos Monitor",
+    "assignment_history": 1,
+    "change_log_cost_center": "CC-MON-901"
+  },
+  "finished_at": "2026-10-29T03:16:06.491Z"
+}

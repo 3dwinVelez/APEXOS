@@ -261,6 +261,8 @@ async function createInvoice({ tenantId, emailId, draft, files, sourceArchive })
         archive: sourceArchive || null,
         line_count: draft.line_count || 0,
         missing_fields: draft.missing_fields,
+        iva_percents: draft.iva_percents || [],
+        cufe_validation: draft.cufe_validation || null,
         pdf_comparison: draft.pdf_comparison || null,
         documents: files.map((file) => file.file_name)
       },
@@ -345,14 +347,20 @@ async function ingestArchive(options) {
       reprocess
     });
     if (emailResult.duplicate) {
+      // Un mismo correo/carpeta no se reprocesa; se devuelven las facturas que
+      // ya generó para que el resumen de la corrida sea exacto.
+      const existing = await prisma.receivedInvoice.findMany({
+        where: { email_id: emailResult.email.id },
+        select: { id: true, full_number: true, total: true, processing_status: true }
+      });
       return {
         status: "duplicate_email",
         duplicate: true,
         email_id: emailResult.email.id,
-        invoices: [],
+        invoices: existing.map((invoice) => ({ ...invoice, status: "duplicate" })),
         errors: [],
         rejected: [],
-        summary: { created: 0, duplicates: 0, failed: 0 }
+        summary: { created: 0, duplicates: existing.length, failed: 0 }
       };
     }
     const email = emailResult.email;

@@ -3,12 +3,13 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const JSZip = require("jszip");
 
 const {
   readSyncConfig,
-  buildDedupeKey,
-  invoiceRow,
-  syncFolder
+  syncFolder,
+  archiveFor,
+  siblingPdf
 } = require("../src/modules/mailbox/invoice-folder-sync");
 
 const HEX_CUFE = "b4e2".padEnd(96, "1");
@@ -22,36 +23,7 @@ function invoiceXml({ cufe = HEX_CUFE, number = "FE1001" } = {}) {
   <cbc:UUID schemeID="1" schemeName="CUFE-SHA384">${cufe}</cbc:UUID>
   <cbc:IssueDate>2026-10-26</cbc:IssueDate>
   <cbc:DocumentCurrencyCode>COP</cbc:DocumentCurrencyCode>
-  <cac:AccountingSupplierParty>
-    <cac:Party>
-      <cac:PartyTaxScheme>
-        <cbc:RegistrationName>PROVEEDOR DE PRUEBA S.A.S.</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="8">901111111-1</cbc:CompanyID>
-        <cac:TaxScheme><cbc:ID>01</cbc:ID></cac:TaxScheme>
-      </cac:PartyTaxScheme>
-    </cac:Party>
-  </cac:AccountingSupplierParty>
-  <cac:AccountingCustomerParty>
-    <cac:Party>
-      <cac:PartyTaxScheme>
-        <cbc:RegistrationName>CLIENTE PRUEBA</cbc:RegistrationName>
-        <cbc:CompanyID schemeID="4">900255181</cbc:CompanyID>
-      </cac:PartyTaxScheme>
-    </cac:Party>
-  </cac:AccountingCustomerParty>
-  <cac:TaxTotal>
-    <cbc:TaxAmount currencyID="COP">19000.00</cbc:TaxAmount>
-    <cac:TaxSubtotal>
-      <cbc:TaxAmount currencyID="COP">19000.00</cbc:TaxAmount>
-      <cac:TaxCategory>
-        <cbc:Percent>19.00</cbc:Percent>
-        <cac:TaxScheme><cbc:ID>01</cbc:ID><cbc:Name>IVA</cbc:Name></cac:TaxScheme>
-      </cac:TaxCategory>
-    </cac:TaxSubtotal>
-  </cac:TaxTotal>
   <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="COP">100000.00</cbc:LineExtensionAmount>
-    <cbc:TaxInclusiveAmount currencyID="COP">119000.00</cbc:TaxInclusiveAmount>
     <cbc:PayableAmount currencyID="COP">119000.00</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
 </Invoice>`;
@@ -61,19 +33,33 @@ function makeTempFolder() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "apexos-invoice-sync-"));
 }
 
-function makeFakePrisma() {
-  const rows = [];
-  return {
-    rows,
-    runWithTenant: async (_tenantId, fn) => fn(),
-    receivedInvoice: {
-      findFirst: async ({ where }) => rows.find((row) => row.tenant_id === where.tenant_id && row.dedupe_key === where.dedupe_key) || null,
-      create: async ({ data }) => {
-        rows.push({ id: rows.length + 1, ...data });
-        return rows[rows.length - 1];
-      }
+function fakeEngine() {
+  const calls = [];
+  const seen = new Map();
+  const ingest = async (options) => {
+    calls.push(options);
+    if (seen.has(options.messageKey)) {
+      const duplicates = seen.get(options.messageKey);
+      return {
+        status: "duplicate_email",
+        duplicate: true,
+        invoices: Array.from({ length: duplicates }, (_, index) => ({ id: index + 1, status: "duplicate" })),
+        errors: [],
+        rejected: [],
+        summary: { created: 0, duplicates, failed: 0 }
+      };
     }
+    seen.set(options.messageKey, 1);
+    return {
+      status: "processed",
+      duplicate: false,
+      invoices: [{ id: calls.length, status: "created", full_number: "FE1001", total: 119000, needs_review: false }],
+      errors: [],
+      rejected: [],
+      summary: { created: 1, duplicates: 0, failed: 0 }
+    };
   };
+  return { calls, ingest };
 }
 
 function baseConfig(folder) {
@@ -99,92 +85,93 @@ test("readSyncConfig acepta fallback de tenant desde MAILBOX_INGEST_TENANT_ID", 
   assert.equal(config.tenantId, "tenant-fallback");
 });
 
-test("buildDedupeKey prioriza cufe y cae en doc sin cufe", () => {
-  const withCufe = buildDedupeKey({ cufe: ` ${HEX_CUFE.toUpperCase()} `, invoice_number: "FE1", total_payable: 100 });
-  assert.equal(withCufe, `cufe:${HEX_CUFE}`);
-  const withoutCufe = buildDedupeKey({ invoice_number: "FE1001", total_payable: 119000, issuer_tax_id_raw: "901111111" });
-  assert.equal(withoutCufe, "doc:901111111|fe|fe1001|119000.00");
-});
-
-test("syncFolder inserta facturas de xml y zip, escanea subcarpetas y es idempotente", async () => {
+test("un XML suelto viaja con su PDF hermano y todo entra por el motor unificado", async () => {
   const folder = makeTempFolder();
-  fs.writeFileSync(path.join(folder, "factura-suelta.xml"), invoiceXml({ cufe: "d".padEnd(96, "3"), number: "XML900" }));
+  fs.writeFileSync(path.join(folder, "factura-suelta.xml"), invoiceXml({ number: "XML900" }));
+  fs.writeFileSync(path.join(folder, "factura-suelta.pdf"), "%PDF-1.4 demo");
+  fs.writeFileSync(path.join(folder, "otro.pdf"), "%PDF-1.4 sin xml");
   const nested = path.join(folder, "2026", "10");
   fs.mkdirSync(nested, { recursive: true });
-  const JSZip = require("jszip");
   const zip = new JSZip();
   zip.file("factura-zip.xml", invoiceXml({ number: "ZIP800" }));
-  zip.file("otra.xml", invoiceXml({ cufe: "c".padEnd(96, "7"), number: "ZIP801" }));
-  fs.writeFileSync(path.join(nested, "lote.zip"), await zip.generateAsync({ type: "nodebuffer" }));
+  const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+  fs.writeFileSync(path.join(nested, "lote.zip"), zipBuffer);
   fs.writeFileSync(path.join(nested, "ignorado.txt"), "no es factura");
 
-  const prisma = makeFakePrisma();
-  const config = baseConfig(folder);
-  const summary = await syncFolder({ config, prisma });
+  const engine = fakeEngine();
+  const summary = await syncFolder({ config: baseConfig(folder), ingest: engine.ingest });
 
   assert.equal(summary.scanned, 2);
-  assert.equal(summary.inserted, 3);
+  assert.equal(summary.inserted, 2);
   assert.equal(summary.duplicates, 0);
-  assert.equal(summary.failed.length, 0);
+  assert.deepEqual(summary.failed, []);
+  assert.equal(engine.calls.length, 2);
 
-  const byNumber = Object.fromEntries(prisma.rows.map((row) => [row.invoice_number, row]));
-  assert.equal(byNumber.XML900.issuer_tax_id, "901111111");
-  assert.equal(byNumber.XML900.receiver_tax_id, "900255181");
-  assert.equal(byNumber.XML900.total, 119000);
-  assert.equal(byNumber.XML900.iva, 19000);
-  assert.equal(byNumber.XML900.tax_total, 19000);
-  assert.equal(byNumber.XML900.issue_date.toISOString().slice(0, 10), "2026-10-26");
-  assert.equal(byNumber.XML900.currency, "COP");
-  assert.equal(byNumber.XML900.processing_status, "pending_assignment");
-  assert.equal(byNumber.XML900.needs_review, false);
-  assert.equal(byNumber.XML900.dedupe_key, `cufe:${"d".padEnd(96, "3")}`);
-  assert.equal(byNumber.ZIP800.source_archive, "lote.zip:factura-zip.xml");
-  assert.equal(byNumber.ZIP800.extraction_metadata.sync, "mailbox-folder");
+  const xmlCall = engine.calls.find((call) => call.archiveName === "factura-suelta.zip");
+  assert.ok(xmlCall);
+  assert.match(xmlCall.messageKey, /^folder:xml:[a-f0-9]{64}$/);
+  assert.equal(xmlCall.source, "folder");
+  assert.equal(xmlCall.mailbox, folder);
+  const synthetic = await JSZip.loadAsync(xmlCall.archiveBuffer);
+  assert.deepEqual(Object.keys(synthetic.files).sort(), ["factura-suelta.pdf", "factura-suelta.xml"]);
 
-  const second = await syncFolder({ config, prisma });
+  const zipCall = engine.calls.find((call) => call.archiveName === "lote.zip");
+  assert.ok(zipCall);
+  assert.match(zipCall.messageKey, /^folder:zip:[a-f0-9]{64}$/);
+  assert.equal(Buffer.compare(zipCall.archiveBuffer, zipBuffer), 0);
+
+  const second = await syncFolder({ config: baseConfig(folder), ingest: engine.ingest });
   assert.equal(second.inserted, 0);
-  assert.equal(second.duplicates, 3);
+  assert.equal(second.duplicates, 2);
+  assert.deepEqual(
+    engine.calls.slice(2).map((call) => call.messageKey),
+    engine.calls.slice(0, 2).map((call) => call.messageKey)
+  );
 });
 
-test("syncFolder registra fallos sin abortar el lote", async () => {
+test("syncFolder aisla fallos y omite metadatos ignorados", async () => {
   const folder = makeTempFolder();
-  fs.writeFileSync(path.join(folder, "buena.xml"), invoiceXml({ number: "OK1" }));
-  fs.writeFileSync(path.join(folder, "mala.xml"), "<html><body/></html>");
-  const JSZip = require("jszip");
-  const zip = new JSZip();
-  zip.file("dañada.xml", "<Invoice><ID>1</ID>");
-  fs.writeFileSync(path.join(folder, "lote.zip"), await zip.generateAsync({ type: "nodebuffer" }));
+  fs.writeFileSync(path.join(folder, "mala.xml"), invoiceXml({ number: "MALA" }));
+  fs.writeFileSync(path.join(folder, "lote.zip"), await new JSZip().generateAsync({ type: "nodebuffer" }));
 
-  const prisma = makeFakePrisma();
-  const summary = await syncFolder({ config: baseConfig(folder), prisma });
+  const ingest = async (options) => {
+    if (options.archiveName === "mala.zip") throw Object.assign(new Error("motor caido"), { code: "INGESTA_FALLIDA" });
+    return {
+      status: "processed_with_errors",
+      invoices: [],
+      errors: [{ code: "DOCUMENTO_SIN_DATOS", message: "lote.zip: sin datos" }],
+      rejected: [
+        { file_name: "notas.txt", reason: "extension_sin_contenido_valido" },
+        { file_name: ".DS_Store", reason: "metadato_del_sistema", ignored: true }
+      ],
+      summary: { created: 0, duplicates: 0, failed: 1 }
+    };
+  };
 
-  assert.equal(summary.inserted, 1);
-  assert.equal(summary.failed.length, 2);
-  const codes = summary.failed.map((item) => item.file).sort();
-  assert.deepEqual(codes, ["lote.zip:dañada.xml", "mala.xml"]);
+  const summary = await syncFolder({ config: baseConfig(folder), ingest });
+
+  assert.equal(summary.scanned, 2);
+  assert.equal(summary.inserted, 0);
+  assert.equal(summary.failed.length, 3);
+  assert.ok(summary.failed.some((entry) => entry.file === "mala.xml" && entry.error === "motor caido"));
+  assert.ok(summary.failed.some((entry) => entry.file === "lote.zip:notas.txt"));
+  assert.ok(summary.failed.some((entry) => entry.file === "lote.zip" && entry.error === "lote.zip: sin datos"));
 });
 
-test("invoiceRow marca revisión cuando el CUFE falta o es inválido", () => {
-  const now = new Date("2026-10-28T10:00:00.000Z");
-  const base = {
-    document_type: "invoice",
-    invoice_number: "FE1",
-    issue_date: "2026-10-26",
-    total_payable: 1000,
-    has_iva: false,
-    iva_amount: 0,
-    iva_percents: [],
-    other_tax_amount: 0,
-    currency: "COP",
-    cufe: null,
-    cufe_validation: { valid: false, reason: "CUFE_NO_ENCONTRADO" }
-  };
-  const noCufe = invoiceRow(base, { tenantId: "t1", sourceFile: "a.xml", now });
-  assert.equal(noCufe.needs_review, true);
-  assert.deepEqual(noCufe.review_reasons, ["CUFE_NO_IDENTIFICADO"]);
-  assert.equal(noCufe.processing_status, "review");
+test("siblingPdf solo empareja mismo directorio y mismo nombre base", async () => {
+  const folder = makeTempFolder();
+  const sub = path.join(folder, "sub");
+  fs.mkdirSync(sub, { recursive: true });
+  const xml = path.join(sub, "FV-1.xml");
+  fs.writeFileSync(xml, invoiceXml({ number: "FV-1" }));
+  const pdf = path.join(sub, "FV-1.pdf");
+  fs.writeFileSync(pdf, "%PDF-1.4 demo");
+  const otherDir = path.join(folder, "otra", "FV-1.pdf");
+  const wrongBase = path.join(sub, "FV-2.pdf");
+  assert.equal(siblingPdf(xml, [xml, pdf, otherDir, wrongBase]), pdf);
 
-  const badCufe = invoiceRow({ ...base, cufe: "xyz", cufe_validation: { valid: false } }, { tenantId: "t1", sourceFile: "a.xml", now });
-  assert.equal(badCufe.needs_review, true);
-  assert.deepEqual(badCufe.review_reasons, ["CUFE_INVALIDO"]);
+  const result = await archiveFor(xml, [xml, pdf]);
+  assert.equal(result.archiveName, "FV-1.zip");
+  const zip = await JSZip.loadAsync(result.buffer);
+  assert.deepEqual(Object.keys(zip.files).sort(), ["FV-1.pdf", "FV-1.xml"]);
 });

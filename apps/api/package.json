@@ -21,7 +21,8 @@
     "mail:ingest": "node scripts/mailbox-ingest.js",
     "mail:invoice-sync": "node scripts/mailbox-invoice-sync.js",
     "mail:login": "node scripts/graph-mail-login.js",
-    "test:mailbox": "node --test test/mailbox-graph-ingest.test.js test/mailbox-imap-ingest.test.js test/mailbox-invoice-xml.test.js test/mailbox-invoice-sync.test.js"
+    "test:mailbox": "node --test test/mailbox-graph-ingest.test.js test/mailbox-imap-ingest.test.js test/mailbox-invoice-sync.test.js",
+    "certify:received-invoices-monitor:local": "node scripts/certifications/received-invoices-monitor-local.js"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",
