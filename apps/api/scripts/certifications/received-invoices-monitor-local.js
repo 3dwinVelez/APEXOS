@@ -218,76 +218,37 @@ async function controlByLabel(page, labelText) {
   const handle = await page.evaluateHandle((needle) => {
     const label = [...document.querySelectorAll("label")]
       .find((item) => item.querySelector("span")?.textContent?.trim() === needle);
-    return label?.querySelector("input, textarea, select") || null;
+    return label?.querySelector('input[role="combobox"]') || label?.querySelector("input, textarea, select") || null;
   }, labelText);
   const element = handle.asElement();
   if (!element) throw new Error(`No se encontro el control "${labelText}".`);
   return element;
 }
 
-async function typeByLabel(page, labelText, value) {
-  const element = await controlByLabel(page, labelText);
-  await element.evaluate((node) => node.scrollIntoView({ block: "center" }));
-  await element.click({ clickCount: 3 });
-  await page.keyboard.press("Backspace");
-  await element.type(value, { delay: 12 });
-}
-
-async function selectByLabel(page, labelText, optionValue) {
-  const element = await controlByLabel(page, labelText);
-  await element.select(optionValue);
-}
-
-// La banda de filtros tambien tiene un select "Responsable"; los campos del
-// modal se buscan dentro del dialogo para no escribir en el filtro equivocado.
-async function modalControlByLabel(page, labelText) {
-  const handle = await page.evaluateHandle((needle) => {
-    const dialog = document.querySelector('[role="dialog"]');
-    if (!dialog) return null;
-    const label = [...dialog.querySelectorAll("label")]
-      .find((item) => item.querySelector("span")?.textContent?.trim() === needle);
-    return label?.querySelector('input[role="combobox"]') || label?.querySelector("input, textarea, select") || null;
-  }, labelText);
+async function controlByAria(page, ariaLabel) {
+  const handle = await page.evaluateHandle((needle) => document.querySelector(`input[aria-label="${needle}"]`), ariaLabel);
   const element = handle.asElement();
-  if (!element) throw new Error(`No se encontro el control "${labelText}" en el modal.`);
+  if (!element) throw new Error(`No se encontro el control "${ariaLabel}".`);
   return element;
 }
 
-// Los buscadores inteligentes mantienen un <select> oculto como autoridad del
-// formulario; el usuario escribe en el input[role="combobox"] y elige la opcion
-// del listbox que se pinta en un portal fuera del modal.
-async function searchInModal(page, labelText, query, optionNeedle, shotName) {
-  const element = await modalControlByLabel(page, labelText);
-  if (await element.evaluate((node) => node.getAttribute("role")) !== "combobox") {
-    throw new Error(`El control "${labelText}" no usa el buscador inteligente.`);
-  }
-  await element.click();
+async function searchCombobox(page, element, query, optionNeedle) {
+  await element.click({ clickCount: 3 });
+  await page.keyboard.press("Backspace");
+  await page.waitForFunction(() => Boolean(document.querySelector('[role="listbox"]')), { timeout: 30000 });
   await element.type(query, { delay: 20 });
   await page.waitForFunction((needle) => [...document.querySelectorAll('[role="option"]')]
-    .some((option) => option.innerText.includes(needle)), { timeout: 15000 }, optionNeedle);
-  const filtered = await page.evaluate(() => [...document.querySelectorAll('[role="option"]')]
+    .some((option) => option.innerText.includes(needle)), { timeout: 30000 }, optionNeedle);
+  const matches = await page.evaluate(() => [...document.querySelectorAll('[role="option"]')]
     .map((option) => option.innerText.trim()));
-  if (shotName) await shot(page, shotName, false);
   const picked = await page.evaluate((needle) => {
     const option = [...document.querySelectorAll('[role="option"]')]
       .find((item) => item.innerText.includes(needle));
     option?.click();
     return Boolean(option);
   }, optionNeedle);
-  if (!picked) throw new Error(`No se pudo elegir la opcion "${optionNeedle}" en "${labelText}".`);
-  return filtered;
-}
-
-async function typeInModal(page, labelText, value) {
-  const element = await modalControlByLabel(page, labelText);
-  await element.click({ clickCount: 3 });
-  await page.keyboard.press("Backspace");
-  await element.type(value, { delay: 12 });
-}
-
-async function selectInModal(page, labelText, optionValue) {
-  const element = await modalControlByLabel(page, labelText);
-  await element.select(optionValue);
+  if (!picked) throw new Error(`No se pudo elegir la opcion "${optionNeedle}".`);
+  return matches;
 }
 
 async function openMonitorTab(page) {
@@ -531,31 +492,40 @@ async function main() {
   });
   await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 30000 });
 
-  // E. Asignar centro de costo desde el monitor.
+  // E. La unica via al detalle es el hipervinculo del numero de factura; la
+  // asignacion se realiza en el formulario unico del detalle y el monitor la refleja.
   await page.evaluate((number) => {
-    const buttons = [...document.querySelectorAll(`button[aria-label="Asignar centro de costo a ${number}"]`)];
-    const visible = buttons.find((item) => item.getBoundingClientRect().width > 0) || buttons[0];
-    visible?.scrollIntoView({ block: "center" });
-    visible?.click();
+    const link = [...document.querySelectorAll(`a[aria-label="Abrir factura ${number}"]`)]
+      .find((item) => item.getBoundingClientRect().width > 0);
+    link?.scrollIntoView({ block: "center" });
+    link?.click();
   }, INVOICE_A);
-  await waitText(page, `Asignar centro de costo · ${INVOICE_A}`).catch(async (error) => {
-    const diagnostics = await page.evaluate(() => ({
-      dialogs: document.querySelectorAll('[role="dialog"]').length,
-      assignButtons: [...document.querySelectorAll('button[aria-label^="Asignar centro de costo"]')]
-        .map((item) => ({ label: item.getAttribute("aria-label"), disabled: item.disabled, width: item.getBoundingClientRect().width })),
-      text: document.body.innerText.slice(0, 3000)
-    }));
+  await page.waitForFunction(() => /\/facturas-recibidas\/\d+$/.test(new URL(location.href).pathname), { timeout: 90000 });
+  await waitText(page, "Datos fiscales");
+  await page.waitForFunction(() => Boolean(document.querySelector('input[aria-label="Buscar responsable"]')), { timeout: 60000 });
+  const responsibleInput = await controlByAria(page, "Buscar responsable");
+  try {
+    await searchCombobox(page, responsibleInput, responsibleName, responsibleName);
+  } catch (error) {
+    const diagnostics = await page.evaluate(() => {
+      const input = document.querySelector('input[aria-label="Buscar responsable"]');
+      const list = document.querySelector('[role="listbox"]');
+      return {
+        url: location.href,
+        input: input ? { value: input.value, disabled: input.disabled, expanded: input.getAttribute("aria-expanded") } : null,
+        listText: list ? list.innerText : null,
+        options: [...document.querySelectorAll('[role="option"]')].map((option) => option.innerText.trim()),
+        body: document.body.innerText.slice(0, 2500)
+      };
+    });
     fs.writeFileSync(path.join(evidenceDir, "assign-diagnostics.json"), JSON.stringify(diagnostics, null, 2));
+    await shot(page, "03a-diagnostico-responsable", false);
     throw error;
-  });
-  await page.waitForFunction(() => Boolean(document.querySelector('[role="dialog"] select')), { timeout: 60000 });
-  await selectInModal(page, "Responsable", String(seeded.responsibleId));
-  const centerMatches = await searchInModal(page, "Centro de costo", "certificado", COST_CENTER, "03-monitor-buscador-centro-costo");
-  await selectInModal(page, "Segmento", "Contable");
-  await typeInModal(page, "Detalle de la asignación", "Centro de costo certificado desde el monitor.");
+  }
+  await page.waitForFunction((name) => document.body.innerText.includes(name), { timeout: 30000 }, responsibleName);
+  const centerMatches = await searchCombobox(page, await controlByLabel(page, "Centro de costo"), "certificado", COST_CENTER);
   const centerField = await page.evaluate(() => {
-    const dialog = document.querySelector('[role="dialog"]');
-    const label = [...(dialog?.querySelectorAll("label") || [])]
+    const label = [...document.querySelectorAll("label")]
       .find((item) => item.querySelector("span")?.textContent?.trim() === "Centro de costo");
     const select = label?.querySelector("select");
     const input = label?.querySelector('input[role="combobox"]');
@@ -566,7 +536,7 @@ async function main() {
       options: select ? [...select.options].map((option) => ({ value: option.value, text: option.textContent })) : []
     };
   });
-  check("El buscador inteligente del modal filtra los centros de costo de la estructura",
+  check("El buscador inteligente del detalle filtra los centros de costo de la estructura",
     centerField.role === "combobox"
     && centerMatches.length === 1
     && centerMatches[0].includes("Centro certificado monitor"),
@@ -577,25 +547,28 @@ async function main() {
     && String(centerField.display || "").includes("Centro certificado monitor")
     && centerField.options.some((option) => option.value === COST_CENTER && option.text.includes("Centro certificado monitor")),
     centerField);
-  await shot(page, "03-monitor-centro-costo", false);
+  await shot(page, "03-detalle-centro-costo", false);
   await page.waitForFunction(() => {
-    const dialog = document.querySelector('[role="dialog"]');
-    const button = dialog && [...dialog.querySelectorAll("button")].find((item) => item.innerText.trim() === "Asignar");
+    const button = [...document.querySelectorAll("button")].find((item) => item.innerText.trim() === "Asignar");
     return Boolean(button && !button.disabled);
   }, { timeout: 30000 });
   await page.evaluate(() => {
-    const button = [...document.querySelectorAll('[role="dialog"] button')].find((item) => item.innerText.trim() === "Asignar");
+    const button = [...document.querySelectorAll("button")].find((item) => item.innerText.trim() === "Asignar");
     button?.click();
   });
-  await waitText(page, `asignada a ${responsibleName}`);
+  await waitText(page, `Factura asignada a ${responsibleName}.`);
+  await page.evaluate(() => document.querySelector('a[href="/dashboard/contabilidad/facturas-recibidas?tab=monitor"]')?.click());
+  await page.waitForFunction(() => /\/facturas-recibidas$/.test(new URL(location.href).pathname)
+    && new URL(location.href).searchParams.get("tab") === "monitor", { timeout: 90000 });
+  await waitText(page, "Monitor de extracción");
   await page.waitForFunction(({ number, costCenter, name }) => {
     const row = [...document.querySelectorAll('section[aria-label="Monitor de facturas extraídas"] table tbody tr')]
       .find((item) => item.innerText.includes(number));
     return Boolean(row && row.innerText.includes(costCenter) && row.innerText.includes(name));
   }, { timeout: 60000 }, { number: INVOICE_A, costCenter: COST_CENTER, name: responsibleName });
   const assignedRow = await monitorRowText(page, INVOICE_A);
-  check("La asignacion desde el monitor deja centro de costo y responsable visibles",
-    assignedRow.includes(COST_CENTER) && assignedRow.includes(responsibleName),
+  check("La asignacion hecha en el detalle deja centro de costo y responsable visibles en el monitor",
+    assignedRow.includes(COST_CENTER) && assignedRow.includes(responsibleName) && assignedRow.includes("Asignada"),
     { assignedRow });
   await shot(page, "03-monitor-asignada");
 
@@ -719,14 +692,14 @@ async function main() {
     return {
       text: section?.innerText || "",
       reprocessDisabled: Boolean(reprocess?.disabled),
-      hasBandejaLink: Boolean([...document.querySelectorAll("a")].find((link) => link.innerText.includes("Ir a la bandeja")))
+      hasMonitorLink: Boolean([...document.querySelectorAll("a")].find((link) => link.innerText.includes("Ir al monitor")))
     };
   });
   check("La factura sin documentos explica el estado y no ofrece reproceso sin ZIP",
     legacyViewer.text.includes("Sin documentos almacenados")
     && !legacyViewer.text.includes("Selecciona un documento")
     && legacyViewer.reprocessDisabled
-    && legacyViewer.hasBandejaLink,
+    && legacyViewer.hasMonitorLink,
     legacyViewer);
   await shot(page, "06-factura-sin-documentos");
 
@@ -815,9 +788,9 @@ async function main() {
     where: { invoice_id: storedA.id, action: "assigned" },
     orderBy: { id: "desc" }
   });
-  check("La asignacion queda auditada con responsable, segmento y centro de costo",
+  check("La asignacion queda auditada con responsable, centro de costo y sin segmento heredado",
     refreshed.cost_center === COST_CENTER
-    && refreshed.segment === "Contable"
+    && refreshed.segment === null
     && refreshed.responsible_name === responsibleName
     && history.length === 1
     && changeLog?.changes?.cost_center === COST_CENTER,

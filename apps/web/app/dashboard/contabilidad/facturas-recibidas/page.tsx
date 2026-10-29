@@ -4,13 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, ArrowRight, CheckCircle2, Eye, FileText, Inbox,
-  Monitor, RefreshCw, Search, Settings2, Upload, UserCog, X
+  AlertTriangle, ArrowLeft, CheckCircle2, Eye, FileText, Inbox,
+  Monitor, RefreshCw, Search, Settings2, Upload, X
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/apiBaseUrl";
-import { ContabilidadNav } from "@/components/contabilidad-nav";
-import { CostCenterSelect, type CostCenterOption } from "@/components/cost-center-select";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form-controls";
 import { Alert, Badge, EmptyState, Skeleton } from "@/components/ui/feedback";
@@ -141,9 +139,8 @@ export default function FacturasRecibidasPage() {
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [mailOpen, setMailOpen] = useState(false);
-  const [tab, setTab] = useState<"inbox" | "monitor" | "emails" | "errors">("inbox");
+  const [tab, setTab] = useState<"monitor" | "emails" | "errors">("monitor");
   const [pdfInvoice, setPdfInvoice] = useState<InvoiceRow | null>(null);
-  const [assignTarget, setAssignTarget] = useState<InvoiceRow | null>(null);
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -170,7 +167,7 @@ export default function FacturasRecibidasPage() {
       setSummary(kpis);
       setError("");
     } catch (caught) {
-      setError(describeError(caught, "No fue posible cargar la bandeja de facturas recibidas."));
+      setError(describeError(caught, "No fue posible cargar el monitor de facturas recibidas."));
     } finally {
       setLoading(false);
     }
@@ -178,6 +175,11 @@ export default function FacturasRecibidasPage() {
 
   useEffect(() => {
     void api<Responsible[]>("/api/v1/accounting/received-invoices/responsibles", { cache: "no-store" }).then(setResponsibles).catch(() => setResponsibles([]));
+  }, []);
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (requested === "monitor" || requested === "emails" || requested === "errors") setTab(requested);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -199,6 +201,7 @@ export default function FacturasRecibidasPage() {
     <div className="apex-workspace-shell space-y-4">
       <header className="apex-section-card flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
         <div>
+          <Link className="mb-2 inline-flex h-9 items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-semibold text-content-strong transition-colors hover:border-apex hover:bg-surface-muted" href="/dashboard/contabilidad"><ArrowLeft size={16} /> Volver a Contabilidad</Link>
           <p className="text-sm font-medium text-apex">M-07 · Finanzas</p>
           <h1 className="text-2xl font-semibold text-content-strong md:text-3xl">Facturas electrónicas recibidas</h1>
           <p className="mt-1 text-sm text-content-body">Recepción desde el buzón, extracción XML/PDF, revisión y asignación con trazabilidad.</p>
@@ -209,8 +212,6 @@ export default function FacturasRecibidasPage() {
           <Button onClick={() => void load()} type="button" variant="ghost"><RefreshCw size={16} /> Actualizar</Button>
         </div>
       </header>
-
-      <ContabilidadNav />
 
       {error ? <Alert tone="error" title="No se pudo completar la consulta">{error}</Alert> : null}
       {message ? <Alert tone="success">{message}</Alert> : null}
@@ -224,12 +225,12 @@ export default function FacturasRecibidasPage() {
       </section>
 
       <nav aria-label="Secciones del módulo" className="flex flex-wrap gap-2">
-        {([["inbox", "Bandeja"], ["monitor", "Monitor"], ["emails", "Correos procesados"], ["errors", "Errores"]] as const).map(([key, label]) => (
+        {([["monitor", "Monitor"], ["emails", "Correos procesados"], ["errors", "Errores"]] as const).map(([key, label]) => (
           <button className={`rounded-md border px-3 py-2 text-sm ${tab === key ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body"}`} key={key} onClick={() => setTab(key)} type="button">{label}</button>
         ))}
       </nav>
 
-      {tab === "inbox" || tab === "monitor" ? (
+      {tab === "monitor" ? (
         <form className="apex-section-card space-y-3 p-3" onSubmit={applyFilters}>
           <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_180px_180px]">
             <div className="relative">
@@ -266,98 +267,10 @@ export default function FacturasRecibidasPage() {
         </form>
       ) : null}
 
-      {tab === "inbox" ? (
-        <>
-
-          <section className="apex-section-card overflow-hidden">
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[1080px] text-sm">
-                <thead>
-                  <tr className="border-b border-line bg-surface-muted text-left text-xs uppercase tracking-wide text-content-muted">
-                    <th className="px-3 py-2">Número</th>
-                    <th className="px-3 py-2">Proveedor</th>
-                    <th className="px-3 py-2">NIT</th>
-                    <th className="px-3 py-2">Emisión</th>
-                    <th className="px-3 py-2">Recepción</th>
-                    <th className="px-3 py-2 text-right">Total</th>
-                    <th className="px-3 py-2">Responsable</th>
-                    <th className="px-3 py-2">Procesamiento</th>
-                    <th className="px-3 py-2">Asignación</th>
-                    <th className="px-3 py-2 text-right">Abrir</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? Array.from({ length: 4 }).map((_, index) => (
-                    <tr className="border-b border-line" key={`skeleton-${index}`}>
-                      {Array.from({ length: 10 }).map((__, cell) => <td className="px-3 py-3" key={cell}><Skeleton className="h-4 w-full" /></td>)}
-                    </tr>
-                  )) : rows.map((row) => (
-                    <tr className="border-b border-line last:border-0 hover:bg-surface-muted/60" key={row.id}>
-                      <td className="px-3 py-2">
-                        <Link className="font-mono font-semibold text-apex hover:underline" href={`/dashboard/contabilidad/facturas-recibidas/${row.id}`}>{row.full_number}</Link>
-                        <div className="mt-0.5 flex gap-1 text-[10px] uppercase text-content-muted">{row.xml_available ? <span>XML</span> : null}{row.pdf_available ? <span>PDF</span> : null}</div>
-                      </td>
-                      <td className="max-w-[220px] truncate px-3 py-2 text-content-strong" title={row.issuer_name || ""}>{row.issuer_name || "(sin nombre)"}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{row.issuer_tax_id || "--"}</td>
-                      <td className="px-3 py-2">{formatDate(row.issue_date)}</td>
-                      <td className="px-3 py-2">{formatDate(row.reception_date)}</td>
-                      <td className="px-3 py-2 text-right font-mono">{money(row.total, row.currency || "COP")}</td>
-                      <td className="px-3 py-2">{row.responsible_name || "--"}</td>
-                      <td className="px-3 py-2"><Badge tone={PROCESSING_TONE[row.processing_status] || "neutral"}>{row.processing_label}</Badge></td>
-                      <td className="px-3 py-2"><Badge tone={ASSIGNMENT_TONE[row.assignment_status] || "neutral"}>{row.assignment_label}</Badge></td>
-                      <td className="px-3 py-2 text-right">
-                        <Link aria-label={`Abrir factura ${row.full_number}`} className="inline-flex h-9 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold text-apex hover:border-apex" href={`/dashboard/contabilidad/facturas-recibidas/${row.id}`}>Abrir <ArrowRight size={14} /></Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="divide-y divide-line md:hidden">
-              {loading ? Array.from({ length: 3 }).map((_, index) => <div className="p-4" key={index}><Skeleton className="h-20 w-full" /></div>) : rows.map((row) => (
-                <Link className="block p-4 hover:bg-surface-muted/60" href={`/dashboard/contabilidad/facturas-recibidas/${row.id}`} key={row.id}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-mono text-sm font-semibold text-apex">{row.full_number}</p>
-                      <p className="truncate text-sm text-content-strong">{row.issuer_name || "(sin nombre)"}</p>
-                      <p className="text-xs text-content-muted">NIT {row.issuer_tax_id || "--"} · {formatDate(row.reception_date)}</p>
-                    </div>
-                    <p className="shrink-0 font-mono text-sm font-semibold">{money(row.total, row.currency || "COP")}</p>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <Badge tone={PROCESSING_TONE[row.processing_status] || "neutral"}>{row.processing_label}</Badge>
-                    <Badge tone={ASSIGNMENT_TONE[row.assignment_status] || "neutral"}>{row.assignment_label}</Badge>
-                    {row.responsible_name ? <Badge>{row.responsible_name}</Badge> : null}
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {!loading && !rows.length ? (
-              <EmptyState
-                description={hasFilters ? "Ajusta los filtros o limpia la búsqueda para ver otras facturas." : "Carga un ZIP con facturas XML/PDF o sincroniza el buzón IMAP para empezar."}
-                icon={<Inbox size={22} />}
-                title={hasFilters ? "Ninguna factura coincide con los filtros" : "Aún no hay facturas recibidas"}
-              />
-            ) : null}
-
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-2 text-sm">
-              <span className="text-content-muted">{meta.total} factura(s) · página {meta.page} de {meta.pages}</span>
-              <div className="flex gap-2">
-                <Button disabled={page <= 1 || loading} onClick={() => setPage((current) => Math.max(1, current - 1))} size="compact" type="button" variant="secondary">Anterior</Button>
-                <Button disabled={page >= meta.pages || loading} onClick={() => setPage((current) => current + 1)} size="compact" type="button" variant="secondary">Siguiente</Button>
-              </div>
-            </div>
-          </section>
-        </>
-      ) : null}
-
       {tab === "monitor" ? (
         <MonitorPanel
           loading={loading}
           meta={meta}
-          onAssign={setAssignTarget}
           onPage={setPage}
           onPreviewPdf={setPdfInvoice}
           page={page}
@@ -372,7 +285,7 @@ export default function FacturasRecibidasPage() {
         <UploadModal onClose={() => setUploadOpen(false)} onDone={(result) => {
           setUploadOpen(false);
           setMessage(result.duplicate ? "El ZIP ya había sido procesado; no se duplicó ninguna factura." : `ZIP procesado: ${result.summary?.created || 0} creada(s), ${result.summary?.duplicates || 0} duplicada(s), ${result.summary?.failed || 0} con error.`);
-          setTab("inbox");
+          setTab("monitor");
           void load();
         }} />
       ) : null}
@@ -380,32 +293,12 @@ export default function FacturasRecibidasPage() {
       {mailOpen ? <MailConfigModal onClose={() => setMailOpen(false)} onSynced={(text) => { setMailOpen(false); setMessage(text); void load(); }} /> : null}
 
       {pdfInvoice ? <InvoicePdfModal invoice={pdfInvoice} onClose={() => setPdfInvoice(null)} /> : null}
-
-      {assignTarget ? (
-        <AssignCostCenterModal
-          invoice={assignTarget}
-          responsibles={responsibles}
-          onClose={() => setAssignTarget(null)}
-          onDone={(text) => { setAssignTarget(null); setMessage(text); void load(); }}
-        />
-      ) : null}
     </div>
   );
 }
 
 type InvoiceDocument = { id: number; document_type: string; file_name: string; size_bytes: number; is_primary: boolean };
-type InvoiceDetail = {
-  full_number: string;
-  processing_status: string;
-  responsible_user_id: number | null;
-  responsible_name: string | null;
-  cost_center: string | null;
-  segment: string | null;
-  assignment_detail: string | null;
-  segments: string[];
-  cost_centers: CostCenterOption[];
-  documents: InvoiceDocument[];
-};
+type InvoiceDetail = { documents: InvoiceDocument[] };
 
 function cufeStatus(row: InvoiceRow) {
   if (!row.cufe) return { label: "No informado", tone: "warning" as Tone };
@@ -421,14 +314,13 @@ function ivaPercents(row: InvoiceRow) {
   return Array.isArray(percents) ? percents.filter((value) => Number.isFinite(Number(value))) : [];
 }
 
-function MonitorPanel({ rows, loading, meta, page, onPage, onPreviewPdf, onAssign }: {
+function MonitorPanel({ rows, loading, meta, page, onPage, onPreviewPdf }: {
   rows: InvoiceRow[];
   loading: boolean;
   meta: Meta;
   page: number;
   onPage: (page: number) => void;
   onPreviewPdf: (invoice: InvoiceRow) => void;
-  onAssign: (invoice: InvoiceRow) => void;
 }) {
   const stats = useMemo(() => ({
     cufe: rows.filter((row) => row.extraction_metadata?.cufe_validation?.valid).length,
@@ -454,17 +346,17 @@ function MonitorPanel({ rows, loading, meta, page, onPage, onPreviewPdf, onAssig
       </div>
 
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[1080px] text-sm">
+        <table className="w-full min-w-[980px] text-sm">
           <thead>
             <tr className="border-b border-line bg-surface-muted text-left text-xs uppercase tracking-wide text-content-muted">
               <th className="px-2 py-2">Factura</th>
               <th className="px-2 py-2">Emisor</th>
               <th className="px-2 py-2">Receptor</th>
-              <th className="px-2 py-2">Emisión</th>
-              <th className="px-2 py-2 text-right">IVA</th>
-              <th className="px-2 py-2 text-right">Total</th>
+              <th className="px-2 py-2">Fechas</th>
+              <th className="px-2 py-2 text-right">Total · IVA</th>
               <th className="px-2 py-2">CUFE</th>
               <th className="px-2 py-2">Centro de costo</th>
+              <th className="px-2 py-2">Estado</th>
               <th className="sticky right-0 z-10 border-l border-line bg-surface-muted px-2 py-2 text-right">Acciones</th>
             </tr>
           </thead>
@@ -486,32 +378,39 @@ function MonitorPanel({ rows, loading, meta, page, onPage, onPreviewPdf, onAssig
                       {row.pdf_available ? <span>· PDF</span> : null}
                     </div>
                   </td>
-                  <td className="max-w-[170px] px-2 py-2">
+                  <td className="max-w-[160px] px-2 py-2">
                     <p className="truncate text-content-strong" title={row.issuer_name || ""}>{row.issuer_name || "(sin nombre)"}</p>
                     <p className="font-mono text-xs text-content-muted">{row.issuer_tax_id || "--"}</p>
                   </td>
-                  <td className="max-w-[150px] px-2 py-2">
+                  <td className="max-w-[140px] px-2 py-2">
                     <p className="truncate text-content-body" title={row.receiver_name || ""}>{row.receiver_name || "(sin nombre)"}</p>
                     <p className="font-mono text-xs text-content-muted">{row.receiver_tax_id || "--"}</p>
                   </td>
-                  <td className="whitespace-nowrap px-2 py-2">{formatDate(row.issue_date)}</td>
-                  <td className="px-2 py-2 text-right">
-                    <p className="font-mono">{Number(row.iva) > 0 ? money(row.iva, row.currency || "COP") : "Sin IVA"}</p>
-                    {percents.length ? <p className="text-xs text-content-muted">{percents.map((value) => `${value}%`).join(" · ")}</p> : null}
+                  <td className="px-2 py-2">
+                    <p className="whitespace-nowrap text-xs"><span className="text-content-muted">Emisión</span> {formatDate(row.issue_date)}</p>
+                    <p className="mt-0.5 whitespace-nowrap text-xs"><span className="text-content-muted">Recepción</span> {formatDate(row.reception_date)}</p>
                   </td>
-                  <td className="whitespace-nowrap px-2 py-2 text-right font-mono font-semibold">{money(row.total, row.currency || "COP")}</td>
-                  <td className="max-w-[140px] px-2 py-2">
+                  <td className="whitespace-nowrap px-2 py-2 text-right">
+                    <p className="font-mono font-semibold">{money(row.total, row.currency || "COP")}</p>
+                    <p className="text-xs text-content-muted">{Number(row.iva) > 0 ? `IVA${percents.length ? ` ${percents.map((value) => `${value}%`).join(" · ")}` : ""} ${money(row.iva, row.currency || "COP")}` : "Sin IVA"}</p>
+                  </td>
+                  <td className="max-w-[120px] px-2 py-2">
                     <p className="truncate font-mono text-xs text-content-body" title={row.cufe || ""}>{row.cufe || "--"}</p>
                     <Badge tone={cufe.tone}>{cufe.label}</Badge>
                   </td>
                   <td className="px-2 py-2">
-                    <p className="whitespace-nowrap text-content-strong">{row.cost_center || "Sin asignar"}</p>
+                    <p className={`whitespace-nowrap font-mono text-xs font-semibold ${row.cost_center ? "text-content-strong" : "text-content-muted"}`}>{row.cost_center || "Sin centro de costo"}</p>
                     <p className="text-xs text-content-muted">{row.responsible_name || "Sin responsable"}{row.segment ? ` · ${row.segment}` : ""}</p>
                   </td>
+                  <td className="px-2 py-2">
+                    <div className="flex flex-col items-start gap-1">
+                      <Badge tone={PROCESSING_TONE[row.processing_status] || "neutral"}>{row.processing_label}</Badge>
+                      <Badge tone={ASSIGNMENT_TONE[row.assignment_status] || "neutral"}>{row.assignment_label}</Badge>
+                    </div>
+                  </td>
                   <td className="sticky right-0 border-l border-line bg-surface px-2 py-2">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end">
                       <Button aria-label={`Ver PDF de ${row.full_number}`} disabled={!row.pdf_available} onClick={() => onPreviewPdf(row)} size="compact" type="button" variant="ghost"><Eye size={16} /> PDF</Button>
-                      <Button aria-label={`Asignar centro de costo a ${row.full_number}`} disabled={row.processing_status === "processed"} onClick={() => onAssign(row)} size="compact" type="button" variant="secondary"><UserCog size={16} /> Asignar</Button>
                     </div>
                   </td>
                 </tr>
@@ -535,15 +434,15 @@ function MonitorPanel({ rows, loading, meta, page, onPage, onPreviewPdf, onAssig
                 </div>
                 <p className="shrink-0 font-mono text-sm font-semibold">{money(row.total, row.currency || "COP")}</p>
               </div>
+              <p className="mt-1 text-xs text-content-muted">Recepción {formatDate(row.reception_date)} · Centro de costo {row.cost_center || "sin asignar"}{row.responsible_name ? ` · ${row.responsible_name}` : ""}</p>
               <div className="mt-2 flex flex-wrap items-center gap-1">
+                <Badge tone={PROCESSING_TONE[row.processing_status] || "neutral"}>{row.processing_label}</Badge>
+                <Badge tone={ASSIGNMENT_TONE[row.assignment_status] || "neutral"}>{row.assignment_label}</Badge>
                 <Badge tone={cufe.tone}>{cufe.label}</Badge>
                 <Badge>{Number(row.iva) > 0 ? `IVA ${percents.length ? `${percents.map((value) => `${value}%`).join(" · ")} · ` : ""}${money(row.iva, row.currency || "COP")}` : "Sin IVA"}</Badge>
-                <Badge tone={row.cost_center ? "info" : "warning"}>{row.cost_center || "Sin centro de costo"}</Badge>
               </div>
               <div className="mt-3 flex flex-wrap gap-1">
                 <Button aria-label={`Ver PDF de ${row.full_number}`} disabled={!row.pdf_available} onClick={() => onPreviewPdf(row)} size="compact" type="button" variant="secondary"><Eye size={16} /> PDF</Button>
-                <Button aria-label={`Asignar centro de costo a ${row.full_number}`} disabled={row.processing_status === "processed"} onClick={() => onAssign(row)} size="compact" type="button"><UserCog size={16} /> Asignar</Button>
-                <Link aria-label={`Abrir factura ${row.full_number}`} className="inline-flex h-9 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold text-apex hover:border-apex" href={`/dashboard/contabilidad/facturas-recibidas/${row.id}`}>Abrir <ArrowRight size={14} /></Link>
               </div>
             </article>
           );
@@ -630,102 +529,6 @@ function documentAnchor(url: string, fileName: string) {
   anchor.href = url;
   anchor.download = fileName || "factura.pdf";
   return anchor;
-}
-
-function AssignCostCenterModal({ invoice, responsibles, onClose, onDone }: {
-  invoice: InvoiceRow;
-  responsibles: Responsible[];
-  onClose: () => void;
-  onDone: (message: string) => void;
-}) {
-  const [detail, setDetail] = useState<InvoiceDetail | null>(null);
-  const [responsibleId, setResponsibleId] = useState(invoice.responsible_user_id ? String(invoice.responsible_user_id) : "");
-  const [costCenter, setCostCenter] = useState(invoice.cost_center || "");
-  const [segment, setSegment] = useState(invoice.segment || "");
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-    api<InvoiceDetail>(`/api/v1/accounting/received-invoices/${invoice.id}`, { cache: "no-store" })
-      .then((loaded) => {
-        if (cancelled) return;
-        setDetail(loaded);
-        setResponsibleId(loaded.responsible_user_id ? String(loaded.responsible_user_id) : "");
-        setCostCenter(loaded.cost_center || "");
-        setSegment(loaded.segment || "");
-        setNote(loaded.assignment_detail || "");
-      })
-      .catch((caught) => { if (!cancelled) setError(describeError(caught, "No fue posible cargar la factura.")); });
-    return () => { cancelled = true; };
-  }, [invoice.id]);
-
-  async function submit() {
-    const person = responsibles.find((user) => String(user.id) === responsibleId);
-    if (!person) { setError("Selecciona el responsable de la factura."); return; }
-    const center = (detail?.cost_centers || []).find((item) => item.code === costCenter);
-    setBusy(true);
-    setError("");
-    try {
-      await api(`/api/v1/accounting/received-invoices/${invoice.id}/assign`, {
-        method: "POST",
-        body: JSON.stringify({
-          responsible_user_id: person.id,
-          segment: segment || undefined,
-          cost_center: costCenter || null,
-          assignment_detail: note.trim() || undefined
-        })
-      });
-      onDone(`Factura ${invoice.full_number} asignada a ${person.name}${center ? ` · centro de costo ${center.code} · ${center.name}` : costCenter ? ` · centro de costo ${costCenter}` : ""}.`);
-    } catch (caught) {
-      setError(describeError(caught, "No fue posible asignar la factura."));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <ModalFrame
-      footer={(
-        <div className="flex justify-end gap-2">
-          <Button onClick={onClose} type="button" variant="ghost">Cancelar</Button>
-          <Button disabled={busy || !responsibleId || !detail} loading={busy} onClick={() => void submit()} type="button">Asignar</Button>
-        </div>
-      )}
-      onClose={onClose}
-      title={`Asignar centro de costo · ${invoice.full_number}`}
-    >
-      <div className="space-y-3 text-sm">
-        <p className="text-content-body">{invoice.issuer_name || "(proveedor sin nombre)"} · NIT {invoice.issuer_tax_id || "--"} · Total {money(invoice.total, invoice.currency || "COP")}</p>
-        {detail ? (
-          <>
-            <Select label="Responsable" onChange={(event) => setResponsibleId(event.target.value)} value={responsibleId}>
-              <option value="">Selecciona un responsable</option>
-              {responsibles.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
-            </Select>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <CostCenterSelect centers={detail.cost_centers || []} onChange={setCostCenter} value={costCenter} />
-              <Select label="Segmento" onChange={(event) => setSegment(event.target.value)} value={segment}>
-                <option value="">Sin segmento</option>
-                {(detail.segments || []).map((item) => <option key={item} value={item}>{item}</option>)}
-              </Select>
-            </div>
-            <Input label="Detalle de la asignación" onChange={(event) => setNote(event.target.value)} value={note} />
-            <p className="text-xs text-content-muted">La asignación queda auditada con responsable, segmento, centro de costo y fecha.</p>
-            {(detail.cost_centers || []).length ? null : (
-              <p className="text-xs text-content-muted">
-                Registra los centros en{" "}
-                <Link className="font-semibold text-apex hover:underline" href="/dashboard/contabilidad/estructura">Contabilidad · Estructura</Link>{" "}
-                para asignarlos desde aquí.
-              </p>
-            )}
-          </>
-        ) : !error ? <Skeleton className="h-32 w-full" /> : null}
-        {error ? <Alert tone="error">{error}</Alert> : null}
-      </div>
-    </ModalFrame>
-  );
 }
 
 function UploadModal({ onClose, onDone }: { onClose: () => void; onDone: (result: UploadResult) => void }) {
@@ -828,8 +631,8 @@ function MailConfigModal({ onClose, onSynced }: { onClose: () => void; onSynced:
   async function sync() {
     setBusy(true); setError(""); setMessage("");
     try {
-      const result = await api<{ status: string; processed: number; created: number; duplicates: number; errors: number }>("/api/v1/accounting/received-invoices/mail-config/sync", { method: "POST", body: JSON.stringify({ limit: 20 }) });
-      onSynced(`Sincronización ${result.status}: ${result.created || 0} factura(s) creada(s), ${result.duplicates || 0} duplicada(s), ${result.errors || 0} error(es).`);
+      const result = await api<{ messages: number; pending: number; created: number; duplicates: number; ignored: number; failed: number }>("/api/v1/accounting/received-invoices/mail-config/sync", { method: "POST", body: JSON.stringify({ limit: 20 }) });
+      onSynced(`Sincronización: ${result.messages || 0} correo(s) revisado(s), ${result.created || 0} factura(s) nueva(s), ${result.duplicates || 0} duplicada(s), ${result.ignored || 0} sin factura, ${result.failed || 0} error(es).`);
     } catch (caught) {
       setError(describeError(caught, "No fue posible sincronizar el buzón."));
     } finally { setBusy(false); }

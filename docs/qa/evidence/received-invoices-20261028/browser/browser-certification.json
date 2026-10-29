@@ -1,12 +1,12 @@
 {
   "suite": "received-invoices-browser",
-  "mode": "headed",
-  "executed_at": "2026-10-28T19:20:44.308Z",
-  "tenant_id": "invoices-ui-52934c7fdf",
+  "mode": "headless",
+  "executed_at": "2026-10-29T17:32:46.516Z",
+  "tenant_id": "invoices-ui-a388903360",
   "api": "http://127.0.0.1:3000",
   "web": "http://127.0.0.1:3001",
-  "total": 26,
-  "passed": 26,
+  "total": 30,
+  "passed": 30,
   "failed": 0,
   "checks": [
     {
@@ -30,7 +30,13 @@
       "status": "passed"
     },
     {
-      "name": "La navegacion de Contabilidad marca la seccion activa",
+      "accountingNav": false,
+      "backLinks": [
+        "Contabilidad",
+        "Contabilidad",
+        "Volver a Contabilidad"
+      ],
+      "name": "La vista no repite la navegacion de Contabilidad y ofrece un solo boton de regreso a sus aplicaciones",
       "status": "passed"
     },
     {
@@ -41,10 +47,10 @@
     },
     {
       "rows": [
-        "FV-2026-000124\nXML\nPDF\n | Insumos del Pacifico SAS | 901777333 | 22/10/2026 | 28/10/2026 | $ 2.856.000 | -- | Pendiente de asignación | Sin asignar | Abrir",
-        "FV-2026-000123\nXML\nPDF\n | Distribuciones Andinas SAS | 900123456 | 20/10/2026 | 28/10/2026 | $ 1.190.000 | -- | Pendiente de asignación | Sin asignar | Abrir"
+        "FV-2026-000124\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n | \n\nInsumos del Pacifico SAS\n\n901777333\n\n | \n\nComercializadora Aurora SAS\n\n901555777\n\n | \n\nEmisión 22/10/2026\n\nRecepción 29/10/2026\n\n | \n\n$ 2.856.000\n\nIVA 0% $ 456.000\n\n | \n\n9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b\n\nVálido · base64 | \n\nSin centro de costo\n\nSin responsable\n\n | \nPendiente de asignación\nSin asignar\n | \nPDF",
+        "FV-2026-000123\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n | \n\nDistribuciones Andinas SAS\n\n900123456\n\n | \n\nComercializadora Aurora SAS\n\n901555777\n\n | \n\nEmisión 20/10/2026\n\nRecepción 29/10/2026\n\n | \n\n$ 1.190.000\n\nIVA 0% $ 190.000\n\n | \n\n3f1c9a2b7d4e6f8a1c3b5d7e9f0a2c4b6d8e0f1a3c5b7d9e1f3a5c7b9d0e2f4a\n\nVálido · base64 | \n\nSin centro de costo\n\nSin responsable\n\n | \nPendiente de asignación\nSin asignar\n | \nPDF"
       ],
-      "name": "La bandeja muestra numero, proveedor, NIT, fechas y total de cada factura",
+      "name": "El monitor muestra numero, proveedor, NIT, fechas y total de cada factura",
       "status": "passed"
     },
     {
@@ -74,8 +80,23 @@
       "status": "passed"
     },
     {
-      "filteredRow": "FV-2026-000123\nXML\nPDF\n\tDistribuciones Andinas SAS\t900123456\t20/10/2026\t28/10/2026\t$ 1.190.000\t--\tPendiente de asignación\tSin asignar\tAbrir",
+      "filteredRow": "FV-2026-000123\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n\t\n\nDistribuciones Andinas SAS\n\n900123456\n\n\t\n\nComercializadora Aurora SAS\n\n901555777\n\n\t\n\nEmisión 20/10/2026\n\nRecepción 29/10/2026\n\n\t\n\n$ 1.190.000\n\nIVA 0% $ 190.000\n\n\t\n\n3f1c9a2b7d4e6f8a1c3b5d7e9f0a2c4b6d8e0f1a3c5b7d9e1f3a5c7b9d0e2f4a\n\nVálido · base64\t\n\nSin centro de costo\n\nSin responsable\n\n\t\nPendiente de asignación\nSin asignar\n\t\nPDF",
       "name": "El filtro por numero deja solo la factura buscada",
+      "status": "passed"
+    },
+    {
+      "headers": [
+        "factura",
+        "emisor",
+        "receptor",
+        "fechas",
+        "total · iva",
+        "cufe",
+        "centro de costo",
+        "estado",
+        "acciones"
+      ],
+      "name": "El monitor muestra el centro de costo y ya no ofrece una columna Abrir",
       "status": "passed"
     },
     {
@@ -92,88 +113,98 @@
     },
     {
       "pdfState": {
-        "src": "blob:http://127.0.0.1:3001/0b569434-9021-4243-afe7-3ac3b1cd7e1f#page=1&zoom=100",
+        "src": "blob:http://127.0.0.1:3001/4ac4be33-594a-4b72-8016-72a413206e34#page=1&zoom=page-width&toolbar=0&navpanes=0",
         "contentType": "application/pdf",
         "embedded": false,
-        "height": 700
+        "height": 720
       },
-      "name": "El visor enmarca el PDF original con paginacion y zoom permitidos por la CSP",
+      "name": "El visor enmarca el PDF original con paginacion y ajuste permitidos por la CSP",
       "status": "passed"
     },
     {
       "pdfState": {
-        "src": "blob:http://127.0.0.1:3001/0b569434-9021-4243-afe7-3ac3b1cd7e1f#page=1&zoom=100",
+        "src": "blob:http://127.0.0.1:3001/4ac4be33-594a-4b72-8016-72a413206e34#page=1&zoom=page-width&toolbar=0&navpanes=0",
         "contentType": "application/pdf",
         "embedded": false,
-        "height": 700
+        "height": 720
       },
       "name": "El PDF se carga dentro del visor y no lo bloquea la politica de seguridad",
       "status": "passed"
     },
     {
       "pdfState": {
-        "src": "blob:http://127.0.0.1:3001/0b569434-9021-4243-afe7-3ac3b1cd7e1f#page=1&zoom=100",
+        "src": "blob:http://127.0.0.1:3001/4ac4be33-594a-4b72-8016-72a413206e34#page=1&zoom=page-width&toolbar=0&navpanes=0",
         "contentType": "application/pdf",
         "embedded": false,
-        "height": 700
+        "height": 720
       },
       "name": "El visor alterna de XML a PDF sin mezclar contenidos",
       "status": "passed"
     },
     {
       "pdfServe": {
-        "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+        "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
         "status": 200,
         "contentType": "application/pdf"
       },
       "documentResponses": [
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 204,
           "contentType": ""
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
-          "contentType": "application/xml"
+          "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
-          "status": 200,
-          "contentType": "application/xml"
-        },
-        {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
-          "status": 200,
-          "contentType": "application/xml"
-        },
-        {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
           "status": 204,
           "contentType": ""
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
+          "status": 200,
+          "contentType": "application/xml"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
+          "status": 200,
+          "contentType": "application/xml"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
+          "status": 200,
+          "contentType": "application/pdf"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 204,
           "contentType": ""
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
+          "status": 200,
+          "contentType": "application/pdf"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         }
@@ -182,17 +213,15 @@
       "status": "passed"
     },
     {
-      "paging": {
-        "prevDisabled": true,
-        "nextDisabled": true
-      },
-      "name": "El visor desactiva la navegacion de paginas cuando el PDF tiene una sola",
+      "prevDisabled": true,
+      "nextDisabled": true,
+      "name": "El visor no ofrece paginacion cuando el PDF tiene una sola pagina",
       "status": "passed"
     },
     {
       "zoomState": {
         "label": true,
-        "src": "blob:http://127.0.0.1:3001/0b569434-9021-4243-afe7-3ac3b1cd7e1f#page=1&zoom=125"
+        "src": "blob:http://127.0.0.1:3001/4ac4be33-594a-4b72-8016-72a413206e34#page=1&zoom=125&toolbar=0&navpanes=0"
       },
       "name": "El control de zoom aplica el porcentaje sobre el PDF",
       "status": "passed"
@@ -200,52 +229,62 @@
     {
       "documentResponses": [
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 204,
           "contentType": ""
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
-          "contentType": "application/xml"
+          "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
-          "status": 200,
-          "contentType": "application/xml"
-        },
-        {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
-          "status": 200,
-          "contentType": "application/xml"
-        },
-        {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
           "status": 204,
           "contentType": ""
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
+          "status": 200,
+          "contentType": "application/xml"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
+          "status": 200,
+          "contentType": "application/xml"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
+          "status": 200,
+          "contentType": "application/pdf"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 204,
           "contentType": ""
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         },
         {
-          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
+          "status": 200,
+          "contentType": "application/pdf"
+        },
+        {
+          "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
           "status": 200,
           "contentType": "application/pdf"
         }
@@ -254,11 +293,18 @@
       "status": "passed"
     },
     {
-      "name": "Los datos administrativos se guardan y confirman en pantalla",
+      "costCenterText": "ESQ 294 · Vehiculo GOLIAT placa ESQ 294",
+      "name": "El formulario unificado guarda los datos básicos y el centro de costo",
       "status": "passed"
     },
     {
-      "name": "La asignacion deja responsable, segmento y estado visibles en la misma pantalla",
+      "usersList": "USUARIOS HABILITADOS\n\nAnalista de Cuentas UI\nresponsable-a388903360@cert.local\nAPEX_ADMIN\nLider de Facturas UI\nui-facturas-a388903360@cert.local\nAPEX_ADMIN",
+      "name": "El responsable se elige del listado de usuarios habilitados de la empresa",
+      "status": "passed"
+    },
+    {
+      "historyText": "Historial y auditoría · FV-2026-000123\nMOVIMIENTOS\n\nAsignación realizada\n\n29/10/2026 17:33 · Usuario #924\n\nFactura asignada a un responsable.\n\nDatos administrativos actualizados\n\n29/10/2026 17:33 · Usuario #924\n\nActualizacion de datos administrativos.\n\nFactura recibida\n\n29/10/2026 17:33\n\nFactura recibida y lista para asignacion.\n\nASIGNACIONES REGISTRADAS\n29/10/2026 17:33 · Analista de Cuentas UI · sin segmento · assigned",
+      "name": "La asignacion deja responsable visible y el historial abre en ventana emergente",
       "status": "passed"
     },
     {
@@ -268,16 +314,38 @@
     {
       "writeRequests": [
         "POST /api/v1/accounting/received-invoices/upload",
-        "PATCH /api/v1/accounting/received-invoices/48",
-        "POST /api/v1/accounting/received-invoices/48/assign",
-        "POST /api/v1/accounting/received-invoices/48/approve"
+        "PATCH /api/v1/accounting/received-invoices/236",
+        "POST /api/v1/accounting/received-invoices/236/assign",
+        "POST /api/v1/accounting/received-invoices/236/approve"
       ],
       "name": "La pantalla envia una sola asignacion y una sola aprobacion",
       "status": "passed"
     },
     {
-      "finalRow": "FV-2026-000123\nXML\nPDF\n\tDistribuciones Andinas SAS\t900123456\t20/10/2026\t28/10/2026\t$ 1.190.000\tAnalista de Cuentas UI\tProcesada\tAsignada\tAbrir",
-      "name": "La bandeja refleja responsable, estado procesado y asignacion final",
+      "accountingNav": false,
+      "backButtons": [
+        "Volver al monitor"
+      ],
+      "name": "El detalle no muestra la navegacion de Contabilidad y ofrece un solo boton de retorno al monitor",
+      "status": "passed"
+    },
+    {
+      "tabs": [
+        "Monitor",
+        "Correos procesados",
+        "Errores"
+      ],
+      "assignButtons": 0,
+      "openLinks": [
+        "FV-2026-000124",
+        "FV-2026-000123"
+      ],
+      "name": "El monitor unificado es la unica vista de facturas y ya no ofrece asignar ni abrir en la tabla",
+      "status": "passed"
+    },
+    {
+      "finalRow": "FV-2026-000123\nFACTURA ELECTRÓNICA DE VENTA\n· XML\n· PDF\n\t\n\nDistribuciones Andinas SAS\n\n900123456\n\n\t\n\nComercializadora Aurora SAS\n\n901555777\n\n\t\n\nEmisión 20/10/2026\n\nRecepción 29/10/2026\n\n\t\n\n$ 1.190.000\n\nIVA 0% $ 190.000\n\n\t\n\n3f1c9a2b7d4e6f8a1c3b5d7e9f0a2c4b6d8e0f1a3c5b7d9e1f3a5c7b9d0e2f4a\n\nVálido · base64\t\n\nESQ 294\n\nAnalista de Cuentas UI\n\n\t\nProcesada\nAsignada\n\t\nPDF",
+      "name": "El monitor refleja responsable, centro de costo, estado procesado y asignacion final",
       "status": "passed"
     },
     {
@@ -286,6 +354,8 @@
         "Failed to load resource: the server responded with a status of 404 (Not Found)",
         "Connecting to 'http://localhost:54321/auth/v1/token?grant_type=password' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Fetch API cannot load http://localhost:54321/auth/v1/token?grant_type=password. Refused to connect because it violates the document's Content Security Policy.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+        "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
         "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
@@ -312,9 +382,10 @@
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\02-bandeja-dos-facturas.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\03-detalle-fiscal.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\04-detalle-visor-pdf.png",
+    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\04b-detalle-responsables.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\05-detalle-asignada.png",
     "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\06-detalle-aprobada.png",
-    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\07-bandeja-final.png"
+    "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\received-invoices-20261028\\browser\\screenshots\\07-monitor-final.png"
   ],
   "console_errors": [],
   "environment_noise": [
@@ -331,66 +402,78 @@
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
     "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked."
   ],
   "bad_api_responses": [],
   "write_requests": [
     "POST /api/v1/accounting/received-invoices/upload",
-    "PATCH /api/v1/accounting/received-invoices/48",
-    "POST /api/v1/accounting/received-invoices/48/assign",
-    "POST /api/v1/accounting/received-invoices/48/approve"
+    "PATCH /api/v1/accounting/received-invoices/236",
+    "POST /api/v1/accounting/received-invoices/236/assign",
+    "POST /api/v1/accounting/received-invoices/236/approve"
   ],
   "document_responses": [
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
       "status": 204,
       "contentType": ""
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
       "status": 200,
-      "contentType": "application/xml"
+      "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
-      "status": 200,
-      "contentType": "application/xml"
-    },
-    {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/90/file",
-      "status": 200,
-      "contentType": "application/xml"
-    },
-    {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
       "status": 204,
       "contentType": ""
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
+      "status": 200,
+      "contentType": "application/xml"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/426/file",
+      "status": 200,
+      "contentType": "application/xml"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
+      "status": 200,
+      "contentType": "application/pdf"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
       "status": 204,
       "contentType": ""
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
       "status": 200,
       "contentType": "application/pdf"
     },
     {
-      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/48/documents/91/file",
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
+      "status": 200,
+      "contentType": "application/pdf"
+    },
+    {
+      "url": "http://127.0.0.1:3000/api/v1/accounting/received-invoices/236/documents/427/file",
       "status": 200,
       "contentType": "application/pdf"
     }
   ],
-  "finished_at": "2026-10-28T19:21:12.971Z"
+  "finished_at": "2026-10-29T17:33:17.645Z"
 }

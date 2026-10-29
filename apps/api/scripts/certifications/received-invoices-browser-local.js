@@ -48,6 +48,8 @@ const email = `ui-facturas-${suffix}@cert.local`;
 const password = "CertUi#2026facturas";
 const leaderName = "Lider de Facturas UI";
 const responsibleName = "Analista de Cuentas UI";
+const COST_CENTER = "ESQ 294";
+const COST_CENTER_NAME = "Vehiculo GOLIAT placa ESQ 294";
 
 const checks = [];
 const consoleErrors = [];
@@ -77,7 +79,15 @@ async function reachable(url) {
 }
 
 async function seed() {
-  const config = { accounting: { organization_tree: { societies: [], branches: [], cost_centers: [] } } };
+  const config = {
+    accounting: {
+      organization_tree: {
+        societies: [{ code: "SOC-UI", name: "Sociedad UI facturas", active: true }],
+        branches: [{ code: "BR-UI", name: "Sucursal UI facturas", society_code: "SOC-UI", active: true }],
+        cost_centers: [{ code: COST_CENTER, name: COST_CENTER_NAME, active: true, branch_code: "BR-UI", society_code: "SOC-UI" }]
+      }
+    }
+  };
   await db.tenant.create({
     data: { id: tenantId, name: "UI facturas recibidas", active_modules: ["M-07"], config, country: "CO", currency: "COP" }
   });
@@ -163,7 +173,8 @@ async function controlByLabel(page, labelText) {
   const handle = await page.evaluateHandle((needle) => {
     const label = [...document.querySelectorAll("label")]
       .find((item) => item.querySelector("span")?.textContent?.trim() === needle);
-    return label?.querySelector("input, textarea, select") || null;
+    // Los buscadores inteligentes dejan un <select> oculto antes del input visible.
+    return label?.querySelector('input[role="combobox"]') || label?.querySelector("input, textarea, select") || null;
   }, labelText);
   const element = handle.asElement();
   if (!element) throw new Error(`No se encontro el control "${labelText}".`);
@@ -176,11 +187,6 @@ async function typeByLabel(page, labelText, value) {
   await element.click({ clickCount: 3 });
   await page.keyboard.press("Backspace");
   await element.type(value, { delay: 12 });
-}
-
-async function selectByLabel(page, labelText, optionValue) {
-  const element = await controlByLabel(page, labelText);
-  await element.select(optionValue);
 }
 
 async function main() {
@@ -243,12 +249,14 @@ async function main() {
   await page.waitForFunction(() => location.pathname.includes("/facturas-recibidas"), { timeout: 60000 });
   await waitText(page, "Facturas electrónicas recibidas");
   check("La funcion esta ubicada dentro de Contabilidad y abre desde su portafolio", page.url().endsWith("/dashboard/contabilidad/facturas-recibidas"), { url: page.url() });
-  const navActive = await page.evaluate(() => {
-    const link = [...document.querySelectorAll('nav[aria-label="Navegación de contabilidad"] a')]
-      .find((item) => item.textContent?.includes("Facturas recibidas"));
-    return Boolean(link && link.className.includes("text-apex"));
-  });
-  check("La navegacion de Contabilidad marca la seccion activa", navActive);
+  const moduleChrome = await page.evaluate(() => ({
+    accountingNav: Boolean(document.querySelector('nav[aria-label="Navegación de contabilidad"]')),
+    backLinks: [...document.querySelectorAll('a[href="/dashboard/contabilidad"]')].map((item) => item.textContent?.trim() || "")
+  }));
+  check("La vista no repite la navegacion de Contabilidad y ofrece un solo boton de regreso a sus aplicaciones",
+    !moduleChrome.accountingNav
+    && moduleChrome.backLinks.filter((text) => /volver a contabilidad/i.test(text)).length === 1,
+    moduleChrome);
 
   // C. Carga del ZIP por la interfaz.
   await clickButton(page, "Cargar ZIP");
@@ -273,11 +281,11 @@ async function main() {
   check("El ZIP con dos facturas XML/PDF se procesa desde el navegador", /2 creada\(s\), 0 duplicada\(s\), 0 con error/.test(uploadMessage), { uploadMessage, file: demoZipFilename });
   await shot(page, "02-bandeja-dos-facturas");
 
-  // D. La bandeja completa los campos fiscales en la tabla.
+  // D. El monitor completa los campos fiscales en la tabla.
   const rows = await page.$$eval("table tbody tr", (items) => items.map((row) => row.innerText.replace(/\t/g, " | ")));
   const first = rows.find((row) => row.includes("FV-2026-000123")) || "";
   const second = rows.find((row) => row.includes("FV-2026-000124")) || "";
-  check("La bandeja muestra numero, proveedor, NIT, fechas y total de cada factura",
+  check("El monitor muestra numero, proveedor, NIT, fechas y total de cada factura",
     first.includes("Distribuciones Andinas SAS") && first.includes("900123456") && first.includes("20/10/2026") && /\$?\s?1\.190\.000/.test(first)
     && second.includes("Insumos del Pacifico SAS") && second.includes("901777333") && /\$?\s?2\.856\.000/.test(second), { rows });
   const kpis = await page.evaluate(() => {
@@ -300,6 +308,9 @@ async function main() {
   }, { timeout: 30000 });
   const filteredRow = await page.$eval("table tbody tr", (row) => row.innerText);
   check("El filtro por numero deja solo la factura buscada", filteredRow.includes("FV-2026-000123") && !filteredRow.includes("FV-2026-000124"), { filteredRow });
+  const headers = await page.$$eval("table thead th", (items) => items.map((item) => item.innerText.trim().toLowerCase()));
+  check("El monitor muestra el centro de costo y ya no ofrece una columna Abrir",
+    headers.includes("centro de costo") && !headers.includes("abrir"), { headers });
   await page.evaluate(() => {
     const link = [...document.querySelectorAll("table tbody tr a")].find((item) => item.innerText.includes("FV-2026-000123"));
     link?.click();
@@ -331,7 +342,7 @@ async function main() {
   await clickButton(page, "PDF ·");
   await page.waitForFunction(() => {
     const frame = document.querySelector("iframe");
-    return Boolean(frame && frame.getAttribute("src")?.startsWith("blob:") && frame.getAttribute("src")?.includes("#page=1&zoom=100"));
+    return Boolean(frame && frame.getAttribute("src")?.startsWith("blob:") && frame.getAttribute("src")?.includes("#page=1&zoom=page-width"));
   }, { timeout: 60000 });
   await page.waitForFunction(() => !document.querySelector("pre"), { timeout: 30000 });
   await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -346,16 +357,20 @@ async function main() {
       height: frame?.getBoundingClientRect().height || 0
     };
   });
-  check("El visor enmarca el PDF original con paginacion y zoom permitidos por la CSP", pdfFrame.includes("#page=1&zoom=100") && pdfState.height > 100, { pdfState });
+  check("El visor enmarca el PDF original con paginacion y ajuste permitidos por la CSP", pdfFrame.includes("#page=1&zoom=page-width") && pdfState.height > 100, { pdfState });
   check("El PDF se carga dentro del visor y no lo bloquea la politica de seguridad", pdfState.contentType === "application/pdf" || pdfState.embedded, { pdfState });
   check("El visor alterna de XML a PDF sin mezclar contenidos", pdfState.contentType === "application/pdf", { pdfState });
   const pdfServe = documentResponses.find((item) => item.status === 200 && /application\/pdf/.test(item.contentType));
   check("La API entrega el PDF autenticado como application/pdf para el visor", Boolean(pdfServe), { pdfServe, documentResponses });
   const paging = await page.evaluate(() => ({
-    prevDisabled: Boolean(document.querySelector('button[aria-label="Página anterior"]')?.disabled),
-    nextDisabled: Boolean(document.querySelector('button[aria-label="Página siguiente"]')?.disabled)
+    prev: document.querySelector('button[aria-label="Página anterior"]'),
+    next: document.querySelector('button[aria-label="Página siguiente"]')
   }));
-  check("El visor desactiva la navegacion de paginas cuando el PDF tiene una sola", paging.prevDisabled && paging.nextDisabled, { paging });
+  const pagingState = {
+    prevDisabled: !paging.prev || Boolean(paging.prev.disabled),
+    nextDisabled: !paging.next || Boolean(paging.next.disabled)
+  };
+  check("El visor no ofrece paginacion cuando el PDF tiene una sola pagina", pagingState.prevDisabled && pagingState.nextDisabled, pagingState);
   await page.click('button[aria-label="Acercar"]');
   await page.waitForFunction(() => document.querySelector("iframe")?.getAttribute("src")?.includes("zoom=125"), { timeout: 30000 });
   const zoomState = await page.evaluate(() => ({
@@ -370,32 +385,64 @@ async function main() {
     documentResponses.some((item) => item.status === 200 && item.url.includes("/documents/")) && documentResponses.filter((item) => item.status === 200).length >= 2,
     { documentResponses });
 
-  // H. Datos administrativos editables con historial.
-  await typeByLabel(page, "Grupo / área", "Contabilidad");
-  await typeByLabel(page, "Centro de costo", "CC-001");
+  // H. Formulario unificado: los datos básicos se guardan sin responsable.
+  await typeByLabel(page, "Centro de costo", COST_CENTER);
+  await page.waitForFunction((needle) => [...document.querySelectorAll('[role="option"]')]
+    .some((option) => option.innerText.includes(needle)), { timeout: 15000 }, COST_CENTER);
+  await page.evaluate((needle) => {
+    const option = [...document.querySelectorAll('[role="option"]')].find((item) => item.innerText.includes(needle));
+    option?.click();
+  }, COST_CENTER);
+  await page.waitForFunction((needle) => {
+    const input = document.querySelector('input[aria-label^="Buscar centro de costo"]');
+    return Boolean(input && input.value.includes(needle));
+  }, { timeout: 15000 }, COST_CENTER);
   await typeByLabel(page, "Observaciones", "Factura validada contra la orden de compra OC-4471.");
-  await clickButton(page, "Guardar");
-  await waitText(page, "Datos administrativos guardados con trazabilidad de cambios.");
-  check("Los datos administrativos se guardan y confirman en pantalla", true);
+  await clickButton(page, "Guardar cambios");
+  await waitText(page, "Datos de la asignación actualizados.");
+  const basicText = await page.evaluate(() => document.body.innerText);
+  check("El formulario unificado guarda los datos básicos y el centro de costo",
+    basicText.includes(`${COST_CENTER} · ${COST_CENTER_NAME}`), { costCenterText: basicText.split("\n").find((line) => line.includes(COST_CENTER)) || "" });
 
-  // I. Asignacion desde la misma pantalla.
+  // I. Asignacion desde la misma pantalla, con historial en ventana emergente.
   const search = await page.$('input[aria-label="Buscar responsable"]');
   await search.click();
+  await page.waitForFunction(() => {
+    const list = document.querySelector('[role="listbox"]');
+    return Boolean(list && list.innerText.toLowerCase().includes("usuarios habilitados") && list.querySelectorAll('[role="option"]').length >= 2);
+  }, { timeout: 30000 });
+  const usersList = await page.evaluate(() => document.querySelector('[role="listbox"]')?.innerText || "");
+  check("El responsable se elige del listado de usuarios habilitados de la empresa",
+    usersList.toLowerCase().includes("usuarios habilitados") && usersList.includes(responsibleName), { usersList });
+  await shot(page, "04b-detalle-responsables", false);
   await search.type(responsibleName, { delay: 20 });
   await page.waitForFunction((name) => [...document.querySelectorAll("button")].some((button) => button.innerText.includes(name)), { timeout: 30000 }, responsibleName);
   await page.evaluate((name) => {
     const button = [...document.querySelectorAll("button")].find((item) => item.innerText.includes(name));
     button?.click();
   }, responsibleName);
-  await selectByLabel(page, "Segmento", "Contable");
-  await typeByLabel(page, "Detalle de la asignación", "Revisar y registrar en el periodo octubre 2026.");
   await clickButton(page, "Asignar");
   await waitText(page, `Factura asignada a ${responsibleName}.`);
   await page.waitForFunction((name) => document.body.innerText.includes(`Responsable actual: ${name}`), { timeout: 30000 }, responsibleName);
   const assignedText = await page.evaluate(() => document.body.innerText);
-  check("La asignacion deja responsable, segmento y estado visibles en la misma pantalla",
-    assignedText.includes(`Responsable actual: ${responsibleName}`) && assignedText.includes("Asignación realizada") && assignedText.includes("Contable"), {});
+  await clickButton(page, "Ver historial");
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    return Boolean(dialog && dialog.innerText.includes("Asignación realizada"));
+  }, { timeout: 30000 });
+  const historyText = await page.evaluate(() => document.querySelector('[role="dialog"]')?.innerText || "");
+  check("La asignacion deja responsable visible y el historial abre en ventana emergente",
+    assignedText.includes(`Responsable actual: ${responsibleName}`)
+    && !assignedText.includes("Asignación realizada")
+    && historyText.includes("Asignación realizada")
+    && historyText.includes(responsibleName),
+    { historyText });
   await shot(page, "05-detalle-asignada");
+  await page.evaluate(() => {
+    const close = document.querySelector('[role="dialog"] button[aria-label="Cerrar"]');
+    close?.click();
+  });
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 15000 });
 
   // J. Aprobacion del lider con auditoria.
   page.once("dialog", (dialog) => { void dialog.accept(); });
@@ -410,20 +457,42 @@ async function main() {
     && writeRequests.filter((item) => item.endsWith("/approve")).length === 1, { writeRequests });
   await shot(page, "06-detalle-aprobada");
 
-  // K. La bandeja refleja el resultado final.
+  // K. El detalle solo ofrece volver al monitor y el monitor unificado refleja el resultado.
+  const detailChrome = await page.evaluate(() => ({
+    accountingNav: Boolean(document.querySelector('nav[aria-label="Navegación de contabilidad"]')),
+    backButtons: [...document.querySelectorAll('a[href="/dashboard/contabilidad/facturas-recibidas?tab=monitor"]')]
+      .map((item) => item.textContent?.trim() || "")
+  }));
+  check("El detalle no muestra la navegacion de Contabilidad y ofrece un solo boton de retorno al monitor",
+    !detailChrome.accountingNav && detailChrome.backButtons.length === 1 && /volver al monitor/i.test(detailChrome.backButtons[0]),
+    detailChrome);
   await page.evaluate(() => {
-    const link = [...document.querySelectorAll('nav[aria-label="Navegación de contabilidad"] a')]
-      .find((item) => item.textContent?.includes("Facturas recibidas"));
-    link?.click();
+    document.querySelector('a[href="/dashboard/contabilidad/facturas-recibidas?tab=monitor"]')?.click();
   });
-  await page.waitForFunction(() => /\/facturas-recibidas$/.test(new URL(location.href).pathname), { timeout: 90000 });
-  await waitText(page, "Facturas electrónicas recibidas");
+  await page.waitForFunction(() => /\/facturas-recibidas$/.test(new URL(location.href).pathname)
+    && new URL(location.href).searchParams.get("tab") === "monitor", { timeout: 90000 });
+  await waitText(page, "Monitor de extracción");
+  await page.waitForFunction(() => [...document.querySelectorAll('section[aria-label="Monitor de facturas extraídas"] table tbody tr')]
+    .some((row) => row.innerText.includes("FV-2026-000123")), { timeout: 60000 });
+  const monitorChrome = await page.evaluate(() => ({
+    tabs: [...document.querySelectorAll('nav[aria-label="Secciones del módulo"] button')].map((item) => item.textContent?.trim() || ""),
+    assignButtons: [...document.querySelectorAll("button")].filter((button) => /^asignar/i.test(button.innerText.trim())).length,
+    openLinks: [...document.querySelectorAll('a[aria-label^="Abrir factura"]')].map((link) => link.textContent?.trim() || "")
+  }));
+  check("El monitor unificado es la unica vista de facturas y ya no ofrece asignar ni abrir en la tabla",
+    monitorChrome.tabs.join("|") === "Monitor|Correos procesados|Errores"
+    && monitorChrome.tabs.includes("Monitor") && !monitorChrome.tabs.includes("Bandeja")
+    && monitorChrome.assignButtons === 0
+    && monitorChrome.openLinks.length > 0 && monitorChrome.openLinks.every((text) => /^FV-/.test(text)),
+    monitorChrome);
   await page.waitForFunction(() => [...document.querySelectorAll("table tbody tr")]
     .some((row) => row.innerText.includes("FV-2026-000123") && row.innerText.includes("Procesada")), { timeout: 60000 });
   const finalRow = await page.$$eval("table tbody tr", (items) => items.map((row) => row.innerText).find((row) => row.includes("FV-2026-000123")) || "");
-  check("La bandeja refleja responsable, estado procesado y asignacion final",
-    finalRow.includes("Distribuciones Andinas SAS") && finalRow.includes(responsibleName) && finalRow.includes("Procesada") && finalRow.includes("Asignada"), { finalRow });
-  await shot(page, "07-bandeja-final");
+  check("El monitor refleja responsable, centro de costo, estado procesado y asignacion final",
+    finalRow.includes("Distribuciones Andinas SAS") && finalRow.includes(responsibleName)
+    && finalRow.includes(COST_CENTER) && finalRow.includes("Procesada") && finalRow.includes("Asignada"),
+    { finalRow });
+  await shot(page, "07-monitor-final");
 
   check("La sesion completa no registro errores de consola propios del modulo", consoleErrors.length === 0, { consoleErrors, environmentNoise });
   check("Ninguna llamada del modulo respondio con error durante la sesion", badApiResponses.length === 0, { badApiResponses });
