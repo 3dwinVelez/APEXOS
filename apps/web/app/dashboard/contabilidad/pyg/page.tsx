@@ -1,52 +1,42 @@
 "use client";
 
-import {
-  getTransportPygReport,
-  type TransportPygAccountChild, type TransportPygReport, type TransportPygRow, type TransportPygVehicle
-} from "@/lib/api";
+import { getTransportPygReport, type TransportPygReport, type TransportPygRow } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
-import { formatRegionalMoney } from "@/lib/regionalFormat";
 import { downloadXlsxWorkbook, type XlsxReportSheet } from "@/lib/reportExports";
 import AccountingPyg from "@/components/accounting/AccountingPyg";
 import TransportPygAccountConfig from "@/components/transport-pyg/TransportPygAccountConfig";
-import { KIND_LABELS } from "@/lib/transport-pyg-account-config";
-import { AlertTriangle, BadgeDollarSign, ChevronDown, ChevronRight, Download, Fuel, Gauge, PieChart, RefreshCw, Scale, Settings2, Truck, Wallet } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Kpi, SourceNote, UnassignedKpis, UnmappedNotice, VehicleKpis, rowOf, rowOfCorporate, vehicleMoney as money, vehiclePercent as percent
+} from "@/components/accounting/PygVehicleReadings";
+import { StatementTable } from "@/components/accounting/PygStatementTable";
+import { PygCentersMatrix } from "@/components/accounting/PygCentersMatrix";
+import { centerExcelLabel } from "@/lib/pyg-center-labels.mjs";
+import { pygExpandedHref } from "@/lib/pyg-expanded";
+import { AlertTriangle, BadgeDollarSign, Download, ExternalLink, Fuel, Gauge, PieChart, RefreshCw, Scale, Settings2, Truck, Wallet } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const money = { format: (value: number) => formatRegionalMoney(value) };
-const percent = new Intl.NumberFormat("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const currentMonth = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`; };
 
-type View = "consolidado" | "vehiculos" | "configuracion";
-const VIEWS: Array<[View, string]> = [["consolidado", "Consolidado"], ["vehiculos", "Por vehículo"], ["configuracion", "Configuración"]];
+type View = "consolidado" | "vehiculos" | "centros" | "configuracion";
+const VIEWS: Array<[View, string]> = [["consolidado", "Consolidado"], ["vehiculos", "Por vehículo"], ["centros", "Por CC"], ["configuracion", "Configuración"]];
 
-function rowOf(vehicle: TransportPygVehicle, code: string) { return vehicle.rows.find((row) => row.code === code); }
-function rowOfCorporate(report: TransportPygReport, code: string) { return report.corporate.rows.find((row) => row.code === code); }
-
-function cumpTone(row: TransportPygRow): "success" | "warning" | "error" | "neutral" {
-  if (row.cump == null) return "neutral";
-  const value = row.cump;
-  if (row.kind === "income") return value >= 1 ? "success" : value >= 0.9 ? "warning" : "error";
-  if (row.kind === "expense") return value <= 1 ? "success" : value <= 1.1 ? "warning" : "error";
-  return "neutral";
+// Enlace nativo a la ventana ampliada. No se deduce si abrió ni se bloquea por temporizadores:
+// el navegador decide y, si la pestaña nueva no aparece, el usuario puede abrir el enlace
+// directamente (clic derecho → abrir en nueva pestaña) mientras esta página sigue intacta.
+function ExpandedWindowLink({ href }: { href: string }) {
+  return (
+    <a
+      aria-label="Abrir el PYG del vehículo en una pestaña o ventana nueva"
+      className="inline-flex h-9 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex hover:bg-apex/5"
+      href={href}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      <ExternalLink size={16} /> Abrir en otra ventana
+    </a>
+  );
 }
-const TONE_CLASS = {
-  success: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  warning: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  error: "bg-red-500/15 text-red-400 border-red-500/30",
-  neutral: "bg-surface-muted text-content-muted border-line"
-};
-
-const KIND_CLASS: Record<string, string> = {
-  income: "font-semibold text-content-strong",
-  expense: "",
-  tax: "",
-  subtotal_gastos_operativos: "font-bold bg-surface-muted/70",
-  subtotal_utilidad_operacional: "font-bold bg-surface-muted/70",
-  subtotal_antes_de_impuestos: "font-bold bg-surface-muted/70",
-  subtotal_utilidad_neta: "font-extrabold bg-apex/10 text-apex"
-};
 
 export default function AccountingVehiclePygPage() {
   const [mainView, setMainView] = useState<"contable" | "vehiculo">("contable");
@@ -103,7 +93,7 @@ export default function AccountingVehiclePygPage() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-apex">M-07 · Contabilidad · Rentabilidad</p>
                 <h1 className="text-2xl font-semibold text-content-strong">{mainView === "contable" ? "PYG Contable · PUC" : "PYG por Vehículo"}</h1>
-                <p className="text-sm text-content-muted">{mainView === "contable" ? "Matriz interactiva del estado de resultados por cuenta PUC, sucursal y centro de costo: actual, año anterior y presupuesto, con desglose hasta el centro de costo." : "Estado de resultados por vehículo construido automáticamente desde el libro contable (asientos publicados del periodo seleccionado) con rangos PUC configurables: ingresos, gastos, subtotales y presupuesto del PYG Contable."}</p>
+                <p className="text-sm text-content-muted">{mainView === "contable" ? "Matriz interactiva del estado de resultados por cuenta PUC, sucursal y centro de costo: actual, año anterior y presupuesto, con desglose hasta el centro de costo." : "Estado de resultados por vehículo construido automáticamente desde el libro contable (asientos publicados del periodo seleccionado) con rangos PUC configurables: ingresos, gastos, subtotales y presupuesto del PYG Contable. La vista Por CC conserva esa estructura con los centros de costo en las columnas."}</p>
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-2">
@@ -139,15 +129,10 @@ export default function AccountingVehiclePygPage() {
                   </ul>
                 </details>
               ) : null}
-              {report.data_status.unmapped_total > 0 ? (
-                <div className="flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-300">
-                  <AlertTriangle className="mt-0.5 shrink-0" size={18} />
-                  <div><strong>Gastos sin clasificar: {money.format(report.data_status.unmapped_total)}.</strong> Existen cuentas del libro sin rango PUC asociado; se presentan en la fila dinámica “GASTOS SIN CLASIFICAR” y siguen dentro de la utilidad. Configura los Rangos PUC para limpiar la lectura.</div>
-                </div>
-              ) : null}
+              <UnmappedNotice report={report} />
               {report.data_status.vehicle_count === 0 ? <NoVehiclesNotice onConfig={() => setView("configuracion")} /> : null}
-              {view === "consolidado" ? <ConsolidatedView canWrite={canWrite} onConfig={() => setView("configuracion")} report={report} /> : <VehiclesView onSelectPlate={setSelectedPlate} report={report} selectedPlate={selectedVehicle?.plate || ""} />}
-              <p className="text-[11px] text-content-muted">Fuente: libro contable (asientos publicados del periodo {report.period}) · el presupuesto proviene de Presupuesto PUC (PYG Contable).</p>
+              {view === "consolidado" ? <ConsolidatedView canWrite={canWrite} onConfig={() => setView("configuracion")} report={report} /> : view === "centros" ? <PygCentersMatrix report={report} /> : <VehiclesView key={report.period} onSelectPlate={setSelectedPlate} report={report} selectedPlate={selectedVehicle?.plate || ""} />}
+              <SourceNote period={report.period} />
             </>
           ) : (
             <div className="apex-section-card p-12 text-center text-content-muted">{loading ? "Leyendo el libro contable del periodo…" : "Construyendo el estado de resultados…"}</div>
@@ -170,111 +155,6 @@ function NoVehiclesNotice({ onConfig }: { onConfig: () => void }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function Kpi({ icon, label, value, detail, tone = "neutral" }: { icon: React.ReactNode; label: string; value: string; detail: string; tone?: "neutral" | "success" | "error" }) {
-  return <article className="apex-section-card p-4"><span className="mb-3 inline-flex rounded-lg bg-surface-muted p-2 text-apex">{icon}</span><p className="text-xs font-bold uppercase tracking-wide text-content-muted">{label}</p><p className={`mt-1 text-xl font-bold ${tone === "success" ? "text-emerald-400" : tone === "error" ? "text-red-400" : "text-content-strong"}`}>{value}</p><p className="mt-1 text-xs text-content-muted">{detail}</p></article>;
-}
-
-function CumpBadge({ row }: { row: TransportPygRow }) {
-  if (row.cump == null) return <span className="text-content-subtle">—</span>;
-  const tone = cumpTone(row);
-  return <span className={`inline-block min-w-[64px] rounded-full border px-2 py-0.5 text-right text-xs font-bold ${TONE_CLASS[tone]}`}>{percent.format(row.cump * 100)}%</span>;
-}
-
-function PctCell({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-content-subtle">—</span>;
-  return <span>{percent.format(value * 100)}%</span>;
-}
-
-function StatementTable({ caption, rows, title }: { title: string; caption: string; rows: TransportPygRow[] }) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const toggle = (code: string) => setExpanded((current) => {
-    const next = new Set(current);
-    if (next.has(code)) next.delete(code); else next.add(code);
-    return next;
-  });
-  const hasDrill = rows.some((row) => (row.children?.length || 0) > 0);
-  const moneyCell = (value: number | null) => value == null ? <span className="text-content-subtle">—</span> : money.format(value);
-  return (
-    <section className="apex-section-card overflow-hidden">
-      <div className="p-4"><h2 className="font-semibold text-content-strong">{title}</h2><p className="text-xs text-content-muted">{caption}</p></div>
-      <div className="max-h-[560px] overflow-auto">
-        <table className="min-w-full text-sm">
-          <thead className="sticky top-0 bg-surface-muted text-xs uppercase text-content-muted">
-            <tr>{["Concepto", "Presupuesto", "Ejecutado", "%", "Cumplimiento"].map((head) => <th className={`px-3 py-2 ${head === "Concepto" ? "text-left" : "text-right"}`} key={head}>{head}</th>)}</tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const kindClass = KIND_CLASS[row.kind] || "";
-              const kindLabel = KIND_LABELS[row.kind];
-              const negative = row.actual < 0;
-              const drill = row.children?.length ? true : false;
-              const open = drill && expanded.has(row.code);
-              return (
-                <Fragment key={row.code}>
-                  <tr className={`border-t border-line ${kindClass.includes("bg-") ? kindClass : "hover:bg-surface-muted"} ${row.dynamic ? "bg-amber-500/5" : ""}`}>
-                    <td className={`px-3 py-2 ${kindClass}`}>
-                      {drill ? (
-                        <button aria-expanded={Boolean(open)} aria-label={`Desglosar ${row.name}`} className="inline-flex max-w-full items-center gap-1 text-left" onClick={() => toggle(row.code)} type="button">
-                          {open ? <ChevronDown className="shrink-0 text-content-muted" size={14} /> : <ChevronRight className="shrink-0 text-content-muted" size={14} />}
-                          <span className="truncate">{row.name}</span>
-                        </button>
-                      ) : row.name}
-                      {row.dynamic ? <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">SIN MAPEAR</span> : null}
-                      {kindLabel ? <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-content-subtle">{kindLabel}</span> : null}
-                      {row.pending ? <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-400" title={row.pending_message || "Sin cuenta asociada"}>PENDIENTE</span> : null}
-                      {row.informational ? <span className="ml-2 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-bold text-content-muted" title="Fila informativa: no se resta de la utilidad neta">INFORMATIVA</span> : null}
-                      {row.budget_coverage === "partial" ? <span className="ml-2 rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold text-amber-400" title="Solo algunas cuentas del concepto tienen presupuesto">PRESUPUESTO PARCIAL</span> : null}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{moneyCell(row.budget)}</td>
-                    <td className={`px-3 py-2 text-right tabular-nums ${negative ? "text-red-400" : ""} ${row.kind.startsWith("subtotal") ? "font-bold" : ""}`}>{money.format(row.actual)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums text-content-muted"><PctCell value={row.pct} /></td>
-                    <td className="px-3 py-2 text-right"><CumpBadge row={row} /></td>
-                  </tr>
-                  {open ? (row.children || []).map((account) => <AccountDrillRow account={account} key={`${row.code}-${account.account_code}`} />) : null}
-                </Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      {hasDrill ? <p className="border-t border-line p-2 text-[11px] text-content-muted">Haz clic en un concepto para desglosar por cuenta y centro de costo (solo nombres; los códigos se ven en Configuración → Rangos PUC).</p> : null}
-    </section>
-  );
-}
-
-function AccountDrillRow({ account }: { account: TransportPygAccountChild }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Fragment>
-      <tr className="border-t border-line bg-surface-muted/40">
-        <td className="py-1.5 pl-10 pr-3 text-xs text-content-muted">
-          {account.centers.length ? (
-            <button aria-expanded={open} aria-label={`Desglosar ${account.account_name}`} className="inline-flex items-center gap-1 text-left" onClick={() => setOpen((value) => !value)} title={`Cuenta ${account.account_code}`} type="button">
-              {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-              <span className="truncate font-medium text-content-strong">{account.account_name}</span>
-            </button>
-          ) : <span className="font-medium text-content-strong" title={`Cuenta ${account.account_code}`}>{account.account_name}</span>}
-          {account.budget_coverage === "partial" ? <span className="ml-2 text-[10px] font-bold text-amber-400">P</span> : null}
-        </td>
-        <td className="px-3 py-1.5 text-right text-xs tabular-nums text-content-muted">{account.budget == null ? "—" : money.format(account.budget)}</td>
-        <td className={`px-3 py-1.5 text-right text-xs tabular-nums ${account.actual < 0 ? "text-red-400" : ""}`}>{money.format(account.actual)}</td>
-        <td className="px-3 py-1.5" colSpan={2} />
-      </tr>
-      {open ? account.centers.map((center) => (
-        <tr className="border-t border-line/60 bg-surface-muted/20" key={`${account.account_code}-${center.center_code}-${center.branch_code}`}>
-          <td className="py-1.5 pl-16 pr-3 text-xs text-content-muted" title={`Centro ${center.center_code} · Sucursal ${center.branch_code}`}>
-            <span className="text-content-strong">{center.center_name}</span>
-            {center.branch_name ? <span className="ml-1 text-[10px] text-content-subtle">· {center.branch_name}</span> : null}
-          </td>
-          <td className="px-3 py-1.5 text-right text-xs tabular-nums text-content-muted">{center.budget == null ? "—" : money.format(center.budget)}</td>
-          <td className={`px-3 py-1.5 text-right text-xs tabular-nums ${center.actual < 0 ? "text-red-400" : ""}`}>{money.format(center.actual)}</td>
-          <td className="px-3 py-1.5" colSpan={2} />
-        </tr>
-      )) : null}
-    </Fragment>
   );
 }
 
@@ -318,10 +198,11 @@ function VehiclesView({ report, selectedPlate, onSelectPlate }: { report: Transp
   const effectivePlate = localSelection || selectedPlate;
   const unassignedSelected = report.unassigned ? effectivePlate === report.unassigned.plate : false;
   const vehicle = unassignedSelected ? null : report.vehicles.find((item) => item.plate === effectivePlate) || report.vehicles[0];
-  const utilidadNeta = vehicle ? rowOf(vehicle, "UTILIDAD_NETA") : undefined;
+  const expandedHref = vehicle ? pygExpandedHref({ plate: vehicle.plate, period: report.period }) : "";
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
         {report.vehicles.map((item) => (
           <button className={`shrink-0 rounded-xl border px-3 py-2 text-left ${item.plate === vehicle?.plate && !unassignedSelected ? "border-apex bg-apex/10" : "border-line hover:bg-surface-muted"}`} key={item.plate} onClick={() => { setLocalSelection(item.plate); onSelectPlate(item.plate); }} type="button">
             <span className="block text-sm font-bold text-content-strong">{item.plate}</span>
@@ -334,25 +215,22 @@ function VehiclesView({ report, selectedPlate, onSelectPlate }: { report: Transp
             <span className="block text-xs font-semibold text-content-muted">{money.format(rowOf(report.unassigned, "TOTAL_INGRESOS")?.actual ?? 0)} de ingresos</span>
           </button>
         ) : null}
+        </div>
+        {vehicle ? (
+          <div className="flex flex-col items-start gap-1">
+            <ExpandedWindowLink href={expandedHref} key={expandedHref} />
+            <p className="text-[11px] text-content-muted">Se abre en una pestaña o ventana nueva. Si no aparece, abre el enlace directamente desde aquí; esta página sigue igual.</p>
+          </div>
+        ) : null}
       </div>
       {unassignedSelected && report.unassigned ? (
         <>
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Kpi icon={<Truck size={18} />} label="Bloque" value="Sin vehículo" detail="Centros de costo sin placa asignada" />
-            <Kpi icon={<BadgeDollarSign size={18} />} label="Ingresos" value={money.format(report.unassigned.income_actual)} detail={`Presupuesto ${rowOf(report.unassigned, "INGRESOS")?.budget == null ? "—" : money.format(rowOf(report.unassigned, "INGRESOS")?.budget ?? 0)}`} />
-            <Kpi icon={<Gauge size={18} />} label="Utilidad operacional" tone={(rowOf(report.unassigned, "UTILIDAD_OPERACIONAL")?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(rowOf(report.unassigned, "UTILIDAD_OPERACIONAL")?.actual ?? 0)} detail={`Gastos ${money.format(rowOf(report.unassigned, "TOTAL_GASTOS_OPERACIONALES")?.actual ?? 0)}`} />
-            <Kpi icon={<PieChart size={18} />} label="Utilidad neta" tone={(rowOf(report.unassigned, "UTILIDAD_NETA")?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(rowOf(report.unassigned, "UTILIDAD_NETA")?.actual ?? 0)} detail="Incluido en el consolidado corporativo" />
-          </section>
+          <UnassignedKpis unassigned={report.unassigned} />
           <StatementTable caption="Centros de costo del libro sin vehículo asignado; nunca se asignan dos veces ni desaparecen del consolidado." rows={report.unassigned.rows} title={`Sin vehículo / sin asignar · ${report.period}`} />
         </>
       ) : vehicle ? (
         <>
-          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Kpi icon={<Truck size={18} />} label="Vehículo" value={vehicle.plate} detail={vehicle.vehicle_label || (vehicle.center_name ? `Centro ${vehicle.center_name}` : "Sin descripción adicional")} />
-            <Kpi icon={<BadgeDollarSign size={18} />} label="Ingresos" value={money.format(vehicle.income_actual)} detail={`Presupuesto ${rowOf(vehicle, "INGRESOS")?.budget == null ? "—" : money.format(rowOf(vehicle, "INGRESOS")?.budget ?? 0)}`} />
-            <Kpi icon={<Gauge size={18} />} label="Utilidad operacional" tone={(rowOf(vehicle, "UTILIDAD_OPERACIONAL")?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(rowOf(vehicle, "UTILIDAD_OPERACIONAL")?.actual ?? 0)} detail={`Gastos ${money.format(rowOf(vehicle, "TOTAL_GASTOS_OPERACIONALES")?.actual ?? 0)}`} />
-            <Kpi icon={<PieChart size={18} />} label="Utilidad neta" tone={(utilidadNeta?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(utilidadNeta?.actual ?? 0)} detail={vehicle.unmapped_expense > 0 ? `Sin clasificar ${money.format(vehicle.unmapped_expense)}` : `Impuesto ${money.format(rowOf(vehicle, "IMPUESTO_REGIMEN_SIMPLE")?.actual ?? 0)}`} />
-          </section>
+          <VehicleKpis vehicle={vehicle} />
           <StatementTable caption={`Estado de resultados de la placa ${vehicle.plate} en ${report.period}, leído del libro contable (asientos publicados del periodo).`} rows={vehicle.rows} title={`PYG ${vehicle.plate} · ${report.period}`} />
         </>
       ) : null}
@@ -412,7 +290,35 @@ function exportWorkbook(report: TransportPygReport) {
         for (const vehicle of report.vehicles) record[vehicle.plate] = rowOf(vehicle, concept.code)?.actual ?? 0;
         return record;
       })
-    }
+    },
+    ...(report.centers?.length ? [{
+      name: "Matriz CC",
+      title: `PYG POR CENTRO DE COSTO · ${report.period}`,
+      subtitle: "Misma estructura del PYG por vehículo con los centros de costo en las columnas: presupuesto, ejecutado, % del ingreso y cumplimiento",
+      columns: [
+        { key: "concepto", label: "CONCEPTO", width: 340 },
+        ...report.centers.flatMap((center, index) => {
+          const label = centerExcelLabel(center, index);
+          return [
+            { key: `cc${index}_presupuesto`, label: `${label} · PRESUPUESTO`, width: 140, numberFormat: "#,##0.00" },
+            { key: `cc${index}_ejecutado`, label: `${label} · EJECUTADO`, width: 140, numberFormat: "#,##0.00" },
+            { key: `cc${index}_porcentaje`, label: `${label} · %`, width: 90, numberFormat: "0.00" },
+            { key: `cc${index}_cumplimiento`, label: `${label} · CUMP %`, width: 100, numberFormat: "0.00" }
+          ];
+        })
+      ],
+      rows: report.corporate.rows.map((concept) => {
+        const record: Record<string, string | number> = { concepto: concept.name };
+        report.centers?.forEach((center, index) => {
+          const row = center.rows.find((item) => item.code === concept.code);
+          record[`cc${index}_presupuesto`] = row?.budget == null ? "" : row.budget;
+          record[`cc${index}_ejecutado`] = row?.actual ?? 0;
+          record[`cc${index}_porcentaje`] = row?.pct == null ? "" : Math.round(row.pct * 10000) / 100;
+          record[`cc${index}_cumplimiento`] = row?.cump == null ? "" : Math.round(row.cump * 10000) / 100;
+        });
+        return record;
+      })
+    }] : [])
   ];
   void downloadXlsxWorkbook(`pyg-transporte-${report.period}`, sheets);
 }
