@@ -111,8 +111,11 @@ async function removeProductPhoto(storagePath) {
 // URL publica y estatica: la vitrina del cliente no puede depender de URLs firmadas
 // con TTL de 10 min. Exige que el bucket comercio-assets sea PUBLICO en Supabase
 // (paso de infra en la migracion a nube; sin credenciales locales devuelve null).
+// Una ruta que empieza en "/" es un asset del sitio (apps/web/public), como el catalogo
+// demo con fotografia ya recortada: se devuelve tal cual para el origen web.
 function publicViewUrl(storagePath) {
   const path = String(storagePath || "");
+  if (path.startsWith("/")) return path;
   if (!path.startsWith(`${BUCKET}/`)) return null;
   const url = String(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
   if (!url) return null;
@@ -122,6 +125,8 @@ function publicViewUrl(storagePath) {
 
 async function signedViewUrl(storagePath, expiresIn = SIGNED_URL_TTL_SECONDS) {
   const path = String(storagePath || "");
+  // Asset del sitio: no hay objeto que firmar, la ruta ya es accesible desde el web.
+  if (path.startsWith("/")) return path;
   if (!path.startsWith(`${BUCKET}/`)) {
     throw Object.assign(new Error("El producto no tiene una fotografia almacenada."), { statusCode: 404 });
   }

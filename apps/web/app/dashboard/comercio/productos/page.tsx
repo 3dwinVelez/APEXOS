@@ -28,6 +28,7 @@ type Product = {
   active: boolean;
   notes: string | null;
   has_photo: boolean;
+  photo_url: string | null;
   catalog_featured: boolean;
   low_stock: boolean;
 };
@@ -156,9 +157,19 @@ export default function ComercioProductosPage() {
     { className: "font-mono", cell: (row) => row.code, header: "Codigo", hideable: false, id: "code", sortValue: (row) => row.code },
     {
       cell: (row) => (
-        <div className="min-w-0">
-          <p className="truncate font-medium">{row.name}</p>
-          <p className="text-xs text-content-muted">{row.unit}{row.has_photo ? " · con foto" : ""}{row.catalog_featured ? " · vitrina" : ""}</p>
+        <div className="flex min-w-0 items-center gap-2">
+          {row.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img alt="" aria-hidden className="h-9 w-9 shrink-0 rounded-md border border-line bg-white object-cover" loading="lazy" src={row.photo_url} />
+          ) : (
+            <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface-muted text-xs font-semibold text-content-muted">
+              {row.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="truncate font-medium">{row.name}</p>
+            <p className="text-xs text-content-muted">{row.unit}{row.catalog_featured ? " · vitrina" : ""}</p>
+          </div>
         </div>
       ),
       header: "Producto",

@@ -30,6 +30,7 @@
     "seed:supabase:active-demo": "node scripts/seed-supabase-active-demo.js",
     "seed:production:initial": "node scripts/seed-production-initial.js",
     "seed:comercio-demo": "node scripts/seed-comercio-demo.js",
+    "seed:comercio-photos": "node scripts/seed-comercio-photos.js",
     "seed:service-references": "node scripts/import-service-references.js",
     "seed:service-technicians": "node scripts/ensure-default-service-technicians.js",
     "platform:init": "node scripts/platform-initialize.js",
