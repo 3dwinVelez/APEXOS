@@ -51,6 +51,15 @@ function start() {
     });
   }
 
+  // Sincronización de facturas desde carpeta a la base de datos: opt-in.
+  if (String(process.env.MAILBOX_INVOICE_SYNC_ENABLED || "").toLowerCase() === "true") {
+    const configured = Number(process.env.MAILBOX_INVOICE_SYNC_INTERVAL_MINUTES || 30);
+    const minutes = Number.isInteger(configured) && configured >= 1 && configured <= 59 ? configured : 30;
+    cron.schedule(`*/${minutes} * * * *`, () => {
+      runOnce("syncMailboxInvoiceFolder", () => require("../modules/mailbox/invoice-folder-sync").syncFolder());
+    });
+  }
+
   // Recepcion de facturas por IMAP: cada empresa decide su intervalo; esta
   // pasada solo dispara las configuraciones habilitadas que ya vencieron.
   cron.schedule("*/5 * * * *", () => {
