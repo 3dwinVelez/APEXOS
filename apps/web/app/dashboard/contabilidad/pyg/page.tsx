@@ -15,7 +15,6 @@ import { AlertTriangle, BadgeDollarSign, ChevronDown, ChevronRight, Download, Fu
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const money = { format: (value: number) => formatRegionalMoney(value) };
-const compact = new Intl.NumberFormat("es-CO", { notation: "compact", maximumFractionDigits: 1 });
 const percent = new Intl.NumberFormat("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const currentMonth = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`; };
 
@@ -320,7 +319,6 @@ function VehiclesView({ report, selectedPlate, onSelectPlate }: { report: Transp
   const unassignedSelected = report.unassigned ? effectivePlate === report.unassigned.plate : false;
   const vehicle = unassignedSelected ? null : report.vehicles.find((item) => item.plate === effectivePlate) || report.vehicles[0];
   const utilidadNeta = vehicle ? rowOf(vehicle, "UTILIDAD_NETA") : undefined;
-  const gridConcepts = report.corporate.rows;
   return (
     <div className="space-y-4">
       <div className="flex gap-2 overflow-x-auto pb-1">
@@ -355,39 +353,10 @@ function VehiclesView({ report, selectedPlate, onSelectPlate }: { report: Transp
             <Kpi icon={<Gauge size={18} />} label="Utilidad operacional" tone={(rowOf(vehicle, "UTILIDAD_OPERACIONAL")?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(rowOf(vehicle, "UTILIDAD_OPERACIONAL")?.actual ?? 0)} detail={`Gastos ${money.format(rowOf(vehicle, "TOTAL_GASTOS_OPERACIONALES")?.actual ?? 0)}`} />
             <Kpi icon={<PieChart size={18} />} label="Utilidad neta" tone={(utilidadNeta?.actual ?? 0) >= 0 ? "success" : "error"} value={money.format(utilidadNeta?.actual ?? 0)} detail={vehicle.unmapped_expense > 0 ? `Sin clasificar ${money.format(vehicle.unmapped_expense)}` : `Impuesto ${money.format(rowOf(vehicle, "IMPUESTO_REGIMEN_SIMPLE")?.actual ?? 0)}`} />
           </section>
-          <div className="grid gap-4 xl:grid-cols-[1.2fr_1fr]">
-            <StatementTable caption={`Estado de resultados de la placa ${vehicle.plate} en ${report.period}, leído del libro contable (asientos publicados del periodo).`} rows={vehicle.rows} title={`PYG ${vehicle.plate} · ${report.period}`} />
-            <MatrixTable concepts={gridConcepts} report={report} />
-          </div>
+          <StatementTable caption={`Estado de resultados de la placa ${vehicle.plate} en ${report.period}, leído del libro contable (asientos publicados del periodo).`} rows={vehicle.rows} title={`PYG ${vehicle.plate} · ${report.period}`} />
         </>
       ) : null}
     </div>
-  );
-}
-
-function MatrixTable({ report, concepts }: { report: TransportPygReport; concepts: TransportPygRow[] }) {
-  return (
-    <section className="apex-section-card overflow-hidden">
-      <div className="p-4"><h2 className="font-semibold text-content-strong">Matriz de ejecutados por placa</h2><p className="text-xs text-content-muted">Todos los centros de costo del periodo en una sola rejilla (comparación directa).</p></div>
-      <div className="max-h-[520px] overflow-auto">
-        <table className="min-w-full text-xs">
-          <thead className="sticky top-0 bg-surface-muted uppercase text-content-muted">
-            <tr><th className="px-3 py-2 text-left">Concepto</th>{report.vehicles.map((vehicle) => <th className="px-2 py-2 text-right" key={vehicle.plate}>{vehicle.plate}</th>)}</tr>
-          </thead>
-          <tbody>
-            {concepts.map((concept) => (
-              <tr className={`border-t border-line ${KIND_CLASS[concept.kind]?.includes("subtotal") ? "bg-surface-muted/60 font-bold" : ""}`} key={concept.code}>
-                <td className="whitespace-nowrap px-3 py-1.5">{concept.name}</td>
-                {report.vehicles.map((vehicle) => {
-                  const value = rowOf(vehicle, concept.code)?.actual ?? 0;
-                  return <td className={`whitespace-nowrap px-2 py-1.5 text-right tabular-nums ${value < 0 ? "text-red-400" : ""}`} key={vehicle.plate}>{value ? compact.format(value) : "-"}</td>;
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
   );
 }
 
