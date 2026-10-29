@@ -1,0 +1,88 @@
+{
+  "validation_summary": {
+    "integral_checks_passed": 139,
+    "certified_application_commit": "67683a77d0cd77ea3fc5bf35ef285954c7b07bd3",
+    "completed_at_utc": "2026-10-29T14:31:57.204Z",
+    "evidence_policy": "Raw JSON, screenshots and logs remain local; reviewed certifications and reproducible scripts are versioned.",
+    "compiled_source_hashes_match": 11,
+    "typescript": "passed",
+    "browser_coverage_completed": true,
+    "centers_artifact_sha256": "03a37e74b0dc04f316f6b46efaefa3e5fe5516fdac5bca9d96fce84ecdeef35b",
+    "window_artifact_sha256": "89584da1b94727ca7ecbb4a68792dfc95b55612cab006b91a45b67bfe8f6b167",
+    "api_tests_passed": 62,
+    "web_tests_passed": 98,
+    "lint": "passed: zero errors and warnings",
+    "production_build": "passed"
+  },
+  "checks": {
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ]
+    },
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ]
+    }
+  },
+  "certification": {
+    "script": "../../../scripts/certifications/transport-pyg-ledger-only-browser-local.js",
+    "evidence": [
+      "../certifications/transport-pyg-window-20261029.md",
+      "../transport-pyg-centers-local-20261029.md"
+    ],
+    "status": "passed"
+  },
+  "environment": "LOCAL",
+  "promotion_branch": "codex/qa-pyg-window-centers-20261029",
+  "source_branch": "desarrollo",
+  "commit": "67683a77d0cd77ea3fc5bf35ef285954c7b07bd3",
+  "qa_status": "pending",
+  "change_id": "transport-pyg-window-centers-20261029",
+  "approval": {
+    "status": "approved",
+    "approved_at": "2026-10-29",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "Autorizar rama y publicación puntual en QA",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "manue"
+  },
+  "target_branch": "develop",
+  "regression_certification": {
+    "script": "../../../scripts/certifications/transport-pyg-centers-browser-local.js",
+    "evidence": [
+      "../certifications/transport-pyg-window-20261029.md",
+      "../transport-pyg-centers-local-20261029.md"
+    ],
+    "status": "passed"
+  },
+  "target_head": "1eb35930928d1abc9a704201b7627b8b94f67915"
+}

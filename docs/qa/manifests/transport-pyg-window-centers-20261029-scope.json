@@ -1,0 +1,223 @@
+{
+  "allowed_deletions": [],
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-pyg-window-centers-20261029",
+  "source_branch": "desarrollo",
+  "allowed_paths": [
+    "apps/api/src/modules/transport-pyg/account-engine.js",
+    "apps/api/test/transport-pyg-centers-matrix.test.js",
+    "apps/web/app/dashboard/contabilidad/pyg/ampliado/page.tsx",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/accounting/PygAccountDrill.tsx",
+    "apps/web/components/accounting/PygCentersMatrix.tsx",
+    "apps/web/components/accounting/PygStatementTable.tsx",
+    "apps/web/components/accounting/PygVehicleExpanded.tsx",
+    "apps/web/components/accounting/PygVehicleReadings.tsx",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/pyg-center-labels.mjs",
+    "apps/web/lib/pyg-expanded.ts",
+    "apps/web/test/pyg-expanded-chrome.test.mjs",
+    "apps/web/test/pyg-expanded-link.test.mjs",
+    "apps/web/test/pyg-expanded-route.test.mjs",
+    "apps/web/test/pyg-expanded-view.test.mjs",
+    "apps/web/test/pyg-expanded.test.mjs",
+    "apps/web/test/transport-pyg-centers-matrix.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-window-20261029.md",
+    "docs/qa/transport-pyg-centers-local-20261029.md",
+    "scripts/certifications/transport-pyg-centers-browser-local.js",
+    "scripts/certifications/transport-pyg-ledger-only-browser-local.js",
+    "docs/qa/manifests/transport-pyg-window-centers-20261029-preqa.json",
+    "docs/qa/manifests/transport-pyg-window-centers-20261029-scope.json"
+  ],
+  "change_intent": {
+    "summary": "Ventana ampliada del PYG individual y matriz Por CC con Excel, sucursal y porcentajes propios; conservar libro contable, presupuestos, permisos y aislamiento.",
+    "modules": [
+      "transport-pyg",
+      "accounting",
+      "dashboard-shell",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport-pyg/account-engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-pyg-centers-matrix.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/pyg/ampliado/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygAccountDrill.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygCentersMatrix.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygStatementTable.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygVehicleExpanded.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygVehicleReadings.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/pyg-center-labels.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/pyg-expanded.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-chrome.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-link.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-route.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-view.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-centers-matrix.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-pyg-vehicle-page.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/transport-pyg-window-20261029.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/transport-pyg-centers-local-20261029.md"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/transport-pyg-centers-browser-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/transport-pyg-ledger-only-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/transport-pyg-window-centers-20261029-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/transport-pyg-window-centers-20261029-scope.json"
+    }
+  ],
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "67683a77d0cd77ea3fc5bf35ef285954c7b07bd3"
+  },
+  "target_head": "1eb35930928d1abc9a704201b7627b8b94f67915",
+  "certified_functional_paths": [
+    "apps/api/src/modules/transport-pyg/account-engine.js",
+    "apps/api/test/transport-pyg-centers-matrix.test.js",
+    "apps/web/app/dashboard/contabilidad/pyg/ampliado/page.tsx",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/accounting/PygAccountDrill.tsx",
+    "apps/web/components/accounting/PygCentersMatrix.tsx",
+    "apps/web/components/accounting/PygStatementTable.tsx",
+    "apps/web/components/accounting/PygVehicleExpanded.tsx",
+    "apps/web/components/accounting/PygVehicleReadings.tsx",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/pyg-center-labels.mjs",
+    "apps/web/lib/pyg-expanded.ts",
+    "apps/web/test/pyg-expanded-chrome.test.mjs",
+    "apps/web/test/pyg-expanded-link.test.mjs",
+    "apps/web/test/pyg-expanded-route.test.mjs",
+    "apps/web/test/pyg-expanded-view.test.mjs",
+    "apps/web/test/pyg-expanded.test.mjs",
+    "apps/web/test/transport-pyg-centers-matrix.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-window-20261029.md",
+    "docs/qa/transport-pyg-centers-local-20261029.md",
+    "scripts/certifications/transport-pyg-centers-browser-local.js",
+    "scripts/certifications/transport-pyg-ledger-only-browser-local.js"
+  ],
+  "base_commits": {
+    "develop": "1eb35930928d1abc9a704201b7627b8b94f67915"
+  },
+  "approval": {
+    "status": "approved",
+    "approved_at": "2026-10-29",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "Autorizar rama y publicación puntual en QA",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "manue"
+  },
+  "change_id": "transport-pyg-window-centers-20261029",
+  "scope_schema_version": 2,
+  "certified_commit": "67683a77d0cd77ea3fc5bf35ef285954c7b07bd3",
+  "protected_capabilities": [
+    {
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ],
+      "name": "ventana_ampliada_seleccion_desglose_fullscreen_regreso_y_permisos",
+      "status": "passed"
+    },
+    {
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ],
+      "name": "matriz_cc_presupuesto_excel_sucursal_porcentajes_y_conciliacion",
+      "status": "passed"
+    },
+    {
+      "evidence": [
+        "../certifications/transport-pyg-window-20261029.md",
+        "../transport-pyg-centers-local-20261029.md"
+      ],
+      "name": "libro_mes_exacto_configuracion_actualizacion_rbac_y_tenant",
+      "status": "passed"
+    }
+  ],
+  "base_commit": "1eb35930928d1abc9a704201b7627b8b94f67915"
+}
