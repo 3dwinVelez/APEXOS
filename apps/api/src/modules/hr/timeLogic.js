@@ -116,7 +116,7 @@ const TIME_PARTS_FORMATTER = new Intl.DateTimeFormat("en-CA", { timeZone: OPERAT
 const DAY_PARTS_FORMATTER = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" });
 
 function classifyMinute(date, nature, params, holidays) {
-  const nightStart = parseTimeMinutes(params.night_start || "21:00") ?? 1260;
+  const nightStart = parseTimeMinutes(params.night_start || "19:00") ?? 1140;
   const nightEnd = parseTimeMinutes(params.night_end || "06:00") ?? 360;
   const parts = TIME_PARTS_FORMATTER.formatToParts(date);
   const hour = Number(parts.find((p) => p.type === "hour")?.value || date.getHours());
