@@ -145,8 +145,9 @@ La suite completa de API (`node --test apps/api/test/*.test.js`) se intentó com
 La intervención **no se puede portar como parche puntual a `main`**:
 
 - `main` (`938fc2b6`) conserva el motor legacy de nómina: `apps/api/src/modules/hr/service.js` tiene 3.907 líneas y no existen `buildPayrollLiquidationRows`, documentos de nómina, aportes segmentados, provisiones ni cierre de periodo. `desarrollo` tiene 8.015 líneas.
+- `origin/develop` (`a505e97f`) sí tiene el motor (7.892 líneas), pero también está divergente: 61 commits que no están en `desarrollo` y 52 de `desarrollo` que no están en él. Un intento de llevar solo el commit de la intervención produce conflictos en `apps/api/src/modules/hr/service.js` (verificado con `git merge-tree`), porque la base del parche no incluye esos 61 commits.
 - R-01 (hora nocturna 19:00) sí aplica hoy a producción. R-02, R-03, R-04 y R-05 dependen del motor nuevo y solo llegan a `main` con la promoción completa del módulo.
 - A la fecha, `main...desarrollo` difiere en **864 archivos / 374 commits**. No es una promoción puntual: requiere el flujo `desarrollo → develop → main` con manifiesto de alcance completo, `qa:preqa:evidence`, `qa:approval:evidence` y QA funcional en ambiente desplegado.
 - Sin esa certificación E2E, forzar el cambio en `main` violaría `AGENTS.md` y `docs/CHANGE_APPROVAL_QA_POLICY.md`. El bloqueo debe declararse explícitamente; no se puede afirmar que producción quedó habilitada.
 
-Estado actual: cambios y pruebas en `desarrollo`; migraciones validadas solo en clúster desechable, **no aplicadas en nube**.
+Estado actual: cambios y pruebas en `desarrollo` (commits `41ad5684` y `a4e18f01`); migraciones validadas solo en clúster desechable, **no aplicadas en nube**. La suite HTTP completa no es ejecutable en este entorno (los tests de integración esperan Postgres en `localhost:55432` y el runner queda colgado); el control válido es la suite HR y los tests adyacentes.
