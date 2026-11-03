@@ -2,8 +2,8 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 1.1.0
-updated_at: 2026-11-02
+version: 1.2.0
+updated_at: 2026-11-03
 ---
 
 # Experto en git / Gobernanza — Equipo APEXOS
@@ -34,6 +34,15 @@ updated_at: 2026-11-02
 ## Autorización acotada de publicación (2026-11-02)
 
 El propietario autoriza de forma permanente y limitada `git push origin desarrollo` al cierre de cada intervención, siempre que: rama `desarrollo`, pruebas verdes, documentación y agentes actualizados (`npm run agents:check`), sin secretos ni artefactos locales. No cubre `develop`, `main`, force push, merges, migraciones remotas, eliminación de ramas ni infraestructura. Cualquier otro push sigue prohibido sin autorización explícita e independiente.
+
+## Frescura de agentes y gobernanza (2026-11-03)
+
+- Antes de editar cualquier archivo, ejecutar `npm run agents:preflight -- --paths "<archivos del alcance>"`.
+- `git fetch origin desarrollo` es lectura remota y está permitido; no mueve ramas locales.
+- Veredictos `INTEGRAR_REMOTO` o `CONFLICTO` bloquean la edición. No resolverlos con `git reset --hard`, `git clean -fd`, force push ni sobrescribiendo el archivo local: se integra la referencia remota con la autorización correspondiente.
+- `CONFLICTO` significa misma versión y misma `updated_at` con `sha256` distinto; se reporta y se resuelve comparando contenido, nunca por fecha de archivo.
+- Al cierre, la secuencia es `npm run agents:sync` → `npm run agents:check` → `npm run agents:preflight` → pruebas → commit → `git push origin desarrollo`.
+- Una intervención que cambió el dominio de un agente sin bumpear su `SKILL.md` está incompleta y no se publica.
 
 ## Controles acumulados (entrenamiento 2026-11-02)
 

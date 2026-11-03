@@ -6,6 +6,42 @@ This repository uses one controlled promotion path:
 desarrollo -> develop -> main
 ```
 
+## Equipo APEXOS y contexto vivo (obligatorio)
+
+Todo trabajo empieza y termina con el equipo de agentes versionado en `agents/` y `.qoder/skills/`. `agents/registry.json` es la fuente de versión; `origin/desarrollo` es la referencia remota.
+
+Antes de modificar cualquier archivo:
+
+1. Ejecutar `npm run agents:preflight -- --paths "<archivos o directorios que se van a tocar>"`.
+2. Si el veredicto es `INTEGRAR_REMOTO` o `CONFLICTO`, detenerse: ejecutar `git fetch origin desarrollo`, integrar la referencia remota con la autorización correspondiente y repetir el preflight. Nunca sobrescribir un `SKILL.md`, `registry.json` o documento de gobernanza con versión o fecha remota más nueva.
+3. Leer los `SKILL.md` que el preflight marca como lecturas obligatorias antes de editar.
+4. Si la tarea toca dos o más disciplinas, entrar por `equipo-apexos` y despachar los expertos que indique el preflight.
+
+Al cerrar la intervención:
+
+5. Actualizar el `SKILL.md` de cada agente cuyo dominio cambió (control nuevo, bump semver y `updated_at`) y registrar la entrada en `agents/CHANGELOG.md`.
+6. Ejecutar `npm run agents:sync && npm run agents:check && npm run agents:preflight`.
+7. Ejecutar pruebas y evidencia, commit y `git push origin desarrollo`.
+
+Un cambio en el dominio de un agente sin actualizar ese agente está incompleto y no se publica.
+
+### Ruteo obligatorio
+
+| Si tocas... | Agentes requeridos |
+|---|---|
+| `apps/web/**` | `apexos-frontend`, `apexos-qa` |
+| `apps/api/prisma/**` | `apexos-db-nube`, `apexos-backend`, `apexos-seguridad`, `apexos-qa` |
+| `apps/api/src/**` | `apexos-backend`, `apexos-seguridad`, `apexos-qa` |
+| `apps/api/src/modules/hr/**` | `apexos-backend`, `apexos-seguridad`, `apexos-qa`; auditores solo para dictamen |
+| `apps/control-tower/**` | `apexos-performance`, `apexos-seguridad`, `apexos-qa` |
+| `docs/design/**`, `docs/project/filosofia-producto-ui.md` | `apexos-frontend` |
+| `docs/qa/**`, `scripts/certifications/**` | `apexos-qa` |
+| `scripts/performance/**`, `docs/PERFORMANCE_*` | `apexos-performance` |
+| `infra/**`, Docker/Railway/Supabase | `apexos-performance`, `apexos-seguridad` |
+| `agents/**`, `.qoder/skills/**`, `AGENTS.md`, `docs/briefs/**` | `equipo-apexos`, `apexos-brief`, `apexos-git-guardian` |
+
+El ruteo se calcula automáticamente con `npm run agents:preflight`; esta tabla es el contrato mínimo y no reemplaza el preflight.
+
 Rules for Codex and any automated agent:
 
 - Before modifying any file, Codex must execute `git rev-parse --show-toplevel`, `git branch --show-current`, `git status --short`, and `git remote -v`.
@@ -54,8 +90,8 @@ Generic task wording such as "implementa", "corrige", "continua", "haz el cambio
 ## Documentation, agents and publication
 
 - Every intervention on the code updates, in the same change, the module documentation, the intervention brief and the team agents (`agents/` and `.qoder/skills/`).
-- `agents/registry.json` is the version source: per-agent semver, `updated_at` and `sha256`. Before editing an agent or governance document, compare against `origin/desarrollo`; if the remote reference is newer, integrate it and never overwrite it.
-- After editing agents, run `npm run agents:sync` and `npm run agents:check`. The check must pass before committing.
+- `agents/registry.json` is the version source: per-agent semver, `updated_at` and `sha256`. Before editing an agent or governance document, run `npm run agents:preflight`; if it reports `INTEGRAR_REMOTO` or `CONFLICTO`, integrate `origin/desarrollo` and never overwrite the remote reference.
+- After editing agents, run `npm run agents:sync`, `npm run agents:check` and `npm run agents:preflight`. All three must pass before committing.
 - The owner grants a permanent, scoped authorization to run `git push origin desarrollo` at the close of each intervention, with green tests, updated documentation and agents, and no secrets. This authorization does not cover `develop`, `main`, force push, merges, remote migrations, branch deletion or infrastructure; those still require explicit independent authorization.
 
 Before proposing any promotion, attach validation evidence and confirm that the target follows:

@@ -1,9 +1,9 @@
 ---
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Recibe una tarea del proyecto APEXOS, la descompone por disciplinas, despacha los expertos (base de datos en la nube, ciberseguridad, QA, frontend, backend, git y performance), integra los resultados y entrega un veredicto final. Usar cuando el usuario invoque /equipo-apexos, pida que trabaje "el equipo", o presente una tarea multi-disciplinaria en este repositorio.
-when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo, el orquestador o repartir trabajo entre expertos.
-version: 1.2.0
-updated_at: 2026-11-02
+when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo, el orquestador o repartir trabajo entre expertos; o el preflight de agentes devuelve dos o más expertos.
+version: 1.3.0
+updated_at: 2026-11-03
 ---
 
 # Equipo APEXOS — Orquestador
@@ -27,13 +27,13 @@ Eres el orquestador del Equipo APEXOS. No haces el trabajo técnico de los exper
 
 ## Protocolo de despacho
 
-1. **Validar la base documental.** Leer `agents/registry.json`, ejecutar `npm run agents:check` y comparar contra `origin/desarrollo`. Si hay una versión más nueva, integrarla antes de planificar; nunca sobrescribirla.
-2. Analizar la tarea y listar solo las disciplinas realmente necesarias.
+1. **Preflight de contexto vivo (obligatorio).** Ejecutar `npm run agents:preflight -- --paths "<archivos o directorios del alcance>"`. Si el veredicto es `INTEGRAR_REMOTO` o `CONFLICTO`, detenerse e integrar `origin/desarrollo`; nunca sobrescribir una versión remota más nueva de un agente o documento. Leer los `SKILL.md` que el preflight marca como lecturas obligatorias y usar su ruteo como lista de expertos a despachar.
+2. Analizar la tarea y confirmar el alcance con el ruteo del preflight. La tabla de ruteo mínima vive en `AGENTS.md`; el preflight la aplica automáticamente.
 3. Por cada experto requerido, invocar `Skill(skill=<nombre>)` con la subtarea como argumento. Si la invocación de skills anidados no está disponible, despachar un agente (`Agent` tool) con el prompt resumido del experto que figura abajo.
 4. Recopilar los resultados, detectar conflictos entre expertos y resolverlos priorizando la gobernanza del repositorio.
 5. Integrar la solución aplicando cambios solo en la rama `desarrollo`.
-6. **Cerrar con documentación y agentes actualizados.** Toda intervención documenta el cambio, incorpora los controles nuevos al agente que los posee, bumpea su versión en `agents/registry.json`, corre `npm run agents:sync && npm run agents:check`, hace commit y ejecuta `git push origin desarrollo`.
-7. Entregar reporte final: qué se hizo, qué validó cada experto, evidencia generada, versión de agentes actualizada, pendientes y autorizaciones que se necesitan.
+6. **Cerrar con documentación y agentes actualizados.** Toda intervención documenta el cambio, incorpora los controles nuevos al agente que los posee, bumpea su versión en `agents/registry.json`, corre `npm run agents:sync && npm run agents:check && npm run agents:preflight`, hace commit y ejecuta `git push origin desarrollo`.
+7. Entregar reporte final: qué se hizo, qué validó cada experto, evidencia generada, versión de agentes actualizada, pendientes y autorizaciones que se necesitan. Incluir la lista de **agentes consultados** y **agentes actualizados**.
 
 ## Reglas de gobierno no negociables
 

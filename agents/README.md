@@ -44,15 +44,31 @@ npm run agents:check
 
 ## Flujo obligatorio al tocar código
 
-1. Actualizar documentación de la intervención y los agentes afectados (control nuevo en el agente que lo posee).
-2. Bump de versión y `updated_at` en el `SKILL.md`; entrada en `agents/CHANGELOG.md`.
-3. `npm run agents:sync` (escribe espejos y refresca `registry.json`).
-4. `npm run agents:check` (debe pasar).
-5. Pruebas de la intervención.
-6. Commit.
-7. `git push origin desarrollo`.
+1. Ejecutar `npm run agents:preflight -- --paths "<archivos o directorios del alcance>"` y leer los `SKILL.md` que devuelve. Un veredicto `INTEGRAR_REMOTO` o `CONFLICTO` bloquea la intervención.
+2. Actualizar documentación de la intervención y los agentes afectados (control nuevo en el agente que lo posee).
+3. Bump de versión y `updated_at` en el `SKILL.md`; entrada en `agents/CHANGELOG.md`.
+4. `npm run agents:sync` (escribe espejos y refresca `registry.json`).
+5. `npm run agents:check` (debe pasar).
+6. `npm run test:agents` y pruebas de la intervención.
+7. `npm run agents:preflight` de cierre (debe quedar sin bloqueos).
+8. Commit.
+9. `git push origin desarrollo`.
 
 El push a `origin/desarrollo` es la única publicación autorizada de forma permanente y acotada: rama `desarrollo`, pruebas verdes, sin secretos ni artefactos locales. **No cubre** `develop`, `main`, force push, merges, migraciones remotas, borrado de ramas ni infraestructura.
+
+## Frescura remota
+
+`npm run agents:preflight` compara cada agente y documento de gobernanza contra `origin/desarrollo` por semver, `updated_at` y `sha256`:
+
+| Veredicto | Significado | Acción |
+|---|---|---|
+| `OK` | Sin referencias remotas más nuevas | Intervenir |
+| `OK_CON_ADVERTENCIAS` | Hay avisos que no bloquean (sin fetch, agente solo local, ruta sin agente) | Revisar y continuar |
+| `INTEGRAR_REMOTO` | `origin/desarrollo` tiene versión o fecha más nueva | Detenerse, integrar y repetir |
+| `CONFLICTO` | Misma versión y fecha con `sha256` distinto | Resolver comparando contenido; no sobrescribir |
+| `RAMA_NO_AUTORIZADA` | La rama activa no es `desarrollo` | Cambiar de rama o pedir autorización |
+
+El preflight solo hace `git fetch`; no mueve ramas, no hace merge y no publica.
 
 ## Registro
 

@@ -64,13 +64,15 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "1.1.0",
-      "updated_at": "2026-11-02",
-      "sha256": "014bc01f3561b0b6e6db1122ee9695b3aeb9bb1a9b840d22a8f88fbec9f94a42",
+      "version": "1.2.0",
+      "updated_at": "2026-11-03",
+      "sha256": "c78b9a0e6cb1d136785ff29f40b2b1f83ee46925a7c10a8e95dc029ed090ca3a",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
         "preflight-registry",
+        "preflight-frescura",
+        "agentes-consultados",
         "semver-y-conflicto",
         "inventario-a-m-d",
         "seccion-11-obligatoria",
@@ -113,13 +115,15 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "1.1.0",
-      "updated_at": "2026-11-02",
-      "sha256": "458a6d610842b70274003b01eba85900cbd1d1c743423975a4420da18bfdd68a",
+      "version": "1.2.0",
+      "updated_at": "2026-11-03",
+      "sha256": "690d2fdc919c30953383f45d04d4148a3dc950b59eed4df3208f50dacc89f35c",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
         "flujo-ramas",
+        "preflight-frescura",
+        "sin-sobrescritura-remota",
         "scope-manifest-v2",
         "push-acotado-desarrollo",
         "worktrees-auxiliares",
@@ -180,14 +184,17 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "1.2.0",
-      "updated_at": "2026-11-02",
-      "sha256": "5107af5ed923d581422e14605455a781fdd76095682d08db3b2276034c198e99",
+      "version": "1.3.0",
+      "updated_at": "2026-11-03",
+      "sha256": "dc5db71828f824d244f715acbcb38e2d64fc5e7ddbc36356eef93f66d9c81583",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
         "roster-completo",
         "preflight-registry",
+        "preflight-frescura",
+        "ruteo-por-rutas",
+        "sin-sobrescritura-remota",
         "despacho-por-disciplina",
         "cierre-docs-agentes",
         "push-acotado-desarrollo"
@@ -198,8 +205,8 @@
     {
       "name": "Reglas de agente",
       "path": "AGENTS.md",
-      "updated_at": "2026-11-02",
-      "sha256": "034eeb9bfa9db5513d9a2469c511a7dd60fd4a3c16d6d54fb13a4d258b2152f4"
+      "updated_at": "2026-11-03",
+      "sha256": "5edd417d485f1838cd8c09ffb6cfc03bcc670b84d747ae54e015e677d5bb14c5"
     },
     {
       "name": "Flujo de ramas",
@@ -210,8 +217,8 @@
     {
       "name": "Plantilla de brief",
       "path": "docs/briefs/_TEMPLATE.md",
-      "updated_at": "2026-11-02",
-      "sha256": "147fea917cfb3debb23e5d5e544c80e61b15d9ad00e076d276e432065df29cf1"
+      "updated_at": "2026-11-03",
+      "sha256": "4b311da97e8d9d3f02fd03ac01b46eb9150494651d3fb2e3699b86f3251ab247"
     },
     {
       "name": "Política de aprobación QA",

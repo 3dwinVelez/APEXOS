@@ -2,8 +2,8 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para el repositorio APEXOS. Valida primero la versión y fecha de la documentación y de los agentes en agents/registry.json (contra origin/desarrollo) para no sobrescribir cambios más nuevos, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D, criterios de aceptación, evidencia exigida, actualización obligatoria de documentación/agentes y push obligatorio a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo, o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 1.1.0
-updated_at: 2026-11-02
+version: 1.2.0
+updated_at: 2026-11-03
 ---
 
 # Brief APEXOS — definición de alcance y publicación
@@ -21,6 +21,8 @@ El prompt crudo del usuario, tal como lo escribió. No lo reescribas ni lo "mejo
 1. **Pre-checks de git.** Ejecuta `git rev-parse --show-toplevel`, `git branch --show-current`, `git status --short` y `git remote -v`. Registra la rama activa. Si no es `desarrollo`, adviérbelo: el brief se redacta igual, pero la implementación queda bloqueada hasta autorización explícita.
 2. **Validar documentación y agentes (obligatorio, antes de redactar).**
    - Lee `agents/registry.json` y `agents/README.md`.
+   - Ejecuta `npm run agents:preflight -- --paths "<archivos o directorios del alcance>"`. Su veredicto es la puerta: `INTEGRAR_REMOTO` o `CONFLICTO` detienen el brief hasta integrar `origin/desarrollo`; nunca se sobrescribe una versión remota más nueva.
+   - El ruteo del preflight define los **agentes consultados** que se declaran en la sección 11 del brief. Si la tarea toca dos o más disciplinas, el entrypoint es `equipo-apexos`.
    - Ejecuta `npm run agents:check`. Debe pasar sin diferencias entre `.qoder/skills/` y `agents/`.
    - Compara versiones y fechas con la referencia remota: `git show origin/desarrollo:agents/registry.json`. Si `origin/desarrollo` tiene una versión mayor o una `updated_at` más reciente para cualquier agente o documento, **no sobrescribas**: detente, reporta el conflicto y actualiza la copia local desde esa referencia antes de redactar.
    - Si la versión local es mayor, continúa y registra el delta en el brief.
@@ -30,7 +32,7 @@ El prompt crudo del usuario, tal como lo escribió. No lo reescribas ni lo "mejo
 5. **Clasificar el alcance.** Separa lo pedido de lo que no se pidió. Si algo es adyacente, márcalo como *fuera de alcance* con su justificación.
 6. **Preguntar solo lo que cambia el alcance.** Máximo 3 preguntas, y solo si la respuesta altera archivos o criterios. Si no, resuelve con supuestos explícitos.
 7. **Escribir el brief** copiando `docs/briefs/_TEMPLATE.md` a `docs/briefs/<YYYY-MM-DD>-<slug>.md`. La sección 11 se diligencia siempre, incluso si el cambio es solo backend o solo UI.
-8. **Reportar**: ruta del brief, agentes que deberán actualizarse (con versión propuesta), supuestos y autorizaciones pendientes. Nada más.
+8. **Reportar**: ruta del brief, agentes consultados (salida del preflight), agentes que deberán actualizarse (con versión propuesta), supuestos y autorizaciones pendientes. Nada más.
 
 ## Protocolo de versiones (documentación y agentes)
 
@@ -39,14 +41,15 @@ El prompt crudo del usuario, tal como lo escribió. No lo reescribas ni lo "mejo
 - **Fecha**: `updated_at` en formato `YYYY-MM-DD`; se actualiza en cada bump.
 - **Nunca sobrescribir una versión superior.** Si el archivo remoto o local es más nuevo, se integra su contenido; no se reemplaza por una copia vieja.
 - **Todo control nuevo descubierto en una intervención se incorpora al agente que lo posee** y se registra en `agents/CHANGELOG.md` y en `agents/registry.json` (campo `controls`).
-- Después de editar un agente: `npm run agents:sync` (o `node scripts/agents/sync-agents.js write`), luego `npm run agents:check`.
+- Después de editar un agente: `npm run agents:sync` (o `node scripts/agents/sync-agents.js write`), luego `npm run agents:check` y `npm run agents:preflight`.
+- **Frescura remota.** El preflight compara semver, `updated_at` y `sha256` contra `origin/desarrollo` y devuelve `INTEGRAR_REMOTO` o `CONFLICTO` cuando la referencia remota es más nueva. Esos veredictos bloquean la redacción y la edición.
 
 ## Publicación obligatoria (push a `origin/desarrollo`)
 
 El propietario del repositorio autoriza de forma permanente y acotada el push a `origin/desarrollo` al cierre de cada intervención. Es obligatorio, no opcional:
 
 1. Actualizar la documentación de la intervención (`docs/briefs/`, `docs/audits/`, `docs/qa/` según aplique) y los agentes afectados.
-2. Ejecutar pruebas y `npm run agents:check`.
+2. Ejecutar pruebas, `npm run agents:check` y `npm run agents:preflight`.
 3. Commit con mensaje `docs(...)`/`feat(...)`/`fix(...)` que describa el cambio real.
 4. `git push origin desarrollo`.
 
@@ -66,7 +69,8 @@ Condiciones de la autorización: rama `desarrollo`, pruebas verdes, sin secretos
 
 ## Anti-patrones
 
-- Redactar sin leer `agents/registry.json` o sin ejecutar `npm run agents:check`.
+- Redactar sin leer `agents/registry.json` o sin ejecutar `npm run agents:check` y `npm run agents:preflight`.
+- Editar agentes o gobernanza sin preflight, o ignorar un veredicto `INTEGRAR_REMOTO`/`CONFLICTO`.
 - Sobrescribir un agente o documento con una versión local más vieja.
 - Inflar el alcance con refactors, renombres o "limpieza" que nadie pidió.
 - Listar archivos generados o evidencia como si fueran cambios de producto.

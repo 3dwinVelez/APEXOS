@@ -4,6 +4,15 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-03
 
+### Contexto vivo y frescura de agentes
+
+- Se agrega `npm run agents:preflight`: compara semver, `updated_at` y `sha256` contra `origin/desarrollo`, bloquea con `INTEGRAR_REMOTO`/`CONFLICTO` y rutea las rutas de la intervención a los agentes obligatorios.
+- `AGENTS.md` incorpora el protocolo de contexto vivo y la tabla de ruteo obligatorio; la sección de documentación exige preflight antes de editar y al cierre.
+- `docs/briefs/_TEMPLATE.md` sección 11 declara agentes consultados y exige preflight sin bloqueos.
+- `equipo-apexos` — `1.3.0` — el despacho parte del preflight; no cierra sin agentes consultados y actualizados.
+- `apexos-brief` — `1.2.0` — el preflight es puerta del brief y define los agentes consultados.
+- `apexos-git-guardian` — `1.2.0` — reglas de frescura: fetch permitido, veredictos bloqueantes y prohibición de sobrescribir referencias remotas.
+
 ### Torre apex-control
 
 - `apexos-performance` — `1.3.0` — control nuevo: las sondas TCP deben llamar a `connect` y probarse contra un servidor efímero; un `timeout` del probe no se confunde con caída del servicio vigilado. Origen: la sonda Redis de la torre nunca conectaba y reportaba `down` con el contenedor arriba.

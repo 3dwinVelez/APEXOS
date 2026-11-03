@@ -1,0 +1,92 @@
+
+> apex-os@2.0.0 test:agents
+> node --test scripts/test/agents-preflight.test.js
+
+TAP version 13
+# Subtest: compareVersions ordena numericamente, no lexicograficamente
+ok 1 - compareVersions ordena numericamente, no lexicograficamente
+  ---
+  duration_ms: 5.5597
+  type: 'test'
+  ...
+# Subtest: classifyFreshness detecta remoto mas nuevo por version o fecha
+ok 2 - classifyFreshness detecta remoto mas nuevo por version o fecha
+  ---
+  duration_ms: 0.6256
+  type: 'test'
+  ...
+# Subtest: classifyFreshness bloquea conflicto cuando version y fecha coinciden con sha distinto
+ok 3 - classifyFreshness bloquea conflicto cuando version y fecha coinciden con sha distinto
+  ---
+  duration_ms: 0.3807
+  type: 'test'
+  ...
+# Subtest: classifyFreshness distingue agentes solo locales o solo remotos
+ok 4 - classifyFreshness distingue agentes solo locales o solo remotos
+  ---
+  duration_ms: 0.3967
+  type: 'test'
+  ...
+# Subtest: classifyDocumentFreshness usa fecha y sha, sin semver
+ok 5 - classifyDocumentFreshness usa fecha y sha, sin semver
+  ---
+  duration_ms: 0.6098
+  type: 'test'
+  ...
+# Subtest: isBlocking solo bloquea actualizaciones remotas, remotos nuevos y conflictos
+ok 6 - isBlocking solo bloquea actualizaciones remotas, remotos nuevos y conflictos
+  ---
+  duration_ms: 0.4023
+  type: 'test'
+  ...
+# Subtest: normalizePath unifica separadores de Windows
+ok 7 - normalizePath unifica separadores de Windows
+  ---
+  duration_ms: 0.3577
+  type: 'test'
+  ...
+# Subtest: routePaths exige frontend y QA para apps/web
+ok 8 - routePaths exige frontend y QA para apps/web
+  ---
+  duration_ms: 2.2501
+  type: 'test'
+  ...
+# Subtest: routePaths exige DB, backend, seguridad y QA para el esquema Prisma
+ok 9 - routePaths exige DB, backend, seguridad y QA para el esquema Prisma
+  ---
+  duration_ms: 1.212
+  type: 'test'
+  ...
+# Subtest: routePaths concentra HR en backend, seguridad y QA
+ok 10 - routePaths concentra HR en backend, seguridad y QA
+  ---
+  duration_ms: 0.9175
+  type: 'test'
+  ...
+# Subtest: routePaths manda gobernanza al trio de agentes
+ok 11 - routePaths manda gobernanza al trio de agentes
+  ---
+  duration_ms: 0.4129
+  type: 'test'
+  ...
+# Subtest: routePaths agrega equipo-apexos cuando la tarea es multidisciplinaria
+ok 12 - routePaths agrega equipo-apexos cuando la tarea es multidisciplinaria
+  ---
+  duration_ms: 0.4694
+  type: 'test'
+  ...
+# Subtest: routePaths informa rutas sin agente asignado
+ok 13 - routePaths informa rutas sin agente asignado
+  ---
+  duration_ms: 3.4262
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 285.068

@@ -21,6 +21,8 @@
     "check:local": "node scripts/preflight-local.js",
     "agents:sync": "node scripts/agents/sync-agents.js write",
     "agents:check": "node scripts/agents/sync-agents.js check",
+    "agents:preflight": "node scripts/agents/preflight.js",
+    "test:agents": "node --test scripts/test/agents-preflight.test.js",
     "prisma:generate": "npm --workspace apps/api run prisma:generate",
     "db:push": "npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate",
     "seed:demo": "node scripts/seed-admin.js",
