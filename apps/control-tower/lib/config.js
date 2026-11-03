@@ -300,7 +300,8 @@ function safeConfig(config) {
         webBaseUrl: environment.webBaseUrl,
         supabaseUrl: environment.supabaseUrl,
         railwayUrl: environment.railwayUrl,
-        vercelUrl: environment.vercelUrl
+        vercelUrl: environment.vercelUrl,
+        apexTokenConfigured: Boolean(environment.apexToken)
       }])
     ),
     cloud: {

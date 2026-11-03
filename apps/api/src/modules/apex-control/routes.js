@@ -2,7 +2,7 @@
 
 const tenancy = require("../../middleware/tenancy");
 const { requirePermission, requireExplicitPermission, tenantHasModule } = require("../../middleware/rbac");
-const { crossTenantEnabled } = require("./activity");
+const { crossTenantEnabled, crossTenantTenants } = require("./activity");
 
 const SOCKET_AUTH_TIMEOUT_MS = 8000;
 
@@ -109,6 +109,20 @@ async function apexControlRoutes(fastify, options = {}) {
   };
 
   fastify.get("/apex-control/tenants", { preHandler: [crossTenantGuard, readAllTenants] }, (request) => service.getTenants(request.query || {}));
+
+  // Detalle por empresa: misma puerta que la tabla agregada, sin listar ni
+  // agregar otras empresas. La allowlist, cuando existe, tambien limita aqui.
+  fastify.get("/apex-control/tenants/:tenantId/modules", { preHandler: [crossTenantGuard, readAllTenants] }, (request, reply) => {
+    const tenantId = String(request.params.tenantId || "").trim();
+    if (!/^[A-Za-z0-9_-]{4,64}$/.test(tenantId)) {
+      return reply.code(400).send({ error: "Identificador de empresa invalido.", code: "EMPRESA_ID_INVALIDO" });
+    }
+    const allowlist = crossTenantTenants();
+    if (allowlist.length && !allowlist.includes(tenantId)) {
+      return reply.code(403).send({ error: "La empresa solicitada esta fuera del alcance autorizado.", code: "EMPRESA_FUERA_DE_ALCANCE" });
+    }
+    return service.getTenantModules(tenantId);
+  });
 
   fastify.get("/apex-control/events", { preHandler: read }, (request) => service.listEvents(request.user?.tenant_id, request.query || {}));
 

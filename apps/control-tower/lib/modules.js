@@ -57,7 +57,12 @@ const REASON_DETAIL = {
   TOKEN_INVALIDO: "Token APEX Control invalido o sin permiso; se muestra solo la salud de servicios.",
   NO_DISPONIBLE: "El ambiente no expone salud por modulo; se muestra solo la salud de servicios.",
   SIN_CONEXION: "Sin conexion con la API para leer datos por modulo.",
-  SIMULACION: "Simulacion activa: salud por modulo omitida."
+  SIMULACION: "Simulacion activa: salud por modulo omitida.",
+  CROSS_TENANT_DESHABILITADO: "La lectura de salud entre empresas esta deshabilitada en este ambiente.",
+  PERMISO_DENEGADO: "El token de la torre no tiene permiso para leer la salud de otras empresas.",
+  EMPRESA_FUERA_DE_ALCANCE: "La empresa esta fuera de la allowlist autorizada para lectura entre empresas.",
+  EMPRESA_NO_ENCONTRADA: "La empresa solicitada no existe en este ambiente.",
+  EMPRESA_ID_INVALIDO: "El identificador de empresa no es valido."
 };
 
 function summaryOf(modules) {
@@ -97,6 +102,7 @@ function normalizeApiPayload(json) {
     reason: null,
     generated_at: json.generated_at || new Date().toISOString(),
     scope: json.scope || "tenant",
+    tenant: json.tenant || null,
     summary: json.summary && typeof json.summary === "object" ? json.summary : summaryOf(modules),
     modules: modules.map((module) => ({
       key: String(module.key || ""),
@@ -210,7 +216,7 @@ function moduleChecks(payload, environment) {
   return checks;
 }
 
-async function fetchModules(config, environment, { httpRequest, fetchImpl = global.fetch, now = new Date() } = {}) {
+async function fetchModules(config, environment, { httpRequest, fetchImpl = global.fetch, now = new Date(), tenantId = null } = {}) {
   if (config.simulation) return catalogPayload("SIMULACION");
   // El token global apunta a la API local; un ambiente remoto solo usa el suyo.
   const fallback = environment.id === "local" ? config.apexToken : "";
@@ -218,9 +224,15 @@ async function fetchModules(config, environment, { httpRequest, fetchImpl = glob
   if (!token) return catalogPayload("SIN_TOKEN");
   if (!environment.apiBaseUrl) return catalogPayload("NO_DISPONIBLE");
 
+  const scope = tenantId ? String(tenantId).trim() : "";
+  if (tenantId && !/^[A-Za-z0-9_-]{4,64}$/.test(scope)) return catalogPayload("EMPRESA_ID_INVALIDO");
+  const path = scope
+    ? `/api/v1/apex-control/tenants/${encodeURIComponent(scope)}/modules`
+    : "/api/v1/apex-control/modules";
+
   let result;
   if (httpRequest) {
-    result = await httpRequest(`${environment.apiBaseUrl}/api/v1/apex-control/modules`, {
+    result = await httpRequest(`${environment.apiBaseUrl}${path}`, {
       timeoutMs: config.environmentTimeoutMs,
       headers: { authorization: `Bearer ${token}` }
     });
@@ -228,7 +240,7 @@ async function fetchModules(config, environment, { httpRequest, fetchImpl = glob
     const controller = typeof AbortController === "function" ? new AbortController() : null;
     const timer = controller ? setTimeout(() => controller.abort(), config.environmentTimeoutMs) : null;
     try {
-      const response = await fetchImpl(`${environment.apiBaseUrl}/api/v1/apex-control/modules`, {
+      const response = await fetchImpl(`${environment.apiBaseUrl}${path}`, {
         headers: { authorization: `Bearer ${token}`, accept: "application/json" },
         signal: controller ? controller.signal : undefined
       });
@@ -248,8 +260,11 @@ async function fetchModules(config, environment, { httpRequest, fetchImpl = glob
   }
 
   if (result.error || result.status === 0) return catalogPayload("SIN_CONEXION");
-  if (result.status === 401 || result.status === 403) return catalogPayload("TOKEN_INVALIDO");
-  if (result.status === 404) return catalogPayload("NO_DISPONIBLE");
+  const responseCode = result.json && result.json.code;
+  if (result.status === 401) return catalogPayload("TOKEN_INVALIDO");
+  if (result.status === 403) return catalogPayload(REASON_DETAIL[responseCode] ? responseCode : "TOKEN_INVALIDO");
+  if (result.status === 400) return catalogPayload(REASON_DETAIL[responseCode] ? responseCode : "EMPRESA_ID_INVALIDO");
+  if (result.status === 404) return catalogPayload(REASON_DETAIL[responseCode] ? responseCode : "NO_DISPONIBLE");
   if (!result.ok || !result.json) return catalogPayload("NO_DISPONIBLE");
   const payload = normalizeApiPayload(result.json);
   if (!payload) return catalogPayload("NO_DISPONIBLE");

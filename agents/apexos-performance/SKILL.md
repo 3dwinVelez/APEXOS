@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.2.0
+version: 2.3.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -44,6 +44,7 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
 10. **Infraestructura con autorización.** Docker, Railway, Supabase, despliegues y cambios de variables de entorno requieren autorización explícita e independiente. Este experto diagnostica y propone; no ejecuta.
 11. **Métricas sin contaminar el puntaje.** El panel de módulos muestra registros, frescura y servicios por módulo mediante sondas `informational`, que no alteran el resumen del ambiente; solo el resumen por ambiente (una sonda por ambiente) pondera. Las tarjetas cloud reportan métricas medibles: Railway (servicios, despliegues, fallidos, antigüedad y estado del último), Vercel (despliegues, listos, fallidos, antigüedad y duración media calculada con `buildingAt`/`ready`), Supabase (`/health?services=` por servicio y versión de base). Sin credenciales o con error de autenticación la tarjeta queda `unknown`, nunca `ok`; una sonda lenta no se reintenta en bucle dentro del mismo ciclo.
 12. **Actividad y empresas acotadas.** La actividad diaria se lee con agregados (`_count`/`_max` y buckets por SQL crudo acotado a `days`), nunca con `findMany` sobre auditoría o eventos. El panel de actividad y empresas es igualmente `informational`: no altera el puntaje del ambiente. En la vista **Resumen** la tabla entre empresas se limita a 12 filas con su nota de "Cambia a Detalle"; el detalle conserva la tabla completa. Por qué: volcar cientos de empresas en la vista rápida alarga el render y vuelve ilegible el estado general.
+13. **Gráficos de salud acotados.** El cálculo de salud es puro y sin I/O (`lib/health.js`): el puntaje por ambiente se deriva una vez por lectura y la vista por empresa reutiliza el mismo endpoint cacheado por ciclo, sin sondas nuevas ni consultas por módulo. El gráfico por módulo renderiza 10 filas en **Resumen** y el total solo en **Detalle**; el filtro por banda y los diálogos reutilizan el payload ya cargado en el navegador. La vista por empresa tiene su propio límite de tasa (30/min) y se relee al cambiar de ambiente una vez, no por cada re-render. Por qué: un gauge con decenas de barras por ciclo convertiría el indicador en el mayor costo del panel.
 
 ## Checklist de intervención
 

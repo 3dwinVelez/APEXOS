@@ -353,11 +353,14 @@ async function run() {
     try {
       chrome = await launchChrome(binary);
       await chrome.cdp.send("Page.navigate", { url: base });
-      const rendered = await waitFor(() => chrome.cdp.evaluate(`document.querySelectorAll('.check').length >= 8 && document.querySelectorAll('.branch').length === 3`), 15000);
+      const rendered = await waitFor(
+        () => chrome.cdp.evaluate(`document.querySelectorAll('.check').length >= 8 && document.querySelectorAll('.metric-tile').length >= 8 && Boolean(document.querySelector('#health [aria-label^="Salud "]'))`),
+        15000
+      );
       assert("browser_dashboard_rendered", Boolean(rendered), {
         checks: await chrome.cdp.evaluate(`document.querySelectorAll('.check').length`),
-        kpis: await chrome.cdp.evaluate(`document.querySelectorAll('.kpi').length`),
-        branches: await chrome.cdp.evaluate(`document.querySelectorAll('.branch').length`)
+        kpis: await chrome.cdp.evaluate(`document.querySelectorAll('.metric-tile').length`),
+        gauge: await chrome.cdp.evaluate(`Boolean(document.querySelector('#health [aria-label^="Salud "]'))`)
       });
       await waitFor(() => chrome.cdp.evaluate(`document.getElementById('livePill').textContent.includes('SSE en vivo')`), 8000);
       const size = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-overview.png"));
@@ -365,8 +368,14 @@ async function run() {
 
       const tabs = await chrome.cdp.evaluate(`document.querySelectorAll('.env-tab').length`);
       assert("browser_environment_tabs", tabs === 3, { tabs });
+      // Ramas, sondas y rendimiento viven en la vista Detalle.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="detail"]').click()`);
+      const detailReady = await waitFor(
+        () => chrome.cdp.evaluate(`document.querySelectorAll('.branch').length === 3 && document.querySelectorAll('details.tech').length >= 8 && document.querySelectorAll('.perf-stat').length === 8`),
+        8000
+      );
       const technicalDetails = await chrome.cdp.evaluate(`document.querySelectorAll('details.tech').length`);
-      assert("browser_technical_details", technicalDetails >= 8, { details: technicalDetails });
+      assert("browser_technical_details", detailReady && technicalDetails >= 8, { details: technicalDetails });
       const performanceStats = await chrome.cdp.evaluate(`document.querySelectorAll('.perf-stat').length`);
       assert("browser_performance_panel", performanceStats === 8, { stats: performanceStats });
 

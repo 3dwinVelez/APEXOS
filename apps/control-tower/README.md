@@ -81,7 +81,27 @@ El panel de módulos consume `GET /api/v1/apex-control/modules` con `Authorizati
 - `ENV_DEVELOP_APEX_TOKEN` y `ENV_MAIN_APEX_TOKEN` son obligatorios para leer módulos remotos. La torre **no** reutiliza el token local contra QA ni PROD: sin token propio el ambiente queda `SIN_TOKEN` y sus módulos en `Sin dato`.
 - Los tokens de sesión viven solo en `apps/control-tower/.env.local` y caducan; renueva el valor cuando el panel reporte `TOKEN_INVALIDO`.
 
-Los módulos no contaminan el puntaje general del ambiente: sus sondas son informativas y el resumen se calcula con las sondas de infraestructura. Un módulo caído sí genera alerta de severidad media.
+Los módulos no contaminan las sondas de infraestructura, pero sí el indicador oficial: el puntaje del ambiente mezcla 70% módulos y 30% infraestructura cuando ambas fuentes se pueden medir. Un módulo caído genera alerta de severidad media.
+
+### Indicador oficial de salud
+
+El primer bloque del panel es el indicador oficial, no un adorno: publica el puntaje, la banda y los umbrales que lo produjeron.
+
+| Banda | Rango | Qué significa |
+|---|---|---|
+| Óptimo | 85–100 | Opera con datos frescos y servicios sanos. |
+| En riesgo | 60–84 | Funciona, pero con degradación, datos viejos o una dependencia en alerta. |
+| Crítico | 0–59 | Módulo caído o dependencia vital sin servicio. |
+| Sin dato | — | La API no pudo medir; no se premia ni se castiga. |
+
+- Puntaje base por estado medido: `ok` 100, `degraded` 65, `down` 10. Un módulo sano que consumió más de tres cuartas partes de su ventana de frescura pierde hasta 25 puntos (piso 70) y entra en riesgo.
+- Ambiente: 70% módulos + 30% infraestructura. Si una fuente no se puede medir, el puntaje usa solo la medible; si no hay ninguna, queda `Sin dato`.
+- El gauge, las tarjetas de banda (con su conteo), la barra de umbrales y el gráfico por módulo ordenado de peor a mejor son clicables: abren el detalle del módulo o la fórmula completa en un diálogo.
+- Los tabs de ambiente muestran el puntaje y las sondas medidas; el indicador **Salud** del tablero replica el mismo número.
+
+### Vista por empresa
+
+La tabla de empresas agrega la columna **Módulos** con **Ver módulos**, que abre el mismo indicador, las bandas y el gráfico de módulos para una sola empresa mediante `GET /api/v1/apex-control/tenants/:tenantId/modules`. La empresa no aporta sondas de infraestructura: cuando no las tiene, el puntaje usa únicamente sus módulos y lo declara. Si el ambiente no permite la lectura entre empresas, el panel muestra el código (`SIN_TOKEN`, `CROSS_TENANT_DESHABILITADO`, `VISTA_EMPRESAS_NO_DISPONIBLE`) y el motivo, nunca ceros que parezcan sanos. Al cambiar de ambiente, la empresa abierta se vuelve a consultar contra el ambiente activo.
 
 ### Actividad, conexiones y empresas
 
@@ -165,7 +185,7 @@ npm run certify:control-tower:local
 
 La certificación levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, captura el panel con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/`.
 
-La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`. La de actividad, conexiones y empresas, con capturas de las vistas Resumen y Detalle, está en `docs/qa/evidence/tower-activity-tenants-20261103/`.
+La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`. La de actividad, conexiones y empresas, con capturas de las vistas Resumen y Detalle, está en `docs/qa/evidence/tower-activity-tenants-20261103/`. La del indicador oficial de salud, umbrales y vista por empresa está en `docs/qa/evidence/tower-health-charts-20261103/`.
 
 Evidencia actual: `certification.json`, `tower-overview.png`, `tower-env-main.png`, `tower-api-down.png` y `telegram-outbox.json`.
 

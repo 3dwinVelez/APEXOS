@@ -1,0 +1,144 @@
+{
+  "generated_at": "2026-11-03T19:39:04.079Z",
+  "environments": {
+    "local": {
+      "overall": "degraded",
+      "score": 77,
+      "band": "risk",
+      "thresholds": {
+        "optimal": 85,
+        "risk": 60
+      },
+      "modules": {
+        "score": 67,
+        "band": "risk",
+        "measurable": 15,
+        "total": 32
+      },
+      "infra": {
+        "score": 100,
+        "band": "optimal",
+        "measurable": 10,
+        "total": 10
+      },
+      "counts": {
+        "total": 32,
+        "ok": 1,
+        "degraded": 14,
+        "down": 0,
+        "unknown": 17
+      },
+      "modules_reason": null,
+      "cloud": {
+        "railway": {
+          "configured": null,
+          "status": null,
+          "detail": null
+        },
+        "vercel": {
+          "configured": null,
+          "status": null,
+          "detail": null
+        },
+        "supabase": {
+          "configured": null,
+          "status": null,
+          "detail": null
+        }
+      }
+    },
+    "develop": {
+      "overall": "ok",
+      "score": 83,
+      "band": "risk",
+      "thresholds": {
+        "optimal": 85,
+        "risk": 60
+      },
+      "modules": {
+        "score": null,
+        "band": "unknown",
+        "measurable": 0,
+        "total": 32
+      },
+      "infra": {
+        "score": 83,
+        "band": "risk",
+        "measurable": 4,
+        "total": 4
+      },
+      "counts": {
+        "total": 32,
+        "ok": 0,
+        "degraded": 0,
+        "down": 0,
+        "unknown": 32
+      },
+      "modules_reason": "SIN_TOKEN",
+      "cloud": {
+        "railway": {
+          "configured": true,
+          "status": "degraded",
+          "detail": "Railway no devolvió el proyecto solicitado."
+        },
+        "vercel": {
+          "configured": false,
+          "status": "unknown",
+          "detail": "Vercel sin token o proyecto configurado. Añade VERCEL_TOKEN y ENV_*_VERCEL_PROJECT_ID."
+        },
+        "supabase": {
+          "configured": false,
+          "status": "unknown",
+          "detail": "Supabase sin token de gestión o ref configurada. Añade SUPABASE_ACCESS_TOKEN y ENV_*_SUPABASE_REF."
+        }
+      }
+    },
+    "main": {
+      "overall": "ok",
+      "score": 83,
+      "band": "risk",
+      "thresholds": {
+        "optimal": 85,
+        "risk": 60
+      },
+      "modules": {
+        "score": null,
+        "band": "unknown",
+        "measurable": 0,
+        "total": 32
+      },
+      "infra": {
+        "score": 83,
+        "band": "risk",
+        "measurable": 4,
+        "total": 4
+      },
+      "counts": {
+        "total": 32,
+        "ok": 0,
+        "degraded": 0,
+        "down": 0,
+        "unknown": 32
+      },
+      "modules_reason": "SIN_TOKEN",
+      "cloud": {
+        "railway": {
+          "configured": true,
+          "status": "degraded",
+          "detail": "Railway no devolvió el proyecto solicitado."
+        },
+        "vercel": {
+          "configured": false,
+          "status": "unknown",
+          "detail": "Vercel sin token o proyecto configurado. Añade VERCEL_TOKEN y ENV_*_VERCEL_PROJECT_ID."
+        },
+        "supabase": {
+          "configured": false,
+          "status": "unknown",
+          "detail": "Supabase sin token de gestión o ref configurada. Añade SUPABASE_ACCESS_TOKEN y ENV_*_SUPABASE_REF."
+        }
+      }
+    }
+  },
+  "tenants": []
+}

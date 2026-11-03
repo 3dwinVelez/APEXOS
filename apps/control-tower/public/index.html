@@ -36,6 +36,17 @@
   <main>
     <nav id="envTabs" class="env-tabs" aria-label="Filtrar por ambiente"></nav>
 
+    <section class="panel span-12 health-panel" aria-labelledby="healthTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Indicador oficial · umbrales fijos</p>
+          <h2 id="healthTitle">Estado del sistema</h2>
+        </div>
+        <span id="healthMeta" class="muted small"></span>
+      </header>
+      <div id="health" class="health"></div>
+    </section>
+
     <section id="kpis" class="kpis" aria-label="Indicadores"></section>
 
     <section class="panel span-12" aria-labelledby="modulesTitle">
@@ -74,6 +85,20 @@
         <span id="tenantsMeta" class="muted small"></span>
       </header>
       <div id="tenants" class="tenants"></div>
+    </section>
+
+    <section id="companyPanel" class="panel span-12 company-panel" aria-labelledby="companyTitle" hidden>
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Detalle autorizado por empresa</p>
+          <h2 id="companyTitle">Salud por empresa</h2>
+        </div>
+        <div class="module-tools">
+          <span id="companyMeta" class="muted small"></span>
+          <button id="btnCompanyClose" class="link" type="button">Cerrar</button>
+        </div>
+      </header>
+      <div id="companyHealth" class="health company-health"></div>
     </section>
 
     <section class="panel span-8" aria-labelledby="servicesTitle">
@@ -209,6 +234,17 @@
     <p>APEX Control Tower corre fuera de APEXOS. Gobierno: solo <strong>desarrollo</strong>. Push, merge, deploy y migraciones remotas requieren autorización humana explícita.</p>
     <p id="footerMeta" class="muted small"></p>
   </footer>
+
+  <dialog id="detailDialog" class="detail-dialog" aria-labelledby="detailTitle">
+    <header class="dialog-head">
+      <div>
+        <p id="detailEyebrow" class="eyebrow">Detalle del módulo</p>
+        <h2 id="detailTitle">Módulo</h2>
+      </div>
+      <button id="btnDialogClose" class="btn ghost" type="button">Cerrar</button>
+    </header>
+    <div id="detailBody" class="dialog-body"></div>
+  </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="app.js"></script>

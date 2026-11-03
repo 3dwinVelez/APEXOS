@@ -167,6 +167,28 @@ async function getModules(tenantId, deps = {}) {
   return computeModules(tenantId, { ...deps, components });
 }
 
+async function getTenantModules(tenantId, deps = {}) {
+  const db = deps.prisma || defaultPrisma;
+  const tenant = await db.tenant.findUnique({
+    where: { id: tenantId },
+    select: { id: true, name: true, plan: true, active: true }
+  });
+  if (!tenant) {
+    throw Object.assign(new Error("Empresa no encontrada"), { statusCode: 404, code: "EMPRESA_NO_ENCONTRADA" });
+  }
+  const components = await loadComponents(deps);
+  const payload = await computeModules(tenantId, { ...deps, components });
+  return {
+    ...payload,
+    tenant: {
+      id: tenant.id,
+      name: tenant.name,
+      plan: tenant.plan || null,
+      active: tenant.active !== false
+    }
+  };
+}
+
 async function getActivity(tenantId, query = {}, deps = {}) {
   return computeActivity(tenantId, query, deps);
 }
@@ -302,6 +324,7 @@ async function listReportRuns(tenantId, query = {}, deps = {}) {
 module.exports = {
   getStatus,
   getModules,
+  getTenantModules,
   getActivity,
   getTenants,
   loadComponents,

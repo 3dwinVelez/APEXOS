@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: mide registros y frescura con aislamiento de tenant
+ok 1 - mide registros y frescura con aislamiento de tenant
+  ---
+  duration_ms: 9.2694
+  type: 'test'
+  ...
+# Subtest: un modulo sin datos o sin modelo queda en unknown, nunca en ok
+ok 2 - un modulo sin datos o sin modelo queda en unknown, nunca en ok
+  ---
+  duration_ms: 3.191
+  type: 'test'
+  ...
+# Subtest: una dependencia caida baja el modulo aunque el dato este fresco
+ok 3 - una dependencia caida baja el modulo aunque el dato este fresco
+  ---
+  duration_ms: 2.8801
+  type: 'test'
+  ...
+# Subtest: adjunta incidentes abiertos de sus dependencias y respeta el limite
+ok 4 - adjunta incidentes abiertos de sus dependencias y respeta el limite
+  ---
+  duration_ms: 4.5058
+  type: 'test'
+  ...
+# Subtest: un error de medicion deja el modulo en unknown con evidencia
+ok 5 - un error de medicion deja el modulo en unknown con evidencia
+  ---
+  duration_ms: 3.0106
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/modules exige licencia y permiso de lectura
+ok 6 - GET /apex-control/modules exige licencia y permiso de lectura
+  ---
+  duration_ms: 546.9929
+  type: 'test'
+  ...
+# Subtest: la salud por empresa devuelve el tenant medido y exige que exista
+ok 7 - la salud por empresa devuelve el tenant medido y exige que exista
+  ---
+  duration_ms: 4.4712
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/tenants/:tenantId/modules mantiene la puerta entre empresas
+ok 8 - GET /apex-control/tenants/:tenantId/modules mantiene la puerta entre empresas
+  ---
+  duration_ms: 61.6853
+  type: 'test'
+  ...
+# Subtest: capacidad permanece apagada ante flag, ambiente, tenant o identidad no permitidos
+ok 9 - capacidad permanece apagada ante flag, ambiente, tenant o identidad no permitidos
+  ---
+  duration_ms: 5.9503
+  type: 'test'
+  ...
+# Subtest: capacidad autorizada es solo lectura y no habilita sync o evidencias
+ok 10 - capacidad autorizada es solo lectura y no habilita sync o evidencias
+  ---
+  duration_ms: 1.6758
+  type: 'test'
+  ...
+# Subtest: cambio de rol bloquea bootstrap aunque el usuario este allowlisted
+ok 11 - cambio de rol bloquea bootstrap aunque el usuario este allowlisted
+  ---
+  duration_ms: 1.0475
+  type: 'test'
+  ...
+# Subtest: requiere perfil tecnico activo ligado a la sesion
+ok 12 - requiere perfil tecnico activo ligado a la sesion
+  ---
+  duration_ms: 1.3915
+  type: 'test'
+  ...
+# Subtest: genera snapshot minimo valido y deriva empresa y usuario de sesion
+ok 13 - genera snapshot minimo valido y deriva empresa y usuario de sesion
+  ---
+  duration_ms: 6.3192
+  type: 'test'
+  ...
+# Subtest: consulta solo tecnico asignado, estados autorizados y ventana de siete dias
+ok 14 - consulta solo tecnico asignado, estados autorizados y ventana de siete dias
+  ---
+  duration_ms: 1.3917
+  type: 'test'
+  ...
+# Subtest: DTO excluye datos administrativos, financieros y payload completo de metadata
+ok 15 - DTO excluye datos administrativos, financieros y payload completo de metadata
+  ---
+  duration_ms: 1.8219
+  type: 'test'
+  ...
+# Subtest: serverVersion es revision temporal de lectura basada en timestamp servidor
+ok 16 - serverVersion es revision temporal de lectura basada en timestamp servidor
+  ---
+  duration_ms: 0.505
+  type: 'test'
+  ...
+# Subtest: indica hasMore sin truncamiento silencioso al superar ordenes
+ok 17 - indica hasMore sin truncamiento silencioso al superar ordenes
+  ---
+  duration_ms: 13.252
+  type: 'test'
+  ...
+# Subtest: rechaza limite de checklist y payload maximo
+ok 18 - rechaza limite de checklist y payload maximo
+  ---
+  duration_ms: 6.7528
+  type: 'test'
+  ...
+# Subtest: error de base de datos se convierte en respuesta interna controlada
+ok 19 - error de base de datos se convierte en respuesta interna controlada
+  ---
+  duration_ms: 1.2861
+  type: 'test'
+  ...
+# Subtest: timeout se convierte en 503 sin detalles internos
+ok 20 - timeout se convierte en 503 sin detalles internos
+  ---
+  duration_ms: 511.7075
+  type: 'test'
+  ...
+# Subtest: limites quedan acotados aun con configuracion invalida
+ok 21 - limites quedan acotados aun con configuracion invalida
+  ---
+  duration_ms: 0.6395
+  type: 'test'
+  ...
+# Subtest: rutas rechazan query libre y configuran rate limit por usuario y empresa
+ok 22 - rutas rechazan query libre y configuran rate limit por usuario y empresa
+  ---
+  duration_ms: 0.785
+  type: 'test'
+  ...
+# Subtest: usuario no autenticado recibe 401 antes de ejecutar bootstrap
+ok 23 - usuario no autenticado recibe 401 antes de ejecutar bootstrap
+  ---
+  duration_ms: 542.6477
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1655.1504

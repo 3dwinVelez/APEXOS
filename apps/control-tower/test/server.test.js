@@ -96,6 +96,18 @@ test("torre local: salud, UI, auth, fabrica, puente, simulacion y telegram", asy
   assert.ok(performance.body.performance.develop);
   assert.ok(performance.body.performance.main);
 
+  assert.ok(environmentSnapshot.local.health, "cada ambiente publica su indicador con umbrales");
+  assert.equal(environmentSnapshot.local.health.thresholds.optimal, 85);
+  assert.equal(environmentSnapshot.local.health.thresholds.risk, 60);
+
+  const tenantUnauthorized = await call(base, "/api/tenants/tenant-a/modules?environment=local");
+  assert.equal(tenantUnauthorized.status, 401);
+  const tenantWithoutScope = await call(base, "/api/tenants/tenant-a/modules?environment=local", { token: UI_TOKEN });
+  assert.equal(tenantWithoutScope.status, 409, "sin lectura de empresas no se inventa el detalle");
+  const invalidEnvironment = await call(base, "/api/tenants/tenant-a/modules?environment=orbita", { token: UI_TOKEN });
+  assert.equal(invalidEnvironment.status, 400);
+  assert.equal(invalidEnvironment.body.error, "AMBIENTE_INVALIDO");
+
   const forbiddenHost = await rawRequest(address.port, "evil.example");
   assert.equal(forbiddenHost, 403);
 

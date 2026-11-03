@@ -9,6 +9,7 @@ const { diagnoseCheck } = require("./diagnostics");
 const { redact } = require("./security");
 const { fetchModules, enrichWithChecks, moduleChecks } = require("./modules");
 const { fetchActivity, activityChecks } = require("./activity");
+const { computeHealth, withModuleBands } = require("./health");
 
 const DEFAULT_MAX_BYTES = 256 * 1024;
 const ENVIRONMENT_ORDER = ["local", "develop", "main"];
@@ -608,6 +609,7 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
 }
 
 function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null, activity = null) {
+  const health = computeHealth({ modules: modules ? modules.modules : [], checks });
   return {
     id: environment.id,
     label: environment.label,
@@ -618,7 +620,8 @@ function buildEnvironmentMeta(config, environment, checks, cloud = null, modules
     webBaseUrl: environment.webBaseUrl,
     overall: environment.enabled ? computeOverall(checks) : "unknown",
     summary: computeSummary(checks),
-    modules: modules || null,
+    modules: modules ? { ...modules, modules: withModuleBands(modules.modules, health) } : null,
+    health,
     activity: activity || null,
     cloud
   };

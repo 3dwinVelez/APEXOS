@@ -60,12 +60,40 @@ const ACTIVITY_REASON = {
   SIMULACION: "Simulación activa: la actividad se omite."
 };
 
+const BAND_LABEL = { optimal: "Óptimo", risk: "En riesgo", critical: "Crítico", unknown: "Sin dato" };
+const BAND_TONE = { optimal: "ok", risk: "degraded", critical: "down", unknown: "unknown" };
+const BAND_RANGE = { optimal: "85–100", risk: "60–84", critical: "0–59", unknown: "sin medición" };
+const BAND_ORDER = ["optimal", "risk", "critical", "unknown"];
+const HEALTH_REASON = {
+  SIN_TOKEN: (environment) => `Sin ENV_${String(environment.id).toUpperCase()}_APEX_TOKEN la torre no puede leer módulos, actividad ni empresas. El ambiente queda en "Sin dato" hasta configurar un JWT propio de ese ambiente en apps/control-tower/.env.local.`,
+  TOKEN_INVALIDO: () => "El token de este ambiente fue rechazado por la API. Renuévalo y reinicia la torre; el token local nunca se reutiliza en QA ni en PROD.",
+  SIN_CONEXION: () => "No hay conexión con la API del ambiente. Revisa la URL y la red antes de confiar en el indicador.",
+  NO_DISPONIBLE: () => "La API del ambiente no expone salud por módulo.",
+  SIMULACION: () => "La torre está en simulación; la salud real por módulo se omite.",
+  CROSS_TENANT_DESHABILITADO: () => "La lectura entre empresas está deshabilitada en este ambiente.",
+  PERMISO_DENEGADO: () => "El token de la torre no tiene el permiso apex-control:read_all_tenants.",
+  EMPRESA_FUERA_DE_ALCANCE: () => "La empresa está fuera de la allowlist autorizada.",
+  EMPRESA_NO_ENCONTRADA: () => "La empresa ya no aparece en la lectura vigente.",
+  EMPRESA_ID_INVALIDO: () => "El identificador de empresa no es válido.",
+  VISTA_EMPRESAS_NO_DISPONIBLE: () => "La lectura por empresa no está disponible en este ambiente.",
+  AMBIENTE_DESACTIVADO: () => "El ambiente está desactivado en la torre."
+};
+const DATA_STATE_LABEL = {
+  fresh: "Fresco",
+  stale: "Datos viejos",
+  empty: "Sin registros",
+  unavailable: "No disponible",
+  declared: "Declarado sin modelo"
+};
+
 const state = {
   data: null,
   telegram: null,
   token: sessionStorage.getItem("towerToken") || "",
   environment: localStorage.getItem("towerEnvironment") || "local",
   moduleFilter: localStorage.getItem("towerModuleFilter") || "all",
+  healthBand: null,
+  company: null,
   view: localStorage.getItem("towerView") || "summary",
   source: null,
   loading: false,
@@ -273,7 +301,9 @@ async function api(path, options = {}, retried = false) {
   }
   if (!response.ok) {
     const message = body && body.error ? body.error : `HTTP ${response.status}`;
-    throw new Error(message);
+    const error = new Error(message);
+    if (body && body.code) error.code = body.code;
+    throw error;
   }
   return body;
 }
@@ -290,6 +320,436 @@ function toast(message, kind = "") {
 
 function pillClass(status) {
   return ["ok", "degraded", "down", "unknown"].includes(status) ? status : "unknown";
+}
+
+function bandCounts(health) {
+  const counts = { optimal: 0, risk: 0, critical: 0, unknown: 0 };
+  for (const entry of (health && Array.isArray(health.entries) ? health.entries : [])) {
+    const band = BAND_ORDER.includes(entry.band) ? entry.band : "unknown";
+    counts[band] += 1;
+  }
+  return counts;
+}
+
+// Un solo lector de datos para el ambiente activo y para la empresa abierta:
+// ambos alimentan el mismo indicador oficial.
+function blockData(scope) {
+  const environment = activeEnvironment();
+  if (scope === "company") {
+    const company = state.company;
+    const data = company && company.data ? company.data : null;
+    return {
+      environment,
+      payload: data,
+      health: data && data.ok ? data.health : null,
+      modules: data && data.ok && Array.isArray(data.modules) ? data.modules : [],
+      tenant: data && data.tenant ? data.tenant : null
+    };
+  }
+  const payload = environment && environment.modules ? environment.modules : null;
+  return {
+    environment,
+    payload,
+    health: environment ? environment.health : null,
+    modules: payload && Array.isArray(payload.modules) ? payload.modules : [],
+    tenant: payload && payload.tenant ? payload.tenant : null
+  };
+}
+
+function gaugeSvg(health) {
+  const score = Number.isFinite(health.score) ? Math.max(0, Math.min(100, Math.round(health.score))) : null;
+  const band = BAND_ORDER.includes(health.band) ? health.band : "unknown";
+  const thresholds = health.thresholds || { risk: 60, optimal: 85 };
+  const risk = Number(thresholds.risk) || 60;
+  const optimal = Number(thresholds.optimal) || 85;
+  const arc = "M 20 106 A 80 80 0 0 1 180 106";
+  const segments = [
+    { cls: "critical", start: 0, size: risk },
+    { cls: "risk", start: risk, size: Math.max(0, optimal - risk) },
+    { cls: "optimal", start: optimal, size: Math.max(0, 100 - optimal) }
+  ];
+  const ticks = [risk, optimal]
+    .map((value) => {
+      const angle = Math.PI * (1 - value / 100);
+      const x = 100 + 80 * Math.cos(angle);
+      const y = 106 - 80 * Math.sin(angle);
+      return `<circle class="gauge-tick" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" />`;
+    })
+    .join("");
+  return `
+    <svg class="gauge" viewBox="0 0 200 136" role="img" aria-label="${escapeHtml(score == null ? "Salud sin medición" : `Salud ${score} de 100, ${BAND_LABEL[band]}`)}">
+      <path class="gauge-track" d="${arc}" pathLength="100" />
+      ${segments.map((segment) => `<path class="gauge-band ${segment.cls}" d="${arc}" pathLength="100" stroke-dasharray="${segment.size} ${Math.max(0, 100 - segment.size)}" stroke-dashoffset="${-segment.start}" />`).join("")}
+      ${score == null ? "" : `<path class="gauge-progress ${band}" d="${arc}" pathLength="100" stroke-dasharray="${score} ${Math.max(0, 100 - score)}" />`}
+      ${ticks}
+      <text class="gauge-score" x="100" y="92" text-anchor="middle">${score == null ? "—" : escapeHtml(score)}</text>
+      <text class="gauge-unit" x="100" y="110" text-anchor="middle">${score == null ? "sin medición" : "de 100"}</text>
+      <text class="gauge-band-label ${band}" x="100" y="132" text-anchor="middle">${escapeHtml(BAND_LABEL[band])}</text>
+    </svg>`;
+}
+
+function thresholdScale(health) {
+  const thresholds = health.thresholds || { risk: 60, optimal: 85 };
+  const risk = Number(thresholds.risk) || 60;
+  const optimal = Number(thresholds.optimal) || 85;
+  const score = Number.isFinite(health.score) ? Math.max(0, Math.min(100, Math.round(health.score))) : null;
+  return `
+    <div class="threshold">
+      <div class="threshold-head">
+        <span>Umbrales oficiales</span>
+        <span>${score == null ? "sin puntaje" : `puntaje ${score}`}</span>
+      </div>
+      <div class="threshold-track" aria-hidden="true">
+        <span class="seg critical" style="width:${risk}%"></span>
+        <span class="seg risk" style="width:${Math.max(0, optimal - risk)}%"></span>
+        <span class="seg optimal" style="width:${Math.max(0, 100 - optimal)}%"></span>
+        ${score == null ? "" : `<span class="threshold-marker" style="left:${score}%"></span>`}
+      </div>
+      <div class="threshold-labels">
+        <span>0 · Crítico</span>
+        <span>${risk} · En riesgo</span>
+        <span>${optimal} · Óptimo</span>
+        <span>100</span>
+      </div>
+    </div>`;
+}
+
+function bandCards(health) {
+  const counts = bandCounts(health);
+  return `
+    <div class="band-cards" role="group" aria-label="Filtrar módulos por banda">
+      ${BAND_ORDER.map((band) => {
+        const active = state.healthBand === band;
+        return `
+          <button class="band-card tone-${BAND_TONE[band]}${active ? " active" : ""}" type="button" data-band-filter="${band}" aria-pressed="${active ? "true" : "false"}">
+            <span class="band-name">${escapeHtml(BAND_LABEL[band])}</span>
+            <span class="band-count">${escapeHtml(formatNumber(counts[band]))}</span>
+            <span class="band-range">${escapeHtml(BAND_RANGE[band])}</span>
+          </button>`;
+      }).join("")}
+    </div>`;
+}
+
+function moduleRow(module, scope) {
+  const band = BAND_ORDER.includes(module.band) ? module.band : "unknown";
+  const tone = BAND_TONE[band];
+  const status = pillClass(module.status);
+  const score = Number.isFinite(module.score) ? module.score : null;
+  const width = score == null ? 0 : Math.max(2, Math.min(100, score));
+  return `
+    <button class="module-row band-${band}" type="button" data-module="${escapeHtml(module.key)}" data-scope="${scope}" title="${escapeHtml(`${module.name} · ${STATUS_LABEL[module.status] || module.status} · ${BAND_LABEL[band]}`)}">
+      <span class="row-name">
+        <span class="dot status-${status}" aria-hidden="true"></span>
+        <span class="row-text">${escapeHtml(module.name)}<small>${escapeHtml(GROUP_LABEL[module.group] || module.group || "")}</small></span>
+      </span>
+      <span class="row-track" aria-hidden="true">${score == null ? '<span class="row-none">sin medición</span>' : `<span class="row-fill" style="width:${width}%"></span>`}</span>
+      <span class="row-score">${score == null ? "—" : escapeHtml(score)}</span>
+      <span class="band-pill ${tone}">${escapeHtml(BAND_LABEL[band])}</span>
+    </button>`;
+}
+
+function moduleChart(scope) {
+  const { modules } = blockData(scope);
+  if (!modules.length) return "";
+  const order = { critical: 0, risk: 1, unknown: 2, optimal: 3 };
+  const filtered = state.healthBand ? modules.filter((module) => (module.band || "unknown") === state.healthBand) : modules;
+  const sorted = [...filtered].sort((left, right) => {
+    const byBand = (order[left.band] ?? 4) - (order[right.band] ?? 4);
+    if (byBand !== 0) return byBand;
+    const leftScore = Number.isFinite(left.score) ? left.score : 101;
+    const rightScore = Number.isFinite(right.score) ? right.score : 101;
+    if (leftScore !== rightScore) return leftScore - rightScore;
+    return String(left.name || left.key).localeCompare(String(right.name || right.key), "es");
+  });
+  const limit = state.view === "summary" ? 10 : sorted.length;
+  const visible = sorted.slice(0, limit);
+  const filterLabel = state.healthBand ? ` · ${BAND_LABEL[state.healthBand]}` : "";
+  return `
+    <section class="module-chart" aria-label="Salud por módulo">
+      <div class="chart-head">
+        <h3>Salud por módulo</h3>
+        <span class="muted small">${escapeHtml(`${filtered.length}/${modules.length}${filterLabel}`)}${sorted.length > visible.length ? " · peores primero" : ""}</span>
+        ${state.healthBand ? '<button class="link" type="button" data-band-filter="all">Ver todos</button>' : ""}
+      </div>
+      ${visible.length
+        ? `<div class="module-rows">${visible.map((module) => moduleRow(module, scope)).join("")}</div>`
+        : `<p class="empty">Ningún módulo en ${escapeHtml(BAND_LABEL[state.healthBand] || "la banda")}.</p>`}
+      ${sorted.length > visible.length ? `<p class="muted small chart-note">Mostrando ${visible.length} de ${sorted.length}. Cambia a Detalle para ver todos.</p>` : ""}
+    </section>`;
+}
+
+function payloadNotice(payload, environment, { scope = "environment" } = {}) {
+  if (!payload) return "";
+  const reason = payload.reason || payload.code || "SIN_DATO";
+  const resolver = HEALTH_REASON[reason];
+  const message = resolver ? resolver(environment || {}) : (payload.detail || "La torre no pudo medir la salud por módulo.");
+  const tone = ["SIN_TOKEN", "SIMULACION"].includes(reason) ? "info" : "warn";
+  const target = scope === "company" ? "de esta empresa" : "de este ambiente";
+  const detail = payload.detail && payload.detail !== message
+    ? `<p class="notice-detail">${escapeHtml(payload.detail)}</p>`
+    : "";
+  return `
+    <div class="health-notice ${tone}" role="status">
+      <div class="notice-head">
+        <span class="pill ${tone === "info" ? "unknown" : "degraded"}">${escapeHtml(reason)}</span>
+        <strong>Sin datos por módulo ${escapeHtml(target)}</strong>
+      </div>
+      <p>${escapeHtml(message)}</p>
+      ${detail}
+    </div>`;
+}
+
+function healthBlock(scope) {
+  const { health, payload, environment } = blockData(scope);
+  if (!health) return payloadNotice(payload, environment, { scope }) || '<p class="empty">Sin lectura de salud.</p>';
+  const notice = payload && payload.source && payload.source !== "api" ? payloadNotice(payload, environment, { scope }) : "";
+  const modulesHealth = health.modules || {};
+  const infraHealth = health.infra || {};
+  const weight = modulesHealth.score != null && infraHealth.score != null
+    ? "70% módulos · 30% infraestructura"
+    : modulesHealth.score != null
+      ? "solo módulos (sin sondas de infraestructura)"
+      : "solo infraestructura (sin datos por módulo)";
+  return `
+    <div class="health-top">
+      <article class="gauge-card">
+        ${gaugeSvg(health)}
+        <div class="gauge-stats">
+          <div><span>Módulos</span><strong>${modulesHealth.score == null ? "—" : escapeHtml(modulesHealth.score)}</strong><small>${escapeHtml(`${modulesHealth.measurable || 0}/${modulesHealth.total || 0} medibles`)}</small></div>
+          <div><span>Infraestructura</span><strong>${infraHealth.score == null ? "—" : escapeHtml(infraHealth.score)}</strong><small>${escapeHtml(`${infraHealth.measurable || 0}/${infraHealth.total || 0} sondas`)}</small></div>
+        </div>
+        <p class="gauge-weight">${escapeHtml(weight)}</p>
+        <button class="link" type="button" data-health-detail>Umbrales y fórmula</button>
+      </article>
+      <div class="health-side">
+        ${notice}
+        ${bandCards(health)}
+        ${thresholdScale(health)}
+      </div>
+    </div>
+    ${moduleChart(scope)}`;
+}
+
+function renderHealth(environment) {
+  const container = document.getElementById("health");
+  const meta = document.getElementById("healthMeta");
+  if (!environment) {
+    meta.textContent = "Sin ambiente";
+    container.innerHTML = '<p class="empty">La torre aún no tiene ambientes configurados.</p>';
+    return;
+  }
+  if (!environment.health) {
+    meta.textContent = environment.enabled ? "Sin lectura" : "Ambiente desactivado";
+    container.innerHTML = `<p class="empty">${environment.enabled ? "Esperando la primera lectura de salud." : "Este ambiente está desactivado en la torre."}</p>`;
+    return;
+  }
+  const health = environment.health;
+  const score = Number.isFinite(health.score) ? health.score : null;
+  const thresholds = health.thresholds || { optimal: 85, risk: 60 };
+  meta.innerHTML = `<span class="band-pill ${BAND_TONE[health.band] || "unknown"}">${escapeHtml(BAND_LABEL[health.band] || "Sin dato")}</span> ${escapeHtml(score == null ? "sin puntaje" : `${score}/100`)} · umbrales ${escapeHtml(thresholds.optimal)} / ${escapeHtml(thresholds.risk)} · ${escapeHtml(environment.label)}`;
+  container.innerHTML = healthBlock("environment");
+}
+
+function renderCompany() {
+  const panel = document.getElementById("companyPanel");
+  const title = document.getElementById("companyTitle");
+  const meta = document.getElementById("companyMeta");
+  const container = document.getElementById("companyHealth");
+  const company = state.company;
+  if (!company) {
+    panel.hidden = true;
+    container.innerHTML = "";
+    meta.textContent = "";
+    return;
+  }
+  panel.hidden = false;
+  const environment = activeEnvironment();
+  title.textContent = `Salud de ${company.name || company.id}`;
+  if (company.loading) {
+    meta.textContent = `${company.id} · consultando ${environment ? environment.short : "ambiente"}…`;
+    container.innerHTML = '<p class="empty">Cargando módulos de la empresa…</p>';
+    return;
+  }
+  if (company.error) {
+    meta.textContent = `${company.id} · sin datos`;
+    const reason = company.errorCode || "";
+    const resolver = HEALTH_REASON[reason];
+    const message = resolver ? resolver(environment || {}) : company.error;
+    container.innerHTML = `
+      <div class="health-notice warn" role="status">
+        <div class="notice-head">
+          <span class="pill degraded">${escapeHtml(reason || "ERROR")}</span>
+          <strong>No se pudo leer la empresa</strong>
+        </div>
+        <p>${escapeHtml(message)}</p>
+      </div>`;
+    return;
+  }
+  const data = company.data || {};
+  meta.textContent = [
+    company.id,
+    environment ? environment.short : null,
+    data.generated_at ? `datos ${formatTime(data.generated_at)}` : null,
+    data.checkedAt ? `lectura ${relative(data.checkedAt)}` : null
+  ].filter(Boolean).join(" · ");
+  container.innerHTML = data.ok
+    ? healthBlock("company")
+    : payloadNotice(data, environment, { scope: "company" });
+}
+
+async function loadCompany(tenantId, name, { scroll = true } = {}) {
+  state.company = { id: tenantId, name, loading: true, data: null, error: null, errorCode: null };
+  renderCompany();
+  try {
+    const payload = await api(`/api/tenants/${encodeURIComponent(tenantId)}/modules?environment=${encodeURIComponent(state.environment)}`);
+    if (!state.company || state.company.id !== tenantId) return;
+    state.company = {
+      id: tenantId,
+      name: (payload && payload.tenant && payload.tenant.name) || name,
+      loading: false,
+      data: payload,
+      error: null,
+      errorCode: null
+    };
+  } catch (error) {
+    if (!state.company || state.company.id !== tenantId) return;
+    state.company = { id: tenantId, name, loading: false, data: null, error: error.message, errorCode: error.code || null };
+  }
+  renderCompany();
+  if (scroll) {
+    const panel = document.getElementById("companyPanel");
+    if (panel && typeof panel.scrollIntoView === "function") panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function refreshCompany() {
+  if (!state.company || state.company.loading) return Promise.resolve();
+  return loadCompany(state.company.id, state.company.name, { scroll: false });
+}
+
+function openDialog({ eyebrow, title, body }) {
+  const dialog = document.getElementById("detailDialog");
+  document.getElementById("detailEyebrow").textContent = eyebrow;
+  document.getElementById("detailTitle").textContent = title;
+  document.getElementById("detailBody").innerHTML = body;
+  if (typeof dialog.showModal === "function") {
+    if (!dialog.open) dialog.showModal();
+  } else {
+    dialog.setAttribute("open", "");
+  }
+}
+
+function closeDialog() {
+  const dialog = document.getElementById("detailDialog");
+  if (typeof dialog.close === "function" && dialog.open) dialog.close();
+  else dialog.removeAttribute("open");
+}
+
+function moduleDetailBody(module) {
+  const band = BAND_ORDER.includes(module.band) ? module.band : "unknown";
+  const status = pillClass(module.status);
+  const data = module.data || {};
+  const services = Array.isArray(module.services) ? module.services : [];
+  const alerts = Array.isArray(module.alerts) ? module.alerts : [];
+  const metrics = [
+    ["Puntaje", Number.isFinite(module.score) ? `${module.score}/100` : "sin medición"],
+    ["Banda", BAND_LABEL[band]],
+    ["Registros", Number.isFinite(data.records) ? formatNumber(data.records) : "—"],
+    ["Estado del dato", DATA_STATE_LABEL[data.state] || "—"],
+    ["Última actividad", data.last_activity_at ? `${formatTime(data.last_activity_at)} · ${relative(data.last_activity_at)}` : "sin registro"],
+    ["Ventana esperada", Number.isFinite(data.expected_minutes) ? `${data.expected_minutes} min` : "—"],
+    ["Antigüedad", Number.isFinite(data.age_minutes) ? `${data.age_minutes} min` : "—"],
+    ["Modelo", module.declared === false ? "Sin modelo operativo" : "Declarado"]
+  ];
+  return `
+    <div class="dialog-summary">
+      <span class="pill ${status}">${escapeHtml(STATUS_LABEL[module.status] || module.status)}</span>
+      <span class="band-pill ${BAND_TONE[band]}">${escapeHtml(BAND_LABEL[band])}</span>
+      <span class="muted small">${escapeHtml(GROUP_LABEL[module.group] || module.group || "")}</span>
+    </div>
+    <p class="dialog-detail">${escapeHtml(module.detail || "Sin detalle adicional.")}</p>
+    <div class="dialog-grid">
+      ${metrics.map(([label, value]) => `<div class="dialog-metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
+    </div>
+    <div class="dialog-section">
+      <h3>Servicios de dependencia</h3>
+      ${services.length
+        ? `<div class="module-services">${services.map((service) => `<span class="service-dot status-${pillClass(service.status)}">${escapeHtml(service.label || service.key)} · ${escapeHtml(STATUS_LABEL[service.status] || service.status)}</span>`).join("")}</div>`
+        : '<p class="muted small">El módulo no declara servicios.</p>'}
+    </div>
+    <div class="dialog-section">
+      <h3>Alertas abiertas</h3>
+      ${alerts.length
+        ? `<ul class="dialog-alerts">${alerts.map((alert) => `<li>${escapeHtml(alert.title || alert.component || "Alerta")} <span class="muted small">${escapeHtml(alert.severity || "")}</span></li>`).join("")}</ul>`
+        : '<p class="muted small">Sin alertas abiertas para sus dependencias.</p>'}
+    </div>
+    <details class="tech" open><summary>Detalle técnico</summary>${technicalBlock({
+      key: module.key,
+      status: module.status,
+      band,
+      score: module.score,
+      declared: module.declared,
+      data: module.data || null,
+      services,
+      alerts
+    })}</details>`;
+}
+
+function openModuleDetail(key, scope) {
+  const { modules, environment } = blockData(scope);
+  const module = modules.find((item) => item.key === key);
+  if (!module) {
+    toast("El módulo ya no aparece en la lectura vigente.", "error");
+    return;
+  }
+  const context = scope === "company"
+    ? (state.company && state.company.name) || "Empresa"
+    : `${environment ? environment.label : "Ambiente"}${environment && environment.branch ? ` · ${environment.branch}` : ""}`;
+  openDialog({
+    eyebrow: `Módulo · ${context}`,
+    title: module.name,
+    body: moduleDetailBody(module)
+  });
+}
+
+function openMethodDialog() {
+  const environment = activeEnvironment();
+  const health = environment ? environment.health : null;
+  const thresholds = (health && health.thresholds) || { optimal: 85, risk: 60 };
+  const risk = Number(thresholds.risk) || 60;
+  const optimal = Number(thresholds.optimal) || 85;
+  const counts = health ? bandCounts(health) : { optimal: 0, risk: 0, critical: 0, unknown: 0 };
+  const source = environment && environment.modules ? environment.modules.source : null;
+  const rows = [
+    ["optimal", `≥ ${optimal}`, "Opera con datos frescos y servicios sanos.", counts.optimal],
+    ["risk", `${risk}–${optimal - 1}`, "Funciona, pero con degradación, datos viejos o dependencias con alerta.", counts.risk],
+    ["critical", `< ${risk}`, "Módulos caídos o dependencias vitales sin servicio.", counts.critical],
+    ["unknown", "sin medición", "La API no pudo medir el módulo; no se premia ni se castiga.", counts.unknown]
+  ];
+  openDialog({
+    eyebrow: "Indicador oficial",
+    title: "Umbrales y fórmula de salud",
+    body: `
+      <div class="band-table">
+        ${rows.map(([band, range, detail, count]) => `
+          <div class="band-row">
+            <span class="band-pill ${BAND_TONE[band]}">${escapeHtml(BAND_LABEL[band])}</span>
+            <span class="band-row-range">${escapeHtml(range)}</span>
+            <span class="band-row-count">${escapeHtml(formatNumber(count))} módulos</span>
+            <p>${escapeHtml(detail)}</p>
+          </div>`).join("")}
+      </div>
+      <div class="dialog-section">
+        <h3>Cómo se calcula</h3>
+        <ul class="method-list">
+          <li>Cada módulo aporta 100 puntos si está operativo, 55 si está degradado y 10 si está caído. Un módulo sin dato no puntúa.</li>
+          <li>Un módulo sano que consume más del 75% de su ventana de frescura pierde hasta 25 puntos: sigue arriba, pero entra en riesgo.</li>
+          <li>El puntaje general combina 70% módulos y 30% infraestructura cuando ambas fuentes se miden; si solo hay una, se usa esa sin inventar la otra.</li>
+          <li>Las sondas informativas (módulos y actividad) no puntúan dos veces: solo cuentan los servicios de infraestructura y los módulos operativos.</li>
+        </ul>
+      </div>
+      <p class="muted small">${escapeHtml(source === "api" ? "Los módulos de este ambiente provienen de la API de APEX Control." : "Este ambiente no entrega datos por módulo: el puntaje se deriva de las dependencias sondeadas.")}</p>`
+  });
 }
 
 function applyView() {
@@ -475,12 +935,13 @@ function renderTenants(environment) {
 
   const compact = state.view === "summary";
   const headers = compact
-    ? ["Empresa", "Estado", "Usuarios", "Sesiones", "Actividad", "GPS"]
-    : ["Empresa", "Estado", "Plan", "Usuarios", "Sesiones", "Actividad", "Última actividad", "GPS", "Último ping"];
+    ? ["Empresa", "Estado", "Usuarios", "Sesiones", "Actividad", "GPS", "Módulos"]
+    : ["Empresa", "Estado", "Plan", "Usuarios", "Sesiones", "Actividad", "Última actividad", "GPS", "Último ping", "Módulos"];
   const all = tenants.tenants || [];
   const visible = compact ? all.slice(0, 12) : all;
   const rows = visible.map((tenant) => {
     const status = pillClass(tenant.status);
+    const action = `<button class="btn mini ghost" type="button" data-tenant-id="${escapeHtml(tenant.tenant_id)}" data-tenant-name="${escapeHtml(tenant.name || tenant.tenant_id)}">Ver módulos</button>`;
     const cells = [
       `<span class="tenant-name">${escapeHtml(tenant.name || tenant.tenant_id)}</span><code class="tenant-id">${escapeHtml(tenant.tenant_id)}</code>`,
       `<span class="pill ${status}">${escapeHtml(TENANT_STATUS_LABEL[tenant.status] || tenant.status)}</span>`,
@@ -489,7 +950,7 @@ function renderTenants(environment) {
       escapeHtml(formatNumber(tenant.activity_period || 0)),
       escapeHtml(formatNumber(tenant.gps_period || 0))
     ];
-    if (compact) return cells;
+    if (compact) return [...cells, action];
     return [
       cells[0],
       cells[1],
@@ -499,7 +960,8 @@ function renderTenants(environment) {
       cells[4],
       escapeHtml(tenant.last_activity_at ? relative(tenant.last_activity_at) : "sin señal"),
       cells[5],
-      escapeHtml(tenant.last_ping_at ? relative(tenant.last_ping_at) : "sin pings")
+      escapeHtml(tenant.last_ping_at ? relative(tenant.last_ping_at) : "sin pings"),
+      action
     ];
   });
 
@@ -555,6 +1017,7 @@ function render() {
   const openAlerts = alerts.filter((alert) => !alert.resolvedAt);
 
   renderEnvironmentTabs(snapshot, environment);
+  renderHealth(environment);
 
   const overallPill = document.getElementById("overallPill");
   const overall = environment ? environment.overall : snapshot ? snapshot.overall : "unknown";
@@ -568,6 +1031,7 @@ function render() {
   renderModules(environment);
   renderActivity(environment);
   renderTenants(environment);
+  renderCompany();
   renderChecks(snapshot, environment);
   renderPerformance(environment);
   renderCloud(environment);
@@ -600,16 +1064,21 @@ function renderEnvironmentTabs(snapshot, selected) {
     return;
   }
   container.innerHTML = entries.map((environment) => {
-    const status = environment.enabled ? environment.overall : "unknown";
+    const health = environment.health;
+    const score = health && Number.isFinite(health.score) ? health.score : null;
+    const band = health && BAND_ORDER.includes(health.band) ? health.band : "unknown";
     const summary = environment.summary || { ok: 0, total: 0 };
+    const meta = [environment.branch, score == null ? "sin puntaje" : `${score}/100`].filter(Boolean).join(" · ");
+    const label = environment.enabled ? (score == null ? "Sin dato" : BAND_LABEL[band]) : "Desactivado";
+    const tone = environment.enabled && score != null ? BAND_TONE[band] : "unknown";
     return `
       <button class="env-tab ${selected && selected.id === environment.id ? "active" : ""}" type="button" data-env="${escapeHtml(environment.id)}" aria-pressed="${selected && selected.id === environment.id ? "true" : "false"}">
-        <span class="dot status-${pillClass(status)}" aria-hidden="true"></span>
+        <span class="dot status-${tone}" aria-hidden="true"></span>
         <span class="env-tab-body">
           <span class="env-tab-label">${escapeHtml(environment.label)}</span>
-          <span class="env-tab-meta">${escapeHtml(environment.branch || "")} · ${summary.ok || 0}/${summary.total || 0} sondas</span>
+          <span class="env-tab-meta">${escapeHtml(meta)} · ${summary.ok || 0}/${summary.total || 0} sondas</span>
         </span>
-        <span class="env-tab-status status-text-${pillClass(status)}">${escapeHtml(environment.enabled ? (STATUS_LABEL[status] || status) : "Desactivado")}</span>
+        <span class="env-tab-status status-text-${tone}">${escapeHtml(label)}</span>
       </button>`;
   }).join("");
 }
@@ -626,13 +1095,19 @@ function renderKpis(environment, data, git, openAlerts) {
   const connections = activity ? activity.connections || {} : {};
   const websocket = connections.websocket || {};
   const tenantsSummary = activityPayload && activityPayload.tenants ? activityPayload.tenants.summary : null;
+  const health = environment ? environment.health : null;
+  const healthScore = health && Number.isFinite(health.score) ? health.score : null;
+  const healthBand = health && BAND_ORDER.includes(health.band) ? health.band : "unknown";
 
   const tiles = [
     {
       label: `Salud ${environment ? environment.short : "general"}`,
-      value: environment ? (STATUS_LABEL[environment.overall] || environment.overall) : "—",
-      foot: environment ? `${summary.ok || 0}/${summary.total || 0} sondas operativas` : "Esperando primera sonda",
-      status: environment ? environment.overall : "unknown"
+      value: healthScore == null ? "—" : String(healthScore),
+      unit: healthScore == null ? "" : "/100",
+      foot: health
+        ? `${BAND_LABEL[healthBand]} · módulos ${health.modules && health.modules.score != null ? health.modules.score : "—"} · infra ${health.infra && health.infra.score != null ? health.infra.score : "—"}`
+        : "Sin lectura de salud",
+      status: health ? BAND_TONE[healthBand] : "unknown"
     },
     {
       label: "Módulos",
@@ -760,8 +1235,9 @@ function renderModules(environment) {
   const summary = payload.summary || {};
   const issues = modules.filter((module) => module.status === "down" || module.status === "degraded");
   const visible = state.moduleFilter === "issues" ? issues : modules;
+  const notice = payload.source !== "api" ? payloadNotice(payload, environment) : "";
 
-  meta.textContent = `${payload.source === "api" ? "Datos APEX Control" : "Solo servicios"} · ${formatTime(payload.generated_at)}`;
+  meta.textContent = `${payload.source === "api" ? "Datos APEX Control" : `Solo servicios · ${payload.reason || "sin dato"}`} · ${formatTime(payload.generated_at)}`;
   const chips = [
     { label: "Módulos", value: summary.total != null ? summary.total : modules.length, status: "unknown" },
     { label: "Operativos", value: summary.ok || 0, status: "ok" },
@@ -775,9 +1251,9 @@ function renderModules(environment) {
     .join("");
 
   if (!visible.length) {
-    container.innerHTML = state.moduleFilter === "issues"
+    container.innerHTML = notice + (state.moduleFilter === "issues"
       ? '<p class="empty">Ningún módulo con problemas.</p>'
-      : '<p class="empty">Sin módulos configurados.</p>';
+      : '<p class="empty">Sin módulos configurados.</p>');
     return;
   }
 
@@ -789,7 +1265,7 @@ function renderModules(environment) {
   }
   const compact = state.view === "summary";
   const card = compact ? miniModuleCard : moduleCard;
-  container.innerHTML = Array.from(groups.entries())
+  container.innerHTML = notice + Array.from(groups.entries())
     .map(([group, list]) => `
       <section class="module-group">
         <h3>${escapeHtml(GROUP_LABEL[group] || group)}</h3>
@@ -1124,6 +1600,7 @@ async function load() {
     }
     state.failures = 0;
     render();
+    refreshCompany().catch(() => {});
   } catch (error) {
     state.failures += 1;
     if (state.failures === 1 || state.failures % 10 === 0) toast(`No se pudo consultar la torre: ${error.message}`, "error");
@@ -1194,7 +1671,30 @@ document.addEventListener("click", (event) => {
       state.environment = id;
       localStorage.setItem("towerEnvironment", id);
       render();
+      if (state.company) loadCompany(state.company.id, state.company.name, { scroll: false });
     }
+    return;
+  }
+  const bandButton = event.target.closest("[data-band-filter]");
+  if (bandButton) {
+    const band = bandButton.dataset.bandFilter;
+    state.healthBand = band === "all" || state.healthBand === band ? null : band;
+    render();
+    return;
+  }
+  const healthDetail = event.target.closest("[data-health-detail]");
+  if (healthDetail) {
+    openMethodDialog();
+    return;
+  }
+  const moduleButton = event.target.closest("[data-module]");
+  if (moduleButton) {
+    openModuleDetail(moduleButton.dataset.module, moduleButton.dataset.scope || "environment");
+    return;
+  }
+  const tenantButton = event.target.closest("[data-tenant-id]");
+  if (tenantButton) {
+    loadCompany(tenantButton.dataset.tenantId, tenantButton.dataset.tenantName);
     return;
   }
   const ack = event.target.closest("[data-ack]");
@@ -1222,6 +1722,17 @@ document.getElementById("btnModuleFilter").addEventListener("click", () => {
   state.moduleFilter = state.moduleFilter === "issues" ? "all" : "issues";
   localStorage.setItem("towerModuleFilter", state.moduleFilter);
   render();
+});
+
+document.getElementById("btnCompanyClose").addEventListener("click", () => {
+  state.company = null;
+  renderCompany();
+});
+
+document.getElementById("btnDialogClose").addEventListener("click", closeDialog);
+
+document.getElementById("detailDialog").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) closeDialog();
 });
 
 document.getElementById("btnAckAll").addEventListener("click", (event) => {

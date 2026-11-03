@@ -13,6 +13,8 @@ const { runAllProbes, computeOverall, computeSummary } = require("./lib/probes")
 const { PerformanceTracker } = require("./lib/performance");
 const { diagnoseCheck } = require("./lib/diagnostics");
 const { collectGitState, runGit, clearRemoteCache } = require("./lib/git");
+const { fetchModules, REASON_DETAIL } = require("./lib/modules");
+const { computeHealth, withModuleBands } = require("./lib/health");
 const { createAuthGuard, createRateLimiter, safeEqual, readToken, assertLoopback, redact, isPlainObject } = require("./lib/security");
 
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -97,6 +99,7 @@ function createTower(overrides = {}) {
   const overridesMap = new Map();
   const mutationLimiter = createRateLimiter({ limit: 60, windowMs: 60000 });
   const fetchLimiter = createRateLimiter({ limit: 1, windowMs: 30000 });
+  const tenantLimiter = createRateLimiter({ limit: 30, windowMs: 60000 });
   const state = {
     snapshot: null,
     git: null,
@@ -362,6 +365,69 @@ function createTower(overrides = {}) {
 
     if (method === "GET" && pathname === "/api/environments") {
       json(res, 200, { environments: state.snapshot ? state.snapshot.environments || {} : {} });
+      return;
+    }
+
+    const tenantModulesMatch = /^\/api\/tenants\/([A-Za-z0-9_-]{4,64})\/modules$/.exec(pathname);
+    if (method === "GET" && tenantModulesMatch) {
+      if (!requireUi(req, res)) return;
+      const limit = tenantLimiter.check(req.socket.remoteAddress || "local");
+      if (!limit.ok) {
+        json(res, 429, { error: "DEMASIADAS_SOLICITUDES", retryAfterMs: limit.retryAfterMs });
+        return;
+      }
+      const environmentId = String(url.searchParams.get("environment") || "local");
+      const environment = config.environments[environmentId];
+      if (!environment) {
+        json(res, 400, { error: "AMBIENTE_INVALIDO" });
+        return;
+      }
+      if (!environment.enabled) {
+        json(res, 409, { error: "AMBIENTE_DESACTIVADO" });
+        return;
+      }
+      // Solo se consulta una empresa que ya aparecio en la lectura agregada:
+      // el endpoint no sirve para descubrir ni sondear tenants a ciegas.
+      const envSnapshot = state.snapshot && state.snapshot.environments ? state.snapshot.environments[environmentId] : null;
+      const activity = envSnapshot && envSnapshot.activity ? envSnapshot.activity : null;
+      const tenants = activity && activity.tenants ? activity.tenants : null;
+      if (!tenants) {
+        json(res, 409, {
+          error: "La lectura por empresa no esta disponible en este ambiente.",
+          code: (activity && activity.tenantsReason) || "VISTA_EMPRESAS_NO_DISPONIBLE"
+        });
+        return;
+      }
+      const tenantId = tenantModulesMatch[1];
+      const tenant = (tenants.tenants || []).find((item) => String(item.tenant_id) === tenantId);
+      if (!tenant) {
+        json(res, 404, { error: "Empresa no encontrada en la lectura vigente.", code: "EMPRESA_NO_ENCONTRADA" });
+        return;
+      }
+
+      const payload = await fetchModules(config, environment, { tenantId });
+      if (!payload || payload.source !== "api") {
+        json(res, 200, {
+          ok: false,
+          reason: payload ? payload.reason : "NO_DISPONIBLE",
+          detail: REASON_DETAIL[payload && payload.reason] || "Sin salud por modulo para la empresa.",
+          tenant: { id: tenantId, name: tenant.name || tenantId },
+          checkedAt: payload ? payload.checkedAt : new Date().toISOString()
+        });
+        return;
+      }
+
+      const health = computeHealth({ modules: payload.modules });
+      json(res, 200, {
+        ok: true,
+        reason: null,
+        tenant: payload.tenant || { id: tenantId, name: tenant.name || tenantId },
+        generated_at: payload.generated_at,
+        checkedAt: payload.checkedAt,
+        summary: payload.summary,
+        health,
+        modules: withModuleBands(payload.modules, health)
+      });
       return;
     }
 

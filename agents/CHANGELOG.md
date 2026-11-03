@@ -4,6 +4,20 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-03
 
+### Indicador oficial de salud y vista por empresa
+
+- `apps/control-tower/lib/health.js` publica el puntaje con umbrales fijos (Óptimo ≥ 85, En riesgo 60–84, Crítico < 60, Sin dato) y mezcla 70% módulos + 30% infraestructura cuando ambas fuentes se miden. `degraded` pasa de 55 a 65: un servicio que responde degradado se lee **En riesgo**, no **Crítico**; solo `down` (10) es crítico. `test/health.test.js` fija las fronteras 85/84/60/59, la penalización por frescura y la mezcla.
+- La torre muestra el indicador como gauge, tarjetas de banda con conteo, barra de umbrales y gráfico por módulo ordenado de peor a mejor; las bandas filtran, las filas abren el detalle del módulo y **Umbrales y fórmula** abre la metodología.
+- `GET /api/v1/apex-control/tenants/:tenantId/modules` mide una sola empresa con la misma guarda, permiso explícito y allowlist de `/tenants`; id inválido 400, inexistente 404 y fuera de allowlist 403. La tabla de empresas abre el detalle por empresa con su propio gauge y gráfico, y lo relee al cambiar de ambiente.
+- QA y PROD siguen `SIN_TOKEN` porque faltan `ENV_DEVELOP_APEX_TOKEN` y `ENV_MAIN_APEX_TOKEN`; el panel nombra la variable exacta. `SUPABASE_ACCESS_TOKEN` y `VERCEL_TOKEN` están vacíos y `RAILWAY_TOKEN` responde `Not Authorized`; se reporta como limitación declarada.
+- `apexos-backend` — `2.3.0` — control nuevo `detalle-empresa-modulos`: ruta por empresa con id validado, 404/403 propios y la misma puerta entre empresas.
+- `apexos-seguridad` — `2.3.0` — control nuevo `detalle-empresa-misma-puerta`: sin superficie paralela de lectura entre tenants; rechazos 400/403/404 probados y tokens por ambiente.
+- `apexos-performance` — `2.3.0` — control nuevo `graficos-salud-acotados`: cálculo puro sin I/O, 10 filas en Resumen y total solo en Detalle, vista por empresa con límite propio de 30/min.
+- `apexos-qa` — `2.4.0` — control nuevo `certificacion-salud-empresa`: fronteras de banda en pruebas, certificación que valida Resumen y Detalle por separado, dos empresas con cifras distintas y snapshot sin tokens.
+- `equipo-apexos` — `2.2.0` — control nuevo `indicador-oficial-y-empresa`: un gráfico sin frontera probada no se presenta como indicador oficial; la vista por empresa conserva la puerta entre empresas.
+- `apexos-brief` — `2.4.0` — control nuevo `alcance-sin-archivos-sin-seguimiento`: un archivo sin seguimiento que no se publica queda fuera del inventario y la cobertura de cierre se corre con `--paths` del alcance exacto, no con todo el árbol.
+- Brief: `docs/briefs/2026-11-03-torre-salud-por-empresa.md`; evidencia en `docs/qa/evidence/tower-health-charts-20261103/` y certificación 37/37 en `docs/qa/evidence/apex-control-tower-f1/`.
+
 ### Cierre de las certificaciones UI y del hueco del palette
 
 - Las seis certificaciones de navegador que fallaban (`phase-two`, `phase-three-accessibility`, `phase-three-collaboration`, `phase-three-personalization`, `phase-three-toolkit`, `phase-three-totp`) se corrigieron en el arnés: hidratación por `dataset.density`, desplegable **Herramientas** abierto antes de pulsar cada herramienta, `press("k")` en lugar de `KeyK`, etiqueta vigente `Nueva compra` y configuración pública de Supabase inyectada en el flujo 2FA simulado. `offline-bootstrap` desactiva Redis antes de importar `tenantCache`. Nueve certificaciones en verde (71 comprobaciones) en `docs/qa/evidence/ui-ux-phase-certifications-20261103/`.

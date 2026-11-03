@@ -1,0 +1,420 @@
+
+> apex-os@2.0.0 control:test
+> npm --workspace apps/control-tower run test
+
+
+> @apexos/control-tower@1.1.0 test
+> node --test
+
+TAP version 13
+# Subtest: sin token no consulta la API y deja la actividad sin dato
+ok 1 - sin token no consulta la API y deja la actividad sin dato
+  ---
+  duration_ms: 5.0829
+  type: 'test'
+  ...
+# Subtest: consulta actividad y empresas con el token del ambiente
+ok 2 - consulta actividad y empresas con el token del ambiente
+  ---
+  duration_ms: 11.3025
+  type: 'test'
+  ...
+# Subtest: empresas restringidas conservan la actividad del tenant
+ok 3 - empresas restringidas conservan la actividad del tenant
+  ---
+  duration_ms: 0.8449
+  type: 'test'
+  ...
+# Subtest: 401 en actividad y caida de red se reportan sin inventar datos
+ok 4 - 401 en actividad y caida de red se reportan sin inventar datos
+  ---
+  duration_ms: 2.6772
+  type: 'test'
+  ...
+# Subtest: el token local no se envia a ambientes remotos
+ok 5 - el token local no se envia a ambientes remotos
+  ---
+  duration_ms: 0.4012
+  type: 'test'
+  ...
+# Subtest: la simulacion omite la red y las credenciales solo exponen nombres
+ok 6 - la simulacion omite la red y las credenciales solo exponen nombres
+  ---
+  duration_ms: 17.1856
+  type: 'test'
+  ...
+# Subtest: abre alerta al caer un servicio critico y la resuelve al recuperarse
+ok 7 - abre alerta al caer un servicio critico y la resuelve al recuperarse
+  ---
+  duration_ms: 24.4107
+  type: 'test'
+  ...
+# Subtest: respeta el cooldown ante parpadeo
+ok 8 - respeta el cooldown ante parpadeo
+  ---
+  duration_ms: 4.336
+  type: 'test'
+  ...
+# Subtest: componentes opcionales degradados no generan alerta
+ok 9 - componentes opcionales degradados no generan alerta
+  ---
+  duration_ms: 0.4783
+  type: 'test'
+  ...
+# Subtest: opcional caido si alerta y reconocer persiste
+ok 10 - opcional caido si alerta y reconocer persiste
+  ---
+  duration_ms: 1.1949
+  type: 'test'
+  ...
+# Subtest: alerta conserva ambiente, impacto funcional y detalle tecnico
+ok 11 - alerta conserva ambiente, impacto funcional y detalle tecnico
+  ---
+  duration_ms: 0.6742
+  type: 'test'
+  ...
+# Subtest: ambientes distintos generan alertas independientes
+ok 12 - ambientes distintos generan alertas independientes
+  ---
+  duration_ms: 1.9228
+  type: 'test'
+  ...
+# Subtest: deploymentStatus traduce estados de los proveedores
+ok 13 - deploymentStatus traduce estados de los proveedores
+  ---
+  duration_ms: 2.4825
+  type: 'test'
+  ...
+# Subtest: Railway sin token informa configuracion pendiente sin llamar red
+ok 14 - Railway sin token informa configuracion pendiente sin llamar red
+  ---
+  duration_ms: 2.6259
+  type: 'test'
+  ...
+# Subtest: Railway consulta proyecto, servicios y deployments con su token
+ok 15 - Railway consulta proyecto, servicios y deployments con su token
+  ---
+  duration_ms: 41.3104
+  type: 'test'
+  ...
+# Subtest: Railway con token invalido queda degradado
+ok 16 - Railway con token invalido queda degradado
+  ---
+  duration_ms: 1.5142
+  type: 'test'
+  ...
+# Subtest: Vercel consulta proyecto y deployments con teamId
+ok 17 - Vercel consulta proyecto y deployments con teamId
+  ---
+  duration_ms: 2.3081
+  type: 'test'
+  ...
+# Subtest: Vercel sin credenciales y con error de token
+ok 18 - Vercel sin credenciales y con error de token
+  ---
+  duration_ms: 1.6317
+  type: 'test'
+  ...
+# Subtest: Supabase refleja estado del proyecto
+ok 19 - Supabase refleja estado del proyecto
+  ---
+  duration_ms: 3.4276
+  type: 'test'
+  ...
+# Subtest: Supabase degrada si alguno de sus servicios internos falla
+ok 20 - Supabase degrada si alguno de sus servicios internos falla
+  ---
+  duration_ms: 4.0705
+  type: 'test'
+  ...
+# Subtest: Supabase conserva el proyecto si la sonda de salud falla
+ok 21 - Supabase conserva el proyecto si la sonda de salud falla
+  ---
+  duration_ms: 1.8809
+  type: 'test'
+  ...
+# Subtest: cloudForEnvironment consulta los tres proveedores del ambiente
+ok 22 - cloudForEnvironment consulta los tres proveedores del ambiente
+  ---
+  duration_ms: 2.9493
+  type: 'test'
+  ...
+# Subtest: cloudForEnvironment reutiliza la consulta durante CLOUD_CACHE_MS
+ok 23 - cloudForEnvironment reutiliza la consulta durante CLOUD_CACHE_MS
+  ---
+  duration_ms: 10.0469
+  type: 'test'
+  ...
+# Subtest: cloudForEnvironment sin credenciales no hace red
+ok 24 - cloudForEnvironment sin credenciales no hace red
+  ---
+  duration_ms: 0.6707
+  type: 'test'
+  ...
+# Subtest: config expone tres ambientes con su rama y defaults seguros
+ok 25 - config expone tres ambientes con su rama y defaults seguros
+  ---
+  duration_ms: 18.0021
+  type: 'test'
+  ...
+# Subtest: safeConfig no filtra tokens ni llaves
+ok 26 - safeConfig no filtra tokens ni llaves
+  ---
+  duration_ms: 1.7322
+  type: 'test'
+  ...
+# Subtest: diagnostico agrega impacto funcional y detalle tecnico por ambiente
+ok 27 - diagnostico agrega impacto funcional y detalle tecnico por ambiente
+  ---
+  duration_ms: 1.0052
+  type: 'test'
+  ...
+# Subtest: performance calcula percentiles, tasa de error y persiste
+ok 28 - performance calcula percentiles, tasa de error y persiste
+  ---
+  duration_ms: 4.5387
+  type: 'test'
+  ...
+# Subtest: overall distingue caido, degradado y sin dato
+ok 29 - overall distingue caido, degradado y sin dato
+  ---
+  duration_ms: 0.9781
+  type: 'test'
+  ...
+# Subtest: sondas remotas consultan API, web y Supabase y dejan cloud sin credenciales
+ok 30 - sondas remotas consultan API, web y Supabase y dejan cloud sin credenciales
+  ---
+  duration_ms: 122.5493
+  type: 'test'
+  ...
+# Subtest: una API remota con error degrada el ambiente
+ok 31 - una API remota con error degrada el ambiente
+  ---
+  duration_ms: 48.3334
+  type: 'test'
+  ...
+# Subtest: simulacion no consulta red remota y marca sondas opcionales sin dato
+ok 32 - simulacion no consulta red remota y marca sondas opcionales sin dato
+  ---
+  duration_ms: 3.0024
+  type: 'test'
+  ...
+# Subtest: ambiente desactivado reporta configuracion pendiente
+ok 33 - ambiente desactivado reporta configuracion pendiente
+  ---
+  duration_ms: 1.7069
+  type: 'test'
+  ...
+# Subtest: validBranch rechaza nombres peligrosos
+ok 34 - validBranch rechaza nombres peligrosos
+  ---
+  duration_ms: 2.9314
+  type: 'test'
+  ...
+# Subtest: collectGitState lee ramas locales y advierte fuera de desarrollo
+ok 35 - collectGitState lee ramas locales y advierte fuera de desarrollo
+  ---
+  duration_ms: 2283.9111
+  type: 'test'
+  ...
+# Subtest: isAncestor distingue historia lineal de divergencia
+ok 36 - isAncestor distingue historia lineal de divergencia
+  ---
+  duration_ms: 2208.0687
+  type: 'test'
+  ...
+# Subtest: los umbrales oficiales son optimo 85, riesgo 60 y critico por debajo
+ok 37 - los umbrales oficiales son optimo 85, riesgo 60 y critico por debajo
+  ---
+  duration_ms: 2.1997
+  type: 'test'
+  ...
+# Subtest: el score por modulo castiga estado y frescura sin puntuar lo no medido
+ok 38 - el score por modulo castiga estado y frescura sin puntuar lo no medido
+  ---
+  duration_ms: 2.3954
+  type: 'test'
+  ...
+# Subtest: el score del ambiente mezcla 70% modulos y 30% infraestructura
+ok 39 - el score del ambiente mezcla 70% modulos y 30% infraestructura
+  ---
+  duration_ms: 7.8727
+  type: 'test'
+  ...
+# Subtest: sin modulos medibles el score cae a la infraestructura y sin nada queda sin dato
+ok 40 - sin modulos medibles el score cae a la infraestructura y sin nada queda sin dato
+  ---
+  duration_ms: 2.7539
+  type: 'test'
+  ...
+# Subtest: withModuleBands deja score y banda listos para el grafico
+ok 41 - withModuleBands deja score y banda listos para el grafico
+  ---
+  duration_ms: 1.5281
+  type: 'test'
+  ...
+# Subtest: N1 entra en cola y N2 espera aprobacion
+ok 42 - N1 entra en cola y N2 espera aprobacion
+  ---
+  duration_ms: 6.4031
+  type: 'test'
+  ...
+# Subtest: N4 nunca se crea desde la torre
+ok 43 - N4 nunca se crea desde la torre
+  ---
+  duration_ms: 0.3913
+  type: 'test'
+  ...
+# Subtest: aprobacion, reclamo y cierre con evidencia
+ok 44 - aprobacion, reclamo y cierre con evidencia
+  ---
+  duration_ms: 3.9713
+  type: 'test'
+  ...
+# Subtest: rechazo y cancelacion respetan estados
+ok 45 - rechazo y cancelacion respetan estados
+  ---
+  duration_ms: 1.0966
+  type: 'test'
+  ...
+# Subtest: reclamo vencido se detecta con el reloj inyectado
+ok 46 - reclamo vencido se detecta con el reloj inyectado
+  ---
+  duration_ms: 3.2011
+  type: 'test'
+  ...
+# Subtest: envelope de lectura no permite cambios
+ok 47 - envelope de lectura no permite cambios
+  ---
+  duration_ms: 0.4571
+  type: 'test'
+  ...
+# Subtest: cola limita trabajos abiertos
+ok 48 - cola limita trabajos abiertos
+  ---
+  duration_ms: 1.7504
+  type: 'test'
+  ...
+# Subtest: sin token la torre cae al catalogo y no inventa salud de datos
+ok 49 - sin token la torre cae al catalogo y no inventa salud de datos
+  ---
+  duration_ms: 8.6104
+  type: 'test'
+  ...
+# Subtest: simulacion, 401, 404 y sin conexion caen al catalogo con su razon
+ok 50 - simulacion, 401, 404 y sin conexion caen al catalogo con su razon
+  ---
+  duration_ms: 1.0084
+  type: 'test'
+  ...
+# Subtest: con token usa la API y consulta con el JWT del ambiente
+ok 51 - con token usa la API y consulta con el JWT del ambiente
+  ---
+  duration_ms: 1.8701
+  type: 'test'
+  ...
+# Subtest: la salud de una empresa usa la ruta acotada y conserva su identidad
+ok 52 - la salud de una empresa usa la ruta acotada y conserva su identidad
+  ---
+  duration_ms: 0.915
+  type: 'test'
+  ...
+# Subtest: los rechazos entre empresas conservan su codigo y no fingen salud
+ok 53 - los rechazos entre empresas conservan su codigo y no fingen salud
+  ---
+  duration_ms: 2.0344
+  type: 'test'
+  ...
+# Subtest: el catalogo hereda el estado de los servicios y nunca declara salud propia
+ok 54 - el catalogo hereda el estado de los servicios y nunca declara salud propia
+  ---
+  duration_ms: 1.1319
+  type: 'test'
+  ...
+# Subtest: en ambientes remotos los servicios se leen con prefijo de ambiente
+ok 55 - en ambientes remotos los servicios se leen con prefijo de ambiente
+  ---
+  duration_ms: 0.572
+  type: 'test'
+  ...
+# Subtest: los chequeos por modulo son informativos y solo el resumen puntua
+ok 56 - los chequeos por modulo son informativos y solo el resumen puntua
+  ---
+  duration_ms: 2.3284
+  type: 'test'
+  ...
+# Subtest: con datos de API el resumen se degrada si hay modulos caidos o degradados
+ok 57 - con datos de API el resumen se degrada si hay modulos caidos o degradados
+  ---
+  duration_ms: 1.3767
+  type: 'test'
+  ...
+# Subtest: redisPing devuelve ok cuando el servidor responde PONG
+ok 58 - redisPing devuelve ok cuando el servidor responde PONG
+  ---
+  duration_ms: 86.9204
+  type: 'test'
+  ...
+# Subtest: redisPing falla cuando el puerto no acepta conexiones
+ok 59 - redisPing falla cuando el puerto no acepta conexiones
+  ---
+  duration_ms: 11.0988
+  type: 'test'
+  ...
+# Subtest: probeApexControl normaliza componentes en arreglo y lee snake_case
+ok 60 - probeApexControl normaliza componentes en arreglo y lee snake_case
+  ---
+  duration_ms: 34.4489
+  type: 'test'
+  ...
+# Subtest: torre local: salud, UI, auth, fabrica, puente, simulacion y telegram
+ok 61 - torre local: salud, UI, auth, fabrica, puente, simulacion y telegram
+  ---
+  duration_ms: 6596.4809
+  type: 'test'
+  ...
+# Subtest: chat no autorizado solo puede emparejar
+ok 62 - chat no autorizado solo puede emparejar
+  ---
+  duration_ms: 13.7939
+  type: 'test'
+  ...
+# Subtest: codigo de emparejamiento incorrecto no autoriza
+ok 63 - codigo de emparejamiento incorrecto no autoriza
+  ---
+  duration_ms: 0.8031
+  type: 'test'
+  ...
+# Subtest: /impl crea N2 con aprobacion y /aprobar lo encola
+ok 64 - /impl crea N2 con aprobacion y /aprobar lo encola
+  ---
+  duration_ms: 5.3029
+  type: 'test'
+  ...
+# Subtest: texto libre se registra como N1 y /qa como N3
+ok 65 - texto libre se registra como N1 y /qa como N3
+  ---
+  duration_ms: 1.9871
+  type: 'test'
+  ...
+# Subtest: callback de aprobacion y reconocimiento de alerta
+ok 66 - callback de aprobacion y reconocimiento de alerta
+  ---
+  duration_ms: 2.8755
+  type: 'test'
+  ...
+# Subtest: comandos N4 no existen y nivel invalido no crea trabajo
+ok 67 - comandos N4 no existen y nivel invalido no crea trabajo
+  ---
+  duration_ms: 3.6519
+  type: 'test'
+  ...
+1..67
+# tests 67
+# suites 0
+# pass 67
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8640.3904

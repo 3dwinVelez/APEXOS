@@ -74,6 +74,55 @@ test("con token usa la API y consulta con el JWT del ambiente", async () => {
   assert.equal(enriched.summary.records, 42, "el enriquecido conserva el total de registros de la API");
 });
 
+test("la salud de una empresa usa la ruta acotada y conserva su identidad", async () => {
+  const calls = [];
+  const httpRequest = async (url, options) => {
+    calls.push({ url, options });
+    return {
+      ok: true,
+      status: 200,
+      error: null,
+      json: {
+        generated_at: "2026-11-03T10:00:00.000Z",
+        scope: "tenant",
+        tenant: { id: "tenant-a", name: "Empresa A", plan: "pro", active: true },
+        summary: { total: 1, ok: 1, degraded: 0, down: 0, unknown: 0 },
+        modules: [{ key: "inventario", name: "Inventario", status: "ok", declared: true, data: { records: 3 } }]
+      }
+    };
+  };
+  const payload = await fetchModules(BASE, environment({ id: "develop", short: "QA" }), { httpRequest, tenantId: "tenant-a" });
+  assert.equal(calls[0].url, "http://api.test/api/v1/apex-control/tenants/tenant-a/modules");
+  assert.equal(calls[0].options.headers.authorization, "Bearer jwt-demo");
+  assert.equal(payload.source, "api");
+  assert.equal(payload.tenant.name, "Empresa A");
+
+  const invalid = await fetchModules(BASE, environment(), { httpRequest, tenantId: "../etc" });
+  assert.equal(invalid.reason, "EMPRESA_ID_INVALIDO");
+  assert.equal(calls.length, 1, "un id invalido no llega a la red");
+});
+
+test("los rechazos entre empresas conservan su codigo y no fingen salud", async () => {
+  const denied = await fetchModules(BASE, environment(), {
+    tenantId: "tenant-a",
+    httpRequest: async () => ({ ok: false, status: 403, json: { code: "CROSS_TENANT_DESHABILITADO" } })
+  });
+  assert.equal(denied.reason, "CROSS_TENANT_DESHABILITADO");
+  assert.equal(denied.modules.every((module) => module.status === "unknown"), true);
+
+  const outside = await fetchModules(BASE, environment(), {
+    tenantId: "tenant-a",
+    httpRequest: async () => ({ ok: false, status: 403, json: { code: "EMPRESA_FUERA_DE_ALCANCE" } })
+  });
+  assert.equal(outside.reason, "EMPRESA_FUERA_DE_ALCANCE");
+
+  const missing = await fetchModules(BASE, environment(), {
+    tenantId: "tenant-a",
+    httpRequest: async () => ({ ok: false, status: 404, json: { code: "EMPRESA_NO_ENCONTRADA" } })
+  });
+  assert.equal(missing.reason, "EMPRESA_NO_ENCONTRADA");
+});
+
 test("el catalogo hereda el estado de los servicios y nunca declara salud propia", async () => {
   const payload = await fetchModules(BASE, environment({ apexToken: "" }));
   const checks = [
