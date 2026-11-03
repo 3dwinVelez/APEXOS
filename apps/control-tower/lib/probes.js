@@ -447,11 +447,24 @@ function deployedInfo(apiCheck) {
   const payload = apiCheck && apiCheck.detail && typeof apiCheck.detail === "object" ? apiCheck.detail : null;
   if (!payload) return null;
   const commit = payload.commit && !/^unknown$/i.test(String(payload.commit)) ? String(payload.commit).slice(0, 12) : null;
+  const memory = payload.memory_mb && typeof payload.memory_mb === "object" ? payload.memory_mb : null;
+  const usage = payload.usage && typeof payload.usage === "object" ? payload.usage : null;
   return {
     status: apiCheck.status,
     version: payload.version != null ? String(payload.version) : null,
     commit,
-    modules: Number.isFinite(payload.modules) ? payload.modules : null
+    modules: Number.isFinite(payload.modules) ? payload.modules : null,
+    uptimeSeconds: Number.isFinite(payload.uptime_seconds) ? payload.uptime_seconds : null,
+    memory: memory ? {
+      rss: Number(memory.rss) || 0,
+      heapUsed: Number(memory.heap_used) || 0,
+      heapTotal: Number(memory.heap_total) || 0
+    } : null,
+    usage: usage ? {
+      requestsTotal: Number(usage.requests_total) || 0,
+      byStatus: usage.by_status && typeof usage.by_status === "object" ? usage.by_status : null,
+      slowQueries: Number(usage.slow_queries_total) || 0
+    } : null
   };
 }
 

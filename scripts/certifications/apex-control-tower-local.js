@@ -371,13 +371,31 @@ async function run() {
       // Ramas, sondas y rendimiento viven en la vista Detalle.
       await chrome.cdp.evaluate(`document.querySelector('[data-view="detail"]').click()`);
       const detailReady = await waitFor(
-        () => chrome.cdp.evaluate(`document.querySelectorAll('.branch').length === 3 && document.querySelectorAll('details.tech').length >= 8 && document.querySelectorAll('.perf-stat').length === 8`),
+        () => chrome.cdp.evaluate(`document.querySelectorAll('.branch').length === 3 && document.querySelectorAll('details.tech').length >= 8 && document.querySelectorAll('.perf-stat').length >= 8`),
         8000
       );
       const technicalDetails = await chrome.cdp.evaluate(`document.querySelectorAll('details.tech').length`);
       assert("browser_technical_details", detailReady && technicalDetails >= 8, { details: technicalDetails });
+      // El panel de rendimiento siempre trae los 8 estadisticos historicos; la telemetria
+      // de proceso del /health agrega memoria/uso encima cuando el API la publica.
       const performanceStats = await chrome.cdp.evaluate(`document.querySelectorAll('.perf-stat').length`);
-      assert("browser_performance_panel", performanceStats === 8, { stats: performanceStats });
+      const apiHealth = await request("http://127.0.0.1:3000", "/health");
+      const runtimePublished = Boolean(apiHealth.body && apiHealth.body.memory_mb);
+      const runtimeRendered = await chrome.cdp.evaluate(
+        `["Memoria RSS","Peticiones","Consultas lentas"].every((label) => Array.from(document.querySelectorAll(".perf-stat")).some((node) => node.textContent.includes(label)))`
+      );
+      assert("browser_performance_panel", performanceStats >= 8, {
+        stats: performanceStats,
+        runtimePublished,
+        runtimeRendered,
+        required: runtimePublished ? "telemetria de proceso visible" : "8 estadisticos base"
+      });
+      if (runtimePublished) {
+        assert("browser_performance_runtime_telemetry", runtimeRendered === true && performanceStats > 8, {
+          stats: performanceStats,
+          rss: await chrome.cdp.evaluate(`(Array.from(document.querySelectorAll(".perf-stat")).find((node) => node.textContent.includes("Memoria RSS")) || {}).textContent || null`)
+        });
+      }
 
       await chrome.cdp.evaluate(`document.querySelector('[data-env="main"]').click()`);
       const mainTab = await waitFor(

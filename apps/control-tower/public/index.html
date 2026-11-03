@@ -35,6 +35,7 @@
 
   <main>
     <nav id="envTabs" class="env-tabs" aria-label="Filtrar por ambiente"></nav>
+    <p id="statusLegend" class="status-legend"></p>
 
     <section class="panel span-12 health-panel" aria-labelledby="healthTitle">
       <header class="panel-head">
@@ -79,25 +80,33 @@
     <section class="panel span-12" aria-labelledby="tenantsTitle">
       <header class="panel-head">
         <div>
-          <p class="eyebrow">Conectividad y actividad por empresa</p>
-          <h2 id="tenantsTitle">Empresas (tenant)</h2>
+          <p class="eyebrow">Consolidado de todas las empresas y su estado operativo</p>
+          <h2 id="tenantsTitle">Monitor consolidado por empresa</h2>
         </div>
         <span id="tenantsMeta" class="muted small"></span>
       </header>
+      <div id="companySummary" class="company-summary"></div>
+      <div class="company-picker">
+        <label class="picker-label" for="companySelect">Empresa</label>
+        <select id="companySelect" class="picker-select"></select>
+        <button id="btnCompanyRefresh" class="btn mini ghost" type="button">Actualizar</button>
+        <span id="pickerHint" class="muted small"></span>
+      </div>
       <div id="tenants" class="tenants"></div>
     </section>
 
     <section id="companyPanel" class="panel span-12 company-panel" aria-labelledby="companyTitle" hidden>
       <header class="panel-head">
         <div>
-          <p class="eyebrow">Detalle autorizado por empresa</p>
-          <h2 id="companyTitle">Salud por empresa</h2>
+          <p class="eyebrow">Estado operativo, carga de datos, memoria, uso de API y rendimiento</p>
+          <h2 id="companyTitle">Empresa seleccionada</h2>
         </div>
         <div class="module-tools">
           <span id="companyMeta" class="muted small"></span>
           <button id="btnCompanyClose" class="link" type="button">Cerrar</button>
         </div>
       </header>
+      <div id="companyKpis" class="tile-grid"></div>
       <div id="companyHealth" class="health company-health"></div>
     </section>
 

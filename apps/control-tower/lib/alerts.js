@@ -58,7 +58,7 @@ class AlertEngine {
         label: check.label,
         status: check.status,
         fingerprint,
-        title: `${check.label}: ${check.status === "down" ? "caído" : "degradado"}`,
+        title: `${check.label}: ${check.status === "down" ? "caído" : "requiere atención"}`,
         message: summarizeDetail(check.detail),
         functional: check.functional || null,
         action: check.action || null,

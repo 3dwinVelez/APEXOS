@@ -52,9 +52,29 @@ function registerQueueGauge() {
 }
 
 // --- Helpers ---
+const runtimeCounters = {
+  total: 0,
+  byStatus: { "2xx": 0, "3xx": 0, "4xx": 0, "5xx": 0 },
+  slowQueries: 0
+};
+
+function statusBucket(status) {
+  const code = Number(status) || 0;
+  if (code >= 500) return "5xx";
+  if (code >= 400) return "4xx";
+  if (code >= 300) return "3xx";
+  return "2xx";
+}
+
+function megabytes(bytes) {
+  return Math.round((Number(bytes) || 0) / 104857.6) / 10;
+}
+
 function recordHttpRequest(method, route, status, durationMs) {
   httpRequestCounter.labels(method, route, String(status)).inc();
   httpRequestDuration.labels(method, route).observe(durationMs);
+  runtimeCounters.total += 1;
+  runtimeCounters.byStatus[statusBucket(status)] += 1;
 }
 
 function recordAuthPhase(phase, durationMs) {
@@ -63,6 +83,32 @@ function recordAuthPhase(phase, durationMs) {
 
 function recordSlowQuery(model, action) {
   slowQueryCounter.labels(model, action).inc();
+  runtimeCounters.slowQueries += 1;
+}
+
+/**
+ * Lectura agregada del proceso para vigilancia externa (torre de control).
+ * Solo totales y consumo del proceso: nunca rutas, tenants ni datos personales.
+ */
+function runtimeSnapshot(options = {}) {
+  const memory = options.memory || process.memoryUsage();
+  const uptime = options.uptimeSeconds != null
+    ? Math.max(0, Math.round(Number(options.uptimeSeconds) || 0))
+    : Math.max(0, Math.round(Number(process.uptime && process.uptime()) || 0));
+  return {
+    uptime_seconds: uptime,
+    memory_mb: {
+      rss: megabytes(memory.rss),
+      heap_used: megabytes(memory.heapUsed),
+      heap_total: megabytes(memory.heapTotal),
+      external: megabytes(memory.external)
+    },
+    usage: {
+      requests_total: runtimeCounters.total,
+      by_status: { ...runtimeCounters.byStatus },
+      slow_queries_total: runtimeCounters.slowQueries
+    }
+  };
 }
 
 async function updateQueueMetrics(queues) {
@@ -92,6 +138,7 @@ module.exports = {
   recordHttpRequest,
   recordAuthPhase,
   recordSlowQuery,
+  runtimeSnapshot,
   updateQueueMetrics,
   metricsEndpoint,
   promClient

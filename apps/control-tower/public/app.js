@@ -1,6 +1,14 @@
 "use strict";
 
-const STATUS_LABEL = { ok: "Operativo", degraded: "Degradado", down: "Caído", unknown: "Sin dato" };
+const STATUS_LABEL = { ok: "Operativo", degraded: "Requiere atención", down: "Caído", unknown: "Sin dato" };
+const STATUS_MEANING = {
+  ok: "Responde dentro del objetivo.",
+  degraded: "Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta.",
+  down: "No responde o falla una dependencia crítica.",
+  unknown: "No se pudo medir; el indicador no premia ni castiga."
+};
+const PRIORITY_LABEL = { alta: "Alta", media: "Media", baja: "Baja" };
+const PRIORITY_TONE = { alta: "down", media: "degraded", baja: "unknown" };
 const RELATION_LABEL = {
   in_sync: "Sincronizada",
   ahead: "Adelantada",
@@ -310,6 +318,7 @@ async function api(path, options = {}, retried = false) {
     const message = body && body.error ? body.error : `HTTP ${response.status}`;
     const error = new Error(message);
     if (body && body.code) error.code = body.code;
+    if (body && body.recommendation) error.recommendation = body.recommendation;
     throw error;
   }
   return body;
@@ -495,6 +504,7 @@ function payloadNotice(payload, environment, { scope = "environment" } = {}) {
   const detail = payload.detail && payload.detail !== message
     ? `<p class="notice-detail">${escapeHtml(payload.detail)}</p>`
     : "";
+  const actions = scope === "company" ? companyActions() : environmentActions();
   return `
     <div class="health-notice ${tone}" role="status">
       <div class="notice-head">
@@ -503,7 +513,8 @@ function payloadNotice(payload, environment, { scope = "environment" } = {}) {
       </div>
       <p>${escapeHtml(message)}</p>
       ${detail}
-    </div>`;
+    </div>
+    ${actionList(actions, { title: `Cómo destrabar "${reason}"` })}`;
 }
 
 function healthBlock(scope) {
@@ -534,7 +545,8 @@ function healthBlock(scope) {
         ${thresholdScale(health)}
       </div>
     </div>
-    ${moduleChart(scope)}`;
+    ${moduleChart(scope)}
+    ${notice ? "" : actionList(scope === "company" ? companyActions() : environmentActions(), { title: "Acciones sugeridas", empty: "Sin acciones pendientes: el alcance medido opera dentro del objetivo." })}`;
 }
 
 function renderHealth(environment) {
@@ -561,28 +573,101 @@ function renderHealth(environment) {
   container.innerHTML = healthBlock("environment");
 }
 
+function companyRow(tenantId) {
+  const environment = activeEnvironment();
+  const payload = environment && environment.activity ? environment.activity.tenants : null;
+  const rows = payload && Array.isArray(payload.tenants) ? payload.tenants : [];
+  return rows.find((row) => String(row.tenant_id) === String(tenantId)) || null;
+}
+
+function companyTiles(data) {
+  const environment = activeEnvironment();
+  const deployed = environment ? environment.deployed : null;
+  const activity = companyRow(data.tenant ? data.tenant.id : state.company.id);
+  const summary = data.summary || {};
+  const health = data.health || {};
+  const score = Number.isFinite(health.score) ? health.score : null;
+  const band = BAND_ORDER.includes(health.band) ? health.band : "unknown";
+  const errorStatuses = (deployed && deployed.usage && deployed.usage.byStatus) || {};
+  return [
+    {
+      label: "Estado operativo",
+      value: score == null ? "—" : String(score),
+      unit: score == null ? "" : "/100",
+      foot: `${BAND_LABEL[band]} · ${summary.ok || 0}/${summary.total || 0} módulos operativos`,
+      status: BAND_TONE[band]
+    },
+    {
+      label: "Carga de datos",
+      value: Number.isFinite(summary.records) ? formatNumber(summary.records) : "—",
+      foot: `${summary.ok || 0}/${summary.total || 0} módulos con datos · ${summary.down || 0} caídos · ${summary.unknown || 0} sin medir`,
+      status: summary.down ? "down" : summary.records ? "ok" : "unknown"
+    },
+    {
+      label: "Actividad de la empresa",
+      value: activity ? formatNumber(activity.activity_period || 0) : "—",
+      foot: activity
+        ? `${formatNumber(activity.sessions_active || 0)} sesiones · ${formatNumber(activity.gps_period || 0)} GPS · ${activity.last_activity_at ? relative(activity.last_activity_at) : "sin señal"}`
+        : "La empresa no aparece en la lectura de actividad",
+      status: activity && activity.activity_period ? "ok" : "unknown"
+    },
+    {
+      label: "Memoria del API",
+      value: deployed && deployed.memory ? formatNumber(deployed.memory.rss) : "—",
+      unit: deployed && deployed.memory ? "MB" : "",
+      foot: memoryFoot(deployed) || "El build desplegado no expone memoria",
+      status: deployed && deployed.memory ? "ok" : "unknown"
+    },
+    {
+      label: "Uso del API",
+      value: deployed && deployed.usage ? formatNumber(deployed.usage.requestsTotal) : "—",
+      unit: deployed && deployed.usage ? "req" : "",
+      foot: usageFoot(deployed) || "El build desplegado no expone uso",
+      status: deployed && deployed.usage ? (errorStatuses["5xx"] ? "degraded" : "ok") : "unknown"
+    },
+    {
+      label: "Rendimiento p95",
+      value: (() => {
+        const performance = performanceData(environment);
+        return performance && performance.p95 != null ? String(performance.p95) : "—";
+      })(),
+      unit: "ms",
+      foot: uptimeFoot(deployed) || "Proceso sin uptime reportado",
+      status: (() => {
+        const performance = performanceData(environment);
+        if (!performance || performance.p95 == null) return "unknown";
+        return performance.p95 > 1500 ? "down" : performance.p95 > 600 ? "degraded" : "ok";
+      })()
+    }
+  ];
+}
+
 function renderCompany() {
   const panel = document.getElementById("companyPanel");
   const title = document.getElementById("companyTitle");
   const meta = document.getElementById("companyMeta");
   const container = document.getElementById("companyHealth");
+  const kpiContainer = document.getElementById("companyKpis");
   const company = state.company;
   if (!company) {
     panel.hidden = true;
     container.innerHTML = "";
+    if (kpiContainer) kpiContainer.innerHTML = "";
     meta.textContent = "";
     return;
   }
   panel.hidden = false;
   const environment = activeEnvironment();
-  title.textContent = `Salud de ${company.name || company.id}`;
+  title.textContent = `${company.name || company.id} · estado por módulo`;
   if (company.loading) {
     meta.textContent = `${company.id} · consultando ${environment ? environment.short : "ambiente"}…`;
     container.innerHTML = '<p class="empty">Cargando módulos de la empresa…</p>';
+    if (kpiContainer) kpiContainer.innerHTML = "";
     return;
   }
   if (company.error) {
     meta.textContent = `${company.id} · sin datos`;
+    if (kpiContainer) kpiContainer.innerHTML = "";
     const reason = company.errorCode || "";
     const resolver = HEALTH_REASON[reason];
     const message = resolver ? resolver(environment || {}) : company.error;
@@ -593,23 +678,26 @@ function renderCompany() {
           <strong>No se pudo leer la empresa</strong>
         </div>
         <p>${escapeHtml(message)}</p>
-      </div>`;
+      </div>
+      ${actionList(companyActions(), { title: `Cómo destrabar "${reason || "ERROR"}"` })}`;
     return;
   }
   const data = company.data || {};
   meta.textContent = [
     company.id,
     environment ? environment.short : null,
+    environment && environment.branch ? `rama ${environment.branch}` : null,
     data.generated_at ? `datos ${formatTime(data.generated_at)}` : null,
     data.checkedAt ? `lectura ${relative(data.checkedAt)}` : null
   ].filter(Boolean).join(" · ");
+  if (kpiContainer) kpiContainer.innerHTML = companyTiles(data).map((entry) => tile(entry)).join("");
   container.innerHTML = data.ok
     ? healthBlock("company")
     : payloadNotice(data, environment, { scope: "company" });
 }
 
 async function loadCompany(tenantId, name, { scroll = true } = {}) {
-  state.company = { id: tenantId, name, loading: true, data: null, error: null, errorCode: null };
+  state.company = { id: tenantId, name, loading: true, data: null, error: null, errorCode: null, errorAction: null };
   renderCompany();
   try {
     const payload = await api(`/api/tenants/${encodeURIComponent(tenantId)}/modules?environment=${encodeURIComponent(state.environment)}`);
@@ -620,11 +708,20 @@ async function loadCompany(tenantId, name, { scroll = true } = {}) {
       loading: false,
       data: payload,
       error: null,
-      errorCode: null
+      errorCode: null,
+      errorAction: null
     };
   } catch (error) {
     if (!state.company || state.company.id !== tenantId) return;
-    state.company = { id: tenantId, name, loading: false, data: null, error: error.message, errorCode: error.code || null };
+    state.company = {
+      id: tenantId,
+      name,
+      loading: false,
+      data: null,
+      error: error.message,
+      errorCode: error.code || null,
+      errorAction: error.recommendation || null
+    };
   }
   renderCompany();
   if (scroll) {
@@ -678,6 +775,7 @@ function moduleDetailBody(module) {
       <span class="band-pill ${BAND_TONE[band]}">${escapeHtml(BAND_LABEL[band])}</span>
       <span class="muted small">${escapeHtml(GROUP_LABEL[module.group] || module.group || "")}</span>
     </div>
+    <p class="dialog-meaning">${escapeHtml(STATUS_MEANING[status] || "")}</p>
     <p class="dialog-detail">${escapeHtml(module.detail || "Sin detalle adicional.")}</p>
     <div class="dialog-grid">
       ${metrics.map(([label, value]) => `<div class="dialog-metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}
@@ -733,7 +831,7 @@ function openMethodDialog() {
   const source = environment && environment.modules ? environment.modules.source : null;
   const rows = [
     ["optimal", `≥ ${optimal}`, "Opera con datos frescos y servicios sanos.", counts.optimal],
-    ["risk", `${risk}–${optimal - 1}`, "Funciona, pero con degradación, datos viejos o dependencias con alerta.", counts.risk],
+    ["risk", `${risk}–${optimal - 1}`, "Responde, pero con datos viejos, una dependencia lenta o un servicio con alerta.", counts.risk],
     ["critical", `< ${risk}`, "Módulos caídos o dependencias vitales sin servicio.", counts.critical],
     ["unknown", "sin medición", "La API no pudo medir el módulo; no se premia ni se castiga.", counts.unknown]
   ];
@@ -753,7 +851,7 @@ function openMethodDialog() {
       <div class="dialog-section">
         <h3>Cómo se calcula</h3>
         <ul class="method-list">
-          <li>Cada módulo aporta 100 puntos si está operativo, 55 si está degradado y 10 si está caído. Un módulo sin dato no puntúa.</li>
+          <li>Cada módulo aporta 100 puntos si está operativo, 55 si responde fuera del objetivo (dato viejo, dependencia lenta o servicio con alerta) y 10 si está caído. Un módulo sin dato no puntúa.</li>
           <li>Un módulo sano que consume más del 75% de su ventana de frescura pierde hasta 25 puntos: sigue arriba, pero entra en riesgo.</li>
           <li>El puntaje general combina 70% módulos y 30% infraestructura cuando ambas fuentes se miden; si solo hay una, se usa esa sin inventar la otra.</li>
           <li>Las sondas informativas (módulos y actividad) no puntúan dos veces: solo cuentan los servicios de infraestructura y los módulos operativos.</li>
@@ -780,6 +878,77 @@ function tile({ label, value, unit = "", foot = "", status = "unknown" }) {
       <p class="tile-value">${escapeHtml(value)}<span class="tile-unit">${escapeHtml(unit)}</span></p>
       <p class="tile-foot">${escapeHtml(foot)}</p>
     </article>`;
+}
+
+function actionItem(item) {
+  const tone = PRIORITY_TONE[item.priority] || "unknown";
+  const command = item.command ? `<code class="action-command">${escapeHtml(item.command)}</code>` : "";
+  return `
+    <li class="action-item tone-${tone}">
+      <span class="action-priority pill ${tone}">${escapeHtml(PRIORITY_LABEL[item.priority] || item.priority || "Media")}</span>
+      <div class="action-body">
+        <p class="action-title">${escapeHtml(item.title || "Acción sugerida")}</p>
+        <p class="action-text">${escapeHtml(item.action || "")}</p>
+        <p class="action-meta"><span class="action-owner">${escapeHtml(item.owner || "equipo-apexos")}</span>${command}</p>
+      </div>
+    </li>`;
+}
+
+function actionList(items, { title = "Acciones sugeridas", empty = "" } = {}) {
+  const list = (Array.isArray(items) ? items : []).filter(Boolean);
+  if (!list.length) {
+    return empty ? `<p class="action-empty">${escapeHtml(empty)}</p>` : "";
+  }
+  return `
+    <div class="action-list">
+      <div class="action-head">
+        <h3>${escapeHtml(title)}</h3>
+        <span class="muted small">${escapeHtml(list.length === 1 ? "1 acción" : `${list.length} acciones`)} · cada una con responsable y siguiente paso</span>
+      </div>
+      <ul class="action-stack">${list.map(actionItem).join("")}</ul>
+    </div>`;
+}
+
+function environmentActions() {
+  const environment = activeEnvironment();
+  return environment && Array.isArray(environment.recommendations) ? environment.recommendations : [];
+}
+
+function companyActions() {
+  const company = state.company;
+  const data = company && company.data ? company.data : null;
+  if (data) {
+    if (Array.isArray(data.recommendations)) return data.recommendations;
+    return data.recommendation ? [data.recommendation] : [];
+  }
+  if (!company || !company.error) return [];
+  // La lectura de la empresa falló: la torre ya devolvió la acción concreta y,
+  // si no la devolvió, se usan las acciones del ambiente que explican la causa.
+  if (company.errorAction) return [company.errorAction];
+  return environmentActions();
+}
+
+function memoryFoot(deployed) {
+  if (!deployed || !deployed.memory) return null;
+  const memory = deployed.memory;
+  return `heap ${formatNumber(memory.heapUsed)}/${formatNumber(memory.heapTotal)} MB`;
+}
+
+function usageFoot(deployed) {
+  if (!deployed || !deployed.usage) return null;
+  const usage = deployed.usage;
+  const status = usage.byStatus || {};
+  const errors = (Number(status["4xx"]) || 0) + (Number(status["5xx"]) || 0);
+  return `${formatNumber(usage.requestsTotal)} peticiones · ${formatNumber(errors)} con error · ${formatNumber(usage.slowQueries)} consultas lentas`;
+}
+
+function uptimeFoot(deployed) {
+  if (!deployed || !Number.isFinite(deployed.uptimeSeconds)) return null;
+  const minutes = Math.floor(deployed.uptimeSeconds / 60);
+  if (minutes < 60) return `${minutes} min encendido`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `${hours} h ${minutes % 60} min encendido`;
+  return `${Math.floor(hours / 24)} días encendido`;
 }
 
 function activityBars(daily) {
@@ -922,16 +1091,157 @@ function renderActivity(environment) {
     </div>`;
 }
 
+function tenantRows(tenantsPayload) {
+  const rows = tenantsPayload && Array.isArray(tenantsPayload.tenants) ? tenantsPayload.tenants : [];
+  const rank = { ok: 0, degraded: 1, unknown: 2, down: 0 };
+  return [...rows].sort((left, right) => {
+    const toneLeft = rank[pillClass(left.status)] ?? 3;
+    const toneRight = rank[pillClass(right.status)] ?? 3;
+    if (toneLeft !== toneRight) return toneLeft - toneRight;
+    return (Number(right.activity_period) || 0) - (Number(left.activity_period) || 0);
+  });
+}
+
+// Consolidado del ambiente: todas las empresas y el consumo real del proceso
+// (memoria, uso de API y rendimiento) en una sola lectura.
+function consolidatedTiles(environment) {
+  const tenantsPayload = environment && environment.activity ? environment.activity.tenants : null;
+  const summary = tenantsPayload ? tenantsPayload.summary || {} : null;
+  const rows = tenantsPayload ? tenantRows(tenantsPayload) : [];
+  const totals = rows.reduce((acc, row) => {
+    acc.activity += Number(row.activity_period) || 0;
+    acc.gps += Number(row.gps_period) || 0;
+    acc.sessions += Number(row.sessions_active) || 0;
+    acc.users += Number(row.users_active) || 0;
+    return acc;
+  }, { activity: 0, gps: 0, sessions: 0, users: 0 });
+  const deployed = environment ? environment.deployed : null;
+  const performance = performanceData(environment);
+  const modulePayload = environment && environment.modules ? environment.modules : null;
+  const moduleSummary = modulePayload && modulePayload.summary ? modulePayload.summary : null;
+  const withoutSignal = rows.filter((row) => pillClass(row.status) !== "ok").length;
+
+  const tiles = [
+    {
+      label: "Empresas activas",
+      value: summary ? `${formatNumber(summary.active || 0)}/${formatNumber(summary.total || 0)}` : "—",
+      foot: summary ? `${formatNumber(summary.with_activity || 0)} con actividad · ${formatNumber(summary.with_sessions || 0)} con sesión` : "Vista por empresa no disponible",
+      status: summary ? (summary.active ? "ok" : "degraded") : "unknown"
+    },
+    {
+      label: "Carga de datos",
+      value: moduleSummary && Number.isFinite(moduleSummary.records) ? formatNumber(moduleSummary.records) : "—",
+      foot: moduleSummary ? `${moduleSummary.ok || 0}/${moduleSummary.total || 0} módulos medibles en el ambiente` : "Sin lectura por módulo",
+      status: moduleSummary ? (moduleSummary.down ? "down" : "ok") : "unknown"
+    },
+    {
+      label: "Actividad acumulada",
+      value: summary ? formatNumber(totals.activity) : "—",
+      foot: summary ? `${formatNumber(totals.gps)} pings GPS · ${formatNumber(totals.users)} usuarios · ${formatNumber(totals.sessions)} sesiones` : "Sin datos de actividad",
+      status: summary && totals.activity ? "ok" : "unknown"
+    },
+    {
+      label: "Empresas sin señal",
+      value: summary ? formatNumber(withoutSignal) : "—",
+      foot: summary ? "estado inactivo o sin actividad en la ventana medida" : "Sin lectura de empresas",
+      status: summary ? (withoutSignal ? "degraded" : "ok") : "unknown"
+    },
+    {
+      label: "Memoria del API",
+      value: deployed && deployed.memory ? formatNumber(deployed.memory.rss) : "—",
+      unit: deployed && deployed.memory ? "MB" : "",
+      foot: deployed && deployed.memory
+        ? `heap ${formatNumber(deployed.memory.heapUsed)}/${formatNumber(deployed.memory.heapTotal)} MB`
+        : "El build desplegado no expone memoria",
+      status: deployed && deployed.memory ? "ok" : "unknown"
+    },
+    {
+      label: "Uso del API",
+      value: deployed && deployed.usage ? formatNumber(deployed.usage.requestsTotal) : "—",
+      unit: deployed && deployed.usage ? "req" : "",
+      foot: usageFoot(deployed) || "El build desplegado no expone uso",
+      status: deployed && deployed.usage ? ((deployed.usage.byStatus && deployed.usage.byStatus["5xx"]) ? "degraded" : "ok") : "unknown"
+    },
+    {
+      label: "Rendimiento p95",
+      value: performance && performance.p95 != null ? String(performance.p95) : "—",
+      unit: performance && performance.p95 != null ? "ms" : "",
+      foot: performance && performance.samples
+        ? `${performance.samples} muestras · ${performance.errorRate || 0}% errores · ${uptimeFoot(deployed) || "sin uptime"}`
+        : "Sin muestras de este ambiente",
+      status: !performance || performance.p95 == null ? "unknown" : performance.p95 > 1500 ? "down" : performance.p95 > 600 ? "degraded" : "ok"
+    }
+  ];
+  return tiles;
+}
+
+function pickerHint(environment, tenantsPayload) {
+  if (tenantsPayload) {
+    const notes = [
+      tenantsPayload.restricted ? "alcance limitado por allowlist" : null,
+      tenantsPayload.days ? `ventana ${tenantsPayload.days} días` : null,
+      environment && environment.branch ? `rama ${environment.branch}` : null
+    ].filter(Boolean);
+    return notes.length ? notes.join(" · ") : "Lectura completa disponible";
+  }
+  const reason = environment && environment.activity ? environment.activity.tenantsReason : null;
+  return TENANT_REASON[reason] || "La vista por empresa no está disponible en este ambiente.";
+}
+
+// Acciones que explican por qué la vista por empresa está bloqueada. Se filtran
+// de las del ambiente para no repetir en el monitor lo que ya muestra la salud.
+const TENANT_BLOCK_CODES = new Set([
+  "MODULO_NO_DESPLEGADO",
+  "SIN_TOKEN",
+  "TOKEN_INVALIDO",
+  "SIN_CONEXION",
+  "CROSS_TENANT_DESHABILITADO",
+  "PERMISO_DENEGADO",
+  "MODULO_NO_HABILITADO",
+  "EMPRESA_FUERA_DE_ALCANCE",
+  "EMPRESA_NO_ENCONTRADA"
+]);
+
+function tenantBlockActions(reason) {
+  const all = environmentActions();
+  const matched = all.filter((item) => TENANT_BLOCK_CODES.has(item.code));
+  if (matched.length) return matched;
+  return reason ? all.slice(0, 1) : [];
+}
+
+function renderCompanyPicker(environment, tenantsPayload) {
+  const select = document.getElementById("companySelect");
+  const hint = document.getElementById("pickerHint");
+  const rows = tenantsPayload ? tenantRows(tenantsPayload) : [];
+  if (select) {
+    const selectedId = state.company ? state.company.id : "";
+    select.innerHTML = `<option value="">${rows.length ? "Selecciona una empresa…" : "Sin empresas disponibles"}</option>`
+      + rows.map((row) => {
+        const label = `${row.name || row.tenant_id} · ${TENANT_STATUS_LABEL[pillClass(row.status)] || row.status} · ${formatNumber(row.activity_period || 0)} activ.`;
+        return `<option value="${escapeHtml(row.tenant_id)}" data-name="${escapeHtml(row.name || row.tenant_id)}"${selectedId === String(row.tenant_id) ? " selected" : ""}>${escapeHtml(label)}</option>`;
+      }).join("");
+    select.disabled = !rows.length;
+  }
+  if (hint) hint.textContent = pickerHint(environment, tenantsPayload);
+}
+
 function renderTenants(environment) {
   const container = document.getElementById("tenants");
   const meta = document.getElementById("tenantsMeta");
+  const summaryContainer = document.getElementById("companySummary");
   const payload = environment && environment.activity ? environment.activity : null;
   const tenants = payload && payload.tenants ? payload.tenants : null;
+
+  if (summaryContainer) {
+    summaryContainer.innerHTML = `<div class="tile-grid">${consolidatedTiles(environment).map((entry) => tile(entry)).join("")}</div>`;
+  }
+  renderCompanyPicker(environment, tenants);
 
   if (!tenants) {
     const reason = payload && payload.tenantsReason;
     meta.textContent = reason ? "Lectura restringida" : "Sin datos";
-    container.innerHTML = `<p class="empty">${escapeHtml(TENANT_REASON[reason] || "La vista por empresa no está disponible en este ambiente.")}</p>`;
+    container.innerHTML = `<p class="empty">${escapeHtml(TENANT_REASON[reason] || "La vista por empresa no está disponible en este ambiente.")}</p>`
+      + actionList(tenantBlockActions(reason), { title: `Qué falta para leer las empresas de ${environment ? environment.short : "este ambiente"}` });
     return;
   }
 
@@ -946,20 +1256,22 @@ function renderTenants(environment) {
 
   const compact = state.view === "summary";
   const headers = compact
-    ? ["Empresa", "Estado", "Usuarios", "Sesiones", "Actividad", "GPS", "Módulos"]
-    : ["Empresa", "Estado", "Plan", "Usuarios", "Sesiones", "Actividad", "Última actividad", "GPS", "Último ping", "Módulos"];
-  const all = tenants.tenants || [];
+    ? ["Empresa", "Estado", "Usuarios", "Sesiones", "Actividad", "GPS", "Módulos", "Acción"]
+    : ["Empresa", "Estado", "Plan", "Usuarios", "Sesiones", "Actividad", "Última actividad", "GPS", "Último ping", "Módulos", "Acción"];
+  const all = tenantRows(tenants);
   const visible = compact ? all.slice(0, 12) : all;
   const rows = visible.map((tenant) => {
     const status = pillClass(tenant.status);
-    const action = `<button class="btn mini ghost" type="button" data-tenant-id="${escapeHtml(tenant.tenant_id)}" data-tenant-name="${escapeHtml(tenant.name || tenant.tenant_id)}">Ver módulos</button>`;
+    const isSelected = state.company && String(state.company.id) === String(tenant.tenant_id);
+    const action = `<button class="btn mini ${isSelected ? "" : "ghost"}" type="button" data-tenant-id="${escapeHtml(tenant.tenant_id)}" data-tenant-name="${escapeHtml(tenant.name || tenant.tenant_id)}">${isSelected ? "Seleccionada" : "Ver módulos"}</button>`;
     const cells = [
       `<span class="tenant-name">${escapeHtml(tenant.name || tenant.tenant_id)}</span><code class="tenant-id">${escapeHtml(tenant.tenant_id)}</code>`,
-      `<span class="pill ${status}">${escapeHtml(TENANT_STATUS_LABEL[tenant.status] || tenant.status)}</span>`,
+      `<span class="pill ${status}" title="${escapeHtml(STATUS_MEANING[status] || "")}">${escapeHtml(TENANT_STATUS_LABEL[status] || tenant.status)}</span>`,
       escapeHtml(formatNumber(tenant.users_active || 0)),
       escapeHtml(formatNumber(tenant.sessions_active || 0)),
       escapeHtml(formatNumber(tenant.activity_period || 0)),
-      escapeHtml(formatNumber(tenant.gps_period || 0))
+      escapeHtml(formatNumber(tenant.gps_period || 0)),
+      escapeHtml(formatNumber(tenant.modules || 0))
     ];
     if (compact) return [...cells, action];
     return [
@@ -972,15 +1284,17 @@ function renderTenants(environment) {
       escapeHtml(tenant.last_activity_at ? relative(tenant.last_activity_at) : "sin señal"),
       cells[5],
       escapeHtml(tenant.last_ping_at ? relative(tenant.last_ping_at) : "sin pings"),
+      cells[6],
       action
     ];
   });
 
   container.innerHTML = dataTable(headers, rows, "Sin empresas para mostrar.")
     + (compact && all.length > visible.length
-      ? `<p class="muted small tenant-note">Mostrando ${visible.length} de ${formatNumber(all.length)} empresas. Cambia a Detalle para la tabla completa.</p>`
+      ? `<p class="muted small tenant-note">Mostrando ${visible.length} de ${formatNumber(all.length)} empresas (peor estado primero). Cambia a Detalle para la tabla completa.</p>`
       : "");
 }
+
 
 function renderCredentials(credentials) {
   const container = document.getElementById("credentials");
@@ -1015,6 +1329,18 @@ function renderCredentials(credentials) {
   }).join("");
 }
 
+function renderStatusLegend() {
+  const legend = document.getElementById("statusLegend");
+  if (!legend) return;
+  const environment = activeEnvironment();
+  const items = ["ok", "degraded", "down", "unknown"].map((status) => `
+    <span class="legend-item">
+      <span class="pill ${status}">${escapeHtml(STATUS_LABEL[status])}</span>
+      <small>${escapeHtml(STATUS_MEANING[status])}</small>
+    </span>`).join("");
+  legend.innerHTML = `<span class="legend-title">Cómo se leen los estados${environment ? ` en ${escapeHtml(environment.short)}` : ""}</span>${items}`;
+}
+
 function render() {
   const data = state.data;
   if (!data) return;
@@ -1028,6 +1354,7 @@ function render() {
   const openAlerts = alerts.filter((alert) => !alert.resolvedAt);
 
   renderEnvironmentTabs(snapshot, environment);
+  renderStatusLegend();
   renderHealth(environment);
 
   const overallPill = document.getElementById("overallPill");
@@ -1124,7 +1451,7 @@ function renderKpis(environment, data, git, openAlerts) {
     {
       label: "Módulos",
       value: moduleSummary ? `${moduleSummary.ok || 0}/${moduleSummary.total || 0}` : "—",
-      foot: moduleSummary ? `${moduleSummary.degraded || 0} degradados · ${moduleSummary.down || 0} caídos` : "Sin datos por módulo",
+      foot: moduleSummary ? `${moduleSummary.degraded || 0} requieren atención · ${moduleSummary.down || 0} caídos` : "Sin datos por módulo",
       status: moduleSummary ? (moduleSummary.down ? "down" : moduleSummary.degraded ? "degraded" : "ok") : "unknown"
     },
     {
@@ -1154,7 +1481,7 @@ function renderKpis(environment, data, git, openAlerts) {
     {
       label: "Servicios caídos",
       value: String(summary.down || 0),
-      foot: `${summary.degraded || 0} degradados · ${summary.unknown || 0} sin dato`,
+      foot: `${summary.degraded || 0} requieren atención · ${summary.unknown || 0} sin dato`,
       status: summary.down ? "down" : "ok"
     },
     {
@@ -1253,7 +1580,7 @@ function renderModules(environment) {
   const chips = [
     { label: "Módulos", value: summary.total != null ? summary.total : modules.length, status: "unknown" },
     { label: "Operativos", value: summary.ok || 0, status: "ok" },
-    { label: "Degradados", value: summary.degraded || 0, status: "degraded" },
+    { label: "Requieren atención", value: summary.degraded || 0, status: "degraded" },
     { label: "Caídos", value: summary.down || 0, status: "down" },
     { label: "Sin dato", value: summary.unknown || 0, status: "unknown" }
   ];
@@ -1372,6 +1699,28 @@ function renderPerformance(environment) {
     { label: "Tasa error", value: errorRate, unit: "%", tone: errorRate > 0 ? "down" : "ok" },
     { label: "Muestras", value: performance.samples, unit: "" }
   ];
+  const deployed = environment ? environment.deployed : null;
+  if (deployed && deployed.memory) {
+    stats.push(
+      { label: "Memoria RSS", value: formatNumber(deployed.memory.rss), unit: " MB" },
+      { label: "Heap usado", value: formatNumber(deployed.memory.heapUsed), unit: " MB" },
+      { label: "Heap total", value: formatNumber(deployed.memory.heapTotal), unit: " MB" }
+    );
+  }
+  if (deployed && deployed.usage) {
+    const byStatus = deployed.usage.byStatus || {};
+    stats.push(
+      { label: "Peticiones", value: formatNumber(deployed.usage.requestsTotal), unit: "" },
+      { label: "2xx", value: formatNumber(byStatus["2xx"] || 0), unit: "" },
+      { label: "4xx", value: formatNumber(byStatus["4xx"] || 0), unit: "", tone: byStatus["4xx"] ? "degraded" : "ok" },
+      { label: "5xx", value: formatNumber(byStatus["5xx"] || 0), unit: "", tone: byStatus["5xx"] ? "down" : "ok" },
+      { label: "Consultas lentas", value: formatNumber(deployed.usage.slowQueries), unit: "", tone: deployed.usage.slowQueries ? "degraded" : "ok" }
+    );
+  }
+  if (deployed && Number.isFinite(deployed.uptimeSeconds)) {
+    stats.push({ label: "Uptime del proceso", value: uptimeFoot(deployed).replace(" encendido", ""), unit: "" });
+  }
+  const runtimeMissing = !deployed || (!deployed.memory && !deployed.usage);
   container.innerHTML = `
     <div class="perf-head">
       <div>
@@ -1387,7 +1736,8 @@ function renderPerformance(environment) {
           <span>${escapeHtml(stat.label)}</span>
           <strong>${stat.value == null ? "—" : escapeHtml(stat.value)}${escapeHtml(stat.unit)}</strong>
         </div>`).join("")}
-    </div>`;
+    </div>
+    ${runtimeMissing ? `<p class="muted small perf-note">El build desplegado ${deployed && deployed.commit ? `(${String(deployed.commit).slice(0, 7)}) ` : ""}aún no expone memoria ni uso del API. Esta vista aparecerá completa cuando el ambiente corra un build con esas métricas.</p>` : ""}`;
 }
 
 function renderCloud(environment) {
@@ -1682,8 +2032,10 @@ document.addEventListener("click", (event) => {
     if (id && id !== state.environment) {
       state.environment = id;
       localStorage.setItem("towerEnvironment", id);
+      // La empresa seleccionada pertenece al ambiente anterior: cambiar de rama
+      // deselecciona en vez de consultarla contra otro ambiente.
+      state.company = null;
       render();
-      if (state.company) loadCompany(state.company.id, state.company.name, { scroll: false });
     }
     return;
   }
@@ -1739,6 +2091,28 @@ document.getElementById("btnModuleFilter").addEventListener("click", () => {
 document.getElementById("btnCompanyClose").addEventListener("click", () => {
   state.company = null;
   renderCompany();
+  renderTenants(activeEnvironment());
+});
+
+document.getElementById("companySelect").addEventListener("change", (event) => {
+  const select = event.currentTarget;
+  const tenantId = select.value;
+  if (!tenantId) {
+    state.company = null;
+    renderCompany();
+    renderTenants(activeEnvironment());
+    return;
+  }
+  const option = select.options[select.selectedIndex];
+  loadCompany(tenantId, option && option.dataset.name ? option.dataset.name : tenantId);
+});
+
+document.getElementById("btnCompanyRefresh").addEventListener("click", (event) => {
+  action(event.currentTarget, async () => {
+    await load();
+    await refreshCompany();
+    toast("Lectura de empresas actualizada.", "ok");
+  });
 });
 
 document.getElementById("btnDialogClose").addEventListener("click", closeDialog);

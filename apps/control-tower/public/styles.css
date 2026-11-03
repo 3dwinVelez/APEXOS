@@ -1753,6 +1753,150 @@ body.view-summary .detail-only { display: none !important; }
 
 .company-panel[hidden] { display: none; }
 
+/* Leyenda de estados */
+.status-legend {
+  grid-column: span 12;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: -4px 0 0;
+  padding: 10px 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: rgba(10, 17, 32, 0.55);
+}
+
+.legend-title {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.legend-item { display: inline-flex; align-items: center; gap: 8px; }
+.legend-item small { color: var(--muted); font-size: 11px; }
+
+/* Monitor consolidado por empresa */
+.company-summary { margin-bottom: 12px; }
+
+.company-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(12, 20, 36, 0.7);
+}
+
+.picker-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.picker-select {
+  flex: 1 1 260px;
+  min-width: 220px;
+  max-width: 460px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: rgba(8, 13, 23, 0.9);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.picker-select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.picker-select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.company-picker .muted { font-size: 11px; }
+.company-kpis { margin-bottom: 14px; }
+
+/* Acciones sugeridas */
+.action-list {
+  margin-top: 16px;
+  padding: 13px 15px 15px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(12, 20, 36, 0.62);
+}
+
+.action-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.action-head h3 { margin: 0; font-size: 13px; letter-spacing: 0.03em; }
+
+.action-stack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.action-item {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  background: rgba(15, 24, 41, 0.75);
+}
+
+.action-item.tone-down { border-left-color: var(--down); }
+.action-item.tone-degraded { border-left-color: var(--warn); }
+.action-item.tone-unknown { border-left-color: var(--unknown); }
+
+.action-priority { justify-self: start; white-space: nowrap; }
+.action-body { min-width: 0; }
+.action-title { margin: 0; font-size: 12.5px; font-weight: 700; }
+.action-text { margin: 3px 0 0; font-size: 11.8px; color: #d6e2f2; overflow-wrap: anywhere; }
+.action-meta { margin: 6px 0 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.action-owner {
+  font-size: 10.5px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.action-command {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--accent);
+  background: rgba(8, 13, 23, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px 7px;
+  overflow-wrap: anywhere;
+}
+
+.action-empty {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.dialog-meaning { margin: 0; font-size: 11.5px; color: var(--muted); }
+.perf-note { margin: 8px 0 0; font-size: 11px; }
+
 /* Drawer de detalle */
 .detail-dialog {
   width: min(760px, calc(100vw - 32px));
@@ -1880,4 +2024,10 @@ body.view-summary .detail-only { display: none !important; }
   .band-row p { grid-area: detail; }
   .dialog-body { padding: 14px 14px 18px; }
   .dialog-head { padding: 14px 14px 11px; }
+  .status-legend { padding: 9px 11px; }
+  .legend-item { width: 100%; }
+  .company-picker { padding: 9px 10px; }
+  .picker-select { max-width: none; }
+  .action-item { grid-template-columns: minmax(0, 1fr); }
+  .action-priority { justify-self: start; }
 }

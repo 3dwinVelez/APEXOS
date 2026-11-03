@@ -14,6 +14,7 @@ const { PerformanceTracker } = require("./lib/performance");
 const { diagnoseCheck } = require("./lib/diagnostics");
 const { collectGitState, runGit, clearRemoteCache } = require("./lib/git");
 const { fetchModules, REASON_DETAIL } = require("./lib/modules");
+const { recommendationsFor } = require("./lib/recommendations");
 const { computeHealth, withModuleBands } = require("./lib/health");
 const { createAuthGuard, createRateLimiter, safeEqual, readToken, assertLoopback, redact, isPlainObject } = require("./lib/security");
 
@@ -84,6 +85,27 @@ function isLoopbackHost(header) {
 
 function eventId() {
   return `EVT-${crypto.randomBytes(3).toString("hex")}`;
+}
+
+function attachRecommendations(snapshot) {
+  for (const environment of Object.values((snapshot && snapshot.environments) || {})) {
+    environment.recommendations = recommendationsFor(environment, { performance: environment.performance });
+  }
+  return snapshot;
+}
+
+function reasonRecommendation(environment, deployed, reason) {
+  const [recommendation] = recommendationsFor({
+    id: environment.id,
+    short: environment.short,
+    enabled: true,
+    apiBaseUrl: environment.apiBaseUrl,
+    webBaseUrl: environment.webBaseUrl,
+    deployed: deployed || null,
+    modules: { reason: reason || "NO_DISPONIBLE", modules: [] },
+    health: { band: null }
+  }, {});
+  return recommendation || null;
 }
 
 function createTower(overrides = {}) {
@@ -224,6 +246,7 @@ function createTower(overrides = {}) {
       }
       store.writeAux("performance", performance.toJSON());
       const snapshot = applyOverrides(probeResult.value);
+      attachRecommendations(snapshot);
       state.snapshot = snapshot;
       store.setSnapshot({ ...snapshot, git: gitSummary(state.git) });
       tower.alerts.evaluate(snapshot);
@@ -392,25 +415,33 @@ function createTower(overrides = {}) {
       const activity = envSnapshot && envSnapshot.activity ? envSnapshot.activity : null;
       const tenants = activity && activity.tenants ? activity.tenants : null;
       if (!tenants) {
+        const code = (activity && activity.tenantsReason) || "VISTA_EMPRESAS_NO_DISPONIBLE";
         json(res, 409, {
           error: "La lectura por empresa no esta disponible en este ambiente.",
-          code: (activity && activity.tenantsReason) || "VISTA_EMPRESAS_NO_DISPONIBLE"
+          code,
+          recommendation: reasonRecommendation(environment, envSnapshot && envSnapshot.deployed, code)
         });
         return;
       }
       const tenantId = tenantModulesMatch[1];
       const tenant = (tenants.tenants || []).find((item) => String(item.tenant_id) === tenantId);
       if (!tenant) {
-        json(res, 404, { error: "Empresa no encontrada en la lectura vigente.", code: "EMPRESA_NO_ENCONTRADA" });
+        json(res, 404, {
+          error: "Empresa no encontrada en la lectura vigente.",
+          code: "EMPRESA_NO_ENCONTRADA",
+          recommendation: reasonRecommendation(environment, envSnapshot && envSnapshot.deployed, "EMPRESA_NO_ENCONTRADA")
+        });
         return;
       }
 
       const payload = await fetchModules(config, environment, { tenantId });
       if (!payload || payload.source !== "api") {
+        const reason = payload ? payload.reason : "NO_DISPONIBLE";
         json(res, 200, {
           ok: false,
-          reason: payload ? payload.reason : "NO_DISPONIBLE",
-          detail: REASON_DETAIL[payload && payload.reason] || "Sin salud por modulo para la empresa.",
+          reason,
+          detail: REASON_DETAIL[reason] || "Sin salud por modulo para la empresa.",
+          recommendation: reasonRecommendation(environment, envSnapshot && envSnapshot.deployed, reason),
           tenant: { id: tenantId, name: tenant.name || tenantId },
           checkedAt: payload ? payload.checkedAt : new Date().toISOString()
         });
@@ -426,6 +457,17 @@ function createTower(overrides = {}) {
         checkedAt: payload.checkedAt,
         summary: payload.summary,
         health,
+        recommendations: recommendationsFor({
+          id: environment.id,
+          short: environment.short,
+          enabled: true,
+          apiBaseUrl: environment.apiBaseUrl,
+          deployed: (envSnapshot && envSnapshot.deployed) || null,
+          modules: { reason: null, modules: payload.modules },
+          activity: null,
+          cloud: null,
+          health
+        }, {}),
         modules: withModuleBands(payload.modules, health)
       });
       return;

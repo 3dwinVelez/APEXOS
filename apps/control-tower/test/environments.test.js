@@ -147,7 +147,15 @@ test("sondas remotas consultan API, web y Supabase y dejan cloud sin credenciale
   const server = await startServer((req, res) => {
     if (req.url === "/health") {
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", version: "2.0", commit: "a505e97f9622", modules: 18 }));
+      res.end(JSON.stringify({
+        status: "ok",
+        version: "2.0",
+        commit: "a505e97f9622",
+        modules: 18,
+        uptime_seconds: 3600,
+        memory_mb: { rss: 200, heap_used: 10, heap_total: 20, external: 1 },
+        usage: { requests_total: 4200, by_status: { "2xx": 4100, "4xx": 80, "5xx": 20 }, slow_queries_total: 7 }
+      }));
       return;
     }
     if (req.url === "/auth/v1/health") {
@@ -176,7 +184,15 @@ test("sondas remotas consultan API, web y Supabase y dejan cloud sin credenciale
   assert.equal(result.cloud.supabase.configured, false);
   assert.equal(result.metrics.length, 1);
   assert.equal(result.metrics[0].environment, "develop");
-  assert.deepEqual(result.api, { status: "ok", version: "2.0", commit: "a505e97f9622", modules: 18 }, "expone el build desplegado que reporta /health");
+  assert.deepEqual(result.api, {
+    status: "ok",
+    version: "2.0",
+    commit: "a505e97f9622",
+    modules: 18,
+    uptimeSeconds: 3600,
+    memory: { rss: 200, heapUsed: 10, heapTotal: 20 },
+    usage: { requestsTotal: 4200, byStatus: { "2xx": 4100, "4xx": 80, "5xx": 20 }, slowQueries: 7 }
+  }, "expone el build, la memoria y el uso que reporta /health");
   assert.equal(computeOverall(result.checks), "ok");
 });
 

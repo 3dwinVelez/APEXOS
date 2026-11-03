@@ -112,7 +112,7 @@ function moduleDetail(name, status, services, data) {
   }
   if (status === "degraded") {
     const degraded = services.filter((service) => service.status === "degraded").map((service) => service.label);
-    if (degraded.length) return `Dependencia degradada: ${degraded.join(", ")}.`;
+    if (degraded.length) return `Dependencia fuera del objetivo: ${degraded.join(", ")}.`;
     return `Sin actividad hace ${data.age_minutes} min (esperado <= ${data.expected_minutes} min).`;
   }
   if (data.state === "declared") return "Modulo declarado sin modelo operativo verificado.";

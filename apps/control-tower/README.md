@@ -35,7 +35,7 @@ Sondas independientes cada 10 segundos:
 - **Nube**: proyecto, servicios y últimos deployments de Railway; proyecto, deployments y duración media de Vercel; estado del proyecto y salud por servicio de Supabase.
 - **Cola de trabajos y puente de Qoder**.
 
-Cada sonda remota degrada a `unknown` sin bloquear a las demás cuando falta configuración o credenciales. El panel no depende de los servicios vigilados: si APEXOS se cae, la torre sigue mostrando el estado y alertando.
+Cada sonda remota que no se puede medir queda en `unknown` sin bloquear a las demás cuando falta configuración o credenciales. El panel no depende de los servicios vigilados: si APEXOS se cae, la torre sigue mostrando el estado y alertando.
 
 La sonda Redis abre su propio socket TCP contra `REDIS_HOST:REDIS_PORT` y espera `+PONG`; no reutiliza el cliente de la API, así que mide el puerto real y no el estado interno de la aplicación.
 
@@ -46,14 +46,16 @@ Dos vistas conmutables desde la barra superior; la elección se recuerda en el n
 - **Resumen**: indicadores grandes por ambiente, tarjetas compactas de módulo, alertas abiertas y empresas con actividad reciente. Ideal para ver el estado de un vistazo.
 - **Detalle**: todo lo anterior más el desglose técnico de sondas, rendimiento, nube, ramas, credenciales, trabajos, Telegram y eventos.
 
-- **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a indicadores, servicios, alertas, rendimiento, nube y rama.
-- **Indicadores**: salud, módulos, registros, actividad de hoy, conexiones, empresas, servicios caídos, alertas, p95, rama y fábrica Qoder.
+- **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a indicadores, servicios, alertas, rendimiento, nube y rama. Debajo, una leyenda fija qué significa cada estado.
+- **Indicadores**: salud, módulos, registros, actividad de hoy, conexiones, empresas, servicios caídos, alertas, p95, memoria y uso del API, rama y fábrica Qoder.
+- **Consolidado por empresa**: siete teselas del ambiente activo (empresas activas, carga de datos, actividad acumulada, empresas sin señal, memoria del API, uso del API y p95) más el selector de empresa.
 - **Servicios**: estado, latencia, detalle, impacto funcional, acción sugerida y detalle técnico expandible.
-- **Módulos**: resumen (operativos, degradados, caídos, sin dato, registros), agrupación por dominio y tarjetas con registros, última actividad, frescura esperada, servicios y alertas. El filtro **Solo problemas** deja a la vista únicamente lo degradado o caído. Si la API no entrega datos, el panel muestra el catálogo en `Sin dato` y lo declara, no lo pinta como sano.
+- **Módulos**: resumen (en objetivo, requieren atención, caídos, sin dato, registros), agrupación por dominio y tarjetas con registros, última actividad, frescura esperada, servicios y alertas. El filtro **Solo problemas** deja a la vista únicamente lo que está caído o fuera del objetivo. Si la API no entrega datos, el panel muestra el catálogo en `Sin dato` y lo declara, no lo pinta como sano.
 - **Actividad**: actividad de hoy, usuarios activos, sesiones, clientes WebSocket, pings GPS y última actividad, con serie diaria de auditoría y eventos. En Detalle se agregan las tablas de conexiones y de actividad diaria.
-- **Empresas**: conectividad por `tenant_id` (sesiones, usuarios, última actividad, pings GPS, estado). El Resumen muestra hasta 12 empresas; el Detalle conserva la tabla completa.
+- **Empresas**: monitor consolidado con conectividad por `tenant_id` (sesiones, usuarios, última actividad, pings GPS, estado) y sus acciones de intervención. El Resumen muestra hasta 12 empresas; el Detalle conserva la tabla completa.
+- **Acciones de intervención**: en cada bloque bloqueado o con módulos fallando, una lista priorizada con qué hacer, el agente responsable y el siguiente comando.
 - **Alertas**: incidentes por ambiente, con impacto funcional, acción y detalle técnico.
-- **Rendimiento API**: p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente.
+- **Rendimiento API**: p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente. En Detalle se agregan memoria del proceso, peticiones por bucket de estado, consultas lentas y uptime.
 - **Nube**: Railway, Supabase y Vercel con estado, proyecto, servicios, deployments y métricas medibles, o la variable exacta que falta.
 - **Credenciales**: preparación de cada proveedor por ambiente (`develop`/`main`) con los nombres de las variables faltantes, nunca sus valores.
 - **Ramas**: relación local/remota de las tres ramas, con la rama del ambiente seleccionado resaltada.
@@ -91,7 +93,7 @@ El primer bloque del panel es el indicador oficial, no un adorno: publica el pun
 | Banda | Rango | Qué significa |
 |---|---|---|
 | Óptimo | 85–100 | Opera con datos frescos y servicios sanos. |
-| En riesgo | 60–84 | Funciona, pero con degradación, datos viejos o una dependencia en alerta. |
+| En riesgo | 60–84 | Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta. |
 | Crítico | 0–59 | Módulo caído o dependencia vital sin servicio. |
 | Sin dato | — | La API no pudo medir; no se premia ni se castiga. |
 
@@ -99,6 +101,48 @@ El primer bloque del panel es el indicador oficial, no un adorno: publica el pun
 - Ambiente: 70% módulos + 30% infraestructura. Si una fuente no se puede medir, el puntaje usa solo la medible; si no hay ninguna, queda `Sin dato`.
 - El gauge, las tarjetas de banda (con su conteo), la barra de umbrales y el gráfico por módulo ordenado de peor a mejor son clicables: abren el detalle del módulo o la fórmula completa en un diálogo.
 - Los tabs de ambiente muestran el puntaje, las sondas medidas y el build desplegado que reporta `GET /health` (`commit` y cantidad de módulos); el indicador **Salud** del tablero replica el mismo número.
+- Bajo las pestañas de ambiente hay una **leyenda de estados** con las cuatro palabras que usa el panel: **Operativo** (responde dentro del objetivo), **Requiere atención** (responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta), **Caído** (no responde o falla una dependencia crítica) y **Sin dato** (no se pudo medir; el indicador no premia ni castiga). El panel no usa la palabra `degrade` ni ninguna de sus formas: el estado interno `degraded` se traduce siempre a **Requiere atención**.
+
+### Telemetría del proceso
+
+`GET /health` de la API publica, además de estado y commit, los agregados del propio proceso: `uptime_seconds`, `memory_mb` (`rss`, `heap_used`, `heap_total`, `external`), `usage.requests_total`, `usage.by_status` (buckets `2xx`/`3xx`/`4xx`/`5xx`) y `usage.slow_queries_total`. La torre los normaliza en `deployedInfo` y los convierte en las teselas **Memoria del API** y **Uso del API** y en las filas de **Detalle → Rendimiento**.
+
+- Son totales del proceso: no hay rutas, identificadores de request, tenants, usuarios ni payloads en esa superficie, y la tendencia fina sigue viviendo en `/metrics`.
+- Un ambiente cuyo build no entrega esos campos (los desplegados antes de este cambio) se muestra con la nota de que no hay medición. La torre nunca hereda las cifras del ambiente anterior ni las inventa.
+- Los contadores se reinician con el proceso: `usage` es desde el arranque actual, no histórico.
+
+### Monitor consolidado por empresa
+
+El bloque **Monitor consolidado por empresa** responde primero por el ambiente completo y luego deja bajar al detalle de una sola empresa:
+
+1. Siete teselas consolidadas: empresas activas, carga de datos, actividad acumulada, empresas sin señal, memoria del API, uso del API y p95 del ambiente.
+2. Un selector **Empresa** que solo se llena con las empresas de la lectura vigente del ambiente activo, con su botón **Actualizar**.
+3. Al elegir una empresa, su panel con seis KPI: estado operativo con su puntaje y banda, carga de datos (`módulos con datos / caídos / sin medir`), actividad de la empresa, memoria del API, uso del API y p95; debajo, el gráfico por módulo de esa empresa.
+
+Al cambiar de ambiente se deselecciona la empresa: una empresa de `local` no se vuelve a consultar contra QA o PROD, para que ninguna cifra termine mezclando ramas.
+
+### Acciones de intervención
+
+`lib/recommendations.js` traduce cada causa de bloqueo en una acción que un agente puede ejecutar: prioridad (**Alta/Media/Baja**), título, qué hacer, **agente responsable** y siguiente comando. Se generan desde el snapshot de la torre, sin consultar redes nuevas, y aparecen en el bloque de salud del ambiente, en el panel de empresas cuando la lectura está bloqueada, en el panel de la empresa seleccionada y en las respuestas de `/api/tenants` y `/api/tenants/:tenantId/modules`.
+
+| Causa | Prioridad | Responsable | Qué se propone |
+|---|---|---|---|
+| `MODULO_NO_DESPLEGADO` / `NO_DISPONIBLE` | Alta | `equipo-apexos` · `apexos-git-guardian` | Promover y desplegar un build con `apex-control`; nombra el commit desplegado y aclara que un token no resuelve esta causa. |
+| `SIN_TOKEN` | Alta | `apexos-seguridad` | Generar el JWT del ambiente con `apex-control:read` y escribir `ENV_<AMBIENTE>_APEX_TOKEN` en `.env.local`. |
+| `TOKEN_INVALIDO` | Alta | `apexos-seguridad` | Renovar el JWT vigente del ambiente y reiniciar la torre. |
+| `SIN_CONEXION` | Alta | `apexos-performance` · `apexos-seguridad` | Verificar la URL del ambiente, la red y el servicio contra `GET /health`. |
+| Módulo caído (`MODULO_CAIDO`) | Alta | `apexos-backend` | Revisar el servicio y su dependencia caída (hasta 5 módulos por ciclo). |
+| Módulo fuera del objetivo (`MODULO_ATENCION`) | Media | `apexos-performance` | Medir frescura y dependencia lenta del módulo. |
+| `CROSS_TENANT_DESHABILITADO` | Media | `apexos-seguridad` | Aprobar y encender `APEX_CONTROL_CROSS_TENANT` con su allowlist. |
+| `PERMISO_DENEGADO` | Media | `apexos-seguridad` | Otorgar `apex-control:read_all_tenants` al rol del token. |
+| `MODULO_NO_HABILITADO` | Media | `apexos-backend` · `apexos-seguridad` | Habilitar `apex-control` para la empresa del token. |
+| `EMPRESA_FUERA_DE_ALCANCE` / `VISTA_EMPRESAS_NO_DISPONIBLE` | Media | `apexos-seguridad` | Ajustar `APEX_CONTROL_CROSS_TENANT_TENANTS` del ambiente. |
+| `CLOUD_SIN_TOKEN` / `CLOUD_ERROR` | Media | `apexos-performance` · `apexos-seguridad` | Cargar o revisar `RAILWAY_TOKEN`, `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`. |
+| Rendimiento fuera de presupuesto (`RENDIMIENTO`) | Alta/Media | `apexos-performance` | Guard de rendimiento del ambiente con p95 y tasa de error medidos. |
+| Puntaje en riesgo o crítico sin otra causa (`SALUD`) | Alta/Media | `equipo-apexos` | Abrir el detalle del módulo con peor puntaje. |
+| `EMPRESA_NO_ENCONTRADA` | Baja | `equipo-apexos` | Releer el monitor y elegir la empresa de la lista; la torre no sondea tenants a ciegas. |
+
+Ninguna acción se ejecuta sola: la torre es de solo lectura y el comando es una sugerencia con su autorización independiente.
 
 ### Conexión real con QA y PROD
 
@@ -111,7 +155,7 @@ Los ambientes remotos están configurados con su URL de API, web y proyecto Supa
 
 ### Vista por empresa
 
-La tabla de empresas agrega la columna **Módulos** con **Ver módulos**, que abre el mismo indicador, las bandas y el gráfico de módulos para una sola empresa mediante `GET /api/v1/apex-control/tenants/:tenantId/modules`. La empresa no aporta sondas de infraestructura: cuando no las tiene, el puntaje usa únicamente sus módulos y lo declara. Si el ambiente no permite la lectura entre empresas, el panel muestra el código (`SIN_TOKEN`, `CROSS_TENANT_DESHABILITADO`, `VISTA_EMPRESAS_NO_DISPONIBLE`) y el motivo, nunca ceros que parezcan sanos. Al cambiar de ambiente, la empresa abierta se vuelve a consultar contra el ambiente activo.
+La tabla de empresas agrega la columna **Módulos** con **Ver módulos**, que abre el mismo indicador, las bandas y el gráfico de módulos para una sola empresa mediante `GET /api/v1/apex-control/tenants/:tenantId/modules`; la columna **Acción** marca cuál está seleccionada. La empresa no aporta sondas de infraestructura: cuando no las tiene, el puntaje usa únicamente sus módulos y lo declara. Si el ambiente no permite la lectura entre empresas, el panel muestra el código (`SIN_TOKEN`, `CROSS_TENANT_DESHABILITADO`, `VISTA_EMPRESAS_NO_DISPONIBLE`), el motivo y la acción con su responsable, nunca ceros que parezcan sanos. Al cambiar de ambiente la empresa queda deseleccionada y el selector se reconstruye con la lectura del ambiente nuevo.
 
 ### Actividad, conexiones y empresas
 
@@ -189,11 +233,14 @@ La torre nunca ejecuta git write, deploy ni migraciones. `Sincronizar ramas` sol
 ```bash
 npm run control:test
 npm run certify:control-tower:local
+npm run certify:control-tower:consolidado
 ```
 
-`control:test` incluye las suites de módulos, cloud y actividad: catálogo sin token, API con Bearer, token inválido, 404, ambiente sin conexión, herencia de servicios caídos, el cálculo de métricas Railway/Vercel/Supabase con respuestas congeladas y, para actividad, la puerta entre empresas (`403 CROSS_TENANT_DESHABILITADO`), la ausencia de red sin token y el token local que no viaja a QA/PROD.
+`control:test` incluye las suites de módulos, cloud, actividad y acciones de intervención: catálogo sin token, API con Bearer, token inválido, 404, ambiente sin conexión, herencia de servicios caídos, el cálculo de métricas Railway/Vercel/Supabase con respuestas congeladas, la puerta entre empresas (`403 CROSS_TENANT_DESHABILITADO`), la ausencia de red sin token, el token local que no viaja a QA/PROD y que cada bloqueo devuelva una acción con prioridad, responsable y comando.
 
-La certificación levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, captura el panel con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/`.
+La certificación fase uno levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, captura el panel con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/`.
+
+`certify:control-tower:consolidado` levanta dos APIs de prueba en `127.0.0.1`: una rica (telemetría de proceso en `/health`, módulos, actividad, empresas y salud por empresa) y otra con el build anterior al módulo (`/health` con commit y `404` en `apex-control`, como QA y PROD hoy). Con Chrome por CDP comprueba el monitor consolidado, el selector de empresa, las teselas de memoria y uso con los números publicados por el API, las acciones con responsable y siguiente comando, el bloqueo de PROD que nombra su commit sin inventar empresas, la ausencia de jerga `degrade`, la leyenda de estados y una consola sin errores. Deja `certification.json`, `snapshot-ambientes.json`, `empresa-tenant-demo.json` y tres capturas en `docs/qa/evidence/torre-consolidado-empresas-20261103/`. No usa bases de datos ni credenciales reales; la evidencia se sanea y se verifica que ni el token de la torre ni el JWT aparecen en ella.
 
 La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`. La de actividad, conexiones y empresas, con capturas de las vistas Resumen y Detalle, está en `docs/qa/evidence/tower-activity-tenants-20261103/`. La del indicador oficial de salud, umbrales y vista por empresa está en `docs/qa/evidence/tower-health-charts-20261103/`.
 

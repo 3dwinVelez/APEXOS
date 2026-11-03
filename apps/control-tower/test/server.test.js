@@ -99,11 +99,18 @@ test("torre local: salud, UI, auth, fabrica, puente, simulacion y telegram", asy
   assert.ok(environmentSnapshot.local.health, "cada ambiente publica su indicador con umbrales");
   assert.equal(environmentSnapshot.local.health.thresholds.optimal, 85);
   assert.equal(environmentSnapshot.local.health.thresholds.risk, 60);
+  assert.ok(Array.isArray(environmentSnapshot.local.recommendations), "cada ambiente publica sus acciones sugeridas");
+  for (const recommendation of environmentSnapshot.local.recommendations) {
+    assert.ok(recommendation.title && recommendation.action && recommendation.owner, "toda accion tiene titulo, paso y responsable");
+    assert.ok(["alta", "media", "baja"].includes(recommendation.priority), "toda accion tiene prioridad");
+  }
 
   const tenantUnauthorized = await call(base, "/api/tenants/tenant-a/modules?environment=local");
   assert.equal(tenantUnauthorized.status, 401);
   const tenantWithoutScope = await call(base, "/api/tenants/tenant-a/modules?environment=local", { token: UI_TOKEN });
   assert.equal(tenantWithoutScope.status, 409, "sin lectura de empresas no se inventa el detalle");
+  assert.ok(tenantWithoutScope.body.recommendation, "el bloqueo de empresas trae su accion de destrabe");
+  assert.match(tenantWithoutScope.body.recommendation.owner, /apexos/);
   const invalidEnvironment = await call(base, "/api/tenants/tenant-a/modules?environment=orbita", { token: UI_TOKEN });
   assert.equal(invalidEnvironment.status, 400);
   assert.equal(invalidEnvironment.body.error, "AMBIENTE_INVALIDO");

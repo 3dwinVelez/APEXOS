@@ -217,7 +217,8 @@ test("con datos de API el resumen se degrada si hay modulos caidos o degradados"
   const summary = checks.find((check) => check.id === "develop.modules");
   assert.equal(summary.status, "degraded");
   assert.equal(summary.optional, false, "con datos de API el resumen si puntua");
-  assert.match(summary.detail, /1\/3 modulos sanos/);
+  assert.match(summary.detail, /1\/3 modulos en objetivo/);
+  assert.doesNotMatch(summary.detail, /degrad/, "el detalle no usa jerga tecnica sin explicar");
   assert.equal(summary.technical.source, "api");
   assert.equal(summary.technical.configured, true);
 });

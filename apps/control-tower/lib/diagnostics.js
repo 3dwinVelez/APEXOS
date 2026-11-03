@@ -41,7 +41,7 @@ const CATALOG = {
   web: {
     functional: {
       down: "El personal no puede abrir la plataforma.",
-      degraded: "La plataforma web responde con errores o lentitud; la experiencia del usuario se degrada."
+      degraded: "La plataforma web responde con errores o lentitud; al usuario le cuesta abrir la plataforma."
     },
     action: "Revisa el despliegue web, el DNS, el certificado y el enrutamiento."
   },

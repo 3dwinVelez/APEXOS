@@ -2,7 +2,7 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.3.0
+version: 2.4.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -49,6 +49,8 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
 16. **Salud por módulo.** `GET /api/v1/apex-control/modules` es de solo lectura, exige `apex-control:read` y se ejecuta dentro de `runWithTenant`. Cada entrada del catálogo se contrasta con el delegado real de Prisma; si el modelo o la medición falla, el módulo queda `unavailable`/`unknown` con el error, nunca `ok`. La frescura se mide contra el campo y la expectativa declarados, y una dependencia caída degrada el módulo. Nunca se consulta un modelo sin filtro de tenant (salvo los globales declarados).
 17. **Actividad, conexiones y lectura entre empresas.** `GET /api/v1/apex-control/activity` agrega auditoría y eventos en buckets diarios exactos con `$queryRaw` sobre `"timestamp"` y `occurred_at`, siempre filtrados por el tenant del token; no se cuenta con `findMany` truncado. `GET /api/v1/apex-control/tenants` es la única lectura entre empresas: exige el permiso explícito `apex-control:read_all_tenants`, la guarda `APEX_CONTROL_CROSS_TENANT` (apagada por defecto fuera de local/development) y la allowlist opcional `APEX_CONTROL_CROSS_TENANT_TENANTS`. Si la guarda falla responde 403 `CROSS_TENANT_DESHABILITADO`; nunca degrada a un listado global silencioso.
 18. **Detalle por empresa con la misma puerta.** `GET /api/v1/apex-control/tenants/:tenantId/modules` mide una sola empresa y reutiliza `crossTenantGuard` + `readAllTenants` + allowlist; no agrega cifras de otras empresas ni abre una segunda superficie de lectura entre tenants. Valida el id con `^[A-Za-z0-9_-]{4,64}$` (`400 EMPRESA_ID_INVALIDO`), responde `404 EMPRESA_NO_ENCONTRADA` si no existe y `403 EMPRESA_FUERA_DE_ALCANCE` si cae fuera de la allowlist. `getTenantModules` devuelve el tenant medido junto al payload de módulos; nunca lo usa para saltarse el filtro del tenant autenticado.
+
+19. **Telemetría de proceso en `/health`, solo agregada.** `runtimeSnapshot()` (`src/fabric/metrics.js`) publica `uptime_seconds`, `memory_mb` (rss/heap/external en MB) y `usage` (peticiones totales, por bucket de estado y consultas lentas) en `/health`, también en el `503 NOT_READY`. Los contadores se alimentan de `recordHttpRequest`/`recordSlowQuery` del proceso: nunca se agregan rutas, usuarios, tenants, cabeceras ni payloads —si algo de eso aparece en `/health`, es una fuga y bloquea el cambio— y las etiquetas de `prom-client` se mantienen separadas para que el `/metrics` siga siendo la fuente detallada. La torre depende de estos campos para las teselas de memoria y uso del API; sin ellos el ambiente se declara `sin medición`, no se rellena con datos de otro ambiente.
 
 ## Checklist de intervención
 

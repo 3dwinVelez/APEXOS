@@ -53,7 +53,7 @@ function countBy(rows, key) {
 
 function statusLine(status) {
   if (status === "ok") return "Operativo";
-  if (status === "degraded") return "Degradado";
+  if (status === "degraded") return "Requiere atencion";
   if (status === "down") return "Caido";
   return "Sin datos";
 }

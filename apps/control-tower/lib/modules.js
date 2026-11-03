@@ -192,7 +192,7 @@ function moduleChecks(payload, environment) {
   const summary = payload.summary;
   const hasApiData = payload.source === "api";
   const detail = hasApiData
-    ? `${summary.ok}/${summary.total} modulos sanos · ${summary.degraded} degradados · ${summary.down} caidos · ${summary.unknown} sin dato`
+    ? `${summary.ok}/${summary.total} modulos en objetivo · ${summary.degraded} requieren atencion · ${summary.down} caidos · ${summary.unknown} sin dato`
     : `${REASON_DETAIL[payload.reason] || "Sin datos por modulo."} ${summary.down} con dependencia caida de ${summary.total}.`;
   checks.push({
     id: `${environmentId}.modules`,

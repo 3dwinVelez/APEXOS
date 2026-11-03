@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "updated_at": "2026-11-03",
-      "sha256": "d4af58791f8a594e64a510c6fd6e6bb8efdbcb916be02cc33748a565f6b9a759",
+      "sha256": "b5a9895dfd82c4458d23339ca6d90a04f86ca86bbf77becc6b8d788d88ce4910",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -77,15 +77,16 @@
         "torre-fuera-api",
         "salud-por-modulo",
         "actividad-por-empresa",
-        "detalle-empresa-modulos"
+        "detalle-empresa-modulos",
+        "telemetria-proceso-health"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "updated_at": "2026-11-03",
-      "sha256": "0cf3498e665593b0048e326a068a49004580a3a34658fcab799eeb9886b62696",
+      "sha256": "7908d844111de355cb5c91fafa9416fbcf9ca5734fbbe5a934cc8bb0243f4de0",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -106,7 +107,8 @@
         "certificacion-ui-en-el-inventario",
         "inventario-cierre-certificaciones",
         "alcance-sin-archivos-sin-seguimiento",
-        "brief-build-desplegado"
+        "brief-build-desplegado",
+        "brief-cifras-nombradas"
       ]
     },
     {
@@ -185,9 +187,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "updated_at": "2026-11-03",
-      "sha256": "a672171a980d0ef5f6cbd5936a6934817fce0b53fe10fc9b5a05a3bd4403daf3",
+      "sha256": "2e78944c32ef67eb79dea0c707ef338ccf923ee9c9d50d8cf27054b9c99b2428",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -205,15 +207,16 @@
         "sondas-informativas",
         "actividad-empresas-acotadas",
         "graficos-salud-acotados",
-        "diagnostico-build-por-ambiente"
+        "diagnostico-build-por-ambiente",
+        "consumo-uso-api-medido"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "updated_at": "2026-11-03",
-      "sha256": "526307fc1226f08f385aa0fddb1fc106f2a96c5f568b416ad58bc5b45bc84404",
+      "sha256": "1db80ab2730119528d7a230403038ee853f353849f6dee46c44befe9154939c6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -237,15 +240,16 @@
         "certificacion-contra-codigo-vigente",
         "certificar-contra-shell-vigente",
         "certificacion-salud-empresa",
-        "certificacion-conexion-build"
+        "certificacion-conexion-build",
+        "certificacion-consolidado-vivo"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "updated_at": "2026-11-03",
-      "sha256": "8566c6166e17b1d1aabb52a01d470a7663050ccf8508d5def916aa358722e204",
+      "sha256": "735e0c3b45e50163725d7365d31f1f45a5f95f2d145a313dcca8b8a283b9b911",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -266,15 +270,16 @@
         "token-por-ambiente",
         "lectura-entre-empresas",
         "detalle-empresa-misma-puerta",
-        "sonda-anonima-diagnostico"
+        "sonda-anonima-diagnostico",
+        "telemetria-agregada-sin-fuga"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "updated_at": "2026-11-03",
-      "sha256": "71a3a6ddc81b172dee048e998b43100cb2b413e97a44ebaaa2374a1d9ffc7657",
+      "sha256": "56bdea9de96775d961fb5c1edd4c3f36f833bc8ea8ccca810371557466af4186",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -293,7 +298,8 @@
         "confirmacion-irreversible",
         "cierre-salud-modulos-cloud",
         "indicador-oficial-y-empresa",
-        "diagnostico-sin-datos-por-causa"
+        "diagnostico-sin-datos-por-causa",
+        "accion-sin-jerga"
       ]
     }
   ],

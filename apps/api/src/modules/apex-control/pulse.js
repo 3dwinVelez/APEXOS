@@ -55,7 +55,7 @@ function incidentSeverity(component) {
 
 function describe(component) {
   if (component.status === "down") return `${component.name} no responde`;
-  if (component.status === "degraded") return `${component.name} esta degradado`;
+  if (component.status === "degraded") return `${component.name} requiere atencion`;
   return `${component.name} recuperado`;
 }
 

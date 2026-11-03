@@ -337,18 +337,30 @@ async function build() {
   fastify.get("/health", async (_request, reply) => {
     const prisma = require("./src/core/prisma");
     const { inspectRuntimeSchema } = require("./src/core/runtimeSchema");
+    const { runtimeSnapshot } = require("./src/fabric/metrics");
     const schema = await inspectRuntimeSchema(prisma);
     const commit = String(process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || "unknown").slice(0, 12);
+    // Solo agregados del proceso: la torre necesita memoria, uptime y uso real
+    // de la API sin exponer rutas, tenants ni datos de clientes.
+    const runtime = runtimeSnapshot();
     if (!schema.ready) {
       return reply.code(503).send({
         status: "NOT_READY",
         code: "SCHEMA_INCOMPATIBLE",
         missing: schema.missing,
         version: "2.0",
-        commit
+        commit,
+        ...runtime
       });
     }
-    return { status: "OK", version: "2.0", modules: MODULES.length, commit, service_certification: "products-v2" };
+    return {
+      status: "OK",
+      version: "2.0",
+      modules: MODULES.length,
+      commit,
+      service_certification: "products-v2",
+      ...runtime
+    };
   });
 
   fastify.get("/metrics", {
