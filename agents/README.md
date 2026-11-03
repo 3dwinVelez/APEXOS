@@ -15,6 +15,8 @@ Carpeta portable del equipo de agentes del repositorio APEXOS. Permite reconstru
 
 Los agentes auditores (`apexos-auditor-marcaciones`, `apexos-auditor-nomina`) son de **solo lectura**: no editan producto, no migran, no commitean ni publican.
 
+Todo agente registrado declara `contract: 2` con las secciones `Alcance`, `Lecturas obligatorias`, `Reglas duras`, `Checklist de intervención`, `Evidencia`, `Handoff` y `Antipatrones`, en ese orden. `agents:sync` y `agents:check` rechazan un agente sin contrato v2 o con secciones incompletas; `test:agents` verifica además que los once agentes lo cumplan.
+
 ## Instalación en otra máquina
 
 ```bash

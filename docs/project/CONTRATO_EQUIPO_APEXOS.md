@@ -128,6 +128,6 @@ Al terminar, cada agente entrega:
 - Presentar una verificación parcial como certificación.
 - Sobrescribir trabajo remoto con una copia local vieja.
 
-## 9. Migración progresiva
+## 9. Contrato vigente
 
-Los agentes que aún no declaran `contract: 2` siguen operando con su contrato anterior. Se migran por fases. Migrados el 2026-11-03: `apexos-frontend` 2.0.0 y `apexos-db-nube` 2.0.0 (fase 1); `apexos-backend` 2.0.0, `apexos-seguridad` 2.0.0 y `apexos-qa` 2.0.0 (fase 2). Un agente migrado no puede volver a `contract: 1`; `agents:check` valida sus secciones y la existencia de sus lecturas obligatorias.
+Los once agentes del equipo declaran `contract: 2` desde el 2026-11-03: `apexos-frontend` y `apexos-db-nube` (fase 1); `apexos-backend`, `apexos-seguridad` y `apexos-qa` (fase 2); `apexos-performance`, `apexos-brief`, `apexos-git-guardian`, `equipo-apexos`, `apexos-auditor-marcaciones` y `apexos-auditor-nomina` (fase 3). `agents:sync` y `agents:check` exigen el contrato a todo agente registrado: un agente nuevo sin `contract: 2` o una regresión a `contract: 1` bloquea la sincronización y la validación. `agents:check` valida las secciones ordenadas y la existencia de las lecturas obligatorias, y `test:agents` verifica que los once agentes cumplan el contrato.

@@ -14,9 +14,9 @@
     {
       "name": "apexos-auditor-marcaciones",
       "role": "auditor-funcional-marcaciones",
-      "version": "1.1.0",
-      "updated_at": "2026-11-02",
-      "sha256": "574a642e5a92dcb0a161d85a2644c585d896f818822f129371f991f8f1373d63",
+      "version": "2.0.0",
+      "updated_at": "2026-11-03",
+      "sha256": "54103b9e850a17ea1737a38fbe0a22bfe0731b78d7dc5a7eac602c65c2a7a9a0",
       "source": ".qoder/skills/apexos-auditor-marcaciones/SKILL.md",
       "mirror": "agents/apexos-auditor-marcaciones/SKILL.md",
       "controls": [
@@ -24,15 +24,20 @@
         "as-is-gap-to-be",
         "evidencia-anonimizada",
         "trampas-conocidas",
-        "estado-remediacion-20261030"
+        "estado-remediacion-20261030",
+        "contrato-v2",
+        "tres-pasadas",
+        "cita-archivo-linea",
+        "reproducir-antes-de-reportar",
+        "sin-veredicto-legal"
       ]
     },
     {
       "name": "apexos-auditor-nomina",
       "role": "auditor-funcional-nomina",
-      "version": "1.1.0",
-      "updated_at": "2026-11-02",
-      "sha256": "2679aa1488f54b77cb44e452cb2d032e65c9d7eea9e8fb6769e74d28f8c18b9b",
+      "version": "2.0.0",
+      "updated_at": "2026-11-03",
+      "sha256": "06b8e19b10b43ac65758dfb2d3731add3b5464f98f2a3c82b697ca34f79a6014",
       "source": ".qoder/skills/apexos-auditor-nomina/SKILL.md",
       "mirror": "agents/apexos-auditor-nomina/SKILL.md",
       "controls": [
@@ -40,7 +45,11 @@
         "recalculo-independiente",
         "cuadre-preview-cierre-aportes",
         "ibc-topes-pisos",
-        "firma-legal-pendiente"
+        "firma-legal-pendiente",
+        "contrato-v2",
+        "tres-pasadas",
+        "delta-economico",
+        "sin-veredicto-legal"
       ]
     },
     {
@@ -71,9 +80,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "1.3.0",
+      "version": "2.0.0",
       "updated_at": "2026-11-03",
-      "sha256": "8e50cf99ae68f6f7e4de5546b5beac738b86f9585b9a6fa6cfbbb763986b5411",
+      "sha256": "620a448f754a657823abcbdc405c9b255e42039c4774b8be8dcf92ee3e5bf2a0",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -84,7 +93,12 @@
         "inventario-a-m-d",
         "seccion-11-obligatoria",
         "push-acotado-desarrollo",
-        "coverage-obligatorio"
+        "coverage-obligatorio",
+        "contrato-v2",
+        "rutas-verificadas",
+        "criterios-observables",
+        "gates-preqa-aprobacion",
+        "sin-secretos"
       ]
     },
     {
@@ -134,9 +148,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "1.3.0",
+      "version": "2.0.0",
       "updated_at": "2026-11-03",
-      "sha256": "2fdfaef551a06097133cd968c3b2421b461d4502cd070f10c6d242b01ecd71f5",
+      "sha256": "f2d1e2940a9f88851e5f5510841d72c04e7e9542459b8ade5f25df6e233f8dde",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -148,15 +162,21 @@
         "worktrees-auxiliares",
         "recuperacion-sin-snapshot",
         "un-commit-un-modulo",
-        "coverage-obligatorio"
+        "coverage-obligatorio",
+        "contrato-v2",
+        "gate-alcance-v2",
+        "candidato-vs-target-remoto",
+        "evidencia-preqa",
+        "evidencia-aprobacion",
+        "sin-operaciones-destructivas"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "1.3.0",
+      "version": "2.0.0",
       "updated_at": "2026-11-03",
-      "sha256": "e4b56e2da01ffce70779f3a1abb02cbd597b6372a9d728b076f8c46c5319b81b",
+      "sha256": "6e13530701567870644a2f2ca1bf19a2c11c8ef5755cf52c2de1fd7e7ff966ac",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -164,7 +184,12 @@
         "harness-temp",
         "performance-guard-bloqueante",
         "rutas-calientes",
-        "server-timing"
+        "server-timing",
+        "contrato-v2",
+        "p95-por-ambiente",
+        "sondas-verificadas",
+        "escritura-solo-nyvora-qa",
+        "infra-con-autorizacion"
       ]
     },
     {
@@ -219,9 +244,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "1.4.0",
+      "version": "2.0.0",
       "updated_at": "2026-11-03",
-      "sha256": "e2f90cc675c35258b3af8d699347837804e2a8c4803c271ea2a6005112837e12",
+      "sha256": "791a0cac8e2fa7dea3d3abeeda0b5bf6ebaa89e861ef5bbeb533427a284255d4",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -233,7 +258,11 @@
         "despacho-por-disciplina",
         "cierre-docs-agentes",
         "push-acotado-desarrollo",
-        "coverage-obligatorio"
+        "coverage-obligatorio",
+        "contrato-v2",
+        "auditores-solo-dictamen",
+        "torre-solo-lectura",
+        "confirmacion-irreversible"
       ]
     }
   ],
@@ -290,7 +319,7 @@
       "name": "Contrato del equipo",
       "path": "docs/project/CONTRATO_EQUIPO_APEXOS.md",
       "updated_at": "2026-11-03",
-      "sha256": "b3ba0fed44ca6c55f0a71cec065dbfa401a816fa68ca08514bc45aae59cc839d"
+      "sha256": "a05f120ccbe8aa9d1226902a5bde1d15e5adfbc15f3d508600787f565fe6c385"
     },
     {
       "name": "Filosofía de producto UI",

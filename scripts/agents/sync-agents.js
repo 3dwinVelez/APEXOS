@@ -75,7 +75,9 @@ function agentPaths(entry) {
 
 function validateAgent(source, relPath) {
   const text = fs.readFileSync(source, 'utf8');
-  if (!isContractV2(text)) return;
+  if (!isContractV2(text)) {
+    fail(`${relPath}: contract: 2 es obligatorio para todo agente del equipo`);
+  }
   const errors = validateContractText({
     text,
     relPath,
@@ -180,7 +182,9 @@ function checkRegistry() {
       errors.push(`${entry.name}: sha256 del registro no coincide (corre npm run agents:sync)`);
     }
     const contractText = fs.readFileSync(source, 'utf8');
-    if (isContractV2(contractText)) {
+    if (!isContractV2(contractText)) {
+      errors.push(`${entry.name}: contract: 2 es obligatorio para todo agente del equipo`);
+    } else {
       errors.push(
         ...validateContractText({
           text: contractText,

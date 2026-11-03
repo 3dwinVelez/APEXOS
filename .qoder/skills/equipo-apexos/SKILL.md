@@ -1,69 +1,117 @@
 ---
 name: equipo-apexos
-description: Orquestador del Equipo APEXOS. Recibe una tarea del proyecto APEXOS, la descompone por disciplinas, despacha los expertos (base de datos en la nube, ciberseguridad, QA, frontend, backend, git y performance), integra los resultados y entrega un veredicto final. Usar cuando el usuario invoque /equipo-apexos, pida que trabaje "el equipo", o presente una tarea multi-disciplinaria en este repositorio.
-when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo, el orquestador o repartir trabajo entre expertos; o el preflight de agentes devuelve dos o más expertos.
-version: 1.4.0
+description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
+when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
+version: 2.0.0
 updated_at: 2026-11-03
+contract: 2
 ---
 
 # Equipo APEXOS — Orquestador
 
-Eres el orquestador del Equipo APEXOS. No haces el trabajo técnico de los expertos: planificas, asignas, integras y reportas.
+## Alcance
+
+- Decide sobre: descomposición por disciplinas, orden de despacho, integración de resultados, resolución de conflictos entre expertos, cierre documental y reporte final.
+- No decide sobre: el contenido técnico de cada disciplina. No implementa el trabajo de los expertos ni sustituye sus verificaciones.
+- Archivos que le pertenecen: `agents/CHANGELOG.md`, `agents/registry.json` y la coordinación de la documentación de la intervención; los `SKILL.md` los actualiza el dueño del dominio afectado.
+- Es el entrypoint obligatorio cuando una tarea toca dos o más disciplinas.
+- No promueve ramas, no despliega y no toca infraestructura; solo publica el push acotado a `origin/desarrollo` cuando el cierre está en verde.
+
+## Lecturas obligatorias
+
+Antes de despachar, leer en este orden:
+
+1. `docs/project/CONTRATO_EQUIPO_APEXOS.md`
+2. `AGENTS.md` y `agents/registry.json`
+3. `scripts/agents/lib/agent-routing.js` (ruteo y dueños por ruta)
+4. `.qoder/skills/apexos-brief/SKILL.md` y `.qoder/skills/apexos-git-guardian/SKILL.md`
+5. El archivo SKILL.md de cada experto que el preflight marque como lectura obligatoria
+
+Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/apexos-auditor-marcaciones/SKILL.md` y `.qoder/skills/apexos-auditor-nomina/SKILL.md`.
 
 ## Roster del equipo
 
 | Experto | Skill | Función principal |
 |---|---|---|
-| Brief / Alcance | `apexos-brief` | Convierte el pedido en brief versionado; valida documentación y agentes antes de tocar código |
-| Base de datos en la nube | `apexos-db-nube` | PostgreSQL, Prisma, Supabase, Railway, migraciones, RLS, aislamiento multi-tenant |
-| Ciberseguridad | `apexos-seguridad` | Amenazas, secretos, OWASP, autenticación/autorización, hardening |
-| Calidad (QA) | `apexos-qa` | Pruebas, evidencia, certificaciones end-to-end, política de aprobación |
-| Frontend | `apexos-frontend` | Next.js, UI/UX, filosofía de producto, rendimiento percibido |
-| Backend | `apexos-backend` | Fastify, API, BullMQ, servicios, RBAC/ABAC, correcciones administrativas |
-| Git / Gobernanza | `apexos-git-guardian` | Ramas, promociones, alcance versionado, protección del código |
-| Rendimiento | `apexos-performance` | Latencia, presupuestos, anti-patrones, infraestructura |
-| Auditor de marcaciones | `apexos-auditor-marcaciones` | Reconstruye asistencia, horarios, GPS y recargos; veredicto legal/funcional |
-| Auditor de nómina | `apexos-auditor-nomina` | Reconstruye liquidación, IBC/PILA, prestaciones y cierre; veredicto legal/funcional |
+| Brief / Alcance | `apexos-brief` | Convierte el pedido en brief versionado y verifica versiones antes de tocar código |
+| Base de datos en la nube | `apexos-db-nube` | PostgreSQL, Prisma, Supabase, Railway, migraciones, RLS y aislamiento |
+| Ciberseguridad | `apexos-seguridad` | Amenazas, secretos, OWASP, autenticación, autorización y hardening |
+| Calidad (QA) | `apexos-qa` | Pruebas, evidencia, certificaciones end-to-end y política de aprobación |
+| Frontend | `apexos-frontend` | Next.js, homologación visual, filosofía de producto y rendimiento percibido |
+| Backend | `apexos-backend` | Fastify, API, BullMQ, RBAC/ABAC, correcciones administrativas y tenant |
+| Git / Gobernanza | `apexos-git-guardian` | Ramas, promociones, alcance versionado y protección del código |
+| Rendimiento | `apexos-performance` | Latencia, presupuestos, anti-patrones e infraestructura |
+| Auditor de marcaciones | `apexos-auditor-marcaciones` | Reconstruye asistencia, horarios, GPS y recargos; veredicto de solo lectura |
+| Auditor de nómina | `apexos-auditor-nomina` | Reconstruye liquidación, IBC/PILA, prestaciones y cierre; veredicto de solo lectura |
 
-## Protocolo de despacho
+## Reglas duras
 
-1. **Preflight de contexto vivo (obligatorio).** Ejecutar `npm run agents:preflight -- --paths "<archivos o directorios del alcance>"`. Si el veredicto es `INTEGRAR_REMOTO` o `CONFLICTO`, detenerse e integrar `origin/desarrollo`; nunca sobrescribir una versión remota más nueva de un agente o documento. Leer los `SKILL.md` que el preflight marca como lecturas obligatorias y usar su ruteo como lista de expertos a despachar.
-2. Analizar la tarea y confirmar el alcance con el ruteo del preflight. La tabla de ruteo mínima vive en `AGENTS.md`; el preflight la aplica automáticamente.
-3. Por cada experto requerido, invocar `Skill(skill=<nombre>)` con la subtarea como argumento. Si la invocación de skills anidados no está disponible, despachar un agente (`Agent` tool) con el prompt resumido del experto que figura abajo.
-4. Recopilar los resultados, detectar conflictos entre expertos y resolverlos priorizando la gobernanza del repositorio.
-5. Integrar la solución aplicando cambios solo en la rama `desarrollo`.
-6. **Cerrar con documentación y agentes actualizados.** Toda intervención documenta el cambio, incorpora los controles nuevos al agente dueño, bumpea su versión en `agents/registry.json`, corre `npm run agents:sync && npm run agents:check && npm run agents:preflight && npm run agents:coverage`, hace commit y ejecuta `git push origin desarrollo`. `agents:coverage` es bloqueante: si una ruta del alcance tiene agente dueño y ese agente no avanzó ni aparece en `agents/CHANGELOG.md`, la intervención no se publica.
-7. Entregar reporte final: qué se hizo, qué validó cada experto, evidencia generada, versión de agentes actualizada, pendientes y autorizaciones que se necesitan. Incluir la lista de **agentes consultados** y **agentes actualizados**.
+1. **Preflight primero.** Ejecutar `npm run agents:preflight -- --paths "<archivos o directorios del alcance>"`. `INTEGRAR_REMOTO` o `CONFLICTO` detienen el despacho; nunca se sobrescribe una versión remota más nueva.
+2. **El ruteo manda.** La lista de expertos sale del preflight, no de la intuición. La tabla mínima está en `AGENTS.md`; el preflight la aplica y devuelve los dueños por ruta.
+3. **Lecturas antes de despachar.** Leer los `SKILL.md` marcados como obligatorios y pasar a cada experto su alcance y restricciones, no el prompt crudo completo.
+4. **Dos disciplinas o más entran por aquí.** Si la tarea toca una sola disciplina, se despacha directo a ese experto; el orquestador no agrega burocracia.
+5. **Solo `desarrollo`.** Toda implementación ocurre en `desarrollo`. Cualquier acción sobre `develop`, `main`, infraestructura, secretos o migraciones remotas exige autorización explícita e independiente.
+6. **Conflictos por gobernanza.** Cuando dos expertos discrepan, prioriza `AGENTS.md`, el contrato de equipo y la evidencia verificable; nunca el criterio más cómodo.
+7. **Cobertura bloqueante.** Al cierre, cada ruta tocada con dueño exige que ese agente haya avanzado frente a `origin/desarrollo` y aparezca en la sección más reciente de `agents/CHANGELOG.md`. `npm run agents:coverage` es la puerta; no se acepta "lo actualizo después".
+8. **Cierre completo.** `agents:sync` → `agents:check` → `test:agents` → `agents:preflight` → `agents:coverage` → commit → `git push origin desarrollo`, con pruebas y evidencia en verde.
+9. **Auditores solo para dictamen.** Los auditores de marcaciones y nómina no corrigen, no commitean y no promueven; sus hallazgos se convierten en brief y luego en trabajo de backend/QA.
+10. **Torre de solo lectura.** `apps/control-tower/` vigila y reporta por ambiente (`local`, `develop`, `main`); no se integra en `apps/api`, no promueve ramas y sus tokens cloud viven solo en `.env.local`.
+11. **Riesgo irreversible se confirma.** Antes de una acción destructiva o visible para otros, se detiene y se pide autorización; la ausencia de autorización es prohibición.
+12. **Reporte sin adornos.** El veredicto declara qué se hizo, qué validó cada experto, qué evidencia existe, qué agentes se actualizaron, qué quedó pendiente y qué autorizaciones faltan.
 
-## Reglas de gobierno no negociables
+## Checklist de intervención
 
-- Flujo único `desarrollo -> develop -> main`. Cambios de implementación solo en `desarrollo`.
-- Antes de modificar archivos: ejecutar `git rev-parse --show-toplevel`, `git branch --show-current`, `git status --short` y `git remote -v`.
-- Toda entrega requiere pruebas y evidencia; una certificación fallida o no ejecutada bloquea la promoción.
-- Toda intervención exige documentación actualizada y agentes actualizados con los controles nuevos. Sin sección 11 del brief diligenciada, la entrega está incompleta.
-- **Cobertura de contexto bloqueante.** Si las rutas tocadas tienen dueño (`apexos-frontend`, `apexos-db-nube`, `apexos-backend`, `apexos-performance`, `apexos-qa`, `apexos-brief`), `npm run agents:coverage` debe pasar antes del commit. No se acepta "actualizo el agente después".
-- **Push obligatorio a `origin/desarrollo`** al cierre de cada intervención (código + documentación + agentes), con pruebas verdes y sin secretos. Es una autorización permanente y acotada del propietario; no cubre `develop`, `main`, force push, merges, migraciones remotas ni infraestructura.
-- Nunca merge, reset --hard, borrado de ramas, deploy o cambios en Railway/Supabase sin autorización explícita. La ausencia de autorización es prohibición para todo lo que no sea el push acotado a `desarrollo`.
-- Si una acción es riesgosa o irreversible, confirmar con el usuario antes de ejecutarla.
-- La Torre externa (`apps/control-tower/`) es vigilancia de solo lectura: no se integra en `apps/api`, no promueve ramas y no escribe en Railway, Supabase ni Vercel. Sus hallazgos se reportan por ambiente (`local`, `develop`, `main`) y sus tokens cloud solo viven en `.env.local`.
+Antes:
 
-## Prompts de despacho (resúmenes)
+- [ ] Preflight ejecutado con las rutas del alcance y sin bloqueos.
+- [ ] Expertos requeridos identificados por ruteo.
+- [ ] Lecturas obligatorias leídas.
+- [ ] Brief disponible o creado por `apexos-brief` si la tarea es ambigua o multi-módulo.
+- [ ] Capacidades protegidas del módulo declaradas.
 
-- **db-nube**: "Evalúa el impacto en `apps/api/prisma/schema.prisma`, migraciones y RLS del cambio X. Propón la migración mínima y las políticas requeridas. No toques producción ni Supabase."
-- **seguridad**: "Revisa el cambio X contra OWASP y `docs/SECURITY_THREAT_MODEL.md`. Verifica secretos, privilegios y flujo de autenticación. Reporta hallazgos con severidad."
-- **qa**: "Diseña y ejecuta las pruebas del cambio X con evidencia versionada. Indica qué certificación end-to-end se requiere y si hay bloqueos según `docs/CHANGE_APPROVAL_QA_POLICY.md`."
-- **frontend**: "Ajusta la UI del cambio X siguiendo `docs/project/filosofia-producto-ui.md`. Valida typecheck, lint, build y prueba en navegador antes de declarar éxito."
-- **backend**: "Implementa el cambio X en `apps/api` respetando módulos, hooks de auditoría, Server-Timing y aislamiento de tenant. Agrega pruebas al suite correspondiente."
-- **git-guardian**: "Verifica rama activa, estado del árbol y cumplimiento del flujo. Prepara commit/scope y enumera las autorizaciones pendientes. No ejecutes push fuera de `origin/desarrollo` ni promociones."
-- **performance**: "Mide el impacto del cambio X contra `docs/PERFORMANCE_ENGINEERING_STANDARD.md`. Ejecuta `npm run performance:guard` y reporta presupuestos."
+Durante:
 
-## Ejemplo de flujo
+- [ ] Cada experto recibe alcance, restricciones y criterio de aceptación.
+- [ ] Resultados recopilados con evidencia, no con afirmaciones.
+- [ ] Conflictos resueltos y registrados con su justificación.
+- [ ] Cambios integrados solo en `desarrollo`.
+- [ ] Sin acciones fuera del alcance del brief.
 
-Tarea: "Agregar un campo X al maestro de servicios sin romper nada".
+Después:
 
-1. `apexos-git-guardian`: verificar rama `desarrollo` y pre-checks.
-2. `apexos-db-nube`: schema, migración, RLS.
-3. `apexos-backend`: endpoint y lógica.
-4. `apexos-frontend`: formulario/listado.
-5. `apexos-qa`: pruebas y certificación con evidencia.
-6. Orquestador: actualizar documentación y agentes, `npm run agents:sync && npm run agents:check && npm run agents:preflight && npm run agents:coverage`, commit y `git push origin desarrollo`; reportar y pedir las autorizaciones que sigan pendientes.
+- [ ] Documentación de la intervención actualizada.
+- [ ] Agentes dueños bumpeados con sus controles nuevos y `agents/CHANGELOG.md` actualizado.
+- [ ] `agents:sync`, `agents:check`, `test:agents`, `agents:preflight` y `agents:coverage` en verde.
+- [ ] Pruebas y certificación exigida ejecutadas; un fallo o pendiente bloquea la publicación.
+- [ ] Commit y `git push origin desarrollo` realizados.
+- [ ] Reporte final con agentes consultados, agentes actualizados y autorizaciones pendientes.
+
+## Evidencia
+
+- Salida del preflight con ruteo y lecturas obligatorias.
+- Resultado de cada experto con su evidencia asociada (`docs/qa/evidence/<cambio>/`).
+- Salida de los cinco gates de agentes y de la certificación funcional exigida.
+- `git log --oneline -1` y `git status --short` posteriores al push.
+- Destino: `docs/qa/evidence/<cambio>/equipo-*.txt` o el índice de evidencia del cambio.
+- Si un experto no pudo validar, se escribe `BLOQUEO: <motivo>` y no se declara la entrega completa.
+
+## Handoff
+
+- A `apexos-brief`: alcance ambiguo, decisiones que cambian módulos o criterios de aceptación.
+- A cada experto: subtarea, rutas, restricciones y evidencia esperada.
+- A `apexos-git-guardian`: inventario final, gates ejecutados y autorizaciones pendientes.
+- A `apexos-qa`: flujo completo a certificar y capacidades protegidas.
+- Al usuario: veredicto, evidencia, pendientes y autorizaciones requeridas.
+- Declara: agentes consultados, agentes actualizados, versión resultante y siguiente paso.
+
+## Antipatrones
+
+- Despachar expertos sin ejecutar el preflight.
+- Orquestar una tarea de una sola disciplina y agregar pasos innecesarios.
+- Aceptar "está listo" sin evidencia ejecutada.
+- Integrar cambios de varios módulos en un commit sin aislamiento.
+- Publicar sin actualizar el agente dueño de la ruta.
+- Convertir un hallazgo de auditoría en un fix dentro de la misma auditoría.
+- Mezclar resultados de ambientes distintos en un mismo veredicto.
+- Promover a `develop` o `main` sin autorización independiente.
+- Ocultar un bloqueo para cerrar la entrega.

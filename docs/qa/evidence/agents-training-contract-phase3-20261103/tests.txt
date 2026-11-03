@@ -1,0 +1,232 @@
+TAP version 13
+# Subtest: detecta contract v2 solo con la version declarada
+ok 1 - detecta contract v2 solo con la version declarada
+  ---
+  duration_ms: 5.7744
+  type: 'test'
+  ...
+# Subtest: un contrato v2 completo y ordenado pasa
+ok 2 - un contrato v2 completo y ordenado pasa
+  ---
+  duration_ms: 3.1187
+  type: 'test'
+  ...
+# Subtest: falla cuando falta una seccion obligatoria
+ok 3 - falla cuando falta una seccion obligatoria
+  ---
+  duration_ms: 2.2089
+  type: 'test'
+  ...
+# Subtest: falla cuando una seccion esta vacia
+ok 4 - falla cuando una seccion esta vacia
+  ---
+  duration_ms: 15.929
+  type: 'test'
+  ...
+# Subtest: falla cuando las secciones estan fuera de orden
+ok 5 - falla cuando las secciones estan fuera de orden
+  ---
+  duration_ms: 1.0195
+  type: 'test'
+  ...
+# Subtest: valida que las lecturas obligatorias existan
+ok 6 - valida que las lecturas obligatorias existan
+  ---
+  duration_ms: 1.6474
+  type: 'test'
+  ...
+# Subtest: extrae y normaliza rutas de lectura con globs y barras de Windows
+ok 7 - extrae y normaliza rutas de lectura con globs y barras de Windows
+  ---
+  duration_ms: 1.374
+  type: 'test'
+  ...
+# Subtest: sectionBody corta en el siguiente encabezado de nivel 2
+ok 8 - sectionBody corta en el siguiente encabezado de nivel 2
+  ---
+  duration_ms: 0.4174
+  type: 'test'
+  ...
+# Subtest: un agente sin contract 2 no se valida contra el contrato nuevo
+ok 9 - un agente sin contract 2 no se valida contra el contrato nuevo
+  ---
+  duration_ms: 1.1527
+  type: 'test'
+  ...
+# Subtest: todos los agentes del registro declaran contract 2 y cumplen el contrato
+ok 10 - todos los agentes del registro declaran contract 2 y cumplen el contrato
+  ---
+  duration_ms: 52.5106
+  type: 'test'
+  ...
+# Subtest: latestChangelogSection solo toma la seccion mas reciente
+ok 11 - latestChangelogSection solo toma la seccion mas reciente
+  ---
+  duration_ms: 3.1446
+  type: 'test'
+  ...
+# Subtest: mentionsAgent no confunde prefijos
+ok 12 - mentionsAgent no confunde prefijos
+  ---
+  duration_ms: 1.2673
+  type: 'test'
+  ...
+# Subtest: cobertura pasa con bump local y changelog de la intervencion
+ok 13 - cobertura pasa con bump local y changelog de la intervencion
+  ---
+  duration_ms: 6.47
+  type: 'test'
+  ...
+# Subtest: cobertura bloquea si el dueno no avanzo frente a origin
+ok 14 - cobertura bloquea si el dueno no avanzo frente a origin
+  ---
+  duration_ms: 0.7624
+  type: 'test'
+  ...
+# Subtest: cobertura bloquea si falta la entrada de changelog
+ok 15 - cobertura bloquea si falta la entrada de changelog
+  ---
+  duration_ms: 1.0027
+  type: 'test'
+  ...
+# Subtest: cobertura bloquea un agente dueno ausente del registro local
+ok 16 - cobertura bloquea un agente dueno ausente del registro local
+  ---
+  duration_ms: 0.8703
+  type: 'test'
+  ...
+# Subtest: sin duenos no se exige actualizacion de contexto
+ok 17 - sin duenos no se exige actualizacion de contexto
+  ---
+  duration_ms: 0.7097
+  type: 'test'
+  ...
+# Subtest: un dueno nuevo solo local se acepta si el changelog lo menciona
+ok 18 - un dueno nuevo solo local se acepta si el changelog lo menciona
+  ---
+  duration_ms: 0.5804
+  type: 'test'
+  ...
+# Subtest: compareVersions ordena numericamente, no lexicograficamente
+ok 19 - compareVersions ordena numericamente, no lexicograficamente
+  ---
+  duration_ms: 6.8676
+  type: 'test'
+  ...
+# Subtest: classifyFreshness detecta remoto mas nuevo por version o fecha
+ok 20 - classifyFreshness detecta remoto mas nuevo por version o fecha
+  ---
+  duration_ms: 12.685
+  type: 'test'
+  ...
+# Subtest: classifyFreshness bloquea conflicto cuando version y fecha coinciden con sha distinto
+ok 21 - classifyFreshness bloquea conflicto cuando version y fecha coinciden con sha distinto
+  ---
+  duration_ms: 0.5474
+  type: 'test'
+  ...
+# Subtest: classifyFreshness distingue agentes solo locales o solo remotos
+ok 22 - classifyFreshness distingue agentes solo locales o solo remotos
+  ---
+  duration_ms: 0.4433
+  type: 'test'
+  ...
+# Subtest: classifyDocumentFreshness usa fecha y sha, sin semver
+ok 23 - classifyDocumentFreshness usa fecha y sha, sin semver
+  ---
+  duration_ms: 1.6222
+  type: 'test'
+  ...
+# Subtest: una edicion local del mismo dia es avance, no conflicto remoto
+ok 24 - una edicion local del mismo dia es avance, no conflicto remoto
+  ---
+  duration_ms: 1.0337
+  type: 'test'
+  ...
+# Subtest: isBlocking solo bloquea actualizaciones remotas, remotos nuevos y conflictos
+ok 25 - isBlocking solo bloquea actualizaciones remotas, remotos nuevos y conflictos
+  ---
+  duration_ms: 0.4847
+  type: 'test'
+  ...
+# Subtest: normalizePath unifica separadores de Windows
+ok 26 - normalizePath unifica separadores de Windows
+  ---
+  duration_ms: 0.5967
+  type: 'test'
+  ...
+# Subtest: routePaths exige frontend y QA para apps/web
+ok 27 - routePaths exige frontend y QA para apps/web
+  ---
+  duration_ms: 10.0358
+  type: 'test'
+  ...
+# Subtest: routePaths exige DB, backend, seguridad y QA para el esquema Prisma
+ok 28 - routePaths exige DB, backend, seguridad y QA para el esquema Prisma
+  ---
+  duration_ms: 8.8089
+  type: 'test'
+  ...
+# Subtest: routePaths concentra HR en backend, seguridad y QA
+ok 29 - routePaths concentra HR en backend, seguridad y QA
+  ---
+  duration_ms: 15.5838
+  type: 'test'
+  ...
+# Subtest: routePaths manda gobernanza al trio de agentes
+ok 30 - routePaths manda gobernanza al trio de agentes
+  ---
+  duration_ms: 2.1909
+  type: 'test'
+  ...
+# Subtest: routePaths trata el contrato del equipo como gobernanza
+ok 31 - routePaths trata el contrato del equipo como gobernanza
+  ---
+  duration_ms: 0.5305
+  type: 'test'
+  ...
+# Subtest: routePaths agrega equipo-apexos cuando la tarea es multidisciplinaria
+ok 32 - routePaths agrega equipo-apexos cuando la tarea es multidisciplinaria
+  ---
+  duration_ms: 2.8051
+  type: 'test'
+  ...
+# Subtest: routePaths informa rutas sin agente asignado
+ok 33 - routePaths informa rutas sin agente asignado
+  ---
+  duration_ms: 5.1024
+  type: 'test'
+  ...
+# Subtest: routePaths asigna dueno de contexto por disciplina
+ok 34 - routePaths asigna dueno de contexto por disciplina
+  ---
+  duration_ms: 2.7421
+  type: 'test'
+  ...
+# Subtest: routePaths sin dueno para gobernanza, scripts, pruebas y evidencia
+ok 35 - routePaths sin dueno para gobernanza, scripts, pruebas y evidencia
+  ---
+  duration_ms: 0.5195
+  type: 'test'
+  ...
+# Subtest: routePaths trata las convenciones de base de datos como contexto de DB
+ok 36 - routePaths trata las convenciones de base de datos como contexto de DB
+  ---
+  duration_ms: 1.8944
+  type: 'test'
+  ...
+# Subtest: routePaths conserva el union de duenos cuando hay varias disciplinas
+ok 37 - routePaths conserva el union de duenos cuando hay varias disciplinas
+  ---
+  duration_ms: 0.544
+  type: 'test'
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 761.419

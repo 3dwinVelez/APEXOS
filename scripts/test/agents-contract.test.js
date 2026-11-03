@@ -88,3 +88,24 @@ test('un agente sin contract 2 no se valida contra el contrato nuevo', () => {
     ['<skill>: contract debe ser 2 para validar']
   );
 });
+
+test('todos los agentes del registro declaran contract 2 y cumplen el contrato', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.resolve(__dirname, '..', '..');
+  const registry = JSON.parse(fs.readFileSync(path.join(root, 'agents', 'registry.json'), 'utf8'));
+  assert.ok(registry.agents.length > 0);
+  for (const entry of registry.agents) {
+    const text = fs.readFileSync(path.join(root, entry.source), 'utf8');
+    assert.equal(isContractV2(text), true, `${entry.name} debe declarar contract: 2`);
+    assert.deepEqual(
+      validateContractText({
+        text,
+        relPath: entry.source,
+        exists: (rel) => fs.existsSync(path.join(root, rel))
+      }),
+      [],
+      `${entry.name} debe cumplir el contrato v2`
+    );
+  }
+});

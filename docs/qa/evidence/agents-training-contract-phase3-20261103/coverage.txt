@@ -1,0 +1,4 @@
+[agents:coverage] rama: desarrollo | rutas: 6 | fetch: si
+  Sin agentes duenos para estas rutas: no se exige actualizacion de contexto.
+
+[agents:coverage] OK: contexto del equipo actualizado para todas las rutas.
