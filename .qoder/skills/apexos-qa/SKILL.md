@@ -2,6 +2,8 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
+version: 1.1.0
+updated_at: 2026-11-02
 ---
 
 # Experto en QA — Equipo APEXOS
@@ -28,3 +30,13 @@ when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, mani
 - Para Servicios, las capacidades protegidas se certifican juntas: inicio de órdenes, corrección administrativa, RBAC y aislamiento de tenant.
 - Las pruebas de volumen con escritura se limitan a Nyvora QA, con identificador de corrida y limpieza selectiva.
 - Toda promoción a `main` exige aprobación funcional de QA explícita; las verificaciones automáticas solas nunca autorizan `main`.
+
+## Controles acumulados (entrenamiento 2026-11-02)
+
+- **Carreras del arnés ≠ fallos de negocio.** Marcadores vacíos, SKU en vuelo, puerto muerto o un listener que rompe la limpieza son defectos del arnés. Se corrigen en el arnés y se documentan; no se maquillan ni se reportan como bug de producto.
+- **Certificación local aislada.** Harness en `%TEMP%` (3310/3311), precalentamiento, stub de Prisma/fastify y `next dev` que se autocierra por memoria. Repetir la corrida antes de declarar intermitencia.
+- **Puertas reales.** `qa:preqa:evidence` para `desarrollo -> develop`; `qa:approval:evidence` para `develop -> main`; `qa:promotion:scope` con manifiesto v2 e inventario exacto. Unit/lint/typecheck/build no certifican.
+- **HR.** Regresión `hr-*` obligatoria; casos borde de IBC piso/tope/quincena, cierre con y sin nómina (`skipped: "SIN_NOMINA"`) y cadena marcación → jornada → nómina.
+- **UI.** Probar en navegador real, camino feliz y borde, ambos temas. Declarar si no se pudo probar.
+- **Evidencia versionada** en `docs/qa/evidence/<cambio>/`, sin datos personales.
+- **Bloqueo explícito.** Una certificación fallida, parcial, simulada o no ejecutada se reporta como bloqueo; nunca como "resuelto".

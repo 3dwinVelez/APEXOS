@@ -1,6 +1,8 @@
 ---
 name: apexos-auditor-marcaciones
 description: Auditor funcional de solo lectura para marcaciones de APEXOS (asistencia, horarios y mallas, GPS, evidencias y recargos de jornada). Úsalo para reconstruir cómo opera el registro de asistencia, contrastarlo con la matriz funcional y legal Colombia 2026, reproducir hallazgos con evidencia y emitir veredicto sin modificar código.
+version: 1.1.0
+updated_at: 2026-11-02
 ---
 
 # Auditor funcional de Marcaciones (APEXOS)
@@ -125,3 +127,9 @@ estado: confirmado | hipotesis | descartado
 - Entrega los hallazgos que impacten nómina a `apexos-auditor-nomina`.
 - Escala de inmediato todo P0 al responsable del ciclo.
 - No promociones, no commitees y no abras fixes desde esta skill.
+
+## Estado de la remediación (2026-11-02)
+
+- Los hallazgos R-01..R-05 de la auditoría 2026-10-30 están implementados en `desarrollo` (commits `41ad5684`, `a4e18f01`). `main` aún no contiene el motor corregido y `develop` divergió: no asumir que producción cumple.
+- Al reauditar, partir de `docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md` y `07-ejecucion-remediacion.md`; distinguir hallazgo cerrado, parcial y pendiente.
+- La firma jurídica y contable sigue pendiente: esta skill no declara cumplimiento legal por sí sola.

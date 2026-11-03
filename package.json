@@ -19,6 +19,8 @@
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "doctor:node": "node scripts/doctor-node.js",
     "check:local": "node scripts/preflight-local.js",
+    "agents:sync": "node scripts/agents/sync-agents.js write",
+    "agents:check": "node scripts/agents/sync-agents.js check",
     "prisma:generate": "npm --workspace apps/api run prisma:generate",
     "db:push": "npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate",
     "seed:demo": "node scripts/seed-admin.js",

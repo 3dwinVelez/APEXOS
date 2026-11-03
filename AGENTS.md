@@ -21,7 +21,7 @@ Rules for Codex and any automated agent:
 - Do not promote branches without explicit authorization.
 - Do not push directly to `main`.
 - Do not push directly to `develop`.
-- Do not push, merge, deploy, run remote migrations, delete branches, modify infrastructure, modify secrets, modify Railway/Supabase, or use force push without explicit independent authorization.
+- Do not push, merge, deploy, run remote migrations, delete branches, modify infrastructure, modify secrets, modify Railway/Supabase, or use force push without explicit independent authorization. The only standing exception is the scoped push to `origin/desarrollo` defined in "Documentation, agents and publication" below.
 - Do not use `git push --force-with-lease`, rebase permanent shared branches, run `git reset --hard`, or run `git clean -fd` automatically.
 - Treat absence of authorization as prohibition.
 - Do not skip validations to finish a delivery.
@@ -50,6 +50,13 @@ Una urgencia productiva modifica la prioridad del cambio, pero nunca modifica el
 La ausencia de autorizacion expresa debe interpretarse como prohibicion.
 
 Generic task wording such as "implementa", "corrige", "continua", "haz el cambio", "dejalo funcionando", "corrigelo urgentemente", "corrigelo en produccion", "actualiza el sistema" or "completa la tarea" authorizes only work on `desarrollo`.
+
+## Documentation, agents and publication
+
+- Every intervention on the code updates, in the same change, the module documentation, the intervention brief and the team agents (`agents/` and `.qoder/skills/`).
+- `agents/registry.json` is the version source: per-agent semver, `updated_at` and `sha256`. Before editing an agent or governance document, compare against `origin/desarrollo`; if the remote reference is newer, integrate it and never overwrite it.
+- After editing agents, run `npm run agents:sync` and `npm run agents:check`. The check must pass before committing.
+- The owner grants a permanent, scoped authorization to run `git push origin desarrollo` at the close of each intervention, with green tests, updated documentation and agents, and no secrets. This authorization does not cover `develop`, `main`, force push, merges, remote migrations, branch deletion or infrastructure; those still require explicit independent authorization.
 
 Before proposing any promotion, attach validation evidence and confirm that the target follows:
 

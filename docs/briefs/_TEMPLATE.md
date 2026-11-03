@@ -29,7 +29,7 @@
 
 ## 4. Restricciones
 
-- Rama: solo `desarrollo`. Prohibido push, merge, deploy, migración remota, cambios en Railway/Supabase sin autorización explícita.
+- Rama: solo `desarrollo`. Push permitido únicamente a `origin/desarrollo` al cierre (sección 11). Prohibido `develop`, `main`, force push, merge, deploy, migración remota y cambios en Railway/Supabase sin autorización explícita.
 - Aislamiento multi-tenant y RBAC intactos.
 - Sin secretos ni credenciales en el brief ni en el diff.
 
@@ -60,3 +60,13 @@
 ## 10. Autorizaciones requeridas
 
 - [ ] <Autorización explícita pendiente, si aplica>
+
+## 11. Documentación, agentes y publicación (obligatoria)
+
+- **Documentación a actualizar**: `<docs/briefs/... | docs/audits/... | docs/qa/... | docs/project/...>`
+- **Agentes a actualizar**: `<agente>` `<version actual>` → `<version propuesta>`; controles nuevos: `<...>`
+- **Registro**: `agents/registry.json` actualizado (`version`, `updated_at`, `sha256`) y entrada en `agents/CHANGELOG.md`.
+- **Secuencia de cierre**: `npm run agents:sync` → `npm run agents:check` → pruebas de la sección 5 → commit.
+- **Publicación obligatoria**: `git push origin desarrollo` (rama `desarrollo`, pruebas verdes, sin secretos ni artefactos locales). No cubre `develop`, `main`, force push, merges, migraciones remotas ni infraestructura.
+- [ ] Sin secretos, credenciales ni artefactos locales en el diff
+- [ ] Documentación y agentes actualizados en el mismo commit

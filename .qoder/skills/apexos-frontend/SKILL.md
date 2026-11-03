@@ -2,6 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, experiencia de usuario y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos.
+version: 1.1.0
+updated_at: 2026-11-02
 ---
 
 # Experto de frontend — Equipo APEXOS
@@ -30,3 +32,11 @@ when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formulari
 - Probar la funcionalidad en navegador (camino feliz y casos borde) antes de declarar éxito; si no se puede probar la UI, decirlo explícitamente.
 - Revisar en navegador y en AMBOS temas (claro y oscuro): popups de `<select>`, estados de foco y estados vacíos/guías de campos obligatorios. En Windows el popup nativo lo pinta el SO con su tema e ignora el `color-scheme` de la página, así que `color-scheme` solo es mitigación parcial; la solución real es `appearance: base-select` + `::picker(select)` tematizado (clase `apex-select` en globals.css, degradación controlada en navegadores sin soporte). La variante `dark:` de Tailwind responde a `prefers-color-scheme` (darkMode: media por defecto en esta app), NO al tema de la app (`html.dark`): con SO en modo oscuro + app en tema claro, los `dark:` se activan por error — el foco de celdas debe acoplarse con clase propia (`apex-cell` + reglas `html.dark`). CDP no captura popups nativos del SO; con base-select sí se capturan, pero si la ventana del navegador está ocluida Chromium no los pinta.
 - Verificar assets con `npm run verify:web-assets` cuando aplique.
+
+## Controles acumulados (entrenamiento 2026-11-02)
+
+- **Un concepto, una vista.** No duplicar bandejas o monitores; fusionar y abrir el detalle por el dato. Un solo botón de regreso al módulo padre.
+- **Formulario consolidado.** Campos básicos en un solo formulario e historial en ventana emergente; evitar tarjetas apiladas con campos solapados.
+- **Reusar la tubería existente.** Si el documento ya se procesó, reparar el dato y el visor real; no inventar visores ni flujos paralelos.
+- **Verificación real.** `next build` sí pasa en `desarrollo` (el bloqueo por rutas tipadas era falso); no usar ese supuesto para evitar build+start. `scripts/dev-web.js` puede llevar la URL de API quemada: verificar el entorno antes de culpar a la UI.
+- **Evidencia de navegador.** Probar camino feliz y borde, ambos temas, y capturar evidencia; si la UI no se pudo probar, declararlo explícitamente.

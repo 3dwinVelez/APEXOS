@@ -1,6 +1,8 @@
 ---
 name: apexos-auditor-nomina
 description: Auditor funcional y legal de solo lectura para la nómina de APEXOS (liquidación, extras y recargos, IBC y PILA, prestaciones, cierre, ajustes, libranzas y retiro). Úsalo para reconstruir cómo calcula la nómina, contrastarla con la matriz funcional y Colombia 2026, reproducir hallazgos con evidencia y emitir veredicto sin modificar código.
+version: 1.1.0
+updated_at: 2026-11-02
 ---
 
 # Auditor funcional de Nómina (APEXOS)
@@ -126,3 +128,9 @@ La matriz normativa y el veredicto legal requieren revisión y firma de jurídic
 - Recibe del auditor de marcaciones los hallazgos que afecten días, horas o recargos.
 - Escala de inmediato todo P0 al responsable del ciclo.
 - No promociones, no commitees y no abras fixes desde esta skill.
+
+## Estado de la remediación (2026-11-02)
+
+- R-04 (topes y pisos de IBC, prorrateo de quincena, sin fallback al salario) y R-05 (cierre con provisiones reales y `skipped: "SIN_NOMINA"`) están implementados en `desarrollo`; `main` conserva el motor legacy y `develop` divergió. No asumir cumplimiento en producción.
+- Evidencia local: `hr-ibc-caps-floors` 7/7, `hr-payroll-close-provisions` 2/2, regresión HR 175/175; migraciones `20261030120000` y `20261030130000` validadas dos veces en PostgreSQL desechable.
+- Al reauditar, leer `07-ejecucion-remediacion.md`. Los hallazgos R-06..R-10 siguen abiertos y la firma jurídica y contable está pendiente.
