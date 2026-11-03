@@ -2,8 +2,8 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS (integrado por sugerencia del orquestador): latencia, presupuestos de performance, anti-patrones, Server-Timing, Docker y despliegues. Usar para medir impacto de cambios, ejecutar guards de rendimiento, auditar latencias o revisar estándares de ejecución de Servicios.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, infraestructura Docker/Railway, benchmarks.
-version: 1.2.0
-updated_at: 2026-11-02
+version: 1.3.0
+updated_at: 2026-11-03
 ---
 
 # Experto en rendimiento — Equipo APEXOS
@@ -40,3 +40,4 @@ updated_at: 2026-11-02
 - **Evidencia.** `Server-Timing` por app/auth/tenant/autorización/Prisma y `x-request-id` en toda respuesta; sin ellos no hay medición atribuible.
 - **Escritura de volumen** solo en Nyvora QA, con identificador de corrida y limpieza selectiva.
 - **Rendimiento por ambiente en la Torre.** El tracker conserva hasta 120 muestras por ambiente y expone p50/p95/promedio/mínimo/máximo, tasa de error y serie. Las sondas remotas tienen `ENV_TIMEOUT_MS` propio y las consultas cloud `CLOUD_TIMEOUT_MS`; no usar la latencia local para juzgar QA o PROD. Un p95 alto sostenido debe contrastarse con el detalle técnico del ambiente, no con el promedio global.
+- **Sondas TCP con conexión y prueba propia.** Una sonda que abre un socket debe llamar a `connect` y validarse contra un servidor efímero en la suite. Sin esa prueba, un `timeout` del probe se confunde con una caída del servicio vigilado: la sonda Redis de la torre mide `+PONG` real y su test levanta un servidor TCP local.

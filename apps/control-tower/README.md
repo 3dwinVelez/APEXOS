@@ -36,6 +36,8 @@ Sondas independientes cada 10 segundos:
 
 Cada sonda remota degrada a `unknown` sin bloquear a las demás cuando falta configuración o credenciales. El panel no depende de los servicios vigilados: si APEXOS se cae, la torre sigue mostrando el estado y alertando.
 
+La sonda Redis abre su propio socket TCP contra `REDIS_HOST:REDIS_PORT` y espera `+PONG`; no reutiliza el cliente de la API, así que mide el puerto real y no el estado interno de la aplicación.
+
 ## Panel
 
 - **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a indicadores, servicios, alertas, rendimiento, nube y rama.
@@ -143,3 +145,4 @@ Si Chrome no está en la ruta estándar, define `CHROME_PATH`.
 - **Ramas sin remoto**: `git` no pudo ejecutar `ls-remote`; la torre muestra el estado local y una advertencia.
 - **Telegram no responde**: token inválido, modo `off`, chat no emparejado o bot sin mensajes iniciados.
 - **Puente fuera de línea**: la sesión de Qoder debe enviar latidos cada 30 segundos como máximo.
+- **Redis en `down` con el contenedor arriba**: la sonda exige `+PONG` real en `REDIS_HOST:REDIS_PORT`; confirma el puerto publicado (`55432` para PostgreSQL, `6379` para Redis) y que no haya otro proceso interceptando la conexión.

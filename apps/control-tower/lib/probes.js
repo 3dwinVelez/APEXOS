@@ -117,6 +117,7 @@ function redisPing(host, port, timeoutMs = 2500) {
     });
     socket.once("timeout", () => finish(false, `timeout ${timeoutMs}ms`));
     socket.once("error", (error) => finish(false, String(error.message || error)));
+    socket.connect(port, host);
   });
 }
 

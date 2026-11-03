@@ -2,6 +2,12 @@
 
 Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue semver: major cambia rol/contrato, minor agrega control o especialidad, patch corrige redacción o rutas.
 
+## 2026-11-03
+
+### Torre apex-control
+
+- `apexos-performance` — `1.3.0` — control nuevo: las sondas TCP deben llamar a `connect` y probarse contra un servidor efímero; un `timeout` del probe no se confunde con caída del servicio vigilado. Origen: la sonda Redis de la torre nunca conectaba y reportaba `down` con el contenedor arriba.
+
 ## 2026-11-02
 
 ### Registro y gobernanza
