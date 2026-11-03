@@ -16,6 +16,9 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
   - `equipo-apexos` — `2.5.0` — regla 17: la residencia declarada se respeta; no se ofrece promocionar bloques que el dueño no pidió desplegar.
   - `apexos-brief` — `2.7.0` — regla 20: todo brief declara la rama de destino y qué bloques no se promueven.
 - Brief actualizado: `docs/briefs/2026-11-03-torre-consolidado-empresas.md` (sección 10 separa la residencia del panel de la promoción pendiente del API).
+- `apexos-git-guardian` — `2.2.1` — regla 18 aclarada: un documento no rastreado del propietario entra al commit solo si él lo pide explícitamente y se escanea por secretos. El 2026-11-03 se pidió y se versionó `docs/design/APEXOS_CONTROL_PLANE.md` en `desarrollo` (431 líneas, cero secretos contra los valores de `.env.local`); la sección 3 del brief registra esa excepción.
+- `apexos-frontend` — `2.3.0` — control nuevo `documento-plano-control-referencia` (regla 13): el documento funcional del plano de control es la referencia de jerarquía visual (general → empresa → módulo) para cualquier panel nuevo y no se reescribe sin autorización del propietario.
+- `apexos-brief` — `2.7.1` — regla 20 extendida: un documento no rastreado del propietario entra al inventario solo con pedido explícito, y el brief lo registra con fecha y escaneo de secretos.
 
 ### Monitor consolidado por empresa, telemetría medida y acciones de intervención
 

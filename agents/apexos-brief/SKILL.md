@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.7.0
+version: 2.7.1
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -50,7 +50,7 @@ Antes de redactar, leer en este orden:
 18. **Archivos sin seguimiento fuera del inventario.** Un archivo que aparece en `git status` pero no se va a publicar (documento de diseño en curso, borrador de otro frente, artefacto local) se declara fuera de alcance por su ruta exacta y no entra en `expected_changes`. Al cerrar, `npm run agents:coverage -- --paths "<inventario exacto>"` se corre con las rutas de la intervención, no con el árbol completo, para que un archivo ajeno no exija bumpear a su agente dueño. Por qué: `docs/design/APEXOS_CONTROL_PLANE.md` sin seguimiento ruteaba a `apexos-frontend` y bloqueaba la cobertura de una intervención que nunca lo tocó.
 
 19. **Brief de monitor consolidado con cifras nombradas.** Un brief de un monitor por empresa declara, número a número, qué se mide en vivo (`/health` agregado, lectura por empresa, actividad), qué depende de credenciales o de un despliegue y qué queda bloqueado por el build desplegado, con su `commit`. El inventario incluye el arnés de certificación nuevo, la pantalla y la leyenda de estados, y la evidencia se publica en un commit separado que lleva el `commit` real del código en su metadato. Por qué: sin esa separación el usuario lee consumos inventados como si fueran medición y no sabe qué autorización falta.
-20. **Brief con rama de destino explícita.** Todo brief declara la rama donde reposa el cambio y qué bloques no se promueven. Una herramienta de puesto de trabajo (`apps/control-tower/**` desde 2026-11-03, solo `desarrollo`) se documenta con residencia fija y sin ítems de despliegue propios; la promoción que sí se pide es la de su dependencia de datos (el API con `apex-control` y la telemetría de `/health`). Por qué: un brief que dice "queda listo para promover" sobre una herramienta que no se despliega genera autorizaciones que el propietario nunca pidió.
+20. **Brief con rama de destino explícita.** Todo brief declara la rama donde reposa el cambio y qué bloques no se promueven. Una herramienta de puesto de trabajo (`apps/control-tower/**` desde 2026-11-03, solo `desarrollo`) se documenta con residencia fija y sin ítems de despliegue propios; la promoción que sí se pide es la de su dependencia de datos (el API con `apex-control` y la telemetría de `/health`). Por qué: un brief que dice "queda listo para promover" sobre una herramienta que no se despliega genera autorizaciones que el propietario nunca pidió. Un documento no rastreado del propietario entra al inventario solo con su pedido explícito, y la sección 3 del brief registra esa autorización con fecha y el escaneo de secretos que la acompañó.
 
 ## Checklist de intervención
 

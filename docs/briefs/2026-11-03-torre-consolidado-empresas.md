@@ -73,8 +73,8 @@ La torre de control deja de ser una lista de componentes: el dueño del ambiente
 
 ## 3. Fuera de alcance
 
-- `docs/design/APEXOS_CONTROL_PLANE.md`: documento de diseño del propietario, sin seguimiento y sin publicar; no se lee como contrato ni se modifica.
-- Promoción a `develop`/`main`, despliegue en Railway/Vercel/Supabase, cambio de infraestructura o de secretos. La conexión en vivo de QA y PROD depende de esas autorizaciones, no de este cambio.
+- `docs/design/APEXOS_CONTROL_PLANE.md`: documento de diseño del propietario. Queda fuera del inventario técnico de esta intervención (no se modifica su contenido); el 2026-11-03 el propietario autorizó expresamente versionarlo tal cual en `desarrollo`. Escaneo previo: sin secretos.
+- Promoción a `develop`/`main`, despliegue en Railway/Vercel/Supabase, cambio de infraestructura o de secretos. La torre de control reposa solo en `desarrollo` (decisión del propietario, sección 10); la promoción pendiente es la del API con `apex-control`, de la que depende la conexión en vivo de QA y PROD.
 - `apps/web/**`: ninguna pantalla de negocio se toca.
 - Esquema y migraciones: `/health` y `/api/v1/apex-control/*` no requieren columnas nuevas.
 - Escritura de datos por la torre: sigue siendo de solo lectura.

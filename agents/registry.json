@@ -84,9 +84,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.7.0",
+      "version": "2.7.1",
       "updated_at": "2026-11-03",
-      "sha256": "82c2d3f82a04921fa2a4f78a5901fc9ed1cdbce5213a283b6fa61fa2e71123e0",
+      "sha256": "e54289ad0fa44a3a1fdcf8ebf28a3f7508fa090ad73baaa95eda8070b6b99b3c",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -138,9 +138,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.2.0",
+      "version": "2.3.0",
       "updated_at": "2026-11-03",
-      "sha256": "3da15acf74368c09e090d547267a1d32574a1368f0c1c8357cf5ffc20d319d97",
+      "sha256": "dc21844bcde0de7142a768b1b8eab0186ed59e1bd698b2e1f732c968c3afa46a",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -155,15 +155,16 @@
         "homologacion-obligatoria",
         "tokens-sin-hex",
         "certificacion-ui-en-la-misma-intervencion",
-        "ruta-dashboard-en-centro-comandos"
+        "ruta-dashboard-en-centro-comandos",
+        "documento-plano-control-referencia"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.2.0",
+      "version": "2.2.1",
       "updated_at": "2026-11-03",
-      "sha256": "616ea41776bfef7a93ff576ffa78cb259da2312e23ecb73e38b533faf7ac8b5e",
+      "sha256": "bd6298ec1b805840a250cbe13d262aa9bb845dcbbe8fd20129a9a83702215268",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -314,7 +315,7 @@
       "name": "Reglas de agente",
       "path": "AGENTS.md",
       "updated_at": "2026-11-03",
-      "sha256": "2507adf5c81068ce8093f7e58483425c1605f8c2b598eb30bfd94783f43f2a10"
+      "sha256": "75c4f6641a9f52d8d8d5125f7256afe12c918a8bf448a7bd3b00e45b76e3ce6c"
     },
     {
       "name": "Flujo de ramas",
