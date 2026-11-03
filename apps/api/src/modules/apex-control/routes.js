@@ -1,7 +1,8 @@
 "use strict";
 
 const tenancy = require("../../middleware/tenancy");
-const { requirePermission, tenantHasModule } = require("../../middleware/rbac");
+const { requirePermission, requireExplicitPermission, tenantHasModule } = require("../../middleware/rbac");
+const { crossTenantEnabled } = require("./activity");
 
 const SOCKET_AUTH_TIMEOUT_MS = 8000;
 
@@ -92,6 +93,22 @@ async function apexControlRoutes(fastify, options = {}) {
   fastify.get("/apex-control/status", { preHandler: read }, (request) => service.getStatus(request.user?.tenant_id));
 
   fastify.get("/apex-control/modules", { preHandler: read }, (request) => service.getModules(request.user?.tenant_id));
+
+  fastify.get("/apex-control/activity", { preHandler: read }, (request) => service.getActivity(request.user?.tenant_id, request.query || {}));
+
+  // Lectura agregada entre empresas: apagada fuera de local y sin permiso
+  // explicito no se concede. La torre es su unico consumidor.
+  const readAllTenants = requireExplicitPermission("apex-control", "read_all_tenants");
+  const crossTenantGuard = async (request, reply) => {
+    if (!crossTenantEnabled()) {
+      return reply.code(403).send({
+        error: "La lectura entre empresas esta deshabilitada en este ambiente.",
+        code: "CROSS_TENANT_DESHABILITADO"
+      });
+    }
+  };
+
+  fastify.get("/apex-control/tenants", { preHandler: [crossTenantGuard, readAllTenants] }, (request) => service.getTenants(request.query || {}));
 
   fastify.get("/apex-control/events", { preHandler: read }, (request) => service.listEvents(request.user?.tenant_id, request.query || {}));
 

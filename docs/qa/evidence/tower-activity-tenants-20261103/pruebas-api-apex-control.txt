@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: la actividad diaria suma auditoria y eventos sin salir del tenant
+ok 1 - la actividad diaria suma auditoria y eventos sin salir del tenant
+  ---
+  duration_ms: 7.5296
+  type: 'test'
+  ...
+# Subtest: las consultas diarias llevan el tenant como parametro
+ok 2 - las consultas diarias llevan el tenant como parametro
+  ---
+  duration_ms: 0.9389
+  type: 'test'
+  ...
+# Subtest: la vista por empresa es cross-tenant y resume actividad, sesiones y GPS
+ok 3 - la vista por empresa es cross-tenant y resume actividad, sesiones y GPS
+  ---
+  duration_ms: 1.8837
+  type: 'test'
+  ...
+# Subtest: la allowlist de empresas limita la lectura cross-tenant
+ok 4 - la allowlist de empresas limita la lectura cross-tenant
+  ---
+  duration_ms: 2.1746
+  type: 'test'
+  ...
+# Subtest: cross-tenant queda apagado fuera de local salvo bandera explicita
+ok 5 - cross-tenant queda apagado fuera de local salvo bandera explicita
+  ---
+  duration_ms: 0.547
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/activity exige autenticacion y respeta el tenant
+ok 6 - GET /apex-control/activity exige autenticacion y respeta el tenant
+  ---
+  duration_ms: 749.8932
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/tenants se bloquea si la lectura entre empresas esta apagada
+ok 7 - GET /apex-control/tenants se bloquea si la lectura entre empresas esta apagada
+  ---
+  duration_ms: 17.0204
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/tenants responde agregados cuando esta habilitado
+ok 8 - GET /apex-control/tenants responde agregados cuando esta habilitado
+  ---
+  duration_ms: 35.3088
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/tenants rechaza sin permiso explicito
+ok 9 - GET /apex-control/tenants rechaza sin permiso explicito
+  ---
+  duration_ms: 28.9168
+  type: 'test'
+  ...
+# Subtest: mide registros y frescura con aislamiento de tenant
+ok 10 - mide registros y frescura con aislamiento de tenant
+  ---
+  duration_ms: 9.4207
+  type: 'test'
+  ...
+# Subtest: un modulo sin datos o sin modelo queda en unknown, nunca en ok
+ok 11 - un modulo sin datos o sin modelo queda en unknown, nunca en ok
+  ---
+  duration_ms: 2.5639
+  type: 'test'
+  ...
+# Subtest: una dependencia caida baja el modulo aunque el dato este fresco
+ok 12 - una dependencia caida baja el modulo aunque el dato este fresco
+  ---
+  duration_ms: 2.24
+  type: 'test'
+  ...
+# Subtest: adjunta incidentes abiertos de sus dependencias y respeta el limite
+ok 13 - adjunta incidentes abiertos de sus dependencias y respeta el limite
+  ---
+  duration_ms: 6.9996
+  type: 'test'
+  ...
+# Subtest: un error de medicion deja el modulo en unknown con evidencia
+ok 14 - un error de medicion deja el modulo en unknown con evidencia
+  ---
+  duration_ms: 2.2299
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/modules exige licencia y permiso de lectura
+ok 15 - GET /apex-control/modules exige licencia y permiso de lectura
+  ---
+  duration_ms: 766.483
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1623.9427

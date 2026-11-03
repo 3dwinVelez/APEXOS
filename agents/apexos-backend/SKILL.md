@@ -2,7 +2,7 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.1.1
+version: 2.2.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -47,6 +47,7 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
 14. **Pruebas reales.** `node:test` con Prisma falso inyectado en `require.cache`; `Prisma.join` anida `.values` y `tenantCache` exige `tenant.findUnique` en el fake. Una prueba que solo lee el código fuente no prueba el endpoint.
 15. **Torre externa fuera de la API.** `apps/control-tower/` es vigilancia de solo lectura; consume `/health` y `/api/v1/apex-control/status` sin cambiar su contrato y no se integra en `apps/api`.
 16. **Salud por módulo.** `GET /api/v1/apex-control/modules` es de solo lectura, exige `apex-control:read` y se ejecuta dentro de `runWithTenant`. Cada entrada del catálogo se contrasta con el delegado real de Prisma; si el modelo o la medición falla, el módulo queda `unavailable`/`unknown` con el error, nunca `ok`. La frescura se mide contra el campo y la expectativa declarados, y una dependencia caída degrada el módulo. Nunca se consulta un modelo sin filtro de tenant (salvo los globales declarados).
+17. **Actividad, conexiones y lectura entre empresas.** `GET /api/v1/apex-control/activity` agrega auditoría y eventos en buckets diarios exactos con `$queryRaw` sobre `"timestamp"` y `occurred_at`, siempre filtrados por el tenant del token; no se cuenta con `findMany` truncado. `GET /api/v1/apex-control/tenants` es la única lectura entre empresas: exige el permiso explícito `apex-control:read_all_tenants`, la guarda `APEX_CONTROL_CROSS_TENANT` (apagada por defecto fuera de local/development) y la allowlist opcional `APEX_CONTROL_CROSS_TENANT_TENANTS`. Si la guarda falla responde 403 `CROSS_TENANT_DESHABILITADO`; nunca degrada a un listado global silencioso.
 
 ## Checklist de intervención
 
@@ -69,6 +70,7 @@ Después:
 
 - [ ] Suite del dominio en verde (`node --test apps/api/test/<dominio>*.test.js`).
 - [ ] Prueba de aislamiento entre dos tenants cuando hay lectura o escritura nueva.
+- [ ] Actividad y empresas: bucket diario con rango, filtro de tenant y 403 de la guarda entre empresas cubiertos.
 - [ ] Muestra de `Server-Timing` y `x-request-id` del endpoint.
 - [ ] Control nuevo en este skill, bump semver, `updated_at` y `agents/CHANGELOG.md`.
 - [ ] `agents:sync`, `agents:check`, `agents:preflight` y `agents:coverage` en verde.
@@ -101,4 +103,6 @@ Después:
 - Declarar auditoría cuando Redis no estaba activo.
 - Arreglar solo el camino API y dejar el fallback Supabase roto.
 - Probar solo con un tenant y llamarlo aislamiento.
+- Contar actividad de varios días con `findMany` truncado o sin rango de fechas.
+- Abrir una vista entre empresas sin permiso explícito, sin guarda de ambiente o sin allowlist.
 - Mover la torre de vigilancia dentro de `apps/api`.

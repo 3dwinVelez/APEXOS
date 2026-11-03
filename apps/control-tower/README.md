@@ -41,12 +41,21 @@ La sonda Redis abre su propio socket TCP contra `REDIS_HOST:REDIS_PORT` y espera
 
 ## Panel
 
+Dos vistas conmutables desde la barra superior; la elección se recuerda en el navegador:
+
+- **Resumen**: indicadores grandes por ambiente, tarjetas compactas de módulo, alertas abiertas y empresas con actividad reciente. Ideal para ver el estado de un vistazo.
+- **Detalle**: todo lo anterior más el desglose técnico de sondas, rendimiento, nube, ramas, credenciales, trabajos, Telegram y eventos.
+
 - **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a indicadores, servicios, alertas, rendimiento, nube y rama.
+- **Indicadores**: salud, módulos, registros, actividad de hoy, conexiones, empresas, servicios caídos, alertas, p95, rama y fábrica Qoder.
 - **Servicios**: estado, latencia, detalle, impacto funcional, acción sugerida y detalle técnico expandible.
 - **Módulos**: resumen (operativos, degradados, caídos, sin dato, registros), agrupación por dominio y tarjetas con registros, última actividad, frescura esperada, servicios y alertas. El filtro **Solo problemas** deja a la vista únicamente lo degradado o caído. Si la API no entrega datos, el panel muestra el catálogo en `Sin dato` y lo declara, no lo pinta como sano.
+- **Actividad**: actividad de hoy, usuarios activos, sesiones, clientes WebSocket, pings GPS y última actividad, con serie diaria de auditoría y eventos. En Detalle se agregan las tablas de conexiones y de actividad diaria.
+- **Empresas**: conectividad por `tenant_id` (sesiones, usuarios, última actividad, pings GPS, estado). El Resumen muestra hasta 12 empresas; el Detalle conserva la tabla completa.
 - **Alertas**: incidentes por ambiente, con impacto funcional, acción y detalle técnico.
 - **Rendimiento API**: p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente.
 - **Nube**: Railway, Supabase y Vercel con estado, proyecto, servicios, deployments y métricas medibles, o la variable exacta que falta.
+- **Credenciales**: preparación de cada proveedor por ambiente (`develop`/`main`) con los nombres de las variables faltantes, nunca sus valores.
 - **Ramas**: relación local/remota de las tres ramas, con la rama del ambiente seleccionado resaltada.
 - **Trabajos Qoder**: creación, aprobación, rechazo y seguimiento de instrucciones.
 - **Telegram**: estado del canal, emparejamiento y simulación en dry-run.
@@ -74,6 +83,15 @@ El panel de módulos consume `GET /api/v1/apex-control/modules` con `Authorizati
 
 Los módulos no contaminan el puntaje general del ambiente: sus sondas son informativas y el resumen se calcula con las sondas de infraestructura. Un módulo caído sí genera alerta de severidad media.
 
+### Actividad, conexiones y empresas
+
+Con el mismo token por ambiente, la torre consulta:
+
+- `GET /api/v1/apex-control/activity`: actividad del tenant del token en los últimos `days` días, con buckets diarios de auditoría y eventos, usuarios activos, sesiones, clientes WebSocket y pings GPS. Filtrado por tenant; nunca agrega cifras de otras empresas.
+- `GET /api/v1/apex-control/tenants`: conectividad por `tenant_id` para la vista de empresas. Es una lectura entre empresas y por eso exige el permiso explícito `apex-control:read_all_tenants`, la guarda `APEX_CONTROL_CROSS_TENANT` (apagada por defecto fuera de local/development) y la allowlist opcional `APEX_CONTROL_CROSS_TENANT_TENANTS`. Si la guarda está cerrada, la API responde `403 CROSS_TENANT_DESHABILITADO` y la torre muestra la restricción con su motivo.
+
+Ambos paneles son informativos: no alteran el puntaje del ambiente. El Resumen limita la tabla de empresas a 12 filas y avisa que el Detalle conserva la tabla completa. Sin token, la sección indica `SIN_TOKEN` y el motivo en vez de mostrar ceros como si hubiera actividad.
+
 ### Métricas cloud
 
 Con los tokens de la sección siguiente, las tarjetas reportan:
@@ -89,7 +107,7 @@ Para la nube (solo lectura):
 - **Supabase**: `SUPABASE_ACCESS_TOKEN`; el `ref` de cada proyecto ya viene en `ENV_DEVELOP_SUPABASE_REF` y `ENV_MAIN_SUPABASE_REF`.
 - Para validar `auth/v1/health` con `200`, define además `ENV_DEVELOP_SUPABASE_ANON_KEY` y `ENV_MAIN_SUPABASE_ANON_KEY` (llave publica anon).
 
-Sin tokens, la tarjeta del proveedor queda en `Sin credenciales` con la variable que falta; nunca se inventa un estado `ok`. Los tokens no se muestran en el panel, la API, los eventos ni la evidencia.
+Sin tokens, la tarjeta del proveedor queda en `Sin credenciales` con la variable que falta; nunca se inventa un estado `ok`. Los tokens no se muestran en el panel, la API, los eventos ni la evidencia. La tarjeta **Credenciales** (solo en Detalle) resume cuántos proveedores están listos por ambiente y enumera únicamente los nombres de las variables faltantes.
 
 ## Telegram
 
@@ -143,11 +161,11 @@ npm run control:test
 npm run certify:control-tower:local
 ```
 
-`control:test` incluye las suites de módulos y cloud: catálogo sin token, API con Bearer, token inválido, 404, ambiente sin conexión, herencia de servicios caídos y el cálculo de métricas Railway/Vercel/Supabase con respuestas congeladas.
+`control:test` incluye las suites de módulos, cloud y actividad: catálogo sin token, API con Bearer, token inválido, 404, ambiente sin conexión, herencia de servicios caídos, el cálculo de métricas Railway/Vercel/Supabase con respuestas congeladas y, para actividad, la puerta entre empresas (`403 CROSS_TENANT_DESHABILITADO`), la ausencia de red sin token y el token local que no viaja a QA/PROD.
 
 La certificación levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, captura el panel con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/`.
 
-La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`.
+La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`. La de actividad, conexiones y empresas, con capturas de las vistas Resumen y Detalle, está en `docs/qa/evidence/tower-activity-tenants-20261103/`.
 
 Evidencia actual: `certification.json`, `tower-overview.png`, `tower-env-main.png`, `tower-api-down.png` y `telegram-outbox.json`.
 

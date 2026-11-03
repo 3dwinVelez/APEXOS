@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.1.1",
+      "version": "2.2.0",
       "updated_at": "2026-11-03",
-      "sha256": "79ae237437edf057ed36eab86415c3aea0962025f2ad7df848d05987df4e12d1",
+      "sha256": "529c716e0ce0a831065c7b7d33f378a98f3159cc13a11f61c1a16fa978fc72a7",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -75,15 +75,16 @@
         "rate-limit-por-tenant",
         "uploads-firma-real",
         "torre-fuera-api",
-        "salud-por-modulo"
+        "salud-por-modulo",
+        "actividad-por-empresa"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "updated_at": "2026-11-03",
-      "sha256": "c785cbfecc18b3e00b389ed911a4b51ca3baacd69155ac4a0b14e3a01880af31",
+      "sha256": "01fad3d51da9ed881d7c01efe112e877ad637d20545bfb5779b7bf583aee5a2b",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -100,7 +101,8 @@
         "criterios-observables",
         "gates-preqa-aprobacion",
         "sin-secretos",
-        "brief-salud-modulos-cloud"
+        "brief-salud-modulos-cloud",
+        "certificacion-ui-en-el-inventario"
       ]
     },
     {
@@ -129,9 +131,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "updated_at": "2026-11-03",
-      "sha256": "767d03538407d992d70c6b66333a284ccde41673ab4ee76b1e5be1d7982565f8",
+      "sha256": "e7264be49c49557361ead86fedad8687fc93d00b956ae04bb2bd24b3e6701e35",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -144,7 +146,8 @@
         "catalogo-componentes",
         "pantallas-referencia",
         "homologacion-obligatoria",
-        "tokens-sin-hex"
+        "tokens-sin-hex",
+        "certificacion-ui-en-la-misma-intervencion"
       ]
     },
     {
@@ -177,9 +180,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "updated_at": "2026-11-03",
-      "sha256": "eead8c2e234806da0a1c2c12e43c6a3a293ec8fb1ef5fe74f3a2566679674476",
+      "sha256": "bda2db2a09829ca7d7e64b39abd2fac84fc04c59a67ccf39301f86cbeb28069b",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -194,15 +197,16 @@
         "escritura-solo-nyvora-qa",
         "infra-con-autorizacion",
         "metricas-cloud-medibles",
-        "sondas-informativas"
+        "sondas-informativas",
+        "actividad-empresas-acotadas"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "updated_at": "2026-11-03",
-      "sha256": "63cb43da3fe4ae2f6a3323796965b19734f9853da3a9751486349bf746eb5cdb",
+      "sha256": "1b7b345d0b367eacf0341454e8dd9e47c87d80236b53f3fddf1c5134066d9001",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -221,15 +225,17 @@
         "evidencia-sin-pii",
         "harness-aislado",
         "pruebas-salud-modulos",
-        "limitacion-cloud-declarada"
+        "limitacion-cloud-declarada",
+        "certificacion-actividad-empresas",
+        "certificacion-contra-codigo-vigente"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "updated_at": "2026-11-03",
-      "sha256": "217519bc13758eeed7cd8ca3112f7a6f9bef7a169f55a7ca6954d0201931130d",
+      "sha256": "dda703a399e79a2734759a5f1447decd5e8ecd737073aece87160b91a9c60da1",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -247,7 +253,8 @@
         "torre-tokens-server-only",
         "hallazgos-con-reproduccion",
         "aislamiento-salud-modulos",
-        "token-por-ambiente"
+        "token-por-ambiente",
+        "lectura-entre-empresas"
       ]
     },
     {

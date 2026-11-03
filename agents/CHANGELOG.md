@@ -4,6 +4,23 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-03
 
+### Torre: actividad, conexiones y vistas Resumen/Detalle
+
+- `GET /api/v1/apex-control/activity` agrega buckets diarios de auditoría y eventos con `$queryRaw` y filtro de tenant; `GET /api/v1/apex-control/tenants` expone conectividad por empresa con permiso explícito, guarda de ambiente y allowlist, y `403 CROSS_TENANT_DESHABILITADO` cuando la guarda está cerrada.
+- `apexos-backend` — `2.2.0` — control nuevo `actividad-por-empresa`: buckets diarios exactos, filtro por tenant y lectura entre empresas con permiso explícito, guarda de ambiente y allowlist.
+- `apexos-seguridad` — `2.2.0` — control nuevo `lectura-entre-empresas`: la conectividad global solo se expone tras aprobación registrada, guarda apagada por defecto fuera de local/development y rechazo 403 probado.
+- `apexos-performance` — `2.2.0` — control nuevo `actividad-empresas-acotadas`: actividad con agregados por rango, panel informativo que no puntúa y vista Resumen limitada a 12 empresas con la tabla completa solo en Detalle.
+- `apexos-qa` — `2.2.0` — control nuevo `certificacion-actividad-empresas`: suite de actividad y empresas en la torre y la API, puerta cerrada 403, token local que no viaja a remotos y capturas reales de Resumen y Detalle.
+- Brief: `docs/briefs/2026-11-03-torre-actividad-empresas.md`; evidencia en `docs/qa/evidence/tower-activity-tenants-20261103/`.
+
+### Certificación UI fase uno
+
+- `apps/web/test/certify-ui-ux-phase-one-local.mjs` valida la navegación por `aria-current` y el panel vigente (`Clasificación y organización`), no por la etiqueta retirada `Existencias y dimensiones`; el conteo de controles con nombre excluye `aria-hidden="true"` y `type="hidden"`. Certificación 13/13 en `docs/qa/evidence/ui-ux-phase-one-revalidation-20261103/`.
+- `apexos-qa` — `2.2.0` — control nuevo `certificacion-contra-codigo-vigente`: un fallo por etiqueta o estructura se reproduce en navegador y se contrasta con el código antes de declarar regresión; el arnés obsoleto se corrige en la misma intervención.
+- `apexos-frontend` — `2.1.0` — control nuevo `certificacion-ui-en-la-misma-intervencion`: renombrar pasos, etiquetas o paneles visibles obliga a actualizar la certificación de navegador que los verifica.
+- `apexos-brief` — `2.2.0` — control nuevo `certificacion-ui-en-el-inventario`: todo cambio de etiquetas o pasos incluye el archivo de certificación UI en el inventario `A`/`M`.
+- Brief: `docs/briefs/2026-11-03-certificacion-ui-fase-uno.md`.
+
 ### Contexto vivo y frescura de agentes
 
 - Se agrega `npm run agents:preflight`: compara semver, `updated_at` y `sha256` contra `origin/desarrollo`, bloquea con `INTEGRAR_REMOTO`/`CONFLICTO` y rutea las rutas de la intervención a los agentes obligatorios.

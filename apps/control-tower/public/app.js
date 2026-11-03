@@ -43,6 +43,22 @@ const METRIC_LABEL = {
   unhealthy: "Con falla",
   last_status: "Último estado"
 };
+const TENANT_REASON = {
+  CROSS_TENANT_DESHABILITADO: "La lectura entre empresas está deshabilitada en este ambiente. La vista solo muestra la empresa del token; habilita APEX_CONTROL_CROSS_TENANT con autorización explícita para ver todas.",
+  PERMISO_DENEGADO: "El token de la torre no tiene el permiso explícito apex-control:read_all_tenants.",
+  MODULO_NO_HABILITADO: "APEX Control no está habilitado para la empresa del token.",
+  NO_DISPONIBLE: "El ambiente no expone la vista por empresa.",
+  SIN_CONEXION: "Sin conexión con la API para leer las empresas.",
+  SIN_TOKEN: "El ambiente no tiene token de lectura; la vista por empresa queda sin datos."
+};
+const TENANT_STATUS_LABEL = { ok: "Activa", degraded: "Sin señal", unknown: "Inactiva" };
+const ACTIVITY_REASON = {
+  SIN_TOKEN: "Este ambiente no tiene token de lectura de APEX Control; la actividad y las conexiones quedan sin dato.",
+  TOKEN_INVALIDO: "El token de la torre fue rechazado por la API; la actividad queda sin dato.",
+  NO_DISPONIBLE: "La API del ambiente no expone actividad por empresa.",
+  SIN_CONEXION: "Sin conexión con la API para leer actividad.",
+  SIMULACION: "Simulación activa: la actividad se omite."
+};
 
 const state = {
   data: null,
@@ -50,6 +66,7 @@ const state = {
   token: sessionStorage.getItem("towerToken") || "",
   environment: localStorage.getItem("towerEnvironment") || "local",
   moduleFilter: localStorage.getItem("towerModuleFilter") || "all",
+  view: localStorage.getItem("towerView") || "summary",
   source: null,
   loading: false,
   pending: false,
@@ -190,7 +207,7 @@ function renderCloudMetrics(metrics) {
     </div>`).join("")}</div>`;
 }
 
-function renderCloudCard(provider, data) {
+function renderCloudCard(provider, data, compact = false) {
   const status = data && data.configured === false ? "unknown" : pillClass(data && data.status ? data.status : "unknown");
   const statusLabel = data && data.configured === false ? "Sin credenciales" : (STATUS_LABEL[status] || status);
   const services = data && Array.isArray(data.services) ? data.services : [];
@@ -225,9 +242,9 @@ function renderCloudCard(provider, data) {
       <p class="cloud-detail">${escapeHtml(data && data.detail ? data.detail : "Sin datos del proveedor.")}</p>
       ${renderCloudMetrics(data && data.metrics)}
       ${projectName ? `<p class="cloud-detail">Servicios: ${services.length}${escapeHtml(region)}${escapeHtml(engine)}</p>` : ""}
-      ${services.length ? `<ul class="cloud-list">${services.slice(0, 4).map((service) => `<li>${escapeHtml(service.name || service.id)}</li>`).join("")}</ul>` : ""}
+      ${!compact && services.length ? `<ul class="cloud-list">${services.slice(0, 4).map((service) => `<li>${escapeHtml(service.name || service.id)}</li>`).join("")}</ul>` : ""}
       ${healthChips ? `<div class="cloud-service-health">${healthChips}</div>` : ""}
-      ${deploymentItems ? `<ul class="cloud-list">${deploymentItems}</ul>` : ""}
+      ${!compact && deploymentItems ? `<ul class="cloud-list">${deploymentItems}</ul>` : ""}
       ${data && data.error ? `<p class="cloud-detail">${escapeHtml(data.error)}</p>` : ""}
       ${data && data.healthError ? `<p class="cloud-detail">Salud: ${escapeHtml(data.healthError)}</p>` : ""}
       ${data && data.configured === false ? `<p class="cloud-hint">Configura ${escapeHtml(provider.hint)}.</p>` : ""}
@@ -275,9 +292,260 @@ function pillClass(status) {
   return ["ok", "degraded", "down", "unknown"].includes(status) ? status : "unknown";
 }
 
+function applyView() {
+  document.body.classList.toggle("view-summary", state.view === "summary");
+  document.body.classList.toggle("view-detail", state.view === "detail");
+  document.querySelectorAll("[data-view]").forEach((button) => {
+    const active = button.dataset.view === state.view;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
+function tile({ label, value, unit = "", foot = "", status = "unknown" }) {
+  return `
+    <article class="metric-tile status-${pillClass(status)}">
+      <p class="tile-label">${escapeHtml(label)}</p>
+      <p class="tile-value">${escapeHtml(value)}<span class="tile-unit">${escapeHtml(unit)}</span></p>
+      <p class="tile-foot">${escapeHtml(foot)}</p>
+    </article>`;
+}
+
+function activityBars(daily) {
+  const rows = Array.isArray(daily) ? daily : [];
+  if (!rows.length) return "";
+  const max = Math.max(1, ...rows.map((row) => Number(row.total) || 0));
+  return `
+    <div class="activity-bars" role="img" aria-label="Actividad diaria">
+      ${rows.map((row) => {
+        const height = Math.max(4, Math.round(((Number(row.total) || 0) / max) * 100));
+        return `
+          <div class="activity-bar" title="${escapeHtml(`${row.date}: ${row.total} actividades`)}">
+            <span class="bar-value">${escapeHtml(row.total)}</span>
+            <span class="bar-track"><span class="bar-fill" style="height:${height}%"></span></span>
+            <span class="bar-label">${escapeHtml(String(row.date).slice(5))}</span>
+          </div>`;
+      }).join("")}
+    </div>`;
+}
+
+function miniModuleCard(module) {
+  const status = pillClass(module.status);
+  const data = module.data || {};
+  const records = Number.isFinite(data.records) ? formatNumber(data.records) : "—";
+  const foot = data.last_activity_at ? `hace ${relative(data.last_activity_at).replace(/^hace /, "")}` : (module.detail || "Sin actividad");
+  const services = (module.services || [])
+    .map((service) => `<span class="service-dot status-${pillClass(service.status)}" title="${escapeHtml(service.key)}: ${escapeHtml(service.status)}">${escapeHtml(service.label || service.key)}</span>`)
+    .join("");
+  return `
+    <article class="mini-card status-${status}" title="${escapeHtml(module.detail || module.name)}">
+      <div class="mini-head">
+        <span class="dot" aria-hidden="true"></span>
+        <h4>${escapeHtml(module.name)}</h4>
+        <span class="pill ${status}">${escapeHtml(STATUS_LABEL[module.status] || module.status)}</span>
+      </div>
+      <p class="mini-value">${escapeHtml(records)}<small>registros</small></p>
+      <p class="mini-foot">${escapeHtml(foot)}</p>
+      ${services ? `<div class="module-services">${services}</div>` : ""}
+    </article>`;
+}
+
+function dataTable(headers, rows, emptyText) {
+  if (!rows.length) return `<p class="empty">${escapeHtml(emptyText)}</p>`;
+  return `
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+        <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderActivity(environment) {
+  const kpis = document.getElementById("activityKpis");
+  const body = document.getElementById("activityBody");
+  const meta = document.getElementById("activityMeta");
+  const payload = environment && environment.activity ? environment.activity : null;
+  const activity = payload && payload.activity ? payload.activity : null;
+
+  if (!activity) {
+    meta.textContent = environment && !environment.enabled ? "Ambiente desactivado" : "Sin datos";
+    kpis.innerHTML = "";
+    body.innerHTML = `<p class="empty">${escapeHtml(ACTIVITY_REASON[payload && payload.reason] || "La torre aún no tiene actividad para este ambiente.")}</p>`;
+    return;
+  }
+
+  const connections = activity.connections || {};
+  const gps = connections.gps || {};
+  const websocket = connections.websocket || {};
+  const daily = Array.isArray(activity.daily) ? activity.daily : [];
+  const company = activity.tenant && activity.tenant.name ? activity.tenant.name : "Empresa del token";
+
+  meta.textContent = `${company} · últimos ${activity.days} días · ${formatTime(payload.checkedAt)}`;
+  kpis.innerHTML = [
+    {
+      label: "Actividad hoy",
+      value: formatNumber(activity.activity.today),
+      foot: `${formatNumber(activity.activity.period)} en la ventana`,
+      status: activity.activity.today ? "ok" : "unknown"
+    },
+    {
+      label: "Usuarios activos",
+      value: formatNumber(activity.activity.active_users || 0),
+      foot: `${formatNumber(connections.distinct_users || 0)} con sesión abierta`,
+      status: activity.activity.active_users ? "ok" : "unknown"
+    },
+    {
+      label: "Sesiones activas",
+      value: formatNumber(connections.active_sessions || 0),
+      foot: connections.last_seen_at ? `última señal ${relative(connections.last_seen_at)}` : "sin señal",
+      status: connections.active_sessions ? "ok" : "unknown"
+    },
+    {
+      label: "WebSocket",
+      value: formatNumber(websocket.clients || 0),
+      foot: `${formatNumber(websocket.tenants || 0)} empresas · proceso`,
+      status: websocket.clients ? "ok" : "unknown"
+    },
+    {
+      label: "Pings GPS",
+      value: formatNumber(gps.pings_period || 0),
+      foot: gps.last_ping_at ? `último ${relative(gps.last_ping_at)}` : "sin pings",
+      status: gps.pings_period ? "ok" : "unknown"
+    },
+    {
+      label: "Última actividad",
+      value: activity.activity.last_activity_at ? relative(activity.activity.last_activity_at) : "nunca",
+      foot: activity.activity.last_activity_at ? formatTime(activity.activity.last_activity_at) : "sin auditoría ni eventos",
+      status: activity.activity.last_activity_at ? "ok" : "unknown"
+    }
+  ].map((entry) => tile(entry)).join("");
+
+  const connectionRows = [
+    ["Sesiones vigentes", `<b>${escapeHtml(formatNumber(connections.active_sessions || 0))}</b>`, escapeHtml(connections.last_seen_at ? formatTime(connections.last_seen_at) : "—")],
+    ["Usuarios distintos", escapeHtml(formatNumber(connections.distinct_users || 0)), escapeHtml(formatNumber(activity.activity.active_users || 0))],
+    ["WebSocket (proceso)", escapeHtml(formatNumber(websocket.clients || 0)), escapeHtml(`${formatNumber(websocket.tenants || 0)} empresas`)],
+    ["GPS en la ventana", escapeHtml(formatNumber(gps.pings_period || 0)), escapeHtml(gps.last_ping_at ? formatTime(gps.last_ping_at) : "—")]
+  ];
+
+  body.innerHTML = `
+    <div class="activity-chart">
+      <div class="chart-head">
+        <h3>Actividad diaria</h3>
+        <span class="muted small">auditoría + eventos · ${escapeHtml(formatNumber(activity.activity.period))} total</span>
+      </div>
+      ${activityBars(daily) || '<p class="empty">Sin actividad en la ventana.</p>'}
+    </div>
+    <div class="detail-only">
+      ${dataTable(["Conexión", "Valor", "Referencia"], connectionRows, "Sin conexiones registradas.")}
+      ${dataTable(
+        ["Día", "Auditoría", "Eventos", "Total"],
+        daily.map((row) => [
+          escapeHtml(row.date),
+          escapeHtml(formatNumber(row.audit || 0)),
+          escapeHtml(formatNumber(row.events || 0)),
+          `<b>${escapeHtml(formatNumber(row.total || 0))}</b>`
+        ]),
+        "Sin días en la ventana."
+      )}
+    </div>`;
+}
+
+function renderTenants(environment) {
+  const container = document.getElementById("tenants");
+  const meta = document.getElementById("tenantsMeta");
+  const payload = environment && environment.activity ? environment.activity : null;
+  const tenants = payload && payload.tenants ? payload.tenants : null;
+
+  if (!tenants) {
+    const reason = payload && payload.tenantsReason;
+    meta.textContent = reason ? "Lectura restringida" : "Sin datos";
+    container.innerHTML = `<p class="empty">${escapeHtml(TENANT_REASON[reason] || "La vista por empresa no está disponible en este ambiente.")}</p>`;
+    return;
+  }
+
+  const summary = tenants.summary || {};
+  meta.textContent = [
+    `${formatNumber(summary.total || 0)} empresas`,
+    `${formatNumber(summary.active || 0)} activas`,
+    `${formatNumber(summary.with_sessions || 0)} con sesión`,
+    tenants.restricted ? "alcance limitado por allowlist" : null,
+    formatTime(tenants.generated_at)
+  ].filter(Boolean).join(" · ");
+
+  const compact = state.view === "summary";
+  const headers = compact
+    ? ["Empresa", "Estado", "Usuarios", "Sesiones", "Actividad", "GPS"]
+    : ["Empresa", "Estado", "Plan", "Usuarios", "Sesiones", "Actividad", "Última actividad", "GPS", "Último ping"];
+  const all = tenants.tenants || [];
+  const visible = compact ? all.slice(0, 12) : all;
+  const rows = visible.map((tenant) => {
+    const status = pillClass(tenant.status);
+    const cells = [
+      `<span class="tenant-name">${escapeHtml(tenant.name || tenant.tenant_id)}</span><code class="tenant-id">${escapeHtml(tenant.tenant_id)}</code>`,
+      `<span class="pill ${status}">${escapeHtml(TENANT_STATUS_LABEL[tenant.status] || tenant.status)}</span>`,
+      escapeHtml(formatNumber(tenant.users_active || 0)),
+      escapeHtml(formatNumber(tenant.sessions_active || 0)),
+      escapeHtml(formatNumber(tenant.activity_period || 0)),
+      escapeHtml(formatNumber(tenant.gps_period || 0))
+    ];
+    if (compact) return cells;
+    return [
+      cells[0],
+      cells[1],
+      escapeHtml(tenant.plan || "—"),
+      cells[2],
+      cells[3],
+      cells[4],
+      escapeHtml(tenant.last_activity_at ? relative(tenant.last_activity_at) : "sin señal"),
+      cells[5],
+      escapeHtml(tenant.last_ping_at ? relative(tenant.last_ping_at) : "sin pings")
+    ];
+  });
+
+  container.innerHTML = dataTable(headers, rows, "Sin empresas para mostrar.")
+    + (compact && all.length > visible.length
+      ? `<p class="muted small tenant-note">Mostrando ${visible.length} de ${formatNumber(all.length)} empresas. Cambia a Detalle para la tabla completa.</p>`
+      : "");
+}
+
+function renderCredentials(credentials) {
+  const container = document.getElementById("credentials");
+  const meta = document.getElementById("credentialsMeta");
+  if (!Array.isArray(credentials) || !credentials.length) {
+    meta.textContent = "Sin reporte";
+    container.innerHTML = '<p class="empty">La torre no reporta credenciales cloud.</p>';
+    return;
+  }
+  const ready = credentials.filter((entry) => entry.configured).length;
+  meta.textContent = `${ready}/${credentials.length} listas · solo se muestran nombres de variables, nunca valores`;
+  container.innerHTML = credentials.map((entry) => {
+    const status = entry.configured ? "ok" : "unknown";
+    const environments = entry.environments || {};
+    const envChips = ["develop", "main"].map((id) => {
+      const value = environments[id];
+      const tone = value === true ? "ok" : "unknown";
+      return `<span class="pill ${tone}">${escapeHtml(id)}: ${value === true ? "configurado" : "pendiente"}</span>`;
+    }).join("");
+    return `
+      <article class="credential-card status-${status}">
+        <div class="credential-head">
+          <h3>${escapeHtml(entry.label || entry.provider)}</h3>
+          <span class="pill ${status}">${entry.configured ? "Listo" : entry.tokenConfigured ? "Parcial" : "Sin token"}</span>
+        </div>
+        <p class="credential-detail">${entry.tokenConfigured ? "Token de proveedor configurado." : "Token de proveedor sin configurar en la torre."}</p>
+        <div class="credential-envs">${envChips}</div>
+        ${entry.missing && entry.missing.length
+          ? `<p class="credential-missing">Falta: ${entry.missing.map((name) => `<code>${escapeHtml(name)}</code>`).join(", ")}</p>`
+          : '<p class="credential-ok">Todas las variables requeridas están presentes.</p>'}
+      </article>`;
+  }).join("");
+}
+
 function render() {
   const data = state.data;
   if (!data) return;
+  applyView();
   const snapshot = data.snapshot;
   const git = data.git;
   const telegram = data.telegram || {};
@@ -298,11 +566,14 @@ function render() {
 
   renderKpis(environment, data, git, openAlerts);
   renderModules(environment);
+  renderActivity(environment);
+  renderTenants(environment);
   renderChecks(snapshot, environment);
   renderPerformance(environment);
   renderCloud(environment);
   renderGit(git, data, environment);
   renderAlerts(alerts);
+  renderCredentials(data.config && data.config.cloud ? data.config.cloud.credentials : null);
   renderJobs(data.jobsList || [], data.jobs);
   renderTelegram(telegram, state.telegram);
   renderEvents(data.events || []);
@@ -348,12 +619,50 @@ function renderKpis(environment, data, git, openAlerts) {
   const performance = environment && environment.performance ? environment.performance : {};
   const branch = git && git.branches ? git.branches.find((item) => item.name === (environment && environment.branch)) : null;
   const relation = branch ? branch.relation : "unknown";
+  const modulePayload = environment && environment.modules ? environment.modules : null;
+  const moduleSummary = modulePayload && modulePayload.summary ? modulePayload.summary : null;
+  const activityPayload = environment && environment.activity ? environment.activity : null;
+  const activity = activityPayload && activityPayload.activity ? activityPayload.activity : null;
+  const connections = activity ? activity.connections || {} : {};
+  const websocket = connections.websocket || {};
+  const tenantsSummary = activityPayload && activityPayload.tenants ? activityPayload.tenants.summary : null;
+
   const tiles = [
     {
       label: `Salud ${environment ? environment.short : "general"}`,
       value: environment ? (STATUS_LABEL[environment.overall] || environment.overall) : "—",
       foot: environment ? `${summary.ok || 0}/${summary.total || 0} sondas operativas` : "Esperando primera sonda",
       status: environment ? environment.overall : "unknown"
+    },
+    {
+      label: "Módulos",
+      value: moduleSummary ? `${moduleSummary.ok || 0}/${moduleSummary.total || 0}` : "—",
+      foot: moduleSummary ? `${moduleSummary.degraded || 0} degradados · ${moduleSummary.down || 0} caídos` : "Sin datos por módulo",
+      status: moduleSummary ? (moduleSummary.down ? "down" : moduleSummary.degraded ? "degraded" : "ok") : "unknown"
+    },
+    {
+      label: "Registros",
+      value: moduleSummary && Number.isFinite(moduleSummary.records) ? formatNumber(moduleSummary.records) : "—",
+      foot: "medidos en los módulos",
+      status: "unknown"
+    },
+    {
+      label: "Actividad hoy",
+      value: activity ? formatNumber(activity.activity.today) : "—",
+      foot: activity ? `${formatNumber(activity.activity.period)} en ${activity.days} días` : "Sin datos de actividad",
+      status: activity && activity.activity.today ? "ok" : "unknown"
+    },
+    {
+      label: "Conexiones",
+      value: activity ? formatNumber(connections.active_sessions || 0) : "—",
+      foot: activity ? `${formatNumber(connections.distinct_users || 0)} usuarios · ${formatNumber(websocket.clients || 0)} WS` : "Sin datos de sesiones",
+      status: activity && connections.active_sessions ? "ok" : "unknown"
+    },
+    {
+      label: "Empresas",
+      value: tenantsSummary ? `${formatNumber(tenantsSummary.active || 0)}/${formatNumber(tenantsSummary.total || 0)}` : "—",
+      foot: tenantsSummary ? `${formatNumber(tenantsSummary.with_sessions || 0)} con sesión · ${formatNumber(tenantsSummary.with_gps || 0)} con GPS` : "Vista por empresa restringida",
+      status: tenantsSummary ? (tenantsSummary.active ? "ok" : "degraded") : "unknown"
     },
     {
       label: "Servicios caídos",
@@ -387,14 +696,7 @@ function renderKpis(environment, data, git, openAlerts) {
     }
   ];
 
-  document.getElementById("kpis").innerHTML = tiles
-    .map((tile) => `
-      <article class="kpi">
-        <p class="kpi-label">${escapeHtml(tile.label)}</p>
-        <p class="kpi-value status-text-${pillClass(tile.status)}">${escapeHtml(tile.value)}</p>
-        <p class="kpi-foot">${escapeHtml(tile.foot)}</p>
-      </article>`)
-    .join("");
+  document.getElementById("kpis").innerHTML = tiles.map((entry) => tile(entry)).join("");
 }
 
 function formatNumber(value) {
@@ -485,11 +787,13 @@ function renderModules(environment) {
     if (!groups.has(group)) groups.set(group, []);
     groups.get(group).push(module);
   }
+  const compact = state.view === "summary";
+  const card = compact ? miniModuleCard : moduleCard;
   container.innerHTML = Array.from(groups.entries())
     .map(([group, list]) => `
       <section class="module-group">
         <h3>${escapeHtml(GROUP_LABEL[group] || group)}</h3>
-        <div class="module-grid">${list.map(moduleCard).join("")}</div>
+        <div class="module-grid${compact ? " mini" : ""}">${list.map(card).join("")}</div>
       </section>`)
     .join("");
 }
@@ -497,6 +801,7 @@ function renderModules(environment) {
 function renderChecks(snapshot, environment) {
   const container = document.getElementById("checks");
   const checks = environmentChecks(snapshot, environment).filter((check) => check.source !== "modules");
+  container.classList.toggle("compact-list", state.view === "summary");
   document.getElementById("probeMeta").textContent = snapshot
     ? `${checks.length} sondas · ${snapshot.durationMs} ms · ${formatTime(snapshot.at)}`
     : "Sin datos";
@@ -506,6 +811,21 @@ function renderChecks(snapshot, environment) {
   }
   if (!checks.length) {
     container.innerHTML = `<p class="empty">Sin sondas para ${escapeHtml(environment ? environment.label : "el ambiente")}.</p>`;
+    return;
+  }
+  if (state.view === "summary") {
+    container.innerHTML = checks
+      .map((check) => {
+        const status = pillClass(check.status);
+        return `
+          <article class="check compact status-${status}" title="${escapeHtml(detailText(check.detail))}">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="compact-label">${escapeHtml(check.label)}</span>
+            <span class="pill ${status}">${escapeHtml(STATUS_LABEL[check.status] || check.status)}</span>
+            <span class="compact-detail">${escapeHtml(detailText(check.detail) || "Sin detalle")}</span>
+          </article>`;
+      })
+      .join("");
     return;
   }
   container.innerHTML = checks
@@ -542,6 +862,18 @@ function renderPerformance(environment) {
   const p95 = performance.p95;
   const tone = p95 == null ? "unknown" : p95 > 1500 || errorRate > 5 ? "down" : p95 > 600 || errorRate > 0 ? "degraded" : "ok";
   meta.textContent = `${performance.samples} muestras · ${formatTime(performance.last && performance.last.at)}`;
+  if (state.view === "summary") {
+    container.innerHTML = `
+      <div class="perf-head">
+        <div>
+          <p class="perf-value">${p95 != null ? escapeHtml(p95) : "—"}<small>ms p95 · ${escapeHtml(label)}</small></p>
+          <p class="perf-sub">${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"} · ${escapeHtml(errorRate)}% errores</p>
+        </div>
+        <span class="pill ${tone}">${escapeHtml(STATUS_LABEL[tone] || tone)}</span>
+      </div>
+      ${sparkline(performance.series)}`;
+    return;
+  }
   const stats = [
     { label: "p50", value: performance.p50, unit: "ms" },
     { label: "p95", value: p95, unit: "ms", tone },
@@ -583,7 +915,8 @@ function renderCloud(environment) {
   const configured = entries.filter((entry) => entry.data && entry.data.configured).length;
   const checkedAt = entries.map((entry) => entry.data && entry.data.checkedAt).filter(Boolean)[0] || null;
   meta.textContent = `${configured}/${entries.length} integraciones con credenciales${checkedAt ? ` · ${formatTime(checkedAt)}` : ""}`;
-  container.innerHTML = entries.map((entry) => renderCloudCard(entry.provider, entry.data)).join("");
+  const compact = state.view === "summary";
+  container.innerHTML = entries.map((entry) => renderCloudCard(entry.provider, entry.data, compact)).join("");
 }
 
 function renderGit(git, data, environment) {
@@ -616,6 +949,18 @@ function renderGit(git, data, environment) {
   }
   flow.innerHTML = flowParts.length ? flowParts.join("") : '<span class="muted small">Sin pares de ramas configurados.</span>';
 
+  if (state.view === "summary") {
+    branches.innerHTML = `<div class="branch-chips">${(git.branches || []).map((branch) => {
+      const relationClass = branch.relation === "in_sync" ? "ok" : branch.relation === "diverged" ? "degraded" : "unknown";
+      const selected = selectedBranch && branch.name === selectedBranch;
+      return `<span class="branch-chip ${branch.current ? "current" : ""} ${selected ? "selected" : ""}">
+        <span class="pill ${relationClass}">${escapeHtml(branch.name)} · ${escapeHtml(RELATION_LABEL[branch.relation] || branch.relation)}</span>
+      </span>`;
+    }).join("")}</div>`;
+    warnings.innerHTML = "";
+    return;
+  }
+
   branches.innerHTML = (git.branches || [])
     .map((branch) => {
       const relationClass = branch.relation === "in_sync" ? "ok" : branch.relation === "diverged" ? "warn" : "unknown";
@@ -646,6 +991,21 @@ function renderAlerts(alerts) {
   document.getElementById("btnAckAll").style.display = open ? "inline" : "none";
   if (!alerts.length) {
     container.innerHTML = '<p class="empty">Sin alertas registradas.</p>';
+    return;
+  }
+  if (state.view === "summary") {
+    const visible = alerts.filter((alert) => !alert.resolvedAt).slice(0, 6);
+    container.innerHTML = visible.length
+      ? visible.map((alert) => `
+        <article class="alert-row status-${pillClass(alert.status)}">
+          <span class="dot" aria-hidden="true"></span>
+          <div class="alert-row-body">
+            <p>${escapeHtml(alert.title || alert.component)}</p>
+            <span>${escapeHtml(formatTime(alert.at))}${alert.environment ? ` · ${escapeHtml(alert.environment)}` : ""}</span>
+          </div>
+          <span class="pill ${pillClass(alert.status)}">${escapeHtml(STATUS_LABEL[alert.status] || alert.status)}</span>
+        </article>`).join("")
+      : '<p class="empty">Sin alertas abiertas.</p>';
     return;
   }
   container.innerHTML = alerts
@@ -817,6 +1177,16 @@ async function action(button, task) {
 }
 
 document.addEventListener("click", (event) => {
+  const viewButton = event.target.closest("[data-view]");
+  if (viewButton) {
+    const view = viewButton.dataset.view;
+    if (view && view !== state.view) {
+      state.view = view;
+      localStorage.setItem("towerView", view);
+      render();
+    }
+    return;
+  }
   const environmentButton = event.target.closest("[data-env]");
   if (environmentButton) {
     const id = environmentButton.dataset.env;

@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.1.0
+version: 2.2.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -44,6 +44,8 @@ Antes de actuar, leer en este orden:
 13. **Evidencia limpia.** `docs/qa/evidence/<cambio>/` sin datos personales, tokens, rutas locales absolutas ni credenciales. Cada archivo debe poder reproducirse con el comando anotado.
 14. **Torre externa.** `npm run certify:control-tower:local` prueba los tres ambientes, el cambio a PROD con tarjetas cloud, el panel de rendimiento, el detalle técnico de sondas/alertas y la alerta con `environment`. `npm run control:test` es regresión unitaria y no reemplaza la certificación end-to-end.
 15. **Salud por módulo y métricas cloud.** La suite `node --test` de la torre cubre catálogo sin token, API con Bearer, 401/inválido, 404, ambiente sin conexión, herencia de servicios caídos y que el resumen de catálogo no puntúe (`informational`); la de la API cubre los 32 módulos, aislamiento por tenant y frescura. La evidencia incluye captura real de la torre en `docs/qa/evidence/torre-modulos-metricas-20261103/` y la salida de las suites. Si no hay credenciales cloud en el equipo, se declara la limitación: las métricas Railway/Vercel/Supabase quedan cubiertas por pruebas congeladas, no por lectura real.
+16. **Actividad, conexiones y empresas.** La suite `activity.test.js` de la torre cubre sin token (sin red), actividad y empresas con `Bearer`, `/tenants` restringido con `403 CROSS_TENANT_DESHABILITADO`, 401/404/sin conexión con su razón, que el token local no viaje a ambientes remotos y que la simulación omita la red. La suite de la API cubre los buckets diarios exactos, el aislamiento por tenant de `/activity` y la puerta de `/tenants`. La evidencia exige captura real de las vistas **Resumen** y **Detalle** de la torre en `docs/qa/evidence/tower-activity-tenants-20261103/`, la salida de ambas suites y el conteo de empresas devuelto por la lectura real. Por qué: una tabla entre empresas sin puerta de permiso es una fuga, y una vista visual solo validada por unit tests no prueba el panel.
+17. **Certificación contra el código vigente.** Cuando una certificación falla por una etiqueta, paso o estructura, primero se reproduce en navegador y se contrasta con el código actual. Si la pantalla cambió de forma legítima, se actualiza el arnés en la misma intervención; no se declara regresión de producto ni se relaja el check. Los conteos de accesibilidad excluyen controles `aria-hidden="true"` y `type="hidden"` porque no son superficie operable. Por qué: `certify-ui-ux-phase-one-local` siguió esperando `Existencias y dimensiones`, retirada en `378115ef`, y falló contra una pantalla correcta hasta el 2026-11-03.
 
 ## Checklist de intervención
 
@@ -60,6 +62,8 @@ Durante:
 - [ ] Errores esperados (401/403/409/422/429) verificados.
 - [ ] Aislamiento entre dos tenants comprobado cuando hay datos.
 - [ ] UI en navegador y ambos temas cuando aplica.
+- [ ] Vistas Resumen y Detalle capturadas cuando el cambio separa resumen visual de detalle técnico.
+- [ ] Lectura entre empresas justificada y probada con la puerta cerrada (403) y abierta.
 - [ ] Fallo del arnés corregido en el arnés, no maquillado.
 
 Después:
@@ -98,4 +102,6 @@ Después:
 - Ampliar el alcance del manifiesto para que pase el diff.
 - Certificar solo una capacidad protegida de Servicios.
 - Declarar UI validada sin abrir el navegador.
+- Declarar la vista Resumen o Detalle validada sin captura real de cada una.
+- Aprobar una tabla entre empresas sin probar la puerta de permiso cerrada.
 - Guardar evidencia con tokens, rutas locales o datos personales.

@@ -219,6 +219,57 @@ function resolveTelegramMode(telegram) {
   return telegram.mode;
 }
 
+function credentialReport(config) {
+  const cloud = config.cloud;
+  const environments = config.environments || {};
+  const railwayEnvs = {};
+  const supabaseEnvs = {};
+  const vercelEnvs = {};
+  const railwayMissing = [];
+  const supabaseMissing = [];
+  const vercelMissing = [];
+
+  for (const id of ["develop", "main"]) {
+    const environment = environments[id] || {};
+    railwayEnvs[id] = Boolean(environment.railwayProjectId);
+    supabaseEnvs[id] = Boolean(environment.supabaseRef);
+    vercelEnvs[id] = Boolean(environment.vercelProjectId);
+    if (!environment.railwayProjectId) railwayMissing.push(`ENV_${id.toUpperCase()}_RAILWAY_PROJECT_ID`);
+    if (!environment.supabaseRef) supabaseMissing.push(`ENV_${id.toUpperCase()}_SUPABASE_REF`);
+    if (!environment.vercelProjectId) vercelMissing.push(`ENV_${id.toUpperCase()}_VERCEL_PROJECT_ID`);
+  }
+  if (!cloud.railway.token) railwayMissing.unshift("RAILWAY_TOKEN");
+  if (!cloud.supabase.accessToken) supabaseMissing.unshift("SUPABASE_ACCESS_TOKEN");
+  if (!cloud.vercel.token) vercelMissing.unshift("VERCEL_TOKEN");
+
+  return [
+    {
+      provider: "railway",
+      label: "Railway",
+      tokenConfigured: Boolean(cloud.railway.token),
+      environments: { local: "not_required", ...railwayEnvs },
+      missing: railwayMissing,
+      configured: Boolean(cloud.railway.token) && Object.values(railwayEnvs).some(Boolean)
+    },
+    {
+      provider: "supabase",
+      label: "Supabase",
+      tokenConfigured: Boolean(cloud.supabase.accessToken),
+      environments: { local: "not_required", ...supabaseEnvs },
+      missing: supabaseMissing,
+      configured: Boolean(cloud.supabase.accessToken) && Object.values(supabaseEnvs).some(Boolean)
+    },
+    {
+      provider: "vercel",
+      label: "Vercel",
+      tokenConfigured: Boolean(cloud.vercel.token),
+      environments: { local: "not_required", ...vercelEnvs },
+      missing: vercelMissing,
+      configured: Boolean(cloud.vercel.token) && Object.values(vercelEnvs).some(Boolean)
+    }
+  ];
+}
+
 function safeConfig(config) {
   return {
     version: config.version,
@@ -255,7 +306,8 @@ function safeConfig(config) {
     cloud: {
       railwayConfigured: Boolean(config.cloud.railway.token),
       vercelConfigured: Boolean(config.cloud.vercel.token),
-      supabaseConfigured: Boolean(config.cloud.supabase.accessToken)
+      supabaseConfigured: Boolean(config.cloud.supabase.accessToken),
+      credentials: credentialReport(config)
     }
   };
 }
@@ -265,5 +317,6 @@ module.exports = {
   DEFAULT_REPO_ROOT,
   loadConfig,
   safeConfig,
+  credentialReport,
   loadEnvFile
 };

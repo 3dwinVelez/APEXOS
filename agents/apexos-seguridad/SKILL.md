@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.1.0
+version: 2.2.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -42,6 +42,7 @@ Antes de actuar, leer en este orden:
 11. **Solo lectura por defecto.** No se cambian autenticación, permisos, RLS, configuración global ni secretos sin instrucción explícita del propietario. El dictamen se entrega; la implementación la hace el dueño del cambio.
 12. **Torre externa.** `RAILWAY_TOKEN`, `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN` y llaves anon viven solo en `apps/control-tower/.env.local`; `safeConfig` no los expone y sin token la sonda queda `unknown`, nunca `ok` inventado. Errores y evidencias no deben arrastrar el valor del token.
 13. **Aislamiento en la salud por módulo.** El endpoint de módulos filtra por el tenant del usuario autenticado (más los globales declarados) y no agrega cifras entre tenants. La torre usa un JWT por ambiente (`ENV_LOCAL_APEX_TOKEN`, `ENV_DEVELOP_APEX_TOKEN`, `ENV_MAIN_APEX_TOKEN`) y jamás reutiliza el token local contra QA ni PROD; sin token propio el ambiente remoto queda `SIN_TOKEN`/`unknown`. Los tokens de sesión usados en `.env.local` no se versionan, no se registran en logs ni en evidencia.
+14. **Lectura entre empresas aprobada y acotada.** La conectividad por empresa solo se expone en `GET /api/v1/apex-control/tenants`, de solo lectura, con permiso explícito `apex-control:read_all_tenants`, guarda `APEX_CONTROL_CROSS_TENANT` apagada por defecto fuera de local/development y allowlist opcional `APEX_CONTROL_CROSS_TENANT_TENANTS`. La aprobación del propietario se registra en el brief; cualquier otra agregación entre tenants sigue prohibida. La actividad del tenant actual (`/activity`) queda filtrada por el token y no se mezcla con la vista global.
 
 ## Checklist de intervención
 
@@ -58,6 +59,7 @@ Durante:
 - [ ] Cada endpoint nuevo o modificado tiene permiso explícito y tenant.
 - [ ] Sin secretos, tokens ni datos personales en código, logs o fixtures.
 - [ ] Errores no filtran trazas, SQL ni rutas internas.
+- [ ] Cross-tenant justificado en el brief, con guarda de ambiente, permiso explícito, allowlist y rechazo 403 probado.
 - [ ] Dependencias nuevas justificadas.
 
 Después:
@@ -97,3 +99,5 @@ Después:
 - Reportar un hallazgo sin reproducción ni archivo/línea.
 - Ignorar archivos nuevos sin rastrear al buscar secretos.
 - Exponer el token cloud en una tarjeta o log de la torre.
+- Habilitar la vista entre empresas por defecto en todos los ambientes.
+- Presentar una agregación global como "resumen del sistema" cuando en realidad mezcla tenants.

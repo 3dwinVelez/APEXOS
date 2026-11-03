@@ -8,6 +8,7 @@ const { cloudForEnvironment } = require("./cloud");
 const { diagnoseCheck } = require("./diagnostics");
 const { redact } = require("./security");
 const { fetchModules, enrichWithChecks, moduleChecks } = require("./modules");
+const { fetchActivity, activityChecks } = require("./activity");
 
 const DEFAULT_MAX_BYTES = 256 * 1024;
 const ENVIRONMENT_ORDER = ["local", "develop", "main"];
@@ -364,6 +365,15 @@ async function collectModules(config, environment, checks) {
   }
 }
 
+async function collectActivity(config, environment) {
+  try {
+    const payload = await fetchActivity(config, environment, { httpRequest });
+    return { payload, checks: activityChecks(payload, environment) };
+  } catch (error) {
+    return { payload: null, checks: [] };
+  }
+}
+
 async function runProbes(config) {
   const startedAt = Date.now();
   const checks = await Promise.all([
@@ -378,6 +388,8 @@ async function runProbes(config) {
   checks.push(...(await probeApexControl(config)));
   const modules = await collectModules(config, config.environments.local, checks);
   if (modules.payload) checks.push(...modules.checks);
+  const activity = await collectActivity(config, config.environments.local);
+  if (activity.checks.length) checks.push(...activity.checks);
   checks.sort((left, right) => {
     if (left.critical !== right.critical) return left.critical ? -1 : 1;
     return left.id.localeCompare(right.id);
@@ -392,6 +404,7 @@ async function runProbes(config) {
     summary,
     checks,
     modules: modules.payload,
+    activity: activity.payload,
     metrics: apiCheck ? [{
       environment: "local",
       endpoint: "/health",
@@ -455,6 +468,7 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
       metrics,
       enabled: false,
       modules: null,
+      activity: null,
       cloud: {
         railway: cloudPlaceholder("railway", false, "Ambiente desactivado."),
         vercel: cloudPlaceholder("vercel", false, "Ambiente desactivado."),
@@ -482,7 +496,15 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
     // La simulacion alimenta el panel de modulos con el catalogo, pero no crea
     // sondas: no hay evidencia real que puntuar.
     const simulatedModules = await collectModules(config, environment, checks);
-    return { checks, metrics, enabled: true, modules: simulatedModules.payload, cloud: simulatedCloud(config, environment) };
+    const simulatedActivity = await collectActivity(config, environment);
+    return {
+      checks,
+      metrics,
+      enabled: true,
+      modules: simulatedModules.payload,
+      activity: simulatedActivity.payload,
+      cloud: simulatedCloud(config, environment)
+    };
   }
 
   const apiEndpoint = `${environment.apiBaseUrl}/health`;
@@ -579,10 +601,13 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
   const modules = await collectModules(config, environment, checks);
   if (modules.payload) checks.push(...modules.checks);
 
-  return { checks, metrics, enabled: true, modules: modules.payload, cloud };
+  const activity = await collectActivity(config, environment);
+  if (activity.checks.length) checks.push(...activity.checks);
+
+  return { checks, metrics, enabled: true, modules: modules.payload, activity: activity.payload, cloud };
 }
 
-function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null) {
+function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null, activity = null) {
   return {
     id: environment.id,
     label: environment.label,
@@ -594,6 +619,7 @@ function buildEnvironmentMeta(config, environment, checks, cloud = null, modules
     overall: environment.enabled ? computeOverall(checks) : "unknown",
     summary: computeSummary(checks),
     modules: modules || null,
+    activity: activity || null,
     cloud
   };
 }
@@ -624,9 +650,9 @@ async function runAllProbes(config, { fetchImpl = global.fetch } = {}) {
     ...main.checks
   ].map(diagnoseCheck));
   const environments = {
-    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules),
-    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules),
-    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules)
+    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules, local.activity),
+    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules, develop.activity),
+    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules, main.activity)
   };
   return {
     at: new Date().toISOString(),

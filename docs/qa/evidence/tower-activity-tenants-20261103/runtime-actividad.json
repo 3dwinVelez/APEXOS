@@ -1,0 +1,211 @@
+{
+  "generated_at": "2026-11-03T16:46:23.536Z",
+  "source": "tower /api/status (snapshot)",
+  "environments": {
+    "local": {
+      "overall": "degraded",
+      "summary": {
+        "ok": 10,
+        "degraded": 1,
+        "down": 0,
+        "unknown": 2,
+        "total": 13
+      },
+      "modules": {
+        "total": 32,
+        "ok": 1,
+        "degraded": 14,
+        "down": 0,
+        "unknown": 17,
+        "records": 8425
+      },
+      "activity": {
+        "generated_at": "2026-11-03T16:46:19.923Z",
+        "scope": "tenant",
+        "days": 7,
+        "tenant": {
+          "id": "c0d70738-9098-4b55-8f62-7aefa80d14ad",
+          "name": "Demo APEX",
+          "plan": "crown",
+          "active": true
+        },
+        "daily": [
+          {
+            "date": "2026-10-28",
+            "audit": 2,
+            "events": 0,
+            "total": 2
+          },
+          {
+            "date": "2026-10-29",
+            "audit": 3,
+            "events": 0,
+            "total": 3
+          },
+          {
+            "date": "2026-10-30",
+            "audit": 0,
+            "events": 0,
+            "total": 0
+          },
+          {
+            "date": "2026-10-31",
+            "audit": 0,
+            "events": 0,
+            "total": 0
+          },
+          {
+            "date": "2026-11-01",
+            "audit": 0,
+            "events": 0,
+            "total": 0
+          },
+          {
+            "date": "2026-11-02",
+            "audit": 0,
+            "events": 0,
+            "total": 0
+          },
+          {
+            "date": "2026-11-03",
+            "audit": 0,
+            "events": 0,
+            "total": 0
+          }
+        ],
+        "activity": {
+          "today": 0,
+          "period": 5,
+          "last_activity_at": "2026-10-29T14:47:06.753Z",
+          "last_activity_age_minutes": 7319,
+          "active_users": 25
+        },
+        "connections": {
+          "active_sessions": 381,
+          "distinct_users": 31,
+          "last_seen_at": "2026-11-03T16:40:58.016Z",
+          "last_seen_age_minutes": 5,
+          "websocket": {
+            "clients": 0,
+            "tenants": 0,
+            "scope": "process"
+          },
+          "gps": {
+            "pings_period": 0,
+            "last_ping_at": null,
+            "last_ping_age_minutes": null
+          }
+        }
+      },
+      "connections": null,
+      "tenants": {
+        "total": 200,
+        "active": 200,
+        "with_activity": 1,
+        "with_sessions": 104,
+        "with_gps": 0
+      },
+      "activity_source": "api",
+      "activity_reason": null,
+      "cloud": null
+    },
+    "develop": {
+      "overall": "ok",
+      "summary": {
+        "ok": 3,
+        "degraded": 1,
+        "down": 0,
+        "unknown": 2,
+        "total": 6
+      },
+      "modules": {
+        "total": 32,
+        "ok": 0,
+        "degraded": 0,
+        "down": 0,
+        "unknown": 32
+      },
+      "activity": null,
+      "connections": null,
+      "tenants": null,
+      "activity_source": "catalog",
+      "activity_reason": "SIN_TOKEN",
+      "cloud": {
+        "railway": "ok",
+        "supabase": "unknown",
+        "vercel": "unknown"
+      }
+    },
+    "main": {
+      "overall": "ok",
+      "summary": {
+        "ok": 3,
+        "degraded": 1,
+        "down": 0,
+        "unknown": 2,
+        "total": 6
+      },
+      "modules": {
+        "total": 32,
+        "ok": 0,
+        "degraded": 0,
+        "down": 0,
+        "unknown": 32
+      },
+      "activity": null,
+      "connections": null,
+      "tenants": null,
+      "activity_source": "catalog",
+      "activity_reason": "SIN_TOKEN",
+      "cloud": {
+        "railway": "ok",
+        "supabase": "unknown",
+        "vercel": "unknown"
+      }
+    }
+  },
+  "credentials": [
+    {
+      "provider": "railway",
+      "label": "Railway",
+      "tokenConfigured": true,
+      "environments": {
+        "local": "not_required",
+        "develop": true,
+        "main": true
+      },
+      "missing": [],
+      "configured": true
+    },
+    {
+      "provider": "supabase",
+      "label": "Supabase",
+      "tokenConfigured": false,
+      "environments": {
+        "local": "not_required",
+        "develop": true,
+        "main": true
+      },
+      "missing": [
+        "SUPABASE_ACCESS_TOKEN"
+      ],
+      "configured": false
+    },
+    {
+      "provider": "vercel",
+      "label": "Vercel",
+      "tokenConfigured": false,
+      "environments": {
+        "local": "not_required",
+        "develop": false,
+        "main": false
+      },
+      "missing": [
+        "VERCEL_TOKEN",
+        "ENV_DEVELOP_VERCEL_PROJECT_ID",
+        "ENV_MAIN_VERCEL_PROJECT_ID"
+      ],
+      "configured": false
+    }
+  ]
+}

@@ -20,6 +20,10 @@
       </div>
     </div>
     <div class="topbar-side">
+      <div class="view-switch" role="group" aria-label="Vista del panel">
+        <button class="view-btn active" type="button" data-view="summary" aria-pressed="true">Resumen</button>
+        <button class="view-btn" type="button" data-view="detail" aria-pressed="false">Detalle</button>
+      </div>
       <span id="overallPill" class="pill unknown">Conectando</span>
       <span id="lastUpdate" class="muted small">Sin lecturas</span>
       <div class="actions">
@@ -47,6 +51,29 @@
       </header>
       <div id="moduleSummary" class="module-summary"></div>
       <div id="modules" class="modules"></div>
+    </section>
+
+    <section class="panel span-12" aria-labelledby="activityTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Registros, actividad y conexiones</p>
+          <h2 id="activityTitle">Actividad operativa</h2>
+        </div>
+        <span id="activityMeta" class="muted small"></span>
+      </header>
+      <div id="activityKpis" class="tile-grid"></div>
+      <div id="activityBody" class="activity-body"></div>
+    </section>
+
+    <section class="panel span-12" aria-labelledby="tenantsTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Conectividad y actividad por empresa</p>
+          <h2 id="tenantsTitle">Empresas (tenant)</h2>
+        </div>
+        <span id="tenantsMeta" class="muted small"></span>
+      </header>
+      <div id="tenants" class="tenants"></div>
     </section>
 
     <section class="panel span-8" aria-labelledby="servicesTitle">
@@ -106,7 +133,18 @@
       <div id="gitWarnings" class="warnings"></div>
     </section>
 
-    <section class="panel span-5" aria-labelledby="jobsTitle">
+    <section class="panel span-12 detail-only" aria-labelledby="credentialsTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Estado de integraciones</p>
+          <h2 id="credentialsTitle">Credenciales cloud</h2>
+        </div>
+        <span id="credentialsMeta" class="muted small"></span>
+      </header>
+      <div id="credentials" class="credentials"></div>
+    </section>
+
+    <section class="panel span-5 detail-only" aria-labelledby="jobsTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Fábrica de desarrollo</p>
@@ -130,7 +168,7 @@
       <div id="jobs" class="jobs"></div>
     </section>
 
-    <section class="panel span-5" aria-labelledby="telegramTitle">
+    <section class="panel span-5 detail-only" aria-labelledby="telegramTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Canal directo</p>
@@ -155,7 +193,7 @@
       </div>
     </section>
 
-    <section class="panel span-7" aria-labelledby="eventsTitle">
+    <section class="panel span-7 detail-only" aria-labelledby="eventsTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Trazabilidad</p>

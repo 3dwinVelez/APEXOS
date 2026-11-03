@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.1.0
+version: 2.2.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -43,6 +43,7 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
 9. **Certificación local aislada.** El arnés vive en `%TEMP%` (puertos 3310/3311), requiere precalentamiento y `next dev` se autocierra por memoria. Un fallo de arranque del arnés es del arnés, no regresión de producto; distinguirlo antes de reportar.
 10. **Infraestructura con autorización.** Docker, Railway, Supabase, despliegues y cambios de variables de entorno requieren autorización explícita e independiente. Este experto diagnostica y propone; no ejecuta.
 11. **Métricas sin contaminar el puntaje.** El panel de módulos muestra registros, frescura y servicios por módulo mediante sondas `informational`, que no alteran el resumen del ambiente; solo el resumen por ambiente (una sonda por ambiente) pondera. Las tarjetas cloud reportan métricas medibles: Railway (servicios, despliegues, fallidos, antigüedad y estado del último), Vercel (despliegues, listos, fallidos, antigüedad y duración media calculada con `buildingAt`/`ready`), Supabase (`/health?services=` por servicio y versión de base). Sin credenciales o con error de autenticación la tarjeta queda `unknown`, nunca `ok`; una sonda lenta no se reintenta en bucle dentro del mismo ciclo.
+12. **Actividad y empresas acotadas.** La actividad diaria se lee con agregados (`_count`/`_max` y buckets por SQL crudo acotado a `days`), nunca con `findMany` sobre auditoría o eventos. El panel de actividad y empresas es igualmente `informational`: no altera el puntaje del ambiente. En la vista **Resumen** la tabla entre empresas se limita a 12 filas con su nota de "Cambia a Detalle"; el detalle conserva la tabla completa. Por qué: volcar cientos de empresas en la vista rápida alarga el render y vuelve ilegible el estado general.
 
 ## Checklist de intervención
 
@@ -59,6 +60,7 @@ Durante:
 - [ ] `Server-Timing` y `x-request-id` capturados en la muestra.
 - [ ] Consultas y planes revisados cuando hay N+1 o transacción larga.
 - [ ] Escrituras de volumen solo en Nyvora QA con id de corrida.
+- [ ] Consultas de actividad con agregados acotados por rango y sin volcar tablas completas.
 - [ ] Sin cambios de infraestructura no autorizados.
 
 Después:
@@ -97,4 +99,5 @@ Después:
 - Aceptar una sonda que solo abre el socket y nunca confirma respuesta.
 - Ignorar errores del benchmark porque el p95 "está bien".
 - Mezclar muestras de varios ambientes en una misma serie.
+- Volcar una tabla entre empresas sin límite en la vista resumen.
 - Desplegar o cambiar infraestructura como parte de una medición.
