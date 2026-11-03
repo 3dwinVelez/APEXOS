@@ -1,0 +1,2 @@
+[agents] apexos-brief: contenido modificado sin bump de version (2.0.0 -> 2.0.0, no avanza)
+EXIT=1

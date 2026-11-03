@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { isContractV2, validateContractText } = require('./lib/agent-contract');
+const { versionBumpError } = require('./lib/agent-versioning');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const REGISTRY_PATH = path.join(ROOT, 'agents', 'registry.json');
@@ -101,13 +102,20 @@ function syncAgent(entry) {
     fail(`${entry.source}: updated_at obligatorio en formato YYYY-MM-DD`);
   }
   validateAgent(source, entry.source);
+  const nextSha = sha256(source);
+  const bumpError = versionBumpError({
+    name: entry.name,
+    previous: entry,
+    next: { version: frontmatter.version, sha256: nextSha }
+  });
+  if (bumpError) fail(bumpError);
   fs.mkdirSync(path.dirname(mirror), { recursive: true });
   fs.copyFileSync(source, mirror);
   return {
     ...entry,
     version: frontmatter.version,
     updated_at: frontmatter.updated_at,
-    sha256: sha256(source)
+    sha256: nextSha
   };
 }
 
