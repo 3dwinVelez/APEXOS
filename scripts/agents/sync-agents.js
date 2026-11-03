@@ -14,8 +14,12 @@ function fail(message) {
   process.exit(1);
 }
 
+function readNormalized(filePath) {
+  return Buffer.from(fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n'), 'utf8');
+}
+
 function sha256(filePath) {
-  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+  return crypto.createHash('sha256').update(readNormalized(filePath)).digest('hex');
 }
 
 function parseFrontmatter(filePath) {
@@ -147,7 +151,7 @@ function checkRegistry() {
       errors.push(`espejo inexistente: ${entry.mirror} (corre npm run agents:sync)`);
       continue;
     }
-    if (!fs.readFileSync(source).equals(fs.readFileSync(mirror))) {
+    if (!readNormalized(source).equals(readNormalized(mirror))) {
       errors.push(`espejo desincronizado: ${entry.mirror}`);
     }
     const frontmatter = parseFrontmatter(source);

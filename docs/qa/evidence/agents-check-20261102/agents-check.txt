@@ -1,0 +1,14 @@
+$ node --check scripts/agents/sync-agents.js
+sintaxis OK
+
+$ npm run agents:sync
+> apex-os@2.0.0 agents:sync
+> node scripts/agents/sync-agents.js write
+
+[agents] sincronizados 11 agentes y 8 documentos
+
+$ npm run agents:check
+> apex-os@2.0.0 agents:check
+> node scripts/agents/sync-agents.js check
+
+[agents] OK: 11 agentes y 8 documentos verificados

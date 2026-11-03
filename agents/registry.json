@@ -48,7 +48,7 @@
       "role": "experto-backend",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "7144f921d34b8bb06344acd582ee6f63eee11e83d724af0ae289a23814b88433",
+      "sha256": "0581882c93c67c940afa0283a20c8c3562cd0fb617236ae3b135cec2a173a868",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -82,7 +82,7 @@
       "role": "experto-base-datos-nube",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "93582a2a93ebafe672ce1cac4e37f3769bc9d5665fa1d2616b636f720e87c5d5",
+      "sha256": "6a1b7b37b92e7ccf1f823ec6e063dc0bc274000af42e29b4e506770a5d0c79fc",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -99,7 +99,7 @@
       "role": "experto-frontend",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "f3a2e9d1654477d67b3bdd61e7019aca7213685ecf1be98ee51f8b6fb706579a",
+      "sha256": "5b8e4b2ccebeb64fd09fb05178f6906ac37d283fb4fd231b841a62d2bc571b01",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -115,7 +115,7 @@
       "role": "git-gobernanza",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "2de2c9c4e4e2b04b2d89180aca5b638204e655d3c48e3aa8acf5da7ec1349910",
+      "sha256": "458a6d610842b70274003b01eba85900cbd1d1c743423975a4420da18bfdd68a",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -132,7 +132,7 @@
       "role": "experto-rendimiento",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "608c9c25ccda5591caffc8e3b5e83f4e729c716b10308976f3fe5b940946c206",
+      "sha256": "db7bb260a93396ce6e3b8bc27ad2d4f0a3303c487f80352752a9cee7b585b410",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -148,7 +148,7 @@
       "role": "experto-calidad",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "dfd5a1b56583005223d234c077c37c61893a90dcb582905e265b58499eb5e917",
+      "sha256": "7ec18248c510fc541747f9c696ed73dd531bd41a04cf65c1bbd1b350ea8e050b",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -165,7 +165,7 @@
       "role": "experto-ciberseguridad",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "517b922dae371a082a28e7a8616ad115af1bd0197dc8ed1f35dd767093b649f3",
+      "sha256": "911f4860e53c77f9cc1f68647dcadbf9449f8c7b3b775499d618eea48b4a796f",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -182,7 +182,7 @@
       "role": "orquestador",
       "version": "1.1.0",
       "updated_at": "2026-11-02",
-      "sha256": "71bf9fc3140cecd9cb3a8d018d7a32ce342f37578b08ea1baec534d082fbb410",
+      "sha256": "8a86b2b316e870b46cf6e74ae622a378d52e97bc0f1d24d08fdf5b4855647e0d",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -199,13 +199,13 @@
       "name": "Reglas de agente",
       "path": "AGENTS.md",
       "updated_at": "2026-11-02",
-      "sha256": "a6f9a067d7f07f73a3ee4a67b26fe5a9150af9a476c46d73cd82054edeeb3f17"
+      "sha256": "034eeb9bfa9db5513d9a2469c511a7dd60fd4a3c16d6d54fb13a4d258b2152f4"
     },
     {
       "name": "Flujo de ramas",
       "path": "BRANCHING_WORKFLOW.md",
       "updated_at": "2026-08-11",
-      "sha256": "88ad88110a34a5c4721a991aec981081cb4eec551e675491080fe0ef3d4e90ad"
+      "sha256": "de3a95e93a63a81177f70d8f3f39df7fb9859760280da4f2dbeff79e8697ce37"
     },
     {
       "name": "Plantilla de brief",
@@ -217,31 +217,31 @@
       "name": "Política de aprobación QA",
       "path": "docs/CHANGE_APPROVAL_QA_POLICY.md",
       "updated_at": "2026-09-08",
-      "sha256": "2baf959478175240a23d409743c4f67d2ef8657fb465197f68ce3edddbca0726"
+      "sha256": "5e124e1bca20ebc0d9f065c490e0fad91324ab961c90eb4e0047b59844647015"
     },
     {
       "name": "Aislamiento multi-tenant",
       "path": "docs/MULTITENANT_DATA_ISOLATION.md",
       "updated_at": "2026-07-02",
-      "sha256": "5f64fca4718a86a49048296ef438b1b697fb0fef8ee5f52a183a0b1e75bb7999"
+      "sha256": "3ce11a60299956df38c98985540a03c4ebc747841f15b7bcf2b47c9da1c27981"
     },
     {
       "name": "Estándar de rendimiento",
       "path": "docs/PERFORMANCE_ENGINEERING_STANDARD.md",
       "updated_at": "2026-07-25",
-      "sha256": "606db855bdeab91c7fe7f7cf525b0e9c48947525657ceb857d4289b511ead7ae"
+      "sha256": "07349e629001e85fd0ebed4c8b36e77018e50dfbe4559fc6605ff9739bfbb111"
     },
     {
       "name": "Filosofía de producto UI",
       "path": "docs/project/filosofia-producto-ui.md",
       "updated_at": "2026-08-21",
-      "sha256": "ac6d7d68cba93e78b95c3884ff183daa02688a5aa1bb1cda88ce73aff18db702"
+      "sha256": "2a557d7e92a9256847ba71f02f5fa4b00a8364accc92115a2145bc34dd652594"
     },
     {
       "name": "Modelo de amenazas",
       "path": "docs/SECURITY_THREAT_MODEL.md",
       "updated_at": "2026-08-11",
-      "sha256": "bbcd84bdb663e838ce4203a5dcd5a8e3736eb30c0fa8282e565f2e9f0bde46d0"
+      "sha256": "748c6e839f550bbb634b0523e8048b020504e0556386e1f17d7d5d55f5db68d9"
     }
   ]
 }
