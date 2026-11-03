@@ -4503,3 +4503,107 @@ model InvoiceMailConfig {
 
   @@map("invoice_mail_configs")
 }
+
+// === APEX CONTROL: SISTEMA NERVIOSO Y TORRE DE CONTROL ===
+model ApexComponent {
+  key              String    @id
+  name             String
+  kind             String
+  criticality      String    @default("standard")
+  probe_interval_s Int       @default(15)
+  enabled          Boolean   @default(true)
+  last_status      String    @default("unknown")
+  last_checked_at  DateTime?
+  metadata         Json      @default("{}")
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  @@map("apex_components")
+  @@index([kind, enabled])
+}
+
+model ApexHealthSample {
+  id            BigInt   @id @default(autoincrement())
+  component_key String
+  status        String
+  latency_ms    Int?
+  error_rate    Float?
+  score         Int?
+  details       Json     @default("{}")
+  sampled_at    DateTime @default(now())
+
+  @@map("apex_health_samples")
+  @@index([component_key, sampled_at])
+  @@index([sampled_at])
+}
+
+model ApexEvent {
+  id             BigInt   @id @default(autoincrement())
+  tenant_id      String?
+  source         String
+  kind           String
+  severity       String   @default("info")
+  component_key  String?
+  entity_type    String?
+  entity_id      String?
+  fingerprint    String
+  correlation_id String?
+  payload        Json     @default("{}")
+  occurred_at    DateTime @default(now())
+
+  @@map("apex_events")
+  @@index([occurred_at])
+  @@index([fingerprint, occurred_at])
+  @@index([tenant_id, occurred_at])
+}
+
+model ApexIncident {
+  id              BigInt    @id @default(autoincrement())
+  tenant_id       String?
+  component_key   String
+  severity        String
+  status          String    @default("open")
+  title           String
+  summary         String
+  fingerprint     String
+  first_seen      DateTime  @default(now())
+  last_seen       DateTime  @default(now())
+  acknowledged_at DateTime?
+  acknowledged_by Int?
+  resolved_at     DateTime?
+  evidence        Json      @default("{}")
+
+  @@map("apex_incidents")
+  @@index([status, severity])
+  @@index([component_key, status])
+  @@index([fingerprint, status])
+}
+
+model ApexNotification {
+  id         BigInt    @id @default(autoincrement())
+  tenant_id  String?
+  user_id    Int?
+  level      String    @default("info")
+  title      String
+  message    String
+  href       String?
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+
+  @@map("apex_notifications")
+  @@index([tenant_id, read_at, created_at])
+}
+
+model ApexReportRun {
+  id         BigInt    @id @default(autoincrement())
+  kind       String
+  period_key String
+  status     String
+  recipients Json      @default("[]")
+  summary    Json      @default("{}")
+  sent_at    DateTime?
+  created_at DateTime  @default(now())
+
+  @@map("apex_report_runs")
+  @@unique([kind, period_key])
+}

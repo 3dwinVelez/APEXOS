@@ -2,7 +2,7 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, experiencia de usuario y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos.
-version: 1.1.0
+version: 1.2.0
 updated_at: 2026-11-02
 ---
 
@@ -40,3 +40,4 @@ updated_at: 2026-11-02
 - **Reusar la tubería existente.** Si el documento ya se procesó, reparar el dato y el visor real; no inventar visores ni flujos paralelos.
 - **Verificación real.** `next build` sí pasa en `desarrollo` (el bloqueo por rutas tipadas era falso); no usar ese supuesto para evitar build+start. `scripts/dev-web.js` puede llevar la URL de API quemada: verificar el entorno antes de culpar a la UI.
 - **Evidencia de navegador.** Probar camino feliz y borde, ambos temas, y capturar evidencia; si la UI no se pudo probar, declararlo explícitamente.
+- **Torre externa: filtro por ambiente.** Los tabs `local`, `develop` y `main` deben filtrar todas las secciones (KPIs, servicios, alertas, rendimiento, cloud y rama resaltada), no solo una lista. El ambiente se persiste en `localStorage` y se normaliza contra el snapshot. Cada sonda y alerta muestra impacto funcional y un `<details>` técnico; el rendimiento se presenta por ambiente con p50/p95 y serie. Validar con la certificación headless, no solo con el build.

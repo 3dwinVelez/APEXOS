@@ -17,6 +17,7 @@ import {
   HeartPulse,
   Landmark,
   PackageCheck,
+  Radar,
   ReceiptText,
   RefreshCcw,
   Route,
@@ -384,6 +385,17 @@ export const MODULES: ApexModule[] = [
     capabilities: ["Productos e inventario propio", "Venta rápida y a crédito", "Cartera con abonos", "Compras, gastos y reportes"],
     nextActions: ["Crear primer producto", "Registrar venta", "Consultar cartera"],
     icon: ShoppingCart
+  },
+  {
+    id: "M-31",
+    slug: "apex-control",
+    name: "APEX Control",
+    area: "Plataforma",
+    status: "Base funcional",
+    summary: "Sistema nervioso de APEX OS: vigila API, base de datos, Redis, colas, crons, Brain, almacenamiento y correo cada 15 segundos, abre incidentes automáticos y mantiene la Torre de Control al día sin que tengas que preguntar.",
+    capabilities: ["Pulso de salud en vivo", "Incidentes automáticos", "Notificaciones in-app", "Briefing diario", "Torre de Control"],
+    nextActions: ["Abrir la Torre", "Revisar incidentes", "Consultar último reporte"],
+    icon: Radar
   }
 ];
 

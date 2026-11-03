@@ -2,6 +2,7 @@ const { getRedisUrl, isRedisDisabled } = require("./redisConfig");
 
 const clientsByTenant = new Map();
 const WS_CHANNEL_PREFIX = "ws:tenant:";
+const WS_GLOBAL_CHANNEL = "ws:global";
 let redisSub = null;
 let redisPub = null;
 
@@ -23,10 +24,18 @@ function getRedis() {
       retryStrategy: () => null
     });
     redisSub.on("message", (channel, message) => {
+      if (channel === WS_GLOBAL_CHANNEL) {
+        localBroadcastAll(message);
+        return;
+      }
       const tenantId = channel.replace(WS_CHANNEL_PREFIX, "");
       localBroadcast(tenantId, message);
     });
-    redisSub.connect().catch(() => {
+    redisSub.connect().then(() => {
+      redisSub?.subscribe(WS_GLOBAL_CHANNEL).catch(() => {
+        // Sin canal global: los snapshots siguen llegando localmente.
+      });
+    }).catch(() => {
       console.warn("[wsManager] Redis subscribe connection failed — broadcasts are local only");
       redisSub = null;
       redisPub = null;
@@ -89,6 +98,39 @@ async function broadcast(tenantId, payload) {
   }
 }
 
+function localBroadcastAll(serialized) {
+  for (const sockets of clientsByTenant.values()) {
+    for (const socket of sockets) {
+      if (socket.readyState === 1) {
+        try {
+          socket.send(serialized);
+        } catch {
+          // Slow client — skip
+        }
+      }
+    }
+  }
+}
+
+async function broadcastAll(payload) {
+  const serialized = JSON.stringify(payload);
+  localBroadcastAll(serialized);
+  const r = getRedis();
+  if (r?.pub) {
+    try {
+      await r.pub.publish(WS_GLOBAL_CHANNEL, serialized);
+    } catch {
+      // Best-effort remote broadcast
+    }
+  }
+}
+
+function stats() {
+  let clients = 0;
+  for (const sockets of clientsByTenant.values()) clients += sockets.size;
+  return { clients, tenants: clientsByTenant.size };
+}
+
 function addClient(tenantId, socket) {
   if (!clientsByTenant.has(tenantId)) {
     clientsByTenant.set(tenantId, new Set());
@@ -126,5 +168,5 @@ function cleanupStale() {
 // Cleanup cada 5 minutos
 setInterval(cleanupStale, 300000).unref();
 
-module.exports = { addClient, removeClient, broadcast };
+module.exports = { addClient, removeClient, broadcast, broadcastAll, stats, WS_GLOBAL_CHANNEL };
 

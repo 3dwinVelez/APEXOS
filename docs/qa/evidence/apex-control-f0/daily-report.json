@@ -1,0 +1,154 @@
+{
+  "kind": "daily",
+  "period_key": "2026-11-02",
+  "generated_at": "2026-11-03T01:15:01.226Z",
+  "window": {
+    "from": "2026-11-02T01:15:01.226Z",
+    "to": "2026-11-03T01:15:01.226Z"
+  },
+  "overall": {
+    "status": "degraded",
+    "score": 94,
+    "counts": {
+      "ok": 7,
+      "degraded": 1,
+      "down": 0,
+      "unknown": 1
+    }
+  },
+  "components": [
+    {
+      "key": "api",
+      "name": "API",
+      "criticality": "critical",
+      "status": "ok",
+      "score": 100,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "brain",
+      "name": "APEX Brain",
+      "criticality": "standard",
+      "status": "ok",
+      "score": 100,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "crons",
+      "name": "Crons",
+      "criticality": "standard",
+      "status": "degraded",
+      "score": 60,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "db",
+      "name": "PostgreSQL",
+      "criticality": "critical",
+      "status": "ok",
+      "score": 100,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "mail",
+      "name": "Correo",
+      "criticality": "standard",
+      "status": "unknown",
+      "score": 50,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "minio",
+      "name": "Almacenamiento",
+      "criticality": "standard",
+      "status": "ok",
+      "score": 100,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "queues",
+      "name": "Colas BullMQ",
+      "criticality": "standard",
+      "status": "ok",
+      "score": 100,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "redis",
+      "name": "Redis",
+      "criticality": "critical",
+      "status": "ok",
+      "score": 100,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    },
+    {
+      "key": "websocket",
+      "name": "WebSocket",
+      "criticality": "standard",
+      "status": "ok",
+      "score": 100,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    }
+  ],
+  "degraded_components": [
+    {
+      "key": "crons",
+      "name": "Crons",
+      "criticality": "standard",
+      "status": "degraded",
+      "score": 60,
+      "last_checked_at": "2026-11-03T01:15:00.005Z"
+    }
+  ],
+  "incidents": {
+    "active": 2,
+    "opened_last_24h": 9,
+    "resolved_last_24h": 7,
+    "items": [
+      {
+        "id": "2",
+        "component_key": "crons",
+        "severity": "warning",
+        "status": "open",
+        "title": "Crons: degraded",
+        "summary": "Crons esta degradado",
+        "last_seen": "2026-11-03T01:15:00.005Z"
+      },
+      {
+        "id": "9",
+        "component_key": "brain",
+        "severity": "error",
+        "status": "open",
+        "title": "APEX Brain: down",
+        "summary": "APEX Brain no responde",
+        "last_seen": "2026-11-03T01:14:45.008Z"
+      }
+    ]
+  },
+  "events": {
+    "total": 64,
+    "by_severity": {
+      "error": 40,
+      "warning": 2,
+      "info": 18,
+      "critical": 4
+    },
+    "by_kind": {
+      "cron.failed": 24,
+      "incident.opened": 9,
+      "component.degraded": 6,
+      "component.ok": 11,
+      "incident.resolved": 7,
+      "component.down": 6,
+      "simulation.failure": 1
+    },
+    "by_component": {
+      "crons": 26,
+      "api": 15,
+      "redis": 8,
+      "queues": 8,
+      "brain": 7
+    }
+  },
+  "link": "/dashboard/apex-control"
+}

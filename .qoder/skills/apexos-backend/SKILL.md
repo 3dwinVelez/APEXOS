@@ -2,7 +2,7 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC.
-version: 1.1.0
+version: 1.2.0
 updated_at: 2026-11-02
 ---
 
@@ -35,3 +35,4 @@ updated_at: 2026-11-02
 - **Auditoría.** El hook global depende de Redis; sin Redis es noop. No usar la auditoría como evidencia de un flujo si Redis no estaba activo.
 - **Pruebas.** `node:test` con Prisma falso inyectado en `require.cache`. `Prisma.join` anida `.values` (aplanar parámetros) y `tenantCache` exige `tenant.findUnique` en el fake. Un test que solo lee código fuente no prueba el endpoint.
 - **Errores Prisma.** Un 500 por `_count` suele indicar relación inexistente o no declarada; revisar `schema.prisma` antes de parchear el handler.
+- **Torre externa (multientorno).** Vive en `apps/control-tower/`, fuera de `apps/api`; consume `/health` y `/api/v1/apex-control/status` sin cambiar su contrato. Sus endpoints propios son `/api/environments` y `/api/performance`. Las sondas remotas usan timeout por ambiente y degradan a `unknown` cuando falta configuración; nunca reportan `ok` sin evidencia. No mover la vigilancia dentro de la API.

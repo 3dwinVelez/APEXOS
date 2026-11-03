@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>APEX Control Tower</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2352c8f5'/%3E%3Ctext x='16' y='21' font-family='Arial' font-size='13' font-weight='700' text-anchor='middle' fill='%23041019'%3EAC%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">AC</div>
+      <div>
+        <p class="eyebrow">Torre externa · vigilancia local</p>
+        <h1>APEX Control</h1>
+      </div>
+    </div>
+    <div class="topbar-side">
+      <span id="overallPill" class="pill unknown">Conectando</span>
+      <span id="lastUpdate" class="muted small">Sin lecturas</span>
+      <div class="actions">
+        <button id="btnRefresh" class="btn ghost" type="button">Actualizar</button>
+        <button id="btnFetch" class="btn ghost" type="button">Sincronizar ramas</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <nav id="envTabs" class="env-tabs" aria-label="Filtrar por ambiente"></nav>
+
+    <section id="kpis" class="kpis" aria-label="Indicadores"></section>
+
+    <section class="panel span-8" aria-labelledby="servicesTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Sondas independientes</p>
+          <h2 id="servicesTitle">Servicios</h2>
+        </div>
+        <span id="probeMeta" class="muted small"></span>
+      </header>
+      <div id="checks" class="checks"></div>
+    </section>
+
+    <section class="panel span-4" aria-labelledby="alertsTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Incidentes</p>
+          <h2 id="alertsTitle">Alertas</h2>
+        </div>
+        <button id="btnAckAll" class="link" type="button">Reconocer todas</button>
+      </header>
+      <div id="alerts" class="alerts"></div>
+    </section>
+
+    <section class="panel span-5" aria-labelledby="performanceTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Latencia y errores</p>
+          <h2 id="performanceTitle">Rendimiento API</h2>
+        </div>
+        <span id="perfMeta" class="muted small"></span>
+      </header>
+      <div id="performance" class="performance"></div>
+    </section>
+
+    <section class="panel span-7" aria-labelledby="cloudTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Dependencias externas</p>
+          <h2 id="cloudTitle">Railway · Supabase · Vercel</h2>
+        </div>
+        <span id="cloudMeta" class="muted small"></span>
+      </header>
+      <div id="cloud" class="cloud-grid"></div>
+    </section>
+
+    <section class="panel span-7" aria-labelledby="gitTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Flujo desarrollo → develop → main</p>
+          <h2 id="gitTitle">Ramas</h2>
+        </div>
+        <span id="gitMeta" class="muted small"></span>
+      </header>
+      <div id="flow" class="flow"></div>
+      <div id="branches" class="branches"></div>
+      <div id="gitWarnings" class="warnings"></div>
+    </section>
+
+    <section class="panel span-5" aria-labelledby="jobsTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Fábrica de desarrollo</p>
+          <h2 id="jobsTitle">Trabajos Qoder</h2>
+        </div>
+        <span id="bridgePill" class="pill unknown">Puente</span>
+      </header>
+      <form id="jobForm" class="job-form">
+        <div class="row tight">
+          <select id="jobLevel" aria-label="Nivel de autorización">
+            <option value="N0">N0 · Observar</option>
+            <option value="N1" selected>N1 · Analizar</option>
+            <option value="N2">N2 · Implementar en desarrollo</option>
+            <option value="N3">N3 · Certificar / pre-QA</option>
+          </select>
+          <button class="btn primary" type="submit">Enviar instrucción</button>
+        </div>
+        <textarea id="jobInstruction" rows="3" maxlength="4000" placeholder="Instrucción para los agentes de Qoder. N2 y N3 requieren aprobación."></textarea>
+        <p class="muted small">N4 (push, merge, deploy) nunca se ejecuta desde la torre.</p>
+      </form>
+      <div id="jobs" class="jobs"></div>
+    </section>
+
+    <section class="panel span-5" aria-labelledby="telegramTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Canal directo</p>
+          <h2 id="telegramTitle">Telegram</h2>
+        </div>
+        <span id="telegramPill" class="pill unknown">Telegram</span>
+      </header>
+      <div class="telegram-body">
+        <div id="telegramInfo" class="muted small"></div>
+        <div class="row tight">
+          <button id="btnPairing" class="btn ghost" type="button">Generar código</button>
+          <span id="pairingCode" class="code"></span>
+        </div>
+        <div class="sim">
+          <p class="muted small">Dry-run: simula mensajes entrantes sin usar la red.</p>
+          <div class="row tight">
+            <input id="simText" type="text" placeholder="/estado o instrucción libre" />
+            <button id="btnSimulate" class="btn ghost" type="button">Simular</button>
+          </div>
+        </div>
+        <div id="outbox" class="outbox"></div>
+      </div>
+    </section>
+
+    <section class="panel span-7" aria-labelledby="eventsTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Trazabilidad</p>
+          <h2 id="eventsTitle">Eventos</h2>
+        </div>
+        <span id="livePill" class="pill unknown">SSE</span>
+      </header>
+      <ul id="events" class="events"></ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>APEX Control Tower corre fuera de APEXOS. Gobierno: solo <strong>desarrollo</strong>. Push, merge, deploy y migraciones remotas requieren autorización humana explícita.</p>
+    <p id="footerMeta" class="muted small"></p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

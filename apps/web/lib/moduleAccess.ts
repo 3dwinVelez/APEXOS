@@ -12,7 +12,7 @@ const MODULE_ACCESS_CACHE_KEY = "apexos_module_access_cache_v2";
 const MODULE_ACCESS_CACHE_MS = 60_000;
 const ROLE_CONTEXT_FETCHED_AT_KEY = "apexos_role_context_fetched_at";
 const ROLE_CONTEXT_TIMEOUT_MS = 2_500;
-const PLATFORM_ADMIN_MODULE_SLUGS = new Set(["administracion"]);
+const PLATFORM_ADMIN_MODULE_SLUGS = new Set(["administracion", "apex-control"]);
 let moduleAccessInFlight: { token: string; promise: Promise<ModuleAccessState> } | null = null;
 
 export type ModuleAccessState = {
@@ -40,6 +40,7 @@ type AnyRow = Record<string, unknown>;
 const moduleCodeBySlug: Record<string, string> = {
   activos: "activos",
   administracion: "administracion_apex",
+  "apex-control": "administracion_apex",
   "apex-ai": "apex_ai",
   calidad: "calidad",
   cartera: "cxc",
@@ -74,6 +75,7 @@ const moduleCodeBySlug: Record<string, string> = {
 
 const permissionModulesBySlug: Record<string, string[]> = {
   administracion: ["admin", "users", "roles", "tenants", "settings", "audit"],
+  "apex-control": ["apex-control", "apex_control", "admin"],
   "apex-ai": ["brain", "ai"],
   compras: ["purchases"],
   contabilidad: ["accounting"],
@@ -95,6 +97,7 @@ const permissionModulesBySlug: Record<string, string[]> = {
 
 const legacyPermissionKeysBySlug: Record<string, string[]> = {
   administracion: ["usuarios", "roles", "configuracion", "auditoria", "notificaciones"],
+  "apex-control": ["apex_control", "administracion_apex", "auditoria"],
   "apex-ai": ["ia"],
   compras: ["compras", "proveedores", "importaciones"],
   contabilidad: ["contabilidad"],
@@ -146,8 +149,13 @@ export function isSupabaseSession() {
   }
 }
 
+// Licencias equivalentes: APEX Control F0 reutiliza administracion (M-22).
+const extraModuleKeys: Record<string, string[]> = {
+  "apex-control": ["M-22", "administracion"]
+};
+
 function moduleKeys(module: ApexModule) {
-  return [module.id, module.slug, getModuleCode(module)];
+  return [module.id, module.slug, getModuleCode(module), ...(extraModuleKeys[module.slug] || [])];
 }
 
 function getStoredRolePermissions(): StoredRolePermission[] | null {

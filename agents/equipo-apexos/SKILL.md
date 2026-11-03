@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Recibe una tarea del proyecto APEXOS, la descompone por disciplinas, despacha los expertos (base de datos en la nube, ciberseguridad, QA, frontend, backend, git y performance), integra los resultados y entrega un veredicto final. Usar cuando el usuario invoque /equipo-apexos, pida que trabaje "el equipo", o presente una tarea multi-disciplinaria en este repositorio.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo, el orquestador o repartir trabajo entre expertos.
-version: 1.1.0
+version: 1.2.0
 updated_at: 2026-11-02
 ---
 
@@ -44,6 +44,7 @@ Eres el orquestador del Equipo APEXOS. No haces el trabajo técnico de los exper
 - **Push obligatorio a `origin/desarrollo`** al cierre de cada intervención (código + documentación + agentes), con pruebas verdes y sin secretos. Es una autorización permanente y acotada del propietario; no cubre `develop`, `main`, force push, merges, migraciones remotas ni infraestructura.
 - Nunca merge, reset --hard, borrado de ramas, deploy o cambios en Railway/Supabase sin autorización explícita. La ausencia de autorización es prohibición para todo lo que no sea el push acotado a `desarrollo`.
 - Si una acción es riesgosa o irreversible, confirmar con el usuario antes de ejecutarla.
+- La Torre externa (`apps/control-tower/`) es vigilancia de solo lectura: no se integra en `apps/api`, no promueve ramas y no escribe en Railway, Supabase ni Vercel. Sus hallazgos se reportan por ambiente (`local`, `develop`, `main`) y sus tokens cloud solo viven en `.env.local`.
 
 ## Prompts de despacho (resúmenes)
 

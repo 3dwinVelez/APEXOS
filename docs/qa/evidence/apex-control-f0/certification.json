@@ -1,0 +1,176 @@
+{
+  "certification": "apex-control-local",
+  "version": 1,
+  "status": "passed",
+  "certification_status": "local_passed_qa_pending",
+  "generated_at": "2026-11-03T01:15:01.238Z",
+  "started_at": "2026-11-03T01:14:09.343Z",
+  "commit": "e25e177f8954d1c2c846046fade1275ebbeb6b21",
+  "environment": {
+    "type": "local",
+    "database": "apexos",
+    "api": "http://127.0.0.1:3000",
+    "web": "http://127.0.0.1:3001",
+    "node": "v24.14.0"
+  },
+  "checks": [
+    {
+      "name": "api_health",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "admin_login",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "status_contract",
+      "ok": true,
+      "detail": {
+        "status": "degraded",
+        "components": 9
+      }
+    },
+    {
+      "name": "components_registered",
+      "ok": true,
+      "detail": {
+        "keys": [
+          "api",
+          "db",
+          "redis",
+          "queues",
+          "crons",
+          "brain",
+          "minio",
+          "mail",
+          "websocket"
+        ]
+      }
+    },
+    {
+      "name": "websocket_authenticated",
+      "ok": true,
+      "detail": {
+        "messages": 1
+      }
+    },
+    {
+      "name": "browser_overview",
+      "ok": true,
+      "detail": {
+        "console_errors": [
+          "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+        ]
+      }
+    },
+    {
+      "name": "redis_down_visible",
+      "ok": true,
+      "detail": {
+        "overall": "degraded",
+        "redis": "down"
+      }
+    },
+    {
+      "name": "redis_incident_open",
+      "ok": true,
+      "detail": {
+        "id": "7",
+        "title": "Redis: down"
+      }
+    },
+    {
+      "name": "redis_event_broadcast",
+      "ok": true,
+      "detail": {
+        "kind": "incident.opened",
+        "fingerprint": "component:redis:health"
+      }
+    },
+    {
+      "name": "browser_acknowledge_clicked",
+      "ok": true,
+      "detail": {
+        "visible": true
+      }
+    },
+    {
+      "name": "browser_acknowledge_confirmed",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "redis_recovered",
+      "ok": true,
+      "detail": {
+        "overall": "degraded",
+        "redis": "ok"
+      }
+    },
+    {
+      "name": "brain_down_visible",
+      "ok": true,
+      "detail": {
+        "overall": "degraded"
+      }
+    },
+    {
+      "name": "brain_recovered",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "simulation_returns_500",
+      "ok": true,
+      "detail": {
+        "status": 500,
+        "body": {
+          "error": "Fallo simulado por APEX Control",
+          "code": "FALLO_SIMULADO"
+        }
+      }
+    },
+    {
+      "name": "simulation_event_persisted",
+      "ok": true,
+      "detail": {
+        "id": "64"
+      }
+    },
+    {
+      "name": "daily_report_preview",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "overall": {
+          "status": "degraded",
+          "score": 94,
+          "counts": {
+            "ok": 7,
+            "degraded": 1,
+            "down": 0,
+            "unknown": 1
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "components": 9,
+    "incidents_detected": 2,
+    "websocket_messages": 26,
+    "console_errors": 1
+  },
+  "evidence": [
+    "certification.json",
+    "browser-overview.png",
+    "browser-degraded.png",
+    "daily-report.json"
+  ]
+}

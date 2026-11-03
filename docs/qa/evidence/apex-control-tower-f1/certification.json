@@ -1,0 +1,369 @@
+{
+  "certification": "apex-control-tower-local",
+  "version": 1,
+  "status": "passed",
+  "certification_status": "local_passed_qa_pending",
+  "generated_at": "2026-11-03T04:15:35.887Z",
+  "started_at": "2026-11-03T04:15:21.648Z",
+  "commit": "f3ce0c1a65d6f95fc13d236e0c690ed9d0c02af2",
+  "working_tree_dirty": true,
+  "environment": {
+    "type": "local",
+    "node": "v24.14.0",
+    "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "tower_url": "http://127.0.0.1:0",
+    "mode": "simulation+dry-run",
+    "telegram": "dry-run",
+    "bridge": "local-token"
+  },
+  "checks": [
+    {
+      "name": "chrome_available",
+      "ok": true,
+      "detail": {
+        "path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+      }
+    },
+    {
+      "name": "tower_boot",
+      "ok": true,
+      "detail": {
+        "url": "http://127.0.0.1:49868",
+        "port": 49868
+      }
+    },
+    {
+      "name": "api_health",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "status_contract",
+      "ok": true,
+      "detail": {
+        "overall": "degraded",
+        "checks": 14
+      }
+    },
+    {
+      "name": "git_three_branches",
+      "ok": true,
+      "detail": {
+        "branches": [
+          "desarrollo",
+          "develop",
+          "main"
+        ]
+      }
+    },
+    {
+      "name": "git_flow_reported",
+      "ok": true,
+      "detail": {
+        "flow": [
+          {
+            "from": "main",
+            "to": "develop",
+            "ok": false,
+            "checked": false
+          },
+          {
+            "from": "develop",
+            "to": "desarrollo",
+            "ok": false,
+            "checked": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "ui_token_configured",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "environment_summaries",
+      "ok": true,
+      "detail": {
+        "environments": [
+          "local",
+          "develop",
+          "main"
+        ]
+      }
+    },
+    {
+      "name": "environments_endpoint",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "performance_endpoint",
+      "ok": true,
+      "detail": {
+        "samples": 1
+      }
+    },
+    {
+      "name": "ui_token_required",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "factory_create_n2",
+      "ok": true,
+      "detail": {
+        "id": "JOB-20261102-231524-fd78"
+      }
+    },
+    {
+      "name": "factory_approve",
+      "ok": true,
+      "detail": {
+        "status": "queued"
+      }
+    },
+    {
+      "name": "bridge_token_required",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "bridge_claim_envelope",
+      "ok": true,
+      "detail": {
+        "job": "JOB-20261102-231524-fd78",
+        "scope": {
+          "branch": "desarrollo",
+          "allowCodeChanges": true,
+          "allowTests": true,
+          "allowCommit": false,
+          "allowPush": false,
+          "allowMerge": false,
+          "allowDeploy": false,
+          "allowRemoteMigrations": false
+        }
+      }
+    },
+    {
+      "name": "bridge_complete",
+      "ok": true,
+      "detail": {
+        "status": "completed"
+      }
+    },
+    {
+      "name": "telegram_pairing_code",
+      "ok": true,
+      "detail": {
+        "expiresAt": "2026-11-03T04:25:24.362Z"
+      }
+    },
+    {
+      "name": "telegram_allowlist",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "telegram_command_status",
+      "ok": true,
+      "detail": {
+        "allowedCount": 2
+      }
+    },
+    {
+      "name": "telegram_impl_requires_approval",
+      "ok": true,
+      "detail": {
+        "stats": {
+          "queued": 0,
+          "awaiting_approval": 1,
+          "claimed": 0,
+          "running": 0,
+          "completed": 1,
+          "failed": 0,
+          "blocked": 0,
+          "rejected": 0,
+          "cancelled": 0
+        }
+      }
+    },
+    {
+      "name": "browser_dashboard_rendered",
+      "ok": true,
+      "detail": {
+        "checks": 8,
+        "kpis": 6,
+        "branches": 3
+      }
+    },
+    {
+      "name": "browser_dashboard_screenshot",
+      "ok": true,
+      "detail": {
+        "bytes": 408347
+      }
+    },
+    {
+      "name": "browser_environment_tabs",
+      "ok": true,
+      "detail": {
+        "tabs": 3
+      }
+    },
+    {
+      "name": "browser_technical_details",
+      "ok": true,
+      "detail": {
+        "details": 9
+      }
+    },
+    {
+      "name": "browser_performance_panel",
+      "ok": true,
+      "detail": {
+        "stats": 8
+      }
+    },
+    {
+      "name": "browser_environment_switch",
+      "ok": true,
+      "detail": {
+        "pill": "PROD Sin dato",
+        "cloudCards": 3,
+        "selectedBranch": 1
+      }
+    },
+    {
+      "name": "browser_environment_screenshot",
+      "ok": true,
+      "detail": {
+        "bytes": 356365
+      }
+    },
+    {
+      "name": "outage_visible",
+      "ok": true,
+      "detail": {
+        "overall": "down"
+      }
+    },
+    {
+      "name": "alert_opened",
+      "ok": true,
+      "detail": {
+        "alerts": [
+          "api",
+          "redis"
+        ]
+      }
+    },
+    {
+      "name": "telegram_alert_sent",
+      "ok": true,
+      "detail": {
+        "outbox": [
+          "[CRITICAL] API APEXOS: caído",
+          "[CRITICAL] API APEXOS: caído"
+        ]
+      }
+    },
+    {
+      "name": "alert_environment_detail",
+      "ok": true,
+      "detail": {
+        "overall": "degraded",
+        "environment": "develop",
+        "technical": true
+      }
+    },
+    {
+      "name": "browser_degraded_rendered",
+      "ok": true,
+      "detail": {
+        "overall": "LOCAL Caído",
+        "alerts": 2
+      }
+    },
+    {
+      "name": "browser_degraded_screenshot",
+      "ok": true,
+      "detail": {
+        "bytes": 424528
+      }
+    },
+    {
+      "name": "recovery_resolved",
+      "ok": true,
+      "detail": {
+        "open": [
+          "redis"
+        ]
+      }
+    },
+    {
+      "name": "browser_console_clean",
+      "ok": true,
+      "detail": {
+        "errors": []
+      }
+    },
+    {
+      "name": "jobs_traceable",
+      "ok": true,
+      "detail": {
+        "queued": 0,
+        "awaiting_approval": 1,
+        "claimed": 0,
+        "running": 0,
+        "completed": 1,
+        "failed": 0,
+        "blocked": 0,
+        "rejected": 0,
+        "cancelled": 0
+      }
+    },
+    {
+      "name": "telegram_evidence",
+      "ok": true,
+      "detail": {
+        "messages": 8
+      }
+    }
+  ],
+  "summary": {
+    "passed": 37,
+    "failed": 0,
+    "total": 37,
+    "screenshots": [
+      {
+        "file": "tower-overview.png",
+        "bytes": 408347
+      },
+      {
+        "file": "tower-env-main.png",
+        "bytes": 356365
+      },
+      {
+        "file": "tower-api-down.png",
+        "bytes": 424528
+      }
+    ],
+    "console_errors": []
+  },
+  "evidence": [
+    "certification.json",
+    "tower-overview.png",
+    "tower-env-main.png",
+    "tower-api-down.png",
+    "telegram-outbox.json"
+  ]
+}

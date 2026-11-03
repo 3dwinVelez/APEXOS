@@ -1,0 +1,57 @@
+{
+  "generated_at": "2026-11-03T04:15:35.063Z",
+  "mode": "dry-run",
+  "allowed_chat_ids": [
+    "cert-chat"
+  ],
+  "outbox": [
+    {
+      "at": "2026-11-03T04:15:28.808Z",
+      "chatId": "intruso",
+      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 2/11/2026, 11:15:28 p. m.\nReconocer: /ack ALR-d995ae",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-03T04:15:28.807Z",
+      "chatId": "cert-chat",
+      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 2/11/2026, 11:15:28 p. m.\nReconocer: /ack ALR-d995ae",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-03T04:15:24.382Z",
+      "chatId": "intruso",
+      "text": "Trabajo JOB-20261102-231524-f84c (Implementar en desarrollo) requiere aprobacion.\n\ncertificacion: agrega prueba de regresion al monitor\n\nDestino: desarrollo\n\nResponde /aprobar JOB-20261102-231524-f84c o usa los botones.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-03T04:15:24.375Z",
+      "chatId": "intruso",
+      "text": "Estado: DEGRADED (6/14 ok)\nLectura: 2/11/2026, 11:15:24 p. m.\n\nAPI APEXOS: ok\nPostgreSQL: ok\nAPI QA: unknown\nSupabase QA: unknown\nAPI PROD: unknown\nSupabase PROD: unknown\nAPEX Control (API): degraded\nBrain (Python): ok\nDocker: ok\nMinIO: ok\nRedis: down\nWeb APEXOS: ok\nWeb QA: unknown\nWeb PROD: unknown\n\nAlertas abiertas: 1",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-03T04:15:24.371Z",
+      "chatId": "intruso",
+      "text": "Emparejamiento exitoso. Ya puedes enviar instrucciones.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-03T04:15:24.365Z",
+      "chatId": "intruso",
+      "text": "Chat no autorizado. Envia /pair <codigo> usando el codigo que muestra APEX Control Tower en tu equipo local.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-03T04:15:24.335Z",
+      "chatId": "cert-chat",
+      "text": "Trabajo JOB-20261102-231524-fd78 (N2) requiere aprobacion.\n\ncertificacion: corrige el reintento de la cola de correo\n\nDestino: desarrollo",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-03T04:15:24.242Z",
+      "chatId": "cert-chat",
+      "text": "[HIGH] Redis: caído\ntimeout 2500ms\nHora: 2/11/2026, 11:15:24 p. m.\nReconocer: /ack ALR-c23b52",
+      "dryRun": true
+    }
+  ]
+}

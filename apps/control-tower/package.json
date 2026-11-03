@@ -1,0 +1,17 @@
+{
+  "name": "@apexos/control-tower",
+  "version": "1.0.0",
+  "private": true,
+  "description": "APEX Control Tower externa: vigilancia local de APEXOS, ramas, alertas y fabrica de trabajo para Qoder",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 1.1.0
+version: 1.2.0
 updated_at: 2026-11-02
 ---
 
@@ -40,3 +40,4 @@ updated_at: 2026-11-02
 - **UI.** Probar en navegador real, camino feliz y borde, ambos temas. Declarar si no se pudo probar.
 - **Evidencia versionada** en `docs/qa/evidence/<cambio>/`, sin datos personales.
 - **Bloqueo explícito.** Una certificación fallida, parcial, simulada o no ejecutada se reporta como bloqueo; nunca como "resuelto".
+- **Torre externa multientorno.** La certificación `npm run certify:control-tower:local` debe probar los tres tabs, el cambio a PROD con tarjetas cloud, el panel de rendimiento, el detalle técnico de sondas/alertas y la alerta con `environment`. Evidencia en `docs/qa/evidence/apex-control-tower-f1/` (`tower-overview.png`, `tower-env-main.png`, `tower-api-down.png`). `npm run control:test` es la regresión unitaria; ninguna de las dos reemplaza la certificación end-to-end de una promoción.

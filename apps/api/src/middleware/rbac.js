@@ -20,7 +20,9 @@ const MODULE_CODES = {
   transport: ["M-14", "transporte", "transport"],
   "apex-heart": ["M-28", "apex_heart", "reportes", "apex-heart"],
   "commercial-management": ["M-27", "gestion-comercial", "gestion_comercial", "commercial-management"],
-  comercio: ["M-30", "comercio", "commerce"]
+  comercio: ["M-30", "comercio", "commerce"],
+  // F0 reutiliza la licencia de administracion (M-22); M-31 se aprovisiona en F1.
+  "apex-control": ["M-31", "apex-control", "apex_control", "administracion_apex", "M-22", "administracion"]
 };
 
 function tenantHasModule(tenant, module) {

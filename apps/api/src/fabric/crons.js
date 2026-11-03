@@ -17,10 +17,20 @@ async function runOnce(name, fn) {
   try {
     await fn();
     console.info(`[cron] ${name} completed in ${Date.now() - startedAt}ms`);
+    await recordRun(name, "ok", Date.now() - startedAt);
   } catch (error) {
     console.error(`[cron] ${name} failed after ${Date.now() - startedAt}ms:`, error.message);
+    await recordRun(name, "failed", Date.now() - startedAt);
   } finally {
     running[name] = false;
+  }
+}
+
+async function recordRun(name, status, durationMs) {
+  try {
+    await require("../modules/apex-control/events").recordCronRun(name, status, durationMs);
+  } catch (error) {
+    console.warn(`[cron] no se pudo registrar ${name} en APEX Control: ${error.message}`);
   }
 }
 
@@ -80,5 +90,55 @@ function startReceivedInvoiceExtraction() {
   });
 }
 
-module.exports = { start, startReceivedInvoiceExtraction, RECEIVED_INVOICE_CRON };
+const APEX_CONTROL_PULSE_CRON = "*/15 * * * * *";
+let apexControlStarted = false;
+
+function envInteger(name, fallback, min, max) {
+  const value = Number(process.env[name]);
+  if (!Number.isInteger(value) || value < min || value > max) return fallback;
+  return value;
+}
+
+// El pulso corre en proceso (no en la ruta de una peticion). El envio del
+// briefing y la limpieza usan la zona horaria de la empresa matriz.
+function startApexControl() {
+  if (apexControlStarted) return null;
+  apexControlStarted = true;
+  if (String(process.env.APEX_CONTROL_ENABLED || "true").toLowerCase() === "false") {
+    console.info("[apex-control] deshabilitado por APEX_CONTROL_ENABLED=false");
+    return null;
+  }
+
+  const pulse = require("../modules/apex-control/pulse").createPulse({
+    intervalMs: Number(process.env.APEX_CONTROL_PULSE_MS || 15000)
+  });
+  const report = require("../modules/apex-control/report");
+  const timezone = process.env.APEX_CONTROL_REPORT_TZ || "America/Bogota";
+  const reportHour = envInteger("APEX_CONTROL_REPORT_HOUR", 7, 0, 23);
+  const reportMinute = envInteger("APEX_CONTROL_REPORT_MINUTE", 0, 0, 59);
+  const cleanupMinute = envInteger("APEX_CONTROL_CLEANUP_MINUTE", 30, 0, 59);
+
+  cron.schedule(APEX_CONTROL_PULSE_CRON, () => {
+    runOnce("apexControlPulse", () => pulse.runOnce());
+  });
+
+  cron.schedule(`${reportMinute} ${reportHour} * * *`, () => {
+    runOnce("apexControlDailyReport", () => report.sendDailyBriefing());
+  }, { timezone });
+
+  cron.schedule(`${cleanupMinute} 3 * * *`, () => {
+    runOnce("apexControlCleanup", () => report.cleanupRetention());
+  }, { timezone });
+
+  console.info(`[apex-control] pulso cada 15 s; reporte diario ${String(reportHour).padStart(2, "0")}:${String(reportMinute).padStart(2, "0")} ${timezone}`);
+  return pulse;
+}
+
+module.exports = {
+  start,
+  startReceivedInvoiceExtraction,
+  startApexControl,
+  RECEIVED_INVOICE_CRON,
+  APEX_CONTROL_PULSE_CRON
+};
 

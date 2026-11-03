@@ -39,7 +39,10 @@ const TENANT_MODELS = new Set([
   // Recepcion y asignacion de facturas electronicas (Contabilidad).
   "InvoiceSupplier", "InvoiceRecipient", "ReceivedInvoice", "ReceivedInvoiceDocument",
   "ReceivedInvoiceAssignment", "ReceivedInvoiceChangeLog", "InvoiceProcessedEmail",
-  "InvoiceProcessingError", "InvoiceMailConfig"
+  "InvoiceProcessingError", "InvoiceMailConfig",
+  // APEX Control: eventos, incidentes, notificaciones y reportes pueden ser
+  // globales (tenant_id NULL) cuando describen infraestructura compartida.
+  "ApexEvent", "ApexIncident", "ApexNotification", "ApexReportRun"
 ]);
 
 const WRITE_OPS = new Set(["create", "createMany", "upsert"]);
@@ -75,6 +78,7 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "WorkActivity", "ActivityEvidence", "ServicePhoto", "ServiceIncident", "EvidenceUploadAuthorization", "AuthorizationSession",
   "SensorReading", "BrainEvent", "BrainMetric",
   "ApexHeartAlert", "ApexHeartInventorySnapshot",
+  "ApexEvent", "ApexHealthSample", "ApexNotification",
   "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
   "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem", "TransportPlan",

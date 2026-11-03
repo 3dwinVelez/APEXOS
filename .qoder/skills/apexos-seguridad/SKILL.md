@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 1.1.0
+version: 1.2.0
 updated_at: 2026-11-02
 ---
 
@@ -34,3 +34,4 @@ updated_at: 2026-11-02
 - **RBAC de nómina/HR** puede no tener permisos explícitos en la matriz; verificar antes de asumir que una ruta está protegida.
 - **Antes de commit:** `git diff --cached` y búsqueda de secretos; revisar también archivos nuevos no rastreados.
 - **Cross-tenant** requiere aprobación operativa explícita y evidencia.
+- **Tokens cloud de la Torre externa.** `RAILWAY_TOKEN`, `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN` y las llaves anon viven solo en `apps/control-tower/.env.local`. `safeConfig` no los expone; las tarjetas muestran "Sin credenciales" y las sondas cloud quedan opcionales, nunca `ok` inventado. Sin token no debe existir llamada a la nube; revisar que errores y evidencias no arrastren el valor del token.

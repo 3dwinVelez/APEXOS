@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS (integrado por sugerencia del orquestador): latencia, presupuestos de performance, anti-patrones, Server-Timing, Docker y despliegues. Usar para medir impacto de cambios, ejecutar guards de rendimiento, auditar latencias o revisar estándares de ejecución de Servicios.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, infraestructura Docker/Railway, benchmarks.
-version: 1.1.0
+version: 1.2.0
 updated_at: 2026-11-02
 ---
 
@@ -39,3 +39,4 @@ updated_at: 2026-11-02
 - **Rutas calientes.** Sin N+1, sin bcrypt por request, sin cálculos pesados; reutilizar la caché de autenticación (SHA-256, 30 s).
 - **Evidencia.** `Server-Timing` por app/auth/tenant/autorización/Prisma y `x-request-id` en toda respuesta; sin ellos no hay medición atribuible.
 - **Escritura de volumen** solo en Nyvora QA, con identificador de corrida y limpieza selectiva.
+- **Rendimiento por ambiente en la Torre.** El tracker conserva hasta 120 muestras por ambiente y expone p50/p95/promedio/mínimo/máximo, tasa de error y serie. Las sondas remotas tienen `ENV_TIMEOUT_MS` propio y las consultas cloud `CLOUD_TIMEOUT_MS`; no usar la latencia local para juzgar QA o PROD. Un p95 alto sostenido debe contrastarse con el detalle técnico del ambiente, no con el promedio global.

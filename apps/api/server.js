@@ -281,6 +281,7 @@ async function build() {
   registerRoutes("comercio-public", require("./src/modules/comercio/public-routes"), { prefix: "/api/v1" });
   registerRoutes("commercial-management", require("./src/modules/commercial-management/routes"), { prefix: "/api/v1" });
   registerRoutes("apex-heart", require("./src/modules/apex-heart/routes"), { prefix: "/api/v1" });
+  registerRoutes("apex-control", require("./src/modules/apex-control/routes"), { prefix: "/api/v1" });
   registerRoutes("transport-pyg", require("./src/modules/transport-pyg/routes"), { prefix: "/api/v1" });
   bootLog("Registered API modules");
 
@@ -297,6 +298,8 @@ async function build() {
   });
   bootLog("Registered brain websocket route");
   registerRoutes("collaboration-websocket", require("./src/modules/collaboration/routes"));
+  require("./src/modules/apex-control/routes").registerLiveRoute(fastify);
+  bootLog("Registered apex-control websocket route");
 
   const { isRedisDisabled } = require("./src/fabric/redisConfig");
   bootLog("Starting background workers");
@@ -325,6 +328,9 @@ async function build() {
   // La extraccion de facturas por IMAP no depende de Redis y debe correr
   // aunque los workers de cola esten deshabilitados.
   require("./src/fabric/crons").startReceivedInvoiceExtraction();
+  // El pulso de APEX Control tambien es independiente de Redis: si Redis cae,
+  // el componente debe reportarse como down, no apagar la vigilancia.
+  require("./src/fabric/crons").startApexControl();
   bootLog("Finished background workers");
 
   bootLog("Registering health route");
@@ -361,6 +367,31 @@ async function build() {
     const route = request.routeOptions?.url || request.url || "unknown";
     if (route === "/metrics" || route === "/health") return;
     recordHttpRequest(request.method, route, reply.statusCode, reply.elapsedTime || 0);
+  });
+
+  // Apex Control: un 5xx es materia prima del sistema nervioso. Se emite sin
+  // datos del cuerpo ni del tenant para no filtrar informacion sensible.
+  fastify.addHook("onResponse", async (request, reply) => {
+    if (reply.statusCode < 500) return;
+    if (String(process.env.APEX_CONTROL_ENABLED || "true").toLowerCase() === "false") return;
+    const route = request.routeOptions?.url || request.url || "unknown";
+    if (route === "/metrics" || route === "/health") return;
+    if (route.endsWith("/apex-control/_simulate/failure")) return;
+    try {
+      await require("./src/modules/apex-control/events").emit({
+        source: "api",
+        kind: "http.5xx",
+        severity: "error",
+        component_key: "api",
+        entity_type: "http_route",
+        entity_id: route,
+        fingerprint: `http:${String(request.method).toUpperCase()}:${route}:5xx`,
+        dedupe_window_s: 30,
+        payload: { method: request.method, route, status_code: reply.statusCode, request_id: request.id }
+      });
+    } catch (error) {
+      fastify.log.warn(`[apex-control] no se pudo emitir el evento 5xx: ${error.message}`);
+    }
   });
   bootLog("Registered health route");
 
