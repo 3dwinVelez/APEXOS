@@ -1,3 +1,7 @@
+// tenantCache exige REDIS_URL al importar el servicio.
+process.env.DISABLE_REDIS = "true";
+process.env.REDIS_DISABLED = "true";
+
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const Fastify = require("fastify");

@@ -82,9 +82,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.2.0",
+      "version": "2.3.0",
       "updated_at": "2026-11-03",
-      "sha256": "01fad3d51da9ed881d7c01efe112e877ad637d20545bfb5779b7bf583aee5a2b",
+      "sha256": "528a6f100a2dcbac2542af38176906f5dfe8c32f348747e37241f827b69864e9",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -102,7 +102,8 @@
         "gates-preqa-aprobacion",
         "sin-secretos",
         "brief-salud-modulos-cloud",
-        "certificacion-ui-en-el-inventario"
+        "certificacion-ui-en-el-inventario",
+        "inventario-cierre-certificaciones"
       ]
     },
     {
@@ -131,9 +132,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "updated_at": "2026-11-03",
-      "sha256": "e7264be49c49557361ead86fedad8687fc93d00b956ae04bb2bd24b3e6701e35",
+      "sha256": "3da15acf74368c09e090d547267a1d32574a1368f0c1c8357cf5ffc20d319d97",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -147,7 +148,8 @@
         "pantallas-referencia",
         "homologacion-obligatoria",
         "tokens-sin-hex",
-        "certificacion-ui-en-la-misma-intervencion"
+        "certificacion-ui-en-la-misma-intervencion",
+        "ruta-dashboard-en-centro-comandos"
       ]
     },
     {
@@ -204,9 +206,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.2.0",
+      "version": "2.3.0",
       "updated_at": "2026-11-03",
-      "sha256": "1b7b345d0b367eacf0341454e8dd9e47c87d80236b53f3fddf1c5134066d9001",
+      "sha256": "57d7db2e39244cd6bc3b9fd680bc6660f8771f7e02fa565cbdb88a9feab1a38c",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -227,7 +229,8 @@
         "pruebas-salud-modulos",
         "limitacion-cloud-declarada",
         "certificacion-actividad-empresas",
-        "certificacion-contra-codigo-vigente"
+        "certificacion-contra-codigo-vigente",
+        "certificar-contra-shell-vigente"
       ]
     },
     {

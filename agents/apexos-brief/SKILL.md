@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.2.0
+version: 2.3.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -45,6 +45,7 @@ Antes de redactar, leer en este orden:
 13. **Solo `desarrollo`.** Si el pedido implica `develop` o `main`, el brief lo declara en autorizaciones requeridas; jamás lo asume. Las migraciones a nube son una autorización aparte.
 14. **Salud por módulo y métricas cloud.** Un brief de la torre con seguimiento por módulo o conectores cloud parte de `docs/briefs/2026-11-03-torre-modulos-metricas.md`, declara si hay credenciales reales o solo pruebas congeladas, y entrega la sección 11 completa. No se promete lectura real de Railway/Supabase/Vercel sin tokens y no se versionan esos tokens.
 15. **Certificación UI en el inventario.** Si el cambio renombra pasos, etiquetas o paneles de un flujo con certificación de navegador, el inventario `A`/`M` incluye el archivo de certificación y el brief declara su revalidación. Por qué: `378115ef` cambió los pasos de creación de productos sin incluir `certify-ui-ux-phase-one-local` y la certificación quedó roja hasta el 2026-11-03.
+16. **Inventario de cierre de certificaciones.** Un brief que cierra deuda de certificaciones enumera cada arnés `M` uno por uno, cada archivo de evidencia `A` de `docs/qa/evidence/<cambio>/` y la salida de síntesis (`web-suite.txt`, `api-suite.txt`, `agents-suite.txt`), y fija como criterio el conteo exacto por certificación más el total de fallos en cero. Un inventario con "las certificaciones" como comodín no sirve como `expected_changes` y se rechaza. Por qué: el cierre del 2026-11-03 tocó seis arneses y nueve JSON de certificación, y solo un inventario archivo por archivo permitió verificar que entraba todo y nada más.
 
 ## Checklist de intervención
 

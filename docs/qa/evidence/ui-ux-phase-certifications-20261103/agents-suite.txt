@@ -1,0 +1,6 @@
+Comando: npm run test:agents
+
+# tests 42
+# pass 42
+# fail 0
+# skipped 0

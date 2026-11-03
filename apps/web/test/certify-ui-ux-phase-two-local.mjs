@@ -15,6 +15,19 @@ const browser = await puppeteer.launch({ executablePath, headless: true, args: [
 const page = await browser.newPage();
 const checks = [];
 const record = (name, passed, detail = {}) => { checks.push({ name, passed, detail }); assert.equal(passed, true, `${name}: ${JSON.stringify(detail)}`); };
+async function waitHydration(target = page) {
+  await target.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
+}
+async function openWorkspaceTools(target = page) {
+  await waitHydration(target);
+  await target.waitForFunction(() => {
+    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
+    const details = summary?.closest("details");
+    if (!details) return false;
+    if (!details.open) summary.click();
+    return details.open;
+  }, { timeout: 5000 });
+}
 
 try {
   await page.setViewport({ width: 1440, height: 900 });
@@ -24,22 +37,30 @@ try {
   await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0" }), page.click('button[type="submit"]')]);
   record("authenticated_dashboard", page.url().includes("/dashboard"));
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle0" });
-  await page.waitForFunction(() => document.body.innerText.toLocaleLowerCase().includes("panel contextual"), { timeout: 10000 }).catch(async (error) => {
+  await waitHydration();
+  await page.waitForFunction(() => {
+    const text = document.body.innerText;
+    return text.includes("Mi operación") && text.includes("Perfil:");
+  }, { timeout: 10000 }).catch(async (error) => {
     const visibleText = await page.evaluate(() => document.body.innerText.slice(0, 1200));
     throw new Error(`No apareció el dashboard contextual en ${page.url()}: ${visibleText}`, { cause: error });
   });
-  record("role_context_dashboard", await page.evaluate(() => document.body.innerText.toLocaleLowerCase().includes("panel contextual")));
+  record("role_context_dashboard", await page.evaluate(() => document.body.innerText.includes("Mi operación") && document.body.innerText.includes("Perfil:")));
 
-  await page.keyboard.down("Control"); await page.keyboard.press("KeyK"); await page.keyboard.up("Control");
+  await page.keyboard.down("Control"); await page.keyboard.press("k"); await page.keyboard.up("Control");
   await page.waitForSelector('[role="dialog"] input', { timeout: 5000 });
   record("command_palette_keyboard", await page.$('[role="dialog"]') !== null);
-  await page.type('[role="dialog"] input', "orden de compra");
-  record("command_palette_search", await page.evaluate(() => document.body.innerText.includes("Nueva orden de compra")));
+  await page.type('[role="dialog"] input', "compra");
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"] [role="option"]')].some((item) => item.textContent?.includes("Nueva compra")), { timeout: 5000 });
+  record("command_palette_search", await page.evaluate(() => document.body.innerText.includes("Nueva compra")));
   await page.keyboard.press("Escape");
 
   await page.goto(`${baseUrl}/dashboard/inventario/productos`, { waitUntil: "networkidle0" });
   record("advanced_breadcrumbs", await page.$('nav[aria-label="Ruta de navegación"]') !== null);
-  record("traceability_control", await page.evaluate(() => document.body.innerText.includes("Trazabilidad")));
+  await openWorkspaceTools();
+  await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Trazabilidad")?.click());
+  await page.waitForSelector('[aria-label="Trazabilidad de navegación"]', { timeout: 5000 });
+  record("traceability_control", await page.evaluate(() => document.body.innerText.includes("Recorrido reciente")));
 
   await page.select('select[aria-label="Idioma"]', "en");
   record("locale_en", await page.evaluate(() => document.documentElement.lang === "en" && document.body.innerText.includes("Command center")));

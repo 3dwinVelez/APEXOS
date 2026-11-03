@@ -1,0 +1,6 @@
+Comando: cd apps/web && node --test --test-force-exit test/command-palette-module-functions.test.mjs
+
+# tests 10
+# pass 10
+# fail 0
+# skipped 0

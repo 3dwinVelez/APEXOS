@@ -16,6 +16,19 @@ const browser = await puppeteer.launch({ executablePath, headless: true, args: [
 const page = await browser.newPage();
 const checks = [];
 const record = (name, passed, detail = {}) => { checks.push({ name, passed, detail }); assert.equal(passed, true, `${name}: ${JSON.stringify(detail)}`); };
+async function waitHydration(target = page) {
+  await target.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
+}
+async function openWorkspaceTools(target = page) {
+  await waitHydration(target);
+  await target.waitForFunction(() => {
+    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
+    const details = summary?.closest("details");
+    if (!details) return false;
+    if (!details.open) summary.click();
+    return details.open;
+  }, { timeout: 5000 });
+}
 let storageKey = "";
 let previous = null;
 
@@ -39,15 +52,19 @@ try {
   await page.waitForSelector('button[aria-label="Preferencias de experiencia"]', { timeout: 30_000 });
   ({ storageKey, previous } = await page.evaluate(() => { const key = `apex_experience_v1:${(localStorage.getItem("user_email") || "anonymous").toLocaleLowerCase()}`; return { storageKey: key, previous: localStorage.getItem(key) }; }));
 
-  await page.click('button[aria-label="Preferencias de experiencia"]');
+  await openWorkspaceTools();
+  await page.evaluate(() => document.querySelector('button[aria-label="Preferencias de experiencia"]')?.click());
+  await page.waitForSelector('[role="dialog"][aria-label="Preferencias de experiencia"]');
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Alto contraste")?.click());
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Reducir movimiento")?.click());
+  await page.waitForFunction(() => document.documentElement.dataset.contrast === "high" && document.documentElement.dataset.reducedMotion === "true", { timeout: 5000 });
   record("accessible_preferences_applied", await page.evaluate(() => document.documentElement.dataset.contrast === "high" && document.documentElement.dataset.reducedMotion === "true"));
 
   const routes = ["/dashboard/inventario/productos", "/dashboard/compras", "/dashboard/ventas", "/dashboard/reportes/apex-heart"];
   for (const route of routes) {
     await page.goto(`${baseUrl}${route}`, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("main h1", { timeout: 20_000 });
+    await page.waitForFunction(() => document.documentElement.dataset.contrast === "high" && document.documentElement.dataset.reducedMotion === "true", { timeout: 20000 });
     const audit = await page.evaluate(() => ({
       h1: document.querySelectorAll("main h1").length,
       main: document.querySelectorAll("main").length,
@@ -61,7 +78,8 @@ try {
     record(`labels_and_layout_${route.split("/").pop()}`, audit.unnamedButtons === 0 && !audit.horizontalOverflow && audit.contrast === "high" && audit.reducedMotion === "true", audit);
   }
 
-  await page.keyboard.down("Control"); await page.keyboard.press("KeyK"); await page.keyboard.up("Control");
+  await waitHydration();
+  await page.keyboard.down("Control"); await page.keyboard.press("k"); await page.keyboard.up("Control");
   await page.waitForSelector('[role="dialog"][aria-modal="true"]');
   record("keyboard_shortcut_focuses_palette", await page.evaluate(() => document.activeElement?.getAttribute("role") === "combobox"));
   await page.keyboard.press("Escape");

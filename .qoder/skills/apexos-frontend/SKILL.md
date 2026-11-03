@@ -2,7 +2,7 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.1.0
+version: 2.2.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -42,6 +42,7 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
 9. **Sin funcionalidad sacrificada por decoración.** Los KPIs salen de datos reales del tenant; si hay operación cargada, no se muestran vacíos.
 10. **Nada se declara terminado sin navegador.** `lint`, `typecheck` y build no prueban la pantalla. Se prueba el flujo en navegador y se captura evidencia; si no se pudo, se declara el bloqueo.
 11. **La certificación UI viaja con el cambio.** Renombrar o reordenar pasos, etiquetas o paneles visibles obliga a actualizar en la misma intervención la certificación de navegador que los verifica. Un cambio de flujo sin su certificación deja la suite en rojo contra una pantalla correcta. Por qué: `378115ef` simplificó la creación de productos y retiró `Existencias y dimensiones`, pero `certify-ui-ux-phase-one-local` siguió esperándola hasta el 2026-11-03.
+12. **Toda ruta del dashboard entra al centro de comandos.** Una pantalla estática nueva bajo `app/dashboard/**` se registra en `apps/web/lib/moduleFunctions.ts` (o en el alias correspondiente) en la misma intervención, con etiqueta de función de negocio y keywords de trabajo diario, no con el nombre técnico del menú. Por qué: `/dashboard/comercio/promociones` existía como pantalla desde el prototipo de Comercio pero quedó fuera del palette hasta el 2026-11-03; la prueba de cobertura del palette la detectó, no un usuario.
 
 ## Checklist de intervención
 

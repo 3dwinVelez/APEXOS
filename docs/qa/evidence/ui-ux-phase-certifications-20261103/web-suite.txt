@@ -1,0 +1,6 @@
+Comando: cd apps/web && node --test --test-force-exit test/*.test.mjs test/*.test.js
+
+# tests 598
+# pass 598
+# fail 0
+# skipped 0

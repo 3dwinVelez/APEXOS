@@ -15,6 +15,18 @@ const browser = await puppeteer.launch({ executablePath, headless: true, args: [
 const page = await browser.newPage();
 const checks = [];
 const record = (name, passed, detail = {}) => { checks.push({ name, passed, detail }); assert.equal(passed, true, `${name}: ${JSON.stringify(detail)}`); };
+async function openPreferences() {
+  await page.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
+  await page.waitForFunction(() => {
+    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
+    const details = summary?.closest("details");
+    if (!details) return false;
+    if (!details.open) summary.click();
+    return details.open;
+  }, { timeout: 5000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Preferencias de experiencia"]')?.click());
+  await page.waitForSelector('[role="dialog"][aria-label="Preferencias de experiencia"]', { timeout: 5000 });
+}
 let storageKey = "";
 let previous = null;
 
@@ -27,8 +39,7 @@ try {
   await page.goto(`${baseUrl}/dashboard/inventario/productos?estado=activo`, { waitUntil: "networkidle0" });
   ({ storageKey, previous } = await page.evaluate(() => { const key = `apex_experience_v1:${(localStorage.getItem("user_email") || "anonymous").toLocaleLowerCase()}`; return { storageKey: key, previous: localStorage.getItem(key) }; }));
 
-  await page.click('button[aria-label="Preferencias de experiencia"]');
-  await page.waitForSelector('[role="dialog"][aria-label="Preferencias de experiencia"]');
+  await openPreferences();
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Compacta")?.click());
   record("compact_density_applied", await page.evaluate(() => document.documentElement.dataset.density === "compact"));
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Grande")?.click());
@@ -38,8 +49,9 @@ try {
   record("favorite_and_view_saved", await page.evaluate(() => document.body.innerText.includes("Accesos personales") && document.body.innerText.includes("Vista guardada")));
 
   await page.reload({ waitUntil: "networkidle0" });
+  await page.waitForFunction(() => document.documentElement.dataset.density === "compact" && document.documentElement.dataset.fontScale === "large", { timeout: 20000 });
   record("preferences_persist_after_reload", await page.evaluate(() => document.documentElement.dataset.density === "compact" && document.documentElement.dataset.fontScale === "large"));
-  await page.click('button[aria-label="Preferencias de experiencia"]');
+  await openPreferences();
   record("personal_access_persisted", await page.evaluate(() => document.body.innerText.includes("Accesos personales")));
 } finally {
   if (storageKey) await page.evaluate(({ key, value }) => { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); document.documentElement.dataset.density = "comfortable"; document.documentElement.dataset.fontScale = "medium"; }, { key: storageKey, value: previous }).catch(() => undefined);

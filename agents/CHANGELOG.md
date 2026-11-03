@@ -4,6 +4,15 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-03
 
+### Cierre de las certificaciones UI y del hueco del palette
+
+- Las seis certificaciones de navegador que fallaban (`phase-two`, `phase-three-accessibility`, `phase-three-collaboration`, `phase-three-personalization`, `phase-three-toolkit`, `phase-three-totp`) se corrigieron en el arnés: hidratación por `dataset.density`, desplegable **Herramientas** abierto antes de pulsar cada herramienta, `press("k")` en lugar de `KeyK`, etiqueta vigente `Nueva compra` y configuración pública de Supabase inyectada en el flujo 2FA simulado. `offline-bootstrap` desactiva Redis antes de importar `tenantCache`. Nueve certificaciones en verde (71 comprobaciones) en `docs/qa/evidence/ui-ux-phase-certifications-20261103/`.
+- `apps/web/lib/moduleFunctions.ts` registra `Gestionar promociones del comercio` para la ruta `/dashboard/comercio/promociones`, que existía sin entrada en el centro de comandos; la prueba de paleta queda 10/10.
+- `apexos-frontend` — `2.2.0` — control nuevo `ruta-dashboard-en-centro-comandos`: toda pantalla estática del dashboard se registra en `lib/moduleFunctions.ts` en la misma intervención, con nombre de función de negocio y keywords de trabajo diario.
+- `apexos-qa` — `2.3.0` — control nuevo `certificar-contra-shell-vigente`: esperar `dataset.density`, abrir **Herramientas**, usar `press("k")`, inyectar la configuración pública de Supabase cuando el build no la trae y desactivar Redis en pruebas que importan `tenantCache`.
+- `apexos-brief` — `2.3.0` — control nuevo `inventario-cierre-certificaciones`: un cierre de deuda de certificaciones enumera cada arnés, cada archivo de evidencia y la salida de síntesis, con conteo exacto por certificación como criterio.
+- Brief: `docs/briefs/2026-11-03-cierre-certificaciones-ui.md`; evidencia en `docs/qa/evidence/ui-ux-phase-certifications-20261103/`.
+
 ### Torre: actividad, conexiones y vistas Resumen/Detalle
 
 - `GET /api/v1/apex-control/activity` agrega buckets diarios de auditoría y eventos con `$queryRaw` y filtro de tenant; `GET /api/v1/apex-control/tenants` expone conectividad por empresa con permiso explícito, guarda de ambiente y allowlist, y `403 CROSS_TENANT_DESHABILITADO` cuando la guarda está cerrada.

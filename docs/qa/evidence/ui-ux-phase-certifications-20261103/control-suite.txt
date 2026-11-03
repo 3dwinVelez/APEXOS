@@ -1,0 +1,6 @@
+Comando: npm run control:test
+
+# tests 67
+# pass 67
+# fail 0
+# skipped 0

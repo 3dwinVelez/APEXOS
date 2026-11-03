@@ -1,0 +1,6 @@
+Comando: cd apps/api && node --test --test-force-exit test/*.test.js
+
+# tests 964
+# pass 962
+# fail 0
+# skipped 2

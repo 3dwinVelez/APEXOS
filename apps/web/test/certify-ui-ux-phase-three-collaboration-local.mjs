@@ -15,6 +15,19 @@ const browser = await puppeteer.launch({ executablePath, headless: true, args: [
 const first = await browser.newPage();
 const checks = [];
 const record = (name, passed, detail = {}) => { checks.push({ name, passed, detail }); assert.equal(passed, true, `${name}: ${JSON.stringify(detail)}`); };
+async function waitHydration(target) {
+  await target.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
+}
+async function openWorkspaceTools(target) {
+  await waitHydration(target);
+  await target.waitForFunction(() => {
+    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
+    const details = summary?.closest("details");
+    if (!details) return false;
+    if (!details.open) summary.click();
+    return details.open;
+  }, { timeout: 5000 });
+}
 
 try {
   await first.setViewport({ width: 1440, height: 900 });
@@ -27,25 +40,26 @@ try {
   await first.waitForSelector('button[aria-label="Colaboración en tiempo real"]');
   await first.goto(`${baseUrl}/dashboard/inventario/productos/nuevo`, { waitUntil: "domcontentloaded" });
   await first.waitForSelector('button[aria-label="Colaboración en tiempo real"]');
-  await new Promise((resolve) => setTimeout(resolve, 1_000));
-  await first.waitForSelector('button[aria-label="Colaboración en tiempo real"]');
-  await first.click('button[aria-label="Colaboración en tiempo real"]');
+  await openWorkspaceTools(first);
+  await first.evaluate(() => document.querySelector('button[aria-label="Colaboración en tiempo real"]')?.click());
+  await first.waitForSelector('[role="dialog"][aria-label="Colaboración en tiempo real"]', { timeout: 5000 });
   record("presence_panel_available", await first.$('[role="dialog"][aria-label="Colaboración en tiempo real"]') !== null);
   record("privacy_notice_visible", await first.evaluate(() => document.body.innerText.includes("no comparte el contenido de los formularios")));
-  await first.click('button[aria-label="Colaboración en tiempo real"]');
+  await first.evaluate(() => document.querySelector('button[aria-label="Colaboración en tiempo real"]')?.click());
 
   const second = await browser.newPage();
   await second.setViewport({ width: 1440, height: 900 });
   await second.goto(`${baseUrl}/dashboard/inventario/productos/nuevo`, { waitUntil: "domcontentloaded" });
   await second.waitForSelector("input");
-  await first.waitForSelector('[aria-label="2 sesiones activas"]', { timeout: 5_000 });
+  await waitHydration(second);
+  await first.waitForSelector('[aria-label="2 sesiones activas"]', { timeout: 8_000 });
   record("second_session_detected", true);
 
   await second.focus("input");
-  await first.waitForFunction(() => document.body.innerText.includes("Edición concurrente"), { timeout: 5_000 });
+  await first.waitForFunction(() => document.body.innerText.includes("Edición concurrente"), { timeout: 8_000 });
   record("concurrent_edit_warning", await first.evaluate(() => document.body.innerText.includes("Verifica los cambios antes de guardar")));
   await second.close();
-  await first.waitForFunction(() => !document.body.innerText.includes("Edición concurrente"), { timeout: 5_000 });
+  await first.waitForFunction(() => !document.body.innerText.includes("Edición concurrente"), { timeout: 8_000 });
   record("session_leave_propagated", true);
 } finally {
   await browser.close();

@@ -1,0 +1,4 @@
+Comando: npm --workspace apps/web run typecheck
+
+> tsc -p tsconfig.typecheck.json --noEmit
+
