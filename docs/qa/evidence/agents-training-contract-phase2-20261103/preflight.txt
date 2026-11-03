@@ -1,0 +1,42 @@
+[agents:preflight] rama: desarrollo | HEAD: 0ad1e15c | fetch: si
+[agents:preflight] comparacion contra origin/desarrollo @ 0ad1e15c
+
+Frescura de agentes
+  NOMBRE                      LOCAL       REMOTO      ESTADO
+  apexos-auditor-marcaciones  1.1.0       1.1.0       in-sync
+  apexos-auditor-nomina       1.1.0       1.1.0       in-sync
+  apexos-backend              2.0.0       1.2.0       local-ahead
+  apexos-brief                1.3.0       1.3.0       in-sync
+  apexos-db-nube              2.0.0       2.0.0       in-sync
+  apexos-frontend             2.0.0       2.0.0       in-sync
+  apexos-git-guardian         1.3.0       1.3.0       in-sync
+  apexos-performance          1.3.0       1.3.0       in-sync
+  apexos-qa                   2.0.0       1.2.0       local-ahead
+  apexos-seguridad            2.0.0       1.2.0       local-ahead
+  equipo-apexos               1.4.0       1.4.0       in-sync
+
+Frescura de gobernanza
+  NOMBRE                                    LOCAL       REMOTO      ESTADO
+  AGENTS.md                                 2026-11-03  2026-11-03  in-sync
+  BRANCHING_WORKFLOW.md                     2026-08-11  2026-08-11  in-sync
+  docs/CHANGE_APPROVAL_QA_POLICY.md         2026-09-08  2026-09-08  in-sync
+  docs/DATABASE_CONVENTIONS.md              2026-11-03  2026-11-03  in-sync
+  docs/MULTITENANT_DATA_ISOLATION.md        2026-07-02  2026-07-02  in-sync
+  docs/PERFORMANCE_ENGINEERING_STANDARD.md  2026-07-25  2026-07-25  in-sync
+  docs/SECURITY_THREAT_MODEL.md             2026-08-11  2026-08-11  in-sync
+  docs/briefs/_TEMPLATE.md                  2026-11-03  2026-11-03  in-sync
+  docs/design/APEXOS_COMPONENT_CATALOG.md   2026-11-03  2026-11-03  in-sync
+  docs/project/CONTRATO_EQUIPO_APEXOS.md    2026-11-03  2026-11-03  local-ahead
+  docs/project/filosofia-producto-ui.md     2026-08-21  2026-08-21  in-sync
+
+Ruteo obligatorio (6 ruta(s))
+  equipo-apexos: .qoder/skills/apexos-backend/SKILL.md, .qoder/skills/apexos-qa/SKILL.md, .qoder/skills/apexos-seguridad/SKILL.md, agents/CHANGELOG.md, agents/registry.json, docs/project/CONTRATO_EQUIPO_APEXOS.md
+  apexos-brief: .qoder/skills/apexos-backend/SKILL.md, .qoder/skills/apexos-qa/SKILL.md, .qoder/skills/apexos-seguridad/SKILL.md, agents/CHANGELOG.md, agents/registry.json, docs/project/CONTRATO_EQUIPO_APEXOS.md
+  apexos-git-guardian: .qoder/skills/apexos-backend/SKILL.md, .qoder/skills/apexos-qa/SKILL.md, .qoder/skills/apexos-seguridad/SKILL.md, agents/CHANGELOG.md, agents/registry.json, docs/project/CONTRATO_EQUIPO_APEXOS.md
+
+Lecturas obligatorias antes de editar
+  - .qoder/skills/equipo-apexos/SKILL.md
+  - .qoder/skills/apexos-brief/SKILL.md
+  - .qoder/skills/apexos-git-guardian/SKILL.md
+
+Veredicto: OK

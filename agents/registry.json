@@ -46,9 +46,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "1.2.0",
-      "updated_at": "2026-11-02",
-      "sha256": "0dead9b3a8041645c02f2ca3574806165c8cd4a9e7332aee335c24171cd3d086",
+      "version": "2.0.0",
+      "updated_at": "2026-11-03",
+      "sha256": "0879351a08b3e7259a68e631bbd9b8c3ad45eeb54571a83119a32cf8404e9463",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -58,7 +58,14 @@
         "doble-almacen",
         "alias-hr-talento-humano",
         "auditoria-depende-redis",
-        "pruebas-prisma-fake"
+        "pruebas-prisma-fake",
+        "contrato-v2",
+        "tenant-context-obligatorio",
+        "permisos-explicitos",
+        "jwt-hs256",
+        "rate-limit-por-tenant",
+        "uploads-firma-real",
+        "torre-fuera-api"
       ]
     },
     {
@@ -163,9 +170,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "1.2.0",
-      "updated_at": "2026-11-02",
-      "sha256": "f9130cf0cd67fbdc3507f4ff544041bd34da4a4b9499fdce12abb1cf7ba722f1",
+      "version": "2.0.0",
+      "updated_at": "2026-11-03",
+      "sha256": "631917015e2919594ef6073d69579fb6f82d45d51f78661d99da0deeabb81dbb",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -174,15 +181,23 @@
         "puertas-evidencia",
         "hr-regresion",
         "ui-navegador-real",
-        "bloqueo-explicito"
+        "bloqueo-explicito",
+        "contrato-v2",
+        "certificacion-bloqueante",
+        "manifiesto-v2-exacto",
+        "capacidades-juntas",
+        "arnes-vs-producto",
+        "aprobacion-main-explicita",
+        "evidencia-sin-pii",
+        "harness-aislado"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "1.2.0",
-      "updated_at": "2026-11-02",
-      "sha256": "5cb640bd2d32d36145723487db2872bf4ebe0fc42df9eec85d69783450ff4b6a",
+      "version": "2.0.0",
+      "updated_at": "2026-11-03",
+      "sha256": "3993a2f9dc1bf7ec964afcaab86a63948412b1baa1e10cbf15163ac11c0db477",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -191,7 +206,14 @@
         "tokens-nunca-en-claro",
         "uploads-validados",
         "rbac-hr-verificar",
-        "secretos-precommit"
+        "secretos-precommit",
+        "contrato-v2",
+        "tenant-unico-filtro",
+        "jwt-timing-safe",
+        "uploads-firma-real",
+        "dependencias-justificadas",
+        "torre-tokens-server-only",
+        "hallazgos-con-reproduccion"
       ]
     },
     {
@@ -268,7 +290,7 @@
       "name": "Contrato del equipo",
       "path": "docs/project/CONTRATO_EQUIPO_APEXOS.md",
       "updated_at": "2026-11-03",
-      "sha256": "ffa207b6b4d3885702c246def123ef484add0c944e31d8e63949f90d0a06b9fa"
+      "sha256": "b3ba0fed44ca6c55f0a71cec065dbfa401a816fa68ca08514bc45aae59cc839d"
     },
     {
       "name": "Filosofía de producto UI",

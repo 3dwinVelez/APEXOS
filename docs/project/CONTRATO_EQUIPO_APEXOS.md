@@ -130,4 +130,4 @@ Al terminar, cada agente entrega:
 
 ## 9. Migración progresiva
 
-Los agentes que aún no declaran `contract: 2` siguen operando con su contrato anterior. Se migran por fases, empezando por frontend y base de datos (migrados el 2026-11-03: `apexos-frontend` 2.0.0 y `apexos-db-nube` 2.0.0). Un agente migrado no puede volver a `contract: 1`; `agents:check` valida sus secciones y la existencia de sus lecturas obligatorias.
+Los agentes que aún no declaran `contract: 2` siguen operando con su contrato anterior. Se migran por fases. Migrados el 2026-11-03: `apexos-frontend` 2.0.0 y `apexos-db-nube` 2.0.0 (fase 1); `apexos-backend` 2.0.0, `apexos-seguridad` 2.0.0 y `apexos-qa` 2.0.0 (fase 2). Un agente migrado no puede volver a `contract: 1`; `agents:check` valida sus secciones y la existencia de sus lecturas obligatorias.

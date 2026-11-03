@@ -28,6 +28,12 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 - `apexos-brief` — `1.3.0` — la sección 11 declara dueño por ruta y exige cobertura en verde.
 - `apexos-git-guardian` — `1.3.0` — la secuencia de cierre incluye `agents:coverage`; sin cobertura no hay commit ni push.
 
+### Fase 2: backend, seguridad y QA
+
+- `apexos-backend` — `2.0.0` — migra a `contract: 2`; contexto de tenant obligatorio, permisos explícitos por guardas, JWT HS256 con `timingSafeEqual`, rate limit por tenant, `Server-Timing` por fases, P2028 como contención, doble almacén, auditoría dependiente de Redis, subidas con firma real y torre fuera de `apps/api`. Nuevos controles: `contrato-v2`, `tenant-context-obligatorio`, `permisos-explicitos`, `jwt-hs256`, `rate-limit-por-tenant`, `uploads-firma-real`, `torre-fuera-api`.
+- `apexos-seguridad` — `2.0.0` — migra a `contract: 2`; el tenant como única frontera donde no hay RLS, secretos fuera del repositorio y del cliente, JWT sin atajos, uploads por firma, dependencias justificadas, hallazgos con reproducción y tokens cloud de la torre solo en servidor. Nuevos controles: `contrato-v2`, `tenant-unico-filtro`, `jwt-timing-safe`, `uploads-firma-real`, `dependencias-justificadas`, `torre-tokens-server-only`, `hallazgos-con-reproduccion`.
+- `apexos-qa` — `2.0.0` — migra a `contract: 2`; certificación bloqueante, manifiesto v2 exacto contra el target remoto, capacidades protegidas juntas, arnés vs producto, aprobación explícita de `main`, evidencia sin datos personales y harness aislado. Nuevos controles: `contrato-v2`, `certificacion-bloqueante`, `manifiesto-v2-exacto`, `capacidades-juntas`, `arnes-vs-producto`, `aprobacion-main-explicita`, `evidencia-sin-pii`, `harness-aislado`.
+
 ### Torre apex-control
 
 - `apexos-performance` — `1.3.0` — control nuevo: las sondas TCP deben llamar a `connect` y probarse contra un servidor efímero; un `timeout` del probe no se confunde con caída del servicio vigilado. Origen: la sonda Redis de la torre nunca conectaba y reportaba `down` con el contenedor arriba.
