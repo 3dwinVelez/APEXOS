@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.0.0
+version: 2.1.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -42,6 +42,7 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
 8. **Frontend medido como usuario.** El presupuesto es de documento percibido y de peticiones reales; usar `npm run qa:request-map` para inventariar peticiones y `scripts/performance/assert-projects-no-server-recharts.js` para impedir render de Recharts en el servidor. Una pantalla "rápida" sin navegador real no es evidencia.
 9. **Certificación local aislada.** El arnés vive en `%TEMP%` (puertos 3310/3311), requiere precalentamiento y `next dev` se autocierra por memoria. Un fallo de arranque del arnés es del arnés, no regresión de producto; distinguirlo antes de reportar.
 10. **Infraestructura con autorización.** Docker, Railway, Supabase, despliegues y cambios de variables de entorno requieren autorización explícita e independiente. Este experto diagnostica y propone; no ejecuta.
+11. **Métricas sin contaminar el puntaje.** El panel de módulos muestra registros, frescura y servicios por módulo mediante sondas `informational`, que no alteran el resumen del ambiente; solo el resumen por ambiente (una sonda por ambiente) pondera. Las tarjetas cloud reportan métricas medibles: Railway (servicios, despliegues, fallidos, antigüedad y estado del último), Vercel (despliegues, listos, fallidos, antigüedad y duración media calculada con `buildingAt`/`ready`), Supabase (`/health?services=` por servicio y versión de base). Sin credenciales o con error de autenticación la tarjeta queda `unknown`, nunca `ok`; una sonda lenta no se reintenta en bucle dentro del mismo ciclo.
 
 ## Checklist de intervención
 

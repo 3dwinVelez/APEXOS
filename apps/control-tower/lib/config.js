@@ -150,7 +150,8 @@ function loadConfig(overrides = {}) {
         vercelUrl: urlValue(env.ENV_LOCAL_VERCEL_URL, ""),
         railwayProjectId: env.ENV_LOCAL_RAILWAY_PROJECT_ID || "",
         vercelProjectId: env.ENV_LOCAL_VERCEL_PROJECT_ID || "",
-        supabaseRef: env.ENV_LOCAL_SUPABASE_REF || ""
+        supabaseRef: env.ENV_LOCAL_SUPABASE_REF || "",
+        apexToken: env.ENV_LOCAL_APEX_TOKEN || env.APEX_CONTROL_TOKEN || ""
       },
       develop: {
         id: "develop",
@@ -166,7 +167,8 @@ function loadConfig(overrides = {}) {
         vercelUrl: urlValue(env.ENV_DEVELOP_VERCEL_URL, ""),
         railwayProjectId: env.ENV_DEVELOP_RAILWAY_PROJECT_ID || "",
         vercelProjectId: env.ENV_DEVELOP_VERCEL_PROJECT_ID || "",
-        supabaseRef: env.ENV_DEVELOP_SUPABASE_REF || ENV_DEFAULTS.develop.supabaseRef
+        supabaseRef: env.ENV_DEVELOP_SUPABASE_REF || ENV_DEFAULTS.develop.supabaseRef,
+        apexToken: env.ENV_DEVELOP_APEX_TOKEN || ""
       },
       main: {
         id: "main",
@@ -182,7 +184,8 @@ function loadConfig(overrides = {}) {
         vercelUrl: urlValue(env.ENV_MAIN_VERCEL_URL, ""),
         railwayProjectId: env.ENV_MAIN_RAILWAY_PROJECT_ID || "",
         vercelProjectId: env.ENV_MAIN_VERCEL_PROJECT_ID || "",
-        supabaseRef: env.ENV_MAIN_SUPABASE_REF || ENV_DEFAULTS.main.supabaseRef
+        supabaseRef: env.ENV_MAIN_SUPABASE_REF || ENV_DEFAULTS.main.supabaseRef,
+        apexToken: env.ENV_MAIN_APEX_TOKEN || ""
       }
     },
     environmentTimeoutMs: intValue(env.ENV_TIMEOUT_MS, 6000, 1000, 30000),

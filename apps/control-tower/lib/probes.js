@@ -7,6 +7,7 @@ const { execFile } = require("node:child_process");
 const { cloudForEnvironment } = require("./cloud");
 const { diagnoseCheck } = require("./diagnostics");
 const { redact } = require("./security");
+const { fetchModules, enrichWithChecks, moduleChecks } = require("./modules");
 
 const DEFAULT_MAX_BYTES = 256 * 1024;
 const ENVIRONMENT_ORDER = ["local", "develop", "main"];
@@ -280,8 +281,8 @@ function probeFromStatus(id, label, component, options = {}) {
   }
   const raw = String(component.status || component.state || "unknown").toLowerCase();
   check.status = ["ok", "degraded", "down", "unknown"].includes(raw) ? raw : "unknown";
-  check.detail = component.detail || component.message || null;
-  check.latencyMs = component.latencyMs ?? null;
+  check.detail = component.detail || component.message || component.details || null;
+  check.latencyMs = component.latencyMs ?? component.latency_ms ?? null;
   return check;
 }
 
@@ -305,8 +306,11 @@ async function probeApexControl(config) {
     deep.detail = result.error;
   } else if (result.status === 200 && result.json) {
     deep.status = ["ok", "degraded", "down"].includes(String(result.json.overall)) ? String(result.json.overall) : "ok";
-    deep.detail = { overall: result.json.overall, components: result.json.components ? Object.keys(result.json.components).length : 0 };
-    const components = result.json.components || {};
+    const rawComponents = result.json.components;
+    const components = Array.isArray(rawComponents)
+      ? Object.fromEntries(rawComponents.map((component) => [component.key, component]))
+      : (rawComponents && typeof rawComponents === "object" ? rawComponents : {});
+    deep.detail = { overall: result.json.overall, components: Object.keys(components).length };
     for (const [id, label] of [
       ["queues", "Colas BullMQ"],
       ["crons", "Crons"],
@@ -329,13 +333,19 @@ async function probeApexControl(config) {
   return results;
 }
 
-function computeSummary(checks) {
+function scored(checks) {
+  return checks.filter((check) => !check.informational);
+}
+
+function computeSummary(allChecks) {
+  const checks = scored(allChecks);
   const summary = { ok: 0, degraded: 0, down: 0, unknown: 0, total: checks.length };
   for (const check of checks) summary[check.status] = (summary[check.status] || 0) + 1;
   return summary;
 }
 
-function computeOverall(checks) {
+function computeOverall(allChecks) {
+  const checks = scored(allChecks);
   if (!checks.length || checks.every((check) => check.status === "unknown")) return "unknown";
   const required = checks.filter((check) => !check.optional);
   if (required.some((check) => check.critical && check.status === "down")) return "down";
@@ -343,6 +353,15 @@ function computeOverall(checks) {
   if (required.some((check) => check.status === "unknown")) return "degraded";
   if (checks.some((check) => check.status === "down")) return "degraded";
   return "ok";
+}
+
+async function collectModules(config, environment, checks) {
+  try {
+    const payload = enrichWithChecks(await fetchModules(config, environment, { httpRequest }), checks, environment.id);
+    return { payload, checks: moduleChecks(payload, environment) };
+  } catch (error) {
+    return { payload: null, checks: [] };
+  }
 }
 
 async function runProbes(config) {
@@ -357,6 +376,8 @@ async function runProbes(config) {
     probeDocker(config)
   ]);
   checks.push(...(await probeApexControl(config)));
+  const modules = await collectModules(config, config.environments.local, checks);
+  if (modules.payload) checks.push(...modules.checks);
   checks.sort((left, right) => {
     if (left.critical !== right.critical) return left.critical ? -1 : 1;
     return left.id.localeCompare(right.id);
@@ -370,6 +391,7 @@ async function runProbes(config) {
     durationMs: Date.now() - startedAt,
     summary,
     checks,
+    modules: modules.payload,
     metrics: apiCheck ? [{
       environment: "local",
       endpoint: "/health",
@@ -391,6 +413,8 @@ function cloudPlaceholder(provider, configured, detail) {
     services: [],
     deployments: [],
     environments: [],
+    health: [],
+    metrics: null,
     error: null,
     checkedAt: new Date().toISOString()
   };
@@ -430,6 +454,7 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
       checks,
       metrics,
       enabled: false,
+      modules: null,
       cloud: {
         railway: cloudPlaceholder("railway", false, "Ambiente desactivado."),
         vercel: cloudPlaceholder("vercel", false, "Ambiente desactivado."),
@@ -454,7 +479,10 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
       check.technical = { endpoint, simulated: true };
       checks.push(check);
     }
-    return { checks, metrics, enabled: true, cloud: simulatedCloud(config, environment) };
+    // La simulacion alimenta el panel de modulos con el catalogo, pero no crea
+    // sondas: no hay evidencia real que puntuar.
+    const simulatedModules = await collectModules(config, environment, checks);
+    return { checks, metrics, enabled: true, modules: simulatedModules.payload, cloud: simulatedCloud(config, environment) };
   }
 
   const apiEndpoint = `${environment.apiBaseUrl}/health`;
@@ -548,10 +576,13 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
     checks.push(check);
   }
 
-  return { checks, metrics, enabled: true, cloud };
+  const modules = await collectModules(config, environment, checks);
+  if (modules.payload) checks.push(...modules.checks);
+
+  return { checks, metrics, enabled: true, modules: modules.payload, cloud };
 }
 
-function buildEnvironmentMeta(config, environment, checks, cloud = null) {
+function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null) {
   return {
     id: environment.id,
     label: environment.label,
@@ -562,6 +593,7 @@ function buildEnvironmentMeta(config, environment, checks, cloud = null) {
     webBaseUrl: environment.webBaseUrl,
     overall: environment.enabled ? computeOverall(checks) : "unknown",
     summary: computeSummary(checks),
+    modules: modules || null,
     cloud
   };
 }
@@ -592,9 +624,9 @@ async function runAllProbes(config, { fetchImpl = global.fetch } = {}) {
     ...main.checks
   ].map(diagnoseCheck));
   const environments = {
-    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local")),
-    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud),
-    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud)
+    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules),
+    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules),
+    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules)
   };
   return {
     at: new Date().toISOString(),

@@ -41,9 +41,23 @@ function unconfigured(provider, detail) {
     services: [],
     deployments: [],
     environments: [],
+    health: [],
+    metrics: null,
     error: null,
     checkedAt: new Date().toISOString()
   };
+}
+
+function ageMinutes(value, now) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return null;
+  return Math.max(0, Math.round((now.getTime() - date.getTime()) / 60000));
+}
+
+function average(values) {
+  const numbers = values.filter((value) => Number.isFinite(value));
+  if (!numbers.length) return null;
+  return Math.round(numbers.reduce((sum, value) => sum + value, 0) / numbers.length);
 }
 
 function authError(provider, response) {
@@ -56,6 +70,8 @@ function authError(provider, response) {
     services: [],
     deployments: [],
     environments: [],
+    health: [],
+    metrics: null,
     error: redact(response.text).slice(0, 300) || null,
     checkedAt: new Date().toISOString()
   };
@@ -158,6 +174,15 @@ async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetch
 
   const latest = deployments.slice().sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)))[0] || null;
   const status = latest ? deploymentStatus(latest.status) : "unknown";
+  const failed = deployments.filter((deployment) => deploymentStatus(deployment.status) === "degraded").length;
+  const metrics = {
+    services: services.length,
+    environments: environments.length,
+    deployments: deployments.length,
+    failed,
+    last_age_minutes: latest ? ageMinutes(latest.createdAt, now) : null,
+    last_status: latest ? (latest.status || null) : null
+  };
   return {
     provider,
     configured: true,
@@ -169,6 +194,8 @@ async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetch
     services: services.slice(0, 20).map((service) => ({ id: service.id, name: service.name })),
     deployments: deployments.slice(0, 8),
     environments: environments.slice(0, 8).map((environment) => ({ id: environment.id, name: environment.name })),
+    health: [],
+    metrics,
     error: warnings.length ? redact(warnings.join("; ")).slice(0, 300) : null,
     checkedAt: now.toISOString()
   };
@@ -209,15 +236,28 @@ async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000
     { headers, timeoutMs }
   );
   const deployments = deploymentsResponse.ok && deploymentsResponse.json && Array.isArray(deploymentsResponse.json.deployments)
-    ? deploymentsResponse.json.deployments.slice(0, 3).map((deployment) => ({
-      id: deployment.uid || deployment.id,
-      state: deployment.state,
-      target: deployment.target || null,
-      url: deployment.url ? (String(deployment.url).startsWith("http") ? deployment.url : `https://${deployment.url}`) : null,
-      createdAt: deployment.createdAt ? new Date(deployment.createdAt).toISOString() : null
-    }))
+    ? deploymentsResponse.json.deployments.slice(0, 3).map((deployment) => {
+      const buildingAt = Number(deployment.buildingAt || deployment.createdAt || 0);
+      const readyAt = Number(deployment.ready || 0);
+      return {
+        id: deployment.uid || deployment.id,
+        state: deployment.state,
+        target: deployment.target || null,
+        url: deployment.url ? (String(deployment.url).startsWith("http") ? deployment.url : `https://${deployment.url}`) : null,
+        createdAt: deployment.createdAt ? new Date(deployment.createdAt).toISOString() : null,
+        durationMs: buildingAt && readyAt > buildingAt ? readyAt - buildingAt : null
+      };
+    })
     : [];
   const latest = deployments[0] || null;
+  const metrics = {
+    deployments: deployments.length,
+    ready: deployments.filter((deployment) => deploymentStatus(deployment.state) === "ok").length,
+    failed: deployments.filter((deployment) => ["ERROR", "CANCELED"].includes(String(deployment.state || "").toUpperCase())).length,
+    last_age_minutes: latest ? ageMinutes(latest.createdAt, now) : null,
+    avg_duration_ms: average(deployments.map((deployment) => deployment.durationMs)),
+    last_status: latest ? (latest.state || null) : null
+  };
   return {
     provider,
     configured: true,
@@ -229,6 +269,8 @@ async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000
     services: [],
     deployments,
     environments: [],
+    health: [],
+    metrics,
     error: deploymentsResponse.error || null,
     checkedAt: now.toISOString()
   };
@@ -262,19 +304,51 @@ async function supabaseStatus({ accessToken, ref, apiUrl, timeoutMs = 8000, fetc
       checkedAt: now.toISOString()
     };
   }
-  const status = String(response.json.status || "").toUpperCase();
+  const healthResponse = await requestJson(
+    fetchImpl,
+    `${apiUrl}/v1/projects/${encodeURIComponent(ref)}/health?services=db,auth,storage,realtime,rest`,
+    { headers: { authorization: `Bearer ${accessToken}` }, timeoutMs }
+  );
+  const health = parseSupabaseHealth(healthResponse.ok ? healthResponse.json : null);
+  const unhealthy = health.filter((item) => !item.healthy).length;
+  const statusRaw = String(response.json.status || "").toUpperCase();
+  const status = unhealthy > 0 ? "degraded" : deploymentStatus(statusRaw);
+  const database = response.json.database && typeof response.json.database === "object"
+    ? { version: response.json.database.version || null, engine: response.json.database.postgres_engine || null }
+    : null;
+  const metrics = { services: health.length, healthy: health.length - unhealthy, unhealthy };
   return {
     provider,
     configured: true,
-    status: deploymentStatus(status),
-    detail: `Proyecto ${response.json.name || ref}: ${status || "sin estado"}${response.json.region ? ` · ${response.json.region}` : ""}`,
-    project: { id: response.json.id || ref, name: response.json.name || ref, region: response.json.region || null },
+    status,
+    detail: `Proyecto ${response.json.name || ref}: ${statusRaw || "sin estado"}${response.json.region ? ` · ${response.json.region}` : ""} · ${health.length} servicios${unhealthy ? ` (${unhealthy} con falla)` : ""}`,
+    project: { id: response.json.id || ref, name: response.json.name || ref, region: response.json.region || null, database },
     services: [],
     deployments: [],
     environments: [],
+    health,
+    metrics,
     error: null,
+    healthError: healthResponse.ok
+      ? null
+      : redact(`HTTP ${healthResponse.status}${healthResponse.text ? `: ${healthResponse.text}` : ""}${healthResponse.error ? `: ${healthResponse.error}` : ""}`).slice(0, 200),
     checkedAt: now.toISOString()
   };
+}
+
+function parseSupabaseHealth(json) {
+  if (!json) return [];
+  const list = Array.isArray(json)
+    ? json
+    : (typeof json === "object"
+      ? Object.entries(json).map(([name, value]) => ({ name, ...(value && typeof value === "object" ? value : {}) }))
+      : []);
+  return list.map((item) => ({
+    service: String(item.name || item.service || "servicio"),
+    healthy: item.healthy !== false && !item.error,
+    status: item.status || null,
+    error: item.error ? redact(String(item.error)).slice(0, 160) : null
+  }));
 }
 
 function formatDate(value) {

@@ -2,7 +2,7 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.0.0
+version: 2.1.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -49,6 +49,7 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
 15. **Worktrees compartidos.** Nunca `git stash`/`pop` genérico. Usar tag único, capturar la entrada y restaurarla con `apply`; eliminar solo la entrada propia.
 16. **Push acotado.** `git push origin desarrollo` está autorizado al cierre de cada intervención con rama `desarrollo`, pruebas verdes, documentación y agentes actualizados, sin secretos ni artefactos locales. No cubre `develop`, `main`, force push, merges, migraciones remotas, borrado de ramas ni infraestructura.
 17. **Antes de operaciones destructivas.** Ejecutar `git status` y preservar lo no confirmado con tag único. Los archivos no rastreados pueden ser trabajo del usuario: no se borran ni se sobrescriben.
+18. **Alcance de la torre por módulo.** Un commit de `apps/control-tower/**` o `apps/api/src/modules/apex-control/**` incluye solo fuente, pruebas, brief, agentes y evidencia de esa intervención. Quedan fuera `.env.local`, tokens, capturas con datos personales y documentos no rastreados ajenos al alcance (por ejemplo `docs/design/APEXOS_CONTROL_PLANE.md` si no fue pedido). El inventario A/M/D del brief debe coincidir con el commit antes de `git push origin desarrollo`.
 
 ## Checklist de intervención
 

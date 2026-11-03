@@ -91,6 +91,8 @@ async function apexControlRoutes(fastify, options = {}) {
 
   fastify.get("/apex-control/status", { preHandler: read }, (request) => service.getStatus(request.user?.tenant_id));
 
+  fastify.get("/apex-control/modules", { preHandler: read }, (request) => service.getModules(request.user?.tenant_id));
+
   fastify.get("/apex-control/events", { preHandler: read }, (request) => service.listEvents(request.user?.tenant_id, request.query || {}));
 
   fastify.get("/apex-control/incidents", { preHandler: read }, (request) => service.listIncidents(request.user?.tenant_id, request.query || {}));

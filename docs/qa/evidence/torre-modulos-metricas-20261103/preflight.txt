@@ -1,0 +1,56 @@
+
+> apex-os@2.0.0 agents:preflight
+> node scripts/agents/preflight.js
+
+[agents:preflight] rama: desarrollo | HEAD: bb2fac8f | fetch: si
+[agents:preflight] comparacion contra origin/desarrollo @ bb2fac8f
+
+Frescura de agentes
+  NOMBRE                      LOCAL       REMOTO      ESTADO
+  apexos-auditor-marcaciones  2.0.0       2.0.0       in-sync
+  apexos-auditor-nomina       2.0.0       2.0.0       in-sync
+  apexos-backend              2.1.1       2.0.0       local-ahead
+  apexos-brief                2.1.0       2.0.0       local-ahead
+  apexos-db-nube              2.0.0       2.0.0       in-sync
+  apexos-frontend             2.0.0       2.0.0       in-sync
+  apexos-git-guardian         2.1.0       2.0.0       local-ahead
+  apexos-performance          2.1.0       2.0.0       local-ahead
+  apexos-qa                   2.1.0       2.0.0       local-ahead
+  apexos-seguridad            2.1.0       2.0.0       local-ahead
+  equipo-apexos               2.1.0       2.0.0       local-ahead
+
+Frescura de gobernanza
+  NOMBRE                                    LOCAL       REMOTO      ESTADO
+  AGENTS.md                                 2026-11-03  2026-11-03  in-sync
+  BRANCHING_WORKFLOW.md                     2026-08-11  2026-08-11  in-sync
+  docs/CHANGE_APPROVAL_QA_POLICY.md         2026-09-08  2026-09-08  in-sync
+  docs/DATABASE_CONVENTIONS.md              2026-11-03  2026-11-03  in-sync
+  docs/MULTITENANT_DATA_ISOLATION.md        2026-07-02  2026-07-02  in-sync
+  docs/PERFORMANCE_ENGINEERING_STANDARD.md  2026-07-25  2026-07-25  in-sync
+  docs/SECURITY_THREAT_MODEL.md             2026-08-11  2026-08-11  in-sync
+  docs/briefs/_TEMPLATE.md                  2026-11-03  2026-11-03  in-sync
+  docs/design/APEXOS_COMPONENT_CATALOG.md   2026-11-03  2026-11-03  in-sync
+  docs/project/CONTRATO_EQUIPO_APEXOS.md    2026-11-03  2026-11-03  in-sync
+  docs/project/filosofia-producto-ui.md     2026-08-21  2026-08-21  in-sync
+
+Ruteo obligatorio (34 ruta(s))
+  equipo-apexos: .qoder/skills/apexos-backend/SKILL.md, .qoder/skills/apexos-brief/SKILL.md, .qoder/skills/apexos-git-guardian/SKILL.md, .qoder/skills/apexos-performance/SKILL.md, .qoder/skills/apexos-qa/SKILL.md, .qoder/skills/apexos-seguridad/SKILL.md, .qoder/skills/equipo-apexos/SKILL.md, agents/CHANGELOG.md, agents/apexos-backend/SKILL.md, agents/apexos-brief/SKILL.md, agents/apexos-git-guardian/SKILL.md, agents/apexos-performance/SKILL.md, agents/apexos-qa/SKILL.md, agents/apexos-seguridad/SKILL.md, agents/equipo-apexos/SKILL.md, agents/registry.json, docs/briefs/2026-11-03-torre-modulos-metricas.md
+  apexos-brief: .qoder/skills/apexos-backend/SKILL.md, .qoder/skills/apexos-brief/SKILL.md, .qoder/skills/apexos-git-guardian/SKILL.md, .qoder/skills/apexos-performance/SKILL.md, .qoder/skills/apexos-qa/SKILL.md, .qoder/skills/apexos-seguridad/SKILL.md, .qoder/skills/equipo-apexos/SKILL.md, agents/CHANGELOG.md, agents/apexos-backend/SKILL.md, agents/apexos-brief/SKILL.md, agents/apexos-git-guardian/SKILL.md, agents/apexos-performance/SKILL.md, agents/apexos-qa/SKILL.md, agents/apexos-seguridad/SKILL.md, agents/equipo-apexos/SKILL.md, agents/registry.json, docs/briefs/2026-11-03-torre-modulos-metricas.md
+  apexos-git-guardian: .qoder/skills/apexos-backend/SKILL.md, .qoder/skills/apexos-brief/SKILL.md, .qoder/skills/apexos-git-guardian/SKILL.md, .qoder/skills/apexos-performance/SKILL.md, .qoder/skills/apexos-qa/SKILL.md, .qoder/skills/apexos-seguridad/SKILL.md, .qoder/skills/equipo-apexos/SKILL.md, agents/CHANGELOG.md, agents/apexos-backend/SKILL.md, agents/apexos-brief/SKILL.md, agents/apexos-git-guardian/SKILL.md, agents/apexos-performance/SKILL.md, agents/apexos-qa/SKILL.md, agents/apexos-seguridad/SKILL.md, agents/equipo-apexos/SKILL.md, agents/registry.json
+  apexos-backend: apps/api/src/modules/apex-control/modules.js, apps/api/src/modules/apex-control/routes.js, apps/api/src/modules/apex-control/service.js
+  apexos-seguridad: apps/api/src/modules/apex-control/modules.js, apps/api/src/modules/apex-control/routes.js, apps/api/src/modules/apex-control/service.js, apps/control-tower/README.md, apps/control-tower/lib/cloud.js, apps/control-tower/lib/config.js, apps/control-tower/lib/modules.js, apps/control-tower/lib/probes.js, apps/control-tower/public/app.js, apps/control-tower/public/index.html, apps/control-tower/public/styles.css, apps/control-tower/test/cloud.test.js, apps/control-tower/test/modules.test.js, apps/control-tower/test/probes.test.js
+  apexos-frontend: docs/design/APEXOS_CONTROL_PLANE.md
+  apexos-performance: apps/control-tower/README.md, apps/control-tower/lib/cloud.js, apps/control-tower/lib/config.js, apps/control-tower/lib/modules.js, apps/control-tower/lib/probes.js, apps/control-tower/public/app.js, apps/control-tower/public/index.html, apps/control-tower/public/styles.css, apps/control-tower/test/cloud.test.js, apps/control-tower/test/modules.test.js, apps/control-tower/test/probes.test.js
+  apexos-qa: apps/api/src/modules/apex-control/modules.js, apps/api/src/modules/apex-control/routes.js, apps/api/src/modules/apex-control/service.js, apps/api/test/apex-control-modules.test.js, apps/control-tower/README.md, apps/control-tower/lib/cloud.js, apps/control-tower/lib/config.js, apps/control-tower/lib/modules.js, apps/control-tower/lib/probes.js, apps/control-tower/public/app.js, apps/control-tower/public/index.html, apps/control-tower/public/styles.css, apps/control-tower/test/cloud.test.js, apps/control-tower/test/modules.test.js, apps/control-tower/test/probes.test.js, docs/qa/evidence/torre-modulos-metricas-20261103/
+
+Lecturas obligatorias antes de editar
+  - .qoder/skills/equipo-apexos/SKILL.md
+  - .qoder/skills/apexos-brief/SKILL.md
+  - .qoder/skills/apexos-git-guardian/SKILL.md
+  - .qoder/skills/apexos-backend/SKILL.md
+  - .qoder/skills/apexos-seguridad/SKILL.md
+  - .qoder/skills/apexos-frontend/SKILL.md
+  - .qoder/skills/apexos-performance/SKILL.md
+  - .qoder/skills/apexos-qa/SKILL.md
+
+Veredicto: OK

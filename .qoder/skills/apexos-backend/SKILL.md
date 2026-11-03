@@ -2,7 +2,7 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.0.0
+version: 2.1.1
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -46,6 +46,7 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
 13. **Archivos.** La subida valida firma real (`detectFileMime`), tamaño (multipart 50 MB) y autorización; el MIME del cliente no es evidencia.
 14. **Pruebas reales.** `node:test` con Prisma falso inyectado en `require.cache`; `Prisma.join` anida `.values` y `tenantCache` exige `tenant.findUnique` en el fake. Una prueba que solo lee el código fuente no prueba el endpoint.
 15. **Torre externa fuera de la API.** `apps/control-tower/` es vigilancia de solo lectura; consume `/health` y `/api/v1/apex-control/status` sin cambiar su contrato y no se integra en `apps/api`.
+16. **Salud por módulo.** `GET /api/v1/apex-control/modules` es de solo lectura, exige `apex-control:read` y se ejecuta dentro de `runWithTenant`. Cada entrada del catálogo se contrasta con el delegado real de Prisma; si el modelo o la medición falla, el módulo queda `unavailable`/`unknown` con el error, nunca `ok`. La frescura se mide contra el campo y la expectativa declarados, y una dependencia caída degrada el módulo. Nunca se consulta un modelo sin filtro de tenant (salvo los globales declarados).
 
 ## Checklist de intervención
 

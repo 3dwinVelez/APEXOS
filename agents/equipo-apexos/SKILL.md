@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.0.0
+version: 2.1.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -58,6 +58,7 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 10. **Torre de solo lectura.** `apps/control-tower/` vigila y reporta por ambiente (`local`, `develop`, `main`); no se integra en `apps/api`, no promueve ramas y sus tokens cloud viven solo en `.env.local`.
 11. **Riesgo irreversible se confirma.** Antes de una acción destructiva o visible para otros, se detiene y se pide autorización; la ausencia de autorización es prohibición.
 12. **Reporte sin adornos.** El veredicto declara qué se hizo, qué validó cada experto, qué evidencia existe, qué agentes se actualizaron, qué quedó pendiente y qué autorizaciones faltan.
+13. **Cierre de salud por módulo y cloud.** Cuando la intervención toca el seguimiento por módulo o los conectores Railway/Supabase/Vercel, el cierre exige el pase de `apexos-backend` (contrato del endpoint), `apexos-seguridad` (tenant y tokens por ambiente), `apexos-performance` (métricas sin contaminar el puntaje) y `apexos-qa` (suites y captura real) con `npm run agents:coverage` en verde. Un conector sin credenciales se reporta como limitación declarada, no como verificado.
 
 ## Checklist de intervención
 

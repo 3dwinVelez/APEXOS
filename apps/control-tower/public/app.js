@@ -23,12 +23,33 @@ const JOB_STATUS_LABEL = {
   cancelled: "Cancelado"
 };
 const MODE_LABEL = { polling: "Polling activo", "dry-run": "Dry-run", off: "Apagado" };
+const GROUP_LABEL = {
+  Operacion: "Operación",
+  Finanzas: "Finanzas",
+  Comercial: "Comercial",
+  Talento: "Talento humano",
+  Inteligencia: "Inteligencia",
+  Plataforma: "Plataforma"
+};
+const METRIC_LABEL = {
+  deployments: "Despliegues (muestra)",
+  services: "Servicios",
+  environments: "Ambientes",
+  failed: "Fallidos",
+  ready: "Listos",
+  last_age_minutes: "Último (min)",
+  avg_duration_ms: "Duración media",
+  healthy: "Sanos",
+  unhealthy: "Con falla",
+  last_status: "Último estado"
+};
 
 const state = {
   data: null,
   telegram: null,
   token: sessionStorage.getItem("towerToken") || "",
   environment: localStorage.getItem("towerEnvironment") || "local",
+  moduleFilter: localStorage.getItem("towerModuleFilter") || "all",
   source: null,
   loading: false,
   pending: false,
@@ -152,21 +173,45 @@ const CLOUD_PROVIDERS = [
   { key: "vercel", label: "Vercel", hint: "VERCEL_TOKEN + ENV_<AMBIENTE>_VERCEL_PROJECT_ID" }
 ];
 
+function formatMetric(key, value) {
+  if (key === "avg_duration_ms" && Number.isFinite(Number(value))) return `${Math.round(Number(value) / 1000)} s`;
+  if (key === "last_age_minutes" && Number.isFinite(Number(value))) return `${value} min`;
+  return String(value);
+}
+
+function renderCloudMetrics(metrics) {
+  if (!metrics || typeof metrics !== "object") return "";
+  const entries = Object.entries(metrics).filter(([, value]) => value != null && value !== "");
+  if (!entries.length) return "";
+  return `<div class="cloud-metrics">${entries.map(([key, value]) => `
+    <div class="cloud-metric">
+      <span>${escapeHtml(METRIC_LABEL[key] || key)}</span>
+      <strong>${escapeHtml(formatMetric(key, value))}</strong>
+    </div>`).join("")}</div>`;
+}
+
 function renderCloudCard(provider, data) {
   const status = data && data.configured === false ? "unknown" : pillClass(data && data.status ? data.status : "unknown");
   const statusLabel = data && data.configured === false ? "Sin credenciales" : (STATUS_LABEL[status] || status);
   const services = data && Array.isArray(data.services) ? data.services : [];
   const deployments = data && Array.isArray(data.deployments) ? data.deployments : [];
+  const health = data && Array.isArray(data.health) ? data.health : [];
   const projectName = data && data.project ? (data.project.name || data.project.id) : null;
   const region = data && data.project && data.project.region ? ` · ${data.project.region}` : "";
+  const engine = data && data.project && data.project.database ? ` · PG ${data.project.database.version || data.project.database.engine || "—"}` : "";
   const deploymentItems = deployments
     .slice(0, 3)
     .map((deployment) => {
       const state = deployment.status || deployment.state || "sin estado";
       const environment = deployment.environment ? `${deployment.environment}: ` : "";
       const target = deployment.target ? ` (${deployment.target})` : "";
-      return `<li>${escapeHtml(environment)}${escapeHtml(state)}${escapeHtml(target)}</li>`;
+      const duration = deployment.durationMs ? ` · ${Math.round(deployment.durationMs / 1000)} s` : "";
+      return `<li>${escapeHtml(environment)}${escapeHtml(state)}${escapeHtml(target)}${escapeHtml(duration)}</li>`;
     })
+    .join("");
+  const healthChips = health
+    .slice(0, 6)
+    .map((item) => `<span class="service-dot status-${item.healthy ? "ok" : "down"}" title="${escapeHtml(item.status || "")}">${escapeHtml(item.service)}</span>`)
     .join("");
   return `
     <article class="cloud-card status-${status}">
@@ -178,10 +223,13 @@ function renderCloudCard(provider, data) {
         <span class="pill ${status}">${escapeHtml(statusLabel)}</span>
       </div>
       <p class="cloud-detail">${escapeHtml(data && data.detail ? data.detail : "Sin datos del proveedor.")}</p>
-      ${projectName ? `<p class="cloud-detail">Servicios: ${services.length}${escapeHtml(region)}</p>` : ""}
+      ${renderCloudMetrics(data && data.metrics)}
+      ${projectName ? `<p class="cloud-detail">Servicios: ${services.length}${escapeHtml(region)}${escapeHtml(engine)}</p>` : ""}
       ${services.length ? `<ul class="cloud-list">${services.slice(0, 4).map((service) => `<li>${escapeHtml(service.name || service.id)}</li>`).join("")}</ul>` : ""}
+      ${healthChips ? `<div class="cloud-service-health">${healthChips}</div>` : ""}
       ${deploymentItems ? `<ul class="cloud-list">${deploymentItems}</ul>` : ""}
       ${data && data.error ? `<p class="cloud-detail">${escapeHtml(data.error)}</p>` : ""}
+      ${data && data.healthError ? `<p class="cloud-detail">Salud: ${escapeHtml(data.healthError)}</p>` : ""}
       ${data && data.configured === false ? `<p class="cloud-hint">Configura ${escapeHtml(provider.hint)}.</p>` : ""}
     </article>`;
 }
@@ -249,6 +297,7 @@ function render() {
   document.getElementById("lastUpdate").textContent = snapshot ? `Lectura ${relative(snapshot.at)} · ${formatTime(snapshot.at)}` : "Sin lecturas";
 
   renderKpis(environment, data, git, openAlerts);
+  renderModules(environment);
   renderChecks(snapshot, environment);
   renderPerformance(environment);
   renderCloud(environment);
@@ -348,9 +397,106 @@ function renderKpis(environment, data, git, openAlerts) {
     .join("");
 }
 
+function formatNumber(value) {
+  if (!Number.isFinite(Number(value))) return "—";
+  return new Intl.NumberFormat("es-CO").format(Number(value));
+}
+
+function moduleCard(module) {
+  const status = pillClass(module.status);
+  const data = module.data || null;
+  const records = data && data.records != null ? `<span><b>${escapeHtml(formatNumber(data.records))}</b> registros</span>` : "<span>Sin medición de datos</span>";
+  const activity = data && data.last_activity_at
+    ? `<span>Última actividad <b>${escapeHtml(relative(data.last_activity_at))}</b></span>`
+    : data && data.state === "declared" ? "<span>Módulo declarado sin modelo</span>" : "<span>Sin actividad registrada</span>";
+  const expected = data && data.expected_minutes != null ? `<span>Esperado ≤ ${escapeHtml(data.expected_minutes)} min</span>` : "";
+  const services = (module.services || [])
+    .map((service) => `<span class="service-dot status-${pillClass(service.status)}" title="${escapeHtml(service.key)}: ${escapeHtml(service.status)}">${escapeHtml(service.label || service.key)}</span>`)
+    .join("");
+  const alerts = Array.isArray(module.alerts) && module.alerts.length
+    ? `<p class="module-alert">${escapeHtml(module.alerts.length)} alerta(s) · ${escapeHtml(module.alerts[0].title)}</p>`
+    : "";
+  const technical = {
+    declared: module.declared,
+    data,
+    services: module.services,
+    alerts: module.alerts
+  };
+  return `
+    <article class="module-card status-${status}">
+      <div class="module-top">
+        <span class="dot status-${status}" aria-hidden="true"></span>
+        <h4>${escapeHtml(module.name)}</h4>
+        <span class="pill ${status}">${escapeHtml(STATUS_LABEL[module.status] || module.status)}</span>
+      </div>
+      <p class="module-detail">${escapeHtml(module.detail || "")}</p>
+      <p class="module-metrics">${records}${activity}${expected}</p>
+      ${services ? `<div class="module-services">${services}</div>` : ""}
+      ${alerts}
+      <details class="tech"><summary>Detalle técnico</summary>${technicalBlock(technical)}</details>
+    </article>`;
+}
+
+function renderModules(environment) {
+  const container = document.getElementById("modules");
+  const summaryEl = document.getElementById("moduleSummary");
+  const meta = document.getElementById("moduleMeta");
+  const filterButton = document.getElementById("btnModuleFilter");
+  const payload = environment && environment.modules ? environment.modules : null;
+
+  filterButton.setAttribute("aria-pressed", state.moduleFilter === "issues" ? "true" : "false");
+  filterButton.textContent = state.moduleFilter === "issues" ? "Ver todos" : "Solo problemas";
+
+  if (!payload) {
+    meta.textContent = environment && !environment.enabled ? "Ambiente desactivado" : "Sin datos";
+    summaryEl.innerHTML = "";
+    container.innerHTML = `<p class="empty">${environment && !environment.enabled ? "Este ambiente está desactivado." : "La torre aún no tiene salud por módulo."}</p>`;
+    return;
+  }
+
+  const modules = Array.isArray(payload.modules) ? payload.modules : [];
+  const summary = payload.summary || {};
+  const issues = modules.filter((module) => module.status === "down" || module.status === "degraded");
+  const visible = state.moduleFilter === "issues" ? issues : modules;
+
+  meta.textContent = `${payload.source === "api" ? "Datos APEX Control" : "Solo servicios"} · ${formatTime(payload.generated_at)}`;
+  const chips = [
+    { label: "Módulos", value: summary.total != null ? summary.total : modules.length, status: "unknown" },
+    { label: "Operativos", value: summary.ok || 0, status: "ok" },
+    { label: "Degradados", value: summary.degraded || 0, status: "degraded" },
+    { label: "Caídos", value: summary.down || 0, status: "down" },
+    { label: "Sin dato", value: summary.unknown || 0, status: "unknown" }
+  ];
+  if (Number.isFinite(summary.records)) chips.push({ label: "Registros", value: formatNumber(summary.records), status: "unknown" });
+  summaryEl.innerHTML = chips
+    .map((chip) => `<span class="module-chip"><span class="dot status-${pillClass(chip.status)}" aria-hidden="true"></span>${escapeHtml(chip.label)} <strong>${escapeHtml(chip.value)}</strong></span>`)
+    .join("");
+
+  if (!visible.length) {
+    container.innerHTML = state.moduleFilter === "issues"
+      ? '<p class="empty">Ningún módulo con problemas.</p>'
+      : '<p class="empty">Sin módulos configurados.</p>';
+    return;
+  }
+
+  const groups = new Map();
+  for (const module of visible) {
+    const group = module.group || "Operacion";
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(module);
+  }
+  container.innerHTML = Array.from(groups.entries())
+    .map(([group, list]) => `
+      <section class="module-group">
+        <h3>${escapeHtml(GROUP_LABEL[group] || group)}</h3>
+        <div class="module-grid">${list.map(moduleCard).join("")}</div>
+      </section>`)
+    .join("");
+}
+
 function renderChecks(snapshot, environment) {
   const container = document.getElementById("checks");
-  const checks = environmentChecks(snapshot, environment);
+  const checks = environmentChecks(snapshot, environment).filter((check) => check.source !== "modules");
   document.getElementById("probeMeta").textContent = snapshot
     ? `${checks.length} sondas · ${snapshot.durationMs} ms · ${formatTime(snapshot.at)}`
     : "Sin datos";
@@ -700,6 +846,12 @@ document.addEventListener("click", (event) => {
       scheduleLoad(100);
     });
   }
+});
+
+document.getElementById("btnModuleFilter").addEventListener("click", () => {
+  state.moduleFilter = state.moduleFilter === "issues" ? "all" : "issues";
+  localStorage.setItem("towerModuleFilter", state.moduleFilter);
+  render();
 });
 
 document.getElementById("btnAckAll").addEventListener("click", (event) => {

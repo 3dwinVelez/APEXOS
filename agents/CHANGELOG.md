@@ -48,6 +48,17 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 - `apexos-performance` — `1.3.0` — control nuevo: las sondas TCP deben llamar a `connect` y probarse contra un servidor efímero; un `timeout` del probe no se confunde con caída del servicio vigilado. Origen: la sonda Redis de la torre nunca conectaba y reportaba `down` con el contenedor arriba.
 
+### Salud por módulo y métricas cloud
+
+- `apps/api` expone `GET /api/v1/apex-control/modules` (32 módulos, `apex-control:read`, tenant-scoped) y la torre agrega panel por módulo con registros, frescura, servicios y alertas, más tarjetas medibles de Railway, Vercel y Supabase. Brief: `docs/briefs/2026-11-03-torre-modulos-metricas.md`.
+- `apexos-backend` — `2.1.1` — control nuevo `salud-por-modulo`: endpoint de solo lectura con permiso explícito, `runWithTenant`, contraste con el delegado real de Prisma, `unavailable` ante error de medición y frescura por campo de fecha/expectativa.
+- `apexos-seguridad` — `2.1.0` — controles nuevos `aislamiento-salud-modulos` y `token-por-ambiente`: sin agregación entre tenants y la torre no reutiliza el token local contra QA/PROD.
+- `apexos-performance` — `2.1.0` — controles nuevos `metricas-cloud-medibles` y `sondas-informativas`: módulos no contaminan el puntaje y las tarjetas cloud reportan despliegues, antigüedad, duración media y salud por servicio; sin token quedan `unknown`.
+- `apexos-qa` — `2.1.0` — controles nuevos `pruebas-salud-modulos` y `limitacion-cloud-declarada`: suites de torre y API más captura real; la falta de credenciales cloud se declara, no se infiere.
+- `apexos-brief` — `2.1.0` — control nuevo `brief-salud-modulos-cloud`: todo brief de módulos/cloud parte del brief de referencia y entrega la sección 11 completa.
+- `apexos-git-guardian` — `2.1.0` — control nuevo `alcance-torre-modulos`: el commit incluye solo fuente, pruebas, brief, agentes y evidencia; deja fuera `.env.local` y documentos no rastreados ajenos.
+- `equipo-apexos` — `2.1.0` — control nuevo `cierre-salud-modulos-cloud`: el cierre exige backend, seguridad, performance y QA con `agents:coverage` en verde y limitaciones declaradas.
+
 ## 2026-11-02
 
 ### Registro y gobernanza

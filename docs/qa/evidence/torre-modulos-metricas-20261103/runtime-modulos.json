@@ -1,0 +1,43 @@
+{
+  "captured_at": "2026-11-03T15:52:21.409Z",
+  "tower_version": "1.0.0",
+  "environments": {
+    "local": {
+      "source": "api",
+      "reason": null,
+      "generated_at": "2026-11-03T15:52:14.949Z",
+      "summary": {
+        "total": 32,
+        "ok": 0,
+        "degraded": 16,
+        "down": 0,
+        "unknown": 16,
+        "records": 5140
+      }
+    },
+    "develop": {
+      "source": "catalog",
+      "reason": "SIN_TOKEN",
+      "generated_at": "2026-11-03T15:52:15.054Z",
+      "summary": {
+        "total": 32,
+        "ok": 0,
+        "degraded": 0,
+        "down": 0,
+        "unknown": 32
+      }
+    },
+    "main": {
+      "source": "catalog",
+      "reason": "SIN_TOKEN",
+      "generated_at": "2026-11-03T15:52:15.537Z",
+      "summary": {
+        "total": 32,
+        "ok": 0,
+        "degraded": 0,
+        "down": 0,
+        "unknown": 32
+      }
+    }
+  }
+}

@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.0.0",
+      "version": "2.1.1",
       "updated_at": "2026-11-03",
-      "sha256": "0879351a08b3e7259a68e631bbd9b8c3ad45eeb54571a83119a32cf8404e9463",
+      "sha256": "79ae237437edf057ed36eab86415c3aea0962025f2ad7df848d05987df4e12d1",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -74,15 +74,16 @@
         "jwt-hs256",
         "rate-limit-por-tenant",
         "uploads-firma-real",
-        "torre-fuera-api"
+        "torre-fuera-api",
+        "salud-por-modulo"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "updated_at": "2026-11-03",
-      "sha256": "620a448f754a657823abcbdc405c9b255e42039c4774b8be8dcf92ee3e5bf2a0",
+      "sha256": "c785cbfecc18b3e00b389ed911a4b51ca3baacd69155ac4a0b14e3a01880af31",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -98,7 +99,8 @@
         "rutas-verificadas",
         "criterios-observables",
         "gates-preqa-aprobacion",
-        "sin-secretos"
+        "sin-secretos",
+        "brief-salud-modulos-cloud"
       ]
     },
     {
@@ -148,9 +150,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "updated_at": "2026-11-03",
-      "sha256": "f2d1e2940a9f88851e5f5510841d72c04e7e9542459b8ade5f25df6e233f8dde",
+      "sha256": "e5b45abb1dbd065f9e75632bda43c22134a76694f6aaa1db8574dcebefeaf2f4",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -168,15 +170,16 @@
         "candidato-vs-target-remoto",
         "evidencia-preqa",
         "evidencia-aprobacion",
-        "sin-operaciones-destructivas"
+        "sin-operaciones-destructivas",
+        "alcance-torre-modulos"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "updated_at": "2026-11-03",
-      "sha256": "6e13530701567870644a2f2ca1bf19a2c11c8ef5755cf52c2de1fd7e7ff966ac",
+      "sha256": "eead8c2e234806da0a1c2c12e43c6a3a293ec8fb1ef5fe74f3a2566679674476",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -189,15 +192,17 @@
         "p95-por-ambiente",
         "sondas-verificadas",
         "escritura-solo-nyvora-qa",
-        "infra-con-autorizacion"
+        "infra-con-autorizacion",
+        "metricas-cloud-medibles",
+        "sondas-informativas"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "updated_at": "2026-11-03",
-      "sha256": "631917015e2919594ef6073d69579fb6f82d45d51f78661d99da0deeabb81dbb",
+      "sha256": "63cb43da3fe4ae2f6a3323796965b19734f9853da3a9751486349bf746eb5cdb",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -214,15 +219,17 @@
         "arnes-vs-producto",
         "aprobacion-main-explicita",
         "evidencia-sin-pii",
-        "harness-aislado"
+        "harness-aislado",
+        "pruebas-salud-modulos",
+        "limitacion-cloud-declarada"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "updated_at": "2026-11-03",
-      "sha256": "3993a2f9dc1bf7ec964afcaab86a63948412b1baa1e10cbf15163ac11c0db477",
+      "sha256": "217519bc13758eeed7cd8ca3112f7a6f9bef7a169f55a7ca6954d0201931130d",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -238,15 +245,17 @@
         "uploads-firma-real",
         "dependencias-justificadas",
         "torre-tokens-server-only",
-        "hallazgos-con-reproduccion"
+        "hallazgos-con-reproduccion",
+        "aislamiento-salud-modulos",
+        "token-por-ambiente"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "updated_at": "2026-11-03",
-      "sha256": "791a0cac8e2fa7dea3d3abeeda0b5bf6ebaa89e861ef5bbeb533427a284255d4",
+      "sha256": "2587b33249ec9648c09750539d0968601284046966c9e719bdd002a248803456",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -262,7 +271,8 @@
         "contrato-v2",
         "auditores-solo-dictamen",
         "torre-solo-lectura",
-        "confirmacion-irreversible"
+        "confirmacion-irreversible",
+        "cierre-salud-modulos-cloud"
       ]
     }
   ],

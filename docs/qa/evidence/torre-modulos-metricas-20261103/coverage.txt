@@ -1,0 +1,11 @@
+
+> apex-os@2.0.0 agents:coverage
+> node scripts/agents/coverage.js --paths apps/api/src/modules/apex-control/modules.js, apps/api/src/modules/apex-control/routes.js, apps/api/src/modules/apex-control/service.js, apps/api/test/apex-control-modules.test.js, apps/control-tower/lib/cloud.js, apps/control-tower/lib/config.js, apps/control-tower/lib/modules.js, apps/control-tower/lib/probes.js, apps/control-tower/public/app.js, apps/control-tower/public/index.html, apps/control-tower/public/styles.css, apps/control-tower/test/cloud.test.js, apps/control-tower/test/modules.test.js, apps/control-tower/test/probes.test.js, apps/control-tower/README.md, docs/briefs/2026-11-03-torre-modulos-metricas.md, docs/qa/evidence/torre-modulos-metricas-20261103/, .qoder/skills/apexos-backend/SKILL.md, .qoder/skills/apexos-seguridad/SKILL.md, .qoder/skills/apexos-performance/SKILL.md, .qoder/skills/apexos-qa/SKILL.md, .qoder/skills/apexos-brief/SKILL.md, .qoder/skills/apexos-git-guardian/SKILL.md, .qoder/skills/equipo-apexos/SKILL.md, agents/CHANGELOG.md, agents/registry.json
+
+[agents:coverage] rama: desarrollo | rutas: 26 | fetch: si
+  AGENTE              VERSION   FRESCURA      CHANGELOG  RESULTADO
+  apexos-brief        2.1.0     local-ahead   si         OK
+  apexos-backend      2.1.1     local-ahead   si         OK
+  apexos-performance  2.1.0     local-ahead   si         OK
+
+[agents:coverage] OK: contexto del equipo actualizado para todas las rutas.

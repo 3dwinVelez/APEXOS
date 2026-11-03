@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: sin token responde 401 y con licencia/permiso responde 200
+ok 1 - sin token responde 401 y con licencia/permiso responde 200
+  ---
+  duration_ms: 874.786
+  type: 'test'
+  ...
+# Subtest: separa licencia de modulo y permiso RBAC
+ok 2 - separa licencia de modulo y permiso RBAC
+  ---
+  duration_ms: 45.9829
+  type: 'test'
+  ...
+# Subtest: la licencia M-22 de administracion habilita APEX Control en F0
+ok 3 - la licencia M-22 de administracion habilita APEX Control en F0
+  ---
+  duration_ms: 29.4821
+  type: 'test'
+  ...
+# Subtest: acusar incidente exige operate y propaga tenant y usuario
+ok 4 - acusar incidente exige operate y propaga tenant y usuario
+  ---
+  duration_ms: 44.8686
+  type: 'test'
+  ...
+# Subtest: aislamiento de notificaciones: tenant B no ve registros del tenant A
+ok 5 - aislamiento de notificaciones: tenant B no ve registros del tenant A
+  ---
+  duration_ms: 12.2426
+  type: 'test'
+  ...
+# Subtest: la simulacion de fallo solo existe en local y emite un evento de error
+ok 6 - la simulacion de fallo solo existe en local y emite un evento de error
+  ---
+  duration_ms: 123.7399
+  type: 'test'
+  ...
+# Subtest: mide registros y frescura con aislamiento de tenant
+ok 7 - mide registros y frescura con aislamiento de tenant
+  ---
+  duration_ms: 8.9739
+  type: 'test'
+  ...
+# Subtest: un modulo sin datos o sin modelo queda en unknown, nunca en ok
+ok 8 - un modulo sin datos o sin modelo queda en unknown, nunca en ok
+  ---
+  duration_ms: 4.4836
+  type: 'test'
+  ...
+# Subtest: una dependencia caida baja el modulo aunque el dato este fresco
+ok 9 - una dependencia caida baja el modulo aunque el dato este fresco
+  ---
+  duration_ms: 2.7466
+  type: 'test'
+  ...
+# Subtest: adjunta incidentes abiertos de sus dependencias y respeta el limite
+ok 10 - adjunta incidentes abiertos de sus dependencias y respeta el limite
+  ---
+  duration_ms: 8.4917
+  type: 'test'
+  ...
+# Subtest: un error de medicion deja el modulo en unknown con evidencia
+ok 11 - un error de medicion deja el modulo en unknown con evidencia
+  ---
+  duration_ms: 4.269
+  type: 'test'
+  ...
+# Subtest: GET /apex-control/modules exige licencia y permiso de lectura
+ok 12 - GET /apex-control/modules exige licencia y permiso de lectura
+  ---
+  duration_ms: 885.8181
+  type: 'test'
+  ...
+# Subtest: buildEvent normaliza severidad, calcula fingerprint y redacta secretos
+ok 13 - buildEvent normaliza severidad, calcula fingerprint y redacta secretos
+  ---
+  duration_ms: 4.2184
+  type: 'test'
+  ...
+# Subtest: emit deduplica eventos dentro de la ventana y publica el primero
+ok 14 - emit deduplica eventos dentro de la ventana y publica el primero
+  ---
+  duration_ms: 2.669
+  type: 'test'
+  ...
+# Subtest: computeOverall degrada con un componente crítico caído y no escala por unknown
+ok 15 - computeOverall degrada con un componente crítico caído y no escala por unknown
+  ---
+  duration_ms: 1.3798
+  type: 'test'
+  ...
+# Subtest: runPulse abre un incidente, no lo duplica y lo resuelve tras dos muestras ok
+ok 16 - runPulse abre un incidente, no lo duplica y lo resuelve tras dos muestras ok
+  ---
+  duration_ms: 10.233
+  type: 'test'
+  ...
+# Subtest: runPulse respeta componentes deshabilitados y publica el snapshot global
+ok 17 - runPulse respeta componentes deshabilitados y publica el snapshot global
+  ---
+  duration_ms: 1.7772
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2038.5248

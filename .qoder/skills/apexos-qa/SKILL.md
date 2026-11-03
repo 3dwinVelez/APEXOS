@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.0.0
+version: 2.1.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -43,6 +43,7 @@ Antes de actuar, leer en este orden:
 12. **UI real.** Navegador, camino feliz y borde, ambos temas. Si no se pudo probar la UI, se declara; no se infiere del build.
 13. **Evidencia limpia.** `docs/qa/evidence/<cambio>/` sin datos personales, tokens, rutas locales absolutas ni credenciales. Cada archivo debe poder reproducirse con el comando anotado.
 14. **Torre externa.** `npm run certify:control-tower:local` prueba los tres ambientes, el cambio a PROD con tarjetas cloud, el panel de rendimiento, el detalle técnico de sondas/alertas y la alerta con `environment`. `npm run control:test` es regresión unitaria y no reemplaza la certificación end-to-end.
+15. **Salud por módulo y métricas cloud.** La suite `node --test` de la torre cubre catálogo sin token, API con Bearer, 401/inválido, 404, ambiente sin conexión, herencia de servicios caídos y que el resumen de catálogo no puntúe (`informational`); la de la API cubre los 32 módulos, aislamiento por tenant y frescura. La evidencia incluye captura real de la torre en `docs/qa/evidence/torre-modulos-metricas-20261103/` y la salida de las suites. Si no hay credenciales cloud en el equipo, se declara la limitación: las métricas Railway/Vercel/Supabase quedan cubiertas por pruebas congeladas, no por lectura real.
 
 ## Checklist de intervención
 

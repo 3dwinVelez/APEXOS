@@ -3,6 +3,7 @@
 const defaultPrisma = require("../../core/prisma");
 const { computeOverall } = require("./pulse");
 const { PROBE_DEFINITIONS, scoreFor } = require("./probes");
+const { getModules: computeModules } = require("./modules");
 
 const COMPONENT_KEYS = PROBE_DEFINITIONS.map((definition) => definition.key);
 const DEFAULT_LIMIT = 100;
@@ -160,6 +161,11 @@ async function getStatus(tenantId, deps = {}) {
   };
 }
 
+async function getModules(tenantId, deps = {}) {
+  const components = await loadComponents(deps);
+  return computeModules(tenantId, { ...deps, components });
+}
+
 async function listEvents(tenantId, query = {}, deps = {}) {
   const db = deps.prisma || defaultPrisma;
   const where = { OR: tenantScope(tenantId) };
@@ -286,6 +292,7 @@ async function listReportRuns(tenantId, query = {}, deps = {}) {
 
 module.exports = {
   getStatus,
+  getModules,
   loadComponents,
   listEvents,
   listIncidents,

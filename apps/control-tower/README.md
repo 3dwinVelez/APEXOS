@@ -30,8 +30,9 @@ Sondas independientes cada 10 segundos:
 - **Local** (rama `desarrollo`): API (`/health`), web (`:3001`), PostgreSQL y Redis por TCP, Redis con `PING` real, Brain (`:8000/health`), MinIO (`:9000/minio/health/live`), Docker y `/api/v1/apex-control/status`.
 - **Develop · QA** (rama `develop`): API y web públicas de QA, Supabase QA y, si hay credenciales, Railway y Vercel.
 - **Main · Producción** (rama `main`): las mismas sondas contra producción.
+- **Módulos**: salud detallada de los 32 módulos operativos que expone `GET /api/v1/apex-control/modules`, con registros, última actividad, frescura esperada, servicios de los que depende y alertas por módulo.
 - **Repositorio git**: rama activa, árbol de trabajo, SHAs locales y remotos y flujo `desarrollo -> develop -> main`.
-- **Nube**: proyecto, servicios y últimos deployments de Railway; proyecto y deployments de Vercel; estado del proyecto Supabase.
+- **Nube**: proyecto, servicios y últimos deployments de Railway; proyecto, deployments y duración media de Vercel; estado del proyecto y salud por servicio de Supabase.
 - **Cola de trabajos y puente de Qoder**.
 
 Cada sonda remota degrada a `unknown` sin bloquear a las demás cuando falta configuración o credenciales. El panel no depende de los servicios vigilados: si APEXOS se cae, la torre sigue mostrando el estado y alertando.
@@ -42,9 +43,10 @@ La sonda Redis abre su propio socket TCP contra `REDIS_HOST:REDIS_PORT` y espera
 
 - **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a indicadores, servicios, alertas, rendimiento, nube y rama.
 - **Servicios**: estado, latencia, detalle, impacto funcional, acción sugerida y detalle técnico expandible.
+- **Módulos**: resumen (operativos, degradados, caídos, sin dato, registros), agrupación por dominio y tarjetas con registros, última actividad, frescura esperada, servicios y alertas. El filtro **Solo problemas** deja a la vista únicamente lo degradado o caído. Si la API no entrega datos, el panel muestra el catálogo en `Sin dato` y lo declara, no lo pinta como sano.
 - **Alertas**: incidentes por ambiente, con impacto funcional, acción y detalle técnico.
 - **Rendimiento API**: p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente.
-- **Nube**: Railway, Supabase y Vercel con estado, proyecto, servicios, deployments o la variable exacta que falta.
+- **Nube**: Railway, Supabase y Vercel con estado, proyecto, servicios, deployments y métricas medibles, o la variable exacta que falta.
 - **Ramas**: relación local/remota de las tres ramas, con la rama del ambiente seleccionado resaltada.
 - **Trabajos Qoder**: creación, aprobación, rechazo y seguimiento de instrucciones.
 - **Telegram**: estado del canal, emparejamiento y simulación en dry-run.
@@ -58,9 +60,27 @@ Los tres ambientes se configuran en `.env.local`. Las URLs públicas de QA y PRO
 
 | Ambiente | Rama | Variables principales |
 |---|---|---|
-| `local` | `desarrollo` | `ENV_LOCAL_API_URL`, `ENV_LOCAL_WEB_URL` |
-| `develop` | `develop` | `ENV_DEVELOP_API_URL`, `ENV_DEVELOP_WEB_URL`, `ENV_DEVELOP_SUPABASE_URL` |
-| `main` | `main` | `ENV_MAIN_API_URL`, `ENV_MAIN_WEB_URL`, `ENV_MAIN_SUPABASE_URL` |
+| `local` | `desarrollo` | `ENV_LOCAL_API_URL`, `ENV_LOCAL_WEB_URL`, `ENV_LOCAL_APEX_TOKEN` (o `APEX_CONTROL_TOKEN`) |
+| `develop` | `develop` | `ENV_DEVELOP_API_URL`, `ENV_DEVELOP_WEB_URL`, `ENV_DEVELOP_SUPABASE_URL`, `ENV_DEVELOP_APEX_TOKEN` |
+| `main` | `main` | `ENV_MAIN_API_URL`, `ENV_MAIN_WEB_URL`, `ENV_MAIN_SUPABASE_URL`, `ENV_MAIN_APEX_TOKEN` |
+
+### Salud por módulo
+
+El panel de módulos consume `GET /api/v1/apex-control/modules` con `Authorization: Bearer <JWT>`. El JWT debe pertenecer a un usuario con permiso `apex-control:read` del tenant que se quiere vigilar. Cada ambiente usa su propio token:
+
+- `ENV_LOCAL_APEX_TOKEN` apunta a la API local; si falta, se usa `APEX_CONTROL_TOKEN`.
+- `ENV_DEVELOP_APEX_TOKEN` y `ENV_MAIN_APEX_TOKEN` son obligatorios para leer módulos remotos. La torre **no** reutiliza el token local contra QA ni PROD: sin token propio el ambiente queda `SIN_TOKEN` y sus módulos en `Sin dato`.
+- Los tokens de sesión viven solo en `apps/control-tower/.env.local` y caducan; renueva el valor cuando el panel reporte `TOKEN_INVALIDO`.
+
+Los módulos no contaminan el puntaje general del ambiente: sus sondas son informativas y el resumen se calcula con las sondas de infraestructura. Un módulo caído sí genera alerta de severidad media.
+
+### Métricas cloud
+
+Con los tokens de la sección siguiente, las tarjetas reportan:
+
+- **Railway**: servicios, entornos, muestra de deployments (últimos 3 por entorno), fallidos, antigüedad y estado del último.
+- **Vercel**: muestra de deployments (últimos 3), listos, fallidos, antigüedad y duración media calculada con `buildingAt`/`ready`.
+- **Supabase**: versión de base, estado del proyecto y salud por servicio (`db`, `auth`, `storage`, `realtime`, `rest`).
 
 Para la nube (solo lectura):
 
@@ -123,7 +143,11 @@ npm run control:test
 npm run certify:control-tower:local
 ```
 
+`control:test` incluye las suites de módulos y cloud: catálogo sin token, API con Bearer, token inválido, 404, ambiente sin conexión, herencia de servicios caídos y el cálculo de métricas Railway/Vercel/Supabase con respuestas congeladas.
+
 La certificación levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, captura el panel con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/`.
+
+La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`.
 
 Evidencia actual: `certification.json`, `tower-overview.png`, `tower-env-main.png`, `tower-api-down.png` y `telegram-outbox.json`.
 
