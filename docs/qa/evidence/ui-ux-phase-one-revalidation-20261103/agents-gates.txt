@@ -1,0 +1,46 @@
+# Gates de agentes — 2026-11-03
+
+HEAD al ejecutar: a289c2ee (== origin/desarrollo)
+
+## agents:check
+
+```
+[agents] OK: 11 agentes y 11 documentos verificados
+```
+
+## test:agents
+
+```
+# tests 42
+# pass 42
+# fail 0
+```
+
+## agents:preflight
+
+```
+Ruteo obligatorio:
+  equipo-apexos, apexos-brief, apexos-frontend, apexos-qa
+Veredicto: OK
+```
+
+## agents:coverage
+
+```
+  AGENTE           VERSION   FRESCURA      CHANGELOG  RESULTADO
+  apexos-brief     2.2.0     in-sync       si         FALTA
+  apexos-frontend  2.1.0     in-sync       si         FALTA
+      - sin bump local frente a origin (estado in-sync)
+```
+
+`agents:coverage` compara contra `origin/desarrollo`, que ya contiene el cambio: otro proceso publicó `51aa9a47` (actividad de la torre) con el `agents:sync` de esta intervención y luego `a289c2ee` con la certificación. La compuerta está diseñada para ejecutarse antes del push, por lo que después del push reporta `in-sync`.
+
+## Verificación contra el baseline previo (48e3d8f7)
+
+```
+apexos-qa: 2.1.0 -> 2.2.0 | sha cambió: true | updated_at 2026-11-03
+apexos-frontend: 2.0.0 -> 2.1.0 | sha cambió: true | updated_at 2026-11-03
+apexos-brief: 2.1.0 -> 2.2.0 | sha cambió: true | updated_at 2026-11-03
+```
+
+Las dos condiciones que exige la cobertura se cumplen frente al baseline anterior al cambio: bump semver con `sha256` distinto y mención de `apexos-brief` y `apexos-frontend` en la sección más reciente de `agents/CHANGELOG.md` (`### Certificación UI fase uno`).
