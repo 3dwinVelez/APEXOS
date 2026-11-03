@@ -4,6 +4,19 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-03
 
+### Conexión real con los ambientes QA y PROD
+
+- La torre ya no responde `SIN_TOKEN` a ciegas: si el ambiente no tiene token, consulta `GET /health` sin credenciales y distingue `401` (falta token) de `404` (el build desplegado no incluye `apex-control`). El nuevo motivo `MODULO_NO_DESPLEGADO` nombra la causa real y el commit responsable.
+- El tab de cada ambiente y el encabezado del indicador muestran `version`, `commit` (7 caracteres) y número de módulos leídos de `/health`; `probes.js` los publica como `deployed`. Un `commit: "unknown"` no se muestra.
+- La actividad y la lectura por empresa usan el mismo diagnóstico: `404` con token informa `MODULO_NO_DESPLEGADO`, sin token informa `SIN_TOKEN`, y la sonda sin credenciales no envía `Authorization`.
+- Medición real del 2026-11-03: QA responde `200` en `/health` con build `a505e97f9622` y PROD con `938fc2b6f42c`; ambos devuelven `404` en `/api/v1/apex-control/modules` porque sus builds son anteriores al módulo (`2a186a63`, 2026-11-02). Los datos por módulo requieren un build con el módulo desplegado y `ENV_DEVELOP_APEX_TOKEN`/`ENV_MAIN_APEX_TOKEN`.
+- `apexos-performance` — `2.4.0` — control nuevo `diagnostico-build-por-ambiente`: el build desplegado se mide y se publica con el puntaje; una consulta sin token solo separa 401 de 404.
+- `apexos-seguridad` — `2.4.0` — control nuevo `sonda-anonima-diagnostico`: la sonda sin credenciales se limita a `/health`, no envía `Authorization` y no persiste tokens.
+- `apexos-qa` — `2.5.0` — control nuevo `certificacion-conexion-build`: la evidencia de conexión exige `/health` real, códigos reales de la ruta de módulos, captura por ambiente y `BLOQUEO: build sin módulo` cuando falta el despliegue.
+- `equipo-apexos` — `2.3.0` — control nuevo `diagnostico-sin-datos-por-causa`: sin datos se separa en credencial, build y red antes de pedir tokens o declarar falla.
+- `apexos-brief` — `2.5.0` — control nuevo `brief-build-desplegado`: el brief de conexión nombra el build desplegado y deja promoción, despliegue y tokens en autorizaciones separadas.
+- Brief: `docs/briefs/2026-11-03-torre-conexion-ambientes.md`; evidencia en `docs/qa/evidence/tower-env-connection-20261103/`.
+
 ### Indicador oficial de salud y vista por empresa
 
 - `apps/control-tower/lib/health.js` publica el puntaje con umbrales fijos (Óptimo ≥ 85, En riesgo 60–84, Crítico < 60, Sin dato) y mezcla 70% módulos + 30% infraestructura cuando ambas fuentes se miden. `degraded` pasa de 55 a 65: un servicio que responde degradado se lee **En riesgo**, no **Crítico**; solo `down` (10) es crítico. `test/health.test.js` fija las fronteras 85/84/60/59, la penalización por frescura y la mezcla.

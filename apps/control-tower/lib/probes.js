@@ -404,6 +404,7 @@ async function runProbes(config) {
     durationMs: Date.now() - startedAt,
     summary,
     checks,
+    api: deployedInfo(apiCheck),
     modules: modules.payload,
     activity: activity.payload,
     metrics: apiCheck ? [{
@@ -442,6 +443,18 @@ function simulatedCloud(config, environment) {
   };
 }
 
+function deployedInfo(apiCheck) {
+  const payload = apiCheck && apiCheck.detail && typeof apiCheck.detail === "object" ? apiCheck.detail : null;
+  if (!payload) return null;
+  const commit = payload.commit && !/^unknown$/i.test(String(payload.commit)) ? String(payload.commit).slice(0, 12) : null;
+  return {
+    status: apiCheck.status,
+    version: payload.version != null ? String(payload.version) : null,
+    commit,
+    modules: Number.isFinite(payload.modules) ? payload.modules : null
+  };
+}
+
 function remoteCheck(environment, id, label, options = {}) {
   return baseCheck(id, label, {
     environment: environment.id,
@@ -468,6 +481,7 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
       checks,
       metrics,
       enabled: false,
+      api: null,
       modules: null,
       activity: null,
       cloud: {
@@ -502,6 +516,7 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
       checks,
       metrics,
       enabled: true,
+      api: null,
       modules: simulatedModules.payload,
       activity: simulatedActivity.payload,
       cloud: simulatedCloud(config, environment)
@@ -605,10 +620,10 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
   const activity = await collectActivity(config, environment);
   if (activity.checks.length) checks.push(...activity.checks);
 
-  return { checks, metrics, enabled: true, modules: modules.payload, activity: activity.payload, cloud };
+  return { checks, metrics, enabled: true, api: deployedInfo(apiCheck), modules: modules.payload, activity: activity.payload, cloud };
 }
 
-function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null, activity = null) {
+function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null, activity = null, apiInfo = null) {
   const health = computeHealth({ modules: modules ? modules.modules : [], checks });
   return {
     id: environment.id,
@@ -620,6 +635,7 @@ function buildEnvironmentMeta(config, environment, checks, cloud = null, modules
     webBaseUrl: environment.webBaseUrl,
     overall: environment.enabled ? computeOverall(checks) : "unknown",
     summary: computeSummary(checks),
+    deployed: apiInfo || null,
     modules: modules ? { ...modules, modules: withModuleBands(modules.modules, health) } : null,
     health,
     activity: activity || null,
@@ -653,9 +669,9 @@ async function runAllProbes(config, { fetchImpl = global.fetch } = {}) {
     ...main.checks
   ].map(diagnoseCheck));
   const environments = {
-    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules, local.activity),
-    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules, develop.activity),
-    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules, main.activity)
+    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules, local.activity, local.api),
+    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules, develop.activity, develop.api),
+    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules, main.activity, main.api)
   };
   return {
     at: new Date().toISOString(),

@@ -1,0 +1,11 @@
+# Sondas reales QA y PROD — 2026-11-03
+
+## QA https://apexos-api-qa-production.up.railway.app
+GET /health -> {"status":"OK","version":"2.0","modules":18,"commit":"a505e97f9622","service_certification":"products-v2"} [HTTP 200]
+GET /api/v1/apex-control/modules (sin credencial) -> {"message":"Route GET:/api/v1/apex-control/modules not found","error":"Not Found","statusCode":404} [HTTP 404]
+
+## PROD https://apexos-api-prod-production.up.railway.app
+GET /health -> {"status":"OK","version":"2.0","modules":17,"commit":"938fc2b6f42c","service_certification":"products-v2"} [HTTP 200]
+GET /api/v1/apex-control/modules (sin credencial) -> {"message":"Route GET:/api/v1/apex-control/modules not found","error":"Not Found","statusCode":404} [HTTP 404]
+
+Lectura: 404 sin credencial significa ruta ausente del build, no token faltante. 401 significaria ruta viva y credencial pendiente.

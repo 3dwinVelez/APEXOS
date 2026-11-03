@@ -56,6 +56,7 @@ const ACTIVITY_REASON = {
   SIN_TOKEN: "Este ambiente no tiene token de lectura de APEX Control; la actividad y las conexiones quedan sin dato.",
   TOKEN_INVALIDO: "El token de la torre fue rechazado por la API; la actividad queda sin dato.",
   NO_DISPONIBLE: "La API del ambiente no expone actividad por empresa.",
+  MODULO_NO_DESPLEGADO: "El build desplegado no incluye el módulo apex-control; la actividad y las empresas quedan sin dato hasta desplegar un build que lo contenga.",
   SIN_CONEXION: "Sin conexión con la API para leer actividad.",
   SIMULACION: "Simulación activa: la actividad se omite."
 };
@@ -69,6 +70,12 @@ const HEALTH_REASON = {
   TOKEN_INVALIDO: () => "El token de este ambiente fue rechazado por la API. Renuévalo y reinicia la torre; el token local nunca se reutiliza en QA ni en PROD.",
   SIN_CONEXION: () => "No hay conexión con la API del ambiente. Revisa la URL y la red antes de confiar en el indicador.",
   NO_DISPONIBLE: () => "La API del ambiente no expone salud por módulo.",
+  MODULO_NO_DESPLEGADO: (environment) => {
+    const build = environment && environment.deployed && environment.deployed.commit
+      ? ` El build desplegado es ${String(environment.deployed.commit).slice(0, 7)}.`
+      : "";
+    return `La API de este ambiente no incluye el módulo apex-control, así que no puede entregar salud por módulo ni actividad.${build} Hay que desplegar un build que lo contenga; la conexión ya está configurada y no falta token.`;
+  },
   SIMULACION: () => "La torre está en simulación; la salud real por módulo se omite.",
   CROSS_TENANT_DESHABILITADO: () => "La lectura entre empresas está deshabilitada en este ambiente.",
   PERMISO_DENEGADO: () => "El token de la torre no tiene el permiso apex-control:read_all_tenants.",
@@ -546,7 +553,11 @@ function renderHealth(environment) {
   const health = environment.health;
   const score = Number.isFinite(health.score) ? health.score : null;
   const thresholds = health.thresholds || { optimal: 85, risk: 60 };
-  meta.innerHTML = `<span class="band-pill ${BAND_TONE[health.band] || "unknown"}">${escapeHtml(BAND_LABEL[health.band] || "Sin dato")}</span> ${escapeHtml(score == null ? "sin puntaje" : `${score}/100`)} · umbrales ${escapeHtml(thresholds.optimal)} / ${escapeHtml(thresholds.risk)} · ${escapeHtml(environment.label)}`;
+  const deployed = environment.deployed;
+  const build = deployed && deployed.commit
+    ? ` · build ${escapeHtml(String(deployed.commit).slice(0, 7))}${deployed.modules != null ? ` (${escapeHtml(deployed.modules)} módulos)` : ""}`
+    : "";
+  meta.innerHTML = `<span class="band-pill ${BAND_TONE[health.band] || "unknown"}">${escapeHtml(BAND_LABEL[health.band] || "Sin dato")}</span> ${escapeHtml(score == null ? "sin puntaje" : `${score}/100`)} · umbrales ${escapeHtml(thresholds.optimal)} / ${escapeHtml(thresholds.risk)} · ${escapeHtml(environment.label)}${build}`;
   container.innerHTML = healthBlock("environment");
 }
 
@@ -1068,7 +1079,8 @@ function renderEnvironmentTabs(snapshot, selected) {
     const score = health && Number.isFinite(health.score) ? health.score : null;
     const band = health && BAND_ORDER.includes(health.band) ? health.band : "unknown";
     const summary = environment.summary || { ok: 0, total: 0 };
-    const meta = [environment.branch, score == null ? "sin puntaje" : `${score}/100`].filter(Boolean).join(" · ");
+    const build = environment.deployed && environment.deployed.commit ? String(environment.deployed.commit).slice(0, 7) : null;
+    const meta = [environment.branch, score == null ? "sin puntaje" : `${score}/100`, build].filter(Boolean).join(" · ");
     const label = environment.enabled ? (score == null ? "Sin dato" : BAND_LABEL[band]) : "Desactivado";
     const tone = environment.enabled && score != null ? BAND_TONE[band] : "unknown";
     return `

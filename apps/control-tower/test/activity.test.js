@@ -45,15 +45,16 @@ function tenantsPayload() {
   };
 }
 
-test("sin token no consulta la API y deja la actividad sin dato", async () => {
-  let called = false;
+test("sin token sondea la ruta sin credencial y deja la actividad sin dato", async () => {
+  const calls = [];
   const payload = await fetchActivity(BASE, environment({ apexToken: "" }), {
-    httpRequest: async () => {
-      called = true;
-      return { ok: true, status: 200, json: {} };
+    httpRequest: async (url, options) => {
+      calls.push({ url, options });
+      return { ok: false, status: 401, json: null };
     }
   });
-  assert.equal(called, false);
+  assert.equal(calls.length, 2, "sondea actividad y empresas para distinguir 401 de 404");
+  assert.ok(calls.every((call) => call.options.headers.authorization === undefined));
   assert.equal(payload.reason, "SIN_TOKEN");
   assert.equal(payload.activity, null);
   assert.equal(payload.tenants, null);
@@ -121,15 +122,28 @@ test("401 en actividad y caida de red se reportan sin inventar datos", async () 
   const missing = await fetchActivity(BASE, environment(), {
     httpRequest: async () => ({ ok: false, status: 404, json: null })
   });
-  assert.equal(missing.reason, "NO_DISPONIBLE");
+  assert.equal(missing.reason, "MODULO_NO_DESPLEGADO");
+});
+
+test("sin token un 404 acusa build anterior y no falta de credencial", async () => {
+  const payload = await fetchActivity(
+    { ...BASE, apexToken: "token-local" },
+    { id: "main", short: "PROD", apiBaseUrl: "https://api.test", apexToken: "" },
+    { httpRequest: async () => ({ ok: false, status: 404, json: null }) }
+  );
+  assert.equal(payload.reason, "MODULO_NO_DESPLEGADO");
+  assert.equal(payload.configured, false);
 });
 
 test("el token local no se envia a ambientes remotos", async () => {
+  const calls = [];
   const payload = await fetchActivity(
     { ...BASE, apexToken: "token-local" },
-    { id: "main", short: "PROD", apiBaseUrl: "https://api.test", apexToken: "" }
+    { id: "main", short: "PROD", apiBaseUrl: "https://api.test", apexToken: "" },
+    { httpRequest: async (url, options) => { calls.push({ url, options }); return { ok: false, status: 401, json: null }; } }
   );
   assert.equal(payload.reason, "SIN_TOKEN");
+  assert.ok(calls.every((call) => call.options.headers.authorization === undefined), "no se envia el token local");
 });
 
 test("la simulacion omite la red y las credenciales solo exponen nombres", async () => {

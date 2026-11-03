@@ -83,9 +83,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "updated_at": "2026-11-03",
-      "sha256": "f3dffff683553de550e77610881c70988f6e63203dcb33e6686c7b806abe98f6",
+      "sha256": "0cf3498e665593b0048e326a068a49004580a3a34658fcab799eeb9886b62696",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -105,7 +105,8 @@
         "brief-salud-modulos-cloud",
         "certificacion-ui-en-el-inventario",
         "inventario-cierre-certificaciones",
-        "alcance-sin-archivos-sin-seguimiento"
+        "alcance-sin-archivos-sin-seguimiento",
+        "brief-build-desplegado"
       ]
     },
     {
@@ -184,9 +185,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "updated_at": "2026-11-03",
-      "sha256": "0674a4212310ceefc04b433cf6abd992bbe81ecb9153c3fef1779227bacda06a",
+      "sha256": "a672171a980d0ef5f6cbd5936a6934817fce0b53fe10fc9b5a05a3bd4403daf3",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -203,15 +204,16 @@
         "metricas-cloud-medibles",
         "sondas-informativas",
         "actividad-empresas-acotadas",
-        "graficos-salud-acotados"
+        "graficos-salud-acotados",
+        "diagnostico-build-por-ambiente"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "updated_at": "2026-11-03",
-      "sha256": "dc0ba1556e0ce6e697e0aff8299841e8f6452f50219f9795a6ae5b2a86b6fab7",
+      "sha256": "526307fc1226f08f385aa0fddb1fc106f2a96c5f568b416ad58bc5b45bc84404",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -234,15 +236,16 @@
         "certificacion-actividad-empresas",
         "certificacion-contra-codigo-vigente",
         "certificar-contra-shell-vigente",
-        "certificacion-salud-empresa"
+        "certificacion-salud-empresa",
+        "certificacion-conexion-build"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "updated_at": "2026-11-03",
-      "sha256": "a234a96ce4b165e6fb71e3c32726329fa6419fdc129c5a2d170f9bf93b07a231",
+      "sha256": "8566c6166e17b1d1aabb52a01d470a7663050ccf8508d5def916aa358722e204",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -262,15 +265,16 @@
         "aislamiento-salud-modulos",
         "token-por-ambiente",
         "lectura-entre-empresas",
-        "detalle-empresa-misma-puerta"
+        "detalle-empresa-misma-puerta",
+        "sonda-anonima-diagnostico"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.2.0",
+      "version": "2.3.0",
       "updated_at": "2026-11-03",
-      "sha256": "aeb75c9509d5ed7d53c368cdc35b33bb00fd60c6945f8b668411f30170036b8f",
+      "sha256": "71a3a6ddc81b172dee048e998b43100cb2b413e97a44ebaaa2374a1d9ffc7657",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -288,7 +292,8 @@
         "torre-solo-lectura",
         "confirmacion-irreversible",
         "cierre-salud-modulos-cloud",
-        "indicador-oficial-y-empresa"
+        "indicador-oficial-y-empresa",
+        "diagnostico-sin-datos-por-causa"
       ]
     }
   ],

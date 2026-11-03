@@ -1,0 +1,61 @@
+{
+  "base": "http://127.0.0.1:4310/",
+  "capturedAt": "2026-11-03T20:12:50.542Z",
+  "checks": {
+    "local": {
+      "selectedTab": "Local desarrollo · 77/100 · 10/13 sondas En riesgo",
+      "tabs": [
+        "Local desarrollo · 77/100 · 10/13 sondas En riesgo",
+        "Develop · QA develop · 83/100 · a505e97 · 2/6 sondas En riesgo",
+        "Main · Producción main · 83/100 · 938fc2b · 2/6 sondas En riesgo"
+      ],
+      "healthMeta": "En riesgo 77/100 · umbrales 85 / 60 · Local",
+      "notice": "",
+      "noticePill": [],
+      "moduleRows": 10,
+      "activityNotice": "",
+      "tenantsNotice": "",
+      "kpis": "Salud LOCAL 77/100 En riesgo · módulos 67 · infra 100 Módulos 1/32 14 degradados · 0 caídos Registros 15.823 medidos en los módulos Actividad hoy 0 5 en 7 días Conexiones 405 31 usuarios · 0 WS Empresas 200/200 104 con sesión · 0 con GPS Servicios caídos 0 1 degradados · 2 sin dato Alertas abiertas 1 Modulos LOCAL: degradado API p95 235 ms 120 muestras · 0.8% errores Rama desarrollo Sincronizada adelante 0 · atrás 0 Fábrica Qoder 0 activos 0 por aprobar · 0 históricos"
+    },
+    "develop": {
+      "selectedTab": "Develop · QA develop · 83/100 · a505e97 · 2/6 sondas En riesgo",
+      "tabs": [
+        "Local desarrollo · 77/100 · 10/13 sondas En riesgo",
+        "Develop · QA develop · 83/100 · a505e97 · 2/6 sondas En riesgo",
+        "Main · Producción main · 83/100 · 938fc2b · 2/6 sondas En riesgo"
+      ],
+      "healthMeta": "En riesgo 83/100 · umbrales 85 / 60 · Develop · QA · build a505e97 (18 módulos)",
+      "notice": "MODULO_NO_DESPLEGADO Sin datos por módulo de este ambiente La API de este ambiente no incluye el módulo apex-control, así que no puede entregar salud por módulo ni actividad. El build desplegado es a505e97. Hay que desplegar un build que lo contenga; la conexión ya está configurada y no falta token.",
+      "noticePill": [
+        "MODULO_NO_DESPLEGADO"
+      ],
+      "moduleRows": 10,
+      "activityNotice": "",
+      "tenantsNotice": "",
+      "kpis": "Salud QA 83/100 En riesgo · módulos — · infra 83 Módulos 0/32 0 degradados · 0 caídos Registros — medidos en los módulos Actividad hoy — Sin datos de actividad Conexiones — Sin datos de sesiones Empresas — Vista por empresa restringida Servicios caídos 0 2 degradados · 2 sin dato Alertas abiertas 0 Sin incidentes abiertos API p95 457 ms 120 muestras · 0% errores Rama develop Sincronizada adelante 0 · atrás 0 Fábrica Qoder 0 activos 0 por aprobar · 0 históricos"
+    },
+    "main": {
+      "selectedTab": "Main · Producción main · 83/100 · 938fc2b · 2/6 sondas En riesgo",
+      "tabs": [
+        "Local desarrollo · 77/100 · 10/13 sondas En riesgo",
+        "Develop · QA develop · 83/100 · a505e97 · 2/6 sondas En riesgo",
+        "Main · Producción main · 83/100 · 938fc2b · 2/6 sondas En riesgo"
+      ],
+      "healthMeta": "En riesgo 83/100 · umbrales 85 / 60 · Main · Producción · build 938fc2b (17 módulos)",
+      "notice": "MODULO_NO_DESPLEGADO Sin datos por módulo de este ambiente La API de este ambiente no incluye el módulo apex-control, así que no puede entregar salud por módulo ni actividad. El build desplegado es 938fc2b. Hay que desplegar un build que lo contenga; la conexión ya está configurada y no falta token.",
+      "noticePill": [
+        "MODULO_NO_DESPLEGADO"
+      ],
+      "moduleRows": 10,
+      "activityNotice": "",
+      "tenantsNotice": "",
+      "kpis": "Salud PROD 83/100 En riesgo · módulos — · infra 83 Módulos 0/32 0 degradados · 0 caídos Registros — medidos en los módulos Actividad hoy — Sin datos de actividad Conexiones — Sin datos de sesiones Empresas — Vista por empresa restringida Servicios caídos 0 2 degradados · 2 sin dato Alertas abiertas 0 Sin incidentes abiertos API p95 1538 ms 120 muestras · 0% errores Rama main Sincronizada adelante 0 · atrás 0 Fábrica Qoder 0 activos 0 por aprobar · 0 históricos"
+    }
+  },
+  "screenshots": [
+    "tower-env-local.png",
+    "tower-env-develop.png",
+    "tower-env-main.png"
+  ],
+  "consoleErrors": []
+}

@@ -9,7 +9,15 @@ const BASE = { environmentTimeoutMs: 1500, simulation: false };
 const environment = (extra = {}) => ({ id: "local", short: "LOCAL", apiBaseUrl: "http://api.test", apexToken: "jwt-demo", ...extra });
 
 test("sin token la torre cae al catalogo y no inventa salud de datos", async () => {
-  const payload = await fetchModules(BASE, environment({ apexToken: "" }));
+  let probe = null;
+  const payload = await fetchModules(BASE, environment({ apexToken: "" }), {
+    httpRequest: async (url, options) => {
+      probe = { url, options };
+      return { ok: false, status: 401, json: null, error: null };
+    }
+  });
+  assert.ok(probe, "sin token se sondea la ruta para distinguir 401 de 404");
+  assert.equal(probe.options.headers.authorization, undefined, "la sonda no lleva credencial inventada");
   assert.equal(payload.source, "catalog");
   assert.equal(payload.configured, false);
   assert.equal(payload.reason, "SIN_TOKEN");
@@ -27,16 +35,24 @@ test("simulacion, 401, 404 y sin conexion caen al catalogo con su razon", async 
   assert.equal(denied.reason, "TOKEN_INVALIDO");
 
   const missing = await fetchModules(BASE, environment(), { httpRequest: async () => ({ ok: false, status: 404, json: null, error: null }) });
-  assert.equal(missing.reason, "NO_DISPONIBLE");
+  assert.equal(missing.reason, "MODULO_NO_DESPLEGADO", "un 404 sin codigo significa que el build no trae el modulo");
 
   const offline = await fetchModules(BASE, environment(), { httpRequest: async () => ({ ok: false, status: 0, json: null, error: "ECONNREFUSED" }) });
   assert.equal(offline.reason, "SIN_CONEXION");
 
   const remoteWithoutToken = await fetchModules(
     { ...BASE, apexToken: "token-local" },
-    { id: "develop", short: "DEV", apiBaseUrl: "https://api.test", apexToken: "" }
+    { id: "develop", short: "DEV", apiBaseUrl: "https://api.test", apexToken: "" },
+    { httpRequest: async () => ({ ok: false, status: 401, json: null, error: null }) }
   );
   assert.equal(remoteWithoutToken.reason, "SIN_TOKEN", "el token local no se envia a ambientes remotos");
+
+  const remoteNotDeployed = await fetchModules(
+    { ...BASE, apexToken: "token-local" },
+    { id: "main", short: "PROD", apiBaseUrl: "https://api.test", apexToken: "" },
+    { httpRequest: async () => ({ ok: false, status: 404, json: null, error: null }) }
+  );
+  assert.equal(remoteNotDeployed.reason, "MODULO_NO_DESPLEGADO", "sin token, un 404 acusa build anterior y no falta de credencial");
 });
 
 test("con token usa la API y consulta con el JWT del ambiente", async () => {
@@ -124,7 +140,9 @@ test("los rechazos entre empresas conservan su codigo y no fingen salud", async 
 });
 
 test("el catalogo hereda el estado de los servicios y nunca declara salud propia", async () => {
-  const payload = await fetchModules(BASE, environment({ apexToken: "" }));
+  const payload = await fetchModules(BASE, environment({ apexToken: "" }), {
+    httpRequest: async () => ({ ok: false, status: 401, json: null, error: null })
+  });
   const checks = [
     { id: "db", status: "down" },
     { id: "queues", status: "ok" }
@@ -144,13 +162,17 @@ test("en ambientes remotos los servicios se leen con prefijo de ambiente", async
   assert.equal(checkIdFor("local", "db"), "db");
   assert.equal(checkIdFor("develop", "db"), "develop.db");
 
-  const payload = await fetchModules(BASE, environment({ apexToken: "" }));
+  const payload = await fetchModules(BASE, environment({ apexToken: "" }), {
+    httpRequest: async () => ({ ok: false, status: 401, json: null, error: null })
+  });
   const enriched = enrichWithChecks(payload, [{ id: "main.db", status: "degraded" }, { id: "main.queues", status: "ok" }], "main");
   assert.equal(enriched.modules.find((module) => module.key === "inventario").status, "degraded");
 });
 
 test("los chequeos por modulo son informativos y solo el resumen puntua", async () => {
-  const payload = await fetchModules(BASE, environment({ apexToken: "" }));
+  const payload = await fetchModules(BASE, environment({ apexToken: "" }), {
+    httpRequest: async () => ({ ok: false, status: 401, json: null, error: null })
+  });
   const enriched = enrichWithChecks(payload, [{ id: "db", status: "down" }, { id: "queues", status: "ok" }], "local");
   const checks = moduleChecks(enriched, { id: "local", short: "LOCAL" });
   const perModule = checks.filter((check) => check.id.startsWith("local.module."));
@@ -165,7 +187,9 @@ test("los chequeos por modulo son informativos y solo el resumen puntua", async 
   assert.equal(summary.status, "degraded");
   assert.match(summary.detail, /dependencia caida/);
 
-  const noToken = await fetchModules(BASE, environment({ apexToken: "" }));
+  const noToken = await fetchModules(BASE, environment({ apexToken: "" }), {
+    httpRequest: async () => ({ ok: false, status: 401, json: null, error: null })
+  });
   const catalogChecks = moduleChecks(enrichWithChecks(noToken, [], "local"), { id: "local", short: "LOCAL" });
   const catalogSummary = catalogChecks.find((check) => check.id === "local.modules");
   assert.equal(catalogSummary.status, "unknown");

@@ -79,6 +79,7 @@ El panel de módulos consume `GET /api/v1/apex-control/modules` con `Authorizati
 
 - `ENV_LOCAL_APEX_TOKEN` apunta a la API local; si falta, se usa `APEX_CONTROL_TOKEN`.
 - `ENV_DEVELOP_APEX_TOKEN` y `ENV_MAIN_APEX_TOKEN` son obligatorios para leer módulos remotos. La torre **no** reutiliza el token local contra QA ni PROD: sin token propio el ambiente queda `SIN_TOKEN` y sus módulos en `Sin dato`.
+- Sin token la torre igual consulta la ruta, sin credencial: `401` confirma que el módulo existe y falta el JWT; `404` significa que el build desplegado no incluye `apex-control` y lo reporta como `MODULO_NO_DESPLEGADO`. Así el panel no atribuye a una credencial lo que en realidad es un despliegue pendiente.
 - Los tokens de sesión viven solo en `apps/control-tower/.env.local` y caducan; renueva el valor cuando el panel reporte `TOKEN_INVALIDO`.
 
 Los módulos no contaminan las sondas de infraestructura, pero sí el indicador oficial: el puntaje del ambiente mezcla 70% módulos y 30% infraestructura cuando ambas fuentes se pueden medir. Un módulo caído genera alerta de severidad media.
@@ -97,7 +98,16 @@ El primer bloque del panel es el indicador oficial, no un adorno: publica el pun
 - Puntaje base por estado medido: `ok` 100, `degraded` 65, `down` 10. Un módulo sano que consumió más de tres cuartas partes de su ventana de frescura pierde hasta 25 puntos (piso 70) y entra en riesgo.
 - Ambiente: 70% módulos + 30% infraestructura. Si una fuente no se puede medir, el puntaje usa solo la medible; si no hay ninguna, queda `Sin dato`.
 - El gauge, las tarjetas de banda (con su conteo), la barra de umbrales y el gráfico por módulo ordenado de peor a mejor son clicables: abren el detalle del módulo o la fórmula completa en un diálogo.
-- Los tabs de ambiente muestran el puntaje y las sondas medidas; el indicador **Salud** del tablero replica el mismo número.
+- Los tabs de ambiente muestran el puntaje, las sondas medidas y el build desplegado que reporta `GET /health` (`commit` y cantidad de módulos); el indicador **Salud** del tablero replica el mismo número.
+
+### Conexión real con QA y PROD
+
+Los ambientes remotos están configurados con su URL de API, web y proyecto Supabase. La torre los consulta en cada ciclo y publica lo que cada build responde de verdad:
+
+- `GET /health` entrega estado, versión, módulos y commit desplegado. Ese commit se muestra en el tab y en el encabezado del indicador, para comparar el build con la rama.
+- La salud por módulo, la actividad y la vista por empresa requieren que ese build incluya el módulo `apex-control`. Un build anterior responde `404` y la torre lo declara como `MODULO_NO_DESPLEGADO` con el commit afectado; no lo confunde con falta de token ni con una caída.
+- Cuando la ruta responde `401`, el módulo sí está desplegado y lo que falta es el JWT del ambiente. Es el momento de configurar `ENV_DEVELOP_APEX_TOKEN` o `ENV_MAIN_APEX_TOKEN`.
+- Estado observado el 2026-11-03: QA corría `a505e97f9622` y PROD `938fc2b6f42c`, ambos anteriores al módulo `apex-control`; por eso mostraban `MODULO_NO_DESPLEGADO`. La conexión no requiere cambios de código adicionales: al desplegar un build que incluya el módulo y configurar su JWT, el panel pasa a cifras reales sin tocar la torre.
 
 ### Vista por empresa
 
@@ -110,7 +120,7 @@ Con el mismo token por ambiente, la torre consulta:
 - `GET /api/v1/apex-control/activity`: actividad del tenant del token en los últimos `days` días, con buckets diarios de auditoría y eventos, usuarios activos, sesiones, clientes WebSocket y pings GPS. Filtrado por tenant; nunca agrega cifras de otras empresas.
 - `GET /api/v1/apex-control/tenants`: conectividad por `tenant_id` para la vista de empresas. Es una lectura entre empresas y por eso exige el permiso explícito `apex-control:read_all_tenants`, la guarda `APEX_CONTROL_CROSS_TENANT` (apagada por defecto fuera de local/development) y la allowlist opcional `APEX_CONTROL_CROSS_TENANT_TENANTS`. Si la guarda está cerrada, la API responde `403 CROSS_TENANT_DESHABILITADO` y la torre muestra la restricción con su motivo.
 
-Ambos paneles son informativos: no alteran el puntaje del ambiente. El Resumen limita la tabla de empresas a 12 filas y avisa que el Detalle conserva la tabla completa. Sin token, la sección indica `SIN_TOKEN` y el motivo en vez de mostrar ceros como si hubiera actividad.
+Ambos paneles son informativos: no alteran el puntaje del ambiente. El Resumen limita la tabla de empresas a 12 filas y avisa que el Detalle conserva la tabla completa. Sin datos, la sección indica el motivo exacto (`SIN_TOKEN`, `MODULO_NO_DESPLEGADO`, `TOKEN_INVALIDO`) en vez de mostrar ceros como si hubiera actividad.
 
 ### Métricas cloud
 

@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.2.0
+version: 2.3.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -59,6 +59,7 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 11. **Riesgo irreversible se confirma.** Antes de una acción destructiva o visible para otros, se detiene y se pide autorización; la ausencia de autorización es prohibición.
 12. **Reporte sin adornos.** El veredicto declara qué se hizo, qué validó cada experto, qué evidencia existe, qué agentes se actualizaron, qué quedó pendiente y qué autorizaciones faltan.
 13. **Cierre de salud por módulo y cloud.** Cuando la intervención toca el seguimiento por módulo o los conectores Railway/Supabase/Vercel, el cierre exige el pase de `apexos-backend` (contrato del endpoint), `apexos-seguridad` (tenant y tokens por ambiente), `apexos-performance` (métricas sin contaminar el puntaje) y `apexos-qa` (suites y captura real) con `npm run agents:coverage` en verde. Un conector sin credenciales se reporta como limitación declarada, no como verificado.
+15. **Sin datos no es sin token.** Cuando un ambiente no entrega datos, el veredicto separa con evidencia las tres causas: credencial ausente o inválida (`401`), build sin el módulo (`404`) y red caída (`SIN_CONEXION`), consultando `/health` antes de pedir credenciales o declarar una falla. Pedir un JWT que no cambia el resultado, o prometer lectura real sin desplegar un build que contenga el módulo, es un diagnóstico incompleto.
 14. **Indicador oficial y lectura por empresa.** Cuando la intervención cambia cómo se publica la salud (umbrales, bandas, gráficos) o agrega una vista por empresa, el cierre exige que el umbral esté fijado en pruebas de frontera, que la ruta entre empresas conserve permiso explícito, guarda y allowlist, y que la certificación de navegador cubra **Resumen** y **Detalle** por separado. Un gráfico sin frontera probada no se presenta como indicador oficial.
 
 ## Checklist de intervención

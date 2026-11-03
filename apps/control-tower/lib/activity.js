@@ -4,6 +4,7 @@ const REASON_DETAIL = {
   SIN_TOKEN: "Sin token de lectura para actividad y conexiones.",
   TOKEN_INVALIDO: "Token invalido o sin permiso para actividad.",
   NO_DISPONIBLE: "El ambiente no expone actividad por tenant.",
+  MODULO_NO_DESPLEGADO: "El build desplegado en el ambiente no incluye el modulo apex-control.",
   SIN_CONEXION: "Sin conexion con la API para leer actividad.",
   SIMULACION: "Simulacion activa: actividad omitida."
 };
@@ -50,10 +51,9 @@ async function fetchActivity(config, environment, { httpRequest, now = new Date(
   if (config.simulation) return emptyPayload("SIMULACION", now);
   const fallback = environment.id === "local" ? config.apexToken : "";
   const token = environment.apexToken || fallback || "";
-  if (!token) return emptyPayload("SIN_TOKEN", now);
   if (!environment.apiBaseUrl) return emptyPayload("NO_DISPONIBLE", now);
 
-  const headers = { authorization: `Bearer ${token}` };
+  const headers = token ? { authorization: `Bearer ${token}` } : {};
   const timeoutMs = config.environmentTimeoutMs;
   const base = `${environment.apiBaseUrl}/api/v1/apex-control`;
   const [activity, tenants] = await Promise.all([
@@ -62,12 +62,14 @@ async function fetchActivity(config, environment, { httpRequest, now = new Date(
   ]);
 
   if (!activity.ok) {
-    const reason = activity.status === 401 || activity.status === 403
-      ? "TOKEN_INVALIDO"
-      : activity.status === 404 ? "NO_DISPONIBLE" : "SIN_CONEXION";
+    const reason = activity.status === 404
+      ? "MODULO_NO_DESPLEGADO"
+      : !token
+        ? "SIN_TOKEN"
+        : activity.status === 401 || activity.status === 403 ? "TOKEN_INVALIDO" : "SIN_CONEXION";
     return {
       ...emptyPayload(reason, now),
-      configured: true,
+      configured: Boolean(token),
       tenantsReason: tenants.ok ? null : tenantReasonFrom(tenants.status, tenants.json)
     };
   }

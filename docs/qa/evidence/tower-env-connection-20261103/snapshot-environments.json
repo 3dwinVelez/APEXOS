@@ -1,0 +1,178 @@
+{
+  "capturedAt": "2026-11-03T20:12:53.552Z",
+  "version": "1.2.0",
+  "environments": {
+    "local": {
+      "branch": "desarrollo",
+      "enabled": true,
+      "overall": "degraded",
+      "deployed": {
+        "status": "ok",
+        "version": "2.0",
+        "commit": null,
+        "modules": 19
+      },
+      "health": {
+        "score": 77,
+        "band": "risk",
+        "modules": {
+          "score": 67,
+          "band": "risk",
+          "measurable": 15,
+          "total": 32
+        },
+        "infra": {
+          "score": 100,
+          "band": "optimal",
+          "measurable": 10,
+          "total": 10
+        },
+        "counts": {
+          "total": 32,
+          "ok": 1,
+          "degraded": 14,
+          "down": 0,
+          "unknown": 17
+        }
+      },
+      "modules": {
+        "source": "api",
+        "reason": null,
+        "summary": {
+          "total": 32,
+          "ok": 1,
+          "degraded": 14,
+          "down": 0,
+          "unknown": 17,
+          "records": 15832
+        }
+      },
+      "activity": {
+        "source": "api",
+        "reason": null,
+        "tenantsReason": null
+      },
+      "checks": {
+        "ok": 10,
+        "degraded": 1,
+        "down": 0,
+        "unknown": 2,
+        "total": 13
+      }
+    },
+    "develop": {
+      "branch": "develop",
+      "enabled": true,
+      "overall": "ok",
+      "deployed": {
+        "status": "ok",
+        "version": "2.0",
+        "commit": "a505e97f9622",
+        "modules": 18
+      },
+      "health": {
+        "score": 83,
+        "band": "risk",
+        "modules": {
+          "score": null,
+          "band": "unknown",
+          "measurable": 0,
+          "total": 32
+        },
+        "infra": {
+          "score": 83,
+          "band": "risk",
+          "measurable": 4,
+          "total": 4
+        },
+        "counts": {
+          "total": 32,
+          "ok": 0,
+          "degraded": 0,
+          "down": 0,
+          "unknown": 32
+        }
+      },
+      "modules": {
+        "source": "catalog",
+        "reason": "MODULO_NO_DESPLEGADO",
+        "summary": {
+          "total": 32,
+          "ok": 0,
+          "degraded": 0,
+          "down": 0,
+          "unknown": 32
+        }
+      },
+      "activity": {
+        "source": "catalog",
+        "reason": "MODULO_NO_DESPLEGADO",
+        "tenantsReason": "NO_DISPONIBLE"
+      },
+      "checks": {
+        "ok": 2,
+        "degraded": 2,
+        "down": 0,
+        "unknown": 2,
+        "total": 6
+      }
+    },
+    "main": {
+      "branch": "main",
+      "enabled": true,
+      "overall": "ok",
+      "deployed": {
+        "status": "ok",
+        "version": "2.0",
+        "commit": "938fc2b6f42c",
+        "modules": 17
+      },
+      "health": {
+        "score": 83,
+        "band": "risk",
+        "modules": {
+          "score": null,
+          "band": "unknown",
+          "measurable": 0,
+          "total": 32
+        },
+        "infra": {
+          "score": 83,
+          "band": "risk",
+          "measurable": 4,
+          "total": 4
+        },
+        "counts": {
+          "total": 32,
+          "ok": 0,
+          "degraded": 0,
+          "down": 0,
+          "unknown": 32
+        }
+      },
+      "modules": {
+        "source": "catalog",
+        "reason": "MODULO_NO_DESPLEGADO",
+        "summary": {
+          "total": 32,
+          "ok": 0,
+          "degraded": 0,
+          "down": 0,
+          "unknown": 32
+        }
+      },
+      "activity": {
+        "source": "catalog",
+        "reason": "MODULO_NO_DESPLEGADO",
+        "tenantsReason": "NO_DISPONIBLE"
+      },
+      "checks": {
+        "ok": 2,
+        "degraded": 2,
+        "down": 0,
+        "unknown": 2,
+        "total": 6
+      }
+    }
+  }
+}

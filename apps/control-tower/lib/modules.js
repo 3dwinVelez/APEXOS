@@ -56,6 +56,7 @@ const REASON_DETAIL = {
   SIN_TOKEN: "Sin token de lectura para datos por modulo; se muestra solo la salud de servicios.",
   TOKEN_INVALIDO: "Token APEX Control invalido o sin permiso; se muestra solo la salud de servicios.",
   NO_DISPONIBLE: "El ambiente no expone salud por modulo; se muestra solo la salud de servicios.",
+  MODULO_NO_DESPLEGADO: "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
   SIN_CONEXION: "Sin conexion con la API para leer datos por modulo.",
   SIMULACION: "Simulacion activa: salud por modulo omitida.",
   CROSS_TENANT_DESHABILITADO: "La lectura de salud entre empresas esta deshabilitada en este ambiente.",
@@ -216,12 +217,39 @@ function moduleChecks(payload, environment) {
   return checks;
 }
 
+async function requestModules(config, environment, path, token, { httpRequest, fetchImpl = global.fetch } = {}) {
+  const url = `${environment.apiBaseUrl}${path}`;
+  const headers = token ? { authorization: `Bearer ${token}` } : {};
+  if (httpRequest) {
+    return httpRequest(url, { timeoutMs: config.environmentTimeoutMs, headers });
+  }
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), config.environmentTimeoutMs) : null;
+  try {
+    const response = await fetchImpl(url, {
+      headers: { ...headers, accept: "application/json" },
+      signal: controller ? controller.signal : undefined
+    });
+    const text = await response.text();
+    let json = null;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      json = null;
+    }
+    return { ok: response.ok, status: response.status, json, error: null };
+  } catch (error) {
+    return { ok: false, status: 0, json: null, error: redact(String(error && error.message ? error.message : error)) };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function fetchModules(config, environment, { httpRequest, fetchImpl = global.fetch, now = new Date(), tenantId = null } = {}) {
   if (config.simulation) return catalogPayload("SIMULACION");
   // El token global apunta a la API local; un ambiente remoto solo usa el suyo.
   const fallback = environment.id === "local" ? config.apexToken : "";
   const token = environment.apexToken || fallback || "";
-  if (!token) return catalogPayload("SIN_TOKEN");
   if (!environment.apiBaseUrl) return catalogPayload("NO_DISPONIBLE");
 
   const scope = tenantId ? String(tenantId).trim() : "";
@@ -230,41 +258,18 @@ async function fetchModules(config, environment, { httpRequest, fetchImpl = glob
     ? `/api/v1/apex-control/tenants/${encodeURIComponent(scope)}/modules`
     : "/api/v1/apex-control/modules";
 
-  let result;
-  if (httpRequest) {
-    result = await httpRequest(`${environment.apiBaseUrl}${path}`, {
-      timeoutMs: config.environmentTimeoutMs,
-      headers: { authorization: `Bearer ${token}` }
-    });
-  } else {
-    const controller = typeof AbortController === "function" ? new AbortController() : null;
-    const timer = controller ? setTimeout(() => controller.abort(), config.environmentTimeoutMs) : null;
-    try {
-      const response = await fetchImpl(`${environment.apiBaseUrl}${path}`, {
-        headers: { authorization: `Bearer ${token}`, accept: "application/json" },
-        signal: controller ? controller.signal : undefined
-      });
-      const text = await response.text();
-      let json = null;
-      try {
-        json = text ? JSON.parse(text) : null;
-      } catch {
-        json = null;
-      }
-      result = { ok: response.ok, status: response.status, json, error: null };
-    } catch (error) {
-      result = { ok: false, status: 0, json: null, error: redact(String(error && error.message ? error.message : error)) };
-    } finally {
-      if (timer) clearTimeout(timer);
-    }
-  }
+  // Sin token tambien se consulta la ruta: el codigo HTTP distingue "falta la
+  // credencial" (401) de "el build no trae el modulo" (404). Adivinar la causa
+  // fue lo que dejo a QA y PROD como SIN_TOKEN cuando su build era anterior.
+  const result = await requestModules(config, environment, path, token, { httpRequest, fetchImpl });
 
   if (result.error || result.status === 0) return catalogPayload("SIN_CONEXION");
   const responseCode = result.json && result.json.code;
+  if (result.status === 404) return catalogPayload(REASON_DETAIL[responseCode] ? responseCode : "MODULO_NO_DESPLEGADO");
+  if (!token) return catalogPayload(result.status === 403 ? "TOKEN_INVALIDO" : "SIN_TOKEN");
   if (result.status === 401) return catalogPayload("TOKEN_INVALIDO");
   if (result.status === 403) return catalogPayload(REASON_DETAIL[responseCode] ? responseCode : "TOKEN_INVALIDO");
   if (result.status === 400) return catalogPayload(REASON_DETAIL[responseCode] ? responseCode : "EMPRESA_ID_INVALIDO");
-  if (result.status === 404) return catalogPayload(REASON_DETAIL[responseCode] ? responseCode : "NO_DISPONIBLE");
   if (!result.ok || !result.json) return catalogPayload("NO_DISPONIBLE");
   const payload = normalizeApiPayload(result.json);
   if (!payload) return catalogPayload("NO_DISPONIBLE");

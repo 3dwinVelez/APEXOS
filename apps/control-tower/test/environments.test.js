@@ -147,7 +147,7 @@ test("sondas remotas consultan API, web y Supabase y dejan cloud sin credenciale
   const server = await startServer((req, res) => {
     if (req.url === "/health") {
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ status: "ok", uptimeSeconds: 12 }));
+      res.end(JSON.stringify({ status: "ok", version: "2.0", commit: "a505e97f9622", modules: 18 }));
       return;
     }
     if (req.url === "/auth/v1/health") {
@@ -176,6 +176,7 @@ test("sondas remotas consultan API, web y Supabase y dejan cloud sin credenciale
   assert.equal(result.cloud.supabase.configured, false);
   assert.equal(result.metrics.length, 1);
   assert.equal(result.metrics[0].environment, "develop");
+  assert.deepEqual(result.api, { status: "ok", version: "2.0", commit: "a505e97f9622", modules: 18 }, "expone el build desplegado que reporta /health");
   assert.equal(computeOverall(result.checks), "ok");
 });
 
