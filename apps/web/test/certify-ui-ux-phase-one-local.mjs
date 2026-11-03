@@ -41,10 +41,17 @@ try {
   assert.ok(continueButton, "Continuar debe estar disponible");
   await continueButton.click();
   record("product_continue_not_obstructed_by_ai_help", await page.$('[aria-label="Cerrar guia"]') === null);
-  record("product_step_navigation", await page.evaluate(() => document.body.textContent?.includes("Existencias y dimensiones") === true));
+  await page.waitForFunction(() => {
+    const current = document.querySelector('[aria-label="Progreso del formulario"] li[aria-current="step"]');
+    return current?.textContent?.includes("Clasificación") === true;
+  }, { timeout: 5000 }).catch(() => null);
+  record("product_step_navigation", await page.evaluate(() => {
+    const current = document.querySelector('[aria-label="Progreso del formulario"] li[aria-current="step"]');
+    return current?.textContent?.includes("Clasificación") === true && document.body.textContent?.includes("Clasificación y organización") === true;
+  }));
 
   await page.goto(`${baseUrl}/dashboard/compras/ordenes/nueva`, { waitUntil: "networkidle0" });
-  const unlabelledPurchases = await page.evaluate(() => [...document.querySelectorAll("input,select,textarea")].filter((element) => !element.getAttribute("aria-label") && !element.getAttribute("aria-labelledby") && !(element.id && document.querySelector(`label[for="${element.id}"]`)) && !element.closest("label")).length);
+  const unlabelledPurchases = await page.evaluate(() => [...document.querySelectorAll("input,select,textarea")].filter((element) => element.getAttribute("aria-hidden") !== "true" && element.getAttribute("type") !== "hidden" && !element.getAttribute("aria-label") && !element.getAttribute("aria-labelledby") && !(element.id && document.querySelector(`label[for="${element.id}"]`)) && !element.closest("label")).length);
   record("purchases_controls_named", unlabelledPurchases === 0, { unlabelledPurchases });
 
   await page.goto(`${baseUrl}/dashboard/ventas/ordenes/nueva`, { waitUntil: "networkidle0" });
