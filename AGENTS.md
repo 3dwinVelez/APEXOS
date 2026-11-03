@@ -57,6 +57,7 @@ Rules for Codex and any automated agent:
 - Implement new features and bug fixes first in `desarrollo`.
 - Use `develop` only for QA integration promoted from `desarrollo`.
 - Use `main` only for production releases promoted from `develop`.
+- `apps/control-tower/**` (APEX Control Tower) reposa solo en `desarrollo`: es una herramienta de puesto de trabajo que se ejecuta desde esa rama. No se promueve a `develop`, no se despliega, y sus certificaciones `npm run certify:control-tower:*` no se citan como evidencia de promoción. La otra mitad del dato sí sigue el flujo: `apps/api/src/modules/apex-control/**` y la telemetría de `/health` se promocionan cuando el propietario lo autorice. Detalle en `docs/project/flujo-ramas-y-ambientes.md`.
 - Do not promote branches without explicit authorization.
 - Do not push directly to `main`.
 - Do not push directly to `develop`.

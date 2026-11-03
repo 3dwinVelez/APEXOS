@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.5.0
+version: 2.6.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -47,6 +47,7 @@ Antes de actuar, leer en este orden:
 16. **Detalle por empresa sin puerta paralela.** `GET /api/v1/apex-control/tenants/:tenantId/modules` es la única ampliación de esa lectura: reutiliza exactamente la misma guarda, permiso explícito y allowlist, mide una sola empresa y no lista ni agrega otras. El id se valida con `^[A-Za-z0-9_-]{4,64}$` antes de tocar Prisma y se responde `400 EMPRESA_ID_INVALIDO`, `404 EMPRESA_NO_ENCONTRADA` o `403 EMPRESA_FUERA_DE_ALCANCE` sin filtrar trazas. La torre consume la ruta con su token de ambiente; una empresa abierta se relee contra el ambiente activo y nunca conserva datos de otro ambiente cuando falta token (`VISTA_EMPRESAS_NO_DISPONIBLE`).
 
 17. **Telemetría agregada sin superficie nueva.** `/health` publica solo totales del proceso (`uptime_seconds`, `memory_mb`, `usage` con peticiones por bucket de estado y consultas lentas): no aparecen rutas, identificadores de request, tenants, usuarios ni payloads. Un campo de ese tipo en el snapshot bloquea el cambio. La torre lo normaliza y lo muestra por ambiente; la evidencia JSON se sanea (`redactEnv`) y se prueba que ni el token de la sesión ni el JWT de `apex-control` aparecen en `certification.json`, `snapshot-ambientes.json` ni en los PNG. Cambiar de ambiente deselecciona la empresa abierta: no se relee una empresa de LOCAL contra QA o PROD. Por qué: el 2026-11-03 la lectura consolidada necesitó telemetría real y el riesgo era exponer justo lo que el `/health` anónimo nunca debe devolver.
+18. **Residir en `desarrollo` no relaja la credencial.** La torre guarda JWTs de QA y PROD, tokens de Railway/Supabase/Vercel y el token de sesión de la UI en `apps/control-tower/.env.local` (gitignored). Que el panel solo repose en `desarrollo` y no se despliegue no cambia nada: los secretos siguen fuera de commits, manifiestos de alcance, evidencia, logs y capturas, y la lectura entre empresas sigue exigiendo `apex-control:read_all_tenants` con `APEX_CONTROL_CROSS_TENANT` encendido en el ambiente. Por qué: el 2026-11-03 el propietario fijó la residencia de la herramienta en `desarrollo`, y el riesgo es concluir que un panel local autoriza a aflojar el manejo de credenciales o el aislamiento por empresa.
 
 ## Checklist de intervención
 

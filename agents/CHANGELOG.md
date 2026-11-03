@@ -4,6 +4,19 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-03
 
+### La torre de control reposa solo en `desarrollo`
+
+- Decisión del propietario: `apps/control-tower/**` es una herramienta de puesto de trabajo que **vive y se ejecuta solo en `desarrollo`**. No se promueve a `develop`, no llega a `main`, no se despliega y sus certificaciones no alimentan un gate de promoción. Se registró en `docs/project/flujo-ramas-y-ambientes.md` (sección «Residentes que nunca se promueven») y en `apps/control-tower/README.md` (sección «Rama de residencia»).
+- Lo que sí sigue el flujo `desarrollo -> develop -> main` es la otra mitad del dato: `apps/api/src/modules/apex-control/**` y la telemetría de `/health`. La residencia del panel no cancela esa promoción; sin un API desplegado con el módulo, la torre no puede leer QA ni PROD.
+- Control nuevo compartido `torre-residente-en-desarrollo`:
+  - `apexos-git-guardian` — `2.2.0` — regla 19: no despacha promoción ni despliegue del panel; el cierre termina en `git push origin desarrollo`.
+  - `apexos-performance` — `2.6.0` — regla 16: la torre se arranca en el puesto (`127.0.0.1:4310`), su presupuesto es de proceso local y su única vía a QA/PROD es el API desplegado.
+  - `apexos-seguridad` — `2.6.0` — regla 18: residir en `desarrollo` no relaja secretos ni la guarda cross-tenant; `.env.local` sigue fuera de commits y manifiestos.
+  - `apexos-qa` — `2.7.0` — regla 22: una verde de `certify:control-tower:*` certifica la herramienta, nunca promueve.
+  - `equipo-apexos` — `2.5.0` — regla 17: la residencia declarada se respeta; no se ofrece promocionar bloques que el dueño no pidió desplegar.
+  - `apexos-brief` — `2.7.0` — regla 20: todo brief declara la rama de destino y qué bloques no se promueven.
+- Brief actualizado: `docs/briefs/2026-11-03-torre-consolidado-empresas.md` (sección 10 separa la residencia del panel de la promoción pendiente del API).
+
 ### Monitor consolidado por empresa, telemetría medida y acciones de intervención
 
 - La torre publica un **monitor consolidado por empresa** por ambiente (empresas activas, carga de datos, actividad acumulada, empresas sin señal, memoria del API, uso del API y p95) y un **selector de empresa** alimentado solo con la lectura vigente. Al elegir una empresa, su panel muestra estado operativo, carga de datos, actividad y consumo del API con los números que devuelven `/health` y `/api/v1/apex-control/tenants/:tenantId/modules`. Cambiar de rama deselecciona la empresa: una empresa de LOCAL no se relee contra QA ni PROD.

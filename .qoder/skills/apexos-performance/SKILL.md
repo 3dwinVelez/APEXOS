@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.5.0
+version: 2.6.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -47,6 +47,7 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
 13. **El build desplegado se mide, no se supone.** La torre lee `GET /health` de cada ambiente y publica `version`, `commit` y número de módulos junto al puntaje del tab y del indicador. Una consulta sin token solo sirve para distinguir `401` (falta token) de `404` (build sin el módulo) y no se repite en bucle; un ambiente cuyo build no contiene `apex-control` queda `MODULO_NO_DESPLEGADO` y no se le atribuyen módulos ni actividad. Por qué: el 2026-11-03 QA (`a505e97f9622`) y PROD (`938fc2b6f42c`) se leían como `SIN_TOKEN` cuando sus builds eran anteriores al módulo.
 14. **Gráficos de salud acotados.** El cálculo de salud es puro y sin I/O (`lib/health.js`): el puntaje por ambiente se deriva una vez por lectura y la vista por empresa reutiliza el mismo endpoint cacheado por ciclo, sin sondas nuevas ni consultas por módulo. El gráfico por módulo renderiza 10 filas en **Resumen** y el total solo en **Detalle**; el filtro por banda y los diálogos reutilizan el payload ya cargado en el navegador. La vista por empresa tiene su propio límite de tasa (30/min). Por qué: un gauge con decenas de barras por ciclo convertiría el indicador en el mayor costo del panel.
 15. **Consumo y uso del API se miden, no se adornan.** La memoria, el uptime y el conteo de peticiones salen del propio proceso y viajan en `GET /health` como agregados (`uptime_seconds`, `memory_mb.*`, `usage.*`); la torre los normaliza en `deployedInfo` y los muestra en las teselas consolidadas y en **Detalle → Rendimiento**. Un ambiente cuyo build no publica esos campos muestra la nota `runtimeMissing` en lugar de inventar un número o heredar el del ambiente anterior. Cambiar de ambiente deselecciona la empresa: una empresa de LOCAL no se vuelve a consultar contra QA o PROD. Por qué: el 2026-11-03 el monitor mostraba consumos sin fuente y reconsultaba la empresa del ambiente anterior, produciendo lecturas cruzadas y errores 409 fantasma en la consola.
+16. **La torre se ejecuta en el puesto, no en la nube.** `apps/control-tower/**` vive solo en `desarrollo`: se arranca con `apex-control.bat` o `node apps/control-tower/server.js` contra `http://127.0.0.1:4310` y nunca se despliega como servicio. Por eso su presupuesto de rendimiento es de proceso local (sondas cada 10 s, sin SLA público) y su única vía a QA/PROD es el API desplegado allí. Medir, documentar o proponer un despliegue de la torre está fuera de este modelo. Por qué: el 2026-11-03 el propietario fijó que el panel se opera desde `desarrollo` con la IA, y una promoción de la herramienta habría creado un segundo vigilante sin fuente de datos.
 
 ## Checklist de intervención
 

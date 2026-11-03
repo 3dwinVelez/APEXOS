@@ -132,7 +132,8 @@ La torre de control deja de ser una lista de componentes: el dueño del ambiente
 
 ## 10. Autorizaciones requeridas
 
-- [ ] Promoción `desarrollo -> develop` con su manifiesto pre-QA y `develop -> main` con su manifiesto QA (política de aprobación de cambio).
+- [ ] **Residencia declarada (decisión del propietario, 2026-11-03)**: `apps/control-tower/**` repose y se ejecute **solo en `desarrollo`**. No se promueve a `develop` ni a `main`, no se despliega y sus certificaciones no alimentan manifiestos de promoción. Registrado en `docs/project/flujo-ramas-y-ambientes.md` y en `apps/control-tower/README.md`.
+- [ ] Promoción `desarrollo -> develop` con su manifiesto pre-QA y `develop -> main` con su manifiesto QA **solo del API** (`apps/api/src/modules/apex-control/**` y la telemetría de `/health`): es la otra mitad de la conexión, sin ella la torre no puede leer QA ni PROD.
 - [ ] Despliegue en Railway (API) y Vercel (web) de un build que incluya `apex-control` y la telemetría de `/health` en QA y PROD.
 - [ ] JWT por ambiente en `apps/control-tower/.env.local`: `ENV_DEVELOP_APEX_TOKEN` y `ENV_MAIN_APEX_TOKEN`, con el permiso `apex-control:read_all_tenants` si se quiere el consolidado entre empresas.
 - [ ] `APEX_CONTROL_CROSS_TENANT` (y su allowlist) en el ambiente que deba exponer el consolidado de empresas.

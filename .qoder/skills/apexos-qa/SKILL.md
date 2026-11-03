@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.6.0
+version: 2.7.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -51,6 +51,7 @@ Antes de actuar, leer en este orden:
 20. **Indicador oficial y salud por empresa.** `test/health.test.js` fija las fronteras 85/84/60/59, la calibración `degraded` = 65 (**En riesgo**, no **Crítico**), la penalización por frescura (piso 70) y la mezcla 70% módulos + 30% infraestructura con caída a la fuente medible. La certificación de navegador valida el **Resumen** (gauge con su puntaje, `metric-tile`, tarjetas de banda) y luego el **Detalle** (`.branch`, `details.tech`, `.perf-stat`); no exige estructura de una vista en la otra. La vista por empresa se prueba con dos empresas de cifras distintas, el cambio de ambiente sobre la empresa abierta y los motivos `SIN_TOKEN`/`VISTA_EMPRESAS_NO_DISPONIBLE` cuando falta token. El snapshot de evidencia exporta solo puntajes, bandas y booleanos de credenciales, nunca tokens. Por qué: los gráficos son el indicador oficial; un umbral sin frontera probada es decorativo.
 
 21. **Consolidado en vivo, no decorado.** `npm run certify:control-tower:consolidado` prueba con una API rica y otra con el build anterior al módulo que las teselas de memoria, uso del API y rendimiento salen de los números publicados por `/health`; que el selector de empresa se llena con la lectura real; que cada bloqueo muestra una acción con responsable y siguiente comando sin pedir un token inútil; que PROD nunca inventa empresas; que el texto visible no usa `degrade` ni sus variantes en español; y que la consola queda sin errores. Un conteo de elementos del DOM se afirma con umbral (`>=`) y se contrasta con el payload real, nunca con el número histórico de la versión anterior del panel. Por qué: el 2026-11-03 la certificación fase uno esperaba 8 `.perf-stat` exactos y el panel ya publicaba los agregados del proceso.
+22. **Una certificación de la torre no promueve nada.** `apps/control-tower/**` reposa solo en `desarrollo`: `certify:control-tower:consolidado` y `certify:control-tower:local` certifican la herramienta en esa rama y sus manifiestos alimentan el cierre de la intervención, nunca un gate `desarrollo -> develop` ni `develop -> main`. El manifiesto de promoción que corresponde al monitor es el del API (`apex-control` y la telemetría de `/health`), con su alcance declarado archivo por archivo. Por qué: el 2026-11-03 el propietario decidió ejecutar el panel desde `desarrollo`; usar una verde de la torre como prueba para desplegarla habría promovido un servicio que no va a la nube.
 
 ## Checklist de intervención
 

@@ -4,6 +4,12 @@ Torre de vigilancia externa para APEXOS. Corre como un proceso Node independient
 
 No requiere `npm install`: usa Node.js 22 o superior y solo módulos nativos.
 
+## Rama de residencia: `desarrollo`
+
+La torre es una herramienta de puesto de trabajo, no un servicio desplegado. Vive y se ejecuta **solo en `desarrollo`**: no se promueve a `develop` ni a `main`, no se despliega en Railway/Vercel y sus certificaciones certifican la herramienta en `desarrollo` (no son evidencia de promoción). La política completa está en `docs/project/flujo-ramas-y-ambientes.md`.
+
+Esto no cambia la otra mitad de la conexión: el módulo `apps/api/src/modules/apex-control/**` y la telemetría de `/health` sí siguen el flujo `desarrollo -> develop -> main`, porque la torre lee QA y PROD a través del API desplegado ahí.
+
 ## Inicio rapido
 
 En Windows, desde la raíz del repositorio:

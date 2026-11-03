@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.4.0
+version: 2.5.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -63,6 +63,7 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 15. **Indicador oficial y lectura por empresa.** Cuando la intervención cambia cómo se publica la salud (umbrales, bandas, gráficos) o agrega una vista por empresa, el cierre exige que el umbral esté fijado en pruebas de frontera, que la ruta entre empresas conserve permiso explícito, guarda y allowlist, y que la certificación de navegador cubra **Resumen** y **Detalle** por separado. Un gráfico sin frontera probada no se presenta como indicador oficial.
 
 16. **Un estado sin explicación no es entrega.** Toda palabra que la torre muestra como estado (p. ej. `degradado`, `degrade`, `parcial`) tiene que ser comprensible para el dueño del ambiente sin abrir el código: si no lo es, se reemplaza por lo que significa y se documenta la frontera en la leyenda. Cada bloqueo se cierra con una acción concreta que lleve prioridad, qué hacer, agente responsable y siguiente comando; una tarjeta de estado sin acción no se aprueba. Por qué: el 2026-11-03 el usuario respondió que no entendía el estado y que no había sugerencias de intervención para que los agentes actuaran.
+17. **La residencia de una herramienta se respeta, no se "optimiza".** Cuando el dueño declara que un bloque vive solo en una rama (hoy `apps/control-tower/**` solo en `desarrollo`, registrado en `docs/project/flujo-ramas-y-ambientes.md`), el orquestador no despacha promotions ni despliegues de ese bloque, aunque la verde esté disponible: el plan de cierre termina en `git push origin desarrollo`. Lo que sí se promueve es la dependencia real del dato —el API con `apex-control`— y se pide por separado. Por qué: el 2026-11-03, tras cerrar el monitor consolidado, la tentación del equipo era ofrecer la promoción completa de la torre; desplegar un panel de puesto de trabajo es alcance no pedido.
 
 ## Checklist de intervención
 
