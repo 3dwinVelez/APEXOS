@@ -1,0 +1,182 @@
+{
+  "ok": true,
+  "reason": null,
+  "tenant": {
+    "id": "tenant-demo",
+    "name": "Demo APEX"
+  },
+  "generated_at": "2026-11-03T21:34:36.900Z",
+  "checkedAt": "2026-11-03T21:34:36.887Z",
+  "summary": {
+    "total": 3,
+    "ok": 1,
+    "degraded": 1,
+    "down": 1,
+    "unknown": 0,
+    "records": 1720
+  },
+  "health": {
+    "score": 58,
+    "band": "critical",
+    "thresholds": {
+      "optimal": 85,
+      "risk": 60
+    },
+    "modules": {
+      "score": 58,
+      "band": "critical",
+      "measurable": 3,
+      "total": 3
+    },
+    "infra": {
+      "score": null,
+      "band": "unknown",
+      "measurable": 0,
+      "total": 0
+    },
+    "counts": {
+      "total": 3,
+      "ok": 1,
+      "degraded": 1,
+      "down": 1,
+      "unknown": 0
+    },
+    "entries": [
+      {
+        "key": "hr",
+        "name": "Talento Humano",
+        "group": "Personas",
+        "status": "ok",
+        "score": 100,
+        "band": "optimal"
+      },
+      {
+        "key": "services",
+        "name": "Servicios",
+        "group": "Operacion",
+        "status": "degraded",
+        "score": 65,
+        "band": "risk"
+      },
+      {
+        "key": "transport",
+        "name": "Transporte",
+        "group": "Operacion",
+        "status": "down",
+        "score": 10,
+        "band": "critical"
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "alta",
+      "owner": "apexos-backend",
+      "action": "Dependencia de sincronizacion caida",
+      "command": null,
+      "id": "local:module:transport",
+      "code": "MODULO_CAIDO",
+      "title": "Transporte caído"
+    },
+    {
+      "priority": "media",
+      "owner": "apexos-performance",
+      "action": "Ultima actividad hace 240 min (esperado <= 30 min)",
+      "command": null,
+      "id": "local:module:services",
+      "code": "MODULO_ATENCION",
+      "title": "Servicios requiere atención"
+    }
+  ],
+  "modules": [
+    {
+      "key": "hr",
+      "name": "Talento Humano",
+      "group": "Personas",
+      "declared": true,
+      "status": "ok",
+      "data": {
+        "state": "fresco",
+        "records": 1240,
+        "last_activity_at": "2026-11-03T21:34:36.900Z",
+        "age_minutes": 2,
+        "expected_minutes": 60
+      },
+      "services": [
+        {
+          "key": "postgres",
+          "label": "PostgreSQL",
+          "status": "ok"
+        }
+      ],
+      "alerts": [],
+      "detail": "1.240 registros · ultima actividad hace 2 min",
+      "score": 100,
+      "band": "optimal"
+    },
+    {
+      "key": "services",
+      "name": "Servicios",
+      "group": "Operacion",
+      "declared": true,
+      "status": "degraded",
+      "data": {
+        "state": "viejo",
+        "records": 480,
+        "last_activity_at": "2026-11-03T21:34:36.900Z",
+        "age_minutes": 240,
+        "expected_minutes": 30
+      },
+      "services": [
+        {
+          "key": "redis",
+          "label": "Redis",
+          "status": "degraded"
+        }
+      ],
+      "alerts": [
+        {
+          "id": "1",
+          "severity": "medium",
+          "status": "open",
+          "title": "Cola de Servicios con retraso"
+        }
+      ],
+      "detail": "Ultima actividad hace 240 min (esperado <= 30 min)",
+      "score": 65,
+      "band": "risk"
+    },
+    {
+      "key": "transport",
+      "name": "Transporte",
+      "group": "Operacion",
+      "declared": true,
+      "status": "down",
+      "data": {
+        "state": "sin_servicio",
+        "records": null,
+        "last_activity_at": null,
+        "age_minutes": null,
+        "expected_minutes": 60
+      },
+      "services": [
+        {
+          "key": "stock-sync",
+          "label": "Sincronizacion",
+          "status": "down"
+        }
+      ],
+      "alerts": [
+        {
+          "id": "2",
+          "severity": "high",
+          "status": "open",
+          "title": "Sincronizacion de Transporte caida"
+        }
+      ],
+      "detail": "Dependencia de sincronizacion caida",
+      "score": 10,
+      "band": "critical"
+    }
+  ]
+}

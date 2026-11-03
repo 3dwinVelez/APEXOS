@@ -3,9 +3,9 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-03T19:42:48.864Z",
-  "started_at": "2026-11-03T19:42:17.566Z",
-  "commit": "20e417fcacfa99c79d85d8e51e70ff636501c09a",
+  "generated_at": "2026-11-03T21:35:45.524Z",
+  "started_at": "2026-11-03T21:35:22.141Z",
+  "commit": "ab75e37d4d09d926841cca7cde9da15dc5482839",
   "working_tree_dirty": true,
   "environment": {
     "type": "local",
@@ -28,8 +28,8 @@
       "name": "tower_boot",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:54034",
-        "port": 54034
+        "url": "http://127.0.0.1:62891",
+        "port": 62891
       }
     },
     {
@@ -119,7 +119,7 @@
       "name": "factory_create_n2",
       "ok": true,
       "detail": {
-        "id": "JOB-20261103-144219-0b1f"
+        "id": "JOB-20261103-163523-4e4c"
       }
     },
     {
@@ -140,7 +140,7 @@
       "name": "bridge_claim_envelope",
       "ok": true,
       "detail": {
-        "job": "JOB-20261103-144219-0b1f",
+        "job": "JOB-20261103-163523-4e4c",
         "scope": {
           "branch": "desarrollo",
           "allowCodeChanges": true,
@@ -164,7 +164,7 @@
       "name": "telegram_pairing_code",
       "ok": true,
       "detail": {
-        "expiresAt": "2026-11-03T19:52:19.866Z"
+        "expiresAt": "2026-11-03T21:45:23.540Z"
       }
     },
     {
@@ -201,7 +201,7 @@
       "ok": true,
       "detail": {
         "checks": 13,
-        "kpis": 11,
+        "kpis": 18,
         "gauge": true
       }
     },
@@ -209,7 +209,7 @@
       "name": "browser_dashboard_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 1140111
+        "bytes": 1312235
       }
     },
     {
@@ -230,7 +230,18 @@
       "name": "browser_performance_panel",
       "ok": true,
       "detail": {
-        "stats": 8
+        "stats": 17,
+        "runtimePublished": true,
+        "runtimeRendered": true,
+        "required": "telemetria de proceso visible"
+      }
+    },
+    {
+      "name": "browser_performance_runtime_telemetry",
+      "ok": true,
+      "detail": {
+        "stats": 17,
+        "rss": "\n          Memoria RSS\n          162 MB\n        "
       }
     },
     {
@@ -246,7 +257,7 @@
       "name": "browser_environment_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 1518796
+        "bytes": 1788991
       }
     },
     {
@@ -296,7 +307,7 @@
       "name": "browser_degraded_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 1793443
+        "bytes": 1968907
       }
     },
     {
@@ -337,21 +348,21 @@
     }
   ],
   "summary": {
-    "passed": 37,
+    "passed": 38,
     "failed": 0,
-    "total": 37,
+    "total": 38,
     "screenshots": [
       {
         "file": "tower-overview.png",
-        "bytes": 1140111
+        "bytes": 1312235
       },
       {
         "file": "tower-env-main.png",
-        "bytes": 1518796
+        "bytes": 1788991
       },
       {
         "file": "tower-api-down.png",
-        "bytes": 1793443
+        "bytes": 1968907
       }
     ],
     "console_errors": []

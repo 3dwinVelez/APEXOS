@@ -1,0 +1,174 @@
+{
+  "lectura": "Torre de control en vivo, sin simulacion",
+  "fecha": "2026-11-03T21:19:08.012Z",
+  "fuente": "http://127.0.0.1:4310/api/status con la configuracion local de apps/control-tower/.env.local",
+  "secrets_comprobados": 3,
+  "ambientes": {
+    "local": {
+      "rama": "desarrollo",
+      "salud": 77,
+      "banda": "risk",
+      "overall": "degraded",
+      "build": null,
+      "modulos": 19,
+      "memoria_mb": 160.1,
+      "heap_mb": 59.8,
+      "peticiones": 791,
+      "por_estado": {
+        "2xx": 789,
+        "3xx": 0,
+        "4xx": 2,
+        "5xx": 0
+      },
+      "consultas_lentas": 0,
+      "uptime_s": 1806,
+      "empresas": {
+        "total": 200,
+        "active": 200,
+        "with_activity": 1,
+        "with_sessions": 104,
+        "with_gps": 0
+      },
+      "motivo_empresas": null,
+      "p95_ms": 148,
+      "acciones": [
+        {
+          "prioridad": "media",
+          "code": "MODULO_ATENCION",
+          "titulo": "Compras requiere atención",
+          "responsable": "apexos-performance",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "MODULO_ATENCION",
+          "titulo": "Contabilidad requiere atención",
+          "responsable": "apexos-performance",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "MODULO_ATENCION",
+          "titulo": "Costos requiere atención",
+          "responsable": "apexos-performance",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "MODULO_ATENCION",
+          "titulo": "Cartera y CxC requiere atención",
+          "responsable": "apexos-performance",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "MODULO_ATENCION",
+          "titulo": "Inventario requiere atención",
+          "responsable": "apexos-performance",
+          "comando": null
+        }
+      ]
+    },
+    "develop": {
+      "rama": "develop",
+      "salud": 83,
+      "banda": "risk",
+      "overall": "ok",
+      "build": "a505e97f9622",
+      "modulos": 18,
+      "memoria_mb": null,
+      "heap_mb": null,
+      "peticiones": null,
+      "por_estado": null,
+      "consultas_lentas": null,
+      "uptime_s": null,
+      "empresas": null,
+      "motivo_empresas": "NO_DISPONIBLE",
+      "p95_ms": 434,
+      "acciones": [
+        {
+          "prioridad": "alta",
+          "code": "MODULO_NO_DESPLEGADO",
+          "titulo": "Desplegar en QA un build con apex-control",
+          "responsable": "equipo-apexos · apexos-git-guardian",
+          "comando": "Permiso de promoción y despliegue en Railway sobre el build que contiene apex-control."
+        },
+        {
+          "prioridad": "media",
+          "code": "CLOUD_ERROR",
+          "titulo": "Revisar la integración con railway",
+          "responsable": "apexos-performance · apexos-seguridad",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "CLOUD_SIN_TOKEN",
+          "titulo": "Configurar SUPABASE_ACCESS_TOKEN",
+          "responsable": "apexos-performance · apexos-seguridad",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "CLOUD_SIN_TOKEN",
+          "titulo": "Configurar VERCEL_TOKEN",
+          "responsable": "apexos-performance · apexos-seguridad",
+          "comando": null
+        }
+      ]
+    },
+    "main": {
+      "rama": "main",
+      "salud": 83,
+      "banda": "risk",
+      "overall": "ok",
+      "build": "938fc2b6f42c",
+      "modulos": 17,
+      "memoria_mb": null,
+      "heap_mb": null,
+      "peticiones": null,
+      "por_estado": null,
+      "consultas_lentas": null,
+      "uptime_s": null,
+      "empresas": null,
+      "motivo_empresas": "NO_DISPONIBLE",
+      "p95_ms": 1091,
+      "acciones": [
+        {
+          "prioridad": "alta",
+          "code": "MODULO_NO_DESPLEGADO",
+          "titulo": "Desplegar en PROD un build con apex-control",
+          "responsable": "equipo-apexos · apexos-git-guardian",
+          "comando": "Permiso de promoción y despliegue en Railway sobre el build que contiene apex-control."
+        },
+        {
+          "prioridad": "media",
+          "code": "CLOUD_ERROR",
+          "titulo": "Revisar la integración con railway",
+          "responsable": "apexos-performance · apexos-seguridad",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "CLOUD_SIN_TOKEN",
+          "titulo": "Configurar SUPABASE_ACCESS_TOKEN",
+          "responsable": "apexos-performance · apexos-seguridad",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "CLOUD_SIN_TOKEN",
+          "titulo": "Configurar VERCEL_TOKEN",
+          "responsable": "apexos-performance · apexos-seguridad",
+          "comando": null
+        },
+        {
+          "prioridad": "media",
+          "code": "RENDIMIENTO",
+          "titulo": "Rendimiento de la API de PROD fuera de objetivo",
+          "responsable": "apexos-performance",
+          "comando": null
+        }
+      ]
+    }
+  }
+}

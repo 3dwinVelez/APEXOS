@@ -1,0 +1,428 @@
+{
+  "certification": "apex-control-tower-consolidado-local",
+  "version": 1,
+  "status": "passed",
+  "certification_status": "local_passed_qa_pending",
+  "generated_at": "2026-11-03T21:34:52.635Z",
+  "started_at": "2026-11-03T21:34:35.801Z",
+  "commit": "ab75e37d4d09d926841cca7cde9da15dc5482839",
+  "working_tree_dirty": true,
+  "alcance": [
+    "monitor consolidado por empresa (empresas, carga, actividad, memoria, uso del API, rendimiento)",
+    "selector de empresa y panel por empresa con acciones sugeridas",
+    "/health del API con runtime agregado (uptime, memoria, uso) y su normalizacion en la torre",
+    "motor de acciones sugeridas por ambiente y por empresa",
+    "ambientes bloqueados por build sin apex-control: bloqueo explicado con accion y responsable"
+  ],
+  "no_certifica": [
+    "datos reales por empresa en QA y PROD: sus builds desplegados no incluyen apex-control",
+    "promocion a develop o main",
+    "despliegue en Railway"
+  ],
+  "environment": {
+    "type": "local",
+    "node": "v22.23.1",
+    "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "modo": "torre real contra API rica (con runtime) y API legada (sin apex-control)",
+    "tokens": "roles locales de certificacion, nunca credenciales reales"
+  },
+  "checks": [
+    {
+      "name": "chrome_available",
+      "ok": true,
+      "detail": {
+        "path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+      }
+    },
+    {
+      "name": "api_rica_sondeada",
+      "ok": true,
+      "detail": {
+        "base": "http://127.0.0.1:52673"
+      }
+    },
+    {
+      "name": "api_legada_bloqueada",
+      "ok": true,
+      "detail": {
+        "base": "http://127.0.0.1:52674"
+      }
+    },
+    {
+      "name": "health_expone_runtime",
+      "ok": true,
+      "detail": {
+        "uptime": 7325,
+        "rss": 214.6,
+        "requests": 98432
+      }
+    },
+    {
+      "name": "torre_iniciada",
+      "ok": true,
+      "detail": {
+        "url": "http://127.0.0.1:52676"
+      }
+    },
+    {
+      "name": "snapshot_con_empresas",
+      "ok": true,
+      "detail": {
+        "tenants": true
+      }
+    },
+    {
+      "name": "ambiente_local_normaliza_runtime",
+      "ok": true,
+      "detail": {
+        "uptimeSeconds": 7325,
+        "memory": {
+          "rss": 214.6,
+          "heapUsed": 88.4,
+          "heapTotal": 121.2
+        },
+        "usage": {
+          "requestsTotal": 98432,
+          "byStatus": {
+            "2xx": 96100,
+            "3xx": 240,
+            "4xx": 2010,
+            "5xx": 82
+          },
+          "slowQueries": 14
+        }
+      }
+    },
+    {
+      "name": "ambiente_bloqueado_sin_runtime",
+      "ok": true,
+      "detail": {
+        "commit": "938fc2b6f42c",
+        "memory": null
+      }
+    },
+    {
+      "name": "empresas_lectura_real",
+      "ok": true,
+      "detail": {
+        "summary": {
+          "total": 3,
+          "active": 3,
+          "with_activity": 2,
+          "with_sessions": 2,
+          "with_gps": 2
+        }
+      }
+    },
+    {
+      "name": "acciones_local",
+      "ok": true,
+      "detail": {
+        "count": 2
+      }
+    },
+    {
+      "name": "acciones_develop",
+      "ok": true,
+      "detail": {
+        "count": 4
+      }
+    },
+    {
+      "name": "acciones_main",
+      "ok": true,
+      "detail": {
+        "count": 4
+      }
+    },
+    {
+      "name": "acciones_con_responsable_y_siguiente_paso",
+      "ok": true,
+      "detail": {
+        "ejemplo": [
+          {
+            "code": "MODULO_CAIDO",
+            "priority": "alta",
+            "owner": "apexos-backend"
+          },
+          {
+            "code": "MODULO_ATENCION",
+            "priority": "media",
+            "owner": "apexos-performance"
+          }
+        ]
+      }
+    },
+    {
+      "name": "bloqueo_por_build_nombra_el_commit",
+      "ok": true,
+      "detail": {
+        "acciones": [
+          "La API responde pero el build desplegado (938fc2b) no incluye el módulo, así que no puede ",
+          "La API responde pero el build desplegado (938fc2b) no incluye el módulo, así que no puede "
+        ]
+      }
+    },
+    {
+      "name": "bloqueo_no_pide_token_inútil",
+      "ok": true,
+      "detail": {
+        "titulos": [
+          "Desplegar en QA un build con apex-control",
+          "Desplegar en PROD un build con apex-control"
+        ]
+      }
+    },
+    {
+      "name": "bloqueo_de_empresas_usa_la_misma_accion",
+      "ok": true,
+      "detail": {
+        "motivos": [
+          "NO_DISPONIBLE",
+          "NO_DISPONIBLE"
+        ]
+      }
+    },
+    {
+      "name": "modulo_caido_dueno_backend",
+      "ok": true,
+      "detail": {
+        "accion": "Transporte caído · apexos-backend"
+      }
+    },
+    {
+      "name": "modulo_en_atencion_dueno_performance",
+      "ok": true,
+      "detail": {
+        "cantidad": 1
+      }
+    },
+    {
+      "name": "ruta_empresa_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "score": 58,
+        "modulos": 3
+      }
+    },
+    {
+      "name": "empresa_con_acciones_y_dueno",
+      "ok": true,
+      "detail": {
+        "codigos": [
+          "MODULO_CAIDO",
+          "MODULO_ATENCION"
+        ]
+      }
+    },
+    {
+      "name": "ruta_empresa_bloqueada_con_accion",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "NO_DISPONIBLE",
+        "accion": "MODULO_NO_DESPLEGADO"
+      }
+    },
+    {
+      "name": "empresa_inexistente_no_se_inventa",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "accion": "EMPRESA_NO_ENCONTRADA"
+      }
+    },
+    {
+      "name": "ruta_empresa_exige_token",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "snapshot_no_filtra_el_token_de_la_torre",
+      "ok": true,
+      "detail": {
+        "tamano": 136976
+      }
+    },
+    {
+      "name": "evidencia_json",
+      "ok": true,
+      "detail": {
+        "archivos": [
+          "snapshot-ambientes.json",
+          "empresa-tenant-demo.json"
+        ]
+      }
+    },
+    {
+      "name": "navegador_monitor_consolidado",
+      "ok": true,
+      "detail": {
+        "teselas": 7,
+        "opciones": 4,
+        "leyenda": "Cómo se leen los estados en LOCAL Operativo Responde dentro del objetivo. Requiere atención Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta. Caído No responde o falla una d",
+        "picker": true
+      }
+    },
+    {
+      "name": "navegador_selector_de_empresa",
+      "ok": true,
+      "detail": {
+        "opciones": 4
+      }
+    },
+    {
+      "name": "navegador_leyenda_de_estados",
+      "ok": true,
+      "detail": {
+        "leyenda": "Cómo se leen los estados en LOCAL Operativo Responde dentro del objetivo. Requiere atención Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta. Caído No responde o falla una d"
+      }
+    },
+    {
+      "name": "navegador_memoria_y_uso_reales",
+      "ok": true,
+      "detail": {
+        "memoria": "Memoria del API 214,6MB heap 88,4/121,2 MB",
+        "uso": "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas"
+      }
+    },
+    {
+      "name": "navegador_empresa_seleccionada",
+      "ok": true,
+      "detail": {
+        "seleccion": "Empresa En Riesgo · Sin señal · 120 activ.",
+        "titulo": "Empresa En Riesgo · estado por módulo",
+        "teselas": 6
+      }
+    },
+    {
+      "name": "navegador_empresa_kpis_completos",
+      "ok": true,
+      "detail": {
+        "teselas": [
+          "Estado operativo 58/100 Crítico · 1/3 módulos operativos",
+          "Carga de datos 1.720 1/3 módulos con datos · 1 caídos · 0 sin medir",
+          "Actividad de la empresa 120 2 sesiones · 4 GPS · ahora",
+          "Memoria del API 214,6MB heap 88,4/121,2 MB",
+          "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas",
+          "Rendimiento p95 74ms 2 h 2 min encendido"
+        ]
+      }
+    },
+    {
+      "name": "navegador_empresa_con_acciones",
+      "ok": true,
+      "detail": {
+        "acciones": 2,
+        "filas": 3
+      }
+    },
+    {
+      "name": "captura_monitor_consolidado",
+      "ok": true,
+      "detail": {
+        "bytes": 1438983,
+        "scroll": true
+      }
+    },
+    {
+      "name": "navegador_resumen_sin_jerga_degrade",
+      "ok": true,
+      "detail": {
+        "coincidencias": []
+      }
+    },
+    {
+      "name": "navegador_producico_explica_el_bloqueo",
+      "ok": true,
+      "detail": {
+        "pill": "PROD Requiere atención",
+        "titulo": "Qué falta para leer las empresas de PROD",
+        "aviso": " MODULO_NO_DESPLEGADO Sin datos por módulo de este ambiente La API de este ambiente no incluye el módulo apex-control, así que no puede entregar salud por módul"
+      }
+    },
+    {
+      "name": "navegador_producico_sin_empresas_inventadas",
+      "ok": true,
+      "detail": {
+        "selectorVacio": true,
+        "acciones": 1,
+        "hint": "El ambiente no expone la vista por empresa."
+      }
+    },
+    {
+      "name": "captura_producto_bloqueado",
+      "ok": true,
+      "detail": {
+        "bytes": 1740556
+      }
+    },
+    {
+      "name": "navegador_rendimiento_con_memoria_y_uso",
+      "ok": true,
+      "detail": {
+        "estadisticas": 17
+      }
+    },
+    {
+      "name": "navegador_sin_jerga_degrade",
+      "ok": true,
+      "detail": {
+        "coincidencias": [],
+        "leyenda": "Cómo se leen los estados en LOCAL Operativo Responde dentro del objetivo. Requiere atención Responde, pero fuera del objetivo: datos viejos, una dependencia len"
+      }
+    },
+    {
+      "name": "captura_vista_detalle",
+      "ok": true,
+      "detail": {
+        "bytes": 1588133
+      }
+    },
+    {
+      "name": "navegador_umbrales_sin_jerga",
+      "ok": true,
+      "detail": {
+        "abierto": true
+      }
+    },
+    {
+      "name": "navegador_consola_sin_errores",
+      "ok": true,
+      "detail": {
+        "errores": []
+      }
+    }
+  ],
+  "summary": {
+    "passed": 42,
+    "failed": 0,
+    "total": 42,
+    "screenshots": [
+      {
+        "file": "01-monitor-consolidado-empresa.png",
+        "bytes": 1438983
+      },
+      {
+        "file": "02-producto-bloqueado-con-acciones.png",
+        "bytes": 1740556
+      },
+      {
+        "file": "03-vista-detalle-consolidado.png",
+        "bytes": 1588133
+      }
+    ],
+    "console_errors": []
+  },
+  "evidence": [
+    "certification.json",
+    "snapshot-ambientes.json",
+    "empresa-tenant-demo.json",
+    "01-monitor-consolidado-empresa.png",
+    "02-producto-bloqueado-con-acciones.png",
+    "03-vista-detalle-consolidado.png"
+  ]
+}
