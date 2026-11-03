@@ -121,7 +121,7 @@ function classifyFreshness(local, remote) {
   return 'in-sync';
 }
 
-function classifyDocumentFreshness(local, remote, { localDirty = false } = {}) {
+function classifyDocumentFreshness(local, remote, { localDirty = false, remoteBehind = false } = {}) {
   if (!local && !remote) return 'unknown';
   if (!local) return 'remote-only';
   if (!remote) return 'local-only';
@@ -132,7 +132,9 @@ function classifyDocumentFreshness(local, remote, { localDirty = false } = {}) {
   if (localDate > remoteDate) return 'local-ahead';
 
   if (local.sha256 && remote.sha256 && local.sha256 !== remote.sha256) {
-    return localDirty ? 'local-ahead' : 'conflict';
+    // Mismo dia con contenido distinto: es avance propio si el remoto ya esta
+    // contenido en HEAD o si el archivo esta editado sin confirmar.
+    return localDirty || remoteBehind ? 'local-ahead' : 'conflict';
   }
   return 'in-sync';
 }

@@ -1,4 +1,4 @@
-[agents:preflight] rama: desarrollo | HEAD: efa82893 | fetch: si
+[agents:preflight] rama: desarrollo | HEAD: bcd67c9a | fetch: si
 [agents:preflight] comparacion contra origin/desarrollo @ efa82893
 
 Frescura de agentes
@@ -29,14 +29,14 @@ Frescura de gobernanza
   docs/project/CONTRATO_EQUIPO_APEXOS.md    2026-11-03  -           local-only
   docs/project/filosofia-producto-ui.md     2026-08-21  2026-08-21  in-sync
 
-Ruteo obligatorio (31 ruta(s))
+Ruteo obligatorio (35 ruta(s))
   equipo-apexos: .qoder/skills/apexos-brief/SKILL.md, .qoder/skills/apexos-db-nube/SKILL.md, .qoder/skills/apexos-frontend/SKILL.md, .qoder/skills/apexos-git-guardian/SKILL.md, .qoder/skills/equipo-apexos/SKILL.md, AGENTS.md, agents/CHANGELOG.md, agents/README.md, agents/TEMPLATE_SKILL.md, agents/apexos-brief/SKILL.md, agents/apexos-db-nube/SKILL.md, agents/apexos-frontend/SKILL.md, agents/apexos-git-guardian/SKILL.md, agents/equipo-apexos/SKILL.md, agents/registry.json, docs/briefs/_TEMPLATE.md, docs/project/CONTRATO_EQUIPO_APEXOS.md, package.json, scripts/agents/coverage.js, scripts/agents/lib/agent-contract.js, scripts/agents/lib/agent-coverage.js, scripts/agents/lib/agent-routing.js, scripts/agents/preflight.js, scripts/agents/sync-agents.js, scripts/test/agents-contract.test.js, scripts/test/agents-coverage.test.js, scripts/test/agents-preflight.test.js
   apexos-brief: .qoder/skills/apexos-brief/SKILL.md, .qoder/skills/apexos-db-nube/SKILL.md, .qoder/skills/apexos-frontend/SKILL.md, .qoder/skills/apexos-git-guardian/SKILL.md, .qoder/skills/equipo-apexos/SKILL.md, AGENTS.md, agents/CHANGELOG.md, agents/README.md, agents/TEMPLATE_SKILL.md, agents/apexos-brief/SKILL.md, agents/apexos-db-nube/SKILL.md, agents/apexos-frontend/SKILL.md, agents/apexos-git-guardian/SKILL.md, agents/equipo-apexos/SKILL.md, agents/registry.json, docs/briefs/_TEMPLATE.md, docs/project/CONTRATO_EQUIPO_APEXOS.md
   apexos-git-guardian: .qoder/skills/apexos-brief/SKILL.md, .qoder/skills/apexos-db-nube/SKILL.md, .qoder/skills/apexos-frontend/SKILL.md, .qoder/skills/apexos-git-guardian/SKILL.md, .qoder/skills/equipo-apexos/SKILL.md, AGENTS.md, agents/CHANGELOG.md, agents/README.md, agents/TEMPLATE_SKILL.md, agents/apexos-brief/SKILL.md, agents/apexos-db-nube/SKILL.md, agents/apexos-frontend/SKILL.md, agents/apexos-git-guardian/SKILL.md, agents/equipo-apexos/SKILL.md, agents/registry.json, docs/project/CONTRATO_EQUIPO_APEXOS.md
   apexos-db-nube: docs/DATABASE_CONVENTIONS.md
   apexos-seguridad: docs/DATABASE_CONVENTIONS.md
   apexos-frontend: docs/design/APEXOS_COMPONENT_CATALOG.md, docs/design/APEXOS_CONTROL_PLANE.md
-  apexos-qa: docs/qa/evidence/agents-training-contract-20261103/, package.json, scripts/agents/coverage.js, scripts/agents/lib/agent-contract.js, scripts/agents/lib/agent-coverage.js, scripts/agents/lib/agent-routing.js, scripts/agents/preflight.js, scripts/agents/sync-agents.js, scripts/test/agents-contract.test.js, scripts/test/agents-coverage.test.js, scripts/test/agents-preflight.test.js
+  apexos-qa: docs/qa/evidence/agents-training-contract-20261103/agents-check.txt, docs/qa/evidence/agents-training-contract-20261103/agents-sync.txt, docs/qa/evidence/agents-training-contract-20261103/coverage.txt, docs/qa/evidence/agents-training-contract-20261103/preflight.txt, docs/qa/evidence/agents-training-contract-20261103/tests.txt, package.json, scripts/agents/coverage.js, scripts/agents/lib/agent-contract.js, scripts/agents/lib/agent-coverage.js, scripts/agents/lib/agent-routing.js, scripts/agents/preflight.js, scripts/agents/sync-agents.js, scripts/test/agents-contract.test.js, scripts/test/agents-coverage.test.js, scripts/test/agents-preflight.test.js
 
 Lecturas obligatorias antes de editar
   - .qoder/skills/equipo-apexos/SKILL.md

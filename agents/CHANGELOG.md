@@ -23,6 +23,7 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 - `docs/DATABASE_CONVENTIONS.md` documenta el estado medido (191 modelos, 639 columnas `tenant_id`, 216 `Float` heredados) y las reglas para no repetir la deuda.
 - `agents:check` valida que todo agente con `contract: 2` tenga las secciones obligatorias, en orden, no vacías y con lecturas existentes.
 - `npm run agents:coverage` se vuelve bloqueante: cada agente dueño de una ruta debe tener bump local frente a `origin/desarrollo` y mención en la sección más reciente de este changelog.
+- El preflight deja de perder el primer carácter de la primera ruta de `git status --porcelain` y de marcar `CONFLICTO` en ediciones locales del mismo día cuando `origin/desarrollo` ya está contenido en `HEAD`.
 - `equipo-apexos` — `1.4.0` — el cierre exige `agents:coverage` y no admite actualizar al dueño en una intervención posterior.
 - `apexos-brief` — `1.3.0` — la sección 11 declara dueño por ruta y exige cobertura en verde.
 - `apexos-git-guardian` — `1.3.0` — la secuencia de cierre incluye `agents:coverage`; sin cobertura no hay commit ni push.

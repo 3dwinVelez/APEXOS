@@ -102,6 +102,19 @@ function isDirty(relPath) {
   return status.split(/\r?\n/).some((line) => line.trim());
 }
 
+function isAncestor(ancestor, descendant) {
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', ancestor, descendant], {
+      cwd: ROOT,
+      stdio: 'ignore',
+      timeout: 15000
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function fromDiff(args) {
   const raw = git(args, { allowFailure: true }) || '';
   return raw
@@ -229,11 +242,16 @@ function main() {
   const remoteDocuments = new Map((remoteRegistry?.documents || []).map((entry) => [entry.path, entry]));
   const documentPaths = [...new Set([...localDocuments.keys(), ...remoteDocuments.keys()])].sort();
 
+  const remoteBehind = isAncestor(`${REMOTE}/${BRANCH}`, 'HEAD');
+
   const documentRows = documentPaths.map((documentPath) => {
     const local = localDocuments.get(documentPath) || null;
     const remote = remoteDocuments.get(documentPath) || null;
     // Una edicion local del mismo dia es avance propio, no conflicto remoto.
-    const status = classifyDocumentFreshness(local, remote, { localDirty: isDirty(documentPath) });
+    const status = classifyDocumentFreshness(local, remote, {
+      localDirty: isDirty(documentPath),
+      remoteBehind
+    });
     const blocking = governanceTouched && isBlocking(status);
     return {
       name: documentPath,

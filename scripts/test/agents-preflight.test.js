@@ -53,6 +53,7 @@ test('una edicion local del mismo dia es avance, no conflicto remoto', () => {
   const local = { updated_at: '2026-11-03', sha256: 'a'.repeat(64) };
   const remote = { ...local, sha256: 'b'.repeat(64) };
   assert.equal(classifyDocumentFreshness(local, remote, { localDirty: true }), 'local-ahead');
+  assert.equal(classifyDocumentFreshness(local, remote, { remoteBehind: true }), 'local-ahead');
   assert.equal(classifyDocumentFreshness(local, remote), 'conflict');
   assert.equal(classifyDocumentFreshness(local, { ...remote, updated_at: '2026-11-04' }, { localDirty: true }), 'remote-newer');
 });
