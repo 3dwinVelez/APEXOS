@@ -13,6 +13,20 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 - `apexos-brief` — `1.2.0` — el preflight es puerta del brief y define los agentes consultados.
 - `apexos-git-guardian` — `1.2.0` — reglas de frescura: fetch permitido, veredictos bloqueantes y prohibición de sobrescribir referencias remotas.
 
+### Contrato de equipo y entrenamiento de contenido
+
+- Se crea `docs/project/CONTRATO_EQUIPO_APEXOS.md` (v2): regla de oro del contexto vivo, preflight, tabla de dueños, contrato obligatorio por agente, checklist universal, evidencia, handoff y antipatrones.
+- Se crea `agents/TEMPLATE_SKILL.md` como plantilla de `contract: 2` para migrar el resto del equipo.
+- `apexos-frontend` — `2.0.0` — migra a `contract: 2`; homologación obligatoria antes que creatividad, catálogo de componentes y pantallas de referencia, tokens sin hex, dos temas, evidencia de navegador. Nuevos controles: `contrato-v2`, `catalogo-componentes`, `pantallas-referencia`, `homologacion-obligatoria`, `tokens-sin-hex`.
+- `apexos-db-nube` — `2.0.0` — migra a `contract: 2`; convención de tablas snake_case plural, checklist de tabla nueva, migración forward-only, índices por tenant y dinero en `Decimal`. Nuevos controles: `contrato-v2`, `convencion-tablas`, `checklist-tabla-nueva`, `migracion-forward-only`, `indices-tenant`, `dinero-decimal`.
+- `docs/design/APEXOS_COMPONENT_CATALOG.md` ordena tokens, primitivas, pantallas de referencia y prohibiciones medidas (269 hex, 93 tablas crudas frente a 8 `DataTable`).
+- `docs/DATABASE_CONVENTIONS.md` documenta el estado medido (191 modelos, 639 columnas `tenant_id`, 216 `Float` heredados) y las reglas para no repetir la deuda.
+- `agents:check` valida que todo agente con `contract: 2` tenga las secciones obligatorias, en orden, no vacías y con lecturas existentes.
+- `npm run agents:coverage` se vuelve bloqueante: cada agente dueño de una ruta debe tener bump local frente a `origin/desarrollo` y mención en la sección más reciente de este changelog.
+- `equipo-apexos` — `1.4.0` — el cierre exige `agents:coverage` y no admite actualizar al dueño en una intervención posterior.
+- `apexos-brief` — `1.3.0` — la sección 11 declara dueño por ruta y exige cobertura en verde.
+- `apexos-git-guardian` — `1.3.0` — la secuencia de cierre incluye `agents:coverage`; sin cobertura no hay commit ni push.
+
 ### Torre apex-control
 
 - `apexos-performance` — `1.3.0` — control nuevo: las sondas TCP deben llamar a `connect` y probarse contra un servidor efímero; un `timeout` del probe no se confunde con caída del servicio vigilado. Origen: la sonda Redis de la torre nunca conectaba y reportaba `down` con el contenedor arriba.

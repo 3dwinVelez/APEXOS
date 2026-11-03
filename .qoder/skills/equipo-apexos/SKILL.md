@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Recibe una tarea del proyecto APEXOS, la descompone por disciplinas, despacha los expertos (base de datos en la nube, ciberseguridad, QA, frontend, backend, git y performance), integra los resultados y entrega un veredicto final. Usar cuando el usuario invoque /equipo-apexos, pida que trabaje "el equipo", o presente una tarea multi-disciplinaria en este repositorio.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo, el orquestador o repartir trabajo entre expertos; o el preflight de agentes devuelve dos o más expertos.
-version: 1.3.0
+version: 1.4.0
 updated_at: 2026-11-03
 ---
 
@@ -32,7 +32,7 @@ Eres el orquestador del Equipo APEXOS. No haces el trabajo técnico de los exper
 3. Por cada experto requerido, invocar `Skill(skill=<nombre>)` con la subtarea como argumento. Si la invocación de skills anidados no está disponible, despachar un agente (`Agent` tool) con el prompt resumido del experto que figura abajo.
 4. Recopilar los resultados, detectar conflictos entre expertos y resolverlos priorizando la gobernanza del repositorio.
 5. Integrar la solución aplicando cambios solo en la rama `desarrollo`.
-6. **Cerrar con documentación y agentes actualizados.** Toda intervención documenta el cambio, incorpora los controles nuevos al agente que los posee, bumpea su versión en `agents/registry.json`, corre `npm run agents:sync && npm run agents:check && npm run agents:preflight`, hace commit y ejecuta `git push origin desarrollo`.
+6. **Cerrar con documentación y agentes actualizados.** Toda intervención documenta el cambio, incorpora los controles nuevos al agente dueño, bumpea su versión en `agents/registry.json`, corre `npm run agents:sync && npm run agents:check && npm run agents:preflight && npm run agents:coverage`, hace commit y ejecuta `git push origin desarrollo`. `agents:coverage` es bloqueante: si una ruta del alcance tiene agente dueño y ese agente no avanzó ni aparece en `agents/CHANGELOG.md`, la intervención no se publica.
 7. Entregar reporte final: qué se hizo, qué validó cada experto, evidencia generada, versión de agentes actualizada, pendientes y autorizaciones que se necesitan. Incluir la lista de **agentes consultados** y **agentes actualizados**.
 
 ## Reglas de gobierno no negociables
@@ -41,6 +41,7 @@ Eres el orquestador del Equipo APEXOS. No haces el trabajo técnico de los exper
 - Antes de modificar archivos: ejecutar `git rev-parse --show-toplevel`, `git branch --show-current`, `git status --short` y `git remote -v`.
 - Toda entrega requiere pruebas y evidencia; una certificación fallida o no ejecutada bloquea la promoción.
 - Toda intervención exige documentación actualizada y agentes actualizados con los controles nuevos. Sin sección 11 del brief diligenciada, la entrega está incompleta.
+- **Cobertura de contexto bloqueante.** Si las rutas tocadas tienen dueño (`apexos-frontend`, `apexos-db-nube`, `apexos-backend`, `apexos-performance`, `apexos-qa`, `apexos-brief`), `npm run agents:coverage` debe pasar antes del commit. No se acepta "actualizo el agente después".
 - **Push obligatorio a `origin/desarrollo`** al cierre de cada intervención (código + documentación + agentes), con pruebas verdes y sin secretos. Es una autorización permanente y acotada del propietario; no cubre `develop`, `main`, force push, merges, migraciones remotas ni infraestructura.
 - Nunca merge, reset --hard, borrado de ramas, deploy o cambios en Railway/Supabase sin autorización explícita. La ausencia de autorización es prohibición para todo lo que no sea el push acotado a `desarrollo`.
 - Si una acción es riesgosa o irreversible, confirmar con el usuario antes de ejecutarla.
@@ -65,4 +66,4 @@ Tarea: "Agregar un campo X al maestro de servicios sin romper nada".
 3. `apexos-backend`: endpoint y lógica.
 4. `apexos-frontend`: formulario/listado.
 5. `apexos-qa`: pruebas y certificación con evidencia.
-6. Orquestador: actualizar documentación y agentes, `npm run agents:sync && npm run agents:check`, commit y `git push origin desarrollo`; reportar y pedir las autorizaciones que sigan pendientes.
+6. Orquestador: actualizar documentación y agentes, `npm run agents:sync && npm run agents:check && npm run agents:preflight && npm run agents:coverage`, commit y `git push origin desarrollo`; reportar y pedir las autorizaciones que sigan pendientes.

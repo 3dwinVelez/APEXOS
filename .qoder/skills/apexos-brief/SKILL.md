@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para el repositorio APEXOS. Valida primero la versión y fecha de la documentación y de los agentes en agents/registry.json (contra origin/desarrollo) para no sobrescribir cambios más nuevos, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D, criterios de aceptación, evidencia exigida, actualización obligatoria de documentación/agentes y push obligatorio a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo, o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 1.2.0
+version: 1.3.0
 updated_at: 2026-11-03
 ---
 
@@ -41,7 +41,8 @@ El prompt crudo del usuario, tal como lo escribió. No lo reescribas ni lo "mejo
 - **Fecha**: `updated_at` en formato `YYYY-MM-DD`; se actualiza en cada bump.
 - **Nunca sobrescribir una versión superior.** Si el archivo remoto o local es más nuevo, se integra su contenido; no se reemplaza por una copia vieja.
 - **Todo control nuevo descubierto en una intervención se incorpora al agente que lo posee** y se registra en `agents/CHANGELOG.md` y en `agents/registry.json` (campo `controls`).
-- Después de editar un agente: `npm run agents:sync` (o `node scripts/agents/sync-agents.js write`), luego `npm run agents:check` y `npm run agents:preflight`.
+- Después de editar un agente: `npm run agents:sync` (o `node scripts/agents/sync-agents.js write`), luego `npm run agents:check`, `npm run agents:preflight` y `npm run agents:coverage`.
+- **Cobertura bloqueante.** El brief declara el agente dueño de cada ruta; al cierre, `npm run agents:coverage -- --paths "<rutas>"` exige que ese agente haya avanzado de versión y tenga entrada en la sección más reciente de `agents/CHANGELOG.md`. Sin eso, la intervención no se publica.
 - **Frescura remota.** El preflight compara semver, `updated_at` y `sha256` contra `origin/desarrollo` y devuelve `INTEGRAR_REMOTO` o `CONFLICTO` cuando la referencia remota es más nueva. Esos veredictos bloquean la redacción y la edición.
 
 ## Publicación obligatoria (push a `origin/desarrollo`)
@@ -49,7 +50,7 @@ El prompt crudo del usuario, tal como lo escribió. No lo reescribas ni lo "mejo
 El propietario del repositorio autoriza de forma permanente y acotada el push a `origin/desarrollo` al cierre de cada intervención. Es obligatorio, no opcional:
 
 1. Actualizar la documentación de la intervención (`docs/briefs/`, `docs/audits/`, `docs/qa/` según aplique) y los agentes afectados.
-2. Ejecutar pruebas, `npm run agents:check` y `npm run agents:preflight`.
+2. Ejecutar pruebas, `npm run agents:check`, `npm run agents:preflight` y `npm run agents:coverage`.
 3. Commit con mensaje `docs(...)`/`feat(...)`/`fix(...)` que describa el cambio real.
 4. `git push origin desarrollo`.
 

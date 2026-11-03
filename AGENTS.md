@@ -20,8 +20,10 @@ Antes de modificar cualquier archivo:
 Al cerrar la intervención:
 
 5. Actualizar el `SKILL.md` de cada agente cuyo dominio cambió (control nuevo, bump semver y `updated_at`) y registrar la entrada en `agents/CHANGELOG.md`.
-6. Ejecutar `npm run agents:sync && npm run agents:check && npm run agents:preflight`.
+6. Ejecutar `npm run agents:sync && npm run agents:check && npm run agents:preflight && npm run agents:coverage`.
 7. Ejecutar pruebas y evidencia, commit y `git push origin desarrollo`.
+
+`agents:coverage` es bloqueante: si una ruta tocada tiene agente dueño y ese agente no avanzó frente a `origin/desarrollo` o no aparece en la sección más reciente de `agents/CHANGELOG.md`, la intervención no se publica. No se acepta actualizar el agente "en la siguiente intervención".
 
 Un cambio en el dominio de un agente sin actualizar ese agente está incompleto y no se publica.
 
@@ -35,6 +37,7 @@ Un cambio en el dominio de un agente sin actualizar ese agente está incompleto 
 | `apps/api/src/modules/hr/**` | `apexos-backend`, `apexos-seguridad`, `apexos-qa`; auditores solo para dictamen |
 | `apps/control-tower/**` | `apexos-performance`, `apexos-seguridad`, `apexos-qa` |
 | `docs/design/**`, `docs/project/filosofia-producto-ui.md` | `apexos-frontend` |
+| `docs/DATABASE_CONVENTIONS.md`, `docs/DATABASE_SECURITY.md`, `docs/MULTITENANT_DATA_ISOLATION.md` | `apexos-db-nube`, `apexos-seguridad` |
 | `docs/qa/**`, `scripts/certifications/**` | `apexos-qa` |
 | `scripts/performance/**`, `docs/PERFORMANCE_*` | `apexos-performance` |
 | `infra/**`, Docker/Railway/Supabase | `apexos-performance`, `apexos-seguridad` |
@@ -91,7 +94,7 @@ Generic task wording such as "implementa", "corrige", "continua", "haz el cambio
 
 - Every intervention on the code updates, in the same change, the module documentation, the intervention brief and the team agents (`agents/` and `.qoder/skills/`).
 - `agents/registry.json` is the version source: per-agent semver, `updated_at` and `sha256`. Before editing an agent or governance document, run `npm run agents:preflight`; if it reports `INTEGRAR_REMOTO` or `CONFLICTO`, integrate `origin/desarrollo` and never overwrite the remote reference.
-- After editing agents, run `npm run agents:sync`, `npm run agents:check` and `npm run agents:preflight`. All three must pass before committing.
+- After editing agents, run `npm run agents:sync`, `npm run agents:check`, `npm run agents:preflight` and `npm run agents:coverage`. All four must pass before committing.
 - The owner grants a permanent, scoped authorization to run `git push origin desarrollo` at the close of each intervention, with green tests, updated documentation and agents, and no secrets. This authorization does not cover `develop`, `main`, force push, merges, remote migrations, branch deletion or infrastructure; those still require explicit independent authorization.
 
 Before proposing any promotion, attach validation evidence and confirm that the target follows:

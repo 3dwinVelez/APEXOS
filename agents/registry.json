@@ -64,9 +64,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "updated_at": "2026-11-03",
-      "sha256": "c78b9a0e6cb1d136785ff29f40b2b1f83ee46925a7c10a8e95dc029ed090ca3a",
+      "sha256": "8e50cf99ae68f6f7e4de5546b5beac738b86f9585b9a6fa6cfbbb763986b5411",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -76,15 +76,16 @@
         "semver-y-conflicto",
         "inventario-a-m-d",
         "seccion-11-obligatoria",
-        "push-acotado-desarrollo"
+        "push-acotado-desarrollo",
+        "coverage-obligatorio"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "1.1.0",
-      "updated_at": "2026-11-02",
-      "sha256": "6a1b7b37b92e7ccf1f823ec6e063dc0bc274000af42e29b4e506770a5d0c79fc",
+      "version": "2.0.0",
+      "updated_at": "2026-11-03",
+      "sha256": "5da8105005b7af78484822623f00e07034c09c6c393b1dbcfca4b6dace15aab2",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -93,15 +94,21 @@
         "rls-compensatorio",
         "seeds-por-tenant",
         "tipos-monetarios",
-        "alineacion-esquemas"
+        "alineacion-esquemas",
+        "contrato-v2",
+        "convencion-tablas",
+        "checklist-tabla-nueva",
+        "migracion-forward-only",
+        "indices-tenant",
+        "dinero-decimal"
       ]
     },
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "1.2.0",
-      "updated_at": "2026-11-02",
-      "sha256": "e75a8633f995a3364d5c3c88312722b409360fae3bd13b76ffe4ade78db14ba1",
+      "version": "2.0.0",
+      "updated_at": "2026-11-03",
+      "sha256": "767d03538407d992d70c6b66333a284ccde41673ab4ee76b1e5be1d7982565f8",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -109,15 +116,20 @@
         "formulario-consolidado",
         "reusar-tuberia",
         "typed-routes-falso",
-        "evidencia-navegador-dos-temas"
+        "evidencia-navegador-dos-temas",
+        "contrato-v2",
+        "catalogo-componentes",
+        "pantallas-referencia",
+        "homologacion-obligatoria",
+        "tokens-sin-hex"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "updated_at": "2026-11-03",
-      "sha256": "690d2fdc919c30953383f45d04d4148a3dc950b59eed4df3208f50dacc89f35c",
+      "sha256": "2fdfaef551a06097133cd968c3b2421b461d4502cd070f10c6d242b01ecd71f5",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -128,7 +140,8 @@
         "push-acotado-desarrollo",
         "worktrees-auxiliares",
         "recuperacion-sin-snapshot",
-        "un-commit-un-modulo"
+        "un-commit-un-modulo",
+        "coverage-obligatorio"
       ]
     },
     {
@@ -184,9 +197,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "updated_at": "2026-11-03",
-      "sha256": "dc5db71828f824d244f715acbcb38e2d64fc5e7ddbc36356eef93f66d9c81583",
+      "sha256": "e2f90cc675c35258b3af8d699347837804e2a8c4803c271ea2a6005112837e12",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -197,7 +210,8 @@
         "sin-sobrescritura-remota",
         "despacho-por-disciplina",
         "cierre-docs-agentes",
-        "push-acotado-desarrollo"
+        "push-acotado-desarrollo",
+        "coverage-obligatorio"
       ]
     }
   ],
@@ -206,7 +220,7 @@
       "name": "Reglas de agente",
       "path": "AGENTS.md",
       "updated_at": "2026-11-03",
-      "sha256": "5edd417d485f1838cd8c09ffb6cfc03bcc670b84d747ae54e015e677d5bb14c5"
+      "sha256": "2507adf5c81068ce8093f7e58483425c1605f8c2b598eb30bfd94783f43f2a10"
     },
     {
       "name": "Flujo de ramas",
@@ -218,13 +232,25 @@
       "name": "Plantilla de brief",
       "path": "docs/briefs/_TEMPLATE.md",
       "updated_at": "2026-11-03",
-      "sha256": "4b311da97e8d9d3f02fd03ac01b46eb9150494651d3fb2e3699b86f3251ab247"
+      "sha256": "6b5d6aa22fef2bba186e3fe8337abffa11efb9aa1ed79013949d92875c835e2f"
     },
     {
       "name": "Política de aprobación QA",
       "path": "docs/CHANGE_APPROVAL_QA_POLICY.md",
       "updated_at": "2026-09-08",
       "sha256": "5e124e1bca20ebc0d9f065c490e0fad91324ab961c90eb4e0047b59844647015"
+    },
+    {
+      "name": "Convenciones de base de datos",
+      "path": "docs/DATABASE_CONVENTIONS.md",
+      "updated_at": "2026-11-03",
+      "sha256": "97f31a0d067e66cad373f5d6d06a67dfd89f65532d613f0e771c430147168ab1"
+    },
+    {
+      "name": "Catálogo de componentes UI",
+      "path": "docs/design/APEXOS_COMPONENT_CATALOG.md",
+      "updated_at": "2026-11-03",
+      "sha256": "edc420f74be7ff46c576e7547001a13bb3b75936b0a40dae7e8cda4197f42ba5"
     },
     {
       "name": "Aislamiento multi-tenant",
@@ -237,6 +263,12 @@
       "path": "docs/PERFORMANCE_ENGINEERING_STANDARD.md",
       "updated_at": "2026-07-25",
       "sha256": "07349e629001e85fd0ebed4c8b36e77018e50dfbe4559fc6605ff9739bfbb111"
+    },
+    {
+      "name": "Contrato del equipo",
+      "path": "docs/project/CONTRATO_EQUIPO_APEXOS.md",
+      "updated_at": "2026-11-03",
+      "sha256": "ffa207b6b4d3885702c246def123ef484add0c944e31d8e63949f90d0a06b9fa"
     },
     {
       "name": "Filosofía de producto UI",

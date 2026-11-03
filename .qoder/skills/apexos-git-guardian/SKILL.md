@@ -2,7 +2,7 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 1.2.0
+version: 1.3.0
 updated_at: 2026-11-03
 ---
 
@@ -41,7 +41,8 @@ El propietario autoriza de forma permanente y limitada `git push origin desarrol
 - `git fetch origin desarrollo` es lectura remota y está permitido; no mueve ramas locales.
 - Veredictos `INTEGRAR_REMOTO` o `CONFLICTO` bloquean la edición. No resolverlos con `git reset --hard`, `git clean -fd`, force push ni sobrescribiendo el archivo local: se integra la referencia remota con la autorización correspondiente.
 - `CONFLICTO` significa misma versión y misma `updated_at` con `sha256` distinto; se reporta y se resuelve comparando contenido, nunca por fecha de archivo.
-- Al cierre, la secuencia es `npm run agents:sync` → `npm run agents:check` → `npm run agents:preflight` → pruebas → commit → `git push origin desarrollo`.
+- Al cierre, la secuencia es `npm run agents:sync` → `npm run agents:check` → `npm run agents:preflight` → `npm run agents:coverage` → pruebas → commit → `git push origin desarrollo`.
+- `npm run agents:coverage` es bloqueante: si una ruta tocada tiene agente dueño y ese agente no avanzó frente a `origin/desarrollo` o no aparece en la sección más reciente de `agents/CHANGELOG.md`, no se hace commit ni push. No se acepta "lo actualizo en la siguiente intervención".
 - Una intervención que cambió el dominio de un agente sin bumpear su `SKILL.md` está incompleta y no se publica.
 
 ## Controles acumulados (entrenamiento 2026-11-02)

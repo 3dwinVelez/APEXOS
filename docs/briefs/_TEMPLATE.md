@@ -68,8 +68,10 @@
 - **Documentación a actualizar**: `<docs/briefs/... | docs/audits/... | docs/qa/... | docs/project/...>`
 - **Agentes a actualizar**: `<agente>` `<version actual>` → `<version propuesta>`; controles nuevos: `<...>`
 - **Registro**: `agents/registry.json` actualizado (`version`, `updated_at`, `sha256`) y entrada en `agents/CHANGELOG.md`.
-- **Secuencia de cierre**: `npm run agents:sync` → `npm run agents:check` → `npm run agents:preflight` → pruebas de la sección 5 → commit.
+- **Cobertura de contexto**: salida de `npm run agents:coverage -- --paths "<...>"`; cada agente dueño debe tener bump local y mención en la sección más reciente de `agents/CHANGELOG.md`.
+- **Secuencia de cierre**: `npm run agents:sync` → `npm run agents:check` → `npm run agents:preflight` → `npm run agents:coverage` → pruebas de la sección 5 → commit.
 - **Publicación obligatoria**: `git push origin desarrollo` (rama `desarrollo`, pruebas verdes, sin secretos ni artefactos locales). No cubre `develop`, `main`, force push, merges, migraciones remotas ni infraestructura.
 - [ ] Preflight sin `INTEGRAR_REMOTO` ni `CONFLICTO`
+- [ ] Cobertura de contexto en verde (`agents:coverage`)
 - [ ] Sin secretos, credenciales ni artefactos locales en el diff
 - [ ] Documentación y agentes actualizados en el mismo commit

@@ -19,33 +19,72 @@ const ROLE_ORDER = [
 ];
 
 const ROUTES = [
-  { id: 'frontend', test: /^apps\/web\//, agents: ['apexos-frontend', 'apexos-qa'] },
+  { id: 'frontend', test: /^apps\/web\//, agents: ['apexos-frontend', 'apexos-qa'], owners: ['apexos-frontend'] },
   {
     id: 'api-prisma',
     test: /^apps\/api\/prisma\//,
-    agents: ['apexos-db-nube', 'apexos-backend', 'apexos-seguridad', 'apexos-qa']
+    agents: ['apexos-db-nube', 'apexos-backend', 'apexos-seguridad', 'apexos-qa'],
+    owners: ['apexos-db-nube']
   },
-  { id: 'api-hr', test: /^apps\/api\/src\/modules\/hr\//, agents: ['apexos-backend', 'apexos-qa'] },
-  { id: 'api-src', test: /^apps\/api\/src\//, agents: ['apexos-backend', 'apexos-seguridad', 'apexos-qa'] },
-  { id: 'api-tests', test: /^apps\/api\/test\//, agents: ['apexos-qa'] },
-  { id: 'control-tower', test: /^apps\/control-tower\//, agents: ['apexos-performance', 'apexos-seguridad', 'apexos-qa'] },
-  { id: 'design-docs', test: /^docs\/design\//, agents: ['apexos-frontend'] },
+  {
+    id: 'api-hr',
+    test: /^apps\/api\/src\/modules\/hr\//,
+    agents: ['apexos-backend', 'apexos-qa'],
+    owners: ['apexos-backend']
+  },
+  {
+    id: 'api-src',
+    test: /^apps\/api\/src\//,
+    agents: ['apexos-backend', 'apexos-seguridad', 'apexos-qa'],
+    owners: ['apexos-backend']
+  },
+  { id: 'api-tests', test: /^apps\/api\/test\//, agents: ['apexos-qa'], owners: [] },
+  {
+    id: 'control-tower',
+    test: /^apps\/control-tower\//,
+    agents: ['apexos-performance', 'apexos-seguridad', 'apexos-qa'],
+    owners: ['apexos-performance']
+  },
+  { id: 'design-docs', test: /^docs\/design\//, agents: ['apexos-frontend'], owners: ['apexos-frontend'] },
   {
     id: 'ui-docs',
     test: /^docs\/project\/(filosofia-producto-ui|validacion-frontend-css)\.md$/,
-    agents: ['apexos-frontend']
+    agents: ['apexos-frontend'],
+    owners: ['apexos-frontend']
   },
-  { id: 'qa-evidence', test: /^(docs\/qa\/|scripts\/certifications\/)/, agents: ['apexos-qa'] },
-  { id: 'performance', test: /^(scripts\/performance\/|docs\/PERFORMANCE_)/, agents: ['apexos-performance'] },
-  { id: 'infra', test: /^(infra\/|Dockerfile|docker-compose\.yml$)/, agents: ['apexos-performance', 'apexos-seguridad'] },
+  {
+    id: 'db-docs',
+    test: /^docs\/(DATABASE_CONVENTIONS|DATABASE_SECURITY|MULTITENANT_DATA_ISOLATION)\.md$/,
+    agents: ['apexos-db-nube', 'apexos-seguridad'],
+    owners: ['apexos-db-nube']
+  },
+  { id: 'qa-evidence', test: /^(docs\/qa\/|scripts\/certifications\/)/, agents: ['apexos-qa'], owners: [] },
+  {
+    id: 'performance',
+    test: /^(scripts\/performance\/|docs\/PERFORMANCE_)/,
+    agents: ['apexos-performance'],
+    owners: ['apexos-performance']
+  },
+  {
+    id: 'infra',
+    test: /^(infra\/|Dockerfile|docker-compose\.yml$)/,
+    agents: ['apexos-performance', 'apexos-seguridad'],
+    owners: ['apexos-performance']
+  },
   {
     id: 'agents-governance',
-    test: /^(agents\/|\.qoder\/skills\/|AGENTS\.md$|BRANCHING_WORKFLOW\.md$)/,
-    agents: ['equipo-apexos', 'apexos-brief', 'apexos-git-guardian']
+    test: /^(agents\/|\.qoder\/skills\/|AGENTS\.md$|BRANCHING_WORKFLOW\.md$|docs\/project\/CONTRATO_EQUIPO_APEXOS\.md$)/,
+    agents: ['equipo-apexos', 'apexos-brief', 'apexos-git-guardian'],
+    owners: []
   },
-  { id: 'briefs', test: /^docs\/briefs\//, agents: ['apexos-brief', 'equipo-apexos'] },
-  { id: 'scripts-tests', test: /^scripts\/test\//, agents: ['apexos-qa'] },
-  { id: 'scripts', test: /^(scripts\/|package\.json$|package-lock\.json$)/, agents: ['equipo-apexos', 'apexos-qa'] }
+  { id: 'briefs', test: /^docs\/briefs\//, agents: ['apexos-brief', 'equipo-apexos'], owners: ['apexos-brief'] },
+  { id: 'scripts-tests', test: /^scripts\/test\//, agents: ['apexos-qa'], owners: [] },
+  {
+    id: 'scripts',
+    test: /^(scripts\/|package\.json$|package-lock\.json$)/,
+    agents: ['equipo-apexos', 'apexos-qa'],
+    owners: []
+  }
 ];
 
 function parseVersion(value) {
@@ -82,7 +121,7 @@ function classifyFreshness(local, remote) {
   return 'in-sync';
 }
 
-function classifyDocumentFreshness(local, remote) {
+function classifyDocumentFreshness(local, remote, { localDirty = false } = {}) {
   if (!local && !remote) return 'unknown';
   if (!local) return 'remote-only';
   if (!remote) return 'local-only';
@@ -92,7 +131,9 @@ function classifyDocumentFreshness(local, remote) {
   if (remoteDate > localDate) return 'remote-newer';
   if (localDate > remoteDate) return 'local-ahead';
 
-  if (local.sha256 && remote.sha256 && local.sha256 !== remote.sha256) return 'conflict';
+  if (local.sha256 && remote.sha256 && local.sha256 !== remote.sha256) {
+    return localDirty ? 'local-ahead' : 'conflict';
+  }
   return 'in-sync';
 }
 
@@ -109,6 +150,7 @@ function normalizePath(value) {
 
 function routePaths(paths) {
   const matched = new Map();
+  const owned = new Map();
   const unmatched = [];
 
   for (const raw of paths || []) {
@@ -122,6 +164,10 @@ function routePaths(paths) {
         if (!matched.has(agent)) matched.set(agent, new Set());
         matched.get(agent).add(file);
       }
+      for (const owner of rule.owners || []) {
+        if (!owned.has(owner)) owned.set(owner, new Set());
+        owned.get(owner).add(file);
+      }
     }
     if (!hits) unmatched.push(file);
   }
@@ -130,15 +176,20 @@ function routePaths(paths) {
     matched.set('equipo-apexos', new Set(['<tarea-multidisciplinaria>']));
   }
 
-  const agents = [...matched.keys()].sort((a, b) => {
+  const order = (a, b) => {
     const left = ROLE_ORDER.indexOf(a);
     const right = ROLE_ORDER.indexOf(b);
     return (left === -1 ? 99 : left) - (right === -1 ? 99 : right) || a.localeCompare(b);
-  });
+  };
+
+  const agents = [...matched.keys()].sort(order);
+  const owners = [...owned.keys()].sort(order);
 
   return {
     agents,
     matches: agents.map((agent) => ({ agent, paths: [...matched.get(agent)].sort() })),
+    owners,
+    ownerMatches: owners.map((owner) => ({ owner, paths: [...owned.get(owner)].sort() })),
     unmatched
   };
 }

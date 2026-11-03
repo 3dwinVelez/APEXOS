@@ -23,14 +23,15 @@ function fail(message) {
   process.exit(1);
 }
 
-function git(args, { allowFailure = false, timeout = 30000 } = {}) {
+function git(args, { allowFailure = false, timeout = 30000, trim = true } = {}) {
   try {
-    return execFileSync('git', args, {
+    const output = execFileSync('git', args, {
       cwd: ROOT,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout
-    }).trim();
+    });
+    return trim ? output.trim() : output;
   } catch (error) {
     if (allowFailure) return null;
     throw error;
@@ -82,16 +83,23 @@ function parseArgs(argv) {
 }
 
 function fromPorcelain() {
-  const raw = git(['status', '--porcelain'], { allowFailure: true }) || '';
+  // Sin trim: el primer renglon de `git status --porcelain` empieza con espacio
+  // y recortarlo desplaza el prefijo XY, perdiendo el primer caracter de la ruta.
+  const raw = git(['status', '--porcelain'], { allowFailure: true, trim: false }) || '';
   return raw
     .split(/\r?\n/)
-    .filter(Boolean)
+    .filter((line) => line.trim())
     .map((line) => {
       const value = line.slice(3).trim().replace(/^"(.*)"$/, '$1');
       const arrow = value.indexOf(' -> ');
       return normalizePath(arrow >= 0 ? value.slice(arrow + 4) : value);
     })
     .filter(Boolean);
+}
+
+function isDirty(relPath) {
+  const status = git(['status', '--porcelain', '--', relPath], { allowFailure: true, trim: false }) || '';
+  return status.split(/\r?\n/).some((line) => line.trim());
 }
 
 function fromDiff(args) {
@@ -224,7 +232,8 @@ function main() {
   const documentRows = documentPaths.map((documentPath) => {
     const local = localDocuments.get(documentPath) || null;
     const remote = remoteDocuments.get(documentPath) || null;
-    const status = classifyDocumentFreshness(local, remote);
+    // Una edicion local del mismo dia es avance propio, no conflicto remoto.
+    const status = classifyDocumentFreshness(local, remote, { localDirty: isDirty(documentPath) });
     const blocking = governanceTouched && isBlocking(status);
     return {
       name: documentPath,

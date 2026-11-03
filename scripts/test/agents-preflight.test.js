@@ -49,6 +49,14 @@ test('classifyDocumentFreshness usa fecha y sha, sin semver', () => {
   assert.equal(classifyDocumentFreshness(local, local), 'in-sync');
 });
 
+test('una edicion local del mismo dia es avance, no conflicto remoto', () => {
+  const local = { updated_at: '2026-11-03', sha256: 'a'.repeat(64) };
+  const remote = { ...local, sha256: 'b'.repeat(64) };
+  assert.equal(classifyDocumentFreshness(local, remote, { localDirty: true }), 'local-ahead');
+  assert.equal(classifyDocumentFreshness(local, remote), 'conflict');
+  assert.equal(classifyDocumentFreshness(local, { ...remote, updated_at: '2026-11-04' }, { localDirty: true }), 'remote-newer');
+});
+
 test('isBlocking solo bloquea actualizaciones remotas, remotos nuevos y conflictos', () => {
   for (const status of ['remote-newer', 'remote-only', 'conflict']) assert.equal(isBlocking(status), true);
   for (const status of ['in-sync', 'local-ahead', 'local-only', 'unknown']) assert.equal(isBlocking(status), false);
@@ -85,6 +93,12 @@ test('routePaths manda gobernanza al trio de agentes', () => {
   assert.deepEqual(result.agents, ['equipo-apexos', 'apexos-brief', 'apexos-git-guardian']);
 });
 
+test('routePaths trata el contrato del equipo como gobernanza', () => {
+  const result = routePaths(['docs/project/CONTRATO_EQUIPO_APEXOS.md']);
+  assert.deepEqual(result.agents, ['equipo-apexos', 'apexos-brief', 'apexos-git-guardian']);
+  assert.deepEqual(result.owners, []);
+});
+
 test('routePaths agrega equipo-apexos cuando la tarea es multidisciplinaria', () => {
   const result = routePaths(['apps/web/app/page.tsx', 'apps/api/src/server.js']);
   assert.ok(result.agents.includes('equipo-apexos'));
@@ -96,4 +110,29 @@ test('routePaths informa rutas sin agente asignado', () => {
   const result = routePaths(['docs/project/contexto-proyecto.md']);
   assert.deepEqual(result.agents, []);
   assert.deepEqual(result.unmatched, ['docs/project/contexto-proyecto.md']);
+});
+
+test('routePaths asigna dueno de contexto por disciplina', () => {
+  assert.deepEqual(routePaths(['apps/web/app/page.tsx']).owners, ['apexos-frontend']);
+  assert.deepEqual(routePaths(['apps/api/prisma/schema.prisma']).owners, ['apexos-db-nube']);
+  assert.deepEqual(routePaths(['apps/api/src/modules/services/routes.js']).owners, ['apexos-backend']);
+  assert.deepEqual(routePaths(['apps/control-tower/server.js']).owners, ['apexos-performance']);
+});
+
+test('routePaths sin dueno para gobernanza, scripts, pruebas y evidencia', () => {
+  for (const file of ['AGENTS.md', 'scripts/agents/preflight.js', 'scripts/test/x.test.js', 'docs/qa/evidence/x/a.txt']) {
+    assert.deepEqual(routePaths([file]).owners, [], file);
+  }
+});
+
+test('routePaths trata las convenciones de base de datos como contexto de DB', () => {
+  const result = routePaths(['docs/DATABASE_CONVENTIONS.md']);
+  assert.ok(result.agents.includes('apexos-db-nube'));
+  assert.deepEqual(result.owners, ['apexos-db-nube']);
+});
+
+test('routePaths conserva el union de duenos cuando hay varias disciplinas', () => {
+  const result = routePaths(['apps/web/app/page.tsx', 'apps/api/prisma/schema.prisma']);
+  assert.deepEqual(result.owners, ['apexos-db-nube', 'apexos-frontend']);
+  assert.equal(result.ownerMatches.length, 2);
 });

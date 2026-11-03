@@ -5,6 +5,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const { isContractV2, validateContractText } = require('./lib/agent-contract');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const REGISTRY_PATH = path.join(ROOT, 'agents', 'registry.json');
@@ -72,6 +73,17 @@ function agentPaths(entry) {
   };
 }
 
+function validateAgent(source, relPath) {
+  const text = fs.readFileSync(source, 'utf8');
+  if (!isContractV2(text)) return;
+  const errors = validateContractText({
+    text,
+    relPath,
+    exists: (rel) => fs.existsSync(path.join(ROOT, rel))
+  });
+  if (errors.length) fail(errors.join('\n[agents] '));
+}
+
 function syncAgent(entry) {
   const { source, mirror } = agentPaths(entry);
   if (!fs.existsSync(source)) fail(`Fuente canónica inexistente: ${entry.source}`);
@@ -86,6 +98,7 @@ function syncAgent(entry) {
   if (!frontmatter.updated_at || !/^\d{4}-\d{2}-\d{2}$/.test(frontmatter.updated_at)) {
     fail(`${entry.source}: updated_at obligatorio en formato YYYY-MM-DD`);
   }
+  validateAgent(source, entry.source);
   fs.mkdirSync(path.dirname(mirror), { recursive: true });
   fs.copyFileSync(source, mirror);
   return {
@@ -165,6 +178,16 @@ function checkRegistry() {
     }
     if (sha256(source) !== entry.sha256) {
       errors.push(`${entry.name}: sha256 del registro no coincide (corre npm run agents:sync)`);
+    }
+    const contractText = fs.readFileSync(source, 'utf8');
+    if (isContractV2(contractText)) {
+      errors.push(
+        ...validateContractText({
+          text: contractText,
+          relPath: entry.source,
+          exists: (rel) => fs.existsSync(path.join(ROOT, rel))
+        })
+      );
     }
   }
 
