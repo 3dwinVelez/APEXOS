@@ -1,3 +1,4 @@
+const { findUserForEmployee } = require("./employeeUserLink");
 const prisma = require("../../core/prisma");
 const { Prisma } = require("@prisma/client");
 const { randomUUID } = require("crypto");
@@ -1220,8 +1221,10 @@ async function createEmployee(tenantId, input) {
   const organization = await resolveTenantEmployeeOrganization(tenantId, input);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     await assertEmployeeDocumentAvailable(tx, tenantId, input);
+    const linkedUserId = await findUserForEmployee(tx, tenantId, input);
     const employee = await tx.employee.create({
       data: {
+        user_id: linkedUserId,
         code: String(input.code || "").trim() || employeeCodeFromDocument(input),
         user_type: input.user_type || input.position || "operario",
         position: input.position || input.user_type || "operario",
@@ -1278,7 +1281,7 @@ async function createEmployee(tenantId, input) {
     await syncEmployeeSalaryHistory(tx, tenantId, employee.id, input);
     await ensureEmployeeContractFoundation(tx, tenantId, employee, {});
     return employee;
-  }));
+  }, { isolationLevel: "Serializable" }));
 }
 
 async function updateEmployee(tenantId, id, input = {}) {
@@ -1328,9 +1331,13 @@ async function updateEmployee(tenantId, id, input = {}) {
       }
     };
     return prisma.$transaction(async (tx) => {
+      const latest = await tx.employee.findFirst({ where: { tenant_id: tenantId, id: employeeId } });
+      if (!latest) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+      const linkedUserId = latest.user_id || await findUserForEmployee(tx, tenantId, nextMetadata, employeeId);
       const employee = await tx.employee.update({
       where: { id: employeeId },
       data: {
+        user_id: linkedUserId,
         ...(input.code !== undefined ? { code: input.code || current.code } : {}),
         ...(input.position !== undefined ? { position: input.position || current.position } : {}),
         ...(input.department !== undefined || input.area !== undefined ? { department: input.department || input.area || current.department } : {}),
@@ -1347,7 +1354,7 @@ async function updateEmployee(tenantId, id, input = {}) {
       await syncEmployeeSalaryHistory(tx, tenantId, employee.id, input);
       await ensureEmployeeContractFoundation(tx, tenantId, employee, {});
       return employee;
-    });
+    }, { isolationLevel: "Serializable" });
   });
 }
 
