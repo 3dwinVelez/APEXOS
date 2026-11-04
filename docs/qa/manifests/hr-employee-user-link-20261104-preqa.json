@@ -9,31 +9,31 @@
     "functional": {
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     "error": {
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     "support_scripts": {
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     "regression": {
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     "platform_regression": {
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     }
   },
@@ -41,21 +41,27 @@
     "status": "passed",
     "script": "../../../scripts/certifications/hr-employee-user-link-local.js",
     "evidence": [
-      "hr-employee-user-link-20261103.md"
+      "../certifications/hr-employee-user-link-20261103.md"
     ]
   },
   "regression_certification": {
     "status": "passed",
     "script": "../../../scripts/certifications/hr-employee-user-link-local.js",
     "evidence": [
-      "hr-employee-user-link-20261103.md"
+      "../certifications/hr-employee-user-link-20261103.md"
     ]
   },
   "approval": {
     "status": "approved",
     "scope": "promotion_to_develop_for_qa",
     "approved_by": "Propietario: solicitud explicita en este chat \"Puedes desplegar esto en qa\"",
-    "approved_at": "2026-11-04T18:43:41.061Z"
+    "approved_at": "2026-11-04T18:43:41.061Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "branch_authorization": "Propietario: si autorizo, en respuesta a crear y publicar la rama indicada y fusionar PR puntual hacia develop."
   },
-  "traceability": "Certificacion ejecutada sobre los blobs de codigo y pruebas del commit indicado antes de crearlo. El commit incluye exclusivamente esos blobs y la evidencia revisada. Reporte bruto local en .local/hr-employee-user-link/local-certification.json. QA funcional desplegada pendiente."
+  "traceability": "Certificacion ejecutada sobre los blobs de codigo y pruebas del commit indicado antes de crearlo. El commit incluye exclusivamente esos blobs y la evidencia revisada. Reporte bruto local en .local/hr-employee-user-link/local-certification.json. QA funcional desplegada pendiente.",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "a505e97f962276e9b7f432cf7f5982dd73eee923"
 }

@@ -19,8 +19,8 @@
     "apps/api/test/admin-role-capabilities.test.js",
     "apps/api/test/hr-employee-user-link.test.js",
     "docs/qa/certifications/hr-employee-user-link-20261103.md",
-    "docs/qa/certifications/hr-employee-user-link-20261104-preqa.json",
-    "docs/qa/certifications/hr-employee-user-link-20261104-scope.json",
+    "docs/qa/manifests/hr-employee-user-link-20261104-preqa.json",
+    "docs/qa/manifests/hr-employee-user-link-20261104-scope.json",
     "scripts/certifications/hr-employee-user-link-local.js"
   ],
   "allowed_deletions": [],
@@ -51,11 +51,11 @@
     },
     {
       "status": "A",
-      "file": "docs/qa/certifications/hr-employee-user-link-20261104-preqa.json"
+      "file": "docs/qa/manifests/hr-employee-user-link-20261104-preqa.json"
     },
     {
       "status": "A",
-      "file": "docs/qa/certifications/hr-employee-user-link-20261104-scope.json"
+      "file": "docs/qa/manifests/hr-employee-user-link-20261104-scope.json"
     },
     {
       "status": "A",
@@ -67,44 +67,61 @@
       "name": "employee_user_link",
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     {
       "name": "payroll_and_contract_preservation",
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     {
       "name": "rbac",
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     {
       "name": "tenant_isolation",
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     {
       "name": "administrative_marking_and_self_service",
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     },
     {
       "name": "user_status_and_session_revocation",
       "status": "passed",
       "evidence": [
-        "hr-employee-user-link-20261103.md"
+        "../certifications/hr-employee-user-link-20261103.md"
       ]
     }
   ],
-  "certified_commit_note": "Codigo certificado primero en desarrollo. El candidato agrega solamente los dos manifiestos a ese commit. No autoriza merge de origin/desarrollo completo ni cambios de infraestructura; QA funcional remota pendiente."
+  "certified_commit_note": "Codigo certificado primero en desarrollo. El candidato agrega solamente los dos manifiestos a ese commit. No autoriza merge de origin/desarrollo completo ni cambios de infraestructura; QA funcional remota pendiente.",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "a505e97f962276e9b7f432cf7f5982dd73eee923",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "cd5cec47b36c4ba9be501f14cd081fcf8a110466"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/hr/employeeUserLink.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/admin-role-capabilities.test.js",
+    "apps/api/test/hr-employee-user-link.test.js",
+    "docs/qa/certifications/hr-employee-user-link-20261103.md",
+    "scripts/certifications/hr-employee-user-link-local.js"
+  ]
 }
