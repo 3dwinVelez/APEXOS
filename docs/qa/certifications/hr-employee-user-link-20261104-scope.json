@@ -1,0 +1,110 @@
+{
+  "change_id": "hr-employee-user-link-20261104",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "develop": "a505e97f962276e9b7f432cf7f5982dd73eee923"
+  },
+  "certified_commit": "cd5cec47b36c4ba9be501f14cd081fcf8a110466",
+  "change_intent": {
+    "summary": "Asociar automaticamente empleados y usuarios dentro del tenant y reutilizar fichas sin duplicar ni reemplazar datos laborales.",
+    "modules": [
+      "hr",
+      "admin"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/hr/employeeUserLink.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/admin-role-capabilities.test.js",
+    "apps/api/test/hr-employee-user-link.test.js",
+    "docs/qa/certifications/hr-employee-user-link-20261103.md",
+    "docs/qa/certifications/hr-employee-user-link-20261104-preqa.json",
+    "docs/qa/certifications/hr-employee-user-link-20261104-scope.json",
+    "scripts/certifications/hr-employee-user-link-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/employeeUserLink.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/admin-role-capabilities.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-employee-user-link.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-link-20261103.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-link-20261104-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-link-20261104-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-link-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "employee_user_link",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-user-link-20261103.md"
+      ]
+    },
+    {
+      "name": "payroll_and_contract_preservation",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-user-link-20261103.md"
+      ]
+    },
+    {
+      "name": "rbac",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-user-link-20261103.md"
+      ]
+    },
+    {
+      "name": "tenant_isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-user-link-20261103.md"
+      ]
+    },
+    {
+      "name": "administrative_marking_and_self_service",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-user-link-20261103.md"
+      ]
+    },
+    {
+      "name": "user_status_and_session_revocation",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-user-link-20261103.md"
+      ]
+    }
+  ],
+  "certified_commit_note": "Codigo certificado primero en desarrollo. El candidato agrega solamente los dos manifiestos a ese commit. No autoriza merge de origin/desarrollo completo ni cambios de infraestructura; QA funcional remota pendiente."
+}
