@@ -30,6 +30,17 @@ async function login(credentials) {
   return token;
 }
 
+const ACCESS_HREFS = [
+  "rutas", "mallas", "marcacion", "novedades", "mapa", "empleados", "entidades",
+  "configuracion-laboral", "nomina", "provisiones", "aportes-sociales",
+  "prestaciones-pagos", "libranzas", "liquidacion-trabajador", "reportes"
+];
+const ACCESS_TITLES = [
+  "Asignar horarios", "Monitor de mallas", "Marcaciones", "Novedades de jornada", "Mapa operativo",
+  "Maestro de empleados", "Entidades y afiliaciones", "Configuración laboral", "Nómina", "Provisiones",
+  "Aportes sociales", "Pago de prestaciones", "Libranzas", "Liquidación de trabajador", "Reportes de tiempo"
+];
+
 async function main() {
   const health = await json("/health");
   assert.equal(health.commit, expectedCommit.slice(0, 12), "El API QA no ejecuta el commit esperado");
@@ -54,23 +65,15 @@ async function main() {
   });
   assert.equal(landingResponse.status, 200, "La portada de Talento Humano no responde en QA");
   const html = await landingResponse.text();
-  const labels = [
-    "Mallas horarias",
-    "Crear y asignar horarios",
-    "Marcaciones y jornadas",
-    "Monitor de jornada",
-    "Reportes de tiempo",
-    "Nómina",
-    "Disponible próximamente"
-  ];
-  for (const label of labels) assert.ok(html.includes(label), `La portada QA no contiene: ${label}`);
-  for (const route of ["rutas", "marcacion", "mapa", "reportes"]) {
-    assert.ok(html.includes(`/dashboard/talento-humano/${route}`), `Falta el acceso QA a ${route}`);
-  }
-  const orderedLabels = ["Crear y asignar horarios", "Marcaciones y jornadas", "Monitor de jornada", "Reportes de tiempo"];
-  const positions = orderedLabels.map((label) => html.indexOf(label));
-  assert.ok(positions.every((position) => position >= 0), "No se encontraron todas las acciones ordenadas");
-  assert.deepEqual([...positions].sort((a, b) => a - b), positions, "Las acciones no conservan el orden certificado");
+  assert.ok(html.includes("M-17 · Talento Humano"), "La portada QA perdio el identificador del modulo M-17");
+  assert.ok(html.includes("Herramientas activas de talento humano"), "La portada QA no renderiza el hub de accesos");
+  const cardHrefs = ACCESS_HREFS.map((route) => `/dashboard/talento-humano/${route}`);
+  assert.equal(new Set(cardHrefs).size, ACCESS_HREFS.length, "El inventario de accesos esta duplicado");
+  for (const href of cardHrefs) assert.ok(html.includes(href), `Falta el acceso QA ${href}`);
+  const positions = ACCESS_TITLES.map((title) => html.indexOf(title));
+  assert.ok(positions.every((position) => position >= 0), `Falta una tarjeta del hub: ${ACCESS_TITLES[positions.indexOf(-1)]}`);
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions, "Las tarjetas del hub no conservan el orden certificado");
+  assert.ok(!html.includes("Disponible próximamente"), "La portada QA sigue anunciando accesos como proximos");
   assert.ok(!html.includes("Gestionar vehículos"), "La portada volvio a mezclar Transporte dentro de Talento Humano");
 
   console.log(JSON.stringify({
@@ -82,9 +85,10 @@ async function main() {
       deployed_api_commit: "passed",
       talent_landing_http: "passed",
       business_domain_grouping: "passed",
-      journey_action_order: "passed",
-      routes_visible: "passed",
+      hub_task_card_order: "passed",
+      all_fifteen_accesses_visible: "passed",
       payroll_separated: "passed",
+      no_pending_access_placeholder: "passed",
       transport_not_mixed: "passed",
       authorized_nyvora_session: "passed",
       limited_nyvora_session: "passed",
