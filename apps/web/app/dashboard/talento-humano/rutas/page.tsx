@@ -20,7 +20,7 @@ type TimeRoute = { id: number | string; code?: string; display_id?: number | str
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; status?: string; latitude?: number | null; longitude?: number | null; age_seconds?: number | null; last_punch_type?: string; last_punch_time?: string; last_activity_type?: string; last_activity_time?: string };
-type MonitorEvidence = { id?: number | string; source?: "activity" | "punch"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean };
+type MonitorEvidence = { id?: number | string; source?: "activity" | "punch"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean; items?: MonitorEvidence[] };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
@@ -591,7 +591,7 @@ export default function RoutesPlanningPage() {
     try {
       const evidence = await api<MonitorEvidence>(`/api/v1/hr/monitor-evidence/${source}/${encodeURIComponent(String(summary.id))}`, { cache: "no-store" });
       if (!evidence.base64_data && !evidence.file_url) throw new Error("La evidencia no contiene un archivo visible.");
-      setLoadedEvidence((current) => ({ ...current, [event.id]: [evidence] }));
+      setLoadedEvidence((current) => ({ ...current, [event.id]: evidence.items?.length ? evidence.items : [evidence] }));
     } catch (error) {
       setEvidenceErrors((current) => ({ ...current, [event.id]: error instanceof Error ? error.message : "No fue posible cargar la evidencia." }));
     } finally {
@@ -604,7 +604,7 @@ export default function RoutesPlanningPage() {
     try {
       const batch = await api<MonitorEvidenceBatch>(`/api/v1/hr/monitor-evidence/route/${encodeURIComponent(String(routeId))}`, { cache: "no-store" });
       const merged: Record<string, MonitorEvidence[]> = {};
-      for (const [id, payload] of Object.entries(batch.punch_evidence || {})) merged[`punch-${id}`] = [payload];
+      for (const [id, payload] of Object.entries(batch.punch_evidence || {})) merged[`punch-${id}`] = payload.items?.length ? payload.items : [payload];
       for (const [id, items] of Object.entries(batch.activity_evidence || {})) merged[`activity-${id}`] = items;
       setLoadedEvidence((current) => ({ ...current, ...merged }));
     } catch {

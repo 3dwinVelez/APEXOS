@@ -3,14 +3,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { spawn, execFileSync } = require('node:child_process');
-module.exports = async function ({ origin, token, document, selectable, check, db, tenantId }) {
+module.exports = async function ({ origin, token, document, selectable, check, db, tenantId, exercise, pagePath = '/dashboard/talento-humano/empleados', artifactName = 'hr-employee-user-association' }) {
   assert.ok(/^http:\/\/127\.0\.0\.1:\d+$/.test(origin));
   const root = path.resolve(__dirname, '../..');
   const nextEnvPath = path.join(root, 'apps/web/next-env.d.ts');
   const tsconfigPath = path.join(root, 'apps/web/tsconfig.json');
   const previousNextEnv = fs.readFileSync(nextEnvPath, 'utf8');
   const previousIncludes = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8')).include || [];
-  const output = path.join(root, '.local/hr-employee-user-association');
+  assert.ok(/^[a-z0-9-]+$/.test(artifactName));
+  const output = path.join(root, '.local', artifactName);
   fs.mkdirSync(output, { recursive: true });
   const out = fs.openSync(path.join(output, 'next.log'), 'w');
   const web = spawn(process.execPath, [path.join(root, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '-H', '127.0.0.1', '-p', '3317'], {
@@ -58,7 +59,8 @@ module.exports = async function ({ origin, token, document, selectable, check, d
       assert.equal(await element.evaluate(node => node.value), value, `Valor ingresado en ${label}`);
       await handle.dispose();
     }
-    await page.goto(url + '/dashboard/talento-humano/empleados', { waitUntil: 'domcontentloaded', timeout: 180000 });
+    await page.goto(url + pagePath, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    if (exercise) { await exercise(page, output); return; }
     const countBefore = await db.employee.count({ where: { tenant_id: tenantId } });
     await check('browser document finds existing user and opens original labor record without duplicate', async () => {
       await button('Nuevo empleado');

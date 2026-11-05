@@ -1,3 +1,12 @@
+import { punchPhotoItems } from "../../api/src/modules/hr/punchEvidence.js";
+
+export function scheduleMonitorUsesOperationalSource(path: string, method = "GET") {
+  if (method.toUpperCase() !== "GET") return false;
+  const pathname = path.split("?")[0];
+  return pathname.startsWith("/api/v1/hr/monitor-evidence/") || pathname === "/api/v1/hr/operations-map"
+    || pathname === "/api/v1/hr/routes" || pathname === "/api/v1/hr/routes/event-summaries";
+}
+
 export function localCalendarDate(value = new Date()) {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
@@ -21,27 +30,22 @@ export type ScheduleMonitorEvidence = {
   file_url?: string;
   has_base64_data?: boolean;
   available?: boolean;
+  items?: ScheduleMonitorEvidence[];
 };
 
 export function scheduleMonitorPunchEvidence(row: {
   extra_evidence?: ScheduleMonitorEvidence | Record<string, unknown> | null;
   metadata?: {
+    identity_photo?: unknown;
     extra_evidence?: ScheduleMonitorEvidence | Record<string, unknown> | null;
     photo?: unknown;
     photo_name?: unknown;
   } | null;
 }): ScheduleMonitorEvidence {
-  const evidence = (row.extra_evidence || row.metadata?.extra_evidence || {}) as Record<string, unknown>;
-  const base64 = String(evidence.base64_data || evidence.base64 || row.metadata?.photo || "").trim();
-  const fileUrl = String(evidence.file_url || "").trim();
-  const fileName = String(evidence.file_name || evidence.name || row.metadata?.photo_name || "evidencia.jpg").trim();
-
-  if (!base64 && !fileUrl) return {};
-  return {
-    ...(base64 ? { base64_data: base64 } : {}),
-    ...(fileUrl ? { file_url: fileUrl } : {}),
-    file_name: fileName || "evidencia.jpg"
-  };
+  const items = punchPhotoItems(row).map(({ base64_data, file_url, file_name }) => ({
+    ...(base64_data ? { base64_data } : {}), ...(file_url ? { file_url } : {}), file_name
+  }));
+  return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
 }
 
 export function scheduleMonitorPunchEvidenceSummary(row: Parameters<typeof scheduleMonitorPunchEvidence>[0] & { id?: string | number }) {

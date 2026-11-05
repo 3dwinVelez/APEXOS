@@ -3,7 +3,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
-const output = path.join(root, '.local/hr-employee-user-association');
+const certificate = process.argv.find(arg => arg.startsWith('--certificate='))?.slice(14) || 'hr-employee-user-link-local.js';
+if (!['hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js'].includes(certificate)) throw Error('Unsupported certification script');
+const outputDirectories = {
+  'hr-punch-mobile-evidence-local.js': 'hr-punch-mobile-evidence',
+  'hr-landing-hub-local.js': 'hr-landing-hub'
+};
+const output = path.join(root, '.local', outputDirectories[certificate] || 'hr-employee-user-association');
 fs.mkdirSync(output, { recursive: true });
 const database = `apexos_cert_hr_assoc_${Date.now()}`;
 if (!/^apexos_cert_hr_assoc_\d+$/.test(database)) throw Error('Unsafe certification database name');
@@ -24,11 +30,12 @@ if (!hasSedes) {
   const migration = fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql'), 'utf8');
   apply(migration.split('-- 3.')[0]);
 }
+if (certificate === 'hr-punch-mobile-evidence-local.js') apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
 const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}`;
 const log = fs.openSync(path.join(output, 'certification.log'), 'w');
-const result = spawnSync(process.execPath, [path.join(__dirname, 'hr-employee-user-link-local.js'), '--output=' + path.join(output, 'certification.json')], {
+const result = spawnSync(process.execPath, [path.join(__dirname, certificate), '--output=' + path.join(output, 'certification.json')], {
   cwd: root, env: { ...process.env, DATABASE_URL: localUrl, DIRECT_URL: localUrl, REDIS_DISABLED: 'true', DISABLE_REDIS: 'true', NODE_ENV: 'test', HR_ASSOCIATION_BROWSER: '1' },
-  stdio: ['ignore', log, log], windowsHide: true, timeout: 600000
+  stdio: ['ignore', log, log], windowsHide: true, timeout: Number(process.env.CERT_TIMEOUT_MS || 600000)
 });
 fs.closeSync(log);
 const requests = new Map();

@@ -1,4 +1,5 @@
 const { findUserForEmployee } = require("./employeeUserLink");
+const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
 const prisma = require("../../core/prisma");
 const { Prisma } = require("@prisma/client");
 const { randomUUID } = require("crypto");
@@ -176,6 +177,13 @@ function monitorEvidencePayload(evidence = {}) {
   };
 }
 
+function monitorPunchEvidence(punch, summary = false) {
+  const items = punchPhotoItems(punch).map(photo => summary
+    ? monitorEvidenceSummary(photo, { id: punch.id, source: "punch" })
+    : { ...monitorEvidencePayload(photo), id: punch.id, source: "punch" });
+  return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
+}
+
 async function getMonitorEvidence(tenantId, source, id) {
   const evidenceId = optionalNumericId(id);
   if (!evidenceId || !["activity", "punch"].includes(String(source))) {
@@ -189,13 +197,13 @@ async function getMonitorEvidence(tenantId, source, id) {
       });
     } else {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
-      evidence = punch?.extra_evidence || punch?.metadata?.extra_evidence || null;
+      evidence = punch ? monitorPunchEvidence(punch) : null;
     }
     const payload = monitorEvidencePayload(evidence || {});
     if (!payload.base64_data && !payload.file_url) {
       throw validationError("La evidencia solicitada no existe o no contiene un archivo disponible.", 404, "EVIDENCIA_MONITOR_NO_ENCONTRADA");
     }
-    return { ...payload, id: evidenceId, source };
+    return { ...payload, ...(evidence?.items ? { items: evidence.items } : {}), id: evidenceId, source };
   });
 }
 
@@ -218,8 +226,7 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
     ]);
     const punchEvidence = {};
     for (const punch of punches) {
-      const source = punch.extra_evidence || punch.metadata?.extra_evidence || {};
-      punchEvidence[String(punch.id)] = { ...monitorEvidencePayload(source), id: punch.id, source: "punch" };
+      punchEvidence[String(punch.id)] = { ...monitorPunchEvidence(punch), id: punch.id, source: "punch" };
     }
     const activityEvidence = {};
     for (const activity of activities) {
@@ -864,11 +871,11 @@ async function listRouteEventSummaries(tenantId) {
       }),
       prisma.timePunch.findMany({
         where: { route_id: { in: routeIds } },
-        select: { route_id: true, extra_evidence: true }
+        select: { route_id: true, extra_evidence: true, metadata: true }
       }),
       prisma.timePunch.findMany({
         where: { route_id: null, OR: dateWindows.map((date) => ({ date })) },
-        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true },
+        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true, extra_evidence: true },
         orderBy: { punched_at: "desc" },
         take: 2000
       }),
@@ -3400,8 +3407,8 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
-          metadata: punch.metadata || {}
+          extra_evidence: monitorPunchEvidence(punch, true),
+          metadata: punchMonitorMetadata(punch.metadata)
         });
       }
       const assignedCount = assigned.length;
@@ -3441,8 +3448,8 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
-          metadata: punch.metadata || {}
+          extra_evidence: monitorPunchEvidence(punch, true),
+          metadata: punchMonitorMetadata(punch.metadata)
         })),
         activity_points: routeActivities.map((activity) => ({
           id: activity.id,
