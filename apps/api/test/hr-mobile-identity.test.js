@@ -240,6 +240,18 @@ test("la selfie se entrega al monitor como evidencia", () => {
   assert.equal(identity.identityEvidenceOf({ id: 16, metadata: {} }), null);
 });
 
+test("las selfies guardadas antes del despliegue tambien llegan al monitor", () => {
+  // La API anterior guardaba la metadata de la app tal cual: la selfie queda
+  // en `identity_photo.base64` y sin `identity_verification`.
+  const legacy = { id: 30, metadata: { source: identity.MOBILE_SOURCE, identity_photo: { name: "selfie.jpg", type: "image/jpeg", size: JPEG.length, base64: `data:image/jpeg;base64,${JPEG.toString("base64")}` } } };
+  assert.equal(identity.identityEvidenceOf(legacy).base64_data, legacy.metadata.identity_photo.base64);
+  const raw = { id: 31, metadata: { identity_photo: { type: "image/png", base64: PNG.toString("base64") } } };
+  assert.equal(identity.identityEvidenceOf(raw).base64_data, `data:image/png;base64,${PNG.toString("base64")}`);
+  const visible = identity.publicPunchMetadata(legacy.metadata);
+  assert.equal(visible.identity_photo.base64, undefined);
+  assert.equal(visible.identity_photo.has_base64_data, true);
+});
+
 test("lo que ve el empleado de su registro nunca incluye la llave", () => {
   const key = deviceKey();
   const visible = identity.publicEnrollment(enrolledEmployee(key, { platform: "android", device_model: "Pixel 8" }));

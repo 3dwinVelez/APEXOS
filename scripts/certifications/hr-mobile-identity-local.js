@@ -292,6 +292,25 @@ async function main() {
     const noSelfieEvidence = await call(admin, "GET", `/hr/monitor-evidence/identity/${webPunch.id}`);
     check("una marcacion sin selfie no inventa evidencia", noSelfieEvidence.status === 404, { status: noSelfieEvidence.status });
 
+    // Marcaciones hechas con la app nueva ANTES del despliegue: la API anterior
+    // guardo la selfie tal cual la mando la app (identity_photo.base64).
+    const legacySelfie = selfieBytes("antes-del-despliegue");
+    const legacy = await prisma.timePunch.create({
+      data: {
+        tenant_id: stored.tenant_id,
+        employee_id: employee.id,
+        user_name: "Cert tecnico",
+        type: "salida",
+        punched_at: new Date(),
+        date: new Date(new Date().toISOString().slice(0, 10)),
+        time: "23:59",
+        metadata: { source: identity.MOBILE_SOURCE, identity_photo: { name: "selfie.jpg", type: "image/jpeg", size: legacySelfie.length, base64: `data:image/jpeg;base64,${legacySelfie.toString("base64")}` } }
+      }
+    });
+    const legacyEvidence = await call(admin, "GET", `/hr/monitor-evidence/identity/${legacy.id}`);
+    check("las selfies guardadas antes del despliegue tambien se ven en el monitor", legacyEvidence.status === 200 && legacyEvidence.payload.base64_data === `data:image/jpeg;base64,${legacySelfie.toString("base64")}`, { status: legacyEvidence.status, code: legacyEvidence.code });
+    await prisma.timePunch.delete({ where: { id: legacy.id } });
+
     // Restablecer.
     const otroMe = await call(otro, "GET", "/auth/me");
     const otroEmployee = await prisma.employee.findFirst({ where: { user: { email: otro.email } } }) || (await call(otro, "GET", "/hr/self/biometric-enrollment"), await prisma.employee.findFirst({ where: { user: { email: otro.email } } }));
