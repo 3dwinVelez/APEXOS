@@ -1,3 +1,4 @@
+const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
 const { findUserForEmployee } = require("./employeeUserLink");
 const prisma = require("../../core/prisma");
 const { Prisma } = require("@prisma/client");
@@ -176,6 +177,13 @@ function monitorEvidencePayload(evidence = {}) {
   };
 }
 
+function monitorPunchEvidence(punch, summary = false) {
+  const items = punchPhotoItems({ ...punch, metadata: { ...punch.metadata, identity_photo: undefined } }).map(photo => summary
+    ? monitorEvidenceSummary(photo, { id: punch.id, source: "punch" })
+    : { ...monitorEvidencePayload(photo), id: punch.id, source: "punch" });
+  return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
+}
+
 async function getMonitorEvidence(tenantId, source, id) {
   const evidenceId = optionalNumericId(id);
   if (!evidenceId || !["activity", "punch", "identity"].includes(String(source))) {
@@ -192,13 +200,13 @@ async function getMonitorEvidence(tenantId, source, id) {
       evidence = mobileIdentity.identityEvidenceOf(punch);
     } else {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
-      evidence = punch?.extra_evidence || punch?.metadata?.extra_evidence || null;
+      evidence = punch ? monitorPunchEvidence(punch) : null;
     }
     const payload = monitorEvidencePayload(evidence || {});
     if (!payload.base64_data && !payload.file_url) {
       throw validationError("La evidencia solicitada no existe o no contiene un archivo disponible.", 404, "EVIDENCIA_MONITOR_NO_ENCONTRADA");
     }
-    return { ...payload, id: evidenceId, source };
+    return { ...payload, ...(evidence?.items ? { items: evidence.items } : {}), id: evidenceId, source };
   });
 }
 
@@ -222,8 +230,7 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
     const punchEvidence = {};
     const identityEvidence = {};
     for (const punch of punches) {
-      const source = punch.extra_evidence || punch.metadata?.extra_evidence || {};
-      punchEvidence[String(punch.id)] = { ...monitorEvidencePayload(source), id: punch.id, source: "punch" };
+      punchEvidence[String(punch.id)] = { ...monitorPunchEvidence(punch), id: punch.id, source: "punch" };
       const selfie = mobileIdentity.identityEvidenceOf(punch);
       if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidencePayload(selfie), id: punch.id, source: "identity" };
     }
@@ -871,11 +878,11 @@ async function listRouteEventSummaries(tenantId) {
       }),
       prisma.timePunch.findMany({
         where: { route_id: { in: routeIds } },
-        select: { route_id: true, extra_evidence: true }
+        select: { route_id: true, extra_evidence: true, metadata: true }
       }),
       prisma.timePunch.findMany({
         where: { route_id: null, OR: dateWindows.map((date) => ({ date })) },
-        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true },
+        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true, extra_evidence: true },
         orderBy: { punched_at: "desc" },
         take: 2000
       }),
@@ -3478,9 +3485,9 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
+          extra_evidence: monitorPunchEvidence(punch, true),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
-          metadata: mobileIdentity.publicPunchMetadata(punch.metadata || {})
+          metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         });
       }
       const assignedCount = assigned.length;
@@ -3520,9 +3527,9 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
+          extra_evidence: monitorPunchEvidence(punch, true),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
-          metadata: mobileIdentity.publicPunchMetadata(punch.metadata || {})
+          metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         })),
         activity_points: routeActivities.map((activity) => ({
           id: activity.id,
