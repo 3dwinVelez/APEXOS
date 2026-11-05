@@ -2,6 +2,8 @@ const tenancy = require("../../middleware/tenancy");
 const { requirePermission, requireAnyPermission, requirePhysicalDeleteGrant, hasPhysicalDeleteGrant, tenantHasModule } = require("../../middleware/rbac");
 const schemas = require("./schema");
 const service = require("./service");
+const prisma = require("../../core/prisma");
+const { listUserCandidates } = require("./employeeUserLink");
 
 function requestContext(request) {
   return {
@@ -38,6 +40,20 @@ async function requireHrModuleEnabled(request, reply) {
 async function hrRoutes(fastify) {
   fastify.addHook("preHandler", fastify.authenticate);
   fastify.addHook("preHandler", tenancy);
+
+  fastify.get("/talento-humano/usuarios-vinculables", {
+    preHandler: requirePermission("hr", "write"),
+    schema: { querystring: { type: "object", properties: {
+      q: { type: "string", maxLength: 120 }, document: { type: "string", maxLength: 80 },
+      document_type: { type: "string", maxLength: 20 }, employee_id: { type: "integer", minimum: 1 }
+    } } }
+  }, request => prisma.runWithTenant(request.user.tenant_id, () => listUserCandidates(prisma, request.user.tenant_id, request.query)));
+
+  fastify.get("/talento-humano/empleados/:id", { preHandler: requirePermission("hr", "read"), schema: { params: { type: "object", properties: { id: { type: "integer", minimum: 1 } }, required: ["id"] } } }, async (request, reply) => {
+    const employee = await prisma.runWithTenant(request.user.tenant_id, () => prisma.employee.findFirst({ where: { tenant_id: request.user.tenant_id, id: request.params.id, __includeInactive: true }, include: { user: { select: { id: true, name: true, email: true, active: true } } } }));
+    if (!employee) return reply.code(404).send({ error: "Empleado no encontrado.", code: "EMPLEADO_NO_ENCONTRADO" });
+    return employee;
+  });
 
   const ownRead = requireAnyPermission([
     { module: "time_tracking", action: "read" },

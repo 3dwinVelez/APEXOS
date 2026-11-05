@@ -7,6 +7,8 @@ const { execFileSync } = require('node:child_process');
 require('../load-env')(path.resolve('.env'));
 if (!['localhost', '127.0.0.1', '[::1]'].includes(new URL(process.env.DATABASE_URL).hostname)) throw Error('Solo base local');
 process.env.DISABLE_REDIS = 'true';
+process.env.REDIS_DISABLED = 'true';
+if (process.env.HR_ASSOCIATION_BROWSER === '1') process.env.ALLOWED_ORIGINS = 'http://127.0.0.1:3317';
 process.env.WORKERS_DISABLED = 'true';
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = randomUUID() + randomUUID();
@@ -123,6 +125,20 @@ async function check(name, fn) { await fn(); checks.push(name); console.log('PAS
       assert.equal(current.status, 200, JSON.stringify(current.body));
       assert.equal(current.body.id, auto.body.id);
       assert.equal(await db.employee.count({ where: { tenant_id: httpTenant.id } }), 2);
+      const selectable = await db.user.create({ data: { tenant_id: httpTenant.id, name: `Selector ${run.slice(0, 8)}`, email: `selector-${email}`, password: hash, role_id: readRole.id } });
+      const candidates = await call('GET', `/talento-humano/usuarios-vinculables?document=${payload.document}&document_type=CC`, null, token);
+      assert.equal(candidates.status, 200);
+      assert.equal(candidates.body.find(row => row.id === linked.body.id).employee_id, created.body.id);
+      assert.equal((await call('GET', '/talento-humano/usuarios-vinculables?q=Selector', null, readerLogin.body.token)).status, 403);
+      const foreignUser = await db.user.create({ data: { tenant_id: other.id, name: 'Foreign selector', email: `foreign-${email}`, password: hash } });
+      const rejected = await call('POST', '/talento-humano/empleados', { ...payload, document: '999123', user_id: foreignUser.id }, token);
+      assert.equal(rejected.status, 409);
+      assert.equal((await call('GET', `/talento-humano/empleados/${employee.id}`, null, token)).status, 404);
+      const occupied = await call('PATCH', `/talento-humano/empleados/${created.body.id}`, { user_id: selectable.id }, token);
+      assert.equal(occupied.status, 409);
+      if (process.env.HR_ASSOCIATION_BROWSER === '1') {
+        await require('./hr-employee-user-association-browser-local')({ origin, token, document: payload.document, selectable, check, db, tenantId: httpTenant.id });
+      }
     });
     result.status = 'passed';
     result.scope = 'real local HTTP, authentication, authorization, service and PostgreSQL persistence';
