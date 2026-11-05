@@ -1,0 +1,232 @@
+{
+  "change_id": "hr-punch-mobile-evidence-20261104",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "8e4f98c2e7862f74b1bdee51b281093e8fc839a3",
+  "commit": "4b479bdfd6195eeeab81f03f8a7013cd99f16129",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "evidence": [
+      "../certifications/hr-punch-mobile-evidence-20261104.md",
+      "hr-punch-mobile-evidence-20261104-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-mobile-identity-local.js",
+    "evidence": [
+      "../certifications/hr-punch-mobile-evidence-20261104.md",
+      "hr-punch-mobile-evidence-20261104-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Propietario: despliega a qa, mas autorizacion previa de esta misma rama auxiliar y fusion por PR",
+    "approved_at": "2026-11-05T03:17:01.137Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "4b479bdfd6195eeeab81f03f8a7013cd99f16129",
+    "target": "8e4f98c2e7862f74b1bdee51b281093e8fc839a3",
+    "original_desarrollo_commit": "303fdbb9016bafbc638bc86fb21470c035ffa4c8",
+    "unit_tests": {
+      "passed": 89,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "photos": {
+      "status": "passed",
+      "started_at": "2026-11-05T03:15:26.980Z",
+      "finished_at": "2026-11-05T03:16:09.087Z",
+      "checks": [
+        "summary exposes photo availability and counters without image bytes",
+        "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence",
+        "chronological team trace displays all mobile photos and opens lightbox"
+      ],
+      "unexpected_5xx": []
+    },
+    "biometric": {
+      "status": "passed",
+      "checks": [
+        {
+          "name": "la API real arranca contra el Postgres local",
+          "status": "passed"
+        },
+        {
+          "name": "un tecnico nuevo no tiene telefono registrado",
+          "status": "passed"
+        },
+        {
+          "name": "sin registro la app no puede marcar",
+          "status": "passed"
+        },
+        {
+          "name": "registra su telefono con la firma de la huella",
+          "status": "passed"
+        },
+        {
+          "name": "consulta su registro sin que viaje la llave",
+          "status": "passed"
+        },
+        {
+          "name": "no puede registrar otro telefono sin que lo restablezcan",
+          "status": "passed"
+        },
+        {
+          "name": "otro empleado no puede registrarse en un telefono ajeno",
+          "status": "passed"
+        },
+        {
+          "name": "la llave publica queda en la ficha del empleado",
+          "status": "passed"
+        },
+        {
+          "name": "desde otro telefono no puede marcar",
+          "status": "passed"
+        },
+        {
+          "name": "con otra llave haciendose pasar por su telefono no pasa",
+          "status": "passed"
+        },
+        {
+          "name": "cambiar la selfie despues de firmar invalida la marcacion",
+          "status": "passed"
+        },
+        {
+          "name": "sin selfie la app no puede marcar",
+          "status": "passed"
+        },
+        {
+          "name": "una version vieja de la app (sin firma) no puede marcar",
+          "status": "passed"
+        },
+        {
+          "name": "los intentos rechazados no dejaron marcaciones",
+          "status": "passed"
+        },
+        {
+          "name": "marca desde su telefono con huella y selfie",
+          "status": "passed"
+        },
+        {
+          "name": "la marcacion queda verificada con su telefono",
+          "status": "passed"
+        },
+        {
+          "name": "la selfie se guarda como data URL con su hash",
+          "status": "passed"
+        },
+        {
+          "name": "la firma cruda de la app no queda suelta en la metadata",
+          "status": "passed"
+        },
+        {
+          "name": "reenviar la misma marcacion (cola offline) no la duplica",
+          "status": "passed"
+        },
+        {
+          "name": "un telefono que quedo registrado para dos empleados no puede marcar",
+          "status": "passed"
+        },
+        {
+          "name": "la web sigue marcando y queda como no verificada",
+          "status": "passed"
+        },
+        {
+          "name": "el supervisor ve la selfie desde el monitor",
+          "status": "passed"
+        },
+        {
+          "name": "una marcacion sin selfie no inventa evidencia",
+          "status": "passed"
+        },
+        {
+          "name": "las selfies guardadas antes del despliegue tambien se ven en el monitor",
+          "status": "passed"
+        },
+        {
+          "name": "el segundo tecnico existe para las pruebas de restablecer",
+          "status": "passed"
+        },
+        {
+          "name": "un tecnico con hr:write no puede restablecer a un compañero",
+          "status": "passed"
+        },
+        {
+          "name": "nadie se restablece a si mismo",
+          "status": "passed"
+        },
+        {
+          "name": "el administrador restablece el registro",
+          "status": "passed"
+        },
+        {
+          "name": "el registro anterior queda en el historial sin la llave",
+          "status": "passed"
+        },
+        {
+          "name": "tras restablecer se registra en el telefono nuevo",
+          "status": "passed"
+        },
+        {
+          "name": "el telefono anterior ya no puede marcar",
+          "status": "passed"
+        },
+        {
+          "name": "el telefono nuevo marca verificado",
+          "status": "passed"
+        },
+        {
+          "name": "sin sesion la API responde 401",
+          "status": "passed"
+        }
+      ],
+      "total": 33
+    },
+    "environment": "Actual local PostgreSQL and browser; Android signature and Supabase provider simulated by the existing versioned identity certificate. No remote writes."
+  }
+}
