@@ -20,6 +20,8 @@ type Employee = {
   active?: boolean;
   metadata?: {
     name?: string;
+    // Telefono registrado para marcar con huella desde la app.
+    mobile_biometric?: { device_id?: string; device_model?: string | null; platform?: string | null; enrolled_at?: string | null };
     document?: string;
     document_type?: string;
     first_name?: string;
@@ -624,6 +626,7 @@ export default function EmployeesMasterPage() {
             </header>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {modalMessage ? <p className="mb-4 rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{modalMessage}</p> : null}
+              {selected && mode !== "create" ? <BiometricEnrollmentPanel employee={selected} onReset={(updated) => { setSelected(updated); setRows((current) => current.map((row) => String(row.id) === String(updated.id) ? updated : row)); }} /> : null}
               {mode === "create" && organizationLoading ? <p className="mb-4 rounded-md border border-line bg-paper p-3 text-sm text-neutral-600" role="status">Cargando maestro contable...</p> : null}
               {mode === "create" && organizationError ? <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="alert">{organizationError}</p> : null}
               <div className="grid gap-3 md:grid-cols-2">
@@ -809,6 +812,53 @@ export default function EmployeesMasterPage() {
           </section>
         </div>
       ), document.body) : null}
+    </div>
+  );
+}
+
+// Registro del telefono con el que el empleado marca usando su huella.
+//
+// Restablecer es lo que el supervisor hace cuando el empleado cambia de
+// telefono o cuando la app avisa que se inscribio una huella nueva en el suyo:
+// el siguiente ingreso a la app pide registrar la huella otra vez.
+function BiometricEnrollmentPanel({ employee, onReset }: { employee: Employee; onReset: (employee: Employee) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const enrollment = employee.metadata?.mobile_biometric;
+
+  async function reset() {
+    if (!window.confirm("El empleado tendra que registrar su huella otra vez en la app antes de volver a marcar. ¿Restablecer el registro?")) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      await api(`/api/v1/hr/employees/${encodeURIComponent(String(employee.id))}/biometric-enrollment`, { method: "DELETE", body: JSON.stringify({ reason: "Restablecido desde el maestro de empleados" }) });
+      const metadata = { ...(employee.metadata || {}) };
+      delete metadata.mobile_biometric;
+      onReset({ ...employee, metadata });
+      setMessage("Registro restablecido. El empleado debe registrar su huella en la app.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible restablecer el registro.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-paper p-3">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-neutral-800">Telefono para marcar con huella</p>
+        <p className="mt-0.5 text-xs text-neutral-600">
+          {enrollment
+            ? `Registrado${enrollment.device_model ? ` en ${enrollment.device_model}` : ""}${enrollment.enrolled_at ? ` el ${new Date(enrollment.enrolled_at).toLocaleDateString("es-CO")}` : ""}.`
+            : "Sin registro. El empleado lo registra la primera vez que marca desde la app."}
+        </p>
+        {message ? <p className="mt-1 text-xs text-neutral-700" role="status">{message}</p> : null}
+      </div>
+      {enrollment ? (
+        <button className="inline-flex h-9 items-center rounded-md border border-line bg-white px-3 text-sm font-semibold text-neutral-700 hover:border-apex hover:text-apex disabled:opacity-60" disabled={busy} onClick={reset} type="button">
+          {busy ? "Restableciendo..." : "Restablecer registro"}
+        </button>
+      ) : null}
     </div>
   );
 }

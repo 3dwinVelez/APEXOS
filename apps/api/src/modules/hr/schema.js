@@ -53,6 +53,21 @@ const punchSchema = {
   }
 };
 
+const biometricEnrollmentSchema = {
+  body: {
+    type: "object",
+    required: ["device_id", "public_key", "signed_at", "signature"],
+    properties: {
+      device_id: { type: "string", minLength: 8, maxLength: 128 },
+      public_key: { type: "string", minLength: 40, maxLength: 1024 },
+      signed_at: { type: "string", maxLength: 40 },
+      signature: { type: "string", minLength: 40, maxLength: 512 },
+      platform: { type: "string", maxLength: 40 },
+      device_model: { type: "string", maxLength: 120 }
+    }
+  }
+};
+
 const routeSchema = {
   body: {
     type: "object",
@@ -775,6 +790,7 @@ const preopSubmitSchema = {
 module.exports = {
   scheduleSchema,
   punchSchema,
+  biometricEnrollmentSchema,
   routeSchema,
   routeBulkSchema,
   routePrevalidateSchema,
