@@ -1096,6 +1096,7 @@ footer strong { color: var(--text); font-weight: 600; }
 /* Vistas por pregunta: el panel muestra una sola vista a la vez y cada seccion
    declara en data-views en cuales aparece. */
 .view-nav {
+  grid-column: span 12;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -1763,7 +1764,7 @@ footer strong { color: var(--text); font-weight: 600; }
   align-items: center;
   flex-wrap: wrap;
   gap: 10px 16px;
-  margin: -4px 0 0;
+  margin: 6px 0 0;
   padding: 10px 14px;
   border: 1px dashed var(--border);
   border-radius: var(--radius);
@@ -2300,7 +2301,7 @@ footer strong { color: var(--text); font-weight: 600; }
    pregunta, asi que se pinta encima del area y etiquetada en el propio grafico. */
 .latency-chart {
   width: 100%;
-  height: 180px;
+  height: 208px;
   margin-top: 10px;
   display: block;
 }
@@ -2309,9 +2310,69 @@ footer strong { color: var(--text); font-weight: 600; }
 .latency-chart .chart-line { fill: none; stroke: var(--accent); stroke-width: 1.6; }
 .latency-chart .chart-risk { stroke: var(--down); stroke-width: 1.2; stroke-dasharray: 5 4; }
 .latency-chart .chart-optimal { stroke: var(--ok); stroke-width: 1; stroke-dasharray: 2 4; opacity: 0.75; }
-.latency-chart .chart-label { fill: var(--muted); font-size: 9px; }
+.latency-chart .chart-label { fill: var(--muted); font-size: 9px; paint-order: stroke; stroke: #0a1120; stroke-width: 3px; stroke-linejoin: round; }
 .latency-chart .chart-label.risk { fill: var(--down); }
 .latency-chart .spark-over { fill: var(--down); stroke: rgba(255, 255, 255, 0.6); stroke-width: 0.6; }
+
+/* Puntos inspeccionables: un blanco por muestra, su cursor y sus horarios. */
+.latency-chart .chart-hit { fill: transparent; cursor: pointer; }
+.latency-chart .chart-hit:hover { fill: rgba(82, 200, 245, 0.1); }
+.latency-chart .chart-hit:focus-visible { outline: none; fill: rgba(82, 200, 245, 0.18); stroke: var(--accent); stroke-width: 1; }
+.latency-chart .chart-cursor { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.85; }
+.latency-chart .chart-cursor-dot { fill: var(--accent); stroke: #04101c; stroke-width: 1.2; }
+.latency-chart .chart-tick { fill: var(--muted); font-size: 9px; }
+
+.latency-explorer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.peaks,
+.point-detail {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(10, 17, 32, 0.6);
+}
+
+.peaks-title {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.peak-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+
+.peak-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(15, 24, 42, 0.7);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.peak-btn:hover { border-color: var(--accent); }
+.peak-btn.active { box-shadow: inset 0 0 0 1px var(--accent); background: rgba(82, 200, 245, 0.12); }
+.peak-btn .peak-time { color: var(--muted); }
+.peak-btn .peak-ms { font-weight: 700; margin-left: auto; }
+.peak-btn .band-pill { font-size: 10.5px; }
+
+.point-rows { margin: 8px 0 0; display: grid; gap: 4px; }
+.point-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
+.point-row dt { color: var(--muted); margin: 0; }
+.point-row dd { margin: 0; font-weight: 600; text-align: right; }
 
 /* Franja de veredicto: una linea, con su regla medida debajo. */
 .verdict-band { margin-bottom: 12px; }

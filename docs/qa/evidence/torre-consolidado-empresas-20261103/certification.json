@@ -3,9 +3,9 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-05T19:18:04.752Z",
-  "started_at": "2026-11-05T19:17:36.022Z",
-  "commit": "ba1fb1c13b79f2130310db480a82849b7de6cf96",
+  "generated_at": "2026-11-05T21:14:24.597Z",
+  "started_at": "2026-11-05T21:13:47.636Z",
+  "commit": "48bcf0cdefdc8a5fee6f0ea490ad7c1898c78098",
   "working_tree_dirty": true,
   "alcance": [
     "siete vistas-pregunta del panel (resumen, latencia, api, modulos, datos, nube, operacion) con sus medidores y umbrales publicados por el servidor",
@@ -40,14 +40,14 @@
       "name": "api_rica_sondeada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:60583"
+        "base": "http://127.0.0.1:58996"
       }
     },
     {
       "name": "api_legada_bloqueada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:60584"
+        "base": "http://127.0.0.1:58997"
       }
     },
     {
@@ -63,7 +63,7 @@
       "name": "torre_iniciada",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:60587"
+        "url": "http://127.0.0.1:59001"
       }
     },
     {
@@ -246,7 +246,7 @@
       "name": "snapshot_no_filtra_el_token_de_la_torre",
       "ok": true,
       "detail": {
-        "tamano": 157203
+        "tamano": 157253
       }
     },
     {
@@ -266,7 +266,7 @@
         "medidores": 10,
         "conUmbral": 7,
         "bandas": [
-          "Óptimo",
+          "En riesgo",
           "Óptimo",
           "Óptimo",
           "Informativo",
@@ -286,7 +286,7 @@
       "ok": true,
       "detail": {
         "bandas": [
-          "Óptimo",
+          "En riesgo",
           "Óptimo",
           "Óptimo",
           "Informativo",
@@ -318,8 +318,8 @@
       "ok": true,
       "detail": {
         "filas": 4,
-        "marcas": 8,
-        "meta": "2 sondeos · 5/11, 14:17:37 → 5/11, 14:17:43 · altura = frescura medida",
+        "marcas": 4,
+        "meta": "1 sondeos · 5/11, 16:13:50 → 5/11, 16:13:50 · altura = frescura medida",
         "api": true
       }
     },
@@ -327,7 +327,7 @@
       "name": "navegador_mapa_incluye_la_api",
       "ok": true,
       "detail": {
-        "meta": "2 sondeos · 5/11, 14:17:37 → 5/11, 14:17:43 · altura = frescura medida"
+        "meta": "1 sondeos · 5/11, 16:13:50 → 5/11, 16:13:50 · altura = frescura medida"
       }
     },
     {
@@ -370,10 +370,10 @@
         "teselas": [
           "Estado operativo 58/100 Crítico · 1/3 módulos operativos",
           "Carga de datos 1.720 1/3 módulos con datos · 1 caídos · 0 sin medir",
-          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 16 s",
+          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 19 s",
           "Memoria del API 214,6MB heap 88,4/121,2 MB",
           "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas",
-          "Rendimiento p95 154ms 2 h 2 min encendido"
+          "Rendimiento p95 358ms 2 h 2 min encendido"
         ]
       }
     },
@@ -389,7 +389,7 @@
       "name": "captura_monitor_consolidado",
       "ok": true,
       "detail": {
-        "bytes": 800557,
+        "bytes": 835341,
         "scroll": true
       }
     },
@@ -442,7 +442,7 @@
       "name": "captura_producto_bloqueado",
       "ok": true,
       "detail": {
-        "bytes": 538182
+        "bytes": 522314
       }
     },
     {
@@ -456,17 +456,57 @@
       "name": "navegador_veredicto_de_latencia_con_tope",
       "ok": true,
       "detail": {
-        "veredicto": "Dentro del tope · tope 400 ms 0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30",
+        "veredicto": "Dentro del tope · tope 400 ms 0/1 muestras sobre 400 ms · racha máxima 0 · ventana 30",
         "topeDibujado": true,
-        "regla": "0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30"
+        "regla": "0/1 muestras sobre 400 ms · racha máxima 0 · ventana 30"
       }
     },
     {
       "name": "navegador_veredicto_dice_si_es_para_atender",
       "ok": true,
       "detail": {
-        "veredicto": "Dentro del tope · tope 400 ms 0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30",
-        "regla": "0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30"
+        "veredicto": "Dentro del tope · tope 400 ms 0/1 muestras sobre 400 ms · racha máxima 0 · ventana 30",
+        "regla": "0/1 muestras sobre 400 ms · racha máxima 0 · ventana 30"
+      }
+    },
+    {
+      "name": "navegador_rejilla_vistas_horizontal",
+      "ok": true,
+      "detail": {
+        "anchoNav": 1472,
+        "anchoMain": 1520,
+        "altoNav": 43,
+        "leyendaUltima": true,
+        "huecoHastaLaPrimeraSeccion": 16
+      }
+    },
+    {
+      "name": "navegador_latencia_detalle_por_punto",
+      "ok": true,
+      "detail": {
+        "picos": {
+          "blancos": 2,
+          "horarios": [
+            "16:13",
+            "16:14"
+          ],
+          "titulos": [
+            "5/11, 16:13:48 · 358 ms · En riesgo",
+            "5/11, 16:14:00 · 252 ms · En riesgo"
+          ],
+          "lista": 2,
+          "muestras": "2 muestras · 5/11, 16:14:00"
+        },
+        "elegido": "2026-11-05T21:13:48.254Z",
+        "punto": {
+          "filas": 8,
+          "hora": "5/11, 16:13:48",
+          "medicion": "358 ms · En riesgo",
+          "anterior": "es la primera de la ventana",
+          "siguiente": "5/11, 16:14:00 · 252 ms",
+          "cursor": 1,
+          "activo": 1
+        }
       }
     },
     {
@@ -481,7 +521,7 @@
       "name": "captura_vista_latencia",
       "ok": true,
       "detail": {
-        "bytes": 550243
+        "bytes": 590084
       }
     },
     {
@@ -500,21 +540,21 @@
     }
   ],
   "summary": {
-    "passed": 51,
+    "passed": 53,
     "failed": 0,
-    "total": 51,
+    "total": 53,
     "screenshots": [
       {
         "file": "01-monitor-consolidado-empresa.png",
-        "bytes": 800557
+        "bytes": 835341
       },
       {
         "file": "02-producto-bloqueado-con-acciones.png",
-        "bytes": 538182
+        "bytes": 522314
       },
       {
         "file": "03-vista-latencia-consolidado.png",
-        "bytes": 550243
+        "bytes": 590084
       }
     ],
     "console_errors": []

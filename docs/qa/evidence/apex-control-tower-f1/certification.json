@@ -3,9 +3,9 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-05T19:17:20.157Z",
-  "started_at": "2026-11-05T19:15:36.287Z",
-  "commit": "ba1fb1c13b79f2130310db480a82849b7de6cf96",
+  "generated_at": "2026-11-05T21:27:29.717Z",
+  "started_at": "2026-11-05T21:26:24.341Z",
+  "commit": "48bcf0cdefdc8a5fee6f0ea490ad7c1898c78098",
   "working_tree_dirty": true,
   "environment": {
     "type": "local",
@@ -28,8 +28,8 @@
       "name": "tower_boot",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:56605",
-        "port": 56605
+        "url": "http://127.0.0.1:51382",
+        "port": 51382
       }
     },
     {
@@ -105,7 +105,7 @@
       "name": "local_componentes_reales",
       "ok": true,
       "detail": {
-        "db_ms": 65,
+        "db_ms": 17,
         "componentes": 9,
         "medidores": 10,
         "muestras_latencia": 1
@@ -137,7 +137,7 @@
       "name": "factory_create_n2",
       "ok": true,
       "detail": {
-        "id": "JOB-20261105-141542-d4fd"
+        "id": "JOB-20261105-162626-2af2"
       }
     },
     {
@@ -158,7 +158,7 @@
       "name": "bridge_claim_envelope",
       "ok": true,
       "detail": {
-        "job": "JOB-20261105-141542-d4fd",
+        "job": "JOB-20261105-162626-2af2",
         "scope": {
           "branch": "desarrollo",
           "allowCodeChanges": true,
@@ -182,7 +182,7 @@
       "name": "telegram_pairing_code",
       "ok": true,
       "detail": {
-        "expiresAt": "2026-11-05T19:25:43.057Z"
+        "expiresAt": "2026-11-05T21:36:26.857Z"
       }
     },
     {
@@ -285,7 +285,7 @@
       "name": "browser_dashboard_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 882059
+        "bytes": 870147
       }
     },
     {
@@ -304,12 +304,12 @@
           "óptimo 240 ms",
           "tope 400 ms"
         ],
-        "aria": "Latencia de la sonda con su tope de 400 ms dibujado",
+        "aria": "Latencia de la sonda con su tope de 400 ms dibujado; cada muestra es un punto inspeccionable",
         "veredicto": "Fuera del tope: atender · tope 400 ms",
         "regla": "1/2 muestras sobre 400 ms · racha máxima 1 · ventana 30",
         "medidor": "óptimo ≤ 240 ms · en riesgo ≤ 400 ms",
         "estadisticas": 17,
-        "checks": 9,
+        "checks": 13,
         "secciones": 2
       }
     },
@@ -340,7 +340,7 @@
       "name": "browser_latencia_muestra_las_sondas",
       "ok": true,
       "detail": {
-        "checks": 9,
+        "checks": 13,
         "secciones": 2
       }
     },
@@ -359,14 +359,55 @@
       "ok": true,
       "detail": {
         "stats": 17,
-        "rss": "\n          Memoria RSS\n          232,5 MB\n        "
+        "rss": "\n          Memoria RSS\n          245,9 MB\n        "
+      }
+    },
+    {
+      "name": "browser_rejilla_vistas_horizontal",
+      "ok": true,
+      "detail": {
+        "anchoNav": 1472,
+        "anchoMain": 1520,
+        "altoNav": 43,
+        "leyendaUltima": true,
+        "seccionesVisibles": 2
+      }
+    },
+    {
+      "name": "browser_latencia_detalle_por_punto",
+      "ok": true,
+      "detail": {
+        "explorador": {
+          "blancos": 2,
+          "horarios": [
+            "16:26",
+            "16:26"
+          ],
+          "picos": 1,
+          "hora": "2026-11-05T21:26:30.581Z"
+        },
+        "detalle": {
+          "filas": 8,
+          "hora": "5/11, 16:26:30",
+          "medicion": "1.066 ms · Crítico",
+          "anterior": "5/11, 16:26:24 · 89 ms",
+          "cursor": 1,
+          "activo": 1
+        }
+      }
+    },
+    {
+      "name": "browser_latencia_punto_capturado",
+      "ok": true,
+      "detail": {
+        "bytes": 560149
       }
     },
     {
       "name": "browser_vista_latencia_capturada",
       "ok": true,
       "detail": {
-        "bytes": 487887
+        "bytes": 537744
       }
     },
     {
@@ -374,10 +415,10 @@
       "ok": true,
       "detail": {
         "componentes": 9,
-        "metas": "9 componentes · 5 con latencia medida · 0 requieren atención",
-        "base": "PostgreSQL database · critical 100 ms 100/100 Óptimo [object Object]",
+        "metas": "9 componentes · 5 con latencia medida · 1 requieren atención",
+        "base": "PostgreSQL database · critical 714 ms 100/100 Crítico [object Object]",
         "teselas": 11,
-        "tecnicos": 46
+        "tecnicos": 45
       }
     },
     {
@@ -391,14 +432,14 @@
       "name": "browser_technical_details",
       "ok": true,
       "detail": {
-        "details": 46
+        "details": 45
       }
     },
     {
       "name": "browser_vista_api_capturada",
       "ok": true,
       "detail": {
-        "bytes": 657007
+        "bytes": 651808
       }
     },
     {
@@ -406,8 +447,8 @@
       "ok": true,
       "detail": {
         "filas": 33,
-        "marcas": 99,
-        "leyenda": "3 sondeos · 5/11, 14:15:41 → 5/11, 14:16:04 · altura = frescura medida",
+        "marcas": 66,
+        "leyenda": "2 sondeos · 5/11, 16:26:26 → 5/11, 16:26:37 · altura = frescura medida",
         "detalle": 0
       }
     },
@@ -415,14 +456,14 @@
       "name": "browser_vista_modulos_capturada",
       "ok": true,
       "detail": {
-        "bytes": 715485
+        "bytes": 731200
       }
     },
     {
       "name": "browser_datos_veredicto_de_base",
       "ok": true,
       "detail": {
-        "veredicto": "La base responde en 100 ms (medido por el propio API). Óptimo · óptimo ≤ 100 ms · en riesgo ≤ 300 ms.",
+        "veredicto": "La base responde en 714 ms (medido por el propio API). Crítico · óptimo ≤ 100 ms · en riesgo ≤ 300 ms.",
         "regla": "Ningún módulo publicó conteo de registros.",
         "teselas": 6,
         "columnas": 0,
@@ -444,7 +485,7 @@
       "name": "browser_vista_datos_capturada",
       "ok": true,
       "detail": {
-        "bytes": 523508
+        "bytes": 515164
       }
     },
     {
@@ -478,7 +519,7 @@
       "name": "browser_environment_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 338076
+        "bytes": 327909
       }
     },
     {
@@ -486,8 +527,8 @@
       "ok": true,
       "detail": {
         "fuente": "api",
-        "db_ms": 116,
-        "registros": 64541,
+        "db_ms": 288,
+        "registros": 78061,
         "cobertura_empresial": 0.5,
         "medidores": 10,
         "muestras_latencia": 1
@@ -508,7 +549,7 @@
         "columnas": 6,
         "filas": 25,
         "conteo": "25 módulos con conteo · 32 módulos leídos",
-        "veredicto": "La base responde en 116 ms (medido por el propio API). En riesgo · óptimo ≤ 100 ms · en riesgo ≤ 300 ms.",
+        "veredicto": "La base responde en 288 ms (medido por el propio API). En riesgo · óptimo ≤ 100 ms · en riesgo ≤ 300 ms.",
         "teselas": 6
       }
     },
@@ -516,7 +557,7 @@
       "name": "browser_vista_datos_reales_capturada",
       "ok": true,
       "detail": {
-        "bytes": 323799
+        "bytes": 334068
       }
     },
     {
@@ -524,16 +565,16 @@
       "ok": true,
       "detail": {
         "filas": 33,
-        "marcas": 66,
-        "conRegistros": 50,
-        "leyenda": "2 sondeos · 5/11, 14:16:26 → 5/11, 14:16:51 · altura = frescura medida"
+        "marcas": 33,
+        "conRegistros": 25,
+        "leyenda": "1 sondeos · 5/11, 16:26:53 → 5/11, 16:26:53 · altura = frescura medida"
       }
     },
     {
       "name": "browser_vista_modulos_reales_capturada",
       "ok": true,
       "detail": {
-        "bytes": 233980
+        "bytes": 276080
       }
     },
     {
@@ -576,14 +617,14 @@
       "ok": true,
       "detail": {
         "overall": "LOCAL Caído",
-        "alerts": 2
+        "alerts": 1
       }
     },
     {
       "name": "browser_degraded_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 959812
+        "bytes": 947610
       }
     },
     {
@@ -619,50 +660,54 @@
       "name": "telegram_evidence",
       "ok": true,
       "detail": {
-        "messages": 11
+        "messages": 7
       }
     }
   ],
   "summary": {
-    "passed": 63,
+    "passed": 66,
     "failed": 0,
-    "total": 63,
+    "total": 66,
     "screenshots": [
       {
         "file": "tower-overview.png",
-        "bytes": 882059
+        "bytes": 870147
+      },
+      {
+        "file": "tower-latencia-punto.png",
+        "bytes": 560149
       },
       {
         "file": "tower-vista-latencia.png",
-        "bytes": 487887
+        "bytes": 537744
       },
       {
         "file": "tower-vista-api.png",
-        "bytes": 657007
+        "bytes": 651808
       },
       {
         "file": "tower-vista-modulos.png",
-        "bytes": 715485
+        "bytes": 731200
       },
       {
         "file": "tower-vista-datos.png",
-        "bytes": 523508
+        "bytes": 515164
       },
       {
         "file": "tower-env-main.png",
-        "bytes": 338076
+        "bytes": 327909
       },
       {
         "file": "tower-datos-reales.png",
-        "bytes": 323799
+        "bytes": 334068
       },
       {
         "file": "tower-modulos-reales.png",
-        "bytes": 233980
+        "bytes": 276080
       },
       {
         "file": "tower-api-down.png",
-        "bytes": 959812
+        "bytes": 947610
       }
     ],
     "console_errors": []
@@ -671,6 +716,7 @@
     "certification.json",
     "telegram-outbox.json",
     "tower-overview.png",
+    "tower-latencia-punto.png",
     "tower-vista-latencia.png",
     "tower-vista-api.png",
     "tower-vista-modulos.png",

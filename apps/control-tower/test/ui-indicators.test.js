@@ -294,8 +294,51 @@ test("la latencia dibuja el tope y la zona optima sobre la serie medida", async 
   assert.match(html, /<line class="chart-optimal"/);
   assert.match(html, /tope 400 ms/);
   assert.match(html, /óptimo 240 ms/);
-  assert.match(html, /aria-label="Latencia de la sonda con su tope de 400 ms dibujado"/);
+  assert.match(html, /aria-label="Latencia de la sonda con su tope de 400 ms dibujado; cada muestra es un punto inspeccionable"/);
   assert.equal(html.split("spark-over").length - 1, 0, "ninguna muestra supera el tope");
+  // Cada muestra medida recibe su propio blanco clicable con la hora dentro del
+  // area accesible: sin esto el grafico es una figura y no una respuesta.
+  assert.equal(html.split('class="chart-hit"').length - 1, 2, "un blanco por cada muestra de la serie");
+  assert.match(html, /<title>\d+\/\d+, \d{2}:\d{2}:\d{2} · 120 ms · Óptimo<\/title>/);
+  assert.equal(html.split('class="chart-tick"').length - 1, 2, "eje con horarios, no con indices");
+});
+
+test("la serie medida se explora por picos y el punto elegido todavia no esta seleccionado", async () => {
+  const { byId } = await mountedPanel(snapshotWithIndicators());
+  const html = byId("performance").innerHTML;
+  assert.match(html, /<div class="latency-explorer">/);
+  assert.match(html, /Picos y horarios medidos/);
+  assert.match(html, /ninguna muestra sobre el tope de 400 ms · los 2 tiempos mas altos/);
+  assert.equal(html.split("data-chart-point-at=").length - 1, 4, "los blancos del grafico y la lista apuntan a la misma muestra");
+  assert.match(html, /<div class="point-detail"><p class="empty">Elija un punto del grafico o un pico de la lista/);
+});
+
+test("el pico sobre el tope se nombra con su hora y su medicion, no con su posicion", async () => {
+  const snapshot = snapshotWithIndicators();
+  const env = snapshot.snapshot.environments.local;
+  env.performance.series = [
+    { at: "2026-11-05T09:55:00.000Z", ms: 120, ok: true },
+    { at: "2026-11-05T09:56:00.000Z", ms: 130, ok: true },
+    { at: "2026-11-05T09:57:00.000Z", ms: 900, ok: true },
+    { at: "2026-11-05T09:58:00.000Z", ms: 140, ok: false },
+    { at: "2026-11-05T09:59:00.000Z", ms: 125, ok: true },
+    { at: "2026-11-05T10:00:00.000Z", ms: 135, ok: true }
+  ];
+  publishIndicators(snapshot);
+  const html = (await mountedPanel(snapshot)).byId("performance").innerHTML;
+  assert.match(html, /1 de 6 muestras sobre el tope de 400 ms/);
+  assert.match(html, /<span class="peak-time">\d+\/\d+, \d{2}:\d{2}:\d{2}<\/span>/);
+  assert.match(html, /<span class="peak-ms">900 ms<\/span>/);
+  assert.match(html, /<title>\d+\/\d+, \d{2}:\d{2}:\d{2} · 140 ms · Óptimo · sonda fallida<\/title>/);
+});
+
+test("la barra de vistas abre la fila y la leyenda cierra el panel", () => {
+  const html = fs.readFileSync(HTML_PATH, "utf8");
+  const styles = fs.readFileSync(path.join(__dirname, "..", "public", "styles.css"), "utf8");
+  const lastSection = html.lastIndexOf("<section");
+  const legend = html.indexOf('id="statusLegend"');
+  assert.ok(legend > lastSection, "la leyenda de estados va despues de las secciones, no entre la navegacion y la respuesta");
+  assert.match(styles, /\.view-nav\s*\{[^}]*grid-column:\s*span 12/, "el navegador de vistas ocupa toda la fila");
 });
 
 test("un pico aislado se reporta como evento, no como falla que atender", async () => {
@@ -317,6 +360,29 @@ test("un pico aislado se reporta como evento, no como falla que atender", async 
   assert.match(html, /<p class="verdict-text">Picos por evento: vigilar · tope 400 ms<\/p>/);
   assert.match(html, /<p class="verdict-rule">1\/6 muestras sobre 400 ms · racha máxima 1 · ventana 30<\/p>/);
   assert.match(byId("performance").innerHTML, /class="spark-over"/);
+});
+
+test("las etiquetas del tope y del optimo no se montan entre si cuando el techo es alto", async () => {
+  const snapshot = snapshotWithIndicators();
+  const env = snapshot.snapshot.environments.local;
+  // Techo 2.656 ms contra un tope de 400: es la corrida real del puesto. Con las
+  // dos etiquetas ancladas a la derecha y a 3 px sobre su linea, "tope 400 ms" y
+  // "óptimo 240 ms" caian encima una de otra.
+  env.performance.series = [
+    { at: "2026-11-05T09:55:00.000Z", ms: 83, ok: true },
+    { at: "2026-11-05T09:56:00.000Z", ms: 2656, ok: false },
+    { at: "2026-11-05T09:57:00.000Z", ms: 791, ok: true },
+    { at: "2026-11-05T09:58:00.000Z", ms: 966, ok: true }
+  ];
+  publishIndicators(snapshot);
+  const { byId } = await mountedPanel(snapshot);
+  const html = byId("performance").innerHTML;
+  const etiquetas = [...html.matchAll(/<text class="chart-label[^"]*" x="([\d.]+)" y="([\d.]+)" text-anchor="(\w+)">([^<]+)<\/text>/g)]
+    .map(([, x, y, anchor, texto]) => ({ x: Number(x), y: Number(y), anchor, texto }));
+  assert.equal(etiquetas.length, 2, "tope y optimo etiquetados sobre el propio corte");
+  assert.ok(etiquetas.every((n) => n.anchor === "start" && n.x < 40), "las etiquetas abren por la izquierda, donde el eje no las tapa");
+  assert.ok(Math.abs(etiquetas[0].y - etiquetas[1].y) >= 12, "los dos textos guardan su altura tipografica");
+  assert.ok(etiquetas.every((n) => n.y >= 9 && n.y <= 182), "ninguna etiqueta sale del area dibujada");
 });
 
 test("sin muestras suficientes la torre admite que no puede firmar un veredicto", async () => {

@@ -121,6 +121,7 @@ const state = {
   moduleFilter: localStorage.getItem("towerModuleFilter") || "all",
   healthBand: null,
   company: null,
+  chartPointAt: null,
   view: localStorage.getItem("towerView") || "resumen",
   source: null,
   loading: false,
@@ -243,7 +244,9 @@ function sparkline(series) {
 // de riesgo, aunque ninguna muestra lo alcance: si el techo del grafico fuera el
 // maximo medido, una serie pegada al limite pareceria plana y el ojo perderia la
 // unica referencia que responde a "Estamos dentro o fuera del tope?".
-function latencyChart(series, entry) {
+// Cada muestra recibe ademas un blanco clicable con su hora, porque el dueno no
+// pregunta solo "cuanto tardo" sino "a que hora paso y fue pico o sostenido".
+function latencyChart(series, entry, selectedIndex) {
   const points = Array.isArray(series) ? series : [];
   if (!entry || !entry.limits || points.length < 2) {
     return sparkline(points);
@@ -252,15 +255,17 @@ function latencyChart(series, entry) {
   const risk = Number(entry.limits.risk);
   if (!Number.isFinite(risk) || risk <= 0) return sparkline(points);
   const width = 620;
-  const height = 180;
+  const height = 208;
   const pad = 10;
+  const axis = 26;
+  const plotBottom = height - axis;
   const values = points.map((sample) => Math.max(0, Number(sample.ms) || 0));
   const ceiling = Math.max(risk * 1.25, ...values);
   const step = (width - pad * 2) / (values.length - 1);
-  const y = (value) => height - pad - (Math.min(value, ceiling) / ceiling) * (height - pad * 2);
+  const y = (value) => plotBottom - (Math.min(value, ceiling) / ceiling) * (plotBottom - pad);
   const coords = values.map((value, index) => ({ x: pad + index * step, y: y(value), value }));
   const line = coords.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-  const area = `${pad},${height - pad} ${line} ${width - pad},${height - pad}`;
+  const area = `${pad},${plotBottom} ${line} ${width - pad},${plotBottom}`;
   const riskY = y(risk).toFixed(1);
   const optimalY = Number.isFinite(optimal) ? y(optimal).toFixed(1) : null;
   const over = coords
@@ -271,15 +276,140 @@ function latencyChart(series, entry) {
       return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3.4" class="${beyond ? "spark-over" : "spark-fail"}" />`;
     })
     .join("");
+  const hits = coords
+    .map((point, index) => {
+      const sample = points[index];
+      const band = sampleBand(point.value, optimal, risk);
+      const left = index === 0 ? pad : point.x - step / 2;
+      const bandWidth = index === 0 || index === coords.length - 1 ? step / 2 + step / 2 : step;
+      return `<rect class="chart-hit" x="${left.toFixed(1)}" y="${pad}" width="${bandWidth.toFixed(1)}" height="${(plotBottom - pad).toFixed(1)}" data-chart-point-at="${escapeHtml(sample.at || "")}" tabindex="0" role="button" aria-label="${escapeHtml(`${formatTime(sample.at)} · ${formatNumber(point.value)} ms · ${BAND_LABEL[band]}`)}"><title>${escapeHtml(`${formatTime(sample.at)} · ${formatNumber(point.value)} ms · ${BAND_LABEL[band]}${sample.ok === false ? " · sonda fallida" : ""}`)}</title></rect>`;
+    })
+    .join("");
+  const selected = Number.isInteger(selectedIndex) && coords[selectedIndex]
+    ? `<line class="chart-cursor" x1="${coords[selectedIndex].x.toFixed(1)}" y1="${pad}" x2="${coords[selectedIndex].x.toFixed(1)}" y2="${plotBottom}" /><circle class="chart-cursor-dot" cx="${coords[selectedIndex].x.toFixed(1)}" cy="${coords[selectedIndex].y.toFixed(1)}" r="4.6" />`
+    : "";
+  const ticks = axisTicks(points, coords, pad, width, plotBottom);
+  // Los dos cortes van a la izquierda y separados por su propia linea: "tope"
+  // arriba y "óptimo" abajo. Anclados a la derecha y a 3 px sobre la linea, con
+  // un techo de 2.6 s los textos de 240 y 400 ms caian encima uno del otro.
+  const riskLabelY = Math.max(pad + 9, Number(riskY) - 4).toFixed(1);
+  const optimalLabelY = optimalY ? Math.min(Number(optimalY) + 11, plotBottom - 3).toFixed(1) : null;
   return `
-    <svg class="latency-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Latencia de la sonda con su tope de ${formatNumber(risk)} ms dibujado">
-      ${optimalY ? `<line class="chart-optimal" x1="${pad}" y1="${optimalY}" x2="${width - pad}" y2="${optimalY}" /><text class="chart-label" x="${width - pad - 2}" y="${Number(optimalY) - 3}" text-anchor="end">óptimo ${formatNumber(optimal)} ms</text>` : ""}
+    <svg class="latency-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Latencia de la sonda con su tope de ${formatNumber(risk)} ms dibujado; cada muestra es un punto inspeccionable">
+      ${optimalY ? `<line class="chart-optimal" x1="${pad}" y1="${optimalY}" x2="${width - pad}" y2="${optimalY}" /><text class="chart-label" x="${pad + 2}" y="${optimalLabelY}" text-anchor="start">óptimo ${formatNumber(optimal)} ms</text>` : ""}
       <line class="chart-risk" x1="${pad}" y1="${riskY}" x2="${width - pad}" y2="${riskY}" />
-      <text class="chart-label risk" x="${width - pad - 2}" y="${Number(riskY) - 3}" text-anchor="end">tope ${formatNumber(risk)} ms</text>
+      <text class="chart-label risk" x="${pad + 2}" y="${riskLabelY}" text-anchor="start">tope ${formatNumber(risk)} ms</text>
       <polygon class="spark-area" points="${area}" />
       <polyline class="chart-line" points="${line}" />
       ${over}
+      ${selected}
+      ${hits}
+      ${ticks}
     </svg>`;
+}
+
+// Banda de una muestra contra los topes publicados por el servidor. El panel no
+// inventa el corte: usa el mismo optimal/risk del medidor p95 del ambiente.
+function sampleBand(value, optimal, risk) {
+  if (!Number.isFinite(value)) return "unknown";
+  if (Number.isFinite(optimal) && value <= optimal) return "optimal";
+  if (value <= risk) return "risk";
+  return "critical";
+}
+
+// Cuatro horarios sobre el eje: el primero, el ultimo y dos intermedios. Se
+// marcan sobre la propia muestra medida, no sobre un tiempo teorico.
+function axisTicks(points, coords, pad, width, plotBottom) {
+  if (points.length < 2) return "";
+  const indexes = [0, Math.round((points.length - 1) / 3), Math.round(((points.length - 1) * 2) / 3), points.length - 1];
+  const seen = new Set();
+  return indexes
+    .filter((index) => !seen.has(index) && seen.add(index))
+    .map((index) => {
+      const anchor = index === 0 ? "start" : index === points.length - 1 ? "end" : "middle";
+      return `<text class="chart-tick" x="${coords[index].x.toFixed(1)}" y="${plotBottom + 14}" text-anchor="${anchor}">${escapeHtml(formatClock(points[index].at))}</text>`;
+    })
+    .join("");
+}
+
+function formatClock(iso) {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleTimeString("es-CO", { hour12: false, hour: "2-digit", minute: "2-digit" });
+}
+
+// Explorador de la serie medida: primero los picos con su hora y despues el
+// detalle del punto que el dueño elija. La seleccion se guarda por marca de
+// tiempo, no por indice, porque la ventana de muestras corre con cada sondeo y
+// un indice envejecido senalaria una muestra distinta sin avisar.
+function latencyExplorer(performance, entry, selectedAt) {
+  const points = Array.isArray(performance.series) ? performance.series : [];
+  if (points.length < 2 || !entry || !entry.limits) return "";
+  const risk = Number(entry.limits.risk);
+  const optimal = Number(entry.limits.optimal);
+  if (!Number.isFinite(risk) || risk <= 0) return "";
+  const ranked = points
+    .map((sample, index) => ({ sample, index, ms: Math.max(0, Number(sample.ms) || 0) }))
+    .sort((left, right) => right.ms - left.ms);
+  const over = ranked.filter((item) => item.ms > risk);
+  const listed = (over.length ? over : ranked).slice(0, 5);
+  const title = over.length
+    ? `${over.length} de ${points.length} muestras sobre el tope de ${formatNumber(risk)} ms`
+    : `ninguna muestra sobre el tope de ${formatNumber(risk)} ms · los ${listed.length} tiempos mas altos`;
+  const selected = points.findIndex((sample) => sample && sample.at === selectedAt);
+  return `
+    <div class="latency-explorer">
+      <div class="peaks">
+        <p class="peaks-title">Picos y horarios medidos</p>
+        <p class="muted small">${escapeHtml(title)}</p>
+        <ul class="peak-list">
+          ${listed.map((item) => `
+            <li>
+              <button class="peak-btn ${item.sample.at === selectedAt ? "active" : ""}" type="button" data-chart-point-at="${escapeHtml(item.sample.at || "")}">
+                <span class="peak-time">${escapeHtml(formatTime(item.sample.at))}</span>
+                <span class="peak-ms">${escapeHtml(formatNumber(item.ms))} ms</span>
+                <span class="band-pill ${BAND_TONE[sampleBand(item.ms, optimal, risk)]}">${escapeHtml(BAND_LABEL[sampleBand(item.ms, optimal, risk)])}</span>
+                ${item.sample.ok === false ? '<span class="band-pill down">sonda fallida</span>' : ""}
+              </button>
+            </li>`).join("")}
+        </ul>
+      </div>
+      ${pointDetail(points, selected, selectedAt, { optimal, risk, performance })}
+    </div>`;
+}
+
+function pointDetail(points, index, selectedAt, context) {
+  if (!selectedAt) {
+    return '<div class="point-detail"><p class="empty">Elija un punto del grafico o un pico de la lista para ver su hora, su medicion y si fue un pico aislado.</p></div>';
+  }
+  if (index < 0) {
+    return `<div class="point-detail"><p class="empty">La muestra de las ${escapeHtml(formatClock(selectedAt))} ya salio de la ventana medida (${points.length} muestras mas recientes).</p></div>`;
+  }
+  const sample = points[index];
+  const ms = Math.max(0, Number(sample.ms) || 0);
+  const band = sampleBand(ms, context.optimal, context.risk);
+  const avg = measuredNumber(context.performance.avg);
+  const p95 = measuredNumber(context.performance.p95);
+  const previous = points[index - 1];
+  const next = points[index + 1];
+  const rows = [
+    { label: "Hora de la muestra", value: formatTime(sample.at) },
+    { label: "Medicion", value: `${formatNumber(ms)} ms · ${BAND_LABEL[band]}` },
+    { label: "Sonda", value: sample.ok === false ? "falló" : "respondió" },
+    { label: "Posicion", value: `muestra ${index + 1} de ${points.length}` },
+    { label: "Contra el promedio", value: avg == null ? "sin promedio" : `${ms > avg ? "+" : ""}${formatNumber(Math.round((ms - avg) * 10) / 10)} ms (${avg ? formatNumber(Math.round((ms / avg) * 10) / 10) : "—"} x)` },
+    { label: "Contra el p95", value: p95 == null ? "sin p95" : `${ms > p95 ? "por encima" : "por debajo"} (${formatNumber(p95)} ms)` },
+    { label: "Muestra anterior", value: previous ? `${formatTime(previous.at)} · ${formatNumber(Math.max(0, Number(previous.ms) || 0))} ms` : "es la primera de la ventana" },
+    { label: "Muestra siguiente", value: next ? `${formatTime(next.at)} · ${formatNumber(Math.max(0, Number(next.ms) || 0))} ms` : "es la ultima de la ventana" }
+  ];
+  return `
+    <div class="point-detail">
+      <p class="peaks-title">Detalle del punto</p>
+      <dl class="point-rows">
+        ${rows.map((row) => `<div class="point-row"><dt>${escapeHtml(row.label)}</dt><dd>${escapeHtml(row.value)}</dd></div>`).join("")}
+      </dl>
+    </div>`;
 }
 
 const CLOUD_PROVIDERS = [
@@ -2040,7 +2170,8 @@ function renderPerformance(environment) {
         <span class="band-pill ${failureTone}" title="Porcentaje de sondas /health de la torre que fallaron, no de peticiones de usuarios">sondas · ${escapeHtml(errorEntry ? BAND_LABEL[errorEntry.band] : "Sin dato")}</span>
       </div>
     </div>
-    ${latencyChart(performance.series, p95Entry)}
+    ${latencyChart(performance.series, p95Entry, (performance.series || []).findIndex((sample) => sample && sample.at === state.chartPointAt))}
+    ${latencyExplorer(performance, p95Entry, state.chartPointAt)}
     <p class="perf-note-inline">${escapeHtml(p95Entry && p95Entry.source ? p95Entry.source : "")} · «sondas» mide los sondeos que la torre hace a /health y fallaron; «4xx/5xx» de abajo mide las peticiones reales de los usuarios. No son la misma señal.</p>
     <div class="perf-grid">
       ${stats.map((stat) => `
@@ -2505,9 +2636,20 @@ document.addEventListener("click", (event) => {
       state.environment = id;
       localStorage.setItem("towerEnvironment", id);
       // La empresa seleccionada pertenece al ambiente anterior: cambiar de rama
-      // deselecciona en vez de consultarla contra otro ambiente.
+      // deselecciona en vez de consultarla contra otro ambiente. Lo mismo con el
+      // punto elegido en la serie, cuyas marcas de tiempo son de otro ambiente.
       state.company = null;
+      state.chartPointAt = null;
       render();
+    }
+    return;
+  }
+  const pointButton = event.target.closest("[data-chart-point-at]");
+  if (pointButton) {
+    const at = pointButton.dataset.chartPointAt;
+    if (at) {
+      state.chartPointAt = state.chartPointAt === at ? null : at;
+      renderPerformance(activeEnvironment());
     }
     return;
   }
@@ -2552,6 +2694,16 @@ document.addEventListener("click", (event) => {
       scheduleLoad(100);
     });
   }
+});
+
+// Un rect de SVG con tabindex no dispara click con Enter ni con espacio; el
+// teclado tiene que poder inspeccionar la serie igual que el raton.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const target = event.target && event.target.closest ? event.target.closest("[data-chart-point-at]") : null;
+  if (!target || target.tagName.toLowerCase() === "button") return;
+  event.preventDefault();
+  target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 });
 
 document.getElementById("btnModuleFilter").addEventListener("click", () => {

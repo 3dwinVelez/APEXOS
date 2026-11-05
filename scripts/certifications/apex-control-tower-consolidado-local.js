@@ -794,6 +794,65 @@ async function run() {
         veredicto: umbralLatencia.veredicto, regla: umbralLatencia.regla.replace(/\s+/g, " ").slice(0, 120)
       });
 
+      // Dos garantias visuales que el unit test no puede dar: que la barra de
+      // vistas ocupe toda la fila (si cae a una columna de 1/12 el panel vuelve a
+      // verse "regado") y que el grafico devuelva el detalle del punto senalado.
+      const cuadricula = await chrome.cdp.evaluate(`(() => {
+        const main = document.querySelector('main');
+        const nav = document.getElementById('viewNav');
+        const leyenda = document.getElementById('statusLegend');
+        const visibles = Array.from(main.children).filter((n) => !n.hidden && n.offsetParent !== null);
+        const primera = visibles.find((n) => n.tagName === 'SECTION');
+        return {
+          anchoNav: Math.round(nav.getBoundingClientRect().width),
+          anchoMain: Math.round(main.getBoundingClientRect().width),
+          altoNav: Math.round(nav.getBoundingClientRect().height),
+          leyendaUltima: visibles[visibles.length - 1] === leyenda,
+          huecoHastaLaPrimeraSeccion: Math.round(primera.getBoundingClientRect().top - nav.getBoundingClientRect().bottom)
+        };
+      })()`);
+      assert("navegador_rejilla_vistas_horizontal", cuadricula.anchoNav > cuadricula.anchoMain * 0.6
+        && cuadricula.altoNav < 90 && cuadricula.leyendaUltima === true
+        && cuadricula.huecoHastaLaPrimeraSeccion < 40, cuadricula);
+
+      // La serie del grafico se llena sondeo a sondeo (4 s): leida de una sola vez
+      // esta certificacion pasa o falla segun cuando arranque el navegador. Se
+      // espera a que el grafico este dibujado, no a que haya pasado un tiempo.
+      const picos = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const leido = {
+          blancos: document.querySelectorAll('.latency-chart .chart-hit').length,
+          horarios: Array.from(document.querySelectorAll('.latency-chart .chart-tick')).map((t) => t.textContent),
+          titulos: Array.from(document.querySelectorAll('.latency-chart .chart-hit title')).slice(0, 2).map((t) => t.textContent),
+          lista: document.querySelectorAll('.peak-btn').length,
+          muestras: document.getElementById('perfMeta').textContent.trim()
+        };
+        return leido.blancos >= 2 && leido.lista >= 1 ? leido : null;
+      })()`).catch(() => null), 30000);
+      const elegido = await chrome.cdp.evaluate(`(() => { const b = document.querySelector('.peak-btn'); if (b) b.click(); return b ? b.dataset.chartPointAt : null; })()`);
+      await sleep(400);
+      const punto = await chrome.cdp.evaluate(`(() => {
+        const filas = Array.from(document.querySelectorAll('#performance .point-row')).map((r) => ({
+          k: r.querySelector('dt').textContent.trim(), v: r.querySelector('dd').textContent.trim()
+        }));
+        const porHora = (nombre) => (filas.find((f) => f.k === nombre) || {}).v || '';
+        return {
+          filas: filas.length,
+          hora: porHora('Hora de la muestra'),
+          medicion: porHora('Medicion'),
+          anterior: porHora('Muestra anterior'),
+          siguiente: porHora('Muestra siguiente'),
+          cursor: document.querySelectorAll('.latency-chart .chart-cursor').length,
+          activo: document.querySelectorAll('.peak-btn.active').length
+        };
+      })()`);
+      assert("navegador_latencia_detalle_por_punto", Boolean(picos) && picos.blancos >= 2 && picos.lista >= 1
+        && picos.horarios.length >= 2 && picos.titulos.length > 0
+        && picos.titulos.every((t) => /\d{2}:\d{2}:\d{2} · \d+ ms/.test(t))
+        && Boolean(elegido) && punto.filas >= 6
+        && /\d{1,2}\/\d{1,2}, \d{2}:\d{2}:\d{2}/.test(punto.hora)
+        && /\d+ ms · (Óptimo|En riesgo|Crítico)/.test(punto.medicion)
+        && punto.cursor === 1 && punto.activo === 1, { picos, elegido, punto });
+
       const lenguaje = await chrome.cdp.evaluate(`document.body.innerText.replace(/\\s+/g,' ')`);
       // La leyenda vive en la vista Resumen: en Latencia se exige que el texto
       // explicativo siga exista en el DOM, aunque no este a la vista.

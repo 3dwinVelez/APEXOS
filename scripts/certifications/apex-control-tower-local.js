@@ -515,6 +515,64 @@ async function run() {
           rss: await chrome.cdp.evaluate(`(Array.from(document.querySelectorAll(".perf-stat")).find((node) => node.textContent.includes("Memoria RSS")) || {}).textContent || null`)
         });
       }
+      // La rejilla es el producto: si el navegador de vistas cae a una columna de
+      // 1/12 deja una banda muerta de 1300 px y el dueno vuelve a ver "regado".
+      const rejilla = await chrome.cdp.evaluate(`(() => {
+        const main = document.querySelector('main');
+        const nav = document.getElementById('viewNav');
+        const leyenda = document.getElementById('statusLegend');
+        const visibles = Array.from(main.children).filter((n) => !n.hidden && n.offsetParent !== null);
+        const R = (n) => n.getBoundingClientRect();
+        return {
+          anchoNav: Math.round(R(nav).width),
+          anchoMain: Math.round(R(main).width),
+          altoNav: Math.round(R(nav).height),
+          leyendaUltima: visibles[visibles.length - 1] === leyenda,
+          seccionesVisibles: visibles.filter((n) => n.tagName === 'SECTION').length
+        };
+      })()`);
+      assert("browser_rejilla_vistas_horizontal", rejilla.anchoNav > rejilla.anchoMain * 0.6
+        && rejilla.altoNav < 90 && rejilla.leyendaUltima && rejilla.seccionesVisibles >= 2, rejilla);
+
+      // El grafico tiene que responder por el punto que el dueno senale: hora,
+      // medicion y si fue pico, no solo la forma de la curva. La serie se llena
+      // sondeo a sondeo, asi que se espera a que este dibujada en vez de leer una
+      // sola vez: leida de una vez, esta certificacion pasa o falla segun el minuto.
+      const explorador = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const blancos = document.querySelectorAll('.latency-chart .chart-hit').length;
+        const horarios = Array.from(document.querySelectorAll('.latency-chart .chart-tick')).map((t) => t.textContent);
+        const picos = document.querySelectorAll('.peak-btn').length;
+        if (blancos < 2 || picos < 1) return null;
+        const btn = document.querySelector('.peak-btn');
+        btn.click();
+        return { blancos, horarios, picos, hora: btn.dataset.chartPointAt };
+      })()`).catch(() => null), 30000);
+      await sleep(400);
+      const detalle = await chrome.cdp.evaluate(`(() => {
+        const filas = Array.from(document.querySelectorAll('#performance .point-row')).map((r) => ({
+          k: r.querySelector('dt').textContent.trim(),
+          v: r.querySelector('dd').textContent.trim()
+        }));
+        const porHora = (nombre) => (filas.find((f) => f.k === nombre) || {}).v || '';
+        return {
+          filas: filas.length,
+          hora: porHora('Hora de la muestra'),
+          medicion: porHora('Medicion'),
+          anterior: porHora('Muestra anterior'),
+          cursor: document.querySelectorAll('.latency-chart .chart-cursor').length,
+          activo: document.querySelectorAll('.peak-btn.active').length
+        };
+      })()`);
+      assert("browser_latencia_detalle_por_punto", Boolean(explorador) && explorador.blancos >= 2
+        && explorador.horarios.length >= 2 && explorador.picos >= 1
+        && explorador.hora && detalle.filas >= 6
+        && /\d{1,2}\/\d{1,2}, \d{2}:\d{2}:\d{2}/.test(detalle.hora)
+        && /\d+ ms · (Óptimo|En riesgo|Crítico)/.test(detalle.medicion)
+        && detalle.cursor === 1 && detalle.activo === 1, { explorador, detalle });
+      const shotDetalle = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-latencia-punto.png"));
+      assert("browser_latencia_punto_capturado", shotDetalle > 20000, { bytes: shotDetalle });
+      await chrome.cdp.evaluate(`(() => { const b = document.querySelector('.peak-btn.active'); if (b) b.click(); })()`);
+
       const shotLatencia = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-latencia.png"));
       assert("browser_vista_latencia_capturada", shotLatencia > 20000, { bytes: shotLatencia });
 
