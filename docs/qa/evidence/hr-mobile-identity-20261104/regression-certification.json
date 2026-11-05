@@ -1,7 +1,7 @@
 {
   "certification": "hr-mobile-identity-regression-local",
   "environment": "LOCAL",
-  "started_at": "2026-11-05T02:04:19.119Z",
+  "started_at": "2026-11-05T02:19:52.361Z",
   "criterion": "toda suite de apps/api/test que carga hr/service|routes|schema|mobile-identity o middleware/rbac, y apps/web/test/hr-*.test.mjs",
   "suites": [
     {
@@ -106,8 +106,8 @@
     {
       "file": "apps\\api\\test\\hr-mobile-identity.test.js",
       "exit_code": 0,
-      "tests": 25,
-      "pass": 25,
+      "tests": 26,
+      "pass": 26,
       "fail": 0,
       "cancelled": 0,
       "ok": true
@@ -394,10 +394,10 @@
   ],
   "totals": {
     "suites": 43,
-    "tests": 384,
-    "pass": 384,
+    "tests": 385,
+    "pass": 385,
     "fail": 0
   },
   "passed": true,
-  "finished_at": "2026-11-05T02:04:29.074Z"
+  "finished_at": "2026-11-05T02:20:01.968Z"
 }

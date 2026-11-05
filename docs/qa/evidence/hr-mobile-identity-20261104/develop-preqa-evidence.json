@@ -3,7 +3,7 @@
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
-  "commit": "eeeeac534b5eb097cc22784b9d428059536cb4b8",
+  "commit": "a94e33db95b52aef6eff2c17bb58141bec61d454",
   "qa_status": "pending",
   "checks": {
     "functional": {

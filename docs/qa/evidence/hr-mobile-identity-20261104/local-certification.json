@@ -1,9 +1,9 @@
 {
   "certification": "hr-mobile-identity-local",
-  "run_id": "20261105020407",
+  "run_id": "20261105021948",
   "environment": "LOCAL",
   "database": "postgresql://***@127.0.0.1:55442/apexos",
-  "started_at": "2026-11-05T02:04:07.407Z",
+  "started_at": "2026-11-05T02:19:48.836Z",
   "checks": [
     {
       "name": "la API real arranca contra el Postgres local",
@@ -37,10 +37,10 @@
         "status": 201,
         "payload": {
           "enrolled": true,
-          "device_id": "and-cert-a-20261105020407",
+          "device_id": "and-cert-a-20261105021948",
           "platform": "android",
           "device_model": "Cert Pixel",
-          "enrolled_at": "2026-11-05T02:04:11.190Z"
+          "enrolled_at": "2026-11-05T02:19:51.041Z"
         }
       }
     },
@@ -50,10 +50,10 @@
       "detail": {
         "payload": {
           "enrolled": true,
-          "device_id": "and-cert-a-20261105020407",
+          "device_id": "and-cert-a-20261105021948",
           "platform": "android",
           "device_model": "Cert Pixel",
-          "enrolled_at": "2026-11-05T02:04:11.190Z"
+          "enrolled_at": "2026-11-05T02:19:51.041Z"
         }
       }
     },
@@ -69,7 +69,7 @@
       "name": "la llave publica queda en la ficha del empleado",
       "ok": true,
       "detail": {
-        "employee_id": 1
+        "employee_id": 3
       }
     },
     {
@@ -135,10 +135,10 @@
           "method": "EC_P256_SHA256",
           "status": "verified",
           "channel": "mobile",
-          "device_id": "and-cert-a-20261105020407",
+          "device_id": "and-cert-a-20261105021948",
           "signature": "[presente]",
-          "enrolled_at": "2026-11-05T02:04:11.190Z",
-          "verified_at": "2026-11-05T02:04:11.477Z"
+          "enrolled_at": "2026-11-05T02:19:51.041Z",
+          "verified_at": "2026-11-05T02:19:51.331Z"
         }
       }
     },
@@ -187,6 +187,14 @@
       }
     },
     {
+      "name": "las selfies guardadas antes del despliegue tambien se ven en el monitor",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
       "name": "el segundo tecnico existe para las pruebas de restablecer",
       "ok": true,
       "detail": {}
@@ -221,7 +229,7 @@
       "detail": {
         "history": [
           {
-            "device_id": "and-cert-a-20261105020407",
+            "device_id": "and-cert-a-20261105021948",
             "reset_reason": "cambio de telefono"
           }
         ]
@@ -258,6 +266,6 @@
       }
     }
   ],
-  "finished_at": "2026-11-05T02:04:12.382Z",
+  "finished_at": "2026-11-05T02:19:52.207Z",
   "passed": true
 }
