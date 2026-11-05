@@ -48,9 +48,31 @@
       <div id="health" class="health"></div>
     </section>
 
-    <section id="kpis" class="kpis" aria-label="Indicadores"></section>
+    <section class="panel span-12" aria-labelledby="gaugesTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Medición con umbral publicado por el servidor</p>
+          <h2 id="gaugesTitle">Medidores del sistema</h2>
+        </div>
+        <span id="gaugesMeta" class="muted small"></span>
+      </header>
+      <div id="gauges" class="gauges"></div>
+    </section>
 
-    <section class="panel span-12" aria-labelledby="modulesTitle">
+    <section class="panel span-12" aria-labelledby="moduleMapTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Un sondeo por marca · módulos y API en el mismo eje</p>
+          <h2 id="moduleMapTitle">Mapa de módulos vs API</h2>
+        </div>
+        <span id="moduleMapMeta" class="muted small"></span>
+      </header>
+      <div id="moduleMap" class="module-map"></div>
+    </section>
+
+    <section id="kpis" class="kpis detail-only" aria-label="Indicadores"></section>
+
+    <section class="panel span-12 detail-only" aria-labelledby="modulesTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Servicios y datos por dominio</p>
@@ -73,7 +95,7 @@
         </div>
         <span id="activityMeta" class="muted small"></span>
       </header>
-      <div id="activityKpis" class="tile-grid"></div>
+      <div id="activityKpis" class="tile-grid detail-only"></div>
       <div id="activityBody" class="activity-body"></div>
     </section>
 
@@ -132,7 +154,7 @@
       <div id="alerts" class="alerts"></div>
     </section>
 
-    <section class="panel span-5" aria-labelledby="performanceTitle">
+    <section class="panel span-5 detail-only" aria-labelledby="performanceTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Latencia y errores</p>
@@ -143,7 +165,7 @@
       <div id="performance" class="performance"></div>
     </section>
 
-    <section class="panel span-7" aria-labelledby="cloudTitle">
+    <section id="cloudPanel" class="panel span-7" aria-labelledby="cloudTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Dependencias externas</p>

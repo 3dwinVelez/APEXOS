@@ -49,11 +49,11 @@ La sonda Redis abre su propio socket TCP contra `REDIS_HOST:REDIS_PORT` y espera
 
 Dos vistas conmutables desde la barra superior; la elección se recuerda en el navegador:
 
-- **Resumen**: indicadores grandes por ambiente, tarjetas compactas de módulo, alertas abiertas y empresas con actividad reciente. Ideal para ver el estado de un vistazo.
-- **Detalle**: todo lo anterior más el desglose técnico de sondas, rendimiento, nube, ramas, credenciales, trabajos, Telegram y eventos.
+- **Resumen**: indicador oficial del ambiente, **medidores con umbral** y **mapa de módulos vs API**, alertas abiertas y empresas con actividad reciente. Ideal para ver el estado de un vistazo, sin teselas numéricas.
+- **Detalle**: todo lo anterior más las teselas de indicadores, el desglose de módulos, el consolidado por empresa y el desglose técnico de sondas, rendimiento, nube, ramas, credenciales, trabajos, Telegram y eventos.
 
 - **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a indicadores, servicios, alertas, rendimiento, nube y rama. Debajo, una leyenda fija qué significa cada estado.
-- **Indicadores**: salud, módulos, registros, actividad de hoy, conexiones, empresas, servicios caídos, alertas, p95, memoria y uso del API, rama y fábrica Qoder.
+- **Indicadores** (Detalle): salud, módulos, registros, actividad de hoy, conexiones, empresas, servicios caídos, alertas, p95, memoria y uso del API, rama y fábrica Qoder. En Resumen estos números viven en los medidores y en el mapa.
 - **Consolidado por empresa**: siete teselas del ambiente activo (empresas activas, carga de datos, actividad acumulada, empresas sin señal, memoria del API, uso del API y p95) más el selector de empresa.
 - **Servicios**: estado, latencia, detalle, impacto funcional, acción sugerida y detalle técnico expandible.
 - **Módulos**: resumen (en objetivo, requieren atención, caídos, sin dato, registros), agrupación por dominio y tarjetas con registros, última actividad, frescura esperada, servicios y alertas. El filtro **Solo problemas** deja a la vista únicamente lo que está caído o fuera del objetivo. Si la API no entrega datos, el panel muestra el catálogo en `Sin dato` y lo declara, no lo pinta como sano.
@@ -61,7 +61,7 @@ Dos vistas conmutables desde la barra superior; la elección se recuerda en el n
 - **Empresas**: monitor consolidado con conectividad por `tenant_id` (sesiones, usuarios, última actividad, pings GPS, estado) y sus acciones de intervención. El Resumen muestra hasta 12 empresas; el Detalle conserva la tabla completa.
 - **Acciones de intervención**: en cada bloque bloqueado o con módulos fallando, una lista priorizada con qué hacer, el agente responsable y el siguiente comando.
 - **Alertas**: incidentes por ambiente, con impacto funcional, acción y detalle técnico.
-- **Rendimiento API**: p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente. En Detalle se agregan memoria del proceso, peticiones por bucket de estado, consultas lentas y uptime.
+- **Rendimiento API** (Detalle): p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente, con dos chips de banda separados — **latencia** (p95 medido) y **sondas** (sondeos `/health` que fallaron) — porque no son la misma señal. Se agregan memoria del proceso, peticiones por bucket de estado, consultas lentas y uptime.
 - **Nube**: Railway, Supabase y Vercel con estado, proyecto, servicios, deployments y métricas medibles, o la variable exacta que falta.
 - **Credenciales**: preparación de cada proveedor por ambiente (`develop`/`main`) con los nombres de las variables faltantes, nunca sus valores.
 - **Ramas**: relación local/remota de las tres ramas, con la rama del ambiente seleccionado resaltada.
@@ -108,6 +108,38 @@ El primer bloque del panel es el indicador oficial, no un adorno: publica el pun
 - El gauge, las tarjetas de banda (con su conteo), la barra de umbrales y el gráfico por módulo ordenado de peor a mejor son clicables: abren el detalle del módulo o la fórmula completa en un diálogo.
 - Los tabs de ambiente muestran el puntaje, las sondas medidas y el build desplegado que reporta `GET /health` (`commit` y cantidad de módulos); el indicador **Salud** del tablero replica el mismo número.
 - Bajo las pestañas de ambiente hay una **leyenda de estados** con las cuatro palabras que usa el panel: **Operativo** (responde dentro del objetivo), **Requiere atención** (responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta), **Caído** (no responde o falla una dependencia crítica) y **Sin dato** (no se pudo medir; el indicador no premia ni castiga). El panel no usa la palabra `degrade` ni ninguna de sus formas: el estado interno `degraded` se traduce siempre a **Requiere atención**.
+
+### Medidores con umbral
+
+El bloque **Medidores del sistema** sustituye el reguero de teselas del Resumen. Cada tarjeta es una magnitud medida con su escala de tres tramos (verde / ámbar / rojo), el marcador del valor y los cortes que produjeron la banda:
+
+| Medidor | Óptimo | En riesgo | Crítico | Fuente del corte |
+|---|---|---|---|---|
+| p95 del API | ≤ 600 ms | ≤ 1.000 ms | > 1.000 ms | presupuesto versionado `PERF_API_P95_MS` |
+| Sondas fallidas | ≤ 1 % | ≤ 5 % | > 5 % | serie de sondas `/health` de la torre |
+| Memoria del API | ≤ 512 MB | ≤ 1.024 MB | > 1.024 MB | `memory_mb.rss` de `/health` |
+| Consultas lentas | 0 | ≤ 5 | > 5 | `usage.slow_queries_total` |
+| Empresas con actividad | ≥ 20 % | ≥ 5 % | < 5 % | `tenants.summary` sobre `active` (dirección invertida: gana el valor alto) |
+| Frescura de datos | ≤ 1x | ≤ 3x | > 3x | peor ratio `age_minutes / expected_minutes` entre módulos |
+| Uptime y peticiones | — | — | — | `Informativo`: contexto del proceso, no diagnóstico |
+
+- Ningún umbral vive en el navegador. El servidor publica `environment.gauges` con `value`, `band`, `tone`, `label_text` y `limits`; el panel solo pinta. Cambiar `PERF_API_P95_MS` mueve el corte del medidor sin tocar el HTML.
+- Bandas visibles: **Óptimo**, **En riesgo**, **Crítico**, **Sin dato** y **Informativo**. No hay jerga interna en la superficie.
+- **Sin dato no es verde**: un valor que no se pudo medir (`null`) queda en banda neutra. Un ambiente que nunca responde no puede aparecer sano.
+- Un medidor informativo no tiene escala ni veredicto: pinta la línea base y la nota «contexto del proceso, no diagnóstico», y no cuenta en el resumen de «en rojo / en riesgo».
+- Si el valor se sale del extremo de la escala, la tarjeta se marca `fuera de escala` en lugar de pegar el marcador al borde.
+
+### Mapa de módulos vs API
+
+El bloque **Mapa de módulos vs API** concentra en un solo gráfico el comportamiento de todos los módulos y del propio API, alineados en el mismo eje temporal: una fila por módulo (de peor a mejor banda) y una fila final para `API /health`.
+
+- Cada marca es un sondeo real de la torre, guardado en el anillo `ModuleTelemetry` (`apps/control-tower/lib/telemetry.js`, 40 muestras persistidas por ambiente). La ventana se ve en la cabecera: `N sondeos · desde → hasta`.
+- **Altura = frescura medida** (`age_minutes / expected_minutes`), color = banda del módulo en ese momento. Un módulo sin fecha medida usa la altura base de su banda; nunca se dibuja una altura inventada.
+- La fila del API lleva la lectura `/health` del mismo sondeo embebida en el tick (`api { ms, ok, band }`), así que la latencia del API y el estado de cada módulo se comparan en la misma columna sin casar marcas por fecha.
+- La API no publica latencia por módulo, así que el mapa no la simula: muestra frescura y banda, que sí están medidas.
+- Una fila es clicable y abre el detalle del módulo; la fila del API no lo es.
+- El anillo se alimenta del sondeo real **antes** de aplicar simulaciones o overrides: una prueba simulada no contamina el historial persistido.
+- Con 32 módulos el cuerpo tiene su propio desplazamiento; en móvil la fila se colapsa a nombre y marcas.
 
 ### Telemetría del proceso
 
@@ -246,9 +278,9 @@ npm run certify:control-tower:consolidado
 
 La certificación fase uno levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, captura el panel con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/`.
 
-`certify:control-tower:consolidado` levanta dos APIs de prueba en `127.0.0.1`: una rica (telemetría de proceso en `/health`, módulos, actividad, empresas y salud por empresa) y otra con el build anterior al módulo (`/health` con commit y `404` en `apex-control`, como QA y PROD hoy). Con Chrome por CDP comprueba el monitor consolidado, el selector de empresa, las teselas de memoria y uso con los números publicados por el API, las acciones con responsable y siguiente comando, el bloqueo de PROD que nombra su commit sin inventar empresas, la ausencia de jerga `degrade`, la leyenda de estados y una consola sin errores. Deja `certification.json`, `snapshot-ambientes.json`, `empresa-tenant-demo.json` y tres capturas en `docs/qa/evidence/torre-consolidado-empresas-20261103/`. No usa bases de datos ni credenciales reales; la evidencia se sanea y se verifica que ni el token de la torre ni el JWT aparecen en ella.
+`certify:control-tower:consolidado` levanta dos APIs de prueba en `127.0.0.1`: una rica (telemetría de proceso en `/health`, módulos, actividad, empresas y salud por empresa) y otra con el build anterior al módulo (`/health` con commit y `404` en `apex-control`, como QA y PROD hoy). Con Chrome por CDP comprueba el monitor consolidado, el selector de empresa, las teselas de memoria y uso con los números publicados por el API, **los medidores con su umbral y el mapa de módulos vs API** (incluido que el Resumen no muestre ninguna tesela), las acciones con responsable y siguiente comando, el bloqueo de PROD que nombra su commit sin inventar empresas, que las bandas solo usen las cinco palabras del vocabulario, la ausencia de jerga `degrade`, la leyenda de estados y una consola sin errores. Deja `certification.json`, `snapshot-ambientes.json`, `empresa-tenant-demo.json` y tres capturas en `docs/qa/evidence/torre-consolidado-empresas-20261103/`. No usa bases de datos ni credenciales reales; la evidencia se sanea y se verifica que ni el token de la torre ni el JWT aparecen en ella.
 
-La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`. La de actividad, conexiones y empresas, con capturas de las vistas Resumen y Detalle, está en `docs/qa/evidence/tower-activity-tenants-20261103/`. La del indicador oficial de salud, umbrales y vista por empresa está en `docs/qa/evidence/tower-health-charts-20261103/`.
+La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`. La de actividad, conexiones y empresas, con capturas de las vistas Resumen y Detalle, está en `docs/qa/evidence/tower-activity-tenants-20261103/`. La del indicador oficial de salud, umbrales y vista por empresa está en `docs/qa/evidence/tower-health-charts-20261103/`. Las cuatro capturas del panel vivo con medidores y mapa están en `docs/qa/evidence/torre-medidores-20261105/`.
 
 Evidencia actual: `certification.json`, `tower-overview.png`, `tower-env-main.png`, `tower-api-down.png` y `telegram-outbox.json`.
 

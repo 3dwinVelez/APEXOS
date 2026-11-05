@@ -2,8 +2,8 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.6.0
-updated_at: 2026-11-03
+version: 2.7.0
+updated_at: 2026-11-05
 contract: 2
 ---
 
@@ -48,6 +48,7 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
 14. **Gráficos de salud acotados.** El cálculo de salud es puro y sin I/O (`lib/health.js`): el puntaje por ambiente se deriva una vez por lectura y la vista por empresa reutiliza el mismo endpoint cacheado por ciclo, sin sondas nuevas ni consultas por módulo. El gráfico por módulo renderiza 10 filas en **Resumen** y el total solo en **Detalle**; el filtro por banda y los diálogos reutilizan el payload ya cargado en el navegador. La vista por empresa tiene su propio límite de tasa (30/min). Por qué: un gauge con decenas de barras por ciclo convertiría el indicador en el mayor costo del panel.
 15. **Consumo y uso del API se miden, no se adornan.** La memoria, el uptime y el conteo de peticiones salen del propio proceso y viajan en `GET /health` como agregados (`uptime_seconds`, `memory_mb.*`, `usage.*`); la torre los normaliza en `deployedInfo` y los muestra en las teselas consolidadas y en **Detalle → Rendimiento**. Un ambiente cuyo build no publica esos campos muestra la nota `runtimeMissing` en lugar de inventar un número o heredar el del ambiente anterior. Cambiar de ambiente deselecciona la empresa: una empresa de LOCAL no se vuelve a consultar contra QA o PROD. Por qué: el 2026-11-03 el monitor mostraba consumos sin fuente y reconsultaba la empresa del ambiente anterior, produciendo lecturas cruzadas y errores 409 fantasma en la consola.
 16. **La torre se ejecuta en el puesto, no en la nube.** `apps/control-tower/**` vive solo en `desarrollo`: se arranca con `apex-control.bat` o `node apps/control-tower/server.js` contra `http://127.0.0.1:4310` y nunca se despliega como servicio. Por eso su presupuesto de rendimiento es de proceso local (sondas cada 10 s, sin SLA público) y su única vía a QA/PROD es el API desplegado allí. Medir, documentar o proponer un despliegue de la torre está fuera de este modelo. Por qué: el 2026-11-03 el propietario fijó que el panel se opera desde `desarrollo` con la IA, y una promoción de la herramienta habría creado un segundo vigilante sin fuente de datos.
+17. **Umbrales de la torre: una sola fuente, cero umbrales en el navegador.** Los cortes de banda de cada magnitud medida viven en `apps/control-tower/lib/metrics.js` (`GAUGES`), y el corte de p95 se deriva del presupuesto versionado `PERF_API_P95_MS`; el servidor publica `environment.gauges` con valor, banda, tono y límites, y el panel solo pinta. El navegador no decide ningún umbral, y un valor no medido es `Sin dato`, jamás verde. Lo informativo (`uptime`, peticiones) tiene su propia banda y no entra en el conteo de rojos. El historial por módulo (`lib/telemetry.js`) se alimenta del sondeo real **antes** de `applyOverrides`, y la altura de una marca sale de la frescura medida: donde la API no publica latencia por módulo, el mapa la deja fuera en lugar de estimarla. Por qué: el 2026-11-05 el Resumen era un reguero de teselas con cuatro umbrales literales en el JS del panel, y `number(null)` convertía un ambiente sin lecturas en un medidor en verde.
 
 ## Checklist de intervención
 
@@ -104,4 +105,6 @@ Después:
 - Ignorar errores del benchmark porque el p95 "está bien".
 - Mezclar muestras de varios ambientes en una misma serie.
 - Volcar una tabla entre empresas sin límite en la vista resumen.
+- Decidir un umbral de banda en el JavaScript del panel en lugar de leerlo del servidor.
+- Estimar una métrica que la fuente no publica (latencia por módulo, frescura inventada) para que un gráfico se vea completo.
 - Desplegar o cambiar infraestructura como parte de una medición.

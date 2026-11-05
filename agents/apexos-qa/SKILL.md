@@ -2,8 +2,8 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.7.0
-updated_at: 2026-11-03
+version: 2.8.0
+updated_at: 2026-11-05
 contract: 2
 ---
 
@@ -52,6 +52,7 @@ Antes de actuar, leer en este orden:
 
 21. **Consolidado en vivo, no decorado.** `npm run certify:control-tower:consolidado` prueba con una API rica y otra con el build anterior al módulo que las teselas de memoria, uso del API y rendimiento salen de los números publicados por `/health`; que el selector de empresa se llena con la lectura real; que cada bloqueo muestra una acción con responsable y siguiente comando sin pedir un token inútil; que PROD nunca inventa empresas; que el texto visible no usa `degrade` ni sus variantes en español; y que la consola queda sin errores. Un conteo de elementos del DOM se afirma con umbral (`>=`) y se contrasta con el payload real, nunca con el número histórico de la versión anterior del panel. Por qué: el 2026-11-03 la certificación fase uno esperaba 8 `.perf-stat` exactos y el panel ya publicaba los agregados del proceso.
 22. **Una certificación de la torre no promueve nada.** `apps/control-tower/**` reposa solo en `desarrollo`: `certify:control-tower:consolidado` y `certify:control-tower:local` certifican la herramienta en esa rama y sus manifiestos alimentan el cierre de la intervención, nunca un gate `desarrollo -> develop` ni `develop -> main`. El manifiesto de promoción que corresponde al monitor es el del API (`apex-control` y la telemetría de `/health`), con su alcance declarado archivo por archivo. Por qué: el 2026-11-03 el propietario decidió ejecutar el panel desde `desarrollo`; usar una verde de la torre como prueba para desplegarla habría promovido un servicio que no va a la nube.
+23. **La torre certifica lo visible, no lo montado.** Cuando una vista se oculta por CSS (`detail-only`) el DOM sigue existiendo, así que una certificación que cuente nodos con `querySelectorAll` aprobaría el Resumen aunque el usuario siga viendo el reguero de teselas. Las gates afirman visibilidad real (`offsetParent`, `getComputedStyle(...).display`) por vista, exigen en Resumen los medidores con su umbral y el mapa con filas y marcas, y declaran `teselasResumenVisibles === 0`. El vocabulario de banda se valida como lista cerrada: **Óptimo / En riesgo / Crítico / Sin dato / Informativo**. Por qué: el 2026-11-05 el rediseño compactó el Resumen y las verificaciones antiguas habrían seguido en verde pintando el detalle técnico.
 
 ## Checklist de intervención
 

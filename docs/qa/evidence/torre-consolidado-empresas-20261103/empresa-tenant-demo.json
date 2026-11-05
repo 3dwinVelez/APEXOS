@@ -5,8 +5,8 @@
     "id": "tenant-demo",
     "name": "Demo APEX"
   },
-  "generated_at": "2026-11-03T21:34:36.900Z",
-  "checkedAt": "2026-11-03T21:34:36.887Z",
+  "generated_at": "2026-11-05T15:36:19.890Z",
+  "checkedAt": "2026-11-05T15:36:19.882Z",
   "summary": {
     "total": 3,
     "ok": 1,
@@ -98,7 +98,7 @@
       "data": {
         "state": "fresco",
         "records": 1240,
-        "last_activity_at": "2026-11-03T21:34:36.900Z",
+        "last_activity_at": "2026-11-05T15:36:19.890Z",
         "age_minutes": 2,
         "expected_minutes": 60
       },
@@ -123,7 +123,7 @@
       "data": {
         "state": "viejo",
         "records": 480,
-        "last_activity_at": "2026-11-03T21:34:36.900Z",
+        "last_activity_at": "2026-11-05T15:36:19.890Z",
         "age_minutes": 240,
         "expected_minutes": 30
       },

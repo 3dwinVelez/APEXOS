@@ -354,13 +354,28 @@ async function run() {
       chrome = await launchChrome(binary);
       await chrome.cdp.send("Page.navigate", { url: base });
       const rendered = await waitFor(
-        () => chrome.cdp.evaluate(`document.querySelectorAll('.check').length >= 8 && document.querySelectorAll('.metric-tile').length >= 8 && Boolean(document.querySelector('#health [aria-label^="Salud "]'))`),
+        () => chrome.cdp.evaluate(`document.querySelectorAll('.check').length >= 8
+          && document.querySelectorAll('#gauges .measure-card').length >= 6
+          && document.querySelectorAll('#moduleMap .map-row').length >= 3
+          && document.querySelectorAll('#moduleMap .map-tick').length >= 3
+          && Boolean(document.querySelector('#health [aria-label^="Salud "]'))`),
         15000
       );
       assert("browser_dashboard_rendered", Boolean(rendered), {
         checks: await chrome.cdp.evaluate(`document.querySelectorAll('.check').length`),
-        kpis: await chrome.cdp.evaluate(`document.querySelectorAll('.metric-tile').length`),
+        medidores: await chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length`),
+        filasMapa: await chrome.cdp.evaluate(`document.querySelectorAll('#moduleMap .map-row').length`),
+        marcasMapa: await chrome.cdp.evaluate(`document.querySelectorAll('#moduleMap .map-tick').length`),
         gauge: await chrome.cdp.evaluate(`Boolean(document.querySelector('#health [aria-label^="Salud "]'))`)
+      });
+      // El Resumen muestra medidores con umbral; las teselas numericas solo se
+      // despliegan en Detalle. Se comprueba el estado visible, no el DOM oculto.
+      const summaryTilesHidden = await chrome.cdp.evaluate(
+        `getComputedStyle(document.getElementById('kpis')).display === 'none'
+          && document.querySelectorAll('#gauges .measure-card.band-optimal, #gauges .measure-card.band-risk, #gauges .measure-card.band-critical, #gauges .measure-card.band-unknown').length >= 6`
+      );
+      assert("browser_summary_uses_gauges", summaryTilesHidden === true, {
+        bands: await chrome.cdp.evaluate(`Array.from(document.querySelectorAll('#gauges .measure-card')).map((node) => node.className.replace('measure-card band-', '')).join('|')`)
       });
       await waitFor(() => chrome.cdp.evaluate(`document.getElementById('livePill').textContent.includes('SSE en vivo')`), 8000);
       const size = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-overview.png"));
@@ -371,11 +386,18 @@ async function run() {
       // Ramas, sondas y rendimiento viven en la vista Detalle.
       await chrome.cdp.evaluate(`document.querySelector('[data-view="detail"]').click()`);
       const detailReady = await waitFor(
-        () => chrome.cdp.evaluate(`document.querySelectorAll('.branch').length === 3 && document.querySelectorAll('details.tech').length >= 8 && document.querySelectorAll('.perf-stat').length >= 8`),
+        () => chrome.cdp.evaluate(`document.querySelectorAll('.branch').length === 3
+          && document.querySelectorAll('details.tech').length >= 8
+          && document.querySelectorAll('.perf-stat').length >= 8
+          && getComputedStyle(document.getElementById('kpis')).display !== 'none'
+          && document.querySelectorAll('#kpis .metric-tile').length >= 8`),
         8000
       );
       const technicalDetails = await chrome.cdp.evaluate(`document.querySelectorAll('details.tech').length`);
-      assert("browser_technical_details", detailReady && technicalDetails >= 8, { details: technicalDetails });
+      assert("browser_technical_details", detailReady && technicalDetails >= 8, {
+        details: technicalDetails,
+        teselasDetalle: await chrome.cdp.evaluate(`document.querySelectorAll('#kpis .metric-tile').length`)
+      });
       // El panel de rendimiento siempre trae los 8 estadisticos historicos; la telemetria
       // de proceso del /health agrega memoria/uso encima cuando el API la publica.
       const performanceStats = await chrome.cdp.evaluate(`document.querySelectorAll('.perf-stat').length`);

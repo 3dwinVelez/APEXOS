@@ -2,6 +2,26 @@
 
 Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue semver: major cambia rol/contrato, minor agrega control o especialidad, patch corrige redacción o rutas.
 
+## 2026-11-05
+
+### Torre de control: medidores con umbral y mapa único de módulos vs API
+
+- El **Resumen** de la torre deja de ser un reguero de teselas. Dos bloques nuevos lo sustituyen: **Medidores del sistema** (una tarjeta por magnitud medida, con su escala de tres tramos verde/ámbar/rojo, el marcador del valor, los cortes que produjeron la banda y su fuente) y **Mapa de módulos vs API** (una fila por módulo de peor a mejor banda más la fila final `API /health`, con una marca por sondeo real en el mismo eje temporal). Las teselas, el desglose de módulos y el bloque de Rendimiento pasan a **Detalle** con gating CSS (`detail-only`), así que el DOM y las verificaciones antiguas siguen intactos.
+- Fuente única de umbrales: `apps/control-tower/lib/metrics.js` (`GAUGES`, `bandForValue`, `gauge`, `gaugesFor`, `moduleBand`, `moduleTicks`, `probeBand`). El corte de p95 se deriva del presupuesto versionado `PERF_API_P95_MS`; el navegador no decide ningún umbral y el servidor publica valor, banda, tono y límites. Vocabulario de banda cerrado: **Óptimo / En riesgo / Crítico / Sin dato / Informativo**.
+- Corrección de producto encontrada por las pruebas nuevas: `number(null)` coerciona a `0`, así que un ambiente sin lecturas se bandaba **Óptimo** (verde silencioso). Un valor no medido es ahora `Sin dato`, y lo informativo (`uptime`, peticiones) tiene banda propia sin escala ni veredicto.
+- Historial medido: `apps/control-tower/lib/telemetry.js` persiste un anillo de 40 muestras por ambiente. `server.js` lo alimenta del sondeo real **antes** de `applyOverrides`, de modo que una simulación no contamina el historial. Cada tick lleva embebida la lectura `/health` de ese mismo sondeo (`api { ms, ok, band }`), porque por ambiente y ciclo solo hay una métrica del API y casar marcas por fecha habría desalineado la fila.
+- La altura de una marca sale de la frescura medida (`age_minutes / expected_minutes`); donde la API no publica latencia por módulo el mapa **no la estima**. Se documenta como deuda del API, no del panel.
+- En **Detalle → Rendimiento** se separan las dos señales que un solo chip confundía: **latencia** (p95 medido) y **sondas** (sondeos `/health` que fallaron), cada una con su banda y una nota que aclara que las peticiones 4xx/5xx de los usuarios no son la misma medición.
+- Pruebas: `npm run control:test` **102/102** con tres suites nuevas (`test/metrics.test.js` 11, `test/telemetry.test.js` 6, `test/ui-indicators.test.js` 6 — esta carga el `public/app.js` real en `node:vm` con un DOM mínimo). Certificaciones re-ejecutadas: `certify:control-tower:local` **39/39** (`docs/qa/evidence/apex-control-tower-f1/`) y `certify:control-tower:consolidado` **44/44** (`docs/qa/evidence/torre-consolidado-empresas-20261103/`), ambas con verificaciones nuevas de visibilidad por vista. Capturas del panel vivo en `docs/qa/evidence/torre-medidores-20261105/`.
+- Brief: `docs/briefs/2026-11-05-torre-medidores-y-mapa.md`. Documentación: `apps/control-tower/README.md` (secciones **Medidores con umbral** y **Mapa de módulos vs API**, y el mapa de la vista Resumen reescrito).
+- Agentes dueños (preflight: `equipo-apexos`, `apexos-brief`, `apexos-seguridad`, `apexos-performance`, `apexos-qa`):
+  - `apexos-performance` — `2.6.0` → `2.7.0` — control nuevo `torre-umbrales-fuente-unica` (regla 17): los cortes viven en `lib/metrics.js` derivados del presupuesto, el navegador no bandea, `Sin dato` no es verde, el anillo se alimenta del sondeo pre-override y la latencia por módulo no se inventa. Dos antipatrones nuevos.
+  - `apexos-qa` — `2.7.0` → `2.8.0` — control nuevo `torre-certifica-lo-visible` (regla 23): con gating CSS hay que afirmar visibilidad real (`offsetParent`, `getComputedStyle`), exigir medidores y mapa en Resumen y `teselasResumenVisibles === 0`, y validar las cinco palabras de banda como lista cerrada.
+  - `apexos-seguridad` — `2.6.0` → `2.6.1` — regla 17 extendida: `environment.gauges` y `moduleHistory` son agregados de banda, frescura y conteo de registros sin ids de empresa, usuario, ruta ni payload; `Sin dato`/`Informativo` no son un veredicto de salud.
+  - `equipo-apexos` — `2.5.0` → `2.5.1` — regla 17 aclarada: un rediseño de la interfaz de una herramienta residente tampoco se promociona; se integra con sus gates locales y se publica en `desarrollo`.
+  - `apexos-brief` — `2.7.1` → `2.7.2` — regla 20 extendida: en un rediseño visual los criterios de aceptación son observables en el DOM por vista y lo que la fuente no publica se declara fuera de alcance.
+- Publicación: `git push origin desarrollo`. La torre no se despliega ni se promueve; siguen pendientes, fuera de este brief, el build del API con `apex-control` en QA/PROD, sus tokens propios y la renovación de `ENV_LOCAL_APEX_TOKEN`.
+
 ## 2026-11-03
 
 ### La torre de control reposa solo en `desarrollo`

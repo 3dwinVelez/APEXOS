@@ -597,6 +597,22 @@ async function run() {
       assert("navegador_selector_de_empresa", conteo.opciones === 4, { opciones: conteo.opciones });
       assert("navegador_leyenda_de_estados", /Requiere atenci/.test(conteo.leyenda) && !/degrad/i.test(conteo.leyenda), { leyenda: conteo.leyenda });
 
+      // Los medidores y el mapa sustituyen el reguero de teselas en el Resumen.
+      const indicadores = await chrome.cdp.evaluate(`({
+        medidores: document.querySelectorAll('#gauges .measure-card').length,
+        conUmbral: [...document.querySelectorAll('#gauges .measure-limits')].filter((n) => /[≤≥]/.test(n.textContent)).length,
+        bandas: [...document.querySelectorAll('#gauges .band-pill')].map((n) => n.textContent.trim()),
+        filasMapa: document.querySelectorAll('#moduleMap .map-row').length,
+        marcasMapa: document.querySelectorAll('#moduleMap .map-tick').length,
+        teselasResumenVisibles: [...document.querySelectorAll('#kpis .metric-tile')].filter((n) => n.offsetParent !== null).length
+      })`);
+      assert("navegador_medidores_y_mapa", indicadores.medidores >= 6
+        && indicadores.conUmbral >= 6
+        && indicadores.filasMapa >= 3
+        && indicadores.marcasMapa >= 3
+        && indicadores.teselasResumenVisibles === 0, indicadores);
+      assert("navegador_bandas_sin_jerga", indicadores.bandas.every((banda) => /Óptimo|En riesgo|Crítico|Sin dato|Informativo/.test(banda)), { bandas: indicadores.bandas });
+
       const memoria = await chrome.cdp.evaluate(`(() => {
         const tiles = [...document.querySelectorAll('#companySummary .metric-tile')];
         const memory = tiles.find((t) => /Memoria del API/.test(t.textContent));

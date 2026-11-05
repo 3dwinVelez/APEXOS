@@ -15,6 +15,8 @@ const { diagnoseCheck } = require("./lib/diagnostics");
 const { collectGitState, runGit, clearRemoteCache } = require("./lib/git");
 const { fetchModules, REASON_DETAIL } = require("./lib/modules");
 const { recommendationsFor } = require("./lib/recommendations");
+const { gaugesFor } = require("./lib/metrics");
+const { ModuleTelemetry } = require("./lib/telemetry");
 const { computeHealth, withModuleBands } = require("./lib/health");
 const { createAuthGuard, createRateLimiter, safeEqual, readToken, assertLoopback, redact, isPlainObject } = require("./lib/security");
 
@@ -87,6 +89,28 @@ function eventId() {
   return `EVT-${crypto.randomBytes(3).toString("hex")}`;
 }
 
+// Adjunta lo que el panel pinta: medidores bandeados e historial de ticks. Es
+// puro sobre el snapshot; el registro del sondeo ocurre antes, sobre la lectura
+// real, para que una simulacion no contamine el anillo persistido.
+function attachIndicators(snapshot, telemetry) {
+  for (const [id, environment] of Object.entries((snapshot && snapshot.environments) || {})) {
+    environment.gauges = gaugesFor(environment);
+    environment.moduleHistory = telemetry ? telemetry.seriesFor(id, { size: 24 }) : [];
+  }
+  return snapshot;
+}
+
+function recordModuleTicks(probe, telemetry, metrics) {
+  const apiByEnvironment = new Map((metrics || []).map((metric) => [String(metric.environment), metric]));
+  for (const [id, environment] of Object.entries((probe && probe.environments) || {})) {
+    const modules = environment.modules && Array.isArray(environment.modules.modules)
+      ? environment.modules.modules
+      : [];
+    if (modules.length) telemetry.record(id, modules, probe.at, apiByEnvironment.get(id) || null);
+  }
+  return telemetry;
+}
+
 function attachRecommendations(snapshot) {
   for (const environment of Object.values((snapshot && snapshot.environments) || {})) {
     environment.recommendations = recommendationsFor(environment, { performance: environment.performance });
@@ -116,6 +140,7 @@ function createTower(overrides = {}) {
 
   const store = new Store({ dataDir: config.dataDir, alertMax: config.alerts.max }).init();
   const performance = new PerformanceTracker({ persisted: store.readAux("performance", {}) });
+  const telemetry = new ModuleTelemetry({ persisted: store.readAux("module-telemetry", {}) });
   const jobs = new Jobs({ store });
   const clients = new Set();
   const overridesMap = new Map();
@@ -238,6 +263,7 @@ function createTower(overrides = {}) {
 
     if (probeResult.status === "fulfilled") {
       performance.recordAll(probeResult.value.metrics);
+      const probeMetrics = probeResult.value.metrics;
       delete probeResult.value.metrics;
       const summaries = performance.all(Object.keys(probeResult.value.environments));
       probeResult.value.performance = summaries;
@@ -245,8 +271,11 @@ function createTower(overrides = {}) {
         environment.performance = summaries[id] || null;
       }
       store.writeAux("performance", performance.toJSON());
+      recordModuleTicks(probeResult.value, telemetry, probeMetrics);
+      store.writeAux("module-telemetry", telemetry.toJSON());
       const snapshot = applyOverrides(probeResult.value);
       attachRecommendations(snapshot);
+      attachIndicators(snapshot, telemetry);
       state.snapshot = snapshot;
       store.setSnapshot({ ...snapshot, git: gitSummary(state.git) });
       tower.alerts.evaluate(snapshot);

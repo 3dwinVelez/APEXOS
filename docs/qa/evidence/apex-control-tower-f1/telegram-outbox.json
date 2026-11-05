@@ -1,50 +1,128 @@
 {
-  "generated_at": "2026-11-03T21:35:44.722Z",
+  "generated_at": "2026-11-05T15:36:03.871Z",
   "mode": "dry-run",
   "allowed_chat_ids": [
     "cert-chat"
   ],
   "outbox": [
     {
-      "at": "2026-11-03T21:35:33.306Z",
+      "at": "2026-11-05T15:35:51.467Z",
       "chatId": "intruso",
-      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 3/11/2026, 4:35:33 p. m.\nReconocer: /ack ALR-d55571",
+      "text": "[RECUPERADO] Modulo Transporte: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
       "dryRun": true
     },
     {
-      "at": "2026-11-03T21:35:33.304Z",
+      "at": "2026-11-05T15:35:51.467Z",
+      "chatId": "intruso",
+      "text": "[RECUPERADO] Modulo Apex Heart: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:51.467Z",
+      "chatId": "intruso",
+      "text": "[RECUPERADO] Modulo Planeacion de demanda: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:51.467Z",
+      "chatId": "intruso",
+      "text": "[RECUPERADO] Modulo APEX AI Core: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:51.467Z",
+      "chatId": "intruso",
+      "text": "[RECUPERADO] Brain (Python): caído\nsocket hang up\nMotivo: Recuperado (ok)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:51.464Z",
       "chatId": "cert-chat",
-      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 3/11/2026, 4:35:33 p. m.\nReconocer: /ack ALR-d55571",
+      "text": "[RECUPERADO] Modulo Transporte: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
       "dryRun": true
     },
     {
-      "at": "2026-11-03T21:35:23.694Z",
-      "chatId": "intruso",
-      "text": "Trabajo JOB-20261103-163523-29b7 (Implementar en desarrollo) requiere aprobacion.\n\ncertificacion: agrega prueba de regresion al monitor\n\nDestino: desarrollo\n\nResponde /aprobar JOB-20261103-163523-29b7 o usa los botones.",
-      "dryRun": true
-    },
-    {
-      "at": "2026-11-03T21:35:23.653Z",
-      "chatId": "intruso",
-      "text": "Estado: OK (10/19 ok)\nLectura: 3/11/2026, 4:35:22 p. m.\n\nAPI APEXOS: ok\nPostgreSQL: ok\nAPI QA: unknown\nSupabase QA: unknown\nAPI PROD: unknown\nSupabase PROD: unknown\nAPEX Control (API): ok\nBrain (Python): ok\nCrons: ok\nDocker: ok\nActividad LOCAL: unknown\nModulo Activos y mantenimiento: unknown\nModulo Administracion APEX: unknown\nModulo APEX AI Core: unknown\nModulo APEX Control: unknown\nModulo Calidad: unknown\nModulo Comercio: unknown\nModulo Comercio exterior: unknown\nModulo Compras: unknown\nModulo Configuracion inicial: unknown\nModulo Contabilidad: unknown\nModulo Costos: unknown\nModulo CRM: unknown\nModulo Cartera y CxC: unknown\nModulo Devoluciones: unknown\nModulo Facturacion: unknown\nModulo Facturacion electronica: unknown\nModulo Gastos Menores: unknown\nModulo Gestion Comercial: unknown\nModulo Inventario: unknown\nModulo Planeacion de demanda: unknown\nModulo Presupuestos: unknown\nModulo Produccion: unknown\nModulo Proyectos: unknown\nModulo Punto de venta: unknown\nModulo Recetas y BOM: unknown\nModulo Apex Heart: unknown\nModulo Servicios: unknown\nModulo Suscripciones: unknown\nModulo Talento Humano: unknown\nModulo Tesoreria: unknown\nModulo Transporte: unknown\nModulo Ventas: unknown\nModulos LOCAL: unknown\nCorreo: unknown\nMinIO: ok\nColas BullMQ: unknown\nRedis: ok\nWeb APEXOS: ok\nWebSocket: ok\nWeb QA: unknown\nWeb PROD: unknown\n\nAlertas abiertas: 0",
-      "dryRun": true
-    },
-    {
-      "at": "2026-11-03T21:35:23.603Z",
-      "chatId": "intruso",
-      "text": "Emparejamiento exitoso. Ya puedes enviar instrucciones.",
-      "dryRun": true
-    },
-    {
-      "at": "2026-11-03T21:35:23.557Z",
-      "chatId": "intruso",
-      "text": "Chat no autorizado. Envia /pair <codigo> usando el codigo que muestra APEX Control Tower en tu equipo local.",
-      "dryRun": true
-    },
-    {
-      "at": "2026-11-03T21:35:23.430Z",
+      "at": "2026-11-05T15:35:51.450Z",
       "chatId": "cert-chat",
-      "text": "Trabajo JOB-20261103-163523-4e4c (N2) requiere aprobacion.\n\ncertificacion: corrige el reintento de la cola de correo\n\nDestino: desarrollo",
+      "text": "[RECUPERADO] Modulo Apex Heart: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:51.437Z",
+      "chatId": "cert-chat",
+      "text": "[RECUPERADO] Modulo Planeacion de demanda: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:51.427Z",
+      "chatId": "cert-chat",
+      "text": "[RECUPERADO] Modulo APEX AI Core: caído\nSimulacion activa: salud por modulo omitida.\nMotivo: Recuperado (unknown)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:51.409Z",
+      "chatId": "cert-chat",
+      "text": "[RECUPERADO] Brain (Python): caído\nsocket hang up\nMotivo: Recuperado (ok)\nHora: 5/11/2026, 10:35:49 a. m.",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.395Z",
+      "chatId": "intruso",
+      "text": "[MEDIUM] Modulo Transporte: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-a99ebc",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.395Z",
+      "chatId": "intruso",
+      "text": "[MEDIUM] Modulo Apex Heart: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-f84a55",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.395Z",
+      "chatId": "intruso",
+      "text": "[MEDIUM] Modulo Planeacion de demanda: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-e74010",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.395Z",
+      "chatId": "intruso",
+      "text": "[MEDIUM] Modulo APEX AI Core: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-15399b",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.395Z",
+      "chatId": "intruso",
+      "text": "[HIGH] Brain (Python): caído\nsocket hang up\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-7e1cfd",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.394Z",
+      "chatId": "intruso",
+      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-a9ce50",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.379Z",
+      "chatId": "cert-chat",
+      "text": "[MEDIUM] Modulo Transporte: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-a99ebc",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.359Z",
+      "chatId": "cert-chat",
+      "text": "[MEDIUM] Modulo Apex Heart: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-f84a55",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.328Z",
+      "chatId": "cert-chat",
+      "text": "[MEDIUM] Modulo Planeacion de demanda: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-e74010",
+      "dryRun": true
+    },
+    {
+      "at": "2026-11-05T15:35:49.257Z",
+      "chatId": "cert-chat",
+      "text": "[MEDIUM] Modulo APEX AI Core: caído\nSimulacion activa: salud por modulo omitida.\nHora: 5/11/2026, 10:35:49 a. m.\nReconocer: /ack ALR-15399b",
       "dryRun": true
     }
   ]

@@ -2031,3 +2031,265 @@ body.view-summary .detail-only { display: none !important; }
   .action-item { grid-template-columns: minmax(0, 1fr); }
   .action-priority { justify-self: start; }
 }
+
+/* Medidores con umbral: el valor medido, su banda y los limites que la produjeron */
+.gauges {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
+  gap: 12px;
+}
+
+.measure-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(165deg, rgba(26, 40, 68, 0.62), rgba(9, 14, 25, 0.86));
+  position: relative;
+  overflow: hidden;
+}
+
+.measure-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--unknown);
+}
+
+.measure-card.band-optimal::before { background: var(--ok); }
+.measure-card.band-risk::before { background: var(--warn); }
+.measure-card.band-critical::before { background: var(--down); }
+.measure-card.band-critical { border-color: rgba(255, 107, 107, 0.34); }
+
+.measure-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.measure-label {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.measure-value {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 660;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.measure-card.band-optimal .measure-value { color: var(--ok); }
+.measure-card.band-risk .measure-value { color: var(--warn); }
+.measure-card.band-critical .measure-value { color: var(--down); }
+
+.measure-unit {
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 4px;
+  color: var(--muted);
+}
+
+.measure-scale {
+  display: flex;
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  background: rgba(125, 156, 210, 0.14);
+}
+
+.measure-scale .seg { height: 100%; }
+.measure-scale .seg.optimal { background: rgba(56, 211, 159, 0.55); }
+.measure-scale .seg.risk { background: rgba(246, 196, 83, 0.55); }
+.measure-scale .seg.critical { background: rgba(255, 107, 107, 0.55); }
+.measure-scale .seg.flat { background: rgba(125, 156, 210, 0.22); }
+.measure-scale.idle { opacity: 0.6; }
+
+.measure-marker {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--text);
+  box-shadow: 0 0 0 1px rgba(5, 8, 15, 0.8);
+  transform: translateX(-1.5px);
+}
+
+.measure-marker.optimal { background: var(--ok); }
+.measure-marker.risk { background: var(--warn); }
+.measure-marker.critical { background: var(--down); }
+
+.measure-limits,
+.measure-foot {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+.measure-foot { font-family: var(--sans); font-size: 10.5px; }
+
+.measure-card.overflow .measure-limits::after {
+  content: " · fuera de escala";
+  color: var(--down);
+}
+
+.measure-spark {
+  display: block;
+  width: 100%;
+  max-width: 152px;
+  height: 26px;
+}
+
+.measure-spark polyline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Mapa unico: cada columna es un sondeo, cada fila un modulo, la ultima fila la API */
+.module-map { display: flex; flex-direction: column; gap: 10px; }
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.map-legend .muted { flex: 1 1 260px; }
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.legend-chip .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--unknown);
+}
+
+.legend-chip.band-optimal .swatch { background: var(--ok); }
+.legend-chip.band-risk .swatch { background: var(--warn); }
+.legend-chip.band-critical .swatch { background: var(--down); }
+
+.map-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.map-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) 96px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: rgba(9, 15, 27, 0.42);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-row:hover { background: rgba(82, 200, 245, 0.07); border-color: var(--border); }
+.map-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.map-row.api-row { cursor: default; background: rgba(9, 15, 27, 0.72); border-color: var(--border); }
+.map-row.api-row:hover { background: rgba(9, 15, 27, 0.72); }
+
+.map-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 22px;
+  min-width: 0;
+  border-bottom: 1px solid rgba(139, 155, 180, 0.22);
+}
+
+.map-tick {
+  display: block;
+  flex: 1 1 0;
+  min-width: 3px;
+  max-width: 12px;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--unknown);
+  opacity: 0.9;
+}
+
+.map-tick.band-optimal { background: var(--ok); }
+.map-tick.band-risk { background: var(--warn); }
+.map-tick.band-critical { background: var(--down); }
+/* Sin medicion: el eje en reposo, no una barra. Un modulo sin fecha medida no
+   puede fingir altura ni color de banda. */
+.map-tick.band-unknown { background: rgba(139, 155, 180, 0.3); min-height: 1px; }
+
+.map-row.api-row .map-tick { border-radius: 2px; opacity: 0.75; }
+
+.map-now { display: flex; justify-content: flex-end; }
+.map-now small { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+
+.map-axis {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) 96px;
+  gap: 10px;
+  padding: 0 9px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+.map-axis span:nth-child(2) { grid-column: 2; }
+.map-axis span:nth-child(3) { text-align: right; }
+
+.dot.status-accent { background: var(--accent); box-shadow: 0 0 0 3px rgba(82, 200, 245, 0.18); }
+.spark-fail { fill: var(--down); }
+
+.perf-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.perf-note-inline { margin: 0; font-size: 10.5px; color: var(--muted); }
+
+body.view-summary #cloudPanel { grid-column: span 12; }
+
+@media (max-width: 720px) {
+  .gauges { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .map-row,
+  .map-axis { grid-template-columns: minmax(96px, 1fr) minmax(0, 2fr); }
+  .map-row .map-now { display: none; }
+  .map-strip { height: 22px; }
+  body.view-summary #cloudPanel { grid-column: span 12; }
+}

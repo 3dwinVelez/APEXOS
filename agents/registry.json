@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-03",
+  "generated_at": "2026-11-05",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -84,9 +84,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.7.1",
-      "updated_at": "2026-11-03",
-      "sha256": "e54289ad0fa44a3a1fdcf8ebf28a3f7508fa090ad73baaa95eda8070b6b99b3c",
+      "version": "2.7.2",
+      "updated_at": "2026-11-05",
+      "sha256": "3494323640c0584949f7bbe43ffab6783de61f7401939ceeb9ce8b155d7550a3",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -190,9 +190,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.6.0",
-      "updated_at": "2026-11-03",
-      "sha256": "04eaf127788b0319113222aa2251d6463559970f625b2e2e50fdf1c370fbd2ab",
+      "version": "2.7.0",
+      "updated_at": "2026-11-05",
+      "sha256": "02693d2e15e4cb24640e6b031a71322b2d5a2c173b60c8ea8750964dd0fcdc26",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -212,15 +212,16 @@
         "graficos-salud-acotados",
         "diagnostico-build-por-ambiente",
         "consumo-uso-api-medido",
-        "torre-residente-en-desarrollo"
+        "torre-residente-en-desarrollo",
+        "torre-umbrales-fuente-unica"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.7.0",
-      "updated_at": "2026-11-03",
-      "sha256": "e350188f2f9d47254870d5df9dfbaa7021f6746d1f5ce75b47b964b7e532d486",
+      "version": "2.8.0",
+      "updated_at": "2026-11-05",
+      "sha256": "8c25099b8262c614968a074faa2b4749c1f231f9504542a819befd99e0a6b415",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -246,15 +247,16 @@
         "certificacion-salud-empresa",
         "certificacion-conexion-build",
         "certificacion-consolidado-vivo",
-        "torre-residente-en-desarrollo"
+        "torre-residente-en-desarrollo",
+        "torre-certifica-lo-visible"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.6.0",
-      "updated_at": "2026-11-03",
-      "sha256": "3699b2f7ed06973dec183db8a607d9f6203316e89c5d88db93d86d70aa51f540",
+      "version": "2.6.1",
+      "updated_at": "2026-11-05",
+      "sha256": "41dd5bab1bb91bc2f15f1e763e8487082cfb267bb02ad607b640b3f6988f0a7f",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -283,9 +285,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.5.0",
-      "updated_at": "2026-11-03",
-      "sha256": "4aeedcd7acc7c2160ee5d6d176cb704ad9b80262c81d4f13473f9a30161d1c60",
+      "version": "2.5.1",
+      "updated_at": "2026-11-05",
+      "sha256": "7955649f10b076a9da6a32938df125d4c658ef2edcdc11646b5e93b4aac346ed",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [

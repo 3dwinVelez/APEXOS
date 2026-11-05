@@ -69,8 +69,8 @@ const ACTIVITY_REASON = {
   SIMULACION: "Simulación activa: la actividad se omite."
 };
 
-const BAND_LABEL = { optimal: "Óptimo", risk: "En riesgo", critical: "Crítico", unknown: "Sin dato" };
-const BAND_TONE = { optimal: "ok", risk: "degraded", critical: "down", unknown: "unknown" };
+const BAND_LABEL = { optimal: "Óptimo", risk: "En riesgo", critical: "Crítico", unknown: "Sin dato", informational: "Informativo" };
+const BAND_TONE = { optimal: "ok", risk: "degraded", critical: "down", unknown: "unknown", informational: "unknown" };
 const BAND_RANGE = { optimal: "85–100", risk: "60–84", critical: "0–59", unknown: "sin medición" };
 const BAND_ORDER = ["optimal", "risk", "critical", "unknown"];
 const HEALTH_REASON = {
@@ -217,7 +217,7 @@ function sparkline(series) {
   const line = coords.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
   const area = `${pad},${height - pad} ${line} ${width - pad},${height - pad}`;
   const failures = coords
-    .map((point, index) => (points[index].ok === false ? `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.6" fill="#ff6b6b" />` : ""))
+    .map((point, index) => (points[index].ok === false ? `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="2.6" class="spark-fail" />` : ""))
     .join("");
   return `
     <svg class="sparkline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Serie de latencia de la API">
@@ -481,7 +481,7 @@ function moduleChart(scope) {
   const visible = sorted.slice(0, limit);
   const filterLabel = state.healthBand ? ` · ${BAND_LABEL[state.healthBand]}` : "";
   return `
-    <section class="module-chart" aria-label="Salud por módulo">
+    <section class="module-chart detail-only" aria-label="Salud por módulo">
       <div class="chart-head">
         <h3>Salud por módulo</h3>
         <span class="muted small">${escapeHtml(`${filtered.length}/${modules.length}${filterLabel}`)}${sorted.length > visible.length ? " · peores primero" : ""}</span>
@@ -492,6 +492,271 @@ function moduleChart(scope) {
         : `<p class="empty">Ningún módulo en ${escapeHtml(BAND_LABEL[state.healthBand] || "la banda")}.</p>`}
       ${sorted.length > visible.length ? `<p class="muted small chart-note">Mostrando ${visible.length} de ${sorted.length}. Cambia a Detalle para ver todos.</p>` : ""}
     </section>`;
+}
+
+// Capa de medición. El servidor ya publicó el valor, su banda y los límites que
+// la produjeron (lib/metrics.js); aquí solo se pinta. Ningún umbral vive en el
+// navegador, así que cambiar el presupuesto de rendimiento rebanda el panel
+// entero sin tocar una línea de UI.
+function gaugeOf(environment, key) {
+  const gauges = environment && Array.isArray(environment.gauges) ? environment.gauges : [];
+  return gauges.find((entry) => entry.key === key) || null;
+}
+
+// Estado que las tarjetas numéricas todavía usan, derivado del mismo medidor.
+function measureStatus(environment, key) {
+  const entry = gaugeOf(environment, key);
+  return entry ? BAND_TONE[entry.band] || "unknown" : "unknown";
+}
+
+// El panel no decide umbrales: cuando hay que resumir dos mediciones distintas se
+// muestra la peor banda medida, nunca un promedio que suavice un rojo.
+const TONE_RANK = { unknown: 0, ok: 1, degraded: 2, down: 3 };
+
+function worstTone(...tones) {
+  const measured = tones.filter((tone) => tone && tone !== "unknown");
+  if (!measured.length) return "unknown";
+  return measured.reduce((worst, tone) => (TONE_RANK[tone] > TONE_RANK[worst] ? tone : worst), measured[0]);
+}
+
+function humanDuration(seconds) {
+  const total = Math.max(0, Math.round(Number(seconds) || 0));
+  if (total < 90) return `${total} s`;
+  const minutes = Math.round(total / 60);
+  if (minutes < 90) return `${minutes} min`;
+  const hours = Math.round((total / 3600) * 10) / 10;
+  if (hours < 72) return `${hours} h`;
+  return `${Math.round((total / 86400) * 10) / 10} d`;
+}
+
+function measureValue(entry) {
+  if (!entry || entry.value == null) return "—";
+  if (entry.key === "uptime") return humanDuration(entry.value);
+  return formatNumber(Math.round(entry.value * 10) / 10);
+}
+
+function measureUnit(entry) {
+  if (!entry || entry.value == null) return "";
+  return entry.key === "uptime" ? "" : entry.unit;
+}
+
+// Geometría de la escala: tres tramos (verde / ámbar / rojo) y el marcador del
+// valor medido. `higher` premia los valores altos, así que invierte el orden.
+// Un medidor informativo no tiene cortes: pintarle una escala inventada lo
+// haría parecer un diagnóstico que el servidor nunca publicó.
+function scaleGeometry(entry) {
+  if (!entry || entry.direction === "informational") return null;
+  const optimal = Number(entry.limits && entry.limits.optimal);
+  const risk = Number(entry.limits && entry.limits.risk);
+  if (!Number.isFinite(optimal) || !Number.isFinite(risk)) return null;
+  if (entry.limits.optimal === null || entry.limits.risk === null) return null;
+  const higher = entry.direction === "higher";
+  const span = higher ? Math.max(optimal * 2, 100) : (risk > 0 ? risk * 1.5 : Math.max(optimal, 1) * 3);
+  if (!(span > 0)) return null;
+  const pct = (value) => Math.max(0, Math.min(100, (value / span) * 100));
+  const marker = entry.value == null ? null : pct(entry.value);
+  const segments = higher
+    ? [
+        { cls: "critical", width: pct(risk) },
+        { cls: "risk", width: pct(optimal) - pct(risk) },
+        { cls: "optimal", width: 100 - pct(optimal) }
+      ]
+    : [
+        { cls: "optimal", width: pct(optimal) },
+        { cls: "risk", width: pct(risk) - pct(optimal) },
+        { cls: "critical", width: 100 - pct(risk) }
+      ];
+  return { segments, marker, overflow: marker === 100 && entry.value != null && entry.value > span };
+}
+
+function measureLimits(entry) {
+  if (!scaleGeometry(entry)) return "contexto del proceso, no diagnóstico";
+  const unit = entry.unit ? ` ${entry.unit}` : "";
+  const optimal = `${formatNumber(entry.limits.optimal)}${unit}`;
+  const risk = `${formatNumber(entry.limits.risk)}${unit}`;
+  return entry.direction === "higher"
+    ? `óptimo ≥ ${optimal} · en riesgo ≥ ${risk}`
+    : `óptimo ≤ ${optimal} · en riesgo ≤ ${risk}`;
+}
+
+function measureFoot(entry, environment) {
+  const performance = performanceData(environment) || {};
+  const deployed = environment ? environment.deployed : null;
+  if (entry.key === "p95") {
+    return performance.samples
+      ? `${formatNumber(performance.samples)} muestras · p50 ${performance.p50 == null ? "—" : performance.p50} ms`
+      : "sin muestras de este ambiente";
+  }
+  if (entry.key === "errorRate") {
+    return performance.samples
+      ? `${formatNumber(performance.failures || 0)} de ${formatNumber(performance.samples)} sondas /health fallaron`
+      : "sin sondas registradas";
+  }
+  if (entry.key === "memoryRss") {
+    return deployed && deployed.memory
+      ? `heap ${formatNumber(deployed.memory.heapUsed)}/${formatNumber(deployed.memory.heapTotal)} MB`
+      : "el build desplegado no expone memoria";
+  }
+  if (entry.key === "dataCoverage") {
+    const summary = environment && environment.activity && environment.activity.tenants
+      ? environment.activity.tenants.summary
+      : null;
+    return summary
+      ? `${formatNumber(summary.with_activity || 0)} de ${formatNumber(summary.active || 0)} empresas activas con actividad`
+      : "sin lectura por empresa en este ambiente";
+  }
+  if (entry.key === "freshness") {
+    return entry.value == null ? "ningún módulo publica fecha medida" : "peor ratio edad/esperado entre los módulos";
+  }
+  if (entry.key === "slowQueries") return "acumuladas desde el arranque del proceso";
+  if (entry.key === "requests") {
+    return deployed && deployed.usage
+      ? `5xx ${formatNumber((deployed.usage.byStatus && deployed.usage.byStatus["5xx"]) || 0)}`
+      : "el build desplegado no expone uso";
+  }
+  return entry.source;
+}
+
+function microSparkline(series) {
+  const points = (Array.isArray(series) ? series : []).slice(-24);
+  if (points.length < 2) return "";
+  const width = 148;
+  const height = 26;
+  const values = points.map((sample) => Math.max(0, Number(sample.ms) || 0));
+  const max = Math.max(...values);
+  const step = width / (values.length - 1);
+  const line = values
+    .map((value, index) => `${(index * step).toFixed(1)},${(height - 2 - (value / Math.max(1, max)) * (height - 4)).toFixed(1)}`)
+    .join(" ");
+  return `<svg class="measure-spark" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${line}" /></svg>`;
+}
+
+function measureCard(entry, environment, { series = null } = {}) {
+  const tone = BAND_TONE[entry.band] || "unknown";
+  const geometry = scaleGeometry(entry);
+  const scale = geometry
+    ? `<div class="measure-scale" aria-hidden="true">
+        ${geometry.segments.map((segment) => `<span class="seg ${segment.cls}" style="width:${Math.max(0, segment.width).toFixed(1)}%"></span>`).join("")}
+        ${geometry.marker == null ? "" : `<span class="measure-marker ${entry.band}" style="left:${geometry.marker.toFixed(1)}%"></span>`}
+      </div>`
+    : '<div class="measure-scale idle" aria-hidden="true"><span class="seg flat" style="width:100%"></span></div>';
+  const spark = entry.key === "p95" ? microSparkline(series) : "";
+  const reading = `${entry.label}: ${measureValue(entry)}${measureUnit(entry) ? ` ${measureUnit(entry)}` : ""}. ${BAND_LABEL[entry.band] || "Sin dato"}. ${measureLimits(entry)}.`;
+  return `
+    <article class="measure-card band-${entry.band}${geometry && geometry.overflow ? " overflow" : ""}" aria-label="${escapeHtml(reading)}" title="${escapeHtml(`${reading} Fuente: ${entry.source}`)}">
+      <div class="measure-head">
+        <p class="measure-label">${escapeHtml(entry.label)}</p>
+        <span class="band-pill ${tone}">${escapeHtml(BAND_LABEL[entry.band] || "Sin dato")}</span>
+      </div>
+      <p class="measure-value">${escapeHtml(measureValue(entry))}<span class="measure-unit">${escapeHtml(measureUnit(entry))}</span></p>
+      ${scale}
+      <p class="measure-limits">${escapeHtml(measureLimits(entry))}</p>
+      ${spark}
+      <p class="measure-foot">${escapeHtml(measureFoot(entry, environment))}</p>
+    </article>`;
+}
+
+function renderGauges(environment) {
+  const container = document.getElementById("gauges");
+  const meta = document.getElementById("gaugesMeta");
+  if (!container || !meta) return;
+  const gauges = environment && Array.isArray(environment.gauges) ? environment.gauges : [];
+  if (!gauges.length) {
+    meta.textContent = "Sin medidores";
+    container.innerHTML = '<p class="empty">La torre aún no publicó los umbrales de este ambiente.</p>';
+    return;
+  }
+  const scored = gauges.filter((entry) => entry.direction !== "informational");
+  const critical = scored.filter((entry) => entry.band === "critical").length;
+  const risky = scored.filter((entry) => entry.band === "risk").length;
+  meta.textContent = `${scored.length} medidores con umbral · ${critical} en rojo · ${risky} en riesgo`;
+  const performance = performanceData(environment) || {};
+  container.innerHTML = gauges.map((entry) => measureCard(entry, environment, { series: performance.series })).join("");
+}
+
+// Altura de un tick: manda la frescura medida (ratio edad/esperado). Un módulo sin
+// fecha medida usa la altura base de su banda; nunca se pinta una altura inventada.
+const TICK_BASE_HEIGHT = { optimal: 30, risk: 58, critical: 86, unknown: 6 };
+
+function tickHeight(tick) {
+  if (!tick) return TICK_BASE_HEIGHT.unknown;
+  if (Number.isFinite(tick.ratio) && tick.ratio > 0) {
+    return Math.max(24, Math.min(100, 24 + (Math.min(tick.ratio, 4) / 4) * 72));
+  }
+  return TICK_BASE_HEIGHT[tick.band] || TICK_BASE_HEIGHT.unknown;
+}
+
+function moduleMapRows(environment, history) {
+  const payload = environment && environment.modules ? environment.modules : null;
+  const modules = payload && Array.isArray(payload.modules) ? payload.modules : [];
+  const order = { critical: 0, risk: 1, unknown: 2, optimal: 3 };
+  return [...modules].sort((left, right) => {
+    const byBand = (order[left.band] ?? 4) - (order[right.band] ?? 4);
+    if (byBand !== 0) return byBand;
+    return String(left.name || left.key).localeCompare(String(right.name || right.key), "es");
+  }).map((module) => ({
+    module,
+    cells: history.map((sample) => (sample.ticks ? sample.ticks[module.key] : null) || null),
+    band: BAND_ORDER.includes(module.band) ? module.band : "unknown"
+  }));
+}
+
+function mapTick(band, height, title) {
+  const safe = BAND_ORDER.includes(band) ? band : "unknown";
+  return `<i class="map-tick band-${safe}" style="height:${Math.max(4, Math.min(100, height)).toFixed(0)}%" title="${escapeHtml(title)}"></i>`;
+}
+
+function renderModuleMap(environment) {
+  const container = document.getElementById("moduleMap");
+  const meta = document.getElementById("moduleMapMeta");
+  if (!container || !meta) return;
+  const history = environment && Array.isArray(environment.moduleHistory) ? environment.moduleHistory : [];
+  const rows = environment ? moduleMapRows(environment, history) : [];
+  if (!rows.length || !history.length) {
+    meta.textContent = history.length ? `${history.length} sondeos · sin módulos medidos` : "Sin sondeos";
+    container.innerHTML = `<p class="empty">${escapeHtml(
+      environment && !environment.enabled
+        ? "Este ambiente está desactivado en la torre."
+        : "El mapa necesita un sondeo con módulos medidos. Mientras la API del ambiente no publique la salud por módulo, aquí no hay nada que dibujar."
+    )}</p>`;
+    return;
+  }
+  const p95Gauge = gaugeOf(environment, "p95");
+  const riskCut = p95Gauge && p95Gauge.limits ? Number(p95Gauge.limits.risk) : 1000;
+  const columns = history.length;
+  const first = formatTime(history[0].at);
+  const last = formatTime(history[history.length - 1].at);
+  meta.textContent = `${columns} sondeos · ${first} → ${last} · altura = frescura medida`;
+
+  const moduleRows = rows.map(({ module, cells, band }) => `
+    <button class="map-row band-${band}" type="button" data-module="${escapeHtml(module.key)}" title="${escapeHtml(`${module.name} · ${BAND_LABEL[band]} · clic para ver el detalle`)}">
+      <span class="map-name"><span class="dot status-${BAND_TONE[band]}" aria-hidden="true"></span>${escapeHtml(module.name)}</span>
+      <span class="map-strip" aria-hidden="true">${cells.map((tick) => mapTick(
+        tick ? tick.band : "unknown",
+        tickHeight(tick),
+        `${module.name} · ${tick ? BAND_LABEL[tick.band] : "sin sondeo"}${tick && tick.ratio != null ? ` · frescura ${tick.ratio}x` : ""}${tick && tick.records != null ? ` · ${formatNumber(tick.records)} registros` : ""}`
+      )).join("")}</span>
+      <span class="map-now"><span class="band-pill ${BAND_TONE[band]}">${escapeHtml(BAND_LABEL[band])}</span></span>
+    </button>`).join("");
+
+  const apiCells = history.map((sample) => sample.api || null);
+  const lastApi = apiCells[apiCells.length - 1];
+  const apiRow = `
+    <div class="map-row api-row band-${lastApi && BAND_ORDER.includes(lastApi.band) ? lastApi.band : "unknown"}">
+      <span class="map-name"><span class="dot status-accent" aria-hidden="true"></span>API /health</span>
+      <span class="map-strip" aria-hidden="true">${apiCells.map((cell) => cell
+        ? mapTick(cell.band, cell.ms == null ? 14 : Math.max(10, Math.min(100, (cell.ms / (riskCut * 1.5)) * 100)), `Sonda /health ${cell.ms == null ? "sin medición" : `${cell.ms} ms`} · objetivo ≤ ${riskCut} ms`)
+        : mapTick("unknown", 12, "Sondeo sin lectura de la API"))}</span>
+      <span class="map-now"><small>${lastApi && lastApi.ms != null ? escapeHtml(`${lastApi.ms} ms`) : "sin sonda"}</small></span>
+    </div>`;
+
+  container.innerHTML = `
+    <div class="map-legend">
+      ${BAND_ORDER.map((band) => `<span class="legend-chip band-${band}"><i class="swatch" aria-hidden="true"></i>${escapeHtml(BAND_LABEL[band])}</span>`).join("")}
+      <span class="muted small">Cada marca es un sondeo real de la torre. La altura sale de la frescura medida; un módulo sin fecha medida usa la altura base de su banda.</span>
+    </div>
+    <div class="map-body">${moduleRows}${apiRow}</div>
+    <div class="map-axis"><span></span><span>${escapeHtml(first)}</span><span>${escapeHtml(last)}</span></div>`;
 }
 
 function payloadNotice(payload, environment, { scope = "environment" } = {}) {
@@ -616,7 +881,7 @@ function companyTiles(data) {
       value: deployed && deployed.memory ? formatNumber(deployed.memory.rss) : "—",
       unit: deployed && deployed.memory ? "MB" : "",
       foot: memoryFoot(deployed) || "El build desplegado no expone memoria",
-      status: deployed && deployed.memory ? "ok" : "unknown"
+      status: deployed && deployed.memory ? measureStatus(environment, "memoryRss") : "unknown"
     },
     {
       label: "Uso del API",
@@ -633,11 +898,7 @@ function companyTiles(data) {
       })(),
       unit: "ms",
       foot: uptimeFoot(deployed) || "Proceso sin uptime reportado",
-      status: (() => {
-        const performance = performanceData(environment);
-        if (!performance || performance.p95 == null) return "unknown";
-        return performance.p95 > 1500 ? "down" : performance.p95 > 600 ? "degraded" : "ok";
-      })()
+      status: measureStatus(environment, "p95")
     }
   ];
 }
@@ -1153,7 +1414,7 @@ function consolidatedTiles(environment) {
       foot: deployed && deployed.memory
         ? `heap ${formatNumber(deployed.memory.heapUsed)}/${formatNumber(deployed.memory.heapTotal)} MB`
         : "El build desplegado no expone memoria",
-      status: deployed && deployed.memory ? "ok" : "unknown"
+      status: deployed && deployed.memory ? measureStatus(environment, "memoryRss") : "unknown"
     },
     {
       label: "Uso del API",
@@ -1169,7 +1430,7 @@ function consolidatedTiles(environment) {
       foot: performance && performance.samples
         ? `${performance.samples} muestras · ${performance.errorRate || 0}% errores · ${uptimeFoot(deployed) || "sin uptime"}`
         : "Sin muestras de este ambiente",
-      status: !performance || performance.p95 == null ? "unknown" : performance.p95 > 1500 ? "down" : performance.p95 > 600 ? "degraded" : "ok"
+      status: measureStatus(environment, "p95")
     }
   ];
   return tiles;
@@ -1356,6 +1617,8 @@ function render() {
   renderEnvironmentTabs(snapshot, environment);
   renderStatusLegend();
   renderHealth(environment);
+  renderGauges(environment);
+  renderModuleMap(environment);
 
   const overallPill = document.getElementById("overallPill");
   const overall = environment ? environment.overall : snapshot ? snapshot.overall : "unknown";
@@ -1494,7 +1757,7 @@ function renderKpis(environment, data, git, openAlerts) {
       label: "API p95",
       value: performance.p95 != null ? `${performance.p95} ms` : "—",
       foot: performance.samples ? `${performance.samples} muestras · ${performance.errorRate || 0}% errores` : "Sin muestras",
-      status: performance.p95 == null ? "unknown" : performance.p95 > 1500 ? "down" : performance.p95 > 600 ? "degraded" : "ok"
+      status: measureStatus(environment, "p95")
     },
     {
       label: `Rama ${environment ? environment.branch : "—"}`,
@@ -1675,16 +1938,26 @@ function renderPerformance(environment) {
   }
   const errorRate = performance.errorRate == null ? 0 : performance.errorRate;
   const p95 = performance.p95;
-  const tone = p95 == null ? "unknown" : p95 > 1500 || errorRate > 5 ? "down" : p95 > 600 || errorRate > 0 ? "degraded" : "ok";
+  const latencyTone = measureStatus(environment, "p95");
+  const failureTone = measureStatus(environment, "errorRate");
+  const tone = worstTone(latencyTone, failureTone);
+  const memoryTone = measureStatus(environment, "memoryRss");
+  const slowTone = measureStatus(environment, "slowQueries");
+  const p95Entry = gaugeOf(environment, "p95");
+  const errorEntry = gaugeOf(environment, "errorRate");
+  const limitText = p95Entry && p95Entry.limits ? `objetivo ≤ ${p95Entry.limits.optimal} ms` : "umbral del presupuesto no publicado";
   meta.textContent = `${performance.samples} muestras · ${formatTime(performance.last && performance.last.at)}`;
   if (state.view === "summary") {
     container.innerHTML = `
       <div class="perf-head">
         <div>
           <p class="perf-value">${p95 != null ? escapeHtml(p95) : "—"}<small>ms p95 · ${escapeHtml(label)}</small></p>
-          <p class="perf-sub">${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"} · ${escapeHtml(errorRate)}% errores</p>
+          <p class="perf-sub">${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"} · ${escapeHtml(errorRate)}% de las sondas fallaron</p>
         </div>
-        <span class="pill ${tone}">${escapeHtml(STATUS_LABEL[tone] || tone)}</span>
+        <div class="perf-badges">
+          <span class="band-pill ${latencyTone}">latencia · ${escapeHtml(p95Entry ? BAND_LABEL[p95Entry.band] : "Sin dato")}</span>
+          <span class="band-pill ${failureTone}">sondas · ${escapeHtml(errorEntry ? BAND_LABEL[errorEntry.band] : "Sin dato")}</span>
+        </div>
       </div>
       ${sparkline(performance.series)}`;
     return;
@@ -1695,14 +1968,14 @@ function renderPerformance(environment) {
     { label: "Promedio", value: performance.avg, unit: "ms" },
     { label: "Mínimo", value: performance.min, unit: "ms" },
     { label: "Máximo", value: performance.max, unit: "ms" },
-    { label: "Errores", value: performance.failures, unit: "", tone: errorRate > 0 ? "down" : "ok" },
-    { label: "Tasa error", value: errorRate, unit: "%", tone: errorRate > 0 ? "down" : "ok" },
+    { label: "Errores", value: performance.failures, unit: "", tone: failureTone },
+    { label: "Tasa error", value: errorRate, unit: "%", tone: failureTone },
     { label: "Muestras", value: performance.samples, unit: "" }
   ];
   const deployed = environment ? environment.deployed : null;
   if (deployed && deployed.memory) {
     stats.push(
-      { label: "Memoria RSS", value: formatNumber(deployed.memory.rss), unit: " MB" },
+      { label: "Memoria RSS", value: formatNumber(deployed.memory.rss), unit: " MB", tone: memoryTone },
       { label: "Heap usado", value: formatNumber(deployed.memory.heapUsed), unit: " MB" },
       { label: "Heap total", value: formatNumber(deployed.memory.heapTotal), unit: " MB" }
     );
@@ -1714,7 +1987,7 @@ function renderPerformance(environment) {
       { label: "2xx", value: formatNumber(byStatus["2xx"] || 0), unit: "" },
       { label: "4xx", value: formatNumber(byStatus["4xx"] || 0), unit: "", tone: byStatus["4xx"] ? "degraded" : "ok" },
       { label: "5xx", value: formatNumber(byStatus["5xx"] || 0), unit: "", tone: byStatus["5xx"] ? "down" : "ok" },
-      { label: "Consultas lentas", value: formatNumber(deployed.usage.slowQueries), unit: "", tone: deployed.usage.slowQueries ? "degraded" : "ok" }
+      { label: "Consultas lentas", value: formatNumber(deployed.usage.slowQueries), unit: "", tone: slowTone }
     );
   }
   if (deployed && Number.isFinite(deployed.uptimeSeconds)) {
@@ -1725,10 +1998,14 @@ function renderPerformance(environment) {
     <div class="perf-head">
       <div>
         <p class="perf-value">${p95 != null ? escapeHtml(p95) : "—"}<small>ms p95 · ${escapeHtml(label)}</small></p>
-        <p class="perf-sub">${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"} · ${escapeHtml(errorRate)}% errores</p>
+        <p class="perf-sub">${escapeHtml(limitText)} · ${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"}</p>
       </div>
-      <span class="pill ${tone}">${escapeHtml(STATUS_LABEL[tone] || tone)}</span>
+      <div class="perf-badges">
+        <span class="band-pill ${latencyTone}" title="Banda del p95 contra el presupuesto de rendimiento">latencia · ${escapeHtml(p95Entry ? BAND_LABEL[p95Entry.band] : "Sin dato")}</span>
+        <span class="band-pill ${failureTone}" title="Porcentaje de sondas /health de la torre que fallaron, no de peticiones de usuarios">sondas · ${escapeHtml(errorEntry ? BAND_LABEL[errorEntry.band] : "Sin dato")}</span>
+      </div>
     </div>
+    <p class="perf-note-inline">«sondas» mide los sondeos que la torre hace a /health y fallaron; «4xx/5xx» de abajo mide las peticiones reales de los usuarios. No son la misma señal.</p>
     ${sparkline(performance.series)}
     <div class="perf-grid">
       ${stats.map((stat) => `

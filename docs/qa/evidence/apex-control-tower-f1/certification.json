@@ -3,9 +3,9 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-03T21:35:45.524Z",
-  "started_at": "2026-11-03T21:35:22.141Z",
-  "commit": "ab75e37d4d09d926841cca7cde9da15dc5482839",
+  "generated_at": "2026-11-05T15:36:04.515Z",
+  "started_at": "2026-11-05T15:35:39.307Z",
+  "commit": "d5918a85d6762d80228b0493bdbb8c6646c31704",
   "working_tree_dirty": true,
   "environment": {
     "type": "local",
@@ -28,8 +28,8 @@
       "name": "tower_boot",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:62891",
-        "port": 62891
+        "url": "http://127.0.0.1:62540",
+        "port": 62540
       }
     },
     {
@@ -44,7 +44,7 @@
       "ok": true,
       "detail": {
         "overall": "ok",
-        "checks": 52
+        "checks": 48
       }
     },
     {
@@ -119,7 +119,7 @@
       "name": "factory_create_n2",
       "ok": true,
       "detail": {
-        "id": "JOB-20261103-163523-4e4c"
+        "id": "JOB-20261105-103540-e10b"
       }
     },
     {
@@ -140,7 +140,7 @@
       "name": "bridge_claim_envelope",
       "ok": true,
       "detail": {
-        "job": "JOB-20261103-163523-4e4c",
+        "job": "JOB-20261105-103540-e10b",
         "scope": {
           "branch": "desarrollo",
           "allowCodeChanges": true,
@@ -164,7 +164,7 @@
       "name": "telegram_pairing_code",
       "ok": true,
       "detail": {
-        "expiresAt": "2026-11-03T21:45:23.540Z"
+        "expiresAt": "2026-11-05T15:45:40.434Z"
       }
     },
     {
@@ -200,16 +200,25 @@
       "name": "browser_dashboard_rendered",
       "ok": true,
       "detail": {
-        "checks": 13,
-        "kpis": 18,
+        "checks": 9,
+        "medidores": 8,
+        "filasMapa": 33,
+        "marcasMapa": 33,
         "gauge": true
+      }
+    },
+    {
+      "name": "browser_summary_uses_gauges",
+      "ok": true,
+      "detail": {
+        "bands": "optimal|optimal|optimal|optimal|unknown|unknown|informational|informational"
       }
     },
     {
       "name": "browser_dashboard_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 1312235
+        "bytes": 968382
       }
     },
     {
@@ -223,7 +232,8 @@
       "name": "browser_technical_details",
       "ok": true,
       "detail": {
-        "details": 45
+        "details": 41,
+        "teselasDetalle": 11
       }
     },
     {
@@ -241,7 +251,7 @@
       "ok": true,
       "detail": {
         "stats": 17,
-        "rss": "\n          Memoria RSS\n          162 MB\n        "
+        "rss": "\n          Memoria RSS\n          110,7 MB\n        "
       }
     },
     {
@@ -257,7 +267,7 @@
       "name": "browser_environment_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 1788991
+        "bytes": 2053919
       }
     },
     {
@@ -281,8 +291,8 @@
       "ok": true,
       "detail": {
         "outbox": [
-          "[CRITICAL] API APEXOS: caído",
-          "[CRITICAL] API APEXOS: caído"
+          "[RECUPERADO] Modulo Transporte: caído",
+          "[RECUPERADO] Modulo Apex Heart: caído"
         ]
       }
     },
@@ -300,14 +310,14 @@
       "ok": true,
       "detail": {
         "overall": "LOCAL Caído",
-        "alerts": 1
+        "alerts": 6
       }
     },
     {
       "name": "browser_degraded_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 1968907
+        "bytes": 2292755
       }
     },
     {
@@ -343,26 +353,26 @@
       "name": "telegram_evidence",
       "ok": true,
       "detail": {
-        "messages": 7
+        "messages": 20
       }
     }
   ],
   "summary": {
-    "passed": 38,
+    "passed": 39,
     "failed": 0,
-    "total": 38,
+    "total": 39,
     "screenshots": [
       {
         "file": "tower-overview.png",
-        "bytes": 1312235
+        "bytes": 968382
       },
       {
         "file": "tower-env-main.png",
-        "bytes": 1788991
+        "bytes": 2053919
       },
       {
         "file": "tower-api-down.png",
-        "bytes": 1968907
+        "bytes": 2292755
       }
     ],
     "console_errors": []

@@ -3,9 +3,9 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-03T21:34:52.635Z",
-  "started_at": "2026-11-03T21:34:35.801Z",
-  "commit": "ab75e37d4d09d926841cca7cde9da15dc5482839",
+  "generated_at": "2026-11-05T15:36:37.769Z",
+  "started_at": "2026-11-05T15:36:16.313Z",
+  "commit": "d5918a85d6762d80228b0493bdbb8c6646c31704",
   "working_tree_dirty": true,
   "alcance": [
     "monitor consolidado por empresa (empresas, carga, actividad, memoria, uso del API, rendimiento)",
@@ -38,14 +38,14 @@
       "name": "api_rica_sondeada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:52673"
+        "base": "http://127.0.0.1:50483"
       }
     },
     {
       "name": "api_legada_bloqueada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:52674"
+        "base": "http://127.0.0.1:50484"
       }
     },
     {
@@ -61,7 +61,7 @@
       "name": "torre_iniciada",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:52676"
+        "url": "http://127.0.0.1:50486"
       }
     },
     {
@@ -244,7 +244,7 @@
       "name": "snapshot_no_filtra_el_token_de_la_torre",
       "ok": true,
       "detail": {
-        "tamano": 136976
+        "tamano": 146908
       }
     },
     {
@@ -282,6 +282,43 @@
       }
     },
     {
+      "name": "navegador_medidores_y_mapa",
+      "ok": true,
+      "detail": {
+        "medidores": 8,
+        "conUmbral": 6,
+        "bandas": [
+          "Óptimo",
+          "Óptimo",
+          "Óptimo",
+          "Crítico",
+          "Óptimo",
+          "Crítico",
+          "Informativo",
+          "Informativo"
+        ],
+        "filasMapa": 4,
+        "marcasMapa": 4,
+        "teselasResumenVisibles": 0
+      }
+    },
+    {
+      "name": "navegador_bandas_sin_jerga",
+      "ok": true,
+      "detail": {
+        "bandas": [
+          "Óptimo",
+          "Óptimo",
+          "Óptimo",
+          "Crítico",
+          "Óptimo",
+          "Crítico",
+          "Informativo",
+          "Informativo"
+        ]
+      }
+    },
+    {
       "name": "navegador_memoria_y_uso_reales",
       "ok": true,
       "detail": {
@@ -305,10 +342,10 @@
         "teselas": [
           "Estado operativo 58/100 Crítico · 1/3 módulos operativos",
           "Carga de datos 1.720 1/3 módulos con datos · 1 caídos · 0 sin medir",
-          "Actividad de la empresa 120 2 sesiones · 4 GPS · ahora",
+          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 6 s",
           "Memoria del API 214,6MB heap 88,4/121,2 MB",
           "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas",
-          "Rendimiento p95 74ms 2 h 2 min encendido"
+          "Rendimiento p95 88ms 2 h 2 min encendido"
         ]
       }
     },
@@ -324,7 +361,7 @@
       "name": "captura_monitor_consolidado",
       "ok": true,
       "detail": {
-        "bytes": 1438983,
+        "bytes": 1351546,
         "scroll": true
       }
     },
@@ -357,7 +394,7 @@
       "name": "captura_producto_bloqueado",
       "ok": true,
       "detail": {
-        "bytes": 1740556
+        "bytes": 1140725
       }
     },
     {
@@ -379,7 +416,7 @@
       "name": "captura_vista_detalle",
       "ok": true,
       "detail": {
-        "bytes": 1588133
+        "bytes": 1852510
       }
     },
     {
@@ -398,21 +435,21 @@
     }
   ],
   "summary": {
-    "passed": 42,
+    "passed": 44,
     "failed": 0,
-    "total": 42,
+    "total": 44,
     "screenshots": [
       {
         "file": "01-monitor-consolidado-empresa.png",
-        "bytes": 1438983
+        "bytes": 1351546
       },
       {
         "file": "02-producto-bloqueado-con-acciones.png",
-        "bytes": 1740556
+        "bytes": 1140725
       },
       {
         "file": "03-vista-detalle-consolidado.png",
-        "bytes": 1588133
+        "bytes": 1852510
       }
     ],
     "console_errors": []
