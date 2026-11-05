@@ -6,12 +6,17 @@ import { downloadXlsxWorkbook } from "@/lib/reportExports";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { punctualityAlert, punctualityTypeNames, type PunctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
 import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ClipboardList, Clock, Download, Eye, Filter, ImageOff, LogIn, MapPin, RotateCcw, Search } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
-type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string };
+type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; file_url?: string }; metadata?: PunchIdentityMetadata };
+// Selfie y verificacion de la marcacion de la app (hr/mobile-identity.js). La
+// API anterior al despliegue guardaba la selfie en `base64`; la actual, en
+// `base64_data`. Se leen ambas.
+type PunchIdentityMetadata = { identity_verification?: { status?: string }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean } };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
 type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: Array<{ base64_data?: string; file_name?: string }>; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
@@ -35,7 +40,7 @@ type ReportRow = {
   overtimeDetail: string;
   punchAlerts: PunchAlert[];
   activities: WorkActivity[];
-  events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number }>;
+  events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number; selfie?: string; identityVerified?: boolean }>;
 };
 
 function punctualityIconFor(tone: PunctualityTone) {
@@ -121,6 +126,19 @@ function hour(value?: string) {
   if (!value) return "--";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value.slice(0, 5) : date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+}
+
+function punchSelfie(punch: Punch) {
+  const photo = punch.metadata?.identity_photo;
+  const content = String(photo?.base64_data || photo?.base64 || "");
+  if (!content) return "";
+  return content.startsWith("data:") ? content : `data:${photo?.type || "image/jpeg"};base64,${content}`;
+}
+
+function punchEvidenceCount(punch: Punch) {
+  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url ? 1 : 0;
+  const selfie = punchSelfie(punch) || punch.metadata?.identity_photo?.has_base64_data ? 1 : 0;
+  return extra + selfie;
 }
 
 function employeeName(employee?: Employee, fallback = "") {
@@ -480,7 +498,7 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: 0 })),
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
         ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, userName: activity.user_name || employeeName(employee, userName), gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0 }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       const punchAlerts = reportPunchAlerts(entry, exit, route);
@@ -964,13 +982,19 @@ export default function HrReportsPage() {
                                 <p className="font-semibold text-content-strong">{punctualityTypeNames[event.title] || event.title}</p>
                                 <Badge tone={isMark ? "neutral" : "info"}>{isMark ? "Marcacion" : "Actividad"}</Badge>
                                 {event.alert ? <Badge tone={event.alert.tone}>{event.alert.label}</Badge> : null}
+                                {event.identityVerified ? <Badge tone="success">Identidad verificada</Badge> : null}
                               </div>
                               <p className="mt-1 text-sm text-content-muted">{event.userName} · <span className="font-semibold text-content-body">{hour(event.at)}</span></p>
                               {event.detail ? <p className="mt-1.5 text-sm text-content-body">{event.detail}</p> : null}
                               {event.gps ? <p className="mt-1.5 flex items-center gap-1.5 text-xs text-content-muted"><MapPin size={12} /> {event.gps}{event.accuracy != null ? ` · precision +/-${Math.round(Number(event.accuracy || 0))} m` : ""}</p> : null}
                             </div>
                           </div>
-                          <div className="mt-3">
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            {event.selfie ? (
+                              <a className="block h-16 w-16 overflow-hidden rounded-md border border-line" href={event.selfie} target="_blank" rel="noreferrer" title="Selfie de la marcacion">
+                                <Image alt={`Selfie de ${event.userName}`} className="h-full w-full object-cover" height={64} src={event.selfie} unoptimized width={64} />
+                              </a>
+                            ) : null}
                             {event.evidenceCount ? <Badge tone="success">{event.evidenceCount} evidencia(s)</Badge> : <p className="inline-flex items-center gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs font-semibold text-content-subtle"><ImageOff size={14} /> Sin evidencia fotografica</p>}
                           </div>
                         </article>

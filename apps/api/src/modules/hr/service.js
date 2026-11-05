@@ -3096,9 +3096,31 @@ async function createOwnPunch(tenantId, user, input) {
   // Antes de crear nada: una marcacion de la app sin telefono registrado,
   // firma valida o selfie se rechaza aqui y no queda a medias.
   const identity = mobileIdentity.verifyPunchIdentity({ employee, user, input });
+  // El telefono acepta cualquier dedo inscrito en el: si quedo registrado para
+  // dos empleados, cualquiera de los dos marca por el otro. Registros dobles
+  // anteriores a esta regla se bloquean hasta que un administrador restablezca.
+  if (identity.identity_verification?.status === "verified") {
+    const owner = await findDeviceOwner(tenantId, identity.identity_verification.device_id, employee.id);
+    if (owner) {
+      throw validationError("Este telefono esta registrado para mas de un empleado. Pide a un administrador que restablezca el registro de quien no es dueño del telefono.", 403, "DISPOSITIVO_COMPARTIDO");
+    }
+  }
   const { identity: _signature, identity_photo: _photo, ...metadata } = input.metadata || {};
   const verifiedInput = { ...input, metadata: { ...metadata, ...identity } };
   return createPunch(tenantId, ownOperationalInput(verifiedInput, employee, user), user, { scope: "own" });
+}
+
+// Otro empleado de la empresa con este telefono registrado, si lo hay.
+async function findDeviceOwner(tenantId, deviceId, excludeEmployeeId) {
+  if (!deviceId) return null;
+  return prisma.runWithTenant(tenantId, () => prisma.employee.findFirst({
+    where: {
+      tenant_id: tenantId,
+      id: { not: excludeEmployeeId },
+      metadata: { path: ["mobile_biometric", "device_id"], equals: String(deviceId) }
+    },
+    select: { id: true }
+  }));
 }
 
 async function getOwnBiometricEnrollment(tenantId, user) {
@@ -3113,6 +3135,9 @@ async function enrollOwnBiometric(tenantId, user, input = {}) {
     // otro dispositivo acabe de hacer.
     const current = await prisma.employee.findFirst({ where: { id: employee.id, tenant_id: tenantId } });
     const record = mobileIdentity.buildEnrollment({ employee: current, user, input });
+    if (await findDeviceOwner(tenantId, record.device_id, employee.id)) {
+      throw validationError("Este telefono ya esta registrado para otro empleado. Cada persona debe marcar desde su propio telefono.", 409, "DISPOSITIVO_DE_OTRO_EMPLEADO");
+    }
     const updated = await prisma.employee.update({
       where: { id: employee.id },
       data: { metadata: { ...(current?.metadata || {}), mobile_biometric: record } }
