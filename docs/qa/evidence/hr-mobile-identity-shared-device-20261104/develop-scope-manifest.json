@@ -1,0 +1,106 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-mobile-identity-shared-device-20261104",
+  "base_commit": "1590f8413cdb45b6445d3429019c8f89400e4210",
+  "base_commits": {
+    "develop": "1590f8413cdb45b6445d3429019c8f89400e4210"
+  },
+  "certified_commit": "287e8efbf8d48a5e4a52efbe7f881dcaf2eba9a6",
+  "change_intent": {
+    "summary": "Caso reportado en QA tras el despliegue de PR #76: la esposa del usuario entro con SU usuario en el telefono de el y registro su huella; como el telefono acepta cualquier dedo inscrito, el marco por ella con su propio dedo. Ahora un telefono solo puede quedar registrado para un empleado de la empresa: POST /hr/self/biometric-enrollment responde 409 DISPOSITIVO_DE_OTRO_EMPLEADO, y createOwnPunch responde 403 DISPOSITIVO_COMPARTIDO a las marcaciones desde un telefono que quedo registrado para dos empleados antes de esta regla, hasta que un administrador restablezca uno. La app (v5021) toma el id del telefono de un hash del ANDROID_ID para que borrar datos no lo convierta en otro. Ademas, Reportes de talento humano contaba siempre cero evidencias en las marcaciones: ahora cuenta selfie y soporte extra, muestra la selfie y la insignia de identidad verificada. Certificacion local 33/33 sobre esta rama (API real contra Postgres con el esquema de develop) y regresion 389/389 en 44 suites.",
+    "modules": [
+      "hr",
+      "web-talento-humano",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-report-punch-selfie.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-mobile-identity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/develop-preqa-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/develop-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/regression-certification.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/test/hr-report-punch-selfie.test.mjs",
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/develop-preqa-evidence.json",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/develop-scope-manifest.json",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/local-certification.json",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/regression-certification.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "un_telefono_por_empleado_en_el_registro",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "registro_doble_previo_bloquea_la_marcacion",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "marcacion_movil_verificada_con_selfie_y_firma",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "restablecer_solo_administrador_y_nunca_propio",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "reportes_cuentan_y_muestran_la_selfie",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "rbac_y_monitor_de_talento_humano",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    }
+  ]
+}
