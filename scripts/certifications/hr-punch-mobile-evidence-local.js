@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const {randomUUID}=require('node:crypto');
 require('../load-env')();
 if(!['127.0.0.1','localhost'].includes(new URL(process.env.DATABASE_URL).hostname))throw Error('Solo base local');
-Object.assign(process.env,{NODE_ENV:'test',REDIS_DISABLED:'true',DISABLE_REDIS:'true',JWT_SECRET:randomUUID()+randomUUID(),ALLOWED_ORIGINS:'http://127.0.0.1:3317'});
+Object.assign(process.env,{NODE_ENV:'test',REDIS_DISABLED:'true',DISABLE_REDIS:'true',JWT_SECRET:randomUUID()+randomUUID(),ALLOWED_ORIGINS:'http://127.0.0.1:'+(process.env.CERT_BROWSER_PORT||'3317')});
 const db=require('../../apps/api/src/core/prisma');const bcrypt=require('bcrypt');
 const result={environment:'LOCAL',started_at:new Date().toISOString(),checks:[],status:'running'};let app;
 const output=process.argv.find(arg=>arg.startsWith('--output='))?.slice(9);
