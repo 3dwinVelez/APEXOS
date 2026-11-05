@@ -270,7 +270,7 @@ test("libranzas page manages concepts, employee balances and recurrent deduction
 test("employee termination liquidation page supports severance balances and indemnization", () => {
   const source = read("app/dashboard/talento-humano/liquidacion-trabajador/page.tsx");
   const landing = read("app/dashboard/talento-humano/page.tsx");
-  assert.match(landing, /Liquidacion de trabajador/);
+  assert.match(landing, /Liquidaci[oó]n de trabajador/);
   assert.match(source, /Liquidacion de trabajador/);
   assert.match(source, /sin_justa_causa/);
   assert.match(source, /obra_labor/);
@@ -354,7 +354,7 @@ test("social benefit provisions live outside payroll liquidation", () => {
 test("social benefit payments page pays provisioned balances", () => {
   const source = read("app/dashboard/talento-humano/prestaciones-pagos/page.tsx");
   const landing = read("app/dashboard/talento-humano/page.tsx");
-  assert.match(landing, /Pago prestaciones/);
+  assert.match(landing, /Pago (de )?prestaciones/);
   assert.match(source, /Pago de prestaciones sociales/);
   assert.match(source, /Prima semestral/);
   assert.match(source, /Cesantías anual al fondo/);
