@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.9.0
+version: 2.10.0
 updated_at: 2026-11-05
 contract: 2
 ---
@@ -62,6 +62,8 @@ Antes de actuar, leer en este orden:
     - Las limitaciones del ambiente se registran honestas y separadas: `subida_de_banner_deja_constancia` acepta 201 o `>=500` porque el bucket `comercio-assets` local está caído, y el generador se ejercita aparte para poder afirmar «el modelo gratuito devuelve JPEG válido» frente a «el proveedor gratis dio 402» sin confundirlos con el bloqueo del bucket.
     - La captura se mira. El defecto de tinta sobre fotografía (tema claro + banner) lo encontró la revisión de `03-vitrina-tema-claro.png`, no ninguna aserción; la aserción antigua describía el defecto como expectativa.
     Por qué: el 2026-11-05 esta intervención tuvo tres falsos rojos por arnés (aserción 400, previa leída antes del flush de React, tema claro heredado de una corrida cortada) y un falso verde real (letra ilegible) que solo se ve en la imagen.
+
+25. **La certificación de la torre tiene dos fases y solo una prueba la conexión.** `npm run certify:control-tower:local` (63/63 el 2026-11-05) corre primero el modo hermético (`TOWER_SIMULATION=true`, donde el catálogo sale de `catalogPayload("SIMULACION")` y las sondas remotas se saltan) y después una **fase real** contra el API del puesto: `browser_vista_api_con_componentes_reales` exige al menos 6 componentes leídos de `GET /api/v1/apex-control/status` y la leyenda `N componentes · M con latencia medida`; `browser_datos_veredicto_de_base` exige la cifra real con `base responde en [0-9.,]+ ms` (el locale escribe 1.668 ms, no un número simple); y quedan capturas por vista (`tower-vista-latencia.png`, `tower-vista-api.png`, `tower-vista-datos.png`, `tower-vista-modulos.png`, `tower-datos-reales.png`, `tower-modulos-reales.png`). Ninguna verde del modo simulado prueba una conexión: el reporte declara qué fase corrió. `certify:control-tower:consolidado` (51/51) aporta el contrato que el API real aún no puede dar en el puesto: un componente con latencia publicada y otro con latencia nula, y afirma `sinMedicion === 1 && ceros === 0`, más el veredicto de latencia con su tope dibujado y su regla de muestras. En el arnés, `Cdp.evaluate` propaga `exceptionDetails.exception.description` (leer solo `text` devolvía un inútil Uncaught) y la captura borra y reintenta el PNG, que Windows mantiene bloqueado desde la corrida anterior. Por qué: el pedido del 2026-11-05 fue terminar el rediseño garantizando conexiones reales a los ambientes, el API y la base de datos; una certificación enteramente simulada habría dado verde sin leer una sola latencia.
 
 ## Checklist de intervención
 

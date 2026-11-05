@@ -20,10 +20,6 @@
       </div>
     </div>
     <div class="topbar-side">
-      <div class="view-switch" role="group" aria-label="Vista del panel">
-        <button class="view-btn active" type="button" data-view="summary" aria-pressed="true">Resumen</button>
-        <button class="view-btn" type="button" data-view="detail" aria-pressed="false">Detalle</button>
-      </div>
       <span id="overallPill" class="pill unknown">Conectando</span>
       <span id="lastUpdate" class="muted small">Sin lecturas</span>
       <div class="actions">
@@ -35,9 +31,19 @@
 
   <main>
     <nav id="envTabs" class="env-tabs" aria-label="Filtrar por ambiente"></nav>
+
+    <nav id="viewNav" class="view-nav" role="group" aria-label="Vista por pregunta">
+      <button class="view-btn" type="button" data-view="resumen">Resumen</button>
+      <button class="view-btn" type="button" data-view="latencia">Latencia</button>
+      <button class="view-btn" type="button" data-view="api">API</button>
+      <button class="view-btn" type="button" data-view="modulos">Módulos</button>
+      <button class="view-btn" type="button" data-view="datos">Base de datos</button>
+      <button class="view-btn" type="button" data-view="nube">Nube</button>
+      <button class="view-btn" type="button" data-view="operacion">Operación</button>
+    </nav>
     <p id="statusLegend" class="status-legend"></p>
 
-    <section class="panel span-12 health-panel" aria-labelledby="healthTitle">
+    <section class="panel span-12 health-panel" data-views="resumen" aria-labelledby="healthTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Indicador oficial · umbrales fijos</p>
@@ -48,18 +54,18 @@
       <div id="health" class="health"></div>
     </section>
 
-    <section class="panel span-12" aria-labelledby="gaugesTitle">
+    <section class="panel span-12" data-views="resumen" aria-labelledby="gaugesTitle">
       <header class="panel-head">
         <div>
-          <p class="eyebrow">Medición con umbral publicado por el servidor</p>
-          <h2 id="gaugesTitle">Medidores del sistema</h2>
+          <p class="eyebrow">Una tarjeta por pregunta · el umbral lo publica el servidor</p>
+          <h2 id="gaugesTitle">Respuestas medidas</h2>
         </div>
         <span id="gaugesMeta" class="muted small"></span>
       </header>
       <div id="gauges" class="gauges"></div>
     </section>
 
-    <section class="panel span-12" aria-labelledby="moduleMapTitle">
+    <section class="panel span-12" data-views="modulos" aria-labelledby="moduleMapTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Un sondeo por marca · módulos y API en el mismo eje</p>
@@ -70,13 +76,24 @@
       <div id="moduleMap" class="module-map"></div>
     </section>
 
-    <section id="kpis" class="kpis detail-only" aria-label="Indicadores"></section>
+    <section id="kpis" class="kpis" data-views="api" aria-label="Indicadores"></section>
 
-    <section class="panel span-12 detail-only" aria-labelledby="modulesTitle">
+    <section class="panel span-12" data-views="api" aria-labelledby="componentsTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Latencia medida por el propio servidor, componente por componente</p>
+          <h2 id="componentsTitle">¿El API responde bien con la carga que tiene?</h2>
+        </div>
+        <span id="componentsMeta" class="muted small"></span>
+      </header>
+      <div id="components" class="components"></div>
+    </section>
+
+    <section class="panel span-12" data-views="modulos" aria-labelledby="modulesTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Servicios y datos por dominio</p>
-          <h2 id="modulesTitle">Módulos operativos</h2>
+          <h2 id="modulesTitle">¿Los módulos están óptimos?</h2>
         </div>
         <div class="module-tools">
           <span id="moduleMeta" class="muted small"></span>
@@ -87,7 +104,7 @@
       <div id="modules" class="modules"></div>
     </section>
 
-    <section class="panel span-12" aria-labelledby="activityTitle">
+    <section class="panel span-12" data-views="modulos" aria-labelledby="activityTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Registros, actividad y conexiones</p>
@@ -95,11 +112,24 @@
         </div>
         <span id="activityMeta" class="muted small"></span>
       </header>
-      <div id="activityKpis" class="tile-grid detail-only"></div>
+      <div id="activityKpis" class="tile-grid"></div>
       <div id="activityBody" class="activity-body"></div>
     </section>
 
-    <section class="panel span-12" aria-labelledby="tenantsTitle">
+    <section class="panel span-12" data-views="datos" aria-labelledby="databaseTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Rapidez medida desde el propio API y volumen real de registros</p>
+          <h2 id="databaseTitle">¿La base está rápida y con datos?</h2>
+        </div>
+        <span id="databaseMeta" class="muted small"></span>
+      </header>
+      <div id="databaseVerdict" class="verdict-band"></div>
+      <div id="databaseKpis" class="tile-grid"></div>
+      <div id="databaseVolume" class="database-volume"></div>
+    </section>
+
+    <section class="panel span-12" data-views="datos" aria-labelledby="tenantsTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Consolidado de todas las empresas y su estado operativo</p>
@@ -117,7 +147,7 @@
       <div id="tenants" class="tenants"></div>
     </section>
 
-    <section id="companyPanel" class="panel span-12 company-panel" aria-labelledby="companyTitle" hidden>
+    <section id="companyPanel" class="panel span-12 company-panel" data-views="datos" aria-labelledby="companyTitle" hidden>
       <header class="panel-head">
         <div>
           <p class="eyebrow">Estado operativo, carga de datos, memoria, uso de API y rendimiento</p>
@@ -132,7 +162,19 @@
       <div id="companyHealth" class="health company-health"></div>
     </section>
 
-    <section class="panel span-8" aria-labelledby="servicesTitle">
+    <section class="panel span-12" data-views="latencia" aria-labelledby="performanceTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Sondeos reales de la torre contra el tope de este ambiente</p>
+          <h2 id="performanceTitle">¿Cómo está la latencia?</h2>
+        </div>
+        <span id="perfMeta" class="muted small"></span>
+      </header>
+      <div id="latencyVerdict" class="verdict-band"></div>
+      <div id="performance" class="performance"></div>
+    </section>
+
+    <section class="panel span-12" data-views="latencia api" aria-labelledby="servicesTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Sondas independientes</p>
@@ -143,10 +185,10 @@
       <div id="checks" class="checks"></div>
     </section>
 
-    <section class="panel span-4" aria-labelledby="alertsTitle">
+    <section class="panel span-12" data-views="resumen operacion" aria-labelledby="alertsTitle">
       <header class="panel-head">
         <div>
-          <p class="eyebrow">Incidentes</p>
+          <p class="eyebrow">Incidentes abiertos en este ambiente</p>
           <h2 id="alertsTitle">Alertas</h2>
         </div>
         <button id="btnAckAll" class="link" type="button">Reconocer todas</button>
@@ -154,29 +196,29 @@
       <div id="alerts" class="alerts"></div>
     </section>
 
-    <section class="panel span-5 detail-only" aria-labelledby="performanceTitle">
-      <header class="panel-head">
-        <div>
-          <p class="eyebrow">Latencia y errores</p>
-          <h2 id="performanceTitle">Rendimiento API</h2>
-        </div>
-        <span id="perfMeta" class="muted small"></span>
-      </header>
-      <div id="performance" class="performance"></div>
-    </section>
-
-    <section id="cloudPanel" class="panel span-7" aria-labelledby="cloudTitle">
+    <section id="cloudPanel" class="panel span-12" data-views="nube" aria-labelledby="cloudTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Dependencias externas</p>
-          <h2 id="cloudTitle">Railway · Supabase · Vercel</h2>
+          <h2 id="cloudTitle">¿Railway, Supabase y Vercel están bien?</h2>
         </div>
         <span id="cloudMeta" class="muted small"></span>
       </header>
       <div id="cloud" class="cloud-grid"></div>
     </section>
 
-    <section class="panel span-7" aria-labelledby="gitTitle">
+    <section class="panel span-12" data-views="nube" aria-labelledby="credentialsTitle">
+      <header class="panel-head">
+        <div>
+          <p class="eyebrow">Qué credencial falta para que cada proveedor deje de estar sin dato</p>
+          <h2 id="credentialsTitle">Credenciales cloud</h2>
+        </div>
+        <span id="credentialsMeta" class="muted small"></span>
+      </header>
+      <div id="credentials" class="credentials"></div>
+    </section>
+
+    <section class="panel span-7" data-views="operacion" aria-labelledby="gitTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Flujo desarrollo → develop → main</p>
@@ -189,18 +231,7 @@
       <div id="gitWarnings" class="warnings"></div>
     </section>
 
-    <section class="panel span-12 detail-only" aria-labelledby="credentialsTitle">
-      <header class="panel-head">
-        <div>
-          <p class="eyebrow">Estado de integraciones</p>
-          <h2 id="credentialsTitle">Credenciales cloud</h2>
-        </div>
-        <span id="credentialsMeta" class="muted small"></span>
-      </header>
-      <div id="credentials" class="credentials"></div>
-    </section>
-
-    <section class="panel span-5 detail-only" aria-labelledby="jobsTitle">
+    <section class="panel span-5" data-views="operacion" aria-labelledby="jobsTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Fábrica de desarrollo</p>
@@ -224,7 +255,7 @@
       <div id="jobs" class="jobs"></div>
     </section>
 
-    <section class="panel span-5 detail-only" aria-labelledby="telegramTitle">
+    <section class="panel span-5" data-views="operacion" aria-labelledby="telegramTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Canal directo</p>
@@ -249,7 +280,7 @@
       </div>
     </section>
 
-    <section class="panel span-7 detail-only" aria-labelledby="eventsTitle">
+    <section class="panel span-7" data-views="operacion" aria-labelledby="eventsTitle">
       <header class="panel-head">
         <div>
           <p class="eyebrow">Trazabilidad</p>

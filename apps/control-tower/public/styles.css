@@ -1093,13 +1093,15 @@ footer strong { color: var(--text); font-weight: 600; }
   * { animation: none !important; transition: none !important; }
 }
 
-/* Vistas Resumen / Detalle */
-.view-switch {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
+/* Vistas por pregunta: el panel muestra una sola vista a la vez y cada seccion
+   declara en data-views en cuales aparece. */
+.view-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 14px;
   background: rgba(9, 15, 27, 0.6);
 }
 
@@ -1108,9 +1110,9 @@ footer strong { color: var(--text); font-weight: 600; }
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 12px;
-  padding: 6px 14px;
-  border-radius: 999px;
+  font-size: 12.5px;
+  padding: 7px 15px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -1122,7 +1124,9 @@ footer strong { color: var(--text); font-weight: 600; }
 
 .view-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-body.view-summary .detail-only { display: none !important; }
+/* La visibilidad la decide el atributo, no una clase del body: una seccion que
+   no pertenece a la vista activa queda oculta por completo. */
+[data-views][hidden] { display: none !important; }
 
 /* Tarjetas métricas grandes */
 .tile-grid {
@@ -1721,7 +1725,6 @@ body.view-summary .detail-only { display: none !important; }
 .module-row.band-risk .row-score { color: var(--warn); }
 .module-row.band-critical .row-score { color: var(--down); }
 .module-row .band-pill { justify-self: end; }
-.chart-note { margin: 8px 2px 0; }
 
 /* Avisos accionables */
 .health-notice {
@@ -2283,13 +2286,100 @@ body.view-summary .detail-only { display: none !important; }
 .perf-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
 .perf-note-inline { margin: 0; font-size: 10.5px; color: var(--muted); }
 
-body.view-summary #cloudPanel { grid-column: span 12; }
-
 @media (max-width: 720px) {
   .gauges { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .map-row,
   .map-axis { grid-template-columns: minmax(96px, 1fr) minmax(0, 2fr); }
   .map-row .map-now { display: none; }
   .map-strip { height: 22px; }
-  body.view-summary #cloudPanel { grid-column: span 12; }
+  .component-row { grid-template-columns: 14px minmax(0, 1fr) auto; }
+  .component-score { display: none; }
 }
+
+/* Grafico de latencia con topes: la linea del tope es la que responde a la
+   pregunta, asi que se pinta encima del area y etiquetada en el propio grafico. */
+.latency-chart {
+  width: 100%;
+  height: 180px;
+  margin-top: 10px;
+  display: block;
+}
+
+.latency-chart .spark-area { fill: rgba(82, 200, 245, 0.12); }
+.latency-chart .chart-line { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+.latency-chart .chart-risk { stroke: var(--down); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.latency-chart .chart-optimal { stroke: var(--ok); stroke-width: 1; stroke-dasharray: 2 4; opacity: 0.75; }
+.latency-chart .chart-label { fill: var(--muted); font-size: 9px; }
+.latency-chart .chart-label.risk { fill: var(--down); }
+.latency-chart .spark-over { fill: var(--down); stroke: rgba(255, 255, 255, 0.6); stroke-width: 0.6; }
+
+/* Franja de veredicto: una linea, con su regla medida debajo. */
+.verdict-band { margin-bottom: 12px; }
+.verdict {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: center;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(9, 15, 27, 0.55);
+}
+.verdict .dot { width: 11px; height: 11px; border-radius: 50%; }
+.verdict-text { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.verdict-rule { margin: 0; grid-column: 2; font-size: 11px; color: var(--muted); }
+.verdict.tone-ok { border-color: rgba(74, 222, 128, 0.4); }
+.verdict.tone-degraded { border-color: rgba(250, 204, 21, 0.4); }
+.verdict.tone-down { border-color: rgba(248, 113, 113, 0.45); }
+.verdict-empty { margin: 0; font-size: 12px; color: var(--muted); }
+
+/* La pregunta encima de cada medidor: el panel se lee como respuestas, no como
+   una lista de metricas sueltas. */
+.measure-question {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  text-transform: none;
+}
+
+.measure-verdict { margin: 6px 0 0; font-size: 11px; font-weight: 600; }
+.measure-verdict.tone-ok { color: var(--ok); }
+.measure-verdict.tone-degraded { color: var(--warn); }
+.measure-verdict.tone-down { color: var(--down); }
+
+.measure-link {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.measure-link:hover { color: var(--text); border-color: var(--accent); }
+
+/* Componentes del API leidos desde /apex-control/status. */
+.component-list { display: grid; gap: 7px; }
+.component-row {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) 92px 64px auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(9, 15, 27, 0.45);
+}
+.component-row .component-dot { width: 11px; height: 11px; border-radius: 50%; }
+.component-name { margin: 0; font-size: 13px; font-weight: 600; }
+.component-sub { margin: 0; font-size: 11px; color: var(--muted); }
+.component-latency { margin: 0; font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
+.component-score { margin: 0; font-size: 11.5px; color: var(--muted); text-align: right; }
+.component-detail { grid-column: 2 / -1; margin: 0; font-size: 11px; color: var(--muted); }
+.component-row.band-critical { border-color: rgba(248, 113, 113, 0.45); }
+.component-row.band-risk { border-color: rgba(250, 204, 21, 0.35); }
+
+.database-volume { margin-top: 12px; }

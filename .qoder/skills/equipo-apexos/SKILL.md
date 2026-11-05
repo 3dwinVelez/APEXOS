@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.5.1
+version: 2.6.0
 updated_at: 2026-11-05
 contract: 2
 ---
@@ -64,6 +64,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 
 16. **Un estado sin explicación no es entrega.** Toda palabra que la torre muestra como estado (p. ej. `degradado`, `degrade`, `parcial`) tiene que ser comprensible para el dueño del ambiente sin abrir el código: si no lo es, se reemplaza por lo que significa y se documenta la frontera en la leyenda. Cada bloqueo se cierra con una acción concreta que lleve prioridad, qué hacer, agente responsable y siguiente comando; una tarjeta de estado sin acción no se aprueba. Por qué: el 2026-11-03 el usuario respondió que no entendía el estado y que no había sugerencias de intervención para que los agentes actuaran.
 17. **La residencia de una herramienta se respeta, no se "optimiza".** Cuando el dueño declara que un bloque vive solo en una rama (hoy `apps/control-tower/**` solo en `desarrollo`, registrado en `docs/project/flujo-ramas-y-ambientes.md`), el orquestador no despacha promotions ni despliegues de ese bloque, aunque la verde esté disponible: el plan de cierre termina en `git push origin desarrollo`. Lo que sí se promueve es la dependencia real del dato —el API con `apex-control`— y se pide por separado. Un rediseño de la interfaz de esa herramienta tampoco se promociona: se integra con sus gates locales (`certify:control-tower:*`) y se publica en `desarrollo`. Por qué: el 2026-11-03, tras cerrar el monitor consolidado, la tentación del equipo era ofrecer la promoción completa de la torre; desplegar un panel de puesto de trabajo es alcance no pedido.
+
+18. **La torre se organiza por preguntas del dueño, no por fuentes de datos.** El contrato de lectura de `apps/control-tower/public/index.html` son siete vistas: **Resumen, Latencia, API, Módulos, Base de datos, Nube y Operación**. Cada sección declara en `data-views` en cuáles aparece, la vista elegida queda en `localStorage("towerView")` y las claves antiguas `summary`/`detail` se resuelven a `resumen`/`api`. Una información nueva entra como sección etiquetada en la vista de su pregunta, nunca como tesela suelta en el Resumen; **Base de datos** es la única que responde primero por el ambiente completo y después por una sola empresa. Que una fuente no se pueda medir no autoriza mover su tarjeta a otra vista: se queda en la suya con `sin medición`. Por qué: el 2026-11-05 el dueño volvió a decir que la información llegaba regada y saturada, y lo que le sirvió fue reorganizar el mismo dato en vistas-pregunta, no añadir métricas.
 
 ## Checklist de intervención
 

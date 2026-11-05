@@ -4,7 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const net = require("node:net");
 const http = require("node:http");
-const { redisPing, probeApexControl } = require("../lib/probes");
+const { redisPing, probeApexControl, runProbes } = require("../lib/probes");
 
 function closedPort() {
   return new Promise((resolve, reject) => {
@@ -54,7 +54,7 @@ test("probeApexControl normaliza componentes en arreglo y lee snake_case", async
           { key: "queues", status: "ok", details: { waiting: 0 }, latency_ms: 12 },
           { key: "crons", status: "down", details: "scheduler caido" },
           { key: "mail", status: "degraded" },
-          { key: "websocket", status: "ok" }
+          { key: "websocket", status: "ok", latency_ms: null, score: null }
         ]
       }));
       return;
@@ -80,4 +80,57 @@ test("probeApexControl normaliza componentes en arreglo y lee snake_case", async
   assert.equal(byId.queues.latencyMs, 12);
   assert.equal(byId.crons.status, "down");
   assert.equal(byId.mail.status, "degraded");
+  // null publicado = no medido. Number(null) vale 0, y un 0 ms se leeria como
+  // componente optimo en la vista API.
+  assert.equal(byId.websocket.latencyMs, null);
+  const porClave = Object.fromEntries(byId["apex-control"].components.map((component) => [component.key, component]));
+  assert.equal(porClave.websocket.latencyMs, null);
+  assert.equal(porClave.websocket.score, null);
+});
+
+// El presupuesto de 2,5 s de la infraestructura local era mas estrecho que el del
+// ambiente (6 s) para el MISMO endpoint: /apex-control/status barre ~30 modulos y
+// un segundo y pico es su costo normal, asi que la torre declaraba caido un API
+// sano y la vista API se quedaba sin componentes que pintar.
+test("la lectura de apex-control usa el presupuesto del ambiente, no el de la infraestructura", async (t) => {
+  const server = http.createServer((req, res) => {
+    if (req.url === "/api/v1/apex-control/status") {
+      setTimeout(() => {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ overall: "ok", components: [{ key: "db", status: "ok", latency_ms: 1500 }] }));
+      }, 700);
+      return;
+    }
+    if (req.url === "/health") {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ status: "OK" }));
+      return;
+    }
+    res.writeHead(404);
+    res.end();
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => server.close());
+  const origin = `http://127.0.0.1:${server.address().port}`;
+
+  const checks = (await runProbes({
+    simulation: false,
+    apiBaseUrl: origin,
+    webBaseUrl: origin,
+    apexToken: "jwt-demo",
+    environmentTimeoutMs: 4000,
+    infra: {
+      timeoutMs: 200,
+      brainUrl: origin,
+      minioUrl: origin,
+      dockerEnabled: false,
+      postgres: { host: "127.0.0.1", port: 1 },
+      redis: { host: "127.0.0.1", port: 1 }
+    },
+    environments: { local: { id: "local", short: "LOCAL", apiBaseUrl: origin, apexToken: "jwt-demo" } }
+  })).checks;
+  const apex = checks.find((check) => check.id === "apex-control");
+  assert.ok(apex.durationMs >= 700, `la lectura tardo ${apex.durationMs} ms`);
+  assert.equal(apex.status, "ok");
+  assert.equal(checks.find((check) => check.id === "db").status, "down");
 });

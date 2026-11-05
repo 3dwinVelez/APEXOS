@@ -10,6 +10,7 @@ const { redact } = require("./security");
 const { fetchModules, enrichWithChecks, moduleChecks } = require("./modules");
 const { fetchActivity, activityChecks } = require("./activity");
 const { computeHealth, withModuleBands } = require("./health");
+const { measuredValue } = require("./metrics");
 
 const DEFAULT_MAX_BYTES = 256 * 1024;
 const ENVIRONMENT_ORDER = ["local", "develop", "main"];
@@ -284,42 +285,78 @@ function probeFromStatus(id, label, component, options = {}) {
   const raw = String(component.status || component.state || "unknown").toLowerCase();
   check.status = ["ok", "degraded", "down", "unknown"].includes(raw) ? raw : "unknown";
   check.detail = component.detail || component.message || component.details || null;
-  check.latencyMs = component.latencyMs ?? component.latency_ms ?? null;
+  check.latencyMs = measuredValue(component.latencyMs ?? component.latency_ms);
   return check;
 }
 
-async function probeApexControl(config) {
+// Componentes de /apex-control/status normalizados para el panel: latency_ms del
+// servidor, estado y detalle ya medidos por el propio API. Se publican como
+// agregados (pid, heap, buckets, clientes): nunca rutas ni identificadores.
+function normalizeComponents(raw) {
+  const list = Array.isArray(raw)
+    ? raw
+    : (raw && typeof raw === "object" ? Object.values(raw) : []);
+  return list
+    .filter((component) => component && component.key)
+    .map((component) => ({
+      key: String(component.key),
+      name: String(component.name || component.key),
+      kind: String(component.kind || "unknown"),
+      criticality: String(component.criticality || "standard"),
+      enabled: component.enabled !== false,
+      status: String(component.status || "unknown"),
+      // Un componente sin latencia publicada es "no medido", no 0 ms: Number(null)
+      // vale 0 y pintaria de verde una lectura que nunca existio.
+      score: measuredValue(component.score),
+      latencyMs: measuredValue(component.latency_ms ?? component.latencyMs),
+      detail: component.details || component.detail || component.message || null
+    }));
+}
+
+async function probeApexControl(config, environment = null, options = {}) {
   const results = [];
-  const deep = baseCheck("apex-control", "APEX Control (API)", { severity: "medium", optional: true });
-  const headers = config.apexToken ? { authorization: `Bearer ${config.apexToken}` } : {};
-  const endpoint = `${config.apiBaseUrl}/api/v1/apex-control/status`;
-  const result = await httpRequest(endpoint, { timeoutMs: config.infra.timeoutMs, headers });
+  const isLocal = !environment || environment.id === "local";
+  const deep = isLocal
+    ? baseCheck("apex-control", "APEX Control (API)", { severity: "medium", optional: true })
+    : remoteCheck(environment, `${environment.id}.apex-control`, `APEX Control ${environment.short}`, { severity: "medium", optional: true });
+  // El token es por ambiente: el legado global solo sirve para el puesto local.
+  const apiBaseUrl = environment && environment.apiBaseUrl ? environment.apiBaseUrl : config.apiBaseUrl;
+  const apexToken = (environment && environment.apexToken) || config.apexToken || "";
+  const headers = apexToken ? { authorization: `Bearer ${apexToken}` } : {};
+  const endpoint = `${apiBaseUrl}/api/v1/apex-control/status`;
+  const result = await httpRequest(endpoint, { timeoutMs: options.timeoutMs || config.infra.timeoutMs, headers });
   deep.durationMs = result.durationMs;
   deep.technical = {
     endpoint,
     method: "GET",
     httpStatus: result.status,
     error: result.error,
-    tokenConfigured: Boolean(config.apexToken),
+    tokenConfigured: Boolean(apexToken),
     response: bodyExcerpt(result)
   };
   if (result.error) {
     deep.status = "down";
     deep.detail = result.error;
   } else if (result.status === 200 && result.json) {
-    deep.status = ["ok", "degraded", "down"].includes(String(result.json.overall)) ? String(result.json.overall) : "ok";
-    const rawComponents = result.json.components;
-    const components = Array.isArray(rawComponents)
-      ? Object.fromEntries(rawComponents.map((component) => [component.key, component]))
-      : (rawComponents && typeof rawComponents === "object" ? rawComponents : {});
-    deep.detail = { overall: result.json.overall, components: Object.keys(components).length };
-    for (const [id, label] of [
-      ["queues", "Colas BullMQ"],
-      ["crons", "Crons"],
-      ["mail", "Correo"],
-      ["websocket", "WebSocket"]
-    ]) {
-      results.push(probeFromStatus(id, label, components[id]));
+    // La API publica `status`; leer solo `overall` dejaba el estado en el
+    // respaldo "ok" aunque la telemetria dijera otra cosa.
+    const reported = String(result.json.overall || result.json.status || "").toLowerCase();
+    deep.status = ["ok", "degraded", "down"].includes(reported) ? reported : "ok";
+    const components = normalizeComponents(result.json.components);
+    deep.components = components;
+    deep.componentsScore = Number.isFinite(Number(result.json.score)) ? Number(result.json.score) : null;
+    deep.detail = { overall: reported || "ok", components: components.length };
+    deep.summaryCounts = result.json.counts || null;
+    if (isLocal) {
+      const byKey = Object.fromEntries(components.map((component) => [component.key, component]));
+      for (const [id, label] of [
+        ["queues", "Colas BullMQ"],
+        ["crons", "Crons"],
+        ["mail", "Correo"],
+        ["websocket", "WebSocket"]
+      ]) {
+        results.push(probeFromStatus(id, label, byKey[id]));
+      }
     }
   } else if (result.status === 401 || result.status === 403) {
     deep.status = "degraded";
@@ -386,7 +423,14 @@ async function runProbes(config) {
     probeMinio(config),
     probeDocker(config)
   ]);
-  checks.push(...(await probeApexControl(config)));
+  // El mismo endpoint se mide con el mismo presupuesto en los tres ambientes:
+  // /apex-control/status barre ~30 modulos y en el puesto local ya tarda alrededor
+  // de un segundo, asi que el recorte de 2,5 s de la infraestructura lo declaraba
+  // caido sin estarlo.
+  const apexChecks = await probeApexControl(config, config.environments.local, {
+    timeoutMs: config.environmentTimeoutMs || config.infra.timeoutMs
+  });
+  checks.push(...apexChecks);
   const modules = await collectModules(config, config.environments.local, checks);
   if (modules.payload) checks.push(...modules.checks);
   const activity = await collectActivity(config, config.environments.local);
@@ -397,6 +441,7 @@ async function runProbes(config) {
   });
   const summary = computeSummary(checks);
   const apiCheck = checks.find((check) => check.id === "api");
+  const apexDeep = checks.find((check) => check.id === "apex-control");
   return {
     at: new Date().toISOString(),
     source: "tower",
@@ -405,6 +450,7 @@ async function runProbes(config) {
     summary,
     checks,
     api: deployedInfo(apiCheck),
+    components: (apexDeep && apexDeep.components) || [],
     modules: modules.payload,
     activity: activity.payload,
     metrics: apiCheck ? [{
@@ -633,10 +679,25 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
   const activity = await collectActivity(config, environment);
   if (activity.checks.length) checks.push(...activity.checks);
 
-  return { checks, metrics, enabled: true, api: deployedInfo(apiCheck), modules: modules.payload, activity: activity.payload, cloud };
+  // La telemetria profunda tambien se busca en el ambiente remoto: si el build
+  // desplegado incluye el modulo, sus componentes dejan de ser "Sin dato".
+  const apexChecks = await probeApexControl(config, environment, { timeoutMs });
+  checks.push(...apexChecks);
+  const apexDeep = apexChecks.find((check) => check.id === `${environment.id}.apex-control`);
+
+  return {
+    checks,
+    metrics,
+    enabled: true,
+    api: deployedInfo(apiCheck),
+    components: (apexDeep && apexDeep.components) || [],
+    modules: modules.payload,
+    activity: activity.payload,
+    cloud
+  };
 }
 
-function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null, activity = null, apiInfo = null) {
+function buildEnvironmentMeta(config, environment, checks, cloud = null, modules = null, activity = null, apiInfo = null, components = []) {
   const health = computeHealth({ modules: modules ? modules.modules : [], checks });
   return {
     id: environment.id,
@@ -649,6 +710,7 @@ function buildEnvironmentMeta(config, environment, checks, cloud = null, modules
     overall: environment.enabled ? computeOverall(checks) : "unknown",
     summary: computeSummary(checks),
     deployed: apiInfo || null,
+    components,
     modules: modules ? { ...modules, modules: withModuleBands(modules.modules, health) } : null,
     health,
     activity: activity || null,
@@ -682,9 +744,9 @@ async function runAllProbes(config, { fetchImpl = global.fetch } = {}) {
     ...main.checks
   ].map(diagnoseCheck));
   const environments = {
-    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules, local.activity, local.api),
-    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules, develop.activity, develop.api),
-    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules, main.activity, main.api)
+    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules, local.activity, local.api, local.components),
+    develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules, develop.activity, develop.api, develop.components),
+    main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules, main.activity, main.api, main.components)
   };
   return {
     at: new Date().toISOString(),

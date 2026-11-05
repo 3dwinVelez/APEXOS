@@ -24,7 +24,7 @@ class ModuleTelemetry {
 
   record(environment, modules, at, api = null) {
     const id = String(environment || "local");
-    const sample = moduleTicks(modules, at || new Date().toISOString(), api);
+    const sample = moduleTicks(modules, at || new Date().toISOString(), api, id);
     if (!Object.keys(sample.ticks).length) return null;
     const list = this.series.get(id) || [];
     list.push(sample);

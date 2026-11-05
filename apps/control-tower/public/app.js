@@ -69,8 +69,7 @@ const ACTIVITY_REASON = {
   SIMULACION: "Simulación activa: la actividad se omite."
 };
 
-const BAND_LABEL = { optimal: "Óptimo", risk: "En riesgo", critical: "Crítico", unknown: "Sin dato", informational: "Informativo" };
-const BAND_TONE = { optimal: "ok", risk: "degraded", critical: "down", unknown: "unknown", informational: "unknown" };
+const BAND_LABEL = { optimal: "Óptimo", risk: "En riesgo", critical: "Crítico", unknown: "Sin dato", informational: "Informativo" };const BAND_TONE = { optimal: "ok", risk: "degraded", critical: "down", unknown: "unknown", informational: "unknown" };
 const BAND_RANGE = { optimal: "85–100", risk: "60–84", critical: "0–59", unknown: "sin medición" };
 const BAND_ORDER = ["optimal", "risk", "critical", "unknown"];
 const HEALTH_REASON = {
@@ -101,6 +100,19 @@ const DATA_STATE_LABEL = {
   declared: "Declarado sin modelo"
 };
 
+// Vistas del panel, en el orden en que se ofrecen. Cada una responde una pregunta
+// operativa del propietario; ninguna muestra "todos los datos a la vez".
+const VIEW_ORDER = ["resumen", "latencia", "api", "modulos", "datos", "nube", "operacion"];
+const VIEW_QUESTION = {
+  resumen: "¿Cómo está APEXOS ahora mismo?",
+  latencia: "¿Cómo está la latencia?",
+  api: "¿El API responde bien con la carga que tiene?",
+  modulos: "¿Los módulos están óptimos y al día?",
+  datos: "¿La base está rápida y con datos reales?",
+  nube: "¿Los servicios de la nube están bien?",
+  operacion: "¿Qué se está haciendo y qué falta?"
+};
+
 const state = {
   data: null,
   telegram: null,
@@ -109,7 +121,7 @@ const state = {
   moduleFilter: localStorage.getItem("towerModuleFilter") || "all",
   healthBand: null,
   company: null,
-  view: localStorage.getItem("towerView") || "summary",
+  view: localStorage.getItem("towerView") || "resumen",
   source: null,
   loading: false,
   pending: false,
@@ -224,6 +236,49 @@ function sparkline(series) {
       <polygon class="spark-area" points="${area}" />
       <polyline points="${line}" />
       ${failures}
+    </svg>`;
+}
+
+// Grafico de latencia con los topes dibujados. La escala siempre incluye el tope
+// de riesgo, aunque ninguna muestra lo alcance: si el techo del grafico fuera el
+// maximo medido, una serie pegada al limite pareceria plana y el ojo perderia la
+// unica referencia que responde a "Estamos dentro o fuera del tope?".
+function latencyChart(series, entry) {
+  const points = Array.isArray(series) ? series : [];
+  if (!entry || !entry.limits || points.length < 2) {
+    return sparkline(points);
+  }
+  const optimal = Number(entry.limits.optimal);
+  const risk = Number(entry.limits.risk);
+  if (!Number.isFinite(risk) || risk <= 0) return sparkline(points);
+  const width = 620;
+  const height = 180;
+  const pad = 10;
+  const values = points.map((sample) => Math.max(0, Number(sample.ms) || 0));
+  const ceiling = Math.max(risk * 1.25, ...values);
+  const step = (width - pad * 2) / (values.length - 1);
+  const y = (value) => height - pad - (Math.min(value, ceiling) / ceiling) * (height - pad * 2);
+  const coords = values.map((value, index) => ({ x: pad + index * step, y: y(value), value }));
+  const line = coords.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+  const area = `${pad},${height - pad} ${line} ${width - pad},${height - pad}`;
+  const riskY = y(risk).toFixed(1);
+  const optimalY = Number.isFinite(optimal) ? y(optimal).toFixed(1) : null;
+  const over = coords
+    .map((point, index) => {
+      const beyond = point.value > risk;
+      const failed = points[index].ok === false;
+      if (!beyond && !failed) return "";
+      return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3.4" class="${beyond ? "spark-over" : "spark-fail"}" />`;
+    })
+    .join("");
+  return `
+    <svg class="latency-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Latencia de la sonda con su tope de ${formatNumber(risk)} ms dibujado">
+      ${optimalY ? `<line class="chart-optimal" x1="${pad}" y1="${optimalY}" x2="${width - pad}" y2="${optimalY}" /><text class="chart-label" x="${width - pad - 2}" y="${Number(optimalY) - 3}" text-anchor="end">óptimo ${formatNumber(optimal)} ms</text>` : ""}
+      <line class="chart-risk" x1="${pad}" y1="${riskY}" x2="${width - pad}" y2="${riskY}" />
+      <text class="chart-label risk" x="${width - pad - 2}" y="${Number(riskY) - 3}" text-anchor="end">tope ${formatNumber(risk)} ms</text>
+      <polygon class="spark-area" points="${area}" />
+      <polyline class="chart-line" points="${line}" />
+      ${over}
     </svg>`;
 }
 
@@ -477,11 +532,11 @@ function moduleChart(scope) {
     if (leftScore !== rightScore) return leftScore - rightScore;
     return String(left.name || left.key).localeCompare(String(right.name || right.key), "es");
   });
-  const limit = state.view === "summary" ? 10 : sorted.length;
+  const limit = sorted.length;
   const visible = sorted.slice(0, limit);
   const filterLabel = state.healthBand ? ` · ${BAND_LABEL[state.healthBand]}` : "";
   return `
-    <section class="module-chart detail-only" aria-label="Salud por módulo">
+    <section class="module-chart" aria-label="Salud por módulo">
       <div class="chart-head">
         <h3>Salud por módulo</h3>
         <span class="muted small">${escapeHtml(`${filtered.length}/${modules.length}${filterLabel}`)}${sorted.length > visible.length ? " · peores primero" : ""}</span>
@@ -490,7 +545,6 @@ function moduleChart(scope) {
       ${visible.length
         ? `<div class="module-rows">${visible.map((module) => moduleRow(module, scope)).join("")}</div>`
         : `<p class="empty">Ningún módulo en ${escapeHtml(BAND_LABEL[state.healthBand] || "la banda")}.</p>`}
-      ${sorted.length > visible.length ? `<p class="muted small chart-note">Mostrando ${visible.length} de ${sorted.length}. Cambia a Detalle para ver todos.</p>` : ""}
     </section>`;
 }
 
@@ -641,9 +695,14 @@ function measureCard(entry, environment, { series = null } = {}) {
       </div>`
     : '<div class="measure-scale idle" aria-hidden="true"><span class="seg flat" style="width:100%"></span></div>';
   const spark = entry.key === "p95" ? microSparkline(series) : "";
+  const verdict = entry.key === "p95" ? latencyVerdictText(environment) : "";
   const reading = `${entry.label}: ${measureValue(entry)}${measureUnit(entry) ? ` ${measureUnit(entry)}` : ""}. ${BAND_LABEL[entry.band] || "Sin dato"}. ${measureLimits(entry)}.`;
+  const link = entry.view
+    ? `<button class="measure-link" type="button" data-view="${escapeHtml(entry.view)}">Ver evidencia</button>`
+    : "";
   return `
     <article class="measure-card band-${entry.band}${geometry && geometry.overflow ? " overflow" : ""}" aria-label="${escapeHtml(reading)}" title="${escapeHtml(`${reading} Fuente: ${entry.source}`)}">
+      ${entry.question ? `<p class="measure-question">${escapeHtml(entry.question)}</p>` : ""}
       <div class="measure-head">
         <p class="measure-label">${escapeHtml(entry.label)}</p>
         <span class="band-pill ${tone}">${escapeHtml(BAND_LABEL[entry.band] || "Sin dato")}</span>
@@ -652,10 +711,27 @@ function measureCard(entry, environment, { series = null } = {}) {
       ${scale}
       <p class="measure-limits">${escapeHtml(measureLimits(entry))}</p>
       ${spark}
+      ${verdict ? `<p class="measure-verdict tone-${escapeHtml(verdict.tone)}">${escapeHtml(verdict.text)}</p>` : ""}
       <p class="measure-foot">${escapeHtml(measureFoot(entry, environment))}</p>
+      ${link}
     </article>`;
 }
 
+// El veredicto lo firma el servidor (lib/metrics.js latencyVerdict) sobre las
+// muestras medidas. Aqui solo se traduce a una linea: el panel no decide si un
+// pico es evento o si ya es un problema que atender.
+function latencyVerdictText(environment) {
+  const verdict = environment ? environment.latency : null;
+  if (!verdict || verdict.state === "unknown") return null;
+  const cap = verdict.cap == null ? "—" : formatNumber(verdict.cap);
+  const text = verdict.state === "optimal"
+    ? `Dentro del tope de ${cap} ms`
+    : `${verdict.label_text} · ${verdict.over}/${verdict.samples} muestras sobre ${cap} ms · racha máxima ${verdict.longest_run}`;
+  const tone = verdict.state === "optimal" ? "ok" : verdict.state === "sustained" ? "down" : "degraded";
+  return { text, tone };
+}
+
+// Tarjeta de resumen de la vista: la pregunta, la cifra, el tope y el semaforo.
 function renderGauges(environment) {
   const container = document.getElementById("gauges");
   const meta = document.getElementById("gaugesMeta");
@@ -1122,11 +1198,27 @@ function openMethodDialog() {
   });
 }
 
+// Las vistas se eligen por pregunta, no por "resumen/detalle": cada seccion del
+// HTML declara en data-views en cuales aparece y aqui solo se enciende la activa.
+const LEGACY_VIEWS = { summary: "resumen", detail: "api" };
+
+function normalizeView(view) {
+  const wanted = LEGACY_VIEWS[view] || view;
+  return VIEW_ORDER.includes(wanted) ? wanted : "resumen";
+}
+
 function applyView() {
-  document.body.classList.toggle("view-summary", state.view === "summary");
-  document.body.classList.toggle("view-detail", state.view === "detail");
+  const view = normalizeView(state.view);
+  if (view !== state.view) {
+    state.view = view;
+    localStorage.setItem("towerView", view);
+  }
+  document.querySelectorAll("[data-views]").forEach((section) => {
+    const views = String(section.dataset.views || "").split(/\s+/).filter(Boolean);
+    section.hidden = !views.includes(view);
+  });
   document.querySelectorAll("[data-view]").forEach((button) => {
-    const active = button.dataset.view === state.view;
+    const active = button.dataset.view === view;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
@@ -1230,27 +1322,6 @@ function activityBars(daily) {
     </div>`;
 }
 
-function miniModuleCard(module) {
-  const status = pillClass(module.status);
-  const data = module.data || {};
-  const records = Number.isFinite(data.records) ? formatNumber(data.records) : "—";
-  const foot = data.last_activity_at ? `hace ${relative(data.last_activity_at).replace(/^hace /, "")}` : (module.detail || "Sin actividad");
-  const services = (module.services || [])
-    .map((service) => `<span class="service-dot status-${pillClass(service.status)}" title="${escapeHtml(service.key)}: ${escapeHtml(service.status)}">${escapeHtml(service.label || service.key)}</span>`)
-    .join("");
-  return `
-    <article class="mini-card status-${status}" title="${escapeHtml(module.detail || module.name)}">
-      <div class="mini-head">
-        <span class="dot" aria-hidden="true"></span>
-        <h4>${escapeHtml(module.name)}</h4>
-        <span class="pill ${status}">${escapeHtml(STATUS_LABEL[module.status] || module.status)}</span>
-      </div>
-      <p class="mini-value">${escapeHtml(records)}<small>registros</small></p>
-      <p class="mini-foot">${escapeHtml(foot)}</p>
-      ${services ? `<div class="module-services">${services}</div>` : ""}
-    </article>`;
-}
-
 function dataTable(headers, rows, emptyText) {
   if (!rows.length) return `<p class="empty">${escapeHtml(emptyText)}</p>`;
   return `
@@ -1337,7 +1408,7 @@ function renderActivity(environment) {
       </div>
       ${activityBars(daily) || '<p class="empty">Sin actividad en la ventana.</p>'}
     </div>
-    <div class="detail-only">
+    <div class="activity-detail">
       ${dataTable(["Conexión", "Valor", "Referencia"], connectionRows, "Sin conexiones registradas.")}
       ${dataTable(
         ["Día", "Auditoría", "Eventos", "Total"],
@@ -1515,13 +1586,9 @@ function renderTenants(environment) {
     formatTime(tenants.generated_at)
   ].filter(Boolean).join(" · ");
 
-  const compact = state.view === "summary";
-  const headers = compact
-    ? ["Empresa", "Estado", "Usuarios", "Sesiones", "Actividad", "GPS", "Módulos", "Acción"]
-    : ["Empresa", "Estado", "Plan", "Usuarios", "Sesiones", "Actividad", "Última actividad", "GPS", "Último ping", "Módulos", "Acción"];
+  const headers = ["Empresa", "Estado", "Plan", "Usuarios", "Sesiones", "Actividad", "Última actividad", "GPS", "Último ping", "Módulos", "Acción"];
   const all = tenantRows(tenants);
-  const visible = compact ? all.slice(0, 12) : all;
-  const rows = visible.map((tenant) => {
+  const rows = all.map((tenant) => {
     const status = pillClass(tenant.status);
     const isSelected = state.company && String(state.company.id) === String(tenant.tenant_id);
     const action = `<button class="btn mini ${isSelected ? "" : "ghost"}" type="button" data-tenant-id="${escapeHtml(tenant.tenant_id)}" data-tenant-name="${escapeHtml(tenant.name || tenant.tenant_id)}">${isSelected ? "Seleccionada" : "Ver módulos"}</button>`;
@@ -1534,7 +1601,6 @@ function renderTenants(environment) {
       escapeHtml(formatNumber(tenant.gps_period || 0)),
       escapeHtml(formatNumber(tenant.modules || 0))
     ];
-    if (compact) return [...cells, action];
     return [
       cells[0],
       cells[1],
@@ -1550,10 +1616,7 @@ function renderTenants(environment) {
     ];
   });
 
-  container.innerHTML = dataTable(headers, rows, "Sin empresas para mostrar.")
-    + (compact && all.length > visible.length
-      ? `<p class="muted small tenant-note">Mostrando ${visible.length} de ${formatNumber(all.length)} empresas (peor estado primero). Cambia a Detalle para la tabla completa.</p>`
-      : "");
+  container.innerHTML = dataTable(headers, rows, "Sin empresas para mostrar.");
 }
 
 
@@ -1635,6 +1698,8 @@ function render() {
   renderCompany();
   renderChecks(snapshot, environment);
   renderPerformance(environment);
+  renderComponents(environment);
+  renderDatabase(environment);
   renderCloud(environment);
   renderGit(git, data, environment);
   renderAlerts(alerts);
@@ -1865,13 +1930,11 @@ function renderModules(environment) {
     if (!groups.has(group)) groups.set(group, []);
     groups.get(group).push(module);
   }
-  const compact = state.view === "summary";
-  const card = compact ? miniModuleCard : moduleCard;
   container.innerHTML = notice + Array.from(groups.entries())
     .map(([group, list]) => `
       <section class="module-group">
         <h3>${escapeHtml(GROUP_LABEL[group] || group)}</h3>
-        <div class="module-grid${compact ? " mini" : ""}">${list.map(card).join("")}</div>
+        <div class="module-grid">${list.map(moduleCard).join("")}</div>
       </section>`)
     .join("");
 }
@@ -1879,7 +1942,6 @@ function renderModules(environment) {
 function renderChecks(snapshot, environment) {
   const container = document.getElementById("checks");
   const checks = environmentChecks(snapshot, environment).filter((check) => check.source !== "modules");
-  container.classList.toggle("compact-list", state.view === "summary");
   document.getElementById("probeMeta").textContent = snapshot
     ? `${checks.length} sondas · ${snapshot.durationMs} ms · ${formatTime(snapshot.at)}`
     : "Sin datos";
@@ -1889,21 +1951,6 @@ function renderChecks(snapshot, environment) {
   }
   if (!checks.length) {
     container.innerHTML = `<p class="empty">Sin sondas para ${escapeHtml(environment ? environment.label : "el ambiente")}.</p>`;
-    return;
-  }
-  if (state.view === "summary") {
-    container.innerHTML = checks
-      .map((check) => {
-        const status = pillClass(check.status);
-        return `
-          <article class="check compact status-${status}" title="${escapeHtml(detailText(check.detail))}">
-            <span class="dot" aria-hidden="true"></span>
-            <span class="compact-label">${escapeHtml(check.label)}</span>
-            <span class="pill ${status}">${escapeHtml(STATUS_LABEL[check.status] || check.status)}</span>
-            <span class="compact-detail">${escapeHtml(detailText(check.detail) || "Sin detalle")}</span>
-          </article>`;
-      })
-      .join("");
     return;
   }
   container.innerHTML = checks
@@ -1929,6 +1976,7 @@ function renderChecks(snapshot, environment) {
 function renderPerformance(environment) {
   const container = document.getElementById("performance");
   const meta = document.getElementById("perfMeta");
+  renderLatencyVerdict(environment);
   const performance = performanceData(environment);
   const label = environment ? environment.short : "LOCAL";
   if (!performance || !performance.samples) {
@@ -1938,30 +1986,17 @@ function renderPerformance(environment) {
   }
   const errorRate = performance.errorRate == null ? 0 : performance.errorRate;
   const p95 = performance.p95;
-  const latencyTone = measureStatus(environment, "p95");
-  const failureTone = measureStatus(environment, "errorRate");
+  const p95Entry = gaugeOf(environment, "p95");
+  const errorEntry = gaugeOf(environment, "errorRate");
+  const latencyTone = BAND_TONE[p95Entry ? p95Entry.band : "unknown"] || "unknown";
+  const failureTone = BAND_TONE[errorEntry ? errorEntry.band : "unknown"] || "unknown";
   const tone = worstTone(latencyTone, failureTone);
   const memoryTone = measureStatus(environment, "memoryRss");
   const slowTone = measureStatus(environment, "slowQueries");
-  const p95Entry = gaugeOf(environment, "p95");
-  const errorEntry = gaugeOf(environment, "errorRate");
-  const limitText = p95Entry && p95Entry.limits ? `objetivo ≤ ${p95Entry.limits.optimal} ms` : "umbral del presupuesto no publicado";
+  const limitText = p95Entry && p95Entry.limits
+    ? `óptimo ≤ ${formatNumber(p95Entry.limits.optimal)} ms · tope ${formatNumber(p95Entry.limits.risk)} ms`
+    : "umbral del presupuesto no publicado";
   meta.textContent = `${performance.samples} muestras · ${formatTime(performance.last && performance.last.at)}`;
-  if (state.view === "summary") {
-    container.innerHTML = `
-      <div class="perf-head">
-        <div>
-          <p class="perf-value">${p95 != null ? escapeHtml(p95) : "—"}<small>ms p95 · ${escapeHtml(label)}</small></p>
-          <p class="perf-sub">${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"} · ${escapeHtml(errorRate)}% de las sondas fallaron</p>
-        </div>
-        <div class="perf-badges">
-          <span class="band-pill ${latencyTone}">latencia · ${escapeHtml(p95Entry ? BAND_LABEL[p95Entry.band] : "Sin dato")}</span>
-          <span class="band-pill ${failureTone}">sondas · ${escapeHtml(errorEntry ? BAND_LABEL[errorEntry.band] : "Sin dato")}</span>
-        </div>
-      </div>
-      ${sparkline(performance.series)}`;
-    return;
-  }
   const stats = [
     { label: "p50", value: performance.p50, unit: "ms" },
     { label: "p95", value: p95, unit: "ms", tone },
@@ -2001,12 +2036,12 @@ function renderPerformance(environment) {
         <p class="perf-sub">${escapeHtml(limitText)} · ${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"}</p>
       </div>
       <div class="perf-badges">
-        <span class="band-pill ${latencyTone}" title="Banda del p95 contra el presupuesto de rendimiento">latencia · ${escapeHtml(p95Entry ? BAND_LABEL[p95Entry.band] : "Sin dato")}</span>
+        <span class="band-pill ${latencyTone}" title="Banda del p95 contra el presupuesto de sonda de este ambiente">latencia · ${escapeHtml(p95Entry ? BAND_LABEL[p95Entry.band] : "Sin dato")}</span>
         <span class="band-pill ${failureTone}" title="Porcentaje de sondas /health de la torre que fallaron, no de peticiones de usuarios">sondas · ${escapeHtml(errorEntry ? BAND_LABEL[errorEntry.band] : "Sin dato")}</span>
       </div>
     </div>
-    <p class="perf-note-inline">«sondas» mide los sondeos que la torre hace a /health y fallaron; «4xx/5xx» de abajo mide las peticiones reales de los usuarios. No son la misma señal.</p>
-    ${sparkline(performance.series)}
+    ${latencyChart(performance.series, p95Entry)}
+    <p class="perf-note-inline">${escapeHtml(p95Entry && p95Entry.source ? p95Entry.source : "")} · «sondas» mide los sondeos que la torre hace a /health y fallaron; «4xx/5xx» de abajo mide las peticiones reales de los usuarios. No son la misma señal.</p>
     <div class="perf-grid">
       ${stats.map((stat) => `
         <div class="perf-stat ${stat.tone || ""}">
@@ -2015,6 +2050,193 @@ function renderPerformance(environment) {
         </div>`).join("")}
     </div>
     ${runtimeMissing ? `<p class="muted small perf-note">El build desplegado ${deployed && deployed.commit ? `(${String(deployed.commit).slice(0, 7)}) ` : ""}aún no expone memoria ni uso del API. Esta vista aparecerá completa cuando el ambiente corra un build con esas métricas.</p>` : ""}`;
+}
+
+// Franja de veredicto de la vista Latencia: una linea que dice si hay que atender
+// o solo vigilar el evento, con la regla que lo produjo debajo.
+function renderLatencyVerdict(environment) {
+  const band = document.getElementById("latencyVerdict");
+  if (!band) return;
+  const verdict = environment ? environment.latency : null;
+  if (!verdict || verdict.state === "unknown") {
+    band.innerHTML = '<p class="verdict-empty">Sin muestras suficientes para firmar un veredicto de latencia.</p>';
+    return;
+  }
+  const tone = verdict.state === "optimal" ? "ok" : verdict.state === "sustained" ? "down" : "degraded";
+  band.innerHTML = `
+    <div class="verdict tone-${tone}">
+      <span class="dot status-${tone}" aria-hidden="true"></span>
+      <p class="verdict-text">${escapeHtml(verdict.label_text)} · tope ${formatNumber(verdict.cap)} ms</p>
+      <p class="verdict-rule">${escapeHtml(verdict.rule || "")}</p>
+    </div>`;
+}
+
+// Vista API: lo que el propio servidor dice de sus componentes. Es la unica
+// lectura "de adentro" que existe hoy (histogramas por ruta requieren el token de
+// /metrics), asi que la torre muestra latencia y estado declarados por la API y
+// no inventa percentiles que no midio.
+// "No se midio" no es cero: Number(null) vale 0, asi que un dato ausente puede
+// colarse como medicion y el panel contaria registros o latencias que nunca se
+// midieron.
+function measuredNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function renderComponents(environment) {
+  const container = document.getElementById("components");
+  const meta = document.getElementById("componentsMeta");
+  if (!container || !meta) return;
+  const components = environment && Array.isArray(environment.components) ? environment.components : [];
+  if (!components.length) {
+    meta.textContent = "Sin componentes leidos";
+    container.innerHTML = `<p class="empty">${escapeHtml(
+      environment && environment.modules && environment.modules.reason
+        ? `La API de ${environment.short} no devolvió la lista de componentes (motivo: ${environment.modules.reason}). Despliegue un build con apex-control para leerlos.`
+        : `La API de ${environment ? environment.short : "este ambiente"} no expone /api/v1/apex-control/status: sin ese endpoint no hay latencias por componente que mostrar.`
+    )}</p>`;
+    return;
+  }
+  const attention = components.filter((component) => component.band === "critical" || component.band === "risk");
+  const withLatency = components.filter((component) => measuredNumber(component.latencyMs) !== null);
+  meta.textContent = `${components.length} componentes · ${withLatency.length} con latencia medida · ${attention.length} requieren atención`;
+  container.innerHTML = `
+    <div class="component-list">
+      ${components.map((component) => {
+        const tone = component.tone || "unknown";
+        const latencyMs = measuredNumber(component.latencyMs);
+        const score = measuredNumber(component.score);
+        const latency = latencyMs !== null ? `${formatNumber(latencyMs)} ms` : "sin medición";
+        const scoreText = score !== null ? `${score}/100` : null;
+        return `
+          <div class="component-row band-${component.band || "unknown"}">
+            <span class="component-dot dot status-${tone}" aria-hidden="true"></span>
+            <div class="component-main">
+              <p class="component-name">${escapeHtml(component.name || component.key)}</p>
+              <p class="component-sub">${escapeHtml(component.kind || "componente")}${component.criticality ? ` · ${escapeHtml(component.criticality)}` : ""}${component.enabled === false ? " · deshabilitado" : ""}</p>
+            </div>
+            <p class="component-latency">${escapeHtml(latency)}</p>
+            ${scoreText ? `<p class="component-score">${escapeHtml(scoreText)}</p>` : '<p class="component-score">—</p>'}
+            <span class="band-pill ${tone}">${escapeHtml(component.label_text || BAND_LABEL[component.band] || "Sin dato")}</span>
+            ${component.detail ? `<p class="component-detail">${escapeHtml(String(component.detail).slice(0, 160))}</p>` : ""}
+          </div>`;
+      }).join("")}
+    </div>`;
+}
+
+// Vista Base de datos: rapidez medida desde adentro del API, volumen real de
+// registros y cobertura de empresas. El tope de la base lo pone el propio API:
+// 100 ms es el objetivo que pidio el propietario y 300 ms es lo que el API ya
+// cataloga como consulta lenta.
+function renderDatabase(environment) {
+  const verdictBand = document.getElementById("databaseVerdict");
+  const kpis = document.getElementById("databaseKpis");
+  const volume = document.getElementById("databaseVolume");
+  const meta = document.getElementById("databaseMeta");
+  if (!verdictBand || !kpis || !volume || !meta) return;
+  const db = gaugeOf(environment, "dbLatency");
+  const slow = gaugeOf(environment, "slowQueries");
+  const dataVolume = gaugeOf(environment, "dataVolume");
+  const coverage = gaugeOf(environment, "dataCoverage");
+  const freshness = gaugeOf(environment, "freshness");
+  const deployed = environment ? environment.deployed : null;
+  const tone = worstTone(
+    db ? BAND_TONE[db.band] : "unknown",
+    slow ? BAND_TONE[slow.band] : "unknown"
+  );
+  const modules = environment && environment.modules && Array.isArray(environment.modules.modules)
+    ? environment.modules.modules
+    : [];
+  const withRecords = modules.filter((module) => measuredNumber(module.data ? module.data.records : null) !== null);
+
+  if (!modules.length && !db) {
+    meta.textContent = "Sin lectura de la base";
+    verdictBand.innerHTML = "";
+    kpis.innerHTML = "";
+    volume.innerHTML = `<p class="empty">Este ambiente no entrega ni el componente de base de datos ni el conteo de registros: la API aún no publica /api/v1/apex-control/status o no hay token de lectura configurado.</p>`;
+    return;
+  }
+  const cap = db && db.limits ? `óptimo ≤ ${formatNumber(db.limits.optimal)} ms · en riesgo ≤ ${formatNumber(db.limits.risk)} ms` : "sin umbral publicado";
+  const dbText = db && db.value != null
+    ? `La base responde en ${formatNumber(db.value)} ms (medido por el propio API). ${BAND_LABEL[db.band]} · ${cap}.`
+    : `No hay lectura del componente de base de datos en este ambiente. ${cap}.`;
+  const volumeText = dataVolume && dataVolume.value != null
+    ? `Hay ${formatNumber(dataVolume.value)} registros medidos en ${withRecords.length} módulos con conteo.`
+    : "Ningún módulo publicó conteo de registros.";
+  verdictBand.innerHTML = `
+    <div class="verdict tone-${tone}">
+      <span class="dot status-${tone}" aria-hidden="true"></span>
+      <p class="verdict-text">${escapeHtml(dbText)}</p>
+      <p class="verdict-rule">${escapeHtml(volumeText)}</p>
+    </div>`;
+  meta.textContent = `${withRecords.length} módulos con conteo · ${formatNumber(modules.length)} módulos leídos`;
+  kpis.innerHTML = [
+    tile({
+      label: "Latencia de la base",
+      value: db && db.value != null ? formatNumber(db.value) : "—",
+      unit: db && db.value != null ? "ms" : "",
+      foot: cap,
+      status: db ? BAND_TONE[db.band] : "unknown"
+    }),
+    tile({
+      label: "Consultas lentas",
+      value: slow && slow.value != null ? formatNumber(slow.value) : "—",
+      foot: slow && slow.limits ? `óptimo ≤ ${slow.limits.optimal} · en riesgo ≤ ${slow.limits.risk} · acumuladas desde el arranque` : "sin umbral publicado",
+      status: slow ? BAND_TONE[slow.band] : "unknown"
+    }),
+    tile({
+      label: "Registros medidos",
+      value: dataVolume && dataVolume.value != null ? formatNumber(dataVolume.value) : "—",
+      foot: "suma de records por módulo publicados por la API",
+      status: "unknown"
+    }),
+    tile({
+      label: "Empresas con actividad",
+      value: coverage && coverage.value != null ? `${formatNumber(coverage.value)} %` : "—",
+      foot: coverage && coverage.limits ? `óptimo ≥ ${formatNumber(coverage.limits.optimal)} %` : "sin lectura por empresa",
+      status: coverage ? BAND_TONE[coverage.band] : "unknown"
+    }),
+    tile({
+      label: "Frescura peor",
+      value: freshness && freshness.value != null ? `${formatNumber(freshness.value)}x` : "—",
+      foot: freshness && freshness.limits ? `óptimo ≤ ${freshness.limits.optimal}x · en riesgo ≤ ${freshness.limits.risk}x` : "sin módulos medidos",
+      status: freshness ? BAND_TONE[freshness.band] : "unknown"
+    }),
+    tile({
+      label: "Memoria del API",
+      value: deployed && deployed.memory ? formatNumber(deployed.memory.rss) : "—",
+      unit: deployed && deployed.memory ? "MB" : "",
+      foot: memoryFoot(deployed) || "el build desplegado no expone memoria",
+      status: measureStatus(environment, "memoryRss")
+    })
+  ].join("");
+  const rows = modules
+    .filter((module) => measuredNumber(module.data ? module.data.records : null) !== null)
+    .sort((left, right) => Number(right.data.records || 0) - Number(left.data.records || 0))
+    .map((module) => {
+      const data = module.data || {};
+      const records = measuredNumber(data.records);
+      const age = measuredNumber(data.age_minutes);
+      const expected = measuredNumber(data.expected_minutes);
+      const ratio = age !== null && expected !== null && expected > 0
+        ? `${Math.round((age / expected) * 100) / 100}x`
+        : "—";
+      return [
+        module.name || module.key,
+        records !== null ? formatNumber(records) : "—",
+        age !== null ? `${age} min` : "—",
+        expected !== null ? `${expected} min` : "—",
+        ratio,
+        BAND_LABEL[module.band] || "Sin dato"
+      ];
+    });
+  const motivo = environment && environment.modules && environment.modules.reason
+    ? ` (motivo: ${environment.modules.reason}).`
+    : ".";
+  volume.innerHTML = rows.length
+    ? dataTable(["Módulo", "Registros", "Edad medida", "Esperado", "Frescura", "Estado"], rows, "")
+    : `<p class="empty">${escapeHtml(`Ningún módulo devolvió conteo de registros en este ambiente${motivo}`)}</p>`;
 }
 
 function renderCloud(environment) {
@@ -2030,7 +2252,7 @@ function renderCloud(environment) {
   const configured = entries.filter((entry) => entry.data && entry.data.configured).length;
   const checkedAt = entries.map((entry) => entry.data && entry.data.checkedAt).filter(Boolean)[0] || null;
   meta.textContent = `${configured}/${entries.length} integraciones con credenciales${checkedAt ? ` · ${formatTime(checkedAt)}` : ""}`;
-  const compact = state.view === "summary";
+  const compact = false;
   container.innerHTML = entries.map((entry) => renderCloudCard(entry.provider, entry.data, compact)).join("");
 }
 
@@ -2064,18 +2286,6 @@ function renderGit(git, data, environment) {
   }
   flow.innerHTML = flowParts.length ? flowParts.join("") : '<span class="muted small">Sin pares de ramas configurados.</span>';
 
-  if (state.view === "summary") {
-    branches.innerHTML = `<div class="branch-chips">${(git.branches || []).map((branch) => {
-      const relationClass = branch.relation === "in_sync" ? "ok" : branch.relation === "diverged" ? "degraded" : "unknown";
-      const selected = selectedBranch && branch.name === selectedBranch;
-      return `<span class="branch-chip ${branch.current ? "current" : ""} ${selected ? "selected" : ""}">
-        <span class="pill ${relationClass}">${escapeHtml(branch.name)} · ${escapeHtml(RELATION_LABEL[branch.relation] || branch.relation)}</span>
-      </span>`;
-    }).join("")}</div>`;
-    warnings.innerHTML = "";
-    return;
-  }
-
   branches.innerHTML = (git.branches || [])
     .map((branch) => {
       const relationClass = branch.relation === "in_sync" ? "ok" : branch.relation === "diverged" ? "warn" : "unknown";
@@ -2106,21 +2316,6 @@ function renderAlerts(alerts) {
   document.getElementById("btnAckAll").style.display = open ? "inline" : "none";
   if (!alerts.length) {
     container.innerHTML = '<p class="empty">Sin alertas registradas.</p>';
-    return;
-  }
-  if (state.view === "summary") {
-    const visible = alerts.filter((alert) => !alert.resolvedAt).slice(0, 6);
-    container.innerHTML = visible.length
-      ? visible.map((alert) => `
-        <article class="alert-row status-${pillClass(alert.status)}">
-          <span class="dot" aria-hidden="true"></span>
-          <div class="alert-row-body">
-            <p>${escapeHtml(alert.title || alert.component)}</p>
-            <span>${escapeHtml(formatTime(alert.at))}${alert.environment ? ` · ${escapeHtml(alert.environment)}` : ""}</span>
-          </div>
-          <span class="pill ${pillClass(alert.status)}">${escapeHtml(STATUS_LABEL[alert.status] || alert.status)}</span>
-        </article>`).join("")
-      : '<p class="empty">Sin alertas abiertas.</p>';
     return;
   }
   container.innerHTML = alerts

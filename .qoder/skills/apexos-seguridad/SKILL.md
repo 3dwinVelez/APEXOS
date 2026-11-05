@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.7.0
+version: 2.8.0
 updated_at: 2026-11-05
 contract: 2
 ---
@@ -55,6 +55,8 @@ Antes de actuar, leer en este orden:
     - `POST .../storefront/generate-image` llama a un proveedor externo: límite propio de 8/min, host hardcodeado (el prompt viaja en la path, nunca una dirección que el cuerpo elija → sin SSRF), y los bytes que regresan se revalidan con magic bytes antes de subirlos; un error del proveedor se traduce en `IMAGEGEN_UNAVAILABLE`/502 sin rebotar su respuesta cruda.
     - La subida y la generación escriben en el mismo bucket (`comercio-assets`) bajo la carpeta del tenant: el aislamiento es la ruta, no un nombre de archivo adivinable.
     Por qué: el 2026-11-05 el riesgo de un «tema editable» es que la pantalla pública pase a dibujar lo que un tercero meta por el body o por un `prompt`.
+
+20. **Lo no medido no es un estado sano y la telemetría por componente sigue siendo agregada.** `GET /api/v1/apex-control/status` publica por componente `key`, `name`, `kind`, `criticality`, `enabled`, `status`, `score` y `latency_ms`; no publica rutas internas, SQL, identificadores de request, tenants, usuarios ni payloads, y la torre reexporta solo esas cifras normalizadas en `normalizeComponents` (`lib/probes.js`). `measuredValue` es obligatoria en todo el camino: un `latency_ms` ausente o `NaN` queda `null` y se lee `sin medición`, porque `Number(null) === 0` pintaría **Óptimo** un componente que nunca respondió. Es la misma clase de engaño que un `ok` heredado del ambiente anterior. El detalle visible se trunca a 160 caracteres y la evidencia se sanea como el snapshot: ni el token de la torre ni el JWT del ambiente aparecen en JSON, logs ni capturas. Por qué: el 2026-11-05 la sonda de correo del API local no publica latencia y un cero habría ocultado que esa verificación nunca se ejecutó.
 
 ## Checklist de intervención
 

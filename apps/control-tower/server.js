@@ -15,7 +15,7 @@ const { diagnoseCheck } = require("./lib/diagnostics");
 const { collectGitState, runGit, clearRemoteCache } = require("./lib/git");
 const { fetchModules, REASON_DETAIL } = require("./lib/modules");
 const { recommendationsFor } = require("./lib/recommendations");
-const { gaugesFor } = require("./lib/metrics");
+const { gaugesFor, latencyVerdict, p95Definition, componentBands } = require("./lib/metrics");
 const { ModuleTelemetry } = require("./lib/telemetry");
 const { computeHealth, withModuleBands } = require("./lib/health");
 const { createAuthGuard, createRateLimiter, safeEqual, readToken, assertLoopback, redact, isPlainObject } = require("./lib/security");
@@ -89,13 +89,25 @@ function eventId() {
   return `EVT-${crypto.randomBytes(3).toString("hex")}`;
 }
 
-// Adjunta lo que el panel pinta: medidores bandeados e historial de ticks. Es
-// puro sobre el snapshot; el registro del sondeo ocurre antes, sobre la lectura
-// real, para que una simulacion no contamine el anillo persistido.
+// Adjunta lo que el panel pinta: medidores bandeados, veredicto de latencia e
+// historial de ticks. Es puro sobre el snapshot; el registro del sondeo ocurre
+// antes, sobre la lectura real, para que una simulacion no contamine el anillo
+// persistido.
 function attachIndicators(snapshot, telemetry) {
   for (const [id, environment] of Object.entries((snapshot && snapshot.environments) || {})) {
+    const definition = p95Definition(id);
     environment.gauges = gaugesFor(environment);
+    if (Array.isArray(environment.components) && environment.components.length) {
+      environment.components = componentBands(environment.components);
+    }
     environment.moduleHistory = telemetry ? telemetry.seriesFor(id, { size: 24 }) : [];
+    // El veredicto lo firma el servidor sobre muestras medidas: un p95 aislado no
+    // dice si la franja fue continua, y esa diferencia es la que separa
+    // "atender" de "vigilar el evento".
+    environment.latency = latencyVerdict(
+      environment.performance ? environment.performance.series : [],
+      definition.risk
+    );
   }
   return snapshot;
 }

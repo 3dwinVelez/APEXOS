@@ -13,12 +13,14 @@ const BRIDGE_TOKEN = "cert-bridge-token";
 const ALLOWED_CHAT = "cert-chat";
 
 const { createTower } = require(path.join(TOWER_DIR, "server.js"));
+const metrics = require(path.join(TOWER_DIR, "lib", "metrics.js"));
 
 const startedAt = new Date().toISOString();
 const checks = [];
 const consoleErrors = [];
 const screenshots = [];
 let tower = null;
+let liveTower = null;
 let chrome = null;
 let dataDir = null;
 
@@ -121,14 +123,38 @@ class Cdp {
   async evaluate(expression) {
     const result = await this.send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
     if (result.exceptionDetails) {
-      throw new Error(result.exceptionDetails.text || "evaluate error");
+      // CDP deja el texto util en exception.description; "text" solo dice
+      // "Uncaught" y no permite saber que evaluacion del panel fallo.
+      const details = result.exceptionDetails;
+      const inner = details.exception ? details.exception.description || details.exception.value : null;
+      throw new Error(String(inner || details.text || "evaluate error").split("\n")[0]);
     }
     return result.result ? result.result.value : undefined;
   }
 
-  async screenshot(file) {
-    const result = await this.send("Page.captureScreenshot", { format: "png", fromSurface: true, captureBeyondViewport: true });
-    fs.writeFileSync(file, Buffer.from(result.data, "base64"));
+  // Con la pagina entera (captureBeyondViewport) una vista de 34 filas deja de
+  // caber en la superficie y el headless tarda mas que el presupuesto del CDP.
+  async screenshot(file, { fullPage = true } = {}) {
+    const result = await this.send("Page.captureScreenshot", {
+      format: "png",
+      fromSurface: true,
+      captureBeyondViewport: fullPage
+    }, 45000);
+    const bytes = Buffer.from(result.data, "base64");
+    // El PNG de la corrida anterior puede seguir bloqueado por el antivirus del
+    // puesto: se reescribe sobre un archivo fresco y, si aun asi falla, se reintenta.
+    try {
+      fs.rmSync(file, { force: true });
+    } catch {
+      // ignore
+    }
+    try {
+      fs.writeFileSync(file, bytes);
+    } catch {
+      await sleep(600);
+      fs.rmSync(file, { force: true });
+      fs.writeFileSync(file, bytes);
+    }
     const size = fs.statSync(file).size;
     screenshots.push({ file: path.basename(file), bytes: size });
     return size;
@@ -283,6 +309,29 @@ async function run() {
     status: environments.status
   });
 
+  // Esta torre es hermetica: en simulacion omite las sondas remotas y la salud por
+  // modulo a proposito, pero SI lee el /apex-control/status real del puesto, que es
+  // de donde sale la latencia de la base que despues se bandea. La evidencia de los
+  // conteos por modulo vive mas abajo, en la fase real.
+  const localSim = await waitFor(async () => {
+    const env = (await request(base, "/api/status")).body.snapshot.environments.local;
+    return env && Array.isArray(env.gauges) && env.gauges.length && env.components && env.components.length ? env : null;
+  }, 30000, 1000) || snapshot.environments.local;
+  const dbSimMs = metrics.componentLatency(localSim.components, "db");
+  assert("local_componentes_reales", Number.isFinite(dbSimMs)
+    && localSim.gauges.length === Object.keys(metrics.GAUGES).length
+    && Boolean(localSim.latency) && localSim.latency.samples > 0, {
+    db_ms: dbSimMs,
+    componentes: localSim.components.length,
+    medidores: localSim.gauges.length,
+    muestras_latencia: localSim.latency ? localSim.latency.samples : 0
+  });
+  assert("simulacion_declarada_en_el_panel", Boolean(localSim.modules)
+    && localSim.modules.source === "catalog" && localSim.modules.reason === "SIMULACION", {
+    fuente: localSim.modules ? localSim.modules.source : null,
+    motivo: localSim.modules ? localSim.modules.reason : null
+  });
+
   const performance = await request(base, "/api/performance");
   assert("performance_endpoint", performance.status === 200 && performance.body.performance.local && performance.body.performance.local.samples >= 1, {
     samples: performance.body && performance.body.performance.local ? performance.body.performance.local.samples : 0
@@ -353,55 +402,103 @@ async function run() {
     try {
       chrome = await launchChrome(binary);
       await chrome.cdp.send("Page.navigate", { url: base });
+      // El arranque cae en Resumen: salud, medidores y alertas. Nada de sondas,
+      // ramas ni nubes mezcladas con la respuesta de "¿cómo está APEXOS?".
+      const visible = `(n) => n.offsetParent !== null`;
       const rendered = await waitFor(
-        () => chrome.cdp.evaluate(`document.querySelectorAll('.check').length >= 8
-          && document.querySelectorAll('#gauges .measure-card').length >= 6
-          && document.querySelectorAll('#moduleMap .map-row').length >= 3
+        () => chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length >= 10
+          && Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length === 3
+          && document.querySelectorAll('.check').length >= 8
           && document.querySelectorAll('#moduleMap .map-tick').length >= 3
           && Boolean(document.querySelector('#health [aria-label^="Salud "]'))`),
         15000
       );
       assert("browser_dashboard_rendered", Boolean(rendered), {
-        checks: await chrome.cdp.evaluate(`document.querySelectorAll('.check').length`),
         medidores: await chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length`),
-        filasMapa: await chrome.cdp.evaluate(`document.querySelectorAll('#moduleMap .map-row').length`),
-        marcasMapa: await chrome.cdp.evaluate(`document.querySelectorAll('#moduleMap .map-tick').length`),
+        seccionesVisibles: await chrome.cdp.evaluate(`Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length`),
         gauge: await chrome.cdp.evaluate(`Boolean(document.querySelector('#health [aria-label^="Salud "]'))`)
       });
-      // El Resumen muestra medidores con umbral; las teselas numericas solo se
-      // despliegan en Detalle. Se comprueba el estado visible, no el DOM oculto.
-      const summaryTilesHidden = await chrome.cdp.evaluate(
-        `getComputedStyle(document.getElementById('kpis')).display === 'none'
-          && document.querySelectorAll('#gauges .measure-card.band-optimal, #gauges .measure-card.band-risk, #gauges .measure-card.band-critical, #gauges .measure-card.band-unknown').length >= 6`
-      );
-      assert("browser_summary_uses_gauges", summaryTilesHidden === true, {
-        bands: await chrome.cdp.evaluate(`Array.from(document.querySelectorAll('#gauges .measure-card')).map((node) => node.className.replace('measure-card band-', '')).join('|')`)
+
+      // Resumen = preguntas con semaforo y tope. Las filas tecnicas (sondas,
+      // teselas, ramas) siguen en el DOM pero NO a la vista.
+      const resumen = await chrome.cdp.evaluate(`({
+        bandas: Array.from(document.querySelectorAll('#gauges .band-pill')).map((n) => n.textContent.trim()),
+        preguntas: Array.from(document.querySelectorAll('#gauges .measure-question')).map((n) => n.textContent.trim()),
+        enlaces: Array.from(document.querySelectorAll('#gauges .measure-link')).map((n) => n.dataset.view),
+        metas: document.getElementById('gaugesMeta').textContent.trim(),
+        kpisVisibles: Array.from(document.querySelectorAll('#kpis .metric-tile')).filter(${visible}).length,
+        checksVisibles: Array.from(document.querySelectorAll('#checks .check')).filter(${visible}).length,
+        secciones: Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length
+      })`);
+      assert("browser_summary_uses_gauges", resumen.kpisVisibles === 0
+        && resumen.checksVisibles === 0
+        && resumen.secciones === 3
+        && resumen.preguntas.length >= 10
+        && /medidores con umbral/.test(resumen.metas), {
+        kpisVisibles: resumen.kpisVisibles, checksVisibles: resumen.checksVisibles,
+        secciones: resumen.secciones, metas: resumen.metas
       });
+      assert("browser_bandas_sin_jerga", resumen.bandas.every((banda) => /Óptimo|En riesgo|Crítico|Sin dato|Informativo/.test(banda))
+        && resumen.enlaces.every((view) => /latencia|api|modulos|datos/.test(view)), {
+        bandas: resumen.bandas, enlaces: resumen.enlaces
+      });
+      assert("browser_cada_pregunta_apunta_a_su_vista", new Set(resumen.enlaces).size >= 4, { vistas: resumen.enlaces });
+
       await waitFor(() => chrome.cdp.evaluate(`document.getElementById('livePill').textContent.includes('SSE en vivo')`), 8000);
       const size = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-overview.png"));
       assert("browser_dashboard_screenshot", size > 20000, { bytes: size });
 
       const tabs = await chrome.cdp.evaluate(`document.querySelectorAll('.env-tab').length`);
       assert("browser_environment_tabs", tabs === 3, { tabs });
-      // Ramas, sondas y rendimiento viven en la vista Detalle.
-      await chrome.cdp.evaluate(`document.querySelector('[data-view="detail"]').click()`);
-      const detailReady = await waitFor(
-        () => chrome.cdp.evaluate(`document.querySelectorAll('.branch').length === 3
-          && document.querySelectorAll('details.tech').length >= 8
-          && document.querySelectorAll('.perf-stat').length >= 8
-          && getComputedStyle(document.getElementById('kpis')).display !== 'none'
-          && document.querySelectorAll('#kpis .metric-tile').length >= 8`),
-        8000
-      );
-      const technicalDetails = await chrome.cdp.evaluate(`document.querySelectorAll('details.tech').length`);
-      assert("browser_technical_details", detailReady && technicalDetails >= 8, {
-        details: technicalDetails,
-        teselasDetalle: await chrome.cdp.evaluate(`document.querySelectorAll('#kpis .metric-tile').length`)
+
+      // --- Vista Latencia: el tope dibujado y el veredicto sostenido vs evento.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="latencia"]').click()`);
+      const latencia = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const leido = {
+          chart: document.querySelectorAll('#performance .latency-chart').length,
+          lineas: Array.from(document.querySelectorAll('#performance .chart-label')).map((n) => n.textContent.trim()),
+          aria: document.querySelector('#performance .latency-chart')
+            ? document.querySelector('#performance .latency-chart').getAttribute('aria-label') : '',
+          veredicto: (document.querySelector('#latencyVerdict .verdict-text') || {}).textContent || '',
+          regla: (document.querySelector('#latencyVerdict .verdict-rule') || {}).textContent || '',
+          medidor: (() => {
+            const tarjeta = Array.from(document.querySelectorAll('#gauges .measure-card')).find((n) => /p95/.test(n.textContent));
+            return tarjeta ? (tarjeta.querySelector('.measure-limits') || {}).textContent || '' : '';
+          })(),
+          estadisticas: document.querySelectorAll('.perf-stat').length,
+          checks: Array.from(document.querySelectorAll('#checks .check')).filter(${visible}).length,
+          secciones: Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length
+        };
+        return leido.chart === 1 && leido.veredicto && leido.medidor ? leido : null;
+      })()`), 25000);
+      assert("browser_latencia_con_tope_dibujado", Boolean(latencia)
+        && latencia.lineas.some((texto) => /^tope \d+ ms$/.test(texto))
+        && latencia.lineas.some((texto) => /^óptimo \d+ ms$/.test(texto))
+        && /tope de \d+ ms/.test(latencia.aria || ""), latencia);
+      assert("browser_latencia_veredicto_sostenido_o_evento", Boolean(latencia)
+        && /Dentro del tope|Picos por evento|Fuera del tope/.test(latencia.veredicto)
+        && /muestras sobre \d+ ms · racha máxima \d+ · ventana \d+/.test(latencia.regla), {
+        veredicto: latencia ? latencia.veredicto : null, regla: latencia ? latencia.regla : null
+      });
+      // El mismo numero: el tope que se dibuja es el tope que publica el medidor.
+      const lineaTope = latencia ? (latencia.lineas.find((texto) => /^tope /.test(texto)) || "") : "";
+      const topeGrafico = Number((lineaTope.match(/\d+/) || [])[0]);
+      const topesMedidor = latencia ? (latencia.medidor.match(/\d+/g) || []).map(Number) : [];
+      assert("browser_tope_del_grafico_es_el_del_medidor", Number.isFinite(topeGrafico)
+        && topesMedidor.includes(topeGrafico), {
+        grafico: topeGrafico, medidor: topesMedidor, lineas: latencia ? latencia.lineas : null
+      });
+      assert("browser_latencia_muestra_las_sondas", Boolean(latencia) && latencia.checks >= 8 && latencia.secciones === 2, {
+        checks: latencia ? latencia.checks : 0, secciones: latencia ? latencia.secciones : 0
       });
       // El panel de rendimiento siempre trae los 8 estadisticos historicos; la telemetria
       // de proceso del /health agrega memoria/uso encima cuando el API la publica.
-      const performanceStats = await chrome.cdp.evaluate(`document.querySelectorAll('.perf-stat').length`);
-      const apiHealth = await request("http://127.0.0.1:3000", "/health");
+      const performanceStats = latencia ? latencia.estadisticas : 0;
+      // Sonda tolerante: si el API local esta caido esto no es un fallo del panel,
+      // es una fuente real ausente. Decirlo aparte evita culpar a la interfaz.
+      const apiHealth = await request("http://127.0.0.1:3000", "/health")
+        .then((r) => ({ ok: true, body: r.body }))
+        .catch(() => ({ ok: false, body: null }));
       const runtimePublished = Boolean(apiHealth.body && apiHealth.body.memory_mb);
       const runtimeRendered = await chrome.cdp.evaluate(
         `["Memoria RSS","Peticiones","Consultas lentas"].every((label) => Array.from(document.querySelectorAll(".perf-stat")).some((node) => node.textContent.includes(label)))`
@@ -418,20 +515,114 @@ async function run() {
           rss: await chrome.cdp.evaluate(`(Array.from(document.querySelectorAll(".perf-stat")).find((node) => node.textContent.includes("Memoria RSS")) || {}).textContent || null`)
         });
       }
+      const shotLatencia = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-latencia.png"));
+      assert("browser_vista_latencia_capturada", shotLatencia > 20000, { bytes: shotLatencia });
 
+      // La torre local lee /apex-control/status del API real del puesto. Con el
+      // puesto cargado esa lectura puede tardar mas que un sondeo, asi que la vista
+      // se espera a lo largo de varios sondeos, no de uno solo.
+      // --- Vista API: que dice el servidor de si mismo y de sus componentes.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="api"]').click()`);
+      const apiVista = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const leido = {
+          componentes: Array.from(document.querySelectorAll('#components .component-row')).filter(${visible}).length,
+          metas: document.getElementById('componentsMeta').textContent.trim(),
+          base: Array.from(document.querySelectorAll('#components .component-row'))
+            .map((n) => n.textContent.replace(/\\s+/g, " ").trim())
+            .filter((texto) => /PostgreSQL|Base de datos/.test(texto))[0] || "",
+          teselas: Array.from(document.querySelectorAll('#kpis .metric-tile')).filter(${visible}).length,
+          tecnicos: document.querySelectorAll('details.tech').length
+        };
+        return leido.componentes >= 6 && /\d/.test(leido.base) ? leido : null;
+      })()`), 45000);
+      assert("browser_vista_api_con_componentes_reales", Boolean(apiVista)
+        && apiVista.componentes >= 6
+        && /\d+ componentes · \d+ con latencia medida/.test(apiVista.metas)
+        && /\d+ ms/.test(apiVista.base), apiVista);
+      assert("browser_vista_api_teselas_tecnicas", Boolean(apiVista) && apiVista.teselas >= 8, {
+        teselas: apiVista ? apiVista.teselas : 0
+      });
+      const technicalDetails = apiVista ? apiVista.tecnicos : 0;
+      assert("browser_technical_details", technicalDetails >= 8, { details: technicalDetails });
+      const shotApi = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-api.png"));
+      assert("browser_vista_api_capturada", shotApi > 20000, { bytes: shotApi });
+
+      // --- Vista Modulos: un solo mapa con la API arriba de cada modulo.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="modulos"]').click()`);
+      const modulos = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const leido = {
+          filas: Array.from(document.querySelectorAll('#moduleMap .map-row')).filter(${visible}).length,
+          marcas: Array.from(document.querySelectorAll('#moduleMap .map-tick')).filter(${visible}).length,
+          leyenda: document.getElementById('moduleMapMeta').textContent.trim(),
+          detalle: Array.from(document.querySelectorAll('#modules .module-row')).filter(${visible}).length
+        };
+        return leido.filas >= 3 && leido.marcas >= 3 ? leido : null;
+      })()`), 8000);
+      assert("browser_modulos_mapa_unico", Boolean(modulos) && /sondeos/.test(modulos.leyenda), modulos);
+      const shotModulos = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-modulos.png"));
+      assert("browser_vista_modulos_capturada", shotModulos > 20000, { bytes: shotModulos });
+
+      // --- Vista Base de datos: rapidez medida, volumen y cobertura.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="datos"]').click()`);
+      const datos = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const leido = {
+          veredicto: (document.querySelector('#databaseVerdict .verdict-text') || {}).textContent || '',
+          regla: (document.querySelector('#databaseVerdict .verdict-rule') || {}).textContent || '',
+          teselas: Array.from(document.querySelectorAll('#databaseKpis .metric-tile')).filter(${visible}).length,
+          columnas: document.querySelectorAll('#databaseVolume th').length,
+          vacio: (document.querySelector('#databaseVolume .empty') || {}).textContent || '',
+          metas: document.getElementById('databaseMeta').textContent.trim(),
+          empresas: Array.from(document.querySelectorAll('#tenants .metric-tile, #tenants .action-item')).filter(${visible}).length
+        };
+        return leido.teselas === 6 && leido.veredicto && leido.columnas === 0 && /SIMULACION/.test(leido.vacio) ? leido : null;
+      })()`), 12000);
+      // El formato lleva separador de miles ("1.777 ms"), asi que el patron debe
+      // aceptarlo: exigir "\d+ ms" declaraba fallida una lectura real y correcta.
+      assert("browser_datos_veredicto_de_base", Boolean(datos)
+        && /base responde en [\d.,]+ ms|No hay lectura del componente/i.test(datos.veredicto)
+        && /registros medidos|conteo de registros/.test(datos.regla), datos);
+      assert("browser_datos_volumen_por_modulo", Boolean(datos) && datos.columnas === 0
+        && /^0 módulos con conteo/.test(datos.metas)
+        && /SIMULACION/.test(datos.vacio), {
+        columnas: datos ? datos.columnas : 0, metas: datos ? datos.metas : null, vacio: datos ? datos.vacio : null
+      });
+      const shotDatos = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-datos.png"));
+      assert("browser_vista_datos_capturada", shotDatos > 20000, { bytes: shotDatos });
+
+      // Ninguna seccion puede quedar huerfana: toda evidencia debe estar declarada
+      // en alguna de las siete vistas, y ninguna vista puede quedarse sin secciones.
+      const cobertura = await chrome.cdp.evaluate(`(() => {
+        const views = ["resumen", "latencia", "api", "modulos", "datos", "nube", "operacion"];
+        const secciones = Array.from(document.querySelectorAll("[data-views]"));
+        const porVista = {};
+        const declaradas = new Set();
+        for (const view of views) {
+          const propias = secciones.filter((n) => n.dataset.views.split(/\\s+/).includes(view));
+          porVista[view] = propias.length;
+          propias.forEach((n) => declaradas.add(n));
+        }
+        document.querySelector('[data-view="resumen"]').click();
+        return { porVista, total: secciones.length, cubiertas: declaradas.size };
+      })()`);
+      assert("browser_cada_vista_tiene_evidencia", Object.values(cobertura.porVista).every((n) => n >= 2)
+        && cobertura.cubiertas === cobertura.total, cobertura);
+
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="nube"]').click()`);
       await chrome.cdp.evaluate(`document.querySelector('[data-env="main"]').click()`);
       const mainTab = await waitFor(
-        () => chrome.cdp.evaluate(`document.getElementById('overallPill').textContent.includes('PROD') && document.querySelectorAll('.cloud-card').length === 3`),
+        () => chrome.cdp.evaluate(`document.getElementById('overallPill').textContent.includes('PROD') && Array.from(document.querySelectorAll('.cloud-card')).filter(${visible}).length === 3`),
         8000
       );
       assert("browser_environment_switch", Boolean(mainTab), {
         pill: await chrome.cdp.evaluate(`document.getElementById('overallPill').textContent`),
-        cloudCards: await chrome.cdp.evaluate(`document.querySelectorAll('.cloud-card').length`),
-        selectedBranch: await chrome.cdp.evaluate(`document.querySelectorAll('.branch.selected').length`)
+        cloudCards: await chrome.cdp.evaluate(`Array.from(document.querySelectorAll('.cloud-card')).filter(${visible}).length`),
+        seleccionadas: await chrome.cdp.evaluate(`document.querySelectorAll('.branch.selected').length`),
+        vista: await chrome.cdp.evaluate(`document.getElementById('cloudPanel').offsetParent !== null`)
       });
       const mainSize = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-env-main.png"));
       assert("browser_environment_screenshot", mainSize > 20000, { bytes: mainSize });
       await chrome.cdp.evaluate(`document.querySelector('[data-env="local"]').click()`);
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="resumen"]').click()`);
       await waitFor(() => chrome.cdp.evaluate(`document.getElementById('overallPill').textContent.includes('LOCAL')`), 5000);
     } catch (error) {
       browserError = error;
@@ -439,12 +630,129 @@ async function run() {
     }
   }
 
+  // --- Fase REAL: una torre sin simulacion, con solo el ambiente del puesto
+  // vigilado, leyendo el API y la base de datos de verdad. Es la evidencia de que
+  // las vistas-pregunta se pintan con datos medidos y no con el catalogo de
+  // respaldo; el resto del script es hermetico y no puede mostrarla.
+  const live = createTower({
+    dataDir: path.join(dataDir, "live"),
+    // 15 s: leer los ~34 modulos le cuesta al API local alrededor de un segundo, y
+    // una torre de certificacion no debe convertir esa lectura en una DoS local.
+    pollMs: 15000,
+    simulation: false,
+    uiToken: UI_TOKEN,
+    telegram: { mode: "off" },
+    git: { remoteEnabled: false },
+    environments: { develop: { enabled: false }, main: { enabled: false } }
+  });
+  liveTower = live;
+  try {
+    const liveAddress = await live.start({ port: 0 });
+    const liveBase = liveAddress.url;
+    const localReal = await waitFor(async () => {
+      const env = (await request(liveBase, "/api/status")).body.snapshot.environments.local;
+      const listo = env && env.modules && env.modules.source === "api"
+        && env.components && env.components.length
+        && metrics.totalRecords(env.modules.modules) > 0
+        && metrics.componentLatency(env.components, "db") !== null;
+      return listo ? env : null;
+    }, 90000, 2000);
+    const registrosReales = localReal ? metrics.totalRecords(localReal.modules.modules) : null;
+    const coberturaReal = localReal ? metrics.coveragePercent(localReal.activity) : null;
+    assert("local_fuente_real", Boolean(localReal)
+      && localReal.modules.source === "api"
+      && registrosReales > 0
+      && Number.isFinite(metrics.componentLatency(localReal.components, "db"))
+      && Number.isFinite(coberturaReal)
+      && localReal.gauges.length === Object.keys(metrics.GAUGES).length
+      && Boolean(localReal.latency) && localReal.latency.samples > 0, {
+      fuente: localReal ? localReal.modules.source : null,
+      db_ms: localReal ? metrics.componentLatency(localReal.components, "db") : null,
+      registros: registrosReales,
+      cobertura_empresial: coberturaReal,
+      medidores: localReal && localReal.gauges ? localReal.gauges.length : 0,
+      muestras_latencia: localReal && localReal.latency ? localReal.latency.samples : 0
+    });
+    assert("mapa_real_de_modulos", Boolean(localReal) && localReal.moduleHistory.length >= 1
+      && Object.keys(localReal.moduleHistory[localReal.moduleHistory.length - 1].ticks).length >= 3, {
+      sondeos: localReal ? localReal.moduleHistory.length : 0,
+      modulos_del_ultimo_sondeo: localReal
+        ? Object.keys(localReal.moduleHistory[localReal.moduleHistory.length - 1].ticks).length
+        : 0
+    });
+
+    if (chrome && !browserError && localReal) {
+      const visibleReal = `(n) => n.offsetParent !== null`;
+      try {
+        await chrome.cdp.send("Page.navigate", { url: liveBase });
+        await waitFor(() => chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length >= 10`).catch(() => false), 20000);
+        await chrome.cdp.evaluate(`document.querySelector('[data-view="datos"]').click()`);
+        const datosReales = await waitFor(() => chrome.cdp.evaluate(`(() => {
+          const leido = {
+            columnas: document.querySelectorAll('#databaseVolume th').length,
+            filas: document.querySelectorAll('#databaseVolume tbody tr').length,
+            conteo: document.getElementById('databaseMeta').textContent.trim(),
+            veredicto: (document.querySelector('#databaseVerdict .verdict-text') || {}).textContent || '',
+            teselas: Array.from(document.querySelectorAll('#databaseKpis .metric-tile')).filter(${visibleReal}).length
+          };
+          return leido.filas >= 3 && leido.columnas >= 6 ? leido : null;
+        })()`).catch(() => null), 20000);
+        assert("browser_datos_con_volumen_real", Boolean(datosReales)
+          && /^\d+ módulos con conteo/.test(datosReales.conteo)
+          && !/^0 módulos con conteo/.test(datosReales.conteo)
+          && /base responde en [\d.,]+ ms/.test(datosReales.veredicto)
+          && datosReales.teselas === 6, datosReales);
+        await chrome.cdp.evaluate(`window.scrollTo(0, 0)`);
+        const shotReales = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-datos-reales.png"), { fullPage: false });
+        assert("browser_vista_datos_reales_capturada", shotReales > 20000, { bytes: shotReales });
+
+        await chrome.cdp.evaluate(`document.querySelector('[data-view="modulos"]').click()`);
+        const modulosReales = await waitFor(() => chrome.cdp.evaluate(`(() => {
+          const leido = {
+            filas: Array.from(document.querySelectorAll('#moduleMap .map-row')).filter(${visibleReal}).length,
+            marcas: Array.from(document.querySelectorAll('#moduleMap .map-tick')).filter(${visibleReal}).length,
+            conRegistros: Array.from(document.querySelectorAll('#moduleMap .map-tick'))
+              .filter((n) => /registros/.test(n.getAttribute('title') || '')).length,
+            leyenda: document.getElementById('moduleMapMeta').textContent.trim()
+          };
+          return leido.filas >= 3 && leido.marcas >= 3 && leido.conRegistros > 0 ? leido : null;
+        })()`).catch(() => null), 20000);
+        assert("browser_modulos_con_datos_reales", Boolean(modulosReales) && /sondeos/.test(modulosReales.leyenda), modulosReales);
+        await chrome.cdp.evaluate(`window.scrollTo(0, 0)`);
+        const shotModulosReales = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-modulos-reales.png"), { fullPage: false });
+        assert("browser_vista_modulos_reales_capturada", shotModulosReales > 20000, { bytes: shotModulosReales });
+      } finally {
+        // La pagina no puede quedarse apuntando a la torre real que ya se detiene:
+        // sus reintentos de SSE llenarian la consola de errores y el resto del
+        // script esta leerian otra interfaz distinta a la que se certifica.
+        await chrome.cdp.send("Page.navigate", { url: base }).catch(() => {});
+        await waitFor(() => chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length >= 10`).catch(() => false), 20000);
+      }
+    }
+  } catch (error) {
+    record("fase_real_disponible", false, { error: String(error.message || error) });
+  } finally {
+    try {
+      await live.stop();
+    } catch {
+      // ignore
+    }
+    liveTower = null;
+  }
+
   const outage = await request(base, "/api/simulate/outage", { method: "POST", token: UI_TOKEN, body: { component: "api", status: "down" } });
   assert("outage_visible", outage.status === 200 && outage.body.snapshot.overall === "down", { overall: outage.body && outage.body.snapshot ? outage.body.snapshot.overall : null });
 
-  const openAlerts = await request(base, "/api/alerts?open=1");
-  const apiAlert = (openAlerts.body.alerts || []).find((alert) => alert.component === "api" && !alert.resolvedAt);
-  assert("alert_opened", Boolean(apiAlert), { alerts: (openAlerts.body.alerts || []).map((alert) => alert.component) });
+  // La alerta la abre un sondeo, no el POST que pinta la falla: consultarla de
+  // inmediato encuentra el inventario del sondeo anterior.
+  const alertos = await waitFor(async () => {
+    const alerts = (await request(base, "/api/alerts?open=1")).body.alerts || [];
+    return alerts.some((alert) => alert.component === "api") ? alerts : null;
+  }, 60000, 1000);
+  assert("alert_opened", Boolean(alertos), {
+    alerts: alertos ? alertos.map((alert) => alert.component)
+      : ((await request(base, "/api/alerts?open=1")).body.alerts || []).map((alert) => alert.component)
+  });
 
   const telegramAfterAlert = await request(base, "/api/telegram");
   assert("telegram_alert_sent", (telegramAfterAlert.body.outbox || []).some((message) => /API APEXOS/.test(message.text)), {
@@ -476,11 +784,15 @@ async function run() {
     assert("browser_degraded_screenshot", size > 20000, { bytes: size });
   }
 
-  const recovered = await request(base, "/api/simulate", { method: "DELETE", token: UI_TOKEN });
-  await sleep(500);
-  const openAfter = await request(base, "/api/alerts?open=1");
-  assert("recovery_resolved", recovered.status === 200 && !(openAfter.body.alerts || []).some((alert) => alert.component === "api"), {
-    open: (openAfter.body.alerts || []).map((alert) => alert.component)
+  await request(base, "/api/simulate", { method: "DELETE", token: UI_TOKEN });
+  // La resolucion ocurre en el siguiente sondeo: dormirse un rato fijo declararia
+  // recuperado un ambiente que la torre aun no ha vuelto a medir.
+  const openAfter = await waitFor(async () => {
+    const alerts = (await request(base, "/api/alerts?open=1")).body.alerts || [];
+    return alerts.some((alert) => alert.component === "api") ? null : alerts;
+  }, 30000, 1000);
+  assert("recovery_resolved", openAfter !== null && !openAfter.some((alert) => alert.component === "api"), {
+    open: ((await request(base, "/api/alerts?open=1")).body.alerts || []).map((alert) => alert.component)
   });
 
   if (chrome && !browserError) {
@@ -548,7 +860,7 @@ async function main() {
       node: process.version,
       chrome: chromePath() || "no disponible",
       tower_url: tower ? `http://127.0.0.1:${tower.server ? tower.server.address().port : 0}` : null,
-      mode: "simulation+dry-run",
+      mode: "torre hermetica en simulacion + torre real contra el API del puesto",
       telegram: "dry-run",
       bridge: "local-token"
     },
@@ -562,11 +874,9 @@ async function main() {
     },
     evidence: [
       "certification.json",
-      "tower-overview.png",
-      "tower-env-main.png",
-      "tower-api-down.png",
-      "telegram-outbox.json"
-    ]
+      "telegram-outbox.json",
+      ...screenshots.map((shot) => shot.file)
+    ],
   };
   fs.writeFileSync(path.join(EVIDENCE_DIR, "certification.json"), `${JSON.stringify(certification, null, 2)}\n`, "utf8");
   console.log(`\nCertificacion ${status}: ${passed}/${checks.length} verificaciones.`);

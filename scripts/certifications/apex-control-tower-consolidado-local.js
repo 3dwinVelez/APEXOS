@@ -130,13 +130,35 @@ class Cdp {
 
   async evaluate(expression) {
     const result = await this.send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.text || "evaluate error");
+    if (result.exceptionDetails) {
+      // CDP deja el texto útil en exception.description; "text" solo dice
+      // "Uncaught" y no permite saber que evaluacion del panel fallo.
+      const details = result.exceptionDetails;
+      const inner = details.exception ? details.exception.description || details.exception.value : null;
+      throw new Error(String(inner || details.text || "evaluate error").split("\n")[0]);
+    }
     return result.result ? result.result.value : undefined;
   }
 
-  async screenshot(file) {
-    const result = await this.send("Page.captureScreenshot", { format: "png", fromSurface: true, captureBeyondViewport: true });
-    fs.writeFileSync(file, Buffer.from(result.data, "base64"));
+  // captureBeyondViewport con una pagina de cientos de filas desborda la surface
+  // y CDP responde tarde: la vista completa se pide solo cuando hace falta.
+  async screenshot(file, { fullPage = true } = {}) {
+    const result = await this.send("Page.captureScreenshot", { format: "png", fromSurface: true, captureBeyondViewport: fullPage }, 45000);
+    const bytes = Buffer.from(result.data, "base64");
+    // El PNG de la corrida anterior puede seguir bloqueado por el antivirus del
+    // puesto: se reescribe sobre un archivo fresco y, si aun asi falla, se reintenta.
+    try {
+      fs.rmSync(file, { force: true });
+    } catch {
+      // ignore
+    }
+    try {
+      fs.writeFileSync(file, bytes);
+    } catch {
+      await sleep(600);
+      fs.rmSync(file, { force: true });
+      fs.writeFileSync(file, bytes);
+    }
     const size = fs.statSync(file).size;
     screenshots.push({ file: path.basename(file), bytes: size });
     return size;
@@ -294,6 +316,26 @@ function startRichApi() {
           uptime_seconds: 7325,
           memory_mb: { rss: 214.6, heap_used: 88.4, heap_total: 121.2, external: 10.1 },
           usage: { requests_total: 98432, by_status: { "2xx": 96100, "3xx": 240, "4xx": 2010, "5xx": 82 }, slow_queries_total: 14 }
+        }
+      };
+    }
+    // Telemetria "de adentro" del API: la torre la pinta en la vista API con la
+    // latencia que el propio servidor midio. Correo no publica latencia, asi que
+    // el panel debe decir "sin medicion" y no 0 ms.
+    if (route === "/api/v1/apex-control/status") {
+      return {
+        status: 200,
+        body: {
+          overall: "ok",
+          score: 94,
+          components: [
+            { key: "db", name: "PostgreSQL", kind: "postgresql", criticality: "critical", status: "ok", latency_ms: 42, score: 96, details: "p95 61 ms" },
+            { key: "redis", name: "Redis", kind: "redis", status: "ok", latency_ms: 8, score: 99 },
+            { key: "queues", name: "Colas BullMQ", kind: "queue", status: "ok", latency_ms: 15, score: 98 },
+            { key: "crons", name: "Crons", kind: "scheduler", status: "ok", latency_ms: 3, score: 100 },
+            { key: "mail", name: "Correo", kind: "smtp", status: "ok", latency_ms: null, score: null },
+            { key: "websocket", name: "WebSocket", kind: "realtime", status: "ok", latency_ms: 2, score: 100 }
+          ]
         }
       };
     }
@@ -584,34 +626,52 @@ async function run() {
     try {
       chrome = await launchChrome(binary);
       await chrome.cdp.send("Page.navigate", { url: `${base}/?token=${UI_TOKEN}` });
-      const rendered = await waitFor(() => chrome.cdp.evaluate(
-        `document.querySelectorAll('#companySummary .metric-tile').length >= 7 && document.querySelectorAll('#companySelect option').length > 1 && document.getElementById('statusLegend').textContent.length > 40`
-      ), 25000);
-      const conteo = await chrome.cdp.evaluate(`({
-        teselas: document.querySelectorAll('#companySummary .metric-tile').length,
-        opciones: document.querySelectorAll('#companySelect option').length,
-        leyenda: document.getElementById('statusLegend').textContent.replace(/\\s+/g,' ').trim().slice(0,220),
-        picker: Boolean(document.getElementById('companySelect'))
-      })`);
-      assert("navegador_monitor_consolidado", Boolean(rendered), conteo);
-      assert("navegador_selector_de_empresa", conteo.opciones === 4, { opciones: conteo.opciones });
-      assert("navegador_leyenda_de_estados", /Requiere atenci/.test(conteo.leyenda) && !/degrad/i.test(conteo.leyenda), { leyenda: conteo.leyenda });
 
-      // Los medidores y el mapa sustituyen el reguero de teselas en el Resumen.
-      const indicadores = await chrome.cdp.evaluate(`({
-        medidores: document.querySelectorAll('#gauges .measure-card').length,
+      // Resumen: solo los medidores con su umbral. Las teselas del consolidado viven
+      // ahora en la vista de base de datos, asi que aqui se certifica que no hay
+      // reguero de datos a la vista.
+      const resumenListo = await waitFor(() => chrome.cdp.evaluate(
+        `[...document.querySelectorAll('#gauges .measure-card')].filter((n) => n.offsetParent !== null).length >= 6 && document.getElementById('statusLegend').textContent.length > 40`
+      ), 25000);
+      const medidores = await chrome.cdp.evaluate(`({
+        medidores: [...document.querySelectorAll('#gauges .measure-card')].filter((n) => n.offsetParent !== null).length,
         conUmbral: [...document.querySelectorAll('#gauges .measure-limits')].filter((n) => /[≤≥]/.test(n.textContent)).length,
         bandas: [...document.querySelectorAll('#gauges .band-pill')].map((n) => n.textContent.trim()),
-        filasMapa: document.querySelectorAll('#moduleMap .map-row').length,
-        marcasMapa: document.querySelectorAll('#moduleMap .map-tick').length,
-        teselasResumenVisibles: [...document.querySelectorAll('#kpis .metric-tile')].filter((n) => n.offsetParent !== null).length
+        teselasVisibles: [...document.querySelectorAll('#kpis .metric-tile, #companySummary .metric-tile')].filter((n) => n.offsetParent !== null).length,
+        leyenda: document.getElementById('statusLegend').textContent.replace(/\\s+/g,' ').trim().slice(0,220)
       })`);
-      assert("navegador_medidores_y_mapa", indicadores.medidores >= 6
-        && indicadores.conUmbral >= 6
-        && indicadores.filasMapa >= 3
-        && indicadores.marcasMapa >= 3
-        && indicadores.teselasResumenVisibles === 0, indicadores);
-      assert("navegador_bandas_sin_jerga", indicadores.bandas.every((banda) => /Óptimo|En riesgo|Crítico|Sin dato|Informativo/.test(banda)), { bandas: indicadores.bandas });
+      assert("navegador_resumen_con_medidores", Boolean(resumenListo)
+        && medidores.medidores >= 6 && medidores.conUmbral >= 6, medidores);
+      assert("navegador_bandas_sin_jerga", medidores.bandas.every((banda) => /Óptimo|En riesgo|Crítico|Sin dato|Informativo/.test(banda)), { bandas: medidores.bandas });
+      assert("navegador_leyenda_de_estados", /Requiere atenci/.test(medidores.leyenda) && !/degrad/i.test(medidores.leyenda), { leyenda: medidores.leyenda });
+      assert("navegador_resumen_sin_teselas", medidores.teselasVisibles === 0, { visibles: medidores.teselasVisibles });
+
+      // El mapa unico de modulos contra la API es su propia vista-pregunta.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="modulos"]').click()`);
+      const mapaListo = await waitFor(() => chrome.cdp.evaluate(
+        `[...document.querySelectorAll('#moduleMap .map-row')].filter((n) => n.offsetParent !== null).length >= 3`
+      ), 15000);
+      const mapa = await chrome.cdp.evaluate(`({
+        filas: [...document.querySelectorAll('#moduleMap .map-row')].filter((n) => n.offsetParent !== null).length,
+        marcas: document.querySelectorAll('#moduleMap .map-tick').length,
+        meta: document.getElementById('moduleMapMeta').textContent.replace(/\\s+/g,' ').trim().slice(0,120),
+        api: document.getElementById('moduleMap').textContent.includes('API /health')
+      })`);
+      assert("navegador_mapa_de_modulos", Boolean(mapaListo) && mapa.filas >= 3 && mapa.marcas >= mapa.filas, mapa);
+      assert("navegador_mapa_incluye_la_api", mapa.api, { meta: mapa.meta });
+
+      // Monitor consolidado por empresa: vista Base de datos.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="datos"]').click()`);
+      const monitorListo = await waitFor(() => chrome.cdp.evaluate(
+        `[...document.querySelectorAll('#companySummary .metric-tile')].filter((n) => n.offsetParent !== null).length >= 7 && document.querySelectorAll('#companySelect option').length > 1`
+      ), 20000);
+      const conteo = await chrome.cdp.evaluate(`({
+        teselas: [...document.querySelectorAll('#companySummary .metric-tile')].filter((n) => n.offsetParent !== null).length,
+        opciones: document.querySelectorAll('#companySelect option').length,
+        picker: Boolean(document.getElementById('companySelect'))
+      })`);
+      assert("navegador_monitor_consolidado", Boolean(monitorListo), conteo);
+      assert("navegador_selector_de_empresa", conteo.opciones === 4, { opciones: conteo.opciones });
 
       const memoria = await chrome.cdp.evaluate(`(() => {
         const tiles = [...document.querySelectorAll('#companySummary .metric-tile')];
@@ -631,7 +691,7 @@ async function run() {
         return select.options[select.selectedIndex].textContent;
       })()`);
       const panelListo = await waitFor(() => chrome.cdp.evaluate(
-        `!document.getElementById('companyPanel').hidden && document.querySelectorAll('#companyKpis .metric-tile').length >= 6 && document.getElementById('companyHealth').textContent.includes('Talento Humano')`
+        `!document.getElementById('companyPanel').hidden && [...document.querySelectorAll('#companyKpis .metric-tile')].filter((n) => n.offsetParent !== null).length >= 6 && document.getElementById('companyHealth').textContent.includes('Talento Humano')`
       ), 15000);
       const panel = await chrome.cdp.evaluate(`({
         visible: !document.getElementById('companyPanel').hidden,
@@ -651,7 +711,7 @@ async function run() {
 
       const captura = await chrome.cdp.evaluate(`document.getElementById('companyPanel').scrollIntoView({block:'start'}) || true`);
       await sleep(400);
-      const shotCompany = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "01-monitor-consolidado-empresa.png"));
+      const shotCompany = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "01-monitor-consolidado-empresa.png"), { fullPage: false });
       assert("captura_monitor_consolidado", shotCompany > 20000, { bytes: shotCompany, scroll: Boolean(captura) });
 
       const resumen = await chrome.cdp.evaluate(`document.body.innerText.replace(/\\s+/g,' ')`);
@@ -659,6 +719,27 @@ async function run() {
         coincidencias: (resumen.match(/[^ ]*degrad[^ ]*/gi) || []).slice(0, 5)
       });
 
+      // Vista API: la latencia que el propio servidor midio componente por
+      // componente. Correo no publica latencia, asi que debe decir "sin medicion".
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="api"]').click()`);
+      const componentesListos = await waitFor(() => chrome.cdp.evaluate(
+        `[...document.querySelectorAll('#components .component-row')].filter((n) => n.offsetParent !== null).length >= 6`
+      ), 15000);
+      const componentes = await chrome.cdp.evaluate(`({
+        filas: [...document.querySelectorAll('#components .component-row')].filter((n) => n.offsetParent !== null).length,
+        meta: document.getElementById('componentsMeta').textContent.replace(/\\s+/g,' ').trim(),
+        sinMedicion: [...document.querySelectorAll('#components .component-latency')].filter((n) => /sin medici/.test(n.textContent)).length,
+        conMilisegundos: [...document.querySelectorAll('#components .component-latency')].filter((n) => /\\d+\\s*ms/.test(n.textContent)).length,
+        ceros: [...document.querySelectorAll('#components .component-latency')].filter((n) => /^0\\s*ms$/.test(n.textContent.trim())).length,
+        teselasVisibles: [...document.querySelectorAll('#kpis .metric-tile')].filter((n) => n.offsetParent !== null).length
+      })`);
+      assert("navegador_componentes_con_latencia_real", Boolean(componentesListos)
+        && componentes.filas >= 6 && componentes.conMilisegundos >= 5
+        && componentes.teselasVisibles >= 1 && /con latencia medida/.test(componentes.meta), componentes);
+      assert("navegador_componente_sin_latencia_no_es_cero", componentes.sinMedicion === 1
+        && componentes.ceros === 0, { sinMedicion: componentes.sinMedicion, ceros: componentes.ceros });
+
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="datos"]').click()`);
       await chrome.cdp.evaluate(`document.querySelector('[data-env="main"]').click()`);
       const prodListo = await waitFor(() => chrome.cdp.evaluate(
         `document.getElementById('tenantsTitle').textContent.includes('consolidado') && document.getElementById('overallPill').textContent.includes('PROD') && document.querySelectorAll('#tenants .action-item').length >= 1`
@@ -681,14 +762,16 @@ async function run() {
       });
       await chrome.cdp.evaluate(`document.getElementById('tenants').scrollIntoView({block:'center'})`);
       await sleep(300);
-      const shotProd = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "02-producto-bloqueado-con-acciones.png"));
+      const shotProd = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "02-producto-bloqueado-con-acciones.png"), { fullPage: false });
       assert("captura_producto_bloqueado", shotProd > 20000, { bytes: shotProd });
 
       await chrome.cdp.evaluate(`document.querySelector('[data-env="local"]').click()`);
       await waitFor(() => chrome.cdp.evaluate(`document.getElementById('overallPill').textContent.includes('LOCAL')`), 10000);
-      await chrome.cdp.evaluate(`document.querySelector('[data-view="detail"]').click()`);
+      // El rendimiento del proceso vivo antes en "Detalle"; hoy es la vista
+      // Latencia, que ademas dibuja el tope del p95 sobre la serie medida.
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="latencia"]').click()`);
       const detalle = await waitFor(() => chrome.cdp.evaluate(
-        `document.querySelectorAll('.perf-stat').length > 8 && [...document.querySelectorAll('.perf-stat')].some((s) => /Memoria RSS/.test(s.textContent))`
+        `[...document.querySelectorAll('.perf-stat')].filter((n) => n.offsetParent !== null).length > 8 && [...document.querySelectorAll('.perf-stat')].some((s) => /Memoria RSS/.test(s.textContent))`
       ), 12000);
       const rendimiento = await chrome.cdp.evaluate(`[...document.querySelectorAll('.perf-stat')].map((s) => s.textContent.replace(/\\s+/g,' ').trim())`);
       assert("navegador_rendimiento_con_memoria_y_uso", Boolean(detalle)
@@ -696,9 +779,23 @@ async function run() {
         && rendimiento.some((s) => /Peticiones/.test(s))
         && rendimiento.some((s) => /Consultas lentas/.test(s))
         && rendimiento.some((s) => /Uptime del proceso/.test(s)), { estadisticas: rendimiento.length });
+      const umbralListo = await waitFor(() => chrome.cdp.evaluate(
+        `document.querySelector('#latencyVerdict .verdict') !== null && /tope \\d/.test(document.getElementById('latencyVerdict').textContent)`
+      ), 12000);
+      const umbralLatencia = await chrome.cdp.evaluate(`({
+        veredicto: document.getElementById('latencyVerdict').textContent.replace(/\\s+/g,' ').trim().slice(0,200),
+        topeDibujado: /tope/i.test(document.getElementById('performance').textContent),
+        regla: (document.querySelector('#latencyVerdict .verdict-rule') || {}).textContent || ""
+      })`);
+      assert("navegador_veredicto_de_latencia_con_tope", Boolean(umbralListo)
+        && umbralLatencia.topeDibujado === true, umbralLatencia);
+      assert("navegador_veredicto_dice_si_es_para_atender", /Dentro del tope|atender|Picos por evento/i.test(umbralLatencia.veredicto)
+        && /muestras sobre/.test(umbralLatencia.regla), {
+        veredicto: umbralLatencia.veredicto, regla: umbralLatencia.regla.replace(/\s+/g, " ").slice(0, 120)
+      });
 
       const lenguaje = await chrome.cdp.evaluate(`document.body.innerText.replace(/\\s+/g,' ')`);
-      // La leyenda vive en la vista Resumen: en Detalle se exige que el texto
+      // La leyenda vive en la vista Resumen: en Latencia se exige que el texto
       // explicativo siga exista en el DOM, aunque no este a la vista.
       const leyenda = await chrome.cdp.evaluate(`document.getElementById('statusLegend').textContent.replace(/\\s+/g,' ')`);
       assert("navegador_sin_jerga_degrade", !/degrad/i.test(lenguaje) && /Requiere atenci/.test(`${lenguaje} ${leyenda}`), {
@@ -707,9 +804,13 @@ async function run() {
       });
       await chrome.cdp.evaluate(`window.scrollTo(0,0)`);
       await sleep(300);
-      const shotDetail = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "03-vista-detalle-consolidado.png"));
-      assert("captura_vista_detalle", shotDetail > 20000, { bytes: shotDetail });
+      const shotDetail = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "03-vista-latencia-consolidado.png"), { fullPage: false });
+      assert("captura_vista_latencia", shotDetail > 20000, { bytes: shotDetail });
 
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="resumen"]').click()`);
+      await waitFor(() => chrome.cdp.evaluate(
+        `!document.getElementById('health').hidden && document.querySelector('#health [data-health-detail]') !== null`
+      ), 10000);
       await chrome.cdp.evaluate(`document.querySelector('#health [data-health-detail]').click()`);
       const umbral = await waitFor(() => chrome.cdp.evaluate(
         `document.getElementById('detailDialog').open && !/degrad/i.test(document.getElementById('detailBody').textContent)`
@@ -774,8 +875,10 @@ async function main() {
     commit: commitSha(),
     working_tree_dirty: workingTreeDirty(),
     alcance: [
+      "siete vistas-pregunta del panel (resumen, latencia, api, modulos, datos, nube, operacion) con sus medidores y umbrales publicados por el servidor",
       "monitor consolidado por empresa (empresas, carga, actividad, memoria, uso del API, rendimiento)",
       "selector de empresa y panel por empresa con acciones sugeridas",
+      "componentes de /apex-control/status con latencia medida y 'sin medicion' cuando el servidor no la publica",
       "/health del API con runtime agregado (uptime, memoria, uso) y su normalizacion en la torre",
       "motor de acciones sugeridas por ambiente y por empresa",
       "ambientes bloqueados por build sin apex-control: bloqueo explicado con accion y responsable"
@@ -806,7 +909,7 @@ async function main() {
       "empresa-tenant-demo.json",
       "01-monitor-consolidado-empresa.png",
       "02-producto-bloqueado-con-acciones.png",
-      "03-vista-detalle-consolidado.png"
+      "03-vista-latencia-consolidado.png"
     ]
   };
   fs.writeFileSync(path.join(EVIDENCE_DIR, "certification.json"), `${JSON.stringify(certification, null, 2)}\n`, "utf8");

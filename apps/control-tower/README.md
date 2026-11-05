@@ -47,23 +47,31 @@ La sonda Redis abre su propio socket TCP contra `REDIS_HOST:REDIS_PORT` y espera
 
 ## Panel
 
-Dos vistas conmutables desde la barra superior; la elección se recuerda en el navegador:
+Siete vistas, una por pregunta; la elección se recuerda en el navegador (`towerView`). Cada bloque del HTML declara en `data-views` en cuáles aparece, así que una vista nunca muestra lo que no responde a su pregunta:
 
-- **Resumen**: indicador oficial del ambiente, **medidores con umbral** y **mapa de módulos vs API**, alertas abiertas y empresas con actividad reciente. Ideal para ver el estado de un vistazo, sin teselas numéricas.
-- **Detalle**: todo lo anterior más las teselas de indicadores, el desglose de módulos, el consolidado por empresa y el desglose técnico de sondas, rendimiento, nube, ramas, credenciales, trabajos, Telegram y eventos.
+| Vista | Pregunta que responde | Qué pinta |
+|---|---|---|
+| **Resumen** | ¿Dónde hay que mirar? | Indicador oficial del ambiente, los medidores con su umbral y las alertas abiertas. Sin teselas numéricas. |
+| **Latencia** | ¿Cómo está la latencia? | Veredicto (dentro del tope / picos por vigilar / fuera del tope: atender) con la regla que lo produjo, serie del p95 con sus líneas de óptimo y tope, y los marcadores de las muestras que se pasaron. Debajo, la memoria del proceso, las peticiones por bucket de estado, las consultas lentas y el uptime. |
+| **API** | ¿El API responde bien con la carga que tiene? | Teselas de indicadores y la latencia que el propio servidor mide componente por componente (`/apex-control/status`), con su banda. |
+| **Módulos** | ¿Los módulos están óptimos? | Mapa único de módulos vs API (una marca por sondeo), tarjetas por dominio con registros, frescura, servicios y alertas, y actividad. |
+| **Base de datos** | ¿La base está óptima y rápida? y ¿qué volumen tiene? | Veredicto de la base medido desde adentro del API, teselas de volumen/cobertura/frescura, la tabla de registros por módulo y el monitor consolidado por empresa con su selector. |
+| **Nube** | ¿Los servicios de la nube están bien? | Railway, Supabase y Vercel con métricas medibles, o la variable exacta que falta, y la preparación de credenciales por ambiente. |
+| **Operación** | ¿Qué hago con esto? | Ramas, trabajos del puente Qoder, Telegram y la traza de eventos. |
 
-- **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a indicadores, servicios, alertas, rendimiento, nube y rama. Debajo, una leyenda fija qué significa cada estado.
-- **Indicadores** (Detalle): salud, módulos, registros, actividad de hoy, conexiones, empresas, servicios caídos, alertas, p95, memoria y uso del API, rama y fábrica Qoder. En Resumen estos números viven en los medidores y en el mapa.
-- **Consolidado por empresa**: siete teselas del ambiente activo (empresas activas, carga de datos, actividad acumulada, empresas sin señal, memoria del API, uso del API y p95) más el selector de empresa.
+Reglas de lectura que aplican a todas las vistas:
+
+- **Lo no medido no es cero.** Un componente sin `latency_ms`, un módulo sin conteo de registros o un ambiente sin historia quedan en `Sin medición` / `Sin dato`; el panel nunca los cuenta como métrica ni los pinta en verde (`measuredNumber` en el navegador, `measuredValue` en `lib/metrics.js` en el servidor).
+- **El umbral lo publica el servidor.** Valor, banda y cortes salen de `lib/metrics.js` (`GAUGES`, una entrada por pregunta) y el navegador solo pinta; no hay topes escritos a mano en el panel.
+- **Picos contra sostenido.** La regla está en `latencyVerdict`: solo un evento por encima del tope es un pico que se vigila; una racha o un porcentaje sostenido sobre la ventana es un problema que se atiende. La regla usada aparece escrita bajo el veredicto.
 - **Servicios**: estado, latencia, detalle, impacto funcional, acción sugerida y detalle técnico expandible.
 - **Módulos**: resumen (en objetivo, requieren atención, caídos, sin dato, registros), agrupación por dominio y tarjetas con registros, última actividad, frescura esperada, servicios y alertas. El filtro **Solo problemas** deja a la vista únicamente lo que está caído o fuera del objetivo. Si la API no entrega datos, el panel muestra el catálogo en `Sin dato` y lo declara, no lo pinta como sano.
-- **Actividad**: actividad de hoy, usuarios activos, sesiones, clientes WebSocket, pings GPS y última actividad, con serie diaria de auditoría y eventos. En Detalle se agregan las tablas de conexiones y de actividad diaria.
-- **Empresas**: monitor consolidado con conectividad por `tenant_id` (sesiones, usuarios, última actividad, pings GPS, estado) y sus acciones de intervención. El Resumen muestra hasta 12 empresas; el Detalle conserva la tabla completa.
+- **Actividad**: actividad de hoy, usuarios activos, sesiones, clientes WebSocket, pings GPS y última actividad, con serie diaria de auditoría y eventos.
+- **Empresas**: monitor consolidado con conectividad por `tenant_id` (sesiones, usuarios, última actividad, pings GPS, estado) y sus acciones de intervención. El Resumen muestra hasta 12 empresas; la vista Base de datos conserva la tabla completa.
 - **Acciones de intervención**: en cada bloque bloqueado o con módulos fallando, una lista priorizada con qué hacer, el agente responsable y el siguiente comando.
 - **Alertas**: incidentes por ambiente, con impacto funcional, acción y detalle técnico.
-- **Rendimiento API** (Detalle): p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente, con dos chips de banda separados — **latencia** (p95 medido) y **sondas** (sondeos `/health` que fallaron) — porque no son la misma señal. Se agregan memoria del proceso, peticiones por bucket de estado, consultas lentas y uptime.
-- **Nube**: Railway, Supabase y Vercel con estado, proyecto, servicios, deployments y métricas medibles, o la variable exacta que falta.
-- **Credenciales**: preparación de cada proveedor por ambiente (`develop`/`main`) con los nombres de las variables faltantes, nunca sus valores.
+- **Rendimiento**: p50, p95, promedio, mínimo, máximo, tasa de error y serie temporal por ambiente, con dos chips de banda separados — **latencia** (p95 medido) y **sondas** (sondeos `/health` que fallaron) — porque no son la misma señal.
+- **Ambientes**: tabs `Local`, `Develop · QA` y `Main · Producción`; el filtro se aplica a todas las vistas. Debajo, una leyenda fija qué significa cada estado. Cambiar de ambiente cierra la empresa abierta: no se relee una empresa de LOCAL contra QA o PROD.
 - **Ramas**: relación local/remota de las tres ramas, con la rama del ambiente seleccionado resaltada.
 - **Trabajos Qoder**: creación, aprobación, rechazo y seguimiento de instrucciones.
 - **Telegram**: estado del canal, emparejamiento y simulación en dry-run.
@@ -113,17 +121,19 @@ El primer bloque del panel es el indicador oficial, no un adorno: publica el pun
 
 El bloque **Medidores del sistema** sustituye el reguero de teselas del Resumen. Cada tarjeta es una magnitud medida con su escala de tres tramos (verde / ámbar / rojo), el marcador del valor y los cortes que produjeron la banda:
 
-| Medidor | Óptimo | En riesgo | Crítico | Fuente del corte |
-|---|---|---|---|---|
-| p95 del API | ≤ 600 ms | ≤ 1.000 ms | > 1.000 ms | presupuesto versionado `PERF_API_P95_MS` |
-| Sondas fallidas | ≤ 1 % | ≤ 5 % | > 5 % | serie de sondas `/health` de la torre |
-| Memoria del API | ≤ 512 MB | ≤ 1.024 MB | > 1.024 MB | `memory_mb.rss` de `/health` |
-| Consultas lentas | 0 | ≤ 5 | > 5 | `usage.slow_queries_total` |
-| Empresas con actividad | ≥ 20 % | ≥ 5 % | < 5 % | `tenants.summary` sobre `active` (dirección invertida: gana el valor alto) |
-| Frescura de datos | ≤ 1x | ≤ 3x | > 3x | peor ratio `age_minutes / expected_minutes` entre módulos |
-| Uptime y peticiones | — | — | — | `Informativo`: contexto del proceso, no diagnóstico |
+| Medidor | Óptimo | En riesgo | Crítico | Vista | Fuente del corte |
+|---|---|---|---|---|---|
+| p95 de la sonda al API | 60 % del presupuesto | = presupuesto | > presupuesto | Latencia | `PROBE_BUDGET_MS` por ambiente: 400 ms LOCAL · 900 ms QA · 1.400 ms PROD (es el viaje torre→ambiente, no la latencia interna del API) |
+| Sondas fallidas | ≤ 1 % | ≤ 5 % | > 5 % | API | serie de sondas `/health` de la torre |
+| Memoria del API | ≤ 512 MB | ≤ 1.024 MB | > 1.024 MB | API | `memory_mb.rss` de `/health` |
+| Consultas lentas | 0 | ≤ 5 | > 5 | Base de datos | `usage.slow_queries_total` |
+| Latencia de la base | ≤ 100 ms | ≤ 300 ms | > 300 ms | Base de datos | componente `db` de `/apex-control/status`: la ida y vuelta la midió el propio API |
+| Registros medidos | — | — | — | Base de datos | `Informativo`: suma de `records` por módulo en `/apex-control/modules` |
+| Empresas con actividad | ≥ 20 % | ≥ 5 % | < 5 % | Base de datos | `tenants.summary` sobre `active` (dirección invertida: gana el valor alto) |
+| Frescura de datos | ≤ 1x | ≤ 3x | > 3x | Módulos | peor ratio `age_minutes / expected_minutes` entre módulos |
+| Uptime y peticiones | — | — | — | API | `Informativo`: contexto del proceso, no diagnóstico |
 
-- Ningún umbral vive en el navegador. El servidor publica `environment.gauges` con `value`, `band`, `tone`, `label_text` y `limits`; el panel solo pinta. Cambiar `PERF_API_P95_MS` mueve el corte del medidor sin tocar el HTML.
+- Ningún umbral vive en el navegador. El servidor publica `environment.gauges` con `value`, `band`, `tone`, `label_text`, `limits` y `source`; el panel solo pinta. Cambiar `PERF_API_P95_MS` o los presupuestos de sonda (`PERF_PROBE_P95_LOCAL_MS`, `PERF_PROBE_P95_DEVELOP_MS`, `PERF_PROBE_P95_MAIN_MS`) mueve el corte del medidor sin tocar el HTML.
 - Bandas visibles: **Óptimo**, **En riesgo**, **Crítico**, **Sin dato** y **Informativo**. No hay jerga interna en la superficie.
 - **Sin dato no es verde**: un valor que no se pudo medir (`null`) queda en banda neutra. Un ambiente que nunca responde no puede aparecer sano.
 - Un medidor informativo no tiene escala ni veredicto: pinta la línea base y la nota «contexto del proceso, no diagnóstico», y no cuenta en el resumen de «en rojo / en riesgo».
@@ -143,7 +153,7 @@ El bloque **Mapa de módulos vs API** concentra en un solo gráfico el comportam
 
 ### Telemetría del proceso
 
-`GET /health` de la API publica, además de estado y commit, los agregados del propio proceso: `uptime_seconds`, `memory_mb` (`rss`, `heap_used`, `heap_total`, `external`), `usage.requests_total`, `usage.by_status` (buckets `2xx`/`3xx`/`4xx`/`5xx`) y `usage.slow_queries_total`. La torre los normaliza en `deployedInfo` y los convierte en las teselas **Memoria del API** y **Uso del API** y en las filas de **Detalle → Rendimiento**.
+`GET /health` de la API publica, además de estado y commit, los agregados del propio proceso: `uptime_seconds`, `memory_mb` (`rss`, `heap_used`, `heap_total`, `external`), `usage.requests_total`, `usage.by_status` (buckets `2xx`/`3xx`/`4xx`/`5xx`) y `usage.slow_queries_total`. La torre los normaliza en `deployedInfo` y los convierte en las teselas **Memoria del API** y **Uso del API** (vista **Base de datos**) y en las filas de proceso de la vista **Latencia**.
 
 - Son totales del proceso: no hay rutas, identificadores de request, tenants, usuarios ni payloads en esa superficie, y la tendencia fina sigue viviendo en `/metrics`.
 - Un ambiente cuyo build no entrega esos campos (los desplegados antes de este cambio) se muestra con la nota de que no hay medición. La torre nunca hereda las cifras del ambiente anterior ni las inventa.
@@ -151,7 +161,7 @@ El bloque **Mapa de módulos vs API** concentra en un solo gráfico el comportam
 
 ### Monitor consolidado por empresa
 
-El bloque **Monitor consolidado por empresa** responde primero por el ambiente completo y luego deja bajar al detalle de una sola empresa:
+El bloque **Monitor consolidado por empresa** (vista **Base de datos**) responde primero por el ambiente completo y luego deja bajar al detalle de una sola empresa:
 
 1. Siete teselas consolidadas: empresas activas, carga de datos, actividad acumulada, empresas sin señal, memoria del API, uso del API y p95 del ambiente.
 2. Un selector **Empresa** que solo se llena con las empresas de la lectura vigente del ambiente activo, con su botón **Actualizar**.
@@ -202,7 +212,7 @@ Con el mismo token por ambiente, la torre consulta:
 - `GET /api/v1/apex-control/activity`: actividad del tenant del token en los últimos `days` días, con buckets diarios de auditoría y eventos, usuarios activos, sesiones, clientes WebSocket y pings GPS. Filtrado por tenant; nunca agrega cifras de otras empresas.
 - `GET /api/v1/apex-control/tenants`: conectividad por `tenant_id` para la vista de empresas. Es una lectura entre empresas y por eso exige el permiso explícito `apex-control:read_all_tenants`, la guarda `APEX_CONTROL_CROSS_TENANT` (apagada por defecto fuera de local/development) y la allowlist opcional `APEX_CONTROL_CROSS_TENANT_TENANTS`. Si la guarda está cerrada, la API responde `403 CROSS_TENANT_DESHABILITADO` y la torre muestra la restricción con su motivo.
 
-Ambos paneles son informativos: no alteran el puntaje del ambiente. El Resumen limita la tabla de empresas a 12 filas y avisa que el Detalle conserva la tabla completa. Sin datos, la sección indica el motivo exacto (`SIN_TOKEN`, `MODULO_NO_DESPLEGADO`, `TOKEN_INVALIDO`) en vez de mostrar ceros como si hubiera actividad.
+Ambos paneles son informativos: no alteran el puntaje del ambiente. El Resumen limita la tabla de empresas a 12 filas para no saturar la vista; la tabla completa vive en la vista **Base de datos**, que es donde el selector de empresa y su panel de seis KPI operan. Sin datos, la sección indica el motivo exacto (`SIN_TOKEN`, `MODULO_NO_DESPLEGADO`, `TOKEN_INVALIDO`) en vez de mostrar ceros como si hubiera actividad.
 
 ### Métricas cloud
 
@@ -219,7 +229,7 @@ Para la nube (solo lectura):
 - **Supabase**: `SUPABASE_ACCESS_TOKEN`; el `ref` de cada proyecto ya viene en `ENV_DEVELOP_SUPABASE_REF` y `ENV_MAIN_SUPABASE_REF`.
 - Para validar `auth/v1/health` con `200`, define además `ENV_DEVELOP_SUPABASE_ANON_KEY` y `ENV_MAIN_SUPABASE_ANON_KEY` (llave publica anon).
 
-Sin tokens, la tarjeta del proveedor queda en `Sin credenciales` con la variable que falta; nunca se inventa un estado `ok`. Los tokens no se muestran en el panel, la API, los eventos ni la evidencia. La tarjeta **Credenciales** (solo en Detalle) resume cuántos proveedores están listos por ambiente y enumera únicamente los nombres de las variables faltantes.
+Sin tokens, la tarjeta del proveedor queda en `Sin credenciales` con la variable que falta; nunca se inventa un estado `ok`. Los tokens no se muestran en el panel, la API, los eventos ni la evidencia. La tarjeta **Credenciales cloud** (vista **Nube**) resume cuántos proveedores están listos por ambiente y enumera únicamente los nombres de las variables faltantes.
 
 ## Telegram
 
@@ -276,13 +286,31 @@ npm run certify:control-tower:consolidado
 
 `control:test` incluye las suites de módulos, cloud, actividad y acciones de intervención: catálogo sin token, API con Bearer, token inválido, 404, ambiente sin conexión, herencia de servicios caídos, el cálculo de métricas Railway/Vercel/Supabase con respuestas congeladas, la puerta entre empresas (`403 CROSS_TENANT_DESHABILITADO`), la ausencia de red sin token, el token local que no viaja a QA/PROD y que cada bloqueo devuelva una acción con prioridad, responsable y comando.
 
-La certificación fase uno levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, captura el panel con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/`.
+La certificación fase uno (`certify:control-tower:local`, **63/63** el 2026-11-05) levanta la torre en modo simulación y Telegram dry-run, verifica API, ambientes, rendimiento, panel, cola, puente, alertas, recuperación y Telegram, y después corre una **fase real**: la torre apunta al API del puesto (`/health` y `/api/v1/apex-control/status`) y exige que el panel muestre al menos 6 componentes con latencias leídas del servidor, las cifras de memoria/uso publicadas por el propio proceso y el veredicto de latencia con su tope. Captura con Chrome headless y deja evidencia en `docs/qa/evidence/apex-control-tower-f1/` (`tower-datos-reales.png`, `tower-modulos-reales.png` y las capturas por vista).
 
-`certify:control-tower:consolidado` levanta dos APIs de prueba en `127.0.0.1`: una rica (telemetría de proceso en `/health`, módulos, actividad, empresas y salud por empresa) y otra con el build anterior al módulo (`/health` con commit y `404` en `apex-control`, como QA y PROD hoy). Con Chrome por CDP comprueba el monitor consolidado, el selector de empresa, las teselas de memoria y uso con los números publicados por el API, **los medidores con su umbral y el mapa de módulos vs API** (incluido que el Resumen no muestre ninguna tesela), las acciones con responsable y siguiente comando, el bloqueo de PROD que nombra su commit sin inventar empresas, que las bandas solo usen las cinco palabras del vocabulario, la ausencia de jerga `degrade`, la leyenda de estados y una consola sin errores. Deja `certification.json`, `snapshot-ambientes.json`, `empresa-tenant-demo.json` y tres capturas en `docs/qa/evidence/torre-consolidado-empresas-20261103/`. No usa bases de datos ni credenciales reales; la evidencia se sanea y se verifica que ni el token de la torre ni el JWT aparecen en ella.
+`certify:control-tower:consolidado` (**51/51** el 2026-11-05) levanta dos APIs de prueba en `127.0.0.1`: una rica (telemetría de proceso en `/health`, `/apex-control/status` con componentes y sus `latency_ms`, módulos, actividad, empresas y salud por empresa) y otra con el build anterior al módulo (`/health` con commit y `404` en `apex-control`, como QA y PROD hoy). Con Chrome por CDP comprueba las siete vistas-pregunta, el monitor consolidado, el selector de empresa, las teselas de memoria y uso con los números publicados por el API, **los medidores con su umbral y el mapa de módulos vs API** (incluido que el Resumen no muestre ninguna tesela), que un componente **sin latencia publicada se lea `sin medición` y nunca cero**, el veredicto de latencia con su tope y su regla de muestras, las acciones con responsable y siguiente comando, el bloqueo de PROD que nombra su commit sin inventar empresas, que las bandas solo usen las cinco palabras del vocabulario, la ausencia de jerga `degrade`, la leyenda de estados y una consola sin errores. Deja `certification.json`, `snapshot-ambientes.json`, `empresa-tenant-demo.json` y tres capturas (`01-monitor-consolidado-empresa.png`, `02-producto-bloqueado-con-acciones.png`, `03-vista-latencia-consolidado.png`) en `docs/qa/evidence/torre-consolidado-empresas-20261103/`. No usa bases de datos ni credenciales reales; la evidencia se sanea y se verifica que ni el token de la torre ni el JWT aparecen en ella.
 
 La verificación manual de módulos y métricas cloud de esta intervención está en `docs/qa/evidence/torre-modulos-metricas-20261103/`. La de actividad, conexiones y empresas, con capturas de las vistas Resumen y Detalle, está en `docs/qa/evidence/tower-activity-tenants-20261103/`. La del indicador oficial de salud, umbrales y vista por empresa está en `docs/qa/evidence/tower-health-charts-20261103/`. Las cuatro capturas del panel vivo con medidores y mapa están en `docs/qa/evidence/torre-medidores-20261105/`.
 
-Evidencia actual: `certification.json`, `tower-overview.png`, `tower-env-main.png`, `tower-api-down.png` y `telegram-outbox.json`.
+Evidencia actual de la fase uno: `certification.json`, `tower-overview.png`, `tower-env-main.png`, `tower-api-down.png`, `tower-datos-reales.png`, `tower-modulos-reales.png`, `tower-vista-latencia.png`, `tower-vista-api.png`, `tower-vista-datos.png`, `tower-vista-modulos.png` y `telegram-outbox.json`. Las capturas anteriores a las vistas-pregunta (`torre-modulos-metricas-20261103`, `tower-activity-tenants-20261103` con la versión Resumen/Detalle, `tower-health-charts-20261103` y `torre-medidores-20261105`) quedan como histórico de intervenciones previas.
+
+### Conexiones reales por fuente
+
+Qué se lee de verdad y qué queda en `sin medición`, ambiente por ambiente:
+
+| Fuente | Ruta real | Quién la consume |
+|---|---|---|
+| Proceso del API (uptime, memoria, buckets de estado, consultas lentas) | `GET /health` | teselas **Memoria del API** / **Uso del API** y vista **Latencia → Rendimiento** |
+| Componentes internos (PostgreSQL, Redis, colas, cron, correo, WebSocket) con `latency_ms` y `score` | `GET /api/v1/apex-control/status` | vista **API** (filas por componente) y medidor **Latencia de la base** |
+| Salud por módulo del ambiente | `GET /api/v1/apex-control/modules` | **mapa de módulos vs API** y gráfico por módulo |
+| Actividad del tenant del token | `GET /api/v1/apex-control/activity` | **carga de datos** y **actividad** del consolidado |
+| Empresas del ambiente | `GET /api/v1/apex-control/tenants` (con `APEX_CONTROL_CROSS_TENANT` encendida) | selector **Empresa** y sus seis KPI |
+| Nube (Railway, Vercel, Supabase) | APIs de proveedor con `RAILWAY_TOKEN` / `VERCEL_TOKEN` / `SUPABASE_ACCESS_TOKEN` | vista **Nube** |
+
+- **Local** (`desarrollo`): las seis primeras fuentes están activas porque el puesto corre el API y la base reales. La evidencia `tower-datos-reales.png` y `tower-modulos-reales.png` sale de esa fase real de la certificación.
+- **QA y PROD**: bloqueadas hoy por despliegue y credenciales, no por código. Los builds desplegados (`a505e97f9622` en QA, `938fc2b6f42c` en PROD) son anteriores al módulo `apex-control` y falta `ENV_DEVELOP_APEX_TOKEN` / `ENV_MAIN_APEX_TOKEN`; sin ellos la torre declara `MODULO_NO_DESPLEGADO` / `SIN_TOKEN` con su acción y responsable, y **no** hereda cifras de otro ambiente.
+- Con `TOWER_SIMULATION=true` la torre es hermética: los módulos vienen del catálogo congelado (`catalogPayload("SIMULACION")`) y las sondas remotas se saltan, así que **ese modo no muestra registros reales** y sirve solo para certificar la interfaz.
+- Los servicios de nube quedan en `Sin credenciales` hasta definir sus tokens; nunca se pinta un `ok` inventado.
 
 Si Chrome no está en la ruta estándar, define `CHROME_PATH`.
 

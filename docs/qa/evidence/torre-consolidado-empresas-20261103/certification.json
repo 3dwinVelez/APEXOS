@@ -3,13 +3,15 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-05T15:36:37.769Z",
-  "started_at": "2026-11-05T15:36:16.313Z",
-  "commit": "d5918a85d6762d80228b0493bdbb8c6646c31704",
+  "generated_at": "2026-11-05T19:18:04.752Z",
+  "started_at": "2026-11-05T19:17:36.022Z",
+  "commit": "ba1fb1c13b79f2130310db480a82849b7de6cf96",
   "working_tree_dirty": true,
   "alcance": [
+    "siete vistas-pregunta del panel (resumen, latencia, api, modulos, datos, nube, operacion) con sus medidores y umbrales publicados por el servidor",
     "monitor consolidado por empresa (empresas, carga, actividad, memoria, uso del API, rendimiento)",
     "selector de empresa y panel por empresa con acciones sugeridas",
+    "componentes de /apex-control/status con latencia medida y 'sin medicion' cuando el servidor no la publica",
     "/health del API con runtime agregado (uptime, memoria, uso) y su normalizacion en la torre",
     "motor de acciones sugeridas por ambiente y por empresa",
     "ambientes bloqueados por build sin apex-control: bloqueo explicado con accion y responsable"
@@ -38,14 +40,14 @@
       "name": "api_rica_sondeada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:50483"
+        "base": "http://127.0.0.1:60583"
       }
     },
     {
       "name": "api_legada_bloqueada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:50484"
+        "base": "http://127.0.0.1:60584"
       }
     },
     {
@@ -61,7 +63,7 @@
       "name": "torre_iniciada",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:50486"
+        "url": "http://127.0.0.1:60587"
       }
     },
     {
@@ -244,7 +246,7 @@
       "name": "snapshot_no_filtra_el_token_de_la_torre",
       "ok": true,
       "detail": {
-        "tamano": 146908
+        "tamano": 157203
       }
     },
     {
@@ -258,48 +260,25 @@
       }
     },
     {
-      "name": "navegador_monitor_consolidado",
+      "name": "navegador_resumen_con_medidores",
       "ok": true,
       "detail": {
-        "teselas": 7,
-        "opciones": 4,
-        "leyenda": "Cómo se leen los estados en LOCAL Operativo Responde dentro del objetivo. Requiere atención Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta. Caído No responde o falla una d",
-        "picker": true
-      }
-    },
-    {
-      "name": "navegador_selector_de_empresa",
-      "ok": true,
-      "detail": {
-        "opciones": 4
-      }
-    },
-    {
-      "name": "navegador_leyenda_de_estados",
-      "ok": true,
-      "detail": {
-        "leyenda": "Cómo se leen los estados en LOCAL Operativo Responde dentro del objetivo. Requiere atención Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta. Caído No responde o falla una d"
-      }
-    },
-    {
-      "name": "navegador_medidores_y_mapa",
-      "ok": true,
-      "detail": {
-        "medidores": 8,
-        "conUmbral": 6,
+        "medidores": 10,
+        "conUmbral": 7,
         "bandas": [
           "Óptimo",
           "Óptimo",
           "Óptimo",
+          "Informativo",
+          "Informativo",
           "Crítico",
           "Óptimo",
           "Crítico",
           "Informativo",
-          "Informativo"
+          "Óptimo"
         ],
-        "filasMapa": 4,
-        "marcasMapa": 4,
-        "teselasResumenVisibles": 0
+        "teselasVisibles": 0,
+        "leyenda": "Cómo se leen los estados en LOCAL Operativo Responde dentro del objetivo. Requiere atención Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta. Caído No responde o falla una d"
       }
     },
     {
@@ -310,12 +289,61 @@
           "Óptimo",
           "Óptimo",
           "Óptimo",
+          "Informativo",
+          "Informativo",
           "Crítico",
           "Óptimo",
           "Crítico",
           "Informativo",
-          "Informativo"
+          "Óptimo"
         ]
+      }
+    },
+    {
+      "name": "navegador_leyenda_de_estados",
+      "ok": true,
+      "detail": {
+        "leyenda": "Cómo se leen los estados en LOCAL Operativo Responde dentro del objetivo. Requiere atención Responde, pero fuera del objetivo: datos viejos, una dependencia lenta o un servicio con alerta. Caído No responde o falla una d"
+      }
+    },
+    {
+      "name": "navegador_resumen_sin_teselas",
+      "ok": true,
+      "detail": {
+        "visibles": 0
+      }
+    },
+    {
+      "name": "navegador_mapa_de_modulos",
+      "ok": true,
+      "detail": {
+        "filas": 4,
+        "marcas": 8,
+        "meta": "2 sondeos · 5/11, 14:17:37 → 5/11, 14:17:43 · altura = frescura medida",
+        "api": true
+      }
+    },
+    {
+      "name": "navegador_mapa_incluye_la_api",
+      "ok": true,
+      "detail": {
+        "meta": "2 sondeos · 5/11, 14:17:37 → 5/11, 14:17:43 · altura = frescura medida"
+      }
+    },
+    {
+      "name": "navegador_monitor_consolidado",
+      "ok": true,
+      "detail": {
+        "teselas": 7,
+        "opciones": 4,
+        "picker": true
+      }
+    },
+    {
+      "name": "navegador_selector_de_empresa",
+      "ok": true,
+      "detail": {
+        "opciones": 4
       }
     },
     {
@@ -342,10 +370,10 @@
         "teselas": [
           "Estado operativo 58/100 Crítico · 1/3 módulos operativos",
           "Carga de datos 1.720 1/3 módulos con datos · 1 caídos · 0 sin medir",
-          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 6 s",
+          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 16 s",
           "Memoria del API 214,6MB heap 88,4/121,2 MB",
           "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas",
-          "Rendimiento p95 88ms 2 h 2 min encendido"
+          "Rendimiento p95 154ms 2 h 2 min encendido"
         ]
       }
     },
@@ -361,7 +389,7 @@
       "name": "captura_monitor_consolidado",
       "ok": true,
       "detail": {
-        "bytes": 1351546,
+        "bytes": 800557,
         "scroll": true
       }
     },
@@ -370,6 +398,26 @@
       "ok": true,
       "detail": {
         "coincidencias": []
+      }
+    },
+    {
+      "name": "navegador_componentes_con_latencia_real",
+      "ok": true,
+      "detail": {
+        "filas": 6,
+        "meta": "6 componentes · 5 con latencia medida · 0 requieren atención",
+        "sinMedicion": 1,
+        "conMilisegundos": 5,
+        "ceros": 0,
+        "teselasVisibles": 11
+      }
+    },
+    {
+      "name": "navegador_componente_sin_latencia_no_es_cero",
+      "ok": true,
+      "detail": {
+        "sinMedicion": 1,
+        "ceros": 0
       }
     },
     {
@@ -394,7 +442,7 @@
       "name": "captura_producto_bloqueado",
       "ok": true,
       "detail": {
-        "bytes": 1140725
+        "bytes": 538182
       }
     },
     {
@@ -402,6 +450,23 @@
       "ok": true,
       "detail": {
         "estadisticas": 17
+      }
+    },
+    {
+      "name": "navegador_veredicto_de_latencia_con_tope",
+      "ok": true,
+      "detail": {
+        "veredicto": "Dentro del tope · tope 400 ms 0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30",
+        "topeDibujado": true,
+        "regla": "0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30"
+      }
+    },
+    {
+      "name": "navegador_veredicto_dice_si_es_para_atender",
+      "ok": true,
+      "detail": {
+        "veredicto": "Dentro del tope · tope 400 ms 0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30",
+        "regla": "0/3 muestras sobre 400 ms · racha máxima 0 · ventana 30"
       }
     },
     {
@@ -413,10 +478,10 @@
       }
     },
     {
-      "name": "captura_vista_detalle",
+      "name": "captura_vista_latencia",
       "ok": true,
       "detail": {
-        "bytes": 1852510
+        "bytes": 550243
       }
     },
     {
@@ -435,21 +500,21 @@
     }
   ],
   "summary": {
-    "passed": 44,
+    "passed": 51,
     "failed": 0,
-    "total": 44,
+    "total": 51,
     "screenshots": [
       {
         "file": "01-monitor-consolidado-empresa.png",
-        "bytes": 1351546
+        "bytes": 800557
       },
       {
         "file": "02-producto-bloqueado-con-acciones.png",
-        "bytes": 1140725
+        "bytes": 538182
       },
       {
-        "file": "03-vista-detalle-consolidado.png",
-        "bytes": 1852510
+        "file": "03-vista-latencia-consolidado.png",
+        "bytes": 550243
       }
     ],
     "console_errors": []
@@ -460,6 +525,6 @@
     "empresa-tenant-demo.json",
     "01-monitor-consolidado-empresa.png",
     "02-producto-bloqueado-con-acciones.png",
-    "03-vista-detalle-consolidado.png"
+    "03-vista-latencia-consolidado.png"
   ]
 }

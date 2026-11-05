@@ -3,16 +3,16 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-05T15:36:04.515Z",
-  "started_at": "2026-11-05T15:35:39.307Z",
-  "commit": "d5918a85d6762d80228b0493bdbb8c6646c31704",
+  "generated_at": "2026-11-05T19:17:20.157Z",
+  "started_at": "2026-11-05T19:15:36.287Z",
+  "commit": "ba1fb1c13b79f2130310db480a82849b7de6cf96",
   "working_tree_dirty": true,
   "environment": {
     "type": "local",
     "node": "v22.23.1",
     "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "tower_url": "http://127.0.0.1:0",
-    "mode": "simulation+dry-run",
+    "mode": "torre hermetica en simulacion + torre real contra el API del puesto",
     "telegram": "dry-run",
     "bridge": "local-token"
   },
@@ -28,8 +28,8 @@
       "name": "tower_boot",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:62540",
-        "port": 62540
+        "url": "http://127.0.0.1:56605",
+        "port": 56605
       }
     },
     {
@@ -44,7 +44,7 @@
       "ok": true,
       "detail": {
         "overall": "ok",
-        "checks": 48
+        "checks": 52
       }
     },
     {
@@ -102,6 +102,24 @@
       }
     },
     {
+      "name": "local_componentes_reales",
+      "ok": true,
+      "detail": {
+        "db_ms": 65,
+        "componentes": 9,
+        "medidores": 10,
+        "muestras_latencia": 1
+      }
+    },
+    {
+      "name": "simulacion_declarada_en_el_panel",
+      "ok": true,
+      "detail": {
+        "fuente": "catalog",
+        "motivo": "SIMULACION"
+      }
+    },
+    {
       "name": "performance_endpoint",
       "ok": true,
       "detail": {
@@ -119,7 +137,7 @@
       "name": "factory_create_n2",
       "ok": true,
       "detail": {
-        "id": "JOB-20261105-103540-e10b"
+        "id": "JOB-20261105-141542-d4fd"
       }
     },
     {
@@ -140,7 +158,7 @@
       "name": "bridge_claim_envelope",
       "ok": true,
       "detail": {
-        "job": "JOB-20261105-103540-e10b",
+        "job": "JOB-20261105-141542-d4fd",
         "scope": {
           "branch": "desarrollo",
           "allowCodeChanges": true,
@@ -164,7 +182,7 @@
       "name": "telegram_pairing_code",
       "ok": true,
       "detail": {
-        "expiresAt": "2026-11-05T15:45:40.434Z"
+        "expiresAt": "2026-11-05T19:25:43.057Z"
       }
     },
     {
@@ -200,10 +218,8 @@
       "name": "browser_dashboard_rendered",
       "ok": true,
       "detail": {
-        "checks": 9,
-        "medidores": 8,
-        "filasMapa": 33,
-        "marcasMapa": 33,
+        "medidores": 10,
+        "seccionesVisibles": 3,
         "gauge": true
       }
     },
@@ -211,14 +227,65 @@
       "name": "browser_summary_uses_gauges",
       "ok": true,
       "detail": {
-        "bands": "optimal|optimal|optimal|optimal|unknown|unknown|informational|informational"
+        "kpisVisibles": 0,
+        "checksVisibles": 0,
+        "secciones": 3,
+        "metas": "7 medidores con umbral · 0 en rojo · 0 en riesgo"
+      }
+    },
+    {
+      "name": "browser_bandas_sin_jerga",
+      "ok": true,
+      "detail": {
+        "bandas": [
+          "Óptimo",
+          "Óptimo",
+          "Óptimo",
+          "Informativo",
+          "Informativo",
+          "Sin dato",
+          "Óptimo",
+          "Óptimo",
+          "Sin dato",
+          "Sin dato"
+        ],
+        "enlaces": [
+          "latencia",
+          "api",
+          "api",
+          "api",
+          "api",
+          "modulos",
+          "datos",
+          "datos",
+          "datos",
+          "datos"
+        ]
+      }
+    },
+    {
+      "name": "browser_cada_pregunta_apunta_a_su_vista",
+      "ok": true,
+      "detail": {
+        "vistas": [
+          "latencia",
+          "api",
+          "api",
+          "api",
+          "api",
+          "modulos",
+          "datos",
+          "datos",
+          "datos",
+          "datos"
+        ]
       }
     },
     {
       "name": "browser_dashboard_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 968382
+        "bytes": 882059
       }
     },
     {
@@ -229,11 +296,52 @@
       }
     },
     {
-      "name": "browser_technical_details",
+      "name": "browser_latencia_con_tope_dibujado",
       "ok": true,
       "detail": {
-        "details": 41,
-        "teselasDetalle": 11
+        "chart": 1,
+        "lineas": [
+          "óptimo 240 ms",
+          "tope 400 ms"
+        ],
+        "aria": "Latencia de la sonda con su tope de 400 ms dibujado",
+        "veredicto": "Fuera del tope: atender · tope 400 ms",
+        "regla": "1/2 muestras sobre 400 ms · racha máxima 1 · ventana 30",
+        "medidor": "óptimo ≤ 240 ms · en riesgo ≤ 400 ms",
+        "estadisticas": 17,
+        "checks": 9,
+        "secciones": 2
+      }
+    },
+    {
+      "name": "browser_latencia_veredicto_sostenido_o_evento",
+      "ok": true,
+      "detail": {
+        "veredicto": "Fuera del tope: atender · tope 400 ms",
+        "regla": "1/2 muestras sobre 400 ms · racha máxima 1 · ventana 30"
+      }
+    },
+    {
+      "name": "browser_tope_del_grafico_es_el_del_medidor",
+      "ok": true,
+      "detail": {
+        "grafico": 400,
+        "medidor": [
+          240,
+          400
+        ],
+        "lineas": [
+          "óptimo 240 ms",
+          "tope 400 ms"
+        ]
+      }
+    },
+    {
+      "name": "browser_latencia_muestra_las_sondas",
+      "ok": true,
+      "detail": {
+        "checks": 9,
+        "secciones": 2
       }
     },
     {
@@ -251,7 +359,109 @@
       "ok": true,
       "detail": {
         "stats": 17,
-        "rss": "\n          Memoria RSS\n          110,7 MB\n        "
+        "rss": "\n          Memoria RSS\n          232,5 MB\n        "
+      }
+    },
+    {
+      "name": "browser_vista_latencia_capturada",
+      "ok": true,
+      "detail": {
+        "bytes": 487887
+      }
+    },
+    {
+      "name": "browser_vista_api_con_componentes_reales",
+      "ok": true,
+      "detail": {
+        "componentes": 9,
+        "metas": "9 componentes · 5 con latencia medida · 0 requieren atención",
+        "base": "PostgreSQL database · critical 100 ms 100/100 Óptimo [object Object]",
+        "teselas": 11,
+        "tecnicos": 46
+      }
+    },
+    {
+      "name": "browser_vista_api_teselas_tecnicas",
+      "ok": true,
+      "detail": {
+        "teselas": 11
+      }
+    },
+    {
+      "name": "browser_technical_details",
+      "ok": true,
+      "detail": {
+        "details": 46
+      }
+    },
+    {
+      "name": "browser_vista_api_capturada",
+      "ok": true,
+      "detail": {
+        "bytes": 657007
+      }
+    },
+    {
+      "name": "browser_modulos_mapa_unico",
+      "ok": true,
+      "detail": {
+        "filas": 33,
+        "marcas": 99,
+        "leyenda": "3 sondeos · 5/11, 14:15:41 → 5/11, 14:16:04 · altura = frescura medida",
+        "detalle": 0
+      }
+    },
+    {
+      "name": "browser_vista_modulos_capturada",
+      "ok": true,
+      "detail": {
+        "bytes": 715485
+      }
+    },
+    {
+      "name": "browser_datos_veredicto_de_base",
+      "ok": true,
+      "detail": {
+        "veredicto": "La base responde en 100 ms (medido por el propio API). Óptimo · óptimo ≤ 100 ms · en riesgo ≤ 300 ms.",
+        "regla": "Ningún módulo publicó conteo de registros.",
+        "teselas": 6,
+        "columnas": 0,
+        "vacio": "Ningún módulo devolvió conteo de registros en este ambiente (motivo: SIMULACION).",
+        "metas": "0 módulos con conteo · 32 módulos leídos",
+        "empresas": 0
+      }
+    },
+    {
+      "name": "browser_datos_volumen_por_modulo",
+      "ok": true,
+      "detail": {
+        "columnas": 0,
+        "metas": "0 módulos con conteo · 32 módulos leídos",
+        "vacio": "Ningún módulo devolvió conteo de registros en este ambiente (motivo: SIMULACION)."
+      }
+    },
+    {
+      "name": "browser_vista_datos_capturada",
+      "ok": true,
+      "detail": {
+        "bytes": 523508
+      }
+    },
+    {
+      "name": "browser_cada_vista_tiene_evidencia",
+      "ok": true,
+      "detail": {
+        "porVista": {
+          "resumen": 3,
+          "latencia": 2,
+          "api": 3,
+          "modulos": 3,
+          "datos": 3,
+          "nube": 2,
+          "operacion": 5
+        },
+        "total": 19,
+        "cubiertas": 19
       }
     },
     {
@@ -260,14 +470,70 @@
       "detail": {
         "pill": "PROD Sin dato",
         "cloudCards": 3,
-        "selectedBranch": 1
+        "seleccionadas": 1,
+        "vista": true
       }
     },
     {
       "name": "browser_environment_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 2053919
+        "bytes": 338076
+      }
+    },
+    {
+      "name": "local_fuente_real",
+      "ok": true,
+      "detail": {
+        "fuente": "api",
+        "db_ms": 116,
+        "registros": 64541,
+        "cobertura_empresial": 0.5,
+        "medidores": 10,
+        "muestras_latencia": 1
+      }
+    },
+    {
+      "name": "mapa_real_de_modulos",
+      "ok": true,
+      "detail": {
+        "sondeos": 1,
+        "modulos_del_ultimo_sondeo": 32
+      }
+    },
+    {
+      "name": "browser_datos_con_volumen_real",
+      "ok": true,
+      "detail": {
+        "columnas": 6,
+        "filas": 25,
+        "conteo": "25 módulos con conteo · 32 módulos leídos",
+        "veredicto": "La base responde en 116 ms (medido por el propio API). En riesgo · óptimo ≤ 100 ms · en riesgo ≤ 300 ms.",
+        "teselas": 6
+      }
+    },
+    {
+      "name": "browser_vista_datos_reales_capturada",
+      "ok": true,
+      "detail": {
+        "bytes": 323799
+      }
+    },
+    {
+      "name": "browser_modulos_con_datos_reales",
+      "ok": true,
+      "detail": {
+        "filas": 33,
+        "marcas": 66,
+        "conRegistros": 50,
+        "leyenda": "2 sondeos · 5/11, 14:16:26 → 5/11, 14:16:51 · altura = frescura medida"
+      }
+    },
+    {
+      "name": "browser_vista_modulos_reales_capturada",
+      "ok": true,
+      "detail": {
+        "bytes": 233980
       }
     },
     {
@@ -291,8 +557,8 @@
       "ok": true,
       "detail": {
         "outbox": [
-          "[RECUPERADO] Modulo Transporte: caído",
-          "[RECUPERADO] Modulo Apex Heart: caído"
+          "[CRITICAL] API APEXOS: caído",
+          "[CRITICAL] API APEXOS: caído"
         ]
       }
     },
@@ -310,14 +576,14 @@
       "ok": true,
       "detail": {
         "overall": "LOCAL Caído",
-        "alerts": 6
+        "alerts": 2
       }
     },
     {
       "name": "browser_degraded_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 2292755
+        "bytes": 959812
       }
     },
     {
@@ -353,35 +619,65 @@
       "name": "telegram_evidence",
       "ok": true,
       "detail": {
-        "messages": 20
+        "messages": 11
       }
     }
   ],
   "summary": {
-    "passed": 39,
+    "passed": 63,
     "failed": 0,
-    "total": 39,
+    "total": 63,
     "screenshots": [
       {
         "file": "tower-overview.png",
-        "bytes": 968382
+        "bytes": 882059
+      },
+      {
+        "file": "tower-vista-latencia.png",
+        "bytes": 487887
+      },
+      {
+        "file": "tower-vista-api.png",
+        "bytes": 657007
+      },
+      {
+        "file": "tower-vista-modulos.png",
+        "bytes": 715485
+      },
+      {
+        "file": "tower-vista-datos.png",
+        "bytes": 523508
       },
       {
         "file": "tower-env-main.png",
-        "bytes": 2053919
+        "bytes": 338076
+      },
+      {
+        "file": "tower-datos-reales.png",
+        "bytes": 323799
+      },
+      {
+        "file": "tower-modulos-reales.png",
+        "bytes": 233980
       },
       {
         "file": "tower-api-down.png",
-        "bytes": 2292755
+        "bytes": 959812
       }
     ],
     "console_errors": []
   },
   "evidence": [
     "certification.json",
+    "telegram-outbox.json",
     "tower-overview.png",
+    "tower-vista-latencia.png",
+    "tower-vista-api.png",
+    "tower-vista-modulos.png",
+    "tower-vista-datos.png",
     "tower-env-main.png",
-    "tower-api-down.png",
-    "telegram-outbox.json"
+    "tower-datos-reales.png",
+    "tower-modulos-reales.png",
+    "tower-api-down.png"
   ]
 }
