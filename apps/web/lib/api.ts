@@ -2,7 +2,7 @@ import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setP
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
-import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode } from "./hrScheduleMonitor";
+import { scheduleMonitorPunchEvidence, scheduleMonitorPunchEvidenceSummary, scheduleTrackingMode, scheduleMonitorUsesOperationalSource } from "./hrScheduleMonitor";
 import { validateServiceReferenceImport } from "./serviceReferenceImport";
 
 const API_URL = API_BASE_URL;
@@ -4609,7 +4609,7 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
     }
   }
 
-  if (supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback(path, method)) {
+  if (supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback(path, method) && !scheduleMonitorUsesOperationalSource(path, method)) {
     const fallback = await supabaseApiFallback<T>(path, options);
     if (fallback !== null) {
       touchSession();
@@ -4653,7 +4653,7 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
   }
 
   if (!response.ok) {
-    if (supabaseSession && !shouldBlockHrWriteFallback(path, method)) {
+    if (supabaseSession && !shouldBlockHrWriteFallback(path, method) && !scheduleMonitorUsesOperationalSource(path, method)) {
       const fallback = await supabaseApiFallback<T>(path, options);
       if (fallback !== null) {
         touchSession();
