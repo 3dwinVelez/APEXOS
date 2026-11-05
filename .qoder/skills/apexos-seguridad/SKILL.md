@@ -3,8 +3,12 @@ name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 version: 2.7.0
+=======
+version: 2.10.0
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
 updated_at: 2026-11-05
 contract: 2
 >>>>>>> ba1fb1c1 (feat(comercio): vitrina publica tematizable por el cliente (colores, banner y textos))
@@ -68,6 +72,15 @@ Antes de actuar, leer en este orden:
     - La subida y la generación escriben en el mismo bucket (`comercio-assets`) bajo la carpeta del tenant: el aislamiento es la ruta, no un nombre de archivo adivinable.
     Por qué: el 2026-11-05 el riesgo de un «tema editable» es que la pantalla pública pase a dibujar lo que un tercero meta por el body o por un `prompt`.
 
+<<<<<<< HEAD
+=======
+20. **Lo no medido no es un estado sano y la telemetría por componente sigue siendo agregada.** `GET /api/v1/apex-control/status` publica por componente `key`, `name`, `kind`, `criticality`, `enabled`, `status`, `score` y `latency_ms`; no publica rutas internas, SQL, identificadores de request, tenants, usuarios ni payloads, y la torre reexporta solo esas cifras normalizadas en `normalizeComponents` (`lib/probes.js`). `measuredValue` es obligatoria en todo el camino: un `latency_ms` ausente o `NaN` queda `null` y se lee `sin medición`, porque `Number(null) === 0` pintaría **Óptimo** un componente que nunca respondió. Es la misma clase de engaño que un `ok` heredado del ambiente anterior. El detalle visible se trunca a 160 caracteres y la evidencia se sanea como el snapshot: ni el token de la torre ni el JWT del ambiente aparecen en JSON, logs ni capturas. Por qué: el 2026-11-05 la sonda de correo del API local no publica latencia y un cero habría ocultado que esa verificación nunca se ejecutó.
+
+21. **El detalle por punto del gráfico no ensancha la superficie.** La inspección de la serie de latencia añade al DOM un `<title>` por muestra y un `aria-label` por blanco, con hora, milisegundos y banda, y una tarjeta de ocho filas (hora, medición, sonda, posición en la ventana, desviación contra promedio y p95, muestras anterior y siguiente). Todo eso sale de la misma serie agregada que el servidor ya publica: no hay una consulta nueva por punto, ni rutas, ni `request_id`, ni tenant, ni usuario, ni payload. El `endpoint`/`status` que `lib/performance.js` guarda por muestra no viaja al panel. La ventana medida es de 40 sondeos: un punto fuera de ella se declara como tal, no se reemplaza por otra muestra, porque reasignar la selección sería publicar una medición que no se hizo. Por qué: el 2026-11-05 el dueño pidió poder ver el detalle en el punto que él eligiera, y la tentación era leer ese punto contra el API; eso habría convertido un gesto de navegación en una consulta autenticada más.
+
+22. **Un valor de tema que se convierte en CSS solo puede venir de una lista cerrada.** Los modos del tema de la vitrina no son texto libre: el cliente elige entre `neutro|suave|marcado`, `plana|media|alta`, `ninguno|puntos|cuadricula|diagonal`, `recto|suave|redondo` y `ligero|medio|fuerte`, y el servidor emite la variable CSS que corresponde a esa elección. Un string arbitrario aquí se convertiría en `url(...)` dentro de `background-image` de una página anónima, que es la inyección que la regla 19 ya cierra para `banner_url`; por eso el contrato se comprueba con la gate que intenta inyectar `url(...)` y afirma que **no aparece** en el `background-image` pintado, además del 400 del enum. La reconstrucción en la lectura (`publicTheme`) es la última puerta: un modo ilegible en la base cae al default y nunca llega al navegador. Por qué: el 2026-11-05 se abrieron cinco campos nuevos de tema y cada uno era un candidato a convertirse en vector si se trataba como metadata inofensiva.
+
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
 ## Checklist de intervención
 
 Antes:

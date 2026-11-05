@@ -2,7 +2,7 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.5.0
+version: 2.6.0
 updated_at: 2026-11-05
 contract: 2
 ---
@@ -57,6 +57,8 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
     - Fastify monta AJV con `removeAdditional: true`: con `additionalProperties: false` un campo no declarado (`banner_url`, `banner_path`, cualquier cosa) **se elimina en silencio y el request devuelve 200**, no 400. Quien escriba la prueba esperando el rechazo firma un falso positivo. La defensa real es strip + reconstrucción, y se verifica por efecto: nada persistido y nada devuelto.
     - La URL pública de una imagen la produce solo el servidor (`storage.publicViewUrl(banner_path)` o un path estático del sitio con `/`); el cliente no manda URLs de imagen jamás.
     Por qué: el 2026-11-05 la certificación de la vitrina afirmaba un 400 frente a `banner_url` inyectado y recibía 200; el comportamiento era correcto y la aserción estaba mal.
+
+21. **Un knob de personalización viaja como enum cerrado y se valida en tres capas.** Los cinco modos de la vitrina (`surface_tint`, `surface_depth`, `background_pattern`, `corner_radius`, `banner_scrim`) se declaran con `enum` y `additionalProperties: false` en el esquema AJV de `PUT .../storefront/theme`, se filtran de nuevo en `setStorefrontTheme` (`THEME_MODE_KEYS` + `safeThemeMode`, con `THEME_MODE_INVALID` y escritura atómica: o se guardan todos o no se guarda ninguno) y se reconstruyen campo por campo en la lectura (`publicTheme`). La segunda y tercera capa no son redundancia con la primera: AJV monta `removeAdditional: true`, así que un campo no declarado se **elimina en silencio y responde 200**, y un valor corrupto ya persistido por cualquier otra vía seguiría saliendo al público. Por eso la defensa se afirma **por efecto** (snapshot del tema público antes y después, idéntico), no por código de estado. Por qué: el 2026-11-05, al agregar los cinco knobs, el riesgo era dejar el enum solo en el esquema y descubrir después que el panel «guardaba» un patrón inventado sin que nadie lo rechazara.
 
 ## Checklist de intervención
 

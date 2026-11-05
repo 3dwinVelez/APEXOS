@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "updated_at": "2026-11-05",
-      "sha256": "67fd9069175245e3e626f836eabb07b0d891846fa56990594f13cffe0446d97e",
+      "sha256": "1378f7cc96c778bf98d9b6d29bd9aa1acd5cf23a5ab335ba11e44b2bf71d129e",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -80,15 +80,22 @@
         "detalle-empresa-modulos",
         "telemetria-proceso-health",
         "tema-vitrina-sin-migracion",
-        "strip-ajv-reconstruccion"
+        "strip-ajv-reconstruccion",
+        "modos-tema-enum-tres-capas"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
+<<<<<<< HEAD
       "version": "2.8.0",
       "updated_at": "2026-11-05",
       "sha256": "25ce9f621bf0191694e56b1ef43ce4e27fb4869ef2d2e1769f09a97ce87aafb9",
+=======
+      "version": "2.11.0",
+      "updated_at": "2026-11-05",
+      "sha256": "b47981f90a0923fbf7e32195d0d71357ab64bd47ebbc6812499f73c3a6a28e32",
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -112,7 +119,14 @@
         "brief-build-desplegado",
         "brief-cifras-nombradas",
         "torre-residente-en-desarrollo",
+<<<<<<< HEAD
         "brief-personalizacion-residencia-dato"
+=======
+        "brief-personalizacion-residencia-dato",
+        "brief-fuentes-reales-torre",
+        "brief-defecto-visual-con-causa-de-arnes",
+        "brief-defecto-clasificado-por-capa"
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       ]
     },
     {
@@ -141,9 +155,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "updated_at": "2026-11-05",
-      "sha256": "57e02b5aeaef25ba374f57bab9140deffeeaceb1038d1bb1ff26ef5e94d36bb8",
+      "sha256": "4c752b30d3fd9e4bdd108c630ed3aa2a4df1cc32d747089cb107b31d7ebc8b86",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -161,15 +175,17 @@
         "ruta-dashboard-en-centro-comandos",
         "documento-plano-control-referencia",
         "vitrina-tokens-sf",
-        "tinta-sobre-fotografia"
+        "tinta-sobre-fotografia",
+        "variables-derivadas-en-el-nodo-del-tema",
+        "ortografia-visible-con-tildes"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.2.1",
+      "version": "2.3.0",
       "updated_at": "2026-11-03",
-      "sha256": "bd6298ec1b805840a250cbe13d262aa9bb845dcbbe8fd20129a9a83702215268",
+      "sha256": "a10d5845ecf87fbe8cddf8a98391ae37b1edf87ec92a836576369a305d1f4f2a",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -189,7 +205,8 @@
         "evidencia-aprobacion",
         "sin-operaciones-destructivas",
         "alcance-torre-modulos",
-        "torre-residente-en-desarrollo"
+        "torre-residente-en-desarrollo",
+        "evidencia-retirada-declarada"
       ]
     },
     {
@@ -224,9 +241,15 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
+<<<<<<< HEAD
       "version": "2.9.0",
       "updated_at": "2026-11-05",
       "sha256": "bdf2c97a0376d27270223bd4461ca4d5d540bcd4d9799a136b0470c22645a89a",
+=======
+      "version": "2.12.0",
+      "updated_at": "2026-11-05",
+      "sha256": "c6a09c1c34c04b886812d11c5b7298c2ca45c8ade23220024511004f29560096",
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -254,15 +277,29 @@
         "certificacion-consolidado-vivo",
         "torre-residente-en-desarrollo",
         "torre-certifica-lo-visible",
+<<<<<<< HEAD
         "certificacion-pintura-medida"
+=======
+        "certificacion-pintura-medida",
+        "torre-certificacion-fase-real",
+        "torre-gates-estructurales-no-temporales",
+        "arnes-lee-lo-que-serializa-el-navegador",
+        "guardado-con-autochequeo"
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
+<<<<<<< HEAD
       "version": "2.7.0",
       "updated_at": "2026-11-05",
       "sha256": "68f08fc8c6b2197f59cbb4bc9ebb8feba7e0cb9378c3182ced5b478c28d7b9d6",
+=======
+      "version": "2.10.0",
+      "updated_at": "2026-11-05",
+      "sha256": "1fd4ab814a61e3e62a900ef168ecc9c1a556b920ef0aa039a0bea39d366bfa7f",
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -286,15 +323,28 @@
         "sonda-anonima-diagnostico",
         "telemetria-agregada-sin-fuga",
         "torre-residente-en-desarrollo",
+<<<<<<< HEAD
         "superficie-tema-sin-inyeccion"
+=======
+        "superficie-tema-sin-inyeccion",
+        "sin-medicion-no-es-cero",
+        "torre-etiquetas-de-grafico-agregadas",
+        "enum-cerrado-modos-tema"
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
+<<<<<<< HEAD
       "version": "2.5.1",
       "updated_at": "2026-11-05",
       "sha256": "7955649f10b076a9da6a32938df125d4c658ef2edcdc11646b5e93b4aac346ed",
+=======
+      "version": "2.8.0",
+      "updated_at": "2026-11-05",
+      "sha256": "8f7f539ba3a9647eb8158621961c064366b4e723fa8549445ef6ea7e3e1db54a",
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -315,7 +365,14 @@
         "indicador-oficial-y-empresa",
         "diagnostico-sin-datos-por-causa",
         "accion-sin-jerga",
+<<<<<<< HEAD
         "torre-residente-en-desarrollo"
+=======
+        "torre-residente-en-desarrollo",
+        "torre-vistas-pregunta",
+        "torre-una-fila-por-bloque",
+        "queja-de-color-se-mide"
+>>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
       ]
     }
   ],

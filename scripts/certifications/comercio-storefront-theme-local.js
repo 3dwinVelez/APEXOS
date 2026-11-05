@@ -102,6 +102,41 @@ function contrastRatio(a, b) {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
+// El pie de foto del destacado: la letra cae sobre un degradado que termina en el fondo del
+// tema. Si su tramo solido se corta antes de donde empieza el texto, la letra se pinta sobre
+// los pixeles de la fotografia — con tema oscuro se perdonaba, con tema claro no. Se mide la
+// rampa que Chromium efectivamente resolvio, no la que dice la hoja.
+function pintaElPieDelDestacado(pintura, etiqueta) {
+  const rampa = String(pintura?.pieFondo || "");
+  // Chromium serializa cada parada como `rgb(11, 18, 32)` o `rgba(11, 18, 32, 0.97) 58%`.
+  // Se captura la PARADA COMPLETA, no el interior del parentesis: parseRgb necesita el prefijo
+  // `rgb(`/`rgba(` para reconocerlo y el alfa vive en el cuarto componente.
+  const paradas = [...rampa.matchAll(/(rgba?\([^)]*\))(?:\s+(\d+(?:\.\d+)?)%)?/g)].map((m) => ({
+    parada: m[1],
+    rgb: parseRgb(m[1]),
+    alpha: Number(/^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([\d.]+)\s*\)$/.exec(m[1])?.[1] ?? 1),
+    at: m[2] === undefined ? null : Number(m[2])
+  })).filter((s) => s.rgb);
+  const solidos = paradas.filter((s) => s.alpha >= 0.9);
+  const cubre = solidos.some((s) => s.at !== null && s.at >= 55);
+  check(`el_pie_del_destacado_cubre_la_letra_${etiqueta}`, cubre, { rampa: rampa.slice(0, 220), solidos });
+  // La rampa tiene que estar armada con el FONDO DEL TEMA. Declarada en :root se congelaba
+  // al negro de la hoja y el comercio con fondo claro recibia letra casi negra sobre negro.
+  // Se compara TODA parada solida: una sola que no sea el fondo del tema es letra perdida.
+  const fondo = parseRgb(pintura?.fondo);
+  const fueraDelTema = solidos.filter((s) => !fondo || contrastRatio(s.rgb, fondo) >= 1.06).map((s) => s.parada);
+  check(`la_rampa_del_pie_usa_el_fondo_del_tema_${etiqueta}`, solidos.length > 0 && Boolean(fondo) && fueraDelTema.length === 0, {
+    solidos: solidos.map((s) => s.parada),
+    fondo: pintura?.fondo,
+    fueraDelTema
+  });
+  const letra = parseRgb(pintura?.destacadoLetra);
+  check(`la_letra_del_destacado_contra_la_rampa_${etiqueta}`, Boolean(letra && fondo) && contrastRatio(letra, fondo) >= 4.5, {
+    destacadoLetra: pintura?.destacadoLetra,
+    fondo: pintura?.fondo
+  });
+}
+
 async function waitForServer(url) {
   let ultimo = null;
   for (const endpoint of ["/api/v1/health", "/health", "/"]) {
@@ -118,7 +153,21 @@ async function waitForServer(url) {
 
 async function shot(page, label) {
   const file = path.join(path.dirname(output), `${label}.png`);
-  await page.screenshot({ path: file, fullPage: false });
+  const bytes = Buffer.from(await page.screenshot({ encoding: "base64", fullPage: false }), "base64");
+  // El PNG de la corrida anterior puede seguir bloqueado por el antivirus del puesto: se
+  // escribe sobre un archivo fresco y, si aun asi falla, se reintenta una vez.
+  try {
+    fs.rmSync(file, { force: true });
+  } catch {
+    // ignore
+  }
+  try {
+    fs.writeFileSync(file, bytes);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    fs.rmSync(file, { force: true });
+    fs.writeFileSync(file, bytes);
+  }
   return path.relative(root, file).replace(/\\/g, "/");
 }
 
@@ -127,18 +176,55 @@ async function readPaint(page) {
   return page.evaluate(() => {
     const raiz = document.querySelector("#inicio");
     const styles = (node) => (node ? getComputedStyle(node) : null);
+    const parseAlpha = (color) => {
+      const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(String(color || ""));
+      if (m) return Number(m[1]);
+      return /rgb\(/.test(String(color || "")) ? 1 : null;
+    };
     const banner = document.querySelector("img.sf-banner-img");
     const titular = document.querySelector("h1");
+    const control = document.querySelector("#inicio .rounded-lg");
+    const vela = document.querySelector(".sf-banner-scrim");
+    const tarjeta = document.querySelector("#inicio article");
+    // El precio se mide contra la superficie que lo sostiene de verdad: se sube por el DOM
+    // hasta el primer ancestro con fondo pintado. Comparar el color del precio contra "la
+    // primera tarjeta de la pagina" enfrentaba dos elementos que no estan uno sobre el otro.
     const precio = [...document.querySelectorAll("span, p, div")].find((node) => /(^|\s)sf-text-accent(\s|$)/.test(String(node.className)) && /\$\s?[\d.]/.test(node.textContent || ""));
+    const soporteDelPrecio = (() => {
+      let nodo = precio?.parentElement || null;
+      while (nodo) {
+        const fondo = getComputedStyle(nodo).backgroundColor;
+        const alpha = parseAlpha(fondo);
+        if (alpha !== null && alpha > 0.5) return fondo;
+        nodo = nodo.parentElement;
+      }
+      return null;
+    })();
     const boton = [...document.querySelectorAll("button, a")].find((node) => /sf-btn-accent/.test(String(node.className)));
+    const pieDestacado = document.querySelector("#inicio .sf-grad-below");
+    // El titular del destacado es el parrafo con la letra mas grande del pie de foto: la
+    // categoria puede no existir y el orden de los hijos no es contrato.
+    const nombreDestacado = pieDestacado
+      ? [...pieDestacado.querySelectorAll("p")].sort((a, b) => parseFloat(getComputedStyle(b).fontSize) - parseFloat(getComputedStyle(a).fontSize))[0]
+      : null;
     return {
       hasRaiz: Boolean(raiz),
       vars: raiz ? String(raiz.getAttribute("style")) : null,
       fondo: styles(raiz)?.backgroundColor,
+      // Patron de fondo: la raiz pinta un degradado cuando el comercio eligio uno, y
+      // "none" cuando eligio liso. Es lo unico que distingue un fondo plano de uno texturado.
+      patron: styles(raiz)?.backgroundImage,
       letraRaiz: styles(raiz)?.color,
+      tarjetaFondo: styles(tarjeta)?.backgroundColor,
+      tarjetaRadio: styles(tarjeta)?.borderTopLeftRadius,
+      controlRadio: styles(control)?.borderTopLeftRadius,
+      velaFondo: styles(vela)?.backgroundImage,
+      pieFondo: styles(pieDestacado)?.backgroundImage,
+      destacadoLetra: styles(nombreDestacado)?.color,
       titularTexto: titular ? (titular.textContent || "").trim() : null,
       titularColor: styles(titular)?.color,
       precioColor: styles(precio)?.color,
+      precioSuperficie: soporteDelPrecio,
       botonChange: styles(boton)?.backgroundColor,
       botonLetra: styles(boton)?.color,
       bannerPresente: Boolean(banner),
@@ -187,6 +273,12 @@ async function main() {
   check("rechaza_hex_invalido", hexMalo.status === 400, { status: hexMalo.status, error: hexMalo.payload?.error?.code ?? hexMalo.payload?.message });
   const textoLargo = await call("/api/v1/comercio/settings/storefront/theme", { token, method: "PUT", body: { headline: "x".repeat(200) } });
   check("rechaza_texto_demasiado_largo", textoLargo.status === 400, { status: textoLargo.status });
+  // Los modos se publican como CSS (radio, patron, opacidad del velo). Un valor libre no
+  // puede llegar a la pagina: el enum del schema lo corta antes de escribir.
+  const modoMalo = await call("/api/v1/comercio/settings/storefront/theme", { token, method: "PUT", body: { background_pattern: "url(http://evil.test/x.png)" } });
+  check("rechaza_un_patron_fuera_del_enum", modoMalo.status === 400, { status: modoMalo.status, error: modoMalo.payload?.error?.code ?? modoMalo.payload?.message });
+  const radioMalo = await call("/api/v1/comercio/settings/storefront/theme", { token, method: "PUT", body: { corner_radius: "0; position: fixed; inset: 0" } });
+  check("rechaza_un_radio_fuera_del_enum", radioMalo.status === 400, { status: radioMalo.status });
   // Fastify valida con ajv `removeAdditional`, es decir DESCARTA claves no declaradas en
   // vez de responder 400. Lo que importa es el efecto: ni la URL ni el path interno del
   // bucket pueden quedar escritos. Si algun dia el schema cambia a rechazo exploto, la
@@ -263,7 +355,72 @@ async function main() {
     check("el_titular_es_el_texto_del_comercio", oscuro.titularTexto === "La despensa del barrio, en un clic", { titularTexto: oscuro.titularTexto });
     check("el_banner_se_renderiza_y_carga", oscuro.bannerPresente && oscuro.bannerCargado, { bannerSrc: oscuro.bannerSrc, bannerCaja: oscuro.bannerCaja });
     check("el_banner_tiene_vela_de_legibilidad", (parseRgb(oscuro.titularColor)?.r ?? 0) + (parseRgb(oscuro.titularColor)?.g ?? 0) > 400, { titularColor: oscuro.titularColor });
+    pintaElPieDelDestacado(oscuro, "oscuro");
     pinturas.fotoTemaOscuro = await shot(page, "02-vitrina-tema-propio-con-banner");
+
+    // === Los cinco modos: tono, profundidad, patron, esquinas y velo ===
+    // Se pone un acento naranja con fondo marcado para que el tinte de las superficies sea
+    // medible (r > g > b) y un radio "redondo" para que el pixel pintado sea distinto.
+    const modos = await call("/api/v1/comercio/settings/storefront/theme", {
+      token,
+      method: "PUT",
+      body: { accent: "#F59E0B", promo: "#BE123C", base: "#171310", surface_tint: "marcado", surface_depth: "alta", background_pattern: "cuadricula", corner_radius: "redondo", banner_scrim: "fuerte" }
+    });
+    check("los_modos_se_guardan", modos.status === 200 && modos.payload.theme?.surface_tint === "marcado" && modos.payload.theme?.corner_radius === "redondo", { status: modos.status, theme: modos.payload.theme });
+    const modosPublico = await call(`/api/v1/public/comercio/catalog/${code}`);
+    check("los_modos_llegan_al_publico", ["marcado", "alta", "cuadricula", "redondo", "fuerte"].every((valor) => Object.values(modosPublico.payload.theme || {}).includes(valor)), { theme: modosPublico.payload.theme });
+    await page.goto(vitrinaUrl, { waitUntil: "networkidle2", timeout: 120000 });
+    pinturas.modos = await readPaint(page);
+    const conModos = pinturas.modos;
+    check("el_patron_de_fondo_se_pinta", /linear-gradient/.test(String(conModos.patron)), { patron: String(conModos.patron).slice(0, 120) });
+    check("el_radio_de_las_tarjetas_sigue_el_tema", parseFloat(String(conModos.tarjetaRadio)) === 28, { tarjetaRadio: conModos.tarjetaRadio, esperado: "1.75rem = 28px" });
+    check("el_radio_de_los_controles_sigue_el_tema", parseFloat(String(conModos.controlRadio)) === 18, { controlRadio: conModos.controlRadio, esperado: "1.125rem = 18px" });
+    check("el_velo_fuerte_cubre_la_foto", /rgba\(0,\s*0,\s*0,\s*0\.68\)/.test(String(conModos.velaFondo)), { velaFondo: String(conModos.velaFondo).slice(0, 140) });
+    check("el_tono_marcado_tiñe_las_superficies", (() => {
+      const superficie = parseRgb(conModos.tarjetaFondo);
+      if (!superficie) return false;
+      // Con acento naranja el tinte empuja el rojo por encima del azul; un gris puro vendria
+      // en r === b. Se compara contra el fondo, que lleva el mismo tinte, para exigir que la
+      // tarjeta no sea un simple gris.
+      return superficie.r > superficie.b + 3;
+    })(), { tarjetaFondo: conModos.tarjetaFondo });
+    check("la_profundidad_alta_separa_tarjeta_y_fondo", (() => {
+      const tarjeta = parseRgb(conModos.tarjetaFondo);
+      const fondo = parseRgb(conModos.fondo);
+      if (!tarjeta || !fondo) return false;
+      return contrastRatio(tarjeta, fondo) >= 1.12;
+    })(), { tarjetaFondo: conModos.tarjetaFondo, fondo: conModos.fondo });
+    check("el_precio_se_contra_su_superficie_en_navegador", (() => {
+      // La promesa del motor: ningun color del comercio deja el precio en 2:1. Se mide lo
+      // que Chromium efectivamente pinto, no lo que calculo el modulo de color.
+      const letra = parseRgb(conModos.precioColor);
+      const superficie = parseRgb(conModos.precioSuperficie);
+      if (!letra || !superficie) return false;
+      return contrastRatio(letra, superficie) >= 4.5;
+    })(), { precioColor: conModos.precioColor, precioSuperficie: conModos.precioSuperficie });
+    pintaElPieDelDestacado(conModos, "modos");
+    pinturas.fotoModos = await shot(page, "03-vitrina-tonos-patron-y-esquinas");
+
+    // Sin patron y con esquinas rectas: la pagina vuelve a fondo plano y bordes duros.
+    await call("/api/v1/comercio/settings/storefront/theme", { token, method: "PUT", body: { surface_tint: "neutro", background_pattern: "ninguno", corner_radius: "recto" } });
+    await page.goto(vitrinaUrl, { waitUntil: "networkidle2", timeout: 120000 });
+    pinturas.plano = await readPaint(page);
+    check("el_patron_liso_no_pinta_degradado", !/gradient/.test(String(pinturas.plano.patron)), { patron: String(pinturas.plano.patron).slice(0, 80) });
+    check("el_tono_neutro_devuelve_la_superficie_al_color_del_fondo", (() => {
+      // "neutro" no significa gris: significa "sin tinte de acento". Con fondo marron
+      // #171310 la tarjeta sigue siendo marron oscuro (su propio croma) y lo que tiene que
+      // desaparecer es el tinte que agregaba el acento ambar. Se mide la separacion
+      // max-min de la tarjeta en los dos estados, no un gris absoluto.
+      const neutro = parseRgb(pinturas.plano.tarjetaFondo);
+      const marcado = parseRgb(conModos.tarjetaFondo);
+      if (!neutro || !marcado) return false;
+      const spread = (c) => Math.max(c.r, c.g, c.b) - Math.min(c.r, c.g, c.b);
+      const fondo = parseRgb(pinturas.plano.fondo);
+      return spread(neutro) <= spread(marcado) - 15 && spread(neutro) <= spread(fondo) + 4;
+    })(), { tarjetaNeutra: pinturas.plano.tarjetaFondo, tarjetaMarcada: conModos.tarjetaFondo, fondo: pinturas.plano.fondo });
+    check("el_radio_recto_endurece_las_esquinas", parseFloat(String(pinturas.plano.tarjetaRadio)) === 6, { tarjetaRadio: pinturas.plano.tarjetaRadio, esperado: "0.375rem = 6px" });
+    pintaElPieDelDestacado(pinturas.plano, "plano");
+    pinturas.fotoPlano = await shot(page, "04-vitrina-recta-sin-patron");
 
     // === Fondo claro: la tinta debe invertirse sola ===
     await call("/api/v1/comercio/settings/storefront/theme", { token, method: "PUT", body: { base: "#F8FAFC", accent: "#0F766E", promo: "#BE123C" } });
@@ -292,7 +449,11 @@ async function main() {
       const elegida = contrastRatio(fondo, letra);
       return elegida >= Math.max(contrastRatio(fondo, hexToRgb("#FFFFFF")), contrastRatio(fondo, hexToRgb("#0A0A0A"))) - 0.05;
     })(), { botonChange: claro.botonChange, botonLetra: claro.botonLetra });
-    pinturas.fotoTemaClaro = await shot(page, "03-vitrina-tema-claro");
+    // El caso que la ronda 1 dejo sin mirar: en un tema claro la tinta es casi negra, y el
+    // pie de foto del destacado difumina hacia el fondo del tema. Si la rampa no llega solida
+    // hasta donde empieza el texto, la letra cae sobre la fotografia y desaparece.
+    pintaElPieDelDestacado(claro, "claro");
+    pinturas.fotoTemaClaro = await shot(page, "05-vitrina-tema-claro");
 
     // === Panel de configuracion operado con teclado y mouse ===
     const acceso = await browser.newPage();
@@ -308,21 +469,43 @@ async function main() {
     const panel = await browser.newPage();
     await panel.setViewport({ width: 1440, height: 1000, deviceScaleFactor: 1 });
     await panel.goto(`${webUrl}/dashboard/comercio/configuracion`, { waitUntil: "networkidle2", timeout: 120000 });
+    // El panel se organiza en pestanas: la seccion de apariencia no existe hasta abrirla.
+    const pestana = await panel.waitForFunction(() => [...document.querySelectorAll('[role="tab"]')].some((b) => /Apariencia/.test(b.textContent || "")), { timeout: 90000 }).then(() => true).catch(() => false);
+    check("el_panel_se_organiza_en_pestanas", pestana, {});
+    await panel.evaluate(() => {
+      const boton = [...document.querySelectorAll('[role="tab"]')].find((b) => /Apariencia/.test(b.textContent || ""));
+      if (boton) boton.click();
+    });
     const seccion = await panel.waitForFunction(() => [...document.querySelectorAll("section")].some((s) => (s.getAttribute("aria-label") || "") === "Apariencia de la vitrina"), { timeout: 90000 }).then(() => true).catch(() => false);
     check("el_panel_muestra_la_seccion_de_apariencia", seccion, {});
     const previaViva = await panel.evaluate(() => {
       const bloque = [...document.querySelectorAll("section")].find((s) => (s.getAttribute("aria-label") || "") === "Apariencia de la vitrina");
-      const previa = bloque?.querySelector('[aria-label^="Previsualizacion"]');
+      const previa = [...(bloque?.querySelectorAll("[aria-label]") || [])].find((e) => /^Previsualizaci[oó]n/.test(e.getAttribute("aria-label") || ""));
       const hex = [...(bloque?.querySelectorAll("input[type=color]") || [])].map((input) => input.value);
-      return { tienePrevia: Boolean(previa), hex };
+      // Los cinco modos se editan con botones de opcion unica dentro de la misma seccion.
+      const grupos = [...(bloque?.querySelectorAll('[role="group"]') || [])].map((grupo) => [...grupo.querySelectorAll("button")].map((b) => (b.textContent || "").trim()));
+      return { tienePrevia: Boolean(previa), hex, grupos };
     });
-    check("el_panel_previsualiza_sin_guardar", previaViva.tienePrevia && previaViva.hex.length === 3, previaViva);
+    check("el_panel_previsualiza_sin_guardar", previaViva.tienePrevia && previaViva.hex.length === 3, { hex: previaViva.hex });
+    check("el_panel_ofrece_los_cinco_modos", ["Neutro", "Plana", "Liso", "Recto", "Ligero"].every((etiqueta) => previaViva.grupos.flat().includes(etiqueta)), { grupos: previaViva.grupos });
+    const rampa = await panel.evaluate(() => {
+      const fila = [...document.querySelectorAll("li")].find((li) => /T[ií]tulos/.test(li.textContent || ""));
+      const ratios = [...document.querySelectorAll("li")].filter((li) => /\d+\.\d:1/.test(li.textContent || "")).length;
+      return { visible: Boolean(fila), ratios };
+    });
+    check("el_panel_muestra_el_contraste_medido", rampa.visible && rampa.ratios >= 7, { rampa });
+    const previa = await panel.evaluate(() => {
+      const bloque = [...document.querySelectorAll("div")].find((d) => /^Previsualizaci[oó]n/.test(d.getAttribute("aria-label") || ""));
+      const raiz = bloque?.querySelector(".sf-root");
+      return { radio: raiz ? getComputedStyle(raiz.querySelector(".rounded-xl")).borderTopLeftRadius : null, patron: raiz ? getComputedStyle(raiz).backgroundImage : null };
+    });
+    check("la_previa_repinta_con_el_motor_de_la_vitrina", Boolean(previa.radio) && previa.radio !== "0px", { previa });
 
     // El click de React dispara un setState: el value del input todavia no ha
     // mutado cuando evaluate() termina. Se espera el repintado antes de leer.
     await panel.evaluate(() => {
       const bloque = [...document.querySelectorAll("section")].find((s) => (s.getAttribute("aria-label") || "") === "Apariencia de la vitrina");
-      const boton = [...(bloque?.querySelectorAll("button") || [])].find((b) => (b.textContent || "").trim() === "Oceano");
+      const boton = [...(bloque?.querySelectorAll("button") || [])].find((b) => /^Oc[eé]ano$/.test((b.textContent || "").trim()));
       if (boton) boton.click();
       return Boolean(boton);
     });
@@ -330,7 +513,7 @@ async function main() {
       const bloque = [...document.querySelectorAll("section")].find((s) => (s.getAttribute("aria-label") || "") === "Apariencia de la vitrina");
       const hex = [...(bloque?.querySelectorAll('input[type="color"]') || [])].map((input) => String(input.value).toLowerCase());
       if (hex[0] !== "#0ea5e9") return false;
-      const previa = bloque?.querySelector('[aria-label^="Previsualizacion"]');
+      const previa = [...(bloque?.querySelectorAll("[aria-label]") || [])].find((e) => /^Previsualizaci[oó]n/.test(e.getAttribute("aria-label") || ""));
       return { hex, tienePrevia: Boolean(previa), fondo: previa ? getComputedStyle(previa).backgroundColor : null };
     }, { timeout: 30000, polling: 400 }).then((handle) => handle.jsonValue()).catch(() => null);
     check("un_preset_cambia_la_paleta_y_la_previa", Boolean(preset) && preset.hex[0] === "#0ea5e9" && preset.tienePrevia, { preset });
@@ -345,7 +528,7 @@ async function main() {
     check("guardar_desde_el_panel_devuelve_200", respuestaPut.status() === 200, { status: respuestaPut.status() });
     const publicado = await call(`/api/v1/public/comercio/catalog/${code}`);
     check("el_preset_guardado_llega_al_publico", publicado.payload.theme?.accent === "#0ea5e9", { accent: publicado.payload.theme?.accent });
-    pinturas.fotoPanel = await shot(panel, "04-panel-apariencia-guardando");
+    pinturas.fotoPanel = await shot(panel, "06-panel-apariencia-guardando");
     await panel.close();
 
     fs.writeFileSync(path.join(path.dirname(output), "pintura-navegador.json"), `${JSON.stringify(pinturas, null, 2)}\n`);

@@ -187,6 +187,33 @@ test("publicTheme: un asset estatico del sitio se conserva tal cual", () => {
   } finally { restore(); }
 });
 
+test("publicTheme: los cinco modos solo salen dentro de su enum", () => {
+  // Viajan como cadenas cerradas porque el frontend los convierte en CSS (radio, patron,
+  // opacidad del velo). Un valor libre escrito en la fila llegaria inyectado a la pagina
+  // publica, asi que la lectura defensiva los vuelve al default desconocidos o corruptos.
+  const { service, restore } = harness();
+  try {
+    const limpio = service.publicTheme({ theme: {
+      surface_tint: "marcado", surface_depth: "plana", background_pattern: "cuadricula", corner_radius: "recto", banner_scrim: "fuerte"
+    } });
+    assert.deepEqual(
+      [limpio.surface_tint, limpio.surface_depth, limpio.background_pattern, limpio.corner_radius, limpio.banner_scrim],
+      ["marcado", "plana", "cuadricula", "recto", "fuerte"]
+    );
+    const defaultSinModos = service.publicTheme({});
+    assert.deepEqual(
+      [defaultSinModos.surface_tint, defaultSinModos.surface_depth, defaultSinModos.background_pattern, defaultSinModos.corner_radius, defaultSinModos.banner_scrim],
+      ["neutro", "media", "ninguno", "suave", "medio"], "un tenant anterior al cambio conserva el aspecto de siempre"
+    );
+    const sucio = service.publicTheme({ theme: {
+      surface_tint: { op: "drop" }, background_pattern: "url(http://evil.test/a.png)", corner_radius: "0; position:fixed; inset:0"
+    } });
+    assert.equal(sucio.surface_tint, "neutro");
+    assert.equal(sucio.background_pattern, "ninguno", "un patron inyectado no sale a la vitrina");
+    assert.equal(sucio.corner_radius, "suave");
+  } finally { restore(); }
+});
+
 // === publicCatalog: el tema viaja sanitizado y sin fugas ===
 
 test("publicCatalog: expone el tema del tenant junto al catalogo, sin costo, stock ni tenant", async () => {
@@ -233,9 +260,10 @@ test("setStorefrontTheme: mezcla colores validas y conserva otras preferencias",
 });
 
 test("setStorefrontTheme: ignora los campos que no le pertenecen (banner y compania)", async () => {
-  // Doble defensa: el schema declara solo 5 claves y el servicio reconstruye campo por
-  // campo. Si un llamada interna pasa banner_url o banner_path, no llegan a la fila:
-  // la URL del cartel solo la producen las rutas de subida/generacion.
+  // Doble defensa: el schema declara solo las claves del tema (colores, modos y textos) y
+  // el servicio reconstruye campo por campo. Si un llamada interna pasa banner_url o
+  // banner_path, no llegan a la fila: la URL del cartel solo la producen
+  // las rutas de subida/generacion.
   const { prisma, service, restore } = harness({ preferences: { theme: { accent: "#10b981" } } });
   try {
     const dto = await service.setStorefrontTheme(TENANT, {
@@ -269,6 +297,25 @@ test("setStorefrontTheme: null devuelve un color a la paleta por defecto", async
     assert.equal(prisma.settings[0].preferences_json.theme.accent, null);
     const theme = service.publicTheme(prisma.settings[0].preferences_json);
     assert.equal(theme.accent, "#10b981", "sin valor propio la vitrina vuelve al esmeralda");
+  } finally { restore(); }
+});
+
+test("setStorefrontTheme: guarda los modos y rechaza uno fuera del enum antes de escribir", async () => {
+  const { prisma, service, restore } = harness({ preferences: { theme: { accent: "#10b981", corner_radius: "suave" } } });
+  try {
+    await service.setStorefrontTheme(TENANT, { surface_tint: "MARCADO", corner_radius: "redondo", background_pattern: "puntos" });
+    const stored = prisma.settings[0].preferences_json.theme;
+    assert.equal(stored.surface_tint, "marcado", "el modo se guarda normalizado");
+    assert.equal(stored.corner_radius, "redondo");
+    assert.equal(stored.background_pattern, "puntos");
+    assert.equal(stored.accent, "#10b981", "lo que no se envio no cambia");
+    // Un valor fuera del enum se rechaza y no deja el tema a medias.
+    await expectError(service.setStorefrontTheme(TENANT, { banner_scrim: "brutal" }), "THEME_MODE_INVALID");
+    await expectError(service.setStorefrontTheme(TENANT, { surface_depth: "insoportable" }), "THEME_MODE_INVALID");
+    assert.ok(!("banner_scrim" in prisma.settings[0].preferences_json.theme), "el rechazo no escribe el modo invalido");
+    // null = volver al modo por defecto de la vitrina.
+    await service.setStorefrontTheme(TENANT, { corner_radius: null });
+    assert.equal(service.publicTheme(prisma.settings[0].preferences_json).corner_radius, "suave");
   } finally { restore(); }
 });
 

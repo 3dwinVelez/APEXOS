@@ -1,7 +1,7 @@
 {
   "cambio": "vitrina-comercio-tematizada",
   "rama": "desarrollo",
-  "ejecutado_en": "2026-11-05T17:58:39.282Z",
+  "ejecutado_en": "2026-11-05T22:10:08.301Z",
   "ambiente": "local",
   "apiUrl": "http://127.0.0.1:3000",
   "webUrl": "http://127.0.0.1:3001",
@@ -60,6 +60,11 @@
           "accent": "#10b981",
           "promo": "#e11d48",
           "base": "#0a0a0a",
+          "surface_tint": "neutro",
+          "surface_depth": "media",
+          "background_pattern": "ninguno",
+          "corner_radius": "suave",
+          "banner_scrim": "medio",
           "headline": null,
           "subhead": null,
           "banner_url": null
@@ -81,6 +86,20 @@
       }
     },
     {
+      "name": "rechaza_un_patron_fuera_del_enum",
+      "ok": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "rechaza_un_radio_fuera_del_enum",
+      "ok": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
       "name": "el_cliente_no_pone_url_de_imagen",
       "ok": true,
       "detail": {
@@ -89,6 +108,11 @@
           "accent": "#10b981",
           "promo": "#e11d48",
           "base": "#0a0a0a",
+          "surface_tint": "neutro",
+          "surface_depth": "media",
+          "background_pattern": "ninguno",
+          "corner_radius": "suave",
+          "banner_scrim": "medio",
           "headline": null,
           "subhead": null,
           "banner_url": null
@@ -97,6 +121,11 @@
           "accent": "#10b981",
           "promo": "#e11d48",
           "base": "#0a0a0a",
+          "surface_tint": "neutro",
+          "surface_depth": "media",
+          "background_pattern": "ninguno",
+          "corner_radius": "suave",
+          "banner_scrim": "medio",
           "headline": null,
           "subhead": null,
           "banner_url": null
@@ -171,6 +200,11 @@
           "accent": "#2563eb",
           "promo": "#f97316",
           "base": "#0b1220",
+          "surface_tint": "neutro",
+          "surface_depth": "media",
+          "background_pattern": "ninguno",
+          "corner_radius": "suave",
+          "banner_scrim": "medio",
           "headline": "La despensa del barrio, en un clic",
           "subhead": "Pide por WhatsApp y te la llevamos hoy",
           "banner_url": null
@@ -207,7 +241,7 @@
       "name": "el_raiz_inyecta_la_tripleta_del_acento",
       "ok": true,
       "detail": {
-        "inicio": "--sf-base-t:11 18 32;--sf-surface-t:24 31 44;--sf-surface2-t:39 45 58;--sf-surface3-t:65 70 81;--sf-line3-t:65 70 81;--sf-line4-t:83 88 98;-"
+        "inicio": "--sf-base-t:11 18 32;--sf-surface-t:24 32 47;--sf-surface2-t:39 48 63;--sf-surface3-t:65 74 91;--sf-line3-t:65 74 91;--sf-line4-t:83 93 110;"
       }
     },
     {
@@ -222,7 +256,7 @@
       "name": "el_texto_de_acento_salio_del_esmeralda",
       "ok": true,
       "detail": {
-        "precioColor": "rgb(81, 130, 239)"
+        "precioColor": "rgb(69, 129, 253)"
       }
     },
     {
@@ -251,6 +285,269 @@
       }
     },
     {
+      "name": "el_pie_del_destacado_cubre_la_letra_oscuro",
+      "ok": true,
+      "detail": {
+        "rampa": "linear-gradient(0deg, rgb(11, 18, 32), rgba(11, 18, 32, 0.97) 58%, rgba(11, 18, 32, 0.55) 82%, rgba(0, 0, 0, 0))",
+        "solidos": [
+          {
+            "parada": "rgb(11, 18, 32)",
+            "rgb": {
+              "r": 11,
+              "g": 18,
+              "b": 32
+            },
+            "alpha": 1,
+            "at": null
+          },
+          {
+            "parada": "rgba(11, 18, 32, 0.97)",
+            "rgb": {
+              "r": 11,
+              "g": 18,
+              "b": 32
+            },
+            "alpha": 0.97,
+            "at": 58
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_rampa_del_pie_usa_el_fondo_del_tema_oscuro",
+      "ok": true,
+      "detail": {
+        "solidos": [
+          "rgb(11, 18, 32)",
+          "rgba(11, 18, 32, 0.97)"
+        ],
+        "fondo": "rgb(11, 18, 32)",
+        "fueraDelTema": []
+      }
+    },
+    {
+      "name": "la_letra_del_destacado_contra_la_rampa_oscuro",
+      "ok": true,
+      "detail": {
+        "destacadoLetra": "rgb(255, 255, 255)",
+        "fondo": "rgb(11, 18, 32)"
+      }
+    },
+    {
+      "name": "los_modos_se_guardan",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "theme": {
+          "accent": "#f59e0b",
+          "promo": "#be123c",
+          "base": "#171310",
+          "surface_tint": "marcado",
+          "surface_depth": "alta",
+          "background_pattern": "cuadricula",
+          "corner_radius": "redondo",
+          "banner_scrim": "fuerte",
+          "headline": "La despensa del barrio, en un clic",
+          "subhead": "Pide por WhatsApp y te la llevamos hoy",
+          "banner_url": "/comercio/productos/P-0001.jpg"
+        }
+      }
+    },
+    {
+      "name": "los_modos_llegan_al_publico",
+      "ok": true,
+      "detail": {
+        "theme": {
+          "accent": "#f59e0b",
+          "promo": "#be123c",
+          "base": "#171310",
+          "surface_tint": "marcado",
+          "surface_depth": "alta",
+          "background_pattern": "cuadricula",
+          "corner_radius": "redondo",
+          "banner_scrim": "fuerte",
+          "headline": "La despensa del barrio, en un clic",
+          "subhead": "Pide por WhatsApp y te la llevamos hoy",
+          "banner_url": "/comercio/productos/P-0001.jpg"
+        }
+      }
+    },
+    {
+      "name": "el_patron_de_fondo_se_pinta",
+      "ok": true,
+      "detail": {
+        "patron": "linear-gradient(rgba(142, 120, 94, 0.17) 1px, rgba(0, 0, 0, 0) 1px), linear-gradient(90deg, rgba(142, 120, 94, 0.17) 1px"
+      }
+    },
+    {
+      "name": "el_radio_de_las_tarjetas_sigue_el_tema",
+      "ok": true,
+      "detail": {
+        "tarjetaRadio": "28px",
+        "esperado": "1.75rem = 28px"
+      }
+    },
+    {
+      "name": "el_radio_de_los_controles_sigue_el_tema",
+      "ok": true,
+      "detail": {
+        "controlRadio": "18px",
+        "esperado": "1.125rem = 18px"
+      }
+    },
+    {
+      "name": "el_velo_fuerte_cubre_la_foto",
+      "ok": true,
+      "detail": {
+        "velaFondo": "linear-gradient(rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.34) 45%, rgba(0, 0, 0, 0.84))"
+      }
+    },
+    {
+      "name": "el_tono_marcado_tiñe_las_superficies",
+      "ok": true,
+      "detail": {
+        "tarjetaFondo": "rgb(53, 34, 11)"
+      }
+    },
+    {
+      "name": "la_profundidad_alta_separa_tarjeta_y_fondo",
+      "ok": true,
+      "detail": {
+        "tarjetaFondo": "rgb(53, 34, 11)",
+        "fondo": "rgb(23, 19, 16)"
+      }
+    },
+    {
+      "name": "el_precio_se_contra_su_superficie_en_navegador",
+      "ok": true,
+      "detail": {
+        "precioColor": "rgb(245, 158, 11)",
+        "precioSuperficie": "rgba(53, 34, 11, 0.7)"
+      }
+    },
+    {
+      "name": "el_pie_del_destacado_cubre_la_letra_modos",
+      "ok": true,
+      "detail": {
+        "rampa": "linear-gradient(0deg, rgb(23, 19, 16), rgba(23, 19, 16, 0.97) 58%, rgba(23, 19, 16, 0.55) 82%, rgba(0, 0, 0, 0))",
+        "solidos": [
+          {
+            "parada": "rgb(23, 19, 16)",
+            "rgb": {
+              "r": 23,
+              "g": 19,
+              "b": 16
+            },
+            "alpha": 1,
+            "at": null
+          },
+          {
+            "parada": "rgba(23, 19, 16, 0.97)",
+            "rgb": {
+              "r": 23,
+              "g": 19,
+              "b": 16
+            },
+            "alpha": 0.97,
+            "at": 58
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_rampa_del_pie_usa_el_fondo_del_tema_modos",
+      "ok": true,
+      "detail": {
+        "solidos": [
+          "rgb(23, 19, 16)",
+          "rgba(23, 19, 16, 0.97)"
+        ],
+        "fondo": "rgb(23, 19, 16)",
+        "fueraDelTema": []
+      }
+    },
+    {
+      "name": "la_letra_del_destacado_contra_la_rampa_modos",
+      "ok": true,
+      "detail": {
+        "destacadoLetra": "rgb(255, 255, 255)",
+        "fondo": "rgb(23, 19, 16)"
+      }
+    },
+    {
+      "name": "el_patron_liso_no_pinta_degradado",
+      "ok": true,
+      "detail": {
+        "patron": "none"
+      }
+    },
+    {
+      "name": "el_tono_neutro_devuelve_la_superficie_al_color_del_fondo",
+      "ok": true,
+      "detail": {
+        "tarjetaNeutra": "rgb(42, 38, 34)",
+        "tarjetaMarcada": "rgb(53, 34, 11)",
+        "fondo": "rgb(23, 19, 16)"
+      }
+    },
+    {
+      "name": "el_radio_recto_endurece_las_esquinas",
+      "ok": true,
+      "detail": {
+        "tarjetaRadio": "6px",
+        "esperado": "0.375rem = 6px"
+      }
+    },
+    {
+      "name": "el_pie_del_destacado_cubre_la_letra_plano",
+      "ok": true,
+      "detail": {
+        "rampa": "linear-gradient(0deg, rgb(23, 19, 16), rgba(23, 19, 16, 0.97) 58%, rgba(23, 19, 16, 0.55) 82%, rgba(0, 0, 0, 0))",
+        "solidos": [
+          {
+            "parada": "rgb(23, 19, 16)",
+            "rgb": {
+              "r": 23,
+              "g": 19,
+              "b": 16
+            },
+            "alpha": 1,
+            "at": null
+          },
+          {
+            "parada": "rgba(23, 19, 16, 0.97)",
+            "rgb": {
+              "r": 23,
+              "g": 19,
+              "b": 16
+            },
+            "alpha": 0.97,
+            "at": 58
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_rampa_del_pie_usa_el_fondo_del_tema_plano",
+      "ok": true,
+      "detail": {
+        "solidos": [
+          "rgb(23, 19, 16)",
+          "rgba(23, 19, 16, 0.97)"
+        ],
+        "fondo": "rgb(23, 19, 16)",
+        "fueraDelTema": []
+      }
+    },
+    {
+      "name": "la_letra_del_destacado_contra_la_rampa_plano",
+      "ok": true,
+      "detail": {
+        "destacadoLetra": "rgb(255, 255, 255)",
+        "fondo": "rgb(23, 19, 16)"
+      }
+    },
+    {
       "name": "el_fondo_claro_se_aplica",
       "ok": true,
       "detail": {
@@ -261,7 +558,7 @@
       "name": "la_letra_del_tema_se_invierte_sobre_fondo_claro",
       "ok": true,
       "detail": {
-        "letraRaiz": "rgb(20, 20, 20)"
+        "letraRaiz": "rgb(10, 10, 10)"
       }
     },
     {
@@ -269,7 +566,7 @@
       "ok": true,
       "detail": {
         "titularColor": "rgb(245, 245, 245)",
-        "letraRaiz": "rgb(20, 20, 20)"
+        "letraRaiz": "rgb(10, 10, 10)"
       }
     },
     {
@@ -288,6 +585,60 @@
       }
     },
     {
+      "name": "el_pie_del_destacado_cubre_la_letra_claro",
+      "ok": true,
+      "detail": {
+        "rampa": "linear-gradient(0deg, rgb(248, 250, 252), rgba(248, 250, 252, 0.97) 58%, rgba(248, 250, 252, 0.55) 82%, rgba(0, 0, 0, 0))",
+        "solidos": [
+          {
+            "parada": "rgb(248, 250, 252)",
+            "rgb": {
+              "r": 248,
+              "g": 250,
+              "b": 252
+            },
+            "alpha": 1,
+            "at": null
+          },
+          {
+            "parada": "rgba(248, 250, 252, 0.97)",
+            "rgb": {
+              "r": 248,
+              "g": 250,
+              "b": 252
+            },
+            "alpha": 0.97,
+            "at": 58
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_rampa_del_pie_usa_el_fondo_del_tema_claro",
+      "ok": true,
+      "detail": {
+        "solidos": [
+          "rgb(248, 250, 252)",
+          "rgba(248, 250, 252, 0.97)"
+        ],
+        "fondo": "rgb(248, 250, 252)",
+        "fueraDelTema": []
+      }
+    },
+    {
+      "name": "la_letra_del_destacado_contra_la_rampa_claro",
+      "ok": true,
+      "detail": {
+        "destacadoLetra": "rgb(10, 10, 10)",
+        "fondo": "rgb(248, 250, 252)"
+      }
+    },
+    {
+      "name": "el_panel_se_organiza_en_pestanas",
+      "ok": true,
+      "detail": {}
+    },
+    {
       "name": "el_panel_muestra_la_seccion_de_apariencia",
       "ok": true,
       "detail": {}
@@ -296,12 +647,69 @@
       "name": "el_panel_previsualiza_sin_guardar",
       "ok": true,
       "detail": {
-        "tienePrevia": true,
         "hex": [
           "#0f766e",
           "#be123c",
           "#f8fafc"
         ]
+      }
+    },
+    {
+      "name": "el_panel_ofrece_los_cinco_modos",
+      "ok": true,
+      "detail": {
+        "grupos": [
+          [
+            "Neutro",
+            "Suave",
+            "Marcado"
+          ],
+          [
+            "Plana",
+            "Media",
+            "Alta"
+          ],
+          [
+            "Liso",
+            "Puntos",
+            "Cuadrícula",
+            "Diagonal"
+          ],
+          [
+            "Recto",
+            "Suave",
+            "Redondo"
+          ],
+          [
+            "Ligero",
+            "Medio",
+            "Fuerte"
+          ],
+          [
+            "",
+            ""
+          ]
+        ]
+      }
+    },
+    {
+      "name": "el_panel_muestra_el_contraste_medido",
+      "ok": true,
+      "detail": {
+        "rampa": {
+          "visible": true,
+          "ratios": 7
+        }
+      }
+    },
+    {
+      "name": "la_previa_repinta_con_el_motor_de_la_vitrina",
+      "ok": true,
+      "detail": {
+        "previa": {
+          "radio": "6px",
+          "patron": "none"
+        }
       }
     },
     {
@@ -367,6 +775,6 @@
     "El banner se certify con un asset estatico del sitio (/comercio/...), que es la otra ruta que produce el servidor."
   ],
   "ok": true,
-  "total": 40,
+  "total": 70,
   "fallidos": []
 }

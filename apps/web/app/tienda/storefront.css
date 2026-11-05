@@ -18,26 +18,28 @@
   --sf-line3-t: 64 64 64;             /* neutral-700 (bordes de paso) */
   --sf-line4-t: 82 82 82;             /* neutral-600 */
   --sf-ink-t: 255 255 255;
-  --sf-ink-strong-t: 245 245 245;     /* neutral-100 */
+  --sf-ink-strong-t: 249 249 249;     /* ~neutral-50 */
   --sf-ink-body-t: 212 212 212;       /* neutral-300 */
-  --sf-ink-secondary-t: 163 163 163;  /* neutral-400 */
-  --sf-ink-muted-t: 115 115 115;      /* neutral-500 */
-  --sf-ink-faint-t: 82 82 82;         /* neutral-600 */
-  --sf-ink-ghost-t: 64 64 64;         /* neutral-700 */
+  --sf-ink-secondary-t: 162 162 162;  /* ~neutral-400 */
+  --sf-ink-muted-t: 116 116 116;      /* ~neutral-500 */
+  --sf-ink-faint-t: 83 83 83;         /* ~neutral-600 */
+  --sf-ink-ghost-t: 65 65 65;         /* ~neutral-700 */
   --sf-ink-deepest-t: 38 38 38;       /* neutral-800 */
   /* Este bloque es exactamente lo que produce buildStorefrontVars(tema default);
-     una prueba lo verifica. Cambiar una sin cambiar la otra descuadra el primer render. */
-  --sf-accent-t: 16 185 129;          /* emerald-500 */
-  --sf-accent-strong-t: 73 202 159;
-  --sf-accent-text-t: 64 199 154;     /* ~emerald-400 */
-  --sf-accent-soft-t: 124 217 186;    /* ~emerald-300 */
-  --sf-accent-deep-t: 12 77 55;       /* ~emerald-950 */
+     una prueba lo verifica. Cambiar una sin cambiar la otra descuadra el primer render.
+     Ya no son mezclas fijas de Tailwind: cada valor sale de medir el contraste de la
+     paleta del comercio contra su propia superficie (ver storefront-theme.ts). */
+  --sf-accent-t: 16 185 129;          /* el hex del comercio, tal cual */
+  --sf-accent-strong-t: 59 208 148;
+  --sf-accent-text-t: 16 185 129;     /* se aclara solo si no alcanza 4.5:1 */
+  --sf-accent-soft-t: 105 213 163;
+  --sf-accent-deep-t: 0 75 48;        /* lavado del acento: hero, sombra, borde de paso */
   --sf-on-accent: #0a0a0a;            /* esmeralda es claro: letra oscura, 8:1 */
   --sf-promo-t: 225 29 72;            /* rose-600 */
-  --sf-promo-strong-t: 232 83 116;
-  --sf-promo-text-t: 231 74 109;
-  --sf-promo-soft-t: 239 131 154;
-  --sf-promo-deep-t: 92 17 34;
+  --sf-promo-strong-t: 251 61 96;
+  --sf-promo-text-t: 236 57 89;
+  --sf-promo-soft-t: 246 96 114;
+  --sf-promo-deep-t: 100 41 46;
   --sf-on-promo: #ffffff;
   /* Tinta sobre fotografia: fija, no depende del tema (la foto ya la oscurece el scrim). */
   --sf-photo-ink-strong-t: 255 255 255;
@@ -46,16 +48,42 @@
   --sf-photo-ink-secondary-t: 203 207 212;
   --sf-photo-ink-muted-t: 170 175 182;
   --sf-photo-ink-faint-t: 190 195 202;
-  --sf-photo-accent-t: 124 217 186;
-  --sf-photo-accent-soft-t: 164 228 207;
-  --sf-photo-promo-t: 239 131 154;
-  --sf-photo-promo-soft-t: 244 169 185;
+  --sf-photo-accent-t: 16 185 129;
+  --sf-photo-accent-soft-t: 105 213 163;
+  --sf-photo-promo-t: 234 53 87;
+  --sf-photo-promo-soft-t: 246 96 114;
+  /* Formas, velo del cartel y patron de fondo: los tres los decide el comercio en su
+     configuracion (recto/suave/redondo, ligero/medio/fuerte, ninguno/puntos/cuadricula/
+     diagonal) y el motor los traduce a estos valores. default = lo que se veia antes. */
+  --sf-radius-md: 0.75rem;
+  --sf-radius-card: 1.25rem;
+  --sf-scrim-top: 0.55;
+  --sf-scrim-mid: 0.2;
+  --sf-scrim-bottom: 0.72;
+  --sf-shadow-alpha: 0.4;
+  --sf-pattern: none;
+  --sf-pattern-size: auto;
+}
+
+/* Las rampas y la sombra de acento se declaran en el contenedor del tema, NO en :root.
+   Un valor personalizado se sustituye en el elemento donde se DECLARA y despues se hereda
+   ya resuelto: declarado en :root, `rgb(var(--sf-base-t))` se congelaba al negro de la
+   hoja y el inline de <Storefront/> no lo alcanzaba. El comercio con fondo claro recibia
+   entonces un degradado negro debajo de la letra casi negra del pie de foto. Aqui la
+   declaracion vive en el mismo nodo que recibe las variables del tema, asi que cada rampa
+   se arma con la paleta real. */
+.sf-root {
   --sf-grad-hero: linear-gradient(135deg, rgb(var(--sf-accent-deep-t) / 0.5), rgb(var(--sf-base-t)) 50%, rgb(var(--sf-base-t)));
   --sf-grad-contact: linear-gradient(135deg, rgb(var(--sf-surface-t)), rgb(var(--sf-surface-t)) 50%, rgb(var(--sf-accent-deep-t) / 0.4));
   --sf-grad-progress: linear-gradient(90deg, rgb(var(--sf-accent-deep-t)), rgb(var(--sf-accent-text-t)));
   --sf-grad-thumb: linear-gradient(135deg, rgb(var(--sf-surface2-t)), rgb(var(--sf-surface-t)));
-  --sf-grad-below: linear-gradient(0deg, rgb(var(--sf-base-t)), rgb(var(--sf-base-t) / 0.85) 45%, transparent);
-  --sf-shadow-accent: 0 12px 25px -4px rgb(var(--sf-accent-deep-t) / 0.4);
+  /* La franja inferior del destacado: la letra va sobre el degradado y arriba de el se ve
+     la fotografia. Con el corte antiguo (opaco hasta el 45 %) el titular caia en la zona
+     translucida: sobre un tema oscuro se salvaba porque el fondo era negro y la letra blanca,
+     pero con un tema claro la letra es casi negra y se pierde en la foto. La rampa deja el
+     tramo del pie de foto practicamente solido y difumina solo el borde superior. */
+  --sf-grad-below: linear-gradient(0deg, rgb(var(--sf-base-t)), rgb(var(--sf-base-t) / 0.97) 58%, rgb(var(--sf-base-t) / 0.55) 82%, transparent);
+  --sf-shadow-accent: 0 12px 25px -4px rgb(var(--sf-accent-deep-t) / var(--sf-shadow-alpha));
 }
 
 /* Fondos ------------------------------------------------------------------ */
@@ -148,10 +176,40 @@
 .sf-shadow-accent { box-shadow: var(--sf-shadow-accent); }
 .sf-underline-accent { text-decoration-color: rgb(var(--sf-accent-t) / 0.7); }
 
+/* Patron de fondo -----------------------------------------------------------
+   El comercio elige ninguno/puntos/cuadricula/diagonal y el motor arma el degradado con
+   la linea mas clara del tema, asi que el patron se tiñe solo: la hoja no sabe cual se
+   escogio. Va en la raiz, debajo de las tarjetas (sf-bg-* pinta su propio color opaco). */
+.sf-pattern {
+  background-image: var(--sf-pattern);
+  background-size: var(--sf-pattern-size);
+}
+
+/* Formas --------------------------------------------------------------------
+   El markup de la vitrina trae los radios literales de Tailwind (rounded-lg/xl/2xl/3xl),
+   que ganan por orden de hoja. En lugar de reescribir las 30 y pico clases, .sf-root
+   reasigna esos utilitarios dentro de la vitrina al radio que configuro el comercio:
+   dos escalones (controles y tarjetas) y la jerarquia se conserva. La especificidad es
+   0-2-0, asi que no hace falta tocar el orden de importacion.
+   Los utilitarios responsivos del cajon de pedido y del modal se re-declaran al final
+   para que su comportamiento de pantalla completa siga mandando. */
+.sf-root :is(.rounded-md, .rounded-lg) { border-radius: var(--sf-radius-md); }
+.sf-root :is(.rounded-xl, .rounded-2xl, .rounded-3xl) { border-radius: var(--sf-radius-card); }
+.sf-root :is(.rounded-t-2xl, .rounded-t-3xl) {
+  border-top-left-radius: var(--sf-radius-card);
+  border-top-right-radius: var(--sf-radius-card);
+}
+.sf-root :is(.rounded-l-2xl, .rounded-l-3xl) {
+  border-top-left-radius: var(--sf-radius-card);
+  border-bottom-left-radius: var(--sf-radius-card);
+}
+
 /* Cartel de la vitrina ------------------------------------------------------
    El banner subido o generado por el comercio cubre el hero; el scrim garantiza
    legibilidad del titular sin importar la foto (degradado hacia abajo + vela
-   oscura fija: la vela NO se tema, la letra clara sobre cualquier imagen). */
+   oscura fija: la vela NO se tema, la letra clara sobre cualquier imagen).
+   La intensidad de la vela si la decide el comercio (ligero/medio/fuerte): con una
+   foto clara y un titular largo necesita más velo que con una foto oscura de fondo. */
 .sf-banner-img {
   position: absolute;
   inset: 0;
@@ -160,7 +218,7 @@
   object-fit: cover;
 }
 .sf-banner-scrim {
-  background-image: linear-gradient(180deg, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.2) 45%, rgb(0 0 0 / 0.72));
+  background-image: linear-gradient(180deg, rgb(0 0 0 / var(--sf-scrim-top)), rgb(0 0 0 / var(--sf-scrim-mid)) 45%, rgb(0 0 0 / var(--sf-scrim-bottom)));
 }
 /* Con cartel, la columna del cartel cae sobre la foto oscurecida por el scrim. La tinta
    del tema NO sirve ahi: en un fondo claro es casi negra y la foto se come el texto.
@@ -178,4 +236,16 @@
   --sf-accent-soft-t: var(--sf-photo-accent-soft-t);
   --sf-promo-text-t: var(--sf-photo-promo-t);
   --sf-promo-soft-t: var(--sf-photo-promo-soft-t);
+}
+
+/* El cajon de pedido y el modal de detalle cambian de forma al crecer la pantalla (en
+   escritorio el cajon se apoya al borde derecho, sin esquinas). Son comportamientos
+   responsivos, no decoracion, y el bloque de formas de arriba los pisaria por
+   especificidad, asi que se vuelven a declarar aqui, despues de el. */
+@media (min-width: 768px) {
+  .sf-root .md\:rounded-none { border-radius: 0; }
+  .sf-root .md\:rounded-l-2xl {
+    border-top-left-radius: var(--sf-radius-card);
+    border-bottom-left-radius: var(--sf-radius-card);
+  }
 }

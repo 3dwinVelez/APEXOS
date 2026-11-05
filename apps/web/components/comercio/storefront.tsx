@@ -445,7 +445,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         : "Todos los productos";
 
   return (
-    <div id="inicio" style={storefrontStyleVars(catalog)} className="min-h-screen sf-bg-base pb-28 sf-text-strong md:pb-10">
+    <div id="inicio" style={storefrontStyleVars(catalog)} className="sf-root min-h-screen sf-bg-base sf-pattern pb-28 sf-text-strong md:pb-10">
       <PromoStrip catalog={catalog} />
 
       {/* Barra fija: marca, buscador, carrito y departamentos siempre disponibles. */}
