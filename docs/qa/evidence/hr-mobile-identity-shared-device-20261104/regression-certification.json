@@ -1,0 +1,412 @@
+{
+  "certification": "hr-mobile-identity-regression-local",
+  "environment": "LOCAL",
+  "started_at": "2026-11-05T02:58:25.513Z",
+  "criterion": "toda suite de apps/api/test que carga hr/service|routes|schema|mobile-identity o middleware/rbac, y apps/web/test/hr-*.test.mjs",
+  "suites": [
+    {
+      "file": "apps\\api\\test\\admin-role-capabilities.test.js",
+      "exit_code": 0,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\commercial-management-contract.test.js",
+      "exit_code": 0,
+      "tests": 13,
+      "pass": 13,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-date-assignments.test.js",
+      "exit_code": 0,
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-deferred-marking-offline.test.js",
+      "exit_code": 0,
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-employee-organization.test.js",
+      "exit_code": 0,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-employee-user-link.test.js",
+      "exit_code": 0,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-list-truncation.test.js",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-marking-concurrency.test.js",
+      "exit_code": 0,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-marking-declared-employee.test.js",
+      "exit_code": 0,
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-marking-kilometraje-conflict.test.js",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-marking-only-rbac.test.js",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-mobile-identity.test.js",
+      "exit_code": 0,
+      "tests": 26,
+      "pass": 26,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-monitor-evidence-demand.test.js",
+      "exit_code": 0,
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-monitor-silent-failures.test.js",
+      "exit_code": 0,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-operations-map-contract.test.js",
+      "exit_code": 0,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-payroll-adjustment-lock.test.js",
+      "exit_code": 0,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-payroll-adjustment-permission.test.js",
+      "exit_code": 0,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-payroll-social-contributions-bulk.test.js",
+      "exit_code": 0,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-reports-range.test.js",
+      "exit_code": 0,
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-route-assignment-lock.test.js",
+      "exit_code": 0,
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-route-physical-deletion-contract.test.js",
+      "exit_code": 0,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-route-physical-deletion.test.js",
+      "exit_code": 0,
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\hr-workday-novelties-contract.test.js",
+      "exit_code": 0,
+      "tests": 24,
+      "pass": 24,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\petty-cash-masters.test.js",
+      "exit_code": 0,
+      "tests": 35,
+      "pass": 35,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\rbac-module-access.test.js",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\service-order-administrative-corrections.test.js",
+      "exit_code": 0,
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\supabase-company-context.test.js",
+      "exit_code": 0,
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\transport-rates-rbac.test.js",
+      "exit_code": 0,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\api\\test\\transport-settlement-rbac.test.js",
+      "exit_code": 0,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-contention-write-feedback.test.mjs",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-employee-biometric-reset.test.mjs",
+      "exit_code": 0,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-landing-information-architecture.test.mjs",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-marking-only-access.test.mjs",
+      "exit_code": 0,
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-monitor-identity-selfie.test.mjs",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-monitor-modal-per-user.test.mjs",
+      "exit_code": 0,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-monitor-refresh.test.mjs",
+      "exit_code": 0,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-offline-marking.test.mjs",
+      "exit_code": 0,
+      "tests": 31,
+      "pass": 31,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-report-punch-alerts.test.mjs",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-report-punch-selfie.test.mjs",
+      "exit_code": 0,
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-reports-xlsx.test.mjs",
+      "exit_code": 0,
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-route-write-fallback.test.mjs",
+      "exit_code": 0,
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-route-write-feedback.test.mjs",
+      "exit_code": 0,
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-schedule-monitor.test.mjs",
+      "exit_code": 0,
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    },
+    {
+      "file": "apps\\web\\test\\hr-workday-novelties-ui.test.mjs",
+      "exit_code": 0,
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "ok": true
+    }
+  ],
+  "totals": {
+    "suites": 44,
+    "tests": 389,
+    "pass": 389,
+    "fail": 0
+  },
+  "passed": true,
+  "finished_at": "2026-11-05T02:58:36.347Z"
+}

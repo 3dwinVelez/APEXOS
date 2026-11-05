@@ -1,0 +1,62 @@
+{
+  "change_id": "hr-mobile-identity-shared-device-20261104",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "287e8efbf8d48a5e4a52efbe7f881dcaf2eba9a6",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-mobile-identity-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-mobile-identity-regression-local.js",
+    "evidence": [
+      "regression-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "John Patino (propietario de la solicitud) - autorizacion expresa en sesion: 'Autorizo los 4 pasos' para la promocion de la identidad en marcaciones por la rama codex/qa-hr-mobile-identity-20261104, y pedido directo tras probarlo en QA: 'Necesito que arregles probe con mi esposa registro la huella en mi celular pero, segui marcando con mi huella esto no debe pasar'. No autoriza main.",
+    "approved_at": "2026-11-05T02:58:54-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}

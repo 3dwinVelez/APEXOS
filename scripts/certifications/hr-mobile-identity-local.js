@@ -244,6 +244,12 @@ async function main() {
     const second = await enroll(tecnico, keyB, DEVICE_B);
     check("no puede registrar otro telefono sin que lo restablezcan", second.status === 409 && second.code === "BIOMETRIA_YA_REGISTRADA", { status: second.status, code: second.code });
 
+    // El caso real que lo motivo: la esposa entra con SU usuario en el telefono
+    // del tecnico y "registra su huella"; el telefono acepta el dedo del
+    // tecnico, que entonces marca por ella.
+    const shared = await enroll(otro, deviceKey(), DEVICE_A);
+    check("otro empleado no puede registrarse en un telefono ajeno", shared.status === 409 && shared.code === "DISPOSITIVO_DE_OTRO_EMPLEADO", { status: shared.status, code: shared.code });
+
     const employee = await prisma.employee.findFirst({ where: { user: { email: tecnico.email } } });
     check("la llave publica queda en la ficha del empleado", employee?.metadata?.mobile_biometric?.public_key === keyA.publicKey, { employee_id: employee?.id });
 
@@ -280,6 +286,13 @@ async function main() {
     const replay = await call(tecnico, "POST", "/hr/self/time-punches", good.body);
     const afterReplay = await prisma.timePunch.count({ where: { employee_id: employee.id, type: "entrada" } });
     check("reenviar la misma marcacion (cola offline) no la duplica", [200, 201].includes(replay.status) && afterReplay === 1, { status: replay.status, entradas: afterReplay });
+
+    // Registros dobles anteriores a la regla: se bloquea la marcacion.
+    const otroBefore = await prisma.employee.findFirst({ where: { user: { email: otro.email } } });
+    await prisma.employee.update({ where: { id: otroBefore.id }, data: { metadata: { ...(otroBefore.metadata || {}), mobile_biometric: { device_id: DEVICE_A, public_key: deviceKey().publicKey, enrolled_at: new Date().toISOString() } } } });
+    const duplicated = await mobilePunch(tecnico, { type: "inicio_almuerzo", key: keyA, deviceId: DEVICE_A });
+    check("un telefono que quedo registrado para dos empleados no puede marcar", duplicated.response.status === 403 && duplicated.response.code === "DISPOSITIVO_COMPARTIDO", { status: duplicated.response.status, code: duplicated.response.code });
+    await prisma.employee.update({ where: { id: otroBefore.id }, data: { metadata: otroBefore.metadata || {} } });
 
     // La web sigue igual.
     const web = await call(tecnico, "POST", "/hr/self/time-punches", { user_name: "Cert tecnico", type: "inicio_almuerzo", punched_at: new Date().toISOString(), idempotency_key: crypto.randomUUID(), metadata: { source: "web" } });
