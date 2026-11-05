@@ -137,14 +137,14 @@ function punchSelfie(punch: Punch) {
 }
 
 function punchEvidenceCount(punch: Punch) {
-  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.base64 || punch.extra_evidence?.file_url ? 1 : 0;
+  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64 ? 1 : 0;
   const selfie = punchSelfie(punch) || punch.metadata?.identity_photo?.has_base64_data ? 1 : 0;
   return extra + selfie;
 }
 
 function punchTimelineEvidence(punch: Punch): HrTimelinePhoto[] {
   const photos: HrTimelinePhoto[] = [];
-  if (punch.extra_evidence?.base64_data || punch.extra_evidence?.base64 || punch.extra_evidence?.file_url) photos.push({ ...punch.extra_evidence, id: punch.id, source: "punch" });
+  if (punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64) photos.push({ ...punch.extra_evidence, id: punch.id, source: "punch" });
   if (!punchSelfie(punch) && punch.metadata?.identity_photo?.has_base64_data) photos.push({ id: punch.id, source: "identity" });
   return photos;
 }
