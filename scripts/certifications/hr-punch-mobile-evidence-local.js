@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const {randomUUID}=require('node:crypto');
 require('../load-env')();
 if(!['127.0.0.1','localhost'].includes(new URL(process.env.DATABASE_URL).hostname))throw Error('Solo base local');
-Object.assign(process.env,{NODE_ENV:'test',REDIS_DISABLED:'true',DISABLE_REDIS:'true',JWT_SECRET:randomUUID()+randomUUID(),ALLOWED_ORIGINS:'http://127.0.0.1:3317'});
+Object.assign(process.env,{NODE_ENV:'test',REDIS_DISABLED:'true',DISABLE_REDIS:'true',JWT_SECRET:randomUUID()+randomUUID(),ALLOWED_ORIGINS:'http://127.0.0.1:'+(process.env.CERT_BROWSER_PORT||'3317')});
 const db=require('../../apps/api/src/core/prisma');const bcrypt=require('bcrypt');
 const result={environment:'LOCAL',started_at:new Date().toISOString(),checks:[],status:'running'};let app;
 const output=process.argv.find(arg=>arg.startsWith('--output='))?.slice(9);
@@ -34,12 +34,12 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
  const token=await login(user);const otherToken=await login(foreign);const deniedToken=await login(denied);
  await check('summary exposes photo availability and counters without image bytes',async()=>{
   const response=await call('/hr/operations-map?date='+day+'&footprint_days=0',token);assert.equal(response.status,200);const detail=response.body.routes.find(row=>row.id===route.id);
-  assert.equal(detail.punch_points.length,4);assert.ok(detail.punch_points.every(row=>row.extra_evidence.has_base64_data));assert.ok(!JSON.stringify(detail).includes(';base64,'));
+  assert.equal(detail.punch_points.length,4);assert.ok(detail.punch_points.every(row=>row.identity_evidence.has_base64_data));assert.ok(!JSON.stringify(detail).includes(';base64,'));
   const summaries=await call('/hr/routes/event-summaries',token);assert.equal(summaries.status,200);assert.equal(summaries.body.routes.find(row=>row.route_id===route.id).evidence_count,6);
  });
  await check('single and batch use TimePunch identity photos, retain extra support and ActivityEvidence',async()=>{
-  for(const punch of punches){const single=await call('/hr/monitor-evidence/punch/'+punch.id,token);assert.equal(single.status,200);assert.equal(single.body.base64_data,photo);}
-  const batch=await call('/hr/monitor-evidence/route/'+route.id,token);assert.equal(batch.status,200);assert.equal(batch.body.counts.punch_evidence,4);assert.equal(batch.body.punch_evidence[punches[3].id].items.length,2);assert.equal(batch.body.activity_evidence[activity.id][0].base64_data,support);
+  for(const punch of punches){const single=await call('/hr/monitor-evidence/identity/'+punch.id,token);assert.equal(single.status,200);assert.equal(single.body.base64_data,photo);}
+  const batch=await call('/hr/monitor-evidence/route/'+route.id,token);assert.equal(batch.status,200);assert.equal(Object.keys(batch.body.identity_evidence).length,4);assert.equal(batch.body.counts.punch_evidence,1);assert.equal(batch.body.punch_evidence[punches[3].id].base64_data,support);assert.equal(batch.body.activity_evidence[activity.id][0].base64_data,support);
   for(const [access,expected]of [[null,401],[otherToken,404],[deniedToken,403]])assert.equal((await call('/hr/monitor-evidence/punch/'+punches[0].id,access)).status,expected);
  });
  await require('./hr-employee-user-association-browser-local')({origin,token,pagePath:'/dashboard/talento-humano/rutas',artifactName:'hr-punch-mobile-evidence',exercise:async(page,folder)=>{
@@ -53,6 +53,27 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].find(node=>node.querySelector('img')).click());
    await page.waitForSelector('button[aria-label="Cerrar evidencia"]');
    await page.screenshot({path:path.join(folder,'lightbox.png')});
+  });
+  await check('Reports journey trace renders the activity photograph and opens its enlargement',async()=>{
+   await page.goto(new URL('/dashboard/talento-humano/reportes',page.url()).href,{waitUntil:'domcontentloaded',timeout:180000});
+   await page.waitForSelector('input[type="date"]');
+   await page.evaluate(day=>{
+    for(const label of [...document.querySelectorAll('label')].filter(node=>/^(Desde|Hasta)/.test(node.textContent.trim()))){
+     const input=label.querySelector('input[type="date"]');
+     if(input){Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,day);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));}
+    }
+   },day);
+   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Aplicar rango'&&!node.disabled));
+   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Aplicar rango').click());
+   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Ver'));
+   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Ver').click());
+   await page.waitForSelector('[aria-label="Trazabilidad de jornada"]');
+   await page.waitForFunction(()=>[...document.querySelectorAll('[aria-label="Trazabilidad de jornada"] li')].some(row=>row.innerText.includes('Inicio de ruta')&&[...row.querySelectorAll('img')].some(image=>image.complete&&image.naturalWidth>0)));
+   await page.screenshot({path:path.join(folder,'report-activity-photo.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Trazabilidad de jornada"] li')].find(row=>row.innerText.includes('Inicio de ruta')).querySelector('button[title="Ampliar evidencia de actividad"]').click());
+   await page.waitForSelector('[aria-label="Evidencia fotografica ampliada"] img');
+   await page.screenshot({path:path.join(folder,'report-activity-expanded.png')});
+
   });
  }});
  result.status='passed';result.photo_source='TimePunch.metadata.identity_photo, with legacy support';
