@@ -2,7 +2,7 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.4.0
+version: 2.5.0
 updated_at: 2026-11-05
 contract: 2
 ---
@@ -50,6 +50,10 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     - Sobre una fotografía del comercio la tinta no es la del tema. Existe una capa aparte (`--sf-photo-*` + `.sf-on-photo`) con letra clara y acentos aclarados por mezcla con blanco, porque el banner es un píxel que el modelo de color del tenant no conoce. Se aplica **por nodo de texto**, no a la columna entera, para no apagar la tinta del botón translúcido ni de la tarjeta del destacado.
     - Un botón sólido lleva la tinta de mayor contraste (`--sf-on-accent`/`--sf-on-promo`), nunca `#fff` literal: sobre un acento medio rinde ~2.2:1 y el botón se ve pero no se lee.
     Por qué: el 2026-11-05, revisando las capturas de la vitrina, un tema claro con banner subido dejaba el titular casi negro sobre la foto oscura —ilegible— mientras las pruebas de clases seguían verdes. La regla anterior («la letra se invierte según el fondo del tema») estaba codificando ese defecto como expectativa.
+
+15. **Una variable derivada se declara en el nodo que recibe el tema, nunca en `:root`.** Toda propiedad personalizada cuyo valor contenga `var(...)` se resuelve en el elemento donde se **declara** y se hereda ya sustituida: declarada en `:root` queda congelada al fallback de la hoja, aunque más abajo se inyecten las variables del tenant. Por eso `--sf-grad-hero/-contact/-progress/-thumb/-below` y `--sf-shadow-accent` viven en el bloque `.sf-root` —el mismo nodo que lleva el `style` de `buildStorefrontVars`— y `:root` solo guarda las tripletas base. Con prueba que extrae los dos bloques y lo exige (`las rampas se declaran donde vive el tema, no en :root`). Por qué: el 2026-11-05 el pie de foto del destacado con tema claro pintaba `rgb(10, 10, 10)` —el negro del CSS— sobre letra casi negra; alargar el degradado no lo arreglaba, porque el defecto era de alcance, no de pintura.
+
+16. **La prosa que ve el cliente se escribe en español correcto.** Las cadenas visibles (etiquetas, ayudas, mensajes, `aria-label`) llevan sus tildes —«Configuración», «página», «campañas», «Títulos»—; los comentarios del repositorio se escriben sin tilde por convención y no son objetivo. Un panel sin tildes al lado del resto del dashboard se lee como borrador y nadie lo corrige después. Por qué: el panel de Comercio quedó así en la ronda 1 y el dueño lo percibió como falta de profesionalismo antes que como falta de funciones; la prueba `la prosa visible del panel escribe el español con sus tildes` lo fija con autochequeo para no volverse decorativa.
 
 ## Checklist de intervención
 

@@ -593,13 +593,37 @@ async function regenerateCatalogCode(tenantId) {
 // El tema vive en preferences_json.theme (slot documentado para preferencias visuales;
 // sin columna nueva). El servidor solo guarda valores saneados: la derivacion de la
 // paleta completa (escalas, contrastes) la hace el frontend desde estos tres hex.
-const THEME_DEFAULTS = Object.freeze({ accent: "#10b981", promo: "#e11d48", base: "#0a0a0a" });
+const THEME_DEFAULTS = Object.freeze({
+  accent: "#10b981",
+  promo: "#e11d48",
+  base: "#0a0a0a",
+  surface_tint: "neutro",
+  surface_depth: "media",
+  background_pattern: "ninguno",
+  corner_radius: "suave",
+  banner_scrim: "medio"
+});
 const THEME_COLOR_KEYS = ["accent", "promo", "base"];
+// Los modos de pintura viajan como cadenas cerradas: el frontend los convierte en
+// variables CSS, y un valor libre escrito en la base de datos terminaria inyectado
+// en la pagina publica. Se valida en la escritura y se vuelve a validar en la lectura.
+const THEME_MODE_KEYS = Object.freeze({
+  surface_tint: ["neutro", "suave", "marcado"],
+  surface_depth: ["plana", "media", "alta"],
+  background_pattern: ["ninguno", "puntos", "cuadricula", "diagonal"],
+  corner_radius: ["recto", "suave", "redondo"],
+  banner_scrim: ["ligero", "medio", "fuerte"]
+});
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 function safeThemeHex(value, fallback) {
   const text = normalizeText(value);
   return HEX_COLOR.test(text) ? text.toLowerCase() : fallback;
+}
+
+function safeThemeMode(value, allowed, fallback) {
+  const text = normalizeText(value).toLowerCase();
+  return allowed.includes(text) ? text : fallback;
 }
 
 // Lectura defensiva: aunque updateSettings acepto antany preferences arbitrarias,
@@ -610,6 +634,11 @@ function publicTheme(prefs) {
     accent: safeThemeHex(theme.accent, THEME_DEFAULTS.accent),
     promo: safeThemeHex(theme.promo, THEME_DEFAULTS.promo),
     base: safeThemeHex(theme.base, THEME_DEFAULTS.base),
+    surface_tint: safeThemeMode(theme.surface_tint, THEME_MODE_KEYS.surface_tint, THEME_DEFAULTS.surface_tint),
+    surface_depth: safeThemeMode(theme.surface_depth, THEME_MODE_KEYS.surface_depth, THEME_DEFAULTS.surface_depth),
+    background_pattern: safeThemeMode(theme.background_pattern, THEME_MODE_KEYS.background_pattern, THEME_DEFAULTS.background_pattern),
+    corner_radius: safeThemeMode(theme.corner_radius, THEME_MODE_KEYS.corner_radius, THEME_DEFAULTS.corner_radius),
+    banner_scrim: safeThemeMode(theme.banner_scrim, THEME_MODE_KEYS.banner_scrim, THEME_DEFAULTS.banner_scrim),
     headline: nullableText(theme.headline, 80),
     subhead: nullableText(theme.subhead, 140),
     // La URL del banner siempre la produce el servidor (bucket o asset estatico del sitio);
@@ -637,6 +666,15 @@ async function setStorefrontTheme(tenantId, patch) {
         throw appError(400, "THEME_COLOR_INVALID", `El color "${key}" debe ser hexadecimal de 6 digitos (ej. #10b981)`);
       }
       theme[key] = hex.toLowerCase();
+    }
+    for (const [key, allowed] of Object.entries(THEME_MODE_KEYS)) {
+      if (patch[key] === undefined) continue;
+      if (patch[key] === null) { theme[key] = null; continue; }
+      const mode = normalizeText(patch[key]).toLowerCase();
+      if (!allowed.includes(mode)) {
+        throw appError(400, "THEME_MODE_INVALID", `El modo "${key}" solo admite ${allowed.join(", ")}`);
+      }
+      theme[key] = mode;
     }
     if (patch.headline !== undefined) theme.headline = nullableText(patch.headline, 80);
     if (patch.subhead !== undefined) theme.subhead = nullableText(patch.subhead, 140);

@@ -211,9 +211,11 @@ const settingsBody = {
   }
 };
 
-// Tema de la vitrina: tres colores hex y los textos del cartel. La imagen del banner
-// NO se escribe aqui; la producen las rutas de banner (upload/generar) y viaja como
-// path interno del bucket. El cliente nunca puede inyectar una URL arbitraria.
+// Tema de la vitrina: tres colores hex, los modos de forma/fondo y los textos del cartel.
+// La imagen del banner NO se escribe aqui; la producen las rutas de banner (upload/generar)
+// y viaja como path interno del bucket. El cliente nunca puede inyectar una URL arbitraria.
+// Los modos son enums cerrados y el frontend los vuelve a validar al pintar: un valor
+// inesperado no puede colarse como CSS inyectado en la pagina publica.
 const storefrontThemeBody = {
   type: "object",
   additionalProperties: false,
@@ -221,6 +223,11 @@ const storefrontThemeBody = {
     accent: { type: ["string", "null"], pattern: "^#[0-9a-fA-F]{6}$" },
     promo: { type: ["string", "null"], pattern: "^#[0-9a-fA-F]{6}$" },
     base: { type: ["string", "null"], pattern: "^#[0-9a-fA-F]{6}$" },
+    surface_tint: { type: ["string", "null"], enum: ["neutro", "suave", "marcado", null] },
+    surface_depth: { type: ["string", "null"], enum: ["plana", "media", "alta", null] },
+    background_pattern: { type: ["string", "null"], enum: ["ninguno", "puntos", "cuadricula", "diagonal", null] },
+    corner_radius: { type: ["string", "null"], enum: ["recto", "suave", "redondo", null] },
+    banner_scrim: { type: ["string", "null"], enum: ["ligero", "medio", "fuerte", null] },
     headline: { type: ["string", "null"], maxLength: 80 },
     subhead: { type: ["string", "null"], maxLength: 140 }
   }

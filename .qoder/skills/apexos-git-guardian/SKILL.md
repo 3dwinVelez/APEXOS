@@ -2,7 +2,7 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.2.1
+version: 2.3.0
 updated_at: 2026-11-03
 contract: 2
 ---
@@ -51,6 +51,8 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
 17. **Antes de operaciones destructivas.** Ejecutar `git status` y preservar lo no confirmado con tag único. Los archivos no rastreados pueden ser trabajo del usuario: no se borran ni se sobrescriben.
 18. **Alcance de la torre por módulo.** Un commit de `apps/control-tower/**` o `apps/api/src/modules/apex-control/**` incluye solo fuente, pruebas, brief, agentes y evidencia de esa intervención. Quedan fuera `.env.local`, tokens, capturas con datos personales y documentos no rastreados ajenos al alcance (por ejemplo `docs/design/APEXOS_CONTROL_PLANE.md` si no fue pedido). Un documento del propietario solo entra al commit cuando él lo pide de forma explícita y después de escanearlo por secretos; la versión del 2026-11-03 quedó versionada en `desarrollo` así. El inventario A/M/D del brief debe coincidir con el commit antes de `git push origin desarrollo`.
 19. **La torre de control reposa solo en `desarrollo`.** `apps/control-tower/**` es una herramienta de puesto de trabajo: no se promueve a `develop`, no se llega a `main`, no se despliega y sus certificaciones no se citan como evidencia de una promoción. La política se lee en `docs/project/flujo-ramas-y-ambientes.md`. Esta residencia no cubre el API: `apps/api/src/modules/apex-control/**` y la telemetría de `/health` sí viajan por el flujo `desarrollo -> develop -> main`, porque son la otra mitad de la conexión con QA y PROD. Por qué: el 2026-11-03 el propietario declaró que el panel se ejecuta desde `desarrollo` con la IA; proponer su promoción pondría en despliegues un servicio que nunca debió estar ahí.
+
+20. **La evidencia renumerada se retira declarándola, no dejándola suelta.** Cuando una ronda reemplaza capturas (dos archivos de la ronda 1 duplicaban los estados «tema claro» y «panel» de la numeración nueva), el borrado entra al inventario A/M/D del commit y el brief escribe qué se retiró y por qué. Un directorio de evidencia con dos generaciones conviviendo es peor que un borrado: el siguiente lector certifica sobre la captura vieja. Y el borrado sigue siendo borrado —requiere `allowed_deletions` en el manifiesto de alcance cuando la promoción lo pida—, no «se limpió la carpeta». Por qué: el 2026-11-05 la ronda 2 regeneró las seis capturas del directorio y dos de la ronda 1 quedaron huérfanas con numeración repetida.
 
 ## Checklist de intervención
 
