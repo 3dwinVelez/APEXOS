@@ -1,0 +1,91 @@
+{
+  "change_id": "hr-landing-hub-20261104",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "ee56b0fa835272c22a5a387e8d99bf9ef3daba32",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-landing-hub-local.js",
+    "runner": "../../../scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "command": "node scripts/certifications/hr-employee-user-association-isolated-local.js --certificate=hr-landing-hub-local.js",
+    "database": "apexos_cert_hr_assoc_1793853635684",
+    "started_at": "2026-11-05T04:41:08.375Z",
+    "finished_at": "2026-11-05T04:49:16.890Z",
+    "unexpected_5xx": 0,
+    "failed_api_requests": 0,
+    "hr_get_requests_exercised": 228,
+    "destinations_opened_by_click": 15,
+    "evidence": [
+      "../certifications/hr-landing-hub-20261104.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-employee-user-link-local.js",
+    "runner": "../../../scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "command": "node scripts/certifications/hr-employee-user-association-isolated-local.js --certificate=hr-employee-user-link-local.js",
+    "database": "apexos_cert_hr_assoc_1793853501044",
+    "started_at": "2026-11-05T04:38:51.314Z",
+    "finished_at": "2026-11-05T04:40:19.016Z",
+    "checks": 10,
+    "unexpected_5xx": 0,
+    "covers": [
+      "rbac",
+      "tenant_isolation",
+      "payroll_and_contract_preservation"
+    ],
+    "evidence": [
+      "../certifications/hr-landing-hub-20261104.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "manue",
+    "approved_at": "2026-11-05T04:55:21Z",
+    "authorization_reference": "Propietario en este chat: \"si prepara el manifiesto de alcance y evidencia pre qa\"; estrategia de candidato elegida: Reconstruir candidato aislado; firma: Firmar como manue.",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "push": false,
+      "merge": false,
+      "deploy": false
+    }
+  },
+  "traceability": "Certificacion de navegador y de regresion ejecutadas sobre los blobs del arbol de trabajo de desarrollo en 1403e617, identicos a los del commit funcional ee56b0fa reconstruido sobre 21ef1a6f (origin/develop). Reportes crudos locales en .local/hr-landing-hub/ y .local/hr-employee-user-association/; no se commitean. QA funcional remota pendiente.",
+  "promotion_branch": "codex/qa-hr-landing-hub-20261104",
+  "target_head": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277"
+}

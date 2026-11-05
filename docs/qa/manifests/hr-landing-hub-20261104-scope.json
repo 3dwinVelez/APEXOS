@@ -1,0 +1,140 @@
+{
+  "change_id": "hr-landing-hub-20261104",
+  "scope_schema_version": 2,
+  "base_commits": {
+    "develop": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277"
+  },
+  "certified_commit": "ee56b0fa835272c22a5a387e8d99bf9ef3daba32",
+  "change_intent": {
+    "summary": "Presentar los accesos de Talento Humano como el hub de tarjetas de tarea ya usado por los otros modulos, con su certificacion de navegador y el contrato QA de la portada actualizado.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/scripts/certifications/hr-landing-qa.js",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-landing-hub-20261104.md",
+    "docs/qa/manifests/hr-landing-hub-20261104-preqa.json",
+    "docs/qa/manifests/hr-landing-hub-20261104-scope.json",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-landing-hub-local.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/scripts/certifications/hr-landing-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-landing-hub-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-landing-hub-20261104-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-landing-hub-20261104-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-landing-hub-local.js"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "name": "hub_task_card_navigation",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "all_fifteen_hr_destinations_render",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "payroll_access_no_longer_placeholder",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "hr_api_traffic_without_server_errors",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "rbac",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "tenant_isolation",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "employee_user_link_regression",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "qa_landing_http_contract",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    }
+  ],
+  "certified_commit_note": "El commit funcional certificado contiene los archivos de interfaz, pruebas, certificadores y evidencia. El candidato agrega solamente los dos manifiestos. No autoriza merge de origin/desarrollo completo: desarrollo trae trabajo de identidad movil de marcacion que borraria archivos vigentes de develop. Sin cambios de infraestructura, esquema ni migraciones.",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-landing-hub-20261104",
+  "target_head": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "ee56b0fa835272c22a5a387e8d99bf9ef3daba32"
+  },
+  "certified_functional_paths": [
+    "apps/api/scripts/certifications/hr-landing-qa.js",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-landing-hub-20261104.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-landing-hub-local.js"
+  ]
+}
