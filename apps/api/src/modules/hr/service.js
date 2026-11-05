@@ -178,7 +178,7 @@ function monitorEvidencePayload(evidence = {}) {
 
 async function getMonitorEvidence(tenantId, source, id) {
   const evidenceId = optionalNumericId(id);
-  if (!evidenceId || !["activity", "punch"].includes(String(source))) {
+  if (!evidenceId || !["activity", "punch", "identity"].includes(String(source))) {
     throw validationError("Evidencia de monitor invalida.", 400, "EVIDENCIA_MONITOR_INVALIDA");
   }
   return prisma.runWithTenant(tenantId, async () => {
@@ -187,6 +187,9 @@ async function getMonitorEvidence(tenantId, source, id) {
       evidence = await prisma.activityEvidence.findFirst({
         where: { id: evidenceId, tenant_id: tenantId, activity: { tenant_id: tenantId } }
       });
+    } else if (source === "identity") {
+      const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
+      evidence = mobileIdentity.identityEvidenceOf(punch);
     } else {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
       evidence = punch?.extra_evidence || punch?.metadata?.extra_evidence || null;
@@ -217,9 +220,12 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
       })
     ]);
     const punchEvidence = {};
+    const identityEvidence = {};
     for (const punch of punches) {
       const source = punch.extra_evidence || punch.metadata?.extra_evidence || {};
       punchEvidence[String(punch.id)] = { ...monitorEvidencePayload(source), id: punch.id, source: "punch" };
+      const selfie = mobileIdentity.identityEvidenceOf(punch);
+      if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidencePayload(selfie), id: punch.id, source: "identity" };
     }
     const activityEvidence = {};
     for (const activity of activities) {
@@ -229,6 +235,7 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
       route_id: routeNumericId,
       generated_at: new Date().toISOString(),
       punch_evidence: punchEvidence,
+      identity_evidence: identityEvidence,
       activity_evidence: activityEvidence,
       counts: {
         punches: punches.length,
@@ -3072,6 +3079,9 @@ async function createPunch(tenantId, input, user, options = {}) {
   throw unavailable;
 }
 
+const mobileIdentity = require("./mobile-identity");
+const { isAdministrativeRole } = require("../../middleware/rbac");
+
 function ownOperationalInput(input, employee, user) {
   const userName = employeeUserName(employee, user?.name || user?.email || "");
   return {
@@ -3090,7 +3100,56 @@ function ownOperationalInput(input, employee, user) {
 async function createOwnPunch(tenantId, user, input) {
   const employee = await getCurrentEmployee(tenantId, user);
   await prisma.runWithTenant(tenantId, () => assertOwnAssignedRoute(tenantId, employee, input));
-  return createPunch(tenantId, ownOperationalInput(input, employee, user), user, { scope: "own" });
+  // Antes de crear nada: una marcacion de la app sin telefono registrado,
+  // firma valida o selfie se rechaza aqui y no queda a medias.
+  const identity = mobileIdentity.verifyPunchIdentity({ employee, user, input });
+  const { identity: _signature, identity_photo: _photo, ...metadata } = input.metadata || {};
+  const verifiedInput = { ...input, metadata: { ...metadata, ...identity } };
+  return createPunch(tenantId, ownOperationalInput(verifiedInput, employee, user), user, { scope: "own" });
+}
+
+async function getOwnBiometricEnrollment(tenantId, user) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  return mobileIdentity.publicEnrollment(employee);
+}
+
+async function enrollOwnBiometric(tenantId, user, input = {}) {
+  const employee = await getCurrentEmployee(tenantId, user);
+  return prisma.runWithTenant(tenantId, async () => {
+    // Se relee dentro de la transaccion logica para no pisar un registro que
+    // otro dispositivo acabe de hacer.
+    const current = await prisma.employee.findFirst({ where: { id: employee.id, tenant_id: tenantId } });
+    const record = mobileIdentity.buildEnrollment({ employee: current, user, input });
+    const updated = await prisma.employee.update({
+      where: { id: employee.id },
+      data: { metadata: { ...(current?.metadata || {}), mobile_biometric: record } }
+    });
+    return mobileIdentity.publicEnrollment(updated);
+  });
+}
+
+async function resetEmployeeBiometric(tenantId, user, employeeId, input = {}) {
+  // `hr:write` no basta: en QA lo trae el rol generico de todos los empleados,
+  // y con el un tecnico podria restablecer a un compañero y registrar ese
+  // usuario en su propio telefono, que es el fraude que esto evita.
+  if (!(user?.role?.name === "APEX_ADMIN" || isAdministrativeRole(user?.role))) {
+    throw validationError("Solo un administrador puede restablecer el registro de huella.", 403, "BIOMETRIA_RESTABLECER_DENEGADO");
+  }
+  const id = optionalNumericId(employeeId);
+  if (!id) throw validationError("Empleado invalido.", 400, "EMPLEADO_INVALIDO");
+  return prisma.runWithTenant(tenantId, async () => {
+    const employee = await prisma.employee.findFirst({ where: { id, tenant_id: tenantId } });
+    if (!employee) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+    if (user?.id && employee.user_id === user.id) {
+      throw validationError("No puedes restablecer tu propio registro de huella.", 403, "BIOMETRIA_RESTABLECER_PROPIO");
+    }
+    const previous = mobileIdentity.publicEnrollment(employee);
+    await prisma.employee.update({
+      where: { id },
+      data: { metadata: mobileIdentity.resetEnrollmentMetadata(employee.metadata || {}, { user, reason: input.reason }) }
+    });
+    return { ok: true, employee_id: id, previous };
+  });
 }
 
 async function createGpsPing(tenantId, input) {
@@ -3395,7 +3454,8 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
           extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
-          metadata: punch.metadata || {}
+          identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
+          metadata: mobileIdentity.publicPunchMetadata(punch.metadata || {})
         });
       }
       const assignedCount = assigned.length;
@@ -3436,7 +3496,8 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
           extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
-          metadata: punch.metadata || {}
+          identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
+          metadata: mobileIdentity.publicPunchMetadata(punch.metadata || {})
         })),
         activity_points: routeActivities.map((activity) => ({
           id: activity.id,
@@ -7822,6 +7883,9 @@ module.exports = {
   getMonitorEvidenceBatch,
   createPunch,
   createOwnPunch,
+  getOwnBiometricEnrollment,
+  enrollOwnBiometric,
+  resetEmployeeBiometric,
   createGpsPing,
   createOwnGpsPing,
   listActivityTypes,
