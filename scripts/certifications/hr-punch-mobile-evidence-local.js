@@ -54,6 +54,27 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await page.waitForSelector('button[aria-label="Cerrar evidencia"]');
    await page.screenshot({path:path.join(folder,'lightbox.png')});
   });
+  await check('Reports journey trace renders the activity photograph and opens its enlargement',async()=>{
+   await page.goto(new URL('/dashboard/talento-humano/reportes',page.url()).href,{waitUntil:'domcontentloaded',timeout:180000});
+   await page.waitForSelector('input[type="date"]');
+   await page.evaluate(day=>{
+    for(const label of [...document.querySelectorAll('label')].filter(node=>/^(Desde|Hasta)/.test(node.textContent.trim()))){
+     const input=label.querySelector('input[type="date"]');
+     if(input){Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,day);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));}
+    }
+   },day);
+   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Aplicar rango'&&!node.disabled));
+   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Aplicar rango').click());
+   await page.waitForFunction(()=>[...document.querySelectorAll('button')].some(node=>node.textContent.trim()==='Ver'));
+   await page.evaluate(()=>[...document.querySelectorAll('button')].find(node=>node.textContent.trim()==='Ver').click());
+   await page.waitForSelector('[aria-label="Trazabilidad de jornada"]');
+   await page.waitForFunction(()=>[...document.querySelectorAll('[aria-label="Trazabilidad de jornada"] li')].some(row=>row.innerText.includes('Inicio de ruta')&&[...row.querySelectorAll('img')].some(image=>image.complete&&image.naturalWidth>0)));
+   await page.screenshot({path:path.join(folder,'report-activity-photo.png')});
+   await page.evaluate(()=>[...document.querySelectorAll('[aria-label="Trazabilidad de jornada"] li')].find(row=>row.innerText.includes('Inicio de ruta')).querySelector('button[title="Ampliar evidencia de actividad"]').click());
+   await page.waitForSelector('[aria-label="Evidencia fotografica ampliada"] img');
+   await page.screenshot({path:path.join(folder,'report-activity-expanded.png')});
+
+  });
  }});
  result.status='passed';result.photo_source='TimePunch.metadata.identity_photo, with legacy support';
 }catch(error){result.status='failed';result.error=error.message;console.error(error.stack);process.exitCode=1;}finally{result.finished_at=new Date().toISOString();if(output)fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');if(app)await app.close();await db.$disconnect();process.exit(process.exitCode||0);}})();
