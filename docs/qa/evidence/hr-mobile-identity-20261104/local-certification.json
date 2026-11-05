@@ -1,0 +1,271 @@
+{
+  "certification": "hr-mobile-identity-local",
+  "run_id": "20261105021948",
+  "environment": "LOCAL",
+  "database": "postgresql://***@127.0.0.1:55442/apexos",
+  "started_at": "2026-11-05T02:19:48.836Z",
+  "checks": [
+    {
+      "name": "la API real arranca contra el Postgres local",
+      "ok": true,
+      "detail": {
+        "api": "http://127.0.0.1:3198/api/v1"
+      }
+    },
+    {
+      "name": "un tecnico nuevo no tiene telefono registrado",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "payload": {
+          "enrolled": false
+        }
+      }
+    },
+    {
+      "name": "sin registro la app no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "BIOMETRIA_NO_REGISTRADA"
+      }
+    },
+    {
+      "name": "registra su telefono con la firma de la huella",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "payload": {
+          "enrolled": true,
+          "device_id": "and-cert-a-20261105021948",
+          "platform": "android",
+          "device_model": "Cert Pixel",
+          "enrolled_at": "2026-11-05T02:19:51.041Z"
+        }
+      }
+    },
+    {
+      "name": "consulta su registro sin que viaje la llave",
+      "ok": true,
+      "detail": {
+        "payload": {
+          "enrolled": true,
+          "device_id": "and-cert-a-20261105021948",
+          "platform": "android",
+          "device_model": "Cert Pixel",
+          "enrolled_at": "2026-11-05T02:19:51.041Z"
+        }
+      }
+    },
+    {
+      "name": "no puede registrar otro telefono sin que lo restablezcan",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "BIOMETRIA_YA_REGISTRADA"
+      }
+    },
+    {
+      "name": "la llave publica queda en la ficha del empleado",
+      "ok": true,
+      "detail": {
+        "employee_id": 3
+      }
+    },
+    {
+      "name": "desde otro telefono no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "DISPOSITIVO_NO_REGISTRADO"
+      }
+    },
+    {
+      "name": "con otra llave haciendose pasar por su telefono no pasa",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "FIRMA_BIOMETRICA_INVALIDA"
+      }
+    },
+    {
+      "name": "cambiar la selfie despues de firmar invalida la marcacion",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "FIRMA_BIOMETRICA_INVALIDA"
+      }
+    },
+    {
+      "name": "sin selfie la app no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "SELFIE_REQUERIDA"
+      }
+    },
+    {
+      "name": "una version vieja de la app (sin firma) no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "IDENTIDAD_REQUERIDA"
+      }
+    },
+    {
+      "name": "los intentos rechazados no dejaron marcaciones",
+      "ok": true,
+      "detail": {
+        "punches": 0
+      }
+    },
+    {
+      "name": "marca desde su telefono con huella y selfie",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "la marcacion queda verificada con su telefono",
+      "ok": true,
+      "detail": {
+        "identity_verification": {
+          "method": "EC_P256_SHA256",
+          "status": "verified",
+          "channel": "mobile",
+          "device_id": "and-cert-a-20261105021948",
+          "signature": "[presente]",
+          "enrolled_at": "2026-11-05T02:19:51.041Z",
+          "verified_at": "2026-11-05T02:19:51.331Z"
+        }
+      }
+    },
+    {
+      "name": "la selfie se guarda como data URL con su hash",
+      "ok": true,
+      "detail": {
+        "type": "image/jpeg",
+        "size": 2036
+      }
+    },
+    {
+      "name": "la firma cruda de la app no queda suelta en la metadata",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "reenviar la misma marcacion (cola offline) no la duplica",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "entradas": 1
+      }
+    },
+    {
+      "name": "la web sigue marcando y queda como no verificada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "el supervisor ve la selfie desde el monitor",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "una marcacion sin selfie no inventa evidencia",
+      "ok": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "las selfies guardadas antes del despliegue tambien se ven en el monitor",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "el segundo tecnico existe para las pruebas de restablecer",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "un tecnico con hr:write no puede restablecer a un compañero",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "BIOMETRIA_RESTABLECER_DENEGADO"
+      }
+    },
+    {
+      "name": "nadie se restablece a si mismo",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "BIOMETRIA_RESTABLECER_DENEGADO"
+      }
+    },
+    {
+      "name": "el administrador restablece el registro",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "el registro anterior queda en el historial sin la llave",
+      "ok": true,
+      "detail": {
+        "history": [
+          {
+            "device_id": "and-cert-a-20261105021948",
+            "reset_reason": "cambio de telefono"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tras restablecer se registra en el telefono nuevo",
+      "ok": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "el telefono anterior ya no puede marcar",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "code": "DISPOSITIVO_NO_REGISTRADO"
+      }
+    },
+    {
+      "name": "el telefono nuevo marca verificado",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "sin sesion la API responde 401",
+      "ok": true,
+      "detail": {
+        "status": 401
+      }
+    }
+  ],
+  "finished_at": "2026-11-05T02:19:52.207Z",
+  "passed": true
+}

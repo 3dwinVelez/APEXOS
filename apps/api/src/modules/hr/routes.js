@@ -56,6 +56,9 @@ async function hrRoutes(fastify) {
   fastify.get("/hr/self/preop/active", { preHandler: ownRead }, (request) => service.getOwnPreoperationalChecklist(request.user?.tenant_id, request.user, request.query));
   fastify.post("/hr/self/preop/:id/submit", { schema: schemas.preopSubmitSchema, preHandler: ownWrite }, (request) => service.submitOwnPreoperationalChecklist(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.post("/hr/self/gps/ping", { schema: schemas.gpsPingSchema, preHandler: ownWrite, config: { rateLimit: { max: 60, timeWindow: "1 minute" } } }, (request) => service.createOwnGpsPing(request.user?.tenant_id, request.user, request.body));
+  // Registro del telefono para marcar con huella (ver mobile-identity.js).
+  fastify.get("/hr/self/biometric-enrollment", { preHandler: ownRead }, (request) => service.getOwnBiometricEnrollment(request.user?.tenant_id, request.user));
+  fastify.post("/hr/self/biometric-enrollment", { schema: schemas.biometricEnrollmentSchema, preHandler: ownWrite }, async (request, reply) => reply.code(201).send(await service.enrollOwnBiometric(request.user?.tenant_id, request.user, request.body)));
   fastify.post("/hr/self/time-punches", { schema: schemas.punchSchema, preHandler: ownWrite, config: { rateLimit: { max: 600, timeWindow: "1 minute" } } }, (request) => service.createOwnPunch(request.user?.tenant_id, request.user, request.body));
   fastify.post("/hr/self/work-activities", { schema: schemas.workActivitySchema, preHandler: ownWrite }, (request) => service.createOwnWorkActivity(request.user?.tenant_id, request.user, request.body));
 
@@ -93,6 +96,9 @@ async function hrRoutes(fastify) {
   fastify.post("/hr/routes/preop/:id/submit", { schema: schemas.preopSubmitSchema, preHandler: requirePermission("hr", "write") }, (request) => service.submitPreoperationalChecklist(request.user?.tenant_id, request.user, request.params.id, request.body));
   fastify.get("/hr/routes/:id/tracking", { preHandler: requirePermission("hr", "read") }, (request) => service.getRouteTracking(request.user?.tenant_id, request.params.id, request.query));
   fastify.get("/hr/operations-map", { preHandler: requirePermission("hr", "read") }, (request) => service.getOperationsMap(request.user?.tenant_id, request.query));
+  // El supervisor restablece el registro cuando el empleado cambia de telefono
+  // o se inscribio una huella nueva en el suyo.
+  fastify.delete("/hr/employees/:id/biometric-enrollment", { preHandler: requirePermission("hr", "write") }, (request) => service.resetEmployeeBiometric(request.user?.tenant_id, request.user, request.params.id, request.body || {}));
   fastify.get("/hr/monitor-evidence/route/:routeId", { preHandler: requirePermission("hr", "read") }, (request) => service.getMonitorEvidenceBatch(request.user?.tenant_id, request.params.routeId));
   fastify.get("/hr/monitor-evidence/:source/:id", { preHandler: requirePermission("hr", "read") }, (request) => service.getMonitorEvidence(request.user?.tenant_id, request.params.source, request.params.id));
 
