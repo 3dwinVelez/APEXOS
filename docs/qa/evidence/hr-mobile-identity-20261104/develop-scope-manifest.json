@@ -1,0 +1,149 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-mobile-identity-20261104",
+  "base_commit": "4b3d39a230d748fad0ef560d481d30b929a305e9",
+  "base_commits": {
+    "develop": "4b3d39a230d748fad0ef560d481d30b929a305e9"
+  },
+  "certified_commit": "eeeeac534b5eb097cc22784b9d428059536cb4b8",
+  "change_intent": {
+    "summary": "Android no le dice a una app de quien es la huella: cualquier huella inscrita en el telefono, o el usuario prestado en otro telefono, permitia marcar por el tecnico. Ahora la marcacion de la app (metadata.source apexos-movil) se ata a un telefono registrado: el empleado registra una llave EC P-256 del Android Keystore (invalidada si se inscribe una huella nueva), y cada marcacion llega firmada tras la huella sobre tipo, hora, clave de idempotencia, telefono y hash de una selfie obligatoria (JPEG/PNG <= 300 KB) que queda como data URL en la metadata. Un solo telefono por usuario; restablecer el registro es solo para administradores y nunca sobre el propio usuario (hr:write lo trae el rol generico de QA). La web sigue marcando y queda como not_verified. El monitor de horarios muestra la selfie (fuente identity, sin contenido en listados) y la insignia Identidad verificada; el maestro de empleados muestra el telefono registrado y permite restablecerlo. Sin migracion de esquema: el registro vive en Employee.metadata y la selfie en TimePunch.metadata. Certificacion local de punta a punta 30/30 sobre esta rama (API real contra Postgres con el esquema de develop y servidor de identidad local con las rutas de Supabase) y regresion 384/384 en 43 suites. Requiere la app APEXOS v5020 o superior: las versiones anteriores reciben IDENTIDAD_REQUERIDA al marcar.",
+    "modules": [
+      "hr",
+      "web-talento-humano",
+      "qa-evidence"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-monitor-identity-selfie.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-mobile-identity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-mobile-identity-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-20261104/develop-preqa-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-20261104/develop-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-20261104/local-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-mobile-identity-20261104/regression-certification.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/test/hr-employee-biometric-reset.test.mjs",
+    "apps/web/test/hr-monitor-identity-selfie.test.mjs",
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "scripts/certifications/hr-mobile-identity-regression-local.js",
+    "docs/qa/evidence/hr-mobile-identity-20261104/develop-preqa-evidence.json",
+    "docs/qa/evidence/hr-mobile-identity-20261104/develop-scope-manifest.json",
+    "docs/qa/evidence/hr-mobile-identity-20261104/local-certification.json",
+    "docs/qa/evidence/hr-mobile-identity-20261104/regression-certification.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "registro_de_un_telefono_por_empleado_con_firma_de_huella",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "marcacion_movil_verificada_con_selfie_y_firma",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "rechazo_de_otro_telefono_otra_llave_selfie_alterada_sin_selfie_y_app_vieja",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "idempotencia_de_la_cola_offline_sin_duplicar",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "marcacion_web_sin_cambios",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    {
+      "name": "restablecer_solo_administrador_y_nunca_propio",
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    {
+      "name": "monitor_de_evidencias_y_rbac_de_talento_humano",
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    }
+  ]
+}
