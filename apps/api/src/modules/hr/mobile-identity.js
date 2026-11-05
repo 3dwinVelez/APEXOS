@@ -224,20 +224,27 @@ function publicPunchMetadata(metadata = {}) {
   if (!metadata || typeof metadata !== "object") return metadata;
   const { identity: _identity, identity_photo: photo, ...rest } = metadata;
   if (!photo || typeof photo !== "object") return rest;
-  const { base64_data: base64, base64: _raw, ...photoRest } = photo;
-  return { ...rest, identity_photo: { ...photoRest, has_base64_data: Boolean(base64) } };
+  const { base64_data: base64, base64: raw, ...photoRest } = photo;
+  return { ...rest, identity_photo: { ...photoRest, has_base64_data: Boolean(base64 || raw) } };
 }
 
 // Selfie de una marcacion en el formato de evidencias del monitor.
+//
+// Lee tambien `base64`: las marcaciones de la app hechas ANTES de desplegar
+// esta verificacion guardaron la selfie tal como la mando la app (sin
+// normalizar a `base64_data`), y deben verse igual en el monitor.
 function identityEvidenceOf(punch) {
   const photo = punch?.metadata?.identity_photo;
-  if (!photo || typeof photo !== "object" || !photo.base64_data) return null;
+  if (!photo || typeof photo !== "object") return null;
+  const content = String(photo.base64_data || photo.base64 || "");
+  if (!content) return null;
+  const type = String(photo.type || "image/jpeg");
   return {
     evidence_type: "identity_selfie",
     file_name: photo.name || `selfie-${punch.id}.jpg`,
-    mime_type: photo.type || "image/jpeg",
+    mime_type: type,
     file_size: photo.size || null,
-    base64_data: photo.base64_data
+    base64_data: content.startsWith("data:") ? content : `data:${type};base64,${content}`
   };
 }
 
