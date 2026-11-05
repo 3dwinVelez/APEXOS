@@ -31,8 +31,15 @@ import {
   Truck,
   X
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { PublicCatalog, PublicCatalogItem, PublicCatalogPromo } from "@/app/tienda/[code]/page";
+import { buildStorefrontVars } from "./storefront-theme";
+
+// El tema viaja en el catalogo publico; aqui se expande a variables CSS sobre el nodo
+// raiz. Sin tema (tenants antiguos) buildStorefrontVars produce los colores de siempre.
+function storefrontStyleVars(catalog: PublicCatalog): CSSProperties {
+  return buildStorefrontVars(catalog.theme) as CSSProperties;
+}
 
 type CartLine = { item: PublicCatalogItem; quantity: number };
 
@@ -101,7 +108,7 @@ const emptyBuyer: Buyer = {
   note: ""
 };
 
-const fieldClass = "w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none transition placeholder:text-neutral-500 focus:border-emerald-500";
+const fieldClass = "w-full rounded-lg border sf-border-line-2 sf-bg-surface px-3 py-2 text-sm outline-none transition sf-placeholder-text-muted focus:sf-focus-border-accent";
 
 function orderStorageKey() {
   return `apex-comercio-pedido:${window.location.pathname}`;
@@ -177,7 +184,7 @@ function SocialLinks({ catalog, className = "" }: { catalog: PublicCatalog; clas
             target="_blank"
             rel="noopener noreferrer"
             aria-label={link.label}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-neutral-300 transition hover:border-emerald-500 hover:text-emerald-400"
+            className="flex h-9 w-9 items-center justify-center rounded-full border sf-border-line-2 sf-bg-surface sf-text-body transition hover:sf-hover-border-accent hover:sf-hover-text-accent"
           >
             <Icon className="h-4 w-4" />
           </a>
@@ -255,7 +262,7 @@ function PromoStrip({ catalog }: { catalog: PublicCatalog }) {
   const promo = catalog.promo || EMPTY_PROMO;
   if (promo.active && promo.percent > 0) {
     return (
-      <div className="bg-rose-600 px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-white sm:text-xs">
+      <div className="sf-btn-promo px-4 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em] sm:text-xs">
         <span className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
           <Tags className="h-3.5 w-3.5 shrink-0" />
           {promo.label || "Ofertas de temporada"} · {discountLabel(promo.percent)} en toda la tienda
@@ -266,7 +273,7 @@ function PromoStrip({ catalog }: { catalog: PublicCatalog }) {
   }
   if (catalog.tagline) {
     return (
-      <div className="border-b border-neutral-800 bg-neutral-900 px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-300 sm:text-xs">
+      <div className="border-b sf-border-line sf-bg-surface px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] sf-text-body sm:text-xs">
         {catalog.tagline}
       </div>
     );
@@ -438,34 +445,34 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         : "Todos los productos";
 
   return (
-    <div id="inicio" className="min-h-screen bg-neutral-950 pb-28 text-neutral-100 md:pb-10">
+    <div id="inicio" style={storefrontStyleVars(catalog)} className="min-h-screen sf-bg-base pb-28 sf-text-strong md:pb-10">
       <PromoStrip catalog={catalog} />
 
       {/* Barra fija: marca, buscador, carrito y departamentos siempre disponibles. */}
-      <header className="sticky top-0 z-40 border-b border-neutral-800 bg-neutral-950/85 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b sf-border-line sf-bg-base-a85 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 md:gap-5 md:px-6">
           <a href="#inicio" className="flex min-w-0 items-center gap-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-sm font-black text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sf-btn-accent-solid text-sm font-black">
               {catalog.store_name.slice(0, 1).toUpperCase()}
             </span>
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold uppercase tracking-wide">{catalog.store_name}</span>
-              <span className="hidden text-[11px] text-neutral-400 sm:block">
+              <span className="hidden text-[11px] sf-text-secondary sm:block">
                 {catalog.items.length} productos · {catalog.categories.length} categorias
               </span>
             </span>
           </a>
           <div className="relative ml-auto w-full max-w-xs md:max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 sf-text-muted" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Busca producto, referencia o rubro..."
               aria-label="Buscar en la tienda"
-              className="w-full rounded-full border border-neutral-700 bg-neutral-900 py-2 pl-9 pr-8 text-sm outline-none placeholder:text-neutral-500 focus:border-emerald-500"
+              className="w-full rounded-full border sf-border-line-2 sf-bg-surface py-2 pl-9 pr-8 text-sm outline-none sf-placeholder-text-muted focus:sf-focus-border-accent"
             />
             {query ? (
-              <button type="button" aria-label="Limpiar busqueda" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200">
+              <button type="button" aria-label="Limpiar busqueda" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 sf-text-muted hover:sf-hover-bg-surface-2 hover:sf-hover-text-body">
                 <X className="h-3.5 w-3.5" />
               </button>
             ) : null}
@@ -473,12 +480,12 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            className="relative flex h-9 shrink-0 items-center gap-2 rounded-full border border-neutral-700 bg-neutral-900 px-3 text-sm font-semibold transition hover:border-emerald-500"
+            className="relative flex h-9 shrink-0 items-center gap-2 rounded-full border sf-border-line-2 sf-bg-surface px-3 text-sm font-semibold transition hover:sf-hover-border-accent"
           >
             <ShoppingBag className="h-4 w-4" />
             <span className="hidden sm:inline">Pedido</span>
             {totalUnits > 0 ? (
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[11px] font-bold text-white">{totalUnits}</span>
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full sf-btn-promo px-1 text-[11px] font-bold">{totalUnits}</span>
             ) : null}
           </button>
         </div>
@@ -524,7 +531,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         <Rail
           title="Destacados"
           subtitle="Lo que la tienda quiere mostrar hoy"
-          icon={<Sparkles className="h-4 w-4 text-emerald-400" />}
+          icon={<Sparkles className="h-4 w-4 sf-text-accent" />}
           items={featuredPool}
           catalog={catalog}
           hasWhatsApp={hasWhatsApp}
@@ -539,7 +546,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         <Rail
           title="En descuento"
           subtitle={`Ahorra hasta ${discountLabel(offers.reduce((max, item) => Math.max(max, item.discount_percent), 0))}`}
-          icon={<Tags className="h-4 w-4 text-rose-400" />}
+          icon={<Tags className="h-4 w-4 sf-text-promo" />}
           accent
           items={[...offers].sort((a, b) => b.discount_percent - a.discount_percent).slice(0, 16)}
           catalog={catalog}
@@ -564,15 +571,15 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
 
       {/* Listado filtrado y ordenado: el nucleo de la vitrina. */}
       <section id="catalogo" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12 md:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-neutral-800 pb-3">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b sf-border-line pb-3">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] sf-text-accent">
               {searchResults ? "Resultados de busqueda" : "Catalogo"}
             </p>
             <h2 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">
               {searchResults ? `“${query.trim()}”` : activeTitle}
             </h2>
-            <p className="mt-1 text-xs text-neutral-400">
+            <p className="mt-1 text-xs sf-text-secondary">
               {visible.length} producto{visible.length === 1 ? "" : "s"} · {availableVisible} disponible{availableVisible === 1 ? "" : "s"}
               {searchResults ? " · limpia la busqueda para volver a los rubros" : ""}
             </p>
@@ -582,18 +589,18 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
               <button
                 type="button"
                 onClick={() => applyFilter(filter.kind === "offers" ? { kind: "all", name: null } : { kind: "offers", name: null })}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${filter.kind === "offers" ? "border-rose-500 bg-rose-600 text-white" : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-rose-500 hover:text-rose-300"}`}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${filter.kind === "offers" ? "sf-border-promo sf-btn-promo" : "sf-border-line-2 sf-bg-surface sf-text-body hover:sf-hover-border-promo hover:sf-hover-text-promo-soft"}`}
               >
                 {filter.kind === "offers" ? "Ver todo" : "Solo ofertas"}
               </button>
             ) : null}
-            <label className="flex items-center gap-2 text-xs text-neutral-400">
+            <label className="flex items-center gap-2 text-xs sf-text-secondary">
               <span className="hidden sm:inline">Ordenar</span>
               <select
                 value={sort}
                 onChange={(event) => setSort(event.target.value as SortKind)}
                 aria-label="Ordenar productos"
-                className="rounded-lg border border-neutral-700 bg-neutral-900 px-2.5 py-1.5 text-xs font-semibold text-neutral-200 outline-none focus:border-emerald-500"
+                className="rounded-lg border sf-border-line-2 sf-bg-surface px-2.5 py-1.5 text-xs font-semibold sf-text-body outline-none focus:sf-focus-border-accent"
               >
                 {SORTS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
               </select>
@@ -602,7 +609,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         </div>
 
         {visible.length === 0 ? (
-          <p className="mt-8 rounded-xl border border-neutral-800 bg-neutral-900 p-8 text-center text-sm text-neutral-400">
+          <p className="mt-8 rounded-xl border sf-border-line sf-bg-surface p-8 text-center text-sm sf-text-secondary">
             {catalog.items.length === 0 ? "Esta tienda aun no tiene productos publicados." : "Ningun producto coincide con la busqueda o el filtro."}
           </p>
         ) : (
@@ -624,12 +631,12 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
 
       {/* Contacto: la vitrina tambien cierra ventas por chat sin pasar por el carrito. */}
       <section aria-label="Contacto" className="mx-auto max-w-7xl px-4 pt-14 md:px-6">
-        <div className="overflow-hidden rounded-3xl border border-neutral-800 bg-gradient-to-br from-neutral-900 via-neutral-900 to-emerald-950/40 p-6 md:p-10">
+        <div className="overflow-hidden rounded-3xl border sf-border-line sf-grad-contact p-6 md:p-10">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="max-w-xl">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">Contacto directo</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] sf-text-accent">Contacto directo</p>
               <h2 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">¿Dudas, reservas o facturacion?</h2>
-              <p className="mt-2 text-sm text-neutral-300">
+              <p className="mt-2 text-sm sf-text-body">
                 Escríbenos y confirmamos disponibilidad, apartados y entrega. Si necesitas factura, dilo en el mismo mensaje del pedido.
               </p>
               <SocialLinks catalog={catalog} className="mt-4" />
@@ -639,12 +646,12 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
                 href={waHref(whatsappDigits(catalog.whatsapp), `¡Hola, ${catalog.store_name}! Quiero informacion sobre un producto de su tienda.`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500"
+                className="inline-flex items-center justify-center gap-2 rounded-xl sf-btn-accent px-5 py-3 text-sm font-bold sf-text-on-accent transition hover:sf-btn-accent hover:sf-hover-btn-accent"
               >
                 <MessageCircle className="h-4 w-4" /> Escríbenos por WhatsApp
               </a>
             ) : (
-              <p className="rounded-xl border border-neutral-700 bg-neutral-900/70 px-4 py-3 text-center text-xs text-neutral-400">
+              <p className="rounded-xl border sf-border-line-2 sf-bg-surface-a70 px-4 py-3 text-center text-xs sf-text-secondary">
                 Esta tienda aun no publico un numero de WhatsApp para pedidos.
               </p>
             )}
@@ -652,46 +659,46 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         </div>
       </section>
 
-      <footer className="mt-14 border-t border-neutral-800 bg-neutral-900/40">
+      <footer className="mt-14 border-t sf-border-line sf-bg-surface-a40">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-4 md:px-6">
           <div>
             <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide">
-              <Store className="h-4 w-4 text-emerald-400" /> {catalog.store_name}
+              <Store className="h-4 w-4 sf-text-accent" /> {catalog.store_name}
             </p>
-            {catalog.tagline ? <p className="mt-2 text-xs leading-relaxed text-neutral-400">{catalog.tagline}</p> : null}
+            {catalog.tagline ? <p className="mt-2 text-xs leading-relaxed sf-text-secondary">{catalog.tagline}</p> : null}
             <SocialLinks catalog={catalog} className="mt-4" />
           </div>
           <div className="md:col-span-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-400">Categorias</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] sf-text-secondary">Categorias</p>
             <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs sm:grid-cols-3">
               {departments.map((dept) => (
-                <button key={dept.name} type="button" onClick={() => applyFilter({ kind: "category", name: dept.name })} className="truncate text-left text-neutral-400 transition hover:text-emerald-400">
-                  {dept.name} <span className="text-neutral-600">({dept.count})</span>
+                <button key={dept.name} type="button" onClick={() => applyFilter({ kind: "category", name: dept.name })} className="truncate text-left sf-text-secondary transition hover:sf-hover-text-accent">
+                  {dept.name} <span className="sf-text-faint">({dept.count})</span>
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-400">Ayuda</p>
-            <ul className="mt-3 space-y-1.5 text-xs text-neutral-400">
-              <li><button type="button" onClick={() => applyFilter({ kind: "all", name: null })} className="transition hover:text-emerald-400">Ver todo el catalogo</button></li>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] sf-text-secondary">Ayuda</p>
+            <ul className="mt-3 space-y-1.5 text-xs sf-text-secondary">
+              <li><button type="button" onClick={() => applyFilter({ kind: "all", name: null })} className="transition hover:sf-hover-text-accent">Ver todo el catalogo</button></li>
               {offers.length > 0 ? (
-                <li><button type="button" onClick={() => applyFilter({ kind: "offers", name: null })} className="transition hover:text-rose-400">Productos en descuento</button></li>
+                <li><button type="button" onClick={() => applyFilter({ kind: "offers", name: null })} className="transition hover:sf-hover-text-promo">Productos en descuento</button></li>
               ) : null}
               {promo.active && promo.percent > 0 && promo.end ? <li>Campana vigente hasta {promo.end}</li> : null}
               {hasWhatsApp ? <li>Pagos y apartados coordinados por WhatsApp</li> : null}
             </ul>
           </div>
         </div>
-        <p className="border-t border-neutral-800/80 px-4 py-4 text-center text-[11px] text-neutral-600">
+        <p className="border-t sf-border-line-a80 px-4 py-4 text-center text-[11px] sf-text-faint">
           {catalog.store_name} · Tienda publicada con APEXOS Comercio
         </p>
       </footer>
 
       {/* Barra fija de carrito (movil) / boton flotante (escritorio) */}
       {totalUnits > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800 bg-neutral-900/95 px-4 py-3 backdrop-blur md:hidden">
-          <button type="button" onClick={() => setCartOpen(true)} className="flex w-full items-center justify-between rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t sf-border-line sf-bg-surface-a95 px-4 py-3 backdrop-blur md:hidden">
+          <button type="button" onClick={() => setCartOpen(true)} className="flex w-full items-center justify-between rounded-xl sf-btn-accent-solid px-4 py-3 text-sm font-bold">
             <span className="flex items-center gap-2"><ShoppingBag className="h-4 w-4" /> {totalUnits} producto{totalUnits === 1 ? "" : "s"}</span>
             <span>{money(totalAmount, catalog.currency)}</span>
           </button>
@@ -701,7 +708,7 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
         <button
           type="button"
           onClick={() => setCartOpen(true)}
-          className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/40 transition hover:bg-emerald-500 md:flex"
+          className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-full sf-btn-accent px-5 py-3 text-sm font-bold transition hover:sf-btn-accent hover:sf-hover-btn-accent shadow-lg sf-shadow-accent md:flex"
         >
           <ShoppingBag className="h-4 w-4" /> Pedido ({totalUnits}) · {money(totalAmount, catalog.currency)}
         </button>
@@ -711,32 +718,32 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
       {cartOpen ? (
         <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/70" onClick={() => setCartOpen(false)} role="dialog" aria-modal="true" aria-label="Pedido">
           <div
-            className="flex max-h-[88vh] w-full flex-col rounded-t-2xl border border-neutral-800 bg-neutral-900 md:h-full md:max-h-none md:w-[26rem] md:rounded-none md:rounded-l-2xl"
+            className="flex max-h-[88vh] w-full flex-col rounded-t-2xl border sf-border-line sf-bg-surface md:h-full md:max-h-none md:w-[26rem] md:rounded-none md:rounded-l-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-neutral-800 px-5 py-4">
+            <div className="flex items-center justify-between border-b sf-border-line px-5 py-4">
               <p className="text-sm font-bold uppercase tracking-wide">Tu pedido</p>
-              <button type="button" aria-label="Cerrar pedido" onClick={() => setCartOpen(false)} className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200">
+              <button type="button" aria-label="Cerrar pedido" onClick={() => setCartOpen(false)} className="rounded-lg p-1.5 sf-text-secondary hover:sf-hover-bg-surface-2 hover:sf-hover-text-body">
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-3">
-              {lines.length === 0 ? <p className="py-6 text-center text-sm text-neutral-500">Aun no agregas productos.</p> : null}
+              {lines.length === 0 ? <p className="py-6 text-center text-sm sf-text-muted">Aun no agregas productos.</p> : null}
               {lines.map((line) => (
-                <div key={line.item.code} className="flex items-start gap-3 border-b border-neutral-800/60 py-3 last:border-0">
+                <div key={line.item.code} className="flex items-start gap-3 border-b sf-border-line-a60 py-3 last:border-0">
                   <Thumb item={line.item} className="h-14 w-12 shrink-0 rounded-lg" size="text-lg" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{line.item.name}</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">{line.item.code} · {money(line.item.price, catalog.currency)} c/u</p>
+                    <p className="mt-0.5 text-xs sf-text-muted">{line.item.code} · {money(line.item.price, catalog.currency)} c/u</p>
                     {hasDiscount(line.item) ? (
-                      <p className="mt-0.5 text-[11px] text-rose-400">
+                      <p className="mt-0.5 text-[11px] sf-text-promo">
                         Antes {money(line.item.base_price, catalog.currency)} · ahorras {money((line.item.base_price - line.item.price) * line.quantity, catalog.currency)}
                       </p>
                     ) : null}
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <Stepper quantity={line.quantity} onChange={(quantity) => setQuantity(line.item, quantity)} />
-                    <button type="button" aria-label={`Quitar ${line.item.name}`} onClick={() => setQuantity(line.item, 0)} className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-800 hover:text-red-400">
+                    <button type="button" aria-label={`Quitar ${line.item.name}`} onClick={() => setQuantity(line.item, 0)} className="rounded-lg p-1.5 sf-text-muted hover:sf-hover-bg-surface-2 hover:sf-hover-text-danger">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -744,10 +751,10 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
               ))}
 
               {/* Datos del pedido: este formulario es la estructura del mensaje de WhatsApp. */}
-              <div className="mt-4 space-y-4 rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">
+              <div className="mt-4 space-y-4 rounded-xl border sf-border-line sf-bg-base-a60 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Datos del pedido</p>
-                  <span className={`text-[11px] font-bold ${missing.length === 0 ? "text-emerald-400" : "text-neutral-500"}`}>
+                  <p className="text-xs font-semibold uppercase tracking-wide sf-text-secondary">Datos del pedido</p>
+                    <span className={`text-[11px] font-bold ${missing.length === 0 ? "sf-text-accent" : "sf-text-muted"}`}>
                     {missing.length === 0 ? "Todo listo para enviar" : `Falta: ${missing.join(", ")}`}
                   </span>
                 </div>
@@ -756,10 +763,10 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
                   aria-valuemin={0}
                   aria-valuenow={checks.filter((check) => check.ok).length}
                   role="progressbar"
-                  className="h-1.5 overflow-hidden rounded-full bg-neutral-800"
+                  className="h-1.5 overflow-hidden rounded-full sf-bg-surface-2"
                 >
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-[width] duration-500"
+                    className="h-full rounded-full sf-grad-progress transition-[width] duration-500"
                     style={{ width: `${(checks.filter((check) => check.ok).length / checks.length) * 100}%` }}
                   />
                 </div>
@@ -891,31 +898,31 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
                 </FormRow>
               </div>
             </div>
-            <div className="space-y-2 border-t border-neutral-800 px-5 py-4">
+            <div className="space-y-2 border-t sf-border-line px-5 py-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-400">Total estimado</span>
+                <span className="sf-text-secondary">Total estimado</span>
                 <span className="text-lg font-bold">{money(totalAmount, catalog.currency)}</span>
               </div>
               {totalSaved > 0.5 ? (
-                <div className="flex items-center justify-between text-xs font-bold text-rose-400">
+                <div className="flex items-center justify-between text-xs font-bold sf-text-promo">
                   <span>Ahorro por descuentos</span>
                   <span>-{money(totalSaved, catalog.currency)}</span>
                 </div>
               ) : null}
               {lines.length > 0 ? (
-                <p className="text-[11px] font-semibold text-neutral-400">{describeOrder(buyer)}</p>
+                <p className="text-[11px] font-semibold sf-text-secondary">{describeOrder(buyer)}</p>
               ) : null}
               {hasWhatsApp ? (
                 <a
                   href={buildOrderUrl(catalog, lines, buyer)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 ${lines.length === 0 ? "pointer-events-none opacity-40" : ""}`}
+                  className={`mt-2 flex w-full items-center justify-center gap-2 rounded-xl sf-btn-accent px-4 py-3 text-sm font-bold sf-text-on-accent transition hover:sf-btn-accent hover:sf-hover-btn-accent ${lines.length === 0 ? "pointer-events-none opacity-40" : ""}`}
                 >
                   <MessageCircle className="h-4 w-4" /> Enviar pedido por WhatsApp
                 </a>
               ) : (
-                <p className="mt-2 rounded-xl border border-neutral-700 bg-neutral-800/60 px-4 py-3 text-center text-xs text-neutral-400">
+                <p className="mt-2 rounded-xl border sf-border-line-2 sf-bg-surface-2-a60 px-4 py-3 text-center text-xs sf-text-secondary">
                   Esta tienda aun no publico un numero de WhatsApp para pedidos.
                 </p>
               )}
@@ -944,9 +951,9 @@ export default function Storefront({ catalog }: { catalog: PublicCatalog }) {
 function FormRow({ label, hint, children }: { label?: string; hint?: string; children: ReactNode }) {
   return (
     <div className="space-y-1.5">
-      {label ? <p className="text-[11px] font-bold uppercase tracking-wide text-neutral-400">{label}</p> : null}
+      {label ? <p className="text-[11px] font-bold uppercase tracking-wide sf-text-secondary">{label}</p> : null}
       {children}
-      {hint ? <p className="text-[11px] text-neutral-500">{hint}</p> : null}
+      {hint ? <p className="text-[11px] sf-text-muted">{hint}</p> : null}
     </div>
   );
 }
@@ -966,7 +973,7 @@ function ChoiceChips({ options, value, onChange }: { options: ChipOption[]; valu
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(option.id)}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold transition active:scale-95 ${selected ? "border-emerald-500 bg-emerald-600 text-white" : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-neutral-500"}`}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-bold transition active:scale-95 ${selected ? "sf-border-accent sf-chip-accent" : "sf-border-line-2 sf-bg-surface sf-text-body hover:sf-hover-border-line-3"}`}
           >
             {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
             {option.label || option.id}
@@ -978,10 +985,10 @@ function ChoiceChips({ options, value, onChange }: { options: ChipOption[]; valu
 }
 
 function DepartChip({ label, count, active, accent, onClick }: { label: string; count?: number; active: boolean; accent?: boolean; onClick: () => void }) {
-  const on = accent ? "border-rose-500 bg-rose-600 text-white" : "border-emerald-500 bg-emerald-600 text-white";
+  const on = accent ? "sf-border-promo sf-btn-promo" : "sf-border-accent sf-chip-accent";
   const off = accent
-    ? "border-neutral-700 bg-neutral-900 text-rose-300 hover:border-rose-500"
-    : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:border-neutral-500";
+    ? "sf-border-line-2 sf-bg-surface sf-text-body hover:sf-hover-text-promo-soft hover:sf-hover-border-promo"
+    : "sf-border-line-2 sf-bg-surface sf-text-body hover:sf-hover-border-line-3";
   return (
     <button
       type="button"
@@ -989,7 +996,7 @@ function DepartChip({ label, count, active, accent, onClick }: { label: string; 
       className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide transition ${active ? on : off}`}
     >
       {label}
-      {typeof count === "number" ? <span className={`ml-1.5 font-semibold ${active ? "opacity-80" : "text-neutral-500"}`}>{count}</span> : null}
+      {typeof count === "number" ? <span className={`ml-1.5 font-semibold ${active ? "opacity-80" : "sf-text-muted"}`}>{count}</span> : null}
     </button>
   );
 }
@@ -997,9 +1004,9 @@ function DepartChip({ label, count, active, accent, onClick }: { label: string; 
 function SectionTitle({ kicker, title, detail }: { kicker: string; title: string; detail?: string }) {
   return (
     <div className="max-w-2xl">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-400">{kicker}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.2em] sf-text-accent">{kicker}</p>
       <h2 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">{title}</h2>
-      {detail ? <p className="mt-1.5 text-xs text-neutral-400">{detail}</p> : null}
+      {detail ? <p className="mt-1.5 text-xs sf-text-secondary">{detail}</p> : null}
     </div>
   );
 }
@@ -1014,8 +1021,8 @@ function Thumb({ item, className = "", size = "text-2xl" }: { item: PublicCatalo
     );
   }
   return (
-    <div className={`flex items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900 ${className}`}>
-      <span className={`${size} font-black text-neutral-700`}>{item.name.slice(0, 1).toUpperCase()}</span>
+    <div className={`flex items-center justify-center sf-grad-thumb ${className}`}>
+      <span className={`${size} font-black sf-text-ghost`}>{item.name.slice(0, 1).toUpperCase()}</span>
     </div>
   );
 }
@@ -1033,25 +1040,37 @@ function Hero({ catalog, promo, featured, offersCount, hasWhatsApp, onQuickView,
   const spotlight = featured.find((item) => item.photo_url) || featured[0] || null;
   const supporting = featured.filter((item) => item !== spotlight).slice(0, 2);
   const campaign = promo.active && promo.percent > 0;
+  // Con cartel subido, el texto vive sobre la foto: la tinta del tema se cambia por la
+  // tinta de fotografia (clara). Sin cartel, manda el tema elegido por el comercio.
+  const photoClass = catalog.theme.banner_url ? "sf-on-photo" : "";
 
   return (
-    <section className="border-b border-neutral-800 bg-gradient-to-br from-emerald-950/50 via-neutral-950 to-neutral-950">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-[1.1fr_1fr] md:items-center md:px-6 md:py-16">
+    <section className="relative overflow-hidden border-b sf-border-line sf-grad-hero">
+      {/* El cartel subido o generado por el comercio cubre el hero; el scrim sostiene la
+          legibilidad del titular sobre la imagen. */}
+      {catalog.theme.banner_url ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={catalog.theme.banner_url} alt="" aria-hidden="true" className="sf-banner-img" />
+          <div className="sf-banner-scrim absolute inset-0" />
+        </>
+      ) : null}
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-[1.1fr_1fr] md:items-center md:px-6 md:py-16">
         <div>
-          <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-400">
+          <p className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.24em] sf-text-accent ${photoClass}`}>
             <Store className="h-4 w-4" /> {catalog.store_name}
           </p>
-          <h1 className="mt-3 text-4xl font-black leading-[1.05] tracking-tight md:text-6xl">
-            {campaign ? (promo.label || "Ofertas de temporada") : (catalog.tagline || "Todo el catalogo, al momento")}
+          <h1 className={`mt-3 text-4xl font-black leading-[1.05] tracking-tight md:text-6xl ${photoClass}`}>
+            {campaign ? (promo.label || "Ofertas de temporada") : (catalog.theme.headline || catalog.tagline || "Todo el catalogo, al momento")}
           </h1>
-          <p className="mt-4 max-w-lg text-sm text-neutral-300 md:text-base">
+          <p className={`mt-4 max-w-lg text-sm sf-text-body md:text-base ${photoClass}`}>
             {campaign
               ? `${discountLabel(promo.percent)} aplicado en toda la tienda${promo.end ? ` hasta el ${promo.end}` : ""}. Arma el pedido y confirmalo por WhatsApp.`
-              : "Escoge por rubro, arma el pedido y envialo por WhatsApp. Los precios con descuento ya llegan con la rebaja aplicada."}
+              : (catalog.theme.subhead || "Escoge por rubro, arma el pedido y envialo por WhatsApp. Los precios con descuento ya llegan con la rebaja aplicada.")}
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             {offersCount > 0 ? (
-              <button type="button" onClick={onSeeOffers} className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-500">
+              <button type="button" onClick={onSeeOffers} className="inline-flex items-center gap-2 rounded-xl sf-btn-promo px-5 py-3 text-sm font-bold transition hover:sf-btn-promo">
                 <Tags className="h-4 w-4" /> Ver {offersCount} ofertas <ArrowRight className="h-4 w-4" />
               </button>
             ) : null}
@@ -1060,27 +1079,27 @@ function Hero({ catalog, promo, featured, offersCount, hasWhatsApp, onQuickView,
                 href={waHref(whatsappDigits(catalog.whatsapp), `¡Hola, ${catalog.store_name}! Quiero informacion sobre productos disponibles.`)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900/70 px-5 py-3 text-sm font-bold text-neutral-100 transition hover:border-emerald-500 hover:text-emerald-300"
+                className="inline-flex items-center gap-2 rounded-xl border sf-border-line-2 sf-bg-surface-a70 px-5 py-3 text-sm font-bold sf-text-strong transition hover:sf-hover-border-accent hover:sf-hover-text-accent-soft"
               >
                 <MessageCircle className="h-4 w-4" /> Escríbenos
               </a>
             ) : null}
           </div>
-          <dl className="mt-8 flex flex-wrap gap-x-8 gap-y-3 text-[11px] uppercase tracking-wide text-neutral-500">
+          <dl className={`mt-8 flex flex-wrap gap-x-8 gap-y-3 text-[11px] uppercase tracking-wide sf-text-muted ${photoClass}`}>
             <div>
               <dt className="sr-only">Productos publicados</dt>
-              <dd className="text-2xl font-black tracking-normal text-neutral-100">{catalog.items.length}</dd>
+              <dd className="text-2xl font-black tracking-normal sf-text-strong">{catalog.items.length}</dd>
               productos
             </div>
             <div>
               <dt className="sr-only">Categorias</dt>
-              <dd className="text-2xl font-black tracking-normal text-neutral-100">{catalog.categories.length}</dd>
+              <dd className="text-2xl font-black tracking-normal sf-text-strong">{catalog.categories.length}</dd>
               categorias
             </div>
             {offersCount > 0 ? (
               <div>
                 <dt className="sr-only">Productos con descuento</dt>
-                <dd className="text-2xl font-black tracking-normal text-rose-400">{offersCount}</dd>
+                <dd className="text-2xl font-black tracking-normal sf-text-promo">{offersCount}</dd>
                 en oferta
               </div>
             ) : null}
@@ -1097,13 +1116,13 @@ function Hero({ catalog, promo, featured, offersCount, hasWhatsApp, onQuickView,
                     key={item.code}
                     type="button"
                     onClick={() => onQuickView(item)}
-                    className="flex items-center gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/70 p-3 text-left transition hover:border-emerald-600"
+                    className="flex items-center gap-3 rounded-2xl border sf-border-line sf-bg-surface-a70 p-3 text-left transition hover:sf-hover-border-accent"
                   >
                     <Thumb item={item} className="h-14 w-14 shrink-0 rounded-xl" size="text-lg" />
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold">{item.name}</p>
-                      <p className="mt-1 text-xs font-bold text-emerald-400">{money(item.price, catalog.currency)}</p>
-                      {hasDiscount(item) ? <p className="text-[11px] text-neutral-500 line-through">{money(item.base_price, catalog.currency)}</p> : null}
+                      <p className="mt-1 text-xs font-bold sf-text-accent">{money(item.price, catalog.currency)}</p>
+                      {hasDiscount(item) ? <p className="text-[11px] sf-text-muted line-through">{money(item.base_price, catalog.currency)}</p> : null}
                     </div>
                   </button>
                 ))}
@@ -1122,23 +1141,23 @@ function FeatureSpotlight({ item, catalog, onQuickView }: { item: PublicCatalogI
     <button
       type="button"
       onClick={() => onQuickView(item)}
-      className="group relative block w-full overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-900 text-left"
+      className="group relative block w-full overflow-hidden rounded-3xl border sf-border-line sf-bg-surface text-left"
     >
       <div className="aspect-[4/3] w-full md:aspect-[16/10]">
         <Thumb item={item} className="h-full w-full transition duration-500 group-hover:scale-[1.03]" size="text-7xl" />
       </div>
-      <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${discounted ? "bg-rose-600 text-white" : "bg-neutral-950/80 text-emerald-400"}`}>
+      <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${discounted ? "sf-btn-promo" : "sf-bg-base-a80 sf-text-accent"}`}>
         {discounted ? `${discountLabel(item.discount_percent)} off` : "Destacado"}
       </span>
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-neutral-950 via-neutral-950/85 to-transparent p-4 pt-14">
-        {item.category ? <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">{item.category}</p> : null}
+      <div className="absolute inset-x-0 bottom-0 sf-grad-below p-4 pt-14">
+        {item.category ? <p className="text-[10px] font-bold uppercase tracking-[0.2em] sf-text-accent">{item.category}</p> : null}
         <p className="mt-1 text-lg font-bold leading-tight md:text-xl">{item.name}</p>
         <p className="mt-1.5 flex flex-wrap items-baseline gap-2">
           <span className="text-lg font-black">{money(item.price, catalog.currency)}</span>
-          <span className="text-xs text-neutral-400">/{item.unit}</span>
-          {discounted ? <span className="text-xs text-neutral-500 line-through">{money(item.base_price, catalog.currency)}</span> : null}
+          <span className="text-xs sf-text-secondary">/{item.unit}</span>
+          {discounted ? <span className="text-xs sf-text-muted line-through">{money(item.base_price, catalog.currency)}</span> : null}
         </p>
-        <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-neutral-300 underline decoration-emerald-500/70 underline-offset-4">Ver detalle</p>
+        <p className="mt-2 text-[11px] font-bold uppercase tracking-wide sf-text-body underline sf-underline-accent underline-offset-4">Ver detalle</p>
       </div>
     </button>
   );
@@ -1168,17 +1187,17 @@ function Rail({ title, subtitle, icon, items, catalog, accent, hasWhatsApp, quan
     <section className="mx-auto max-w-7xl px-4 pt-12 md:px-6">
       <div className="flex items-end justify-between gap-4">
         <div className="min-w-0">
-          <p className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${accent ? "text-rose-400" : "text-emerald-400"}`}>
+          <p className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] ${accent ? "sf-text-promo" : "sf-text-accent"}`}>
             {icon} {title}
           </p>
-          {subtitle ? <p className="mt-1 text-xs text-neutral-400">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-1 text-xs sf-text-secondary">{subtitle}</p> : null}
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={onBrowseAll} className="hidden text-[11px] font-bold uppercase tracking-wide text-neutral-400 hover:text-emerald-400 sm:block">Ver todos</button>
-          <button type="button" aria-label={`Desplazar ${title} hacia la izquierda`} onClick={() => slide(-1)} className="rounded-full border border-neutral-700 bg-neutral-900 p-1.5 text-neutral-300 transition hover:border-emerald-500 hover:text-white">
+          <button type="button" onClick={onBrowseAll} className="hidden text-[11px] font-bold uppercase tracking-wide sf-text-secondary hover:sf-hover-text-accent sm:block">Ver todos</button>
+          <button type="button" aria-label={`Desplazar ${title} hacia la izquierda`} onClick={() => slide(-1)} className="rounded-full border sf-border-line-2 sf-bg-surface p-1.5 sf-text-body transition hover:sf-hover-border-accent hover:sf-hover-text-strong">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button type="button" aria-label={`Desplazar ${title} hacia la derecha`} onClick={() => slide(1)} className="rounded-full border border-neutral-700 bg-neutral-900 p-1.5 text-neutral-300 transition hover:border-emerald-500 hover:text-white">
+          <button type="button" aria-label={`Desplazar ${title} hacia la derecha`} onClick={() => slide(1)} className="rounded-full border sf-border-line-2 sf-bg-surface p-1.5 sf-text-body transition hover:sf-hover-border-accent hover:sf-hover-text-strong">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -1207,27 +1226,27 @@ function DepartmentCard({ dept, currency, onOpen }: { dept: Department; currency
     <button
       type="button"
       onClick={onOpen}
-      className="group overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 p-4 text-left transition hover:border-emerald-600"
+      className="group overflow-hidden rounded-2xl border sf-border-line sf-bg-surface p-4 text-left transition hover:sf-hover-border-accent"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-bold uppercase tracking-wide">{dept.name}</p>
-          <p className="mt-1 text-[11px] text-neutral-400">
+          <p className="mt-1 text-[11px] sf-text-secondary">
             {dept.count} producto{dept.count === 1 ? "" : "s"} · {dept.available} disponible{dept.available === 1 ? "" : "s"}
           </p>
-          <p className="mt-2 text-xs font-bold text-emerald-400">Desde {money(dept.from, currency)}</p>
+          <p className="mt-2 text-xs font-bold sf-text-accent">Desde {money(dept.from, currency)}</p>
         </div>
         {dept.bestDiscount > 0 ? (
-          <span className="shrink-0 rounded-full bg-rose-600/90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
+          <span className="shrink-0 rounded-full sf-btn-promo-a90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide">
             hasta {discountLabel(dept.bestDiscount)}
           </span>
         ) : null}
       </div>
       {/* La miniatura es decorativa: el mosaico se sostiene igual sin foto. */}
       {dept.cover ? (
-        <div className="mt-3 flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-950/60 p-2">
+        <div className="mt-3 flex items-center gap-2 rounded-xl border sf-border-line sf-bg-base-a60 p-2">
           <Thumb item={dept.cover} className="h-9 w-9 shrink-0 rounded-lg" size="text-base" />
-          <p className="min-w-0 truncate text-[11px] text-neutral-400 transition group-hover:text-neutral-200">{dept.cover.name}</p>
+          <p className="min-w-0 truncate text-[11px] sf-text-secondary transition sf-group-hover-text-body">{dept.cover.name}</p>
         </div>
       ) : null}
     </button>
@@ -1245,48 +1264,48 @@ function ProductCard({ item, catalog, hasWhatsApp, accent, quantity, onQuantity,
 }) {
   const discounted = hasDiscount(item);
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 transition hover:border-neutral-600 hover:shadow-lg hover:shadow-black/40">
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-neutral-800 to-neutral-900">
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border sf-border-line sf-bg-surface transition hover:sf-hover-border-line-3 hover:shadow-lg hover:shadow-black/40">
+      <div className="relative aspect-[4/5] w-full overflow-hidden sf-grad-thumb">
         <button type="button" onClick={onQuickView} className="block h-full w-full" aria-label={`Ver detalle de ${item.name}`}>
           <Thumb item={item} className="h-full w-full transition duration-500 hover:scale-[1.04]" />
         </button>
         <div className="pointer-events-none absolute left-2 top-2 flex flex-col items-start gap-1">
           {discounted ? (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white ${accent ? "bg-rose-600" : "bg-rose-600/90"}`}>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${accent ? "sf-btn-promo" : "sf-btn-promo-a90"}`}>
               {discountLabel(item.discount_percent)} off
             </span>
           ) : null}
           {item.featured ? (
-            <span className="rounded-full bg-neutral-950/85 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-400">Destacado</span>
+            <span className="rounded-full sf-bg-base-a85 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide sf-text-accent">Destacado</span>
           ) : null}
         </div>
-        <span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${item.available ? "bg-emerald-600/90 text-white" : "bg-neutral-700/90 text-neutral-200"}`}>
+        <span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${item.available ? "sf-btn-accent-solid" : "sf-bg-surface-3-a90 sf-text-body"}`}>
           {item.available ? "Disponible" : "Agotado"}
         </span>
         <button
           type="button"
           onClick={onQuickView}
           aria-label={`Vista rapida de ${item.name}`}
-          className="absolute bottom-2 right-2 rounded-full border border-neutral-700 bg-neutral-950/85 p-2 text-neutral-200 transition hover:border-emerald-500 hover:text-emerald-300"
+          className="absolute bottom-2 right-2 rounded-full border sf-border-line-2 sf-bg-base-a85 p-2 sf-text-body transition hover:sf-hover-border-accent hover:sf-hover-text-accent-soft"
         >
           <Eye className="h-4 w-4" />
         </button>
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
-        {item.category ? <p className="truncate text-[10px] font-bold uppercase tracking-wide text-emerald-400">{item.category}</p> : null}
-        <button type="button" onClick={onQuickView} className="text-left text-sm font-medium leading-snug transition hover:text-emerald-300">
+        {item.category ? <p className="truncate text-[10px] font-bold uppercase tracking-wide sf-text-accent">{item.category}</p> : null}
+        <button type="button" onClick={onQuickView} className="text-left text-sm font-medium leading-snug transition hover:sf-hover-text-accent-soft">
           {item.name}
         </button>
-        <p className="text-[11px] text-neutral-500">Ref. {item.code}</p>
+        <p className="text-[11px] sf-text-muted">Ref. {item.code}</p>
         <div className="mt-auto flex items-end justify-between gap-2 pt-2">
           <div className="min-w-0">
             <p className="text-sm font-black leading-tight">
-              {money(item.price, catalog.currency)} <span className="text-[10px] font-normal text-neutral-500">/{item.unit}</span>
+              {money(item.price, catalog.currency)} <span className="text-[10px] font-normal sf-text-muted">/{item.unit}</span>
             </p>
             {discounted ? (
-              <p className="text-[11px] leading-tight text-neutral-500">
+              <p className="text-[11px] leading-tight sf-text-muted">
                 <span className="line-through">{money(item.base_price, catalog.currency)}</span>
-                <span className="ml-1 font-bold text-rose-400">-{money(item.base_price - item.price, catalog.currency)}</span>
+                <span className="ml-1 font-bold sf-text-promo">-{money(item.base_price - item.price, catalog.currency)}</span>
               </p>
             ) : null}
           </div>
@@ -1294,7 +1313,7 @@ function ProductCard({ item, catalog, hasWhatsApp, accent, quantity, onQuantity,
             quantity > 0 ? (
               <Stepper quantity={quantity} onChange={onQuantity} />
             ) : (
-              <button type="button" onClick={() => onQuantity(1)} className="shrink-0 rounded-lg bg-emerald-600 p-2 text-white transition hover:bg-emerald-500" aria-label={`Agregar ${item.name}`}>
+              <button type="button" onClick={() => onQuantity(1)} className="shrink-0 rounded-lg sf-btn-accent p-2 transition hover:sf-btn-accent hover:sf-hover-btn-accent" aria-label={`Agregar ${item.name}`}>
                 <Plus className="h-4 w-4" />
               </button>
             )
@@ -1305,7 +1324,7 @@ function ProductCard({ item, catalog, hasWhatsApp, accent, quantity, onQuantity,
             href={buildInterestUrl(catalog, item)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 flex items-center justify-center gap-1.5 rounded-lg border border-neutral-700 px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide text-neutral-300 transition hover:border-emerald-500 hover:text-emerald-300"
+            className="mt-1 flex items-center justify-center gap-1.5 rounded-lg border sf-border-line-2 px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide sf-text-body transition hover:sf-hover-border-accent hover:sf-hover-text-accent-soft"
           >
             <MessageCircle className="h-3.5 w-3.5" /> Consultar
           </a>
@@ -1334,13 +1353,13 @@ function QuickView({ item, catalog, buyer, hasWhatsApp, quantity, onQuantity, on
       aria-label={`Detalle de ${item.name}`}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-neutral-800 bg-neutral-900 sm:rounded-3xl md:flex-row"
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border sf-border-line sf-bg-surface sm:rounded-3xl md:flex-row"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-gradient-to-br from-neutral-800 to-neutral-900 md:aspect-auto md:w-1/2">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden sf-grad-thumb md:aspect-auto md:w-1/2">
           <Thumb item={item} className="h-full w-full" size="text-8xl" />
           {discounted ? (
-            <span className="absolute left-3 top-3 rounded-full bg-rose-600 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
+            <span className="absolute left-3 top-3 rounded-full sf-btn-promo px-3 py-1 text-xs font-black uppercase tracking-wide">
               {discountLabel(item.discount_percent)} off
             </span>
           ) : null}
@@ -1348,45 +1367,45 @@ function QuickView({ item, catalog, buyer, hasWhatsApp, quantity, onQuantity, on
         <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-5 md:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              {item.category ? <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">{item.category}</p> : null}
+              {item.category ? <p className="text-[10px] font-bold uppercase tracking-[0.2em] sf-text-accent">{item.category}</p> : null}
               <h3 className="mt-1 text-xl font-bold leading-tight tracking-tight">{item.name}</h3>
-              <p className="mt-1 text-[11px] text-neutral-500">Ref. {item.code} · venta por {item.unit}</p>
+              <p className="mt-1 text-[11px] sf-text-muted">Ref. {item.code} · venta por {item.unit}</p>
             </div>
-            <button type="button" aria-label="Cerrar detalle" onClick={onClose} className="shrink-0 rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200">
+            <button type="button" aria-label="Cerrar detalle" onClick={onClose} className="shrink-0 rounded-lg p-1.5 sf-text-secondary hover:sf-hover-bg-surface-2 hover:sf-hover-text-body">
               <X className="h-5 w-5" />
             </button>
           </div>
 
           <div className="mt-4 flex flex-wrap items-baseline gap-2">
             <span className="text-2xl font-black">{money(item.price, catalog.currency)}</span>
-            <span className="text-xs text-neutral-400">/ {item.unit}</span>
+            <span className="text-xs sf-text-secondary">/ {item.unit}</span>
             {discounted ? (
               <>
-                <span className="text-sm text-neutral-500 line-through">{money(item.base_price, catalog.currency)}</span>
-                <span className="rounded-full bg-rose-600/15 px-2 py-0.5 text-[11px] font-bold text-rose-400">
+                <span className="text-sm sf-text-muted line-through">{money(item.base_price, catalog.currency)}</span>
+                <span className="rounded-full sf-bg-promo-a15 px-2 py-0.5 text-[11px] font-bold sf-text-promo">
                   ahorras {money(item.base_price - item.price, catalog.currency)}
                 </span>
               </>
             ) : null}
           </div>
 
-          <p className={`mt-3 inline-flex w-fit items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${item.available ? "bg-emerald-600/15 text-emerald-400" : "bg-neutral-800 text-neutral-400"}`}>
+          <p className={`mt-3 inline-flex w-fit items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${item.available ? "sf-bg-accent-a15 sf-text-accent" : "sf-bg-surface-2 sf-text-secondary"}`}>
             {item.available ? "Disponible para pedido inmediato" : "Agotado · consulta la proxima entrada"}
           </p>
 
-          <p className="mt-4 text-sm leading-relaxed text-neutral-300">
+          <p className="mt-4 text-sm leading-relaxed sf-text-body">
             {item.description || "Este producto no tiene descripcion publicada. Pide el detalle por WhatsApp y el comercio te confirma presentacion, peso o modelo."}
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-neutral-800 pt-4">
+          <div className="mt-6 flex flex-wrap items-center gap-3 border-t sf-border-line pt-4">
             {item.available ? (
               quantity > 0 ? (
                 <>
                   <Stepper quantity={quantity} onChange={onQuantity} large />
-                  <span className="text-xs text-neutral-400">Subtotal {money(item.price * quantity, catalog.currency)}</span>
+                  <span className="text-xs sf-text-secondary">Subtotal {money(item.price * quantity, catalog.currency)}</span>
                 </>
               ) : (
-                <button type="button" onClick={() => onQuantity(1)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500">
+                <button type="button" onClick={() => onQuantity(1)} className="inline-flex items-center gap-2 rounded-xl sf-btn-accent px-5 py-3 text-sm font-bold sf-text-on-accent transition hover:sf-btn-accent hover:sf-hover-btn-accent">
                   <Plus className="h-4 w-4" /> Agregar al pedido
                 </button>
               )
@@ -1396,7 +1415,7 @@ function QuickView({ item, catalog, buyer, hasWhatsApp, quantity, onQuantity, on
                 href={buildInterestUrl(catalog, item, buyer)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-neutral-700 px-4 py-3 text-sm font-bold text-neutral-100 transition hover:border-emerald-500 hover:text-emerald-300"
+                className="inline-flex items-center gap-2 rounded-xl border sf-border-line-2 px-4 py-3 text-sm font-bold sf-text-strong transition hover:sf-hover-border-accent hover:sf-hover-text-accent-soft"
               >
                 <MessageCircle className="h-4 w-4" /> Consultar o apartar
               </a>
@@ -1411,10 +1430,10 @@ function QuickView({ item, catalog, buyer, hasWhatsApp, quantity, onQuantity, on
 function Stepper({ quantity, onChange, large }: { quantity: number; onChange: (quantity: number) => void; large?: boolean }) {
   const icon = large ? "h-4 w-4" : "h-3.5 w-3.5";
   return (
-    <div className={`flex items-center rounded-xl border border-neutral-700 bg-neutral-800 ${large ? "px-1.5 py-1" : "px-1 py-0.5"}`}>
-      <button type="button" aria-label="Restar" onClick={() => onChange(quantity - 1)} className="p-1.5 text-neutral-300 hover:text-white"><Minus className={icon} /></button>
+    <div className={`flex items-center rounded-xl border sf-border-line-2 sf-bg-surface-2 ${large ? "px-1.5 py-1" : "px-1 py-0.5"}`}>
+      <button type="button" aria-label="Restar" onClick={() => onChange(quantity - 1)} className="p-1.5 sf-text-body hover:sf-hover-text-strong"><Minus className={icon} /></button>
       <span className={`${large ? "w-9" : "w-6"} text-center text-sm font-bold tabular-nums`}>{quantity}</span>
-      <button type="button" aria-label="Sumar" onClick={() => onChange(quantity + 1)} className="p-1.5 text-neutral-300 hover:text-white"><Plus className={icon} /></button>
+      <button type="button" aria-label="Sumar" onClick={() => onChange(quantity + 1)} className="p-1.5 sf-text-body hover:sf-hover-text-strong"><Plus className={icon} /></button>
     </div>
   );
 }

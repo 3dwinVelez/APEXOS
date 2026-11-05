@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.6.1
+version: 2.7.0
 updated_at: 2026-11-05
 contract: 2
 ---
@@ -48,6 +48,13 @@ Antes de actuar, leer en este orden:
 
 17. **Telemetría agregada sin superficie nueva.** `/health` publica solo totales del proceso (`uptime_seconds`, `memory_mb`, `usage` con peticiones por bucket de estado y consultas lentas): no aparecen rutas, identificadores de request, tenants, usuarios ni payloads. Un campo de ese tipo en el snapshot bloquea el cambio. La torre lo normaliza y lo muestra por ambiente; la evidencia JSON se sanea (`redactEnv`) y se prueba que ni el token de la sesión ni el JWT de `apex-control` aparecen en `certification.json`, `snapshot-ambientes.json` ni en los PNG. Cambiar de ambiente deselecciona la empresa abierta: no se relee una empresa de LOCAL contra QA o PROD. Lo mismo aplica a los medidores y al historial por módulo que la torre calcula en `lib/metrics.js` y persiste en `lib/telemetry.js` (`environment.gauges`, `moduleHistory`): son agregados de banda, frescura y conteo de registros, sin ids de empresa, usuario, ruta ni payload, y `Sin dato` / `Informativo` no son un veredicto de salud. Por qué: el 2026-11-03 la lectura consolidada necesitó telemetría real y el riesgo era exponer justo lo que el `/health` anónimo nunca debe devolver.
 18. **Residir en `desarrollo` no relaja la credencial.** La torre guarda JWTs de QA y PROD, tokens de Railway/Supabase/Vercel y el token de sesión de la UI en `apps/control-tower/.env.local` (gitignored). Que el panel solo repose en `desarrollo` y no se despliegue no cambia nada: los secretos siguen fuera de commits, manifiestos de alcance, evidencia, logs y capturas, y la lectura entre empresas sigue exigiendo `apex-control:read_all_tenants` con `APEX_CONTROL_CROSS_TENANT` encendido en el ambiente. Por qué: el 2026-11-03 el propietario fijó la residencia de la herramienta en `desarrollo`, y el riesgo es concluir que un panel local autoriza a aflojar el manejo de credenciales o el aislamiento por empresa.
+
+19. **Una superficie pública personalizable no abre canal de inyección.** La vitrina de Comercio es anónima por link y el panel de apariencia escribe sobre ella; el contrato quedó fijado así (`apps/api/src/modules/comercio/`):
+    - El catálogo público y el DTO de tema se reconstruyen campo por campo: no salen `cost`, `stock`, el id interno del tenant ni `banner_path`; solo `banner_url` ya firmado por el servidor. Un campo extra en `preferences_json.theme` que llegue por HTTP no existe, porque AJV (`removeAdditional: true`) lo strips y el servicio no lo copia.
+    - Ninguna URL de imagen la aporta el cliente. La única vía es `POST /comercio/settings/storefront/banner` (multipart, `MAX_BYTES`, `files: 1`, `parts: 1`) o el generador, y ambos devuelven la ruta del bucket del tenant.
+    - `POST .../storefront/generate-image` llama a un proveedor externo: límite propio de 8/min, host hardcodeado (el prompt viaja en la path, nunca una dirección que el cuerpo elija → sin SSRF), y los bytes que regresan se revalidan con magic bytes antes de subirlos; un error del proveedor se traduce en `IMAGEGEN_UNAVAILABLE`/502 sin rebotar su respuesta cruda.
+    - La subida y la generación escriben en el mismo bucket (`comercio-assets`) bajo la carpeta del tenant: el aislamiento es la ruta, no un nombre de archivo adivinable.
+    Por qué: el 2026-11-05 el riesgo de un «tema editable» es que la pantalla pública pase a dibujar lo que un tercero meta por el body o por un `prompt`.
 
 ## Checklist de intervención
 
@@ -107,3 +114,6 @@ Después:
 - Exponer el token cloud en una tarjeta o log de la torre.
 - Habilitar la vista entre empresas por defecto en todos los ambientes.
 - Presentar una agregación global como "resumen del sistema" cuando en realidad mezcla tenants.
+- Dar por bueno que `additionalProperties: false` rechaza un campo inyectado cuando AJV lo está stripendo en silencio.
+- Aceptar una URL o un path de bucket enviado por el cliente para pintar una imagen en la vitrina.
+- Reenviar al proveedor de imágenes una dirección construida con entrada del usuario.

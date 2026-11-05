@@ -2,8 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.3.0
-updated_at: 2026-11-03
+version: 2.4.0
+updated_at: 2026-11-05
 contract: 2
 ---
 
@@ -44,6 +44,12 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
 11. **La certificación UI viaja con el cambio.** Renombrar o reordenar pasos, etiquetas o paneles visibles obliga a actualizar en la misma intervención la certificación de navegador que los verifica. Un cambio de flujo sin su certificación deja la suite en rojo contra una pantalla correcta. Por qué: `378115ef` simplificó la creación de productos y retiró `Existencias y dimensiones`, pero `certify-ui-ux-phase-one-local` siguió esperándola hasta el 2026-11-03.
 12. **Toda ruta del dashboard entra al centro de comandos.** Una pantalla estática nueva bajo `app/dashboard/**` se registra en `apps/web/lib/moduleFunctions.ts` (o en el alias correspondiente) en la misma intervención, con etiqueta de función de negocio y keywords de trabajo diario, no con el nombre técnico del menú. Por qué: `/dashboard/comercio/promociones` existía como pantalla desde el prototipo de Comercio pero quedó fuera del palette hasta el 2026-11-03; la prueba de cobertura del palette la detectó, no un usuario.
 13. **El documento funcional del plano de control es referencia, no contrato editable.** `docs/design/APEXOS_CONTROL_PLANE.md` (v0.2, del propietario) quedó versionado el 2026-11-03 en `desarrollo` junto con la residencia de la torre: describe qué debe verse y en qué jerarquía (general → empresa → módulo), y esa jerarquía manda sobre cualquier panel nuevo que diseñe. No se reescribe ni se contradice sin que el propietario lo pida; si una pantalla cambia el modelo, primero se actualiza el documento con su autorización y después el código. Por qué: el 2026-11-03 el dueño autorizó expresamente commitearlo, y el riesgo es que un agente lo trate como borrador propio y rediseñe el monitor contra un modelo que ya no es el vigente.
+
+14. **Una pantalla tematizada por tenant no pinta con colores literales.** Donde el cliente decide la apariencia (`apps/web/app/tienda/**`, `components/comercio/storefront.tsx`), cada color sale de una clase `sf-*` que lee `--sf-*-t` inyectado en el contenedor raíz; la hoja `storefront.css` y el markup no llevan ni una clase `bg-emerald-500`/`text-neutral-100`/`border-rose-500`. Tres invariantes con prueba:
+    - El bloque `:root` de la hoja es **exactamente** lo que produce `buildStorefrontVars(tema default)`: si se mueve uno sin el otro, el primer render (SSR, sin tema todavía) se descuadra.
+    - Sobre una fotografía del comercio la tinta no es la del tema. Existe una capa aparte (`--sf-photo-*` + `.sf-on-photo`) con letra clara y acentos aclarados por mezcla con blanco, porque el banner es un píxel que el modelo de color del tenant no conoce. Se aplica **por nodo de texto**, no a la columna entera, para no apagar la tinta del botón translúcido ni de la tarjeta del destacado.
+    - Un botón sólido lleva la tinta de mayor contraste (`--sf-on-accent`/`--sf-on-promo`), nunca `#fff` literal: sobre un acento medio rinde ~2.2:1 y el botón se ve pero no se lee.
+    Por qué: el 2026-11-05, revisando las capturas de la vitrina, un tema claro con banner subido dejaba el titular casi negro sobre la foto oscura —ilegible— mientras las pruebas de clases seguían verdes. La regla anterior («la letra se invierte según el fondo del tema») estaba codificando ese defecto como expectativa.
 
 ## Checklist de intervención
 
@@ -97,3 +103,6 @@ Después:
 - Declarar terminado con `build` en verde y sin abrir el navegador.
 - Resolver un popup de `<select>` solo con `color-scheme` (el SO lo ignora).
 - Agregar dependencias de UI sin justificar y sin actualizar el catálogo.
+- Dejar un color literal de Tailwind en una superficie que el tenant personaliza.
+- Reusar la tinta invertida del tema como letra sobre la fotografía del banner.
+- Cambiar `buildStorefrontVars` sin mover a la vez el bloque `:root` de `storefront.css`.

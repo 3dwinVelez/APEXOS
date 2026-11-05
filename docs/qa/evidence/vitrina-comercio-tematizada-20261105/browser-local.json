@@ -1,0 +1,372 @@
+{
+  "cambio": "vitrina-comercio-tematizada",
+  "rama": "desarrollo",
+  "ejecutado_en": "2026-11-05T17:58:39.282Z",
+  "ambiente": "local",
+  "apiUrl": "http://127.0.0.1:3000",
+  "webUrl": "http://127.0.0.1:3001",
+  "navegador": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "tenant": null,
+  "checks": [
+    {
+      "name": "entorno_local_listo",
+      "ok": true,
+      "detail": {
+        "apiUrl": "http://127.0.0.1:3000",
+        "webUrl": "http://127.0.0.1:3001",
+        "tenant_id": "c0d70738-9098-4b55-8f62-7aefa80d14ad",
+        "catalog_code": "ysr288md"
+      }
+    },
+    {
+      "name": "login_real",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "catalogo_publico_responde",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "items": 119
+      }
+    },
+    {
+      "name": "catalogo_publico_no_filtra_costo_stock_ni_tenant",
+      "ok": true,
+      "detail": {
+        "claves": [
+          "store_name",
+          "tagline",
+          "currency",
+          "whatsapp",
+          "facebook",
+          "instagram",
+          "promo",
+          "theme",
+          "categories",
+          "items"
+        ],
+        "muestra": "{\"store_name\":\"TIENDA ALIEN\",\"tagline\":\"Abarrotes, ferretería, ropa y más: pide por WhatsApp y te apartamos el pedido.\",\"currency\":\"COP\",\"whatsapp\":\"+5730011122"
+      }
+    },
+    {
+      "name": "tema_viaja_con_el_catalogo",
+      "ok": true,
+      "detail": {
+        "theme": {
+          "accent": "#10b981",
+          "promo": "#e11d48",
+          "base": "#0a0a0a",
+          "headline": null,
+          "subhead": null,
+          "banner_url": null
+        }
+      }
+    },
+    {
+      "name": "rechaza_hex_invalido",
+      "ok": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "rechaza_texto_demasiado_largo",
+      "ok": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "el_cliente_no_pone_url_de_imagen",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "tema": {
+          "accent": "#10b981",
+          "promo": "#e11d48",
+          "base": "#0a0a0a",
+          "headline": null,
+          "subhead": null,
+          "banner_url": null
+        },
+        "antes": {
+          "accent": "#10b981",
+          "promo": "#e11d48",
+          "base": "#0a0a0a",
+          "headline": null,
+          "subhead": null,
+          "banner_url": null
+        }
+      }
+    },
+    {
+      "name": "el_cliente_no_pone_path_del_bucket",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "guardado": null
+      }
+    },
+    {
+      "name": "rechaza_prompt_demasiado_corto",
+      "ok": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "vitrina_calienta_la_ruta",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "vitrina_responde",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "url": "http://127.0.0.1:3001/tienda/ysr288md"
+      }
+    },
+    {
+      "name": "sin_tema_usa_el_fondo_neutral_950_de_siempre",
+      "ok": true,
+      "detail": {
+        "fondo": "rgb(10, 10, 10)"
+      }
+    },
+    {
+      "name": "sin_tema_conserva_el_esmeralda_original",
+      "ok": true,
+      "detail": {
+        "botonChange": "rgb(16, 185, 129)"
+      }
+    },
+    {
+      "name": "el_boton_solido_de_fabrica_es_legible",
+      "ok": true,
+      "detail": {
+        "botonChange": "rgb(16, 185, 129)",
+        "botonLetra": "rgb(10, 10, 10)"
+      }
+    },
+    {
+      "name": "sin_tema_no_hay_banner",
+      "ok": true,
+      "detail": {
+        "bannerSrc": null
+      }
+    },
+    {
+      "name": "tema_guardado_en_minusculas",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "theme": {
+          "accent": "#2563eb",
+          "promo": "#f97316",
+          "base": "#0b1220",
+          "headline": "La despensa del barrio, en un clic",
+          "subhead": "Pide por WhatsApp y te la llevamos hoy",
+          "banner_url": null
+        }
+      }
+    },
+    {
+      "name": "no_pisa_las_demas_preferencias",
+      "ok": true,
+      "detail": {
+        "claves": []
+      }
+    },
+    {
+      "name": "el_servidor_produce_la_url_del_banner",
+      "ok": true,
+      "detail": {
+        "banner_url": "/comercio/productos/P-0001.jpg"
+      }
+    },
+    {
+      "name": "el_publico_no_filtra_el_path_interno",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "la_vitrina_usa_el_fondo_del_comercio",
+      "ok": true,
+      "detail": {
+        "fondo": "rgb(11, 18, 32)"
+      }
+    },
+    {
+      "name": "el_raiz_inyecta_la_tripleta_del_acento",
+      "ok": true,
+      "detail": {
+        "inicio": "--sf-base-t:11 18 32;--sf-surface-t:24 31 44;--sf-surface2-t:39 45 58;--sf-surface3-t:65 70 81;--sf-line3-t:65 70 81;--sf-line4-t:83 88 98;-"
+      }
+    },
+    {
+      "name": "el_boton_primario_sigue_el_acento_nuevo",
+      "ok": true,
+      "detail": {
+        "botonChange": "rgb(37, 99, 235)",
+        "esperado": "#2563eb"
+      }
+    },
+    {
+      "name": "el_texto_de_acento_salio_del_esmeralda",
+      "ok": true,
+      "detail": {
+        "precioColor": "rgb(81, 130, 239)"
+      }
+    },
+    {
+      "name": "el_titular_es_el_texto_del_comercio",
+      "ok": true,
+      "detail": {
+        "titularTexto": "La despensa del barrio, en un clic"
+      }
+    },
+    {
+      "name": "el_banner_se_renderiza_y_carga",
+      "ok": true,
+      "detail": {
+        "bannerSrc": "/comercio/productos/P-0001.jpg",
+        "bannerCaja": {
+          "w": 1366,
+          "h": 580
+        }
+      }
+    },
+    {
+      "name": "el_banner_tiene_vela_de_legibilidad",
+      "ok": true,
+      "detail": {
+        "titularColor": "rgb(245, 245, 245)"
+      }
+    },
+    {
+      "name": "el_fondo_claro_se_aplica",
+      "ok": true,
+      "detail": {
+        "fondo": "rgb(248, 250, 252)"
+      }
+    },
+    {
+      "name": "la_letra_del_tema_se_invierte_sobre_fondo_claro",
+      "ok": true,
+      "detail": {
+        "letraRaiz": "rgb(20, 20, 20)"
+      }
+    },
+    {
+      "name": "sobre_el_cartel_la_letra_no_depende_del_tema",
+      "ok": true,
+      "detail": {
+        "titularColor": "rgb(245, 245, 245)",
+        "letraRaiz": "rgb(20, 20, 20)"
+      }
+    },
+    {
+      "name": "el_boton_toma_el_teal_del_comercio",
+      "ok": true,
+      "detail": {
+        "botonChange": "rgb(15, 118, 110)"
+      }
+    },
+    {
+      "name": "la_tinta_del_boton_es_la_de_mayor_contraste",
+      "ok": true,
+      "detail": {
+        "botonChange": "rgb(15, 118, 110)",
+        "botonLetra": "rgb(255, 255, 255)"
+      }
+    },
+    {
+      "name": "el_panel_muestra_la_seccion_de_apariencia",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "el_panel_previsualiza_sin_guardar",
+      "ok": true,
+      "detail": {
+        "tienePrevia": true,
+        "hex": [
+          "#0f766e",
+          "#be123c",
+          "#f8fafc"
+        ]
+      }
+    },
+    {
+      "name": "un_preset_cambia_la_paleta_y_la_previa",
+      "ok": true,
+      "detail": {
+        "preset": {
+          "hex": [
+            "#0ea5e9",
+            "#f97316",
+            "#0b1220"
+          ],
+          "tienePrevia": true,
+          "fondo": "rgba(0, 0, 0, 0)"
+        }
+      }
+    },
+    {
+      "name": "guardar_desde_el_panel_devuelve_200",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "el_preset_guardado_llega_al_publico",
+      "ok": true,
+      "detail": {
+        "accent": "#0ea5e9"
+      }
+    },
+    {
+      "name": "subida_de_banner_deja_constancia",
+      "ok": true,
+      "detail": {
+        "status": 500,
+        "resultado": "sin bucket local: rechazo del almacenamiento",
+        "code": "ERROR_INTERNO",
+        "detalle": ""
+      }
+    },
+    {
+      "name": "el_modelo_gratuito_no_es_el_bloqueo",
+      "ok": true,
+      "detail": {
+        "status": 500,
+        "code": "ERROR_INTERNO",
+        "detalle": "",
+        "lectura": "fallos del generador"
+      }
+    },
+    {
+      "name": "tenant_restaurado",
+      "ok": true,
+      "detail": {
+        "claves": []
+      }
+    }
+  ],
+  "limitaciones": [
+    "El bucket comercio-assets de Supabase no existe en el ambiente local: la subida del banner y la persistencia de la imagen generada quedan bloqueadas por ambiente, con su codigo reportado en los checks.",
+    "La generacion si sale a la red (modelo gratuito Pollinations, sin cuenta ni clave); su resultado solo puede guardarse donde hay bucket configurado.",
+    "El banner se certify con un asset estatico del sitio (/comercio/...), que es la otra ruta que produce el servidor."
+  ],
+  "ok": true,
+  "total": 40,
+  "fallidos": []
+}

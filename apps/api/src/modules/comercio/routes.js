@@ -30,6 +30,24 @@ async function comercioRoutes(fastify) {
   fastify.put("/comercio/settings", { schema: schema.settingsSchema, preHandler: write }, (request) => service.updateSettings(tenantOf(request), request.body));
   // Quemar el link publico actual y asignar uno nuevo (sin body: leccion FST_ERR_CTP_EMPTY_JSON_BODY).
   fastify.post("/comercio/settings/catalog/regenerate", { preHandler: write }, (request) => service.regenerateCatalogCode(tenantOf(request)));
+  // Tema de la vitrina publica: colores y textos del cartel (preferences_json.theme).
+  fastify.put("/comercio/settings/storefront/theme", { schema: schema.storefrontThemeSchema, preHandler: write }, (request) => service.setStorefrontTheme(tenantOf(request), request.body));
+  // Banner: subida multipart (misma validacion que foto de producto) o generacion con el
+  // modelo gratuito. El generate llama a un proveedor externo: limite de tasa propio.
+  fastify.post("/comercio/settings/storefront/banner", { preHandler: write }, async (request, reply) => {
+    const file = await request.file({ limits: { fileSize: storage.MAX_BYTES, files: 1, fields: 0, parts: 1 } });
+    if (!file) throw Object.assign(new Error("Adjunta una imagen PNG, JPEG o WEBP."), { statusCode: 400 });
+    if (file.file.truncated) throw Object.assign(new Error(`El banner supera el limite de ${Math.round(storage.MAX_BYTES / (1024 * 1024))} MB.`), { statusCode: 413 });
+    const bytes = await file.toBuffer();
+    const saved = await service.attachStorefrontBanner(tenantOf(request), { bytes, declaredMime: file.mimetype });
+    return reply.code(201).send(saved);
+  });
+  fastify.delete("/comercio/settings/storefront/banner", { preHandler: write }, (request) => service.detachStorefrontBanner(tenantOf(request)));
+  fastify.post("/comercio/settings/storefront/generate-image", {
+    schema: schema.storefrontGenerateSchema,
+    preHandler: write,
+    config: { rateLimit: { max: 8, timeWindow: "1 minute" } }
+  }, (request) => service.generateStorefrontBanner(tenantOf(request), request.body.prompt));
 
   // --- Promociones y campanas ---
   // Varias pueden convivir; el precio de vitrina y mostrador toma la mejor aplicable.

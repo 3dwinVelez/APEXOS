@@ -2,8 +2,8 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.4.0
-updated_at: 2026-11-03
+version: 2.5.0
+updated_at: 2026-11-05
 contract: 2
 ---
 
@@ -51,6 +51,12 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
 18. **Detalle por empresa con la misma puerta.** `GET /api/v1/apex-control/tenants/:tenantId/modules` mide una sola empresa y reutiliza `crossTenantGuard` + `readAllTenants` + allowlist; no agrega cifras de otras empresas ni abre una segunda superficie de lectura entre tenants. Valida el id con `^[A-Za-z0-9_-]{4,64}$` (`400 EMPRESA_ID_INVALIDO`), responde `404 EMPRESA_NO_ENCONTRADA` si no existe y `403 EMPRESA_FUERA_DE_ALCANCE` si cae fuera de la allowlist. `getTenantModules` devuelve el tenant medido junto al payload de módulos; nunca lo usa para saltarse el filtro del tenant autenticado.
 
 19. **Telemetría de proceso en `/health`, solo agregada.** `runtimeSnapshot()` (`src/fabric/metrics.js`) publica `uptime_seconds`, `memory_mb` (rss/heap/external en MB) y `usage` (peticiones totales, por bucket de estado y consultas lentas) en `/health`, también en el `503 NOT_READY`. Los contadores se alimentan de `recordHttpRequest`/`recordSlowQuery` del proceso: nunca se agregan rutas, usuarios, tenants, cabeceras ni payloads —si algo de eso aparece en `/health`, es una fuga y bloquea el cambio— y las etiquetas de `prom-client` se mantienen separadas para que el `/metrics` siga siendo la fuente detallada. La torre depende de estos campos para las teselas de memoria y uso del API; sin ellos el ambiente se declara `sin medición`, no se rellena con datos de otro ambiente.
+
+20. **La personalización por tenant es metadata, y el strip de AJV no es un rechazo.** El tema de la vitrina de Comercio vive en `ComercioSettings.preferences_json.theme` (`setStorefrontTheme`), no en columnas nuevas: mientras el cambio sea presentación, no se abre migración y el tenant sin tema pinta con el default. Dos reglas del contrato:
+    - El servicio **reconstruye el objeto campo por campo** —lista blanca de claves de color, regex de hex y `nullableText` con tope de longitud— y nunca persiste el `patch` recibido tal cual. `publicTheme()` reconstruye otra vez hacia afuera, así que ni `banner_path` interno ni ninguna clave experimental salen del DTO público.
+    - Fastify monta AJV con `removeAdditional: true`: con `additionalProperties: false` un campo no declarado (`banner_url`, `banner_path`, cualquier cosa) **se elimina en silencio y el request devuelve 200**, no 400. Quien escriba la prueba esperando el rechazo firma un falso positivo. La defensa real es strip + reconstrucción, y se verifica por efecto: nada persistido y nada devuelto.
+    - La URL pública de una imagen la produce solo el servidor (`storage.publicViewUrl(banner_path)` o un path estático del sitio con `/`); el cliente no manda URLs de imagen jamás.
+    Por qué: el 2026-11-05 la certificación de la vitrina afirmaba un 400 frente a `banner_url` inyectado y recibía 200; el comportamiento era correcto y la aserción estaba mal.
 
 ## Checklist de intervención
 
@@ -110,3 +116,6 @@ Después:
 - Contar actividad de varios días con `findMany` truncado o sin rango de fechas.
 - Abrir una vista entre empresas sin permiso explícito, sin guarda de ambiente o sin allowlist.
 - Mover la torre de vigilancia dentro de `apps/api`.
+- Confiar en `additionalProperties: false` para rechazar un campo inyectado y probar un 400 que AJV nunca produce.
+- Guardar el `patch` del cliente en `preferences_json` en vez de reconstruirlo campo por campo.
+- Aceptar una URL de imagen enviada por el cliente para el banner de la vitrina.

@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.4.0",
-      "updated_at": "2026-11-03",
-      "sha256": "b5a9895dfd82c4458d23339ca6d90a04f86ca86bbf77becc6b8d788d88ce4910",
+      "version": "2.5.0",
+      "updated_at": "2026-11-05",
+      "sha256": "67fd9069175245e3e626f836eabb07b0d891846fa56990594f13cffe0446d97e",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -78,15 +78,17 @@
         "salud-por-modulo",
         "actividad-por-empresa",
         "detalle-empresa-modulos",
-        "telemetria-proceso-health"
+        "telemetria-proceso-health",
+        "tema-vitrina-sin-migracion",
+        "strip-ajv-reconstruccion"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.7.2",
+      "version": "2.8.0",
       "updated_at": "2026-11-05",
-      "sha256": "3494323640c0584949f7bbe43ffab6783de61f7401939ceeb9ce8b155d7550a3",
+      "sha256": "25ce9f621bf0191694e56b1ef43ce4e27fb4869ef2d2e1769f09a97ce87aafb9",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -109,7 +111,8 @@
         "alcance-sin-archivos-sin-seguimiento",
         "brief-build-desplegado",
         "brief-cifras-nombradas",
-        "torre-residente-en-desarrollo"
+        "torre-residente-en-desarrollo",
+        "brief-personalizacion-residencia-dato"
       ]
     },
     {
@@ -138,9 +141,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.3.0",
-      "updated_at": "2026-11-03",
-      "sha256": "dc21844bcde0de7142a768b1b8eab0186ed59e1bd698b2e1f732c968c3afa46a",
+      "version": "2.4.0",
+      "updated_at": "2026-11-05",
+      "sha256": "57e02b5aeaef25ba374f57bab9140deffeeaceb1038d1bb1ff26ef5e94d36bb8",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -156,7 +159,9 @@
         "tokens-sin-hex",
         "certificacion-ui-en-la-misma-intervencion",
         "ruta-dashboard-en-centro-comandos",
-        "documento-plano-control-referencia"
+        "documento-plano-control-referencia",
+        "vitrina-tokens-sf",
+        "tinta-sobre-fotografia"
       ]
     },
     {
@@ -219,9 +224,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.8.0",
+      "version": "2.9.0",
       "updated_at": "2026-11-05",
-      "sha256": "8c25099b8262c614968a074faa2b4749c1f231f9504542a819befd99e0a6b415",
+      "sha256": "bdf2c97a0376d27270223bd4461ca4d5d540bcd4d9799a136b0470c22645a89a",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -248,15 +253,16 @@
         "certificacion-conexion-build",
         "certificacion-consolidado-vivo",
         "torre-residente-en-desarrollo",
-        "torre-certifica-lo-visible"
+        "torre-certifica-lo-visible",
+        "certificacion-pintura-medida"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.6.1",
+      "version": "2.7.0",
       "updated_at": "2026-11-05",
-      "sha256": "41dd5bab1bb91bc2f15f1e763e8487082cfb267bb02ad607b640b3f6988f0a7f",
+      "sha256": "68f08fc8c6b2197f59cbb4bc9ebb8feba7e0cb9378c3182ced5b478c28d7b9d6",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -279,7 +285,8 @@
         "detalle-empresa-misma-puerta",
         "sonda-anonima-diagnostico",
         "telemetria-agregada-sin-fuga",
-        "torre-residente-en-desarrollo"
+        "torre-residente-en-desarrollo",
+        "superficie-tema-sin-inyeccion"
       ]
     },
     {

@@ -9,6 +9,7 @@
 const crypto = require("node:crypto");
 const prisma = require("../../core/prisma");
 const storage = require("./storage");
+const imagegen = require("./imagegen");
 
 const TX_OPTIONS = { maxWait: 5_000, timeout: 20_000 };
 
@@ -462,6 +463,9 @@ function settingsDto(row) {
     catalog_facebook: row.catalog_facebook || null,
     catalog_instagram: row.catalog_instagram || null,
     catalog_tagline: row.catalog_tagline || null,
+    // El panel de configuracion pinta la apariencia con el mismo tema sanitized que ve el
+    // publico: colores validados y la URL del banner ya resuelta por el servidor.
+    theme: publicTheme(row.preferences_json),
     preferences: row.preferences_json && typeof row.preferences_json === "object" ? row.preferences_json : {},
     updated_at: row.updated_at ? row.updated_at.toISOString() : null
   };
@@ -583,6 +587,104 @@ async function regenerateCatalogCode(tenantId) {
     const updated = await updateSettingsWithUniqueCode(current.id, { catalog_code: randomCatalogCode() });
     return settingsDto(updated);
   });
+}
+
+// === Tema de la vitrina publica ===
+// El tema vive en preferences_json.theme (slot documentado para preferencias visuales;
+// sin columna nueva). El servidor solo guarda valores saneados: la derivacion de la
+// paleta completa (escalas, contrastes) la hace el frontend desde estos tres hex.
+const THEME_DEFAULTS = Object.freeze({ accent: "#10b981", promo: "#e11d48", base: "#0a0a0a" });
+const THEME_COLOR_KEYS = ["accent", "promo", "base"];
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+function safeThemeHex(value, fallback) {
+  const text = normalizeText(value);
+  return HEX_COLOR.test(text) ? text.toLowerCase() : fallback;
+}
+
+// Lectura defensiva: aunque updateSettings acepto antany preferences arbitrarias,
+// la vitrina publica reconstruye el tema campo por campo. Nunca sale un valor crudo.
+function publicTheme(prefs) {
+  const theme = prefs && typeof prefs === "object" && prefs.theme && typeof prefs.theme === "object" ? prefs.theme : {};
+  return {
+    accent: safeThemeHex(theme.accent, THEME_DEFAULTS.accent),
+    promo: safeThemeHex(theme.promo, THEME_DEFAULTS.promo),
+    base: safeThemeHex(theme.base, THEME_DEFAULTS.base),
+    headline: nullableText(theme.headline, 80),
+    subhead: nullableText(theme.subhead, 140),
+    // La URL del banner siempre la produce el servidor (bucket o asset estatico del sitio);
+    // el cliente nunca escribe una URL arbitraria que la vitrina fuera a mostrar.
+    banner_url: typeof theme.banner_path === "string" ? storage.publicViewUrl(theme.banner_path) : null
+  };
+}
+
+function readThemeFrom(row) {
+  const prefs = row.preferences_json && typeof row.preferences_json === "object" ? { ...row.preferences_json } : {};
+  const theme = prefs.theme && typeof prefs.theme === "object" && !Array.isArray(prefs.theme) ? { ...prefs.theme } : {};
+  return { prefs, theme };
+}
+
+async function setStorefrontTheme(tenantId, patch) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.comercioSettings.findFirst({ where: {} })
+      || await prisma.comercioSettings.create({ data: {} });
+    const { prefs, theme } = readThemeFrom(current);
+    for (const key of THEME_COLOR_KEYS) {
+      if (patch[key] === undefined) continue;
+      if (patch[key] === null) { theme[key] = null; continue; }
+      const hex = normalizeText(patch[key]);
+      if (!HEX_COLOR.test(hex)) {
+        throw appError(400, "THEME_COLOR_INVALID", `El color "${key}" debe ser hexadecimal de 6 digitos (ej. #10b981)`);
+      }
+      theme[key] = hex.toLowerCase();
+    }
+    if (patch.headline !== undefined) theme.headline = nullableText(patch.headline, 80);
+    if (patch.subhead !== undefined) theme.subhead = nullableText(patch.subhead, 140);
+    prefs.theme = theme;
+    const updated = await prisma.comercioSettings.update({ where: { id: current.id }, data: { preferences_json: prefs } });
+    return settingsDto(updated);
+  });
+}
+
+// Subida del banner: misma validacion de firma/tamano/dimension que la foto de producto.
+async function attachStorefrontBanner(tenantId, { bytes, declaredMime }) {
+  const validated = storage.validateProductImage(bytes, declaredMime);
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.comercioSettings.findFirst({ where: {} })
+      || await prisma.comercioSettings.create({ data: {} });
+    const objectPath = storage.storefrontObjectKey({ tenantId, extension: validated.extension });
+    const storagePath = await storage.uploadProductPhoto({ objectPath, bytes, contentType: validated.mime });
+    const { prefs, theme } = readThemeFrom(current);
+    const previous = theme.banner_path;
+    theme.banner_path = storagePath;
+    prefs.theme = theme;
+    const updated = await prisma.comercioSettings.update({ where: { id: current.id }, data: { preferences_json: prefs } });
+    // El banner anterior se elimina best-effort: la fila ya no referencia el objeto.
+    if (previous) await storage.removeProductPhoto(previous).catch(() => false);
+    return { ...settingsDto(updated), banner_url: await storage.signedViewUrl(storagePath) };
+  });
+}
+
+async function detachStorefrontBanner(tenantId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const current = await prisma.comercioSettings.findFirst({ where: {} })
+      || await prisma.comercioSettings.create({ data: {} });
+    const { prefs, theme } = readThemeFrom(current);
+    const previous = theme.banner_path;
+    theme.banner_path = null;
+    prefs.theme = theme;
+    const updated = await prisma.comercioSettings.update({ where: { id: current.id }, data: { preferences_json: prefs } });
+    if (previous) await storage.removeProductPhoto(previous).catch(() => false);
+    return settingsDto(updated);
+  });
+}
+
+// Generacion con el modelo gratuito: se valida el storage ANTES de generar para no
+// gastar el ciclo del proveedor cuando el ambiente no puede recibir la imagen.
+async function generateStorefrontBanner(tenantId, prompt) {
+  storage.storageConfig();
+  const bytes = await imagegen.generateBannerImage(prompt);
+  return attachStorefrontBanner(tenantId, { bytes, declaredMime: "application/octet-stream" });
 }
 
 // === Promociones: CRUD, audiencia y envio ===
@@ -1057,6 +1159,7 @@ async function publicCatalog(code) {
       facebook: settings.catalog_facebook || null,
       instagram: settings.catalog_instagram || null,
       promo: storefrontBanner(promotions),
+      theme: publicTheme(settings.preferences_json),
       categories: [...new Set(items.map((item) => item.category).filter(Boolean))].sort(),
       items
     };
@@ -2040,6 +2143,13 @@ module.exports = {
   getSettings,
   updateSettings,
   regenerateCatalogCode,
+  // tema de la vitrina
+  publicTheme,
+  THEME_DEFAULTS,
+  setStorefrontTheme,
+  attachStorefrontBanner,
+  detachStorefrontBanner,
+  generateStorefrontBanner,
   // promociones
   listPromotions,
   getPromotion,
