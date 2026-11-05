@@ -50,6 +50,15 @@ function objectKey({ tenantId, productId, extension }) {
   return `${tenant}/comercio/products/${product}/${crypto.randomUUID()}.${ext}`;
 }
 
+// Banner de la vitrina publica: un objeto por tenant dentro de su propia carpeta.
+// La fecha en la clave deja historial legible si un dia se guardaran varios.
+function storefrontObjectKey({ tenantId, extension }) {
+  const tenant = sanitizeSegment(tenantId);
+  if (!tenant) throw Object.assign(new Error("Identificador de empresa invalido."), { statusCode: 400 });
+  const ext = Object.values(ALLOWED_MIME).includes(extension) ? extension : "bin";
+  return `${tenant}/comercio/storefront/banner-${Date.now()}-${crypto.randomUUID()}.${ext}`;
+}
+
 function validateProductImage(bytes, declaredMime) {
   if (!bytes?.length) throw Object.assign(new Error("El archivo esta vacio."), { statusCode: 400 });
   if (bytes.length > MAX_BYTES) throw Object.assign(new Error("La foto supera el limite de 5 MB."), { statusCode: 413 });
@@ -150,6 +159,7 @@ module.exports = {
   SIGNED_URL_TTL_SECONDS,
   storageConfig,
   objectKey,
+  storefrontObjectKey,
   validateProductImage,
   uploadProductPhoto,
   removeProductPhoto,

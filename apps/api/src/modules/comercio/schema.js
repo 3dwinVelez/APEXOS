@@ -211,6 +211,32 @@ const settingsBody = {
   }
 };
 
+// Tema de la vitrina: tres colores hex y los textos del cartel. La imagen del banner
+// NO se escribe aqui; la producen las rutas de banner (upload/generar) y viaja como
+// path interno del bucket. El cliente nunca puede inyectar una URL arbitraria.
+const storefrontThemeBody = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    accent: { type: ["string", "null"], pattern: "^#[0-9a-fA-F]{6}$" },
+    promo: { type: ["string", "null"], pattern: "^#[0-9a-fA-F]{6}$" },
+    base: { type: ["string", "null"], pattern: "^#[0-9a-fA-F]{6}$" },
+    headline: { type: ["string", "null"], maxLength: 80 },
+    subhead: { type: ["string", "null"], maxLength: 140 }
+  }
+};
+
+// Prompt del generador gratuito. El texto se envia codificado al host fijo del
+// proveedor; los limites cortos evitan abusos del ciclo de generacion.
+const storefrontGenerateBody = {
+  type: "object",
+  required: ["prompt"],
+  additionalProperties: false,
+  properties: {
+    prompt: { type: "string", minLength: 4, maxLength: 300 }
+  }
+};
+
 // Promocion: nombre + porcentaje obligatorios en el alta. El alcance decide si se
 // guardan categorias o product_ids; el servicio descarta el segmento que no aplica.
 const promotionFields = {
@@ -290,6 +316,8 @@ module.exports = {
   expenseCreateSchema: { body: expenseBody },
   expenseUpdateSchema: { params: idParams, body: expenseUpdateBody },
   settingsSchema: { body: settingsBody },
+  storefrontThemeSchema: { body: storefrontThemeBody },
+  storefrontGenerateSchema: { body: storefrontGenerateBody },
   catalogRouteSchema: { params: catalogCodeParams },
   promotionCreateSchema: { body: promotionBody },
   promotionUpdateSchema: { params: idParams, body: promotionUpdateBody },

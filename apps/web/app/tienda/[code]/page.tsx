@@ -2,6 +2,8 @@
 // Server component: resuelve el catalogo en el servidor contra el endpoint publico del
 // API (sin auth). El carrito y WhatsApp viven en <Storefront/> (client).
 import Storefront from "@/components/comercio/storefront";
+import "../storefront.css";
+import { DEFAULT_STOREFRONT_THEME, type StorefrontTheme } from "@/components/comercio/storefront-theme";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,8 @@ export type PublicCatalog = {
   facebook: string | null;
   instagram: string | null;
   promo: PublicCatalogPromo;
+  // Paleta y cartel del tenant; el API siempre la devuelve (cae al tema default si no hay config).
+  theme: StorefrontTheme;
   categories: string[];
   items: PublicCatalogItem[];
 };
@@ -60,6 +64,9 @@ async function fetchCatalog(code: string): Promise<{ status: "ok" | "closed" | "
     }
     if (!response.ok) return fallback ? { status: "ok", data: fallback } : { status: "unavailable" };
     const data = await response.json() as PublicCatalog;
+    // Un API desplegado antes del cambio de tema responde sin el campo; la vitrina no
+    // debe romperse, se pinta con la paleta de siempre.
+    data.theme = data.theme || DEFAULT_STOREFRONT_THEME;
     catalogFallback.set(code, { at: Date.now(), data });
     return { status: "ok", data };
   } catch {

@@ -1,0 +1,57 @@
+{
+  "sinTema": {
+    "hasRaiz": true,
+    "vars": "--sf-base-t:10 10 10;--sf-surface-t:23 23 23;--sf-surface2-t:38 38 38;--sf-surface3-t:64 64 64;--sf-line3-t:64 64 64;--sf-line4-t:82 82 82;--sf-ink-t:255 255 255;--sf-ink-strong-t:245 245 245;--sf-ink-body-t:212 212 212;--sf-ink-secondary-t:163 163 163;--sf-ink-muted-t:115 115 115;--sf-ink-faint-t:82 82 82;--sf-ink-ghost-t:64 64 64;--sf-ink-deepest-t:38 38 38;--sf-accent-t:16 185 129;--sf-accent-strong-t:73 202 159;--sf-accent-text-t:64 199 154;--sf-accent-soft-t:124 217 186;--sf-accent-deep-t:12 77 55;--sf-on-accent:#0a0a0a;--sf-promo-t:225 29 72;--sf-promo-strong-t:232 83 116;--sf-promo-text-t:231 74 109;--sf-promo-soft-t:239 131 154;--sf-promo-deep-t:92 17 34;--sf-on-promo:#ffffff;--sf-photo-ink-strong-t:255 255 255;--sf-photo-ink-t:245 245 245;--sf-photo-ink-body-t:228 230 233;--sf-photo-ink-secondary-t:203 207 212;--sf-photo-ink-muted-t:170 175 182;--sf-photo-ink-faint-t:190 195 202;--sf-photo-accent-t:124 217 186;--sf-photo-accent-soft-t:164 228 207;--sf-photo-promo-t:239 131 154;--sf-photo-promo-soft-t:244 169 185",
+    "fondo": "rgb(10, 10, 10)",
+    "letraRaiz": "rgb(245, 245, 245)",
+    "titularTexto": "Abarrotes, ferretería, ropa y más: pide por WhatsApp y te apartamos el pedido.",
+    "titularColor": "rgb(245, 245, 245)",
+    "precioColor": "rgb(64, 199, 154)",
+    "botonChange": "rgb(16, 185, 129)",
+    "botonLetra": "rgb(10, 10, 10)",
+    "bannerPresente": false,
+    "bannerSrc": null,
+    "bannerCargado": false,
+    "bannerCaja": null
+  },
+  "fotoSinTema": "docs/qa/evidence/vitrina-comercio-tematizada-20261105/01-vitrina-sin-tema.png",
+  "temaOscuro": {
+    "hasRaiz": true,
+    "vars": "--sf-base-t:11 18 32;--sf-surface-t:24 31 44;--sf-surface2-t:39 45 58;--sf-surface3-t:65 70 81;--sf-line3-t:65 70 81;--sf-line4-t:83 88 98;--sf-ink-t:255 255 255;--sf-ink-strong-t:245 246 246;--sf-ink-body-t:212 214 216;--sf-ink-secondary-t:164 166 171;--sf-ink-muted-t:116 120 128;--sf-ink-faint-t:83 88 98;--sf-ink-ghost-t:65 70 81;--sf-ink-deepest-t:39 45 58;--sf-accent-t:37 99 235;--sf-accent-strong-t:89 136 240;--sf-accent-text-t:81 130 239;--sf-accent-soft-t:135 169 244;--sf-accent-deep-t:21 49 109;--sf-on-accent:#ffffff;--sf-promo-t:249 115 22;--sf-promo-strong-t:250 149 78;--sf-promo-text-t:250 143 69;--sf-promo-soft-t:252 178 127;--sf-promo-deep-t:101 55 28;--sf-on-promo:#0a0a0a;--sf-photo-ink-strong-t:255 255 255;--sf-photo-ink-t:245 245 245;--sf-photo-ink-body-t:228 230 233;--sf-photo-ink-secondary-t:203 207 212;--sf-photo-ink-muted-t:170 175 182;--sf-photo-ink-faint-t:190 195 202;--sf-photo-accent-t:135 169 244;--sf-photo-accent-soft-t:172 196 247;--sf-photo-promo-t:252 178 127;--sf-photo-promo-soft-t:253 202 166",
+    "fondo": "rgb(11, 18, 32)",
+    "letraRaiz": "rgb(245, 246, 246)",
+    "titularTexto": "La despensa del barrio, en un clic",
+    "titularColor": "rgb(245, 245, 245)",
+    "precioColor": "rgb(81, 130, 239)",
+    "botonChange": "rgb(37, 99, 235)",
+    "botonLetra": "rgb(255, 255, 255)",
+    "bannerPresente": true,
+    "bannerSrc": "/comercio/productos/P-0001.jpg",
+    "bannerCargado": true,
+    "bannerCaja": {
+      "w": 1366,
+      "h": 580
+    }
+  },
+  "fotoTemaOscuro": "docs/qa/evidence/vitrina-comercio-tematizada-20261105/02-vitrina-tema-propio-con-banner.png",
+  "temaClaro": {
+    "hasRaiz": true,
+    "vars": "--sf-base-t:248 250 252;--sf-surface-t:235 237 239;--sf-surface2-t:221 222 224;--sf-surface3-t:196 197 199;--sf-line3-t:196 197 199;--sf-line4-t:178 179 181;--sf-ink-t:10 10 10;--sf-ink-strong-t:20 20 20;--sf-ink-body-t:52 52 52;--sf-ink-secondary-t:99 100 101;--sf-ink-muted-t:146 147 148;--sf-ink-faint-t:178 179 181;--sf-ink-ghost-t:196 197 199;--sf-ink-deepest-t:221 222 224;--sf-accent-t:15 118 110;--sf-accent-strong-t:73 151 145;--sf-accent-text-t:14 94 88;--sf-accent-soft-t:15 107 100;--sf-accent-deep-t:159 200 198;--sf-on-accent:#ffffff;--sf-promo-t:190 18 60;--sf-promo-strong-t:206 75 107;--sf-promo-text-t:150 16 49;--sf-promo-soft-t:172 17 55;--sf-promo-deep-t:226 162 179;--sf-on-promo:#ffffff;--sf-photo-ink-strong-t:255 255 255;--sf-photo-ink-t:245 245 245;--sf-photo-ink-body-t:228 230 233;--sf-photo-ink-secondary-t:203 207 212;--sf-photo-ink-muted-t:170 175 182;--sf-photo-ink-faint-t:190 195 202;--sf-photo-accent-t:123 180 175;--sf-photo-accent-soft-t:164 203 200;--sf-photo-promo-t:219 125 148;--sf-photo-promo-soft-t:230 165 181",
+    "fondo": "rgb(248, 250, 252)",
+    "letraRaiz": "rgb(20, 20, 20)",
+    "titularTexto": "La despensa del barrio, en un clic",
+    "titularColor": "rgb(245, 245, 245)",
+    "precioColor": "rgb(14, 94, 88)",
+    "botonChange": "rgb(15, 118, 110)",
+    "botonLetra": "rgb(255, 255, 255)",
+    "bannerPresente": true,
+    "bannerSrc": "/comercio/productos/P-0001.jpg",
+    "bannerCargado": true,
+    "bannerCaja": {
+      "w": 1366,
+      "h": 580
+    }
+  },
+  "fotoTemaClaro": "docs/qa/evidence/vitrina-comercio-tematizada-20261105/03-vitrina-tema-claro.png",
+  "fotoPanel": "docs/qa/evidence/vitrina-comercio-tematizada-20261105/04-panel-apariencia-guardando.png"
+}
