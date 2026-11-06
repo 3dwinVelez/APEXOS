@@ -88,6 +88,7 @@
       "name": "apexos-brief",
       "role": "brief-alcance",
 <<<<<<< HEAD
+<<<<<<< HEAD
       "version": "2.8.0",
       "updated_at": "2026-11-05",
       "sha256": "25ce9f621bf0191694e56b1ef43ce4e27fb4869ef2d2e1769f09a97ce87aafb9",
@@ -96,6 +97,11 @@
       "updated_at": "2026-11-05",
       "sha256": "b47981f90a0923fbf7e32195d0d71357ab64bd47ebbc6812499f73c3a6a28e32",
 >>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
+=======
+      "version": "2.13.0",
+      "updated_at": "2026-11-06",
+      "sha256": "81238fc1c08e3ba0fc3d16cd328abd2292604bcd88a78e82da64d16ace0d76e2",
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -125,8 +131,15 @@
         "brief-personalizacion-residencia-dato",
         "brief-fuentes-reales-torre",
         "brief-defecto-visual-con-causa-de-arnes",
+<<<<<<< HEAD
         "brief-defecto-clasificado-por-capa"
 >>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
+=======
+        "brief-defecto-clasificado-por-capa",
+        "limitacion-ambiental-reproducida",
+        "pasada-ux-registra-hallazgo-cancelado",
+        "brief-separa-arnes-de-producto"
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       ]
     },
     {
@@ -155,9 +168,15 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
+<<<<<<< HEAD
       "version": "2.5.0",
       "updated_at": "2026-11-05",
       "sha256": "4c752b30d3fd9e4bdd108c630ed3aa2a4df1cc32d747089cb107b31d7ebc8b86",
+=======
+      "version": "2.8.0",
+      "updated_at": "2026-11-06",
+      "sha256": "74a0be3291a782d01730cc6ce4f4e9332c806a0253e72829a95d7ad9bfcbabd5",
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -177,7 +196,20 @@
         "vitrina-tokens-sf",
         "tinta-sobre-fotografia",
         "variables-derivadas-en-el-nodo-del-tema",
+<<<<<<< HEAD
         "ortografia-visible-con-tildes"
+=======
+        "ortografia-visible-con-tildes",
+        "imagen-se-certifica-cargada",
+        "busqueda-canonica-searchfield",
+        "tinta-de-texto-accesible",
+        "hooks-antes-del-gate",
+        "capa-fuera-de-modalframe",
+        "enlace-accion-con-button-classes",
+        "piso-tactil-24px-en-el-objetivo-real",
+        "niveles-de-tinta-con-cota-aa-medida",
+        "lote-de-texto-se-revisa-en-el-diff"
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       ]
     },
     {
@@ -242,6 +274,7 @@
       "name": "apexos-qa",
       "role": "experto-calidad",
 <<<<<<< HEAD
+<<<<<<< HEAD
       "version": "2.9.0",
       "updated_at": "2026-11-05",
       "sha256": "bdf2c97a0376d27270223bd4461ca4d5d540bcd4d9799a136b0470c22645a89a",
@@ -250,6 +283,11 @@
       "updated_at": "2026-11-05",
       "sha256": "c6a09c1c34c04b886812d11c5b7298c2ca45c8ade23220024511004f29560096",
 >>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
+=======
+      "version": "2.15.0",
+      "updated_at": "2026-11-06",
+      "sha256": "9b766ccfdee55058548a5f9be849ffa86b414ba3c93ef260ee818cbcd4672255",
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -284,8 +322,20 @@
         "torre-certificacion-fase-real",
         "torre-gates-estructurales-no-temporales",
         "arnes-lee-lo-que-serializa-el-navegador",
+<<<<<<< HEAD
         "guardado-con-autochequeo"
 >>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
+=======
+        "guardado-con-autochequeo",
+        "check-no-legaliza-un-5xx",
+        "medicion-dentro-de-la-pantalla",
+        "blancos-contra-la-norma-no-el-criterio",
+        "control-se-prueba-desde-su-estado-vacio",
+        "recorrido-se-autocuenta",
+        "composicion-de-fondo-como-la-pinta-el-navegador",
+        "se-espera-el-hecho-del-dom-no-el-reloj",
+        "contrato-ortografia-sobre-texto-extraido"
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       ]
     },
     {
@@ -337,6 +387,7 @@
       "name": "equipo-apexos",
       "role": "orquestador",
 <<<<<<< HEAD
+<<<<<<< HEAD
       "version": "2.5.1",
       "updated_at": "2026-11-05",
       "sha256": "7955649f10b076a9da6a32938df125d4c658ef2edcdc11646b5e93b4aac346ed",
@@ -345,6 +396,11 @@
       "updated_at": "2026-11-05",
       "sha256": "8f7f539ba3a9647eb8158621961c064366b4e723fa8549445ef6ea7e3e1db54a",
 >>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
+=======
+      "version": "2.10.0",
+      "updated_at": "2026-11-06",
+      "sha256": "f5a2dacc6ffe3f57234f8f2c56e069339fa029107e90cca93a1894a54d22892d",
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -371,8 +427,15 @@
         "torre-residente-en-desarrollo",
         "torre-vistas-pregunta",
         "torre-una-fila-por-bloque",
+<<<<<<< HEAD
         "queja-de-color-se-mide"
 >>>>>>> 3b2b44b6 (fix(comercio): motor de color perceptual, cinco knobs de vitrina y panel por pestanas)
+=======
+        "queja-de-color-se-mide",
+        "limitacion-de-ambiente-no-cubre-5xx",
+        "pasada-ux-se-mide-antes-de-despachar",
+        "rojo-de-medicion-se-atribuye"
+>>>>>>> aa06c5a0 (feat(comercio): pasada UX medida del modulo, busqueda canonica y espanol completo en la vitrina)
       ]
     }
   ],
@@ -410,8 +473,8 @@
     {
       "name": "Catálogo de componentes UI",
       "path": "docs/design/APEXOS_COMPONENT_CATALOG.md",
-      "updated_at": "2026-11-03",
-      "sha256": "edc420f74be7ff46c576e7547001a13bb3b75936b0a40dae7e8cda4197f42ba5"
+      "updated_at": "2026-11-06",
+      "sha256": "424b52aeb752d2de30ab6054758eb5966707a32c6665e4a60ec574ee0ad3fbcf"
     },
     {
       "name": "Aislamiento multi-tenant",

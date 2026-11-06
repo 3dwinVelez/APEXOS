@@ -89,7 +89,7 @@ export default async function TiendaPage({ params }: { params: Promise<{ code: s
   const { code } = await params;
   const clean = String(code || "").toLowerCase();
   if (!/^[a-z0-9]{4,32}$/.test(clean)) {
-    return <ShellMessage title="Link no valido" detail="El direccion de la tienda esta incompleta. Pide el link otra vez al comercio." />;
+    return <ShellMessage title="Link no válido" detail="La dirección de la tienda está incompleta. Pide el link otra vez al comercio." />;
   }
   const result = await fetchCatalog(clean);
   if (result.status === "closed") {

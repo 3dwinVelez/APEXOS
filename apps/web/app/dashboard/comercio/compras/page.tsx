@@ -1,14 +1,15 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Plus, RefreshCw, Search, X } from "lucide-react";
+import { ChevronDown, Download, Plus, RefreshCw, X } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
 import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
-import { ComercioMessages, Field, ModuleHeader, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { comercioGate, ComercioMessages, describeError, Field, matchesQuery, ModuleHeader, money, todayISO, useComercioAccess, useVentana } from "@/components/comercio/shared";
 
 // Compras de mercancia (POST /api/v1/comercio/purchases). Cada compra recalcula el costo
 // promedio ponderado del producto y suma stock con su movimiento trazado.
@@ -84,7 +85,7 @@ export default function ComercioComprasPage() {
     downloadExcelWorkbook("comercio-compras.xls", [{
       name: "Compras",
       columns: [
-        { key: "number", label: "Numero" },
+        { key: "number", label: "Número" },
         { key: "date", label: "Fecha" },
         { key: "product", label: "Producto", width: 220 },
         { key: "supplier", label: "Proveedor", width: 180 },
@@ -107,7 +108,7 @@ export default function ComercioComprasPage() {
   }
 
   const columns: DataColumn<Purchase>[] = [
-    { className: "font-mono font-semibold", cell: (row) => row.full_number, header: "Numero", hideable: false, id: "number", sortValue: (row) => row.id },
+    { className: "font-mono font-semibold", cell: (row) => row.full_number, header: "Número", hideable: false, id: "number", sortValue: (row) => row.id },
     { cell: (row) => row.date, header: "Fecha", id: "date", sortValue: (row) => row.date },
     {
       cell: (row) => (
@@ -160,33 +161,34 @@ export default function ComercioComprasPage() {
       setSaving(false);
     }
   }
+  const ventana = useVentana(filtered);
   const blocked = comercioGate(access);
   if (blocked) return blocked;
-
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Inventario" subtitle="Registro de compras por producto: sube el stock y ajusta el costo promedio con el que se calcula el margen de cada venta." title="Compras de mercancia" />
+      <ModuleHeader section="Inventario" subtitle="Cada compra suma stock y recalcula el costo promedio del producto; con ese costo se mide el margen de las ventas. Empieza con Nueva compra." title="Compras de mercancía" />
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
         <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_minmax(16rem,20rem)] lg:items-end">
-          <Field label="Buscar">
-            <span className="relative block">
-              <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
-              <input aria-label="Buscar compras por numero, producto o proveedor" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Numero, producto o proveedor" value={query} />
-            </span>
-          </Field>
-          <Field hint={products.length ? `${products.length} productos activos en el catalogo` : undefined} label="Producto">
-            <select className="control apex-select" onChange={(event) => setProductId(event.target.value)} value={productId}>
+          <SearchField
+            hint="Ignora acentos y mayúsculas"
+            label="Buscar compras por número, producto o proveedor"
+            onChange={setQuery}
+            placeholder="Número, producto o proveedor"
+            value={query}
+          />
+          <Field hint={products.length ? `${products.length} productos activos en el catálogo` : undefined} label="Producto">
+            <TransportSearchSelect aria-label="Filtrar las compras por código o nombre del producto" className="control w-full" onChange={(event) => setProductId(event.target.value)} value={productId}>
               <option value="">Todos los productos</option>
               {products.map((product) => <option key={product.id} value={String(product.id)}>{product.code} - {product.name}</option>)}
-            </select>
+            </TransportSearchSelect>
           </Field>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost"><X size={12} /> Limpiar filtros</Button> : null}
-            <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {purchases.length} compras · {purchasedUnits} unidades · {money(purchasedTotal)}</span>
+            <span aria-live="polite" className="font-semibold text-content-body" id="conteo-resultados">{filtered.length} de {purchases.length} compras · {purchasedUnits} unidades · {money(purchasedTotal)}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={!filtered.length} onClick={() => exportPurchases(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
@@ -196,8 +198,8 @@ export default function ComercioComprasPage() {
         </div>
 
         {!loading && filtered.length ? (
-          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-            {filtered.map((purchase) => (
+          <><ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {ventana.visibles.map((purchase) => (
               <li className="rounded-md border border-line p-3" key={purchase.id}>
                 <div className="flex justify-between">
                   <span className="font-mono text-sm font-semibold">{purchase.full_number}</span>
@@ -209,6 +211,12 @@ export default function ComercioComprasPage() {
               </li>
             ))}
           </ul>
+        {ventana.restantes > 0 ? (
+          <div className="px-4 pb-4">
+            <Button onClick={ventana.ampliar} size="compact" variant="secondary"><ChevronDown size={14} /> Ver {ventana.restantes} más</Button>
+          </div>
+        ) : null}
+        </>
         ) : null}
 
         <div className="hidden p-4 lg:block">
@@ -216,12 +224,12 @@ export default function ComercioComprasPage() {
             bulkActions={(selected, clear) => (
               <>
                 <Button onClick={() => exportPurchases(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
-                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar selección</Button>
               </>
             )}
             columns={columns}
             emptyDetail={purchases.length ? "Ajusta el buscador o cambia el producto para volver a ver compras." : "Registra la primera compra para surtir el inventario y fijar el costo promedio."}
-            emptyTitle={purchases.length ? "Ninguna compra con estos filtros" : "Aun no hay compras"}
+            emptyTitle={purchases.length ? "Ninguna compra con estos filtros" : "Aún no hay compras"}
             loading={loading}
             pageSize={12}
             rowKey={(row) => row.id}
@@ -232,12 +240,12 @@ export default function ComercioComprasPage() {
       </section>
 
       {editorOpen ? (
-        <ModalFrame onClose={() => setEditorOpen(false)} title="Registrar compra de mercancia">
+        <ModalFrame onClose={() => setEditorOpen(false)} title="Registrar compra de mercancía">
           <form className="space-y-4" onSubmit={save}>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <Field label="Producto">
-                  <TransportSearchSelect aria-label="Buscar el producto comprado por codigo o nombre" className="control w-full" onChange={(event) => setForm({ ...form, product_id: event.target.value })} required value={form.product_id}>
+                  <TransportSearchSelect aria-label="Buscar el producto comprado por código o nombre" className="control w-full" onChange={(event) => setForm({ ...form, product_id: event.target.value })} required value={form.product_id}>
                     <option value="">Seleccione el producto comprado</option>
                     {products.map((product) => (
                       <option key={product.id} value={String(product.id)}>{product.code} - {product.name} (stock {product.stock}, costo {money(product.cost)})</option>

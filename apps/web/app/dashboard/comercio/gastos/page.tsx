@@ -1,13 +1,14 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Ban, Download, Plus, RefreshCw, Search, TrendingDown, TrendingUp, X } from "lucide-react";
+import { Ban, ChevronDown, Download, Plus, RefreshCw, Search, TrendingDown, TrendingUp, X } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
-import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { Check, comercioGate, ComercioMessages, describeError, Field, matchesQuery, ModuleHeader, money, StatusPill, todayISO, useComercioAccess, useVentana } from "@/components/comercio/shared";
 
 // Movimientos "otros" del Comercio (GET /api/v1/comercio/expenses): egresos operativos
 // (direction=expense) e ingresos fuera del catalogo (direction=income, p. ej. recargas).
@@ -90,11 +91,11 @@ export default function ComercioGastosPage() {
     downloadExcelWorkbook("comercio-ingresos-egresos.xls", [{
       name: "Movimientos",
       columns: [
-        { key: "number", label: "Numero" },
+        { key: "number", label: "Número" },
         { key: "date", label: "Fecha" },
         { key: "concept", label: "Concepto", width: 220 },
-        { key: "category", label: "Categoria" },
-        { key: "direction", label: "Direccion" },
+        { key: "category", label: "Categoría" },
+        { key: "direction", label: "Dirección" },
         { key: "method", label: "Medio" },
         { key: "amount", label: "Valor" },
         { key: "state", label: "Estado" },
@@ -115,7 +116,7 @@ export default function ComercioGastosPage() {
   }
 
   const columns: DataColumn<Expense>[] = [
-    { className: "font-mono", cell: (row) => row.full_number, header: "Numero", hideable: false, id: "number", sortValue: (row) => row.id },
+    { className: "font-mono", cell: (row) => row.full_number, header: "Número", hideable: false, id: "number", sortValue: (row) => row.id },
     { cell: (row) => row.date, header: "Fecha", id: "date", sortValue: (row) => row.date },
     {
       cell: (row) => (
@@ -129,11 +130,11 @@ export default function ComercioGastosPage() {
       id: "concept",
       sortValue: (row) => row.concept
     },
-    { cell: (row) => row.category || "--", header: "Categoria", id: "category", sortValue: (row) => row.category || "" },
+    { cell: (row) => row.category || "--", header: "Categoría", id: "category", sortValue: (row) => row.category || "" },
     { cell: (row) => row.method || "--", header: "Medio", id: "method", sortValue: (row) => row.method || "" },
     {
       className: "text-right",
-      cell: (row) => <span className={`font-semibold ${row.direction === "income" ? "text-success" : "text-error"}`}>{row.direction === "income" ? "+" : "-"}{money(row.amount)}</span>,
+      cell: (row) => <span className={`font-semibold ${row.direction === "income" ? "text-success-ink" : "text-error-ink"}`}>{row.direction === "income" ? "+" : "-"}{money(row.amount)}</span>,
       header: "Valor",
       id: "amount",
       sortValue: (row) => Number(row.amount)
@@ -201,30 +202,32 @@ export default function ComercioGastosPage() {
       setSaving(false);
     }
   }
+  const ventana = useVentana(filtered);
   const blocked = comercioGate(access);
   if (blocked) return blocked;
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Caja" subtitle="Ingresos distintos de ventas (recargas, servicios) y egresos del dia a dia (arriendo, servicios, transporte). Entran al resultado estimado de los reportes." title="Ingresos y egresos" />
+      <ModuleHeader section="Caja" subtitle="Anota recargas, servicios y gastos del día a día: entran al resultado que muestran los reportes. Los movimientos no se borran, se anulan con permiso de aprobación." title="Ingresos y egresos" />
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
         <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_minmax(13rem,16rem)_auto] lg:items-end">
-          <Field label="Buscar">
-            <span className="relative block">
-              <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
-              <input aria-label="Buscar movimientos por numero, concepto, categoria o medio de pago" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Numero, concepto, categoria o medio" value={query} />
-            </span>
-          </Field>
-          <Field hint={categories.length ? `${categories.length} categorias en movimiento` : undefined} label="Categoria">
+          <SearchField
+            hint="Ignora acentos y mayúsculas"
+            label="Buscar movimientos por número, concepto, categoría o medio de pago"
+            onChange={setQuery}
+            placeholder="Número, concepto, categoría o medio"
+            value={query}
+          />
+          <Field hint={categories.length ? `${categories.length} categorías en movimiento` : undefined} label="Categoría">
             <select className="control apex-select" onChange={(event) => setCategory(event.target.value)} value={category}>
               <option value="">Todas</option>
               {categories.map((name) => <option key={name} value={name}>{name}</option>)}
             </select>
           </Field>
           <div className="flex flex-wrap items-center gap-3 pb-2 text-sm lg:pb-0">
-            <div className="flex gap-1" role="group" aria-label="Filtro por direccion">
+            <div className="flex gap-1" role="group" aria-label="Filtro por dirección">
               <FilterChip label="Todos" active={directionFilter === ""} onClick={() => setDirectionFilter("")} />
               <FilterChip icon={<TrendingUp size={12} />} label="Ingresos" active={directionFilter === "income"} onClick={() => setDirectionFilter("income")} />
               <FilterChip icon={<TrendingDown size={12} />} label="Egresos" active={directionFilter === "expense"} onClick={() => setDirectionFilter("expense")} />
@@ -235,9 +238,9 @@ export default function ComercioGastosPage() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
           <div className="flex min-w-0 flex-wrap items-center gap-3">
             {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost"><X size={12} /> Limpiar filtros</Button> : null}
-            <span>Ingresos: <span className="font-semibold text-success">+{money(incomeTotal)}</span></span>
-            <span>Egresos: <span className="font-semibold text-error">-{money(expenseTotal)}</span></span>
-            <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {expenses.length} movimientos · neto {money(netFiltered)}</span>
+            <span>Ingresos: <span className="font-semibold text-success-ink">+{money(incomeTotal)}</span></span>
+            <span>Egresos: <span className="font-semibold text-error-ink">-{money(expenseTotal)}</span></span>
+            <span aria-live="polite" className="font-semibold text-content-body" id="conteo-resultados">{filtered.length} de {expenses.length} movimientos · neto {money(netFiltered)}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={!filtered.length} onClick={() => exportExpenses(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
@@ -247,8 +250,8 @@ export default function ComercioGastosPage() {
         </div>
 
         {!loading && filtered.length ? (
-          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-            {filtered.map((expense) => {
+          <><ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {ventana.visibles.map((expense) => {
               const cardBody = (
                 <>
                   <div className="flex items-start justify-between gap-2">
@@ -258,8 +261,8 @@ export default function ComercioGastosPage() {
                     </div>
                     <StatusPill tone={expense.status === "active" ? "ok" : "muted"}>{expense.status === "active" ? "Activo" : "Anulado"}</StatusPill>
                   </div>
-                  <p className={`mt-1 text-lg font-semibold ${expense.direction === "income" ? "text-success" : "text-error"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</p>
-                  {access.canWrite ? <p className="mt-2 text-xs font-medium text-apex">Abrir ficha</p> : null}
+                  <p className={`mt-1 text-lg font-semibold ${expense.direction === "income" ? "text-success-ink" : "text-error-ink"}`}>{expense.direction === "income" ? "+" : "-"}{money(expense.amount)}</p>
+                  {access.canWrite ? <p className="mt-2 text-xs font-medium text-apex-ink">Abrir ficha</p> : null}
                 </>
               );
               return (
@@ -271,6 +274,12 @@ export default function ComercioGastosPage() {
               );
             })}
           </ul>
+        {ventana.restantes > 0 ? (
+          <div className="px-4 pb-4">
+            <Button onClick={ventana.ampliar} size="compact" variant="secondary"><ChevronDown size={14} /> Ver {ventana.restantes} más</Button>
+          </div>
+        ) : null}
+        </>
         ) : null}
 
         <div className="hidden p-4 lg:block">
@@ -278,12 +287,12 @@ export default function ComercioGastosPage() {
             bulkActions={(selected, clear) => (
               <>
                 <Button onClick={() => exportExpenses(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
-                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar selección</Button>
               </>
             )}
             columns={columns}
-            emptyDetail={expenses.length ? "Cambia el filtro de direccion o limpia el buscador para volver a ver movimientos." : "Registra el primer ingreso o egreso para llevar el caja del dia a dia."}
-            emptyTitle={expenses.length ? "Ningun movimiento con estos filtros" : "Aun no hay movimientos"}
+            emptyDetail={expenses.length ? "Cambia el filtro de dirección o limpia el buscador para volver a ver movimientos." : "Registra el primer ingreso o egreso para llevar la caja del día a día."}
+            emptyTitle={expenses.length ? "Ningún movimiento con estos filtros" : "Aún no hay movimientos"}
             loading={loading}
             pageSize={12}
             rowKey={(row) => row.id}
@@ -300,8 +309,8 @@ export default function ComercioGastosPage() {
               <div className="sm:col-span-2">
                 <Field label="Tipo de movimiento">
                   <div className="flex gap-2">
-                    <button className={`flex-1 rounded-control border px-3 py-2 text-sm font-medium transition-colors ${form.direction === "expense" ? "border-error/40 bg-error/10 text-error" : "border-line text-content-body hover:bg-surface-muted"}`} onClick={() => setForm({ ...form, direction: "expense" })} type="button">Egreso</button>
-                    <button className={`flex-1 rounded-control border px-3 py-2 text-sm font-medium transition-colors ${form.direction === "income" ? "border-success/40 bg-success/10 text-success" : "border-line text-content-body hover:bg-surface-muted"}`} onClick={() => setForm({ ...form, direction: "income" })} type="button">Ingreso</button>
+                    <button className={`flex-1 rounded-control border px-3 py-2 text-sm font-medium transition-colors ${form.direction === "expense" ? "border-error/40 bg-error/10 text-error-ink" : "border-line text-content-body hover:bg-surface-muted"}`} onClick={() => setForm({ ...form, direction: "expense" })} type="button">Egreso</button>
+                    <button className={`flex-1 rounded-control border px-3 py-2 text-sm font-medium transition-colors ${form.direction === "income" ? "border-success/40 bg-success/10 text-success-ink" : "border-line text-content-body hover:bg-surface-muted"}`} onClick={() => setForm({ ...form, direction: "income" })} type="button">Ingreso</button>
                   </div>
                 </Field>
               </div>
@@ -310,7 +319,7 @@ export default function ComercioGastosPage() {
                   <input className="control" maxLength={160} onChange={(event) => setForm({ ...form, concept: event.target.value })} required value={form.concept} />
                 </Field>
               </div>
-              <Field label="Categoria (opcional)">
+              <Field label="Categoría (opcional)">
                 <input className="control" maxLength={80} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Servicios, Arriendo..." value={form.category} />
               </Field>
               <Field label="Valor">
@@ -354,7 +363,7 @@ export default function ComercioGastosPage() {
             <p className="text-sm text-content-body">{voidTarget.concept} · {money(voidTarget.amount)}. El movimiento queda como anulado en el historial y sale de los totales.</p>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
               <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setVoidTarget(null)} type="button">Cancelar</button>
-              <button className="apex-primary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={saving} onClick={() => void voidExpense()} type="button"><Ban size={14} /> {saving ? "Anulando..." : "Confirmar anulacion"}</button>
+              <button className="apex-primary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={saving} onClick={() => void voidExpense()} type="button"><Ban size={14} /> {saving ? "Anulando..." : "Confirmar anulación"}</button>
             </div>
           </div>
         </ModalFrame>
@@ -367,7 +376,7 @@ function FilterChip({ active, icon, label, onClick }: { active: boolean; icon?: 
   return (
     <button
       aria-pressed={active}
-      className={`inline-flex min-h-9 items-center gap-1.5 rounded-control border px-3 text-xs font-semibold transition-colors ${active ? "border-apex/40 bg-apex/10 text-apex" : "border-line text-content-body hover:bg-surface-muted"}`}
+      className={`inline-flex min-h-9 items-center gap-1.5 rounded-control border px-3 text-xs font-semibold transition-colors ${active ? "border-apex/40 bg-apex/10 text-apex-ink" : "border-line text-content-body hover:bg-surface-muted"}`}
       onClick={onClick}
       type="button"
     >

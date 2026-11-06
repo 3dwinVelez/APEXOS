@@ -126,8 +126,8 @@ export function SalesTrendChart({ data }: { data: { date: string; total: number 
           <XAxis dataKey="date" axisLine={false} tickLine={false} minTickGap={16} tick={{ fill: palette.text, fontSize: 11 }}
             tickFormatter={(value: string) => `${value.slice(8, 10)}/${value.slice(5, 7)}`} />
           <YAxis axisLine={false} tickLine={false} width={56} tick={{ fill: palette.text, fontSize: 11 }} tickFormatter={(value: number) => compact(value)} />
-          <Tooltip contentStyle={palette.tooltip} labelFormatter={(label: string) => `Dia ${label}`}
-            formatter={(value: number | string, name: string) => [money(Number(value)), name === "tendencia" ? "Promedio 7 dias" : "Ventas del dia"]} />
+          <Tooltip contentStyle={palette.tooltip} labelFormatter={(label: string) => `Día ${label}`}
+            formatter={(value: number | string, name: string) => [money(Number(value)), name === "tendencia" ? "Promedio 7 días" : "Ventas del día"]} />
           <Area isAnimationActive={false} type="monotone" dataKey="total" stroke={palette.apex} strokeWidth={2.5} fill="url(#comercioSales)" name="total" />
           {rows.length > 2 ? <Line isAnimationActive={false} type="monotone" dataKey="tendencia" stroke={palette.info} strokeWidth={2} strokeDasharray="5 4" dot={false} name="tendencia" /> : null}
         </ComposedChart>

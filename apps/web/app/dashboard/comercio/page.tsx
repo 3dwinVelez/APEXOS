@@ -42,28 +42,28 @@ const COMERCIO_APPS = [
     title: "Vender y cobrar hoy",
     detail: "El mostrador: registrar la venta, revisar el comprobante y cobrar lo pendiente.",
     actions: [
-      { href: "/dashboard/comercio/vender", title: "Vender", detail: "Cobro en efectivo, medio digital o credito con cuotas.", icon: ShoppingCart, primary: true },
-      { href: "/dashboard/comercio/ventas", title: "Ventas", detail: "Comprobantes emitidos, su detalle y anuracion con motivo.", icon: Receipt },
-      { href: "/dashboard/comercio/cartera", title: "Cartera", detail: "Creditos vigentes y vencidos con abono por cuota.", icon: HandCoins }
+      { href: "/dashboard/comercio/vender", title: "Vender", detail: "Cobro en efectivo, medio digital o crédito con cuotas.", icon: ShoppingCart, primary: true },
+      { href: "/dashboard/comercio/ventas", title: "Ventas", detail: "Comprobantes emitidos, su detalle y anulación con motivo.", icon: Receipt },
+      { href: "/dashboard/comercio/cartera", title: "Cartera", detail: "Créditos vigentes y vencidos con abono por cuota.", icon: HandCoins }
     ]
   },
   {
     title: "Maestros del negocio",
-    detail: "Lo que sostienes en stock y con quien trabajas.",
+    detail: "Lo que sostienes en stock y con quién trabajas.",
     actions: [
       { href: "/dashboard/comercio/productos", title: "Productos", detail: "Foto, precio de lista, descuento, costo promedio y stock.", icon: Package },
       { href: "/dashboard/comercio/clientes", title: "Clientes", detail: "Documento, contacto y saldo de cada cliente.", icon: Users },
-      { href: "/dashboard/comercio/compras", title: "Compras", detail: "Recepcion de mercancia y recosto del promedio ponderado.", icon: Wallet }
+      { href: "/dashboard/comercio/compras", title: "Compras", detail: "Recepción de mercancía y recosto del promedio ponderado.", icon: Wallet }
     ]
   },
   {
     title: "Caja, resultados y vitrina",
-    detail: "El dinero que entra y sale, como va el mes y que ven tus clientes.",
+    detail: "El dinero que entra y sale, cómo va el mes y qué ven tus clientes.",
     actions: [
-      { href: "/dashboard/comercio/gastos", title: "Ingresos y egresos", detail: "Movimientos de caja por direccion, medio y responsable.", icon: BarChart3 },
-      { href: "/dashboard/comercio/reportes", title: "Reportes", detail: "Tendencia diaria, margen, rankings y exportacion a Excel.", icon: TrendingUp },
-      { href: "/dashboard/comercio/promociones", title: "Promociones", detail: "Campanas con vigencia, segmentos y envio por WhatsApp.", icon: Megaphone },
-      { href: "/dashboard/comercio/configuracion", title: "Configuracion", detail: "Datos del negocio, redes, WhatsApp y vitrina publica.", icon: Settings2 }
+      { href: "/dashboard/comercio/gastos", title: "Ingresos y egresos", detail: "Movimientos de caja por dirección, medio y responsable.", icon: BarChart3 },
+      { href: "/dashboard/comercio/reportes", title: "Reportes", detail: "Tendencia diaria, margen, rankings y exportación a Excel.", icon: TrendingUp },
+      { href: "/dashboard/comercio/promociones", title: "Promociones", detail: "Campañas con vigencia, segmentos y envío por WhatsApp.", icon: Megaphone },
+      { href: "/dashboard/comercio/configuracion", title: "Configuración", detail: "Datos del negocio, redes, WhatsApp y vitrina pública.", icon: Settings2 }
     ]
   }
 ] as const;
@@ -100,10 +100,9 @@ export default function ComercioHome() {
       <header className="apex-section-card p-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-medium text-apex">M-30 · Comercial</p>
             <h1 className="text-3xl font-semibold">Comercio</h1>
             <p className="mt-1 max-w-3xl text-sm text-content-body">
-              Tienda autonoma con su propio inventario, cartera y caja. Sus datos no se mezclan con el ERP.
+              Tu tienda con su propio inventario, ventas, cartera y caja. Cobra en el mostrador, revisa lo que queda por reponer y mide el resultado del mes.
             </p>
           </div>
           <Link className="apex-secondary-action inline-flex items-center gap-2" href="/dashboard/comercio/vender">
@@ -122,7 +121,7 @@ export default function ComercioHome() {
             <Kpi label="Egresos del mes" tone="error" value={money(expenseMonth)}
               detail={`Compras ${money(data.month.purchases)} · gastos ${money(data.month.expenses)}`} />
             <Kpi label="Resultado estimado" tone={data.month.estimated_result >= 0 ? "neutral" : "error"} value={money(data.month.estimated_result)}
-              detail={`Margen bruto ${money(data.month.gross_margin)} · costo mercancia ${money(data.month.cost_of_goods)}`} />
+              detail={`Margen bruto ${money(data.month.gross_margin)} · costo mercancía ${money(data.month.cost_of_goods)}`} />
             <Kpi label="Cartera pendiente" tone={data.month.overdue_receivable > 0 ? "warning" : "neutral"} value={money(data.month.receivable)}
               detail={data.month.overdue_receivable > 0 ? `Vencido ${money(data.month.overdue_receivable)}` : "Sin cuentas vencidas"} />
           </>
@@ -134,8 +133,8 @@ export default function ComercioHome() {
         {loading || !data ? <Skeleton className="h-5 w-64" /> : (
           <>
             <p>Ventas: <span className="font-semibold text-content-strong">{money(data.today.sales)}</span></p>
-            <p>Ingresos extra: <span className="font-semibold text-success">{money(data.today.income)}</span></p>
-            <p>Gastos: <span className="font-semibold text-error">{money(data.today.expenses)}</span></p>
+            <p>Ingresos extra: <span className="font-semibold text-success-ink">{money(data.today.income)}</span></p>
+            <p>Gastos: <span className="font-semibold text-error-ink">{money(data.today.expenses)}</span></p>
             <p>Efectivo recaudado: <span className="font-semibold text-content-strong">{money(data.today.cash_collected)}</span></p>
             <p>Inventario valorado: <span className="font-semibold text-content-strong">{money(data.month.inventory_value)}</span></p>
           </>
@@ -143,14 +142,14 @@ export default function ComercioHome() {
       </section>
 
       {data && data.low_stock.length > 0 ? (
-        <Alert tone="warning" title={`Reposicion pendiente · ${data.low_stock.length} productos por debajo del minimo`}>
+        <Alert tone="warning" title={`Reposición pendiente · ${data.low_stock.length} productos por debajo del mínimo`}>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {data.low_stock.slice(0, 6).map((product) => (
               <span key={product.id}><span className="font-mono text-xs">{product.code}</span> {product.name}: {product.stock} u (min {product.min_stock})</span>
             ))}
           </div>
-          <Link className="mt-2 inline-flex items-center gap-1 font-semibold text-content-strong underline underline-offset-2" href="/dashboard/comercio/productos">
-            <AlertTriangle size={14} /> Ajustar stock y minimos
+          <Link className="mt-2 inline-flex min-h-6 items-center gap-1 font-semibold text-content-strong underline underline-offset-2" href="/dashboard/comercio/productos">
+            <AlertTriangle size={14} /> Ajustar stock y mínimos
           </Link>
         </Alert>
       ) : null}
@@ -186,37 +185,37 @@ export default function ComercioHome() {
                 );
               })}
             </ul>
-          ) : <EmptyState className="min-h-32 border-0 py-6" title="Sin recaudo en el mes" description="Cuando registres la primera venta veras aqui como entra el dinero." />}
+          ) : <EmptyState className="min-h-32 border-0 py-6" title="Sin recaudo en el mes" description="Cuando registres la primera venta verás aquí cómo entra el dinero." />}
         </Panel>
-        <Panel title="Productos mas vendidos" href="/dashboard/comercio/reportes" hrefLabel="Ver reportes">
+        <Panel title="Productos más vendidos" href="/dashboard/comercio/reportes" hrefLabel="Ver reportes">
           {data && data.top_products.length ? (
             <ul className="mt-2 divide-y divide-line text-sm">
               {data.top_products.slice(0, 6).map((product, index) => (
                 <li className="flex items-center gap-3 py-2" key={product.product_id ?? `${product.product_name}-${index}`}>
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-apex/10 text-xs font-bold text-apex">{index + 1}</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-apex/10 text-xs font-bold text-apex-ink">{index + 1}</span>
                   <span className="min-w-0 flex-1 truncate text-content-body">{product.product_name}</span>
                   <span className="text-xs text-content-muted">{product.quantity} u</span>
                   <span className="font-semibold text-content-strong">{money(product.revenue)}</span>
                 </li>
               ))}
             </ul>
-          ) : <EmptyState className="min-h-32 border-0 py-6" title="Aun sin ventas" description="El ranking se construye desde las ventas del mes en curso." />}
+          ) : <EmptyState className="min-h-32 border-0 py-6" title="Aún sin ventas" description="El ranking se construye desde las ventas del mes en curso." />}
         </Panel>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Ultimas ventas" href="/dashboard/comercio/ventas" hrefLabel="Ver todas">
+        <Panel title="Últimas ventas" href="/dashboard/comercio/ventas" hrefLabel="Ver todas">
           {data && data.recent_sales.length ? (
             <ul className="mt-2 divide-y divide-line text-sm">
               {data.recent_sales.map((sale) => (
                 <li className="flex items-center justify-between gap-2 py-2" key={sale.id}>
                   <span className="font-mono text-xs text-content-muted">{sale.full_number}</span>
-                  <span className="min-w-0 flex-1 truncate text-content-body">{sale.customer_name || (sale.payment_type === "credit" ? "Credito" : "Contado")}</span>
+                  <span className="min-w-0 flex-1 truncate text-content-body">{sale.customer_name || (sale.payment_type === "credit" ? "Crédito" : "Contado")}</span>
                   <span className="font-semibold text-content-strong">{money(sale.total)}</span>
                 </li>
               ))}
             </ul>
-          ) : <EmptyState className="min-h-32 border-0 py-6" title="Aun no hay ventas" description="Abre el mostrador para registrar la primera." />}
+          ) : <EmptyState className="min-h-32 border-0 py-6" title="Aún no hay ventas" description="Abre el mostrador para registrar la primera." />}
         </Panel>
         <Panel title="Movimientos de inventario" href="/dashboard/comercio/productos" hrefLabel="Ver productos">
           {data && data.recent_movements.length ? (
@@ -224,12 +223,12 @@ export default function ComercioHome() {
               {data.recent_movements.map((movement) => (
                 <li className="flex items-center justify-between gap-2 py-2" key={movement.id}>
                   <span className="min-w-0 flex-1 truncate text-content-body">{movement.product_name}</span>
-                  <span className={movement.change >= 0 ? "font-semibold text-success" : "font-semibold text-error"}>{movement.change > 0 ? "+" : ""}{movement.change}</span>
+                  <span className={movement.change >= 0 ? "font-semibold text-success-ink" : "font-semibold text-error-ink"}>{movement.change > 0 ? "+" : ""}{movement.change}</span>
                   <span className="w-28 shrink-0 truncate text-right text-xs text-content-muted">{movement.reason}</span>
                 </li>
               ))}
             </ul>
-          ) : <EmptyState className="min-h-32 border-0 py-6" title="Sin movimientos todavia" description="Compras, ventas y ajustes quedan registrados aqui." />}
+          ) : <EmptyState className="min-h-32 border-0 py-6" title="Sin movimientos todavía" description="Compras, ventas y ajustes quedan registrados aquí." />}
         </Panel>
       </div>
     </div>
@@ -237,9 +236,9 @@ export default function ComercioHome() {
 }
 
 const kpiTones = {
-  success: "text-success",
-  error: "text-error",
-  warning: "text-warning",
+  success: "text-success-ink",
+  error: "text-error-ink",
+  warning: "text-warning-ink",
   neutral: "text-content-strong"
 } as const;
 
@@ -260,7 +259,7 @@ function Panel({ title, href, hrefLabel, children }: { title: string; href: stri
         <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-content-strong">
           <Boxes size={16} className="text-apex" /> {title}
         </h2>
-        <Link className="inline-flex items-center gap-1 text-xs font-semibold text-apex" href={href}>{hrefLabel} <ArrowUpRight size={13} /></Link>
+        <Link className="inline-flex min-h-6 items-center gap-1 text-xs font-semibold text-apex-ink" href={href}>{hrefLabel} <ArrowUpRight size={13} /></Link>
       </div>
       {children}
     </section>

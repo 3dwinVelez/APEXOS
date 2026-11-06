@@ -6,6 +6,7 @@ import { Building2, Copy, Globe, ImagePlus, Layers, Megaphone, Monitor, Palette,
 import { twMerge } from "tailwind-merge";
 import { api } from "@/lib/api";
 import { ComercioMessages, Field, ModuleHeader, comercioGate, describeError, useComercioAccess } from "@/components/comercio/shared";
+import { Skeleton } from "@/components/ui/feedback";
 import { buildStorefrontVars, contrastRatioHex, DEFAULT_STOREFRONT_THEME, tripletToHex, type BackgroundPattern, type BannerScrim, type CornerRadius, type StorefrontTheme, type SurfaceDepth, type SurfaceTint } from "@/components/comercio/storefront-theme";
 // El previsualizador del panel usa las mismas clases sf-* de la vitrina: lo que se ve
 // aqui es literalmente lo que vera el cliente.
@@ -94,6 +95,8 @@ const RAMP_SPECS: Array<{ label: string; fgVar: string; bgVar: string; min: numb
   { label: "Títulos", fgVar: "--sf-ink-strong-t", bgVar: "--sf-surface-t", min: 4.5 },
   { label: "Texto de producto", fgVar: "--sf-ink-body-t", bgVar: "--sf-surface-t", min: 4.5 },
   { label: "Texto secundario", fgVar: "--sf-ink-secondary-t", bgVar: "--sf-surface-t", min: 3 },
+  { label: "Tenue (Referencia y contadores)", fgVar: "--sf-ink-muted-t", bgVar: "--sf-surface-t", min: 4.5 },
+  { label: "Microcopy (pie y avisos)", fgVar: "--sf-ink-faint-t", bgVar: "--sf-surface-t", min: 4.5 },
   { label: "Precio en acento", fgVar: "--sf-accent-text-t", bgVar: "--sf-surface-t", min: 4.5 },
   { label: "Etiqueta de promoción", fgVar: "--sf-promo-text-t", bgVar: "--sf-surface-t", min: 4.5 },
   { label: "Botón primario", fgVar: "--sf-on-accent", bgVar: "--sf-accent-t", min: 4.5 },
@@ -148,7 +151,7 @@ function ModePicker<T extends string>({ disabled, help, label, onChange, options
             aria-pressed={option.value === value}
             className={twMerge(
               "rounded-control border px-2.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex",
-              option.value === value ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body hover:border-apex hover:text-content-strong"
+              option.value === value ? "border-apex bg-apex/10 text-apex-ink" : "border-line bg-surface text-content-body hover:border-apex hover:text-content-strong"
             )}
             disabled={disabled}
             key={option.value}
@@ -180,7 +183,7 @@ function ContrastRamp({ vars }: { vars: Record<string, string> }) {
             <span className="flex h-6 w-9 shrink-0 items-center justify-center rounded-control border border-line text-[11px] font-bold" style={{ backgroundColor: bg, color: fg }}>Aa</span>
             <span className="flex-1 truncate text-content-body">{spec.label}</span>
             <span className="font-mono text-[10px] uppercase text-content-muted">{fg}</span>
-            <span className={twMerge("w-12 text-right font-mono text-[11px] font-semibold", ok ? "text-success" : "text-warning")}>{ratio.toFixed(1)}:1</span>
+            <span className={twMerge("w-12 text-right font-mono text-[11px] font-semibold", ok ? "text-success-ink" : "text-warning-ink")}>{ratio.toFixed(1)}:1</span>
           </li>
         );
       })}
@@ -450,7 +453,7 @@ export default function ComercioConfiguracionPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Configuración" subtitle="Datos del negocio para el comprobante y la personalización de tu página pública. Afecta solo a este tenant." title="Configuración del comercio" />
+      <ModuleHeader subtitle="Datos del negocio que salen en el comprobante y apariencia de tu página pública. Los cambios aplican solo a este comercio y se reflejan al instante en la vitrina." title="Configuración del comercio" />
 
       <div aria-label="Secciones de la configuración" className="grid grid-cols-2 gap-2 sm:max-w-2xl sm:grid-cols-3" role="tablist">
         {tabs.map((entry) => (
@@ -459,7 +462,7 @@ export default function ComercioConfiguracionPage() {
             aria-selected={tab === entry.id}
             className={twMerge(
               "inline-flex h-10 items-center justify-center gap-2 rounded-control border px-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex",
-              tab === entry.id ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body hover:border-apex hover:text-content-strong"
+              tab === entry.id ? "border-apex bg-apex/10 text-apex-ink" : "border-line bg-surface text-content-body hover:border-apex hover:text-content-strong"
             )}
             key={entry.id}
             onClick={() => {
@@ -479,8 +482,11 @@ export default function ComercioConfiguracionPage() {
       <ComercioMessages error={error} message={message} />
 
       {loading || !settings ? (
-        <section className="apex-section-card p-4">
-          <p className="text-sm text-content-body">Cargando configuración...</p>
+        <section aria-busy="true" className="apex-section-card space-y-3 p-4">
+          <Skeleton className="h-6 w-56 rounded-control" />
+          <Skeleton className="h-10 rounded-control" />
+          <Skeleton className="h-10 rounded-control" />
+          <Skeleton className="h-10 rounded-control" />
         </section>
       ) : null}
 
@@ -536,7 +542,7 @@ export default function ComercioConfiguracionPage() {
                   <input className="control flex-1 font-mono text-xs" readOnly value={`${typeof window === "undefined" ? "" : window.location.origin}/tienda/${settings.catalog_code}`} />
                   <button className="h-7 min-h-0 apex-secondary-action flex items-center gap-2 whitespace-nowrap px-3 text-xs font-semibold" disabled={!access.canWrite || catalogBusy} onClick={() => void copyLink()} type="button"><Copy size={13} /> Copiar</button>
                   <button
-                    className={twMerge("flex items-center gap-2 whitespace-nowrap rounded-control border px-3 text-xs", confirmRegen ? "border-error/40 bg-error/10 text-error" : "border-line text-content-body hover:bg-surface-muted")}
+                    className={twMerge("flex items-center gap-2 whitespace-nowrap rounded-control border px-3 text-xs", confirmRegen ? "border-error/40 bg-error/10 text-error-ink" : "border-line text-content-body hover:bg-surface-muted")}
                     disabled={!access.canWrite || catalogBusy}
                     onBlur={() => setConfirmRegen(false)}
                     onClick={() => void regenerateCode()}
@@ -546,7 +552,7 @@ export default function ComercioConfiguracionPage() {
                   </button>
                 </div>
               </Field>
-              {copied ? <p className="text-xs font-medium text-success">{copied.startsWith("http") ? copied : "Link copiado al portapapeles."}</p> : null}
+              {copied ? <p className="text-xs font-medium text-success-ink">{copied.startsWith("http") ? copied : "Link copiado al portapapeles."}</p> : null}
               {/* Un solo formulario para todo lo de la vitrina (frase, contacto y redes):
                   evita un boton de guardar por campo. */}
               <form className="space-y-3" onSubmit={saveVitrine}>
@@ -560,7 +566,7 @@ export default function ComercioConfiguracionPage() {
                   <Field label="WhatsApp para pedidos (con código de país, ej. +573001112233)">
                     <input className="control" disabled={!access.canWrite || catalogBusy} maxLength={32} onChange={(event) => setWhatsapp(event.target.value)} placeholder="+57..." value={whatsapp} />
                   </Field>
-                  {!whatsapp.trim() ? <p className="text-xs text-warning">Sin número de WhatsApp, la vitrina muestra los productos pero el botón de pedido queda deshabilitado.</p> : null}
+                  {!whatsapp.trim() ? <p className="text-xs text-warning-ink">Sin número de WhatsApp, la vitrina muestra los productos pero el botón de pedido queda deshabilitado.</p> : null}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field label="Instagram (usuario o URL)">
                       <input className="control" disabled={!access.canWrite || catalogBusy} maxLength={200} onChange={(event) => setInstagram(event.target.value)} placeholder="instagram.com/mitienda" value={instagram} />
@@ -573,7 +579,7 @@ export default function ComercioConfiguracionPage() {
                 </Subsection>
 
                 <Subsection help="Las campañas tienen su propia aplicación: varias a la vez, segmentos por categoría o producto y envío por WhatsApp a tus clientes." icon={Megaphone} label="Campañas y descuentos">
-                  <Link className="inline-flex items-center gap-1 text-xs font-semibold text-apex" href="/dashboard/comercio/promociones">Abrir Promociones</Link>
+                  <Link className="inline-flex items-center gap-1 text-xs font-semibold text-apex-ink" href="/dashboard/comercio/promociones">Abrir Promociones</Link>
                 </Subsection>
 
                 {access.canWrite ? (
@@ -687,7 +693,7 @@ export default function ComercioConfiguracionPage() {
                   <p className="text-[11px] text-content-muted">Sin titular, la vitrina usa la frase de la pestaña Vitrina; sin subtítulo, escribe la ayuda de pedido.</p>
                   <ModePicker
                     disabled={!access.canWrite || appearanceBusy}
-                    help={bannerPreview ? "Que tan oscuro queda el velo sobre tu foto. Con una foto clara y un titular largo, sube a Fuerte." : "Solo se nota cuando hay una foto en el cartel: sin foto no hay velo."}
+                    help={bannerPreview ? "Qué tan oscuro queda el velo sobre tu foto. Con una foto clara y un titular largo, sube a Fuerte." : "Solo se nota cuando hay una foto en el cartel: sin foto no hay velo."}
                     label="Velo sobre la foto"
                     onChange={(value) => setAppearance({ ...appearance, banner_scrim: value })}
                     options={SCRIM_OPTIONS}
@@ -705,7 +711,7 @@ export default function ComercioConfiguracionPage() {
                       </button>
                       {bannerPreview ? (
                         <button
-                          className={twMerge("flex items-center gap-2 rounded-control border px-3 text-xs", confirmRemoveBanner ? "border-error/40 bg-error/10 text-error" : "border-line text-content-body hover:bg-surface-muted")}
+                          className={twMerge("flex items-center gap-2 rounded-control border px-3 text-xs", confirmRemoveBanner ? "border-error/40 bg-error/10 text-error-ink" : "border-line text-content-body hover:bg-surface-muted")}
                           disabled={!access.canWrite || appearanceBusy}
                           onBlur={() => setConfirmRemoveBanner(false)}
                           onClick={() => {
@@ -722,7 +728,7 @@ export default function ComercioConfiguracionPage() {
 
                   <div className="border-t border-line pt-3">
                     <p className="flex items-center gap-2 text-xs font-semibold text-content-strong"><Sparkles size={14} /> Generar con modelo gratuito</p>
-                    <p className="mt-0.5 text-xs text-content-muted">Describe la imagen y el generador la sube como banner. Puede tardar unos segundos; si el resultado no convence, gener otra o sube tu foto.</p>
+                    <p className="mt-0.5 text-xs text-content-muted">Describe la imagen y el generador la sube como banner. Puede tardar unos segundos; si el resultado no convence, genera otra o sube tu foto.</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <input
                         className="control min-w-[14rem] flex-1"
@@ -741,7 +747,7 @@ export default function ComercioConfiguracionPage() {
 
                 {access.canWrite ? (
                   <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line pt-4">
-                    {themeDirty ? <span className="text-[11px] font-medium text-warning">Cambios sin guardar</span> : <span className="text-[11px] text-content-muted">Apariencia al día</span>}
+                    {themeDirty ? <span className="text-[11px] font-medium text-warning-ink">Cambios sin guardar</span> : <span className="text-[11px] text-content-muted">Apariencia al día</span>}
                     <button className="apex-primary-action flex items-center gap-2 px-4 text-sm font-semibold" disabled={appearanceBusy} onClick={() => void saveAppearance()} type="button">
                       <Save size={13} /> {appearanceBusy ? "Guardando..." : "Guardar apariencia"}
                     </button>
@@ -760,7 +766,7 @@ export default function ComercioConfiguracionPage() {
                     {([["escritorio", Monitor], ["movil", Smartphone]] as const).map(([kind, Icon]) => (
                       <button
                         aria-pressed={viewport === kind}
-                        className={twMerge("rounded-control border p-1.5 transition-colors", viewport === kind ? "border-apex bg-apex/10 text-apex" : "border-line text-content-muted hover:text-content-strong")}
+                        className={twMerge("rounded-control border p-1.5 transition-colors", viewport === kind ? "border-apex bg-apex/10 text-apex-ink" : "border-line text-content-muted hover:text-content-strong")}
                         key={kind}
                         onClick={() => setViewport(kind)}
                         title={kind === "movil" ? "Ver en celular" : "Ver en escritorio"}
@@ -824,7 +830,7 @@ export default function ComercioConfiguracionPage() {
                     <ContrastRamp vars={previewVars} />
                   </div>
                   {contrastFallos.length ? (
-                    <p className="mt-2 text-[11px] text-warning">
+                    <p className="mt-2 text-[11px] text-warning-ink">
                       Con este fondo no se lee bien: {contrastFallos.map((fallo) => fallo.label.toLowerCase()).join(", ")}. Prueba un fondo más claro o más oscuro, o baja la
                       profundidad de las tarjetas.
                     </p>

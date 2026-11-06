@@ -46,7 +46,7 @@ test("el tema default reproduce la paleta original de la vitrina", () => {
   // Tolerancia de un punto: la rampa ahora sale de OKLab y del contraste medido.
   assert.ok(Math.abs(Number(vars["--sf-ink-strong-t"].split(" ")[0]) - 245) <= 6);
   assert.ok(Math.abs(Number(vars["--sf-ink-secondary-t"].split(" ")[0]) - 163) <= 4);
-  assert.ok(Math.abs(Number(vars["--sf-ink-muted-t"].split(" ")[0]) - 115) <= 4);
+  assert.ok(Math.abs(Number(vars["--sf-ink-muted-t"].split(" ")[0]) - 139) <= 4);
 });
 
 test("la letra y los botones cumplen el contraste minimo medido, no por formula", () => {
@@ -57,6 +57,11 @@ test("la letra y los botones cumplen el contraste minimo medido, no por formula"
     ["--sf-ink-strong-t", "--sf-surface-t", 4.5],
     ["--sf-ink-body-t", "--sf-surface-t", 4.5],
     ["--sf-ink-secondary-t", "--sf-surface-t", 3],
+    // El precio de referencia, «Ref. P-0019», el contador del departamento y el aviso legal
+    // del pie salen de muted/faint: es texto que el cliente lee, no decoracion. La vitrina
+    // media 3,8:1 ahi porque la lista se certificaba sin estos dos niveles.
+    ["--sf-ink-muted-t", "--sf-surface-t", 4.5],
+    ["--sf-ink-faint-t", "--sf-surface-t", 4.5],
     ["--sf-accent-text-t", "--sf-surface-t", 4.5],
     ["--sf-promo-text-t", "--sf-surface-t", 4.5],
     ["--sf-accent-soft-t", "--sf-surface-t", 4.5]

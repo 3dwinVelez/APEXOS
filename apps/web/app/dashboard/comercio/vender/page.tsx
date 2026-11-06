@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Minus, Plus, Search, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
+import { Skeleton } from "@/components/ui/feedback";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
@@ -58,7 +60,7 @@ export default function ComercioVenderPage() {
       setCustomers(customerRows.items.filter((row) => row.active));
       setReady(true);
     } catch (caught) {
-      setLoadError(describeError(caught, "No fue posible cargar el catalogo del comercio."));
+      setLoadError(describeError(caught, "No fue posible cargar el catálogo del comercio."));
     }
   }, []);
 
@@ -109,7 +111,7 @@ export default function ComercioVenderPage() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!cart.length) { setError("Agrega al menos un producto al carrito."); return; }
-    if (isCredit && !customerId) { setError("Las ventas a credito exigen un cliente."); return; }
+    if (isCredit && !customerId) { setError("Las ventas a crédito exigen un cliente."); return; }
     setSaving(true);
     setError("");
     try {
@@ -150,22 +152,28 @@ export default function ComercioVenderPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Ventas" subtitle="Venta rapida en Mostrador o a credito con cuotas sin interes. Los precios los fija el servidor: la pantalla es solo el carrito." title="Vender" />
+      <ModuleHeader section="Ventas" subtitle="Arma el carrito desde el catálogo y cobra en mostrador o a crédito con cuotas sin interés. Los precios los fija el servidor: aquí solo eliges producto y cantidad." title="Vender" />
       <ComercioMessages error={loadError || error} />
 
       {!ready ? (
-        <div className="apex-section-card p-6 text-sm text-content-body">Cargando catalogo...</div>
+        <div aria-busy="true" className="apex-section-card grid gap-3 p-4">
+          <p className="text-sm text-content-body">Cargando el catálogo para vender…</p>
+          <Skeleton className="h-16 rounded-control" />
+          <Skeleton className="h-16 rounded-control" />
+          <Skeleton className="h-16 rounded-control" />
+        </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <section aria-label="Catalogo" className="apex-section-card p-4">
+          <section aria-label="Catálogo" className="apex-section-card p-4">
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)]">
-              <Field label="Buscar">
-                <span className="relative block">
-                  <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
-                  <input aria-label="Buscar producto por nombre, codigo, categoria o unidad" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, codigo o categoria" value={query} />
-                </span>
-              </Field>
-              <Field hint={categories.length ? `${categories.length} categorias disponibles` : undefined} label="Categoria">
+              <SearchField
+                hint="Ignora acentos y mayúsculas"
+                label="Buscar producto"
+                onChange={setQuery}
+                placeholder="Nombre, código o categoría"
+                value={query}
+              />
+              <Field hint={categories.length ? `${categories.length} categorías disponibles` : undefined} label="Categoría">
                 <select className="control apex-select" onChange={(event) => setCategory(event.target.value)} value={category}>
                   <option value="">Todas</option>
                   {categories.map((name) => <option key={name} value={name}>{name}</option>)}
@@ -174,15 +182,15 @@ export default function ComercioVenderPage() {
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2 text-xs text-content-muted">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <Check checked={showAll} label="Ver todo el catalogo" onChange={setShowAll} />
-                <span aria-live="polite" className="font-semibold text-content-body">{visibleProducts.length} de {matchingProducts.length} productos</span>
+                <Check checked={showAll} label="Ver todo el catálogo" onChange={setShowAll} />
+                <span aria-live="polite" className="font-semibold text-content-body" id="conteo-resultados">{visibleProducts.length} de {matchingProducts.length} productos</span>
               </div>
               <span>Toca una tarjeta para agregarla al carrito. El precio lo fija el servidor.</span>
             </div>
             {visibleProducts.length === 0 ? (
               <p className="mt-4 text-sm text-content-muted">
-                No hay productos que coincidan con la busqueda.{" "}
-                <button className="font-semibold text-apex underline underline-offset-2" onClick={() => { setQuery(""); setCategory(""); }} type="button">Limpiar la busqueda</button>
+                No hay productos que coincidan con la búsqueda.{" "}
+                <button className="font-semibold text-apex-ink underline underline-offset-2" onClick={() => { setQuery(""); setCategory(""); }} type="button">Limpiar la búsqueda</button>
               </p>
             ) : (
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -201,11 +209,11 @@ export default function ComercioVenderPage() {
                         {product.sale_discount_percent > 0 ? (
                           <>
                             <span className="text-xs font-normal text-content-muted line-through">{money(product.price)}</span>
-                            <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-[11px] font-semibold text-success">-{product.sale_discount_percent}%</span>
+                            <span className="rounded-full bg-success/10 px-1.5 py-0.5 text-[11px] font-semibold text-success-ink">-{product.sale_discount_percent}%</span>
                           </>
                         ) : null}
                       </p>
-                      {product.low_stock ? <p className="mt-1 text-[11px] font-semibold text-warning">Stock bajo: queda(n) {product.stock}</p> : null}
+                      {product.low_stock ? <p className="mt-1 text-[11px] font-semibold text-warning-ink">Stock bajo: queda(n) {product.stock}</p> : null}
                     </button>
                   </li>
                 ))}
@@ -231,7 +239,7 @@ export default function ComercioVenderPage() {
                       <button className="rounded border border-line p-1" disabled={line.quantity >= line.stock} onClick={() => changeQuantity(line.product_id, 1)} type="button" aria-label={`Agregar una unidad de ${line.name}`}><Plus size={12} /></button>
                     </div>
                     <span className="w-24 text-right font-semibold">{money(line.price * line.quantity)}</span>
-                    <button className="text-content-muted hover:text-error" onClick={() => setCart((current) => current.filter((item) => item.product_id !== line.product_id))} type="button" aria-label={`Eliminar ${line.name} del carrito`}><Trash2 size={14} /></button>
+                    <button className="text-content-muted hover:text-error-ink" onClick={() => setCart((current) => current.filter((item) => item.product_id !== line.product_id))} type="button" aria-label={`Eliminar ${line.name} del carrito`}><Trash2 size={14} /></button>
                   </li>
                 ))}
               </ul>
@@ -249,13 +257,13 @@ export default function ComercioVenderPage() {
             <div className="rounded-md border border-line p-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold">Forma de pago</p>
-                <Check checked={isCredit} label="Venta a credito" onChange={setIsCredit} />
+                <Check checked={isCredit} label="Venta a crédito" onChange={setIsCredit} />
               </div>
               {!isCredit ? (
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {METHODS.map((option) => (
                     <button
-                      className={`rounded-md border px-2 py-2 text-sm ${method === option && !isCredit ? "border-apex bg-apex/10 font-semibold text-apex" : "border-line"}`}
+                      className={`rounded-md border px-2 py-2 text-sm ${method === option && !isCredit ? "border-apex bg-apex/10 font-semibold text-apex-ink" : "border-line"}`}
                       disabled={isCredit}
                       key={option}
                       onClick={() => setMethod(option)}
@@ -268,7 +276,7 @@ export default function ComercioVenderPage() {
               ) : (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <Field label="Cliente">
-                    <TransportSearchSelect aria-label="Buscar el cliente por codigo o nombre" className="control w-full" onChange={(event) => setCustomerId(event.target.value)} required value={customerId}>
+                    <TransportSearchSelect aria-label="Buscar el cliente por código o nombre" className="control w-full" onChange={(event) => setCustomerId(event.target.value)} required value={customerId}>
                       <option value="">Seleccione un cliente</option>
                       {customers.map((customer) => (
                         <option key={customer.id} value={String(customer.id)}>{customer.code} - {customer.name}</option>
@@ -278,7 +286,7 @@ export default function ComercioVenderPage() {
                   <Field label="Pago inicial">
                     <input className="control" min={0} onChange={(event) => setDownPayment(event.target.value)} step="0.01" type="number" value={downPayment} />
                   </Field>
-                  <Field label="Numero de cuotas">
+                  <Field label="Número de cuotas">
                     <input className="control" max={60} min={1} onChange={(event) => setInstallmentCount(event.target.value)} type="number" value={installmentCount} />
                   </Field>
                   <Field label="Frecuencia">
@@ -309,7 +317,7 @@ export default function ComercioVenderPage() {
             </div>
 
             <button className="inline-flex items-center apex-primary-action w-full px-4 text-sm font-semibold gap-2" disabled={saving || !cart.length || !access.canWrite} type="submit">
-              {saving ? "Registrando..." : isCredit ? "Vender a credito" : "Vender ahora"}
+              {saving ? "Registrando..." : isCredit ? "Vender a crédito" : "Vender ahora"}
             </button>
           </form>
         </div>
@@ -320,7 +328,7 @@ export default function ComercioVenderPage() {
           <div className="space-y-3 text-sm">
             <div className="text-center">
               <p className="text-lg font-semibold">{receipt.full_number}</p>
-              <p className="text-xs text-content-muted">{receipt.date} · {receipt.payment_type === "credit" ? "Credito" : `Pago: ${receipt.method}`}</p>
+              <p className="text-xs text-content-muted">{receipt.date} · {receipt.payment_type === "credit" ? "Crédito" : `Pago: ${receipt.method}`}</p>
               {receipt.customer_name ? <p className="text-xs text-content-muted">Cliente: {receipt.customer_name}</p> : null}
             </div>
             <ul className="divide-y divide-line">
@@ -337,8 +345,8 @@ export default function ComercioVenderPage() {
               <div className="flex justify-between font-semibold"><span>Total</span><span>{money(receipt.total)}</span></div>
             </div>
             {receipt.credit_full_number ? (
-              <p className="rounded-md border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
-                Se abrio el credito {receipt.credit_full_number}. Consulta el plan de cuotas y registra abonos en la pestaña Cartera.
+              <p className="rounded-md border border-warning/30 bg-warning/10 p-3 text-xs text-warning-ink">
+                Se abrió el crédito {receipt.credit_full_number}. Consulta el plan de cuotas y registra abonos en la pestaña Cartera.
               </p>
             ) : null}
             {receipt.note ? <p className="text-xs text-content-muted">Nota: {receipt.note}</p> : null}

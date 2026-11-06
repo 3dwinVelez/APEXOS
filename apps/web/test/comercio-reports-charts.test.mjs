@@ -43,11 +43,11 @@ test("el promedio movil de 7 dias acompana la tendencia diaria", () => {
   assert.match(charts, /function withTrend\(rows/);
   assert.match(charts, /rows\.slice\(Math\.max\(0, index - 6\), index \+ 1\)/);
   assert.match(charts, /dataKey="tendencia"/);
-  assert.match(charts, /Promedio 7 dias/);
+  assert.match(charts, /Promedio 7 días/);
 });
 
 test("los cinco presets de rango son botones presionables y sincronizan desde-hasta", () => {
-  for (const label of ['label: "Hoy"', 'label: "7 dias"', 'label: "30 dias"', 'label: "Este mes"', 'label: "Mes anterior"']) {
+  for (const label of ['label: "Hoy"', 'label: "7 días"', 'label: "30 días"', 'label: "Este mes"', 'label: "Mes anterior"']) {
     assert.ok(reportes.includes(label), `falta el preset ${label}`);
   }
   assert.match(reportes, /aria-pressed=\{activePreset === preset\.id\}/);
@@ -67,7 +67,10 @@ test("las seis tarjetas de resultado usan los campos del agregado del servidor",
 
 test("el buscador de movimientos es inteligente y deja ver cuantos filas oculta", () => {
   assert.match(reportes, /matchesQuery\(query, row\.product_name, REASON_LABELS\[row\.reason\] \|\| row\.reason, row\.reference \|\| ""\)/);
-  assert.match(reportes, /aria-label="Buscar movimiento de inventario"/);
+  // La busqueda canonica: SearchField con su etiqueta visible, no un input suelto con aria-label.
+  assert.match(reportes, /<SearchField\b[\s\S]{0,320}label="Buscar movimiento"/);
+  assert.match(reportes, /import \{ SearchField \} from "@\/components\/ui\/SearchField"/);
+  assert.doesNotMatch(reportes, /aria-label="Buscar movimiento de inventario"/);
   assert.match(reportes, /ocultos por el filtro/);
   assert.match(reportes, /\{filteredMovements\.length\} de \{movements\.length\} movimientos/);
 });
@@ -79,13 +82,13 @@ test("la traza de inventario usa la tabla moderna con orden, columnas y paginaci
   for (const id of ['id: "date"', 'id: "product"', 'id: "change"', 'id: "before"', 'id: "after"', 'id: "reason"', 'id: "reference"']) {
     assert.ok(reportes.includes(id), `falta la columna ${id}`);
   }
-  assert.match(reportes, /emptyTitle=\{hasMovementFilters \? "Ningun movimiento coincide" : "Sin movimientos en el rango"\}/);
+  assert.match(reportes, /emptyTitle=\{hasMovementFilters \? "Ningún movimiento coincide" : "Sin movimientos en el rango"\}/);
 });
 
 test("el libro de Excel lleva resumen, diario, medios, productos, clientes y movimientos", () => {
   assert.match(reportes, /import \{ downloadExcelWorkbook \} from "@\/lib\/reportExports"/);
   assert.match(reportes, /downloadExcelWorkbook\(`comercio-reportes-\$\{from\}-a-\$\{to\}\.xlsx`/);
-  for (const sheet of ["Resumen", "Ventas por dia", "Recaudo por medio", "Top productos", "Mejores clientes", "Movimientos"]) {
+  for (const sheet of ["Resumen", "Ventas por día", "Recaudo por medio", "Top productos", "Mejores clientes", "Movimientos"]) {
     assert.ok(reportes.includes(`name: "${sheet}"`), `falta la hoja ${sheet}`);
   }
   // La hoja de movimientos respeta el filtro activo: lo que se ve es lo que se exporta.
@@ -93,8 +96,11 @@ test("el libro de Excel lleva resumen, diario, medios, productos, clientes y mov
 });
 
 test("cada panel declara su estado vacio con accion en lugar de un cuadro en blanco", () => {
-  for (const detail of ["No hay ventas entre el", "Sin recaudo registrado en el rango", "Sin ventas de producto en el rango", "Sin ventas con cliente registrado en el rango", "Ningun producto esta por debajo de su minimo"]) {
+  for (const detail of ["Sin ventas en este rango", "Sin recaudo registrado", "Sin productos vendidos", "Ninguna venta con cliente asignado", "Ningún producto está por debajo de su mínimo"]) {
     assert.ok(reportes.includes(detail), `falta el estado vacio ${detail}`);
   }
+  // La tabla de movimientos distingue "no hay datos" de "el filtro no deja nada".
+  assert.match(reportes, /emptyTitle=\{hasMovementFilters \? "Ningún movimiento coincide" : "Sin movimientos en el rango"\}/);
+  assert.match(reportes, /emptyDetail="Cambie el rango de fechas o registre una compra, venta o ajuste de inventario\."/);
   assert.match(reportes, /Calculando el periodo\.\.\./);
 });
