@@ -1,0 +1,99 @@
+{
+  "change_id": "comercio-ux-pasada-20261106",
+  "commit": "f8d9be023daa6703c9811c454b606fe9ee54cc7c",
+  "reviewed_commit": "f8d9be023daa6703c9811c454b606fe9ee54cc7c",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": null,
+  "target_head": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277",
+  "qa_status": "pending",
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": null,
+    "approved_at": null,
+    "quality_gate_overridden": false,
+    "authorizations": [],
+    "nota": "Sin autorización del dueño. Este manifiesto deja la evidencia certificada y las razones de bloqueo; npm run qa:preqa:evidence debe fallar hasta que el dueño autorice la promoción."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/comercio-service.test.js",
+        "../../../apps/api/test/comercio-storage.test.js",
+        "../../../apps/api/test/comercio-storefront-theme.test.js"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/vitrina-comercio-banner-upload-20261106/browser-local.json",
+        "../../../apps/api/test/api-error-mapping.test.js"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/comercio-ux-local.js",
+        "../../../scripts/certifications/comercio-storefront-theme-local.js"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/comercio-ux-consistency.test.mjs",
+        "../../../apps/web/test/comercio-storefront-theme.test.mjs",
+        "../../../apps/web/test/comercio-storefront-resilience.test.mjs",
+        "../../../apps/web/test/comercio-reports-charts.test.mjs"
+      ]
+    },
+    "platform_regression": {
+      "status": "pending",
+      "evidence": [
+        "../evidence/comercio-ux-pasada-20261106/browser-local.json"
+      ],
+      "motivo": "La regresión de plataforma se midió en el puesto local contra la API y el PostgreSQL del puesto. La corrida completa de la suite de plataforma en el ambiente QA de Railway no está ejecutada."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-ux-local.js",
+    "evidence": [
+      "../evidence/comercio-ux-pasada-20261106/browser-local.json",
+      "../evidence/comercio-ux-pasada-20261106/recorrido.json"
+    ],
+    "resultado": "CERTIFICATION_OK total=287 fallidos=[] (la celda del «Reintentar» se provoca abortando /api/v1/comercio/dashboard)"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-storefront-theme-local.js",
+    "evidence": [
+      "../evidence/vitrina-comercio-banner-upload-20261106/browser-local.json"
+    ],
+    "resultado": "77 checks con fallidos: 0 (subida del banner leída y pintada en el navegador)"
+  },
+  "suites": {
+    "web": "648/648 (fuente y unidad, sin los certify-*.mjs de navegador)",
+    "web_certificaciones_navegador": "9/9 en serie con --test-concurrency=1; en paralelo dos revientan su waitForFunction de 30 s por disputarse el dev-server, carga del arnés y no del producto",
+    "comercio_contrato_de_fuente": "14/14",
+    "api_comercio": "69/69 (comercio-service + comercio-storage + comercio-storefront-theme + api-error-mapping)",
+    "typecheck": "limpio",
+    "lint": "0 errores, 22 avisos preexistentes",
+    "agentes": "agents:check OK, test:agents 42/42, agents:preflight OK, agents:coverage OK",
+    "transcripcion": "../evidence/comercio-ux-pasada-20261106/gates-cierre.txt"
+  },
+  "blocking_reasons": [
+    "El dueño pidió el commit listo para migrar, no la migración: no hay autorización para desarrollo → develop.",
+    "origin/develop no contiene el módulo: la promoción es la del módulo completo (28 commits, 250 rutas), no un commit puntual, y exige reconstruir el candidato.",
+    "Falta la certificación de aislamiento multi-tenant y RBAC del módulo, capacidad protegida por política.",
+    "npm run qa:preqa:evidence falla por diseño mientras approval.status siga en pending."
+  ],
+  "pending_certifications": [
+    "Aislamiento multi-tenant y RBAC de los endpoints /api/v1/comercio/**: no existe prueba versionada que los cubra (apps/api/test/comercio-service.test.js corre contra un único TENANT simulado). Es capacidad protegida de la política y debe certificarse antes de cualquier gate de promoción.",
+    "Lectura anónima del catálogo público por catalog_code entre tenants: la ruta está declarada, no certificada con dos tenants reales.",
+    "Las seis migraciones del módulo (20261026120000 a 20261028190000) aplicadas en el ambiente QA.",
+    "Certificación end-to-end del módulo en el Railway de QA, no solo en el puesto local."
+  ]
+}
