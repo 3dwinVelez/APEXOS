@@ -129,6 +129,29 @@ que esa clase de fuga no pueda repetirse.
   la sustitución de `text-rose-600`). Se registran porque una corrección en lote sin typecheck ni
   revisión del diff es exactamente la forma en que se publica una pantalla en blanco.
 
+### 2.5 El rojo que solo aparecía a veces: un estado de error sin provocar no es certificación
+
+La corrida de las puertas de cierre —con el módulo ya corregido— devolvió
+`CERTIFICATION_FAIL {"fallidos":["objetivos_tactiles_ok_portada_movil_oscuro"]}` con un único
+blanco por debajo de 24 px: el botón **«Reintentar»** de la portada (20×66). La corrida anterior
+había dado 286 en verde. La diferencia no fue el código: fue que en esta corrida la petición
+`/api/v1/comercio/dashboard` falló y la pantalla mostró su estado de error.
+
+- **El defecto era real** y estaba fuera de la matriz: el control de reintento del aviso de error
+  era un `<button>` de 20 px. Es un blanco de dedo, no un enlace en medio de un párrafo, así que la
+  excepción de WCAG 2.5.8 no lo ampara. Sube a `inline-flex min-h-6 items-center` y la prueba de
+  fuente fija el piso para que nadie lo vuelva a dejar suelto.
+- **El check era una lotería, y eso también era un defecto del arnés.** Un control que solo existe
+  cuando algo falla no puede depender de que algo falle: la certificación ahora **provoca** el
+  estado (intercepta la petición del tablero y la aborta), mide el botón sobre lo que el navegador
+  pintó y exige 24 px. La corrida pasó de 286 a **287 checks** y el detalle quedó fijado en
+  `browser-local.json` como `{"presente":true,"alto":24,"ancho":66}`.
+- **Regla que sale de aquí** (`apexos-qa` regla 33, control `estado-de-error-se-provoca-en-la-certificacion`):
+  todo estado de error, vacío o de permiso que la certificación mida tiene que ser alcanzable por
+  construcción. Si el camino normal no lo provoca, se provoca desde el arnés (petición abortada,
+  tenant sin datos, rol sin permiso) o el check no cuenta como evidencia. Y el piso se fija también
+  en la prueba de fuente, porque un arnés puede provocar mal el estado.
+
 ## 3. Alcance exacto
 
 | Estado | Archivo | Qué cambia |
@@ -148,7 +171,7 @@ que esa clase de fuga no pueda repetirse.
 | `M` | `apps/web/test/comercio-storefront-theme.test.mjs` | Los dos niveles de tinta que fallaban entran en la lista de cotas exigidas y se actualiza el literal del tema default |
 | `M` | `apps/web/app/globals.css` | Tokens de tinta `--color-success-ink` / `--color-warning-ink` / `--color-error-ink` / `--color-apex-ink` en claro, oscuro y los dos modos de contraste alto; animación del velo apagada con movimiento reducido |
 | `M` | `apps/web/tailwind.config.ts` | `success-ink`, `warning-ink`, `error-ink` y `apex-ink` como colores utilizables |
-| `M` | `apps/web/app/dashboard/comercio/page.tsx` | Portada: sin jerga de módulo, textos con ortografía completa, tintas de texto accesibles y enlaces-acción de 24 px |
+| `M` | `apps/web/app/dashboard/comercio/page.tsx` | Portada: sin jerga de módulo, textos con ortografía completa, tintas de texto accesibles, enlaces-acción de 24 px y el botón «Reintentar» del aviso de error llevado a 24 px de alto |
 | `M` | `apps/web/app/dashboard/comercio/productos/page.tsx` | `SearchField`, ventana móvil, `text-error-ink` en lugar de `text-rose-600` suelto |
 | `M` | `apps/web/app/dashboard/comercio/vender/page.tsx` | Búsqueda de mostrador con `SearchField`; aviso de crédito con ortografía completa |
 | `M` | `apps/web/app/dashboard/comercio/ventas/page.tsx` | `SearchField`, ventana móvil, estado vacío de anulación explicado |
@@ -162,7 +185,7 @@ que esa clase de fuga no pueda repetirse.
 | `M` | `apps/web/app/dashboard/comercio/ComercioCharts.tsx` | Ejes y series de los gráficos con ortografía completa («Día 7», «Promedio 7 días», «Ventas del día») |
 | `M` | `apps/web/test/comercio-reports-charts.test.mjs` | El contrato de Reportes sigue el nuevo texto: presets, hoja «Ventas por día», `SearchField` en movimientos y los cuatro títulos de estado vacío que ahora explican qué hacer |
 | `A` | `apps/web/test/comercio-ux-consistency.test.mjs` | Catorce pruebas de contrato de fuente: brújula en todas las pantallas, búsqueda compartida obligatoria, hooks antes del gate por componente, aro de capas, animaciones apagadas con movimiento reducido, enlace-acción con la misma fuente, encabezados de tabla, combobox que sigue al scroll y el palette que no roba el foco del diálogo. La ortografía visible se mide sobre texto extraído (comillas, backticks y nodos JSX de las catorce fuentes del módulo, vitrina y gráficos incluidos) con tres reglas —vocabulario curado, terminación `-ción`/`-sión` y eñe— y autoverificación en las dos direcciones: cinco faltas conocidas deben dispararse y tres formas de código legítimo no |
-| `A` | `scripts/certifications/comercio-ux-local.js` | Certificación de navegador real: 11 rutas × 2 anchuras × 2 temas midiendo desbordes, nombres accesibles, blancos táctiles y contraste sobre el fondo pintado, más diálogo, foco, Escape, ventana móvil, selector dentro de capa, carrito y vista rápida de la vitrina y movimiento reducido |
+| `A` | `scripts/certifications/comercio-ux-local.js` | Certificación de navegador real: 11 rutas × 2 anchuras × 2 temas midiendo desbordes, nombres accesibles, blancos táctiles y contraste sobre el fondo pintado, más diálogo, foco, Escape, ventana móvil, selector dentro de capa, carrito y vista rápida de la vitrina, movimiento reducido y el **estado de error de la portada provocado** (se aborta `/api/v1/comercio/dashboard` para medir el botón «Reintentar» en vez de esperar que el ambiente falle) |
 | `A` | `docs/qa/evidence/comercio-ux-pasada-20261106/` | Capturas, `browser-local.json` y `recorrido.json` de la corrida |
 | `M` | `package.json` | Alta de `certify:comercio-ux:local` |
 | `M` | `docs/design/APEXOS_COMPONENT_CATALOG.md` | Registro de `SearchField`, `useOverlayA11y`, `buttonClasses` y las tintas `*-ink` |
@@ -222,6 +245,8 @@ que esa clase de fuga no pueda repetirse.
 9. `node --test apps/web/test/comercio-ux-consistency.test.mjs` en verde, `npm run
    certify:comercio-ux:local` en verde, typecheck y lint limpios y las suites de web/API sin
    regresión.
+10. El estado de error de la portada se certifica provocándolo (petición del tablero abortada) y su
+    botón «Reintentar» mide 24 px en el navegador, no solo en el fuente.
 
 ## 6. Restricciones
 
@@ -240,6 +265,12 @@ que esa clase de fuga no pueda repetirse.
   certificación de navegador con sus limitaciones declaradas.
 - `docs/qa/evidence/comercio-ux-pasada-20261106/recorrido.json` — contraste mínimo y conteo de
   blancos táctiles por ruta, pantalla física y tema.
+- `docs/qa/evidence/comercio-ux-pasada-20261106/portada-390-error-provocado.png` — la portada en
+  390 px con el estado de error provocado y el «Reintentar» de 24 px.
+- `docs/qa/evidence/comercio-ux-pasada-20261106/gates-cierre.txt` — transcripción de las puertas de
+  cierre: agentes (sync/check/42 pruebas/preflight `OK`/coverage `OK`), contrato de fuente 14/14,
+  suite web de fuente 648/648, las nueve certificaciones de navegador de `apps/web` 9/9 en serie —
+  en paralelo dos revientan su `waitForFunction` de 30 s por disputarse el dev-server, carga del
+  arnés y no del producto—, subset Comercio del API 69/69, typecheck limpio, lint 0 errores / 22
+  avisos y `CERTIFICATION_OK {"total":287}`.
 - Capturas de portada, clientes y reportes en 1440 oscuro, y de clientes/productos/vitrina en 390.
-- Salida de `node --test apps/web/test/comercio-ux-consistency.test.mjs`.
-- Salida de las suites `apps/web` y `apps/api` al cierre.

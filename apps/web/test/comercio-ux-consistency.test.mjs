@@ -272,6 +272,13 @@ test("los blancos tactiles del modulo tienen el piso de WCAG 2.5.8", () => {
   assert.match(brujula, /min-h-6/, "el enlace «Comercio» de la brujula debe medir 24 px de alto");
   assert.match(shared, /<label className="inline-flex min-h-6 items-center/, "la etiqueta de la casilla es el blanco real: debe llegar a 24 px");
   assert.match(storefront, /className="min-h-6 text-left text-sm font-medium leading-snug/, "el titulo de la tarjeta de la vitrina debe poder pulsarse en movil");
+  // El boton «Reintentar» del estado de error de la portada lo encontro la certificacion de
+  // navegador midiendo 20 px: es un control de dedo, no un enlace en medio de un parrafo.
+  // Se corta por el cierre del tag y no con [^>]* porque el onClick lleva una flecha (=>).
+  const cierre = fuentes.portada.indexOf(">Reintentar</button>");
+  const reintentar = cierre < 0 ? "" : fuentes.portada.slice(fuentes.portada.lastIndexOf("<button", cierre), cierre);
+  assert.ok(cierre >= 0, "la portada debe ofrecer Reintentar cuando el tablero no carga");
+  assert.match(reintentar, /inline-flex min-h-6 items-center/, "«Reintentar» debe medir 24 px de alto: la certificacion lo pidio en movil");
 });
 
 test("los niveles de tinta que llevan texto se certifican contra la cota AA", () => {

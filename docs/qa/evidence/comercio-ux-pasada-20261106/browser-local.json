@@ -1961,31 +1961,6 @@
             "alto": 24,
             "ancho": 56,
             "nombre": "Comercio"
-          },
-          {
-            "alto": 40,
-            "ancho": 332,
-            "nombre": "Buscar producto"
-          },
-          {
-            "alto": 24,
-            "ancho": 149,
-            "nombre": "Ver todo el catálogo"
-          },
-          {
-            "alto": 24,
-            "ancho": 117,
-            "nombre": "Venta a crédito"
-          },
-          {
-            "alto": 38,
-            "ancho": 149,
-            "nombre": "Efectivo"
-          },
-          {
-            "alto": 38,
-            "ancho": 149,
-            "nombre": "Nequi"
           }
         ]
       }
@@ -2634,6 +2609,15 @@
       }
     },
     {
+      "name": "el_reintento_de_la_portada_es_un_blanco_tactil",
+      "ok": true,
+      "detail": {
+        "alto": 24,
+        "ancho": 66,
+        "presente": true
+      }
+    },
+    {
       "name": "la_ruta_responde_sin_error_busqueda_productos",
       "ok": true,
       "detail": {
@@ -2660,7 +2644,7 @@
         "boton": true,
         "tecleado": "silla de oficina",
         "valor": "",
-        "ms_hasta_boton": 671
+        "ms_hasta_boton": 927
       }
     },
     {
@@ -2989,7 +2973,7 @@
       }
     }
   ],
-  "ejecutado_en": "2026-11-06T18:53:09.454Z",
+  "ejecutado_en": "2026-11-06T19:44:31.040Z",
   "fallidos": [],
   "limitaciones": [
     "Se mide con el tenant demo local (catalogo sembrado). Un tenant real con otros textos o mas columnas puede cambiar el numero de objetivos tactiles por debajo de 44 px; la cota dura exigida es 24 px (WCAG 2.5.8) y todo lo menor a 44 px se reporta como muestra para decidir.",
@@ -2997,6 +2981,6 @@
   ],
   "ok": true,
   "rama": "desarrollo",
-  "total": 286,
+  "total": 287,
   "webUrl": "http://127.0.0.1:3001"
 }
