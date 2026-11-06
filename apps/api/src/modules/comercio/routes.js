@@ -47,7 +47,7 @@ async function comercioRoutes(fastify) {
     schema: schema.storefrontGenerateSchema,
     preHandler: write,
     config: { rateLimit: { max: 8, timeWindow: "1 minute" } }
-  }, (request) => service.generateStorefrontBanner(tenantOf(request), request.body.prompt));
+  }, async (request, reply) => reply.code(201).send(await service.generateStorefrontBanner(tenantOf(request), request.body.prompt)));
 
   // --- Promociones y campanas ---
   // Varias pueden convivir; el precio de vitrina y mostrador toma la mejor aplicable.

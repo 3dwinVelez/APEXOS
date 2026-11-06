@@ -2,8 +2,8 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.6.0
-updated_at: 2026-11-05
+version: 2.7.0
+updated_at: 2026-11-06
 contract: 2
 ---
 
@@ -59,6 +59,14 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
     Por qué: el 2026-11-05 la certificación de la vitrina afirmaba un 400 frente a `banner_url` inyectado y recibía 200; el comportamiento era correcto y la aserción estaba mal.
 
 21. **Un knob de personalización viaja como enum cerrado y se valida en tres capas.** Los cinco modos de la vitrina (`surface_tint`, `surface_depth`, `background_pattern`, `corner_radius`, `banner_scrim`) se declaran con `enum` y `additionalProperties: false` en el esquema AJV de `PUT .../storefront/theme`, se filtran de nuevo en `setStorefrontTheme` (`THEME_MODE_KEYS` + `safeThemeMode`, con `THEME_MODE_INVALID` y escritura atómica: o se guardan todos o no se guarda ninguno) y se reconstruyen campo por campo en la lectura (`publicTheme`). La segunda y tercera capa no son redundancia con la primera: AJV monta `removeAdditional: true`, así que un campo no declarado se **elimina en silencio y responde 200**, y un valor corrupto ya persistido por cualquier otra vía seguiría saliendo al público. Por eso la defensa se afirma **por efecto** (snapshot del tema público antes y después, idéntico), no por código de estado. Por qué: el 2026-11-05, al agregar los cinco knobs, el riesgo era dejar el enum solo en el esquema y descubrir después que el panel «guardaba» un patrón inventado sin que nadie lo rechazara.
+
+22. **Un almacén administrado se elige por configuración explícita, nunca por lo que responda la red.** El módulo de Comercio guarda imágenes en `comercio-assets` con `COMERCIO_STORAGE_DRIVER` (`apps/api/src/modules/comercio/storage.js:62`): `supabase` si no se declara nada, `minio` en el puesto de desarrollo, y cualquier otro valor devuelve 503 `ALMACENAMIENTO_DRIVER_INVALIDO` con los valores admitidos escritos en el mensaje. No hay fallback implícito Supabase→MinIO ni al revés: un conductor que cambia solo según qué puerto contesta convierte un mal `curl` en objetos escritos en dos almacenes distintos, y el comercio pierde imágenes sin que nadie lo vea. El precedente del repo es `transport/tms-evidence-storage.js` («explicit development provider, never an implicit fallback»). Por qué: el 2026-11-06 la subida de banner apuntaba fija al Supabase local (54321), que en este puesto no corre, y el error de red terminaba en 500 `ERROR_INTERNO`.
+
+23. **Un fallo de dependencia conserva su código y su salida, y toda llamada remota tiene reloj.** Tres reglas que forman el contrato de `storage.js`:
+    - El error de red se traduce por familia antes de salir del módulo (`storageError`, `storage.js:87`): DNS → «no se resuelve desde este ambiente»; conexión rechazada/reset → «está apagado o la URL apunta a otro lado, sube el almacén local o corrige su configuración»; agotado el timeout → «tardó más de Ns en responder»; el resto → el mensaje de la causa truncado. Todos 502 `ALMACEN_NO_RESPONDE`, con `cause` conservado para el log. Un `TypeError: fetch failed` sin `statusCode` es, para el usuario, «Error interno», y para el operador una pila sin dirección.
+    - Toda llamada al almacén va acotada por `STORAGE_TIMEOUT_MS` (15 s, `AbortSignal.timeout` en el `fetch` y `withTimeout` en el cliente S3). Un almacén colgado debe dar un 502 legible, no una petición que el navegador corta sola.
+    - La ruta de **lectura** de una página pública no lanza: `publicViewUrl` (`storage.js:268`) devuelve `null` ante cualquier misconfiguración y la vitrina pinta el degradado del tema. Que el almacén esté caído no puede tumbar un catálogo público; la escritura sí devuelve su error, porque ahí el usuario tiene que saber que no se guardó.
+    Por qué: el 2026-11-06 había tres causas apiladas (red sin código, handler que tragaba el 502 y un generador 402 que llegaba como 500) y cada una se veía igual desde la pantalla: «Error interno».
 
 ## Checklist de intervención
 
@@ -121,3 +129,6 @@ Después:
 - Confiar en `additionalProperties: false` para rechazar un campo inyectado y probar un 400 que AJV nunca produce.
 - Guardar el `patch` del cliente en `preferences_json` en vez de reconstruirlo campo por campo.
 - Aceptar una URL de imagen enviada por el cliente para el banner de la vitrina.
+- Dejar que un `TypeError: fetch failed` llegue al handler global: sin `statusCode` se convierte en 500 `ERROR_INTERNO` y el usuario no puede accionar.
+- Cambiar de almacén por fallback implícito cuando el configurado no responde, en lugar de exigir `COMERCIO_STORAGE_DRIVER`.
+- Lanzar una excepción en la ruta de lectura de una página pública por culpa de un almacén caído o mal configurado.

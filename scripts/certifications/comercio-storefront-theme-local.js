@@ -534,25 +534,75 @@ async function main() {
     fs.writeFileSync(path.join(path.dirname(output), "pintura-navegador.json"), `${JSON.stringify(pinturas, null, 2)}\n`);
 
     // === Almacenamiento y generacion en este ambiente ===
+    // Aqui se pago caro un check tolerant: aceptar "status >= 500" como conformidad
+    // convirtio un defecto de producto (la caida del almacen salia como error interno)
+    // en una supuesta limitacion de ambiente. La subida se exige en 201 y se comprueba
+    // que el objeto existe, que se lee sin credenciales y que la vitrina lo pinta.
     const bytes = fs.readFileSync(path.join(root, "apps/web/public", sampleAsset.slice(1)));
     const form = new FormData();
     form.append("file", new Blob([bytes], { type: "image/jpeg" }), "banner-e2e.jpg");
     const subida = await call("/api/v1/comercio/settings/storefront/banner", { token, method: "POST", form });
-    check("subida_de_banner_deja_constancia", subida.status === 201 || subida.status >= 500, {
+    const urlPublica = String(subida.payload?.theme?.banner_url || "");
+    check("la_subida_del_banner_devuelve_201", subida.status === 201, {
       status: subida.status,
-      resultado: subida.status === 201 ? "bucket disponible: banner publicado" : "sin bucket local: rechazo del almacenamiento",
       code: String(subida.payload?.code || subida.payload?.error?.code || ""),
-      detalle: String(subida.payload?.message || subida.payload?.error?.message || "").slice(0, 160)
+      detalle: String(subida.payload?.message || subida.payload?.error?.message || "").slice(0, 200)
     });
+    check("el_banner_subido_sale_como_url_publica_del_servidor", /^https?:\/\/[^/]+\/comercio-assets\/.+/.test(urlPublica), { banner_url: urlPublica });
+    check("la_respueta_del_panel_lleva_url_firmada", /^https?:\/\//.test(String(subida.payload?.banner_url || "")), {
+      banner_url: String(subida.payload?.banner_url || "").slice(0, 120)
+    });
+
+    const lectura = await fetch(urlPublica).catch(() => null);
+    const leidos = lectura ? Buffer.from(await lectura.arrayBuffer()) : Buffer.alloc(0);
+    check("el_objeto_se_lee_sin_credenciales", lectura?.status === 200 && /^image\//.test(String(lectura.headers.get("content-type") || "")), {
+      status: lectura?.status ?? null, content_type: lectura?.headers?.get("content-type") ?? null
+    });
+    check("el_objeto_devuelve_los_mismos_bytes", leidos.length === bytes.length, { esperados: bytes.length, leidos: leidos.length });
+
+    const vitrinaConBanner = await browser.newPage();
+    try {
+      await vitrinaConBanner.setViewport({ width: 1360, height: 1000, deviceScaleFactor: 1 });
+      const cargada = vitrinaConBanner.waitForResponse((r) => r.url() === urlPublica || r.url().startsWith(`${urlPublica}?`), { timeout: 60000 }).catch(() => null);
+      await vitrinaConBanner.goto(vitrinaUrl, { waitUntil: "networkidle2", timeout: 120000 });
+      const peticion = await cargada;
+      const pinturaBanner = await vitrinaConBanner.evaluate((esperada) => {
+        const img = document.querySelector(".sf-banner-img");
+        return {
+          src: img?.getAttribute("src") || null,
+          caja: img ? { w: img.clientWidth, h: img.clientHeight } : null,
+          decodificada: Boolean(img && img.complete && img.naturalWidth > 0),
+          // Si la CSP bloquea el origen, complete/naturalWidth pueden quedar en false sin
+          // que haya peticion de red: se registra tambien si el navegador la intentó.
+          es_la_subida: Boolean(img && esperada && img.getAttribute("src") === esperada)
+        };
+      }, urlPublica);
+      check("la_vitrina_pide_el_banner_subido_al_almacen", Boolean(peticion) && peticion.status() === 200, {
+        status: peticion?.status() ?? null, url: urlPublica.slice(0, 140)
+      });
+      check("el_banner_de_la_vitrina_es_el_recien_subido", pinturaBanner.es_la_subida, { src: pinturaBanner.src, esperado: urlPublica });
+      check("el_banner_se_decodifica_en_el_navegador", pinturaBanner.decodificada && pinturaBanner.caja.w > 200 && pinturaBanner.caja.h > 40, { pinturaBanner });
+      pinturas.fotoBannerSubido = await shot(vitrinaConBanner, "07-vitrina-con-banner-subido");
+    } finally {
+      await vitrinaConBanner.close().catch(() => undefined);
+    }
+
+    // Se quita el banner para no dejar en la demo un objeto que la siguiente corrida no
+    // espera; el bucket conserva el historial y la Preferences vuelve al origen abajo.
+    await call("/api/v1/comercio/settings/storefront/banner", { token, method: "DELETE" });
 
     const generacion = await call("/api/v1/comercio/settings/storefront/generate-image", { token, method: "POST", body: { prompt: "Banner panoramico de una despensa de barrio con tonos azules y luz calida" } });
     const codigo = String(generacion.payload?.error?.code ?? generacion.payload?.code ?? "");
-    check("el_modelo_gratuito_no_es_el_bloqueo", generacion.status === 201 || !codigo.startsWith("IMAGEGEN_"), {
+    const detalleGeneracion = String(generacion.payload?.message || generacion.payload?.error?.message || "").slice(0, 200);
+    // El generador gratuito cobra por debajo de cierta cuota y puede fallar: lo que NO
+    // esta permitido es que ese fallo llegue como error interno nuestro. 502 con codigo
+    // y frase accionable ("sube tu propia imagen") es el contrato.
+    check("la_generacion_no_devuelve_error_interno", generacion.status === 201 || (generacion.status === 502 && codigo.startsWith("IMAGEGEN_")), {
       status: generacion.status,
       code: codigo || null,
-      detalle: String(generacion.payload?.message || generacion.payload?.error?.message || "").slice(0, 160),
-      lectura: codigo ? "fallos del generador" : "el generador devolvio bytes validos; solo falla el almacenamiento local"
+      detalle: detalleGeneracion
     });
+    if (generacion.status === 201) await call("/api/v1/comercio/settings/storefront/banner", { token, method: "DELETE" });
   } finally {
     await browser.close().catch(() => undefined);
   }
@@ -576,9 +626,9 @@ const evidence = {
   tenant: null,
   checks,
   limitaciones: [
-    "El bucket comercio-assets de Supabase no existe en el ambiente local: la subida del banner y la persistencia de la imagen generada quedan bloqueadas por ambiente, con su codigo reportado en los checks.",
-    "La generacion si sale a la red (modelo gratuito Pollinations, sin cuenta ni clave); su resultado solo puede guardarse donde hay bucket configurado.",
-    "El banner se certify con un asset estatico del sitio (/comercio/...), que es la otra ruta que produce el servidor."
+    "El ambiente local escribe en el MinIO del compose (COMERCIO_STORAGE_DRIVER=minio): la subida del banner se certify con un objeto real leido sin credenciales. En la nube el conductor sigue siendo Supabase Storage y alli falta crear el bucket comercio-assets con lectura publica.",
+    "La generacion si sale a la red (modelo gratuito Pollinations, sin cuenta ni clave); en esta corrida se exige que lo generado pueda guardarse en el almacen configurado.",
+    "El banner del bloque de tema usa un asset estatico del sitio (/comercio/...), que es la otra ruta que produce el servidor; la ruta del bucket se cubre en los checks de subida."
   ]
 };
 

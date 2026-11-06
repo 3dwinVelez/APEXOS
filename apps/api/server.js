@@ -361,28 +361,15 @@ async function build() {
   });
   bootLog("Registered health route");
 
+  const { mapApiError } = require("./src/core/api-error");
   fastify.setErrorHandler((error, request, reply) => {
     const requestId = request.id;
     reply.header("x-request-id", requestId);
-    const code = error.code;
-    if (code === "P2002") return reply.code(409).send({ error: "Registro duplicado", code: "DUPLICADO", request_id: requestId });
-    if (code === "P2025") return reply.code(404).send({ error: "No encontrado", code: "NO_ENCONTRADO", request_id: requestId });
-    if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
-      // details lleva diagnostico estructurado generado por el servidor (p. ej. los
-      // conflictos de MALLA_SOLAPADA): sin esto el cliente solo recibe una frase generica.
-      const details = error.details && typeof error.details === "object" && !Array.isArray(error.details) ? error.details : undefined;
-      return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId, ...(details ? { details } : {}) });
-    }
-    // Todo 503 con codigo es un fallo controlado "intente de nuevo", generado a proposito por un
-    // servicio (concurrencia de marcacion, de mallas, de ajuste de nomina). Si se listara codigo
-    // por codigo, el siguiente en apareceria caeria al 500 generico y volveria a verse como caida.
-    if (error.statusCode === 503 && error.code) {
-      return reply.code(503).send({ error: error.message, code: error.code, request_id: requestId });
-    }
-    if (error.statusCode === 400) return reply.code(400).send({ error: error.message, code: "VALIDACION", request_id: requestId });
-    if (error.statusCode === 429) return reply.code(429).send({ error: "Demasiadas solicitudes", code: "LIMITE_SOLICITUDES", request_id: requestId });
-    fastify.log.error({ err: error, requestId, url: request.url, method: request.method, userId: request.user?.id, tenantId: request.user?.tenant_id }, "Unhandled API error");
-    return reply.code(500).send({ error: "Error interno", code: "ERROR_INTERNO", request_id: requestId });
+    // La tabla de traduccion vive en core/api-error.js, que es lo que cubren las pruebas
+    // (levantar la app completa deja el proceso del test colgado de un handle).
+    const outcome = mapApiError(error, request, requestId);
+    if (outcome.log) fastify.log.error(outcome.log, "Unhandled API error");
+    return reply.code(outcome.statusCode).send(outcome.payload);
   });
 
   return fastify;

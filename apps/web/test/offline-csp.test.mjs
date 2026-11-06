@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { configuredConnectOrigin, configuredWebSocketOrigin } from "../lib/security/csp.ts";
+import { configuredConnectOrigin, configuredImageOrigins, configuredWebSocketOrigin } from "../lib/security/csp.ts";
 
 test("normaliza API http local a origen", () => {
   assert.equal(configuredConnectOrigin("http://127.0.0.1:3100/api?q=1"), "http://127.0.0.1:3100");
@@ -41,3 +41,31 @@ test("ws sin api o con valores invalidos queda cerrado", () => {
   assert.equal(configuredWebSocketOrigin("ws://user:pass@127.0.0.1:3100", "http://127.0.0.1:3100"), "");
 });
 
+
+// El banner de la vitrina vive en el almacen de objetos local (MinIO en http) y la
+// politica general solo deja https:. Se abre el origen justo y solo en desarrollo; si
+// esto se afloja de mas, cualquier servidor http pasa a poder incrustarse como imagen.
+test("img-src: anade el origen loopback del almacen solo en desarrollo", () => {
+  assert.equal(configuredImageOrigins("http://localhost:9000", true), " http://localhost:9000");
+  assert.equal(configuredImageOrigins("http://127.0.0.1:9000", true), " http://127.0.0.1:9000");
+});
+test("img-src: en produccion la lista queda ignorada", () => {
+  assert.equal(configuredImageOrigins("http://localhost:9000", false), "");
+});
+test("img-src: nada que no sea loopback entra en la politica", () => {
+  assert.equal(configuredImageOrigins("http://evil.test:9000", true), "");
+  assert.equal(configuredImageOrigins("https://atlas.example.com", true), "");
+  assert.equal(configuredImageOrigins("http://localhost:9000/bucket", true), "");
+  assert.equal(configuredImageOrigins("http://user:pass@localhost:9000", true), "");
+  assert.equal(configuredImageOrigins("javascript:alert(1)", true), "");
+});
+test("img-src: sin variable no se toca la politica", () => {
+  assert.equal(configuredImageOrigins(undefined, true), "");
+  assert.equal(configuredImageOrigins("  ,  ", true), "");
+});
+test("img-src: varios origenes salen deduplicados", () => {
+  assert.equal(
+    configuredImageOrigins("http://localhost:9000, http://localhost:9000 ,http://127.0.0.1:9000", true),
+    " http://localhost:9000 http://127.0.0.1:9000"
+  );
+});
