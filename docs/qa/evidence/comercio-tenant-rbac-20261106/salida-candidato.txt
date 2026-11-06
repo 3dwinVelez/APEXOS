@@ -1,0 +1,947 @@
+Before loading environment
+# lineas de query omitidas de la transcripcion: 571
+Environment loaded
+After loading environment
+Before require fastify
+After require fastify
+Entering build()
+Starting APEX OS API bootstrap
+Registering cors
+Registered cors
+Registering rate-limit
+Registered rate-limit
+Registering security headers
+Registered security headers
+Registering websocket
+Registered websocket
+Registering multipart
+Registered multipart
+Registering auth decorator
+Registered auth decorator
+Registering audit hook
+Redis disabled - using noop queues
+Registered audit hook
+Registering platform technical log hooks
+Registered platform technical log hooks
+Registering performance logging
+Registered performance logging
+Registering API modules
+Registering auth routes
+Registered auth routes
+Registering onboarding routes
+Registered onboarding routes
+Registering brain routes
+Registered brain routes
+Registering admin routes
+Registered admin routes
+Registering inventory routes
+Registered inventory routes
+Registering accounting routes
+Registered accounting routes
+Registering purchases routes
+Registered purchases routes
+Registering projects routes
+Registered projects routes
+Registering sales routes
+Registered sales routes
+Registering invoicing routes
+Registered invoicing routes
+Registering hr routes
+Registered hr routes
+Registering services routes
+Registered services routes
+Registering offline routes
+Registered offline routes
+Registering transport routes
+Registered transport routes
+Registering sales-invoice routes
+Registered sales-invoice routes
+Registering accounts-receivable routes
+Registered accounts-receivable routes
+Registering treasury routes
+Registered treasury routes
+Registering petty-cash routes
+Registered petty-cash routes
+Registering comercio routes
+Registered comercio routes
+Registering comercio-public routes
+Registered comercio-public routes
+Registering commercial-management routes
+Registered commercial-management routes
+Registering apex-heart routes
+Registered apex-heart routes
+Registering transport-pyg routes
+Registered transport-pyg routes
+Registered API modules
+Registering brain websocket route
+Registered brain websocket route
+Registering collaboration-websocket routes
+Registered collaboration-websocket routes
+Starting background workers
+Redis disabled: background workers and crons disabled
+Finished background workers
+Registering health route
+Registered health route
+[16:29:07.198] [32mINFO[39m (7080): [36mEntering build()[39m
+[16:29:07.199] [32mINFO[39m (7080): [36mStarting APEX OS API bootstrap[39m
+[16:29:07.199] [32mINFO[39m (7080): [36mRegistering cors[39m
+[16:29:07.254] [32mINFO[39m (7080): [36mRegistered cors[39m
+[16:29:07.254] [32mINFO[39m (7080): [36mRegistering rate-limit[39m
+[16:29:07.375] [32mINFO[39m (7080): [36mRegistered rate-limit[39m
+[16:29:07.375] [32mINFO[39m (7080): [36mRegistering security headers[39m
+[16:29:07.379] [32mINFO[39m (7080): [36mRegistered security headers[39m
+[16:29:07.379] [32mINFO[39m (7080): [36mRegistering websocket[39m
+[16:29:07.523] [32mINFO[39m (7080): [36mRegistered websocket[39m
+[16:29:07.523] [32mINFO[39m (7080): [36mRegistering multipart[39m
+[16:29:07.597] [32mINFO[39m (7080): [36mRegistered multipart[39m
+[16:29:07.597] [32mINFO[39m (7080): [36mRegistering auth decorator[39m
+[16:29:07.598] [32mINFO[39m (7080): [36mRegistered auth decorator[39m
+[16:29:07.598] [32mINFO[39m (7080): [36mRegistering audit hook[39m
+[16:29:07.615] [32mINFO[39m (7080): [36mRegistered audit hook[39m
+[16:29:07.615] [32mINFO[39m (7080): [36mRegistering platform technical log hooks[39m
+[16:29:07.748] [32mINFO[39m (7080): [36mRegistered platform technical log hooks[39m
+[16:29:07.748] [32mINFO[39m (7080): [36mRegistering performance logging[39m
+[16:29:07.749] [32mINFO[39m (7080): [36mRegistered performance logging[39m
+[16:29:07.749] [32mINFO[39m (7080): [36mRegistering API modules[39m
+[16:29:07.830] [32mINFO[39m (7080): [36mRegistering auth routes[39m
+[16:29:07.831] [32mINFO[39m (7080): [36mRegistered auth routes[39m
+[16:29:07.845] [32mINFO[39m (7080): [36mRegistering onboarding routes[39m
+[16:29:07.845] [32mINFO[39m (7080): [36mRegistered onboarding routes[39m
+[16:29:07.873] [32mINFO[39m (7080): [36mRegistering brain routes[39m
+[16:29:07.873] [32mINFO[39m (7080): [36mRegistered brain routes[39m
+[16:29:07.899] [32mINFO[39m (7080): [36mRegistering admin routes[39m
+[16:29:07.899] [32mINFO[39m (7080): [36mRegistered admin routes[39m
+[16:29:07.920] [32mINFO[39m (7080): [36mRegistering inventory routes[39m
+[16:29:07.920] [32mINFO[39m (7080): [36mRegistered inventory routes[39m
+[16:29:07.947] [32mINFO[39m (7080): [36mRegistering accounting routes[39m
+[16:29:07.947] [32mINFO[39m (7080): [36mRegistered accounting routes[39m
+[16:29:07.964] [32mINFO[39m (7080): [36mRegistering purchases routes[39m
+[16:29:07.964] [32mINFO[39m (7080): [36mRegistered purchases routes[39m
+[16:29:07.975] [32mINFO[39m (7080): [36mRegistering projects routes[39m
+[16:29:07.975] [32mINFO[39m (7080): [36mRegistered projects routes[39m
+[16:29:07.982] [32mINFO[39m (7080): [36mRegistering sales routes[39m
+[16:29:07.982] [32mINFO[39m (7080): [36mRegistered sales routes[39m
+[16:29:07.992] [32mINFO[39m (7080): [36mRegistering invoicing routes[39m
+[16:29:07.992] [32mINFO[39m (7080): [36mRegistered invoicing routes[39m
+[16:29:08.149] [32mINFO[39m (7080): [36mRegistering hr routes[39m
+[16:29:08.149] [32mINFO[39m (7080): [36mRegistered hr routes[39m
+[16:29:08.180] [32mINFO[39m (7080): [36mRegistering services routes[39m
+[16:29:08.180] [32mINFO[39m (7080): [36mRegistered services routes[39m
+[16:29:08.197] [32mINFO[39m (7080): [36mRegistering offline routes[39m
+[16:29:08.197] [32mINFO[39m (7080): [36mRegistered offline routes[39m
+[16:29:13.194] [32mINFO[39m (7080): [36mRegistering transport routes[39m
+[16:29:13.195] [32mINFO[39m (7080): [36mRegistered transport routes[39m
+[16:29:13.206] [32mINFO[39m (7080): [36mRegistering sales-invoice routes[39m
+[16:29:13.206] [32mINFO[39m (7080): [36mRegistered sales-invoice routes[39m
+[16:29:13.214] [32mINFO[39m (7080): [36mRegistering accounts-receivable routes[39m
+[16:29:13.214] [32mINFO[39m (7080): [36mRegistered accounts-receivable routes[39m
+[16:29:13.235] [32mINFO[39m (7080): [36mRegistering treasury routes[39m
+[16:29:13.235] [32mINFO[39m (7080): [36mRegistered treasury routes[39m
+[16:29:13.257] [32mINFO[39m (7080): [36mRegistering petty-cash routes[39m
+[16:29:13.257] [32mINFO[39m (7080): [36mRegistered petty-cash routes[39m
+[16:29:13.287] [32mINFO[39m (7080): [36mRegistering comercio routes[39m
+[16:29:13.287] [32mINFO[39m (7080): [36mRegistered comercio routes[39m
+[16:29:13.289] [32mINFO[39m (7080): [36mRegistering comercio-public routes[39m
+[16:29:13.289] [32mINFO[39m (7080): [36mRegistered comercio-public routes[39m
+[16:29:13.310] [32mINFO[39m (7080): [36mRegistering commercial-management routes[39m
+[16:29:13.310] [32mINFO[39m (7080): [36mRegistered commercial-management routes[39m
+[16:29:13.319] [32mINFO[39m (7080): [36mRegistering apex-heart routes[39m
+[16:29:13.319] [32mINFO[39m (7080): [36mRegistered apex-heart routes[39m
+[16:29:13.376] [32mINFO[39m (7080): [36mRegistering transport-pyg routes[39m
+[16:29:13.376] [32mINFO[39m (7080): [36mRegistered transport-pyg routes[39m
+[16:29:13.376] [32mINFO[39m (7080): [36mRegistered API modules[39m
+[16:29:13.376] [32mINFO[39m (7080): [36mRegistering brain websocket route[39m
+[16:29:13.379] [32mINFO[39m (7080): [36mRegistered brain websocket route[39m
+[16:29:13.382] [32mINFO[39m (7080): [36mRegistering collaboration-websocket routes[39m
+[16:29:13.383] [32mINFO[39m (7080): [36mRegistered collaboration-websocket routes[39m
+[16:29:13.383] [32mINFO[39m (7080): [36mStarting background workers[39m
+[16:29:13.383] [32mINFO[39m (7080): [36mRedis disabled: background workers and crons disabled[39m
+[16:29:13.383] [32mINFO[39m (7080): [36mFinished background workers[39m
+[16:29:13.383] [32mINFO[39m (7080): [36mRegistering health route[39m
+[16:29:13.392] [32mINFO[39m (7080): [36mRegistered health route[39m
+[16:29:19.141] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/auth/login",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:19.679] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 329.96730000000025
+[16:29:19.803] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-2"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/auth/login",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:19.915] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-2"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 110.98729999999887
+[16:29:20.140] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-3"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/auth/login",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:20.342] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-3"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 201.9262000000017
+[16:29:20.792] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-4"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/auth/login",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:21.187] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-4"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 394.45310000000063
+[16:29:21.188] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-5"
+    [35mreq[39m: {
+      "method": "PUT",
+      "url": "/api/v1/comercio/settings",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:21.393] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-5"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 203.29629999999997
+[16:29:21.393] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-6"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/products",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:21.629] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-6"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 235.21099999999933
+[16:29:21.630] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-7"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/customers",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:21.695] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-7"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 64.68860000000132
+[16:29:21.696] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-8"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/sales",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:22.316] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-8"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 617.5262999999977
+[16:29:22.323] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-9"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/sales",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:22.937] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-9"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 611.9611999999979
+[16:29:22.938] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-a"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/expenses",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:23.298] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-a"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 359.7358999999997
+[16:29:23.299] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-b"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/promotions",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:24.015] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-b"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 715.7668999999987
+[16:29:24.016] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-c"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/credits",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:24.544] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-c"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 527.4359000000004
+[16:29:24.545] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-d"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/products",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:24.854] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-d"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 309.2066999999988
+[16:29:24.855] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-e"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/expenses",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.021] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-e"
+    [35mres[39m: {
+      "statusCode": 201
+    }
+    [35mresponseTime[39m: 164.91200000000026
+[16:29:25.022] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-f"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/products/150",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.177] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-f"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 154.62780000000203
+[16:29:25.179] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-g"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/products/150/photo-url",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.223] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-g"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 43.86700000000201
+[16:29:25.223] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-h"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/sales/203",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.274] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-h"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 50.73370000000068
+[16:29:25.275] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-i"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/credits/44",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.310] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-i"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 34.64119999999821
+[16:29:25.310] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-j"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/promotions/10/audience",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.357] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-j"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 46.530800000000454
+[16:29:25.357] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-k"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/promotions/10",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.413] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-k"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 55.552700000000186
+[16:29:25.414] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-l"
+    [35mreq[39m: {
+      "method": "PUT",
+      "url": "/api/v1/comercio/products/150",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.462] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-l"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 48.18790000000081
+[16:29:25.463] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-m"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/products/150/adjust-stock",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.546] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-m"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 82.99439999999959
+[16:29:25.547] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-n"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/products/150/deactivate",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.621] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-n"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 73.5102999999981
+[16:29:25.622] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-o"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/customers/28/deactivate",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.661] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-o"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 39.10580000000118
+[16:29:25.661] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-p"
+    [35mreq[39m: {
+      "method": "PUT",
+      "url": "/api/v1/comercio/customers/28",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.707] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-p"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 44.897000000000844
+[16:29:25.707] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-q"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/sales/203/void",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.765] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-q"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 58.11249999999927
+[16:29:25.770] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-r"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/credits/44/payments",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.839] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-r"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 68.52939999999944
+[16:29:25.839] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-s"
+    [35mreq[39m: {
+      "method": "PUT",
+      "url": "/api/v1/comercio/expenses/72",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.907] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-s"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 67.34010000000126
+[16:29:25.907] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-t"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/expenses/72/void",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:25.958] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-t"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 50.425999999999476
+[16:29:25.958] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-u"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/promotions/10/status",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.023] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-u"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 64.61670000000231
+[16:29:26.024] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-v"
+    [35mreq[39m: {
+      "method": "PUT",
+      "url": "/api/v1/comercio/promotions/10",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.098] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-v"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 73.71610000000146
+[16:29:26.098] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-w"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/products/150",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.137] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-w"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 38.567699999999604
+[16:29:26.138] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-x"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/products?include_inactive=true",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.198] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-x"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 59.13560000000143
+[16:29:26.198] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-y"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/customers",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.269] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-y"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 66.84519999999975
+[16:29:26.270] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-z"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/sales",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.391] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-z"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 120.22850000000108
+[16:29:26.391] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-10"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/credits",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.455] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-10"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 63.478900000001886
+[16:29:26.455] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-11"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/expenses",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.528] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-11"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 72.76850000000195
+[16:29:26.529] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-12"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/movements",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.592] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-12"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 63.214499999998225
+[16:29:26.592] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-13"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/promotions",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.655] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-13"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 62.316100000000006
+[16:29:26.656] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-14"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/dashboard",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:26.961] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-14"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 305.26230000000214
+[16:29:26.962] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-15"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/dashboard",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.236] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-15"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 274.2472999999991
+[16:29:27.237] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-16"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/reports/summary",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.371] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-16"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 133.8106000000007
+[16:29:27.372] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-17"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/settings",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.473] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-17"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 100.86599999999817
+[16:29:27.473] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-18"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/dashboard",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.526] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-19"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/products",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.560] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1a"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/products",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.643] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-18"
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 51.17329999999856
+[16:29:27.645] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-19"
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 28.62550000000192
+[16:29:27.797] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1a"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 236.90829999999914
+[16:29:27.797] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1b"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/products",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.878] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1c"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/sales/203/void",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:27.931] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1d"
+    [35mreq[39m: {
+      "method": "PUT",
+      "url": "/api/v1/comercio/settings",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:28.114] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1e"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/dashboard",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:28.119] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1e"
+    [35mres[39m: {
+      "statusCode": 401
+    }
+    [35mresponseTime[39m: 1.360000000000582
+[16:29:28.120] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1f"
+    [35mreq[39m: {
+      "method": "PUT",
+      "url": "/api/v1/comercio/settings",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:28.206] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1b"
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 77.60280000000057
+[16:29:28.206] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1c"
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 49.33850000000166
+[16:29:28.313] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1d"
+    [35mres[39m: {
+      "statusCode": 403
+    }
+    [35mresponseTime[39m: 179.60269999999946
+[16:29:28.372] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1f"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 251.09159999999974
+[16:29:28.373] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1g"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/public/comercio/catalog/hvze6p77",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:28.480] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1g"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 106.67569999999978
+[16:29:28.481] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1h"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/comercio/settings",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:28.665] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1h"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 183.72450000000026
+[16:29:28.670] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1i"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/public/comercio/catalog/zzzz",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:28.705] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1i"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 33.84130000000005
+[16:29:28.705] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1j"
+    [35mreq[39m: {
+      "method": "POST",
+      "url": "/api/v1/comercio/settings/catalog/regenerate",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+[16:29:28.871] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1j"
+    [35mres[39m: {
+      "statusCode": 200
+    }
+    [35mresponseTime[39m: 165.49960000000283
+[16:29:28.871] [32mINFO[39m (7080): [36mincoming request[39m
+    [35mreqId[39m: "req-1k"
+    [35mreq[39m: {
+      "method": "GET",
+      "url": "/api/v1/public/comercio/catalog/hvze6p77",
+      "host": "localhost:80",
+      "remoteAddress": "127.0.0.1"
+    }
+CERTIFICATION_OK {"evidencia":"C:\\Users\\mq1\\AppData\\Local\\Temp\\candidato-tenant-rbac-tip.json","total":53}
+[16:29:28.924] [32mINFO[39m (7080): [36mrequest completed[39m
+    [35mreqId[39m: "req-1k"
+    [35mres[39m: {
+      "statusCode": 404
+    }
+    [35mresponseTime[39m: 52.195300000003044
+LIMPIEZA {"empresas":4,"residuales":[]}

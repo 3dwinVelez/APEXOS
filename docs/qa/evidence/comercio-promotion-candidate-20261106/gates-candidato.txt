@@ -1,0 +1,126 @@
+CANDIDATO DE PROMOCION COMERCIO -> develop — puertas medidas en el arbol del candidato
+=======================================================================================
+Rama auxiliar : promocion/comercio-develop-20261106
+Worktree      : C:/Users/mq1/Documents/Proyectos/APEXOS-comercio-develop
+Tip candidato : 423d8cb0f3969a47ecd19140cd6f97e899b45953
+Baseline      : origin/develop = 21ef1a6f
+Comites del candidato sobre el baseline: 32
+  e5fc15a5 acota el arbol al modulo / 3e1e5835 certificacion de aislamiento / 423d8cb0 repara el registro perdido
+
+INVENTARIO NETO (fuente de verdad de los manifiestos)
+----------------------------------------------------
+$ git diff --name-status origin/develop..HEAD | awk '{print $1}' | sort | uniq -c
+    177 A
+     21 M
+      0 D
+Cero borrados: los 6 SKILL.md que la normalizacion inicial quitaba existen en origin/develop y se
+restauraron desde develop (borrarlos hubiera sido una eliminacion no autorizada).
+
+IDENTIDAD CON EL ARBOL CERTIFICADO
+----------------------------------
+173 rutas del candidato contienen "comercio" o "tienda" en su path. Contra el arbol certificado (69c096c8):
+$ git diff 69c096c8 HEAD -- <las 173 rutas> | wc -l
+0            <- el codigo del modulo es byte a byte el que se certifico en el navegador
+
+25 rutas restantes = plumbing compartido. Audites:
+- paridad de contenido Comercio con el arbol certificado (recuento de lineas que mencionan comercio
+  archivo por archivo): sin desacuerdos. Unico hallazgo corregido abajo.
+- lineas de develop eliminadas, por archivo y con su causa:
+    20 apps/api/server.js            -> el manejador de error inline se muda a src/core/api-error.js;
+                                        la tabla comparada linea a linea conserva P2002->409 DUPLICADO,
+                                        P2025->404 NO_ENCONTRADO, 4xx con details (MALLA_SOLAPADA),
+                                        502/503/504 con codigo, 400 VALIDACION, 429 LIMITE_SOLICITUDES
+                                        y 500 ERROR_INTERNO. Ademas amplia 502/504, no quita nada.
+                                        Cubierto por apps/api/test/api-error-mapping.test.js (en verde).
+     8 apps/web/components/transport/TransportSearchSelect.tsx
+                                        el selector tecleable compartido (tarea UX #20) quita el
+                                        autocienre por resize/scroll y recalcula la posicion del menu;
+                                        es un componente que TAMBIEN consume Transporte, no solo Comercio.
+     6 apps/web/components/ui/button.tsx
+                                        reescritura del className: el anillo de foco, la transicion y
+                                        twMerge pasan al patron de la pasada UX. Compartido por todo el sistema.
+     4 apps/web/components/system/CommandPalette.tsx -> solo el handler de Escape: ahora el Escape
+                                        le pertenece al palette unicamente mientras esta abierto.
+     3 apps/web/next.config.ts        img-src acepta el origen del almacen local de imagenes y se
+                                        importa la matriz CSP desde lib/security/csp.ts.
+     2 apps/web/components/ui/ModalFrame.tsx  el modal se vuelve bottom-sheet en movil (ventanado).
+     1 apps/web/test/offline-csp.test.mjs, apps/web/components/ui/data-table.tsx,
+       apps/web/components/shell/ContextBreadcrumbs.tsx, apps/web/app/globals.css,
+       apps/api/src/modules/admin/service.js, apps/api/src/middleware/rbac.js, apps/api/src/core/prisma.js
+     0 package.json, apps/api/prisma/schema.prisma, apps/api/src/core/api-error.js,
+       apps/api/test/api-error-mapping.test.js, apps/web/lib/{modules,moduleFunctions,moduleAccess,csp}.ts,
+       apps/web/components/ui/{SearchField.tsx,useOverlayA11y.ts}, apps/web/tailwind.config.ts, .env.example
+                                        <- adiciones puras: no se pierde ni una linea de develop.
+- Riesgo declarado: 9 de las 25 rutas compartidas son componentes y middleware que usan OTROS modulos
+  (Transporte, administracion, tablas, modales, paleta). No son codigo de Comercio y por eso su
+  proteccion no la da la certificacion del modulo, la da la suite completa de develop ejecutada sobre
+  el candidato: 749 pruebas, 746 en verde y los 3 rojos reproducidos en develop limpio linea a linea
+  (seccion siguiente). Ninguna prueba propia de Transporte, Contabilidad o Administracion falla por
+  estos cambios. La regresion visual de esos componentes en navegador si queda pendiente para QA.
+- "petty-cash" sigue presente en las dos listas de server.js (lineas 34 y 278); el "-petty-cash" del
+  diff era la coma que ahora le sigue "comercio", no una perdida.
+
+HALLAZGO Y REPARACION DEL CANDIDATO (423d8cb0)
+----------------------------------------------
+La primera reconstruccion tomo apps/web/lib/moduleFunctions.ts de un estado previo del modulo y perdio
+la entrada fn-comercio-promociones, asi que el centro de comandos (Ctrl+K) no ofrecia Promociones solo
+en esta rama. Reparado y medido:
+  antes : rutas sin acceso = /dashboard/comercio/promociones, /dashboard/contabilidad/pyg/ampliado
+  despues: rutas sin acceso = /dashboard/contabilidad/pyg/ampliado   (identico a develop limpio)
+
+PUERTAS EJECUTADAS SOBRE EL TIPO 423d8cb0
+-----------------------------------------
+$ npx prisma validate --schema apps/api/prisma/schema.prisma
+  The schema at apps\api\prisma\schema.prisma is valid
+
+$ node scripts/certifications/comercio-tenant-rbac-local.js --output=.../candidato-tenant-rbac-tip.json
+  CERTIFICATION_OK {"total":53}          53/53, fallidos: []
+  LIMPIEZA {"empresas":4,"residuales":[]}
+  evidencia: ../comercio-tenant-rbac-20261106/candidato.json (commit 423d8cb0)
+
+$ cd apps/api && node --test test/comercio-service.test.js test/comercio-storage.test.js \
+          test/comercio-storefront-theme.test.js test/api-error-mapping.test.js
+  # tests 69 / # pass 69 / # fail 0
+
+$ cd apps/web && node --experimental-strip-types --test test/comercio-ux-consistency.test.mjs \
+          test/comercio-storefront-theme.test.mjs test/comercio-storefront-resilience.test.mjs \
+          test/comercio-reports-charts.test.mjs
+  # tests 49 / # pass 49 / # fail 0
+
+$ cd apps/web && node --experimental-strip-types --test <99 archivos de test/>
+  # tests 749 / # pass 746 / # fail 3
+    not ok 88  - el registro de funciones cubre todas las rutas del dashboard
+    not ok 301 - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+    not ok 303 - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+
+$ npm --workspace apps/web run typecheck  -> exit 0 (sin errores)
+$ npm run lint                            -> 22 problems (0 errors, 22 warnings), los 22 previos
+
+LOS 3 ROJOS SON DEL DESTINO, NO DEL CANDIDATO (medido)
+------------------------------------------------------
+Reproduccion sobre origin/develop limpio, sin el modulo, extraido con git archive a un directorio aparte:
+  $ git archive origin/develop -- apps/web | tar -x -C <dir>
+  $ cd <dir>/apps/web && node --test test/command-palette-module-functions.test.mjs test/hr-route-write-fallback.test.mjs
+  not ok 1  - el registro de funciones cubre todas las rutas del dashboard
+              rutas sin acceso desde el centro de comandos: /dashboard/contabilidad/pyg/ampliado
+  not ok 12 - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+  not ok 14 - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+  # tests 19 / # pass 16 / # fail 3
+Los dos de `hr-route-write-fallback.test.mjs` son contrato de fuente: el test de develop exige
+`if (supabaseSession && !shouldBlockHrWriteFallback(path, method))` pero develop ya anadio
+`&& !scheduleMonitorUsesOperationalSource(path, method)` a apps/web/lib/api.ts.
+Prueba de que no es culpa del candidato: `git diff origin/develop HEAD -- apps/web/lib/api.ts` y
+`git diff origin/develop HEAD -- apps/web/test/hr-route-write-fallback.test.mjs` miden 0 lineas:
+el candidato lleva los dos archivos tal cuales estan en develop.
+`/dashboard/contabilidad/pyg/ampliado` tampoco esta registrado en develop (no aparece en
+moduleFunctions.ts, operationalWorkspace.ts ni modules.ts de origin/develop).
+Arreglar cualquiera de los tres es alcance de otros modulos y quedaria fuera de este manifiesto.
+
+LIMITE DECLARADO (no se finge un verde)
+---------------------------------------
+La certificacion de navegador (comercio-ux-local.js y comercio-storefront-theme-local.js) NO se volvio
+a ejecutar contra el candidato: en esta maquina el usuario ya tiene un `next dev` en 3001 desde desarrollo
+y un segundo servidor no sirve rutas de dashboard autenticadas (colision de HMR deja "Validando perfil de
+acceso"). Se cubre con la identidad byte a byte de las 173 rutas Comercio y con la corrida de las puertas
+anteriores sobre el propio candidato; la regresion de navegador del candidato debe medirse en el ambiente
+QA de Railway despues del merge.

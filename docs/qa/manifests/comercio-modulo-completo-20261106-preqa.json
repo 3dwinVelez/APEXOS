@@ -1,0 +1,114 @@
+{
+  "change_id": "comercio-modulo-completo-20261106",
+  "commit": "423d8cb0f3969a47ecd19140cd6f97e899b45953",
+  "reviewed_commit": "423d8cb0f3969a47ecd19140cd6f97e899b45953",
+  "certified_tree": "69c096c87eee57109f1c7b6caeea5c1ae8e72bd4",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "promocion/comercio-develop-20261106",
+  "target_head": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-06",
+    "quality_gate_overridden": false,
+    "authorizations": [
+      "Promocionar el modulo Comercio a develop de manera controlada, solo este modulo, sin afectar ninguna otra funcion del sistema.",
+      "Rama auxiliar + PR hacia develop como mecanismo de publicacion.",
+      "Las seis migraciones del modulo las aplica Railway al hacer el merge; ninguna migracion se aplica desde esta estacion.",
+      "Cerrar antes de promover la brecha de aislamiento multi-tenant y RBAC (se cerro con 53 checks)."
+    ],
+    "nota": "Autorizacion del dueno: promover solo el modulo Comercio a develop por rama auxiliar + PR, con las migraciones aplicadas por Railway al hacer el merge. Lo que sigue sin autorizacion es la publicacion en si (push de la rama auxiliar y apertura del PR) y el despliegue en Railway."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/comercio-service.test.js",
+        "../../../apps/api/test/comercio-storage.test.js",
+        "../../../apps/api/test/comercio-storefront-theme.test.js",
+        "../evidence/comercio-promotion-candidate-20261106/gates-candidato.txt"
+      ],
+      "medida": "69/69 en apps/api (comercio-service, comercio-storage, comercio-storefront-theme, api-error-mapping) ejecutados sobre el candidato 423d8cb0"
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/vitrina-comercio-banner-upload-20261106/browser-local.json",
+        "../../../apps/api/test/api-error-mapping.test.js",
+        "../evidence/comercio-tenant-rbac-20261106/salida.txt"
+      ],
+      "medida": "rechazos con codigo de negocio (NO_AUTENTICADO, MODULO_NO_HABILITADO, PERMISO_DENEGADO y los 404 de negocio) y ninguna respuesta 5xx en la celda de aislamiento; el 500 historico del banner esta reproducido y corregido con su evidencia"
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/comercio-ux-local.js",
+        "../../../scripts/certifications/comercio-storefront-theme-local.js",
+        "../../../scripts/certifications/comercio-tenant-rbac-local.js"
+      ],
+      "medida": "los tres scripts de certificacion corren de verdad; el de aislamiento dio CERTIFICATION_OK total=53 y LIMPIEZA {\"empresas\":4,\"residuales\":[]} sobre el propio candidato"
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/comercio-ux-consistency.test.mjs",
+        "../../../apps/web/test/comercio-storefront-theme.test.mjs",
+        "../../../apps/web/test/comercio-storefront-resilience.test.mjs",
+        "../../../apps/web/test/comercio-reports-charts.test.mjs",
+        "../evidence/comercio-promotion-candidate-20261106/gates-candidato.txt"
+      ],
+      "medida": "49/49 en los cuatro contratos de fuente Comercio del candidato; suite completa de apps/web 749 pruebas con 746 en verde y 3 rojos que se reproducen en origin/develop limpio (git archive), no del candidato"
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-promotion-candidate-20261106/gates-candidato.txt",
+        "../evidence/comercio-ux-pasada-20261106/browser-local.json",
+        "../evidence/comercio-ux-pasada-20261106/recorrido.json"
+      ],
+      "medida": "Regresion de plataforma corrida sobre el arbol del candidato: prisma validate valido, typecheck del workspace web en 0 errores, lint 0 errores / 22 avisos previos, suite web 749 pruebas con cero fallos nuevos contra el destino y la celda de aislamiento multi-tenant del sistema de rutas compartidas. La corrida en el Railway de QA sigue pendiente y se declara como limite, no como verde."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-ux-local.js",
+    "evidence": [
+      "../evidence/comercio-ux-pasada-20261106/browser-local.json",
+      "../evidence/comercio-ux-pasada-20261106/recorrido.json"
+    ],
+    "resultado": "CERTIFICATION_OK total=287 fallidos=[] medida sobre el arbol certificado 69c096c8, cuyas 173 rutas Comercio el candidato replica byte a byte (la celda del «Reintentar» se provoca abortando /api/v1/comercio/dashboard)"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-tenant-rbac-local.js",
+    "evidence": [
+      "../evidence/comercio-tenant-rbac-20261106/api-local.json",
+      "../evidence/comercio-tenant-rbac-20261106/candidato.json"
+    ],
+    "resultado": "53 checks con fallidos: 0 sobre el propio candidato 423d8cb0: cuatro empresas, lectura y escritura cruzadas, codigos de negocio en cada rechazo, vitrina publica sin costo/stock/tenant/ids y limpieza sin residuales"
+  },
+  "suites": {
+    "web_candidato": "749 pruebas, 746 pasan, 3 fallan (las 3 reproducidas en origin/develop limpio)",
+    "web_contratos_comercio_candidato": "49/49",
+    "api_comercio_candidato": "69/69",
+    "aislamiento_candidato": "53/53, LIMPIEZA {\"empresas\":4,\"residuales\":[]}",
+    "typecheck_candidato": "0 errores",
+    "lint_candidato": "0 errores, 22 avisos preexistentes",
+    "prisma_candidato": "schema valido",
+    "navegador_arbol_certificado": "certificacion de cierre 287 checks y regresion de vitrina 77 checks, ambas en 0 fallidos"
+  },
+  "pending_certifications": [
+    "Regresion de navegador del candidato: la pasada UX se midio contra el arbol certificado 69c096c8 y el candidato replica sus 173 rutas Comercio byte a byte, pero un segundo `next dev` en esta maquina no sirve rutas autenticadas (colision de HMR), asi que la corrida en navegador del candidato se hace en el ambiente QA de Railway despues del merge.",
+    "Aplicacion de las seis migraciones del modulo (20261026120000 a 20261028190000) en el ambiente QA: por decision del dueno las aplica Railway al hacer el merge, no esta estacion.",
+    "Bucket `comercio-assets` en la nube: no existe todavia; la vitrina degrada a sin banner pero la subida real del banner en QA queda sin certificar."
+  ],
+  "known_target_failures": [
+    "apps/web/test/hr-route-write-fallback.test.mjs (2 pruebas): contrato de fuente de develop que ya no coincide con apps/web/lib/api.ts de develop. Ambos archivos estan byte a byte como en el destino.",
+    "apps/web/test/command-palette-module-functions.test.mjs (1 prueba): /dashboard/contabilidad/pyg/ampliado no esta registrado en el centro de comandos de develop. Ya falla en origin/develop limpio.",
+    "Reproducidos y medidos en ../evidence/comercio-promotion-candidate-20261106/gates-candidato.txt. Arreglarlos es alcance de otros modulos."
+  ]
+}

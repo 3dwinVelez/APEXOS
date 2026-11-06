@@ -1,0 +1,60 @@
+# Certificacion de aislamiento multi-tenant y RBAC del modulo Comercio (M-30) — 2026-11-06
+# rama: desarrollo | comando: npm run certify:comercio-tenant-rbac:local
+# aplicacion real (server.build + app.inject) contra el PostgreSQL local del puesto; sin burlas
+# lineas de query omitidas de la transcripcion: 767
+CERTIFICATION_OK {"evidencia":"C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\comercio-tenant-rbac-20261106\\api-local.json","total":53}
+LIMPIEZA {"empresas":4,"residuales":[]}
+# checks: 53 | fallidos: [] | commit certificado: 69c096c8 | base: apexos | metodo: server.build() + app.inject, sin burlas ni interception
+  OK  cuatro_empresas_con_licencia_distinta  {"A":"3d954ef4-3fc4-45f9-90fd-6486b0473c46","L":"3c563126-5ffd-4e1e-b22f-a3e65b41fbdc","B":"80d73057-5bce-4d3b-a213-3fbf9ee4e46e","C":"a3840179-6959-48b3-9e62-211787ec6022"}
+  OK  settings_de_A  "nombre de tienda escrito"
+  OK  productos_y_clientes_de_A_creados  {"producto":146,"cliente":26}
+  OK  documentos_de_A_creados  {"venta_efectivo":199,"venta_credito":200,"gasto":68,"promocion":8}
+  OK  cartera_de_A_tiene_cuota  {"credito":42}
+  OK  datos_de_C_creados  {"producto":147,"gasto":69}
+  OK  C_no_lee_el_producto_de_A  {"status":404,"code":"PRODUCT_NOT_FOUND"}
+  OK  C_no_lee_el_foto_de_A  {"status":404,"code":"PRODUCT_NOT_FOUND"}
+  OK  C_no_lee_el_venta_de_A  {"status":404,"code":"SALE_NOT_FOUND"}
+  OK  C_no_lee_el_credito_de_A  {"status":404,"code":"CREDIT_NOT_FOUND"}
+  OK  C_no_lee_el_audiencia_de_A  {"status":404,"code":"PROMOTION_NOT_FOUND"}
+  OK  C_no_lee_el_promocion_de_A  {"status":404,"code":"PROMOTION_NOT_FOUND"}
+  OK  C_no_editar_el_producto_de_A  {"status":404,"code":"PRODUCT_NOT_FOUND"}
+  OK  C_no_ajustar_el_stock_de_A  {"status":404,"code":"PRODUCT_NOT_FOUND"}
+  OK  C_no_archivar_el_producto_de_A  {"status":404,"code":"PRODUCT_NOT_FOUND"}
+  OK  C_no_archivar_el_cliente_de_A  {"status":404,"code":"CUSTOMER_NOT_FOUND"}
+  OK  C_no_editar_el_cliente_de_A  {"status":404,"code":"CUSTOMER_NOT_FOUND"}
+  OK  C_no_anular_la_venta_de_A  {"status":404,"code":"SALE_NOT_FOUND"}
+  OK  C_no_abonar_a_la_cartera_de_A  {"status":404,"code":"CREDIT_NOT_FOUND"}
+  OK  C_no_editar_el_gasto_de_A  {"status":404,"code":"EXPENSE_NOT_FOUND"}
+  OK  C_no_anular_el_gasto_de_A  {"status":404,"code":"EXPENSE_NOT_FOUND"}
+  OK  C_no_activar_la_promocion_de_A  {"status":404,"code":"PROMOTION_NOT_FOUND"}
+  OK  C_no_editar_la_promocion_de_A  {"status":404,"code":"PROMOTION_NOT_FOUND"}
+  OK  el_invasor_no_muto_nada  {"price":12000,"active":true}
+  OK  la_lista_de_productos_de_C_no_tiene_filas_de_A  {"status":200,"tamano":456,"items":1}
+  OK  la_lista_de_clientes_de_C_no_tiene_filas_de_A  {"status":200,"tamano":22,"items":0}
+  OK  la_lista_de_ventas_de_C_no_tiene_filas_de_A  {"status":200,"tamano":22,"items":0}
+  OK  la_lista_de_creditos_de_C_no_tiene_filas_de_A  {"status":200,"tamano":61,"items":0}
+  OK  la_lista_de_gastos_de_C_no_tiene_filas_de_A  {"status":200,"tamano":256,"items":1}
+  OK  la_lista_de_movimientos_de_C_no_tiene_filas_de_A  {"status":200,"tamano":258,"items":1}
+  OK  la_lista_de_promociones_de_C_no_tiene_filas_de_A  {"status":200,"tamano":25,"items":0}
+  OK  dashboard_de_C_no_lee_la_ventana_de_A  {"ventas_A":null,"ventas_C":null}
+  OK  reporte_de_C_sin_ingresos_de_A  {"status":200}
+  OK  configuracion_de_C_es_la_suya  {"store_name":"Mi negocio"}
+  OK  empresa_sin_M30_queda_fuera_del_modulo  {"status":403,"code":"MODULO_NO_HABILITADO"}
+  OK  empresa_sin_M30_no_crea_nada  {"status":403,"code":"MODULO_NO_HABILITADO"}
+  OK  el_lector_si_lee  {"status":200}
+  OK  el_lector_no_escribe  {"status":403,"code":"PERMISO_DENEGADO"}
+  OK  el_lector_no_anula  {"status":403,"code":"PERMISO_DENEGADO"}
+  OK  el_lector_no_configura  {"status":403,"code":"PERMISO_DENEGADO"}
+  OK  sin_sesion_no_hay_modulo  {"status":401,"code":"TOKEN_INVALIDO"}
+  OK  A_publica_su_vitrina  {"codigo":"fgqypr35"}
+  OK  la_vitrina_es_publica  {"status":200,"store_name":"Almacen Aurora de A","items":1}
+  OK  la_vitrina_saca_solo_productos_de_A  {"items":["Cafe Aurora 250 g"]}
+  OK  la_vitrina_no_revela_costo  {"filtro":"\"cost\""}
+  OK  la_vitrina_no_revela_stock_crudo  {"filtro":"\"stock\""}
+  OK  la_vitrina_no_revela_tenant  {"filtro":"3d954ef4-3fc4-45f9-90fd-6486b0473c46"}
+  OK  la_vitrina_no_revela_ids_internas  {"filtro":"\"id\":"}
+  OK  la_vitrina_de_C_no_existe_sin_publicar  {"status":404,"code":"CATALOG_NOT_FOUND"}
+  OK  quemar_el_link_cambia_el_codigo  {"anterior":"fgqypr35","nuevo":"yn5pe3d8"}
+  OK  el_link_quemado_muere  {"status":404}
+  OK  ninguna_respuesta_es_5xx  {"codigos":[200,201,401,403,404]}
+  OK  los_rechazos_traen_codigo_de_negocio  {"rechazos":25}

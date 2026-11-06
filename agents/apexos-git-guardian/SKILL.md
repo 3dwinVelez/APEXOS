@@ -2,8 +2,8 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.3.0
-updated_at: 2026-11-03
+version: 2.4.0
+updated_at: 2026-11-06
 contract: 2
 ---
 
@@ -54,10 +54,11 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
 
 20. **La evidencia renumerada se retira declarándola, no dejándola suelta.** Cuando una ronda reemplaza capturas (dos archivos de la ronda 1 duplicaban los estados «tema claro» y «panel» de la numeración nueva), el borrado entra al inventario A/M/D del commit y el brief escribe qué se retiró y por qué. Un directorio de evidencia con dos generaciones conviviendo es peor que un borrado: el siguiente lector certifica sobre la captura vieja. Y el borrado sigue siendo borrado —requiere `allowed_deletions` en el manifiesto de alcance cuando la promoción lo pida—, no «se limpió la carpeta». Por qué: el 2026-11-05 la ronda 2 regeneró las seis capturas del directorio y dos de la ronda 1 quedaron huérfanas con numeración repetida.
 
+21. **Un candidato reconstruido se audita por archivo, y sus rojos se reproducen en el destino antes de atribuirlos.** Cuando el destino no contiene el módulo y la promoción se reconstruye en una rama auxiliar (cherry-picks o normalización de árbol), «los comites son los mismos» no prueba que el árbol lo sea. Dos medidas obligatorias, en este orden: (a) **paridad del contenido del módulo** — todo archivo compartido que el candidato toca se compara contra el árbol certificado, y cualquier línea del módulo presente en ese árbol y ausente en el candidato es un defecto de la reconstrucción, no del producto —; (b) **línea quitada por línea quitada contra el destino** — todo `-` del diff `origin/<target>..candidato` necesita su explicación; si es una reescritura de un componente compartido, se dice qué preservó y qué prueba la cubre. Y cuando la suite del candidato trae fallos, se extrae el destino limpio (`git archive origin/<target> -- <ruta> | tar -x`) y se corre ahí: un rojo que reproduce en el destino es deuda del destino y se **declara** en el manifiesto, nunca se arregla de paso ni se cuenta como falla del módulo. Por qué: el 2026-11-06 el candidato de Comercio perdió `fn-comercio-promociones` al tomar `moduleFunctions.ts` de un estado previo — en `desarrollo` estaba verde, en la rama auxiliar roto — y sus 3 fallos de suite resultaron ser dos contratos de fuente obsoletos de `develop` y una ruta de Contabilidad sin registro en la paleta; sin las dos medidas se habrían publicado como defectos del módulo promovido.
+
 ## Checklist de intervención
 
 Antes:
-
 - [ ] Preflight de agentes sin bloqueos y lecturas obligatorias leídas.
 - [ ] Rama, árbol y remoto registrados.
 - [ ] Inventario A/M/D exacto disponible y verificado contra el diff real.

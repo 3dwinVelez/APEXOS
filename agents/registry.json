@@ -187,9 +187,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.3.0",
-      "updated_at": "2026-11-03",
-      "sha256": "a10d5845ecf87fbe8cddf8a98391ae37b1edf87ec92a836576369a305d1f4f2a",
+      "version": "2.4.0",
+      "updated_at": "2026-11-06",
+      "sha256": "b7195e96523d0e4bcc19f770ecfbbdb4a978684c427a120aab206b1c078a76f3",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -210,7 +210,8 @@
         "sin-operaciones-destructivas",
         "alcance-torre-modulos",
         "torre-residente-en-desarrollo",
-        "evidencia-retirada-declarada"
+        "evidencia-retirada-declarada",
+        "candidato-reconstruido-se-audita-por-archivo"
       ]
     },
     {
@@ -247,9 +248,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.16.0",
+      "version": "2.17.0",
       "updated_at": "2026-11-06",
-      "sha256": "248b9a0feb1a44d607a49137ec847cb833ea548db0621cceee95669b128c32d6",
+      "sha256": "3488af79c30cbc7908205291e5eb870661da4118593e6f68df1bbadd889e3a98",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -290,7 +291,8 @@
         "composicion-de-fondo-como-la-pinta-el-navegador",
         "se-espera-el-hecho-del-dom-no-el-reloj",
         "contrato-ortografia-sobre-texto-extraido",
-        "estado-de-error-se-provoca-en-la-certificacion"
+        "estado-de-error-se-provoca-en-la-certificacion",
+        "el-codigo-de-negocio-discrimina-la-causa"
       ]
     },
     {
