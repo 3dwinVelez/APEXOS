@@ -8,7 +8,7 @@
     "develop": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277"
   },
   "target_head": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277",
-  "certified_commit": "f8d9be023daa6703c9811c454b606fe9ee54cc7c",
+  "certified_commit": "163a53f59acfea90696d394e4ef9681b81f64333",
   "candidate_source": {
     "branch": "desarrollo",
     "commits": [
@@ -39,9 +39,10 @@
       "2735426dd8915f753c747c575e01dec4623f691d",
       "cf119a9f9e6bfb944fd1ae33685310e51afca2b4",
       "00e66a30e3204035b0c2716159d11a75cf405eb8",
-      "f8d9be023daa6703c9811c454b606fe9ee54cc7c"
+      "f8d9be023daa6703c9811c454b606fe9ee54cc7c",
+      "163a53f59acfea90696d394e4ef9681b81f64333"
     ],
-    "note": "origin/develop no contiene el módulo Comercio (0 archivos). La promoción no es un merge de rama: el candidato se reconstruye aplicando estos 28 commits sobre el baseline de develop, en una rama auxiliar que requiere autorización independiente del dueño. El commit que versiona este propio manifiesto no puede citarse a sí mismo. Los commits que solo versionan estos dos archivos de alcance/pre-QA son tips de `desarrollo`, no aportan código de producto y quedan fuera de `commits`."
+    "note": "origin/develop no contiene el módulo Comercio (0 archivos). La promoción no es un merge de rama: el candidato se reconstruye aplicando estos 29 commits sobre el baseline de develop, en una rama auxiliar que requiere autorización independiente del dueño. El commit que versiona este propio manifiesto no puede citarse a sí mismo. Los commits que solo versionan estos dos archivos de alcance/pre-QA son tips de `desarrollo`, no aportan código de producto y quedan fuera de `commits`."
   },
   "change_intent": {
     "summary": "Promocionar el módulo Comercio completo (vitrina pública tematizable, mostrador, descuentos, promociones, cartera, gastos, compras, reportes y su pasada UX medida en Chromium) desde desarrollo a develop, sin infraestructura, sin migraciones remotas aplicadas y sin tocar otros módulos.",
@@ -1392,7 +1393,7 @@
     ],
     "blocking_reasons": [
       "El dueño pidió el commit listo para migrar, no la migración: no hay autorización para desarrollo → develop.",
-      "origin/develop no contiene el módulo: la promoción es la del módulo completo (28 commits, 250 rutas), no un commit puntual, y exige reconstruir el candidato.",
+      "origin/develop no contiene el módulo: la promoción es la del módulo completo (29 commits, 250 rutas), no un commit puntual, y exige reconstruir el candidato.",
       "Falta la certificación de aislamiento multi-tenant y RBAC del módulo, capacidad protegida por política.",
       "npm run qa:preqa:evidence falla por diseño mientras approval.status siga en pending."
     ]

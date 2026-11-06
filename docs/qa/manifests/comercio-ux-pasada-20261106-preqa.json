@@ -1,7 +1,7 @@
 {
   "change_id": "comercio-ux-pasada-20261106",
-  "commit": "f8d9be023daa6703c9811c454b606fe9ee54cc7c",
-  "reviewed_commit": "f8d9be023daa6703c9811c454b606fe9ee54cc7c",
+  "commit": "163a53f59acfea90696d394e4ef9681b81f64333",
+  "reviewed_commit": "163a53f59acfea90696d394e4ef9681b81f64333",
   "environment": "LOCAL",
   "source_branch": "desarrollo",
   "target_branch": "develop",
@@ -86,7 +86,7 @@
   },
   "blocking_reasons": [
     "El dueño pidió el commit listo para migrar, no la migración: no hay autorización para desarrollo → develop.",
-    "origin/develop no contiene el módulo: la promoción es la del módulo completo (28 commits, 250 rutas), no un commit puntual, y exige reconstruir el candidato.",
+    "origin/develop no contiene el módulo: la promoción es la del módulo completo (29 commits, 250 rutas), no un commit puntual, y exige reconstruir el candidato.",
     "Falta la certificación de aislamiento multi-tenant y RBAC del módulo, capacidad protegida por política.",
     "npm run qa:preqa:evidence falla por diseño mientras approval.status siga en pending."
   ],
