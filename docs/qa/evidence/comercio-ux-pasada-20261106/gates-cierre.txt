@@ -1,5 +1,7 @@
 # Gates de cierre — pasada UX de Comercio — 2026-11-06
-# rama: desarrollo | HEAD: aa06c5a0
+# rama: desarrollo | estado certificado: f8d9be02 (la corrida se ejecuto con el arbol de ese commit)
+# Las dos puertas de promocion del final se leen contra el tip de la rama y salen bloqueadas por
+# diseno: falta la autorizacion del dueno.
 
 === npm run agents:sync ===
 > apex-os@2.0.0 agents:sync
@@ -83,3 +85,17 @@ exit=0
 === npm run certify:comercio-ux:local ===
 CERTIFICATION_OK {"evidencia":"docs/qa/evidence/comercio-ux-pasada-20261106","total":287}
 LISTO
+
+=== npm run qa:promotion:scope -- docs/qa/manifests/comercio-ux-pasada-20261106-scope.json HEAD origin/develop ===
+ALCANCE DE PROMOCION INVALIDO: rutas fuera de alcance
+# Bloqueo por diseno: origin/develop no contiene ninguna ruta del modulo Comercio, asi que el diff
+# neto de la rama trae torre, buzon, contabilidad, agentes y demas alcance ajeno. La promocion del
+# modulo exige reconstruir el candidato (28 commits) en una rama auxiliar autorizada, no merger la rama.
+
+=== npm run qa:preqa:evidence -- docs/qa/manifests/comercio-ux-pasada-20261106-preqa.json ===
+AUTORIZACION PRE-QA BLOQUEADA
+- approval.status debe ser approved
+- la autorizacion pre-QA requiere responsable y fecha
+- checks.platform_regression.status debe ser passed
+# Falla por las tres razones esperadas: falta la autorizacion del dueno y la regresion de
+# plataforma en el ambiente QA de Railway no esta ejecutada. No es un rojo de producto.

@@ -41,7 +41,7 @@
       "00e66a30e3204035b0c2716159d11a75cf405eb8",
       "f8d9be023daa6703c9811c454b606fe9ee54cc7c"
     ],
-    "note": "origin/develop no contiene el módulo Comercio (0 archivos). La promoción no es un merge de rama: el candidato se reconstruye aplicando estos 28 commits sobre el baseline de develop, en una rama auxiliar que requiere autorización independiente del dueño."
+    "note": "origin/develop no contiene el módulo Comercio (0 archivos). La promoción no es un merge de rama: el candidato se reconstruye aplicando estos 28 commits sobre el baseline de develop, en una rama auxiliar que requiere autorización independiente del dueño. El commit que versiona este propio manifiesto no puede citarse a sí mismo. Los commits que solo versionan estos dos archivos de alcance/pre-QA son tips de `desarrollo`, no aportan código de producto y quedan fuera de `commits`."
   },
   "change_intent": {
     "summary": "Promocionar el módulo Comercio completo (vitrina pública tematizable, mostrador, descuentos, promociones, cartera, gastos, compras, reportes y su pasada UX medida en Chromium) desde desarrollo a develop, sin infraestructura, sin migraciones remotas aplicadas y sin tocar otros módulos.",
