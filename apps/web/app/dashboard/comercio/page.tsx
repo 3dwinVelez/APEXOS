@@ -111,7 +111,7 @@ export default function ComercioHome() {
         </div>
       </header>
 
-      {error ? <Alert tone="error" title="No se pudo cargar el tablero">{error} <button className="font-semibold underline" onClick={() => void load()} type="button">Reintentar</button></Alert> : null}
+      {error ? <Alert tone="error" title="No se pudo cargar el tablero">{error} <button className="inline-flex min-h-6 items-center font-semibold underline" onClick={() => void load()} type="button">Reintentar</button></Alert> : null}
 
       <section aria-label="Indicadores del mes" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {loading || !data ? [0, 1, 2, 3].map((index) => <Skeleton className="h-28" key={index} />) : (

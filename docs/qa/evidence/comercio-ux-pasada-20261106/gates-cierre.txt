@@ -1,0 +1,85 @@
+# Gates de cierre — pasada UX de Comercio — 2026-11-06
+# rama: desarrollo | HEAD: aa06c5a0
+
+=== npm run agents:sync ===
+> apex-os@2.0.0 agents:sync
+> node scripts/agents/sync-agents.js write
+
+[agents] sincronizados 11 agentes y 11 documentos
+
+=== npm run agents:check ===
+
+> apex-os@2.0.0 agents:check
+> node scripts/agents/sync-agents.js check
+
+[agents] OK: 11 agentes y 11 documentos verificados
+
+=== npm run test:agents ===
+# tests 42
+# pass 42
+# fail 0
+
+=== npm run agents:preflight -- --paths "apps/web/**,scripts/certifications/**,docs/qa/**,docs/briefs/**,agents/**,.qoder/skills/**" ===
+Veredicto: OK
+
+=== npm run agents:coverage -- --paths "apps/web/**,scripts/certifications/**,docs/qa/**,docs/briefs/**,agents/**,.qoder/skills/**" ===
+
+> apex-os@2.0.0 agents:coverage
+> node scripts/agents/coverage.js --paths apps/web/**,scripts/certifications/**,docs/qa/**,docs/briefs/**,agents/**,.qoder/skills/**
+
+[agents:coverage] rama: desarrollo | rutas: 6 | fetch: si
+  AGENTE           VERSION   FRESCURA      CHANGELOG  RESULTADO
+  apexos-brief     2.13.0    local-ahead   si         OK
+  apexos-frontend  2.8.0     local-ahead   si         OK
+
+[agents:coverage] OK: contexto del equipo actualizado para todas las rutas.
+
+=== contrato de fuente UX de Comercio (apps/web/test/comercio-ux-consistency.test.mjs) ===
+# tests 14
+# pass 14
+# fail 0
+
+=== suite web de fuente y unidad (apps/web, node --test test/*.mjs sin certify-*) ===
+# tests 648
+# pass 648
+# fail 0
+
+=== las 9 certificaciones de navegador de apps/web, en serie ===
+# Nota del arnes: con `node --test` en paralelo dos de ellas (`foundation` y `toolkit`) reventaron su
+# waitForFunction de 30 s; cada certify-*.mjs abre su propio Chromium contra el mismo dev-server y se
+# disputan la maquina. No es un defecto del producto: ejecutadas en serie pasan las nueve, y por eso
+# se registran aqui con su numero de comprobaciones.
+# CERTIFICACIÓN BOTÓN PROVEEDOR PASSED: 6 comprobaciones
+# CERTIFICACIÓN UI/UX LOCAL PASSED: 13 comprobaciones
+# CERTIFICACIÓN ACCESIBILIDAD FASE 3 PASSED: 11 comprobaciones
+# CERTIFICACIÓN COLABORACIÓN FASE 3 PASSED: 5 comprobaciones
+# CERTIFICACIÓN FASE 3 BASE LOCAL PASSED: 7 comprobaciones
+# CERTIFICACIÓN PERSONALIZACIÓN FASE 3 PASSED: 5 comprobaciones
+# CERTIFICACIÓN TOOLKIT FASE 3 PASSED: 6 comprobaciones
+# CERTIFICACIÓN TOTP FASE 3 PASSED: 4 comprobaciones
+# CERTIFICACIÓN FASE 2 LOCAL PASSED: 14 comprobaciones
+# tests 9
+# pass 9
+# fail 0
+
+=== subset Comercio del API ===
+# tests 69
+# pass 69
+# fail 0
+
+=== npm run typecheck -w apps/web ===
+
+> @apex-os/web@2.0.0 typecheck
+> tsc -p tsconfig.typecheck.json --noEmit
+
+exit=0
+
+=== npm run lint -w apps/web ===
+  4613:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+   73:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  127:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+✖ 22 problems (0 errors, 22 warnings)
+
+=== npm run certify:comercio-ux:local ===
+CERTIFICATION_OK {"evidencia":"docs/qa/evidence/comercio-ux-pasada-20261106","total":287}
+LISTO

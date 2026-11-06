@@ -247,9 +247,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.15.0",
+      "version": "2.16.0",
       "updated_at": "2026-11-06",
-      "sha256": "9b766ccfdee55058548a5f9be849ffa86b414ba3c93ef260ee818cbcd4672255",
+      "sha256": "248b9a0feb1a44d607a49137ec847cb833ea548db0621cceee95669b128c32d6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -289,7 +289,8 @@
         "recorrido-se-autocuenta",
         "composicion-de-fondo-como-la-pinta-el-navegador",
         "se-espera-el-hecho-del-dom-no-el-reloj",
-        "contrato-ortografia-sobre-texto-extraido"
+        "contrato-ortografia-sobre-texto-extraido",
+        "estado-de-error-se-provoca-en-la-certificacion"
       ]
     },
     {

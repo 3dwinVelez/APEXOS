@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.15.0
+version: 2.16.0
 updated_at: 2026-11-06
 contract: 2
 ---
@@ -92,6 +92,8 @@ Antes de actuar, leer en este orden:
     - **Reglas:** una lista curada no alcanza nunca; se suma la regla estructural (toda terminación `-cion`/`-sion` suelta es `-ción`/`-sión`, y el plural `-ciones` no lleva tilde) y la de la eñe (`campana`→`campaña`, `dueno`→`dueño`). Cubren vocablos que nadie escribió en la lista.
     - **Autoverificación bilateral:** cinco frases con falta conocida deben disparar exactamente una detección y tres formas de código legítimo no deben disparar ninguna. Con una sola mitad, el guard demuestra que sabe gritar pero no que sabe callar.
     - Y la lista se revisa contra la norma antes de usarse: `Apariencia`, `periodo`, `solo` (RAE 2014) y `examen`/`imagen` (llanas; la tilde llega en `exámenes`) **no** son faltas. Un guard que «corrige» texto correcto destruye la confianza en el resto de sus rojos. Por qué: el 2026-11-06, tras la barrida, cambian 115 cadenas y el guard queda en 14 pruebas; antes de este control declaró verdes dos rondas con faltas evidentes.
+
+33. **Todo estado que solo aparece al fallar se provoca desde el arnés.** El botón «Reintentar» de la portada de Comercio vivía dentro de `{error ? <Alert…> : null}`, así que la matriz de blancos táctiles solo lo medía cuando `/api/v1/comercio/dashboard` tenía la bondad de caerse: una corrida midió 20 px y lo declaró rojo, la siguiente no lo encontró y declaró verde la misma pantalla. Un check que depende del humor del ambiente no certifica nada —ni cuando pasa—, y el defecto real (24 px exigidos por WCAG 2.5.8 frente a 20 px medidos) quedó sin arreglar hasta que volvió a salir en la corrida siguiente. Regla: el estado se **fabrica** (`setRequestInterception` + `req.abort()` de la ruta concreta, o el equivalente: sesión sin permiso, respuesta vacía, 5xx), se mide, y el check se auto-cuenta con el detalle (`{"presente":true,"alto":24,"ancho":66}`); si el estado no se puede provocar, el check no existe y se declara como límite, nunca como verde. Por qué: el 2026-11-06 la certificación de cierre pasó de 286 a 287 checks al hacer determinística esta celda; la corrección exige también fijar el piso en la prueba de fuente, porque el arnés puede provocar mal y el contrato de fuente no lo permite.
 
 ## Checklist de intervención
 

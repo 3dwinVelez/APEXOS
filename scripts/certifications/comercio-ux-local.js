@@ -389,6 +389,31 @@ async function main() {
     }
     check("el_recorrido_mide_44_pantallas", resumen.length === RUTAS.length * 2 * 2, { medidas: resumen.length });
 
+    // === Estado de error de la portada, provocado ===
+    // El boton «Reintentar» solo aparece si el tablero no carga, asi que en la matriz dependia
+    // de un capricho del ambiente: en una corrida midio 20 px y en la siguiente no existia.
+    // Se corta la peticion a proposito para medir siempre el blanco tactil del estado de error.
+    await page.evaluate(() => localStorage.setItem("apex_theme", "dark"));
+    await page.setViewport({ ...PANTALLAS.movil, deviceScaleFactor: 1 });
+    await page.setRequestInterception(true);
+    const cortaTablero = (req) => {
+      if (req.url().includes("/api/v1/comercio/dashboard")) return void req.abort().catch(() => {});
+      return void req.continue().catch(() => {});
+    };
+    page.on("request", cortaTablero);
+    await page.goto(`${webUrl}/dashboard/comercio`, { waitUntil: "networkidle2", timeout: NAV_TIMEOUT }).catch(() => null);
+    await sleep(1200);
+    const reintento = await page.evaluate(() => {
+      const boton = [...document.querySelectorAll("button")].find((b) => /Reintentar/.test(b.innerText || ""));
+      if (!boton) return { presente: false };
+      const caja = boton.getBoundingClientRect();
+      return { alto: Math.round(caja.height), ancho: Math.round(caja.width), presente: true };
+    });
+    page.off("request", cortaTablero);
+    await page.setRequestInterception(false);
+    check("el_reintento_de_la_portada_es_un_blanco_tactil", reintento.presente && reintento.alto >= 24, reintento);
+    await shot(page, "portada-390-error-provocado");
+
     // === Busqueda moderna: campo etiquetado, con icono y limpieza, que filtra de verdad ===
     await page.setViewport({ ...PANTALLAS.escritorio, deviceScaleFactor: 1 });
     await page.evaluate(() => localStorage.setItem("apex_theme", "light"));
