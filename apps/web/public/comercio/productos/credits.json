@@ -1,0 +1,1317 @@
+{
+  "source": "Wikimedia Commons",
+  "note": "Imagenes libres de Wikimedia Commons, recortadas a 640x640 para el catalogo demo.",
+  "updated_at": "2026-10-29T03:30:18.491Z",
+  "items": {
+    "P-0019": {
+      "name": "Aceite de girasol 900 ml",
+      "file": "/comercio/productos/P-0019.jpg",
+      "query": "sunflower oil bottle",
+      "title": "File:Bottle 1 liter Sunflower refined oil.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bottle_1_liter_Sunflower_refined_oil.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Exgsp Gmbh LLC BOTTLE 1 liter Sunflower refined oil",
+      "sha256": "7229fca4e25f9152bac7211e96772b86e25096251d7a3c239828f2985601a33c"
+    },
+    "P-0016": {
+      "name": "Arroz grano dorado 500 g",
+      "file": "/comercio/productos/P-0016.jpg",
+      "query": "white rice",
+      "title": "File:WhiteRice.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:WhiteRice.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Sanjay Acharya",
+      "sha256": "5706baa4288a48fd2d19ffe5368e7d670e5551a20286eb5e168c7acf681cbbb3"
+    },
+    "P-0025": {
+      "name": "Atun en aceite 140 g",
+      "file": "/comercio/productos/P-0025.jpg",
+      "query": "canned tuna",
+      "title": "File:Kooddoo canned tuna.jpeg",
+      "page": "https://commons.wikimedia.org/wiki/File:Kooddoo_canned_tuna.jpeg",
+      "license": "CC BY-SA 3.0",
+      "artist": "User:CRC43",
+      "sha256": "bf8036a6f072ca112b6ef9209073c08676da2f3ed4be9a7828aed5ec2c5d1b99"
+    },
+    "P-0022": {
+      "name": "Azucar morena 1 kg",
+      "file": "/comercio/productos/P-0022.jpg",
+      "query": "brown sugar bowl",
+      "title": "File:Sugar Brown.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Sugar_Brown.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Donovan Govan.",
+      "sha256": "3f85d9b65c5b016507b46679e5bd04912ac3fbb536e044d17bc1e6d060d88198"
+    },
+    "P-0026": {
+      "name": "Cafe molido 250 g",
+      "file": "/comercio/productos/P-0026.jpg",
+      "query": "coffee",
+      "title": "File:Roasted coffee beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans.jpg",
+      "license": "Public domain",
+      "artist": "MarkSweep",
+      "sha256": "c60db4992649dcf113267c2b0a0eed07c3927cc1c0282b599d3183046c256baf"
+    },
+    "P-0020": {
+      "name": "Espagueti 500 g",
+      "file": "/comercio/productos/P-0020.jpg",
+      "query": "spaghetti pasta",
+      "title": "File:Costa Pasta spaghetti 01.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Costa_Pasta_spaghetti_01.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Leonard J. DeFrancisci",
+      "sha256": "45714d6296931a0d68a9ea963558270954562a6eaf1756e4dbed60d823c1a2cb"
+    },
+    "P-0017": {
+      "name": "Frijol Cargamanto 500 g",
+      "file": "/comercio/productos/P-0017.jpg",
+      "query": "red kidney beans",
+      "title": "File:Red kidney beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Red_kidney_beans.jpg",
+      "license": "CC0",
+      "artist": "Fumikas Sagisavas",
+      "sha256": "1c3ca7bf7a3bc7daeab9dcbb18b89b7df7799700af1aae9cfacf0705ba653045"
+    },
+    "P-0021": {
+      "name": "Harina de trigo 1 kg",
+      "file": "/comercio/productos/P-0021.jpg",
+      "query": "wheat flour bag",
+      "title": "File:A nice bag of wheat flour!.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:A_nice_bag_of_wheat_flour!.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Ph scale 56",
+      "sha256": "962cbb858100f10db702a809133fbae5978b0cd36cff7334328734692a4f450c"
+    },
+    "P-0024": {
+      "name": "Huevos grandes x 12",
+      "file": "/comercio/productos/P-0024.jpg",
+      "query": "egg carton",
+      "title": "File:Stack of egg cartons.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Stack_of_egg_cartons.jpg",
+      "license": "Public domain",
+      "artist": "Edward Betts",
+      "sha256": "893d15d8423fd364adeee69878018b284377da285a995edfba5e48447e6f76ab"
+    },
+    "P-0018": {
+      "name": "Lenteja 500 g",
+      "file": "/comercio/productos/P-0018.jpg",
+      "query": "lentils",
+      "title": "File:Red lentils (1).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Red_lentils_(1).jpg",
+      "license": "CC0",
+      "artist": "Fumikas Sagisavas",
+      "sha256": "7bfa198422d49f60a3768045a7add0739696c1ce58c96d688b6d80b1b4876027"
+    },
+    "P-0027": {
+      "name": "Panela pico 1 kg",
+      "file": "/comercio/productos/P-0027.jpg",
+      "query": "panela",
+      "title": "File:Panela.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Panela.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Jdvillalobos",
+      "sha256": "8ebbc75a6c4cc1a4f29b832876783b227fcf2e61cb793969e4e4891e5b3d9876"
+    },
+    "P-0023": {
+      "name": "Sal yodada 500 g",
+      "file": "/comercio/productos/P-0023.jpg",
+      "query": "table salt",
+      "title": "File:TableSaltRussia.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:TableSaltRussia.jpg",
+      "license": "CC BY-SA 2.5",
+      "artist": "Leonid Dzhepko / Л.П. Джепко",
+      "sha256": "b02a4dbb4b382a1d3312c46d8c7e0072a8615ffca54cfc8816d4a57d21edc5f3"
+    },
+    "P-0032": {
+      "name": "Agua con gas 600 ml",
+      "file": "/comercio/productos/P-0032.jpg",
+      "query": "File:BORJOMI GEORGIAN MINERAL WATER glass bottle0.5 barcode4860019001346 codeCG2RUBY1 date30.10.2019L10 1.jpg",
+      "title": "File:BORJOMI GEORGIAN MINERAL WATER glass bottle0.5 barcode4860019001346 codeCG2RUBY1 date30.10.2019L10 1.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:BORJOMI_GEORGIAN_MINERAL_WATER_glass_bottle0.5_barcode4860019001346_codeCG2RUBY1_date30.10.2019L10_1.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Matsievsky",
+      "sha256": "602eaf9a8eee16be972264801975c219c31d8b8d8853eb045e05ff5aa216fd49"
+    },
+    "P-0031": {
+      "name": "Agua sin gas 600 ml",
+      "file": "/comercio/productos/P-0031.jpg",
+      "query": "bottled water",
+      "title": "File:InterContinental Yokohama Grand bottled water 20111101.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:InterContinental_Yokohama_Grand_bottled_water_20111101.jpg",
+      "license": "Public domain",
+      "artist": "Yusuke Kawasaki",
+      "sha256": "ef3939aa2340e421d04cfc64ff94032fb35582e81d29fcd95b4d2f8d2e3f351e"
+    },
+    "P-0034": {
+      "name": "Bebida energetica 250 ml",
+      "file": "/comercio/productos/P-0034.jpg",
+      "query": "energy drink can",
+      "title": "File:Energy Drink Battery Cans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Energy_Drink_Battery_Cans.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Klooni",
+      "sha256": "1c44940b8e1cc8ead1e02af4fc84569cc8f1cd2d4b09f9c7d10e7c08fb825552"
+    },
+    "P-0005": {
+      "name": "Cafe SMOKE 1793056531777",
+      "file": "/comercio/productos/P-0005.jpg",
+      "query": "roasted coffee beans",
+      "title": "File:Roasted coffee beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans.jpg",
+      "license": "Public domain",
+      "artist": "MarkSweep",
+      "sha256": "c60db4992649dcf113267c2b0a0eed07c3927cc1c0282b599d3183046c256baf"
+    },
+    "P-0008": {
+      "name": "Cafe SMOKE 1793056709934",
+      "file": "/comercio/productos/P-0008.jpg",
+      "query": "coffee package",
+      "title": "File:Uchunari grade 0 coffee package.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Uchunari_grade_0_coffee_package.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Annerella",
+      "sha256": "51f304606ac3156c8b1df88bfc09348867c0503bc57208da9f3de293a0245a94"
+    },
+    "P-0011": {
+      "name": "Cafe SMOKE 1793056764296",
+      "file": "/comercio/productos/P-0011.jpg",
+      "query": "coffee beans bag",
+      "title": "File:AeroPress coffeemaker and bag of coffee beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:AeroPress_coffeemaker_and_bag_of_coffee_beans.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Sharon Chen from Austin, United States",
+      "sha256": "353f614205c4fc694f18b4d57df42e17c14c850e57597cfa9332b38d63251468"
+    },
+    "P-0014": {
+      "name": "Cafe SMOKE 1793057040391",
+      "file": "/comercio/productos/P-0014.jpg",
+      "query": "coffee package",
+      "title": "File:Uchunari grade 0 coffee package.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Uchunari_grade_0_coffee_package.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Annerella",
+      "sha256": "51f304606ac3156c8b1df88bfc09348867c0503bc57208da9f3de293a0245a94"
+    },
+    "P-0002": {
+      "name": "Cafe molido 250g",
+      "file": "/comercio/productos/P-0002.jpg",
+      "query": "coffee",
+      "title": "File:Roasted coffee beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans.jpg",
+      "license": "Public domain",
+      "artist": "MarkSweep",
+      "sha256": "c60db4992649dcf113267c2b0a0eed07c3927cc1c0282b599d3183046c256baf"
+    },
+    "P-0001": {
+      "name": "Cafe molido 250g",
+      "file": "/comercio/productos/P-0001.jpg",
+      "query": "coffee",
+      "title": "File:Roasted coffee beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans.jpg",
+      "license": "Public domain",
+      "artist": "MarkSweep",
+      "sha256": "c60db4992649dcf113267c2b0a0eed07c3927cc1c0282b599d3183046c256baf"
+    },
+    "P-0036": {
+      "name": "Chocolate saborizado 980 ml",
+      "file": "/comercio/productos/P-0036.jpg",
+      "query": "chocolate milk bottle",
+      "title": "File:Chocolate milk bottles.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Chocolate_milk_bottles.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Phillip Stewart",
+      "sha256": "3dafaae4adb1edc8bbf5d8388dff6177a52b31ab0640b3a3202495169211d0c1"
+    },
+    "P-0028": {
+      "name": "Gaseosa cola 1.5 L",
+      "file": "/comercio/productos/P-0028.jpg",
+      "query": "cola soft drink bottle",
+      "title": "File:Drink \"Favorite Cola\".jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Drink_%22Favorite_Cola%22.jpg",
+      "license": "CC0",
+      "artist": "Будущее Прекрасно",
+      "sha256": "d01d917e51f381c2fab1c21b794c96dd4f5b236cef2b88d4f6ee37ce5526824d"
+    },
+    "P-0029": {
+      "name": "Gaseosa limonada 1.5 L",
+      "file": "/comercio/productos/P-0029.jpg",
+      "query": "File:Bottle of Vess Diet Lemon Lime Soda - DPLA - aa80da0948f47199e541b920395f1e95 (page 1).jpg",
+      "title": "File:Bottle of Vess Diet Lemon Lime Soda - DPLA - aa80da0948f47199e541b920395f1e95 (page 1).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bottle_of_Vess_Diet_Lemon_Lime_Soda_-_DPLA_-_aa80da0948f47199e541b920395f1e95_(page_1).jpg",
+      "license": "Public domain",
+      "artist": "Vess Beverage Co",
+      "sha256": "ea4665d8d60d85b7f288ee615a9658bc0330ad89a96af7de57b48dcb1315c50f"
+    },
+    "P-0030": {
+      "name": "Jugo de fruta 1 L",
+      "file": "/comercio/productos/P-0030.jpg",
+      "query": "orange juice",
+      "title": "File:Orange juice without any fruits.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Orange_juice_without_any_fruits.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "No machine-readable author provided. Flunse assumed (based on copyright claims).",
+      "sha256": "e1ec7e6080c27c6b9d98de91e30addd2422dcdb8b30856c54986de4d07ff4d07"
+    },
+    "P-0037": {
+      "name": "Limonada natural 1 L",
+      "file": "/comercio/productos/P-0037.jpg",
+      "query": "lemonade",
+      "title": "File:Fresh lemonade and lemons.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Fresh_lemonade_and_lemons.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Eric Polk",
+      "sha256": "c91a2b9e2b9d5cc2d6c8cb7a0276aa57e91f9965f39c7e537563f1016d982a46"
+    },
+    "P-0033": {
+      "name": "Malta 250 ml",
+      "file": "/comercio/productos/P-0033.jpg",
+      "query": "File:Pack Vita Malt.jpg",
+      "title": "File:Pack Vita Malt.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Pack_Vita_Malt.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Warinhari",
+      "sha256": "ea7a2d4de75c2c53aeb91088140e7ca0e84ec824bbd0f4301fe9ace59360a391"
+    },
+    "P-0035": {
+      "name": "Te frio 500 ml",
+      "file": "/comercio/productos/P-0035.jpg",
+      "query": "File:Iced Tea from flickr.jpg",
+      "title": "File:Iced Tea from flickr.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Iced_Tea_from_flickr.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Melissa Doroquez",
+      "sha256": "b2d75c4431134a56bd2db0b892b98e426d8f57710cfcf02cb439b50abb8f0fa4"
+    },
+    "P-0081": {
+      "name": "Cepillo dental medio",
+      "file": "/comercio/productos/P-0081.jpg",
+      "query": "toothbrush",
+      "title": "File:Toothbrush x2 20050716 003.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Toothbrush_x2_20050716_003.jpg",
+      "license": "Public domain",
+      "artist": "Jonas Bergsten",
+      "sha256": "6a836c8bb02d389c11ceca90bb1533a970d2ef65c1a73a99d18dc969ba5be810"
+    },
+    "P-0087": {
+      "name": "Crema corporal 250 ml",
+      "file": "/comercio/productos/P-0087.jpg",
+      "query": "File:Warm Vanilla Sugar shower gel and lotion.jpg",
+      "title": "File:Warm Vanilla Sugar shower gel and lotion.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Warm_Vanilla_Sugar_shower_gel_and_lotion.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "SarahMalik32",
+      "sha256": "5f9ef5e3a5573685bc98299f58d822cfde3bf01d20bd04d4b92f405e31201e0a"
+    },
+    "P-0082": {
+      "name": "Desodorante en piedra 75 g",
+      "file": "/comercio/productos/P-0082.jpg",
+      "query": "deodorant",
+      "title": "File:MUM Deodorant pic1.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:MUM_Deodorant_pic1.JPG",
+      "license": "Public domain",
+      "artist": "Alf van Beem",
+      "sha256": "536e5d56c6be9363a630fd6402cd4819bdb7d3e9f025cac7336c077e8ec3e733"
+    },
+    "P-0078": {
+      "name": "Jabon de tocador 100 g",
+      "file": "/comercio/productos/P-0078.jpg",
+      "query": "soap bar",
+      "title": "File:Femina, soap bar, pic4.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Femina,_soap_bar,_pic4.JPG",
+      "license": "CC0",
+      "artist": "Alf van Beem",
+      "sha256": "46310e9e3a326c4fa3e200938e6028117a978cfd10ef1bcedcea171ec6146b5a"
+    },
+    "P-0083": {
+      "name": "Papel higienico x 4 rollos",
+      "file": "/comercio/productos/P-0083.jpg",
+      "query": "toilet paper",
+      "title": "File:Toilet paper orientation over.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Toilet_paper_orientation_over.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Elya",
+      "sha256": "7ff914a39edae1a3c13b08e88e6f795b288180403b2b475c5a98f958421d064d"
+    },
+    "P-0080": {
+      "name": "Pasta dental 100 ml",
+      "file": "/comercio/productos/P-0080.jpg",
+      "query": "File:舒客 Shuke cherry blossom enzyme toothpaste in a tube.jpg",
+      "title": "File:舒客 Shuke cherry blossom enzyme toothpaste in a tube.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:%E8%88%92%E5%AE%A2_Shuke_cherry_blossom_enzyme_toothpaste_in_a_tube.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Nord794ub",
+      "sha256": "0452bd82ad542cc5ed60e6a8fdf5043287d7f3b08048ca91ef31e5dbf38991e4"
+    },
+    "P-0086": {
+      "name": "Pañales de bebé talla 30 x 30",
+      "file": "/comercio/productos/P-0086.jpg",
+      "query": "File:Disposablediaper.JPG",
+      "title": "File:Disposablediaper.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Disposablediaper.JPG",
+      "license": "Public domain",
+      "artist": "Coop41",
+      "sha256": "2a37db72b68d407110a54ca5545c96770fefa21e0bef0eb2afef9b9f73996112"
+    },
+    "P-0085": {
+      "name": "Protectores solares FPS 50",
+      "file": "/comercio/productos/P-0085.jpg",
+      "query": "sunscreen bottle",
+      "title": "File:Suncademy airless bottle sunscreen citronella active ingredients.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Suncademy_airless_bottle_sunscreen_citronella_active_ingredients.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Alpantex",
+      "sha256": "be07198a0bd34232023f2870385aef11ca2c0286a6dd29eeee172b4a3c539dc0"
+    },
+    "P-0079": {
+      "name": "Shampoo reparador 400 ml",
+      "file": "/comercio/productos/P-0079.jpg",
+      "query": "shampoo bottle",
+      "title": "File:Shampoo Bottle made of PLA-Blend Bio-Flex.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Shampoo_Bottle_made_of_PLA-Blend_Bio-Flex.jpg",
+      "license": "CC BY-SA 3.0 de",
+      "artist": "F. Kesselring, FKuR Willich",
+      "sha256": "56be0834dc59560e706d647e8af9b5ebbdd3e676a4afadf77c1538e5ca1fdbb8"
+    },
+    "P-0084": {
+      "name": "Toallas humedas x 40",
+      "file": "/comercio/productos/P-0084.jpg",
+      "query": "wet wipes",
+      "title": "File:Thai Wet wipes - wrapped.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Thai_Wet_wipes_-_wrapped.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "User:Mattes",
+      "sha256": "9de7c8629b018a202d724c24c806c8a9b8f3eb90c2e753b6ea470131b31824a1"
+    },
+    "P-0102": {
+      "name": "Candado 40 mm con llave",
+      "file": "/comercio/productos/P-0102.jpg",
+      "query": "padlock",
+      "title": "File:Padlock klódka ubt.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Padlock_kl%C3%B3dka_ubt.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Tomasz Sienicki [user: tsca, mail: tomasz.sienicki at gmail.com]",
+      "sha256": "6d3c53e7bb53b25c67a6faf0c7a9034d4ead43b07a5ce3a8ac3ad666ec2115ee"
+    },
+    "P-0098": {
+      "name": "Cinta de aislar 20 m",
+      "file": "/comercio/productos/P-0098.jpg",
+      "query": "electrical tape",
+      "title": "File:Electrical-tape black.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Electrical-tape_black.jpg",
+      "license": "Public domain",
+      "artist": "Jonas Bergsten",
+      "sha256": "d5c4d8b992d52944271e2af7e92717020146892e45fe5bf55ab7571124d26171"
+    },
+    "P-0097": {
+      "name": "Cinta de enmascarar 1\" x 30 m",
+      "file": "/comercio/productos/P-0097.jpg",
+      "query": "masking tape roll",
+      "title": "File:A Roll of Masking Tape (32410678777).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:A_Roll_of_Masking_Tape_(32410678777).jpg",
+      "license": "CC BY 2.0",
+      "artist": "HireAHelper",
+      "sha256": "33aa542dad880e0116bf02d2c7844300abefc6d4c705861e84d6ba1d9e0fd975"
+    },
+    "P-0100": {
+      "name": "Destornillador plano 6\"",
+      "file": "/comercio/productos/P-0100.jpg",
+      "query": "File:Screw Driver display.jpg",
+      "title": "File:Screw Driver display.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Screw_Driver_display.jpg",
+      "license": "CC BY 2.5",
+      "artist": "Fcb981 at English Wikipedia",
+      "sha256": "d022df329158c6d1bf32cb9032c9a0c10e646a701a81a235965cb8690fdcf3cd"
+    },
+    "P-0105": {
+      "name": "Foco LED 9 W luz calida",
+      "file": "/comercio/productos/P-0105.jpg",
+      "query": "LED light bulb",
+      "title": "File:7W LED light bulb (GU10).JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:7W_LED_light_bulb_(GU10).JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Dmitry G",
+      "sha256": "b2cb4fc43c889a6a121dc815b9060fd1a320297800371686eaf5c345b3bfe014"
+    },
+    "P-0104": {
+      "name": "Kit de pintura 10 piezas",
+      "file": "/comercio/productos/P-0104.jpg",
+      "query": "paint brushes",
+      "title": "File:Paint brushes (30804).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Paint_brushes_(30804).jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Rhododendrites",
+      "sha256": "35af130bbd3b40ec5285b8b0883623eeb9c49ae0270873dddf0cf352bce6614b"
+    },
+    "P-0101": {
+      "name": "Llave inglesa 8\"",
+      "file": "/comercio/productos/P-0101.jpg",
+      "query": "adjustable wrench",
+      "title": "File:Chrome Vanadium Adjustable Wrench.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Chrome_Vanadium_Adjustable_Wrench.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "User: MrX",
+      "sha256": "c39be9eebf70a9c830fb028fc5b75007ec8e3071c4c8d4e5615f28886f42b03e"
+    },
+    "P-0096": {
+      "name": "Martillo de una 16 oz",
+      "file": "/comercio/productos/P-0096.jpg",
+      "query": "claw hammer",
+      "title": "File:Claw hammer-1.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Claw_hammer-1.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Shakespeare at en.wikipedia",
+      "sha256": "fe4fb4a95a076b5d0c75536974d98d5ee5eab4bdfd449e13bab705bde8f10615"
+    },
+    "P-0103": {
+      "name": "Pintura vinilica 1 L",
+      "file": "/comercio/productos/P-0103.jpg",
+      "query": "File:Nippon Paint Tin.jpg",
+      "title": "File:Nippon Paint Tin.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Nippon_Paint_Tin.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": null,
+      "sha256": "ff7fed328b9d4da93c451243daaab55369aaa369f83ded2cfa3ab56f0237a260"
+    },
+    "P-0099": {
+      "name": "Tornillos y tuercas x 50",
+      "file": "/comercio/productos/P-0099.jpg",
+      "query": "screws and nuts",
+      "title": "File:Screws, Nuts, Bolts and Threads.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Screws,_Nuts,_Bolts_and_Threads.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Tudor Barker",
+      "sha256": "84b3b4ead53d2fd19c4b31df8adf1365b062982e3be162546ae094d1a21d3721"
+    },
+    "P-0063": {
+      "name": "Aguacate Hass",
+      "file": "/comercio/productos/P-0063.jpg",
+      "query": "avocado hass",
+      "title": "File:Avocado-Hass-Kern.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Avocado-Hass-Kern.jpg",
+      "license": "CC BY 3.0",
+      "artist": "MartinThoma",
+      "sha256": "0a58e99bf29a9776e1d25a499cb1952cb81dcf96cca50cc77fb0af731319e5a9"
+    },
+    "P-0062": {
+      "name": "Banano",
+      "file": "/comercio/productos/P-0062.jpg",
+      "query": "bananas",
+      "title": "File:Green raw bananas.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Green_raw_bananas.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Vitaium",
+      "sha256": "ebfc81550b63c89521108e62cb5a451e8bbed5046d4789a05a9703a83eb187e1"
+    },
+    "P-0059": {
+      "name": "Cebolla cabezona",
+      "file": "/comercio/productos/P-0059.jpg",
+      "query": "onions",
+      "title": "File:Mixed onions.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Mixed_onions.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Colin",
+      "sha256": "85f63978029804a038074a64f8c1a7d680c278ce7e2410f4aaa751cbd92f5210"
+    },
+    "P-0065": {
+      "name": "Cilantro y cebollin",
+      "file": "/comercio/productos/P-0065.jpg",
+      "query": "cilantro bunch",
+      "title": "File:Cilantro bunches in a stack.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cilantro_bunches_in_a_stack.jpg",
+      "license": "CC0",
+      "artist": "Jeffery Martin",
+      "sha256": "b3ed537239b775331457c8e220c170a7ee000f07e5dc72da2a57563db1b9af40"
+    },
+    "P-0064": {
+      "name": "Limon Tahiti",
+      "file": "/comercio/productos/P-0064.jpg",
+      "query": "lime citrus",
+      "title": "File:Limes (Citrus aurantifolia) in Thailand.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Limes_(Citrus_aurantifolia)_in_Thailand.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Susan Slater",
+      "sha256": "a1d3e8d5e9c3bfea7a99e8b541b356f47e32ee1af76ff7700f42d82679ad8b3d"
+    },
+    "P-0067": {
+      "name": "Mango maduro x 5",
+      "file": "/comercio/productos/P-0067.jpg",
+      "query": "mango fruit",
+      "title": "File:Mango fruits.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Mango_fruits.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Bhaskaranaidu",
+      "sha256": "3915252564590e5f6af9fcbabac44aa69115321e721566929d62d4022a9aeeed"
+    },
+    "P-0060": {
+      "name": "Papa criolla",
+      "file": "/comercio/productos/P-0060.jpg",
+      "query": "potato tubers",
+      "title": "File:Potato tubers in pail.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Potato_tubers_in_pail.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Ruslan V. Albitsky aka pauk",
+      "sha256": "a993738ed84e1526b26d3adf047b2e66a808514802e616f1c3cefaa2f770e248"
+    },
+    "P-0061": {
+      "name": "Platano verde",
+      "file": "/comercio/productos/P-0061.jpg",
+      "query": "green plantain",
+      "title": "File:Ripe Plantain and green Plantain.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Ripe_Plantain_and_green_Plantain.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Menyea",
+      "sha256": "85b224cb4f7a6532ab16429c046ee7ed738a88815ec8aa38bc061d2bc8b51e61"
+    },
+    "P-0058": {
+      "name": "Tomate rojo",
+      "file": "/comercio/productos/P-0058.jpg",
+      "query": "File:Ripe Red Tomatoes.jpg",
+      "title": "File:Ripe Red Tomatoes.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Ripe_Red_Tomatoes.jpg",
+      "license": "CC0",
+      "artist": "Glenda Green",
+      "sha256": "a9b4d59d3b112de6dc60329aa5555ccd1653d7cec9ccc736280bbda145a41c0e"
+    },
+    "P-0066": {
+      "name": "Zanahoria",
+      "file": "/comercio/productos/P-0066.jpg",
+      "query": "carrots",
+      "title": "File:Carrots from Pakistan.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Carrots_from_Pakistan.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Challiyan",
+      "sha256": "ec31f9404538c6aa9e3ae7ea006292b9dbd55d038fdf4b2cc0e4f6a0f67b4da3"
+    },
+    "P-0055": {
+      "name": "Crema de leche 250 ml",
+      "file": "/comercio/productos/P-0055.jpg",
+      "query": "cream carton",
+      "title": "File:Solleys Dairies Cream Cartons.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Solleys_Dairies_Cream_Cartons.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Digihum",
+      "sha256": "498192602b5af1d1ae9447c8c4450f269be71e0c65943469549d82a7dad5435d"
+    },
+    "P-0056": {
+      "name": "Helado de vainilla 1 L",
+      "file": "/comercio/productos/P-0056.jpg",
+      "query": "File:2019-12-25 01 15 23 An unopened tub of Turkey Hill Homemade Vanilla Premium Ice Cream in the Parkway Village section of Ewing Township, Mercer County, New Jersey.jpg",
+      "title": "File:2019-12-25 01 15 23 An unopened tub of Turkey Hill Homemade Vanilla Premium Ice Cream in the Parkway Village section of Ewing Township, Mercer County, New Jersey.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:2019-12-25_01_15_23_An_unopened_tub_of_Turkey_Hill_Homemade_Vanilla_Premium_Ice_Cream_in_the_Parkway_Village_section_of_Ewing_Township,_Mercer_County,_New_Jersey.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "sha256": "db2c8210caa50a10a70c953775ba8b5d56d1300f92e209df071b4ca78367790a"
+    },
+    "P-0049": {
+      "name": "Leche deslactosada 1 L",
+      "file": "/comercio/productos/P-0049.jpg",
+      "query": "milk carton",
+      "title": "File:Tetra-Milk-Carton---Betsukai-Milk---2024-04-27 03.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Tetra-Milk-Carton---Betsukai-Milk---2024-04-27_03.jpg",
+      "license": "CC BY 4.0",
+      "artist": "RuinDig/Yuki Uchida",
+      "sha256": "7afe561e836ce5736266a0ce5f65f06596ff8c5eff8a4ad9a4240f680a51d3e2"
+    },
+    "P-0048": {
+      "name": "Leche entera 1 L",
+      "file": "/comercio/productos/P-0048.jpg",
+      "query": "milk bottle",
+      "title": "File:Milk cup and bottle.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Milk_cup_and_bottle.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Ladybesttruthful at Burmese Wikipedia",
+      "sha256": "2fea8813b5da6c5985696f60bb36b9492331be87aeaa47a0345e5917d9fa96f7"
+    },
+    "P-0054": {
+      "name": "Mantequilla 250 g",
+      "file": "/comercio/productos/P-0054.jpg",
+      "query": "butter block",
+      "title": "File:Block of butter 20200928 080207.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Block_of_butter_20200928_080207.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Salicyna",
+      "sha256": "3b0550b84c2934407242a76d8be2d55957646f82075a255bdd993c99c9377e15"
+    },
+    "P-0057": {
+      "name": "Pollo entero congelado",
+      "file": "/comercio/productos/P-0057.jpg",
+      "query": "raw whole chicken",
+      "title": "File:Whole raw chicken - Japan Dec 22 2019.jpeg",
+      "page": "https://commons.wikimedia.org/wiki/File:Whole_raw_chicken_-_Japan_Dec_22_2019.jpeg",
+      "license": "CC BY 4.0",
+      "artist": "Nesnad",
+      "sha256": "f43dbd277eecbbd0aa12b31e5840f67b581a243f22f8f0ef3bd314e8730cfa40"
+    },
+    "P-0050": {
+      "name": "Queso doble crema 250 g",
+      "file": "/comercio/productos/P-0050.jpg",
+      "query": "fresh white cheese",
+      "title": "File:Atera Fresh Cheese topped with potato chips and black and white sesame seeds (39548979760).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Atera_Fresh_Cheese_topped_with_potato_chips_and_black_and_white_sesame_seeds_(39548979760).jpg",
+      "license": "CC BY 2.0",
+      "artist": "Lou Stejskal",
+      "sha256": "89fb94694e79622cc645f528dae8930dede1d73fe84f44d00861969a57ccfbe3"
+    },
+    "P-0051": {
+      "name": "Queso mozzarella rallado 200 g",
+      "file": "/comercio/productos/P-0051.jpg",
+      "query": "File:2021-01-02 20 52 08 A bag of Kraft Finely Shredded Mozzarella Cheese in the Franklin Farm section of Oak Hill, Fairfax County, Virginia.jpg",
+      "title": "File:2021-01-02 20 52 08 A bag of Kraft Finely Shredded Mozzarella Cheese in the Franklin Farm section of Oak Hill, Fairfax County, Virginia.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:2021-01-02_20_52_08_A_bag_of_Kraft_Finely_Shredded_Mozzarella_Cheese_in_the_Franklin_Farm_section_of_Oak_Hill,_Fairfax_County,_Virginia.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "sha256": "556693faaea70c1ba962554b1868836a130511d854c6809042818411fb8e031f"
+    },
+    "P-0053": {
+      "name": "Yogurt de frutas x 4",
+      "file": "/comercio/productos/P-0053.jpg",
+      "query": "yogurt cups",
+      "title": "File:RECALLED - YoBaby Peach-Pear Yogurt Cups (14312958189).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:RECALLED_-_YoBaby_Peach-Pear_Yogurt_Cups_(14312958189).jpg",
+      "license": "Public domain",
+      "artist": "The U.S. Food and Drug Administration",
+      "sha256": "3ea55c16e9855ce99499f81549022e234f0667e366c7a0442532e737d8bf44be"
+    },
+    "P-0052": {
+      "name": "Yogurt natural 150 g",
+      "file": "/comercio/productos/P-0052.jpg",
+      "query": "File:Joghurt.jpg",
+      "title": "File:Joghurt.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Joghurt.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "No machine-readable author provided. Rainer Zenz assumed (based on copyright claims).",
+      "sha256": "9765cc75e7f65c5bfbd81b76f84907cce977bc05be3265a1a87493cb0e6f05c7"
+    },
+    "P-0075": {
+      "name": "Ambientador en aerosol 250 ml",
+      "file": "/comercio/productos/P-0075.jpg",
+      "query": "air freshener spray",
+      "title": "File:Febreze air fresheners.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Febreze_air_fresheners.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "KRoock74",
+      "sha256": "515ed4096ff9d9902e32361afa22c93a2ee0fc845ff0abefa38514b5f640dc6e"
+    },
+    "P-0074": {
+      "name": "Bolsas de basura 30 L x 10",
+      "file": "/comercio/productos/P-0074.jpg",
+      "query": "File:A typical black bin bag from the UK 20060811.jpg",
+      "title": "File:A typical black bin bag from the UK 20060811.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:A_typical_black_bin_bag_from_the_UK_20060811.jpg",
+      "license": "Public domain",
+      "artist": "Yuyudevil",
+      "sha256": "adb101ef2a54ac83ef4dc455663f5df3324e43f7c98a4e2dd16cdf24ad3721ec"
+    },
+    "P-0068": {
+      "name": "Detergente en polvo 400 g",
+      "file": "/comercio/productos/P-0068.jpg",
+      "query": "File:Oxydol Soap Powder - TWCMS-G3776 (16507577399).jpg",
+      "title": "File:Oxydol Soap Powder - TWCMS-G3776 (16507577399).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Oxydol_Soap_Powder_-_TWCMS-G3776_(16507577399).jpg",
+      "license": "No restrictions",
+      "artist": "Tyne &amp; Wear Archives &amp; Museums",
+      "sha256": "be2d826ef78c4c79b22147dcc65be384b0049dfb8b4ae12caffd2adffa0c640b"
+    },
+    "P-0077": {
+      "name": "Escoba de cabeza ancha",
+      "file": "/comercio/productos/P-0077.jpg",
+      "query": "broom and dustpan",
+      "title": "File:Blue broom and dustpan.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Blue_broom_and_dustpan.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Santeri Viinamäki",
+      "sha256": "5c1608ecf41273ecfd5fe7f54bbe98fa6dcd7979af15dfcd92c7ef322107cc69"
+    },
+    "P-0072": {
+      "name": "Esponja doble uso x 3",
+      "file": "/comercio/productos/P-0072.jpg",
+      "query": "cleaning sponge",
+      "title": "File:Cleaning sponge detail.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cleaning_sponge_detail.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Sylenius",
+      "sha256": "6a8df970bd9d6244f4b9c2867ef1828bf3cb6f0732f7e38c74392c411b6fe659"
+    },
+    "P-0073": {
+      "name": "Lavaplatos 500 ml",
+      "file": "/comercio/productos/P-0073.jpg",
+      "query": "dishwashing liquid bottle",
+      "title": "File:Tesco and Sainsburys own dishwashing liquid.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Tesco_and_Sainsburys_own_dishwashing_liquid.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Kai Hendry",
+      "sha256": "e6efe068caed9101613a5893bf01d6fb21281b0e2308320165fecd06eb0e5a13"
+    },
+    "P-0069": {
+      "name": "Lejia concentrada 1 L",
+      "file": "/comercio/productos/P-0069.jpg",
+      "query": "bleach",
+      "title": "File:HK Kao Bleach 3.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:HK_Kao_Bleach_3.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Meadohsum",
+      "sha256": "d00842ac647c88e99afd3bef387125ee11d14044ccf0e1ba4933aa86ec9eae53"
+    },
+    "P-0070": {
+      "name": "Limpiador aromatico 1 L",
+      "file": "/comercio/productos/P-0070.jpg",
+      "query": "cleaning spray bottle",
+      "title": "File:Window cleaner and an empty spray bottle.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Window_cleaner_and_an_empty_spray_bottle.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Corn cheese",
+      "sha256": "481a92ed878e3d2794e71ca22e2b95a18e043071041e0d3cf135d7a621e63192"
+    },
+    "P-0076": {
+      "name": "Pasta abrillantadora 200 g",
+      "file": "/comercio/productos/P-0076.jpg",
+      "query": "File:Double-N Wax Floor Polish - TWCMS-G3766 (16506034760).jpg",
+      "title": "File:Double-N Wax Floor Polish - TWCMS-G3766 (16506034760).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Double-N_Wax_Floor_Polish_-_TWCMS-G3766_(16506034760).jpg",
+      "license": "No restrictions",
+      "artist": "Tyne &amp; Wear Archives &amp; Museums",
+      "sha256": "2c40594cfa337b25a66c2e3afd369d1fc1203facaacee75b2e2de99486ae55d7"
+    },
+    "P-0071": {
+      "name": "Suavizante de telas 750 ml",
+      "file": "/comercio/productos/P-0071.jpg",
+      "query": "fabric softener",
+      "title": "File:Globus Saarbrücken, fabric softener pic1.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Globus_Saarbr%C3%BCcken,_fabric_softener_pic1.JPG",
+      "license": "Public domain",
+      "artist": "Alf van Beem",
+      "sha256": "0c2f141abdc5d4ea917e4dcb9d96d440f5a805166df466f59d567a5c7669e651"
+    },
+    "P-0090": {
+      "name": "Arena sanitaria 2 kg",
+      "file": "/comercio/productos/P-0090.jpg",
+      "query": "cat litter",
+      "title": "File:Fresh cat litter.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Fresh_cat_litter.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "CambridgeBayWeather",
+      "sha256": "ac2920deb8c40465bf75c58d8b5000bdbc8be6174e31ef67333e67950a3e5d71"
+    },
+    "P-0089": {
+      "name": "Concentrado para gato 500 g",
+      "file": "/comercio/productos/P-0089.jpg",
+      "query": "cat food",
+      "title": "File:Cat food (pellets and water).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cat_food_(pellets_and_water).jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Deavmi",
+      "sha256": "f80bb8ae5fd3ad7a937e8b65729133ffd5813f96509ff17932ab2745f803568a"
+    },
+    "P-0088": {
+      "name": "Concentrado para perro 1.5 kg",
+      "file": "/comercio/productos/P-0088.jpg",
+      "query": "dog food",
+      "title": "File:Large Dog food bowl.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Large_Dog_food_bowl.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Ohiopetwatch",
+      "sha256": "46aed7d2cb8ff57c580b2aa6e718a2b95a3bf611cfabfd56a38bc016e808aa28"
+    },
+    "P-0093": {
+      "name": "Correa para perro 1.5 m",
+      "file": "/comercio/productos/P-0093.jpg",
+      "query": "File:PPD-Leash-PinkGreenStripes.jpg",
+      "title": "File:PPD-Leash-PinkGreenStripes.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:PPD-Leash-PinkGreenStripes.jpg",
+      "license": "Public domain",
+      "artist": "Schizek at English Wikipedia",
+      "sha256": "c31d5276f7819a80f534102cd31ff49c73627e12e23e453276ef80cc1ede2ad2"
+    },
+    "P-0095": {
+      "name": "Juguete mordedor de goma",
+      "file": "/comercio/productos/P-0095.jpg",
+      "query": "dog chew toy",
+      "title": "File:Dog with rawhide chew toy.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Dog_with_rawhide_chew_toy.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Shane Adams",
+      "sha256": "be1c220a924e43b9395631025437dd8340fa2d673df87d53ae4b8f0949601778"
+    },
+    "P-0094": {
+      "name": "Plato doble para mascota",
+      "file": "/comercio/productos/P-0094.jpg",
+      "query": "File:Dog food in a bowl.jpg",
+      "title": "File:Dog food in a bowl.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Dog_food_in_a_bowl.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "James Redekop",
+      "sha256": "6bd31fabc51a19f1de909eb20819d3559ba728fe4e70f443c1e4f4bdc229bbf6"
+    },
+    "P-0092": {
+      "name": "Shampoo para perro 250 ml",
+      "file": "/comercio/productos/P-0092.jpg",
+      "query": "File:Շան շամպուն և փափկացուցիչ.JPG",
+      "title": "File:Շան շամպուն և փափկացուցիչ.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:%D5%87%D5%A1%D5%B6_%D5%B7%D5%A1%D5%B4%D5%BA%D5%B8%D6%82%D5%B6_%D6%87_%D6%83%D5%A1%D6%83%D5%AF%D5%A1%D6%81%D5%B8%D6%82%D6%81%D5%AB%D5%B9.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Chaojoker",
+      "sha256": "832ecc9a2b11f3347f753d8e3cb104ed7f24fdfbb6ccf169b1eb0dcd38e55563"
+    },
+    "P-0091": {
+      "name": "Snack dental para perro",
+      "file": "/comercio/productos/P-0091.jpg",
+      "query": "dog bone treat",
+      "title": "File:Bone Dog Treats (51049786016).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bone_Dog_Treats_(51049786016).jpg",
+      "license": "CC BY 2.0",
+      "artist": "Megan Marrs",
+      "sha256": "d02129e9e6ec97d4da06d44eb2e63980221c88cb5045d0f6df5c1d3fefb7f286"
+    },
+    "P-0108": {
+      "name": "Block de notas adhesivas",
+      "file": "/comercio/productos/P-0108.jpg",
+      "query": "sticky notes",
+      "title": "File:Sticky Notes in different colors.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Sticky_Notes_in_different_colors.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Ramesh NG",
+      "sha256": "6129ca7bd2d0454201b6dc9f96ef7c8513739ccfe162347d7d67bff701508950"
+    },
+    "P-0112": {
+      "name": "Carpetas de plastico x 10",
+      "file": "/comercio/productos/P-0112.jpg",
+      "query": "file folder",
+      "title": "File:File-folders.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:File-folders.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Shoplet Office Supplies",
+      "sha256": "63b5d958ca7c003b4ebb91c9549c217ec533c05e670b644ed6bb5856046352a0"
+    },
+    "P-0110": {
+      "name": "Cinta pegante 2\" x 30 m",
+      "file": "/comercio/productos/P-0110.jpg",
+      "query": "adhesive tape roll",
+      "title": "File:Adhesive tapes clear.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Adhesive_tapes_clear.JPG",
+      "license": "Public domain",
+      "artist": "BarberJP",
+      "sha256": "2925b95d610c710fdf9ad069aaa6a7e56bbe652c173eeee3be08447dce34dd7b"
+    },
+    "P-0106": {
+      "name": "Cuaderno de 100 hojas",
+      "file": "/comercio/productos/P-0106.jpg",
+      "query": "notebook",
+      "title": "File:TAHIR SHAH NOTEBOOKS.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:TAHIR_SHAH_NOTEBOOKS.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Tahirshah999",
+      "sha256": "001b11d48c44ec7b26b7b40328bd326ced1ac6d70ba9950fbe8196f520ceb6d2"
+    },
+    "P-0107": {
+      "name": "Esferograficas azules x 10",
+      "file": "/comercio/productos/P-0107.jpg",
+      "query": "ballpoint",
+      "title": "File:Grey ballpoint.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Grey_ballpoint.jpg",
+      "license": "CC0",
+      "artist": "Fiersel",
+      "sha256": "e20f9edbf90649dd5487abddb531728da298b87921680f1bbb8d3e6e7430926a"
+    },
+    "P-0109": {
+      "name": "Resaltador de colores x 4",
+      "file": "/comercio/productos/P-0109.jpg",
+      "query": "File:Filzstifte1.jpg",
+      "title": "File:Filzstifte1.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Filzstifte1.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Peng",
+      "sha256": "232118ce9eaf18b82715d5254750be6b1c12a19d206c1b3326363a92d12ade24"
+    },
+    "P-0113": {
+      "name": "Sobres kraft x 20",
+      "file": "/comercio/productos/P-0113.jpg",
+      "query": "File:Letter pro.jpg",
+      "title": "File:Letter pro.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Letter_pro.jpg",
+      "license": "CC0",
+      "artist": "Jotahin",
+      "sha256": "8571ef136eb2080b4464a034ca27ef52cfc83efa95dcfa860f72dd0651b77354"
+    },
+    "P-0111": {
+      "name": "Tijeras escolares punta roma",
+      "file": "/comercio/productos/P-0111.jpg",
+      "query": "scissors",
+      "title": "File:Scissors - PD.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Scissors_-_PD.jpg",
+      "license": "Public domain",
+      "artist": "n.raveender",
+      "sha256": "a2763319ea098df013affa978cb890fea50739aee5fa983687b06985aff3cebe"
+    },
+    "P-0117": {
+      "name": "Calcetines deportivos x 3",
+      "file": "/comercio/productos/P-0117.jpg",
+      "query": "File:Björn Borg socks 3.jpg",
+      "title": "File:Björn Borg socks 3.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bj%C3%B6rn_Borg_socks_3.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "W.carter",
+      "sha256": "be93fc93ba952a0e1a8571c464d22fe45644b33ffe47c88d993d4d0c28d9aef1"
+    },
+    "P-0122": {
+      "name": "Calzado de seguridad",
+      "file": "/comercio/productos/P-0122.jpg",
+      "query": "work boots",
+      "title": "File:Wolverine Overpass work boots.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Wolverine_Overpass_work_boots.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Best For My Feet",
+      "sha256": "71723bbe0acb26f023811b32c690776d6386a06f17e64efce8fa4f6108033538"
+    },
+    "P-0114": {
+      "name": "Camiseta basica algodon",
+      "file": "/comercio/productos/P-0114.jpg",
+      "query": "File:Ringflash Tshirt Blank Template (3214240974).jpg",
+      "title": "File:Ringflash Tshirt Blank Template (3214240974).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Ringflash_Tshirt_Blank_Template_(3214240974).jpg",
+      "license": "CC BY 2.0",
+      "artist": "THOR",
+      "sha256": "031a44e3f67cb62c55dd9807b3e36f01335280430c9fff3f878a4638003af0aa"
+    },
+    "P-0118": {
+      "name": "Gorra camionera",
+      "file": "/comercio/productos/P-0118.jpg",
+      "query": "baseball cap",
+      "title": "File:Baseball Cap PaRacorD ®.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Baseball_Cap_PaRacorD_%C2%AE.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Paracord e.K.",
+      "sha256": "0673306fd7798873466e631652c0e4b480a530ee94af0b0bad4eb54838b2293e"
+    },
+    "P-0115": {
+      "name": "Jean pitillo unisex",
+      "file": "/comercio/productos/P-0115.jpg",
+      "query": "denim jeans",
+      "title": "File:Denim jeans wrinkled.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Denim_jeans_wrinkled.jpg",
+      "license": "Public domain",
+      "artist": "Deb Tremper",
+      "sha256": "85c202b942731a20bff56507efe7268a65842acd796f879696747a72128f4354"
+    },
+    "P-0123": {
+      "name": "Mochila escolar reforzada",
+      "file": "/comercio/productos/P-0123.jpg",
+      "query": "school backpack",
+      "title": "File:School bag backpack.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:School_bag_backpack.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Gamingforfun365",
+      "sha256": "2272ae5f38b4b3a541b79e646cf4c6af9e8177beeab60effd4f6c95f7f779577"
+    },
+    "P-0121": {
+      "name": "Pijama de dos piezas",
+      "file": "/comercio/productos/P-0121.jpg",
+      "query": "pajama set",
+      "title": "File:Saint Laurent Rive Gauche + Halston pajama sets.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Saint_Laurent_Rive_Gauche_%2B_Halston_pajama_sets.jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Museum at FIT",
+      "sha256": "bd0a9266ffbb8037258d7f158ac5c2bd862e4573b5b33f38e3ff26cda0a608e9"
+    },
+    "P-0120": {
+      "name": "Poncho impermeable",
+      "file": "/comercio/productos/P-0120.jpg",
+      "query": "File:Yellow Raincoat.jpg",
+      "title": "File:Yellow Raincoat.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Yellow_Raincoat.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Jim Grandy",
+      "sha256": "02ac6de85ebec9413e63911d1d48483ecde558a75cda1535594a2394d9d6c30f"
+    },
+    "P-0116": {
+      "name": "Sudadera polar con capucha",
+      "file": "/comercio/productos/P-0116.jpg",
+      "query": "File:Sonoma Raceway hoodie - June 2023 - Sarah Stierch.jpg",
+      "title": "File:Sonoma Raceway hoodie - June 2023 - Sarah Stierch.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Sonoma_Raceway_hoodie_-_June_2023_-_Sarah_Stierch.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Missvain",
+      "sha256": "4ef9055900c7e3d70631fa6de9e1c64823020ff32273d224fd39c3a6cab79279"
+    },
+    "P-0119": {
+      "name": "Zapatillas deportivas casual",
+      "file": "/comercio/productos/P-0119.jpg",
+      "query": "sneakers",
+      "title": "File:Vans sneakers and socks.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Vans_sneakers_and_socks.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Downtowngal",
+      "sha256": "fcc939b4450f95ccd2aacb3942121acdb3382261c4200147d35e3e98f4eff3c3"
+    },
+    "P-0125": {
+      "name": "Audifonos intraauriculares",
+      "file": "/comercio/productos/P-0125.jpg",
+      "query": "in-ear headphones",
+      "title": "File:Phonak PFE112 In-Ear Headphones 1.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Phonak_PFE112_In-Ear_Headphones_1.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Minseong Kim",
+      "sha256": "520343a8b85a15f82ee3ed74b274a28bccf50e2775ec8d7e3c18135194699d59"
+    },
+    "P-0126": {
+      "name": "Bateria portatil 10.000 mAh",
+      "file": "/comercio/productos/P-0126.jpg",
+      "query": "power bank",
+      "title": "File:SAMSUNG BATTERY PACK (POWER BANK) EB-PG850.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:SAMSUNG_BATTERY_PACK_(POWER_BANK)_EB-PG850.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Dinkun Chen",
+      "sha256": "a680c7f1a2f0632b0fdb0c9035feef2ca6bb921f34c8e10a4774ad0b2a32d55d"
+    },
+    "P-0124": {
+      "name": "Cable USB-C 1 m",
+      "file": "/comercio/productos/P-0124.jpg",
+      "query": "USB-C cable",
+      "title": "File:USB-C cable 2017 A.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:USB-C_cable_2017_A.jpg",
+      "license": "CC0",
+      "artist": "Fructibus",
+      "sha256": "f6b2f156796b806e44181379b4b2e167846c9a557579b02ba0d671be57a81738"
+    },
+    "P-0131": {
+      "name": "Foco inteligente wifi",
+      "file": "/comercio/productos/P-0131.jpg",
+      "query": "smart LED bulb",
+      "title": "File:Tapo smart LED bulb lighting sample.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Tapo_smart_LED_bulb_lighting_sample.jpg",
+      "license": "CC BY 4.0",
+      "artist": "Japanwikisan",
+      "sha256": "e2f0f3d92fd805727921aa08d921f9ab010c26dacbe3ecc2f86a72291b4e80c9"
+    },
+    "P-0127": {
+      "name": "Memoria USB 32 GB",
+      "file": "/comercio/productos/P-0127.jpg",
+      "query": "File:SanDisk-Cruzer-USB-4GB-ThumbDrive.jpg",
+      "title": "File:SanDisk-Cruzer-USB-4GB-ThumbDrive.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:SanDisk-Cruzer-USB-4GB-ThumbDrive.jpg",
+      "license": "Public domain",
+      "artist": "Evan-Amos",
+      "sha256": "4fd02e806324ced471b11dc83b5d70ad38ca2707fa120148438f7e7018fcdb41"
+    },
+    "P-0128": {
+      "name": "Mouse optico con cable",
+      "file": "/comercio/productos/P-0128.jpg",
+      "query": "computer mouse",
+      "title": "File:Computer mouse 1 2015-02-28.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Computer_mouse_1_2015-02-28.JPG",
+      "license": "CC BY-SA 4.0",
+      "artist": "FASTILY",
+      "sha256": "880cd0fded7946351a2f7670f62a5f0bfbe803afeea175dd0a434c876c06c1c6"
+    },
+    "P-0130": {
+      "name": "Soporte de celular para auto",
+      "file": "/comercio/productos/P-0130.jpg",
+      "query": "phone car holder",
+      "title": "File:Car universal holder for smartphones and phablets, Oude Pekela (2018) 01.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Car_universal_holder_for_smartphones_and_phablets,_Oude_Pekela_(2018)_01.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Donald Trung Quoc Don (Chữ Hán: 徵國單) - Wikimedia Commons.(Want to use this image?)",
+      "sha256": "fd4ef4fe34dbe20fc3fe9548c6c7c2e71390c6b3c7284d160e6c091f0c5b5a20"
+    },
+    "P-0129": {
+      "name": "Teclado USB completo",
+      "file": "/comercio/productos/P-0129.jpg",
+      "query": "computer keyboard",
+      "title": "File:Computer keyboard layout (28808607618).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Computer_keyboard_layout_(28808607618).jpg",
+      "license": "CC BY 2.0",
+      "artist": "Eric Fischer",
+      "sha256": "1600931d8007c067d71bd28e48f48f98d6972d8ded0e8b366017378e77768a1a"
+    },
+    "P-0004": {
+      "name": "Cafe SMOKE 1793056531777",
+      "file": "/comercio/productos/P-0004.jpg",
+      "query": "roasted coffee beans",
+      "title": "File:Roasted coffee beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Roasted_coffee_beans.jpg",
+      "license": "Public domain",
+      "artist": "MarkSweep",
+      "sha256": "c60db4992649dcf113267c2b0a0eed07c3927cc1c0282b599d3183046c256baf"
+    },
+    "P-0007": {
+      "name": "Cafe SMOKE 1793056709934",
+      "file": "/comercio/productos/P-0007.jpg",
+      "query": "coffee package",
+      "title": "File:Uchunari grade 0 coffee package.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Uchunari_grade_0_coffee_package.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Annerella",
+      "sha256": "51f304606ac3156c8b1df88bfc09348867c0503bc57208da9f3de293a0245a94"
+    },
+    "P-0010": {
+      "name": "Cafe SMOKE 1793056764296",
+      "file": "/comercio/productos/P-0010.jpg",
+      "query": "coffee beans bag",
+      "title": "File:AeroPress coffeemaker and bag of coffee beans.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:AeroPress_coffeemaker_and_bag_of_coffee_beans.jpg",
+      "license": "CC BY 2.0",
+      "artist": "Sharon Chen from Austin, United States",
+      "sha256": "353f614205c4fc694f18b4d57df42e17c14c850e57597cfa9332b38d63251468"
+    },
+    "P-0013": {
+      "name": "Cafe SMOKE 1793057040391",
+      "file": "/comercio/productos/P-0013.jpg",
+      "query": "coffee package",
+      "title": "File:Uchunari grade 0 coffee package.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:Uchunari_grade_0_coffee_package.JPG",
+      "license": "CC BY-SA 3.0",
+      "artist": "Annerella",
+      "sha256": "51f304606ac3156c8b1df88bfc09348867c0503bc57208da9f3de293a0245a94"
+    },
+    "P-0006": {
+      "name": "Panela SMOKE 1793056531777",
+      "file": "/comercio/productos/P-0006.jpg",
+      "query": "panela",
+      "title": "File:Panela.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Panela.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Jdvillalobos",
+      "sha256": "8ebbc75a6c4cc1a4f29b832876783b227fcf2e61cb793969e4e4891e5b3d9876"
+    },
+    "P-0009": {
+      "name": "Panela SMOKE 1793056709934",
+      "file": "/comercio/productos/P-0009.jpg",
+      "query": "panela",
+      "title": "File:Panela.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Panela.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Jdvillalobos",
+      "sha256": "8ebbc75a6c4cc1a4f29b832876783b227fcf2e61cb793969e4e4891e5b3d9876"
+    },
+    "P-0012": {
+      "name": "Panela SMOKE 1793056764296",
+      "file": "/comercio/productos/P-0012.jpg",
+      "query": "panela",
+      "title": "File:Panela.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Panela.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Jdvillalobos",
+      "sha256": "8ebbc75a6c4cc1a4f29b832876783b227fcf2e61cb793969e4e4891e5b3d9876"
+    },
+    "P-0042": {
+      "name": "Bombon de frutas x 45 g",
+      "file": "/comercio/productos/P-0042.jpg",
+      "query": "fruit candy",
+      "title": "File:Fruit-shaped pressed candy.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Fruit-shaped_pressed_candy.jpg",
+      "license": "CC0",
+      "artist": "Fumikas Sagisavas",
+      "sha256": "78af2a73b086455f2f0df8e1768a1c964b6b61790fefe4c489c4636be01052fc"
+    },
+    "P-0041": {
+      "name": "Cacahuate salado 100 g",
+      "file": "/comercio/productos/P-0041.jpg",
+      "query": "peanuts in bowl",
+      "title": "File:Peanuts in a bowl..jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Peanuts_in_a_bowl..jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "Monika M. Wahi",
+      "sha256": "f3bb2a11e82fdcb2e9499cd163ff5fae4326865aad791e63ec881a6b700f919e"
+    },
+    "P-0047": {
+      "name": "Chicle de menta x 10",
+      "file": "/comercio/productos/P-0047.jpg",
+      "query": "chewing gum pack",
+      "title": "File:A pack of chewing gum, Wrigley's, 1940s.JPG",
+      "page": "https://commons.wikimedia.org/wiki/File:A_pack_of_chewing_gum,_Wrigley%27s,_1940s.JPG",
+      "license": "CC BY-SA 4.0",
+      "artist": "KingaNBM",
+      "sha256": "83424dd3b12851cb6e9d03f8947a1b1e1d5738a32a5a92f46c6ac3d6e847e2ae"
+    },
+    "P-0045": {
+      "name": "Chitos de queso 30 g",
+      "file": "/comercio/productos/P-0045.jpg",
+      "query": "cheese puffs",
+      "title": "File:Cheese puffs.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Cheese_puffs.jpg",
+      "license": "CC BY 2.0",
+      "artist": "annulla",
+      "sha256": "2a753d7ce9a66feb853fd52df5681368f6c56a6b27655e05c298a1d9b1e3f2ff"
+    },
+    "P-0043": {
+      "name": "Chocolate con leche 50 g",
+      "file": "/comercio/productos/P-0043.jpg",
+      "query": "milk chocolate bar",
+      "title": "File:Hershey's KING SIZE Milk Chocolate Bar (19476732213).jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Hershey%27s_KING_SIZE_Milk_Chocolate_Bar_(19476732213).jpg",
+      "license": "CC BY-SA 2.0",
+      "artist": "Willis Lam",
+      "sha256": "5e8cdf80492199349c24b071aba37863e3d5ddcc01af52d8c504eb330f623510"
+    },
+    "P-0039": {
+      "name": "Galletas de soda x 12",
+      "file": "/comercio/productos/P-0039.jpg",
+      "query": "soda crackers",
+      "title": "File:HK food 梳打餅乾 Soda biscuits crackers June 2024 R12S 03.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:HK_food_%E6%A2%B3%E6%89%93%E9%A4%85%E4%B9%BE_Soda_biscuits_crackers_June_2024_R12S_03.jpg",
+      "license": "CC0",
+      "artist": "SZolramui Hwa Griom",
+      "sha256": "66615467e253acf157e452a71bbcbc64d318a520f9ea1ec1c0a04d4cc94280d1"
+    },
+    "P-0040": {
+      "name": "Galletas rellenas de choco",
+      "file": "/comercio/productos/P-0040.jpg",
+      "query": "sandwich cookies",
+      "title": "File:Stack of sandwich cookies 2.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Stack_of_sandwich_cookies_2.jpg",
+      "license": "CC BY-SA 3.0",
+      "artist": "SKopp",
+      "sha256": "79b19ea010b043caaa8ab3c22737f682a6a9364b7567d3b1d743967351cec9d8"
+    },
+    "P-0044": {
+      "name": "Maiz pufu 30 g",
+      "file": "/comercio/productos/P-0044.jpg",
+      "query": "corn puffs",
+      "title": "File:General Mills – Kix cereal – Crispy Corn Puffs, with milk.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:General_Mills_%E2%80%93_Kix_cereal_%E2%80%93_Crispy_Corn_Puffs,_with_milk.jpg",
+      "license": "CC BY-SA 4.0",
+      "artist": "Th78blue",
+      "sha256": "2f859befa9cab1980f414549e3fa832e658ec2759bf46dda704324ca973bb7a6"
+    },
+    "P-0046": {
+      "name": "Palitos salados x 6",
+      "file": "/comercio/productos/P-0046.jpg",
+      "query": "bread sticks",
+      "title": "File:Bread Sticks With Sesame.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Bread_Sticks_With_Sesame.jpg",
+      "license": "Public domain",
+      "artist": "Игорь Феденко",
+      "sha256": "e0b1ad1d2358289811e25f8c4a3bdbf3c52d442b20c76c5f3a227b0ea64784d4"
+    },
+    "P-0038": {
+      "name": "Papas fritas 120 g",
+      "file": "/comercio/productos/P-0038.jpg",
+      "query": "potato chips",
+      "title": "File:Potato-Chips.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Potato-Chips.jpg",
+      "license": "Public domain",
+      "artist": "Evan-Amos",
+      "sha256": "d7bdf6e84d3bf5ef3fdfbe428985c63d43ceee595d748c9fb590cd51771bcd26"
+    },
+    "P-0015": {
+      "name": "Panela SMOKE 1793057040391",
+      "file": "/comercio/productos/P-0015.jpg",
+      "query": "panela",
+      "title": "File:Panela.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Panela.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Jdvillalobos",
+      "sha256": "8ebbc75a6c4cc1a4f29b832876783b227fcf2e61cb793969e4e4891e5b3d9876"
+    },
+    "P-0003": {
+      "name": "Panela x10",
+      "file": "/comercio/productos/P-0003.jpg",
+      "query": "panela",
+      "title": "File:Panela.jpg",
+      "page": "https://commons.wikimedia.org/wiki/File:Panela.jpg",
+      "license": "CC BY 3.0",
+      "artist": "Jdvillalobos",
+      "sha256": "8ebbc75a6c4cc1a4f29b832876783b227fcf2e61cb793969e4e4891e5b3d9876"
+    }
+  }
+}
