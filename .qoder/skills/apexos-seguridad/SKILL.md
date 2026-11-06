@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.10.0
-updated_at: 2026-11-05
+version: 2.11.0
+updated_at: 2026-11-06
 contract: 2
 ---
 
@@ -61,6 +61,14 @@ Antes de actuar, leer en este orden:
 21. **El detalle por punto del gráfico no ensancha la superficie.** La inspección de la serie de latencia añade al DOM un `<title>` por muestra y un `aria-label` por blanco, con hora, milisegundos y banda, y una tarjeta de ocho filas (hora, medición, sonda, posición en la ventana, desviación contra promedio y p95, muestras anterior y siguiente). Todo eso sale de la misma serie agregada que el servidor ya publica: no hay una consulta nueva por punto, ni rutas, ni `request_id`, ni tenant, ni usuario, ni payload. El `endpoint`/`status` que `lib/performance.js` guarda por muestra no viaja al panel. La ventana medida es de 40 sondeos: un punto fuera de ella se declara como tal, no se reemplaza por otra muestra, porque reasignar la selección sería publicar una medición que no se hizo. Por qué: el 2026-11-05 el dueño pidió poder ver el detalle en el punto que él eligiera, y la tentación era leer ese punto contra el API; eso habría convertido un gesto de navegación en una consulta autenticada más.
 
 22. **Un valor de tema que se convierte en CSS solo puede venir de una lista cerrada.** Los modos del tema de la vitrina no son texto libre: el cliente elige entre `neutro|suave|marcado`, `plana|media|alta`, `ninguno|puntos|cuadricula|diagonal`, `recto|suave|redondo` y `ligero|medio|fuerte`, y el servidor emite la variable CSS que corresponde a esa elección. Un string arbitrario aquí se convertiría en `url(...)` dentro de `background-image` de una página anónima, que es la inyección que la regla 19 ya cierra para `banner_url`; por eso el contrato se comprueba con la gate que intenta inyectar `url(...)` y afirma que **no aparece** en el `background-image` pintado, además del 400 del enum. La reconstrucción en la lectura (`publicTheme`) es la última puerta: un modo ilegible en la base cae al default y nunca llega al navegador. Por qué: el 2026-11-05 se abrieron cinco campos nuevos de tema y cada uno era un candidato a convertirse en vector si se trataba como metadata inofensiva.
+
+23. **Aflojar una cabecera de seguridad es un cambio con tres condiciones y prueba por cada una.** La CSP de `apps/web` relaja `img-src` para admitir el almacén de imágenes local, y ese tipo de relax solo pasa si cumple las tres a la vez:
+    - **Solo en desarrollo**: `configuredImageOrigins` (`apps/web/lib/security/csp.ts:43`) recibe `isDevelopment` y devuelve cadena vacía con `NODE_ENV` distinto de `development`. En producción la directiva queda byte a byte como estaba (`'self' data: blob: https:`).
+    - **Solo loopback**: se aceptan `localhost`, `127.0.0.1` y `::1`, con protocolo `http:`/`https:`, sin usuario ni contraseña en la URL y con path raíz. Un `http://10.0.0.5:9000`, un `http://atacante.example/` o un `javascript:` se descartan en silencio.
+    - **Prueba por condición**: `apps/web/test/offline-csp.test.mjs` cubre «se añade en dev», «se ignora en prod», «rechaza no-loopback / path / credenciales / esquema no http», «entrada vacía» y «deduplica». Un filtro sin su prueba de rechazo es un `try/catch` decorativo.
+    Por qué: el 2026-11-06 había que dejar cargar `http://localhost:9000` para que el banner subido se viera en la vitrina local, y la tentación era escribir `img-src ... http:` —eso habría abierto imágenes mixtas en producción para arreglar una pantalla de desarrollo.
+
+24. **La lectura anónima de un bucket es una decisión de infraestructura, no un detalle del cliente.** La vitrina pública del comercio no puede depender de una URL firmada con TTL de 10 minutos, así que el objeto se sirve por URL pública. El código solo abre esa lectura donde es inocuo: `ensureMinioBucket` (`apps/api/src/modules/comercio/storage.js:202`) aplica la política `s3:GetObject` anónima **únicamente** si el endpoint resuelve a loopback. Fuera del puesto de desarrollo, la ausencia de bucket devuelve 503 `ALMACEN_BUCKET_FALTA` con la instrucción de crearlo, y abrir la lectura pública en Supabase/MinIO nube exige autorización explícita del dueño. El aislamiento por tenant sigue en el objeto: la clave lleva el `tenant_id` en el path (`<tenant>/comercio/storefront/...`), el único identificador que se publica es el nombre del objeto y el `bucket`/path interno nunca viaja en el DTO público. Por qué: el 2026-11-06 el arreglo más corto habría sido «crea el bucket con lectura pública», que aplicado en el ambiente nube expone los objetos de todos los tenants a quien adivine una clave.
 
 ## Checklist de intervención
 
@@ -123,3 +131,6 @@ Después:
 - Dar por bueno que `additionalProperties: false` rechaza un campo inyectado cuando AJV lo está stripendo en silencio.
 - Aceptar una URL o un path de bucket enviado por el cliente para pintar una imagen en la vitrina.
 - Reenviar al proveedor de imágenes una dirección construida con entrada del usuario.
+- Abrir una cabecera de seguridad `solo donde hace falta ahora` sin la guarda de ambiente y sin la prueba que exige el rechazo.
+- Aplicar una política de lectura anónima a un almacén que no es del puesto de desarrollo.
+- Tratar un 502/503 de dependencia como equivalente de un 500 propio: el código es lo que permite accionar sin leer logs.

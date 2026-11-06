@@ -2,8 +2,8 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.11.0
-updated_at: 2026-11-05
+version: 2.12.0
+updated_at: 2026-11-06
 contract: 2
 ---
 
@@ -60,6 +60,8 @@ Antes de redactar, leer en este orden:
 
 24. **Un brief de ronda 2 clasifica cada defecto por su capa y lo prueba con medición.** Cuando el dueño vuelve con «los colores no se ajustan bien», «faltan más medios de personalización» y «ordena el módulo», el brief no responde con gusto: declara por separado (a) la **fórmula** —mezcla en gamma en lugar de OKLCH, tinta por porcentaje fijo en lugar de contraste medido—, (b) el **alcance de la declaración** —una variable derivada en `:root` que se congela al fallback aunque el tema se inyecte más abajo—, (c) el **arnés** —parsear la sintaxis que el navegador no emite, medir un precio contra la superficie equivocada— y (d) la **percepción de oficio** —prosa sin tildes, un scroll de 900 campos en vez de pestañas—. Cada una lleva qué se midió para confirmarla y qué prueba la fija. Tratar (b) como (a) produce el peor resultado: se alarga el degradado, la captura sigue igual y el equipo concluye que el dueño se queja por gusto. Por qué: el 2026-11-05 las tres quejas eran reales, tenían causas distintas y dos de ellas solo se veían leyendo el valor pintado por Chromium.
 
+25. **Una limitación de ambiente escrita en el brief lleva su reproducción y su código, y un 5xx no se hereda como limitación.** Cuando el brief declara «esto no se pudo verificar por el entorno», la frase exige tres cosas: el comando o la petición que lo probó, el código exacto que devolvió el servidor y la causa clasificada (falta de credencial, recurso que no existe, servicio apagado). Si el síntoma es un 5xx sin código propio, el brief **no** lo registra como limitación: abre criterio de aceptación para que el experto lo clasifique, porque un 500 `ERROR_INTERNO` es la firma de que el código no sabe qué le pasó. Además, antes de escribir «en este ambiente no hay X», se revisa qué está levantado de verdad (el compose del repo trae almacén, Redis y base): declarar una carencia que no existe congela el defecto por rondas. Por qué: el 2026-11-06 la sección de limitaciones del brief decía «el bucket `comercio-assets` no existe en este ambiente: la subida responde 500 `ERROR_INTERNO` en vez de un 503 limpio» y lo firma como verificación pendiente; el MinIO del puesto sí estaba corriendo y detrás había tres defectos de producto (red sin código, handler que tragaba el 502 y CSP que bloqueaba el almacén local).
+
 ## Checklist de intervención
 
 Antes:
@@ -115,3 +117,5 @@ Después:
 - Declarar certificación con unit tests, lint o build.
 - Editar código, agentes o gobernanza desde este agente.
 - Asumir `develop` o `main` como rama de trabajo.
+- Registrar un 500 genérico como «limitación del ambiente» sin pedir que se clasifique la causa.
+- Aceptar la etiqueta de un check que «pasa con 201 o con 5xx» como si documentara el estado del entorno.

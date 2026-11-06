@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-05",
+  "generated_at": "2026-11-06",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.6.0",
-      "updated_at": "2026-11-05",
-      "sha256": "1378f7cc96c778bf98d9b6d29bd9aa1acd5cf23a5ab335ba11e44b2bf71d129e",
+      "version": "2.7.0",
+      "updated_at": "2026-11-06",
+      "sha256": "6bf1fe44c367f744af353c787773a2c7e7f9db5c70e1ee7f1ef38480ffe32d6f",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -81,15 +81,17 @@
         "telemetria-proceso-health",
         "tema-vitrina-sin-migracion",
         "strip-ajv-reconstruccion",
-        "modos-tema-enum-tres-capas"
+        "modos-tema-enum-tres-capas",
+        "almacen-driver-configurado",
+        "fallo-dependencia-conserva-codigo"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.11.0",
-      "updated_at": "2026-11-05",
-      "sha256": "b47981f90a0923fbf7e32195d0d71357ab64bd47ebbc6812499f73c3a6a28e32",
+      "version": "2.12.0",
+      "updated_at": "2026-11-06",
+      "sha256": "8e44aa5e713011b3ba3218638aa38c541396dbe76a3373f82cfd6b9c5abf0114",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -116,7 +118,8 @@
         "brief-personalizacion-residencia-dato",
         "brief-fuentes-reales-torre",
         "brief-defecto-visual-con-causa-de-arnes",
-        "brief-defecto-clasificado-por-capa"
+        "brief-defecto-clasificado-por-capa",
+        "limitacion-ambiental-reproducida"
       ]
     },
     {
@@ -145,9 +148,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.5.0",
-      "updated_at": "2026-11-05",
-      "sha256": "4c752b30d3fd9e4bdd108c630ed3aa2a4df1cc32d747089cb107b31d7ebc8b86",
+      "version": "2.6.0",
+      "updated_at": "2026-11-06",
+      "sha256": "c9251a7ae4a461304435e8a6b7336da21eafba00db89206424e2298887e4cbda",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -167,7 +170,8 @@
         "vitrina-tokens-sf",
         "tinta-sobre-fotografia",
         "variables-derivadas-en-el-nodo-del-tema",
-        "ortografia-visible-con-tildes"
+        "ortografia-visible-con-tildes",
+        "imagen-se-certifica-cargada"
       ]
     },
     {
@@ -233,9 +237,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.12.0",
-      "updated_at": "2026-11-05",
-      "sha256": "c6a09c1c34c04b886812d11c5b7298c2ca45c8ade23220024511004f29560096",
+      "version": "2.13.0",
+      "updated_at": "2026-11-06",
+      "sha256": "1046606d54c592ecf45002b340681fb0b2d9bf935d1a4283f1076a13ea320f2f",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -267,15 +271,16 @@
         "torre-certificacion-fase-real",
         "torre-gates-estructurales-no-temporales",
         "arnes-lee-lo-que-serializa-el-navegador",
-        "guardado-con-autochequeo"
+        "guardado-con-autochequeo",
+        "check-no-legaliza-un-5xx"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.10.0",
-      "updated_at": "2026-11-05",
-      "sha256": "1fd4ab814a61e3e62a900ef168ecc9c1a556b920ef0aa039a0bea39d366bfa7f",
+      "version": "2.11.0",
+      "updated_at": "2026-11-06",
+      "sha256": "fadf649e5918fe80c2a6b1cae2c84195986462fc0383e7d5bd72f06f2f07db5c",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -302,15 +307,17 @@
         "superficie-tema-sin-inyeccion",
         "sin-medicion-no-es-cero",
         "torre-etiquetas-de-grafico-agregadas",
-        "enum-cerrado-modos-tema"
+        "enum-cerrado-modos-tema",
+        "csp-img-solo-loopback-dev",
+        "lectura-anonima-solo-almacen-local"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.8.0",
-      "updated_at": "2026-11-05",
-      "sha256": "8f7f539ba3a9647eb8158621961c064366b4e723fa8549445ef6ea7e3e1db54a",
+      "version": "2.9.0",
+      "updated_at": "2026-11-06",
+      "sha256": "df06446b0acccd3c3b543ed7bcfcecaf3dd98656e0c68dd132fa4e546834b2e9",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -334,7 +341,8 @@
         "torre-residente-en-desarrollo",
         "torre-vistas-pregunta",
         "torre-una-fila-por-bloque",
-        "queja-de-color-se-mide"
+        "queja-de-color-se-mide",
+        "limitacion-de-ambiente-no-cubre-5xx"
       ]
     }
   ],

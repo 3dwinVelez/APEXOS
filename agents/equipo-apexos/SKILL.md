@@ -2,8 +2,8 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.8.0
-updated_at: 2026-11-05
+version: 2.9.0
+updated_at: 2026-11-06
 contract: 2
 ---
 
@@ -71,6 +71,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 
 20. **Una queja de color se mide, no se discute.** «Los colores no se ajustan bien» entra como trabajo con tres preguntas obligatorias antes de despachar: ¿la paleta se deriva en espacio perceptual o en gamma?, ¿la tinta se resuelve por contraste medido o por porcentaje fijo?, ¿la variable que pinta se declara en el nodo que recibe el tema? El despacho lleva el criterio de aceptación en cifras (razón WCAG por par, separación de OKLab-L entre superficies, margen entre modos de tono) y la aprobación del cierre es la certificación que lee `getComputedStyle`, no la opinión del experto. Si una captura muestra un estado ilegible, se reproduce en navegador contra el documento vigente antes de aceptar la explicación. Por qué: el 2026-11-05 la ronda 2 tenía tres causas —fórmula, alcance de declaración y arnés— y la tentación del equipo era «ajustar el gusto del diseñador»; con medidas, cada causa se cerró con su prueba.
 
+21. **Una «limitación de ambiente» no cierra un 5xx: lo hereda como defecto hasta demostrar lo contrario.** Cuando un experto reporta que algo falló por el entorno (no hay bucket, no hay clave, el servicio no corre), el orquestador no acepta la etiqueta ni la publica en el cierre sin tres evidencias: la reproducción con la respuesta cruda y el log, la clasificación de la causa (`apexos-seguridad`/`apexos-backend` dicen si el código tradujo el fallo o lo disfrazó) y la verificación de que **el ambiente del puesto realmente no puede** dar el resultado —revisando primero qué hay levantado, porque el compose del repo suele traer el almacén, Redis y la base. Si el ambiente sí puede, el trabajo pendiente es configurar el ambiente y tensar el código, no relajar el check. Lo que sí se declara como limitación es lo que está fuera del control del puesto y pide autorización (crear un recurso en la nube), con su código. Por qué: el 2026-11-06 el cierre de la ronda 1 decía «el bucket `comercio-assets` no existe en este ambiente: la subida responde 500» y la gate lo daba por bueno; el dueño volvió a los dos días con «la subida genera un error interno» y resultaron tres defectos de producto —red sin código propio, handler que se tragaba el 502 y CSP que bloqueaba el MinIO que sí estaba corriendo en el puesto.
+
 ## Checklist de intervención
 
 Antes:
@@ -79,6 +81,7 @@ Antes:
 - [ ] Expertos requeridos identificados por ruteo.
 - [ ] Lecturas obligatorias leídas.
 - [ ] Brief disponible o creado por `apexos-brief` si la tarea es ambigua o multi-módulo.
+- [ ] Ningún 5xx del reporte anterior clasificado todavía como «limitación de ambiente» (regla 21).
 - [ ] Capacidades protegidas del módulo declaradas.
 
 Durante:
@@ -127,3 +130,5 @@ Después:
 - Mezclar resultados de ambientes distintos en un mismo veredicto.
 - Promover a `develop` o `main` sin autorización independiente.
 - Ocultar un bloqueo para cerrar la entrega.
+- Heredar la «limitación de ambiente» de una ronda anterior sin reproducirla en la nueva.
+- Cerrar una intervención con un check que no puede fallar.

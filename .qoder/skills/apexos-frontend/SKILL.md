@@ -2,8 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.5.0
-updated_at: 2026-11-05
+version: 2.6.0
+updated_at: 2026-11-06
 contract: 2
 ---
 
@@ -54,6 +54,8 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
 15. **Una variable derivada se declara en el nodo que recibe el tema, nunca en `:root`.** Toda propiedad personalizada cuyo valor contenga `var(...)` se resuelve en el elemento donde se **declara** y se hereda ya sustituida: declarada en `:root` queda congelada al fallback de la hoja, aunque más abajo se inyecten las variables del tenant. Por eso `--sf-grad-hero/-contact/-progress/-thumb/-below` y `--sf-shadow-accent` viven en el bloque `.sf-root` —el mismo nodo que lleva el `style` de `buildStorefrontVars`— y `:root` solo guarda las tripletas base. Con prueba que extrae los dos bloques y lo exige (`las rampas se declaran donde vive el tema, no en :root`). Por qué: el 2026-11-05 el pie de foto del destacado con tema claro pintaba `rgb(10, 10, 10)` —el negro del CSS— sobre letra casi negra; alargar el degradado no lo arreglaba, porque el defecto era de alcance, no de pintura.
 
 16. **La prosa que ve el cliente se escribe en español correcto.** Las cadenas visibles (etiquetas, ayudas, mensajes, `aria-label`) llevan sus tildes —«Configuración», «página», «campañas», «Títulos»—; los comentarios del repositorio se escriben sin tilde por convención y no son objetivo. Un panel sin tildes al lado del resto del dashboard se lee como borrador y nadie lo corrige después. Por qué: el panel de Comercio quedó así en la ronda 1 y el dueño lo percibió como falta de profesionalismo antes que como falta de funciones; la prueba `la prosa visible del panel escribe el español con sus tildes` lo fija con autochequeo para no volverse decorativa.
+
+17. **Una imagen que el servidor entrega bien puede estar bloqueada por la cabecera del sitio: se certifica cargada, no devuelta.** El `img-src` de `apps/web/next.config.ts` cierra el origen de las imágenes, así que un almacén local servido por `http://localhost:9000` produce una subida en 201 y una `<img>` rota en la vitrina y en la previa del panel. El contrato del cliente: cuando algo nuevo se sirve desde un origen distinto del del sitio, se declara en `NEXT_PUBLIC_IMAGE_ORIGINS` (regla 23 de `apexos-seguridad`: desarrollo y loopback nada más) y la certificación de navegador lo comprueba en el navegador real —petición a 200 en la red de Chromium, `src` pintado igual a la URL que devolvió el servidor y `naturalWidth > 0`—, nunca solo con el 201 del `POST`. Por qué: el 2026-11-06 el arreglo del banner quedó «verificado» por la respuesta del API y la imagen seguía sin verse; lo descubrió el dueño al abrir la página, no una prueba.
 
 ## Checklist de intervención
 
@@ -110,3 +112,4 @@ Después:
 - Dejar un color literal de Tailwind en una superficie que el tenant personaliza.
 - Reusar la tinta invertida del tema como letra sobre la fotografía del banner.
 - Cambiar `buildStorefrontVars` sin mover a la vez el bloque `:root` de `storefront.css`.
+- Dar por buena una imagen subida porque el `POST` devolvió 201, sin verla cargada en el navegador.

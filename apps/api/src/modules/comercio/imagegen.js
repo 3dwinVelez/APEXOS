@@ -54,7 +54,14 @@ async function generateBannerImage(prompt) {
   } finally {
     clearTimeout(timer);
   }
-  if (!response.ok) throw genError(502, "IMAGEGEN_UNAVAILABLE", `El generador responded con ${response.status}. Puedes subir tu propia imagen.`);
+  // El codigo 402 del proveedor significa que el nivel gratuito se quedo sin cuota: el
+  // comercio no puede arreglarlo, pero si puede subir su propia foto, y eso se le dice.
+  if (!response.ok) {
+    const causa = response.status === 402
+      ? "el nivel gratuito del generador se quedo sin credito"
+      : `el generador contesto ${response.status}`;
+    throw genError(502, "IMAGEGEN_UNAVAILABLE", `No se pudo generar la imagen: ${causa}. Puedes subir tu propia imagen.`);
+  }
   const bytes = await readCapped(response);
   if (!bytes.length) throw genError(502, "IMAGEGEN_EMPTY", "El generador no devolvio una imagen. Intenta con otra descripcion.");
   return bytes;

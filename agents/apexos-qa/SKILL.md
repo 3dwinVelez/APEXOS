@@ -2,8 +2,8 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.12.0
-updated_at: 2026-11-05
+version: 2.13.0
+updated_at: 2026-11-06
 contract: 2
 ---
 
@@ -69,6 +69,13 @@ Antes de actuar, leer en este orden:
 
 27. **El arnés lee lo que el navegador serializa, y un guardado se autoverifica.** Dos defectos propios de esta ronda, ambos con rojo falso: (a) parsear las paradas de un degradado con la sintaxis `color / alfa` que escribió el humano cuando Chromium devuelve `rgb(11, 18, 32)` y `rgba(11, 18, 32, 0.97) 58%` —el grupo capturado perdía el prefijo `rgb(` y el parseador devolvía `undefined`, así que la gate se leía vacía y se culpaba al CSS—; y (b) una prueba de ortografía de interfaz que filtraba la prosa con una lista mal armada: contaba rutas de import como frases y no atrapaba ni `Campanas`. La corrección de (b) no es solo el regex: la prueba incluye un `assert.match` de una falta conocida, porque un guardado que no puede fallar no protege nada. Antes de dar rojo por producto, se imprime el valor crudo que devolvió el navegador. Por qué: el 2026-11-05 la certificación cayó en `la_rampa_del_pie_usa_el_fondo_del_tema_oscuro` mostrando `{"colorRampa":"11, 18, 32","fondo":"rgb(11, 18, 32)"}` —los dos colores eran el mismo— y la falla estaba en el parseador, no en la vitrina.
 
+28. **Ningún 5xx es conformidad, y una «limitación de ambiente» se demuestra antes de escribirla.** Un check del estilo `status === 201 || status >= 500` no puede fallar nunca: es un verde decorativo que además **blinda** el defecto, porque la siguiente persona ve la gate en verde y un cierre que ya declaró «no hay bucket local, es del ambiente». La regla:
+    - Un check afirma un resultado: `la_subida_del_banner_devuelve_201` o se queda fuera. Si el ambiente no puede darlo, la certificación se ejecuta contra un ambiente que sí puede —acá, el MinIO del compose que ya estaba corriendo—, no se relaja la aserción.
+    - Antes de registrar una limitación de ambiente, se reproduce el fallo y se lee la respuesta y el log: un 500 `ERROR_INTERNO` es un defecto **hasta que se demuestre** que es infraestructura. Lo que sí se declara como limitación es lo que queda afuera del control del puesto (crear el bucket en la nube pide autorización), con el código que lo prueba.
+    - La verificación de una subida termina en el almacén, no en el `POST`: lectura anónima del objeto, mismos bytes, petición real desde el navegador, `src` pintado igual a la URL del servidor y `naturalWidth > 0`. Un 201 con imagen rota es un fallo que este patrón no detecta.
+    - Se mira la captura antes de firmar el verde. `07-vitrina-con-banner-subido.png` existe porque el dueño abrió la página y vio el error que los 70 checks de la ronda 2 no veían.
+    Por qué: el 2026-11-06 la ronda 1 cerró con «el bucket no existe en el ambiente local» y el 500 del banner convivió dos rondes con esa etiqueta; la causa era un `fetch` contra un Supabase apagado, sin `statusCode`, más una CSP que bloqueaba el almacén local.
+
 ## Checklist de intervención
 
 Antes:
@@ -131,3 +138,5 @@ Después:
 - Afirmar un 400 frente a un campo inyectado cuando el validador lo elimina en silencio y el resultado correcto es 200 sin cambios.
 - Restaurar el estado del tenant solo al final de la certificación, dejando que una corrida abortada contamine la siguiente.
 - Presentar un fallo de ambiente (bucket sin crear, cuota gratuita 402) como verificado o mezclarlo con el defecto del producto.
+- Aceptar un 5xx en un check «para que la gate no se caiga» y llamarlo limitación del ambiente sin reproducirlo.
+- Certificar una subida por el código del `POST` sin leer el objeto en el almacén ni verlo pintado en el navegador.
