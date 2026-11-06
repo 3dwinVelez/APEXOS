@@ -32,6 +32,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-comercio-gastos", label: "Registrar ingresos y egresos de caja", description: "Movimientos de caja por direccion y medio de pago", href: "/dashboard/comercio/gastos", module: "comercio", keywords: "ingreso egresos caja gasto movimiento medio de pago comercio" },
   { id: "fn-comercio-reportes", label: "Ver reportes del comercio", description: "Tendencia diaria, margen, rankings y exportacion", href: "/dashboard/comercio/reportes", module: "comercio", keywords: "reporte tendencia margen ranking utilidad excel comercio" },
   { id: "fn-comercio-configuracion", label: "Configurar la vitrina del comercio", description: "Datos del negocio, redes, WhatsApp y campana de descuentos", href: "/dashboard/comercio/configuracion", module: "comercio", keywords: "configuracion vitrina publica codigo whatsapp instagram facebook campana descuento moneda comercio" },
+  { id: "fn-comercio-promociones", label: "Gestionar promociones del comercio", description: "Campanas de descuento por categoria o producto y envio por WhatsApp", href: "/dashboard/comercio/promociones", module: "comercio", keywords: "promocion campana descuento mercadeo audiencia categoria producto whatsapp cliente comercio" },
 
   // Contabilidad
   { id: "fn-contab-saldos-iniciales", label: "Importar saldos iniciales", description: "Cargue de saldos contables de apertura", href: "/dashboard/contabilidad/importar-saldos-iniciales", module: "contabilidad", keywords: "saldo apertura inicial importar contabilidad" },
