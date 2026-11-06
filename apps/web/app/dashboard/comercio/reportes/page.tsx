@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, RefreshCw, Search, X } from "lucide-react";
+import { Boxes, Download, RefreshCw, TrendingUp, Users, Wallet, X } from "lucide-react";
+import Link from "next/link";
+import { SearchField } from "@/components/ui/SearchField";
+import { EmptyState } from "@/components/ui/feedback";
 import { api } from "@/lib/api";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
 import { CashMethodChart, SalesTrendChart, TopProductsChart } from "../ComercioCharts";
@@ -42,7 +45,7 @@ const REASON_LABELS: Record<string, string> = {
   initial: "Inicial",
   purchase: "Compra",
   sale: "Venta",
-  sale_void: "Anulacion",
+  sale_void: "Anulación",
   adjustment: "Ajuste"
 };
 
@@ -67,8 +70,8 @@ function lastMonthRange() {
 // Presets de rango: el comerciante no piensa en fechas, piensa en "hoy", "la semana" o "el mes".
 const PRESETS = [
   { id: "hoy", label: "Hoy", build: () => ({ from: todayISO(), to: todayISO() }) },
-  { id: "7d", label: "7 dias", build: () => ({ from: shiftDays(6), to: todayISO() }) },
-  { id: "30d", label: "30 dias", build: () => ({ from: shiftDays(29), to: todayISO() }) },
+  { id: "7d", label: "7 días", build: () => ({ from: shiftDays(6), to: todayISO() }) },
+  { id: "30d", label: "30 días", build: () => ({ from: shiftDays(29), to: todayISO() }) },
   { id: "mes", label: "Este mes", build: () => ({ from: firstOfMonth(), to: todayISO() }) },
   { id: "anterior", label: "Mes anterior", build: lastMonthRange },
 ] as const;
@@ -163,7 +166,7 @@ export default function ComercioReportesPage() {
         ]
       },
       {
-        name: "Ventas por dia",
+        name: "Ventas por día",
         columns: [
           { key: "date", label: "Fecha", width: 130 },
           { key: "total", label: "Ventas", width: 140 }
@@ -175,7 +178,7 @@ export default function ComercioReportesPage() {
         columns: [
           { key: "method", label: "Medio de pago", width: 160 },
           { key: "total", label: "Recaudo", width: 140 },
-          { key: "share", label: "Participacion", width: 120 }
+          { key: "share", label: "Participación", width: 120 }
         ],
         rows: summary.cash_by_method.map((row) => ({ method: row.method, total: row.total, share: percent(row.total, cashTotal) }))
       },
@@ -205,7 +208,7 @@ export default function ComercioReportesPage() {
           { key: "product_name", label: "Producto", width: 220 },
           { key: "change", label: "Cambio", width: 90 },
           { key: "stock_before", label: "Antes", width: 90 },
-          { key: "stock_after", label: "Despues", width: 90 },
+          { key: "stock_after", label: "Después", width: 90 },
           { key: "reason", label: "Motivo", width: 120 },
           { key: "reference", label: "Referencia", width: 160 }
         ],
@@ -225,9 +228,9 @@ export default function ComercioReportesPage() {
   const movementColumns: DataColumn<Movement>[] = useMemo(() => [
     { id: "date", header: "Fecha", cell: (row) => <span className="whitespace-nowrap text-xs">{row.occurred_at}</span>, sortValue: (row) => row.occurred_at },
     { id: "product", header: "Producto", cell: (row) => row.product_name, sortValue: (row) => row.product_name },
-    { id: "change", header: "Cambio", className: "text-right", cell: (row) => <span className={`font-semibold ${row.change >= 0 ? "text-success" : "text-error"}`}>{row.change > 0 ? "+" : ""}{row.change}</span>, sortValue: (row) => row.change },
+    { id: "change", header: "Cambio", className: "text-right", cell: (row) => <span className={`font-semibold ${row.change >= 0 ? "text-success-ink" : "text-error-ink"}`}>{row.change > 0 ? "+" : ""}{row.change}</span>, sortValue: (row) => row.change },
     { id: "before", header: "Antes", className: "text-right", cell: (row) => row.stock_before, sortValue: (row) => row.stock_before },
-    { id: "after", header: "Despues", className: "text-right", cell: (row) => row.stock_after, sortValue: (row) => row.stock_after },
+    { id: "after", header: "Después", className: "text-right", cell: (row) => row.stock_after, sortValue: (row) => row.stock_after },
     { id: "reason", header: "Motivo", cell: (row) => <StatusPill tone={row.reason === "sale" || row.reason === "sale_void" ? "warn" : "muted"}>{REASON_LABELS[row.reason] || row.reason}</StatusPill>, sortValue: (row) => REASON_LABELS[row.reason] || row.reason },
     { id: "reference", header: "Referencia", cell: (row) => <span className="font-mono text-xs">{row.reference || "--"}</span> }
   ], []);
@@ -237,15 +240,15 @@ export default function ComercioReportesPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Resultados" subtitle="Resultado del periodo: ventas, margen, gastos, caja, cartera e inventario. Elija el rango y exporte el detalle a Excel." title="Reportes" />
+      <ModuleHeader section="Resultados" subtitle="Resultado del periodo: ventas, margen, gastos, caja, cartera e inventario. Elige el rango arriba y exporta el detalle a Excel." title="Reportes" />
       <ComercioMessages error={error} />
 
       <section aria-label="Rango del reporte" className="apex-section-card space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">Rapido</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-content-muted">Rápido</span>
           {PRESETS.map((preset) => (
             <button aria-pressed={activePreset === preset.id} key={preset.id}
-              className={`inline-flex min-h-10 items-center rounded-control border px-3 text-xs font-semibold transition-colors ${activePreset === preset.id ? "border-apex/40 bg-apex/10 text-apex" : "border-line text-content-body hover:bg-surface-muted"}`}
+              className={`inline-flex min-h-10 items-center rounded-control border px-3 text-xs font-semibold transition-colors ${activePreset === preset.id ? "border-apex/40 bg-apex/10 text-apex-ink" : "border-line text-content-body hover:bg-surface-muted"}`}
               onClick={() => applyPreset(preset.id)} type="button">{preset.label}</button>
           ))}
         </div>
@@ -281,7 +284,7 @@ export default function ComercioReportesPage() {
             </div>
             <div className="apex-section-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Resultado estimado</p>
-              <p className={`mt-1 text-xl font-semibold ${summary.totals.estimated_result < 0 ? "text-error" : "text-success"}`}>{money(summary.totals.estimated_result)}</p>
+              <p className={`mt-1 text-xl font-semibold ${summary.totals.estimated_result < 0 ? "text-error-ink" : "text-success-ink"}`}>{money(summary.totals.estimated_result)}</p>
               <p className="mt-1 text-xs text-content-muted">Gastos {money(summary.totals.expenses)} · Compras {money(summary.totals.purchases)}</p>
             </div>
             <div className="apex-section-card p-4">
@@ -292,32 +295,38 @@ export default function ComercioReportesPage() {
             <div className="apex-section-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Cartera</p>
               <p className="mt-1 text-xl font-semibold text-content-strong">{money(summary.totals.receivable)}</p>
-              <p className={`mt-1 text-xs ${summary.totals.overdue_receivable > 0 ? "font-semibold text-error" : "text-content-muted"}`}>
+              <p className={`mt-1 text-xs ${summary.totals.overdue_receivable > 0 ? "font-semibold text-error-ink" : "text-content-muted"}`}>
                 {summary.totals.overdue_receivable > 0 ? `Vencida ${money(summary.totals.overdue_receivable)}` : "Sin cartera vencida"}
               </p>
             </div>
             <div className="apex-section-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Inventario</p>
               <p className="mt-1 text-xl font-semibold text-content-strong">{money(summary.totals.inventory_value)}</p>
-              <p className={`mt-1 text-xs ${summary.low_stock.length ? "font-semibold text-warning" : "text-content-muted"}`}>
+              <p className={`mt-1 text-xs ${summary.low_stock.length ? "font-semibold text-warning-ink" : "text-content-muted"}`}>
                 {summary.low_stock.length ? `${summary.low_stock.length} productos por reponer` : "Inventario sin faltantes"}
               </p>
             </div>
           </section>
 
-          <section aria-label="Tendencia de ventas por dia" className="apex-section-card p-4">
+          <section aria-label="Tendencia de ventas por día" className="apex-section-card p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-sm font-semibold text-content-strong">Tendencia de ventas por dia</h2>
+              <h2 className="text-sm font-semibold text-content-strong">Tendencia de ventas por día</h2>
               <p className="text-xs text-content-muted">
-                {dailyMax ? `Mejor dia ${dailyMax.date}: ${money(dailyMax.total)} · promedio ${money(summary.daily_sales.reduce((sum, row) => sum + row.total, 0) / summary.daily_sales.length)}` : "Sin ventas en el rango"}
+                {dailyMax ? `Mejor día ${dailyMax.date}: ${money(dailyMax.total)} · promedio ${money(summary.daily_sales.reduce((sum, row) => sum + row.total, 0) / summary.daily_sales.length)}` : "Sin ventas en el rango"}
               </p>
             </div>
             {summary.daily_sales.length === 0 ? (
-              <p className="mt-3 rounded-control border border-dashed border-line p-6 text-center text-sm text-content-muted">No hay ventas entre el {from} y el {to}. Registre una venta o amplie el rango.</p>
+              <EmptyState
+                className="mt-3 rounded-control border border-dashed border-line"
+                description={`Entre el ${from} y el ${to} no se registró ninguna venta. Amplíe el rango para comparar días o registre la primera venta en el mostrador.`}
+                icon={<TrendingUp size={22} />}
+                primaryAction={<Link className={buttonClasses("secondary", "compact")} href="/dashboard/comercio/vender">Registrar una venta</Link>}
+                title="Sin ventas en este rango"
+              />
             ) : (
               <>
                 <div className="mt-3"><SalesTrendChart data={summary.daily_sales} /></div>
-                <p className="mt-2 text-xs text-content-muted">La linea discontinua es el promedio movil de 7 dias. La suma de los dias coincide con la tarjeta de Ventas.</p>
+                <p className="mt-2 text-xs text-content-muted">La línea discontinua es el promedio móvil de 7 días. La suma de los días coincide con la tarjeta de Ventas.</p>
               </>
             )}
           </section>
@@ -326,7 +335,12 @@ export default function ComercioReportesPage() {
             <section aria-label="Recaudo por medio de pago" className="apex-section-card p-4">
               <h2 className="text-sm font-semibold text-content-strong">Recaudo por medio de pago</h2>
               {summary.cash_by_method.length === 0 ? (
-                <p className="mt-3 rounded-control border border-dashed border-line p-6 text-center text-sm text-content-muted">Sin recaudo registrado en el rango.</p>
+                <EmptyState
+                  className="mt-3 rounded-control border border-dashed border-line"
+                  description="Cuando cobre algo en este rango verá aquí el desglose de efectivo, tarjeta y transferencia."
+                  icon={<Wallet size={22} />}
+                  title="Sin recaudo registrado"
+                />
               ) : (
                 <>
                   <div className="mt-3"><CashMethodChart data={summary.cash_by_method} /></div>
@@ -337,10 +351,15 @@ export default function ComercioReportesPage() {
               )}
             </section>
 
-            <section aria-label="Productos mas vendidos" className="apex-section-card p-4">
-              <h2 className="text-sm font-semibold text-content-strong">Productos mas vendidos</h2>
+            <section aria-label="Productos más vendidos" className="apex-section-card p-4">
+              <h2 className="text-sm font-semibold text-content-strong">Productos más vendidos</h2>
               {summary.top_products.length === 0 ? (
-                <p className="mt-3 rounded-control border border-dashed border-line p-6 text-center text-sm text-content-muted">Sin ventas de producto en el rango.</p>
+                <EmptyState
+                  className="mt-3 rounded-control border border-dashed border-line"
+                  description="Ningún producto se vendió en el rango; el ranking se llena con las ventas del mostrador."
+                  icon={<Boxes size={22} />}
+                  title="Sin productos vendidos"
+                />
               ) : (
                 <div className="mt-3"><TopProductsChart data={summary.top_products} /></div>
               )}
@@ -351,12 +370,17 @@ export default function ComercioReportesPage() {
             <section aria-label="Mejores clientes" className="apex-section-card">
               <h2 className="border-b border-line p-4 text-sm font-semibold text-content-strong">Mejores clientes</h2>
               {summary.top_customers.length === 0 ? (
-                <p className="p-6 text-center text-sm text-content-muted">Sin ventas con cliente registrado en el rango.</p>
+                <EmptyState
+                  description="Al vender, asigne el cliente: así este ranking separa quien compra seguido de quien compra una sola vez."
+                  icon={<Users size={22} />}
+                  primaryAction={<Link className={buttonClasses("secondary", "compact")} href="/dashboard/comercio/clientes">Abrir el maestro de clientes</Link>}
+                  title="Ninguna venta con cliente asignado"
+                />
               ) : (
                 <ol className="divide-y divide-line">
                   {summary.top_customers.map((row, index) => (
                     <li className="flex items-center gap-3 px-4 py-2.5" key={row.customer_id}>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-apex/10 text-xs font-semibold text-apex">{index + 1}</span>
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-apex/10 text-xs font-semibold text-apex-ink">{index + 1}</span>
                       <span className="min-w-0 flex-1 truncate text-sm">{row.customer_name || "Cliente sin nombre"}</span>
                       <span className="text-xs text-content-muted">{row.sales} venta(s)</span>
                       <span className="w-28 text-right text-sm font-semibold text-content-strong">{money(row.total)}</span>
@@ -369,7 +393,7 @@ export default function ComercioReportesPage() {
             <section aria-label="Productos por reponer" className="apex-section-card">
               <h2 className="border-b border-line p-4 text-sm font-semibold text-content-strong">Productos por reponer ({summary.low_stock.length})</h2>
               {summary.low_stock.length === 0 ? (
-                <p className="p-6 text-center text-sm text-content-muted">Ningun producto esta por debajo de su minimo.</p>
+                <p className="p-6 text-center text-sm text-content-muted">Ningún producto está por debajo de su mínimo.</p>
               ) : (
                 <ul className="divide-y divide-line">
                   {summary.low_stock.map((product) => (
@@ -377,7 +401,7 @@ export default function ComercioReportesPage() {
                       <span className="min-w-0 flex-1 truncate text-sm">{product.name}</span>
                       <span className="font-mono text-xs text-content-muted">{product.code}</span>
                       <span className="w-32 text-right text-sm">
-                        <span className="font-semibold text-warning">{product.stock}</span>
+                        <span className="font-semibold text-warning-ink">{product.stock}</span>
                         <span className="text-content-muted"> / min {product.min_stock} {product.unit}</span>
                       </span>
                     </li>
@@ -390,15 +414,16 @@ export default function ComercioReportesPage() {
           <section aria-label="Movimientos de inventario" className="apex-section-card p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-sm font-semibold text-content-strong">Movimientos de inventario</h2>
-              <p className="text-xs text-content-muted">{movements.length} movimientos del rango (se muestran los mas recientes).</p>
+              <p className="text-xs text-content-muted">{movements.length} movimientos del rango; se muestran los más recientes.</p>
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(240px,1fr)_14rem_auto] sm:items-end">
-              <Field label="Buscar movimiento" hint="Producto, motivo o referencia. Acentos ignorados.">
-                <div className="relative">
-                  <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" size={15} />
-                  <input aria-label="Buscar movimiento de inventario" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto o referencia..." value={query} />
-                </div>
-              </Field>
+              <SearchField
+                hint="Producto, motivo o referencia. Ignora acentos y mayúsculas."
+                label="Buscar movimiento"
+                onChange={setQuery}
+                placeholder="Producto, referencia o motivo"
+                value={query}
+              />
               <Field label="Motivo">
                 <select aria-label="Filtrar movimientos por motivo" className="control apex-select" onChange={(event) => setReason(event.target.value)} value={reason}>
                   <option value="all">Todos los motivos</option>
@@ -416,7 +441,7 @@ export default function ComercioReportesPage() {
             </p>
             <div className="mt-3">
               <SmartDataTable columns={movementColumns} emptyDetail="Cambie el rango de fechas o registre una compra, venta o ajuste de inventario."
-                emptyTitle={hasMovementFilters ? "Ningun movimiento coincide" : "Sin movimientos en el rango"}
+                emptyTitle={hasMovementFilters ? "Ningún movimiento coincide" : "Sin movimientos en el rango"}
                 loading={loading} pageSize={12} rowKey={(row) => row.id} rows={filteredMovements} storageKey="comercio-movimientos-inventario" />
             </div>
           </section>

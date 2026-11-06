@@ -1,13 +1,14 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Plus, RefreshCw, Users } from "lucide-react";
+import { ChevronDown, Download, Plus, RefreshCw, Users } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
-import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, useComercioAccess } from "@/components/comercio/shared";
+import { Check, comercioGate, ComercioMessages, describeError, Field, matchesQuery, ModuleHeader, StatusPill, useComercioAccess, useVentana } from "@/components/comercio/shared";
 
 // Maestro de clientes del Comercio (GET /api/v1/comercio/customers). Es un cliente propio
 // del modulo: no se mezcla con los Parties del ERP. Desactivar esta bloqueado si tiene
@@ -75,12 +76,12 @@ export default function ComercioClientesPage() {
     downloadExcelWorkbook("comercio-clientes.xls", [{
       name: "Clientes",
       columns: [
-        { key: "code", label: "Codigo" },
+        { key: "code", label: "Código" },
         { key: "name", label: "Nombre", width: 220 },
         { key: "document", label: "Documento" },
-        { key: "phone", label: "Telefono" },
+        { key: "phone", label: "Teléfono" },
         { key: "email", label: "Correo" },
-        { key: "address", label: "Direccion", width: 200 },
+        { key: "address", label: "Dirección", width: 200 },
         { key: "state", label: "Estado" }
       ],
       rows: rows.map((row) => ({
@@ -104,7 +105,7 @@ export default function ComercioClientesPage() {
   }
 
   const columns: DataColumn<Customer>[] = [
-    { className: "font-mono", cell: (row) => row.code, header: "Codigo", hideable: false, id: "code", sortValue: (row) => row.code },
+    { className: "font-mono", cell: (row) => row.code, header: "Código", hideable: false, id: "code", sortValue: (row) => row.code },
     {
       cell: (row) => (
         <div className="min-w-0">
@@ -118,7 +119,7 @@ export default function ComercioClientesPage() {
       sortValue: (row) => row.name
     },
     { cell: (row) => row.document || "--", header: "Documento", id: "document", sortValue: (row) => row.document || "" },
-    { cell: (row) => row.phone || "--", header: "Telefono", id: "phone", sortValue: (row) => row.phone || "" },
+    { cell: (row) => row.phone || "--", header: "Teléfono", id: "phone", sortValue: (row) => row.phone || "" },
     { cell: (row) => row.email || "--", header: "Correo", id: "email", sortValue: (row) => row.email || "" },
     { cell: (row) => (row.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>), header: "Estado", id: "state", sortValue: (row) => (row.active ? 1 : 0) },
     {
@@ -170,22 +171,23 @@ export default function ComercioClientesPage() {
       setError(describeError(caught, "No fue posible cambiar el estado del cliente."));
     }
   }
+  const ventana = useVentana(filtered);
   const blocked = comercioGate(access);
   if (blocked) return blocked;
-
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Maestros" subtitle="Directorio propio del comercio para ventas a credito y seguimiento de cartera." title="Clientes" />
+      <ModuleHeader section="Maestros" subtitle="Directorio de clientes del comercio: se usa en la venta a crédito y en el seguimiento de cartera. Empieza con Nuevo cliente." title="Clientes" />
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
         <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_auto_auto_auto] lg:items-end">
-          <Field label="Buscar">
-            <span className="relative block">
-              <Users className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
-              <input aria-label="Buscar clientes por codigo, nombre, documento, telefono o correo" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Nombre, codigo, documento o telefono" value={query} />
-            </span>
-          </Field>
+          <SearchField
+            hint="Ignora acentos y mayúsculas"
+            label="Buscar clientes por código, nombre, documento, teléfono o correo"
+            onChange={setQuery}
+            placeholder="Nombre, código, documento o teléfono"
+            value={query}
+          />
           <div className="flex items-center gap-3 pb-2 text-sm lg:pb-0">
             <Check checked={showInactive} label="Ver inactivos" onChange={setShowInactive} />
           </div>
@@ -196,13 +198,13 @@ export default function ComercioClientesPage() {
           {access.canWrite ? <Button onClick={() => openEditor(null)} size="compact"><Plus size={14} /> Nuevo cliente</Button> : null}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
-          {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost">Limpiar filtros</Button> : <span>Un cliente con creditos vigentes no se puede desactivar; el servidor lo bloquea.</span>}
-          <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {customers.length} clientes</span>
+          {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost">Limpiar filtros</Button> : <span>Un cliente con créditos vigentes no se puede desactivar; el servidor lo bloquea.</span>}
+          <span aria-live="polite" className="font-semibold text-content-body" id="conteo-resultados">{filtered.length} de {customers.length} clientes</span>
         </div>
 
         {!loading && filtered.length ? (
-          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-            {filtered.map((customer) => {
+          <><ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {ventana.visibles.map((customer) => {
               const cardBody = (
                 <>
                   <div className="flex items-start justify-between gap-2">
@@ -212,9 +214,9 @@ export default function ComercioClientesPage() {
                     </div>
                     <StatusPill tone={customer.active ? "ok" : "muted"}>{customer.active ? "Activo" : "Inactivo"}</StatusPill>
                   </div>
-                  <p className="mt-1 text-xs text-content-body">{customer.document || "Sin documento"} · {customer.phone || "Sin telefono"}</p>
+                  <p className="mt-1 text-xs text-content-body">{customer.document || "Sin documento"} · {customer.phone || "Sin teléfono"}</p>
                   {customer.email ? <p className="truncate text-xs text-content-muted">{customer.email}</p> : null}
-                  {access.canWrite ? <p className="mt-2 text-xs font-medium text-apex">Abrir ficha</p> : null}
+                  {access.canWrite ? <p className="mt-2 text-xs font-medium text-apex-ink">Abrir ficha</p> : null}
                 </>
               );
               return (
@@ -226,6 +228,12 @@ export default function ComercioClientesPage() {
               );
             })}
           </ul>
+        {ventana.restantes > 0 ? (
+          <div className="px-4 pb-4">
+            <Button onClick={ventana.ampliar} size="compact" variant="secondary"><ChevronDown size={14} /> Ver {ventana.restantes} más</Button>
+          </div>
+        ) : null}
+        </>
         ) : null}
 
         <div className="hidden p-4 lg:block">
@@ -233,12 +241,12 @@ export default function ComercioClientesPage() {
             bulkActions={(selected, clear) => (
               <>
                 <Button onClick={() => exportCustomers(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
-                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar selección</Button>
               </>
             )}
             columns={columns}
-            emptyDetail={customers.length ? "Ajusta o limpia los filtros para volver a ver clientes." : "Crea el primer cliente para poder vender a credito."}
-            emptyTitle={customers.length ? "Ningun cliente con estos filtros" : "Aun no tienes clientes"}
+            emptyDetail={customers.length ? "Ajusta o limpia los filtros para volver a ver clientes." : "Crea el primer cliente para poder vender a crédito."}
+            emptyTitle={customers.length ? "Ningún cliente con estos filtros" : "Aún no tienes clientes"}
             loading={loading}
             pageSize={12}
             rowKey={(row) => row.id}
@@ -260,13 +268,13 @@ export default function ComercioClientesPage() {
               <Field label="Documento (opcional)">
                 <input className="control" maxLength={30} onChange={(event) => setForm({ ...form, document: event.target.value })} value={form.document} />
               </Field>
-              <Field label="Telefono (opcional)">
+              <Field label="Teléfono (opcional)">
                 <input className="control" maxLength={30} onChange={(event) => setForm({ ...form, phone: event.target.value })} value={form.phone} />
               </Field>
               <Field label="Correo (opcional)">
                 <input className="control" maxLength={160} onChange={(event) => setForm({ ...form, email: event.target.value })} type="email" value={form.email} />
               </Field>
-              <Field label="Direccion (opcional)">
+              <Field label="Dirección (opcional)">
                 <input className="control" maxLength={300} onChange={(event) => setForm({ ...form, address: event.target.value })} value={form.address} />
               </Field>
               <div className="md:col-span-2">
@@ -275,7 +283,7 @@ export default function ComercioClientesPage() {
                 </Field>
               </div>
             </div>
-            <p className="text-xs text-content-muted">El codigo (C-0001...) lo asigna el servidor. Desactivar deja el cliente fuera de ventas y de la vitrina, pero conserva su historial; un cliente con creditos vigentes no se desactiva.</p>
+            <p className="text-xs text-content-muted">El código (C-0001...) lo asigna el servidor. Desactivar deja al cliente fuera de ventas y de la vitrina, pero conserva su historial.</p>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
               {editing && access.canWrite ? (
                 <Button disabled={saving} onClick={() => void toggleActive(editing)} type="button" variant="secondary">

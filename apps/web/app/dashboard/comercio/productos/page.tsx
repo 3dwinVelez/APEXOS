@@ -1,13 +1,14 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Camera, ChevronRight, Download, PackageSearch, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Camera, ChevronDown, ChevronRight, Download, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
-import { Check, ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, money, useComercioAccess } from "@/components/comercio/shared";
+import { Check, comercioGate, ComercioMessages, describeError, Field, matchesQuery, ModuleHeader, money, StatusPill, useComercioAccess, useVentana } from "@/components/comercio/shared";
 
 // Maestro de productos del Comercio (GET /api/v1/comercio/products). El stock nunca se
 // edita por el formulario: solo por ajustes, compras o ventas, todo trazado en movimientos.
@@ -79,7 +80,7 @@ export default function ComercioProductosPage() {
 
   // La ficha del producto concentra stock, foto y estado: un solo punto de entrada
   // por fila evita la tanda de botones repetidos en el listado.
-  const [adjustForm, setAdjustForm] = useState({ new_stock: "", reason: "Conteo fisico" });
+  const [adjustForm, setAdjustForm] = useState({ new_stock: "", reason: "Conteo físico" });
   const [adjustBusy, setAdjustBusy] = useState(false);
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -125,16 +126,16 @@ export default function ComercioProductosPage() {
     downloadExcelWorkbook("comercio-productos.xls", [{
       name: "Productos",
       columns: [
-        { key: "code", label: "Codigo" },
+        { key: "code", label: "Código" },
         { key: "name", label: "Producto", width: 220 },
-        { key: "category", label: "Categoria" },
+        { key: "category", label: "Categoría" },
         { key: "unit", label: "Unidad" },
         { key: "list_price", label: "Precio de lista" },
         { key: "discount", label: "Descuento %" },
         { key: "final_price", label: "Precio final" },
         { key: "cost", label: "Costo promedio" },
         { key: "stock", label: "Stock" },
-        { key: "min_stock", label: "Minimo" },
+        { key: "min_stock", label: "Mínimo" },
         { key: "state", label: "Estado" }
       ],
       rows: rows.map((row) => ({
@@ -154,7 +155,7 @@ export default function ComercioProductosPage() {
   }
 
   const columns: DataColumn<Product>[] = [
-    { className: "font-mono", cell: (row) => row.code, header: "Codigo", hideable: false, id: "code", sortValue: (row) => row.code },
+    { className: "font-mono", cell: (row) => row.code, header: "Código", hideable: false, id: "code", sortValue: (row) => row.code },
     {
       cell: (row) => (
         <div className="flex min-w-0 items-center gap-2">
@@ -177,7 +178,7 @@ export default function ComercioProductosPage() {
       id: "name",
       sortValue: (row) => row.name
     },
-    { cell: (row) => row.category || "--", header: "Categoria", id: "category", sortValue: (row) => row.category || "" },
+    { cell: (row) => row.category || "--", header: "Categoría", id: "category", sortValue: (row) => row.category || "" },
     {
       className: "text-right",
       cell: (row) => (
@@ -198,7 +199,7 @@ export default function ComercioProductosPage() {
       id: "stock",
       sortValue: (row) => Number(row.stock)
     },
-    { className: "text-right", cell: (row) => <span className="text-content-muted">{row.min_stock}</span>, header: "Minimo", id: "min", sortValue: (row) => Number(row.min_stock) },
+    { className: "text-right", cell: (row) => <span className="text-content-muted">{row.min_stock}</span>, header: "Mínimo", id: "min", sortValue: (row) => Number(row.min_stock) },
     { cell: (row) => (row.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>), header: "Estado", id: "state", sortValue: (row) => (row.active ? 1 : 0) },
     {
       className: "text-right",
@@ -248,7 +249,7 @@ export default function ComercioProductosPage() {
     setForm(product
       ? { name: product.name, category: product.category || "", unit: product.unit, price: String(product.price), cost: String(product.cost), stock: "", min_stock: String(product.min_stock), discount_percent: String(product.discount_percent), notes: product.notes || "", active: product.active, catalog_featured: product.catalog_featured }
       : emptyForm);
-    setAdjustForm({ new_stock: product ? String(product.stock) : "", reason: "Conteo fisico" });
+    setAdjustForm({ new_stock: product ? String(product.stock) : "", reason: "Conteo físico" });
     setPhotoFile(null);
     setPhotoUrl(null);
     setError("");
@@ -273,7 +274,7 @@ export default function ComercioProductosPage() {
     try {
       const result = await api<{ product: Product; movement: unknown }>(`/api/v1/comercio/products/${editing.id}/adjust-stock`, {
         method: "POST",
-        body: JSON.stringify({ new_stock: Number(adjustForm.new_stock), reason: adjustForm.reason.trim() || "Conteo fisico" })
+        body: JSON.stringify({ new_stock: Number(adjustForm.new_stock), reason: adjustForm.reason.trim() || "Conteo físico" })
       });
       setMessage(`${editing.name}: stock ${editing.stock} -> ${result.product.stock}.`);
       setEditing(result.product);
@@ -301,7 +302,7 @@ export default function ComercioProductosPage() {
       setEditing({ ...editing, has_photo: true });
       await load();
     } catch (caught) {
-      setError(describeError(caught, "No fue posible subir la fotografia."));
+      setError(describeError(caught, "No fue posible subir la fotografía."));
     } finally {
       setPhotoBusy(false);
     }
@@ -318,28 +319,29 @@ export default function ComercioProductosPage() {
       setEditing({ ...editing, has_photo: false });
       await load();
     } catch (caught) {
-      setError(describeError(caught, "No fue posible eliminar la fotografia."));
+      setError(describeError(caught, "No fue posible eliminar la fotografía."));
     } finally {
       setPhotoBusy(false);
     }
   }
+  const ventana = useVentana(filtered);
   const blocked = comercioGate(access);
   if (blocked) return blocked;
-
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Inventario" subtitle="Productos con precio de lista, descuento, costo promedio y stock propio del comercio. El mismo precio final se usa en la vitrina publica y en el mostrador." title="Productos" />
+      <ModuleHeader section="Inventario" subtitle="Productos con precio de lista, descuento, costo promedio y stock. El mismo precio final cobra la vitrina pública y el mostrador. El stock solo cambia con ajustes, compras o ventas." title="Productos" />
       <ComercioMessages error={error} message={message} />
 
       <section className="apex-section-card">
         <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_13rem_auto_auto] lg:items-end">
-          <Field label="Buscar">
-            <span className="relative block">
-              <PackageSearch className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
-              <input aria-label="Buscar productos por codigo, nombre, categoria o unidad" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="Codigo, nombre, categoria o unidad" value={query} />
-            </span>
-          </Field>
-          <Field hint={categories.length ? `${categories.length} categorias en el catalogo` : undefined} label="Categoria">
+          <SearchField
+            hint="Ignora acentos y mayúsculas"
+            label="Buscar productos"
+            onChange={setQuery}
+            placeholder="Código, nombre, categoría o unidad"
+            value={query}
+          />
+          <Field hint={categories.length ? `${categories.length} categorías en el catálogo` : undefined} label="Categoría">
             <select className="control apex-select" onChange={(event) => setCategory(event.target.value)} value={category}>
               <option value="">Todas</option>
               {categories.map((name) => <option key={name} value={name}>{name}</option>)}
@@ -357,14 +359,14 @@ export default function ComercioProductosPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
-          <span>El precio final lista solo el descuento del producto. Si hay campana de vitrina (Configuracion), la vitrina y el mostrador usan el porcentaje mayor entre los dos.</span>
-          <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} de {products.length} productos</span>
+          <span>El precio que ve el cliente usa el descuento mayor entre el producto y la promoción activa; nunca se suman.</span>
+          <span aria-live="polite" className="font-semibold text-content-body" id="conteo-resultados">{filtered.length} de {products.length} productos</span>
         </div>
 
         {!loading && filtered.length ? (
           /* Movil: toda la tarjeta es el acceso a la ficha. Escritorio: una sola accion por fila. */
-          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-              {filtered.map((product) => {
+          <><ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+              {ventana.visibles.map((product) => {
                 const cardBody = (
                   <>
                     <div className="flex items-start justify-between gap-2">
@@ -382,13 +384,13 @@ export default function ComercioProductosPage() {
                       {product.discount_percent > 0 ? (
                         <>
                           <span className="text-xs font-normal text-content-muted line-through">{money(product.price)}</span>
-                          <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">-{product.discount_percent}%</span>
+                          <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success-ink">-{product.discount_percent}%</span>
                         </>
                       ) : null}
-                      {product.catalog_featured ? <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning">Vitrina</span> : null}
+                      {product.catalog_featured ? <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning-ink">Vitrina</span> : null}
                     </p>
                     <p className="text-xs text-content-muted">Costo: {money(product.cost)} · Min: {product.min_stock}</p>
-                    {access.canWrite ? <p className="mt-2 flex items-center gap-1 text-xs font-medium text-apex"><ChevronRight size={12} /> Abrir ficha</p> : null}
+                    {access.canWrite ? <p className="mt-2 flex items-center gap-1 text-xs font-medium text-apex-ink"><ChevronRight size={12} /> Abrir ficha</p> : null}
                   </>
                 );
                 return (
@@ -402,6 +404,12 @@ export default function ComercioProductosPage() {
                 );
               })}
           </ul>
+        {ventana.restantes > 0 ? (
+          <div className="px-4 pb-4">
+            <Button onClick={ventana.ampliar} size="compact" variant="secondary"><ChevronDown size={14} /> Ver {ventana.restantes} más</Button>
+          </div>
+        ) : null}
+        </>
         ) : null}
 
         <div className="hidden p-4 lg:block">
@@ -409,12 +417,12 @@ export default function ComercioProductosPage() {
             bulkActions={(selected, clear) => (
               <>
                 <Button onClick={() => exportProducts(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
-                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar selección</Button>
               </>
             )}
             columns={columns}
             emptyDetail={products.length ? "Ajusta o limpia los filtros para volver a ver productos." : "Crea el primer producto para tener vitrina, mostrador y stock propio."}
-            emptyTitle={products.length ? "Ningun producto con estos filtros" : "Aun no tienes productos"}
+            emptyTitle={products.length ? "Ningún producto con estos filtros" : "Aún no tienes productos"}
             loading={loading}
             pageSize={12}
             rowKey={(row) => row.id}
@@ -434,8 +442,8 @@ export default function ComercioProductosPage() {
                     <input className="control" maxLength={160} onChange={(event) => setForm({ ...form, name: event.target.value })} required value={form.name} />
                   </Field>
                 </div>
-                <Field label="Categoria (opcional)">
-                  <input className="control" maxLength={80} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Lacteos, Aseo..." value={form.category} />
+                <Field label="Categoría (opcional)">
+                  <input className="control" maxLength={80} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Lácteos, Aseo..." value={form.category} />
                 </Field>
                 <Field label="Unidad">
                   <input className="control" maxLength={20} onChange={(event) => setForm({ ...form, unit: event.target.value })} value={form.unit} />
@@ -464,14 +472,14 @@ export default function ComercioProductosPage() {
                       {cleanPercent(form.discount_percent) > 0 ? (
                         <>
                           <span className="ml-2 text-xs text-content-muted line-through">{money(Number(form.price || 0))}</span>
-                          <span className="ml-2 text-xs font-semibold text-rose-600">-{cleanPercent(form.discount_percent)}%</span>
+                          <span className="ml-2 text-xs font-semibold text-error-ink">-{cleanPercent(form.discount_percent)}%</span>
                         </>
                       ) : null}
                     </p>
                     <Check checked={form.catalog_featured} label="Destacar en la vitrina" onChange={(checked) => setForm({ ...form, catalog_featured: checked })} />
                   </div>
                   <p className="mt-2 text-xs text-content-muted">
-                    El descuento se aplica sobre el precio de lista y rige en la vitrina y en el mostrador. Si la campana de la configuracion tiene un porcentaje mayor, se usa ese: los descuentos nunca se suman.
+                    El descuento se aplica sobre el precio de lista y rige en la vitrina y en el mostrador. Si la campaña de la configuración tiene un porcentaje mayor, se usa ese: los descuentos nunca se suman.
                   </p>
                 </div>
                 {editing ? (
@@ -483,17 +491,17 @@ export default function ComercioProductosPage() {
                     <input className="control" min={0} onChange={(event) => setForm({ ...form, stock: event.target.value })} type="number" value={form.stock} />
                   </Field>
                 )}
-                <Field label="Stock minimo (alerta de reposicion)">
+                <Field label="Stock mínimo (alerta de reposición)">
                   <input className="control" min={0} onChange={(event) => setForm({ ...form, min_stock: event.target.value })} type="number" value={form.min_stock} />
                 </Field>
                 <div className="md:col-span-2">
-                  <Field label="Notas (descripcion en la vitrina)">
+                  <Field label="Notas (descripción en la vitrina)">
                     <textarea className="control" maxLength={500} onChange={(event) => setForm({ ...form, notes: event.target.value })} rows={2} value={form.notes} />
                   </Field>
                 </div>
                 <Check checked={form.active} label="Producto activo" onChange={(checked) => setForm({ ...form, active: checked })} />
               </div>
-              <p className="text-xs text-content-muted">El codigo lo asigna el servidor (P-0001, P-0002...). El costo se recalcula solo con cada compra de mercancia y la nota se muestra como descripcion en la ficha publica.</p>
+              <p className="text-xs text-content-muted">El código (P-0001, P-0002...) lo asigna el servidor. El costo se recalcula con cada compra de mercancía y la nota se muestra como descripción en la ficha pública.</p>
               <div className="flex justify-end gap-2 border-t border-line pt-4">
                 <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
                 <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar producto"}</button>
@@ -504,7 +512,7 @@ export default function ComercioProductosPage() {
               <section className="apex-section-card-muted/50 p-4">
                 <h3 className="text-sm font-semibold">Ajustar stock ({editing.stock} {editing.unit})</h3>
                 <form className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end" onSubmit={applyAdjust}>
-                  <Field label="Cantidad contejada">
+                  <Field label="Cantidad del conteo">
                     <input className="control" min={0} onChange={(event) => setAdjustForm({ ...adjustForm, new_stock: event.target.value })} required type="number" value={adjustForm.new_stock} />
                   </Field>
                   <Field label="Motivo del ajuste">
@@ -512,19 +520,19 @@ export default function ComercioProductosPage() {
                   </Field>
                   <button className="apex-secondary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={adjustBusy} type="submit">{adjustBusy ? "Aplicando..." : "Aplicar ajuste"}</button>
                 </form>
-                <p className="mt-2 text-xs text-content-muted">El ajuste queda trazado como movimiento de inventario. Si otro usuario modifico el stock mientras tanto, el guardado se rechaza y se debe repetir el conteo.</p>
+                <p className="mt-2 text-xs text-content-muted">El ajuste queda trazado como movimiento de inventario. Si otro usuario modificó el stock mientras tanto, el guardado se rechaza y se debe repetir el conteo.</p>
               </section>
             ) : null}
 
             {editing ? (
               <section className="apex-section-card-muted/50 p-4">
-                <h3 className="text-sm font-semibold">Fotografia del producto</h3>
+                <h3 className="text-sm font-semibold">Fotografía del producto</h3>
                 <div className="mt-3 grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] sm:items-start">
                   {photoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img alt={`Foto de ${editing.name}`} className="max-h-56 w-full rounded-md border border-line object-contain" src={photoUrl} />
                   ) : (
-                    <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed border-line p-4 text-center text-sm text-content-muted">Sin fotografia.</p>
+                    <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed border-line p-4 text-center text-sm text-content-muted">Sin fotografía.</p>
                   )}
                   <form className="space-y-3" onSubmit={uploadPhoto}>
                     <Field label="Nueva foto (PNG, JPEG o WEBP, max 5 MB)">
@@ -536,7 +544,7 @@ export default function ComercioProductosPage() {
                         <button className="apex-secondary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={photoBusy} onClick={() => void removePhoto()} type="button"><Trash2 size={14} /> Quitar foto</button>
                       ) : null}
                     </div>
-                    <p className="text-xs text-content-muted">En moviles la camara queda disponible gracias al capture del campo. La imagen se almacena en el bucket comercio-assets con ruta aislada por tenant.</p>
+                    <p className="text-xs text-content-muted">En móviles la cámara queda disponible gracias al capture del campo. La imagen se almacena en el bucket comercio-assets con ruta aislada por tenant.</p>
                   </form>
                 </div>
               </section>

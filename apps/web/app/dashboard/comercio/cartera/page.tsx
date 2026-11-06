@@ -1,13 +1,14 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Download, HandCoins, RefreshCw, Search, X } from "lucide-react";
+import { ChevronDown, Download, HandCoins, RefreshCw, Search, X } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
-import { ComercioMessages, Field, ModuleHeader, StatusPill, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
+import { comercioGate, ComercioMessages, describeError, Field, matchesQuery, ModuleHeader, money, StatusPill, todayISO, useComercioAccess, useVentana } from "@/components/comercio/shared";
 
 // Cartera del Comercio (GET /api/v1/comercio/credits). El saldo, el vencimiento y los
 // totales los calcula el servidor; el abono se reparte oldest-first entre cuotas.
@@ -94,7 +95,7 @@ export default function ComercioCarteraPage() {
     downloadExcelWorkbook("comercio-cartera.xls", [{
       name: "Cartera",
       columns: [
-        { key: "number", label: "Credito" },
+        { key: "number", label: "Crédito" },
         { key: "customer", label: "Cliente", width: 200 },
         { key: "financed", label: "Financiado" },
         { key: "down", label: "Inicial" },
@@ -122,7 +123,7 @@ export default function ComercioCarteraPage() {
   }
 
   const columns: DataColumn<Credit>[] = [
-    { className: "font-mono font-semibold", cell: (row) => row.full_number, header: "Credito", hideable: false, id: "number", sortValue: (row) => row.id },
+    { className: "font-mono font-semibold", cell: (row) => row.full_number, header: "Crédito", hideable: false, id: "number", sortValue: (row) => row.id },
     {
       cell: (row) => (
         <div className="min-w-0">
@@ -137,7 +138,7 @@ export default function ComercioCarteraPage() {
     },
     { className: "text-right", cell: (row) => money(row.financed_amount), header: "Financiado", id: "financed", sortValue: (row) => Number(row.financed_amount) },
     { className: "text-right", cell: (row) => <span className="text-content-muted">{money(row.down_payment)}</span>, header: "Inicial", id: "down", sortValue: (row) => Number(row.down_payment) },
-    { className: "text-right", cell: (row) => <span className="text-success">{money(row.paid_total)}</span>, header: "Abonado", id: "paid", sortValue: (row) => Number(row.paid_total) },
+    { className: "text-right", cell: (row) => <span className="text-success-ink">{money(row.paid_total)}</span>, header: "Abonado", id: "paid", sortValue: (row) => Number(row.paid_total) },
     { className: "text-right", cell: (row) => <span className="font-semibold">{money(row.balance)}</span>, header: "Saldo", id: "balance", sortValue: (row) => Number(row.balance) },
     {
       cell: (row) => {
@@ -194,12 +195,12 @@ export default function ComercioCarteraPage() {
       setSaving(false);
     }
   }
+  const ventana = useVentana(filtered);
   const blocked = comercioGate(access);
   if (blocked) return blocked;
-
   return (
     <div className="apex-workspace-shell space-y-4">
-      <ModuleHeader eyebrow="M-30 · Cartera" subtitle="Creditos con cuotas sin interes. Los abonos se aplican primero a la cuota mas antigua vencida." title="Cartera" />
+      <ModuleHeader subtitle="Los créditos con cuotas sin interés muestran su saldo y su vencimiento. Abre el crédito por su número para abonar: el abono se aplica primero a la cuota más antigua." title="Cartera" />
       <ComercioMessages error={error} message={message} />
 
       <section aria-label="Totales de cartera" className="grid gap-3 sm:grid-cols-2">
@@ -209,18 +210,19 @@ export default function ComercioCarteraPage() {
         </div>
         <div className="apex-section-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-content-muted">Cartera vencida</p>
-          <p className={`mt-1 text-2xl font-semibold ${totals.overdue > 0 ? "text-error" : ""}`}>{money(totals.overdue)}</p>
+          <p className={`mt-1 text-2xl font-semibold ${totals.overdue > 0 ? "text-error-ink" : ""}`}>{money(totals.overdue)}</p>
         </div>
       </section>
 
       <section className="apex-section-card">
         <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_13rem] lg:items-end">
-          <Field hint="Ignora acentos: busca por numero, cliente o estado" label="Buscar">
-            <span className="relative block">
-              <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
-              <input aria-label="Buscar creditos por numero, cliente o estado" className="control pl-9" onChange={(event) => setQuery(event.target.value)} placeholder="CRD-0001, cliente o vencido" value={query} />
-            </span>
-          </Field>
+          <SearchField
+            hint="Ignora acentos y mayúsculas"
+            label="Buscar créditos por número, cliente o estado"
+            onChange={setQuery}
+            placeholder="CRD-0001, cliente o vencido"
+            value={query}
+          />
           <Field label="Vista">
             <select className="control apex-select" onChange={(event) => setStatus(event.target.value)} value={status}>
               <option value="open">Vigentes</option>
@@ -234,7 +236,7 @@ export default function ComercioCarteraPage() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost"><X size={12} /> Limpiar filtros</Button> : null}
-            <span aria-live="polite" className="font-semibold text-content-body">{filtered.length} credito(s) · saldo {money(filtered.reduce((sum, row) => sum + Number(row.balance || 0), 0))}</span>
+            <span aria-live="polite" className="font-semibold text-content-body" id="conteo-resultados">{filtered.length} créditos · saldo {money(filtered.reduce((sum, row) => sum + Number(row.balance || 0), 0))}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button disabled={!filtered.length} onClick={() => exportCredits(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
@@ -243,8 +245,8 @@ export default function ComercioCarteraPage() {
         </div>
 
         {!loading && filtered.length ? (
-          <ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
-            {filtered.map((credit) => (
+          <><ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+            {ventana.visibles.map((credit) => (
               <li className="rounded-md border border-line p-3" key={credit.id}>
                 <button className="w-full text-left" onClick={() => setDetail(credit)} type="button">
                   <div className="flex items-center justify-between">
@@ -256,6 +258,12 @@ export default function ComercioCarteraPage() {
               </li>
             ))}
           </ul>
+        {ventana.restantes > 0 ? (
+          <div className="px-4 pb-4">
+            <Button onClick={ventana.ampliar} size="compact" variant="secondary"><ChevronDown size={14} /> Ver {ventana.restantes} más</Button>
+          </div>
+        ) : null}
+        </>
         ) : null}
 
         <div className="hidden p-4 lg:block">
@@ -263,12 +271,12 @@ export default function ComercioCarteraPage() {
             bulkActions={(selected, clear) => (
               <>
                 <Button onClick={() => exportCredits(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
-                <Button onClick={clear} size="compact" variant="ghost">Limpiar seleccion</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar selección</Button>
               </>
             )}
             columns={columns}
-            emptyDetail={credits.length ? "Cambia la vista o limpia el buscador: en Todos tambien aparecen los pagados y anulados." : "Las ventas a credito con cuotas aparecen aqui automaticamente."}
-            emptyTitle={credits.length ? "Ningun credito con estos filtros" : "Aun no hay creditos"}
+            emptyDetail={credits.length ? "Cambia la vista o limpia el buscador: en Todos también aparecen los pagados y anulados." : "Las ventas a crédito con cuotas aparecen aquí automáticamente."}
+            emptyTitle={credits.length ? "Ningún crédito con estos filtros" : "Aún no hay créditos"}
             loading={loading}
             pageSize={12}
             rowKey={(row) => row.id}
@@ -279,7 +287,7 @@ export default function ComercioCarteraPage() {
       </section>
 
       {detail ? (
-        <ModalFrame maxWidth="md:max-w-3xl" onClose={() => setDetail(null)} title={`Credito ${detail.full_number}`}>
+        <ModalFrame maxWidth="md:max-w-3xl" onClose={() => setDetail(null)} title={`Crédito ${detail.full_number}`}>
           <div className="space-y-4 text-sm">
             <p className="text-xs text-content-muted">
               {detail.customer_name || "Sin nombre"} · financiado {money(detail.financed_amount)} en {detail.installment_count} cuota(s) {detail.frequency === "weekly" ? "semanal" : detail.frequency === "monthly" ? "mensual" : "quincenal"} · primer vencimiento {detail.first_due_date || "--"}
@@ -295,7 +303,7 @@ export default function ComercioCarteraPage() {
                   {detail.installments.map((item) => (
                     <tr className="border-b" key={item.id}>
                       <td className="py-1 font-mono">{item.number}</td>
-                      <td className={item.status !== "paid" && item.due_date && item.due_date < todayISO() ? "font-semibold text-error" : ""}>{item.due_date}</td>
+                      <td className={item.status !== "paid" && item.due_date && item.due_date < todayISO() ? "font-semibold text-error-ink" : ""}>{item.due_date}</td>
                       <td className="text-right">{money(item.amount)}</td>
                       <td className="text-right">{money(item.paid_amount)}</td>
                       <td className="text-right">{money(item.pending)}</td>
@@ -317,7 +325,7 @@ export default function ComercioCarteraPage() {
                   ))}
                 </ul>
               </div>
-            ) : <p className="text-xs text-content-muted">Sin abonos registrados todavia.</p>}
+            ) : <p className="text-xs text-content-muted">Sin abonos registrados todavía.</p>}
             <div className="flex justify-end gap-2 border-t border-line pt-4">
               {access.canWrite && detail.status === "open" && detail.balance > 0 ? (
                 <button className="apex-primary-action flex items-center gap-1 px-4 text-sm font-semibold" onClick={() => { setPayTarget(detail); setPayForm({ amount: String(detail.balance), method: "Efectivo", date: todayISO(), note: "" }); }} type="button">
@@ -352,7 +360,7 @@ export default function ComercioCarteraPage() {
                 <input className="control" maxLength={500} onChange={(event) => setPayForm({ ...payForm, note: event.target.value })} value={payForm.note} />
               </Field>
             </div>
-            <p className="text-xs text-content-muted">El abono se aplica automaticamente a la cuota mas antigua pendiente. Si cubre todo el saldo, el credito queda pagado.</p>
+            <p className="text-xs text-content-muted">El abono se aplica automáticamente a la cuota más antigua pendiente. Si cubre todo el saldo, el crédito queda pagado.</p>
             <div className="flex justify-end gap-2 border-t border-line pt-4">
               <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setPayTarget(null)} type="button">Cancelar</button>
               <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Registrando..." : "Registrar abono"}</button>

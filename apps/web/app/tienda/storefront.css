@@ -21,8 +21,8 @@
   --sf-ink-strong-t: 249 249 249;     /* ~neutral-50 */
   --sf-ink-body-t: 212 212 212;       /* neutral-300 */
   --sf-ink-secondary-t: 162 162 162;  /* ~neutral-400 */
-  --sf-ink-muted-t: 116 116 116;      /* ~neutral-500 */
-  --sf-ink-faint-t: 83 83 83;         /* ~neutral-600 */
+  --sf-ink-muted-t: 139 139 139;      /* AA 5,2:1 sobre la superficie de las tarjetas */
+  --sf-ink-faint-t: 128 128 128;      /* AA 4,5:1: microcopy que el cliente lee */
   --sf-ink-ghost-t: 65 65 65;         /* ~neutral-700 */
   --sf-ink-deepest-t: 38 38 38;       /* neutral-800 */
   /* Este bloque es exactamente lo que produce buildStorefrontVars(tema default);

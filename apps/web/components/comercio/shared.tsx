@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ShieldOff } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, ShieldOff } from "lucide-react";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { formatRegionalMoney } from "@/lib/regionalFormat";
 import { Alert, Badge, EmptyState, Skeleton } from "@/components/ui/feedback";
@@ -73,7 +74,7 @@ export function AccessDenied() {
     <div className="apex-workspace-shell">
       <section className="apex-section-card">
         <EmptyState
-          description="Este modulo es autonomo y usa sus propios permisos (Comercio). Solicita acceso de lectura al rol administrador."
+          description="Este módulo es autónomo y usa sus propios permisos (Comercio). Solicita acceso de lectura al rol administrador."
           icon={<ShieldOff size={22} />}
           title="Comercio no disponible para este perfil"
         />
@@ -94,7 +95,7 @@ export function Field({ children, hint, label }: { children: ReactNode; hint?: s
 
 export function Check({ checked, label, onChange }: { checked: boolean; label: string; onChange: (checked: boolean) => void }) {
   return (
-    <label className="inline-flex items-center gap-2 text-sm text-content-body">
+    <label className="inline-flex min-h-6 items-center gap-2 text-sm text-content-body">
       <input checked={checked} className="h-4 w-4 rounded border-line text-apex focus:ring-apex/30" onChange={(event) => onChange(event.target.checked)} type="checkbox" />
       {label}
     </label>
@@ -107,12 +108,23 @@ export function StatusPill({ children, tone }: { children: ReactNode; tone: keyo
   return <Badge tone={pillTones[tone]}>{children}</Badge>;
 }
 
-export function ModuleHeader({ actions, eyebrow = "M-30 · Comercial", subtitle, title }: { actions?: ReactNode; eyebrow?: string; subtitle: string; title: string }) {
+/**
+ * Encabezado comun de las pantallas de Comercio. La ruta superior dice donde esta el
+ * usuario y el subtitulo dice que se hace aqui y con que boton se empieza: el codigo
+ * interno del modulo (M-30) no se muestra porque no le dice nada al dueno del negocio.
+ */
+export function ModuleHeader({ actions, section, subtitle, title }: { actions?: ReactNode; section?: string; subtitle: string; title: string }) {
+  const area = section && section !== title ? section : null;
   return (
     <header className="apex-section-card flex flex-wrap items-end justify-between gap-3 p-4">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-apex">{eyebrow}</p>
-        <h1 className="text-3xl font-semibold">{title}</h1>
+        <nav aria-label="Ubicación en Comercio" className="flex flex-wrap items-center gap-1 text-xs font-semibold">
+          <Link className="inline-flex min-h-6 items-center rounded-sm px-0.5 text-content-body outline-none hover:text-apex-ink focus-visible:ring-2 focus-visible:ring-apex/40" href="/dashboard/comercio">Comercio</Link>
+          {area ? <><ChevronRight aria-hidden="true" className="text-content-muted" size={13} /><span className="text-content-body">{area}</span></> : null}
+          <ChevronRight aria-hidden="true" className="text-content-muted" size={13} />
+          <span aria-current="page" className="text-apex-ink">{title}</span>
+        </nav>
+        <h1 className="mt-1.5 text-3xl font-semibold">{title}</h1>
         <p className="mt-1 max-w-3xl text-sm text-content-body">{subtitle}</p>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -124,10 +136,26 @@ export function ModuleHeader({ actions, eyebrow = "M-30 · Comercial", subtitle,
 export function ComercioMessages({ error, message }: { error?: string; message?: string }) {
   return (
     <>
-      {error ? <Alert tone="error" title="No fue posible completar la accion">{error}</Alert> : null}
+      {error ? <Alert tone="error" title="No fue posible completar la acción">{error}</Alert> : null}
       {message ? <Alert tone="success">{message}</Alert> : null}
     </>
   );
+}
+
+/**
+ * Ventana de los listados en tarjetas (movil). La tabla de escritorio ya pagina de a 12;
+ * las tarjetas del mismo listado mostraban todo el registro del tenant de una sola vez.
+ * Se reinicia cuando cambia el resultado del filtro, no cuando cambia la identidad del
+ * array, para no volver a montar el estado en cada render.
+ */
+export function useVentana<T>(items: T[], tamano = 12) {
+  const [limite, setLimite] = useState(tamano);
+  useEffect(() => { setLimite(tamano); }, [items.length, tamano]);
+  return {
+    restantes: Math.max(0, items.length - limite),
+    visibles: items.slice(0, limite),
+    ampliar: () => setLimite((actual) => actual + tamano)
+  };
 }
 
 export function todayISO() {

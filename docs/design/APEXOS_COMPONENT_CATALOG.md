@@ -1,6 +1,6 @@
 # Catálogo de componentes y homologación UI — APEXOS
 
-Versión: 1.0 — 2026-11-03
+Versión: 1.1 — 2026-11-06
 
 Índice normativo para construir pantallas en `apps/web`. No reemplaza los estándares; los ordena para que una pantalla nueva no invente un patrón distinto.
 
@@ -23,12 +23,17 @@ Definidos en `apps/web/tailwind.config.ts` y `apps/web/app/globals.css`:
 | Texto | `text-content-strong`, `text-content-body`, `text-content-muted`, `text-content-subtle` |
 | Bordes | `border-line`, `border-apex`, `border-success`, `border-warning`, `border-error`, `border-info` |
 | Marca y estados | `bg-apex`, `text-apex`, `bg-success`, `bg-warning`, `bg-error`, `bg-info` |
+| Tinta de texto de estado | `text-success-ink`, `text-warning-ink`, `text-error-ink`, `text-apex-ink` |
 | Radios | `rounded-control`, `rounded-card`, `rounded-overlay` |
 | Sombras | `shadow-card`, `shadow-overlay` |
 | Espaciado | `p-page`, `gap-section` |
 | Tipografía | `font-sans` (Inter) |
 
 Prohibido: colores hex en JSX, `style={{ color: ... }}` para temas, tamaños de fuente fuera de la escala de Tailwind, espaciados arbitrarios (`mt-[13px]`) y nuevos tokens sin actualizar el design system.
+
+Las tintas `*-ink` existen porque el verde, ámbar y rojo de señal pintan bien un chip o una barra, pero como TEXTO sobre blanco se quedan en 2,2:1-4,2:1 y suspenden WCAG AA. Son aditivas: los tokens de señal (`--color-success`, `--color-warning`, `--color-error`) no se tocaron porque los consumen todos los módulos. Regla: `bg-*`/`border-*` van con el token de señal; el texto va con `*-ink`.
+
+`text-apex-ink` sigue la misma lógica con la marca, y por un margen más fino: el acento `15 118 110` sobre blanco sí llega a 5,47:1, pero sobre su propio tinte `bg-apex/10` —la pestaña activa, el chip de porcentaje, el número de paso— cae a **4,45:1** y suspende AA por 0,05. El fondo tintado con el propio acento es el caso que engaña: la cota se mide contra lo que el navegador compuso, no contra blanco. `comercio-ux-consistency.test.mjs` corta la regresión y autoverifica la norma: `text-apex` solo queda permitido donde pinta un no-texto (el cuadro de una casilla, un icono).
 
 Clases CSS de comportamiento ya existentes: `apex-page-shell`, `apex-section-card`, `apex-standard-table*`, `apex-select`, `apex-cell`, `apex-primary-action`, `apex-secondary-action`, `apex-eyebrow`, `apex-dense-actions`, `apex-workspace-shell`, `apex-virtual-row`.
 
@@ -43,6 +48,10 @@ Clases CSS de comportamiento ya existentes: `apex-page-shell`, `apex-section-car
 | Tabla simple | `DataTable` | `@/components/ui/data-table` | Tablas de una sola vista sin selección | `<table>` con estilos propios |
 | Tabla de registros | `SmartDataTable` + `DataColumn` | `@/components/ui/data-table` | Listados con orden, columnas, paginación y selección | Listado con `map` de tarjetas |
 | Botón | `Button` (`primary`, `secondary`, `ghost`, `danger`; `compact`, `default`, `touch`) | `@/components/ui/button` | Toda acción | `<button>` con clases ad hoc |
+| Enlace que es acción | `buttonClasses(variant, size, className)` | `@/components/ui/button` | El botón forzosamente es `<a>` o `Link` (WhatsApp, descarga, navegar) | Copiar en cada pantalla la cadena de clases del botón |
+| Búsqueda de listado | `SearchField` | `@/components/ui/SearchField` | Filtrar una lista ya cargada: etiqueta, ayuda, limpiar y recuento anunciado | `<input type="text">` con placeholder «Buscar» |
+| Capa fuera de ModalFrame | `useOverlayA11y(abierto, onClose)` | `@/components/ui/useOverlayA11y` | Panel propio con la tinta del tenant (carrito y vista rápida de la vitrina) | `useEffect` de Escape suelto que no atrapa el foco |
+| Listado largo en móvil | `useVentana(items, tamaño)` | `@/components/comercio/shared` (vive en el módulo; se promueve a `ui/` cuando lo pida un segundo módulo) | Tarjetas de un listado con decenas de registros | Pinar todo el registro del tenant en el DOM |
 | Campos | `Input`, `Select`, `Textarea` | `@/components/ui/form-controls` | Formularios con label, hint y error | Inputs sueltos sin label |
 | Rejilla y secciones de formulario | `FormGrid`, `FormSection`, `StepIndicator` | `@/components/ui/layout` | Formularios largos y asistentes | Tarjetas apiladas con campos solapados |
 | Pestañas | `TabsList`, `TabLink`, `TabButton` | `@/components/ui/tabs` | Navegación interna | Menús propios |
@@ -84,6 +93,7 @@ Durante:
 - [ ] Tokens oficiales; cero hex y cero espaciados arbitrarios.
 - [ ] Selects con `apex-select`; foco de celdas con `apex-cell`.
 - [ ] Ambos temas y móvil (objetivos táctiles, una mano).
+- [ ] Toda pantalla hija dice dónde está el usuario (brújula con `aria-current="page"`); el texto visible no explica códigos internos del módulo.
 
 Después:
 
@@ -91,6 +101,7 @@ Después:
 - [ ] Comparación lado a lado con la pantalla de referencia.
 - [ ] `npm run lint`, typecheck y build.
 - [ ] `npm run verify:web-assets` cuando aplique.
+- [ ] Certificación de navegador versionada del módulo tocado (Comercio: `npm run certify:comercio-ux:local`).
 - [ ] Declarar si no se pudo probar en navegador.
 
 ## 6. Prohibiciones con evidencia
@@ -100,6 +111,11 @@ Después:
 - Modales propios en lugar de `ModalFrame`, y `<select>` sin `apex-select`.
 - `dark:` de Tailwind responde a `prefers-color-scheme`, no al tema de la app; para el tema usar clases acopladas a `html.dark` (`apex-cell`).
 - Vistas duplicadas del mismo concepto, tarjetas apiladas con campos solapados y más de un botón de regreso al módulo padre.
+- Búsquedas artesanales: antes de la pasada de 2026-11-06, Comercio filtraba con cuatro variantes de `<input>` distinto en once pantallas. Hoy `SearchField` es obligatorio y lo corta `apps/web/test/comercio-ux-consistency.test.mjs`.
+- Texto de estado con el token de señal (`text-success`, `text-warning`, `text-error`): miden 2,2:1-4,2:1 sobre blanco. El texto lleva la tinta `*-ink`.
+- Texto con el acento de marca (`text-apex`) sobre su propio tinte (`bg-apex/10`): 4,45:1 en el tema claro. Lleva `text-apex-ink`; el acento se queda en bordes, rellenos, iconos y casillas.
+- Blancos táctiles por debajo de 24×24 px (WCAG 2.5.8). La cota se mide sobre el objetivo real: una casilla se pulsa por su `<label>`, así que el área que cuenta es la de la etiqueta. En móvil, un enlace de navegación (`min-h-6`) o un campo con etiqueta valen como fila tocable.
+- Niveles de tinta de la vitrina (`--sf-ink-muted-t`, `--sf-ink-faint-t`) usados para texto legible sin garantía AA medida sobre su propia superficie. El motor los fija con `INK_TARGETS` a 5,2:1 y 4,5:1 respectivamente y `comercio-storefront-theme.test.mjs` lo comprueba.
 
 ## 7. Cómo agregar un patrón
 

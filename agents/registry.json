@@ -89,9 +89,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.12.0",
+      "version": "2.13.0",
       "updated_at": "2026-11-06",
-      "sha256": "8e44aa5e713011b3ba3218638aa38c541396dbe76a3373f82cfd6b9c5abf0114",
+      "sha256": "81238fc1c08e3ba0fc3d16cd328abd2292604bcd88a78e82da64d16ace0d76e2",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -119,7 +119,9 @@
         "brief-fuentes-reales-torre",
         "brief-defecto-visual-con-causa-de-arnes",
         "brief-defecto-clasificado-por-capa",
-        "limitacion-ambiental-reproducida"
+        "limitacion-ambiental-reproducida",
+        "pasada-ux-registra-hallazgo-cancelado",
+        "brief-separa-arnes-de-producto"
       ]
     },
     {
@@ -148,9 +150,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.6.0",
+      "version": "2.8.0",
       "updated_at": "2026-11-06",
-      "sha256": "c9251a7ae4a461304435e8a6b7336da21eafba00db89206424e2298887e4cbda",
+      "sha256": "74a0be3291a782d01730cc6ce4f4e9332c806a0253e72829a95d7ad9bfcbabd5",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -171,7 +173,15 @@
         "tinta-sobre-fotografia",
         "variables-derivadas-en-el-nodo-del-tema",
         "ortografia-visible-con-tildes",
-        "imagen-se-certifica-cargada"
+        "imagen-se-certifica-cargada",
+        "busqueda-canonica-searchfield",
+        "tinta-de-texto-accesible",
+        "hooks-antes-del-gate",
+        "capa-fuera-de-modalframe",
+        "enlace-accion-con-button-classes",
+        "piso-tactil-24px-en-el-objetivo-real",
+        "niveles-de-tinta-con-cota-aa-medida",
+        "lote-de-texto-se-revisa-en-el-diff"
       ]
     },
     {
@@ -237,9 +247,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.13.0",
+      "version": "2.15.0",
       "updated_at": "2026-11-06",
-      "sha256": "1046606d54c592ecf45002b340681fb0b2d9bf935d1a4283f1076a13ea320f2f",
+      "sha256": "9b766ccfdee55058548a5f9be849ffa86b414ba3c93ef260ee818cbcd4672255",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -272,7 +282,14 @@
         "torre-gates-estructurales-no-temporales",
         "arnes-lee-lo-que-serializa-el-navegador",
         "guardado-con-autochequeo",
-        "check-no-legaliza-un-5xx"
+        "check-no-legaliza-un-5xx",
+        "medicion-dentro-de-la-pantalla",
+        "blancos-contra-la-norma-no-el-criterio",
+        "control-se-prueba-desde-su-estado-vacio",
+        "recorrido-se-autocuenta",
+        "composicion-de-fondo-como-la-pinta-el-navegador",
+        "se-espera-el-hecho-del-dom-no-el-reloj",
+        "contrato-ortografia-sobre-texto-extraido"
       ]
     },
     {
@@ -315,9 +332,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.9.0",
+      "version": "2.10.0",
       "updated_at": "2026-11-06",
-      "sha256": "df06446b0acccd3c3b543ed7bcfcecaf3dd98656e0c68dd132fa4e546834b2e9",
+      "sha256": "f5a2dacc6ffe3f57234f8f2c56e069339fa029107e90cca93a1894a54d22892d",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -342,7 +359,9 @@
         "torre-vistas-pregunta",
         "torre-una-fila-por-bloque",
         "queja-de-color-se-mide",
-        "limitacion-de-ambiente-no-cubre-5xx"
+        "limitacion-de-ambiente-no-cubre-5xx",
+        "pasada-ux-se-mide-antes-de-despachar",
+        "rojo-de-medicion-se-atribuye"
       ]
     }
   ],
@@ -380,8 +399,8 @@
     {
       "name": "Catálogo de componentes UI",
       "path": "docs/design/APEXOS_COMPONENT_CATALOG.md",
-      "updated_at": "2026-11-03",
-      "sha256": "edc420f74be7ff46c576e7547001a13bb3b75936b0a40dae7e8cda4197f42ba5"
+      "updated_at": "2026-11-06",
+      "sha256": "424b52aeb752d2de30ab6054758eb5966707a32c6665e4a60ec574ee0ad3fbcf"
     },
     {
       "name": "Aislamiento multi-tenant",

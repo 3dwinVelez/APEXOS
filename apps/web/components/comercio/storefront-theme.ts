@@ -297,10 +297,12 @@ const TINT_FACTORS: Record<SurfaceTint, number> = { neutro: 0, suave: 0.34, marc
 const TINT_CHROMA_CAP = 0.075;
 
 // Razon de contraste objetivo de cada nivel de texto, medida contra la superficie de las
-// tarjetas. strong/body/secondary sobran para AA; muted es el piso AA de texto pequeno;
-// faint y ghost son decorativos (precio tachado, microcopy) y quedan por encima de lo que
-// daba la mezcla RGB anterior en el tema default.
-const INK_TARGETS = { strong: 17, body: 12, secondary: 7, muted: 3.8, faint: 2.3, ghost: 1.75 } as const;
+// tarjetas. strong/body/secondary sobran para AA; muted y faint tambien son texto que el
+// cliente lee (precio de referencia, "Ref. P-0019", contador del departamento, aviso legal
+// del pie), asi que ninguno baja de 4,5:1, el piso AA de texto pequeno. faint queda un
+// escalon por debajo de muted para conservar la jerarquia sin quedarse en 3,8:1, que era lo
+// que media la vitrina y reprobaba. ghost es decorativo (la inicial del producto sin foto).
+const INK_TARGETS = { strong: 17, body: 12, secondary: 7, muted: 5.2, faint: 4.5, ghost: 1.75 } as const;
 
 const SCRIM_VALUES: Record<BannerScrim, { top: string; mid: string; bottom: string }> = {
   ligero: { top: "0.42", mid: "0.08", bottom: "0.58" },
