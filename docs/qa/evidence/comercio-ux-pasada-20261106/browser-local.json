@@ -1961,6 +1961,31 @@
             "alto": 24,
             "ancho": 56,
             "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar producto"
+          },
+          {
+            "alto": 24,
+            "ancho": 149,
+            "nombre": "Ver todo el catálogo"
+          },
+          {
+            "alto": 24,
+            "ancho": 117,
+            "nombre": "Venta a crédito"
+          },
+          {
+            "alto": 38,
+            "ancho": 149,
+            "nombre": "Efectivo"
+          },
+          {
+            "alto": 38,
+            "ancho": 149,
+            "nombre": "Nequi"
           }
         ]
       }
@@ -2644,7 +2669,7 @@
         "boton": true,
         "tecleado": "silla de oficina",
         "valor": "",
-        "ms_hasta_boton": 927
+        "ms_hasta_boton": 756
       }
     },
     {
@@ -2973,7 +2998,7 @@
       }
     }
   ],
-  "ejecutado_en": "2026-11-06T19:44:31.040Z",
+  "ejecutado_en": "2026-11-06T20:00:53.290Z",
   "fallidos": [],
   "limitaciones": [
     "Se mide con el tenant demo local (catalogo sembrado). Un tenant real con otros textos o mas columnas puede cambiar el numero de objetivos tactiles por debajo de 44 px; la cota dura exigida es 24 px (WCAG 2.5.8) y todo lo menor a 44 px se reporta como muestra para decidir.",

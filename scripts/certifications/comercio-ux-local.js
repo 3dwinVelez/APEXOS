@@ -391,7 +391,7 @@ async function main() {
 
     // === Estado de error de la portada, provocado ===
     // El boton «Reintentar» solo aparece si el tablero no carga, asi que en la matriz dependia
-    // de un capricho del ambiente: en una corrida midio 20 px y en la siguiente no existia.
+    // de un capricho del ambiente: en una corrida dio 20 px y en la siguiente no existia.
     // Se corta la peticion a proposito para medir siempre el blanco tactil del estado de error.
     await page.evaluate(() => localStorage.setItem("apex_theme", "dark"));
     await page.setViewport({ ...PANTALLAS.movil, deviceScaleFactor: 1 });
