@@ -1,6 +1,6 @@
 {
   "ambiente": "local",
-  "ejecutado": "2026-11-06T19:44:30.597Z",
+  "ejecutado": "2026-11-06T20:00:52.098Z",
   "resumen": [
     {
       "armazon_menor_de_24": [
@@ -667,7 +667,7 @@
       ],
       "contraste_minimo": 6.68,
       "etiqueta": "promociones_escritorio_oscuro",
-      "tactiles_menores": 13
+      "tactiles_menores": 9
     },
     {
       "armazon_menor_de_24": [
@@ -750,7 +750,7 @@
       ],
       "contraste_minimo": 6.68,
       "etiqueta": "productos_movil_oscuro",
-      "tactiles_menores": 7
+      "tactiles_menores": 8
     },
     {
       "armazon_menor_de_24": [
@@ -770,9 +770,9 @@
           "nombre": "Vender"
         }
       ],
-      "contraste_minimo": 10.51,
+      "contraste_minimo": 6.68,
       "etiqueta": "vender_movil_oscuro",
-      "tactiles_menores": 1
+      "tactiles_menores": 9
     },
     {
       "armazon_menor_de_24": [
