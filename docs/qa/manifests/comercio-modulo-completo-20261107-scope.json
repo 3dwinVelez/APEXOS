@@ -1,0 +1,1559 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "comercio-modulo-completo-20261107",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-comercio-develop-20261107",
+  "base_commits": {
+    "develop": "22fdf222a2b9a2a0c443f6b3ed8c128bf4b8529e"
+  },
+  "target_head": "22fdf222a2b9a2a0c443f6b3ed8c128bf4b8529e",
+  "certified_commit": "f1d902ccd4ae18881c71072ad2be943d0be52056",
+  "candidate": {
+    "branch": "codex/qa-comercio-develop-20261107",
+    "commits_over_baseline": 2,
+    "inventario": "210 A / 22 M / 0 D",
+    "nota": "el tip exacto se registra en el PR; el guard de CI recibe el candidato por linea de comando y lo contrasta contra origin/develop. Comite certificado f1d902ccd4ae18881c71072ad2be943d0be52056, comite de manifiestos el inmediato superior."
+  },
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "f1d902ccd4ae18881c71072ad2be943d0be52056",
+    "certified_tree_funcional": "b384727880a7ea9ef22c28958779ea188bb5079a",
+    "reconstruido_de": [
+      "82299cf638b7afd155b72283766c2e98312ca4c8",
+      "b676ebad95a5c7007798791659613d7d389a26b6"
+    ],
+    "nota": "origin/develop no contiene el modulo Comercio (0 rutas), asi que la promocion no es un merge de rama: el cambio neto del modulo se reconstruyo sobre la linea base vigente de develop (22fdf222, merge PR #81 nominas-marcaciones) en un solo comite, porque el candidato anterior montaba sobre 21ef1a6f y su diff contra el target vigente mostraba las 9 rutas de RRHH como borrados. Las 173 rutas cuyo path menciona comercio o tienda estan byte a byte identicas al arbol certificado b3847278 y ese arbol coincide con el codigo Comercio de la punta de desarrollo; las 9 rutas de la promocion #81 quedan identicas a develop. La medida bidireccional esta en ../evidence/comercio-promotion-candidate-20261107/gates-candidato.txt. Los comites de la torre de control (apex-control, control-tower), del buzon de correo y de facturas recibidas NO pertenecen a este alcance y quedan fuera del candidato."
+  },
+  "change_intent": {
+    "summary": "Promocionar el modulo Comercio completo (vitrina publica tematizable por tenant, mostrador, descuentos, promociones, cartera, gastos, compras, reportes y su pasada UX medida en Chromium) desde desarrollo a develop sobre la linea base vigente 22fdf222, sin infraestructura, sin migraciones remotas aplicadas desde esta estacion y sin tocar el codigo funcional de los demas modulos. Incluye el plumbing compartido que el modulo necesita (tabla de errores de dependencia en core/api-error.js, CSP e img-src del almacen de imagenes, primitivas de UI) y un toque cross-modulo declarado: apps/api/test/hr-payroll-adjustment-lock.test.js solo reubica la asercion del contrato del 503 al archivo donde vive desde 70bc7338; no cambia el contrato.",
+    "modules": [
+      "comercio",
+      "ui-compartido",
+      "core-error",
+      "nomina-contrato"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": ".env.example"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261026120000_comercio_foundation/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261026140000_comercio_payment_allocations/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261027120000_comercio_public_catalog/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261027150000_comercio_social_links/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261028120000_comercio_discounts/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261028190000_comercio_promotions/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/core/api-error.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/imagegen.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/public-routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/storage.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/api-error-mapping.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/comercio-service.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/comercio-storage.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/comercio-storefront-theme.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-payroll-adjustment-lock.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/ComercioCharts.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/cartera/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/clientes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/compras/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/configuracion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/gastos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/productos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/promociones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/vender/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/ventas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/tienda/[code]/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/tienda/storefront.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/comercio/shared.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/comercio/storefront-theme.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/comercio/storefront.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/ContextBreadcrumbs.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/TransportSearchSelect.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/SearchField.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/button.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/useOverlayA11y.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleAccess.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/modules.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/security/csp.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/next.config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0001.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0002.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0003.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0004.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0005.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0006.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0007.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0008.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0009.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0010.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0011.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0012.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0013.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0014.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0015.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0016.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0017.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0018.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0019.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0020.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0021.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0022.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0023.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0024.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0025.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0026.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0027.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0028.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0029.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0030.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0031.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0032.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0033.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0034.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0035.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0036.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0037.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0038.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0039.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0040.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0041.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0042.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0043.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0044.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0045.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0046.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0047.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0048.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0049.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0050.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0051.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0052.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0053.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0054.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0055.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0056.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0057.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0058.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0059.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0060.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0061.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0062.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0063.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0064.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0065.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0066.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0067.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0068.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0069.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0070.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0071.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0072.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0073.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0074.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0075.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0076.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0077.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0078.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0079.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0080.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0081.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0082.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0083.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0084.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0085.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0086.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0087.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0088.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0089.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0090.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0091.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0092.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0093.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0094.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0095.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0096.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0097.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0098.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0099.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0100.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0101.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0102.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0103.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0104.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0105.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0106.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0107.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0108.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0109.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0110.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0111.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0112.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0113.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0114.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0115.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0116.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0117.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0118.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0119.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0120.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0121.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0122.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0123.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0124.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0125.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0126.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0127.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0128.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0129.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0130.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/P-0131.jpg"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/comercio/productos/credits.json"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/tailwind.config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-reports-charts.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-storefront-resilience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-storefront-theme.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-ux-consistency.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/offline-csp.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/api-suite-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/candidato-tenant-rbac.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/cert-theme-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/cert-ux-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/gates-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/pr-desarrollar.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/01-vitrina-sin-tema.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/02-vitrina-tema-propio-con-banner.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/03-vitrina-tonos-patron-y-esquinas.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/04-vitrina-recta-sin-patron.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/05-vitrina-tema-claro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/06-panel-apariencia-guardando.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/07-vitrina-con-banner-subido.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/browser-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/pintura-navegador.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/browser-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-1440-oscuro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-390-claro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-390-ventanado.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/portada-1440-oscuro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/portada-390-error-provocado.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/productos-390-claro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/recorrido.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/reportes-1440-oscuro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/vitrina-390.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-promotion-candidate-20261107/web-suite-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-tenant-rbac-20261106/api-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-tenant-rbac-20261106/salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/vitrina-comercio-banner-upload-20261106/pintura-navegador.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/comercio-modulo-completo-20261107-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/comercio-modulo-completo-20261107-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/comercio-storefront-theme-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/comercio-tenant-rbac-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/comercio-ux-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/data/comercio-photo-queries.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/ensure-comercio-assets-bucket.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/seed-comercio-demo.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/seed-comercio-photos.js"
+    }
+  ],
+  "allowed_paths": [
+    ".env.example",
+    "apps/api/prisma/migrations/20261026120000_comercio_foundation/migration.sql",
+    "apps/api/prisma/migrations/20261026140000_comercio_payment_allocations/migration.sql",
+    "apps/api/prisma/migrations/20261027120000_comercio_public_catalog/migration.sql",
+    "apps/api/prisma/migrations/20261027150000_comercio_social_links/migration.sql",
+    "apps/api/prisma/migrations/20261028120000_comercio_discounts/migration.sql",
+    "apps/api/prisma/migrations/20261028190000_comercio_promotions/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/server.js",
+    "apps/api/src/core/api-error.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/comercio/imagegen.js",
+    "apps/api/src/modules/comercio/public-routes.js",
+    "apps/api/src/modules/comercio/routes.js",
+    "apps/api/src/modules/comercio/schema.js",
+    "apps/api/src/modules/comercio/service.js",
+    "apps/api/src/modules/comercio/storage.js",
+    "apps/api/test/api-error-mapping.test.js",
+    "apps/api/test/comercio-service.test.js",
+    "apps/api/test/comercio-storage.test.js",
+    "apps/api/test/comercio-storefront-theme.test.js",
+    "apps/api/test/hr-payroll-adjustment-lock.test.js",
+    "apps/web/app/dashboard/comercio/ComercioCharts.tsx",
+    "apps/web/app/dashboard/comercio/cartera/page.tsx",
+    "apps/web/app/dashboard/comercio/clientes/page.tsx",
+    "apps/web/app/dashboard/comercio/compras/page.tsx",
+    "apps/web/app/dashboard/comercio/configuracion/page.tsx",
+    "apps/web/app/dashboard/comercio/gastos/page.tsx",
+    "apps/web/app/dashboard/comercio/page.tsx",
+    "apps/web/app/dashboard/comercio/productos/page.tsx",
+    "apps/web/app/dashboard/comercio/promociones/page.tsx",
+    "apps/web/app/dashboard/comercio/reportes/page.tsx",
+    "apps/web/app/dashboard/comercio/vender/page.tsx",
+    "apps/web/app/dashboard/comercio/ventas/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/tienda/[code]/page.tsx",
+    "apps/web/app/tienda/storefront.css",
+    "apps/web/components/comercio/shared.tsx",
+    "apps/web/components/comercio/storefront-theme.ts",
+    "apps/web/components/comercio/storefront.tsx",
+    "apps/web/components/shell/ContextBreadcrumbs.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/components/transport/TransportSearchSelect.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/components/ui/SearchField.tsx",
+    "apps/web/components/ui/button.tsx",
+    "apps/web/components/ui/data-table.tsx",
+    "apps/web/components/ui/useOverlayA11y.ts",
+    "apps/web/lib/moduleAccess.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/modules.ts",
+    "apps/web/lib/security/csp.ts",
+    "apps/web/next.config.ts",
+    "apps/web/public/comercio/productos/P-0001.jpg",
+    "apps/web/public/comercio/productos/P-0002.jpg",
+    "apps/web/public/comercio/productos/P-0003.jpg",
+    "apps/web/public/comercio/productos/P-0004.jpg",
+    "apps/web/public/comercio/productos/P-0005.jpg",
+    "apps/web/public/comercio/productos/P-0006.jpg",
+    "apps/web/public/comercio/productos/P-0007.jpg",
+    "apps/web/public/comercio/productos/P-0008.jpg",
+    "apps/web/public/comercio/productos/P-0009.jpg",
+    "apps/web/public/comercio/productos/P-0010.jpg",
+    "apps/web/public/comercio/productos/P-0011.jpg",
+    "apps/web/public/comercio/productos/P-0012.jpg",
+    "apps/web/public/comercio/productos/P-0013.jpg",
+    "apps/web/public/comercio/productos/P-0014.jpg",
+    "apps/web/public/comercio/productos/P-0015.jpg",
+    "apps/web/public/comercio/productos/P-0016.jpg",
+    "apps/web/public/comercio/productos/P-0017.jpg",
+    "apps/web/public/comercio/productos/P-0018.jpg",
+    "apps/web/public/comercio/productos/P-0019.jpg",
+    "apps/web/public/comercio/productos/P-0020.jpg",
+    "apps/web/public/comercio/productos/P-0021.jpg",
+    "apps/web/public/comercio/productos/P-0022.jpg",
+    "apps/web/public/comercio/productos/P-0023.jpg",
+    "apps/web/public/comercio/productos/P-0024.jpg",
+    "apps/web/public/comercio/productos/P-0025.jpg",
+    "apps/web/public/comercio/productos/P-0026.jpg",
+    "apps/web/public/comercio/productos/P-0027.jpg",
+    "apps/web/public/comercio/productos/P-0028.jpg",
+    "apps/web/public/comercio/productos/P-0029.jpg",
+    "apps/web/public/comercio/productos/P-0030.jpg",
+    "apps/web/public/comercio/productos/P-0031.jpg",
+    "apps/web/public/comercio/productos/P-0032.jpg",
+    "apps/web/public/comercio/productos/P-0033.jpg",
+    "apps/web/public/comercio/productos/P-0034.jpg",
+    "apps/web/public/comercio/productos/P-0035.jpg",
+    "apps/web/public/comercio/productos/P-0036.jpg",
+    "apps/web/public/comercio/productos/P-0037.jpg",
+    "apps/web/public/comercio/productos/P-0038.jpg",
+    "apps/web/public/comercio/productos/P-0039.jpg",
+    "apps/web/public/comercio/productos/P-0040.jpg",
+    "apps/web/public/comercio/productos/P-0041.jpg",
+    "apps/web/public/comercio/productos/P-0042.jpg",
+    "apps/web/public/comercio/productos/P-0043.jpg",
+    "apps/web/public/comercio/productos/P-0044.jpg",
+    "apps/web/public/comercio/productos/P-0045.jpg",
+    "apps/web/public/comercio/productos/P-0046.jpg",
+    "apps/web/public/comercio/productos/P-0047.jpg",
+    "apps/web/public/comercio/productos/P-0048.jpg",
+    "apps/web/public/comercio/productos/P-0049.jpg",
+    "apps/web/public/comercio/productos/P-0050.jpg",
+    "apps/web/public/comercio/productos/P-0051.jpg",
+    "apps/web/public/comercio/productos/P-0052.jpg",
+    "apps/web/public/comercio/productos/P-0053.jpg",
+    "apps/web/public/comercio/productos/P-0054.jpg",
+    "apps/web/public/comercio/productos/P-0055.jpg",
+    "apps/web/public/comercio/productos/P-0056.jpg",
+    "apps/web/public/comercio/productos/P-0057.jpg",
+    "apps/web/public/comercio/productos/P-0058.jpg",
+    "apps/web/public/comercio/productos/P-0059.jpg",
+    "apps/web/public/comercio/productos/P-0060.jpg",
+    "apps/web/public/comercio/productos/P-0061.jpg",
+    "apps/web/public/comercio/productos/P-0062.jpg",
+    "apps/web/public/comercio/productos/P-0063.jpg",
+    "apps/web/public/comercio/productos/P-0064.jpg",
+    "apps/web/public/comercio/productos/P-0065.jpg",
+    "apps/web/public/comercio/productos/P-0066.jpg",
+    "apps/web/public/comercio/productos/P-0067.jpg",
+    "apps/web/public/comercio/productos/P-0068.jpg",
+    "apps/web/public/comercio/productos/P-0069.jpg",
+    "apps/web/public/comercio/productos/P-0070.jpg",
+    "apps/web/public/comercio/productos/P-0071.jpg",
+    "apps/web/public/comercio/productos/P-0072.jpg",
+    "apps/web/public/comercio/productos/P-0073.jpg",
+    "apps/web/public/comercio/productos/P-0074.jpg",
+    "apps/web/public/comercio/productos/P-0075.jpg",
+    "apps/web/public/comercio/productos/P-0076.jpg",
+    "apps/web/public/comercio/productos/P-0077.jpg",
+    "apps/web/public/comercio/productos/P-0078.jpg",
+    "apps/web/public/comercio/productos/P-0079.jpg",
+    "apps/web/public/comercio/productos/P-0080.jpg",
+    "apps/web/public/comercio/productos/P-0081.jpg",
+    "apps/web/public/comercio/productos/P-0082.jpg",
+    "apps/web/public/comercio/productos/P-0083.jpg",
+    "apps/web/public/comercio/productos/P-0084.jpg",
+    "apps/web/public/comercio/productos/P-0085.jpg",
+    "apps/web/public/comercio/productos/P-0086.jpg",
+    "apps/web/public/comercio/productos/P-0087.jpg",
+    "apps/web/public/comercio/productos/P-0088.jpg",
+    "apps/web/public/comercio/productos/P-0089.jpg",
+    "apps/web/public/comercio/productos/P-0090.jpg",
+    "apps/web/public/comercio/productos/P-0091.jpg",
+    "apps/web/public/comercio/productos/P-0092.jpg",
+    "apps/web/public/comercio/productos/P-0093.jpg",
+    "apps/web/public/comercio/productos/P-0094.jpg",
+    "apps/web/public/comercio/productos/P-0095.jpg",
+    "apps/web/public/comercio/productos/P-0096.jpg",
+    "apps/web/public/comercio/productos/P-0097.jpg",
+    "apps/web/public/comercio/productos/P-0098.jpg",
+    "apps/web/public/comercio/productos/P-0099.jpg",
+    "apps/web/public/comercio/productos/P-0100.jpg",
+    "apps/web/public/comercio/productos/P-0101.jpg",
+    "apps/web/public/comercio/productos/P-0102.jpg",
+    "apps/web/public/comercio/productos/P-0103.jpg",
+    "apps/web/public/comercio/productos/P-0104.jpg",
+    "apps/web/public/comercio/productos/P-0105.jpg",
+    "apps/web/public/comercio/productos/P-0106.jpg",
+    "apps/web/public/comercio/productos/P-0107.jpg",
+    "apps/web/public/comercio/productos/P-0108.jpg",
+    "apps/web/public/comercio/productos/P-0109.jpg",
+    "apps/web/public/comercio/productos/P-0110.jpg",
+    "apps/web/public/comercio/productos/P-0111.jpg",
+    "apps/web/public/comercio/productos/P-0112.jpg",
+    "apps/web/public/comercio/productos/P-0113.jpg",
+    "apps/web/public/comercio/productos/P-0114.jpg",
+    "apps/web/public/comercio/productos/P-0115.jpg",
+    "apps/web/public/comercio/productos/P-0116.jpg",
+    "apps/web/public/comercio/productos/P-0117.jpg",
+    "apps/web/public/comercio/productos/P-0118.jpg",
+    "apps/web/public/comercio/productos/P-0119.jpg",
+    "apps/web/public/comercio/productos/P-0120.jpg",
+    "apps/web/public/comercio/productos/P-0121.jpg",
+    "apps/web/public/comercio/productos/P-0122.jpg",
+    "apps/web/public/comercio/productos/P-0123.jpg",
+    "apps/web/public/comercio/productos/P-0124.jpg",
+    "apps/web/public/comercio/productos/P-0125.jpg",
+    "apps/web/public/comercio/productos/P-0126.jpg",
+    "apps/web/public/comercio/productos/P-0127.jpg",
+    "apps/web/public/comercio/productos/P-0128.jpg",
+    "apps/web/public/comercio/productos/P-0129.jpg",
+    "apps/web/public/comercio/productos/P-0130.jpg",
+    "apps/web/public/comercio/productos/P-0131.jpg",
+    "apps/web/public/comercio/productos/credits.json",
+    "apps/web/tailwind.config.ts",
+    "apps/web/test/comercio-reports-charts.test.mjs",
+    "apps/web/test/comercio-storefront-resilience.test.mjs",
+    "apps/web/test/comercio-storefront-theme.test.mjs",
+    "apps/web/test/comercio-ux-consistency.test.mjs",
+    "apps/web/test/offline-csp.test.mjs",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/api-suite-salida.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/candidato-tenant-rbac.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/cert-theme-salida.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/cert-ux-salida.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/gates-candidato.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/pr-desarrollar.md",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/01-vitrina-sin-tema.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/02-vitrina-tema-propio-con-banner.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/03-vitrina-tonos-patron-y-esquinas.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/04-vitrina-recta-sin-patron.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/05-vitrina-tema-claro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/06-panel-apariencia-guardando.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/07-vitrina-con-banner-subido.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/browser-local.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/pintura-navegador.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/browser-local.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-1440-oscuro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-390-claro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-390-ventanado.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/portada-1440-oscuro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/portada-390-error-provocado.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/productos-390-claro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/recorrido.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/reportes-1440-oscuro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/vitrina-390.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/web-suite-salida.txt",
+    "docs/qa/evidence/comercio-tenant-rbac-20261106/api-local.json",
+    "docs/qa/evidence/comercio-tenant-rbac-20261106/salida.txt",
+    "docs/qa/evidence/vitrina-comercio-banner-upload-20261106/pintura-navegador.json",
+    "docs/qa/manifests/comercio-modulo-completo-20261107-preqa.json",
+    "docs/qa/manifests/comercio-modulo-completo-20261107-scope.json",
+    "package.json",
+    "scripts/certifications/comercio-storefront-theme-local.js",
+    "scripts/certifications/comercio-tenant-rbac-local.js",
+    "scripts/certifications/comercio-ux-local.js",
+    "scripts/data/comercio-photo-queries.json",
+    "scripts/ensure-comercio-assets-bucket.js",
+    "scripts/seed-comercio-demo.js",
+    "scripts/seed-comercio-photos.js"
+  ],
+  "allowed_deletions": [],
+  "deletion_justification": "El candidato no elimina ninguna ruta. La reconstruccion sobre 22fdf222 se hizo copiando las 201 rutas del cambio neto sobre el arbol del target vigente, asi que las 9 rutas de la promocion #81 (payrollWorkdays.js, service.js de RRHH, dos pruebas, dos certificaciones y dos manifiestos) permanecen byte a byte; no hay borrado que autorizar.",
+  "protected_capabilities": [
+    {
+      "name": "Aislamiento multi-tenant y RBAC de los endpoints /api/v1/comercio/**: cuatro empresas reales, lectura y escritura entre tenants devuelven el codigo de negocio y mutar desde otro tenant no muta nada",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-promotion-candidate-20261107/candidato-tenant-rbac.json",
+        "../evidence/comercio-promotion-candidate-20261107/gates-candidato.txt",
+        "../evidence/comercio-tenant-rbac-20261106/api-local.json"
+      ]
+    },
+    {
+      "name": "Precio final con descuento identico en la vitrina publica y en el mostrador",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/comercio-service.test.js",
+        "../../../apps/web/test/comercio-reports-charts.test.mjs",
+        "../evidence/comercio-promotion-candidate-20261107/api-suite-salida.txt",
+        "../evidence/comercio-promotion-candidate-20261107/web-suite-salida.txt"
+      ]
+    },
+    {
+      "name": "Stock, recosto del promedio ponderado y bloqueo optimista en ajustes, compras y ventas",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/comercio-service.test.js",
+        "../evidence/comercio-promotion-candidate-20261107/api-suite-salida.txt"
+      ]
+    },
+    {
+      "name": "Segmentos de campana, vigencia y alcance de la promocion por categoria o producto",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/comercio-service.test.js",
+        "../evidence/comercio-promotion-candidate-20261107/theme/browser-local.json"
+      ]
+    },
+    {
+      "name": "Vitrina publica tematizada por tenant sin colores literales y con paridad entre el motor y la hoja CSS, medida en el navegador del candidato",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/comercio-storefront-theme.test.mjs",
+        "../../../apps/api/test/comercio-storefront-theme.test.js",
+        "../evidence/comercio-promotion-candidate-20261107/theme/browser-local.json",
+        "../evidence/comercio-promotion-candidate-20261107/theme/pintura-navegador.json"
+      ]
+    },
+    {
+      "name": "La vitrina no cae cuando falla el almacen de imagenes; lectura anonima solo en loopback",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/comercio-storage.test.js",
+        "../../../apps/web/test/comercio-storefront-resilience.test.mjs",
+        "../evidence/comercio-promotion-candidate-20261107/theme/browser-local.json"
+      ]
+    },
+    {
+      "name": "Subida del banner: 201, lectura sin credenciales y pintura real en el navegador sobre el candidato",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-promotion-candidate-20261107/theme/browser-local.json",
+        "../evidence/comercio-promotion-candidate-20261107/theme/07-vitrina-con-banner-subido.png",
+        "../evidence/vitrina-comercio-banner-upload-20261106/pintura-navegador.json"
+      ]
+    },
+    {
+      "name": "Pasada UX de las once pantallas y la vitrina sobre el candidato: busqueda canonica, ventanado, capas con aro de foco y blancos tactiles 24x24",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-promotion-candidate-20261107/ux/browser-local.json",
+        "../evidence/comercio-promotion-candidate-20261107/ux/recorrido.json",
+        "../../../apps/web/test/comercio-ux-consistency.test.mjs",
+        "../evidence/comercio-promotion-candidate-20261107/cert-ux-salida.txt"
+      ]
+    },
+    {
+      "name": "Regresion de los modulos vecinos que consumen el plumbing compartido (Transporte, Administracion, tablas, modales, paleta de comandos y el contrato del 503)",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-promotion-candidate-20261107/web-suite-salida.txt",
+        "../evidence/comercio-promotion-candidate-20261107/api-suite-salida.txt",
+        "../evidence/comercio-promotion-candidate-20261107/gates-candidato.txt",
+        "../../../apps/api/test/api-error-mapping.test.js"
+      ]
+    }
+  ],
+  "pending_certifications": [
+    "Aplicacion de las seis migraciones del modulo (20261026120000..20261028190000) en el ambiente QA: por decision del dueno las aplica Railway al hacer el merge, no esta estacion. Despues del merge se verifica que /api/v1/comercio/dashboard responda sin P2022 y que las seis aparezcan en _prisma_migrations.",
+    "Bucket comercio-assets en el Supabase del ambiente QA: el alta idempotente y con guardas esta versionada en scripts/ensure-comercio-assets-bucket.js, pero ejecutarla contra la nube requiere la sesion del dueno. Sin bucket, la vitrina degrada a sin banner (ese camino si esta certificado).",
+    "Regresion visual en navegador de los componentes compartidos (Transporte, tablas, modales, paleta) en el Railway de QA: las suites de fuente de develop pasan sobre el candidato con los mismos 3 rojos del destino, pero la pintura de esos modulos en el ambiente QA no se midio aqui."
+  ],
+  "known_target_failures": [
+    "apps/web/test/hr-route-write-fallback.test.mjs (2 pruebas): contrato de fuente de develop que ya no coincide con apps/web/lib/api.ts de develop. Ambos archivos viajan byte a byte como en el destino (0 lineas de diff).",
+    "apps/web/test/command-palette-module-functions.test.mjs (1 prueba): /dashboard/contabilidad/pyg/ampliado no esta registrado en el centro de comandos de develop. Falla identico en origin/develop limpio.",
+    "npm run qa:deterministic-validation: aborta en POST /api/v1/accounting/chart/init con P2010/3F000 schema apexos_accounting_private does not exist. Es el ambiente local de pruebas, no el candidato; ninguna ruta de Comercio interviene.",
+    "Reproducidos y medidos en ../evidence/comercio-promotion-candidate-20261107/gates-candidato.txt. Arreglarlos es alcance de otros modulos."
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-07",
+    "quality_gate_overridden": false,
+    "authorizations_granted": [
+      "Promocionar el modulo Comercio a develop de manera controlada, solo este modulo, sin afectar ninguna otra funcion del sistema.",
+      "Rama auxiliar + PR hacia develop como mecanismo de publicacion.",
+      "Las seis migraciones del modulo las aplica Railway al hacer el merge; ninguna migracion se aplica desde esta estacion.",
+      "Cerrar antes de promover la brecha de aislamiento multi-tenant y RBAC (se cerro con 53 checks sobre el candidato).",
+      "Terminar de validar lo que haga falta y crear en Supabase lo necesario, sin detenerse salvo que aparezca algo critico que requiera autorizacion."
+    ],
+    "authorizations_still_required": [
+      "Force push o reescritura del historial de promocion/comercio-develop-20261106: no se hizo. La publicacion usa la rama nueva promocion/comercio-develop-20261107 y el PR anterior (#80) se cierra en favor de este.",
+      "Creacion del bucket comercio-assets en el Supabase de QA (sesion del dueno).",
+      "Despliegue del candidato en el Railway de QA para la regresion visual de los componentes compartidos.",
+      "Cualquier paso hacia main."
+    ],
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "scoped_promotion_to_develop_only": true,
+      "migrations_applied_by_railway_on_merge": true,
+      "force_push": false,
+      "promotion_to_main": false
+    }
+  },
+  "observations": "Rondas del modulo en desarrollo: prototipo M-30, vitrina tematizada (1-3), pasada UX medida (4-5), certificacion de aislamiento multi-tenant y RBAC (6) y re-base del candidato contra el target vigente con auditoria bidireccional y certificacion de navegador propia del candidato (7). El candidato no incluye agents/, .qoder/skills, documentacion de gobernanza, briefs ni evidencia de QA: solo producto, pruebas, certificaciones y el plumbing compartido.",
+  "certified_functional_paths": [
+    ".env.example",
+    "apps/api/prisma/migrations/20261026120000_comercio_foundation/migration.sql",
+    "apps/api/prisma/migrations/20261026140000_comercio_payment_allocations/migration.sql",
+    "apps/api/prisma/migrations/20261027120000_comercio_public_catalog/migration.sql",
+    "apps/api/prisma/migrations/20261027150000_comercio_social_links/migration.sql",
+    "apps/api/prisma/migrations/20261028120000_comercio_discounts/migration.sql",
+    "apps/api/prisma/migrations/20261028190000_comercio_promotions/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/server.js",
+    "apps/api/src/core/api-error.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/comercio/imagegen.js",
+    "apps/api/src/modules/comercio/public-routes.js",
+    "apps/api/src/modules/comercio/routes.js",
+    "apps/api/src/modules/comercio/schema.js",
+    "apps/api/src/modules/comercio/service.js",
+    "apps/api/src/modules/comercio/storage.js",
+    "apps/api/test/api-error-mapping.test.js",
+    "apps/api/test/comercio-service.test.js",
+    "apps/api/test/comercio-storage.test.js",
+    "apps/api/test/comercio-storefront-theme.test.js",
+    "apps/api/test/hr-payroll-adjustment-lock.test.js",
+    "apps/web/app/dashboard/comercio/ComercioCharts.tsx",
+    "apps/web/app/dashboard/comercio/cartera/page.tsx",
+    "apps/web/app/dashboard/comercio/clientes/page.tsx",
+    "apps/web/app/dashboard/comercio/compras/page.tsx",
+    "apps/web/app/dashboard/comercio/configuracion/page.tsx",
+    "apps/web/app/dashboard/comercio/gastos/page.tsx",
+    "apps/web/app/dashboard/comercio/page.tsx",
+    "apps/web/app/dashboard/comercio/productos/page.tsx",
+    "apps/web/app/dashboard/comercio/promociones/page.tsx",
+    "apps/web/app/dashboard/comercio/reportes/page.tsx",
+    "apps/web/app/dashboard/comercio/vender/page.tsx",
+    "apps/web/app/dashboard/comercio/ventas/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/tienda/[code]/page.tsx",
+    "apps/web/app/tienda/storefront.css",
+    "apps/web/components/comercio/shared.tsx",
+    "apps/web/components/comercio/storefront-theme.ts",
+    "apps/web/components/comercio/storefront.tsx",
+    "apps/web/components/shell/ContextBreadcrumbs.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/components/transport/TransportSearchSelect.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/components/ui/SearchField.tsx",
+    "apps/web/components/ui/button.tsx",
+    "apps/web/components/ui/data-table.tsx",
+    "apps/web/components/ui/useOverlayA11y.ts",
+    "apps/web/lib/moduleAccess.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/modules.ts",
+    "apps/web/lib/security/csp.ts",
+    "apps/web/next.config.ts",
+    "apps/web/public/comercio/productos/P-0001.jpg",
+    "apps/web/public/comercio/productos/P-0002.jpg",
+    "apps/web/public/comercio/productos/P-0003.jpg",
+    "apps/web/public/comercio/productos/P-0004.jpg",
+    "apps/web/public/comercio/productos/P-0005.jpg",
+    "apps/web/public/comercio/productos/P-0006.jpg",
+    "apps/web/public/comercio/productos/P-0007.jpg",
+    "apps/web/public/comercio/productos/P-0008.jpg",
+    "apps/web/public/comercio/productos/P-0009.jpg",
+    "apps/web/public/comercio/productos/P-0010.jpg",
+    "apps/web/public/comercio/productos/P-0011.jpg",
+    "apps/web/public/comercio/productos/P-0012.jpg",
+    "apps/web/public/comercio/productos/P-0013.jpg",
+    "apps/web/public/comercio/productos/P-0014.jpg",
+    "apps/web/public/comercio/productos/P-0015.jpg",
+    "apps/web/public/comercio/productos/P-0016.jpg",
+    "apps/web/public/comercio/productos/P-0017.jpg",
+    "apps/web/public/comercio/productos/P-0018.jpg",
+    "apps/web/public/comercio/productos/P-0019.jpg",
+    "apps/web/public/comercio/productos/P-0020.jpg",
+    "apps/web/public/comercio/productos/P-0021.jpg",
+    "apps/web/public/comercio/productos/P-0022.jpg",
+    "apps/web/public/comercio/productos/P-0023.jpg",
+    "apps/web/public/comercio/productos/P-0024.jpg",
+    "apps/web/public/comercio/productos/P-0025.jpg",
+    "apps/web/public/comercio/productos/P-0026.jpg",
+    "apps/web/public/comercio/productos/P-0027.jpg",
+    "apps/web/public/comercio/productos/P-0028.jpg",
+    "apps/web/public/comercio/productos/P-0029.jpg",
+    "apps/web/public/comercio/productos/P-0030.jpg",
+    "apps/web/public/comercio/productos/P-0031.jpg",
+    "apps/web/public/comercio/productos/P-0032.jpg",
+    "apps/web/public/comercio/productos/P-0033.jpg",
+    "apps/web/public/comercio/productos/P-0034.jpg",
+    "apps/web/public/comercio/productos/P-0035.jpg",
+    "apps/web/public/comercio/productos/P-0036.jpg",
+    "apps/web/public/comercio/productos/P-0037.jpg",
+    "apps/web/public/comercio/productos/P-0038.jpg",
+    "apps/web/public/comercio/productos/P-0039.jpg",
+    "apps/web/public/comercio/productos/P-0040.jpg",
+    "apps/web/public/comercio/productos/P-0041.jpg",
+    "apps/web/public/comercio/productos/P-0042.jpg",
+    "apps/web/public/comercio/productos/P-0043.jpg",
+    "apps/web/public/comercio/productos/P-0044.jpg",
+    "apps/web/public/comercio/productos/P-0045.jpg",
+    "apps/web/public/comercio/productos/P-0046.jpg",
+    "apps/web/public/comercio/productos/P-0047.jpg",
+    "apps/web/public/comercio/productos/P-0048.jpg",
+    "apps/web/public/comercio/productos/P-0049.jpg",
+    "apps/web/public/comercio/productos/P-0050.jpg",
+    "apps/web/public/comercio/productos/P-0051.jpg",
+    "apps/web/public/comercio/productos/P-0052.jpg",
+    "apps/web/public/comercio/productos/P-0053.jpg",
+    "apps/web/public/comercio/productos/P-0054.jpg",
+    "apps/web/public/comercio/productos/P-0055.jpg",
+    "apps/web/public/comercio/productos/P-0056.jpg",
+    "apps/web/public/comercio/productos/P-0057.jpg",
+    "apps/web/public/comercio/productos/P-0058.jpg",
+    "apps/web/public/comercio/productos/P-0059.jpg",
+    "apps/web/public/comercio/productos/P-0060.jpg",
+    "apps/web/public/comercio/productos/P-0061.jpg",
+    "apps/web/public/comercio/productos/P-0062.jpg",
+    "apps/web/public/comercio/productos/P-0063.jpg",
+    "apps/web/public/comercio/productos/P-0064.jpg",
+    "apps/web/public/comercio/productos/P-0065.jpg",
+    "apps/web/public/comercio/productos/P-0066.jpg",
+    "apps/web/public/comercio/productos/P-0067.jpg",
+    "apps/web/public/comercio/productos/P-0068.jpg",
+    "apps/web/public/comercio/productos/P-0069.jpg",
+    "apps/web/public/comercio/productos/P-0070.jpg",
+    "apps/web/public/comercio/productos/P-0071.jpg",
+    "apps/web/public/comercio/productos/P-0072.jpg",
+    "apps/web/public/comercio/productos/P-0073.jpg",
+    "apps/web/public/comercio/productos/P-0074.jpg",
+    "apps/web/public/comercio/productos/P-0075.jpg",
+    "apps/web/public/comercio/productos/P-0076.jpg",
+    "apps/web/public/comercio/productos/P-0077.jpg",
+    "apps/web/public/comercio/productos/P-0078.jpg",
+    "apps/web/public/comercio/productos/P-0079.jpg",
+    "apps/web/public/comercio/productos/P-0080.jpg",
+    "apps/web/public/comercio/productos/P-0081.jpg",
+    "apps/web/public/comercio/productos/P-0082.jpg",
+    "apps/web/public/comercio/productos/P-0083.jpg",
+    "apps/web/public/comercio/productos/P-0084.jpg",
+    "apps/web/public/comercio/productos/P-0085.jpg",
+    "apps/web/public/comercio/productos/P-0086.jpg",
+    "apps/web/public/comercio/productos/P-0087.jpg",
+    "apps/web/public/comercio/productos/P-0088.jpg",
+    "apps/web/public/comercio/productos/P-0089.jpg",
+    "apps/web/public/comercio/productos/P-0090.jpg",
+    "apps/web/public/comercio/productos/P-0091.jpg",
+    "apps/web/public/comercio/productos/P-0092.jpg",
+    "apps/web/public/comercio/productos/P-0093.jpg",
+    "apps/web/public/comercio/productos/P-0094.jpg",
+    "apps/web/public/comercio/productos/P-0095.jpg",
+    "apps/web/public/comercio/productos/P-0096.jpg",
+    "apps/web/public/comercio/productos/P-0097.jpg",
+    "apps/web/public/comercio/productos/P-0098.jpg",
+    "apps/web/public/comercio/productos/P-0099.jpg",
+    "apps/web/public/comercio/productos/P-0100.jpg",
+    "apps/web/public/comercio/productos/P-0101.jpg",
+    "apps/web/public/comercio/productos/P-0102.jpg",
+    "apps/web/public/comercio/productos/P-0103.jpg",
+    "apps/web/public/comercio/productos/P-0104.jpg",
+    "apps/web/public/comercio/productos/P-0105.jpg",
+    "apps/web/public/comercio/productos/P-0106.jpg",
+    "apps/web/public/comercio/productos/P-0107.jpg",
+    "apps/web/public/comercio/productos/P-0108.jpg",
+    "apps/web/public/comercio/productos/P-0109.jpg",
+    "apps/web/public/comercio/productos/P-0110.jpg",
+    "apps/web/public/comercio/productos/P-0111.jpg",
+    "apps/web/public/comercio/productos/P-0112.jpg",
+    "apps/web/public/comercio/productos/P-0113.jpg",
+    "apps/web/public/comercio/productos/P-0114.jpg",
+    "apps/web/public/comercio/productos/P-0115.jpg",
+    "apps/web/public/comercio/productos/P-0116.jpg",
+    "apps/web/public/comercio/productos/P-0117.jpg",
+    "apps/web/public/comercio/productos/P-0118.jpg",
+    "apps/web/public/comercio/productos/P-0119.jpg",
+    "apps/web/public/comercio/productos/P-0120.jpg",
+    "apps/web/public/comercio/productos/P-0121.jpg",
+    "apps/web/public/comercio/productos/P-0122.jpg",
+    "apps/web/public/comercio/productos/P-0123.jpg",
+    "apps/web/public/comercio/productos/P-0124.jpg",
+    "apps/web/public/comercio/productos/P-0125.jpg",
+    "apps/web/public/comercio/productos/P-0126.jpg",
+    "apps/web/public/comercio/productos/P-0127.jpg",
+    "apps/web/public/comercio/productos/P-0128.jpg",
+    "apps/web/public/comercio/productos/P-0129.jpg",
+    "apps/web/public/comercio/productos/P-0130.jpg",
+    "apps/web/public/comercio/productos/P-0131.jpg",
+    "apps/web/public/comercio/productos/credits.json",
+    "apps/web/tailwind.config.ts",
+    "apps/web/test/comercio-reports-charts.test.mjs",
+    "apps/web/test/comercio-storefront-resilience.test.mjs",
+    "apps/web/test/comercio-storefront-theme.test.mjs",
+    "apps/web/test/comercio-ux-consistency.test.mjs",
+    "apps/web/test/offline-csp.test.mjs",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/api-suite-salida.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/candidato-tenant-rbac.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/cert-theme-salida.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/cert-ux-salida.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/gates-candidato.txt",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/pr-desarrollar.md",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/01-vitrina-sin-tema.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/02-vitrina-tema-propio-con-banner.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/03-vitrina-tonos-patron-y-esquinas.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/04-vitrina-recta-sin-patron.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/05-vitrina-tema-claro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/06-panel-apariencia-guardando.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/07-vitrina-con-banner-subido.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/browser-local.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/theme/pintura-navegador.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/browser-local.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-1440-oscuro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-390-claro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/clientes-390-ventanado.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/portada-1440-oscuro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/portada-390-error-provocado.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/productos-390-claro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/recorrido.json",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/reportes-1440-oscuro.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/ux/vitrina-390.png",
+    "docs/qa/evidence/comercio-promotion-candidate-20261107/web-suite-salida.txt",
+    "docs/qa/evidence/comercio-tenant-rbac-20261106/api-local.json",
+    "docs/qa/evidence/comercio-tenant-rbac-20261106/salida.txt",
+    "docs/qa/evidence/vitrina-comercio-banner-upload-20261106/pintura-navegador.json",
+    "package.json",
+    "scripts/certifications/comercio-storefront-theme-local.js",
+    "scripts/certifications/comercio-tenant-rbac-local.js",
+    "scripts/certifications/comercio-ux-local.js",
+    "scripts/data/comercio-photo-queries.json",
+    "scripts/ensure-comercio-assets-bucket.js",
+    "scripts/seed-comercio-demo.js",
+    "scripts/seed-comercio-photos.js"
+  ]
+}
