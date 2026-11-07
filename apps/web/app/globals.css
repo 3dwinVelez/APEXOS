@@ -12,6 +12,15 @@
   --color-success: 34 197 94;
   --color-warning: 245 158 11;
   --color-error: 239 68 68;
+  /* Tintas semanticas para TEXTO. El verde, ambar y rojo de senal pintan bien un chip o una
+     barra, pero sobre blanco no llegan a 4.5:1; estas variantes si, en los dos temas. */
+  --color-success-ink: 4 120 87;
+  --color-warning-ink: 180 83 9;
+  --color-error-ink: 190 18 60;
+  /* La tinta de marca para TEXTO: el acento del producto (15 118 110) se lee bien sobre
+     blanco (5,47:1) pero sobre su propio tinte bg-apex/10 baja a 4,45:1 y suspende AA. Los
+     etiquetas, chips de numeros y pestanas activas del modulo usan esta variante. */
+  --color-apex-ink: 17 94 88;
   --color-info: 37 99 235;
   --surface: 255 255 255;
   --surface-soft: 247 245 239;
@@ -50,6 +59,10 @@ html[data-contrast="high"] {
   --surface-muted: 229 231 235;
   --text-body: 17 24 39;
   --text-muted: 31 41 55;
+  --color-success-ink: 3 87 57;
+  --color-warning-ink: 146 64 14;
+  --color-error-ink: 159 18 57;
+  --color-apex-ink: 5 80 74;
 }
 
 html.dark[data-contrast="high"] {
@@ -59,6 +72,10 @@ html.dark[data-contrast="high"] {
   --text-strong: 255 255 255;
   --text-body: 243 244 246;
   --text-muted: 229 231 235;
+  --color-success-ink: 134 239 172;
+  --color-warning-ink: 253 224 71;
+  --color-error-ink: 254 202 202;
+  --color-apex-ink: 153 246 228;
 }
 
 html[data-contrast="high"] .apex-dashboard-content a:not([role="button"]) {
@@ -451,6 +468,10 @@ html.dark {
   --color-success: 34 197 94;
   --color-warning: 245 158 11;
   --color-error: 239 68 68;
+  --color-success-ink: 110 231 183;
+  --color-warning-ink: 252 211 77;
+  --color-error-ink: 253 164 175;
+  --color-apex-ink: 94 234 212;
   --color-info: 37 99 235;
   --surface: 23 35 45;
   --surface-soft: 15 23 32;
@@ -569,8 +590,14 @@ textarea {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@keyframes apexBackdropEnter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .apex-page-enter { animation: apexPageEnter 220ms ease-out both; }
 .apex-dialog-enter { animation: apexDialogEnter 180ms ease-out both; }
+.apex-backdrop-enter { animation: apexBackdropEnter 160ms ease-out both; }
 
 @media (prefers-reduced-motion: reduce) {
   html:focus-within {
@@ -587,7 +614,8 @@ textarea {
   }
 
   .apex-page-enter,
-  .apex-dialog-enter {
+  .apex-dialog-enter,
+  .apex-backdrop-enter {
     animation: none !important;
   }
 

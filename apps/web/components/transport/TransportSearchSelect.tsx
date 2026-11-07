@@ -45,21 +45,26 @@ export function TransportSearchSelect({ className, autoFocus, id, ...props }: Se
   }, [props.value]);
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener("resize", close);
-    window.addEventListener("scroll", close);
-    return () => { window.removeEventListener("resize", close); window.removeEventListener("scroll", close); };
+    const onMove = () => place();
+    window.addEventListener("resize", onMove);
+    window.addEventListener("scroll", onMove, true);
+    return () => { window.removeEventListener("resize", onMove); window.removeEventListener("scroll", onMove, true); };
   }, [open]);
   useEffect(() => {
     if (open) document.getElementById(`${listId}-${active}`)?.scrollIntoView({ block: "nearest" });
   }, [active, open, listId]);
-  function show() {
-    if (props.disabled || !select.current || !input.current) return;
-    setOptions(readOptions(select.current));
-    const rect = input.current.getBoundingClientRect();
+  function place() {
+    const node = input.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
     const below = window.innerHeight - rect.bottom - 12;
     const height = Math.min(260, Math.max(100, below >= 160 ? below : rect.top - 12));
     setPosition({ left: rect.left, top: below >= 160 ? rect.bottom + 4 : Math.max(4, rect.top - height - 4), width: rect.width, maxHeight: height });
+  }
+  function show() {
+    if (props.disabled || !select.current || !input.current) return;
+    setOptions(readOptions(select.current));
+    place();
     setOpen(true);
     setActive(0);
   }
