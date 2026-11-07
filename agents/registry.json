@@ -248,9 +248,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.22.0",
+      "version": "2.23.0",
       "updated_at": "2026-11-07",
-      "sha256": "a53fb9d9b5ef3c17ad476e486c1d28f93fa4f0ff8910c8449bcd60eba239cb95",
+      "sha256": "03f76e09854fd327359acb5f11f514565d58c5cd4b05c2a5a8981ca54c088648",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [

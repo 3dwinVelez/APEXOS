@@ -162,8 +162,11 @@ try {
     rutas_del_cierre: cierre.length, deben_viajar_en_el_paquete: ausentes, sin_resolver_fuera_del_paquete: fueraDeAlcance
   });
 
-  // 7. Las rutas del paquete viajan byte a byte como en la rama de trabajo.
-  const rutasDelPaquete = [...new Set([...contrato, ...cierre.filter((p) => enIndex.has(p))])].sort();
+  // 7. Las rutas del paquete viajan byte a byte como en la version certificada.
+  // El cierre incluye lecturas de codigo de producto (schema.prisma, server.js) que ya estaban en el
+  // destino: esas no son del paquete y no se comparan, o la paridad mediria el arbol del destino.
+  const cambiadasContraBase = new Set(git(["diff", "--cached", "--name-only", BASE, "--"]).split(/\r?\n/).filter(Boolean));
+  const rutasDelPaquete = [...new Set([...contrato, ...cierre.filter((p) => cambiadasContraBase.has(p))])].sort();
   const fueraDeParidad = [];
   for (const f of rutasDelPaquete) {
     if (/^docs\/qa\//.test(f)) continue;

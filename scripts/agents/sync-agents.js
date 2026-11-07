@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { isContractV2, validateContractText } = require('./lib/agent-contract');
-const { versionBumpError } = require('./lib/agent-versioning');
+const { versionBumpError, documentDriftLevel } = require('./lib/agent-versioning');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const REGISTRY_PATH = path.join(ROOT, 'agents', 'registry.json');
@@ -160,6 +160,7 @@ function writeRegistry() {
 function checkRegistry() {
   const registry = readRegistry();
   const errors = [];
+  const avisos = [];
 
   if (!Array.isArray(registry.agents) || !registry.agents.length) errors.push('registry.agents vacío');
   if (!Array.isArray(registry.documents) || !registry.documents.length) errors.push('registry.documents vacío');
@@ -212,10 +213,15 @@ function checkRegistry() {
     if (sha256(abs) !== entry.sha256) {
       errors.push(`documento cambiado sin registrar: ${entry.path} (corre npm run agents:sync)`);
     }
-    if (gitDate(entry.path) !== entry.updated_at) {
-      errors.push(`documento con fecha distinta al registro: ${entry.path}`);
+    const nivel = documentDriftLevel({ shaMatches: sha256(abs) === entry.sha256, gitDate: gitDate(entry.path), registryDate: entry.updated_at });
+    if (nivel !== 'ok') {
+      const mensaje = `documento con fecha de rama distinta al registro: ${entry.path} (${gitDate(entry.path)} vs ${entry.updated_at})`;
+      if (nivel === 'aviso') avisos.push(mensaje);
+      else errors.push(mensaje);
     }
   }
+
+  for (const aviso of avisos) console.warn(`[agents] AVISO: ${aviso}`);
 
   if (errors.length) {
     for (const error of errors) console.error(`[agents] ${error}`);

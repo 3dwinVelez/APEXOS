@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { versionBumpError } = require('../agents/lib/agent-versioning');
+const { versionBumpError, documentDriftLevel } = require('../agents/lib/agent-versioning');
 
 const previous = { version: '2.0.0', sha256: 'aaa' };
 
@@ -26,4 +26,16 @@ test('un cambio sin bump de version se rechaza', () => {
 test('una version que retrocede se rechaza', () => {
   const error = versionBumpError({ name: 'demo', previous, next: { version: '1.9.0', sha256: 'bbb' } });
   assert.match(error, /retrocede/);
+});
+
+test('documento con el sha correcto y la misma fecha no genera ni aviso', () => {
+  assert.equal(documentDriftLevel({ shaMatches: true, gitDate: '2026-11-03', registryDate: '2026-11-03' }), 'ok');
+});
+
+test('documento promocionado conserva el sha y solo avisa por la fecha de la rama', () => {
+  assert.equal(documentDriftLevel({ shaMatches: true, gitDate: '2026-11-07', registryDate: '2026-11-03' }), 'aviso');
+});
+
+test('documento con contenido distinto sigue siendo un error aunque la fecha cuadre', () => {
+  assert.equal(documentDriftLevel({ shaMatches: false, gitDate: '2026-11-03', registryDate: '2026-11-03' }), 'error');
 });
