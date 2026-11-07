@@ -110,10 +110,24 @@ test("con el candado ocupado el ajuste rinde 503 controlado y no escribe nada", 
 test("el servidor trata cualquier 503 con codigo como fallo controlado", () => {
   const fs = require("node:fs");
   const path = require("node:path");
-  const server = fs.readFileSync(path.resolve(__dirname, "../server.js"), "utf8");
+  // La tabla de traduccion salio de server.js a core/api-error.js (fix del banner de Comercio,
+  // 2026-11-06). El contrato no cambio: un 503 con codigo sigue siendo fallo controlado. Se
+  // mide en su nueva casa y ademas que el servidor la monta, que es lo que dejaba el corte.
+  const servidor = fs.readFileSync(path.resolve(__dirname, "../server.js"), "utf8");
+  const tabla = fs.readFileSync(path.resolve(__dirname, "../src/core/api-error.js"), "utf8");
   assert.match(
-    server,
-    /if \(error\.statusCode === 503 && error\.code\) \{/,
+    tabla,
+    /const DEPENDENCY_STATUSES = \[[^\]]*\b503\b[^\]]*\];/,
+    "el 503 tiene que seguir en la familia de fallos de dependencia controlados"
+  );
+  assert.match(
+    tabla,
+    /error\.code && DEPENDENCY_STATUSES\.includes\(error\.statusCode\)/,
     "un 503 con codigo no puede caer al 500 generico: el operario lo leeria como caida del backend"
+  );
+  assert.match(
+    servidor,
+    /require\("\.\/src\/core\/api-error"\)/,
+    "server.js debe montar la tabla: sin el require el errorhandler vuelve al 500 generico"
   );
 });

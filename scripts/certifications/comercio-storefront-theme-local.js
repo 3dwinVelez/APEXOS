@@ -57,6 +57,7 @@ const db = new PrismaClient();
 // Instantanea de las preferencias del tenant. Se restaura SIEMPRE, incluso cuando la
 // certificacion falla a mitad: un run rojo no debe dejar temas pegados en la demo.
 let restaurar = null;
+let restaurarCampana = async () => {};
 function check(name, ok, detail = {}) {
   checks.push({ name, ok: Boolean(ok), detail });
   assert.ok(ok, `${name}: ${JSON.stringify(detail)}`);
@@ -254,6 +255,16 @@ async function main() {
   await restaurar();
   check("entorno_local_listo", true, { apiUrl, webUrl, tenant_id: inicial.tenant_id, catalog_code: code });
 
+  // Campana vigente del tenant (la semilla demo deja una activa a proposito). M-30 decidio que
+  // el Hero ceda el titular a la campana mientras dure, asi que la vitrina SEMBRADA no muestra
+  // el titular del tema: se mide primero esa precedencia y despues se pausa la campana para
+  // poder medir el titular propio del comercio. Al terminar se devuelve la campana a su estado.
+  const campana = await db.comercioPromotion.findFirst({
+    where: { tenant_id: inicial.tenant_id, status: "active" },
+    orderBy: { id: "asc" },
+    select: { id: true, name: true, status: true }
+  });
+
   const login = await call("/api/v1/auth/login", { method: "POST", body: { email, password } });
   const token = login.payload.token || login.payload.access_token;
   check("login_real", login.status === 200 && Boolean(token), { status: login.status });
@@ -323,7 +334,24 @@ async function main() {
       return contrastRatio(fondo, letra) >= Math.max(contrastRatio(fondo, hexToRgb("#FFFFFF")), contrastRatio(fondo, hexToRgb("#0A0A0A"))) - 0.05;
     })(), { botonChange: base.botonChange, botonLetra: base.botonLetra });
     check("sin_tema_no_hay_banner", base.bannerPresente === false, { bannerSrc: base.bannerSrc });
+    // Precedencia del Hero (M-30): mientras hay campana activa, el titular es el de la campana,
+    // no el del comercio. Se certifica con la vitrina sembrada tal como llega el usuario.
+    if (campana) {
+      check("la_campana_vigente_toma_el_titular_del_hero", base.titularTexto === campana.name, {
+        titularTexto: base.titularTexto, campana: campana.name
+      });
+    } else {
+      check("sin_campana_el_hero_usa_el_eslogan_del_comercio", base.titularTexto === String(anonimo.payload?.tagline || base.titularTexto), {
+        titularTexto: base.titularTexto, tagline: anonimo.payload?.tagline ?? null
+      });
+    }
     pinturas.fotoSinTema = await shot(page, "01-vitrina-sin-tema");
+
+    // Se pausa la campana para que el titular propio del tema sea lo que el navegador pinte.
+    if (campana) {
+      await db.comercioPromotion.update({ where: { id: campana.id }, data: { status: "draft" } });
+      restaurarCampana = () => db.comercioPromotion.update({ where: { id: campana.id }, data: { status: campana.status } });
+    }
 
     // === Tema propio del comercio: colores, textos y cartel ===
     const guardado = await call("/api/v1/comercio/settings/storefront/theme", {
@@ -645,6 +673,7 @@ main()
   })
   .finally(async () => {
     // Si la certificacion revienta a mitad, el tenant vuelve a su estado de todos modos.
+    await restaurarCampana().catch((error) => console.error("WARNING: no se pudo devolver la campana a su estado:", error.message));
     if (restaurar) await restaurar().catch((error) => console.error("WARNING: no se pudo restaurar el tenant:", error.message));
     await db.$disconnect();
   });
