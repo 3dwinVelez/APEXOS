@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "cambio": "equipo-contrato-promocion-20261107",
+  "medido": "2026-11-07",
+  "target": {
+    "rama": "develop",
+    "commit": "2cb064e2a8968011e6497735921f8d36d9bd4768",
+    "merge_base_con_desarrollo": "0b03f3fd01d14dce90ade11e2ea4f67cef576146"
+  },
+  "fuente": {
+    "rama": "desarrollo",
+    "commit": "c1e85e286a7080a74a3e47ca54d2b3bfae95b026"
+  },
+  "instrumento": "scripts/certifications/agents-contract-promotion-local.js (cierre_de_lecturas_completo_en_el_candidato)",
+  "conteo": {
+    "rutas": 54,
+    "A": 44,
+    "M": 10,
+    "D": 0,
+    "bilaterales": [
+      "package.json"
+    ]
+  },
+  "bloques": {
+    "contrato": 27,
+    "maquinaria": 12,
+    "certificador": 1,
+    "cierre_de_lecturas": 14
+  },
+  "docs_del_cierre_ausentes_en_el_destino": [
+    "docs/DATABASE_CONVENTIONS.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/00-alcance.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/01-inventario.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/02-matriz-normativa.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/03-matriz-funcional-marcaciones.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/04-matriz-funcional-nomina.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/05-plan-remediacion.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/07-ejecucion-remediacion.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-marcaciones.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-nomina.md",
+    "docs/briefs/_TEMPLATE.md",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md",
+    "docs/project/CONTRATO_EQUIPO_APEXOS.md"
+  ],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-auditor-marcaciones/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-auditor-nomina/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "AGENTS.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/CHANGELOG.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/README.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/TEMPLATE_SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-auditor-marcaciones/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-auditor-nomina/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/registry.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/DATABASE_CONVENTIONS.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/00-alcance.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/01-inventario.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/02-matriz-normativa.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/03-matriz-funcional-marcaciones.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/04-matriz-funcional-nomina.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/05-plan-remediacion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/07-ejecucion-remediacion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-marcaciones.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-nomina.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/_TEMPLATE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/APEXOS_COMPONENT_CATALOG.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/project/CONTRATO_EQUIPO_APEXOS.md"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/coverage.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-contract.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-coverage.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-routing.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-versioning.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/preflight.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/sync-agents.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/agents-contract-promotion-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-coverage.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-preflight.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-versioning.test.js"
+    }
+  ]
+}

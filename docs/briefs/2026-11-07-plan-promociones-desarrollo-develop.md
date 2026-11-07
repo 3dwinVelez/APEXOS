@@ -23,7 +23,7 @@ Inventario completo por paquete: `docs/qa/evidence/plan-promociones-20261107/inv
 
 | # | Paquete | Rutas | Conflictos | Certificación exigida | Autorización |
 |---|---|---|---|---|---|
-| 1 | **Contrato de equipo**: `.qoder/skills/**`, `agents/**`, `AGENTS.md` + la maquinaria `scripts/agents/**`, `scripts/test/agents-*.test.js` y las 5 líneas `agents:*` de `package.json` | 39 (37 `A` / 2 `M` / 0 `D`) | **0** — los blobs de `develop` en esas 27 rutas son idénticos a la merge-base | `scripts/certifications/agents-contract-promotion-local.js` (gates de agentes sobre el árbol del candidato) | ya otorgada por la instrucción general |
+| 1 | **Contrato de equipo**: `.qoder/skills/**`, `agents/**`, `AGENTS.md` + la maquinaria `scripts/agents/**`, `scripts/test/agents-*.test.js`, las 5 líneas `agents:*` de `package.json` + el **cierre de lecturas** que el propio contrato declara (14 documentos ausentes en `develop`) | 54 (44 `A` / 10 `M` / 0 `D`) | **1**: solo `package.json`, y se resuelve por hunk (aporta únicamente las 5 entradas `agents:*` sobre el `package.json` de `develop`) | `scripts/certifications/agents-contract-promotion-local.js` (gates de agentes + cierre de lecturas sobre el árbol del candidato) | ya otorgada por la instrucción general |
 | 2 | **P0 vigencia laboral 2026** (nómina y marcaciones) | 13 hr/prisma + pruebas y certificaciones | **Sí**: `hr/service.js`, `hr/timeLogic.js`, `schema.prisma`, `core/prisma.js` | certificación de nómina/marcaciones sobre el candidato, con las 4 rutas liberadas en `develop` preservadas | **falta**: decisión bilateral `night_start` |
 | 3 | **Contabilidad: facturas recibidas + buzón** | 39 + 4 certificaciones `received-invoices-*` | **Sí**: `accounting/routes.js` y 9 `D` de PYG ampliado/reversión | certificación IMAP + navegador del monitor | **falta**: qué hacer con las 9 rutas `D` (retrointegrar antes, tarea #44) |
 | 4 | **`apex-control` en la API** (la otra mitad del dato de la torre) | 13 + `server.js`, `core/prisma.js`, `middleware/rbac.js`, `fabric/*` | **Sí**, y toca aislamiento por tenant | certificación de health/endpoints + RBAC | **falta**: decisión bilateral del plumbing común |
@@ -45,13 +45,16 @@ Orden: 1 → 2 → 3/7 → 4. El paquete 1 va primero porque es el único que se
 
 ## Criterios de aceptación del paquete 1
 
+El alcance del paquete no lo decide la intuición sino el propio contrato: el certificador calcula su **cierre de lecturas** — los `documents` de `agents/registry.json` (los verifica `agents:check`) más cada ruta citada en la sección `Lecturas obligatorias` de cada skill más el expediente `docs/audits/2026-10-30-marcaciones-nomina/**` que el roster abre. Medido contra `origin/develop = 2cb064e2`, ese cierre tiene **58 rutas** y **14 no existen en el destino**, así que viajan dentro del paquete; si no viajaran, el contrato promotedo obligaría a abrir archivos inexistentes donde aterriza.
+
 | Criterio | Medida |
 |---|---|
-| Agrega, no borra | diff `2cb064e2..candidato` = 39 rutas, `0 D` |
-| Las 27 rutas del contrato viajan idénticas a `desarrollo` | hash de blob ruta por ruta contra `origin/desarrollo` |
-| `package.json` solo aporta las 5 entradas `agents:*` | diff contra `origin/develop` limitado a esas líneas |
+| Agrega, no borra | diff `2cb064e2..candidato` = 54 rutas, `0 D`, `0 R` |
+| Las 54 rutas viajan idénticas a la rama que las certificó | hash de blob ruta por ruta contra `desarrollo` (`--reference=desarrollo`) |
+| `package.json` solo aporta las 5 entradas `agents:*` | diff contra `origin/develop` limitado a esas líneas; el archivo es el único bilateral del paquete |
 | El contrato se ejecuta en el destino | `test:agents`, `agents:check`, `agents:preflight`, `agents:coverage` verdes sobre el árbol del candidato |
-| Toda comando `npm run` citado por el contrato existe en `develop` | el certificador lo enumera; excepción declarada: 4 fichas de `certify:control-tower:*` / `control:test`, que `AGENTS.md` marca como residentes en `desarrollo` |
+| Toda comando `npm run <comando>` citada por el contrato existe en `develop` | el certificador lo enumera; excepción declarada: 4 fichas de `certify:control-tower:*` / `control:test`, que `AGENTS.md` marca como residentes en `desarrollo` |
+| Ninguna lectura obligatoria queda hueca | `cierre_de_lecturas_completo_en_el_candidato`: 0 rutas que deban viajar ausentes y 0 lecturas fuera de alcance |
 | Puertas de promoción | `ALCANCE DE PROMOCION VALIDO` y `AUTORIZACION PRE-QA VALIDA` + `PROMOCION CI ALCANZADA` en local |
 
 ## Lo que este brief NO afirma

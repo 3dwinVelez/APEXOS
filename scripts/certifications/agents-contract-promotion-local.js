@@ -11,7 +11,10 @@
  *
  * Uso (desde el arbol del candidato, con las rutas ya en el index):
  *   node scripts/certifications/agents-contract-promotion-local.js \
- *     --base=origin/develop --output=docs/qa/evidence/<cambio>/contract.json
+ *     --base=origin/develop --reference=desarrollo --output=docs/qa/evidence/<cambio>/contract.json
+ *
+ * --base es la linea base del destino sobre la que se construyo el candidato; --reference es la
+ * version del contrato que se esta certificando (en desarrollo local puede ir delante de origin).
  *
  * No imprime secretos y no toca la red: solo git y scripts locales.
  */
@@ -23,6 +26,7 @@ const root = path.resolve(__dirname, "../..");
 const arg = (name, fallback = "") => (process.argv.find((a) => a.startsWith(`--${name}=`)) || "").split("=").slice(1).join("=") || fallback;
 
 const BASE = arg("base", "origin/develop");
+const REFERENCIA = arg("reference", process.env.APEXOS_CONTRACT_REFERENCE || "origin/desarrollo");
 const OUTPUT = arg("output");
 const EVIDENCE_DIR = OUTPUT ? path.dirname(OUTPUT) : "";
 const FALLO = [];
@@ -48,6 +52,29 @@ function run(cmd, args) {
 function contractPaths() {
   const listed = git(["diff", "--cached", "--name-only", BASE, "--"]).split(/\r?\n/).filter(Boolean);
   return listed.filter((f) => /^(.qoder\/skills\/|agents\/|AGENTS\.md$|scripts\/agents\/|scripts\/test\/agents-|scripts\/certifications\/agents-contract-promotion-local\.js$)/.test(f));
+}
+
+/**
+ * Cierre de lecturas: lo que el propio contrato declara obligatorio.
+ * - los `documents` del registry (los verifica `agents:check`);
+ * - cada ruta citada en la seccion `Lecturas obligatorias` de cada skill;
+ * - el expediente de auditoria que el roster del equipo deja abierto.
+ * Es la lista que responde a la pregunta "promovido el contrato, se puede leer donde aterriza?".
+ */
+const PREFIJO_CONTRATO = /^(docs\/|agents\/|\.qoder\/|scripts\/agents\/)/;
+function closurePaths() {
+  const rutas = new Set();
+  const reg = JSON.parse(git(["show", `${REFERENCIA}:agents/registry.json`]));
+  for (const d of reg.documents || []) rutas.add(d.path);
+  const skills = git(["ls-tree", "-r", "--name-only", REFERENCIA, "--", ".qoder/skills"]).split(/\r?\n/).filter((f) => f.endsWith("SKILL.md"));
+  for (const f of skills) {
+    const texto = git(["show", `${REFERENCIA}:${f}`]).replace(/\r\n/g, "\n");
+    const seccion = texto.match(/## Lecturas obligatorias\n([\s\S]*?)\n## /);
+    if (!seccion) continue;
+    for (const m of seccion[1].matchAll(/`([A-Za-z0-9_.\/-]+?\.[A-Za-z0-9_-]+)`/g)) rutas.add(m[1]);
+  }
+  for (const f of git(["ls-tree", "-r", "--name-only", REFERENCIA, "--", "docs/audits/2026-10-30-marcaciones-nomina"]).split(/\r?\n/).filter(Boolean)) rutas.add(f);
+  return [...rutas].filter((p) => git(["ls-tree", REFERENCIA, "--", p]).trim() !== "").sort();
 }
 
 function npmTokensFrom(paths) {
@@ -116,20 +143,39 @@ try {
     tokens: [...tokens.keys()].sort(), sin_resolver: sinResolver, residencia_de_torre_declarada: residenciaDeclarada
   });
 
-  // 6. Las rutas del contrato viajan byte a byte como en origin/desarrollo.
-  const referencia = process.env.APEXOS_CONTRACT_REFERENCE || "origin/desarrollo";
+  // 6. El cierre de lecturas que el contrato declara existe en el arbol del candidato.
+  const cierre = closurePaths();
+  const enIndex = new Set(git(["ls-files"]).split(/\r?\n/).filter(Boolean));
+  const baseSobreAmbasRamas = git(["merge-base", BASE, REFERENCIA]).trim();
+  const blobEn = (ref, p) => git(["ls-tree", ref, "--", p]).trim().split(/\s+/)[2] || "";
+  const ausentes = [];
+  const fueraDeAlcance = [];
+  for (const p of cierre) {
+    if (enIndex.has(p)) continue;
+    const enDestino = blobEn(BASE, p) !== "";
+    if (enDestino) continue; // ya estaba en el destino: no hace falta promoverlo
+    const desarrolloLoToco = blobEn(baseSobreAmbasRamas, p) === blobEn(REFERENCIA, p);
+    if (PREFIJO_CONTRATO.test(p) && !desarrolloLoToco) ausentes.push(p);
+    else fueraDeAlcance.push({ ruta: p, motivo: PREFIJO_CONTRATO.test(p) ? "identica en ambas ramas desde la merge-base" : "codigo de producto, no contrato" });
+  }
+  record("cierre_de_lecturas_completo_en_el_candidato", ausentes.length === 0 && fueraDeAlcance.length === 0, {
+    rutas_del_cierre: cierre.length, deben_viajar_en_el_paquete: ausentes, sin_resolver_fuera_del_paquete: fueraDeAlcance
+  });
+
+  // 7. Las rutas del paquete viajan byte a byte como en la rama de trabajo.
+  const rutasDelPaquete = [...new Set([...contrato, ...cierre.filter((p) => enIndex.has(p))])].sort();
   const fueraDeParidad = [];
-  for (const f of contrato) {
-    if (/^(docs\/qa\/|scripts\/certifications\/)/.test(f)) continue;
-    const esperado = git(["ls-tree", referencia, "--", f]).trim().split(/\s+/)[2] || "";
+  for (const f of rutasDelPaquete) {
+    if (/^docs\/qa\//.test(f)) continue;
+    const esperado = blobEn(REFERENCIA, f);
     const medido = git(["hash-object", "-w", "--path", f, path.join(root, f)]).trim();
     if (esperado !== medido) fueraDeParidad.push({ file: f, esperado, medido });
   }
   record("rutas_identicas_a_la_rama_de_trabajo", fueraDeParidad.length === 0, {
-    referencia, rutas_comparadas: contrato.filter((f) => !/^(docs\/qa\/|scripts\/certifications\/)/.test(f)).length, diferencias: fueraDeParidad
+    referencia: REFERENCIA, rutas_comparadas: rutasDelPaquete.length, diferencias: fueraDeParidad
   });
 
-  // 7. Inventario del candidato contra el destino: sin borrados.
+  // 8. Inventario del candidato contra el destino: sin borrados.
   const inventario = git(["diff", "--cached", "--name-status", BASE]).split(/\r?\n/).filter(Boolean).map((l) => l.split("\t"));
   const conteoInventario = { A: 0, M: 0, D: 0, R: 0 };
   for (const parts of inventario) {
@@ -143,7 +189,7 @@ try {
     base: BASE, ...conteoInventario, evidencia_pendiente_de_add: pendientes, rutas_totales_del_paquete: total
   });
 
-  // 8. Negativos: la CI del destino rechaza la forma equivocada (el lesson de la ronda 7B).
+  // 9. Negativos: la CI del destino rechaza la forma equivocada (el lesson de la ronda 7B).
   const negativos = [];
   const guard = path.join(root, "scripts/git-governance-guard.js");
   const prDesdePromocion = spawnSync(process.execPath, [guard, "ci"], {
@@ -171,7 +217,10 @@ try {
     medido_en_commit: head,
     nota_metodo: "El sha declarado es el HEAD vigente al momento de la medicion (la linea base del candidato); el arbol medido es el del index mas los archivos de evidencia que este mismo run escribe. Un archivo no puede llevar el sha del commit que lo contiene.",
     base: BASE,
+    referencia: REFERENCIA,
     rutas_del_contrato: contrato,
+    rutas_del_paquete: rutasDelPaquete,
+    cierre_de_lecturas: cierre,
     fallidos: FALLO,
     checks
   };
