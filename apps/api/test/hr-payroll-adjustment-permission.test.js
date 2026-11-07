@@ -9,10 +9,26 @@ const test = require("node:test");
 // Las rutas hermanas (listar y borrar) si los tenian, por eso el hoyo solo estaba en la escritura.
 
 const ROUTES = path.resolve(__dirname, "../src/modules/hr/routes.js");
-const ROUTE_LINE = /fastify\.(get|post|put|patch|delete)\("([^"]+)"[^\n]*/g;
+const ts = require("typescript");
 
 function routeLines(source) {
-  return [...source.matchAll(ROUTE_LINE)].map((match) => ({ method: match[1], url: match[2], line: match[0] }));
+  const file = ts.createSourceFile("routes.js", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const routes = [];
+  function visit(node) {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)
+      && node.expression.expression.getText(file) === "fastify"
+      && ["get", "post", "put", "patch", "delete"].includes(node.expression.name.text)
+      && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
+      const options = node.arguments[1];
+      // Inspect the options object, including multiline declarations; never accept
+      // an unrelated permission check inside a handler as a route guard.
+      routes.push({ method: node.expression.name.text, url: node.arguments[0].text,
+        line: options && ts.isObjectLiteralExpression(options) ? options.getText(file) : "" });
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  return routes;
 }
 
 test("el alta de ajuste de nomina exige el permiso de escritura de nomina en sus dos rutas", () => {
