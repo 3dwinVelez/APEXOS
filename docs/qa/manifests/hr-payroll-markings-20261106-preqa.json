@@ -1,0 +1,105 @@
+{
+  "change_id": "hr-payroll-markings-20261106",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277",
+  "commit": "17efd9c6652abddab7114a38c70e4f2db4fdb69a",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-payroll-markings-local.js",
+    "evidence": [
+      "../certifications/hr-payroll-markings-20261106.md",
+      "hr-payroll-markings-20261106-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-payroll-markings-local.js",
+    "evidence": [
+      "../certifications/hr-payroll-markings-20261106.md",
+      "hr-payroll-markings-20261106-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Propietario: sube a qa; autorizacion previa de la misma rama auxiliar y fusion por PR",
+    "approved_at": "2026-11-07T02:44:35.546Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "17efd9c6652abddab7114a38c70e4f2db4fdb69a",
+    "target": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277",
+    "unit_tests": {
+      "passed": 50,
+      "failed": 0
+    },
+    "full_flow": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "started_at": "2026-11-07T02:42:29.672Z",
+      "checks": [
+        "preview links three complete days without stored workdays and has no payroll/workday writes",
+        "period boundaries, incomplete day, RBAC and tenant isolation are enforced",
+        "browser payroll trial displays linked days and hours in the requested fortnight",
+        "definitive liquidation persists the same hours and repeated trial remains unchanged",
+        "stale processed rows are replaced in calculation without modifying the stored cache",
+        "approved day correction replaces the raw day without duplicate pay"
+      ],
+      "finished_at": "2026-11-07T02:43:37.253Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1794019321157",
+      "source_database_modified": false,
+      "fixture_schema_hunk": "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-07T02:43:37.351Z"
+    },
+    "environment": "Actual local PostgreSQL without TimeRoute.kind, HTTP API and Chrome, synthetic employees and punches. No remote writes."
+  }
+}
