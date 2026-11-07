@@ -4,8 +4,9 @@ const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const certificate = process.argv.find(arg => arg.startsWith('--certificate='))?.slice(14) || 'hr-employee-user-link-local.js';
-if (!['hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js'].includes(certificate)) throw Error('Unsupported certification script');
+if (!['hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js'].includes(certificate)) throw Error('Unsupported certification script');
 const outputDirectories = {
+  'hr-payroll-markings-local.js': 'hr-payroll-markings',
   'hr-punch-mobile-evidence-local.js': 'hr-punch-mobile-evidence',
   'hr-landing-hub-local.js': 'hr-landing-hub'
 };

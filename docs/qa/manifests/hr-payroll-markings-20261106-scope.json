@@ -1,0 +1,138 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-payroll-markings-20261106",
+  "base_commits": {
+    "develop": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277"
+  },
+  "target_head": "21ef1a6f494c4f0f78fecc0c5bc50ad42f79c277",
+  "certified_commit": "17efd9c6652abddab7114a38c70e4f2db4fdb69a",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "17efd9c6652abddab7114a38c70e4f2db4fdb69a",
+    "original_commits": [
+      "618cdd9b",
+      "1f1fa718"
+    ],
+    "reconstruction": "Only the reviewed payroll workday changes reconstructed over the latest develop, preserving prior photo and identity changes."
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/payrollWorkdays.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-payroll-adjustment-permission.test.js",
+    "apps/api/test/hr-payroll-workdays.test.js",
+    "docs/qa/certifications/hr-payroll-markings-20261106.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-payroll-markings-local.js"
+  ],
+  "change_intent": {
+    "summary": "Derive payroll preview and final calculation from current TimePunch; preserve payroll persistence, corrections and tenant isolation.",
+    "modules": [
+      "hr",
+      "nomina"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/payrollWorkdays.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-payroll-adjustment-permission.test.js",
+    "apps/api/test/hr-payroll-workdays.test.js",
+    "docs/qa/certifications/hr-payroll-markings-20261106.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-payroll-markings-local.js",
+    "docs/qa/manifests/hr-payroll-markings-20261106-scope.json",
+    "docs/qa/manifests/hr-payroll-markings-20261106-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/payrollWorkdays.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-payroll-adjustment-permission.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-workdays.test.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-payroll-markings-20261106.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-payroll-markings-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-payroll-markings-20261106-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-payroll-markings-20261106-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "preview_without_payroll_writes",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    {
+      "name": "definitive_liquidation_persistence",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    {
+      "name": "date_boundaries_and_incomplete_workdays",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    {
+      "name": "corrections_and_cache_without_duplicate_hours",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    {
+      "name": "tenant_isolation_and_rbac",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    },
+    {
+      "name": "legacy_route_schema_compatibility",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-payroll-markings-20261106.md",
+        "hr-payroll-markings-20261106-preqa.json"
+      ]
+    }
+  ],
+  "traceability": "Implemented on desarrollo then reconstructed over current develop. No unrelated files, migrations, deletions or infrastructure."
+}

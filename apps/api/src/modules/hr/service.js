@@ -8,6 +8,7 @@ const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath
 const { buildRouteEventSummaries } = require("./routeEventSummaries");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 const hrPolicy = require("./policy");
+const { loadPayrollWorkdays } = require("./payrollWorkdays");
 const { resolveTenantEmployeeOrganization, organizationTreeFromConfig } = require("./organization");
 const { resolveExplicitParty, partyCommonFields, partyMatchesSearch, compactTaxId, normalizeTaxId } = require("./laborEntityPartyMatcher");
 const { calculateSocialContributionSegments, commercialDaysBetween: commercialDayCount } = require("./socialContributionSegments");
@@ -5336,11 +5337,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     return Number(concept.factor || (1 + Number(concept.percent || 0) / 100) || 1);
   };
   const employeeIds = employees.map((employee) => employee.id);
-  const [workdays, adjustments, libranzasByEmployee, salarySnapshots, calendarDays, scheduleRoutes] = await Promise.all([
-    employeeIds.length ? prisma.processedWorkday.findMany({
-      where: { employee_id: { in: employeeIds }, date: { gte: start, lt: endExclusive } },
-      orderBy: { date: "asc" }
-    }) : [],
+  const [adjustments, libranzasByEmployee, salarySnapshots, calendarDays, scheduleRoutes] = await Promise.all([
     employeeIds.length ? prisma.$queryRaw`
       SELECT *
       FROM th_nomina_ajustes
@@ -5358,6 +5355,10 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     activeCalendarDaysByDate(tenantId, start, end, input.country || "CO"),
     employeeIds.length ? prisma.timeRoute.findMany({ where: { date: { gte: start, lt: endExclusive } }, select: { date: true, employees: true, kind: true } }).catch(() => []) : []
   ]);
+  const liveWorkdays = await loadPayrollWorkdays({ db: prisma, tenantId, employees, start, endExclusive, parameters: { ...DEFAULT_PARAMS, ...payrollConfig.parameters }, calendarDays });
+  // Approved day corrections replace the raw day, rather than paying its hours twice.
+  const correctedDays = new Set(adjustments.filter(row => isWorkdayCorrection(row) && !isExternalWorkday(row)).map(row => `${row.employee_id}:${String(row.metadata?.work_date || "").slice(0, 10)}`));
+  const workdays = liveWorkdays.filter(day => !correctedDays.has(`${day.employee_id}:${new Date(day.date).toISOString().slice(0, 10)}`));
   // Descanso explicito desde la malla (TimeRoute con kind='descanso'). Un dia se paga solo si
   // tiene marcacion, descanso explicito o licencia remunerada; cualquier otro dia no se paga.
   const employeeAliasKeys = new Map();
@@ -5412,10 +5413,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const monthEndExclusive = startOfDay(`${nextYear}-${String(nextMonth).padStart(2, "0")}-01`);
     transportMonthPeriodDays = daysInclusive(monthStart, new Date(monthEndExclusive.getTime() - 86400000));
     const [monthWorkdays, monthAdjustments] = await Promise.all([
-      prisma.processedWorkday.findMany({
-        where: { employee_id: { in: employeeIds }, date: { gte: monthStart, lt: monthEndExclusive } },
-        select: { employee_id: true, date: true }
-      }).catch(() => []),
+      loadPayrollWorkdays({ db: prisma, tenantId, employees, start: monthStart, endExclusive: monthEndExclusive, parameters: { ...DEFAULT_PARAMS, ...payrollConfig.parameters }, calendarDays: await activeCalendarDaysByDate(tenantId, monthStart, new Date(monthEndExclusive.getTime() - 86400000), input.country || "CO") }),
       prisma.$queryRaw`
         SELECT employee_id, period_key, adjustment_type, concept_code, minutes, metadata
         FROM th_nomina_ajustes
@@ -5712,7 +5710,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       net: money(gross - deductions),
       employer_cost: gross,
       lines: allLines,
-      source_summary: { days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: salaryBaseForDeductions, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
+      source_summary: { time_punch_workdays: days.filter(day => day.source === "time_punch").length, days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: salaryBaseForDeductions, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
     };
   });
 }
