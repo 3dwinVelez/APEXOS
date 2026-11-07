@@ -2,8 +2,8 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.10.0
-updated_at: 2026-11-06
+version: 2.11.0
+updated_at: 2026-11-07
 contract: 2
 ---
 
@@ -77,6 +77,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 
 23. **Todo rojo de medición se atribuye antes de que nadie toque el producto.** Un check de contraste, de blanco táctico o de desborde que sale rojo tiene dos causas posibles y el orquestador exige distinguirlas con una sonda focalizada antes de autorizar el cambio: defecto de producto (la pantalla está mal) o defecto de arnés (el medidor no reproduce lo que el navegador pintó). El brief de una pasada UX guarda las dos listas por separado —«lo que resultó ser del arnés» y «lo que sí era de producto»— con la cifra y la cadena de fondos, porque un rojo mal atribuido produce un cambio visual real para arreglar una matemática falsa. Por qué: el 2026-11-06 la vitrina reportó 1,25:1 en la insignia de descuento; la sonda mostró que el navegador pintaba 5,7:1 y que el error era el orden de composición del medidor. Sin esa atribución se habría oscurecido el promo del tema claro, que se veía bien.
 
+24. **La autorización del dueño cubre el mecanismo, y el mecanismo lo fija el destino — no la máquina que promueve.** Cuando la autorización es «promover el módulo X a `develop` de manera controlada por rama auxiliar + PR», el cierre del orquestador no termina en las puertas de humanos (`qa:promotion:scope`, `qa:preqa:evidence`) ni en las suites: el candidato tiene que pasar **el contrato de CI del destino** antes de empujar la rama auxiliar. Eso es una medida, no una opinión, y se corre en local: `node scripts/git-governance-guard.js ci-promotion <candidato> <target> develop refs/heads/<rama>` y `node scripts/certifications/scoped-qa-governance-local.js`. Tres consecuencias: (a) la forma autorizada no es negociable — este repo enruta `ci-promotion` **solo** para head refs `codex/qa-<algo>`; una rama con prefijo inventado cae en el modo `ci` y se rechaza aunque el árbol sea perfecto; (b) el contrato del destino puede exigir en el candidato rutas que la política de alcance de la ronda quería dejar fuera (aquí: los dos manifiestos y la evidencia que ellos citan); la salida **no** es relajar el gate ni ampliar el alcance del producto, sino declarar la excepción con su lista exacta en el brief; y (c) cuando el gate responde por la forma, no se pide una autorización nueva: se repone la rama con la forma autorizada, se cierra el PR viejo diciendo por qué y se deja la historia vieja alcanzable en un respaldo. Por qué: el 2026-11-07 la verde del Comercio y sus dos puertas de humanos estaban listas y el primer intento (PR #82, rama `promocion/...`) quedó rojo en el primer paso de GitHub; la segunda rama, con el mismo árbol de producto medido en 201 rutas y 0 diferencias por hash de blob, dejó los seis checks en verde. Queda un defecto documental conocido sin corregir: `apexos-qa` tiene dos reglas numeradas 30 y no se renumeraron aquí, porque las rondas anteriores citan esas reglas por número en briefs y en `agents/CHANGELOG.md`; la renumeración se hace en una pasada dedicada con sus citas, nunca de paso dentro de una promoción.
+
 ## Checklist de intervención
 
 Antes:
@@ -102,6 +104,7 @@ Después:
 - [ ] Agentes dueños bumpeados con sus controles nuevos y `agents/CHANGELOG.md` actualizado.
 - [ ] `agents:sync`, `agents:check`, `test:agents`, `agents:preflight` y `agents:coverage` en verde.
 - [ ] Pruebas y certificación exigida ejecutadas; un fallo o pendiente bloquea la publicación.
+- [ ] Contrato de CI del destino corrido en local (o verificado en GitHub) antes de dar por publicada una rama auxiliar.
 - [ ] Commit y `git push origin desarrollo` realizados.
 - [ ] Reporte final con agentes consultados, agentes actualizados y autorizaciones pendientes.
 
@@ -136,3 +139,4 @@ Después:
 - Ocultar un bloqueo para cerrar la entrega.
 - Heredar la «limitación de ambiente» de una ronda anterior sin reproducirla en la nueva.
 - Cerrar una intervención con un check que no puede fallar.
+- Declarar verde una promoción hacia `develop` sin haber pasado el contrato de CI del destino, o asumir que la forma de una rama auxiliar es un detalle estético.

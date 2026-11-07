@@ -2,7 +2,7 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.5.0
+version: 2.6.0
 updated_at: 2026-11-07
 contract: 2
 ---
@@ -58,6 +58,8 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
 
 22. **La auditoría del candidato es en las dos direcciones y por hash de blob; y se rehace contra el target vigente antes de publicar.** Dos reglas que la ronda 6 no tenía. (a) **Bidireccional**: el cotejo recorre los sets de rutas en ambos sentidos —`comm -23` y `comm -13` de `git ls-tree -r --name-only <árbol certificado> | grep -i <concepto>` contra el del candidato— porque una ruta que el candidato *nunca tuvo* jamás aparece en una comparación que itera sobre las rutas del candidato. Y se mide por hash de blob (`git rev-parse <ref>:<ruta>`), nunca con archivos del árbol de trabajo: entre worktrees el checkout con CRLF reportó 42 rutas Comercio como «distintas» siendo idénticas. (b) **Target vigente, no el baseline local**: antes de empujar se vuelve a medir `origin/<target>`; si avanzó, el candidato se **reconstruye** sobre el commit nuevo y se comprueba que las rutas ajenas de esa promoción permanecen byte a byte (`IGUAL ×N`). Un candidato viejo sobre un target que avanzó muestra las rutas ajenas como `D` en su diff, el gate de alcance las rechaza por falta de `allowed_deletions` y un merge descuidado las revierte. La salida nunca es `--force` sobre la rama auxiliar ya publicada: se abre la rama nueva con la fecha de la ronda y el PR viejo se cierra declarando por qué. Por qué: el 2026-11-06 el candidato de Comercio perdió `scripts/seed-comercio-demo.js` — prerequisito declarado de sus dos certificaciones de navegador — y el 2026-11-07 `develop` avanzó a `22fdf222` con 9 rutas de RRHH que el candidato marcaba como borrados; se reconstruyó sobre el target nuevo y las 9 quedaron `IGUAL ×9`.
 
+23. **La forma de la rama auxiliar es parte del contrato de promoción, y se verifica localmente antes de empujar.** La CI de este repo no valida cualquier rama auxiliar hacia `develop`: `.github/workflows/ci.yml` enruta a `git-governance-guard.js ci-promotion` **solo** cuando el head ref casa `/^codex\/qa-[^/]+$/`; una rama `promocion/...`, `feature/...` o `chore/...` cae en el modo `ci`, que únicamente admite `desarrollo` y responde `GOBIERNO GIT BLOQUEADO: PR hacia develop solo desde desarrollo`. El nombre no es un detalle de estilo: con `ci-promotion` entran exigencias que un manifiesto «correcto» puede no cumplir. Las que se miden: los dos manifiestos (`-scope.json` y `-preqa.json`) tienen que estar **dentro del diff `target..candidato`** (versionados en el candidato, no solo en la máquina que promueve); `promotion_branch` debe ser exactamente el head ref en ambos; `certified_functional_paths` debe igualar el diff exacto de `certified^..certified`; y todo lo que cambie después del `certified_commit` se limita a esas rutas más un conjunto cerrado de gobernanza. Consecuencia que hay que aceptar por escrito: **la evidencia estampada dentro del commit certificado ya no se puede editar**, y un archivo no puede llevar el sha del commit que lo contiene. Receta antes de empujar: `node scripts/git-governance-guard.js ci-promotion <candidate> <target> develop refs/heads/<rama>` y `node scripts/certifications/scoped-qa-governance-local.js` — si el contrato del destino no pasa aquí, tampoco pasa en GitHub. Cuando el rechazo es por la forma, la salida es publicar la rama con la forma autorizada, cerrar el PR viejo con un comentario que diga por qué, y dejar los comites viejos alcanzables en una rama de respaldo; **nunca** `--force` sobre la rama publicada ni borrar la historia ajena. Por qué: el 2026-11-07 el PR #82 del Comercio (`promocion/comercio-develop-20261107`) estuvo rojo en el primer paso de CI teniendo las dos puertas de promoción verdes; se publicó `codex/qa-comercio-develop-20261107` sobre el mismo árbol de producto (201 rutas, 0 diferencias por hash de blob) y los seis checks quedaron en verde.
+
 ## Checklist de intervención
 
 Antes:
@@ -72,6 +74,7 @@ Durante:
 - [ ] Commit con mensaje que describe el cambio real y un solo módulo.
 - [ ] `git diff --cached` revisado por secretos y artefactos.
 - [ ] Manifiesto y evidencia coherentes con el candidato y el target remoto.
+- [ ] Forma del head ref verificada contra el contrato de CI del destino, y `ci-promotion` + `scoped-qa-governance-local` corridos en local antes de empujar la rama auxiliar.
 
 Después:
 
@@ -109,3 +112,6 @@ Después:
 - Hacer `push` a `develop` o `main` por iniciativa propia.
 - Publicar con `--force` o `--no-verify`.
 - Borrar archivos no rastreados del usuario.
+- Abrir el PR hacia `develop` desde una rama auxiliar con nombre libre (`promocion/*`, `chore/*`) y dar por hecho que la CI la va a tratar como promoción.
+- Corregir el contenido de un candidato para «arreglar» un rojo de CI causado por la forma de la rama o por un manifiesto mal apuntado.
+- Reescribir la evidencia de un commit certificado después de publicarlo.

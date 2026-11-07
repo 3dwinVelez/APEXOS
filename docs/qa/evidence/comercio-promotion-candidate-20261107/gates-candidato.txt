@@ -1,10 +1,14 @@
 CANDIDATO DE PROMOCION COMERCIO -> develop — puertas medidas en el arbol del candidato (ronda 7)
 ==================================================================================
-Rama auxiliar : promocion/comercio-develop-20261107
+Rama auxiliar : codex/qa-comercio-develop-20261107 (reemplaza a promocion/comercio-develop-20261107; ver RONDA 7B)
 Worktree      : C:/Users/mq1/Documents/Proyectos/APEXOS-comercio-develop
-Tip candidato : b676ebad95a5c7007798791659613d7d389a26b6
+Tip candidato : el comite de manifiestos, inmediatamente encima del comite certificado del modulo;
+                ambos shas quedan estampados en docs/qa/manifests/comercio-modulo-completo-20261107-*.json
 Baseline      : origin/develop = 22fdf222 (merge PR #81: nominas-marcaciones, promovido despues del candidato anterior)
-Comites del candidato sobre el baseline: 2 (el cambio neto del modulo reconstruido sobre el target vigente)
+Comites del candidato sobre el baseline: 2
+  1) el cambio neto del modulo reconstruido sobre el target vigente + la evidencia que los manifiestos referencian
+  2) los dos manifiestos (alcance v2 y pre-QA), uniques rutas fuera del producto en todo el PR
+Inventario    : 232 rutas = 210 A / 22 M / 0 D  (201 de producto + 29 de evidencia + 2 manifiestos)
 
 POR QUE SE RECONSTRUYO EL CANDIDATO
 -----------------------------------
@@ -79,11 +83,11 @@ PLUMBING COMPARTIDO (22 rutas M) Y QUE SE PIERDE CADA UNA
 PUERTAS EJECUTADAS SOBRE EL TIPO b676ebad
 -----------------------------------------
 $ node --test apps/api/test/*.test.js
-  # tests 1050 / # pass 1048 / # fail 0 / # skipped 2      exit=0   (api-suite.log)
+  # tests 1050 / # pass 1048 / # fail 0 / # skipped 2      exit=0   (api-suite-salida.txt)
   (1050, no 1043: el candidato ahora lleva las 7 pruebas nuevas de payrollWorkdays.js de develop)
 
 $ cd apps/web && node --experimental-strip-types --test <todos los test/*.test.mjs>
-  # tests 749 / # pass 746 / # fail 3      (web-suite.log)
+  # tests 749 / # pass 746 / # fail 3      (web-suite-salida.txt)
     not ok 88  - el registro de funciones cubre todas las rutas del dashboard
     not ok 301 - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
     not ok 303 - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
@@ -147,3 +151,56 @@ LIMITE NO CERRADO (se declara, no se finge)
   Supabase de develop requiere la sesion del dueno (no se tocan sus credenciales). En local la subida
   real del banner si esta certificada (driver minio, check "la_vitrina_pide_el_banner_subido_al_almacen"
   en verde dentro de los 78).
+
+RONDA 7B — LA PUERTA DE CI RECHAZA LA RAMA AUXILIAR GENERICA
+------------------------------------------------------------
+El PR #82 (rama promocion/comercio-develop-20261107) dejo el job "Git Governance Guard" en rojo:
+
+    GOBIERNO GIT BLOQUEADO: PR hacia develop solo desde desarrollo. Origen: promocion/comercio-develop-20261107.
+
+No es una falla del modulo: es la regla de scripts/git-governance-guard.js (assertGithubRef, modo `ci`),
+que solo admite PR a develop desde `desarrollo`. Como origin/develop nunca contuvo el modulo, un PR desde
+`desarrollo` arrastraria la torre de control (apex-control / control-tower), el buzon de correo y facturas
+recibidas, que el manifiesto de alcance deja expresamente fuera.
+
+La misma puerta tiene una ruta prevista para promociones acotadas por rama auxiliar (lineas 28-40 de
+.github/workflows/ci.yml): si la rama cabe en `codex/qa-[^/]+`, el job no mira el flujo de ramas y corre el
+guard en modo `ci-promotion`, que exige:
+
+  - exactamente un manifiesto *-scope.json y uno *-preqa.json DENTRO del diff del candidato
+  - promotion_branch igual al nombre real de la rama auxiliar
+  - approval.authorization_flags.auxiliary_branch_promotion = true
+  - candidate_source.branch = desarrollo y candidate_source.commit = certified_commit, ancestro del
+    candidato y NO contenido en el target
+  - certified_functional_paths = el diff exacto del comite certificado, y ninguna ruta de producto puede
+    cambiar despues de ese comite (solo los manifiestos y las rutas de gobernanza declaradas)
+  - todo script y toda evidencia referenciada por los manifiestos debe estar versionado en el candidato
+  - los dos validadores oficiales corren dentro del guard (validate-promotion-scope.js y
+    validate-preqa-promotion-evidence.js)
+
+Se reconstruyo el candidato con esa forma. El arbol de producto no cambio: las 201 rutas comparadas por hash
+de blob contra el tip anterior dan 0 diferencias. Lo unico que se sumo al comite certificado son los 29
+archivos de evidencia que los manifiestos referencian, y los dos manifiestos van en un comite aparte. La
+convencion del repositorio deja los .log fuera del control de versiones (.gitignore:17 `*.log`), asi que las
+salidas de suite viajan como *-salida.txt en lugar de .log.
+
+Medida local, en el worktree del candidato:
+
+    $ node scripts/git-governance-guard.js ci-promotion HEAD origin/develop develop codex/qa-comercio-develop-20261107
+    PROMOCION CI ALCANZADA: comercio-modulo-completo-20261107
+
+    $ node scripts/certifications/scoped-qa-governance-local.js --output=<temp>/scoped-cert.json
+    status: passed | checks: 20 | fallidos: ninguno        (el paso que la CI corre para estas ramas)
+
+    $ for p in $(git diff --name-only 22fdf222 <tip-anterior>); do rev-parse HEAD:$p vs <tip-anterior>:$p; done
+    rutas=201 diferencias=0
+
+El PR #82 se cierra en favor del que abre esta rama: su arbol de producto es identico, pero el manifiesto que
+publicaba (201 rutas, sin la evidencia versionada) ya no describe lo que la CI de una rama auxiliar valida.
+
+El comite certificado se reconstruyo una ultima vez para que la evidencia que viaja dentro de el (este archivo y
+pr-desarrollar.md) describa la ruta final y no la rama abandonada. De ahi el cierre circular que se declara en los
+limites: un archivo no puede estampar el sha del comite que lo contiene, asi que los dos unicos lugares donde viven
+los shas finales del candidato son los manifiestos (comite 2, encima del certificado) y la pagina del PR. La regla
+del guard que fija ese orden es la linea 173 de scripts/git-governance-guard.js: ninguna ruta del comite certificado
+puede cambiar despues de el, asi que la evidencia no puede reescribirse a posteriori.

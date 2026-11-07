@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.18.0
+version: 2.19.1
 updated_at: 2026-11-07
 contract: 2
 ---
@@ -102,6 +102,8 @@ Antes de actuar, leer en este orden:
 
 34. **Un código de estado no es una causa: la prueba exige el código de negocio y el conteo de residuales.** Al certificar el aislamiento multi-tenant de Comercio, dos checks «pasaron» leyendo solo `status === 404`: el módulo no tiene `GET /comercio/customers/:id` ni `GET /comercio/expenses/:id`, así que el 404 lo producía el router de Fastify, no el filtro de tenant — el arnés habría declarado aislamiento perfecto contra un endpoint inexistente. Y en la limpieza, `prisma.user.deleteMany` no borra: el middleware de *soft delete* lo convierte en `updateMany({active:false})` y deja la fila, por eso la primera corrida reportó 0 empresas pero 9 usuarios residuales. Regla: (a) todo rechazo se afirma con su **código de negocio** (`PRODUCT_NOT_FOUND`, `SALE_NOT_FOUND`, `MODULO_NO_HABILITADO`, `PERMISO_DENEGADO`, `CATALOG_NOT_FOUND`) y la celda se escribe contra rutas que existan de verdad en la tabla del módulo; (b) toda certificación que monta fixtures cuenta los residuales por tabla —incluidas `User`, `Role`, `Permission`, `AuthorizationSession` y `Tenant`— y borra con SQL crudo cuando el modelo está en `SOFT_DELETE`, porque una limpieza incompleta contamina la siguiente corrida y el ambiente compartido. Por qué: el 2026-11-06 `scripts/certifications/comercio-tenant-rbac-local.js` pasó de dos falsos verdes y nueve usuarios huérfanos a 53 checks con `LIMPIEZA {"residuales":[]}`.
 
+35. **La evidencia que un manifiesto cita tiene que existir en el candidato, y eso fija su nombre y su momento.** `git-governance-guard.js` no se conforma con que la salida exista en la máquina: `assertManifestRefs` / `candidatePath` pasan cada `script` y cada `evidence` nombrado en los manifiestos por `git cat-file -e <candidato>:<ruta>` y rechazan rutas absolutas o que escapen el repositorio. Tres consecuencias operativas, todas medidas en la ronda 7 del Comercio: (a) un archivo que el `.gitignore` excluye **no puede ser evidencia citada** — los `*.log` de las suites quedaron fuera del candidato y hubo que volcar la misma salida con nombre versionable (`api-suite-salida.txt`, `web-suite-salida.txt`); (b) el candidato de una rama auxiliar arrastra la **excepción documentada** a la regla de «la evidencia no se promueve»: van versionados los dos manifiestos, las rutas de evidencia que esos manifiestos citan (14 en el Comercio) y las que forman el inventario exacto del `certified_commit` (29 en total en ese directorio); la lista y su motivo se escriben en el brief, y ni una ruta más; (c) **la evidencia se estampa antes del commit certificado y no se toca después**, porque el guard solo admite cambios posteriores dentro de `certified_functional_paths` más un conjunto cerrado de gobernanza — y ningún archivo puede llevar el sha del commit que lo contiene, así que la cabecera declara el commit **medido**, no el que publica. Antes de dar la certificación por buena, se corre el contrato local del destino (`ci-promotion` + `scoped-qa-governance-local.js`), que es lo que reproduce GitHub. Por qué: el 2026-11-07 el candidato se reconstruyó dos veces — la primera porque dos salidas citadas eran `.log` ignorados, la segunda porque el `gates-candidato.txt` seguía mostrando el sha reemplazado `b676ebad` — y en ambas el rojo lo produjo el contrato de promoción, no el producto.
+
 ## Checklist de intervención
 
 Antes:
@@ -110,6 +112,7 @@ Antes:
 - [ ] Brief o manifiesto con alcance exacto y capacidades protegidas.
 - [ ] Datos y tenant de prueba identificados (nunca producción).
 - [ ] Comando de certificación y su salida esperada definidos.
+- [ ] Rutas de evidencia citadas por los manifiestos confirmadas como versionables (no ignoradas por `.gitignore`) y presentes en el candidato.
 
 Durante:
 
@@ -138,6 +141,7 @@ Después:
 - Manifiesto de alcance validado y resultado de la puerta (`qa:preqa:evidence` o `qa:approval:evidence`).
 - Destino: `docs/qa/evidence/<cambio>/` con prefijo por dominio (`api-`, `web-`, `db-`, `security-`, `qa-`).
 - Si no se ejecutó, se escribe `BLOQUEO: <motivo>` y se informa al orquestador.
+- Cuando la certificación respalda una promoción por rama auxiliar, se pega además la salida del contrato local del destino (`ci-promotion` y `scoped-qa-governance-local`), no solo las puertas de humanos.
 
 ## Handoff
 
@@ -166,3 +170,4 @@ Después:
 - Presentar un fallo de ambiente (bucket sin crear, cuota gratuita 402) como verificado o mezclarlo con el defecto del producto.
 - Aceptar un 5xx en un check «para que la gate no se caiga» y llamarlo limitación del ambiente sin reproducirlo.
 - Certificar una subida por el código del `POST` sin leer el objeto en el almacén ni verlo pintado en el navegador.
+- Citar como evidencia un archivo que el `.gitignore` excluye, o reescribir la evidencia de un commit certificado para que muestre el sha del commit que la publica.
