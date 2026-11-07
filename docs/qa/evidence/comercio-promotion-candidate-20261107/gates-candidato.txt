@@ -1,0 +1,149 @@
+CANDIDATO DE PROMOCION COMERCIO -> develop — puertas medidas en el arbol del candidato (ronda 7)
+==================================================================================
+Rama auxiliar : promocion/comercio-develop-20261107
+Worktree      : C:/Users/mq1/Documents/Proyectos/APEXOS-comercio-develop
+Tip candidato : b676ebad95a5c7007798791659613d7d389a26b6
+Baseline      : origin/develop = 22fdf222 (merge PR #81: nominas-marcaciones, promovido despues del candidato anterior)
+Comites del candidato sobre el baseline: 2 (el cambio neto del modulo reconstruido sobre el target vigente)
+
+POR QUE SE RECONSTRUYO EL CANDIDATO
+-----------------------------------
+Mientras se cerraba la ronda 6, develop avanzo de 21ef1a6f a 22fdf222 con 9 rutas nuevas de RRHH
+(payrollWorkdays.js, service.js, dos pruebas, dos certificaciones y dos manifiestos). El candidato
+anterior (423d8cb0) seguia montado sobre 21ef1a6f, asi que su diff contra el target vigente mostraba
+esas 9 rutas como borrados: el gate de alcance las habria rechazado y un merge sin cuidado las habria
+revertido. Se reconstruyo el cambio neto del modulo sobre la linea base nueva en vez de forzar el
+historial de la rama auxiliar (no hay autorizacion de force push).
+
+Medida de que la reconstruccion no perdio el trabajo de RRHH, comparando hashes de blob (inmune al
+ruido CRLF del checkout):
+  $ for p in $(git diff --name-only 21ef1a6f..22fdf222); do git rev-parse HEAD:$p; git rev-parse 22fdf222:$p; done
+  IGUAL x9   -> las 9 rutas de la promocion #81 quedan byte a byte como estan en develop
+
+INVENTARIO NETO (fuente de verdad de los manifiestos)
+----------------------------------------------------
+$ git diff --name-status origin/develop..HEAD | awk '{print $1}' | sort | uniq -c
+    179 A
+     22 M
+      0 D
+Cero borrados, cero rutas de otros modulos fuera del plumbing compartido declarado abajo.
+
+AUDITORIA BIDIRECCIONAL CONTRA EL ARBOL CERTIFICADO (la leccion de la ronda 6)
+-----------------------------------------------------------------------------
+La ronda 6 perdio scripts/seed-comercio-demo.js porque el cotejo era en una sola direccion (recorria
+las rutas del candidato y buscaba su par en el arbol certificado; una ruta que el candidato nunca tuvo
+jamais se reporta). Esta ronda se midio en las dos direcciones y por hash de blob:
+  $ git ls-tree -r --name-only b3847278 | grep -iE "comercio" | sort > set-certificado   (173 rutas)
+  $ git ls-tree -r --name-only HEAD     | grep -iE "comercio" | sort > set-candidato     (173 rutas)
+  $ comm -23 set-certificado set-candidato   -> vacio (no falta ninguna)
+  $ comm -13 set-certificado set-candidato   -> vacio (no sobra ninguna)
+  $ por ruta: git rev-parse HEAD:<p> vs git rev-parse b3847278:<p>
+  rutas=201 diferencias=1  -> unica diferencia package.json, la linea del script npm
+    "comercio:ensure-assets-bucket": "node scripts/ensure-comercio-assets-bucket.js" anadida en el comite final;
+    las 200 rutas restantes, incluido todo el codigo del modulo, estan byte a byte como en el arbol certificado
+El arbol certificado b3847278 es el que se midio en la ronda 6; su codigo Comercio ademas coincide con
+el de la punta de desarrollo:
+  $ git diff --name-status desarrollo HEAD -- 'apps' 'scripts' | grep -iE "comercio|tienda"  -> vacio
+
+PLUMBING COMPARTIDO (22 rutas M) Y QUE SE PIERDE CADA UNA
+---------------------------------------------------------
+- apps/api/server.js                     : el manejador de error inline se muda a src/core/api-error.js.
+  La tabla comparada linea a linea conserva P2002->409 DUPLICADO, P2025->404 NO_ENCONTRADO, 4xx con
+  details (MALLA_SOLAPADA), 502/503/504 con codigo, 400 VALIDACION, 429 LIMITE_SOLICITUDES y 500
+  ERROR_INTERNO; ademas amplia 502/504, no quita nada. Cubierto por api-error-mapping.test.js.
+- apps/api/test/hr-payroll-adjustment-lock.test.js (toque cross-modulo, declarado en change_intent)
+                                         : el contrato del 503 buscaba `if (error.statusCode === 503 &&
+  error.code) {` dentro de server.js. Ese bloque vivo en src/core/api-error.js desde 70bc7338 y la
+  prueba estaba en rojo en desarrollo desde entonces. Se reubica la asercion (lee la tabla donde vive y
+  exige el require en server.js). No cambia el contrato, cambia donde se mide.
+- apps/web/components/transport/TransportSearchSelect.tsx (8 lineas) : el selector tecleable compartido
+  quita el autocierre por resize/scroll y recalcula la posicion del menu. Lo consume Transporte tambien.
+- apps/web/components/ui/button.tsx (6)  : reescritura del className (anillo de foco, transicion,
+  twMerge) del patron de la pasada UX. Compartido por todo el sistema.
+- apps/web/components/system/CommandPalette.tsx (4) : solo el handler de Escape; el Escape le pertenece
+  al palette unicamente mientras esta abierto.
+- apps/web/next.config.ts (3)            : img-src acepta el origen del almacen local de imagenes e
+  importa la matriz CSP desde lib/security/csp.ts.
+- apps/web/components/ui/ModalFrame.tsx (2) : el modal se vuelve bottom-sheet en movil (ventanado).
+- 1 linea cada uno: apps/web/test/offline-csp.test.mjs, apps/web/components/ui/data-table.tsx,
+  ContextBreadcrumbs.tsx, apps/web/app/globals.css, apps/api/src/modules/admin/service.js,
+  apps/api/src/middleware/rbac.js, apps/api/src/core/prisma.js.
+- 0 lineas (adiciones puras, no se pierde ni una linea de develop): package.json,
+  apps/api/prisma/schema.prisma, .env.example, apps/api/src/core/api-error.js,
+  apps/api/test/api-error-mapping.test.js, apps/web/lib/{modules,moduleFunctions,moduleAccess}.ts,
+  apps/web/lib/security/csp.ts, apps/web/components/ui/{SearchField.tsx,useOverlayA11y.ts},
+  apps/web/tailwind.config.ts.
+- "petty-cash" sigue presente en las dos listas de server.js (lineas 34 y 278); el "-petty-cash" del
+  diff era la coma que ahora le sigue "comercio", no una perdida.
+
+PUERTAS EJECUTADAS SOBRE EL TIPO b676ebad
+-----------------------------------------
+$ node --test apps/api/test/*.test.js
+  # tests 1050 / # pass 1048 / # fail 0 / # skipped 2      exit=0   (api-suite.log)
+  (1050, no 1043: el candidato ahora lleva las 7 pruebas nuevas de payrollWorkdays.js de develop)
+
+$ cd apps/web && node --experimental-strip-types --test <todos los test/*.test.mjs>
+  # tests 749 / # pass 746 / # fail 3      (web-suite.log)
+    not ok 88  - el registro de funciones cubre todas las rutas del dashboard
+    not ok 301 - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+    not ok 303 - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+  Nota de arnes: estas pruebas resuelven sus rutas contra process.cwd(); se corren desde apps/web.
+  Desde la raiz del repo aparecen 4 falsos rojos mas en ibc-nomina-ui.test.mjs (ENOENT de
+  app/dashboard/...): medidos por separado desde apps/web quedan 4/4 en verde.
+
+$ npm --workspace apps/web run typecheck  -> exit 0, sin errores (typecheck.log)
+$ npm run lint                            -> 22 problems (0 errors, 22 warnings), los 22 de siempre (lint.log)
+$ npm run governance:ci                   -> exit 0 (governance.log)
+$ npx prisma validate --schema apps/api/prisma/schema.prisma
+  The schema at apps\api\prisma\schema.prisma is valid
+
+CERTIFICACIONES DE NAVEGADOR SOBRE EL PROPIO CANDIDATO (stack aislado 3310/3311)
+-------------------------------------------------------------------------------
+Ambiente: API `node server.js` en 3310 y `next dev -p 3311` levantados desde el worktree del candidato,
+con el .env de la raiz exportado (trampa medida: un `next dev` lanzado a mano no carga el .env raiz y
+deja NEXT_PUBLIC_IMAGE_ORIGINS vacio, entonces la CSP bloquea el banner y la prueba se vuelve roja sin
+que el negocio haya fallado). Se usa `localhost` y no `127.0.0.1`: Next 16.3.5 bloquea su propio recurso
+de HMR entre origenes y la hidratacion muere antes del login.
+
+$ LOCAL_API_URL=http://localhost:3310 LOCAL_WEB_URL=http://localhost:3311 \
+  node scripts/certifications/comercio-storefront-theme-local.js
+  CERTIFICATION_OK {"total":78,"fallidos":[]}              (theme/browser-local.json + 01..07 PNG + pintura-navegador.json)
+
+$ LOCAL_API_URL=http://localhost:3310 LOCAL_WEB_URL=http://localhost:3311 \
+  node scripts/certifications/comercio-ux-local.js
+  CERTIFICATION_OK {"total":287}   fallidos: []            (ux/browser-local.json + recorrido.json + PNGs de 1440 y 390)
+
+$ node scripts/certifications/comercio-tenant-rbac-local.js --output=.../candidato-tenant-rbac.json
+  status=passed, commit estampado = b676ebad95a5c7007798791659613d7d389a26b6
+  summary {"total":53,"fallidos":[]}   LIMPIEZA {"empresas":4,"residuales":[]}
+
+LOS 3 ROJOS WEB SON DEL DESTINO, NO DEL CANDIDATO (reproducidos otra vez)
+------------------------------------------------------------------------
+Extraccion limpia del target vigente con git archive (sin el modulo, sin node_modules):
+  $ git archive origin/develop | tar -x -C <dir>
+  $ cd <dir>/apps/web && node --experimental-strip-types --test \
+        test/command-palette-module-functions.test.mjs test/hr-route-write-fallback.test.mjs
+  not ok 1  - el registro de funciones cubre todas las rutas del dashboard
+              rutas sin acceso desde el centro de comandos: /dashboard/contabilidad/pyg/ampliado
+  not ok 12 - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+  not ok 14 - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+  # tests 19 / # pass 16 / # fail 3
+Prueba de inocencia del candidato: los dos archivos que esos contratos leen
+(apps/web/lib/api.ts y apps/web/test/hr-route-write-fallback.test.mjs) miden 0 lineas de diferencia
+contra develop; `/dashboard/contabilidad/pyg/ampliado` tampoco esta registrado en el moduleFunctions.ts
+de origin/develop. Arreglarlos es alcance de otros modulos y queda fuera de este manifiesto.
+
+LIMITE NO CERRADO (se declara, no se finge)
+-------------------------------------------
+- npm run qa:deterministic-validation: aborta en POST /api/v1/accounting/chart/init con
+  P2010/3F000 `schema "apexos_accounting_private" does not exist`. Es el ambiente local (la base de
+  prueba no tiene ese esquema de Contabilidad), no el candidato: ninguna ruta de Comercio interviene y
+  el fallo es identico en desarrollo y en el candidato. Queda como deuda conocida del entorno local.
+- Las 6 migraciones del modulo (20261026120000..20261028190000) las aplica Railway al hacer el merge,
+  por decision del dueno; despues del merge se verifica que /api/v1/comercio/dashboard responda sin
+  P2022 y que aparezcan en _prisma_migrations.
+- El bucket `comercio-assets` en la nube del ambiente QA todavia no existe. Se versiono el alta
+  idempotente y con guardas en scripts/ensure-comercio-assets-bucket.js; ejecutarla contra el proyecto
+  Supabase de develop requiere la sesion del dueno (no se tocan sus credenciales). En local la subida
+  real del banner si esta certificada (driver minio, check "la_vitrina_pide_el_banner_subido_al_almacen"
+  en verde dentro de los 78).

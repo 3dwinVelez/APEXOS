@@ -2,8 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.8.0
-updated_at: 2026-11-06
+version: 2.9.0
+updated_at: 2026-11-07
 contract: 2
 ---
 
@@ -70,6 +70,8 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     - **Ningún nivel de tinta que pinte texto legible puede quedar por debajo de 4,5:1.** En el motor de la vitrina (`storefront-theme.ts`) los niveles `muted` y `faint` cargan las referencias («Ref. P-0019»), los contadores y el microcopy del pie, y estaban cotas de 3,8:1 y menores porque se les trató como decoración. La cota de cada nivel se mide contra la superficie donde se pinta, se copia al `:root` de `app/tienda/storefront.css` (la prueba de paridad lo exige) y se lista en el panel de auditoría de Configuración para que el comercio lo vea antes de publicar. Por qué: el 2026-11-06 la certificación dejó 26 rojos táctiles y un «3,8:1» persistente en la vitrina; los dos se arreglaron en la fuente de la norma, no repintando pantalla por pantalla.
 
 23. **Un lote de reemplazos de texto se revisa en el diff y se cierra con typecheck; la ortografía no arrastra backend.** Corregir ~115 cadenas visibles a mano es inviable, pero el lote introduce defectos que la lectura confiable no ve: un par viejo/nuevo asimétrico dejó un template literal **sin cerrar** en `app/dashboard/comercio/promociones/page.tsx` (lo detuvo `npx tsc -p tsconfig.typecheck.json --noEmit`, no la vista previa), y una sustitución de `text-rose-600` produjo la clase inexistente `text-error-ink-ink` en `productos/page.tsx:475` —esa solo se ve leyendo las cadenas **añadidas** del diff, porque el compilador no valida utilidades de Tailwind. Regla: después de un lote, (1) typecheck, (2) revisar en el diff las cadenas nuevas buscando tokens duplicados (`-ink-ink`), comillas o backticks desparejados y palabras inventadas (`contejada`), (3) la ortografía se arregla en el texto que ve el cliente, no en los defaults del API: `apps/api/src/modules/comercio/service.js:1332` y `:1694` guardan motivos sin tilde y se dejaron a propósito, porque meter `apps/api/**` en un commit de etiquetas de pantalla arrastra a `apexos-backend` y `apexos-seguridad` a un cambio que no es suyo. Por qué: el 2026-11-06 la barrida de Comercio se hizo en lote y ambos artefactos habrían quedado publicados sin esos dos pasos.
+
+24. **El origen de imagenes que la CSP autoriza depende del entorno donde se levanto el dev-server; un asset bloqueado no es un defecto del negocio.** `NEXT_PUBLIC_IMAGE_ORIGINS` se hornea en el bundle al arrancar el cliente y `next dev` lanzado a mano desde `apps/web` no carga el `.env` de la raiz del monorepo. Sintoma: la vitrina no pinta el banner subido al almacen, el `fetch` del navegador devuelve el objeto perfecto y la certificacion marca `status null`. Reglas: (a) antes de atribuir un asset ausente al codigo, se verifica el valor **hirviendo lo que el navegador recibe**, no lo que la variable deberia valer; (b) el arnés aislado exporta el `.env` de la raiz y usa `localhost`, no `127.0.0.1` (Next 16.3.5 bloquea su propio `/_next/hmr` entre origenes y la hidratacion muere antes del login); (c) una celda roja de navegador se reproduce a mano en la misma URL antes de escribir «limite de ambiente». Por que: el 2026-11-06 la certificacion de banners de Comercio estuvo roja dos corridas por estas dos trampas, sin que el upload ni la pintura hubieran fallado.
 
 ## Checklist de intervención
 

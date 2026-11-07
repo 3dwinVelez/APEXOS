@@ -1,0 +1,130 @@
+{
+  "change_id": "comercio-modulo-completo-20261107",
+  "commit": "b676ebad95a5c7007798791659613d7d389a26b6",
+  "reviewed_commit": "b676ebad95a5c7007798791659613d7d389a26b6",
+  "certified_tree": "b676ebad95a5c7007798791659613d7d389a26b6",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "promocion/comercio-develop-20261107",
+  "target_head": "22fdf222a2b9a2a0c443f6b3ed8c128bf4b8529e",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-07",
+    "quality_gate_overridden": false,
+    "authorizations": [
+      "Promocionar el modulo Comercio a develop de manera controlada, solo este modulo, sin afectar ninguna otra funcion del sistema.",
+      "Rama auxiliar + PR hacia develop como mecanismo de publicacion.",
+      "Las seis migraciones del modulo las aplica Railway al hacer el merge; ninguna migracion se aplica desde esta estacion.",
+      "Cerrar antes de promover la brecha de aislamiento multi-tenant y RBAC (53 checks sobre el propio candidato).",
+      "Terminar de validar lo que haga falta y crear en Supabase lo necesario, sin detenerse salvo algo critico que requiera autorizacion."
+    ],
+    "nota": "Autorizacion vigente del dueno para publicar empujando la rama auxiliar hacia origin y abriendo el PR contra develop, con push acotado a origin/desarrollo al cerrar la intervencion. No cubre main, force push, migraciones remotas aplicadas desde esta estacion ni cambios de infraestructura o secretos. El PR anterior (#80) quedo obsoleto porque develop avanzo a 22fdf222: se cierra en favor de esta rama nueva en lugar de forzar el historial de la rama vieja."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/comercio-service.test.js",
+        "../../../apps/api/test/comercio-storage.test.js",
+        "../../../apps/api/test/comercio-storefront-theme.test.js",
+        "../evidence/comercio-promotion-candidate-20261107/gates-candidato.txt"
+      ],
+      "medida": "69/69 en apps/api (comercio-service, comercio-storage, comercio-storefront-theme, api-error-mapping) y 1050 pruebas de la suite API completa con 1048 en verde, 0 fallos y 2 saltadas, ejecutadas sobre el candidato b676ebad"
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-promotion-candidate-20261107/theme/browser-local.json",
+        "../../../apps/api/test/api-error-mapping.test.js",
+        "../../../apps/api/test/hr-payroll-adjustment-lock.test.js",
+        "../evidence/comercio-tenant-rbac-20261106/salida.txt"
+      ],
+      "medida": "rechazos con codigo de negocio (NO_AUTENTICADO, MODULO_NO_HABILITADO, PERMISO_DENEGADO y los 404 de negocio), ninguna respuesta 5xx en la celda de aislamiento, el 500 historico del banner corregido y certificado con subida real, y el contrato del 503/502/504 como fallo controlado medido donde vive (src/core/api-error.js)"
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/comercio-ux-local.js",
+        "../../../scripts/certifications/comercio-storefront-theme-local.js",
+        "../../../scripts/certifications/comercio-tenant-rbac-local.js",
+        "../../../scripts/ensure-comercio-assets-bucket.js",
+        "../../../scripts/seed-comercio-demo.js"
+      ],
+      "medida": "los tres scripts de certificacion corrieron de verdad contra el candidato (aislamiento 53 checks con LIMPIEZA empresas=4 residuales=[]; vitrina 78 checks; UX 287 checks) y el alta del bucket esta versionada con guardas: exige SUPABASE_URL + service role y CONFIRM_COMERCIO_BUCKET=true"
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/comercio-ux-consistency.test.mjs",
+        "../../../apps/web/test/comercio-storefront-theme.test.mjs",
+        "../../../apps/web/test/comercio-storefront-resilience.test.mjs",
+        "../../../apps/web/test/comercio-reports-charts.test.mjs",
+        "../evidence/comercio-promotion-candidate-20261107/gates-candidato.txt"
+      ],
+      "medida": "49/49 en los cuatro contratos de fuente Comercio del candidato; suite completa de apps/web 749 pruebas con 746 en verde y 3 rojos que se reproducen en origin/develop limpio (git archive), no del candidato; suite API completa 1048/1050 con 0 fallos"
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-promotion-candidate-20261107/gates-candidato.txt",
+        "../evidence/comercio-promotion-candidate-20261107/ux/browser-local.json",
+        "../evidence/comercio-promotion-candidate-20261107/ux/recorrido.json",
+        "../evidence/comercio-promotion-candidate-20261107/api-suite.log",
+        "../evidence/comercio-promotion-candidate-20261107/web-suite.log"
+      ],
+      "medida": "Regresion de plataforma corrida sobre el arbol del candidato b676ebad: prisma validate valido, typecheck del workspace web en 0 errores, lint 0 errores / 22 avisos previos, governance:ci en verde, suite API 1050 con 0 fallos, suite web 749 con los mismos 3 rojos del destino, y las dos certificaciones de navegador (78 y 287 checks) ejecutadas en el stack aislado 3310/3311 contra este mismo tip. La regresion visual de los componentes compartidos en el Railway de QA sigue pendiente y se declara como limite, no como verde."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-ux-local.js",
+    "evidence": [
+      "../evidence/comercio-promotion-candidate-20261107/ux/browser-local.json",
+      "../evidence/comercio-promotion-candidate-20261107/ux/recorrido.json",
+      "../evidence/comercio-promotion-candidate-20261107/cert-ux-salida.txt"
+    ],
+    "resultado": "CERTIFICATION_OK total=287 fallidos=[] medida sobre el propio candidato b676ebad en el stack aislado (API 3310, web 3311 con localhost para que el HMR de Next no bloquee la hidratacion); la celda del boton de reintento se provoca abortando /api/v1/comercio/dashboard"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-storefront-theme-local.js",
+    "evidence": [
+      "../evidence/comercio-promotion-candidate-20261107/theme/browser-local.json",
+      "../evidence/comercio-promotion-candidate-20261107/theme/pintura-navegador.json",
+      "../evidence/comercio-promotion-candidate-20261107/cert-theme-salida.txt",
+      "../evidence/comercio-promotion-candidate-20261107/candidato-tenant-rbac.json"
+    ],
+    "resultado": "78 checks con fallidos: 0 sobre el candidato b676ebad: vitrina sin tema, tema propio con banner subido al almacen, tonos y patron, esquinas, tema claro, panel de apariencia guardando y el banner real pintado desde el almacen; se anadio el check de la campana vigente que cede el titular del Hero y la corrida deja la preferencia y la campana del tenant en su estado original"
+  },
+  "suites": {
+    "api_completa_candidato": "1050 pruebas, 1048 pasan, 0 fallan, 2 saltadas",
+    "web_candidato": "749 pruebas, 746 pasan, 3 fallan (las 3 reproducidas en origin/develop limpio)",
+    "web_contratos_comercio_candidato": "49/49",
+    "api_comercio_candidato": "69/69",
+    "aislamiento_candidato": "53/53, LIMPIEZA {\"empresas\":4,\"residuales\":[]}",
+    "navegador_vitrina_candidato": "78 checks, 0 fallidos",
+    "navegador_ux_candidato": "287 checks, 0 fallidos",
+    "typecheck_candidato": "0 errores",
+    "lint_candidato": "0 errores, 22 avisos preexistentes",
+    "governance_candidato": "governance:ci exit 0",
+    "prisma_candidato": "schema valido"
+  },
+  "pending_certifications": [
+    "Las seis migraciones del modulo (20261026120000..20261028190000) las aplica Railway al hacer el merge; despues se verifica /api/v1/comercio/dashboard sin P2022 y su presencia en _prisma_migrations.",
+    "Bucket comercio-assets en el Supabase de QA: el alta esta versionada en scripts/ensure-comercio-assets-bucket.js pero requiere la sesion del dueno en la nube.",
+    "Regresion visual en navegador de Transporte, tablas, modales y paleta de comandos en el Railway de QA (consumen el plumbing compartido)."
+  ],
+  "known_target_failures": [
+    "hr-route-write-fallback.test.mjs (2) y command-palette-module-functions.test.mjs (1): fallan identico en origin/develop limpio; los archivos que leen viajan byte a byte como en el destino.",
+    "qa:deterministic-validation aborta en POST /api/v1/accounting/chart/init por el esquema apexos_accounting_private ausente en la base local: limite del ambiente, no del candidato."
+  ],
+  "certified_source_tree": {
+    "branch": "desarrollo",
+    "tip": "92c80f17",
+    "candidate_predecessor": "b384727880a7ea9ef22c28958779ea188bb5079a"
+  }
+}

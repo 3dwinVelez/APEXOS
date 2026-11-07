@@ -1,0 +1,2 @@
+CERTIFICATION_OK {"evidencia":"../../../AppData/Local/Temp/comercio-cand2-evid/theme/browser-local.json","total":78,"fallidos":[]}
+exit=0

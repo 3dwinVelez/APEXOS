@@ -2,8 +2,8 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.17.0
-updated_at: 2026-11-06
+version: 2.18.0
+updated_at: 2026-11-07
 contract: 2
 ---
 
@@ -82,6 +82,11 @@ Antes de actuar, leer en este orden:
     - **La cota es la norma, lo demás es muestra:** se exige 24×24 px (AA) y todo lo menor a 44 px se **reporta** en el JSON de evidencia, no se afirma como rojo. Una gate que impone el criterio del experto de turno se relaja en cuanto molesta; una que cita la norma no.
     - **El estado vacío del control también se prueba:** el botón «Limpiar» de un campo de búsqueda solo aparece con texto escrito, así que una aserción que lo busca con el campo vacío es roja por construcción. La secuencia correcta lee el campo vacío → escribe → verifica que el botón apareció → lo pulsa → verifica que el campo quedó vacío.
     - **La matriz se auto-cuenta:** un check exige `rutas × anchuras × temas` mediciones efectivas; si una celda faltó, el recorrido no existe. Y un 5xx sigue siendo rojo: la ruta se calienta una vez y se reintenta, nunca se perdona.
+
+30. **El certificado corre contra el candidato, y el ambiente del arnés es parte de la medición.** Tres reglas fijadas el 2026-11-07 en la ronda 7 del Comercio:
+    - **No se declara límite lo que sí se puede medir.** La ronda 6 cerró con «la regresión de navegador del candidato va en Railway» porque un segundo `next dev` en la máquina no servía dashboard autenticado. Era un defecto del arnés: se corrigió y las dos certificaciones (78 y 287 checks) corrieron sobre el propio candidato. Un límite solo se escribe después de intentar el camino.
+    - **Las tres trampas del stack aislado** (`127.0.0.1:3310` API + `localhost:3311` web, para no tocar los puertos del usuario): (a) un `next dev` lanzado a mano **no carga el `.env` de la raíz** del monorepo, así que `NEXT_PUBLIC_IMAGE_ORIGINS` queda vacío y la CSP bloquea el asset —el check se pone rojo sin que el negocio haya fallado—; hay que exportar el `.env` antes de levantar el web. (b) Next 16.3.5 **bloquea su propio recurso de HMR entre orígenes** (`Blocked cross-origin request to Next.js dev resource /_next/hmr from 127.0.0.1`): el navegador debe entrar por `localhost`, o la hidratación muere y el login nunca redirige. (c) Las pruebas de fuente de `apps/web` resuelven rutas contra `process.cwd()`: correrlas desde la raíz del repo produce ENOENT falsos (`app/dashboard/...`) que se leen como defectos del candidato.
+    - **Precondición determinista o medida, nunca asumida:** cuando la semilla deja un estado que cambia la pantalla —una campaña activa que cede el titular del Hero—, la certificación mide primero esa precedencia como check explícito, pausa el estado para poder medir el siguiente, y lo **restaura** en su `finally`. Una gate que depende del estado de la semilla es roja en la máquina del siguiente ingeniero.
 
 30. **Un medidor que no reproduce el algoritmo de pintura del navegador no es evidencia.** El contraste se calculó sumando los `backgroundColor` de la cadena de ancestros, pero en orden invertido —trataba al ancestro como si estuviera *delante* del nodo— y sin dividir por el alfa resultante. Con capas opacas el error no se ve (se corta el recorrido en la primera), pero un chip translúcido sobre una tarjeta clara se medía contra la tarjeta: la insignia «HASTA -20%» arrojó **1,25:1** cuando el navegador pintaba `rgb(194 39 77)` con letra blanca, es decir **5,7:1**. Regla: cuando un check rojo de medición parece imposible, se escribe una sonda que vuelque la cadena de fondos y el color de letra antes de tocar el producto, y se confronta con el orden source-over (`fondo_resultante = (c_front·a_front + c_back·a_back·(1−a_front)) / a_resultante`). Por qué: el 2026-11-06 ese rojo se habría «corregido» oscureciendo la tinta del promo del tema claro —un cambio visual real para arreglar una matemática falsa— y la cota buena se habría perdido.
 

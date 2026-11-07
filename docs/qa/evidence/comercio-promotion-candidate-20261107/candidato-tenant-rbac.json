@@ -1,0 +1,506 @@
+{
+  "certification": "comercio-tenant-rbac-local",
+  "version": 1,
+  "status": "passed",
+  "generated_at": "2026-11-07T20:09:45.656Z",
+  "commit": "b676ebad95a5c7007798791659613d7d389a26b6",
+  "environment": {
+    "type": "local-isolated-api",
+    "database": "apexos",
+    "node": "v22.23.1"
+  },
+  "method": "server.build() + app.inject, sin burlas ni interception",
+  "tenants": {
+    "A": "059c74af-3bcf-4ca6-aee3-0d05f0758b1f",
+    "L": "4de34e8c-af6a-47bb-9dea-d7cecad5d372",
+    "B": "421d8659-83d0-4013-9d6f-58717aeea321",
+    "C": "b2ee3ce3-c60f-4313-b4cf-98ecb4f9b4b7"
+  },
+  "summary": {
+    "total": 53,
+    "fallidos": []
+  },
+  "checks": [
+    {
+      "name": "cuatro_empresas_con_licencia_distinta",
+      "fase": "montaje",
+      "status": "passed",
+      "detail": {
+        "A": "059c74af-3bcf-4ca6-aee3-0d05f0758b1f",
+        "L": "4de34e8c-af6a-47bb-9dea-d7cecad5d372",
+        "B": "421d8659-83d0-4013-9d6f-58717aeea321",
+        "C": "b2ee3ce3-c60f-4313-b4cf-98ecb4f9b4b7"
+      }
+    },
+    {
+      "name": "settings_de_A",
+      "fase": "datos de A",
+      "status": "passed",
+      "detail": "nombre de tienda escrito"
+    },
+    {
+      "name": "productos_y_clientes_de_A_creados",
+      "fase": "datos de A",
+      "status": "passed",
+      "detail": {
+        "producto": 156,
+        "cliente": 31
+      }
+    },
+    {
+      "name": "documentos_de_A_creados",
+      "fase": "datos de A",
+      "status": "passed",
+      "detail": {
+        "venta_efectivo": 209,
+        "venta_credito": 210,
+        "gasto": 78,
+        "promocion": 13
+      }
+    },
+    {
+      "name": "cartera_de_A_tiene_cuota",
+      "fase": "datos de A",
+      "status": "passed",
+      "detail": {
+        "credito": 47
+      }
+    },
+    {
+      "name": "datos_de_C_creados",
+      "fase": "datos de C",
+      "status": "passed",
+      "detail": {
+        "producto": 157,
+        "gasto": 79
+      }
+    },
+    {
+      "name": "C_no_lee_el_producto_de_A",
+      "fase": "lectura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_lee_el_foto_de_A",
+      "fase": "lectura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_lee_el_venta_de_A",
+      "fase": "lectura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "SALE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_lee_el_credito_de_A",
+      "fase": "lectura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "CREDIT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_lee_el_audiencia_de_A",
+      "fase": "lectura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PROMOTION_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_lee_el_promocion_de_A",
+      "fase": "lectura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PROMOTION_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_editar_el_producto_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_ajustar_el_stock_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_archivar_el_producto_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_archivar_el_cliente_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "CUSTOMER_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_editar_el_cliente_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "CUSTOMER_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_anular_la_venta_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "SALE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_abonar_a_la_cartera_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "CREDIT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_editar_el_gasto_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "EXPENSE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_anular_el_gasto_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "EXPENSE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_activar_la_promocion_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PROMOTION_NOT_FOUND"
+      }
+    },
+    {
+      "name": "C_no_editar_la_promocion_de_A",
+      "fase": "escritura cruzada por id",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "PROMOTION_NOT_FOUND"
+      }
+    },
+    {
+      "name": "el_invasor_no_muto_nada",
+      "fase": "los datos de A siguen intactos",
+      "status": "passed",
+      "detail": {
+        "price": 12000,
+        "active": true
+      }
+    },
+    {
+      "name": "la_lista_de_productos_de_C_no_tiene_filas_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "tamano": 456,
+        "items": 1
+      }
+    },
+    {
+      "name": "la_lista_de_clientes_de_C_no_tiene_filas_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "tamano": 22,
+        "items": 0
+      }
+    },
+    {
+      "name": "la_lista_de_ventas_de_C_no_tiene_filas_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "tamano": 22,
+        "items": 0
+      }
+    },
+    {
+      "name": "la_lista_de_creditos_de_C_no_tiene_filas_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "tamano": 61,
+        "items": 0
+      }
+    },
+    {
+      "name": "la_lista_de_gastos_de_C_no_tiene_filas_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "tamano": 256,
+        "items": 1
+      }
+    },
+    {
+      "name": "la_lista_de_movimientos_de_C_no_tiene_filas_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "tamano": 258,
+        "items": 1
+      }
+    },
+    {
+      "name": "la_lista_de_promociones_de_C_no_tiene_filas_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "tamano": 25,
+        "items": 0
+      }
+    },
+    {
+      "name": "dashboard_de_C_no_lee_la_ventana_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "ventas_A": null,
+        "ventas_C": null
+      }
+    },
+    {
+      "name": "reporte_de_C_sin_ingresos_de_A",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "configuracion_de_C_es_la_suya",
+      "fase": "listados y agregados",
+      "status": "passed",
+      "detail": {
+        "store_name": "Mi negocio"
+      }
+    },
+    {
+      "name": "empresa_sin_M30_queda_fuera_del_modulo",
+      "fase": "licencia por empresa",
+      "status": "passed",
+      "detail": {
+        "status": 403,
+        "code": "MODULO_NO_HABILITADO"
+      }
+    },
+    {
+      "name": "empresa_sin_M30_no_crea_nada",
+      "fase": "licencia por empresa",
+      "status": "passed",
+      "detail": {
+        "status": 403,
+        "code": "MODULO_NO_HABILITADO"
+      }
+    },
+    {
+      "name": "el_lector_si_lee",
+      "fase": "permisos por rol",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "el_lector_no_escribe",
+      "fase": "permisos por rol",
+      "status": "passed",
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "el_lector_no_anula",
+      "fase": "permisos por rol",
+      "status": "passed",
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "el_lector_no_configura",
+      "fase": "permisos por rol",
+      "status": "passed",
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "sin_sesion_no_hay_modulo",
+      "fase": "permisos por rol",
+      "status": "passed",
+      "detail": {
+        "status": 401,
+        "code": "TOKEN_INVALIDO"
+      }
+    },
+    {
+      "name": "A_publica_su_vitrina",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "codigo": "d4aa2y35"
+      }
+    },
+    {
+      "name": "la_vitrina_es_publica",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "store_name": "Almacen Aurora de A",
+        "items": 1
+      }
+    },
+    {
+      "name": "la_vitrina_saca_solo_productos_de_A",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "items": [
+          "Cafe Aurora 250 g"
+        ]
+      }
+    },
+    {
+      "name": "la_vitrina_no_revela_costo",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "filtro": "\"cost\""
+      }
+    },
+    {
+      "name": "la_vitrina_no_revela_stock_crudo",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "filtro": "\"stock\""
+      }
+    },
+    {
+      "name": "la_vitrina_no_revela_tenant",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "filtro": "059c74af-3bcf-4ca6-aee3-0d05f0758b1f"
+      }
+    },
+    {
+      "name": "la_vitrina_no_revela_ids_internas",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "filtro": "\"id\":"
+      }
+    },
+    {
+      "name": "la_vitrina_de_C_no_existe_sin_publicar",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "status": 404,
+        "code": "CATALOG_NOT_FOUND"
+      }
+    },
+    {
+      "name": "quemar_el_link_cambia_el_codigo",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "anterior": "d4aa2y35",
+        "nuevo": "r6c2w5yf"
+      }
+    },
+    {
+      "name": "el_link_quemado_muere",
+      "fase": "vitrina publica anonima",
+      "status": "passed",
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "ninguna_respuesta_es_5xx",
+      "fase": "codigo de negocio conservado",
+      "status": "passed",
+      "detail": {
+        "codigos": [
+          200,
+          201,
+          401,
+          403,
+          404
+        ]
+      }
+    },
+    {
+      "name": "los_rechazos_traen_codigo_de_negocio",
+      "fase": "codigo de negocio conservado",
+      "status": "passed",
+      "detail": {
+        "rechazos": 25
+      }
+    }
+  ]
+}

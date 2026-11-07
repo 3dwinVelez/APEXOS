@@ -2,8 +2,8 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.7.0
-updated_at: 2026-11-06
+version: 2.8.0
+updated_at: 2026-11-07
 contract: 2
 ---
 
@@ -67,6 +67,8 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
     - Toda llamada al almacén va acotada por `STORAGE_TIMEOUT_MS` (15 s, `AbortSignal.timeout` en el `fetch` y `withTimeout` en el cliente S3). Un almacén colgado debe dar un 502 legible, no una petición que el navegador corta sola.
     - La ruta de **lectura** de una página pública no lanza: `publicViewUrl` (`storage.js:268`) devuelve `null` ante cualquier misconfiguración y la vitrina pinta el degradado del tema. Que el almacén esté caído no puede tumbar un catálogo público; la escritura sí devuelve su error, porque ahí el usuario tiene que saber que no se guardó.
     Por qué: el 2026-11-06 había tres causas apiladas (red sin código, handler que tragaba el 502 y un generador 402 que llegaba como 500) y cada una se veía igual desde la pantalla: «Error interno».
+
+24. **Un contrato movido se mide donde vive, y un rojo heredado se repara en el mismo alcance que lo movio.** Cuando una correccion extrae logica de `server.js` a un modulo (`src/core/api-error.js`), cualquier prueba de fuente que buscaba ese bloque con una regex sobre `server.js` se vuelve roja **en la rama, no en el producto**. Dos obligaciones: (a) la prueba se reubica en el mismo comite que mueve el codigo, y si sigue mirando el archivo viejo se le exige el `require` del nuevo para que el movimiento no pueda deshacerse en silencio; (b) el toque cross-modulo se declara en `change_intent.modules` del manifiesto y en el brief, porque un comite que dice `comercio` y toca la prueba de Nomina es exactamente lo que la politica de alcance prohibe arreglar «de paso». Por que: el 2026-11-06 el fix del banner de Comercio movio la tabla de errores y dejo `apps/api/test/hr-payroll-adjustment-lock.test.js` en rojo en `desarrollo`; el candidato lo heredaba y el rojo se habria leido como defecto del modulo promovido.
 
 ## Checklist de intervención
 
