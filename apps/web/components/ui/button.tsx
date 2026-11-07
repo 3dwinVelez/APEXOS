@@ -23,6 +23,16 @@ const sizes: Record<ButtonSize, string> = {
   touch: "h-12 px-5 text-base"
 };
 
+// Las acciones que por fuerza son enlace (wa.me, descarga firmada, Link de Next) pintan y
+// se comportan igual que el boton: la misma tinta, el mismo alto y el mismo anillo de foco
+// salen de aqui, no de una cadena copiada en cada pantalla.
+const base =
+  "inline-flex items-center justify-center gap-2 rounded-control border text-sm font-semibold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-apex focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
+export function buttonClasses(variant: ButtonVariant = "primary", size: ButtonSize = "default", className?: string) {
+  return twMerge(base, variants[variant], sizes[size], className);
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { className, variant = "primary", size = "default", loading = false, disabled, children, ...props },
   ref
@@ -30,12 +40,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button
       ref={ref}
-      className={twMerge(
-        "inline-flex items-center justify-center gap-2 rounded-control border text-sm font-semibold transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-apex focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-        variants[variant],
-        sizes[size],
-        className
-      )}
+      className={buttonClasses(variant, size, className)}
       aria-busy={loading || undefined}
       disabled={disabled || loading}
       {...props}

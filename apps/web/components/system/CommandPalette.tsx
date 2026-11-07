@@ -63,14 +63,23 @@ export function CommandPalette() {
     else setAccess({ loading: false, isPlatformAdmin: false, bySlug: Object.fromEntries(MODULES.map((module) => [module.slug, true])) });
     const onKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setOpen((value) => !value); }
-      if (event.key === "Escape") {
-        setOpen(false);
-        window.setTimeout(() => trigger.current?.focus(), 0);
-      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+  // Escape solo le pertenece al palette mientras el palette esta abierto. Cerrado, el teclazo
+  // no debe mover el foco: se llevaba el disparador de cualquier dialogo cerrado con Escape y
+  // el usuario terminaba en la barra de arriba en lugar del boton que habia pulsado.
+  useEffect(() => {
+    if (!open) return;
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      window.setTimeout(() => trigger.current?.focus(), 0);
+    };
+    window.addEventListener("keydown", onEscape);
+    return () => window.removeEventListener("keydown", onEscape);
+  }, [open]);
   useEffect(() => {
     if (open) {
       setRecentIds(readRecentIds());

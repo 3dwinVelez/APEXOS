@@ -1,0 +1,954 @@
+{
+  "ambiente": "local",
+  "ejecutado": "2026-11-07T20:15:38.103Z",
+  "resumen": [
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 52,
+          "nombre": "Comercio"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "portada_escritorio_claro",
+      "tactiles_menores": 5
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 55,
+          "nombre": "Productos"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "productos_escritorio_claro",
+      "tactiles_menores": 44
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 38,
+          "nombre": "Vender"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "vender_escritorio_claro",
+      "tactiles_menores": 9
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 36,
+          "nombre": "Ventas"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "ventas_escritorio_claro",
+      "tactiles_menores": 42
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 40,
+          "nombre": "Cartera"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "cartera_escritorio_claro",
+      "tactiles_menores": 41
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 43,
+          "nombre": "Clientes"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "clientes_escritorio_claro",
+      "tactiles_menores": 41
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 48,
+          "nombre": "Compras"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "compras_escritorio_claro",
+      "tactiles_menores": 29
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 100,
+          "nombre": "Ingresos y egresos"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "gastos_escritorio_claro",
+      "tactiles_menores": 45
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 71,
+          "nombre": "Promociones"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "promociones_escritorio_claro",
+      "tactiles_menores": 13
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 62,
+          "nombre": "Apex Heart"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "reportes_escritorio_claro",
+      "tactiles_menores": 10
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 77,
+          "nombre": "Configuración"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "configuracion_escritorio_claro",
+      "tactiles_menores": 6
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 52,
+          "nombre": "Comercio"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "portada_movil_claro",
+      "tactiles_menores": 5
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 55,
+          "nombre": "Productos"
+        }
+      ],
+      "contraste_minimo": 4.65,
+      "etiqueta": "productos_movil_claro",
+      "tactiles_menores": 8
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 38,
+          "nombre": "Vender"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "vender_movil_claro",
+      "tactiles_menores": 9
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 36,
+          "nombre": "Ventas"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "ventas_movil_claro",
+      "tactiles_menores": 6
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 40,
+          "nombre": "Cartera"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "cartera_movil_claro",
+      "tactiles_menores": 5
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 43,
+          "nombre": "Clientes"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "clientes_movil_claro",
+      "tactiles_menores": 7
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 48,
+          "nombre": "Compras"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "compras_movil_claro",
+      "tactiles_menores": 6
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 100,
+          "nombre": "Ingresos y egresos"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "gastos_movil_claro",
+      "tactiles_menores": 10
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 71,
+          "nombre": "Promociones"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "promociones_movil_claro",
+      "tactiles_menores": 13
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 62,
+          "nombre": "Apex Heart"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "reportes_movil_claro",
+      "tactiles_menores": 10
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 77,
+          "nombre": "Configuración"
+        }
+      ],
+      "contraste_minimo": 4.97,
+      "etiqueta": "configuracion_movil_claro",
+      "tactiles_menores": 6
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 52,
+          "nombre": "Comercio"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "portada_escritorio_oscuro",
+      "tactiles_menores": 5
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 55,
+          "nombre": "Productos"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "productos_escritorio_oscuro",
+      "tactiles_menores": 44
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 38,
+          "nombre": "Vender"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "vender_escritorio_oscuro",
+      "tactiles_menores": 9
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 36,
+          "nombre": "Ventas"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "ventas_escritorio_oscuro",
+      "tactiles_menores": 42
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 40,
+          "nombre": "Cartera"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "cartera_escritorio_oscuro",
+      "tactiles_menores": 41
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 43,
+          "nombre": "Clientes"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "clientes_escritorio_oscuro",
+      "tactiles_menores": 41
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 48,
+          "nombre": "Compras"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "compras_escritorio_oscuro",
+      "tactiles_menores": 29
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 100,
+          "nombre": "Ingresos y egresos"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "gastos_escritorio_oscuro",
+      "tactiles_menores": 45
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 71,
+          "nombre": "Promociones"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "promociones_escritorio_oscuro",
+      "tactiles_menores": 9
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 62,
+          "nombre": "Apex Heart"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "reportes_escritorio_oscuro",
+      "tactiles_menores": 6
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 77,
+          "nombre": "Configuración"
+        }
+      ],
+      "contraste_minimo": 8.67,
+      "etiqueta": "configuracion_escritorio_oscuro",
+      "tactiles_menores": 4
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 52,
+          "nombre": "Comercio"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "portada_movil_oscuro",
+      "tactiles_menores": 5
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 55,
+          "nombre": "Productos"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "productos_movil_oscuro",
+      "tactiles_menores": 8
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 38,
+          "nombre": "Vender"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "vender_movil_oscuro",
+      "tactiles_menores": 9
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 36,
+          "nombre": "Ventas"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "ventas_movil_oscuro",
+      "tactiles_menores": 6
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 40,
+          "nombre": "Cartera"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "cartera_movil_oscuro",
+      "tactiles_menores": 5
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 43,
+          "nombre": "Clientes"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "clientes_movil_oscuro",
+      "tactiles_menores": 7
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 48,
+          "nombre": "Compras"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "compras_movil_oscuro",
+      "tactiles_menores": 6
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 100,
+          "nombre": "Ingresos y egresos"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "gastos_movil_oscuro",
+      "tactiles_menores": 10
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 71,
+          "nombre": "Promociones"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "promociones_movil_oscuro",
+      "tactiles_menores": 13
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 62,
+          "nombre": "Apex Heart"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "reportes_movil_oscuro",
+      "tactiles_menores": 10
+    },
+    {
+      "armazon_menor_de_24": [
+        {
+          "alto": 22,
+          "ancho": 22,
+          "nombre": "Inicio"
+        },
+        {
+          "alto": 16,
+          "ancho": 51,
+          "nombre": "Comercio"
+        },
+        {
+          "alto": 16,
+          "ancho": 77,
+          "nombre": "Configuración"
+        }
+      ],
+      "contraste_minimo": 6.68,
+      "etiqueta": "configuracion_movil_oscuro",
+      "tactiles_menores": 6
+    }
+  ]
+}
