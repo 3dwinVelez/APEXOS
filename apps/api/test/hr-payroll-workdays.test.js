@@ -49,3 +49,13 @@ test('loader constrains every database read to tenant and time range, never writ
   for(const [name,args] of calls){assert.equal(args.where.tenant_id,'tenant-a');if(!['workSchedule','employee'].includes(name))assert.deepEqual(args.where.date,{gte:start,lt:endExclusive});}
   assert.equal(calls.find(([name])=>name==='timePunch')[1].select.metadata,undefined,'do not read selfie payloads');
 });
+test('an older schema without route kind still links hours, but other database errors surface', async () => {
+  const db=Object.fromEntries(['processedWorkday','timePunch','workSchedule','employee'].map(name=>[name,{findMany:async()=>name==='timePunch'?punches():[]}]));
+  const options={db,tenantId:'tenant-a',employees:[employee],start:new Date('2026-11-01T05:00:00Z'),endExclusive:new Date('2026-11-16T05:00:00Z'),parameters:{},calendarDays:new Map()};
+  let calls=0;
+  db.timeRoute={findMany:async ({select,where})=>{calls++;assert.equal(where.tenant_id,'tenant-a');if(select.kind)throw Object.assign(new Error('Missing kind'),{code:'P2022',meta:{column:'TimeRoute.kind'}});return [];}};
+  assert.equal((await loadPayrollWorkdays(options))[0].ordinary_day_minutes,480);
+  assert.equal(calls,2);
+  db.timeRoute.findMany=async()=>{throw Object.assign(new Error('Database unavailable'),{code:'P1001'});};
+  await assert.rejects(loadPayrollWorkdays(options),{code:'P1001'});
+});

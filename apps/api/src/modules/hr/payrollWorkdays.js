@@ -56,11 +56,16 @@ function payrollWorkdays({ employees, punches, stored, schedules, routes, parame
 async function loadPayrollWorkdays({ db, tenantId, employees, start, endExclusive, parameters, calendarDays }) {
   if (!employees.length) return [];
   const range = { gte: start, lt: endExclusive };
+  const routeQuery = { where: { tenant_id: tenantId, date: range }, select: { id: true, start_time: true, end_time: true } };
   const [stored, punches, schedules, routes, identityEmployees] = await Promise.all([
     db.processedWorkday.findMany({ where: { tenant_id: tenantId, employee_id: { in: employees.map(employee => employee.id) }, date: range } }),
     db.timePunch.findMany({ where: { tenant_id: tenantId, date: range }, select: { id: true, employee_id: true, user_name: true, type: true, date: true, time: true, punched_at: true, route_id: true, vehicle_plate: true }, orderBy: { punched_at: 'asc' } }),
     db.workSchedule.findMany({ where: { tenant_id: tenantId, active: true }, orderBy: { id: 'asc' } }),
-    db.timeRoute.findMany({ where: { tenant_id: tenantId, date: range }, select: { id: true, start_time: true, end_time: true, kind: true } }),
+    db.timeRoute.findMany({ ...routeQuery, select: { ...routeQuery.select, kind: true } }).catch(error => {
+      // Older schemas have working hours but do not yet distinguish rest routes.
+      if (error.code !== 'P2022' || error.meta?.column !== 'TimeRoute.kind') throw error;
+      return db.timeRoute.findMany(routeQuery);
+    }),
     db.employee.findMany({ where: { tenant_id: tenantId }, select: { id: true, code: true, metadata: true, user: { select: { name: true, email: true } } } })
   ]);
   return payrollWorkdays({ employees, stored, punches, schedules, routes, parameters, calendarDays, identityEmployees });
