@@ -6,6 +6,8 @@ const { spawn, execFileSync } = require('node:child_process');
 module.exports = async function ({ origin, token, document, selectable, check, db, tenantId, exercise, pagePath = '/dashboard/talento-humano/empleados', artifactName = 'hr-employee-user-association' }) {
   assert.ok(/^http:\/\/127\.0\.0\.1:\d+$/.test(origin));
   const root = path.resolve(__dirname, '../..');
+  const port = Number(process.env.CERT_BROWSER_PORT || 3317);
+  assert.ok(Number.isInteger(port) && port >= 1024 && port <= 65535);
   const nextEnvPath = path.join(root, 'apps/web/next-env.d.ts');
   const tsconfigPath = path.join(root, 'apps/web/tsconfig.json');
   const previousNextEnv = fs.readFileSync(nextEnvPath, 'utf8');
@@ -14,13 +16,13 @@ module.exports = async function ({ origin, token, document, selectable, check, d
   const output = path.join(root, '.local', artifactName);
   fs.mkdirSync(output, { recursive: true });
   const out = fs.openSync(path.join(output, 'next.log'), 'w');
-  const web = spawn(process.execPath, [path.join(root, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '-H', '127.0.0.1', '-p', '3317'], {
+  const web = spawn(process.execPath, [path.join(root, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
     cwd: path.join(root, 'apps/web'), windowsHide: true, stdio: ['ignore', out, out],
     env: { ...process.env, NODE_ENV: 'development', NEXT_PUBLIC_API_URL: origin, NEXT_PUBLIC_WS_URL: origin.replace('http:', 'ws:'), NEXT_DIST_DIR: '.next-hr-user-association' }
   });
   let browser;
   try {
-    const url = 'http://127.0.0.1:3317';
+    const url = `http://127.0.0.1:${port}`;
     const deadline = Date.now() + 180000;
     while (true) {
       try { if ((await fetch(url + '/login', { signal: AbortSignal.timeout(3000) })).status < 500) break; } catch {}
@@ -98,7 +100,7 @@ module.exports = async function ({ origin, token, document, selectable, check, d
     });
   } finally {
     if (browser) await browser.close();
-    if (process.platform === 'win32' && web.pid) {
+    if (process.platform === 'win32' && web.pid && web.exitCode === null) {
       try { execFileSync('taskkill', ['/PID', String(web.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true }); } catch {}
     } else web.kill();
     fs.closeSync(out);
