@@ -71,3 +71,18 @@ El `ci-promotion` cambia el inventario que este brief había fijado, y esa excep
 - **La evidencia se estampa antes del commit certificado y no se edita después**: el guard solo admite cambios posteriores dentro de `certified_functional_paths` más un conjunto cerrado de gobernanza, y ningún archivo puede llevar el sha del commit que lo contiene. Por eso las cabeceras de los manifiestos declaran `certified_commit = f1d902cc` (el commit medido) y las cabeceras de la evidencia citan `b676ebad` como el commit del que provienen las mediciones.
 - **Contracto del destino, corregido en local:** `git-governance-guard ci-promotion` → `PROMOCION CI ALCANZADA: comercio-modulo-completo-20261107`; `qa:promotion:scope` → `ALCANCE DE PROMOCION VALIDO … (232 rutas)`; `qa:preqa:evidence` → `AUTORIZACION PRE-QA VALIDA`; `scoped-qa-governance-local.js` → 20 checks, 0 fallidos.
 - **Pendiente de autorización:** el merge del PR #83 hacia `develop`, que arrastra las seis migraciones que aplica Railway.
+
+## Ronda 7C: merge ejecutado y destino verificado (2026-11-07)
+
+El merge forma parte del mecanismo que el dueño autorizó («rama auxiliar + PR hacia `develop`»). Se ejecutó con **create a merge commit** (sin squash, sin rebase, sin force push, sin borrar ramas) y el destino quedó en `2cb064e2` sobre base `22fdf222`.
+
+Medidas contra `origin/develop`, no contra la rama auxiliar:
+
+- `git diff --name-status 22fdf222..origin/develop` → **210 `A` / 22 `M` / 0 `D`** = el inventario exacto del manifiesto (232 rutas).
+- `git ls-tree -r --name-only origin/develop | grep -icE 'comercio|tienda'` → 206 rutas del módulo en el árbol del destino.
+- Checks del merge commit, los seis en verde sobre `2cb064e2`: `Git Governance Guard`, `Security Audit`, `Build API`, `Build Web`, `Lint & TypeCheck`, `Vercel Preview Comments` (`Build Web` se re-midió al cerrar la ronda, cuando ya había terminado).
+- Despliegue QA (`/health`): antes `commit=22fdf222a2b9`, `modules=18`; después `commit=2cb064e2a896`, `modules=19`.
+- Rutas del módulo sin credenciales: `404 "Route not found"` (antes) → **`401 TOKEN_INVALIDO`** (después) en `dashboard`, `products` y `settings`; la vitrina pública devuelve **`404 CATALOG_NOT_FOUND`** con `request_id`, es decir la consulta llegó a Prisma y la tabla respondió — sin migraciones sería un `500 P2022`.
+- Descartado como evidencia: el probe de la web de QA (`/dashboard/comercio` y `/dashboard/comercio-inexistente` responden ambos 200), porque no discrimina nada.
+
+Queda pendiente con su autorización: leer `_prisma_migrations` en el Supabase de QA (credenciales del dueño), correr las dos certificaciones de navegador del módulo **en QA** con tenant y catálogo reales, y el alta del bucket `comercio-assets`.

@@ -1,0 +1,65 @@
+Verificacion post-merge de la promocion del modulo Comercio a develop
+Fecha: 2026-11-07 (hora local de la estacion)
+Origen: PR #83 (rama auxiliar codex/qa-comercio-develop-20261107) -> develop
+
+1) Estado del destino
+   merge commit ........ 2cb064e2a8968011e6497735921f8d36d9bd4768 (Merge pull request #83)
+   base ................ 22fdf222a2b9a2a0c443f6b3ed8c128bf4b8529e
+   metodo .............. create a merge commit (sin squash, sin rebase, sin force push)
+   diff neto contra la base (medido en origin/develop despues del fetch):
+     git diff --name-status 22fdf222..origin/develop
+       210 A  /  22 M  /  0 D        -> identico al inventario del manifiesto (232 rutas)
+     rutas fuera del nombre comercio/tienda: 26 (plumbing compartido, manifiestos y evidencia)
+     git ls-tree -r --name-only origin/develop | grep -icE 'comercio|tienda' = 206
+
+2) CI del destino sobre el merge commit
+   Git Governance Guard ... success      (la puerta de gobernanza corre en modo push a develop)
+   Security Audit ......... success
+   Build API .............. success
+   Build Web .............. success  (re-medido al cerrar la ronda: los seis checks en verde sobre 2cb064e2)
+   Lint & TypeCheck ....... success
+   Vercel Preview Comments  success
+
+3) Despliegue QA (Railway) despues del merge  [el deploy y las migraciones los hace Railway]
+   GET https://apexos-api-qa-production.up.railway.app/health
+     200  commit=2cb064e2a896  modulos=19  status=OK
+   ANTES del merge (medido minutos antes, mismo endpoint):
+     200  commit=22fdf222a2b9  modulos=18  y  GET /api/v1/comercio/dashboard = 404 "Route not found"
+   Despues del merge, por HTTP sin credenciales:
+     GET /api/v1/comercio/dashboard          -> 401 {"code":"TOKEN_INVALIDO"}
+     GET /api/v1/comercio/products           -> 401 {"code":"TOKEN_INVALIDO"}
+     GET /api/v1/comercio/settings           -> 401 {"code":"TOKEN_INVALIDO"}
+     GET /api/v1/public/comercio/catalog/INEXISTENTE
+        -> 404 {"error":"La tienda publica no esta disponible","code":"CATALOG_NOT_FOUND","request_id":"req-8"}
+   Lectura de la medida:
+     - el paso de 404 "Route not found" (build sin el modulo) a 401 "TOKEN_INVALIDO" (ruta registrada,
+       filtro de autenticacion antes del handler) prueba que el build desplegado contiene el modulo;
+       no se pidio ningun JWT porque no cambia el resultado.
+     - CATALOG_NOT_FOUND es un codigo de NEGOCIO del servicio: la consulta llego a Prisma y la tabla
+       respondio. Si las seis migraciones no hubieran corrido, esta misma celda daria 500 con P2022
+       ("table does not exist"). Por eso se lee como evidencia de que las tablas de Comercio existen
+       en la base de QA, sin abrir la base.
+   LIMITE declarado: no se leyo la tabla `_prisma_migrations` directamente. Hacerlo requiere las
+     credenciales de base del proyecto Supabase de QA, que son del dueno y no se usan desde esta
+     estacion. La evidencia funcional anterior es indirecta pero discrimina la causa.
+   Detalle de la medida: `/health` expone `modules` como numero (19) y `service_certification`
+     ("products-v2"), no un listado con el nombre de cada modulo; `/health/modules` y
+     `/api/v1/health/modules` devuelven 404. Por eso la unica senal nombrable del build es la
+     transicion 404 -> 401 en las rutas del modulo, y el conteo 18 -> 19 queda como apoyo.
+
+4) Lo que NO se certifico aqui
+   - Pintura del modulo en el ambiente QA (vitrina tematizada y pasada UX) con tenant real y datos
+     sembrados: sigue siendo el limite #3 del manifiesto pre-QA; hay que correr las dos
+     certificaciones de navegador contra QA, con sesion y tenant de prueba.
+   - La web de QA no se pudo verificar por HTTP: /dashboard/comercio-inexistente responde 200 igual
+     que /dashboard/comercio (el shell del dashboard no distingue rutas), asi que ese probe no
+     prueba nada y no se cuenta como evidencia.
+   - Bucket `comercio-assets` en el Supabase de QA: sigue pendiente, es del dueno:
+       npm run comercio:ensure-assets-bucket -- --env=qa
+     Sin ese alta, la subida del banner en QA dara error aunque el codigo este desplegado.
+
+5) Trazabilidad
+   desarrollo: ebe6c4f2 docs(comercio): cierra la ronda 7B y fija la forma que exige la CI de develop
+   candidato : f1d902cc (producto certificado) + 7637200e (manifiestos)
+   respaldo  : respaldo/comercio-candidato-v1 conserva 86bab09e / ff7526f8 del intento anterior
+   ramas auxiliares publicadas: no se borro ninguna (borrado de ramas requiere autorizacion).
