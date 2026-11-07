@@ -1,0 +1,3011 @@
+{
+  "ambiente": "local",
+  "apiUrl": "http://localhost:3310",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "cambio": "comercio-ux-pasada",
+  "checks": [
+    {
+      "name": "login_real",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_login",
+      "ok": true,
+      "detail": {
+        "etiqueta": "login",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "acceso_por_la_interfaz",
+      "ok": true,
+      "detail": {
+        "ruta": "http://localhost:3311/dashboard"
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_productos_light",
+      "ok": true,
+      "detail": {
+        "etiqueta": "productos_light",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "tema_claro_sin_clase_dark",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "la_ruta_responde_sin_error_productos_dark",
+      "ok": true,
+      "detail": {
+        "etiqueta": "productos_dark",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "tema_oscuro_aplica_la_clase",
+      "ok": true,
+      "detail": {
+        "clases": "dark"
+      }
+    },
+    {
+      "name": "el_tema_oscuro_oscurece_la_superficie",
+      "ok": true,
+      "detail": {
+        "fondo": "rgb(15, 23, 32)"
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_portada_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "portada_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_portada_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_portada_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_portada_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_productos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "productos_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_productos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_productos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_productos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_productos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Productos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_vender_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "vender_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_vender_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_vender_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_vender_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_vender_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Vender",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_ventas_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "ventas_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_ventas_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_ventas_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_ventas_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_ventas_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Ventas",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_cartera_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "cartera_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_cartera_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_cartera_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_cartera_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_cartera_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Cartera",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_clientes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "clientes_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_clientes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_clientes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_clientes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_clientes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Clientes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_compras_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "compras_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_compras_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_compras_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_compras_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_compras_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Compras de mercancía",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_gastos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "gastos_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_gastos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_gastos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_gastos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_gastos_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Ingresos y egresos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_promociones_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "promociones_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_promociones_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_promociones_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_promociones_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_promociones_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Promociones",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_reportes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "reportes_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_reportes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_reportes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_reportes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_reportes_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Reportes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_configuracion_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "configuracion_escritorio_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_configuracion_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_configuracion_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_configuracion_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_configuracion_escritorio_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Configuración del comercio",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_portada_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "portada_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_portada_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_portada_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_portada_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_portada_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 169,
+            "nombre": "Ajustar stock y mínimos"
+          },
+          {
+            "alto": 24,
+            "ancho": 59,
+            "nombre": "Ver caja"
+          },
+          {
+            "alto": 24,
+            "ancho": 84,
+            "nombre": "Ver reportes"
+          },
+          {
+            "alto": 24,
+            "ancho": 68,
+            "nombre": "Ver todas"
+          },
+          {
+            "alto": 24,
+            "ancho": 93,
+            "nombre": "Ver productos"
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_productos_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "productos_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_productos_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_productos_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_productos_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_productos_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar productos"
+          },
+          {
+            "alto": 24,
+            "ancho": 129,
+            "nombre": "Solo por reponer"
+          },
+          {
+            "alto": 24,
+            "ancho": 102,
+            "nombre": "Ver inactivos"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_productos_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Productos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_vender_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "vender_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_vender_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_vender_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_vender_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_vender_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar producto"
+          },
+          {
+            "alto": 24,
+            "ancho": 149,
+            "nombre": "Ver todo el catálogo"
+          },
+          {
+            "alto": 24,
+            "ancho": 117,
+            "nombre": "Venta a crédito"
+          },
+          {
+            "alto": 38,
+            "ancho": 149,
+            "nombre": "Efectivo"
+          },
+          {
+            "alto": 38,
+            "ancho": 149,
+            "nombre": "Nequi"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_vender_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Vender",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_ventas_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "ventas_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_ventas_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_ventas_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_ventas_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_ventas_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 133,
+            "nombre": "Nueva venta"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar ventas por número, cliente o form"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 123,
+            "nombre": "Ver 178 más"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_ventas_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Ventas",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_cartera_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "cartera_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_cartera_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_cartera_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_cartera_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_cartera_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar créditos por número, cliente o es"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 110,
+            "nombre": "Ver 9 más"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_cartera_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Cartera",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_clientes_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "clientes_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_clientes_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_clientes_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_clientes_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_clientes_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar clientes por código, nombre, docu"
+          },
+          {
+            "alto": 24,
+            "ancho": 102,
+            "nombre": "Ver inactivos"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 332,
+            "nombre": "Nuevo cliente"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_clientes_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Clientes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_compras_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "compras_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_compras_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_compras_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_compras_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_compras_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar compras por número, producto o pr"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 141,
+            "nombre": "Nueva compra"
+          },
+          {
+            "alto": 36,
+            "ancho": 110,
+            "nombre": "Ver 9 más"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_compras_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Compras de mercancía",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_gastos_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "gastos_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_gastos_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_gastos_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_gastos_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_gastos_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar movimientos por número, concepto,"
+          },
+          {
+            "alto": 36,
+            "ancho": 58,
+            "nombre": "Todos"
+          },
+          {
+            "alto": 36,
+            "ancho": 90,
+            "nombre": "Ingresos"
+          },
+          {
+            "alto": 36,
+            "ancho": 86,
+            "nombre": "Egresos"
+          },
+          {
+            "alto": 24,
+            "ancho": 104,
+            "nombre": "Ver anulados"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_gastos_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Ingresos y egresos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_promociones_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "promociones_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_promociones_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_promociones_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_promociones_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_promociones_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 36,
+            "ancho": 162,
+            "nombre": "Nueva promoción"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar promociones por nombre, categoría"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 26,
+            "ancho": 57,
+            "nombre": "Todas"
+          },
+          {
+            "alto": 26,
+            "ancho": 59,
+            "nombre": "Activa"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_promociones_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Promociones",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_reportes_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "reportes_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_reportes_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_reportes_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_reportes_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_reportes_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 48,
+            "nombre": "Hoy"
+          },
+          {
+            "alto": 40,
+            "ancho": 58,
+            "nombre": "7 días"
+          },
+          {
+            "alto": 40,
+            "ancho": 64,
+            "nombre": "30 días"
+          },
+          {
+            "alto": 40,
+            "ancho": 74,
+            "nombre": "Este mes"
+          },
+          {
+            "alto": 40,
+            "ancho": 95,
+            "nombre": "Mes anterior"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_reportes_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Reportes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_configuracion_movil_claro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "configuracion_movil_claro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_configuracion_movil_claro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_configuracion_movil_claro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_configuracion_movil_claro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_configuracion_movil_claro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 179,
+            "nombre": "Negocio"
+          },
+          {
+            "alto": 40,
+            "ancho": 179,
+            "nombre": "Vitrina pública"
+          },
+          {
+            "alto": 40,
+            "ancho": 179,
+            "nombre": "Apariencia"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Gracias por su compra"
+          },
+          {
+            "alto": 40,
+            "ancho": 197,
+            "nombre": "Guardar configuración"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_configuracion_movil_claro",
+      "ok": true,
+      "detail": {
+        "actual": "Configuración del comercio",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_portada_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "portada_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_portada_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_portada_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_portada_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_productos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "productos_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_productos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_productos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_productos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_productos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Productos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_vender_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "vender_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_vender_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_vender_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_vender_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_vender_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Vender",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_ventas_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "ventas_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_ventas_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_ventas_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_ventas_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_ventas_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Ventas",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_cartera_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "cartera_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_cartera_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_cartera_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_cartera_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_cartera_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Cartera",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_clientes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "clientes_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_clientes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_clientes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_clientes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_clientes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Clientes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_compras_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "compras_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_compras_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_compras_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_compras_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_compras_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Compras de mercancía",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_gastos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "gastos_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_gastos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_gastos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_gastos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_gastos_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Ingresos y egresos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_promociones_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "promociones_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_promociones_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_promociones_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_promociones_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_promociones_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Promociones",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_reportes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "reportes_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_reportes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_reportes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_reportes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_reportes_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Reportes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_configuracion_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "configuracion_escritorio_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_configuracion_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 1440,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "nombres_accesibles_configuracion_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_configuracion_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "orientacion_visible_configuracion_escritorio_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Configuración del comercio",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_portada_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "portada_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_portada_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_portada_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_portada_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_portada_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 169,
+            "nombre": "Ajustar stock y mínimos"
+          },
+          {
+            "alto": 24,
+            "ancho": 59,
+            "nombre": "Ver caja"
+          },
+          {
+            "alto": 24,
+            "ancho": 84,
+            "nombre": "Ver reportes"
+          },
+          {
+            "alto": 24,
+            "ancho": 68,
+            "nombre": "Ver todas"
+          },
+          {
+            "alto": 24,
+            "ancho": 93,
+            "nombre": "Ver productos"
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_productos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "productos_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_productos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_productos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_productos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_productos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar productos"
+          },
+          {
+            "alto": 24,
+            "ancho": 129,
+            "nombre": "Solo por reponer"
+          },
+          {
+            "alto": 24,
+            "ancho": 102,
+            "nombre": "Ver inactivos"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_productos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Productos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_vender_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "vender_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_vender_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_vender_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_vender_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_vender_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar producto"
+          },
+          {
+            "alto": 24,
+            "ancho": 149,
+            "nombre": "Ver todo el catálogo"
+          },
+          {
+            "alto": 24,
+            "ancho": 117,
+            "nombre": "Venta a crédito"
+          },
+          {
+            "alto": 38,
+            "ancho": 149,
+            "nombre": "Efectivo"
+          },
+          {
+            "alto": 38,
+            "ancho": 149,
+            "nombre": "Nequi"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_vender_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Vender",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_ventas_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "ventas_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_ventas_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_ventas_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_ventas_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_ventas_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 133,
+            "nombre": "Nueva venta"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar ventas por número, cliente o form"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 123,
+            "nombre": "Ver 178 más"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_ventas_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Ventas",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_cartera_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "cartera_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_cartera_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_cartera_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_cartera_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_cartera_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar créditos por número, cliente o es"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 110,
+            "nombre": "Ver 9 más"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_cartera_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Cartera",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_clientes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "clientes_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_clientes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_clientes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_clientes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_clientes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar clientes por código, nombre, docu"
+          },
+          {
+            "alto": 24,
+            "ancho": 102,
+            "nombre": "Ver inactivos"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 332,
+            "nombre": "Nuevo cliente"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_clientes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Clientes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_compras_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "compras_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_compras_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_compras_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_compras_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_compras_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar compras por número, producto o pr"
+          },
+          {
+            "alto": 36,
+            "ancho": 80,
+            "nombre": "Excel"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 36,
+            "ancho": 141,
+            "nombre": "Nueva compra"
+          },
+          {
+            "alto": 36,
+            "ancho": 110,
+            "nombre": "Ver 9 más"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_compras_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Compras de mercancía",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_gastos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "gastos_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_gastos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_gastos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_gastos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_gastos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar movimientos por número, concepto,"
+          },
+          {
+            "alto": 36,
+            "ancho": 58,
+            "nombre": "Todos"
+          },
+          {
+            "alto": 36,
+            "ancho": 90,
+            "nombre": "Ingresos"
+          },
+          {
+            "alto": 36,
+            "ancho": 86,
+            "nombre": "Egresos"
+          },
+          {
+            "alto": 24,
+            "ancho": 104,
+            "nombre": "Ver anulados"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_gastos_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Ingresos y egresos",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_promociones_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "promociones_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_promociones_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_promociones_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_promociones_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_promociones_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 36,
+            "ancho": 162,
+            "nombre": "Nueva promoción"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Buscar promociones por nombre, categoría"
+          },
+          {
+            "alto": 36,
+            "ancho": 111,
+            "nombre": "Actualizar"
+          },
+          {
+            "alto": 26,
+            "ancho": 57,
+            "nombre": "Todas"
+          },
+          {
+            "alto": 26,
+            "ancho": 59,
+            "nombre": "Activa"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_promociones_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Promociones",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_reportes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "reportes_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_reportes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_reportes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_reportes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_reportes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 48,
+            "nombre": "Hoy"
+          },
+          {
+            "alto": 40,
+            "ancho": 58,
+            "nombre": "7 días"
+          },
+          {
+            "alto": 40,
+            "ancho": 64,
+            "nombre": "30 días"
+          },
+          {
+            "alto": 40,
+            "ancho": 74,
+            "nombre": "Este mes"
+          },
+          {
+            "alto": 40,
+            "ancho": 95,
+            "nombre": "Mes anterior"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_reportes_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Reportes",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_configuracion_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "etiqueta": "configuracion_movil_oscuro",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_configuracion_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_configuracion_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_configuracion_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_configuracion_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 24,
+            "ancho": 56,
+            "nombre": "Comercio"
+          },
+          {
+            "alto": 40,
+            "ancho": 179,
+            "nombre": "Negocio"
+          },
+          {
+            "alto": 40,
+            "ancho": 179,
+            "nombre": "Vitrina pública"
+          },
+          {
+            "alto": 40,
+            "ancho": 179,
+            "nombre": "Apariencia"
+          },
+          {
+            "alto": 40,
+            "ancho": 332,
+            "nombre": "Gracias por su compra"
+          },
+          {
+            "alto": 40,
+            "ancho": 197,
+            "nombre": "Guardar configuración"
+          }
+        ]
+      }
+    },
+    {
+      "name": "orientacion_visible_configuracion_movil_oscuro",
+      "ok": true,
+      "detail": {
+        "actual": "Configuración del comercio",
+        "esta": true,
+        "jerga": false
+      }
+    },
+    {
+      "name": "el_recorrido_mide_44_pantallas",
+      "ok": true,
+      "detail": {
+        "medidas": 44
+      }
+    },
+    {
+      "name": "el_reintento_de_la_portada_es_un_blanco_tactil",
+      "ok": true,
+      "detail": {
+        "alto": 24,
+        "ancho": 66,
+        "presente": true
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_busqueda_productos",
+      "ok": true,
+      "detail": {
+        "etiqueta": "busqueda_productos",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "la_busqueda_es_un_campo_etiquetado",
+      "ok": true,
+      "detail": {
+        "asociada": true,
+        "limpiar_en_vacio": false,
+        "etiqueta": "Buscar productos",
+        "presente": true,
+        "tipo": "search"
+      }
+    },
+    {
+      "name": "el_boton_de_limpiar_vacia_el_campo",
+      "ok": true,
+      "detail": {
+        "boton": true,
+        "tecleado": "silla de oficina",
+        "valor": "",
+        "ms_hasta_boton": 729
+      }
+    },
+    {
+      "name": "el_recuento_anuncia_las_filas_vistas",
+      "ok": true,
+      "detail": {
+        "recuento": "119 de 131 productos"
+      }
+    },
+    {
+      "name": "la_busqueda_filtra_y_ignora_sobrantes",
+      "ok": true,
+      "detail": {
+        "codigo": "P-0013",
+        "antes": "119 de 131 productos",
+        "despues": "1 de 131 productos"
+      }
+    },
+    {
+      "name": "la_busqueda_ignora_acentos_y_mayusculas",
+      "ok": true,
+      "detail": {
+        "sin_acento": "panales",
+        "con_acento": "Pañales",
+        "recuento_sin_acento": "1 de 131 productos",
+        "recuento_con_acento": "1 de 131 productos"
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_ventanado_movil",
+      "ok": true,
+      "detail": {
+        "etiqueta": "ventanado_movil",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "la_lista_movil_va_ventaneada",
+      "ok": true,
+      "detail": {
+        "ampli": true,
+        "texto_boton": "Ver 107 más",
+        "tarjetas": 12
+      }
+    },
+    {
+      "name": "ampliar_ventana_muestra_mas",
+      "ok": true,
+      "detail": {
+        "antes": 12,
+        "despues": 24
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_dialogo_clientes",
+      "ok": true,
+      "detail": {
+        "etiqueta": "dialogo_clientes",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "el_alta_de_cliente_abre_un_dialogo",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "el_dialogo_anima_su_entrada",
+      "ok": true,
+      "detail": {
+        "animada": true,
+        "presente": true,
+        "clase": "apexDialogEnter"
+      }
+    },
+    {
+      "name": "el_dialogo_recibe_el_foco",
+      "ok": true,
+      "detail": {
+        "dentro": true,
+        "etiqueta": "BUTTON"
+      }
+    },
+    {
+      "name": "el_tab_no_se_escapa_del_dialogo",
+      "ok": true,
+      "detail": {
+        "se_escapo_en": null
+      }
+    },
+    {
+      "name": "escape_cierra_el_dialogo",
+      "ok": true,
+      "detail": {
+        "dialogos": 0,
+        "foco": "Nuevo cliente",
+        "scroll": ""
+      }
+    },
+    {
+      "name": "el_foco_vuelve_al_disparador",
+      "ok": true,
+      "detail": {
+        "dialogos": 0,
+        "foco": "Nuevo cliente",
+        "scroll": ""
+      }
+    },
+    {
+      "name": "el_scroll_del_fondo_se_devuelve",
+      "ok": true,
+      "detail": {
+        "dialogos": 0,
+        "foco": "Nuevo cliente",
+        "scroll": ""
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_selector_compras",
+      "ok": true,
+      "detail": {
+        "etiqueta": "selector_compras",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "el_selector_sigue_al_scroll",
+      "ok": true,
+      "detail": {
+        "antes": {
+          "alto": 260,
+          "tope": 357
+        },
+        "despues": {
+          "alto": 260,
+          "tope": 197
+        }
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_vitrina_movil",
+      "ok": true,
+      "detail": {
+        "etiqueta": "vitrina_movil",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "sin_desbordes_vitrina_movil",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "nombres_accesibles_vitrina_movil",
+      "ok": true,
+      "detail": {
+        "sin_nombre": []
+      }
+    },
+    {
+      "name": "contraste_suficiente_vitrina_movil",
+      "ok": true,
+      "detail": {
+        "por_debajo": []
+      }
+    },
+    {
+      "name": "objetivos_tactiles_ok_vitrina_movil",
+      "ok": true,
+      "detail": {
+        "menores_de_24": [],
+        "muestra_bajos": [
+          {
+            "alto": 36,
+            "ancho": 90,
+            "nombre": "V VENTAS CAMILA"
+          },
+          {
+            "alto": 38,
+            "ancho": 202,
+            "nombre": "Buscar en la tienda"
+          },
+          {
+            "alto": 36,
+            "ancho": 42,
+            "nombre": "Pedido"
+          },
+          {
+            "alto": 40,
+            "ancho": 40,
+            "nombre": "Desplazar Destacados hacia la izquierda"
+          },
+          {
+            "alto": 40,
+            "ancho": 40,
+            "nombre": "Desplazar Destacados hacia la derecha"
+          },
+          {
+            "alto": 34,
+            "ancho": 34,
+            "nombre": "Vista rápida de Aceite de girasol 900 ml"
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_vitrina_permite_agregar_al_pedido",
+      "ok": true,
+      "detail": {
+        "nombre": "Agregar Aceite de girasol 900 ml"
+      }
+    },
+    {
+      "name": "el_carrito_es_una_capa_accesible",
+      "ok": true,
+      "detail": {
+        "animada": true,
+        "modal": true,
+        "focoDentro": true
+      }
+    },
+    {
+      "name": "el_tab_no_se_escapa_del_carrito",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "escape_cierra_el_carrito",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "la_vista_rapida_es_accesible",
+      "ok": true,
+      "detail": {
+        "foco": true,
+        "nombre": "Detalle de Aceite de girasol 900 ml",
+        "rol": "dialog"
+      }
+    },
+    {
+      "name": "escape_cierra_la_vista_rapida",
+      "ok": true,
+      "detail": {}
+    },
+    {
+      "name": "la_vitrina_no_desborda_en_movil",
+      "ok": true,
+      "detail": {
+        "ancho": 390,
+        "viewport": 390
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_movimiento_reducido",
+      "ok": true,
+      "detail": {
+        "etiqueta": "movimiento_reducido",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "el_movimiento_reducido_apaga_entradas",
+      "ok": true,
+      "detail": {
+        "dialogo": "none",
+        "duracion": "0s",
+        "fondo": "none"
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_preferencias",
+      "ok": true,
+      "detail": {
+        "etiqueta": "preferencias",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "el_shell_abre_las_preferencias_del_usuario",
+      "ok": true,
+      "detail": {
+        "abreCuenta": true,
+        "panel": true
+      }
+    },
+    {
+      "name": "el_control_de_tema_cambia_la_pantalla",
+      "ok": true,
+      "detail": {
+        "antes": false,
+        "boton": "Oscuro",
+        "despues": true
+      }
+    },
+    {
+      "name": "la_ruta_responde_sin_error_tema_restaurado",
+      "ok": true,
+      "detail": {
+        "etiqueta": "tema_restaurado",
+        "errores": [],
+        "status": 200
+      }
+    },
+    {
+      "name": "la_certificacion_deja_el_tema_como_estaba",
+      "ok": true,
+      "detail": {
+        "tema_inicial": null
+      }
+    },
+    {
+      "name": "evidencia_de_recorrido_escrita",
+      "ok": true,
+      "detail": {
+        "archivo": "../../../AppData/Local/Temp/comercio-cand2-evid/uxfinal/recorrido.json"
+      }
+    }
+  ],
+  "ejecutado_en": "2026-11-07T20:15:38.550Z",
+  "fallidos": [],
+  "limitaciones": [
+    "Se mide con el tenant demo local (catalogo sembrado). Un tenant real con otros textos o mas columnas puede cambiar el numero de objetivos tactiles por debajo de 44 px; la cota dura exigida es 24 px (WCAG 2.5.8) y todo lo menor a 44 px se reporta como muestra para decidir.",
+    "El contraste se calcula sobre el fondo pintado por los propios padres (sin pixel sampling): un texto sobre una fotografia del banner de la vitrina no se puede medir aqui; esa ruta se cubre en certify:comercio-storefront-theme:local."
+  ],
+  "ok": true,
+  "rama": "desarrollo",
+  "total": 287,
+  "webUrl": "http://localhost:3311"
+}

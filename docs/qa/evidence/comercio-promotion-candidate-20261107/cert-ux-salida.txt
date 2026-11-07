@@ -1,0 +1,2 @@
+CERTIFICATION_OK {"evidencia":"../../../AppData/Local/Temp/comercio-cand2-evid/uxfinal","total":287}
+exit=0

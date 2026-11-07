@@ -33,3 +33,30 @@ export function configuredWebSocketOrigin(
   }
 }
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
+// Origenes extra para img-src. Solo hacen falta en desarrollo, donde el almacen de
+// objetos del puesto (MinIO en http://localhost:9000) sirve los banners por http y la
+// politica general solo permite https:. En produccion la lista se ignora: aflojar el
+// CSP por variable de ambiente seria una puerta trasera. Se admite puerto (el almacen
+// local lo usa) pero nunca un host que no sea loopback, ni rutas ni credenciales.
+export function configuredImageOrigins(raw: string | undefined, isDevelopment: boolean): string {
+  if (!isDevelopment || !raw) return "";
+  const origins: string[] = [];
+  for (const entry of String(raw).split(",")) {
+    const value = entry.trim();
+    if (!value) continue;
+    try {
+      const url = new URL(value);
+      if (!["http:", "https:"].includes(url.protocol)) continue;
+      if (!LOOPBACK_HOSTS.has(url.hostname)) continue;
+      if (url.username || url.password) continue;
+      if (url.pathname !== "/" || url.search || url.hash) continue;
+      if (!origins.includes(url.origin)) origins.push(url.origin);
+    } catch {
+      // Entrada mal formada: se descarta, no se abre la politica.
+    }
+  }
+  return origins.length ? ` ${origins.join(" ")}` : "";
+}
+

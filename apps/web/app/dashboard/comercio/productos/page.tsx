@@ -1,0 +1,557 @@
+"use client";
+
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Camera, ChevronDown, ChevronRight, Download, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { SearchField } from "@/components/ui/SearchField";
+import { api } from "@/lib/api";
+import { ModalFrame } from "@/components/ui/ModalFrame";
+import { Button } from "@/components/ui/button";
+import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
+import { downloadExcelWorkbook } from "@/lib/reportExports";
+import { Check, comercioGate, ComercioMessages, describeError, Field, matchesQuery, ModuleHeader, money, StatusPill, useComercioAccess, useVentana } from "@/components/comercio/shared";
+
+// Maestro de productos del Comercio (GET /api/v1/comercio/products). El stock nunca se
+// edita por el formulario: solo por ajustes, compras o ventas, todo trazado en movimientos.
+// El descuento tampoco reescribe el precio: price es el precio de lista y price_final es
+// el que cobra la vitrina y el mostrador.
+type Product = {
+  id: number;
+  code: string;
+  name: string;
+  category: string | null;
+  unit: string;
+  price: number;
+  discount_percent: number;
+  price_final: number;
+  cost: number;
+  stock: number;
+  min_stock: number;
+  active: boolean;
+  notes: string | null;
+  has_photo: boolean;
+  photo_url: string | null;
+  catalog_featured: boolean;
+  low_stock: boolean;
+};
+
+type ProductForm = {
+  name: string;
+  category: string;
+  unit: string;
+  price: string;
+  cost: string;
+  stock: string;
+  min_stock: string;
+  discount_percent: string;
+  notes: string;
+  active: boolean;
+  catalog_featured: boolean;
+};
+
+const emptyForm: ProductForm = { name: "", category: "", unit: "unidad", price: "", cost: "", stock: "", min_stock: "0", discount_percent: "0", notes: "", active: true, catalog_featured: false };
+
+const MAX_DISCOUNT = 90;
+
+// Espejo del calculo del servidor (apps/api .../comercio/service.js: discountedPrice).
+function finalPriceOf(price: number, percent: number) {
+  const pct = Math.min(MAX_DISCOUNT, Math.max(0, percent));
+  return Math.round((price * (1 - pct / 100) + Number.EPSILON) * 100) / 100;
+}
+
+function cleanPercent(value: string) {
+  return Math.min(MAX_DISCOUNT, Math.max(0, Number(value || 0) || 0));
+}
+
+export default function ComercioProductosPage() {
+  const access = useComercioAccess();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
+  const [lowOnly, setLowOnly] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
+
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [form, setForm] = useState<ProductForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
+
+  // La ficha del producto concentra stock, foto y estado: un solo punto de entrada
+  // por fila evita la tanda de botones repetidos en el listado.
+  const [adjustForm, setAdjustForm] = useState({ new_stock: "", reason: "Conteo físico" });
+  const [adjustBusy, setAdjustBusy] = useState(false);
+
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await api<{ items: Product[]; total: number }>("/api/v1/comercio/products?include_inactive=true&limit=500", { cache: "no-store" });
+      setProducts(result.items);
+      setError("");
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible cargar los productos."));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (access.ready && access.canRead) void load();
+  }, [access.ready, access.canRead, load]);
+
+  const categories = useMemo(() => [...new Set(products.map((row) => row.category || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "es")), [products]);
+
+  const filtered = useMemo(() => products.filter((row) => {
+    if (!showInactive && !row.active) return false;
+    if (lowOnly && !row.low_stock) return false;
+    if (category && row.category !== category) return false;
+    return matchesQuery(query, row.code, row.name, row.category || "", row.unit);
+  }), [products, query, category, lowOnly, showInactive]);
+
+  const hasFilters = Boolean(query.trim() || category || lowOnly || showInactive);
+
+  function clearFilters() {
+    setQuery("");
+    setCategory("");
+    setLowOnly(false);
+    setShowInactive(false);
+  }
+
+  function exportProducts(rows: Product[]) {
+    downloadExcelWorkbook("comercio-productos.xls", [{
+      name: "Productos",
+      columns: [
+        { key: "code", label: "Código" },
+        { key: "name", label: "Producto", width: 220 },
+        { key: "category", label: "Categoría" },
+        { key: "unit", label: "Unidad" },
+        { key: "list_price", label: "Precio de lista" },
+        { key: "discount", label: "Descuento %" },
+        { key: "final_price", label: "Precio final" },
+        { key: "cost", label: "Costo promedio" },
+        { key: "stock", label: "Stock" },
+        { key: "min_stock", label: "Mínimo" },
+        { key: "state", label: "Estado" }
+      ],
+      rows: rows.map((row) => ({
+        code: row.code,
+        name: row.name,
+        category: row.category || "",
+        unit: row.unit,
+        list_price: Number(row.price),
+        discount: Number(row.discount_percent),
+        final_price: Number(row.price_final),
+        cost: Number(row.cost),
+        stock: Number(row.stock),
+        min_stock: Number(row.min_stock),
+        state: row.active ? "Activo" : "Inactivo"
+      }))
+    }]);
+  }
+
+  const columns: DataColumn<Product>[] = [
+    { className: "font-mono", cell: (row) => row.code, header: "Código", hideable: false, id: "code", sortValue: (row) => row.code },
+    {
+      cell: (row) => (
+        <div className="flex min-w-0 items-center gap-2">
+          {row.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img alt="" aria-hidden className="h-9 w-9 shrink-0 rounded-md border border-line bg-white object-cover" loading="lazy" src={row.photo_url} />
+          ) : (
+            <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line bg-surface-muted text-xs font-semibold text-content-muted">
+              {row.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="truncate font-medium">{row.name}</p>
+            <p className="text-xs text-content-muted">{row.unit}{row.catalog_featured ? " · vitrina" : ""}</p>
+          </div>
+        </div>
+      ),
+      header: "Producto",
+      hideable: false,
+      id: "name",
+      sortValue: (row) => row.name
+    },
+    { cell: (row) => row.category || "--", header: "Categoría", id: "category", sortValue: (row) => row.category || "" },
+    {
+      className: "text-right",
+      cell: (row) => (
+        <div className="leading-tight">
+          <span className="font-semibold">{money(row.price_final)}</span>
+          {row.discount_percent > 0 ? <span className="block text-xs text-content-muted"><span className="line-through">{money(row.price)}</span> -{row.discount_percent}%</span> : null}
+        </div>
+      ),
+      header: "Precio final",
+      id: "price",
+      sortValue: (row) => Number(row.price_final)
+    },
+    { className: "text-right", cell: (row) => money(row.cost), header: "Costo", id: "cost", sortValue: (row) => Number(row.cost) },
+    {
+      className: "text-right",
+      cell: (row) => <StatusPill tone={row.low_stock ? "warn" : "ok"}>{row.stock} {row.unit}</StatusPill>,
+      header: "Stock",
+      id: "stock",
+      sortValue: (row) => Number(row.stock)
+    },
+    { className: "text-right", cell: (row) => <span className="text-content-muted">{row.min_stock}</span>, header: "Mínimo", id: "min", sortValue: (row) => Number(row.min_stock) },
+    { cell: (row) => (row.active ? <StatusPill tone="ok">Activo</StatusPill> : <StatusPill tone="muted">Inactivo</StatusPill>), header: "Estado", id: "state", sortValue: (row) => (row.active ? 1 : 0) },
+    {
+      className: "text-right",
+      cell: (row) => (access.canWrite ? <Button onClick={() => openEditor(row)} size="compact" variant="secondary"><Pencil size={12} /> Ficha</Button> : null),
+      header: "Acciones",
+      hideable: false,
+      id: "action"
+    }
+  ];
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      const body: Record<string, unknown> = {
+        name: form.name.trim(),
+        category: form.category.trim() || undefined,
+        unit: form.unit.trim() || "unidad",
+        price: Number(form.price || 0),
+        cost: Number(form.cost || 0),
+        min_stock: Number(form.min_stock || 0),
+        discount_percent: cleanPercent(form.discount_percent),
+        catalog_featured: form.catalog_featured,
+        notes: form.notes.trim() || undefined,
+        active: form.active
+      };
+      if (!editing) body.stock = Number(form.stock || 0);
+      if (editing) {
+        await api(`/api/v1/comercio/products/${editing.id}`, { method: "PUT", body: JSON.stringify(body) });
+        setMessage(`Producto ${editing.code} actualizado.`);
+      } else {
+        const created = await api<Product>("/api/v1/comercio/products", { method: "POST", body: JSON.stringify(body) });
+        setMessage(`Producto creado: ${created.code} · ${created.name}`);
+      }
+      setEditorOpen(false);
+      await load();
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible guardar el producto."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openEditor(product: Product | null) {
+    setEditing(product);
+    setForm(product
+      ? { name: product.name, category: product.category || "", unit: product.unit, price: String(product.price), cost: String(product.cost), stock: "", min_stock: String(product.min_stock), discount_percent: String(product.discount_percent), notes: product.notes || "", active: product.active, catalog_featured: product.catalog_featured }
+      : emptyForm);
+    setAdjustForm({ new_stock: product ? String(product.stock) : "", reason: "Conteo físico" });
+    setPhotoFile(null);
+    setPhotoUrl(null);
+    setError("");
+    setEditorOpen(true);
+    if (product?.has_photo) {
+      void (async () => {
+        try {
+          const result = await api<{ photo_url: string | null }>(`/api/v1/comercio/products/${product.id}/photo-url`);
+          setPhotoUrl(result.photo_url);
+        } catch {
+          /* la vista previa es opcional */
+        }
+      })();
+    }
+  }
+
+  async function applyAdjust(event: FormEvent) {
+    event.preventDefault();
+    if (!editing) return;
+    setAdjustBusy(true);
+    setError("");
+    try {
+      const result = await api<{ product: Product; movement: unknown }>(`/api/v1/comercio/products/${editing.id}/adjust-stock`, {
+        method: "POST",
+        body: JSON.stringify({ new_stock: Number(adjustForm.new_stock), reason: adjustForm.reason.trim() || "Conteo físico" })
+      });
+      setMessage(`${editing.name}: stock ${editing.stock} -> ${result.product.stock}.`);
+      setEditing(result.product);
+      setAdjustForm({ new_stock: String(result.product.stock), reason: adjustForm.reason });
+      await load();
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible ajustar el stock."));
+    } finally {
+      setAdjustBusy(false);
+    }
+  }
+
+  async function uploadPhoto(event: FormEvent) {
+    event.preventDefault();
+    if (!editing || !photoFile) return;
+    setPhotoBusy(true);
+    setError("");
+    try {
+      const body = new FormData();
+      body.append("file", photoFile);
+      const result = await api<Product & { photo_url: string | null }>(`/api/v1/comercio/products/${editing.id}/photo`, { method: "POST", body });
+      setPhotoUrl(result.photo_url);
+      setPhotoFile(null);
+      setMessage(`Foto actualizada para ${editing.name}.`);
+      setEditing({ ...editing, has_photo: true });
+      await load();
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible subir la fotografía."));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    if (!editing) return;
+    setPhotoBusy(true);
+    try {
+      await api(`/api/v1/comercio/products/${editing.id}/photo`, { method: "DELETE" });
+      setMessage(`Foto eliminada de ${editing.name}.`);
+      setPhotoUrl(null);
+      setPhotoFile(null);
+      setEditing({ ...editing, has_photo: false });
+      await load();
+    } catch (caught) {
+      setError(describeError(caught, "No fue posible eliminar la fotografía."));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+  const ventana = useVentana(filtered);
+  const blocked = comercioGate(access);
+  if (blocked) return blocked;
+  return (
+    <div className="apex-workspace-shell space-y-4">
+      <ModuleHeader section="Inventario" subtitle="Productos con precio de lista, descuento, costo promedio y stock. El mismo precio final cobra la vitrina pública y el mostrador. El stock solo cambia con ajustes, compras o ventas." title="Productos" />
+      <ComercioMessages error={error} message={message} />
+
+      <section className="apex-section-card">
+        <div className="grid gap-3 border-b border-line p-4 lg:grid-cols-[minmax(240px,1fr)_13rem_auto_auto] lg:items-end">
+          <SearchField
+            hint="Ignora acentos y mayúsculas"
+            label="Buscar productos"
+            onChange={setQuery}
+            placeholder="Código, nombre, categoría o unidad"
+            value={query}
+          />
+          <Field hint={categories.length ? `${categories.length} categorías en el catálogo` : undefined} label="Categoría">
+            <select className="control apex-select" onChange={(event) => setCategory(event.target.value)} value={category}>
+              <option value="">Todas</option>
+              {categories.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </Field>
+          <div className="flex flex-wrap items-center gap-3 pb-2 text-sm lg:pb-0">
+            <Check checked={lowOnly} label="Solo por reponer" onChange={setLowOnly} />
+            <Check checked={showInactive} label="Ver inactivos" onChange={setShowInactive} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            {hasFilters ? <Button onClick={clearFilters} size="compact" variant="ghost">Limpiar filtros</Button> : null}
+            <Button disabled={!filtered.length} onClick={() => exportProducts(filtered)} size="compact" variant="secondary"><Download size={14} /> Excel</Button>
+            <Button onClick={() => void load()} size="compact" variant="secondary"><RefreshCw size={14} /> Actualizar</Button>
+            {access.canWrite ? <Button onClick={() => openEditor(null)} size="compact"><Plus size={14} /> Nuevo producto</Button> : null}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
+          <span>El precio que ve el cliente usa el descuento mayor entre el producto y la promoción activa; nunca se suman.</span>
+          <span aria-live="polite" className="font-semibold text-content-body" id="conteo-resultados">{filtered.length} de {products.length} productos</span>
+        </div>
+
+        {!loading && filtered.length ? (
+          /* Movil: toda la tarjeta es el acceso a la ficha. Escritorio: una sola accion por fila. */
+          <><ul className="grid gap-3 p-4 sm:grid-cols-2 lg:hidden">
+              {ventana.visibles.map((product) => {
+                const cardBody = (
+                  <>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{product.name}</p>
+                        <p className="font-mono text-xs text-content-muted">{product.code}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <StatusPill tone={product.low_stock ? "warn" : "ok"}>{product.stock} {product.unit}</StatusPill>
+                        {!product.active ? <StatusPill tone="muted">Inactivo</StatusPill> : null}
+                      </div>
+                    </div>
+                    <p className="mt-2 flex flex-wrap items-baseline gap-2 text-sm font-semibold">
+                      <span>{money(product.price_final)}</span>
+                      {product.discount_percent > 0 ? (
+                        <>
+                          <span className="text-xs font-normal text-content-muted line-through">{money(product.price)}</span>
+                          <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success-ink">-{product.discount_percent}%</span>
+                        </>
+                      ) : null}
+                      {product.catalog_featured ? <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold text-warning-ink">Vitrina</span> : null}
+                    </p>
+                    <p className="text-xs text-content-muted">Costo: {money(product.cost)} · Min: {product.min_stock}</p>
+                    {access.canWrite ? <p className="mt-2 flex items-center gap-1 text-xs font-medium text-apex-ink"><ChevronRight size={12} /> Abrir ficha</p> : null}
+                  </>
+                );
+                return (
+                  <li className="rounded-md border border-line p-3" key={product.id}>
+                    {access.canWrite ? (
+                      <button className="block w-full text-left" onClick={() => openEditor(product)} type="button">{cardBody}</button>
+                    ) : (
+                      cardBody
+                    )}
+                  </li>
+                );
+              })}
+          </ul>
+        {ventana.restantes > 0 ? (
+          <div className="px-4 pb-4">
+            <Button onClick={ventana.ampliar} size="compact" variant="secondary"><ChevronDown size={14} /> Ver {ventana.restantes} más</Button>
+          </div>
+        ) : null}
+        </>
+        ) : null}
+
+        <div className="hidden p-4 lg:block">
+          <SmartDataTable
+            bulkActions={(selected, clear) => (
+              <>
+                <Button onClick={() => exportProducts(selected)} size="compact" variant="secondary"><Download size={14} /> Exportar {selected.length}</Button>
+                <Button onClick={clear} size="compact" variant="ghost">Limpiar selección</Button>
+              </>
+            )}
+            columns={columns}
+            emptyDetail={products.length ? "Ajusta o limpia los filtros para volver a ver productos." : "Crea el primer producto para tener vitrina, mostrador y stock propio."}
+            emptyTitle={products.length ? "Ningún producto con estos filtros" : "Aún no tienes productos"}
+            loading={loading}
+            pageSize={12}
+            rowKey={(row) => row.id}
+            rows={filtered}
+            storageKey="comercio-productos"
+          />
+        </div>
+      </section>
+
+      {editorOpen ? (
+        <ModalFrame maxWidth="md:max-w-3xl" onClose={() => setEditorOpen(false)} title={editing ? `Ficha del producto ${editing.code}` : "Nuevo producto"}>
+          <div className="space-y-5">
+            <form className="space-y-4" onSubmit={save}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Field label="Nombre">
+                    <input className="control" maxLength={160} onChange={(event) => setForm({ ...form, name: event.target.value })} required value={form.name} />
+                  </Field>
+                </div>
+                <Field label="Categoría (opcional)">
+                  <input className="control" maxLength={80} onChange={(event) => setForm({ ...form, category: event.target.value })} placeholder="Lácteos, Aseo..." value={form.category} />
+                </Field>
+                <Field label="Unidad">
+                  <input className="control" maxLength={20} onChange={(event) => setForm({ ...form, unit: event.target.value })} value={form.unit} />
+                </Field>
+                <Field label="Precio de venta">
+                  <input className="control" min={0} onChange={(event) => setForm({ ...form, price: event.target.value })} required step="0.01" type="number" value={form.price} />
+                </Field>
+                <Field label="Costo unitario">
+                  {/* El costo promedio sale de las compras y si tiene centavos: step=1
+                      bloqueaba el guardado de cualquier producto con costo decimal. */}
+                  <input className="control" min={0} onChange={(event) => setForm({ ...form, cost: event.target.value })} required step="0.01" type="number" value={form.cost} />
+                </Field>
+                {/* Descuento y destacado: el precio de lista nunca se reescribe, la vitrina
+                    y el mostrador derivan el precio final del porcentaje. */}
+                <div className="apex-section-card-muted/50 p-4 md:col-span-2">
+                  <h3 className="text-sm font-semibold">Descuento y vitrina</h3>
+                  <div className="mt-3 flex flex-wrap items-end gap-4">
+                    <div className="w-40">
+                      <Field label={`Descuento (0 a ${MAX_DISCOUNT}%)`}>
+                        <input className="control" max={MAX_DISCOUNT} min={0} onChange={(event) => setForm({ ...form, discount_percent: event.target.value })} step="0.5" type="number" value={form.discount_percent} />
+                      </Field>
+                    </div>
+                    <p className="text-sm">
+                      <span className="text-content-muted">Precio final: </span>
+                      <span className="font-semibold">{money(finalPriceOf(Number(form.price || 0), cleanPercent(form.discount_percent)))}</span>
+                      {cleanPercent(form.discount_percent) > 0 ? (
+                        <>
+                          <span className="ml-2 text-xs text-content-muted line-through">{money(Number(form.price || 0))}</span>
+                          <span className="ml-2 text-xs font-semibold text-error-ink">-{cleanPercent(form.discount_percent)}%</span>
+                        </>
+                      ) : null}
+                    </p>
+                    <Check checked={form.catalog_featured} label="Destacar en la vitrina" onChange={(checked) => setForm({ ...form, catalog_featured: checked })} />
+                  </div>
+                  <p className="mt-2 text-xs text-content-muted">
+                    El descuento se aplica sobre el precio de lista y rige en la vitrina y en el mostrador. Si la campaña de la configuración tiene un porcentaje mayor, se usa ese: los descuentos nunca se suman.
+                  </p>
+                </div>
+                {editing ? (
+                  <Field label="Stock actual (se ajusta abajo)">
+                    <input className="control" disabled type="number" value={editing.stock} />
+                  </Field>
+                ) : (
+                  <Field label="Stock inicial">
+                    <input className="control" min={0} onChange={(event) => setForm({ ...form, stock: event.target.value })} type="number" value={form.stock} />
+                  </Field>
+                )}
+                <Field label="Stock mínimo (alerta de reposición)">
+                  <input className="control" min={0} onChange={(event) => setForm({ ...form, min_stock: event.target.value })} type="number" value={form.min_stock} />
+                </Field>
+                <div className="md:col-span-2">
+                  <Field label="Notas (descripción en la vitrina)">
+                    <textarea className="control" maxLength={500} onChange={(event) => setForm({ ...form, notes: event.target.value })} rows={2} value={form.notes} />
+                  </Field>
+                </div>
+                <Check checked={form.active} label="Producto activo" onChange={(checked) => setForm({ ...form, active: checked })} />
+              </div>
+              <p className="text-xs text-content-muted">El código (P-0001, P-0002...) lo asigna el servidor. El costo se recalcula con cada compra de mercancía y la nota se muestra como descripción en la ficha pública.</p>
+              <div className="flex justify-end gap-2 border-t border-line pt-4">
+                <button className="inline-flex items-center apex-secondary-action px-4 text-sm font-semibold gap-2" onClick={() => setEditorOpen(false)} type="button">Cancelar</button>
+                <button className="inline-flex items-center apex-primary-action px-4 text-sm font-semibold gap-2" disabled={saving} type="submit">{saving ? "Guardando..." : "Guardar producto"}</button>
+              </div>
+            </form>
+
+            {editing ? (
+              <section className="apex-section-card-muted/50 p-4">
+                <h3 className="text-sm font-semibold">Ajustar stock ({editing.stock} {editing.unit})</h3>
+                <form className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end" onSubmit={applyAdjust}>
+                  <Field label="Cantidad del conteo">
+                    <input className="control" min={0} onChange={(event) => setAdjustForm({ ...adjustForm, new_stock: event.target.value })} required type="number" value={adjustForm.new_stock} />
+                  </Field>
+                  <Field label="Motivo del ajuste">
+                    <input className="control" maxLength={60} onChange={(event) => setAdjustForm({ ...adjustForm, reason: event.target.value })} value={adjustForm.reason} />
+                  </Field>
+                  <button className="apex-secondary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={adjustBusy} type="submit">{adjustBusy ? "Aplicando..." : "Aplicar ajuste"}</button>
+                </form>
+                <p className="mt-2 text-xs text-content-muted">El ajuste queda trazado como movimiento de inventario. Si otro usuario modificó el stock mientras tanto, el guardado se rechaza y se debe repetir el conteo.</p>
+              </section>
+            ) : null}
+
+            {editing ? (
+              <section className="apex-section-card-muted/50 p-4">
+                <h3 className="text-sm font-semibold">Fotografía del producto</h3>
+                <div className="mt-3 grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] sm:items-start">
+                  {photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt={`Foto de ${editing.name}`} className="max-h-56 w-full rounded-md border border-line object-contain" src={photoUrl} />
+                  ) : (
+                    <p className="flex min-h-24 items-center justify-center rounded-md border border-dashed border-line p-4 text-center text-sm text-content-muted">Sin fotografía.</p>
+                  )}
+                  <form className="space-y-3" onSubmit={uploadPhoto}>
+                    <Field label="Nueva foto (PNG, JPEG o WEBP, max 5 MB)">
+                      <input accept="image/png,image/jpeg,image/webp" capture="environment" className="control" onChange={(event) => setPhotoFile(event.target.files?.[0] || null)} type="file" />
+                    </Field>
+                    <div className="flex flex-wrap gap-2">
+                      <button className="apex-primary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={photoBusy || !photoFile} type="submit"><Camera size={14} /> {photoBusy ? "Subiendo..." : "Subir foto"}</button>
+                      {editing.has_photo ? (
+                        <button className="apex-secondary-action flex items-center gap-1 px-4 text-sm font-semibold" disabled={photoBusy} onClick={() => void removePhoto()} type="button"><Trash2 size={14} /> Quitar foto</button>
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-content-muted">En móviles la cámara queda disponible gracias al capture del campo. La imagen se almacena en el bucket comercio-assets con ruta aislada por tenant.</p>
+                  </form>
+                </div>
+              </section>
+            ) : null}
+          </div>
+        </ModalFrame>
+      ) : null}
+    </div>
+  );
+}
