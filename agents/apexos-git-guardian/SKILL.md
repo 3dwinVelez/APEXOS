@@ -2,7 +2,7 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.7.0
+version: 2.8.0
 updated_at: 2026-11-07
 contract: 2
 ---
@@ -62,12 +62,15 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
 
 24. **El merge es parte del mecanismo auditado, y se audita contra el destino, no contra la rama auxiliar.** Cuando el dueño autoriza «rama auxiliar + PR hacia `develop`» y las puertas están verdes, el merge forma parte de esa autorización; se ejecuta con **create a merge commit** — squash y rebase reescriben historia compartida y están fuera de autorización salvo pedido expreso — y la auditoría se repite **sobre el merge commit del destino**, no sobre el tip de la rama auxiliar: `git fetch origin <target>` y `git diff --name-status <base>..origin/<target>` debe dar exactamente el inventario del manifiesto (`210 A / 22 M / 0 D` en el Comercio, 0 borrados), con el conteo de rutas del módulo en el árbol del destino como segunda medida. Después: leer los checks del merge commit (la puerta de gobernanza corre en modo distinto sobre un push a `develop` que sobre el PR) y verificar el despliegue del ambiente según la regla de QA. Y no se borra nada: la rama auxiliar publicada se deja, el respaldo del intento anterior se conserva en `respaldo/*`, y el borrado de ramas requiere autorización independiente. Por qué: el 2026-11-07 el PR #83 del Comercio se mergeó en `2cb064e2` sobre base `22fdf222`; la verificación contra el destino confirmó las 232 rutas y `Git Governance Guard` en verde, y las ramas auxiliares de las rondas previas siguen vivas en `origin` precisamente porque nadie las borró.
 
+25. **La divergencia entre dos ramas se mide por blob a tres bandas y por conflicto de fusión — nunca con `rev-parse` desde este shell ni con fechas de commit.** Cuando hay que responder «qué rama tiene qué», el inventario de rutas no alcanza: hay que decir por qué lado cambió. Receta medida, en orden: (a) `git merge-base origin/<a> origin/<b>` como único punto de referencia; (b) por cada ruta, `git ls-tree <ref> -- <ruta>` en base y en las dos ramas y comparar los tres sha — `base == rama1` significa que el contenido nuevo está solo en la otra, `base` distinto de ambas significa **conflicto bilateral real**; (c) `git merge-tree --write-tree origin/<a> origin/<b>` para contar los conflictos que produciría un merge de rama completa, que es la cifra que decide el orden de reconciliación. Dos trampas que invalidan la medición si se ignoran: **`git rev-parse <ref>:<ruta>` está roto desde el shell de Windows de esta estación** — reescribe `:` y `/` (`fatal: ambiguous argument 'origin\desarrollo;.gitignore'`) y, con `2>/dev/null`, devuelve vacío, lo que **inventa** conflictos bilaterales donde la ruta simplemente no se resolvió; y **las fechas de commit no prueban qué contenido manda**, porque una promoción reconstruida deja su commit en el destino *posterior* al de la rama de trabajo. Y un punto ciego propio de este repo: `npm run agents:preflight` solo compara contra `origin/desarrollo`, así que nunca ve que `develop` tiene skills distintos; eso se mide aparte con `git diff --numstat origin/develop origin/desarrollo -- .qoder/skills agents AGENTS.md`. Por qué: el 2026-11-07 la primera pasada de la auditoría de ramas clasificó 26 archivos como bilaterales usando `rev-parse`; con `ls-tree` la cifra real era **17**, y los 8 skills resultaron estar byte a byte con su merge-base — es decir, congelados en `develop` en el blob del 2026-10-24 mientras `desarrollo` acumulaba reglas. Medida final del mismo día: 508 rutas distintas, 79 modificadas en ambas ramas, 25 conflictos de fusión (11 de código).
+
 ## Checklist de intervención
 
 Antes:
 - [ ] Preflight de agentes sin bloqueos y lecturas obligatorias leídas.
 - [ ] Rama, árbol y remoto registrados.
 - [ ] Inventario A/M/D exacto disponible y verificado contra el diff real.
+- [ ] Si la pregunta es «qué rama tiene qué»: divergencia medida por blob a tres bandas (`merge-base` + `ls-tree`) y `merge-tree`, nunca por fechas de commit ni con `rev-parse` en este shell.
 - [ ] Autorizaciones explícitas identificadas para cualquier operación fuera de `desarrollo`.
 
 Durante:
@@ -116,4 +119,6 @@ Después:
 - Borrar archivos no rastreados del usuario.
 - Abrir el PR hacia `develop` desde una rama auxiliar con nombre libre (`promocion/*`, `chore/*`) y dar por hecho que la CI la va a tratar como promoción.
 - Corregir el contenido de un candidato para «arreglar» un rojo de CI causado por la forma de la rama o por un manifiesto mal apuntado.
+- Decidir qué rama es autoritativa por la fecha del commit, o medir la divergencia con `git rev-parse <ref>:<ruta>` desde el shell de Windows.
+- Cerrar una auditoría de ramas sin contar los conflictos de fusión reales (`merge-tree`) y sin nombrar el punto ciego de `agents:preflight` frente al destino.
 - Reescribir la evidencia de un commit certificado después de publicarlo.

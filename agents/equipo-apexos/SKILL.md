@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.11.0
+version: 2.12.0
 updated_at: 2026-11-07
 contract: 2
 ---
@@ -79,6 +79,9 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 
 24. **La autorización del dueño cubre el mecanismo, y el mecanismo lo fija el destino — no la máquina que promueve.** Cuando la autorización es «promover el módulo X a `develop` de manera controlada por rama auxiliar + PR», el cierre del orquestador no termina en las puertas de humanos (`qa:promotion:scope`, `qa:preqa:evidence`) ni en las suites: el candidato tiene que pasar **el contrato de CI del destino** antes de empujar la rama auxiliar. Eso es una medida, no una opinión, y se corre en local: `node scripts/git-governance-guard.js ci-promotion <candidato> <target> develop refs/heads/<rama>` y `node scripts/certifications/scoped-qa-governance-local.js`. Tres consecuencias: (a) la forma autorizada no es negociable — este repo enruta `ci-promotion` **solo** para head refs `codex/qa-<algo>`; una rama con prefijo inventado cae en el modo `ci` y se rechaza aunque el árbol sea perfecto; (b) el contrato del destino puede exigir en el candidato rutas que la política de alcance de la ronda quería dejar fuera (aquí: los dos manifiestos y la evidencia que ellos citan); la salida **no** es relajar el gate ni ampliar el alcance del producto, sino declarar la excepción con su lista exacta en el brief; y (c) cuando el gate responde por la forma, no se pide una autorización nueva: se repone la rama con la forma autorizada, se cierra el PR viejo diciendo por qué y se deja la historia vieja alcanzable en un respaldo. Por qué: el 2026-11-07 la verde del Comercio y sus dos puertas de humanos estaban listas y el primer intento (PR #82, rama `promocion/...`) quedó rojo en el primer paso de GitHub; la segunda rama, con el mismo árbol de producto medido en 201 rutas y 0 diferencias por hash de blob, dejó los seis checks en verde. Queda un defecto documental conocido sin corregir: `apexos-qa` tiene dos reglas numeradas 30 y no se renumeraron aquí, porque las rondas anteriores citan esas reglas por número en briefs y en `agents/CHANGELOG.md`; la renumeración se hace en una pasada dedicada con sus citas, nunca de paso dentro de una promoción.
 
+25. **Antes de despachar una promoción o una reconciliación, el orquestador pide el mapa de ramas y ordena por riesgo de producto, no por incomodidad de git.** La pregunta «qué rama tiene qué» no se responde con `git log` ni con el inventario de rutas: se mide por blob contra el merge-base y se cuentan los conflictos reales con `merge-tree` (regla 25 de `apexos-git-guardian`). Tres consecuencias del despacho: (a) un archivo **bilateral** no se resuelve por preferencia de un experto — se declara el conflicto, se nombra qué aporta cada lado y se pide decisión; (b) la prioridad la fija lo que el ambiente hace mal, no lo que cuesta fusionar: en la medición del 2026-11-07, `main` y `develop` **no tienen las dos migraciones de vigencia laboral 2026** que sí están en `desarrollo` (recargo nocturno 35 %, HEND 155/165, topes y pisos de IBC), así que la nómina de QA y producción se liquida con tarifas anteriores a la Ley 2466/2025 — eso va delante de los 17 archivos que pelean en el merge; (c) los gates de agentes solo comparan contra `origin/desarrollo`, de modo que el orquestador ordena **a propósito** la medición del destino cuando el alcance incluye skills que se van a promocionar; sin esa orden, `develop` sigue operando con los skills congelados en su último blob compartido. Por qué: la recopilación de pendientes de esa fecha ordenada por «qué destraba» puso primero el bucket y las certificaciones de navegador; reordenada por contenido medido, lo primero era la vigencia laboral ausente en los dos ambientes liberados.
+
+
 ## Checklist de intervención
 
 Antes:
@@ -88,6 +91,7 @@ Antes:
 - [ ] Lecturas obligatorias leídas.
 - [ ] Brief disponible o creado por `apexos-brief` si la tarea es ambigua o multi-módulo.
 - [ ] Ningún 5xx del reporte anterior clasificado todavía como «limitación de ambiente» (regla 21).
+- [ ] Mapa de ramas pedido por blob cuando el alcance es una promoción o una reconciliación (regla 25).
 - [ ] Capacidades protegidas del módulo declaradas.
 
 Durante:
@@ -140,3 +144,5 @@ Después:
 - Heredar la «limitación de ambiente» de una ronda anterior sin reproducirla en la nueva.
 - Cerrar una intervención con un check que no puede fallar.
 - Declarar verde una promoción hacia `develop` sin haber pasado el contrato de CI del destino, o asumir que la forma de una rama auxiliar es un detalle estético.
+- Ordenar una recopilación de pendientes por lo que cuesta fusionar en vez de por lo que el ambiente liberado hace mal (regla 25).
+- Resolver un archivo bilateral entre ramas «porque el experto lo prefiere», sin declarar las dos aportaciones ni pedir decisión.
