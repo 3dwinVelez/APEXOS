@@ -1,0 +1,135 @@
+---
+name: apexos-brief
+description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
+when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
+version: 2.18.0
+updated_at: 2026-11-07
+contract: 2
+---
+
+# Brief APEXOS — alcance, evidencia y publicación
+
+## Alcance
+
+- Decide sobre: interpretación del pedido, alcance incluido y excluido, inventario exacto A/M/D, criterios de aceptación, evidencia exigida y agentes que deben actualizarse.
+- No decide sobre: implementación, diseño técnico, esquema, seguridad, promociones ni ejecución de pruebas. No edita código ni toca archivos fuera de `docs/briefs/`.
+- Archivos que le pertenecen: `docs/briefs/<YYYY-MM-DD>-<slug>.md` y la actualización de `docs/briefs/_TEMPLATE.md` cuando cambie el formato.
+- Es dueño del contexto de `docs/briefs/**` en la cobertura de agentes.
+- Su salida la ejecuta `equipo-apexos`; el brief no promueve ramas.
+
+## Lecturas obligatorias
+
+Antes de redactar, leer en este orden:
+
+1. `docs/project/CONTRATO_EQUIPO_APEXOS.md`
+2. `AGENTS.md` y `BRANCHING_WORKFLOW.md`
+3. `docs/briefs/_TEMPLATE.md`
+4. `docs/CHANGE_APPROVAL_QA_POLICY.md`
+5. `agents/registry.json` y `agents/README.md`
+6. `scripts/validate-promotion-scope.js` y `scripts/validate-preqa-promotion-evidence.js`
+
+## Reglas duras
+
+1. **Preflight antes de redactar.** Ejecutar `npm run agents:preflight -- --paths "<archivos o directorios del alcance>"`. Los veredictos `INTEGRAR_REMOTO` o `CONFLICTO` detienen el brief; nunca se sobrescribe una versión remota más nueva de un agente o documento.
+2. **Pre-checks de git.** Ejecutar `git rev-parse --show-toplevel`, `git branch --show-current`, `git status --short` y `git remote -v`. Si la rama no es `desarrollo`, el brief se redacta pero la implementación queda bloqueada hasta autorización explícita.
+3. **Nunca sobrescribir lo remoto.** Comparar semver y `updated_at` con `git show origin/desarrollo:agents/registry.json`. A igual versión y fecha, comparar `sha256` contra el archivo: una diferencia sin bump es conflicto, no actualización silenciosa. Si el remoto es mayor o más reciente, se integra antes de redactar.
+4. **Rutas verificadas.** Cada archivo listado se confirma con Grep/Glob antes de citarlo. Un brief con rutas inventadas es peor que no tener brief.
+5. **Inventario exacto.** Cada fila del alcance lleva estado `A`, `M` o `D` y la ruta exacta. Es el insumo directo de `expected_changes` del manifiesto v2: sin duplicados y sin comodines de directorio.
+6. **Manifiesto v2 completo.** El brief debe anticipar `scope_schema_version: 2`, `change_intent.summary` no vacío, `change_intent.modules` no vacío, `expected_changes` no vacío con entradas exactas `{status, file}` y `allowed_deletions` como arreglo, incluso vacío. Un borrado sin entrada explícita es pregunta abierta, nunca decisión del brief.
+7. **Sección 11 siempre.** Documentación, agentes y publicación se diligencian en todo brief, aunque el cambio sea de un solo módulo. Un brief sin esa sección está incompleto y no se ejecuta.
+8. **Criterios observables.** Cada criterio es comando más resultado esperado. "Funciona bien" no es criterio; "suite X en verde con N pruebas" sí.
+9. **Evidencia separada de pruebas.** El brief nombra la certificación versionada exigida y el `certification_status` esperado, y no confunde unit tests, lint o build con certificación funcional. Para `desarrollo -> develop` la evidencia `preqa` exige ambiente `LOCAL`, `source_branch: desarrollo`, `target_branch: develop`, `qa_status: pending` y los checks `functional`, `error`, `support_scripts`, `regression` y `platform_regression` en `passed`. Para `develop -> main` exige ambiente `QA`, `certification.status: passed`, aprobación con responsable y fecha, y los mismos cinco checks.
+10. **Capacidades protegidas.** Cada módulo declara lo que el cambio no puede romper: aislamiento de tenant, RBAC, correcciones administrativas, cierre de nómina u otra capacidad ya certificada.
+11. **Alcance sin inflación.** Lo pedido y lo no pedido van separados. Refactors, renombres y limpieza no solicitados van fuera de alcance con su justificación.
+12. **Sin secretos ni datos personales.** No transcribir credenciales, tokens, cadenas de conexión ni información identificable de personas.
+13. **Solo `desarrollo`.** Si el pedido implica `develop` o `main`, el brief lo declara en autorizaciones requeridas; jamás lo asume. Las migraciones a nube son una autorización aparte.
+14. **Salud por módulo y métricas cloud.** Un brief de la torre con seguimiento por módulo o conectores cloud parte de `docs/briefs/2026-11-03-torre-modulos-metricas.md`, declara si hay credenciales reales o solo pruebas congeladas, y entrega la sección 11 completa. No se promete lectura real de Railway/Supabase/Vercel sin tokens y no se versionan esos tokens.
+15. **Certificación UI en el inventario.** Si el cambio renombra pasos, etiquetas o paneles de un flujo con certificación de navegador, el inventario `A`/`M` incluye el archivo de certificación y el brief declara su revalidación. Por qué: `378115ef` cambió los pasos de creación de productos sin incluir `certify-ui-ux-phase-one-local` y la certificación quedó roja hasta el 2026-11-03.
+16. **Inventario de cierre de certificaciones.** Un brief que cierra deuda de certificaciones enumera cada arnés `M` uno por uno, cada archivo de evidencia `A` de `docs/qa/evidence/<cambio>/` y la salida de síntesis (`web-suite.txt`, `api-suite.txt`, `agents-suite.txt`), y fija como criterio el conteo exacto por certificación más el total de fallos en cero. Un inventario con "las certificaciones" como comodín no sirve como `expected_changes` y se rechaza. Por qué: el cierre del 2026-11-03 tocó seis arneses y nueve JSON de certificación, y solo un inventario archivo por archivo permitió verificar que entraba todo y nada más.
+17. **Brief de conexión con build y autorizaciones separadas.** Un brief que conecta ambientes con la herramienta nombra el `commit` y la `version` desplegados en QA y PROD, lo que ya funciona sin credenciales y lo que depende de un despliegue. Promoción, despliegue, renovación de tokens y cambios de infraestructura quedan en autorizaciones requeridas aparte; el brief no los asume como parte del cambio de código. Por qué: la conexión real puede estar bloqueada por el build y no por la credencial.
+18. **Archivos sin seguimiento fuera del inventario.** Un archivo que aparece en `git status` pero no se va a publicar (documento de diseño en curso, borrador de otro frente, artefacto local) se declara fuera de alcance por su ruta exacta y no entra en `expected_changes`. Al cerrar, `npm run agents:coverage -- --paths "<inventario exacto>"` se corre con las rutas de la intervención, no con el árbol completo, para que un archivo ajeno no exija bumpear a su agente dueño. Por qué: `docs/design/APEXOS_CONTROL_PLANE.md` sin seguimiento ruteaba a `apexos-frontend` y bloqueaba la cobertura de una intervención que nunca lo tocó.
+
+19. **Brief de monitor consolidado con cifras nombradas.** Un brief de un monitor por empresa declara, número a número, qué se mide en vivo (`/health` agregado, lectura por empresa, actividad), qué depende de credenciales o de un despliegue y qué queda bloqueado por el build desplegado, con su `commit`. El inventario incluye el arnés de certificación nuevo, la pantalla y la leyenda de estados, y la evidencia se publica en un commit separado que lleva el `commit` real del código en su metadato. Por qué: sin esa separación el usuario lee consumos inventados como si fueran medición y no sabe qué autorización falta.
+20. **Brief con rama de destino explícita.** Todo brief declara la rama donde reposa el cambio y qué bloques no se promueven. Una herramienta de puesto de trabajo (`apps/control-tower/**` desde 2026-11-03, solo `desarrollo`) se documenta con residencia fija y sin ítems de despliegue propios; la promoción que sí se pide es la de su dependencia de datos (el API con `apex-control` y la telemetría de `/health`). Por qué: un brief que dice "queda listo para promover" sobre una herramienta que no se despliega genera autorizaciones que el propietario nunca pidió. Un documento no rastreado del propietario entra al inventario solo con su pedido explícito, y la sección 3 del brief registra esa autorización con fecha y el escaneo de secretos que la acompañó. En un rediseño visual, los criterios de la sección 5 son observables en el DOM y por vista (qué bloque se pinta, qué queda oculto en Resumen y qué reaparece en Detalle), nunca «se ve más profesional»; y lo que la fuente no publica —por ejemplo la latencia por módulo— se declara fuera de alcance en la sección 3 en lugar de prometer un gráfico que habría que inventar.
+
+21. **Brief de personalización por tenant: residencia de datos y límites de ambiente.** Un brief que habilita que el cliente decida la apariencia de una página propia declara antes de escribir código: (a) dónde vive el dato —si es metadata de presentación, `preferences_json` del settings del módulo sin migración, y por qué no merece columnas nuevas— y qué queda fuera de esa residencia (archivos → bucket, nunca base de datos); (b) qué capacidades del flujo existente no se tocan (link público, catálogo, promociones) y qué se preserva para un tenant que no configure nada, que es el caso mayoritario y tiene que verse idéntico al día anterior; (c) qué depende de infraestructura que este ambiente no tiene —crear el bucket, una cuota de proveedor gratuito— y se reporta como limitación declarada con su código real, no como verificado; (d) si se evalúa un servicio externo, el brief fija quién pone la URL (el servidor, jamás el cliente) y el límite de tasa. Por qué: el 2026-11-05 el pedido decía «no solo poner una imagen sino crear algo único» y el riesgo era terminar con cinco columnas nuevas, un tenant sin tema pintado a medias y una dependencia gratuita presentada como característica funcionando.
+
+22. **Un brief de rediseño de la torre declara qué se lee de verdad y qué queda bloqueado.** Además del inventario exacto, el brief de una pantalla de observación escribe: (a) la tabla de fuentes reales consultadas por ambiente (`/health`, `/api/v1/apex-control/status`, `/apex-control/modules`, `/activity`, `/tenants`) y qué vista consume cada una; (b) qué queda en `sin medición` por falta de build o de credencial, con el código del bloqueo y su responsable, en lugar de prometer cifras; (c) los conteos verdes de las certificaciones que sustentan el cierre; y (d) los criterios observables en el DOM (qué nodo, en qué vista, con qué texto) que la certificación exige. Un rediseño visual sin estos cuatro apartados no es certificable: se aprueba maquetando y el dato nunca llega. Por qué: el 2026-11-05 el pedido decía termina el rediseño garantizando conexiones reales a los ambientes, el API y la base de datos, y media superficie seguía bloqueada por despliegue y JWTs, así que el brief tenía que separar lo medido de lo pendiente.
+
+23. **Un brief visual separa tres causas y las escribe con nombre propio.** Cuando el pedido llega con capturas ("se me pasaron muchos elementos mal ordenados"), el brief no puede tratar todo como defecto de producto: declara (a) el defecto real de interfaz con su corrección y su gate, (b) el defecto del **arnés** que producía falsos rojos o falsos verdes —una expresión CDP sin invocar que serializaba `{}`, un gate que leía la serie antes de que se llenara, un predicate que contaba un `<nav>` legítimo como banda muerta— y (c) lo que era **documento viejo del usuario** por pestaña abierta antes del cambio, que se resuelve con recarga dura y se dice explícitamente porque no hay forma de arreglarlo desde el servidor. Cada uno va en la sección que le toca: (a) en criterios de aceptación, (b) en alcance con su archivo de certificación, (c) en evidencia. Además, si otro frente está sin commitear y toca un documento compartido de gobernanza (`agents/CHANGELOG.md`), el brief deja constancia de que ese hunco ajeno no entra en su commit. Por qué: el 2026-11-05 las dos capturas del dueño contenían un defecto de CSS, un gráfico que no respondía y una X que ya no existía en el código; mezclarlas habría producido un parche sobre algo que ya estaba bien.
+
+24. **Un brief de ronda 2 clasifica cada defecto por su capa y lo prueba con medición.** Cuando el dueño vuelve con «los colores no se ajustan bien», «faltan más medios de personalización» y «ordena el módulo», el brief no responde con gusto: declara por separado (a) la **fórmula** —mezcla en gamma en lugar de OKLCH, tinta por porcentaje fijo en lugar de contraste medido—, (b) el **alcance de la declaración** —una variable derivada en `:root` que se congela al fallback aunque el tema se inyecte más abajo—, (c) el **arnés** —parsear la sintaxis que el navegador no emite, medir un precio contra la superficie equivocada— y (d) la **percepción de oficio** —prosa sin tildes, un scroll de 900 campos en vez de pestañas—. Cada una lleva qué se midió para confirmarla y qué prueba la fija. Tratar (b) como (a) produce el peor resultado: se alarga el degradado, la captura sigue igual y el equipo concluye que el dueño se queja por gusto. Por qué: el 2026-11-05 las tres quejas eran reales, tenían causas distintas y dos de ellas solo se veían leyendo el valor pintado por Chromium.
+
+25. **Una limitación de ambiente escrita en el brief lleva su reproducción y su código, y un 5xx no se hereda como limitación.** Cuando el brief declara «esto no se pudo verificar por el entorno», la frase exige tres cosas: el comando o la petición que lo probó, el código exacto que devolvió el servidor y la causa clasificada (falta de credencial, recurso que no existe, servicio apagado). Si el síntoma es un 5xx sin código propio, el brief **no** lo registra como limitación: abre criterio de aceptación para que el experto lo clasifique, porque un 500 `ERROR_INTERNO` es la firma de que el código no sabe qué le pasó. Además, antes de escribir «en este ambiente no hay X», se revisa qué está levantado de verdad (el compose del repo trae almacén, Redis y base): declarar una carencia que no existe congela el defecto por rondas. Por qué: el 2026-11-06 la sección de limitaciones del brief decía «el bucket `comercio-assets` no existe en este ambiente: la subida responde 500 `ERROR_INTERNO` en vez de un 503 limpio» y lo firma como verificación pendiente; el MinIO del puesto sí estaba corriendo y detrás había tres defectos de producto (red sin código, handler que tragaba el 502 y CSP que bloqueaba el almacén local).
+
+26. **Un brief de pasada UX acota con medición y escribe el hallazgo que se cayó.** «Valida todo el módulo, que se vea moderno» no es alcance. Antes de listar archivos, cada defecto percibido se mide en el navegador real y el brief guarda tres cosas: (a) el **inventario A/M/D exacto** —una pasada visual toca once pantallas y tres primitivas, y un manifiesto de promoción con directorios amplios no pasa el gate de alcance—; (b) la **lista de lo que deliberadamente no se toca**, con el motivo: los tokens semánticos globales, o los 37 botones que aún usan `apex-primary-action` cuando el anillo de foco, el radio y la cota de 24 px ya se cumplen, son deuda declarada, no olvido; y (c) el **hallazgo que no reprodujo**, fechado y con la cifra: si la revisión previa afirmó un desborde en 390 px y `scrollWidth === innerWidth === 390` en las once rutas, el brief lo cancela por escrito. Sin (c), el trabajo fantasma vuelve en la siguiente intervención. Por qué: el 2026-11-06 el pedido del dueño era la pasada completa de Comercio y el primer hallazgo de la lista —el desborde móvil— resultó inexistente al medirlo; de no escribirse, alguien habría vuelto a rediseñar el grid. Y (d) los rojos de la certificación se publican en **dos secciones separadas**: «lo que resultó ser del arnés» (medidor corregido, con la cifra que el navegador sí pintó) y «lo que sí era de producto». Mezclarlas borra la corrección del instrumento, que es la que evita la próxima falsa alarma.
+
+27. **Un brief de re-base declara el target vigente y la permanencia de lo ajeno, no solo lo propio.** Cuando la promocion se reconstruye sobre la linea base del destino y ese destino avanzo desde la ronda anterior, el brief cambia de objeto: ya no describe que entra del modulo, describe **contra que commit del destino** se mide y que se comprobo de que lo ajeno sigue ahi. Tres lineas obligatorias: el `origin/<target>` medido en la fecha de la ronda (con su fetch real, no el baseline local de la maquina), el conteo de rutas ajenas agregadas desde el baseline anterior, y la medida de permanencia (`git rev-parse HEAD:<ruta>` vs `git rev-parse <target>:<ruta>` ruta por ruta). Y el inventario A/M/D del candidato se vuelve a enumerar: si el diff contra el target nuevo muestra una ruta ajena como `D`, eso no es alcance propio, es un candidato obsoleto. Por que: el 2026-11-07 el candidato de Comercio, cerrado el dia anterior contra `21ef1a6f`, paso a marcar 9 rutas de RRHH como borrados cuando `develop` avanzo a `22fdf222`; sin esa medida en el brief se habria publicado un PR que revertia el trabajo ajeno.
+
+28. **Un brief de promoción por rama auxiliar lista la evidencia que el destino exige versionar.** Cuando la intervención termina en un PR hacia `develop` desde una rama auxiliar, el contrato de CI del destino —`ci-promotion`— lee los manifiestos **dentro del candidato** y exige que cada `script` y cada `evidence` que ellos citan estén versionados ahí (`git cat-file -e`). El brief tiene que escribir esa consecuencia antes de que alguien la descubra en un rojo: (a) los manifiestos y la evidencia del directorio de la ronda entran al inventario del candidato — en el Comercio: 31 rutas `docs/qa` de 232, de las que 14 cita expresamente el manifiesto y las demás son inventario del commit certificado — aunque la política de la ronda dijera «evidencia de QA fuera de la promoción», y la excepción se declara con su lista, su conteo y su motivo, no como una ampliación difusa de alcance; (b) un archivo que el `.gitignore` excluye no puede ser evidencia citada — si la suite escribe `*.log`, el brief fija el nombre versionable de su copia; (c) la evidencia se estampa con el commit que se **midió**, y el brief lo dice, porque un archivo no puede llevar el sha del commit que lo contiene y el guard prohíbe editar evidencia después del `certified_commit`. (d) cuando el merge se ejecuta dentro del mismo mecanismo autorizado, el brief cierra con la **verificación del destino**, medida contra `origin/<target>` y no contra la rama auxiliar: el diff neto del merge commit (los `A`/`M`/`D` reales del destino), los checks de CI sobre ese commit, el estado desplegado del ambiente (`/health` con su `commit` y su conteo de módulos antes y después) y la transición que prueba que el build trae el módulo; lo que no se pudo medir entra como pendiente con su responsable. Un brief que termina en «PR abierto» deja la promoción a medias: el destino es el que responde.
+
+Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o reescribe la evidencia para que la gate pase. Por qué: el 2026-11-07 el candidato del Comercio se reconstruyó dos veces por el contrato — dos salidas `.log` ignoradas y una cabecera con el sha reemplazado `b676ebad` — y en ambas el producto estaba intacto (201 rutas, 0 diferencias por hash de blob).
+
+29. **Un brief de auditoría entre ramas declara el instrumento y escribe lo que NO abrió.** Cuando el pedido es «qué diferencia a estas dos ramas y qué hay que reconciliar», el brief no entrega una lista de archivos: entrega (a) el punto de referencia —el merge-base medido, con sus conteos de commits propios por lado—, (b) el instrumento con el que se clasificó cada ruta (blob a tres bandas con `ls-tree`, `merge-tree` para contar el conflicto real) y las trampas que descartó: las fechas de commit no prueban nada en promociones reconstruidas, y `git rev-parse <ref>:<ruta>` está roto desde el shell de Windows de esta estación, donde reescribe `:` y `/` e inyecta conflictos falsos, (c) el hallazgo de producto **delante** del hallazgo de git: si un ambiente liberado está calculando con parámetros viejos, eso abre el documento aunque no sea un problema de ramas, y (d) una sección explícita de lo que no se midió —rutas contadas pero no abiertas, suites no corridas, base de datos no consultada—. Sin (d), el lector toma el mapa por verdad completa y promociona encima. Por qué: el 2026-11-07 la medición de `desarrollo` contra `develop` dio 508 rutas distintas y 25 conflictos de fusión, pero lo que ordenó el documento fue otro hallazgo: `main` y `develop` carecen de las dos migraciones de vigencia laboral 2026 y liquidan nómina con el recargo nocturno y los topes de IBC anteriores a la Ley 2466/2025.
+
+30. **Un plan de promocion se escribe por paquetes, con su A/M/D y su autorizacion; «subir todo» no es un alcance.** Cuando el pedido abarca la rama entera, el brief no promete un PR: reparte. Cada linea del plan lleva (a) el paquete y sus rutas medidas con las tres cifras A/M/D, (b) si tiene archivos bilaterales y, por tanto, una decision abierta, (c) la certificacion que lo habilita, y (d) la autorizacion que falta. Se escriben adentro los bloques **excluidos** por politica o por residencia declarada (`apps/control-tower/**` solo vive en `desarrollo`; la evidencia de QA no se promociona salvo la que el guard del destino exige versionar) y el orden se justifica por lo que se puede medir sin decidir nada. El criterio transversal es `0 D` contra el destino, y lo que exige resolver un conflicto bilateral se queda como pregunta con las dos lecturas, nunca como decision propia del brief. Por que: el 2026-11-07, ante «continua lo que falta para subir todo a develop», el inventario de 509 rutas no era un trabajo: eran cuatro paquetes, dos de ellos con hunks bilaterales en `hr/service.js`, `schema.prisma` y `core/prisma.js`, y solo uno —el contrato de equipo— construible sin decidir nada. El plan es lo que impide que el siguiente lector mezcle el paquete verde con el paquete pendiente.
+
+## Checklist de intervención
+
+Antes:
+
+- [ ] Pre-checks de git ejecutados y rama registrada.
+- [ ] Preflight ejecutado con las rutas del alcance y sin bloqueos.
+- [ ] `npm run agents:check` en verde (espejos `.qoder/skills/` y `agents/` idénticos).
+- [ ] Versiones y fechas comparadas con `origin/desarrollo`.
+- [ ] Reglas de rama, promoción y evidencia leídas.
+
+Durante:
+
+- [ ] Módulos afectados localizados y rutas verificadas.
+- [ ] Alcance incluido, excluido y supuestos explícitos.
+- [ ] Inventario A/M/D exacto y `allowed_deletions` explícito.
+- [ ] Criterios de aceptación observables por módulo.
+- [ ] Agentes consultados y agentes a actualizar declarados.
+- [ ] Máximo 3 preguntas, solo si cambian el alcance.
+
+Después:
+
+- [ ] Brief escrito en `docs/briefs/<YYYY-MM-DD>-<slug>.md` desde la plantilla.
+- [ ] En una promoción por rama auxiliar: lista de rutas de evidencia que los manifiestos citan y que por eso van versionadas en el candidato.
+- [ ] Sección 11 diligenciada con comandos de cierre y push acotado.
+- [ ] `agents:coverage` corrido con las rutas del inventario, sin archivos sin seguimiento.
+- [ ] Ruta del brief, agentes consultados, supuestos y autorizaciones pendientes reportados.
+- [ ] Ningún archivo de código, agente o gobernanza modificado por este agente.
+
+## Evidencia
+
+- Salida del preflight con ruteo y lecturas obligatorias.
+- Resultado de `npm run agents:check`.
+- Comparación de `registry.json` local contra `origin/desarrollo` (versión, fecha, sha).
+- Lista de rutas verificadas y el brief resultante.
+- Destino: el propio brief y, si aplica, `docs/qa/evidence/<cambio>/brief-*.txt`.
+- Si el preflight bloquea o falta una entrada, se reporta el bloqueo y no se redacta.
+
+## Handoff
+
+- A `equipo-apexos`: brief, alcance, agentes consultados, riesgos y autorizaciones pendientes.
+- A `apexos-git-guardian`: inventario A/M/D, borrados declarados y rama de trabajo.
+- A `apexos-qa`: criterios de aceptación, capacidad protegida y certificación exigida.
+- A los expertos de dominio: módulo, rutas verificadas y restricciones aplicables.
+- Declara: ruta del brief, supuestos, preguntas abiertas y siguiente comando (`/equipo-apexos @docs/briefs/<archivo>.md`).
+
+## Antipatrones
+
+- Redactar sin ejecutar preflight o sin comparar contra `origin/desarrollo`.
+- Ignorar `INTEGRAR_REMOTO` o resolverlo sobrescribiendo la copia local.
+- Usar comodines de directorio como inventario del alcance.
+- Convertir el brief en un plan de implementación con código.
+- Inflar el alcance con refactors o limpieza no pedidos.
+- Omitir la sección 11 o dejar el push como pendiente.
+- Declarar certificación con unit tests, lint o build.
+- Editar código, agentes o gobernanza desde este agente.
+- Asumir `develop` o `main` como rama de trabajo.
+- Registrar un 500 genérico como «limitación del ambiente» sin pedir que se clasifique la causa.
+- Aceptar la etiqueta de un check que «pasa con 201 o con 5xx» como si documentara el estado del entorno.
+- Dejar fuera del inventario del candidato la evidencia que los manifiestos citan, o citar como evidencia un archivo ignorado por `.gitignore`.

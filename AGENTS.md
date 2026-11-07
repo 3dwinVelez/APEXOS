@@ -6,6 +6,45 @@ This repository uses one controlled promotion path:
 desarrollo -> develop -> main
 ```
 
+## Equipo APEXOS y contexto vivo (obligatorio)
+
+Todo trabajo empieza y termina con el equipo de agentes versionado en `agents/` y `.qoder/skills/`. `agents/registry.json` es la fuente de versión; `origin/desarrollo` es la referencia remota.
+
+Antes de modificar cualquier archivo:
+
+1. Ejecutar `npm run agents:preflight -- --paths "<archivos o directorios que se van a tocar>"`.
+2. Si el veredicto es `INTEGRAR_REMOTO` o `CONFLICTO`, detenerse: ejecutar `git fetch origin desarrollo`, integrar la referencia remota con la autorización correspondiente y repetir el preflight. Nunca sobrescribir un `SKILL.md`, `registry.json` o documento de gobernanza con versión o fecha remota más nueva.
+3. Leer los `SKILL.md` que el preflight marca como lecturas obligatorias antes de editar.
+4. Si la tarea toca dos o más disciplinas, entrar por `equipo-apexos` y despachar los expertos que indique el preflight.
+
+Al cerrar la intervención:
+
+5. Actualizar el `SKILL.md` de cada agente cuyo dominio cambió (control nuevo, bump semver y `updated_at`) y registrar la entrada en `agents/CHANGELOG.md`.
+6. Ejecutar `npm run agents:sync && npm run agents:check && npm run agents:preflight && npm run agents:coverage`.
+7. Ejecutar pruebas y evidencia, commit y `git push origin desarrollo`.
+
+`agents:coverage` es bloqueante: si una ruta tocada tiene agente dueño y ese agente no avanzó frente a `origin/desarrollo` o no aparece en la sección más reciente de `agents/CHANGELOG.md`, la intervención no se publica. No se acepta actualizar el agente "en la siguiente intervención".
+
+Un cambio en el dominio de un agente sin actualizar ese agente está incompleto y no se publica.
+
+### Ruteo obligatorio
+
+| Si tocas... | Agentes requeridos |
+|---|---|
+| `apps/web/**` | `apexos-frontend`, `apexos-qa` |
+| `apps/api/prisma/**` | `apexos-db-nube`, `apexos-backend`, `apexos-seguridad`, `apexos-qa` |
+| `apps/api/src/**` | `apexos-backend`, `apexos-seguridad`, `apexos-qa` |
+| `apps/api/src/modules/hr/**` | `apexos-backend`, `apexos-seguridad`, `apexos-qa`; auditores solo para dictamen |
+| `apps/control-tower/**` | `apexos-performance`, `apexos-seguridad`, `apexos-qa` |
+| `docs/design/**`, `docs/project/filosofia-producto-ui.md` | `apexos-frontend` |
+| `docs/DATABASE_CONVENTIONS.md`, `docs/DATABASE_SECURITY.md`, `docs/MULTITENANT_DATA_ISOLATION.md` | `apexos-db-nube`, `apexos-seguridad` |
+| `docs/qa/**`, `scripts/certifications/**` | `apexos-qa` |
+| `scripts/performance/**`, `docs/PERFORMANCE_*` | `apexos-performance` |
+| `infra/**`, Docker/Railway/Supabase | `apexos-performance`, `apexos-seguridad` |
+| `agents/**`, `.qoder/skills/**`, `AGENTS.md`, `docs/briefs/**` | `equipo-apexos`, `apexos-brief`, `apexos-git-guardian` |
+
+El ruteo se calcula automáticamente con `npm run agents:preflight`; esta tabla es el contrato mínimo y no reemplaza el preflight.
+
 Rules for Codex and any automated agent:
 
 - Before modifying any file, Codex must execute `git rev-parse --show-toplevel`, `git branch --show-current`, `git status --short`, and `git remote -v`.
@@ -18,10 +57,11 @@ Rules for Codex and any automated agent:
 - Implement new features and bug fixes first in `desarrollo`.
 - Use `develop` only for QA integration promoted from `desarrollo`.
 - Use `main` only for production releases promoted from `develop`.
+- `apps/control-tower/**` (APEX Control Tower) reposa solo en `desarrollo`: es una herramienta de puesto de trabajo que se ejecuta desde esa rama. No se promueve a `develop`, no se despliega, y sus certificaciones `npm run certify:control-tower:*` no se citan como evidencia de promoción. La otra mitad del dato sí sigue el flujo: `apps/api/src/modules/apex-control/**` y la telemetría de `/health` se promocionan cuando el propietario lo autorice. Detalle en `docs/project/flujo-ramas-y-ambientes.md`.
 - Do not promote branches without explicit authorization.
 - Do not push directly to `main`.
 - Do not push directly to `develop`.
-- Do not push, merge, deploy, run remote migrations, delete branches, modify infrastructure, modify secrets, modify Railway/Supabase, or use force push without explicit independent authorization.
+- Do not push, merge, deploy, run remote migrations, delete branches, modify infrastructure, modify secrets, modify Railway/Supabase, or use force push without explicit independent authorization. The only standing exception is the scoped push to `origin/desarrollo` defined in "Documentation, agents and publication" below.
 - Do not use `git push --force-with-lease`, rebase permanent shared branches, run `git reset --hard`, or run `git clean -fd` automatically.
 - Treat absence of authorization as prohibition.
 - Do not skip validations to finish a delivery.
@@ -50,6 +90,13 @@ Una urgencia productiva modifica la prioridad del cambio, pero nunca modifica el
 La ausencia de autorizacion expresa debe interpretarse como prohibicion.
 
 Generic task wording such as "implementa", "corrige", "continua", "haz el cambio", "dejalo funcionando", "corrigelo urgentemente", "corrigelo en produccion", "actualiza el sistema" or "completa la tarea" authorizes only work on `desarrollo`.
+
+## Documentation, agents and publication
+
+- Every intervention on the code updates, in the same change, the module documentation, the intervention brief and the team agents (`agents/` and `.qoder/skills/`).
+- `agents/registry.json` is the version source: per-agent semver, `updated_at` and `sha256`. Before editing an agent or governance document, run `npm run agents:preflight`; if it reports `INTEGRAR_REMOTO` or `CONFLICTO`, integrate `origin/desarrollo` and never overwrite the remote reference.
+- After editing agents, run `npm run agents:sync`, `npm run agents:check`, `npm run agents:preflight` and `npm run agents:coverage`. All four must pass before committing.
+- The owner grants a permanent, scoped authorization to run `git push origin desarrollo` at the close of each intervention, with green tests, updated documentation and agents, and no secrets. This authorization does not cover `develop`, `main`, force push, merges, remote migrations, branch deletion or infrastructure; those still require explicit independent authorization.
 
 Before proposing any promotion, attach validation evidence and confirm that the target follows:
 

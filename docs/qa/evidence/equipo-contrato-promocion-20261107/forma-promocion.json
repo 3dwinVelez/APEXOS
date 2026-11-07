@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "certification": "scoped-qa-governance-local",
+  "status": "passed",
+  "fixture": "real-git",
+  "candidate": "064a56ef60500b675ba54b37f643629e10f83649",
+  "baseline": "8e69e8e2bec0c08a9df401582417f0d13be02234",
+  "checks": [
+    {
+      "name": "guard_authorized_ci_flow",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "guard_authorized_promotion",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "name": "guard_main_target_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "GOBIERNO GIT BLOQUEADO: PR hacia main solo desde develop. Origen: desarrollo."
+    },
+    {
+      "name": "guard_unapproved_promotion_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "GOBIERNO GIT BLOQUEADO: Promocion desarrollo-to-develop requiere APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP."
+    },
+    {
+      "name": "guard_auxiliary_branch_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "GOBIERNO GIT BLOQUEADO: Push/CI sobre rama no permanente no autorizado: codex/qa-unapproved."
+    },
+    {
+      "name": "scope_authorized_flow",
+      "status": "passed",
+      "exit_code": 0,
+      "stdout": "ALCANCE DE PROMOCION VALIDO: fixture-governance (1 rutas)",
+      "stderr": ""
+    },
+    {
+      "name": "scope_missing_cert_ancestor_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ALCANCE DE PROMOCION INVALIDO: ni el candidato ni el destino contienen el commit funcional certificado"
+    },
+    {
+      "name": "scope_changed_baseline_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ALCANCE DE PROMOCION INVALIDO: el destino develop cambio desde el baseline aprobado"
+    },
+    {
+      "name": "scope_extra_diff_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ALCANCE DE PROMOCION INVALIDO: rutas fuera de alcance: A:attestation.md, A:changed-baseline.json, A:extra.txt, A:git-governance-guard.js, A:missing-cert.json, A:scope.json, A:validate-preqa-promotion-evidence.js, A:validate-promotion-scope.js"
+    },
+    {
+      "name": "preqa_missing_approval_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "regression.evidence debe contener archivos\n- checks.platform_regression.status debe ser passed\n- checks.platform_regression.evidence debe contener archivos\n- certification.status debe ser passed\n- certification.script debe apuntar a un script versionado existente\n- certification.evidence debe contener archivos\n- regression_certification.status debe ser passed\n- regression_certification.script debe apuntar a un script versionado existente\n- regression_certification.evidence debe contener archivos"
+    },
+    {
+      "name": "strict_authorized_develop_promotion",
+      "status": "passed",
+      "exit_code": 0,
+      "stderr": "",
+      "expected_error": null
+    },
+    {
+      "name": "strict_develop_to_main_ci_remains_allowed",
+      "status": "passed",
+      "exit_code": 0,
+      "stderr": "",
+      "expected_error": null
+    },
+    {
+      "name": "strict_wrong_actual_head_branch_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: promotion_branch no coincide con la rama auxiliar autorizada",
+      "expected_error": "promotion_branch no coincide"
+    },
+    {
+      "name": "strict_missing_origin_target_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: no existe origin/develop; no se puede verificar el target actual",
+      "expected_error": "no existe origin/develop"
+    },
+    {
+      "name": "strict_altered_functional_path_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: las rutas funcionales certificadas cambiaron despues del commit certificado",
+      "expected_error": "las rutas funcionales certificadas cambiaron"
+    },
+    {
+      "name": "strict_absolute_evidence_path_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: scope.protected_capabilities[0].evidence contiene una ruta no portable",
+      "expected_error": "ruta no portable"
+    },
+    {
+      "name": "strict_repository_traversal_evidence_path_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: scope.protected_capabilities[0].evidence escapa el repositorio: ../../../../outside-evidence.json",
+      "expected_error": "escapa el repositorio"
+    },
+    {
+      "name": "strict_untracked_evidence_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: scope.protected_capabilities[0].evidence no esta versionada en el candidato: docs/qa/certifications/untracked.json",
+      "expected_error": "no esta versionada"
+    },
+    {
+      "name": "strict_extra_noncertified_product_inventory_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: scope validator rechazo: ALCANCE DE PROMOCION INVALIDO: diff distinto al inventario exacto; faltan [A:apps/product/rogue.js], sobran []",
+      "expected_error": null
+    },
+    {
+      "name": "strict_certified_commit_already_in_target_rejected",
+      "status": "passed",
+      "exit_code": 1,
+      "stderr": "GOBIERNO GIT BLOQUEADO: certified_commit ya esta contenido en el target",
+      "expected_error": "certified_commit"
+    }
+  ]
+}
