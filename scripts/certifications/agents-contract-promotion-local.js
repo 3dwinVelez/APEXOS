@@ -192,7 +192,21 @@ try {
     base: BASE, ...conteoInventario, evidencia_pendiente_de_add: pendientes, rutas_totales_del_paquete: total
   });
 
-  // 9. Negativos: la CI del destino rechaza la forma equivocada (el lesson de la ronda 7B).
+  // 9. package.json es el unico bilateral del paquete: se mide por hunk, no por preferencia.
+  const PKG_CLAVES = ["agents:sync", "agents:check", "agents:preflight", "agents:coverage", "test:agents"];
+  const diffPkg = git(["diff", "--cached", BASE, "--", "package.json"]).split(/\r?\n/);
+  const agregadas = diffPkg.filter((l) => l.startsWith("+") && !l.startsWith("+++")).map((l) => l.slice(1).trim());
+  const quitadas = diffPkg.filter((l) => l.startsWith("-") && !l.startsWith("---")).map((l) => l.slice(1).trim());
+  const claveDe = (l) => (l.match(/^"([A-Za-z0-9:_-]+)":/) || [])[1] || "";
+  const fueraDeLugar = agregadas.filter((l) => !PKG_CLAVES.includes(claveDe(l)));
+  const faltaAlguna = PKG_CLAVES.filter((k) => !agregadas.some((l) => claveDe(l) === k));
+  const esCandidato = /^codex\/qa-/.test(rama);
+  record("package_json_solo_aporta_las_entradas_del_contrato", esCandidato ? (agregadas.length === PKG_CLAVES.length && quitadas.length === 0 && fueraDeLugar.length === 0 && faltaAlguna.length === 0) : true, {
+    rama, medido: agregadas.length === PKG_CLAVES.length && quitadas.length === 0 && fueraDeLugar.length === 0 && faltaAlguna.length === 0, exigido_en_rama_auxiliar: esCandidato,
+    lineas_agregadas: agregadas.length, lineas_quitadas: quitadas.length, fuera_de_lugar: fueraDeLugar, faltan: faltaAlguna
+  });
+
+  // 10. Negativos: la CI del destino rechaza la forma equivocada (el lesson de la ronda 7B).
   const negativos = [];
   const guard = path.join(root, "scripts/git-governance-guard.js");
   const prDesdePromocion = spawnSync(process.execPath, [guard, "ci"], {
