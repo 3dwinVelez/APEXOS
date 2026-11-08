@@ -154,3 +154,33 @@ R-01 (Media) 7 rutas BFF administrativas de apps/web siguen usando service role:
 R-02 (Media) `routes_authenticated_without_permission_guard` sigue en 198 de 753
   rutas autenticadas (informacional, sin regresion). Es materia de otra fase.
 R-03 (Media) La politica anon de service_references descrita en BLOQUEO.
+
+================================================================================
+Certificacion E2E local del formulario publico (2026-11-08)
+================================================================================
+
+Entorno: el mismo stack local de la Fase 2 (Docker + API :3000 + web :3001).
+  APEXOS_PUBLIC_SERVICE_COMPANY_ID se configuro en el .env local (gitignored)
+  con la empresa demo c0d70738-9098-4b55-8f62-7aefa80d14ad. Ese archivo es el
+  que cargan scripts/dev-web.js y el API; config/local.env no participa del
+  arranque local.
+
+  GET http://127.0.0.1:3000/api/v1/public/services/catalog  -> 200
+    company_id = c0d70738-9098-4b55-8f62-7aefa80d14ad (allowlist del servidor)
+    5 referencias activas, 3 tipos de servicio y 2 almacenes; sin cost/stock.
+  GET http://127.0.0.1:3001/api/public/service-requests      -> 200
+    El BFF responde con el mismo catalogo y no instancia Prisma ni usa
+    SUPABASE_SERVICE_ROLE_KEY (la ruta delega en el API local).
+
+  POST http://127.0.0.1:3001/api/public/service-requests?empresa=001346eb-...
+  body con "company_id": "001346eb-..." (otra empresa):
+    -> 200 {"ok":true,"order":{"id":96,"number":"SOL-2026-00005"}}
+  Verificacion en base:
+    ServiceOrder 96 -> tenant_id c0d70738-9098-4b55-8f62-7aefa80d14ad,
+      status agendado, 1 ServiceOrderItem.
+    La empresa inyectada por body y por query no participo: el destino lo fijo
+    la allowlist del servidor.
+
+  Esta es la certificacion E2E que faltaba. Lo que NO se midio aqui: la rama de
+  nube del BFF (lectura con llave anon y RPC create_public_service_order), que
+  exige Supabase desplegado y sigue condicionada por R-03.
