@@ -248,9 +248,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.23.0",
+      "version": "2.24.0",
       "updated_at": "2026-11-07",
-      "sha256": "03f76e09854fd327359acb5f11f514565d58c5cd4b05c2a5a8981ca54c088648",
+      "sha256": "00eef80a00bede7e22c2e37d9da5a804e3bac1927aa95fa011b20b89e840d0eb",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -292,7 +292,8 @@
         "se-espera-el-hecho-del-dom-no-el-reloj",
         "contrato-ortografia-sobre-texto-extraido",
         "estado-de-error-se-provoca-en-la-certificacion",
-        "el-codigo-de-negocio-discrimina-la-causa"
+        "el-codigo-de-negocio-discrimina-la-causa",
+        "evidencia-de-gates-con-execpath"
       ]
     },
     {
@@ -335,9 +336,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.12.0",
+      "version": "2.13.0",
       "updated_at": "2026-11-07",
-      "sha256": "1573d7dea24117bd6d8214cf1388efed925b9bfc1c481f53758730c56bec54da",
+      "sha256": "946a17eda616a0e3a62d641e872f01aeaf2d6bdf3a850c81122313bdde9e0b29",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -364,7 +365,8 @@
         "queja-de-color-se-mide",
         "limitacion-de-ambiente-no-cubre-5xx",
         "pasada-ux-se-mide-antes-de-despachar",
-        "rojo-de-medicion-se-atribuye"
+        "rojo-de-medicion-se-atribuye",
+        "editar-fuente-no-espejo"
       ]
     }
   ],
