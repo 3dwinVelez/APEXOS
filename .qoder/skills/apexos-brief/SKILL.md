@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.20.0
+version: 2.21.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -78,6 +78,8 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
 
 32. **Una fase ejecutada se cierra en el mismo brief con sección de ejecución, mediciones antes/después y bloqueos declarados; una casilla marcada sin evidencia es una promesa.** El cierre de la Fase 1 (2026-11-08) fijó la forma: (a) §11 pasa a `[x]` solo citando la sección donde vive el detalle; (b) una §14 por fase con tabla hallazgo → cierre → archivo, tabla de indicadores antes/después tomada del gate, comandos de prueba con su resultado y **decisiones registradas** (por qué se conservó el `PUT` de sincronía heredada, qué variable es prerrequisito de despliegue); (c) un bloque **Bloqueos declarados** con la línea `BLOQUEO: <motivo>` cuando una certificación no se ejecutó, y un bloque de **hallazgos residuales** con severidad y archivo; (d) lo que no se medió se dice en el brief, no se omite, porque el brief es la fuente que otro lector usa para promocionar. Por qué: el 2026-11-08 la Fase 1 dejó el formulario público sin service role pero sin recorrido E2E en navegador; cerrar sin decirlo habría convertido un bloqueo de ambiente en un "sin hallazgos" implícito.
 
+33. **Una fase autorizada en modo observar se escribe como observación, y la casilla se parte por lo que sí se ejecutó.** El cierre de la Fase 2 (2026-11-08, §15) fijó tres obligaciones adicionales: (a) la casilla de §11 nombra los hallazgos cubiertos (`C-06, C-07, A-02, A-03, A-06`) y lo no cubierto queda en una casilla aparte (`A-01, A-13`), porque marcar la fase completa habría declarado cerrada la reactivación automática en `security/supabaseAuth.js`; (b) el brief escribe los **límites de la rotación** —dos pestañas producen un falso reuso, los tokens previos conservan el `sid` anterior— y que el encendido de `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` exige una corrida medida y autorización propia; (c) cada prerrequisito de despliegue que no se puede aplicar desde el repo (`TRUST_PROXY` en Railway) se declara como `BLOQUEO` con su consecuencia medida (anónimos agrupados por la IP del proxy), no se omite porque el código ya esté listo. Por qué: el 2026-11-08 el dueño eligió observar antes de expulsar; un brief que hubiera vendido la fase como «revocación activa» habría autorizado a otro lector a confiar en un enforcement que sigue apagado.
+
 ## Checklist de intervención
 
 Antes:
@@ -137,3 +139,5 @@ Después:
 - Registrar un 500 genérico como «limitación del ambiente» sin pedir que se clasifique la causa.
 - Aceptar la etiqueta de un check que «pasa con 201 o con 5xx» como si documentara el estado del entorno.
 - Dejar fuera del inventario del candidato la evidencia que los manifiestos citan, o citar como evidencia un archivo ignorado por `.gitignore`.
+- Marcar `[x]` una fase que se ejecutó en observación y presentarla como enforcement activo, o agrupar en esa casilla los hallazgos que no estaban en la opción autorizada.
+- Omitir el prerrequisito de despliegue que el repo no puede aplicar (proxy, variable de ambiente) porque «el código ya está listo».

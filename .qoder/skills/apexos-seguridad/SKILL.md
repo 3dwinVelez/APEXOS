@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.13.0
+version: 2.14.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -86,6 +86,13 @@ Antes de actuar, leer en este orden:
     - **Asignar peso es tan sensible como editar el rol, y cambiar la clave de otro exige re-autenticación.** El candado de rol aplica a crear y editar usuarios, y la clave ajena responde `428` sin la prueba del administrador y `403` si no coincide (`apps/api/src/modules/admin/service.js:29,40`).
     Corolario honesto: una política RLS anón no queda cubierta porque la ruta web consulte con `company_id=eq.`; si la política no filtra por empresa, la lectura directa por REST sigue expuesta y se declara como hallazgo residual (R-03 del brief), no como control cerrado. Por qué: el 2026-11-08 el formulario público resolvía la empresa por `/rest/v1/companies` con service role y 29 modelos con columna `tenant_id` quedaban fuera del middleware.
 
+28. **Una revocación que no expulsa deja de ser un control si se mide, y el login no puede ser un oráculo de cuentas.** La Fase 2 del plan candado (2026-11-08) fijó cuatro contratos en `apps/api`:
+    - **Modos explícitos y medición siempre encendida.** `security/authorizationState.js:11` resuelve `off|observe|enforce`; `validateAuthorization` (`:87`) cuenta el motivo incluso con los flags apagados y solo expulsa con `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED=true`. `USER_REVOKED`, `TENANT_REVOKED` y el estado ausente se rechazan en cualquier modo. Una tasa que solo existe cuando alguien enciende el flag no sirve para decidir si conviene encenderlo; el contador `apex_authorization_mismatch_total{reason}` (`fabric/metrics.js:37`) va por motivo, sin ids, rutas ni payloads.
+    - **El refresh rota y el reuso es observable.** `modules/auth/service.js:202` crea la sesión nueva y revoca la anterior con `revoke_reason = "refresh_rotated"`; reutilizar un refresh rotado se mide como `REFRESH_TOKEN_REUSED` y el de un logout como `REFRESH_SESSION_REVOKED`. Una sesión ya revocada **no** se rota: eso lavaría el logout en una sesión fresca. Dos pestañas producen un falso reuso, así que la activación del enforcement exige esa medición previa y autorización aparte.
+    - **`bcrypt.compare` corre siempre y la respuesta es única.** `modules/auth/service.js:134-135` compara contra un hash señuelo cuando el correo no existe y devuelve el mismo `401` para correo inexistente, clave incorrecta y usuario desactivado; el `403 "Usuario desactivado"` desapareció porque confirmaba la cuenta.
+    - **`trustProxy` es una allowlist, no un booleano.** `security/trustProxy.js:12` solo honra `X-Forwarded-For` con saltos, IP/CIDR o palabras de proxy-addr declaradas en `TRUST_PROXY`; `true` se rechaza a propósito. Sin declaración, rotar la cabecera no cambia la clave del rate limit ni la del bloqueo de login. El costo —detrás de un proxy no declarado los anónimos se agrupan por la IP del proxy— se declara como prerrequisito de ambiente; no se esconde ni se «arregla» volviendo a `true`.
+    Cierre medido el 2026-11-08: 21/21 API (`authorization-observe`, `auth-session-hardening`, `trust-proxy`, `rbac-administrative-role`) y 3/3 web (`module-access-role`). Residual declarado: A-01/A-13 en `security/supabaseAuth.js:317,365` siguen reactivando usuario y empresa al sincronizar. Por qué: logout, expulsión y degradación de permisos no surtían efecto hasta que expirara el access token de 8 h, y el login distinguía una cuenta desactivada de una clave incorrecta.
+
 ## Checklist de intervención
 
 Antes:
@@ -157,3 +164,6 @@ Después:
 - Reescribir la baseline de seguridad desde un modo pasivo y presentar el candado como intacto.
 - Aceptar «RLS protege el aislamiento» sin medir rol propietario, `FORCE ROW LEVEL SECURITY` y fijación del tenant por consulta.
 - Tolerar un advisory con una allowlist sin motivo ni vencimiento: eso es una excepción permanente disfrazada.
+- Encender `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` para «cerrar» una fase autorizada solo en observación, sin la corrida medida que demuestre que no expulsa sesiones sanas.
+- Volver a `trustProxy: true` porque el ambiente no declaró el proxy: eso devuelve al cliente la elección de su IP y del cubo del rate limit.
+- Conservar un `403` que distingue «usuario desactivado» de «clave incorrecta»: es un oráculo de enumeración de cuentas.

@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.15.0
+version: 2.16.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -88,6 +88,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 
 28. **Un cambio que tensa el aislamiento se despacha a seis disciplinas y cada una debe avanzar en el mismo cierre.** El preflight de la Fase 1 (2026-11-08) ruteó las mismas rutas a `apexos-backend` (middleware y admin), `apexos-seguridad` (aislamiento y llave de servicio), `apexos-frontend` (BFF público), `apexos-qa` (rechazos y evidencia), `apexos-brief` (cierre de fase) y `equipo-apexos` (orden y baseline). Tres consecuencias: (a) el orquestador no acepta el cierre con un solo experto actualizado —`agents:coverage` es bloqueante y nombra el que falte—; (b) el dueño de la conducta (backend/frontend) no se sustituye por el revisor de seguridad: el dictamen no implementa; (c) cuando la ejecución deja un bloqueo de ambiente (stack caído, variable sin configurar) o un residual fuera de alcance (7 rutas BFF con service role, RLS anón sin filtro de empresa), el cierre los publica con su fase pendiente y no los presenta como parte de la fase entregada. Por qué: el 2026-11-08 la Fase 1 tocó `core/prisma.js`, `admin/service.js` y el BFF público a la vez, y un cierre despachado solo al backend habría dejado `apexos-frontend` y `apexos-qa` sin el control que el cambio sí modificó.
 
+29. **Cuando el dueño autoriza observar antes de expulsar, el cierre entrega la medición y no toca el interruptor.** Tres verificaciones de la Fase 2 (2026-11-08): (a) **el flag de enforcement sigue en su default versionado** (`false` en `config/.env.example` y sin fijarlo en `infra/` ni en Railway): encenderlo es otra autorización, no un detalle del cierre; (b) **la fase se declara parcial solo en lo que cubrió**: C-06, C-07, A-02, A-03 y A-06 quedaron medidos, mientras A-01/A-13 (`supabaseAuth.js` reactivando usuario y empresa) siguen abiertos y así se publican; (c) **el prerrequisito de ambiente que el repo no puede aplicar** (`TRUST_PROXY` en el proxy desplegado) se entrega como `BLOQUEO` con su consecuencia, no se resuelve tocando infraestructura sin autorización. El orquestador tampoco acepta «ya está blindado» cuando lo que se entregó es una tasa de revocación esperando lectura. Por qué: el 2026-11-08 el dueño eligió la opción de observar primero; un cierre que encendiera el enforcement para presentar la fase completa habría cambiado la conducta de autenticación global sin la corrida medida que esa misma decisión exigía.
+
 ## Checklist de intervención
 
 Antes:
@@ -152,3 +154,4 @@ Después:
 - Declarar verde una promoción hacia `develop` sin haber pasado el contrato de CI del destino, o asumir que la forma de una rama auxiliar es un detalle estético.
 - Ordenar una recopilación de pendientes por lo que cuesta fusionar en vez de por lo que el ambiente liberado hace mal (regla 25).
 - Resolver un archivo bilateral entre ramas «porque el experto lo prefiere», sin declarar las dos aportaciones ni pedir decisión.
+- Encender un flag de enforcement al cerrar una fase que el dueño autorizó solo en observación, para poder presentarla completa.

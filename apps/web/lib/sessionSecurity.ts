@@ -117,9 +117,12 @@ export async function keepSessionAlive() {
     })
       .then(async (response) => {
         if (!response.ok) throw new Error("No fue posible renovar la sesion.");
-        const body = await response.json() as { token?: string };
+        const body = await response.json() as { token?: string; refresh?: string };
         if (!body.token) throw new Error("La renovacion de sesion no devolvio token.");
         localStorage.setItem("token", body.token);
+        // El API rota el refresh en cada renovacion; si no se guarda, el cliente
+        // conserva uno viejo y la deteccion de reuso mide un artefacto del cliente.
+        if (body.refresh) localStorage.setItem("refresh", body.refresh);
         touchSession();
       })
       .catch(() => {

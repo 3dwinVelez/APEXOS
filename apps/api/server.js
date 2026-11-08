@@ -2,6 +2,8 @@ console.log("Before loading environment");
 require("./src/core/loadEnv")();
 console.log("After loading environment");
 
+const { resolveTrustProxy } = require("./src/security/trustProxy");
+
 console.log("Before require fastify");
 const fastify = require("fastify")({
   bodyLimit: Number(process.env.API_BODY_LIMIT_BYTES || 25 * 1024 * 1024),
@@ -9,7 +11,9 @@ const fastify = require("fastify")({
     level: process.env.NODE_ENV === "production" ? "warn" : "info",
     transport: process.env.NODE_ENV === "development" ? { target: "pino-pretty" } : undefined
   },
-  trustProxy: true
+  // Sin TRUST_PROXY declarado no se confia en X-Forwarded-For: confiar en todos
+  // deja que el cliente elija su IP y esquive el bloqueo de login.
+  trustProxy: resolveTrustProxy(process.env.TRUST_PROXY)
 });
 console.log("After require fastify");
 

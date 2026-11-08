@@ -31,6 +31,15 @@ const authPhaseDuration = new promClient.Histogram({
   buckets: [5, 10, 25, 50, 100, 250, 500]
 });
 
+// --- Motivos de revocación vistos por la API ---
+// Agregado por motivo, sin ids: es lo que permite decidir si un flag de
+// enforcement se puede encender sin expulsar sesiones.
+const authorizationMismatchCounter = new promClient.Counter({
+  name: "apex_authorization_mismatch_total",
+  help: "Peticiones con revocación o versión de autorización desactualizada, por motivo",
+  labelNames: ["reason"]
+});
+
 // --- Contadores de queries lentas ---
 const slowQueryCounter = new promClient.Counter({
   name: "apex_slow_queries_total",
@@ -79,6 +88,11 @@ function recordHttpRequest(method, route, status, durationMs) {
 
 function recordAuthPhase(phase, durationMs) {
   authPhaseDuration.labels(phase).observe(durationMs);
+}
+
+function recordAuthorizationMismatch(reason) {
+  if (!reason) return;
+  authorizationMismatchCounter.labels(String(reason)).inc();
 }
 
 function recordSlowQuery(model, action) {
@@ -137,6 +151,7 @@ async function metricsEndpoint(queues) {
 module.exports = {
   recordHttpRequest,
   recordAuthPhase,
+  recordAuthorizationMismatch,
   recordSlowQuery,
   runtimeSnapshot,
   updateQueueMetrics,

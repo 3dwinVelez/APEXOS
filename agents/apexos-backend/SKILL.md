@@ -2,8 +2,8 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.9.0
-updated_at: 2026-11-07
+version: 2.10.0
+updated_at: 2026-11-08
 contract: 2
 ---
 
@@ -75,6 +75,13 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
     - **La ruta pasa el actor completo, no solo su id.** `PUT`/`POST /admin/users` reciben `request.user.role.name` y `service.js` aplica `assertRoleAssignmentAllowed` (solo `APEX_ADMIN` asigna `APEX_ADMIN`) y `assertActorPassword` (cambiar la clave de otro exige la del administrador: `428` sin prueba, `403` si no coincide, también en `/access`). Un endpoint con `users:edit` que cambia la clave ajena sin esa prueba es apropiación de cuenta, no administración.
     Prueba de cierre: `node --test apps/api/test/core-tenant-models.test.js apps/api/test/admin-role-escalation.test.js` (22/22 el 2026-11-08, incluidas las lecturas de tesorería, comercio y PYG que antes no se filtraban). Por qué: la lista manual tenía 29 modelos con `tenant_id` fuera del middleware y `PUT /admin/users/:id` permitía autoascenderse a `APEX_ADMIN` con permiso `users:edit`.
 
+26. **La sesión se mide antes de expulsar: modo observar, refresh que rota y login que no distingue cuentas.** Cuatro contratos de `apps/api` que dejó la Fase 2 del plan candado (2026-11-08):
+    - **El modo se resuelve en un solo lugar y la métrica no depende del flag.** `src/security/authorizationState.js:11` devuelve `enforce`, `observe` u `off`; `validateAuthorization` (`:87`) registra el motivo siempre y solo lanza para `SESSION_REVOKED`/`USER_VERSION_STALE`/`TENANT_VERSION_STALE` con enforcement encendido. `USER_REVOKED` y `TENANT_REVOKED` se rechazan en cualquier modo. El contador `apex_authorization_mismatch_total{reason}` (`src/fabric/metrics.js:37`) va por motivo y sin ids.
+    - **El refresh rota y deja rastro distinguible.** `src/modules/auth/service.js:202` crea la sesión nueva y revoca la anterior con `revoke_reason = "refresh_rotated"`; el reuso se registra como `REFRESH_TOKEN_REUSED` y el logout como `REFRESH_SESSION_REVOKED`. Una sesión ya revocada no se rota: rotarla devolvería una sesión válida a quien conserva el refresh de un cierre.
+    - **`bcrypt.compare` corre siempre y hay una sola respuesta de fallo.** `service.js:134-135` usa un hash señuelo cuando el correo no existe; correo inexistente, clave incorrecta y usuario desactivado comparten un `401`. El costo de bcrypt no puede depender de si la cuenta existe.
+    - **`trustProxy` se declara, no se asume.** `server.js:16` resuelve `TRUST_PROXY` con `src/security/trustProxy.js:12`, que rechaza `true` y solo acepta saltos, IP/CIDR o palabras conocidas. Detrás de un proxy sin declarar, la clave del rate limit y del bloqueo de login pasa a ser la IP del proxy: es un costo de ambiente que se declara, no un motivo para volver a `true`.
+    Prueba de cierre: `node --test test/authorization-observe.test.js test/auth-session-hardening.test.js test/trust-proxy.test.js` (17/17 el 2026-11-08). Por qué: la revocación no surtía efecto hasta que expirara el token y `/auth/refresh` entregaba un access token sin invalidar el refresh de 30 días.
+
 ## Checklist de intervención
 
 Antes:
@@ -139,3 +146,6 @@ Después:
 - Dejar que un `TypeError: fetch failed` llegue al handler global: sin `statusCode` se convierte en 500 `ERROR_INTERNO` y el usuario no puede accionar.
 - Cambiar de almacén por fallback implícito cuando el configurado no responde, en lugar de exigir `COMERCIO_STORAGE_DRIVER`.
 - Lanzar una excepción en la ruta de lectura de una página pública por culpa de un almacén caído o mal configurado.
+- Rotar el refresh sobre una sesión ya revocada: se lava el logout y el cliente recibe una sesión válida que el cierre debía anular.
+- Dejar que `bcrypt.compare` se salte cuando el correo no existe o responder `403` por usuario desactivado: el login se convierte en un oráculo de cuentas.
+- Resolver `trustProxy` con `true` o con un valor no declarado solo para que el rate limit «funcione» en el proxy.

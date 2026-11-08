@@ -2,8 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.10.0
-updated_at: 2026-11-07
+version: 2.11.0
+updated_at: 2026-11-08
 contract: 2
 ---
 
@@ -80,6 +80,11 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     - **El `fetch` del cliente no manda empresa.** `savePublicServiceCatalog` (`apps/web/lib/api.ts`) envía solo el payload y el token; el `?empresa=` que sobreviva en una pantalla administrativa es sincronía heredada y no puede convertirse en la fuente de la empresa.
     Prueba de cierre: `npm run test:security` en `apps/web` (10/10) cubre ausencia de service role, allowlist, `401` sin JWT, `401` con sesión inválida y `403` por RLS. Por qué: el BFF público resolvía la empresa enumerando `/rest/v1/companies` con la llave de servicio y cualquiera podía editar catálogos de otra empresa.
 
+26. **El cliente guarda el refresh que el API rota, y el rol administrativo se compara exacto.** Dos contratos del cliente medidos en la Fase 2 (2026-11-08):
+    - **La renovación de sesión guarda el refresh nuevo.** `apps/web/lib/sessionSecurity.ts:125` escribe `body.refresh` en `localStorage` junto al token. Si el cliente conserva el refresh viejo, el API mide un reuso que produjo el propio cliente y la señal deja de valer para decidir el enforcement. Un `keepSessionAlive` que solo reescriba `token` está incompleto, aunque la pantalla siga funcionando.
+    - **`isAdministrativeRole` no abre Administración por parecidos.** `apps/web/lib/moduleAccessPolicy.ts` compara nombre normalizado exacto contra la lista; `apps/web/test/module-access-role.test.mjs` fija que subcadenas, valores vacíos y roles ausentes no abren el módulo. Un `.includes("admin")` aquí repite el bypass que la API ya cerró.
+    Prueba de cierre: `node --experimental-strip-types --test test/module-access-role.test.mjs` (3/3 el 2026-11-08). Por qué: sin la primera regla, la detección de reuso mide un artefacto del cliente; sin la segunda, una pestaña administrativa se abre por un nombre que solo se parece.
+
 ## Checklist de intervención
 
 Antes:
@@ -136,3 +141,5 @@ Después:
 - Reusar la tinta invertida del tema como letra sobre la fotografía del banner.
 - Cambiar `buildStorefrontVars` sin mover a la vez el bloque `:root` de `storefront.css`.
 - Dar por buena una imagen subida porque el `POST` devolvió 201, sin verla cargada en el navegador.
+- Renovar la sesión guardando solo el `token` y descartar el `refresh` rotado: la siguiente renovación se lee como reuso.
+- Decidir el acceso a Administración con un `includes` sobre el nombre o el metadata del rol.

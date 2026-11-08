@@ -1,5 +1,15 @@
 # Security Changelog
 
+## 2026-11-08 — Plan candado, Fase 2 en modo observar (C-06, C-07, A-02, A-03, A-06)
+
+- La revocación de sesiones dejó de ser invisible: `apps/api/src/security/authorizationState.js` tiene modos `off`/`observe`/`enforce`, cuenta cada motivo (`SESSION_REVOKED`, `USER_VERSION_STALE`, `TENANT_VERSION_STALE`, `USER_REVOKED`, `TENANT_REVOKED`) y lo publica en `apex_authorization_mismatch_total{reason}` (`apps/api/src/fabric/metrics.js`). Se cuenta **siempre**, aunque el flag esté apagado; el log por request solo aparece en `observe`/`enforce`. Con `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` apagado (default versionado) nada se expulsa: la fase mide para decidir.
+- `/auth/refresh` rota la sesión: crea una nueva, revoca la anterior con `revoke_reason = "refresh_rotated"` y devuelve `refresh` nuevo. Reutilizar un refresh rotado se registra como `REFRESH_TOKEN_REUSED` y el de una sesión cerrada como `REFRESH_SESSION_REVOKED`; una sesión ya revocada **no** se rota, para no lavar el logout. `apps/web/lib/sessionSecurity.ts` guarda el refresh rotado.
+- Login sin oráculo: `bcrypt.compare` corre siempre (hash señuelo si el correo no existe) y correo inexistente, clave incorrecta y usuario desactivado comparten un único `401 "No fue posible iniciar sesion con esas credenciales."`; desaparece el `403 "Usuario desactivado"`.
+- `trustProxy` deja de ser `true`: `apps/api/src/security/trustProxy.js` solo confía en `X-Forwarded-For` cuando `TRUST_PROXY` declara saltos, IP/CIDR o palabras de proxy-addr; `true` se rechaza a propósito. Sin declaración, un XFF falsificado no cambia `request.ip` y el bloqueo de login no se esquiva rotando la cabecera. Variable documentada en `config/.env.example`.
+- A-06 se cierra con pruebas: `isAdministrativeRole` ya comparaba exacto en API y web; `apps/api/test/rbac-administrative-role.test.js` y `apps/web/test/module-access-role.test.mjs` fijan que parecidos, subcadenas y `metadata` no abren Administración.
+- Pruebas: 21/21 API (`authorization-observe`, `auth-session-hardening`, `trust-proxy`, `rbac-administrative-role`) y 3/3 web. Evidencia en `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`.
+- Bloqueos declarados: certificación E2E de login/refresh no ejecutada (stack local caído); `TRUST_PROXY` sin declarar en Railway, de modo que detrás del proxy el límite global agrupa a los anónimos por la IP del proxy hasta que se declare con autorización propia. Residual abierto: A-01/A-13 (`supabaseAuth.js` reactiva usuario y empresa).
+
 ## 2026-11-08 — Plan candado, Fase 1 (C-01..C-04)
 
 - El formulario público de Servicios dejó de usar el service role: `apps/web/app/api/public/service-requests/route.ts` solo configura `SUPABASE_URL`/`SUPABASE_ANON_KEY`, lee con `company_id=eq.<allowlist>` y, para editar catálogos, exige JWT del administrador y deja decidir a RLS (`42501`/401/403 → 403). Sin `PrismaClient` en toda la superficie pública.

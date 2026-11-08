@@ -195,7 +195,8 @@ Ninguna fase 1-7 toca conducta de auth, permisos, RLS, configuración global, in
 
 - [x] **Fase 0** — gates, CI, `.gitignore`, threat model. Autorizada y ejecutada el 2026-11-08 (detalle en la sección 13).
 - [x] **Fase 1** — cerrar C-01..C-04 en código. Autorizada y ejecutada el 2026-11-08 (detalle en la sección 14). Decisión tomada: `GLOBAL_MODELS` corta y explícita en `apps/api/src/core/tenantModels.js`, con el resto derivado del schema; el service role del frontend se retira de la ruta pública y su lectura se delega al API. La certificación E2E del formulario en navegador queda **bloqueada** por stack local caído y allowlist sin configurar, y así se registra en la evidencia.
-- [ ] **Fase 2** — cambio de conducta de sesión/revocación/auth. Requiere autorización expresa por ser autenticación global.
+- [x] **Fase 2 — C-06, C-07, A-02, A-03, A-06** — autorizada en **modo observar** el 2026-11-08 (detalle en la sección 15): la revocación se mide y no expulsa, el refresh rota con detección de reuso, `bcrypt.compare` corre siempre, el login responde uniforme, `isAdministrativeRole` queda exacto y `trustProxy` pasa a allowlist. El encendido de `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` queda para una corrida medida con autorización aparte.
+- [ ] **Fase 2 — residual A-01, A-13** — la reactivación automática de usuario y empresa en `apps/api/src/security/supabaseAuth.js` sigue abierta: desactivar en el API no cierra el acceso por Supabase y renombrar en Supabase levanta una suspensión. No estaba incluida en la opción autorizada y toca autenticación global por otro camino; requiere autorización expresa.
 - [ ] **Fase 3** — `infra/**` (Redis, puertos, nginx, credenciales de compose). Requiere autorización de infraestructura; no se toca Railway/Supabase desde aquí.
 - [ ] **Fase 4** — CSP y cabeceras del web con nonce (cambia el bundle entregado).
 - [ ] **Fase 5** — actualización de dependencias (next, sharp, nodemailer, zod, minio, shell-quote).
@@ -292,3 +293,49 @@ Evidencia versionada: `docs/qa/evidence/plan-candado-20261108/gate-fase-1.txt` y
 - R-01 (Media): 7 rutas BFF administrativas de `apps/web` siguen usando service role (`/api/admin/users`, `/api/admin/roles`, `/api/platform/companies`, `/api/platform/company-modules`, `/api/platform/company-sessions`, `/api/services/monitor-orders`, `/api/v1/services/orders/[id]`). Es la misma clase de superficie que C-01, fuera del alcance de la ruta pública.
 - R-02 (Media): `routes_authenticated_without_permission_guard` sigue en 198 de 753 rutas autenticadas (informacional, sin regresión en esta fase).
 
+
+## 15. Ejecución de la Fase 2 — modo observar (2026-11-08)
+
+Alcance ejecutado: C-06, C-07, A-02, A-03 y A-06 en `desarrollo`, con la revocación **instrumentada y medida, sin expulsar sesiones**. A-01 y A-13 siguen abiertos (ver checklist de la sección 11). El encendido de `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` no forma parte de esta ejecución: exige una corrida medida y autorización independiente.
+
+**Cambios**
+
+| Archivo | Cambio |
+|---|---|
+| `apps/api/src/security/authorizationState.js` | Modos `off`/`observe`/`enforce` (`authorizationMode`), contadores por motivo (`authorizationMetrics`), `noteAuthEvent` y `rotateSession`. `validateAuthorization` siempre registra el motivo y devuelve `authorization_session_revoke_reason`. |
+| `apps/api/src/fabric/metrics.js` | Contador Prometheus `apex_authorization_mismatch_total{reason}`, sin ids ni payloads. |
+| `apps/api/src/modules/auth/service.js` | Login uniforme: `bcrypt.compare` corre siempre (hash señuelo para correo inexistente) y un único 401 para correo inexistente, clave incorrecta y usuario desactivado. Refresh rota la sesión y detecta reuso (`REFRESH_TOKEN_REUSED` vs `REFRESH_SESSION_REVOKED`). |
+| `apps/api/src/security/trustProxy.js` (nuevo) + `apps/api/server.js:16` | `trustProxy` deja de ser `true`: sin `TRUST_PROXY` no se confía en `X-Forwarded-For`; se aceptan saltos (`1`), listas de IP/CIDR y palabras reconocidas por proxy-addr. `true` se rechaza a propósito. |
+| `apps/web/lib/sessionSecurity.ts` | `keepSessionAlive` guarda el refresh rotado; sin eso el cliente conservaría uno viejo y la detección de reuso mediría un artefacto del cliente. |
+| `config/.env.example` | Se documentan `TRUST_PROXY` y el significado de los flags de observación/enforcement. |
+
+**Medición (lo que permite decidir si se enciende)**
+
+- `authorizationMetrics()` publica `mode`, `total` y `reasons`; `apex_authorization_mismatch_total` sale por `/metrics` (autenticado). Se cuenta **siempre**, aunque el flag esté apagado, y el log por request solo aparece en `observe`/`enforce`.
+- Un refresh reutilizado sobre una sesión rotada se registra como `REFRESH_TOKEN_REUSED`; sobre una sesión revocada por logout, como `REFRESH_SESSION_REVOKED`. Rotar una sesión ya revocada **no** ocurre: eso lavaría el logout en una sesión fresca. En ese caso se devuelve el mismo refresh presentado, sin extender su expiración a otros 30 días.
+
+**Pruebas ejecutadas**
+
+```bash
+cd apps/api && node --test test/authorization-observe.test.js test/auth-session-hardening.test.js \
+  test/trust-proxy.test.js test/rbac-administrative-role.test.js   # 21/21 pass
+cd apps/web && node --experimental-strip-types --test test/module-access-role.test.mjs  # 3/3 pass
+```
+
+Evidencia versionada: `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`.
+
+**Decisiones registradas**
+
+- Modo observar elegido por el dueño: el enforcement global de autenticación no se enciende sin una corrida medida. La conducta visible al usuario cambia solo en lo seguro: login uniforme y rotación de refresh.
+- `isAdministrativeRole` ya era comparación exacta en API y web; A-06 se cierra **fijándolo con pruebas** (parecidos como `admín` se normalizan a `admin` y se aceptan; subcadenas y `metadata` no), sin reescribir código que ya estaba bien.
+- La detección de reuso se apoya en `revoke_reason` de `AuthorizationSession` porque no hay tabla de cadena de refrescos; no se añadió migración en esta fase.
+
+**Límites conocidos de la rotación**
+
+- Dos pestañas pueden presentar el mismo refresh: una rota y la otra aparece como `REFRESH_TOKEN_REUSED` aunque no haya ataque. En modo observar solo se mide; con enforcement encendido obligaría a re-login, por eso la activación necesita esa medición previa.
+- Los access tokens emitidos antes de la rotación conservan el `sid` anterior: al encender enforcement caducan por revocación. La ventana se mide antes de activar.
+
+**Bloqueos declarados**
+
+- `BLOQUEO`: el stack local sigue caído (API :3000 y web :3001), así que **no** se ejecutó certificación E2E de login/refresh en navegador; lo medido son pruebas de servicio, de ruta y del cliente.
+- `BLOQUEO`: `TRUST_PROXY` no está declarado en Railway desde esta intervención. Mientras no se declare en el ambiente desplegado, detrás del proxy toda petición anónima comparte la IP del proxy en el límite global (200/min) y en el bloqueo de login. Declararlo es cambio de ambiente y exige autorización propia; `config/.env.example` deja la instrucción.

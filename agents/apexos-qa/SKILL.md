@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.27.0
+version: 2.28.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -124,6 +124,13 @@ Antes de actuar, leer en este orden:
     - **La evidencia se versiona sin secretos ni PII** en `docs/qa/evidence/<cambio>/` con nombres `gate-*.txt` y `security-*.txt`, y declara los hallazgos residuales con severidad (R-01..R-03 del brief).
     Por que: el 2026-11-08 una fase "cerrada" con pruebas verdes y sin prueba de rechazo habria dejado el formulario público devolviendo datos de otra empresa sin que ninguna celda lo dijera.
 
+41. **Una fase autorizada en observación se certifica midiendo la tasa y probando el rechazo con el flag encendido; el enforcement no se declara.** La Fase 2 (2026-11-08) fijó cuatro pruebas obligatorias:
+    - **La misma sesión revocada se mide sin flag y se rechaza con flag.** `apps/api/test/authorization-observe.test.js:68,85` demuestra que observar no expulsa y que `enforce` responde `401 SESSION_REVOKED`. Citar solo la prueba de la función pura deja sin cubrir la función que honra el flag — el hueco que mantuvo invisible C-06.
+    - **El reuso de refresh se distingue del logout y no abre sesión nueva.** `apps/api/test/auth-session-hardening.test.js:186,200,212`: un refresh rotado se mide como `REFRESH_TOKEN_REUSED`, uno de logout como `REFRESH_SESSION_REVOKED`, y ninguno de los dos crea una sesión válida. Dos pestañas pueden producir un falso reuso y eso se escribe como límite, no se presenta como ataque.
+    - **El login no distingue cuentas.** `auth-session-hardening.test.js:141,152`: correo inexistente paga bcrypt y devuelve el mismo `401` que una clave incorrecta o un usuario desactivado. La prueba de tiempo y de código de estado es la que cierra A-03; un `403` con texto distinto la reprueba.
+    - **`X-Forwarded-For` falsificado no cambia la clave sin proxy declarado.** `apps/api/test/trust-proxy.test.js:31,35` lo mide contra Fastify real con y sin `TRUST_PROXY`. Un test que solo importe `resolveTrustProxy` no prueba que `request.ip` quede fuera del control del cliente.
+    Evidencia de la fase: `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`, con 21/21 API y 3/3 web, el `BLOQUEO` del stack caído y el de `TRUST_PROXY` sin declarar en Railway. Por qué: una fase en observación que se reporte como enforcement cumplido es exactamente el «passed» constante que la Fase 0 tuvo que retirar.
+
 ## Checklist de intervención
 
 Antes:
@@ -197,3 +204,6 @@ Después:
 - Citar un check no bloqueante de limpieza como si fuera una verificación, o dar por limpia una corrida sin una lectura independiente por id, correo, tabla y prefijo del bucket.
 - Publicar `session: "passed"`, `status: "ok"` o cualquier veredicto como constante del script, o descartar la respuesta de la llamada que se dice certificada.
 - Aceptar como prueba de sesión un test unitario de la función de decisión cuando la función que honra el flag de enforcement es otra.
+- Certificar una fase en observación como si el enforcement estuviera encendido, o citar la tasa de revocación sin haber corrido la misma prueba con el flag activo.
+- Dar por cerrada una detección de reuso sin distinguir el refresh rotado del de un logout: uno es reuso, el otro es un cierre.
+- Probar `resolveTrustProxy` aislado y llamarlo prueba de que `request.ip` ya no obedece a `X-Forwarded-For`.
