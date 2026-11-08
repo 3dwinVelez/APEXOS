@@ -1,0 +1,125 @@
+{
+  "$comment": "Advisories conocidos y aceptados temporalmente. Un paquete aqui NO bloquea CI; uno ausente SI bloquea. Toda entrada exige motivo y vencimiento; vencida, vuelve a bloquear. Gate: scripts/security/ci-audit-gate.js. Ver docs/briefs/2026-11-08-plan-candado-blindaje-integral.md (Fase 5).",
+  "allow": [
+    {
+      "package": "@eslint/config-array",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "@eslint/eslintrc",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "@fastify/busboy",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "brace-expansion",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "chromium-bidi",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "concurrently",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "decode-uri-component",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "eslint",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "fast-uri",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "minimatch",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "minio",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "next",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "node-forge",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "nodemailer",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "puppeteer-core",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "query-string",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "sharp",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "shell-quote",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "source-map-js",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "zod",
+      "advisory": "*",
+      "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    }
+  ]
+}

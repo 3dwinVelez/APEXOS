@@ -73,6 +73,7 @@ function repositoryState(root) {
     }
   }
   visit(path.join(root, "supabase"));
+  visit(path.join(root, "apps/api/prisma/migrations"));
   const rlsTables = new Set();
   const policies = new Map();
   const functions = new Map();
@@ -189,6 +190,12 @@ function compare(repository, deployed) {
   const missingRls = repository.rlsTables.filter((item) => !liveRls.has(item));
   const tablesWithoutRls = deployed.relations.filter((item) => ["r", "p"].includes(item.kind) && !item.rls_enabled).map((item) => `${item.schema}.${item.name}`);
   const tablesWithRlsWithoutPolicies = deployed.relations.filter((item) => item.rls_enabled && !deployed.policies.some((policy) => policy.schema === item.schema && policy.table_name === item.name)).map((item) => `${item.schema}.${item.name}`);
+  const rlsEnabledWithoutForce = deployed.relations
+    .filter((item) => item.rls_enabled && !item.rls_forced && ["r", "p"].includes(item.kind))
+    .map((item) => `${item.schema}.${item.name} (owner=${item.owner})`);
+  const ownerBypassTables = deployed.relations
+    .filter((item) => item.rls_enabled && ["r", "p"].includes(item.kind) && item.owner === deployed.identity.db_user)
+    .map((item) => `${item.schema}.${item.name}`);
   const missingPolicies = [...expectedPolicies.keys()].filter((key) => !livePolicies.has(key));
   const extraPolicies = [...livePolicies.keys()].filter((key) => !expectedPolicies.has(key));
   const logicDifferences = [];
@@ -206,7 +213,7 @@ function compare(repository, deployed) {
   }, {})).filter(([, names]) => names.length > 1).map(([logic, names]) => ({ logic, names }));
   const policyText = deployed.policies.map((item) => `${item.using_expression} ${item.check_expression}`).join(" ");
   const referencedFunctions = [...new Set([...policyText.matchAll(/\b([a-z_][\w]*)\s*\(/gi)].map((match) => match[1]).filter((name) => !["select", "exists", "coalesce", "nullif", "current_setting"].includes(name.toLowerCase())))].sort();
-  return { missingRls, tablesWithoutRls, tablesWithRlsWithoutPolicies, missingPolicies, extraPolicies, logicDifferences, duplicatePolicies, referencedFunctions };
+  return { missingRls, tablesWithoutRls, tablesWithRlsWithoutPolicies, rlsEnabledWithoutForce, ownerBypassTables, missingPolicies, extraPolicies, logicDifferences, duplicatePolicies, referencedFunctions };
 }
 
 async function main() {
@@ -258,6 +265,24 @@ async function main() {
   fs.writeFileSync(output, `${JSON.stringify(report, null, 2)}\n`);
   console.log(`[rls-inspect] target=${target} tables=${deployed.relations.length} policies=${deployed.policies.length} missing_rls=${comparison.missingRls.length} logic_differences=${comparison.logicDifferences.length}`);
   console.log(`[rls-inspect] report=${output}`);
+
+  if (args.gate === true) {
+    const blockers = [
+      ["missing_rls", comparison.missingRls],
+      ["logic_differences", comparison.logicDifferences],
+      ["rls_without_policies", comparison.tablesWithRlsWithoutPolicies],
+      ["rls_without_force", comparison.rlsEnabledWithoutForce],
+      ["owner_bypass_tables", comparison.ownerBypassTables],
+    ].filter(([, list]) => Array.isArray(list) && list.length > 0);
+    if (blockers.length) {
+      for (const [name, list] of blockers) {
+        console.error(`[rls-inspect][gate] ${name}: ${list.length}`);
+        list.slice(0, 20).forEach((item) => console.error(`  - ${typeof item === "string" ? item : JSON.stringify(item)}`));
+      }
+      throw new Error(`Gate RLS bloqueado por ${blockers.map(([name]) => name).join(", ")}`);
+    }
+    console.log("[rls-inspect][gate] Sin hallazgos bloqueantes.");
+  }
 }
 
 main().catch((error) => {

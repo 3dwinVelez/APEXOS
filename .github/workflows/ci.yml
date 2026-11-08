@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, develop, desarrollo]
@@ -98,6 +101,5 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: npm audit
-        run: npm audit --audit-level=high
-        continue-on-error: true
+      - name: Audit dependencies (blocking, allowlist with expiry)
+        run: node scripts/security/ci-audit-gate.js
