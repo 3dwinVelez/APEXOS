@@ -1,0 +1,55 @@
+== plan candado Fase 0 — 2026-11-08 ==
+rama: desarrollo  head: d90aa4c9
+
+== npm run security:candado ==
+
+> apex-os@2.0.0 security:candado
+> node scripts/security/candado-gates.js
+
+[candado-gates] Midiendo postura de seguridad...
+[candado-gates] Indicadores:
+  models_with_tenant_id_outside_allowlist: 29
+  models_in_allowlist_without_tenant_id_column: 5
+  raw_sql_queries: 190
+  routes_without_auth: 4
+  npm_audit_critical_high: 20
+  script_src_unsafe_inline: 1
+  connect_src_scheme_wildcard: 1
+  object_src_not_none: 1
+  rls_force_statements: 0
+  rls_enable_statements: 41
+  rls_policies_declared: 176
+  app_tenant_guc_sets_in_code: 0
+  published_ports: 11
+  explicitly_bound_ports: 1
+  lax_default_credentials: 9
+  redis_without_password: 1
+  example_files_with_enforcement_disabled: 2
+  (info) routes_authenticated_without_permission_guard: 198
+[candado-gates] Sin regresión frente a la baseline. Exit 0.
+
+== npm run security:ci-audit ==
+[ci-audit] Tolerados por allowlist vigente (20): @eslint/config-array (high), @eslint/eslintrc (high), @fastify/busboy (high), brace-expansion (high), chromium-bidi (high), concurrently (critical), decode-uri-component (high), eslint (high), fast-uri (high), minimatch (high), minio (high), next (critical), node-forge (high), nodemailer (high), puppeteer-core (high), query-string (high), sharp (high), shell-quote (critical), source-map-js (high), zod (high)
+[ci-audit] OK: 0 advisories critical/high fuera de allowlist.
+
+== node scripts/certifications/auth-session-readiness.js (sin ambiente) ==
+C:\Users\mq1\Documents\Proyectos\APEXOS\scripts\certifications\auth-session-readiness.js:12
+  throw new Error("CERT_API_URL, CERT_LOGIN_EMAIL, CERT_LOGIN_PASSWORD y CERT_EXPECTED_COMMIT son obligatorios");
+  ^
+
+Error: CERT_API_URL, CERT_LOGIN_EMAIL, CERT_LOGIN_PASSWORD y CERT_EXPECTED_COMMIT son obligatorios
+    at Object.<anonymous> (C:\Users\mq1\Documents\Proyectos\APEXOS\scripts\certifications\auth-session-readiness.js:12:9)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.23.1
+auth_session_exit=1
+
+== npm run security:inspect-rls:gate (sin base configurada) ==
+[rls-inspect] --target debe ser local, qa o production.
+inspect_rls_exit=1
