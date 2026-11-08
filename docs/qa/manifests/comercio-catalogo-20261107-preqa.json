@@ -1,0 +1,107 @@
+{
+  "change_id": "comercio-catalogo-20261107",
+  "commit": "094f8c02d1471fe5bb62b5b2c1915c31f34bbd87",
+  "certified_tree": "no aplica: el candidato reconstruye una sola ruta funcional sobre 2cb064e2 y su paridad se midio por inventario A/M/D",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-comercio-catalogo-develop-20261107",
+  "target_head": "2cb064e2a8968011e6497735921f8d36d9bd4768",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-07",
+    "quality_gate_overridden": false,
+    "authorizations": [
+      "Rama auxiliar + PR hacia develop para publicar la migracion de catalogo de Comercio.",
+      "Aplicar el catalogo en la base de QA y habilitar el modulo en Cliente Piloto QA y Empresa Demo APEX-OS.",
+      "No tocar main ni infraestructura; ninguna migracion de Prisma se aplica desde esta estacion."
+    ],
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "scoped_promotion_to_develop_only": true,
+      "qa_catalog_write_authorized": true,
+      "force_push": false,
+      "promotion_to_main": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../evidence/comercio-catalogo-20261107/alta-y-activacion.txt",
+        "../../../supabase/migrations/20261107120000_comercio_module_catalog.sql"
+      ],
+      "medida": "11/11 checks contra el Supabase de QA: existe exactamente una fila commerce en public.modules, su contenido coincide campo por campo con la migracion versionada, los 2 planes tienen su plan_modules, las 9 empresas tienen su company_modules (o sea, el toggle existe para todas) y solo las 2 empresas autorizadas quedaron enabled=true"
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/gates-candidato.txt",
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../../../apps/api/test/comercio-service.test.js"
+      ],
+      "medida": "el certificador aborta con exit_code 1 y lista el nombre del check cuando algo falla; se demostro en la primera corrida, que salio CERTIFICATION_FAILED por un rojo del instrumento y CERTIFICATION_PASSED con fallidos=[] despues de corregirlo. Sin sesion, /api/v1/comercio/settings sigue respondiendo 401 con TOKEN_INVALIDO, no 5xx ni 404"
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/comercio-module-catalog-qa.js",
+        "../../../scripts/certifications/commercial-module-catalog-qa.js",
+        "../evidence/comercio-catalogo-20261107/gates-candidato.txt"
+      ],
+      "medida": "script versionado, de solo lectura, que exige SUPABASE_URL y service role del archivo de ambiente y no escribe nada; node --check en verde y la corrida real contra QA con su salida capturada en la evidencia. El precedente M-27 (commercial-module-catalog-qa.js) queda al lado como patron"
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../../../apps/web/test/comercio-storefront-theme.test.mjs",
+        "../../../supabase/migrations/20261011100000_petty_cash_module_catalog.sql"
+      ],
+      "medida": "49/49 en los cuatro contratos de fuente Comercio de apps/web ejecutados sobre el arbol del candidato (ux-consistency, storefront-theme, storefront-resilience, reports-charts); en el catalogo las 35 filas previas conservan su codigo sin duplicados, comercio_exterior mantiene su ruta y orden propios y las otras 7 empresas siguen con enabled=false"
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/gates-candidato.txt",
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../../../apps/api/test/comercio-storage.test.js"
+      ],
+      "medida": "el candidato no agrega ni modifica ninguna ruta bajo apps/ ni infra/: inventario 7 A / 0 M / 0 D contra 2cb064e2, y las dos unicas rutas de codigo son un SQL nuevo y un script que nadie importa. La superficie que si toca es el catalogo de plataforma, y ahi la medida es directa: /health reporta el mismo commit desplegado 2cb064e2a896 con 19 modulos y la ruta privada del modulo sigue viva"
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-module-catalog-qa.js",
+    "evidence": [
+      "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+      "../evidence/comercio-catalogo-20261107/alta-y-activacion.txt"
+    ],
+    "resultado": "CERTIFICATION_PASSED total=11 fallidos=[] medido contra el Supabase de QA: alta del modulo, coincidencia con la migracion, coberturas de plan y empresa, y habilitacion acotada a Cliente Piloto QA y Empresa Demo APEX-OS"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/comercio-module-catalog-qa.js",
+    "evidence": [
+      "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+      "../evidence/comercio-catalogo-20261107/gates-candidato.txt"
+    ],
+    "resultado": "los tres checks de regresion del mismo certificador: ninguna otra empresa recibe el modulo, el resto del catalogo sin codigos duplicados y sin colision de sort_order con la fila nueva, y el API desplegado sigue exponiendo Comercio (401 sin sesion, commit 2cb064e2a896)"
+  },
+  "suites": {
+    "web_contratos_comercio_candidato": "49/49",
+    "certificador_catalogo_qa": "11 checks, 0 fallidos",
+    "node_check_certificador": "exit 0"
+  },
+  "pending_certifications": [
+    "Confirmar con la sesion del dueno que, al entrar a Cliente Piloto QA, Comercio aparece en el menu: el espejo ensureTenantMirror escribe Tenant.active_modules en el login a partir de company_modules y esa ultima milla no se puede ejercitar sin su sesion.",
+    "El despliegue en QA ya trae el codigo del modulo; esta promocion no cambia el build, asi que no se espera redeploy del producto."
+  ],
+  "known_target_failures": [
+    "Five preexisting shared sort_order values in the QA module catalog (20, 70, 80, 90, 100); declared, not introduced here and not blocked by this change."
+  ]
+}
