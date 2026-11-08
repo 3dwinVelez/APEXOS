@@ -195,7 +195,7 @@ Ninguna fase 1-7 toca conducta de auth, permisos, RLS, configuración global, in
 
 - [x] **Fase 0** — gates, CI, `.gitignore`, threat model. Autorizada y ejecutada el 2026-11-08 (detalle en la sección 13).
 - [x] **Fase 1** — cerrar C-01..C-04 en código. Autorizada y ejecutada el 2026-11-08 (detalle en la sección 14). Decisión tomada: `GLOBAL_MODELS` corta y explícita en `apps/api/src/core/tenantModels.js`, con el resto derivado del schema; el service role del frontend se retira de la ruta pública y su lectura se delega al API. La certificación E2E del formulario en navegador queda **bloqueada** por stack local caído y allowlist sin configurar, y así se registra en la evidencia.
-- [x] **Fase 2 — C-06, C-07, A-02, A-03, A-06** — autorizada en **modo observar** el 2026-11-08 (detalle en la sección 15): la revocación se mide y no expulsa, el refresh rota con detección de reuso, `bcrypt.compare` corre siempre, el login responde uniforme, `isAdministrativeRole` queda exacto y `trustProxy` pasa a allowlist. El encendido de `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` queda para una corrida medida con autorización aparte.
+- [x] **Fase 2 — C-06, C-07, A-02, A-03, A-06** — autorizada en **modo observar** el 2026-11-08 (detalle en la sección 15): la revocación se mide y no expulsa, el refresh rota con detección de reuso, `bcrypt.compare` corre siempre, el login responde uniforme, `isAdministrativeRole` queda exacto y `trustProxy` pasa a allowlist. La certificación E2E de login, refresh y logout se ejecutó el 2026-11-08 con el stack local levantado. El encendido de `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED` queda para una corrida medida con autorización aparte.
 - [ ] **Fase 2 — residual A-01, A-13** — la reactivación automática de usuario y empresa en `apps/api/src/security/supabaseAuth.js` sigue abierta: desactivar en el API no cierra el acceso por Supabase y renombrar en Supabase levanta una suspensión. No estaba incluida en la opción autorizada y toca autenticación global por otro camino; requiere autorización expresa.
 - [ ] **Fase 3** — `infra/**` (Redis, puertos, nginx, credenciales de compose). Requiere autorización de infraestructura; no se toca Railway/Supabase desde aquí.
 - [ ] **Fase 4** — CSP y cabeceras del web con nonce (cambia el bundle entregado).
@@ -335,7 +335,15 @@ Evidencia versionada: `docs/qa/evidence/plan-candado-20261108/security-fase-2.tx
 - Dos pestañas pueden presentar el mismo refresh: una rota y la otra aparece como `REFRESH_TOKEN_REUSED` aunque no haya ataque. En modo observar solo se mide; con enforcement encendido obligaría a re-login, por eso la activación necesita esa medición previa.
 - Los access tokens emitidos antes de la rotación conservan el `sid` anterior: al encender enforcement caducan por revocación. La ventana se mide antes de activar.
 
+**Certificación E2E local (2026-11-08)**
+
+El propietario autorizó Docker y `config/local.env`; el stack se levantó (postgres 16, pgbouncer, redis, minio y brain en Docker; API :3000 y web :3001) y la base local presentó 216 tablas con 72 migraciones aplicadas. Resultados sobre el API real:
+
+- `npm run certify:auth-session` en verde: login, consulta autenticada y cinco rechazos 401 (sin token, token basura, `alg none`, clave incorrecta, firma alterada); revocación **medida** y no expulsada, que es la conducta de modo observar.
+- Sesión E2E: el refresh sano rota el `sid` y emite refresh nuevo; el reuso del refresh rotado conserva el mismo valor, no abre sesión y suma `REFRESH_TOKEN_REUSED`; el logout deja `/auth/me` en 200 (medido) y el refresh de esa sesión suma `REFRESH_SESSION_REVOKED`. El login es uniforme (mismo 401 y mismo mensaje para usuario inexistente y clave errónea, con costo bcrypt comparable) y un `X-Forwarded-For` falsificado no altera la sesión.
+- La expulsión real sigue cubierta por prueba y solo depende de `AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED`, que no se encendió.
+
 **Bloqueos declarados**
 
-- `BLOQUEO`: el stack local sigue caído (API :3000 y web :3001), así que **no** se ejecutó certificación E2E de login/refresh en navegador; lo medido son pruebas de servicio, de ruta y del cliente.
+- `BLOQUEO` (cerrado 2026-11-08): la certificación E2E que faltaba por stack local caído ya se ejecutó; su salida queda en `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`.
 - `BLOQUEO`: `TRUST_PROXY` no está declarado en Railway desde esta intervención. Mientras no se declare en el ambiente desplegado, detrás del proxy toda petición anónima comparte la IP del proxy en el límite global (200/min) y en el bloqueo de login. Declararlo es cambio de ambiente y exige autorización propia; `config/.env.example` deja la instrucción.
