@@ -1,0 +1,129 @@
+Certificacion remota del modulo Comercio en el ambiente de develop (QA) - 2026-11-07
+Rama promocionada: develop @ 2cb064e2 (merge del PR #83, modulo Comercio completo)
+
+METODO: ejecucion versionada y reproducible contra el ambiente desplegado, no contra el puesto local.
+Comando: npm run certify:comercio:qa-develop
+Archivo: scripts/certifications/comercio-develop-remote.js
+Salida:  docs/qa/evidence/comercio-qa-develop-20261107/qa-certification.json
+Guardia: el script se niega a correr si --api-url no es exactamente la API de QA en Railway (HTTPS).
+Aislamiento del dano: la corrida aprovisiona TRES empresas efimeras propias, trabaja solo sobre ellas y las
+destruye al terminar. El tenant demo de QA se usa solo para lectura y se comprueba que quedo intacto.
+
+=== 1. Veredicto ===
+status=passed  79/79 checks
+api_commit=2cb064e2a896 == expected_commit=2cb064e2a896 (el build de QA es el codigo promocionado)
+Distribucion de codigos HTTP: 200 x29, 201 x12, 400 x3, 401 x1, 403 x2, 404 x6, 415 x2
+Sin un solo 5xx en toda la corrida. Ninguna peticion a la API devolvio error interno.
+
+=== 2. Que cierra esta ronda (hueco declarado en lectura-ambiente.txt, seccion 5) ===
+- Tema propio del tenant guardado: SI. PUT /comercio/settings/storefront/theme escribio preferences_json y el
+  catalogo publico devolvio ese tema. Check el_tema_persiste_en_la_base_qa lo confirmo leyendo la fila en Supabase.
+- Subida real de banner contra el bucket: SI. POST .../banner devolvio 201, el objeto se escribio en
+  comercio-assets/<tenant>/comercio/storefront/... y se leyo sin credenciales por la URL publica, con los mismos bytes.
+- Panel/apariencia, promociones, RBAC por funcion y aislamiento con empresas reales: SI, todo medido autenticado.
+- Link publico quemado y regenerado: SI. Quemar el codigo cambia el codigo y mata el link (404); el nuevo responde.
+
+=== 3. Licencia y RBAC (medidos, no deducidos) ===
+Empresa con M-30 habilitada -> lectura y escritura permitidas.
+Empresa SIN M-30 -> GET /comercio/settings y POST de escritura responden 403 MODULO_NO_HABILITADO, y la empresa
+sin licencia no tiene fila de configuracion (licencia_sin_M30_bloquea_la_lectura, licencia_sin_M30_bloquea_la_escritura,
+la_empresa_sin_licencia_no_tiene_configuracion).
+Sin sesion -> la superficie privada responde 401 TOKEN_INVALIDO y la vitrina publica contesta sin token:
+con link inexistente da 404 con codigo de negocio CATALOG_NOT_FOUND (vitrina_publica_viva_sin_sesion) y con link
+valido entrega el catalogo del tenant (modulo_privado_sin_sesion_401, vitrina_publica_del_codigo_responde,
+el_link_nuevo_responde).
+
+=== 4. Vitrina publica y contrato de datos ===
+- El catalogo publico no filtra costo, stock, ids de tenant ni de usuario (la_vitrina_no_filtra_costo_stock_ni_tenant).
+- El tema se normaliza a minusculas y persiste (tema_guardado_en_minusculas). El guardado midio accent #2563eb y
+  base #0b1220, y ese mismo tema salio por el catalogo publico (el_tema_del_tenant_llega_al_publico); antes de tocarlo,
+  el publico ya viajaba con los defaults #10b981 / #e11d48 / #0a0a0a (tema_por_defecto_viaja_en_el_publico).
+- Rechazo de entradas: hex invalido, patron fuera del enum y texto demasiado largo -> 400 (3 rechazos medidos).
+- El cliente no puede inyectar banner_url: la respuesta o es 400 o es 200 con el tema sin cambios y el path en null
+  (el_cliente_no_pone_url_de_banner, medido 200 + banner_url null). El servidor es el unico que produce esa URL.
+- La promocion del 10 % se aplica en vitrina (base 12000 -> price 10800) y en la venta de efectivo
+  (2 x 10800 = 21600, documento V-000001). La venta descuenta inventario (20 -> 18) y deja su movimiento.
+- Venta a credito (3 unidades, anticipo 10000, 3 cuotas mensuales) genera el documento CR-0001 con saldo financiado
+  22400 (el_total_menos_anticipo). El abono de 5000 responde 201 y el saldo baja a 17400 medido en la base de QA.
+  Limite honesto: la corrida comprueba el documento, el saldo y el abono persistido; no afirma fila por fila el plan
+  de cuotas en comercio_installments.
+- El dashboard del mes consolida las ventas medidas: sales 54000, cost_of_goods 35000, gross_margin 19000,
+  estimated_result 19000, receivable 17400, cash_collected 26600, inventory_value 105000 (el_dashboard_refleja_las_ventas
+  cuenta 2 ventas recientes).
+- Anular la venta de efectivo devuelve las 2 unidades compradas: stock 15 -> 17, medido como delta sobre la misma
+  corrida y no como absoluto (sobre el mismo producto ya habian corrido la venta de efectivo y la de credito).
+- Gasto operativo de $50000 registrado (201).
+- Normalizaciones y filtrado del contrato publico: currency COP en mayusculas, el publico no filtra el path interno
+  del bucket, no revela el costo del producto (solo expone code, name, category, unit, price, base_price,
+  discount_percent, description, featured, available, photo_url) y la foto del producto llega desde el bucket.
+
+=== 5. Almacenamiento (bucket comercio-assets del Supabase de QA) ===
+Objetos creados por la corrida: 3 (banner PNG subido, foto de producto, banner JPG generado por el modelo gratuito)
+Objetos que quedaron al terminar: 0
+- La generacion con modelo gratuito respondio 201 y escribio un objeto real en el bucket (la_generacion_no_devuelve_error_interno).
+- Subidas rechazadas con 415: archivo que no es imagen y archivo cuyo MIME no coincide con la firma (2 casos).
+- El path escrito queda dentro del prefijo del tenant (comercio-assets/<tenantId>/comercio/...) y la respuesta del
+  upload trae la URL firmada que produce el servidor, no la que pida el cliente (el_path_del_objeto_es_del_tenant,
+  la_respuesta_trae_url_firmada_del_servidor).
+- El publico expone la URL publica del bucket y nunca el path interno; el objeto se lee sin credenciales y devuelve
+  exactamente los mismos bytes que se subieron (el_objeto_se_lee_sin_credenciales, el_objeto_devuelve_los_mismos_bytes).
+- Quitar el banner deja de exponer la URL; el objeto borrado ya no se lee en el ORIGEN (lectura autenticada -> 400).
+
+=== 6. Aislamiento multi-tenant ===
+La tercera empresa se aprovisiono con M-30 y con documentos propios, para que el aislamiento se mida contra IDs que
+esta corrida sabe que existen, y no contra los datos que el tenant demo tenga hoy.
+- Lectura del producto de otra empresa -> 404 PRODUCT_NOT_FOUND; lectura de su venta -> 404 SALE_NOT_FOUND.
+- El listado del tenant CERT no contiene ninguna fila ajena y toda fila lleva su RUN_ID.
+- POST /comercio/products/<id ajeno>/deactivate desde la empresa de la corrida -> 404, y la ficha leida con el token
+  de la empresa duena sigue activa y con su stock intacto (el_invasor_no_muto_nada: no hubo mutacion cruzada).
+- La vitrina publica de la empresa ajena conservo su tema por defecto, sin tocar (la_vitrina_ajena_no_se_movio).
+- El producto demo de QA tampoco se lee desde la empresa de la corrida.
+- el_tenant_demo_quedo_intacto: el tenant compartido no recibi una sola escritura de esta corrida.
+
+=== 7. Limpieza (verificada dos veces) ===
+Dentro de la corrida: 11 checks de limpieza, todos en verde (empresas y usuarios efimeras eliminadas, cero filas de
+comercio en las 15 tablas por tenant, cero objetos en el bucket). Estos checks se registran como NO bloqueantes a
+proposito: un fallo de limpieza nunca debe tapar el fallo real del negocio que provoco la abortada.
+Verificacion independiente posterior (residuo-independiente.txt): consulta directa a la base de QA por los 3 ids de
+empresa, los 3 correos efimeros y las 15 tablas de Comercio -> TODO AUSENTE / 0 filas, y 0 objetos por prefijo de
+tenant en el bucket. La corrida no dejo residuo.
+
+=== 8. Limitaciones declaradas (no son verde, no son fallo de producto) ===
+- CACHE DEL CDN EN BUCKET PUBLICO: tras un DELETE confirmado (origen -> 400), la URL PUBLICA del objeto borrado sigue
+  respondiendo 200 durante el TTL de la cache. Medido: status_publico=200, status_origen=400, incluido a los 4 s.
+  Consecuencia para el producto: borrar un banner retira la referencia del tema de inmediato, pero los bytes viejos
+  siguen legibles en la URL publica un rato. Si alguna vez un banner tiene dato sensible, esto es un riesgo a tratar,
+  no una molestia. Queda registrado como check no bloqueante para que se vea y no se olvide.
+- MIGRACION FUERA DE LINEA: _prisma_migrations tiene la fila 20260814150000_commercial_visit_scheduling marcada como
+  rollback en la base de QA. No es del modulo Comercio y tocarla requiere autorizacion independiente; no se toco.
+- La corrida no captura pixel del navegador: certifica contrato HTTP + persistencia real en la base de QA. La captura
+  visual del storefront en develop queda en la tarea #42 (regresion visual de componentes compartidos).
+
+=== 9. Alcance ===
+Solo modulo Comercio (M-30). No se tocaron otros modulos, no se escribio en main, no se promovio nada a main,
+no se modificaron secretos ni infraestructura. Las credenciales de QA se leen de config/qa.env (archivo local, nunca
+commiteado) y ninguna salida de esta evidencia contiene claves ni contrasenas.
+
+=== 10. Puertas del contrato de equipo, con su salida ===
+npm run agents:sync        -> [agents] sincronizados 11 agentes y 11 documentos
+npm run agents:check       -> [agents] OK: 11 agentes y 11 documentos verificados
+npm run test:agents        -> 45 pruebas, 45 pass, 0 fail
+npm run agents:preflight   -> Veredicto: OK (ruteo: equipo-apexos, apexos-brief, apexos-git-guardian, apexos-qa)
+npm run agents:coverage    -> OK (ver advertencia abajo: paso vacio para estas rutas)
+
+Agente dueno actualizado en la fuente (.qoder/skills/apexos-qa/SKILL.md, nunca el espejo): 2.24.0 -> 2.25.0 con la
+regla 38 y cuatro antipatrones. El registry.json local marca apexos-qa 2.25.0 contra 2.24.0 en origin/desarrollo
+(local-ahead) y la entrada aparece en la seccion mas reciente de agents/CHANGELOG.md: esas son las dos condiciones
+que coverage exige, comprobadas a mano.
+
+ADVERTENCIA HONESTA SOBRE agents:coverage: para las rutas de esta intervencion (scripts/certifications/**,
+docs/qa/**, package.json, agents/**, .qoder/skills/**) la tabla de ruteo declara owners: [], asi que coverage
+imprime "Sin agentes duenos para estas rutas" y pasa VACIO. La puerta no fallo: es que no midio nada. Queda registrado
+aqui como el punto ciego ya conocido de gobernanza, no como verde de la puerta.
+
+=== 11. Como reproducir ===
+npm run certify:comercio:qa-develop
+Necesita config/qa.env local con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY (QA_API_URL es opcional: el script ya
+apunta al host de QA y aborta si le pasan cualquier otro). Requiere que el build de QA siga en 2cb064e2a896; si el
+destino avance, pasar --expected-commit=<sha del build actual>. La corrida escribe y borra en QA: crea tres empresas
+efimeras, sus documentos y tres objetos en comercio-assets, y los destruye al terminar.

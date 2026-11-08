@@ -1,0 +1,47 @@
+Certificacion de lectura del modulo Comercio en el ambiente de develop (QA) — 2026-11-07
+Rama promocionada: develop @ 2cb064e2 (merge del PR #83, modulo Comercio completo)
+
+METODO: medicion real contra el ambiente desplegado (HTTP + consola del proyecto), no contra el puesto local.
+Nada de esto escribe en la nube: son lecturas. Ninguna salida incluye claves ni rutas locales.
+
+=== 1. Que build esta corriendo ===
+GET https://apexos-api-qa-production.up.railway.app/health -> HTTP 200 en 0.80s
+{"status":"OK","version":"2.0","modules":19,"commit":"2cb064e2a896","service_certification":"products-v2"}
+  commit 2cb064e2a896 == el merge del PR #83. El ambiente de QA tiene el codigo promocionado, no un build viejo.
+
+=== 2. Contrato de la vitrina publica (sin sesion) ===
+GET /api/v1/public/comercio/catalog/zzzz99 -> 404 {"code":"CATALOG_NOT_FOUND"}      (codigo malformed, rechazo con codigo de negocio)
+GET /api/v1/public/comercio/catalog/aaaa11 -> 404 {"code":"CATALOG_NOT_FOUND"}      (codigo valido inexistente)
+GET /api/v1/public/comercio/catalog/qaf9e18b -> 200 con el catalogo real del tenant de QA
+  top-level: store_name, tagline, currency, whatsapp, facebook, instagram, promo, theme, categories, items
+  items[0]:  code, name, category, unit, price, base_price, discount_percent, description, featured, available, photo_url
+  items: 3 | campanas: 0
+  Campos sensibles expuestos (costo, margen, proveedor, ids de tenant/usuario, tokens): NINGUNO.
+  Clave de aislamiento: la ruta pública busca por catalog_code y despues envuelve la lectura en runWithTenant; sin la
+  fila de settings no hay ninguna consulta de producto, asi que un codigo ajeno no revela datos de otro tenant.
+
+=== 3. Puerta de autorizacion del modulo administrativo ===
+GET /api/v1/comercio/dashboard sin token -> HTTP 401 {"code":"TOKEN_INVALIDO"}
+  La superficie privada del modulo sigue detras de autenticacion en el ambiente liberado.
+
+=== 4. Capa de tokens del tema, medida en el DOM de la vitrina desplegada ===
+GET /tienda/qaf9e18b (navegador) -> render con la capa --sf-* escrita en linea sobre el elemento raiz:
+  --sf-base-t:10 10 10 | --sf-surface-t:23 23 23 | --sf-accent-t:16 185 129 | --sf-accent-on:#0a0a0a
+  --sf-promo-t:225 29 72 | --sf-radius-card:1.25rem | --sf-scrim-top:0.55 --sf-scrim-mid:0.2 --sf-scrim-bottom:0.72
+  --sf-pattern:none --sf-pattern-size:auto
+  Es el tema por defecto (preferences_json del tenant es NULL), pero prueba que la tuberia de personalizacion
+  esta desplegada y pinta: los tokens existen, el hero toma el scrim y el patron se resuelve.
+GET /tienda/zzzz9999 (navegador) -> "Tienda no disponible / Esta tienda desactivó o cambió su link público."
+  Estado negativo con copia accionable, sin 5xx y sin pantalla en blanco.
+Requests de red de la carga del navegador: 200 en todos los recursos, 0 fallos 5xx.
+
+=== 5. Lo que NO se pudo certificar aqui (limite declarado, no verde) ===
+- Tema propio del tenant guardado (PUT /comercio/settings/storefront/theme): requiere sesion autenticada en el
+  ambiente de QA. El tenant demo de QA no tiene preferences_json, asi que la personalizacion por tenant sigue sin
+  evidencia en el ambiente liberado.
+- Subida real de banner contra el bucket comercio-assets (POST /comercio/settings/storefront/banner): mismo requisito.
+  El bucket ya existe con la configuracion correcta, o sea que el bloqueo es de sesion, no de infraestructura.
+- Panel de apariencia, promociones, RBAC por funcion y aislamiento multi-tenant con dos empresas reales: todo detras
+  de la autenticacion.
+- Captura de pixel: la superficie del navegador integrado no estaba visible (viewport hidden), asi que esta ronda
+  registro DOM y contrato, no png.

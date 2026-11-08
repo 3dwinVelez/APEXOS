@@ -1,0 +1,13 @@
+Verificacion independiente de residuo despues de la corrida 20261108012042 (npm run certify:comercio:qa-develop)
+Metodo: lectura directa por PostgREST a la base de QA con las credenciales de config/qa.env (archivo local, nunca commiteado).
+Los 3 ids de empresa y los 3 correos efimeros salen de la evidencia de la propia corrida. No se imprimio ninguna clave.
+Criterio: empresa y usuario ausentes, 0 filas en las 15 tablas de Comercio y 0 objetos en el prefijo del bucket.
+
+EMPRESA CERT tenant_read=200 AUSENTE user_read=200 AUSENTE
+  bucket/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/ -> 200 objetos=0
+EMPRESA SINLIC tenant_read=200 AUSENTE user_read=200 AUSENTE
+  bucket/bf68e5cc-f1ab-4284-98e7-10b928c3578b/ -> 200 objetos=0
+EMPRESA AJENO tenant_read=200 AUSENTE user_read=200 AUSENTE
+  bucket/24becba1-c7b3-4a59-ac8a-fcf34ba3f9e4/ -> 200 objetos=0
+
+Resultado: AUSENTE significa 200 con conjunto vacio, o sea cero residuo. Las 15 tablas por cada empresa tampoco devolvieron una sola fila (la lectura solo imprime las que algo devolvieron).

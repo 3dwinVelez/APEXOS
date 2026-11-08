@@ -1,0 +1,25 @@
+> _prisma_migrations -> 70 filas. Las 6 migraciones del modulo Comercio estan aplicadas:
+  20261026120000_comercio_foundation
+  20261026140000_comercio_payment_allocations
+  20261027120000_comercio_public_catalog
+  20261027150000_comercio_social_links
+  20261028120000_comercio_discounts
+  20261028190000_comercio_promotions
+
+> Filas con estado distinto de aplicado: 1
+  20260814150000_commercial_visit_scheduling | finished_at=NULL | rolled_back_at=2026-09-03 | applied_steps_count=0
+  logs: "A migration failed to apply. New migrations cannot be applied before the error is recovered from..."
+  El archivo de esa migracion sigue existe en las tres ramas. No bloqueo las 6 de Comercio (se aplicaron
+  despues), pero es un registro sucio que hay que saldar aparte: borrar o resolver la fila es una escritura
+  a la base liberada y pide autorizacion independiente.
+
+> information_schema.tables like 'comercio%' -> 15 tablas presentes en el esquema public de QA.
+
+> Storage (consola del proyecto QA):
+  comercio-assets | PUBLIC | file_size_limit 5 MB | allowed_mime_types image/png, image/jpeg, image/webp | 0 politicas
+  Config identical a la que escribe scripts/ensure-comercio-assets-bucket.js: la alta ya estaba hecha, no habia que crear nada.
+  La lectura publica no depende de politicas RLS porque el bucket esta marcado public; la escritura la hace la API con la clave de servicio.
+
+> comercio_settings (datos reales del ambiente QA): filas=1, catalog_enabled=1, preferences_json=NULL, productos=3, campanas=0, catalog_code=qaf9e18b
+  Interpretacion: el tenant demo de QA tiene vitrina publicada con 3 productos y NINGUN tema propio guardado,
+  asi que la personalizacion por tenant no se puede certificar en QA hasta escribir un tema por la ruta autenticada.

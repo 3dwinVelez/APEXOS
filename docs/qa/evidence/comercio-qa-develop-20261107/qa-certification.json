@@ -1,0 +1,808 @@
+{
+  "change_id": "comercio-qa-develop-20261107",
+  "certification": "comercio-module-develop-remote",
+  "environment": "QA",
+  "target_environment": "develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "supabase_project": "jbirkghkekuifgfsgquq",
+  "api_commit": "2cb064e2a896",
+  "expected_commit": "2cb064e2a896",
+  "generated_at": "2026-11-08T01:20:42.225Z",
+  "scope": {
+    "capability": "Comercio (M-30) end-to-end en develop: API desplegada (Railway) contra Supabase QA, con vitrina publica tematizada por tenant, bucket comercio-assets real, licencia M-30, RBAC y aislamiento entre empresas.",
+    "proven_by_live_execution": [
+      "commit desplegado + vitrina publica anonima por HTTPS (404 con codigo de negocio para link inexistente)",
+      "dos empresas efimeras aprovisionadas en la base QA (una con M-30, otra sin licencia) y autenticadas por /api/v1/auth/login",
+      "configuracion y link publico propios, tema guardado en preferences_json y reflejado en el catalogo publico",
+      "rechazo de hex/modo/texto invalidos y de URLs de imagen inyectadas por el cliente",
+      "subida de banner y de foto de producto al bucket comercio-assets: URL publica del servidor, lectura sin credenciales, bytes identicos y eliminacion del objeto",
+      "promocion vigente: precio de vitrina = precio de mostrador; venta efectivo y credito con cuotas y abono; anulacion con reversa de inventario",
+      "quemar el link: el codigo anterior muere (404) y el nuevo responde",
+      "aislamiento: documentos del tenant demo ajeno devuelven 404 con codigo de negocio y la lista propia no contiene filas ajenas",
+      "limpieza verificada: 0 filas en las 15 tablas de Comercio y 0 objetos en el bucket para las dos empresas de la corrida"
+    ]
+  },
+  "fixtures": {
+    "run_id": "20261108012042",
+    "tenants": {
+      "cert": "03f70bcf-bd9e-45aa-86cb-8c6d83263da0",
+      "sin_licencia": "bf68e5cc-f1ab-4284-98e7-10b928c3578b",
+      "ajeno": "24becba1-c7b3-4a59-ac8a-fcf34ba3f9e4"
+    },
+    "foreign_tenant_id": "e8fac747-e410-41dd-8784-2c0ca71660e8"
+  },
+  "storage": {
+    "bucket": "comercio-assets",
+    "objects_created": [
+      "03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/storefront/banner-1794100857297-525c8b98-c6c3-434f-92c5-1acc2409cba4.png",
+      "03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/products/6/4c30f93a-7e4d-47d5-b6c4-2487acfa2c13.png",
+      "03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/storefront/banner-1794100895142-191c586e-be3d-4f92-8f82-c540a0ad009d.jpg"
+    ],
+    "objects_left": 0
+  },
+  "checks": [
+    {
+      "name": "develop_salud_y_commit",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "commit": "2cb064e2a896",
+        "esperado": "2cb064e2a896",
+        "modulos": 19
+      }
+    },
+    {
+      "name": "vitrina_publica_viva_sin_sesion",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404,
+        "code": "CATALOG_NOT_FOUND"
+      }
+    },
+    {
+      "name": "modulo_privado_sin_sesion_401",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 401,
+        "code": "TOKEN_INVALIDO"
+      }
+    },
+    {
+      "name": "empresas_efimeras_aprovisionadas",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "con_licencia": "03f70bcf",
+        "sin_licencia": "bf68e5cc",
+        "ajeno": "24becba1"
+      }
+    },
+    {
+      "name": "licencia_sin_M30_bloquea_la_lectura",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 403,
+        "code": "MODULO_NO_HABILITADO"
+      }
+    },
+    {
+      "name": "licencia_sin_M30_bloquea_la_escritura",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 403
+      }
+    },
+    {
+      "name": "la_empresa_sin_licencia_no_tiene_configuracion",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "filas": 0
+      }
+    },
+    {
+      "name": "login_de_la_empresa_de_certificacion",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "tenant_id": "03f70bcf"
+      }
+    },
+    {
+      "name": "configuracion_crea_su_fila_propia",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "catalog_code": "w2nj94sh",
+        "en_base": true
+      }
+    },
+    {
+      "name": "moneda_normalizada_mayusculas",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "currency": "COP"
+      }
+    },
+    {
+      "name": "vitrina_publica_del_codigo_responde",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "store_name": "Despensa Certificada 20261108012042"
+      }
+    },
+    {
+      "name": "la_vitrina_no_filtra_costo_stock_ni_tenant",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "claves": [
+          "store_name",
+          "tagline",
+          "currency",
+          "whatsapp",
+          "facebook",
+          "instagram",
+          "promo",
+          "theme",
+          "categories",
+          "items"
+        ]
+      }
+    },
+    {
+      "name": "tema_por_defecto_viaja_en_el_publico",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "theme": {
+          "accent": "#10b981",
+          "promo": "#e11d48",
+          "base": "#0a0a0a",
+          "surface_tint": "neutro",
+          "surface_depth": "media",
+          "background_pattern": "ninguno",
+          "corner_radius": "suave",
+          "banner_scrim": "medio",
+          "headline": null,
+          "subhead": null,
+          "banner_url": null
+        }
+      }
+    },
+    {
+      "name": "rechaza_un_hex_invalido",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "rechaza_un_patron_fuera_del_enum",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "rechaza_un_texto_demasiado_largo",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "el_cliente_no_pone_url_de_banner",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "banner_url": null,
+        "path_guardado": null
+      }
+    },
+    {
+      "name": "tema_guardado_en_minusculas",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "theme": {
+          "accent": "#2563eb",
+          "promo": "#be123c",
+          "base": "#0b1220",
+          "surface_tint": "marcado",
+          "surface_depth": "alta",
+          "background_pattern": "cuadricula",
+          "corner_radius": "redondo",
+          "banner_scrim": "fuerte",
+          "headline": "La despensa del barrio, en un clic",
+          "subhead": "Certificacion remota develop",
+          "banner_url": null
+        }
+      }
+    },
+    {
+      "name": "el_tema_del_tenant_llega_al_publico",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "accent": "#2563eb",
+        "base": "#0b1220"
+      }
+    },
+    {
+      "name": "el_tema_persiste_en_la_base_qa",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "preferences": "{\"theme\":{\"base\":\"#0b1220\",\"promo\":\"#be123c\",\"accent\":\"#2563eb\",\"subhead\":\"Certificacion remota develop\",\"headline\":\"La despensa del barrio, en un clic\",\"banner_scrim\":\"fuerte\",\"surface_tint\":\"marcado"
+      }
+    },
+    {
+      "name": "la_subida_del_banner_devuelve_201",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": null,
+        "detalle": ""
+      }
+    },
+    {
+      "name": "el_banner_sale_como_url_publica_del_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "banner_url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/storefront/banner-1794100857297-"
+      }
+    },
+    {
+      "name": "el_path_del_objeto_es_del_tenant",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "banner_path": "comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/storefront/banner-1794100857297-525c8b98-c6c3-434f-92c5-1acc2409cba4.png"
+      }
+    },
+    {
+      "name": "la_respuesta_trae_url_firmada_del_servidor",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "firmada": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/sign/comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/com"
+      }
+    },
+    {
+      "name": "el_objeto_se_lee_sin_credenciales",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "content_type": "image/png"
+      }
+    },
+    {
+      "name": "el_objeto_devuelve_los_mismos_bytes",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "esperados": 226882,
+        "leidos": 226882
+      }
+    },
+    {
+      "name": "el_publico_expone_la_url_del_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "banner_url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/storefront/banner-1794100857297-"
+      }
+    },
+    {
+      "name": "el_publico_no_filtra_el_path_interno",
+      "ok": true,
+      "blocking": true,
+      "detail": {}
+    },
+    {
+      "name": "rechaza_un_archivo_que_no_es_imagen",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 415,
+        "detalle": ""
+      }
+    },
+    {
+      "name": "rechaza_un_mime_que_no_coincide",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 415
+      }
+    },
+    {
+      "name": "quitar_el_banner_deja_de_exponer_url",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "el_objeto_borrado_ya_no_esta_en_el_origen",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status_origen": 400
+      }
+    },
+    {
+      "name": "la_cache_publica_del_cdn_sigue_sirviendo_el_objeto_borrado",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "status_publico": 200,
+        "status_origen": 400
+      }
+    },
+    {
+      "name": "el_inventario_del_bucket_queda_vacio_tras_borrar",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "carpetas": 0
+      }
+    },
+    {
+      "name": "producto_creado_con_codigo_y_stock",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": "P-0001",
+        "stock": 20
+      }
+    },
+    {
+      "name": "la_foto_del_producto_sube_al_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "photo_url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/sign/comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/com"
+      }
+    },
+    {
+      "name": "la_ficha_expone_la_url_publica_del_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "has_photo": true,
+        "url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/products/6/4c30f93a-7e4d-47d5-b6"
+      }
+    },
+    {
+      "name": "la_foto_se_lee_sin_credenciales",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "la_url_firmada_de_la_foto_es_legible",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "photo_url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/sign/comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/com"
+      }
+    },
+    {
+      "name": "promocion_creada_y_activa",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "id": 3
+      }
+    },
+    {
+      "name": "la_vitrina_aplica_el_descuento",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "price": 10800,
+        "base_price": 12000,
+        "discount_percent": 10
+      }
+    },
+    {
+      "name": "la_vitrina_publica_la_foto_del_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "photo_url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/03f70bcf-bd9e-45aa-86cb-8c6d83263da0/comercio/products/6/4c30f93a-7e4d-47d5-b6"
+      }
+    },
+    {
+      "name": "el_publico_no_revela_el_costo_del_producto",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "claves": [
+          "code",
+          "name",
+          "category",
+          "unit",
+          "price",
+          "base_price",
+          "discount_percent",
+          "description",
+          "featured",
+          "available",
+          "photo_url"
+        ]
+      }
+    },
+    {
+      "name": "cliente_creado",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": "C-0001"
+      }
+    },
+    {
+      "name": "venta_efectivo_aplica_el_precio_de_vitrina",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "total": 21600,
+        "number": "V-000001"
+      }
+    },
+    {
+      "name": "la_venta_descuenta_inventario",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "stock": 18
+      }
+    },
+    {
+      "name": "la_venta_deja_movimiento_de_inventario",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "movimiento": {
+          "change": -2,
+          "reference": "V-000001"
+        }
+      }
+    },
+    {
+      "name": "venta_credito_genera_documento_y_cartera",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "credito": "CR-0001"
+      }
+    },
+    {
+      "name": "la_cartera_registra_el_saldo_financiado",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "balance": 22400,
+        "anticipo": 10000
+      }
+    },
+    {
+      "name": "el_abono_baja_el_saldo",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201
+      }
+    },
+    {
+      "name": "el_abono_persiste_en_la_base_qa",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "antes": 22400,
+        "despues": 17400
+      }
+    },
+    {
+      "name": "el_dashboard_refleja_las_ventas",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "recientes": 2
+      }
+    },
+    {
+      "name": "el_dashboard_consolida_el_mes",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "mes": {
+          "sales": 54000,
+          "cost_of_goods": 35000,
+          "gross_margin": 19000,
+          "expenses": 0,
+          "income": 0,
+          "purchases": 0,
+          "estimated_result": 19000,
+          "receivable": 17400,
+          "overdue_receivable": 0,
+          "inventory_value": 105000,
+          "cash_collected": 26600
+        }
+      }
+    },
+    {
+      "name": "anular_venta_devuelve_el_inventario",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "status_negocio": "voided"
+      }
+    },
+    {
+      "name": "la_anulacion_reversa_el_stock",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "antes": 15,
+        "despues": 17
+      }
+    },
+    {
+      "name": "gasto_operativo_registrado",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "amount": 50000
+      }
+    },
+    {
+      "name": "la_empresa_ajena_tiene_documentos_propios",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "producto": 7,
+        "venta": "V-000001"
+      }
+    },
+    {
+      "name": "no_lee_el_producto_de_otra_empresa",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "no_lee_la_venta_de_otra_empresa",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404,
+        "code": "SALE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "el_invasor_no_muto_nada",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status_escritura": 404,
+        "activo": true,
+        "stock": 4
+      }
+    },
+    {
+      "name": "el_tenant_demo_tiene_documentos_ajenos",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "id_ajeno": 3
+      }
+    },
+    {
+      "name": "no_lee_el_producto_demo_de_qa",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "el_listado_no_contiene_filas_ajenas",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "filas": 1
+      }
+    },
+    {
+      "name": "la_vitrina_ajena_no_se_movio",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "accent_ajeno": "#10b981"
+      }
+    },
+    {
+      "name": "quemar_el_link_cambia_el_codigo",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "anterior": "w2nj94sh",
+        "nuevo": "b8ckb6rk"
+      }
+    },
+    {
+      "name": "el_link_quemado_muere",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "el_link_nuevo_responde",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "la_generacion_no_devuelve_error_interno",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": null,
+        "detalle": ""
+      }
+    },
+    {
+      "name": "ninguna_respuesta_es_5xx",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "distribucion": {
+          "200": 29,
+          "201": 12,
+          "400": 3,
+          "401": 1,
+          "403": 2,
+          "404": 6,
+          "415": 2
+        }
+      }
+    },
+    {
+      "name": "el_tenant_demo_quedo_intacto",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "antes_len": 375,
+        "despues_len": 375
+      }
+    },
+    {
+      "name": "ningun_objeto_de_la_corrida_sigue_legible",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "creados": 3,
+        "quedaron": []
+      }
+    },
+    {
+      "name": "sin_filas_de_comercio_en_03f70bcf",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "sobrantes": []
+      }
+    },
+    {
+      "name": "sin_objetos_del_bucket_en_03f70bcf",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "carpetas": 0
+      }
+    },
+    {
+      "name": "sin_filas_de_comercio_en_bf68e5cc",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "sobrantes": []
+      }
+    },
+    {
+      "name": "sin_objetos_del_bucket_en_bf68e5cc",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "carpetas": 0
+      }
+    },
+    {
+      "name": "sin_filas_de_comercio_en_24becba1",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "sobrantes": []
+      }
+    },
+    {
+      "name": "sin_objetos_del_bucket_en_24becba1",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "carpetas": 0
+      }
+    },
+    {
+      "name": "usuarios_efimeros_eliminados",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "quedaron": 0
+      }
+    },
+    {
+      "name": "empresas_efimeras_eliminadas",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "quedaron": 0
+      }
+    }
+  ],
+  "status": "passed",
+  "finished_at": "2026-11-08T01:21:55.977Z",
+  "checks_passed": 79,
+  "checks_total": 79,
+  "http_status_distribution": {
+    "200": 29,
+    "201": 12,
+    "400": 3,
+    "401": 1,
+    "403": 2,
+    "404": 6,
+    "415": 2
+  }
+}
