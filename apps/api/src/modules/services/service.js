@@ -1601,6 +1601,9 @@ async function listPhotos(tenantId, user, orderId) {
 }
 
 module.exports = {
+  serviceTypeCode,
+  normalizeServiceTypes,
+  normalizeServiceStores,
   listOrders,
   listTechnicians,
   listServiceTypes,

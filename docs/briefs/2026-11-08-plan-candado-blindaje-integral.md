@@ -194,7 +194,7 @@ Tesorería (`treasury`), Compras (`purchases`), Comercio (los 17 modelos `Commer
 Ninguna fase 1-7 toca conducta de auth, permisos, RLS, configuración global, infraestructura o dependencias sin autorización expresa (regla 11 de `apexos-seguridad`). Estado:
 
 - [x] **Fase 0** — gates, CI, `.gitignore`, threat model. Autorizada y ejecutada el 2026-11-08 (detalle en la sección 13).
-- [ ] **Fase 1** — cerrar C-01..C-04 en código. Requiere decisión sobre `GLOBAL_MODELS` y sobre el destino del service role del frontend.
+- [x] **Fase 1** — cerrar C-01..C-04 en código. Autorizada y ejecutada el 2026-11-08 (detalle en la sección 14). Decisión tomada: `GLOBAL_MODELS` corta y explícita en `apps/api/src/core/tenantModels.js`, con el resto derivado del schema; el service role del frontend se retira de la ruta pública y su lectura se delega al API. La certificación E2E del formulario en navegador queda **bloqueada** por stack local caído y allowlist sin configurar, y así se registra en la evidencia.
 - [ ] **Fase 2** — cambio de conducta de sesión/revocación/auth. Requiere autorización expresa por ser autenticación global.
 - [ ] **Fase 3** — `infra/**` (Redis, puertos, nginx, credenciales de compose). Requiere autorización de infraestructura; no se toca Railway/Supabase desde aquí.
 - [ ] **Fase 4** — CSP y cabeceras del web con nonce (cambia el bundle entregado).
@@ -240,4 +240,55 @@ npm run security:inspect-rls:gate
 ```
 
 `security:inspect-rls:gate` **requiere base viva**; en el puesto sin base sale con error de conexión, y eso es un `BLOQUEO` declarado, no un verde.
+
+## 14. Ejecución de la Fase 1 (2026-11-08)
+
+Decisión de alcance aplicada (D-2): el middleware de tenant sigue siendo el único filtro; esta fase lo tensa pero no crea un rol de conexión nuevo.
+
+| Hallazgo | Cierre | Artefacto |
+|---|---|---|
+| C-01 service role en el formulario público | El BFF de `apps/web/app/api/public/service-requests` ya no usa `SUPABASE_SERVICE_ROLE_KEY` ni `PrismaClient`; la lectura anónima va con `company_id=eq.<allowlist>` y la escritura de catálogos exige JWT del administrador y deja decidir a RLS. | `apps/web/app/api/public/service-requests/route.ts` (reescrito) |
+| C-02 empresa elegida por el cliente | La empresa sale solo de `APEXOS_PUBLIC_SERVICE_COMPANY_ID` (alias `NEXT_PUBLIC_...`); `company_id`, `company_name` y `?empresa=` son cosméticos. Sin allowlist: 503 `EMPRESA_PUBLICA_NO_CONFIGURADA`, sin consultar la base. En local, lectura y escritura se delegan al API operativo (`/api/v1/public/services/*`) que aplica RBAC. | `apps/api/src/modules/services/public-service.js`, `public-routes.js`, `apps/api/server.js` |
+| C-03 allowlist de tenant mantenida a mano | `TENANT_MODELS` se deriva de `Prisma.dmmf` (179 modelos con columna) y `GLOBAL_MODELS` queda corta y explícita (12 sin columna); el módulo lanza al arrancar si un global tiene `tenant_id`. | `apps/api/src/core/tenantModels.js`, `apps/api/src/core/prisma.js:5,70` |
+| C-04 escalada por `PUT /admin/users/:id` | El candado de rol que ya protegía `updateRole` se aplica a `createUser`/`updateUser`, y cambiar la clave de otro usuario exige la clave actual del administrador (428 sin prueba, 403 si no coincide), también en `/access`. | `apps/api/src/modules/admin/service.js:29,40,1123,1261,1265,1437`, `admin/routes.js:71,74` |
+
+Mediciones (gate `scripts/security/candado-gates.js`, baseline refrescada con `--update` y `--block` en verde):
+
+| Indicador | Antes | Después |
+|---|---|---|
+| `models_with_tenant_id_outside_allowlist` | 29 | **0** |
+| `models_in_allowlist_without_tenant_id_column` | 5 | **0** |
+| `public_web_routes_using_service_role` | 0 | **0** |
+| `public_web_routes_using_prisma_client` | 0 | **0** |
+| `routes_without_auth` | 4 | 4 (login/register/refresh/onboarding, intencionales) |
+| (info) `public_routes_declared` | no medido | **3** |
+
+El gate también se corrigió: el hook de autenticación de `services/routes.js` se heredaba al archivo hermano `public-routes.js`, y eso clasificaba como autenticadas tres rutas públicas y ensuciaba el informacional de 198. Ahora el hook se evalúa por archivo y los archivos públicos no heredan el de su directorio.
+
+Pruebas ejecutadas:
+
+```bash
+node --test apps/api/test/core-tenant-models.test.js apps/api/test/admin-role-escalation.test.js apps/api/test/public-service-allowlist.test.js
+# 22/22 pass
+cd apps/web && npm run test:security      # 10/10 pass
+cd apps/web && npm run typecheck          # limpio
+npm run security:candado:block            # exit 0
+```
+
+Evidencia versionada: `docs/qa/evidence/plan-candado-20261108/gate-fase-1.txt` y `security-fase-1.txt` (pruebas de rechazo 401/403/428/503 y hallazgos residuales).
+
+**Decisiones registradas**
+
+- El `PUT /api/public/service-requests?empresa=...` que la pantalla de administración usa como sincronía heredada **se conserva**: en nube el API operativo escribe Prisma y el formulario público lee Supabase, así que retirarlo desincronizaría el catálogo. Queda endurecido (JWT + allowlist + RLS), no eliminado.
+- `APEXOS_PUBLIC_SERVICE_COMPANY_ID` se añade a `config/.env.example` como prerrequisito de despliegue. No se escribió en `config/local.env` (archivo de ambiente gitignored) desde esta intervención.
+
+**Bloqueos declarados**
+
+- `BLOQUEO`: el stack local está caído (API :3000 y web :3001 no responden, `docker ps` vacío) y la allowlist no está configurada en `config/local.env`. La certificación E2E del formulario público **no se ejecutó**; lo medido son pruebas de ruta y de servicio.
+- `BLOQUEO`: la política RLS anón `service_references_public_catalog_select` no filtra por empresa. La ruta web ya consulta con la empresa de la allowlist, pero la lectura directa por REST con la llave anón permitiría leer etiquetas de tipos de servicio de otras empresas. Corregir RLS es cambio de nube y exige autorización propia (fase posterior).
+
+**Hallazgos residuales abiertos**
+
+- R-01 (Media): 7 rutas BFF administrativas de `apps/web` siguen usando service role (`/api/admin/users`, `/api/admin/roles`, `/api/platform/companies`, `/api/platform/company-modules`, `/api/platform/company-sessions`, `/api/services/monitor-orders`, `/api/v1/services/orders/[id]`). Es la misma clase de superficie que C-01, fuera del alcance de la ruta pública.
+- R-02 (Media): `routes_authenticated_without_permission_guard` sigue en 198 de 753 rutas autenticadas (informacional, sin regresión en esta fase).
 

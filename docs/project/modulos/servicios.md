@@ -60,12 +60,13 @@
 - La solicitud publica crea una preorden en `service_orders` con estado `agendado`, sin tecnico asignado, marcada en metadata como `public_request` y `requires_admin_completion`.
 - La solicitud publica usa consecutivo corto `OS-00000` y lo muestra como numero de seguimiento al finalizar.
 - La solicitud publica conserva en metadata cedula, correo, referencia/producto y fecha de recepcion.
-- La API publica `/api/public/service-requests` valida campos obligatorios, cedula numerica, telefono, referencia activa y empresa activa antes de crear la orden.
 - La factura o pedido es opcional en el formulario publico, creacion administrativa, edicion de orden y API/fallback Supabase.
-- La empresa destino del formulario publico se resuelve por `APEXOS_PUBLIC_SERVICE_COMPANY_ID` o `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`; si no existe, puede buscar una empresa activa por parametro `empresa`.
-- La API publica acepta configuracion server-side con `SUPABASE_URL`/`SUPABASE_ANON_KEY` o sus equivalentes `NEXT_PUBLIC_*`, siempre con `SUPABASE_SERVICE_ROLE_KEY` solo en servidor; en desarrollo tambien puede leer el `.env` raiz aunque Next se ejecute desde `apps/web`.
-- Si el runtime server-side no tiene una service role efectiva, el formulario externo depende de la politica `service_references_public_catalog_select` para listar referencias activas sin sesion de usuario.
-- Las consultas de catalogo publico usan explicitamente `SUPABASE_ANON_KEY` como bearer para referencias y tipos de servicio; la service role se reserva para la insercion controlada de la preorden.
+- La ruta server-side `/api/public/service-requests` es un BFF sin llave de servicio ni Prisma: lee catalogo publico, crea preordenes y delega la edicion de catalogos al administrador autenticado.
+- La empresa destino del formulario publico sale unicamente de `APEXOS_PUBLIC_SERVICE_COMPANY_ID` (o `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`) como allowlist de servidor; el parametro `?empresa=` y los campos `company_id`/`company_name` del cuerpo son cosmeticos y no participan en la resolucion.
+- En local, el BFF delega en el API operativo `/api/v1/public/services/catalog` y `/api/v1/public/services/orders`, que fijan el tenant con `runWithTenant` y validan referencias, tipos de servicio y almacenes activos contra Prisma.
+- En la nube, el BFF lee con la llave anon (politica `service_references_public_catalog_select`) y crea la preorden con la RPC `create_public_service_order` (`SECURITY DEFINER`, solo inserta); toda la consulta queda acotada a la empresa de la allowlist.
+- La edicion de catalogos publicos (`PUT /api/public/service-requests`) exige el JWT del administrador: en local se reenvia al API (`/services/service-types`, `/services/service-stores`, `/services/satisfaction-questions`) con `services:write`; en la nube escribe con la sesion del usuario y la politica `service_references_write_admin`. Sin JWT responde 401 y sin permiso 403.
+- Las rutas publicas declaran limite propio: catalogo 60/min y solicitud 10/min por tenant/IP, cuerpo maximo 64 KB y AJV estricto (`additionalProperties: false`).
 - La migracion `20260623203000_public_service_request_rpc.sql` agrega la funcion `create_public_service_order` para crear preordenes externas con `anon`, validando referencia activa, tipo de servicio activo, estado `agendado` y consecutivo corto sin exponer service role en Railway.
 - Al finalizar, el formulario muestra una pantalla amplia de confirmacion con el numero de seguimiento y accion principal para realizar otra solicitud.
 - El estado `agendado` representa preordenes creadas desde el link publico. Administracion puede conservarlas sin tecnico mientras valida datos; al cambiarlas a `pendiente`, la asignacion de tecnico responsable se vuelve obligatoria.
@@ -79,7 +80,7 @@
 - El monitor ordena por defecto todas las ordenes de mayor a menor creacion/consecutivo, sin importar estado, para que el servicio mas nuevo aparezca primero.
 - El monitor calcula un SLA de 4 dias habiles por orden desde `created_at`; muestra el indicador solo en la columna `Agenda` para evitar duplicidad visual. El contador solo se congela cuando la orden queda `cerrada` con fecha de cierre.
 - Promocion controlada: estos cambios viven en `desarrollo`; antes de mover a `develop` y luego `main`, aplicar/validar la migracion `20260623173000_service_orders_agendado_status.sql` en el ambiente objetivo y ejecutar la validacion deterministica indicada en `BRANCHING_WORKFLOW.md`.
-- Por seguridad, el endpoint publico no acepta `company_id` arbitrario desde el navegador.
+- Por seguridad, el endpoint publico ignora `company_id`, `company_name` y `?empresa=`: la empresa solo sale de la allowlist del servidor.
 - El lobby de Servicios incorpora acceso a `Formulario publico` para que administracion pueda copiar o abrir el enlace rapidamente.
 - Las ordenes creadas desde el formulario publico aparecen en el lobby como `Por completar` o `Completar solicitud`, indicando que administracion debe completar referencia o tecnico antes de pasar a operacion.
 - La creacion publica no reemplaza la creacion administrativa interna: administracion sigue usando `/dashboard/servicios/nuevo` cuando ya conoce referencia, tecnico y fechas operativas completas.
@@ -101,13 +102,12 @@ El formulario publico debe funcionar como una solicitud guiada para personas sin
 
 ## Variables de entorno relacionadas
 
-- `APEXOS_PUBLIC_SERVICE_COMPANY_ID`: empresa por defecto para registrar solicitudes publicas desde el servidor.
-- `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`: alternativa compatible con despliegues donde se expone el identificador publico de empresa.
-- `SUPABASE_URL` o `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto Supabase usado por la ruta server-side.
-- `SUPABASE_ANON_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`: llave anonima usada junto con service role desde servidor.
-- `SUPABASE_SERVICE_ROLE_KEY`: llave server-only requerida para que la API publica inserte solicitudes sin sesion de usuario.
+- `APEXOS_PUBLIC_SERVICE_COMPANY_ID`: allowlist de servidor con la empresa destino del formulario publico. Es obligatoria: sin ella el formulario y la edicion de catalogos publicos responden 503 `EMPRESA_PUBLICA_NO_CONFIGURADA` con el nombre de la variable.
+- `NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID`: alias del mismo id para despliegues donde se publica el identificador de empresa.
+- `SUPABASE_URL` o `NEXT_PUBLIC_SUPABASE_URL` y `SUPABASE_ANON_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`: lectura publica del catalogo y RPC de preorden en la nube. La ruta ya no usa llave de servicio.
+- `NEXT_PUBLIC_API_URL` o `API_URL`: API operativo al que delega el formulario en local; si falta, responde 503.
 - `/api/services/monitor-orders` reutiliza las mismas variables server-side y exige encabezado `Authorization` para evitar exponer el monitor como endpoint publico.
-- Si ninguna variable esta configurada, el endpoint intenta resolver empresa activa con el parametro `empresa`, por ejemplo `/servicios/solicitar?empresa=SCJ`.
+- Si la allowlist no esta configurada, el endpoint no intenta adivinar la empresa activa con `?empresa=`: responde 503 y el enlace `/servicios/solicitar?empresa=<empresa>` queda solo como etiqueta de navegacion.
 
 ## Validaciones esperadas
 

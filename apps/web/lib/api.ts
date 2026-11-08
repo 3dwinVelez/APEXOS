@@ -1758,14 +1758,12 @@ async function supabaseServiceTypes() {
 }
 
 async function savePublicServiceCatalog<T>(payload: Record<string, unknown>, responseKey: string, fallback: T) {
-  const companyId = await currentSupabaseCompanyId();
+  // La empresa del catalogo publico sale de la allowlist del servidor: el cliente no la envia.
   const token = typeof window !== "undefined" ? localStorage.getItem("token") || "" : "";
-  const companyName = typeof window !== "undefined" ? localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "" : "";
-  const requestPath = companyName ? `/api/public/service-requests?empresa=${encodeURIComponent(companyName)}` : "/api/public/service-requests";
-  const response = await fetch(requestPath, {
+  const response = await fetch("/api/public/service-requests", {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: JSON.stringify({ company_id: companyId, company_name: companyName, ...payload })
+    body: JSON.stringify(payload)
   });
   const body = await response.json().catch(() => ({})) as Record<string, unknown>;
   if (!response.ok) throw new Error(String(body.message || response.statusText || "No fue posible actualizar el catalogo publico."));
