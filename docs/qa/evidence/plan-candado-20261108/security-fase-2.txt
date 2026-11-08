@@ -119,12 +119,45 @@ Resultados
   # 3/3 pass
 
 ================================================================================
+Certificacion E2E local (2026-11-08, con autorizacion del propietario)
+================================================================================
+
+Entorno: Docker Desktop 29.4.2; infra/docker-compose.yml (postgres 16, pgbouncer,
+  redis, minio, brain) en 127.0.0.1; API :3000 y web :3001. Base apexos con 216
+  tablas y 72 migraciones aplicadas (paridad con apps/api/prisma/migrations).
+
+  curl http://127.0.0.1:3000/health -> 200, status OK, modules 19
+  curl http://127.0.0.1:3001/ -> 200; /login -> 200
+
+  npm run certify:auth-session (CERT_ENVIRONMENT=local)
+  # login passed, authenticated_query passed, session passed
+  # rechazos 401: sin token, token basura, alg none, clave incorrecta, firma alterada
+  # revocacion medida=true, enforced=false (modo observar)
+  # exit 0
+
+  E2E de sesion contra el API en modo observar
+  (AUTHORIZATION_VERSION_OBSERVATION_ENABLED=true):
+  # login 200 con sid; refresh sano rota el sid y emite refresh nuevo
+  # reuso del refresh rotado: conserva el mismo refresh, no abre sesion nueva,
+  #   apex_authorization_mismatch_total{reason="REFRESH_TOKEN_REUSED"} +1
+  # logout 200; /auth/me despues del logout responde 200 (medido, no expulsado)
+  # refresh de la sesion cerrada conserva el valor:
+  #   REFRESH_SESSION_REVOKED +1 y SESSION_REVOKED +2 (me + refresh)
+  # login uniforme: usuario inexistente y clave incorrecta -> 401 con el mismo
+  #   mensaje (1252 ms vs 1418 ms/1270 ms, bcrypt siempre)
+  # login con X-Forwarded-For falsificado no altera la sesion emitida
+
+  Estas mediciones prueban la conducta de Fase 2 en modo observar. La expulsion
+  real (401 SESSION_REVOKED) esta cubierta por test y solo se activa con
+  AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED, que NO se encendio aqui.
+
+================================================================================
 BLOQUEO declarado
 ================================================================================
 
-BLOQUEO: el stack local esta caido (API :3000 y web :3001 no responden). La
-  certificacion E2E de login, renovacion y logout en navegador NO se ejecuto; lo
-  medido son pruebas de servicio, de ruta y del cliente arriba listadas.
+CERRADO 2026-11-08: el stack local estaba caido y se levanto con autorizacion del
+  propietario. La certificacion E2E de login, renovacion y logout se ejecuto y su
+  salida queda arriba.
 
 BLOQUEO: TRUST_PROXY no esta declarado en Railway desde esta intervencion. Mientras
   el ambiente desplegado no lo declare, detras del proxy toda peticion anonima
