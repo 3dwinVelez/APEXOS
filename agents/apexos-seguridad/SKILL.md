@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.11.0
-updated_at: 2026-11-06
+version: 2.12.0
+updated_at: 2026-11-08
 contract: 2
 ---
 
@@ -70,6 +70,15 @@ Antes de actuar, leer en este orden:
 
 24. **La lectura anónima de un bucket es una decisión de infraestructura, no un detalle del cliente.** La vitrina pública del comercio no puede depender de una URL firmada con TTL de 10 minutos, así que el objeto se sirve por URL pública. El código solo abre esa lectura donde es inocuo: `ensureMinioBucket` (`apps/api/src/modules/comercio/storage.js:202`) aplica la política `s3:GetObject` anónima **únicamente** si el endpoint resuelve a loopback. Fuera del puesto de desarrollo, la ausencia de bucket devuelve 503 `ALMACEN_BUCKET_FALTA` con la instrucción de crearlo, y abrir la lectura pública en Supabase/MinIO nube exige autorización explícita del dueño. El aislamiento por tenant sigue en el objeto: la clave lleva el `tenant_id` en el path (`<tenant>/comercio/storefront/...`), el único identificador que se publica es el nombre del objeto y el `bucket`/path interno nunca viaja en el DTO público. Por qué: el 2026-11-06 el arreglo más corto habría sido «crea el bucket con lectura pública», que aplicado en el ambiente nube expone los objetos de todos los tenants a quien adivine una clave.
 
+25. **Un gate que no puede fallar no es un control, y su línea base es intocable sin permiso explícito.** Todo control de seguridad que este skill afirme tiene que tener un comando que salga `1` cuando el control se rompe, y ese comando debe estar en CI o en la secuencia de cierre. Concretamente en este repo:
+    - `npm run security:candado` mide y compara sin reescribir nada; `security:candado:block` es el modo que bloquea. La baseline (`docs/qa/evidence/plan-candado-20261108/baseline.json`) **solo** cambia con `--update` explícito: un modo pasivo que la reescriba convierte el candado en un espejo y borra la regresión antes de que alguien la lea.
+    - `node scripts/security/ci-audit-gate.js` bloquea advisories critical/high. Toda excepción vive en `scripts/security/audit-allowlist.json` con `reason` y `expires`; una entrada vencida vuelve a bloquear, así que tolerar deuda no es olvidarla.
+    - `npm run security:inspect-rls:gate` falla con `missing_rls`, `rls_without_force` u `owner_bypass_tables`. Un inspector que solo loguea sus hallazgos es un informe, no una puerta.
+    - Si una comprobación no se pudo ejecutar (sin base viva, sin credencial, sin red), se escribe `BLOQUEO: <motivo>`; jamás se reporta como verde.
+    Por qué: el 2026-11-08 la auditoría encontró tres gates que decían "passed" sin poder fallar —`certify:auth-session` fijaba `session:"passed"` como literal, `security:inspect-rls` solo logueaba y el job de CI corría `npm audit` con `continue-on-error: true`— y por eso 3 críticas y 17 altas pasaban en silencio.
+
+26. **Una RLS que el API no puede ejercer no se cuenta como control, y el documento lo dice.** Declarar RLS como mitigación exige demostrar las tres cosas a la vez: (a) el rol de conexión **no** es propietario de las tablas (o existe `FORCE ROW LEVEL SECURITY`), (b) cada consulta fija el tenant (`set_config('app.tenant_id', …)` o `SET LOCAL`), y (c) la política existe para esa tabla. Medición del 2026-11-08 en `desarrollo`: 41 `ENABLE ROW LEVEL SECURITY`, 176 `CREATE POLICY`, **0** `FORCE`, **0** `set_config('app.tenant_id')` en el código del API, y conexión con rol propietario. Conclusión obligatoria: el middleware de tenant con `AsyncLocalStorage` es el **único** filtro y así se escribe en `docs/SECURITY_THREAT_MODEL.md`; una revisión que acepte "RLS" como mitigación sin esas tres pruebas es un falso negativo. Por qué: el threat model afirmaba "101 sentencias RLS y 231 políticas" como control de multiempresa mientras el tráfico real no pasaba por ninguna política.
+
 ## Checklist de intervención
 
 Antes:
@@ -92,6 +101,9 @@ Durante:
 Después:
 
 - [ ] Hallazgos con severidad, reproducción y recomendación.
+- [ ] Todo control afirmado tiene un comando que sale 1 si se rompe; corridos `npm run security:candado:block` y `npm run security:ci-audit`.
+- [ ] La baseline de seguridad no se reescribió sin `--update` explícito y su ruta está en el brief.
+- [ ] Si se cita RLS como mitigación: rol no propietario o `FORCE`, y tenant fijado por consulta; si falta uno, la mitigación declarada es el middleware de tenant.
 - [ ] `npm run security:inspect-rls` cuando cambie el aislamiento.
 - [ ] `npm run certify:dependency-security` cuando cambien dependencias.
 - [ ] `git diff --cached` revisado por secretos, incluidos archivos nuevos.
@@ -134,3 +146,7 @@ Después:
 - Abrir una cabecera de seguridad `solo donde hace falta ahora` sin la guarda de ambiente y sin la prueba que exige el rechazo.
 - Aplicar una política de lectura anónima a un almacén que no es del puesto de desarrollo.
 - Tratar un 502/503 de dependencia como equivalente de un 500 propio: el código es lo que permite accionar sin leer logs.
+- Llamar «gate» a un script que solo loguea sus hallazgos propios.
+- Reescribir la baseline de seguridad desde un modo pasivo y presentar el candado como intacto.
+- Aceptar «RLS protege el aislamiento» sin medir rol propietario, `FORCE ROW LEVEL SECURITY` y fijación del tenant por consulta.
+- Tolerar un advisory con una allowlist sin motivo ni vencimiento: eso es una excepción permanente disfrazada.

@@ -30,3 +30,16 @@ logs/
 .npm-cache/
 supabase/.temp/
 apps/control-tower/data/
+
+# Artefactos locales que no deben versionarse nunca: copias de conflicto,
+# material criptográfico y volcados de base de datos.
+*.bak
+*.orig
+*.rej
+*.pem
+*.key
+*.p12
+*.pfx
+*.dump
+*.sql.gz
+*.backup

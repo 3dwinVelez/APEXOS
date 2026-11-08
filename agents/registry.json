@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-07",
+  "generated_at": "2026-11-08",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -89,9 +89,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.18.0",
-      "updated_at": "2026-11-07",
-      "sha256": "5aa313d920dc7157543598b8990bc1b857e3a627e94a86eee75913b0536fb748",
+      "version": "2.19.0",
+      "updated_at": "2026-11-08",
+      "sha256": "4ca762e890132627a51f9342a2d7a6607973874ebcd12a1075aecf1006a293e5",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -248,9 +248,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.25.0",
-      "updated_at": "2026-11-07",
-      "sha256": "ca1773c0fd7ae8fac1ebcecfc58370eeecaf38431803031d350311a749461413",
+      "version": "2.26.0",
+      "updated_at": "2026-11-08",
+      "sha256": "b501ecd04ddab91f3d2afb132b156f375736293eac715cb2857ae682efb88db0",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -299,9 +299,9 @@
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.11.0",
-      "updated_at": "2026-11-06",
-      "sha256": "fadf649e5918fe80c2a6b1cae2c84195986462fc0383e7d5bd72f06f2f07db5c",
+      "version": "2.12.0",
+      "updated_at": "2026-11-08",
+      "sha256": "c4e0effeda71cbf297419a42bde5306a87bbba83458880e3314d67322973862c",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -336,9 +336,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.13.0",
-      "updated_at": "2026-11-07",
-      "sha256": "946a17eda616a0e3a62d641e872f01aeaf2d6bdf3a850c81122313bdde9e0b29",
+      "version": "2.14.0",
+      "updated_at": "2026-11-08",
+      "sha256": "c1f7ba29ecd650e1732f1ae2a514b1f4f01443dfb96734f278ca3ce9597a23a8",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -434,8 +434,8 @@
     {
       "name": "Modelo de amenazas",
       "path": "docs/SECURITY_THREAT_MODEL.md",
-      "updated_at": "2026-08-11",
-      "sha256": "748c6e839f550bbb634b0523e8048b020504e0556386e1f17d7d5d55f5db68d9"
+      "updated_at": "2026-11-08",
+      "sha256": "3625214c0e594f0e42a76344b7db664938530be3ed1f14e94d70c462d10801c9"
     }
   ]
 }

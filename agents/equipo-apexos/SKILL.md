@@ -2,8 +2,8 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.13.0
-updated_at: 2026-11-07
+version: 2.14.0
+updated_at: 2026-11-08
 contract: 2
 ---
 
@@ -83,6 +83,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 
 26. **Un `SKILL.md` se edita en su fuente `.qoder/skills/**`, nunca en el espejo `agents/**`.** `npm run agents:sync` copia fuente → espejo y `npm run agents:restore` copia al revés: un control escrito en el espejo se borra en silencio en el siguiente sync, sin error ni aviso. Por eso el cierre del orquestador no acepta como evidencia "el archivo está modificado": verifica el texto del control en la fuente, que el bump quede registrado en `agents/registry.json` con su sha256 nuevo y que `agents:check` compare ambos espejos. Por qué: el 2026-11-07 el inciso (g) de la regla 37 de `apexos-qa` se escribió en `agents/apexos-qa/SKILL.md`, el sync lo sobrescribió con la fuente sin el inciso, y `agents/CHANGELOG.md` quedó anunciando un `2.23.0 → 2.24.0` sobre un archivo que seguía en `2.23.0` — un agente bumpeteado que no existe.
 
+
+27. **La baseline de un candado no se reescribe sola y la fase autorizada no se adelanta.** Cuando el pedido es un plan de blindaje por fases y el dueño autoriza una sola, el cierre mide dos cosas además de la entrega: (a) **la línea base sigue intacta** —cualquier `baseline.json` de seguridad cambia solo con un `--update` explícito y el veredicto cita la salida del comando que bloquea, no la del que reporta—; y (b) **las fases no autorizadas no se ejecutaron**, verificable en el inventario de rutas tocadas, que debe quedarse dentro del alcance autorizado aunque los hallazgos de las fases siguientes estén escritos y den ganas de arreglarlos. Un plan que avanza "de paso" sobre código de producto deja de ser un plan candado y se vuelve un cambio de conducta sin su puerta de no-ruptura. Además, el plan no se acepta si sus gates no pueden fallar: `security:candado:block`, `security:ci-audit` y `security:inspect-rls:gate` se demuestran con un rojo provocado, no con una corrida verde. Por qué: el 2026-11-08 el dueño autorizó **solo la Fase 0** de siete, y el valor de esa decisión dependía de que el resto quedara escrito y sin ejecutar; a la vez, tres gates del repo decían "passed" sin poder fallar, así que la primera entrega del plan tuvo que ser hacerlos fallar.
 
 ## Checklist de intervención
 

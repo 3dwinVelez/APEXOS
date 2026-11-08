@@ -72,6 +72,12 @@ const ROUTES = [
     owners: ['apexos-performance']
   },
   {
+    id: 'security',
+    test: /^(scripts\/security\/|docs\/SECURITY_|\.github\/workflows\/|\.gitignore$)/,
+    agents: ['apexos-seguridad', 'apexos-qa'],
+    owners: ['apexos-seguridad']
+  },
+  {
     id: 'agents-governance',
     test: /^(agents\/|\.qoder\/skills\/|AGENTS\.md$|BRANCHING_WORKFLOW\.md$|docs\/project\/CONTRATO_EQUIPO_APEXOS\.md$)/,
     agents: ['equipo-apexos', 'apexos-brief', 'apexos-git-guardian'],

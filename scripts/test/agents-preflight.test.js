@@ -94,6 +94,20 @@ test('routePaths manda gobernanza al trio de agentes', () => {
   assert.deepEqual(result.agents, ['equipo-apexos', 'apexos-brief', 'apexos-git-guardian']);
 });
 
+test('routePaths da dueno de seguridad a scripts/security, CI y el threat model', () => {
+  for (const file of [
+    'scripts/security/candado-gates.js',
+    'docs/SECURITY_THREAT_MODEL.md',
+    '.github/workflows/ci.yml',
+    '.gitignore'
+  ]) {
+    const result = routePaths([file]);
+    assert.deepEqual(result.agents, ['equipo-apexos', 'apexos-seguridad', 'apexos-qa'], file);
+    assert.deepEqual(result.owners, ['apexos-seguridad'], file);
+    assert.deepEqual(result.unmatched, [], file);
+  }
+});
+
 test('routePaths trata el contrato del equipo como gobernanza', () => {
   const result = routePaths(['docs/project/CONTRATO_EQUIPO_APEXOS.md']);
   assert.deepEqual(result.agents, ['equipo-apexos', 'apexos-brief', 'apexos-git-guardian']);

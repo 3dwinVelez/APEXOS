@@ -2,8 +2,8 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.25.0
-updated_at: 2026-11-07
+version: 2.26.0
+updated_at: 2026-11-08
 contract: 2
 ---
 
@@ -115,6 +115,8 @@ Antes de actuar, leer en este orden:
     - **El origen manda sobre la URL publica.** Tras un `DELETE` confirmado, la URL publica del bucket publico sigue respondiendo 200 mientras vive la cache del CDN (medido: `status_publico=200`, `status_origen=400`, a los 0 y a los 4 s). La gate de borrado lee el **origen** con la clave de servicio; la latencia del CDN queda registrada como limite declarado —con consecuencia de producto: retirar un banner quita la referencia de inmediato, pero los bytes viejos siguen legibles un rato—.
     Por que: el 2026-11-07 la seccion 5 de `lectura-ambiente.txt` declaraba exactamente este hueco («requiere sesion autenticada en el ambiente de QA»). La sesion no se pidio ni se toco la cuenta del demo: se construyo con empresas propias sobre la misma base de QA, y el hueco se cerro con evidencia reproduzible por comando.
 
+39. **Una certificación que fija su veredicto en el código no certifica: mide el rechazo o no cuenta.** `scripts/certifications/auth-session-readiness.js` publicaba `session:"passed"` como literal y descartaba la respuesta de `/api/v1/services/orders`, así que pasaba intacto con la revocación rota. Una certificación de control de acceso debe probar contra el ambiente los **rechazos** que afirma: sin `Authorization`, token basura, token firmado con `alg:none`, firma HS256 con clave incorrecta y firma alterada → todos `401`; y, cuando el ambiente lo permita de verdad, el token revocado por `logout` → `401` en la request siguiente (`CERT_REQUIRE_REVOCATION=true`). Cada rechazo guarda su `status` y su código de negocio, y el campo `session` sale de la medición, nunca de una constante. Corolario de cobertura: un test unitario de la función pura de decisión (`authorizationDecision`) **no** cubre la función que honra el flag (`validateAuthorization`); ese hueco es el que mantuvo invisible el hallazgo C-06 del plan candado. Por qué: el 2026-11-08 la auditoría del plan candado encontró tres certificaciones que decían "passed" sin poder fallar, y la única forma de que no vuelva a ocurrir es que el arnés ejercite el rechazo.
+
 ## Checklist de intervención
 
 Antes:
@@ -186,3 +188,5 @@ Después:
 - Certificar el ambiente liberado escribiendo sobre el tenant demo compartido, en vez de aprovisionar empresas efímeras propias y dejar constancia de que el demo quedó intacto.
 - Aceptar la URL pública de un bucket público como prueba de que un objeto se borró: la cache del CDN sirve el objeto muerto durante su TTL; el borrado se comprueba en el origen.
 - Citar un check no bloqueante de limpieza como si fuera una verificación, o dar por limpia una corrida sin una lectura independiente por id, correo, tabla y prefijo del bucket.
+- Publicar `session: "passed"`, `status: "ok"` o cualquier veredicto como constante del script, o descartar la respuesta de la llamada que se dice certificada.
+- Aceptar como prueba de sesión un test unitario de la función de decisión cuando la función que honra el flag de enforcement es otra.
