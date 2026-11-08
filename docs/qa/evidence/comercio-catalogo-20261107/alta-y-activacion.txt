@@ -1,0 +1,79 @@
+ALTA Y ACTIVACION DEL MODULO COMERCIO (M-30) EN EL CATALOGO DE PLATAFORMA — QA
+Cambio: comercio-catalogo-20261107 | Ambiente: QA (Supabase + Railway de develop) | Fecha: 2026-11-07
+
+=== 1. Que se encontro ===
+El modulo Comercio estaba promocionado a develop (2cb064e2), desplegado y con sus tablas creadas,
+pero NO aparecia en Administracion APEX > Suscripciones, asi que no habia forma de activarlo por
+empresa. La causa no es git ni despliegue: es un renglon de catalogo ausente.
+
+La pantalla arma su lista con la vista public.v_platform_company_module_access, definida como
+`from public.companies c cross join public.modules m ... where m.visibility_scope = 'tenant'
+and m.is_active = true` (supabase/migrations/20260517180000_platform_admin_and_scj_seed.sql:270-296).
+Lo que se puede activar es exactamente el contenido de public.modules; el registro frontend
+MODULES en apps/web/lib/modules.ts (donde M-30 si existe, linea 378) no alimenta esa lista: solo
+se usa para gatear la propia pagina (suscripciones/page.tsx:250).
+
+Medido en el Supabase de QA antes de tocar nada: public.modules tenia 35 filas y ninguna con
+code='comercio'. Existia comercio_exterior (otro modulo, ruta /dashboard/comercio-exterior). Las
+migraciones de catalogo de los modulos anteriores si estan versionadas: M-27
+(20260903100000_commercial_management_module_catalog.sql) y M-29
+(20261011100000_petty_cash_module_catalog.sql). Para Comercio no existe ninguna, en ninguna rama:
+supabase/migrations es identico entre desarrollo y origin/develop. El modulo se implemento sin
+publicarse nunca en el catalogo de plataforma.
+
+=== 2. Cadena de activacion (como llega al menu) ===
+  company_modules (alta por empresa, lo que escribe el toggle)
+    -> vista public.v_company_module_status (security_invoker, evalua auth.uid())
+      -> apps/api/src/security/supabaseAuth.js ensureTenantMirror() (lineas 310-326)
+        -> Tenant.active_modules
+          -> middleware/rbac.js (linea 23: comercio: ["M-30","comercio","commerce"]) y el filtro
+             de menu apps/web/lib/moduleAccess.ts:341, que enciende la tarjeta cuando el arreglo
+             contiene el id, el slug o el codigo del modulo.
+La nota del propio codigo (supabaseAuth.js:255-259) es la razon por la que esta evidencia lee las
+tablas base y no la vista: con la clave de servicio se pierde el contexto RLS del usuario y la
+vista devuelve 0 filas, lo que se leeria como "no hay modulos" sin serlo.
+
+=== 3. Que se hizo ===
+- Versionada la migracion supabase/migrations/20261107120000_comercio_module_catalog.sql replicando
+  el patron de M-29: insert en public.modules (code comercio, route /dashboard/comercio, icon
+  shopping-cart, sort_order 290, visibility_scope tenant, is_active true) con on conflict (code) do
+  update, y siembra public.plan_modules y public.company_modules en enabled=false. El modulo nace
+  neutral: lo prende un administrador de plataforma por empresa, no se autohabilita.
+- Aplicado el mismo contenido en la base de QA por PostgREST con la clave de servicio, con
+  autorizacion expresa del dueno. Resultado: modulo id 1c2e7852-9bc8-467a-a80d-b872f172b4d9,
+  2 plan_modules, 9 company_modules (una por empresa existente) y enabled=true exclusivamente en
+  Cliente Piloto QA (c56bc5df) y Empresa Demo APEX-OS (e8fac747), las dos empresas autorizadas.
+- Versionado el certificador scripts/certifications/comercio-module-catalog-qa.js. Solo lee.
+
+=== 4. Certificacion (catalogo-qa.json, 11/11) ===
+  OK migracion_versionada_presente        la migracion esta en el arbol y menciona comercio
+  OK una_sola_fila_de_catalogo            exactly one public.modules row with code=comercio (36 total)
+  OK renglon_coincide_con_la_migracion    route, icon, sort_order, scope e is_active iguales al archivo
+  OK plan_modules_cubierto                2 planes, 2 filas, 0 habilitados en plan
+  OK toggle_existe_para_todas_las_empresas 9 empresas, 9 filas: toda empresa puede activarlo u ocultarlo
+  OK empresas_autorizadas_identificadas   las dos nombres resuelven a dos ids distintos
+  OK solo_autorizadas_habilitadas         enabled=true son exactamente 2
+  OK ninguna_otra_empresa_recibe_el_modulo las otras 7 siguen en false
+  OK restodel_catalogo_intacto            sin codigos duplicados y el 290 no choca con nadie
+  OK comercio_no_pisa_comercio_exterior   ruta y orden distintos del modulo homonimo
+  OK el_api_desplegado_sigue_exponiendo_el_modulo /health commit 2cb064e2a896, /api/v1/comercio/settings 401
+
+El primer corrida de este certificador salio con un rojo que era del instrumento, no del ambiente:
+el check exigio sort_order unico en todo el catalogo y QA tiene cinco ordenes compartidas
+preexistentes (20 compras+apex_heart, 70 finanzas+contabilidad, 80 tesoreria+reportes, 90
+costos+wms, 100 configuracion+presupuestos). La fila nueva no toca ninguna de esas. El check se
+corrigio para afirmar lo que importa: que no haya codigos duplicados y que el sort_order 290 no
+colisione con la fila que este agregando. Queda escrito en la evidencia como dato, no como verde.
+
+=== 5. Limites declarados (no son verde) ===
+- No se ejercicio el espejo en vivo: ensureTenantMirror corre con la sesion de un administrador de
+  plataforma y escribe Tenant.active_modules. Esta evidencia llega hasta company_modules, que es la
+  entrada de esa cadena; la comprobacion de que Comercio aparece en el menu de Cliente Piloto QA al
+  entrar es el paso que falta y le toca al dueno porque requiere su sesion. Empresa Demo APEX-OS ya
+  tenia M-30 escrito a mano en Tenant.active_modules y su respaldo de catalogo ahora existe.
+- El codigo de Comercio en la base de QA es 'comercio'; el registro frontend lo conoce por id M-30 y
+  por slug. El middleware acepta las tres formas, asi que no hay que tocar Tenant.active_modules.
+- La migracion queda versionada para que otros ambientes la apliquen; en QA se aplico el contenido,
+  no el archivo. Si alguien corre supabase db push contra QA, el on conflict do update hace el
+  re-aplique inofensivo y los on conflict do nothing no reactivan empresas que alguien haya apagado.
+- No se toca main y no se habilita Comercio en produccion.

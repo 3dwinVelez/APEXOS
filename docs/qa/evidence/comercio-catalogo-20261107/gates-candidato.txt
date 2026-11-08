@@ -1,0 +1,41 @@
+# Gates del candidato comercio-catalogo-20261107
+# rama auxiliar: codex/qa-comercio-catalogo-develop-20261107
+# base medida: origin/develop = 2cb064e2a8968011e6497735921f8d36d9bd4768  (el sha del commit certificado lo declara el manifiesto de alcance)
+
+## 1. node --check del certificador versionado
+cmd: node --check scripts/certifications/comercio-module-catalog-qa.js
+exit_code: 0
+
+## 2. certificador contra QA (lectura pura)
+cmd: node scripts/certifications/comercio-module-catalog-qa.js --env-file=config/qa.env --output=docs/qa/evidence/comercio-catalogo-20261107/catalogo-qa.json
+OK   migracion_versionada_presente
+OK   una_sola_fila_de_catalogo
+OK   renglon_coincide_con_la_migracion
+OK   plan_modules_cubierto
+OK   toggle_existe_para_todas_las_empresas
+OK   empresas_autorizadas_identificadas
+OK   solo_autorizadas_habilitadas
+OK   ninguna_otra_empresa_recibe_el_modulo
+OK   restodel_catalogo_intacto
+OK   comercio_no_pisa_comercio_exterior
+OK   el_api_desplegado_sigue_exponiendo_el_modulo
+
+CERTIFICATION_PASSED total=11 fallidos=[]
+evidencia: docs\qa\evidence\comercio-catalogo-20261107\catalogo-qa.json
+exit_code: 0
+
+## 3. contratos de fuente Comercio en apps/web (este candidato)
+cmd: node --test apps/web/test/comercio-ux-consistency.test.mjs apps/web/test/comercio-storefront-theme.test.mjs apps/web/test/comercio-storefront-resilience.test.mjs apps/web/test/comercio-reports-charts.test.mjs
+  duration_ms: 5.3043
+  type: 'test'
+  ...
+1..49
+# tests 49
+# suites 0
+# pass 49
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3737.4252
+exit_code: 0

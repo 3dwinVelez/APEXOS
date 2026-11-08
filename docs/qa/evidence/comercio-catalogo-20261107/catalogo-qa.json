@@ -1,0 +1,146 @@
+{
+  "change_id": "comercio-catalogo-20261107",
+  "certification": "comercio_module_catalog_qa",
+  "environment": "QA",
+  "generated_at": "2026-11-08T02:24:40.349Z",
+  "supabase_project": "jbirkghkekuifgfsgquq",
+  "migration": "supabase/migrations/20261107120000_comercio_module_catalog.sql",
+  "modulo": {
+    "code": "comercio",
+    "name": "Comercio",
+    "route": "/dashboard/comercio",
+    "icon": "shopping-cart",
+    "sort_order": 290,
+    "visibility_scope": "tenant",
+    "is_active": true
+  },
+  "empresas_autorizadas": [
+    "Cliente Piloto QA",
+    "Empresa Demo APEX-OS"
+  ],
+  "checks": [
+    {
+      "name": "migracion_versionada_presente",
+      "status": "passed",
+      "detail": {
+        "ruta": "supabase/migrations/20261107120000_comercio_module_catalog.sql",
+        "bytes": 1730
+      }
+    },
+    {
+      "name": "una_sola_fila_de_catalogo",
+      "status": "passed",
+      "detail": {
+        "encontradas": 1
+      }
+    },
+    {
+      "name": "renglon_coincide_con_la_migracion",
+      "status": "passed",
+      "detail": {
+        "id": "1c2e7852-9bc8-467a-a80d-b872f172b4d9",
+        "code": "comercio",
+        "name": "Comercio",
+        "route": "/dashboard/comercio",
+        "icon": "shopping-cart",
+        "sort_order": 290,
+        "is_active": true,
+        "visibility_scope": "tenant"
+      }
+    },
+    {
+      "name": "plan_modules_cubierto",
+      "status": "passed",
+      "detail": {
+        "planes": 2,
+        "filas": 2,
+        "habilitados_en_plan": 0
+      }
+    },
+    {
+      "name": "toggle_existe_para_todas_las_empresas",
+      "status": "passed",
+      "detail": {
+        "empresas": 9,
+        "filas": 9
+      }
+    },
+    {
+      "name": "empresas_autorizadas_identificadas",
+      "status": "passed",
+      "detail": {
+        "pedidas": [
+          "Cliente Piloto QA",
+          "Empresa Demo APEX-OS"
+        ],
+        "resueltas": [
+          "Cliente Piloto QA",
+          "Empresa Demo APEX-OS"
+        ]
+      }
+    },
+    {
+      "name": "solo_autorizadas_habilitadas",
+      "status": "passed",
+      "detail": {
+        "autorizadas": [
+          "Cliente Piloto QA",
+          "Empresa Demo APEX-OS"
+        ],
+        "habilitadas": [
+          "Cliente Piloto QA",
+          "Empresa Demo APEX-OS"
+        ]
+      }
+    },
+    {
+      "name": "ninguna_otra_empresa_recibe_el_modulo",
+      "status": "passed",
+      "detail": {
+        "inesperadas": []
+      }
+    },
+    {
+      "name": "restodel_catalogo_intacto",
+      "status": "passed",
+      "detail": {
+        "filas_totales": 36,
+        "otras_modulos": 35,
+        "codigos_duplicados": [],
+        "colision_de_sort_order_con_la_fila_nueva": [],
+        "orden_compartido_preexistente": [
+          "20:compras+apex_heart",
+          "70:finanzas+contabilidad",
+          "80:reportes+tesoreria",
+          "90:wms+costos",
+          "100:configuracion+presupuestos"
+        ]
+      }
+    },
+    {
+      "name": "comercio_no_pisa_comercio_exterior",
+      "status": "passed",
+      "detail": {
+        "comercio_exterior": {
+          "route": "/dashboard/comercio-exterior",
+          "sort_order": 160
+        }
+      }
+    },
+    {
+      "name": "el_api_desplegado_sigue_exponiendo_el_modulo",
+      "status": "passed",
+      "detail": {
+        "commit": "2cb064e2a896",
+        "modulos_reportados": 19,
+        "sin_sesion": {
+          "status": 401,
+          "code": "{\"error\":\"Token invalido\",\"code\":\"TOKEN_INVALIDO\"}"
+        }
+      }
+    }
+  ],
+  "checks_total": 11,
+  "checks_failed": 0,
+  "status": "passed"
+}
