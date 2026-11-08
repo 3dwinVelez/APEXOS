@@ -1,0 +1,125 @@
+{
+  "change_id": "equipo-contrato-promocion-20261107",
+  "commit": "365348813b6d12a14cfaa51ceb74a779ea1928a9",
+  "reviewed_commit": "365348813b6d12a14cfaa51ceb74a779ea1928a9",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-equipo-develop-20261107",
+  "target_head": "2cb064e2a8968011e6497735921f8d36d9bd4768",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-07",
+    "quality_gate_overridden": false,
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "scoped_promotion_to_develop_only": true,
+      "force_push": false,
+      "promotion_to_main": false
+    },
+    "authorizations": [
+      "Continua lo que falta para subir todo a develop, sin afectar ninguna otra funcion del sistema.",
+      "Rama auxiliar + PR hacia develop como mecanismo de publicacion.",
+      "Commit local en desarrollo al cerrar la intervencion; nada a main."
+    ],
+    "nota": "Autorizacion vigente del dueno para publicar empujando la rama auxiliar y abriendo el PR contra develop. No cubre main, force push, migraciones remotas, infraestructura ni secretos."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+        "../../../scripts/test/agents-contract.test.js",
+        "../../../scripts/test/agents-preflight.test.js"
+      ],
+      "medida": "Los 10 checks del certificador pasan sobre el arbol del candidato con --base=origin/develop --reference=acb88f25: espejos y registry OK (11 agentes, 11 documentos), 45/45 pruebas de la maquinaria, preflight sin conflicto (RAMA_NO_AUTORIZADA esperado en rama auxiliar), cobertura N/A declarada, comandos citados resueltos, cierre de lecturas 58 rutas con 0 huecos, paridad 53 rutas con 0 diferencias, 47 A / 10 M / 0 D / 0 R, hunk de package.json medido (5 agregadas, 0 quitadas) y los negativos de la forma de rama auxiliar"
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+        "../evidence/equipo-contrato-promocion-20261107/forma-promocion.json",
+        "../../../scripts/agents/preflight.js",
+        "../../../scripts/agents/coverage.js"
+      ],
+      "medida": "Cada gate registra su exit_code real sin maquillar: agents:check 0, test:agents 0, governance:ci 0, agents:preflight 1 con veredicto RAMA_NO_AUTORIZADA y agents:coverage 1 por no estar en desarrollo. En forma-promocion.json los 6 negativos de manifiesto mutado (evidencia absoluta, evasion del repositorio, evidencia sin versionar, inventario extra no certificado, certified_commit ya contenido en el target, rama auxiliar incorrecta) rechazan con el mensaje esperado"
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/agents-contract-promotion-local.js",
+        "../../../scripts/certifications/scoped-qa-governance-local.js",
+        "../../../scripts/agents/sync-agents.js",
+        "../../../scripts/agents/lib/agent-contract.js",
+        "../evidence/equipo-contrato-promocion-20261107/contract.json"
+      ],
+      "medida": "El certificador nuevo (10 checks) y la certificacion de la forma de promocion (20 checks con fixture git real) se ejecutaron de verdad contra este arbol y escribieron su evidencia versionada; sync-agents check y lib/agent-contract corren dentro de ese mismo ciclo. agents:sync (escritor) se excluye del registro por ser escritura, no por no funcionar"
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/test/agents-versioning.test.js",
+        "../../../scripts/test/agents-coverage.test.js",
+        "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+        "../evidence/equipo-contrato-promocion-20261107/contract.json"
+      ],
+      "medida": "45/45 pruebas de la maquinaria del contrato, incluidas las 3 nuevas de documentDriftLevel (sha igual + fecha de rama distinta = aviso, no error; sha distinto = error), que eran el punto ciego que hacia imposible certificar fuera de desarrollo. La paridad byte a byte de las 53 rutas del paquete contra acb88f25 sale con 0 diferencias y 0 rutas bajo apps/ o infra/ tocadas"
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+        "../evidence/equipo-contrato-promocion-20261107/forma-promocion.json",
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../../../AGENTS.md"
+      ],
+      "medida": "Regresion de plataforma sobre el arbol del candidato: governance:ci exit 0, forma de promocion certificada con 20 checks, contrato completo con su cierre de lecturas versionado y el diff neto contra 2cb064e2 limitado a las 59 rutas declaradas. Las suites de apps/api y apps/web no aplican: el candidato tiene 0 rutas de producto"
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/agents-contract-promotion-local.js",
+    "evidence": [
+      "../evidence/equipo-contrato-promocion-20261107/contract.json",
+      "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt"
+    ],
+    "resultado": "CERTIFICATION_OK 10/10 sobre el propio candidato 36534881 con base origin/develop (2cb064e2) y referencia congelada acb88f25: el contrato de equipo se ejecuta en la forma del destino, su cierre de lecturas viaja completo y el paquete no borra ni renombra nada"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/scoped-qa-governance-local.js",
+    "evidence": [
+      "../evidence/equipo-contrato-promocion-20261107/forma-promocion.json",
+      "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt"
+    ],
+    "resultado": "20 checks, 0 no pasados, con fixture git real y los validadores copiados del arbol del candidato: el flujo autorizado desarrollo->develop pasa, los PR hacia develop solo desde desarrollo pasan, y rechazan la rama auxiliar equivocada, el origin/develop ausente, la ruta funcional alterada, la evidencia no portable, la evidencia que escapa el repositorio, la evidencia sin versionar, el inventario extra no certificado y el certified_commit ya contenido en el target"
+  },
+  "suites": {
+    "maquinaria_contrato_candidato": "45/45",
+    "certificador_contrato_candidato": "10/10 checks, fallidos []",
+    "certificador_forma_promocion_candidato": "20/20 checks, 0 no pasados",
+    "paridad_con_desarrollo": "53 rutas comparadas, 0 diferencias",
+    "inventario_neto": "47 A / 10 M / 0 D / 0 R sobre 2cb064e2",
+    "package_json_hunk": "5 lineas agregadas, 0 quitadas, 0 fuera de lugar",
+    "rutas_de_producto_tocadas": "0",
+    "agents_check_candidato": "exit 0 con avisos por fecha de rama (11 documentos)",
+    "governance_ci_candidato": "exit 0"
+  },
+  "pending_certifications": [
+    "Ejecutar los gates del contrato en develop despues del merge, cuando los documentos ya tengan commit propio en esa rama y los avisos por fecha desaparezcan.",
+    "Verificacion cruzada del preflight por rama de destino (hoy compara solo contra origin/desarrollo, que es el contrato vigente): intervencion posterior.",
+    "Suites de apps/api y apps/web: no aplican a este paquete (0 rutas de producto) y se declaran como limite, no como verde."
+  ],
+  "known_target_failures": [
+    "agents:preflight y agents:coverage devuelven exit 1 fuera de desarrollo por diseno; quedan registrados con su codigo real en gates-candidato.txt."
+  ],
+  "certified_source_tree": {
+    "branch": "desarrollo",
+    "tip": "acb88f25",
+    "nota": "desarrollo sigue avanzando; el paquete se cerro contra este tip y la paridad se midio con --reference=acb88f25"
+  }
+}

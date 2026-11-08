@@ -1,0 +1,509 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "equipo-contrato-promocion-20261107",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-equipo-develop-20261107",
+  "base_commits": {
+    "develop": "2cb064e2a8968011e6497735921f8d36d9bd4768"
+  },
+  "target_head": "2cb064e2a8968011e6497735921f8d36d9bd4768",
+  "certified_commit": "365348813b6d12a14cfaa51ceb74a779ea1928a9",
+  "candidate": {
+    "branch": "codex/qa-equipo-develop-20261107",
+    "commits_over_baseline": 2,
+    "inventario": "49 A / 10 M / 0 D / 0 R",
+    "nota": "C1 = el paquete del contrato con su evidencia (57 rutas); C2 = los dos manifiestos. El tip exacto lo recibe el guard por linea de comando y lo contrasta contra origin/develop."
+  },
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "365348813b6d12a14cfaa51ceb74a779ea1928a9",
+    "reconstruido_de": [
+      "c1e85e28",
+      "8b74afdd",
+      "fe7b0441",
+      "acb88f25"
+    ],
+    "referencia_congelada": "acb88f25",
+    "nota": "desarrollo avanzo despues de acb88f25 con el plan de promociones y con los agentes de esta ronda, pero el paquete se certifico contra ese tip congelado (--reference=acb88f25) y la paridad byte a byte esta medida en contract.json. certified_commit es el comite funcional ya montado sobre 2cb064e2; no es un merge de rama porque origin/develop no tiene ninguna de estas 57 rutas y un merge de desarrollo traeria las 92 D de la funcionalidad liberada en develop y nunca retrointegrada."
+  },
+  "change_intent": {
+    "summary": "Promover el contrato de equipo del Equipo APEXOS a develop para que sea ejecutable en el destino: los 11 SKILL.md y sus espejos, agents/registry.json, agents/CHANGELOG.md, AGENTS.md, la maquinaria versionada (scripts/agents/** con ruteo, contrato, cobertura, versionado, preflight y sync), las 45 pruebas de esa maquinaria, el certificador scripts/certifications/agents-contract-promotion-local.js, los 14 documentos del cierre de lecturas que el propio contrato declara y que develop no tenia, y las 5 entradas de package.json (agents:sync, agents:check, agents:preflight, agents:coverage y test:agents) necesarias para invocarlos. No toca codigo de producto: 0 rutas bajo apps/ ni infra/.",
+    "modules": [
+      "equipo-agentes",
+      "gobernanza-de-promociones",
+      "documentacion-de-gobernanza"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-auditor-marcaciones/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-auditor-nomina/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": ".qoder/skills/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": ".qoder/skills/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "M",
+      "file": "AGENTS.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/CHANGELOG.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/README.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/TEMPLATE_SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-auditor-marcaciones/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-auditor-nomina/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-backend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-brief/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-db-nube/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-frontend/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-git-guardian/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-performance/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-qa/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/apexos-seguridad/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/equipo-apexos/SKILL.md"
+    },
+    {
+      "status": "A",
+      "file": "agents/registry.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/DATABASE_CONVENTIONS.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/00-alcance.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/01-inventario.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/02-matriz-normativa.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/03-matriz-funcional-marcaciones.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/04-matriz-funcional-nomina.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/05-plan-remediacion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/07-ejecucion-remediacion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-marcaciones.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-nomina.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/_TEMPLATE.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/APEXOS_COMPONENT_CATALOG.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/project/CONTRATO_EQUIPO_APEXOS.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/equipo-contrato-promocion-20261107/contract.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/equipo-contrato-promocion-20261107/forma-promocion.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/equipo-contrato-promocion-20261107/gates-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/equipo-contrato-promocion-20261107-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/equipo-contrato-promocion-20261107-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/coverage.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-contract.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-coverage.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-routing.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/lib/agent-versioning.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/preflight.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/agents/sync-agents.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/agents-contract-promotion-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-coverage.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-preflight.test.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/test/agents-versioning.test.js"
+    }
+  ],
+  "allowed_paths": [
+    ".qoder/skills/apexos-auditor-marcaciones/SKILL.md",
+    ".qoder/skills/apexos-auditor-nomina/SKILL.md",
+    ".qoder/skills/apexos-backend/SKILL.md",
+    ".qoder/skills/apexos-brief/SKILL.md",
+    ".qoder/skills/apexos-db-nube/SKILL.md",
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-performance/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/apexos-seguridad/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "AGENTS.md",
+    "agents/CHANGELOG.md",
+    "agents/README.md",
+    "agents/TEMPLATE_SKILL.md",
+    "agents/apexos-auditor-marcaciones/SKILL.md",
+    "agents/apexos-auditor-nomina/SKILL.md",
+    "agents/apexos-backend/SKILL.md",
+    "agents/apexos-brief/SKILL.md",
+    "agents/apexos-db-nube/SKILL.md",
+    "agents/apexos-frontend/SKILL.md",
+    "agents/apexos-git-guardian/SKILL.md",
+    "agents/apexos-performance/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/apexos-seguridad/SKILL.md",
+    "agents/equipo-apexos/SKILL.md",
+    "agents/registry.json",
+    "docs/DATABASE_CONVENTIONS.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/00-alcance.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/01-inventario.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/02-matriz-normativa.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/03-matriz-funcional-marcaciones.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/04-matriz-funcional-nomina.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/05-plan-remediacion.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/07-ejecucion-remediacion.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-marcaciones.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-nomina.md",
+    "docs/briefs/_TEMPLATE.md",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md",
+    "docs/project/CONTRATO_EQUIPO_APEXOS.md",
+    "docs/qa/evidence/equipo-contrato-promocion-20261107/contract.json",
+    "docs/qa/evidence/equipo-contrato-promocion-20261107/forma-promocion.json",
+    "docs/qa/evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+    "docs/qa/manifests/equipo-contrato-promocion-20261107-preqa.json",
+    "docs/qa/manifests/equipo-contrato-promocion-20261107-scope.json",
+    "package.json",
+    "scripts/agents/coverage.js",
+    "scripts/agents/lib/agent-contract.js",
+    "scripts/agents/lib/agent-coverage.js",
+    "scripts/agents/lib/agent-routing.js",
+    "scripts/agents/lib/agent-versioning.js",
+    "scripts/agents/preflight.js",
+    "scripts/agents/sync-agents.js",
+    "scripts/certifications/agents-contract-promotion-local.js",
+    "scripts/test/agents-contract.test.js",
+    "scripts/test/agents-coverage.test.js",
+    "scripts/test/agents-preflight.test.js",
+    "scripts/test/agents-versioning.test.js"
+  ],
+  "allowed_deletions": [],
+  "deletion_justification": "El candidato no elimina ninguna ruta: el commit certificado mide 47 A / 10 M / 0 D / 0 R y con los dos manifiestos el neto es 49 A / 10 M / 0 D / 0 R, medidos con git diff --name-status contra la punta vigente de origin/develop (2cb064e2). Las unicas 10 M del commit certificado son 8 SKILL.md espejo bajo .qoder/skills (backend, db-nube, frontend, git-guardian, performance, qa, seguridad y equipo-apexos), AGENTS.md y package.json; los otros 3 espejos (auditores y brief) no existian en el destino y entran como A. package.json solo suma 5 lineas y no quita ninguna (medido en contract.json).",
+  "protected_capabilities": [
+    {
+      "name": "El contrato de equipo se ejecuta en el destino: los cinco gates (agents:sync es escritor y se declara) y las 45 pruebas de la maquinaria corren sobre el arbol del candidato con exit_code 0",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+        "../../../scripts/certifications/agents-contract-promotion-local.js"
+      ]
+    },
+    {
+      "name": "Paridad byte a byte con la rama de trabajo: las 53 rutas del paquete coinciden con el blob de acb88f25, 0 diferencias",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../../../scripts/agents/sync-agents.js"
+      ]
+    },
+    {
+      "name": "El commit certificado no borra ni renombra ninguna ruta del destino: 47 A / 10 M / 0 D / 0 R sobre 2cb064e2",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt"
+      ]
+    },
+    {
+      "name": "package.json solo aporta las 5 entradas del contrato: 5 lineas agregadas, 0 quitadas, nada fuera de lugar (el unico archivo bilateral del paquete, resuelto por hunk)",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../../../package.json"
+      ]
+    },
+    {
+      "name": "El cierre de lecturas del contrato viaja completo: 58 rutas citadas como obligatorias, 0 deben quedar fuera del paquete y 0 sin resolver",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../../../agents/registry.json",
+        "../../../docs/project/CONTRATO_EQUIPO_APEXOS.md"
+      ]
+    },
+    {
+      "name": "Ningun gate bloquea por un hecho de la rama: agents:check conserva el sha del documento y solo avisa por la fecha de la rama (regresion que impedia certificar fuera de desarrollo), con sus 3 pruebas de frontera",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../../../scripts/test/agents-versioning.test.js",
+        "../../../scripts/agents/lib/agent-versioning.js"
+      ]
+    },
+    {
+      "name": "La forma de promocion sigue certificada end-to-end con un repositorio git real (guard + validador de alcance + validador pre-QA): 20 checks, 0 no pasados, incluidos los 6 negativos de manifiesto mutado",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/forma-promocion.json",
+        "../../../scripts/certifications/scoped-qa-governance-local.js"
+      ]
+    },
+    {
+      "name": "El ruteo por disciplina y la cobertura de agentes siguen calculando dueños por ruta en el destino; los comandos citados por el contrato resuelven en la rama Auxiliar y ninguna cita queda colgando",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/contract.json",
+        "../../../scripts/agents/lib/agent-routing.js",
+        "../../../scripts/agents/coverage.js"
+      ]
+    },
+    {
+      "name": "Regresion de los demas modulos: 0 rutas tocadas bajo apps/ o infra/; el codigo de producto del destino permanece byte a byte como en 2cb064e2 porque el candidato no lo modifica",
+      "status": "passed",
+      "evidence": [
+        "../evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+        "../evidence/equipo-contrato-promocion-20261107/contract.json"
+      ]
+    }
+  ],
+  "pending_certifications": [
+    "La promocion no desplega nada: el merge lo hace el dueno desde el PR. Después del merge, `npm run agents:check` y `npm run test:agents` deben correr en develop sin avisos por fechas una vez que los documentos tengan commit propio en esa rama.",
+    "El punto ciego del preflight queda cerrado solo a medias en este paquete: agents:preflight sigue comparando unicamente contra origin/desarrollo, que es el contrato vigente. Que el destino pueda ejecutar los gates es lo que certifica este paquete; una verificacion cruzada por rama de destino es alcance de una intervencion posterior.",
+    "Las suites de apps/api y apps/web no corren en este paquete porque el candidato no toca ninguna de sus 0 rutas: no hay nada que regresionar ahi y se declara como limite, no como verde."
+  ],
+  "known_target_failures": [
+    "agents:preflight devuelve RAMA_NO_AUTORIZADA (exit 1) cuando la rama activa no es desarrollo: es su contrato, medido y registrado en gates-candidato.txt; el certificador lo espera y no lo maquilla.",
+    "agents:coverage devuelve exit 1 fuera de desarrollo por el mismo motivo y se registra como no aplicable en esta rama."
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-07",
+    "quality_gate_overridden": false,
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "scoped_promotion_to_develop_only": true,
+      "force_push": false,
+      "promotion_to_main": false
+    },
+    "authorizations_granted": [
+      "Continua lo que falta para subir todo a develop (autorizacion amplia a los paquetes pendientes, sin main).",
+      "Rama auxiliar + PR hacia develop como mecanismo de publicacion.",
+      "El paquete 1 es el contrato de equipo ejecutable en el destino, sin codigo de producto."
+    ],
+    "authorizations_still_required": [
+      "Merge del PR hacia develop: lo ejecuta el dueno (o su CI con el check de gobernanza en verde).",
+      "Cualquier paso hacia main: requiere autorizacion independiente y manifiesto QA de aprobacion.",
+      "Force push, reescritura del historial compartido, migraciones remotas o cambios de infraestructura y secretos."
+    ]
+  },
+  "observations": "Paquete 1 del plan docs/briefs/2026-11-07-plan-promociones-desarrollo-develop.md. La medicion inicial del paquete era de 39 rutas; con el cierre de lecturas del propio contrato (registry documents + Lecturas obligatorias de los 11 SKILL.md + expediente de auditoria) el numero real es 58 rutas citadas, de las cuales 14 no existian en el destino y 54 forman el paquete. La evidencia de medicion esta versionada en ../evidence/equipo-contrato-promocion-20261107/.",
+  "certified_functional_paths": [
+    ".qoder/skills/apexos-auditor-marcaciones/SKILL.md",
+    ".qoder/skills/apexos-auditor-nomina/SKILL.md",
+    ".qoder/skills/apexos-backend/SKILL.md",
+    ".qoder/skills/apexos-brief/SKILL.md",
+    ".qoder/skills/apexos-db-nube/SKILL.md",
+    ".qoder/skills/apexos-frontend/SKILL.md",
+    ".qoder/skills/apexos-git-guardian/SKILL.md",
+    ".qoder/skills/apexos-performance/SKILL.md",
+    ".qoder/skills/apexos-qa/SKILL.md",
+    ".qoder/skills/apexos-seguridad/SKILL.md",
+    ".qoder/skills/equipo-apexos/SKILL.md",
+    "AGENTS.md",
+    "agents/CHANGELOG.md",
+    "agents/README.md",
+    "agents/TEMPLATE_SKILL.md",
+    "agents/apexos-auditor-marcaciones/SKILL.md",
+    "agents/apexos-auditor-nomina/SKILL.md",
+    "agents/apexos-backend/SKILL.md",
+    "agents/apexos-brief/SKILL.md",
+    "agents/apexos-db-nube/SKILL.md",
+    "agents/apexos-frontend/SKILL.md",
+    "agents/apexos-git-guardian/SKILL.md",
+    "agents/apexos-performance/SKILL.md",
+    "agents/apexos-qa/SKILL.md",
+    "agents/apexos-seguridad/SKILL.md",
+    "agents/equipo-apexos/SKILL.md",
+    "agents/registry.json",
+    "docs/DATABASE_CONVENTIONS.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/00-alcance.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/01-inventario.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/02-matriz-normativa.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/03-matriz-funcional-marcaciones.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/04-matriz-funcional-nomina.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/05-plan-remediacion.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/07-ejecucion-remediacion.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-marcaciones.md",
+    "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-nomina.md",
+    "docs/briefs/_TEMPLATE.md",
+    "docs/design/APEXOS_COMPONENT_CATALOG.md",
+    "docs/project/CONTRATO_EQUIPO_APEXOS.md",
+    "docs/qa/evidence/equipo-contrato-promocion-20261107/contract.json",
+    "docs/qa/evidence/equipo-contrato-promocion-20261107/forma-promocion.json",
+    "docs/qa/evidence/equipo-contrato-promocion-20261107/gates-candidato.txt",
+    "package.json",
+    "scripts/agents/coverage.js",
+    "scripts/agents/lib/agent-contract.js",
+    "scripts/agents/lib/agent-coverage.js",
+    "scripts/agents/lib/agent-routing.js",
+    "scripts/agents/lib/agent-versioning.js",
+    "scripts/agents/preflight.js",
+    "scripts/agents/sync-agents.js",
+    "scripts/certifications/agents-contract-promotion-local.js",
+    "scripts/test/agents-contract.test.js",
+    "scripts/test/agents-coverage.test.js",
+    "scripts/test/agents-preflight.test.js",
+    "scripts/test/agents-versioning.test.js"
+  ]
+}

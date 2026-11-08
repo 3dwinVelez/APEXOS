@@ -1,0 +1,389 @@
+MEDICION DE LOS GATES DEL CONTRATO SOBRE EL CANDIDATO
+candidato (HEAD): 4f1a84754f462e8bbe781e6187fcb0638eb6f9bf
+rama: codex/qa-equipo-develop-20261107
+base (origin/develop): 2cb064e2a8968011e6497735921f8d36d9bd4768
+referencia congelada (desarrollo al certificar): acb88f25
+ambiente: LOCAL, ejecutado en el arbol de trabajo del candidato, sin red y sin secretos
+agents:sync no se corre aqui: es el unico gate que escribe y este registro es de solo lectura
+
+=== npm run agents:check
+cmd: node scripts/agents/sync-agents.js check
+nota: espejos, registry, sha256, contract:2 y validaciones del contrato de los 11 agentes y 11 documentos
+salida:
+[agents] OK: 11 agentes y 11 documentos verificados
+[agents] AVISO: documento con fecha de rama distinta al registro: AGENTS.md (2026-11-07 vs 2026-11-03)
+[agents] AVISO: documento con fecha de rama distinta al registro: docs/briefs/_TEMPLATE.md (2026-11-07 vs 2026-11-03)
+[agents] AVISO: documento con fecha de rama distinta al registro: docs/DATABASE_CONVENTIONS.md (2026-11-07 vs 2026-11-03)
+[agents] AVISO: documento con fecha de rama distinta al registro: docs/design/APEXOS_COMPONENT_CATALOG.md (2026-11-07 vs 2026-11-06)
+[agents] AVISO: documento con fecha de rama distinta al registro: docs/project/CONTRATO_EQUIPO_APEXOS.md (2026-11-07 vs 2026-11-03)
+exit_code: 0
+
+=== npm run test:agents
+cmd: node --test scripts/test/agents-preflight.test.js scripts/test/agents-contract.test.js scripts/test/agents-coverage.test.js scripts/test/agents-versioning.test.js
+nota: las 45 pruebas de la maquinaria del contrato
+salida:
+TAP version 13
+# Subtest: detecta contract v2 solo con la version declarada
+ok 1 - detecta contract v2 solo con la version declarada
+  ---
+  duration_ms: 4.6658
+  type: 'test'
+  ...
+# Subtest: un contrato v2 completo y ordenado pasa
+ok 2 - un contrato v2 completo y ordenado pasa
+  ---
+  duration_ms: 2.0411
+  type: 'test'
+  ...
+# Subtest: falla cuando falta una seccion obligatoria
+ok 3 - falla cuando falta una seccion obligatoria
+  ---
+  duration_ms: 1.6405
+  type: 'test'
+  ...
+# Subtest: falla cuando una seccion esta vacia
+ok 4 - falla cuando una seccion esta vacia
+  ---
+  duration_ms: 0.6816
+  type: 'test'
+  ...
+# Subtest: falla cuando las secciones estan fuera de orden
+ok 5 - falla cuando las secciones estan fuera de orden
+  ---
+  duration_ms: 0.4902
+  type: 'test'
+  ...
+# Subtest: valida que las lecturas obligatorias existan
+ok 6 - valida que las lecturas obligatorias existan
+  ---
+  duration_ms: 1.0734
+  type: 'test'
+  ...
+# Subtest: extrae y normaliza rutas de lectura con globs y barras de Windows
+ok 7 - extrae y normaliza rutas de lectura con globs y barras de Windows
+  ---
+  duration_ms: 0.5262
+  type: 'test'
+  ...
+# Subtest: sectionBody corta en el siguiente encabezado de nivel 2
+ok 8 - sectionBody corta en el siguiente encabezado de nivel 2
+  ---
+  duration_ms: 0.2314
+  type: 'test'
+  ...
+# Subtest: un agente sin contract 2 no se valida contra el contrato nuevo
+ok 9 - un agente sin contract 2 no se valida contra el contrato nuevo
+  ---
+  duration_ms: 0.6913
+  type: 'test'
+  ...
+# Subtest: todos los agentes del registro declaran contract 2 y cumplen el contrato
+ok 10 - todos los agentes del registro declaran contract 2 y cumplen el contrato
+  ---
+  duration_ms: 34.6219
+  type: 'test'
+  ...
+# Subtest: latestChangelogSection solo toma la seccion mas reciente
+ok 11 - latestChangelogSection solo toma la seccion mas reciente
+  ---
+  duration_ms: 1.4832
+  type: 'test'
+  ...
+# Subtest: mentionsAgent no confunde prefijos
+ok 12 - mentionsAgent no confunde prefijos
+  ---
+  duration_ms: 0.4045
+  type: 'test'
+  ...
+# Subtest: cobertura pasa con bump local y changelog de la intervencion
+ok 13 - cobertura pasa con bump local y changelog de la intervencion
+  ---
+  duration_ms: 2.2875
+  type: 'test'
+  ...
+# Subtest: cobertura bloquea si el dueno no avanzo frente a origin
+ok 14 - cobertura bloquea si el dueno no avanzo frente a origin
+  ---
+  duration_ms: 0.4825
+  type: 'test'
+  ...
+# Subtest: cobertura bloquea si falta la entrada de changelog
+ok 15 - cobertura bloquea si falta la entrada de changelog
+  ---
+  duration_ms: 0.4932
+  type: 'test'
+  ...
+# Subtest: cobertura bloquea un agente dueno ausente del registro local
+ok 16 - cobertura bloquea un agente dueno ausente del registro local
+  ---
+  duration_ms: 0.2716
+  type: 'test'
+  ...
+# Subtest: sin duenos no se exige actualizacion de contexto
+ok 17 - sin duenos no se exige actualizacion de contexto
+  ---
+  duration_ms: 0.305
+  type: 'test'
+  ...
+# Subtest: un dueno nuevo solo local se acepta si el changelog lo menciona
+ok 18 - un dueno nuevo solo local se acepta si el changelog lo menciona
+  ---
+  duration_ms: 0.2296
+  type: 'test'
+  ...
+# Subtest: compareVersions ordena numericamente, no lexicograficamente
+ok 19 - compareVersions ordena numericamente, no lexicograficamente
+  ---
+  duration_ms: 3.7711
+  type: 'test'
+  ...
+# Subtest: classifyFreshness detecta remoto mas nuevo por version o fecha
+ok 20 - classifyFreshness detecta remoto mas nuevo por version o fecha
+  ---
+  duration_ms: 1.7041
+  type: 'test'
+  ...
+# Subtest: classifyFreshness bloquea conflicto cuando version y fecha coinciden con sha distinto
+ok 21 - classifyFreshness bloquea conflicto cuando version y fecha coinciden con sha distinto
+  ---
+  duration_ms: 0.4716
+  type: 'test'
+  ...
+# Subtest: classifyFreshness distingue agentes solo locales o solo remotos
+ok 22 - classifyFreshness distingue agentes solo locales o solo remotos
+  ---
+  duration_ms: 0.3632
+  type: 'test'
+  ...
+# Subtest: classifyDocumentFreshness usa fecha y sha, sin semver
+ok 23 - classifyDocumentFreshness usa fecha y sha, sin semver
+  ---
+  duration_ms: 0.496
+  type: 'test'
+  ...
+# Subtest: una edicion local del mismo dia es avance, no conflicto remoto
+ok 24 - una edicion local del mismo dia es avance, no conflicto remoto
+  ---
+  duration_ms: 1.7709
+  type: 'test'
+  ...
+# Subtest: isBlocking solo bloquea actualizaciones remotas, remotos nuevos y conflictos
+ok 25 - isBlocking solo bloquea actualizaciones remotas, remotos nuevos y conflictos
+  ---
+  duration_ms: 0.5827
+  type: 'test'
+  ...
+# Subtest: normalizePath unifica separadores de Windows
+ok 26 - normalizePath unifica separadores de Windows
+  ---
+  duration_ms: 0.5622
+  type: 'test'
+  ...
+# Subtest: routePaths exige frontend y QA para apps/web
+ok 27 - routePaths exige frontend y QA para apps/web
+  ---
+  duration_ms: 2.9238
+  type: 'test'
+  ...
+# Subtest: routePaths exige DB, backend, seguridad y QA para el esquema Prisma
+ok 28 - routePaths exige DB, backend, seguridad y QA para el esquema Prisma
+  ---
+  duration_ms: 1.7073
+  type: 'test'
+  ...
+# Subtest: routePaths concentra HR en backend, seguridad y QA
+ok 29 - routePaths concentra HR en backend, seguridad y QA
+  ---
+  duration_ms: 0.7793
+  type: 'test'
+  ...
+# Subtest: routePaths manda gobernanza al trio de agentes
+ok 30 - routePaths manda gobernanza al trio de agentes
+  ---
+  duration_ms: 0.3803
+  type: 'test'
+  ...
+# Subtest: routePaths trata el contrato del equipo como gobernanza
+ok 31 - routePaths trata el contrato del equipo como gobernanza
+  ---
+  duration_ms: 0.2429
+  type: 'test'
+  ...
+# Subtest: routePaths agrega equipo-apexos cuando la tarea es multidisciplinaria
+ok 32 - routePaths agrega equipo-apexos cuando la tarea es multidisciplinaria
+  ---
+  duration_ms: 0.2318
+  type: 'test'
+  ...
+# Subtest: routePaths informa rutas sin agente asignado
+ok 33 - routePaths informa rutas sin agente asignado
+  ---
+  duration_ms: 0.1862
+  type: 'test'
+  ...
+# Subtest: routePaths asigna dueno de contexto por disciplina
+ok 34 - routePaths asigna dueno de contexto por disciplina
+  ---
+  duration_ms: 0.1851
+  type: 'test'
+  ...
+# Subtest: routePaths sin dueno para gobernanza, scripts, pruebas y evidencia
+ok 35 - routePaths sin dueno para gobernanza, scripts, pruebas y evidencia
+  ---
+  duration_ms: 0.1501
+  type: 'test'
+  ...
+# Subtest: routePaths trata las convenciones de base de datos como contexto de DB
+ok 36 - routePaths trata las convenciones de base de datos como contexto de DB
+  ---
+  duration_ms: 0.1268
+  type: 'test'
+  ...
+# Subtest: routePaths conserva el union de duenos cuando hay varias disciplinas
+ok 37 - routePaths conserva el union de duenos cuando hay varias disciplinas
+  ---
+  duration_ms: 0.1233
+  type: 'test'
+  ...
+# Subtest: un agente nuevo sin registro previo no requiere bump
+ok 38 - un agente nuevo sin registro previo no requiere bump
+  ---
+  duration_ms: 3.654
+  type: 'test'
+  ...
+# Subtest: contenido sin cambios no exige bump
+ok 39 - contenido sin cambios no exige bump
+  ---
+  duration_ms: 0.3329
+  type: 'test'
+  ...
+# Subtest: un cambio con version mayor es valido
+ok 40 - un cambio con version mayor es valido
+  ---
+  duration_ms: 0.6367
+  type: 'test'
+  ...
+# Subtest: un cambio sin bump de version se rechaza
+ok 41 - un cambio sin bump de version se rechaza
+  ---
+  duration_ms: 0.6756
+  type: 'test'
+  ...
+# Subtest: una version que retrocede se rechaza
+ok 42 - una version que retrocede se rechaza
+  ---
+  duration_ms: 0.6484
+  type: 'test'
+  ...
+# Subtest: documento con el sha correcto y la misma fecha no genera ni aviso
+ok 43 - documento con el sha correcto y la misma fecha no genera ni aviso
+  ---
+  duration_ms: 1.4709
+  type: 'test'
+  ...
+# Subtest: documento promocionado conserva el sha y solo avisa por la fecha de la rama
+ok 44 - documento promocionado conserva el sha y solo avisa por la fecha de la rama
+  ---
+  duration_ms: 0.5005
+  type: 'test'
+  ...
+# Subtest: documento con contenido distinto sigue siendo un error aunque la fecha cuadre
+ok 45 - documento con contenido distinto sigue siendo un error aunque la fecha cuadre
+  ---
+  duration_ms: 0.3074
+  type: 'test'
+  ...
+1..45
+# tests 45
+# suites 0
+# pass 45
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 361.8783
+exit_code: 0
+
+=== npm run agents:preflight -- --paths AGENTS.md
+cmd: node scripts/agents/preflight.js --paths AGENTS.md
+nota: ruteo y contraste de versiones contra origin/desarrollo; en rama auxiliar el veredicto es RAMA_NO_AUTORIZADA y se registra tal cual
+salida:
+[agents:preflight] rama: codex/qa-equipo-develop-20261107 | HEAD: 4f1a8475 | fetch: si
+[agents:preflight] comparacion contra origin/desarrollo @ 93d97b12
+
+Frescura de agentes
+  NOMBRE                      LOCAL       REMOTO      ESTADO
+  apexos-auditor-marcaciones  2.0.0       2.0.0       in-sync
+  apexos-auditor-nomina       2.0.0       2.0.0       in-sync
+  apexos-backend              2.8.0       2.8.0       in-sync
+  apexos-brief                2.18.0      2.17.0      local-ahead
+  apexos-db-nube              2.0.0       2.0.0       in-sync
+  apexos-frontend             2.9.0       2.9.0       in-sync
+  apexos-git-guardian         2.9.0       2.8.0       local-ahead
+  apexos-performance          2.9.0       2.9.0       in-sync
+  apexos-qa                   2.23.0      2.20.0      local-ahead
+  apexos-seguridad            2.11.0      2.11.0      in-sync
+  equipo-apexos               2.12.0      2.12.0      in-sync
+
+Frescura de gobernanza
+  NOMBRE                                    LOCAL       REMOTO      ESTADO
+  AGENTS.md                                 2026-11-03  2026-11-03  in-sync
+  BRANCHING_WORKFLOW.md                     2026-08-11  2026-08-11  in-sync
+  docs/CHANGE_APPROVAL_QA_POLICY.md         2026-09-08  2026-09-08  in-sync
+  docs/DATABASE_CONVENTIONS.md              2026-11-03  2026-11-03  in-sync
+  docs/MULTITENANT_DATA_ISOLATION.md        2026-07-02  2026-07-02  in-sync
+  docs/PERFORMANCE_ENGINEERING_STANDARD.md  2026-07-25  2026-07-25  in-sync
+  docs/SECURITY_THREAT_MODEL.md             2026-08-11  2026-08-11  in-sync
+  docs/briefs/_TEMPLATE.md                  2026-11-03  2026-11-03  in-sync
+  docs/design/APEXOS_COMPONENT_CATALOG.md   2026-11-06  2026-11-06  in-sync
+  docs/project/CONTRATO_EQUIPO_APEXOS.md    2026-11-03  2026-11-03  in-sync
+  docs/project/filosofia-producto-ui.md     2026-08-21  2026-08-21  in-sync
+
+Ruteo obligatorio (1 ruta(s))
+  equipo-apexos: AGENTS.md
+  apexos-brief: AGENTS.md
+  apexos-git-guardian: AGENTS.md
+
+Lecturas obligatorias antes de editar
+  - .qoder/skills/equipo-apexos/SKILL.md
+  - .qoder/skills/apexos-brief/SKILL.md
+  - .qoder/skills/apexos-git-guardian/SKILL.md
+
+Veredicto: RAMA_NO_AUTORIZADA
+
+[agents:preflight] BLOQUEADO: integra origin/desarrollo o resuelve el conflicto antes de editar agentes o gobernanza.
+exit_code: 1
+
+=== npm run agents:coverage
+cmd: node scripts/agents/coverage.js
+nota: cobertura bloqueante por ruta tocada; fuera de desarrollo se declara como N/A, no como verde
+salida:
+[agents:coverage] La rama activa es "codex/qa-equipo-develop-20261107"; la cobertura de contexto solo aplica en "desarrollo".
+exit_code: 1
+
+=== npm run governance:ci
+cmd: node scripts/git-governance-guard.js ci
+nota: modo ci del guard; la forma de promocion con manifiestos y candidatos se certifica aparte en forma-promocion.json
+salida:
+
+exit_code: 0
+
+=== LITIGADO: lo que NO existia en el destino antes de este paquete
+entrada de origin/develop: 2cb064e2a8968011e6497735921f8d36d9bd4768
+entradas de package.json ausentes en el destino (5): agents:sync, agents:check, agents:preflight, agents:coverage, test:agents
+archivos bajo scripts/agents en el destino: 0
+certificador agents-contract-promotion-local.js en el destino: no
+razon por la que el contrato de equipo no podia ejecutarse en develop; este paquete la cierra
+
+=== CERTIFICACION DEL CONTRATO EJECUTADO EN EL DESTINO
+script: scripts/certifications/agents-contract-promotion-local.js
+argumentos: --base=origin/develop --reference=acb88f25 --output=docs/qa/evidence/equipo-contrato-promocion-20261107/contract.json
+status: passed | checks: 10 | fallidos: []
+por check: espejos_y_registry_coherentes:passed, pruebas_de_la_maquinaria_verdes:passed, preflight_del_contrato_sin_conflicto:passed, cobertura_de_agentes_mide_a_duefios:passed, comandos_citados_resuelven_en_el_destino:passed, cierre_de_lecturas_completo_en_el_candidato:passed, rutas_identicas_a_la_rama_de_trabajo:passed, candidato_no_borra_nada_del_destino:passed, package_json_solo_aporta_las_entradas_del_contrato:passed, forma_de_la_rama_auxiliar_es_parte_del_contrato:passed
+cada check con su exit_code y su salida real esta en contract.json
+
+=== FORMA DE PROMOCION (guard + scope + pre-QA) CERTIFICADA CON FIXTURE GIT REAL
+script: scripts/certifications/scoped-qa-governance-local.js
+argumentos: --output=docs/qa/evidence/equipo-contrato-promocion-20261107/forma-promocion.json
+status: passed | checks: 20 | no pasados: 0
+evidencia completa en forma-promocion.json
