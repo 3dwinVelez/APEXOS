@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.12.0
+version: 2.13.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -78,6 +78,13 @@ Antes de actuar, leer en este orden:
     Por qué: el 2026-11-08 la auditoría encontró tres gates que decían "passed" sin poder fallar —`certify:auth-session` fijaba `session:"passed"` como literal, `security:inspect-rls` solo logueaba y el job de CI corría `npm audit` con `continue-on-error: true`— y por eso 3 críticas y 17 altas pasaban en silencio.
 
 26. **Una RLS que el API no puede ejercer no se cuenta como control, y el documento lo dice.** Declarar RLS como mitigación exige demostrar las tres cosas a la vez: (a) el rol de conexión **no** es propietario de las tablas (o existe `FORCE ROW LEVEL SECURITY`), (b) cada consulta fija el tenant (`set_config('app.tenant_id', …)` o `SET LOCAL`), y (c) la política existe para esa tabla. Medición del 2026-11-08 en `desarrollo`: 41 `ENABLE ROW LEVEL SECURITY`, 176 `CREATE POLICY`, **0** `FORCE`, **0** `set_config('app.tenant_id')` en el código del API, y conexión con rol propietario. Conclusión obligatoria: el middleware de tenant con `AsyncLocalStorage` es el **único** filtro y así se escribe en `docs/SECURITY_THREAT_MODEL.md`; una revisión que acepte "RLS" como mitigación sin esas tres pruebas es un falso negativo. Por qué: el threat model afirmaba "101 sentencias RLS y 231 políticas" como control de multiempresa mientras el tráfico real no pasaba por ninguna política.
+
+27. **Una superficie pública no lleva service role, la empresa la fija el servidor y el aislamiento se deriva del schema.** Cuatro reglas que la Fase 1 del plan candado dejó medidas:
+    - **Sin llave de servicio ni Prisma en la ruta pública.** `apps/web/app/api/public/service-requests/route.ts` configura solo `SUPABASE_URL`/`SUPABASE_ANON_KEY`; si la operación necesita privilegio, la escribe el API operativo detrás de su RBAC, no el BFF con `SUPABASE_SERVICE_ROLE_KEY`. Una llave de servicio en una ruta anónima convierte un error de filtro en lectura global.
+    - **La empresa sale de una allowlist del servidor.** `APEXOS_PUBLIC_SERVICE_COMPANY_ID` (alias `NEXT_PUBLIC_…`) es la única fuente; `company_id`, `company_name` y `?empresa=` del cuerpo son cosméticos y no cambian el tenant destinatario (`apps/api/src/modules/services/public-service.js:27`). Sin allowlist válida: `503 EMPRESA_PUBLICA_NO_CONFIGURADA` sin consultar la base — falla cerrada. Confirmarlo exige la prueba con dos tenants antes de declarar cerrado el control.
+    - **El conjunto de modelos filtrados se deriva del schema.** `apps/api/src/core/tenantModels.js:25` calcula `TENANT_MODELS` de `Prisma.dmmf` y declara `GLOBAL_MODELS` corta y explícita; el módulo lanza al arrancar si un global tiene `tenant_id`. Una lista mantenida a mano no es un control: tenía 29 modelos fuera.
+    - **Asignar peso es tan sensible como editar el rol, y cambiar la clave de otro exige re-autenticación.** El candado de rol aplica a crear y editar usuarios, y la clave ajena responde `428` sin la prueba del administrador y `403` si no coincide (`apps/api/src/modules/admin/service.js:29,40`).
+    Corolario honesto: una política RLS anón no queda cubierta porque la ruta web consulte con `company_id=eq.`; si la política no filtra por empresa, la lectura directa por REST sigue expuesta y se declara como hallazgo residual (R-03 del brief), no como control cerrado. Por qué: el 2026-11-08 el formulario público resolvía la empresa por `/rest/v1/companies` con service role y 29 modelos con columna `tenant_id` quedaban fuera del middleware.
 
 ## Checklist de intervención
 

@@ -175,6 +175,7 @@ type UserForm = {
   last_names: string;
   email: string;
   password: string;
+  current_password: string;
   role_id: string;
   code: string;
   document_type: string;
@@ -272,6 +273,7 @@ const emptyUser: UserForm = {
   last_names: "",
   email: "",
   password: "",
+  current_password: "",
   role_id: "",
   code: "",
   document_type: "CC",
@@ -1357,6 +1359,7 @@ export default function AdministracionPage() {
     if (!selectedUserId && !userForm.password) return "La clave inicial es obligatoria.";
     if (userForm.password && userForm.password.length < 8) return "La clave debe tener minimo 8 caracteres.";
     if (userForm.password && (!/[A-Za-z]/.test(userForm.password) || !/[0-9]/.test(userForm.password))) return "La clave debe combinar letras y numeros.";
+    if (selectedUserId && userForm.password && !userForm.current_password.trim()) return "Confirma tu clave actual para cambiar la clave del usuario.";
     return "";
   }
 
@@ -1372,6 +1375,7 @@ export default function AdministracionPage() {
       const payload = quickUserPayload(userForm, roles, !selectedUserId);
       if (selectedUserId && userForm.password) {
         payload.password = userForm.password;
+        payload.current_password = userForm.current_password;
         payload.require_password_change = true;
       }
       if (selectedUserId) await api(`/api/v1/admin/users/${selectedUserApiId()}`, { method: "PUT", body: JSON.stringify(payload) });
@@ -1502,14 +1506,21 @@ export default function AdministracionPage() {
       notify("Clave temporal invalida", "Usa minimo 8 caracteres con letras y numeros.", "warning");
       return;
     }
+    const actorPassword = userForm.current_password.trim();
+    if (!actorPassword) {
+      setMessage("Confirma tu clave actual antes de cambiar la clave de otro usuario.");
+      notify("Clave del administrador requerida", "Escribe tu propia clave para autorizar el cambio.", "warning");
+      return;
+    }
     if (!window.confirm(`Confirmas cambiar la clave de acceso de ${selectedUser?.name || "este usuario"}? El usuario debera cambiarla al ingresar.`)) return;
     if (userAccessSaving) return;
     setUserAccessSaving(true);
     try {
-      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ password: nextPassword, require_password_change: true, session_status: "sin_sesion" }) });
+      await api(`/api/v1/admin/users/${targetId}/access`, { method: "PATCH", body: JSON.stringify({ password: nextPassword, current_password: actorPassword, require_password_change: true, session_status: "sin_sesion" }) });
       setMessage("Clave temporal actualizada. El usuario debera cambiarla en el proximo ingreso.");
       notify("Clave actualizada", `La clave temporal de ${selectedUser?.name || "usuario"} quedo guardada correctamente.`);
       setUserField("password", "");
+      setUserField("current_password", "");
       await load();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Error al cambiar la clave del usuario.";
@@ -2425,6 +2436,7 @@ export default function AdministracionPage() {
             <SelectField label="Rol" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
             <SelectField label="Estado" value={userForm.user_status} onChange={(value) => setUserField("user_status", value)} options={optionPairs(masterData.user_statuses)} />
             <Field label="Nueva clave temporal" type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
+            {userForm.password ? <Field label="Tu clave actual (autoriza el cambio)" type="password" value={userForm.current_password} onChange={(value) => setUserField("current_password", value)} /> : null}
             <Toggle label="Exigir cambio de clave" checked={userForm.require_password_change} onChange={(value) => setUserField("require_password_change", value)} />
           </div>
           <p className="mt-3 rounded-md bg-paper px-3 py-2 text-xs font-medium text-neutral-600">Para cambiar clave sin correo, escribe una clave temporal y usa Cambiar clave. El usuario debera cambiarla en el proximo ingreso.</p>
@@ -2467,6 +2479,7 @@ export default function AdministracionPage() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <Field label="Correo de acceso" value={userForm.access_email} onChange={(value) => { setUserField("access_email", value); setUserField("email", value); }} />
           <Field label={selectedUserId ? "Nueva clave opcional" : "Clave inicial"} type="password" value={userForm.password} onChange={(value) => setUserField("password", value)} />
+          {selectedUserId && userForm.password ? <Field label="Tu clave actual (autoriza el cambio)" type="password" value={userForm.current_password} onChange={(value) => setUserField("current_password", value)} /> : null}
           <SelectField label="Rol principal" value={userForm.role_id} onChange={(value) => setUserField("role_id", value)} options={[["", "Seleccionar rol"], ...roles.filter((role) => role.active).map((role) => [String(role.id), role.name] as [string, string])]} />
           <SelectField label="Perfil operativo" value={userForm.operational_profile || userForm.operational_classification} onChange={(value) => { setUserField("operational_profile", value); setUserField("operational_classification", value); }} options={optionPairs(masterData.user_types, "Seleccionar perfil")} />
           <Field label="Empresa" value={userForm.company} onChange={(value) => setUserField("company", value)} />

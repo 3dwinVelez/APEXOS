@@ -1,8 +1,11 @@
 {
-  "timestamp": "2026-11-08T19:07:45.097Z",
+  "timestamp": "2026-11-08T19:51:08.541Z",
   "indicators": {
-    "models_with_tenant_id_outside_allowlist": 29,
-    "models_in_allowlist_without_tenant_id_column": 5,
+    "models_with_tenant_id_outside_allowlist": 0,
+    "models_in_allowlist_without_tenant_id_column": 0,
+    "global_models_not_in_schema": 0,
+    "public_web_routes_using_service_role": 0,
+    "public_web_routes_using_prisma_client": 0,
     "raw_sql_queries": 190,
     "routes_without_auth": 4,
     "npm_audit_critical_high": 20,
@@ -20,47 +23,32 @@
     "example_files_with_enforcement_disabled": 2
   },
   "informational": {
-    "routes_authenticated_without_permission_guard": 198
+    "routes_authenticated_without_permission_guard": 198,
+    "tenant_models_filtered": 179,
+    "global_models_declared": 12,
+    "web_routes_using_service_role_total": 7,
+    "public_routes_declared": 3
   },
   "details": {
-    "routes_total": 753,
-    "outside_allowlist": [
-      "TransportPygConcept",
-      "TransportPygBudget",
-      "TransportPygSourceMap",
-      "TransportPygConfig",
-      "TreasuryBank",
-      "TreasuryAdvance",
-      "TreasuryAdvanceApplication",
-      "TreasuryPayment",
-      "TreasuryPaymentApplication",
-      "PurchaseImport",
-      "PurchaseImportCost",
-      "Subscription",
-      "ApexHeartReportSchedule",
-      "CommercialAdvisor",
-      "CommercialCustomer",
-      "CommercialCustomerCommitment",
-      "CommercialZone",
-      "CommercialCustomerCategory",
-      "CommercialPeriod",
-      "CommercialAdvisorBudget",
-      "CommercialCustomerBudget",
-      "CommercialVisit",
-      "CommercialVisitEvent",
-      "CommercialSettings",
-      "CommercialVisitReason",
-      "CommercialVisitResult",
-      "CommercialProduct",
-      "CommercialSalesOrder",
-      "CommercialQuotation"
+    "routes_total": 756,
+    "outside_allowlist": [],
+    "in_allowlist_without_column": [],
+    "global_models_not_in_schema": [],
+    "public_web_routes_using_service_role": [],
+    "public_web_routes_using_prisma_client": [],
+    "web_routes_using_service_role_total": [
+      "apps/web/app/api/admin/roles/route.ts",
+      "apps/web/app/api/admin/users/route.ts",
+      "apps/web/app/api/platform/companies/route.ts",
+      "apps/web/app/api/platform/company-modules/route.ts",
+      "apps/web/app/api/platform/company-sessions/route.ts",
+      "apps/web/app/api/services/monitor-orders/route.ts",
+      "apps/web/app/api/v1/services/orders/[id]/route.ts"
     ],
-    "in_allowlist_without_column": [
-      "Movement",
-      "SkuValuation",
-      "WarehouseTransfer",
-      "WarehouseTransferLine",
-      "ApexReportRun"
+    "public_routes_declared": [
+      "GET /public/comercio/catalog/:code (apps/api/src/modules/comercio/public-routes.js)",
+      "GET /public/services/catalog (apps/api/src/modules/services/public-routes.js)",
+      "POST /public/services/orders (apps/api/src/modules/services/public-routes.js)"
     ],
     "routes_without_auth": [
       "POST /auth/register (apps/api/src/modules/auth/routes.js)",

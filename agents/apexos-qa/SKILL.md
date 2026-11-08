@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.26.0
+version: 2.27.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -116,6 +116,13 @@ Antes de actuar, leer en este orden:
     Por que: el 2026-11-07 la seccion 5 de `lectura-ambiente.txt` declaraba exactamente este hueco («requiere sesion autenticada en el ambiente de QA»). La sesion no se pidio ni se toco la cuenta del demo: se construyo con empresas propias sobre la misma base de QA, y el hueco se cerro con evidencia reproduzible por comando.
 
 39. **Una certificación que fija su veredicto en el código no certifica: mide el rechazo o no cuenta.** `scripts/certifications/auth-session-readiness.js` publicaba `session:"passed"` como literal y descartaba la respuesta de `/api/v1/services/orders`, así que pasaba intacto con la revocación rota. Una certificación de control de acceso debe probar contra el ambiente los **rechazos** que afirma: sin `Authorization`, token basura, token firmado con `alg:none`, firma HS256 con clave incorrecta y firma alterada → todos `401`; y, cuando el ambiente lo permita de verdad, el token revocado por `logout` → `401` en la request siguiente (`CERT_REQUIRE_REVOCATION=true`). Cada rechazo guarda su `status` y su código de negocio, y el campo `session` sale de la medición, nunca de una constante. Corolario de cobertura: un test unitario de la función pura de decisión (`authorizationDecision`) **no** cubre la función que honra el flag (`validateAuthorization`); ese hueco es el que mantuvo invisible el hallazgo C-06 del plan candado. Por qué: el 2026-11-08 la auditoría del plan candado encontró tres certificaciones que decían "passed" sin poder fallar, y la única forma de que no vuelva a ocurrir es que el arnés ejercite el rechazo.
+
+40. **Una fase del plan candado se cierra con el rechazo medido de cada control, la baseline refrescada a propósito y el bloqueo escrito, no con un "sin hallazgos".** Cuatro obligaciones de la Fase 1 (2026-11-08):
+    - **Cada control afirmado lleva su prueba de rechazo y su archivo:línea.** 503 sin allowlist y 400 por referencia ajena (`apps/api/test/public-service-allowlist.test.js`); 401 sin JWT, 401 con sesión inválida y 403 por RLS (`apps/web/test/public-service-requests-security.test.mjs`); 428 y 403 de re-autenticación (`apps/api/test/admin-role-escalation.test.js`); contrato del filtro derivado del schema (`apps/api/test/core-tenant-models.test.js`). Un control sin rechazo medido no se cuenta como cerrado, aunque el camino feliz pase.
+    - **La baseline se refresca solo con `--update` y el veredicto se cita por `--block`.** En la Fase 1 bajó de 29→0 y 5→0; el refresco fue intencional y quedó en `docs/qa/evidence/plan-candado-20261108/gate-fase-1.txt`. Citar como veredicto la salida del modo pasivo es citar el reporte, no la puerta.
+    - **Una certificación E2E no ejecutada se escribe `BLOQUEO: <motivo>`.** La Fase 1 no pudo recorrer el formulario público en navegador porque el stack local estaba caído y `APEXOS_PUBLIC_SERVICE_COMPANY_ID` no estaba configurado; la evidencia lo dice y separa lo medido (pruebas de ruta y servicio) de lo prometido.
+    - **La evidencia se versiona sin secretos ni PII** en `docs/qa/evidence/<cambio>/` con nombres `gate-*.txt` y `security-*.txt`, y declara los hallazgos residuales con severidad (R-01..R-03 del brief).
+    Por que: el 2026-11-08 una fase "cerrada" con pruebas verdes y sin prueba de rechazo habria dejado el formulario público devolviendo datos de otra empresa sin que ninguna celda lo dijera.
 
 ## Checklist de intervención
 

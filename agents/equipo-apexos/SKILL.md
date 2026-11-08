@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.14.0
+version: 2.15.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -85,6 +85,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
 
 
 27. **La baseline de un candado no se reescribe sola y la fase autorizada no se adelanta.** Cuando el pedido es un plan de blindaje por fases y el dueño autoriza una sola, el cierre mide dos cosas además de la entrega: (a) **la línea base sigue intacta** —cualquier `baseline.json` de seguridad cambia solo con un `--update` explícito y el veredicto cita la salida del comando que bloquea, no la del que reporta—; y (b) **las fases no autorizadas no se ejecutaron**, verificable en el inventario de rutas tocadas, que debe quedarse dentro del alcance autorizado aunque los hallazgos de las fases siguientes estén escritos y den ganas de arreglarlos. Un plan que avanza "de paso" sobre código de producto deja de ser un plan candado y se vuelve un cambio de conducta sin su puerta de no-ruptura. Además, el plan no se acepta si sus gates no pueden fallar: `security:candado:block`, `security:ci-audit` y `security:inspect-rls:gate` se demuestran con un rojo provocado, no con una corrida verde. Por qué: el 2026-11-08 el dueño autorizó **solo la Fase 0** de siete, y el valor de esa decisión dependía de que el resto quedara escrito y sin ejecutar; a la vez, tres gates del repo decían "passed" sin poder fallar, así que la primera entrega del plan tuvo que ser hacerlos fallar.
+
+28. **Un cambio que tensa el aislamiento se despacha a seis disciplinas y cada una debe avanzar en el mismo cierre.** El preflight de la Fase 1 (2026-11-08) ruteó las mismas rutas a `apexos-backend` (middleware y admin), `apexos-seguridad` (aislamiento y llave de servicio), `apexos-frontend` (BFF público), `apexos-qa` (rechazos y evidencia), `apexos-brief` (cierre de fase) y `equipo-apexos` (orden y baseline). Tres consecuencias: (a) el orquestador no acepta el cierre con un solo experto actualizado —`agents:coverage` es bloqueante y nombra el que falte—; (b) el dueño de la conducta (backend/frontend) no se sustituye por el revisor de seguridad: el dictamen no implementa; (c) cuando la ejecución deja un bloqueo de ambiente (stack caído, variable sin configurar) o un residual fuera de alcance (7 rutas BFF con service role, RLS anón sin filtro de empresa), el cierre los publica con su fase pendiente y no los presenta como parte de la fase entregada. Por qué: el 2026-11-08 la Fase 1 tocó `core/prisma.js`, `admin/service.js` y el BFF público a la vez, y un cierre despachado solo al backend habría dejado `apexos-frontend` y `apexos-qa` sin el control que el cambio sí modificó.
 
 ## Checklist de intervención
 

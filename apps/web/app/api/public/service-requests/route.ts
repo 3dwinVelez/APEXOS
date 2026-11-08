@@ -1,13 +1,21 @@
+// Formulario publico de Servicios (BFF de apps/web).
+//
+// Este handler no tiene llave de servicio ni Prisma: el visitante anonimo solo puede leer
+// el catalogo publico y crear una pre-orden. La empresa destino NO la elige el cliente; sale
+// de una allowlist de servidor (APEXOS_PUBLIC_SERVICE_COMPANY_ID). Nada del body ni del query
+// (`?empresa=`) participa en resolverla.
+//
+//   - Local: delega en el API operativo (`/api/v1/public/services/*`), que cierra el tenant
+//     con runWithTenant y valida contra la base real.
+//   - Nube: lee con la llave anon (RLS de catalogo publico) y crea por RPC
+//     `create_public_service_order` (SECURITY DEFINER, solo inserta preordenes).
+//   - Actualizar catalogos: exige el JWT del administrador y deja que RLS
+//     (`service_references_write_admin`) decida. Sin JWT -> 401; sin permiso -> 403.
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
-import { PrismaClient } from "@prisma/client";
-
-let rootEnvCache: Record<string, string> | null = null;
 
 type PublicServiceRequest = {
-  company_id?: string;
-  company_name?: string;
   customer_name?: string;
   customer_document?: string;
   customer_phone?: string;
@@ -26,8 +34,8 @@ type PublicServiceRequest = {
 };
 type PublicReferenceRow = { id: string; company_id?: string; code: string; name: string; category?: string; brand?: string; model?: string };
 type SupabaseUser = { id?: string; email?: string };
-type PermissionRow = { module?: string; actions?: unknown };
 
+const SERVICE_TYPES_REFERENCE_CODE = "__SERVICE_TYPES__";
 const DEFAULT_SERVICE_TYPES = [
   { code: "montaje", label: "Montaje", active: true },
   { code: "desmontaje", label: "Desmontaje", active: true },
@@ -37,17 +45,28 @@ const DEFAULT_SERVICE_STORES = [
   { code: "hogar_y_moda_1", label: "Hogar y Moda 1", active: true },
   { code: "hogar_y_moda_2", label: "Hogar y Moda 2", active: true }
 ];
-const SERVICE_TYPES_REFERENCE_CODE = "__SERVICE_TYPES__";
-let localPrismaClient: PrismaClient | null = null;
+const MAX_ITEMS = 20;
+const MAX_ITEM_QUANTITY = 50;
 
-function localPrisma() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL local no fue cargada.");
-  localPrismaClient ||= new PrismaClient();
-  return localPrismaClient;
+class PublicServiceError extends Error {
+  status: number;
+
+  constructor(message: string, status = 400) {
+    super(message);
+    this.status = status;
+  }
 }
+
+let rootEnvCache: Record<string, string> | null = null;
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
+}
+
+function failure(error: unknown) {
+  if (error instanceof PublicServiceError) return jsonError(error.message, error.status);
+  console.error("[public-service-requests]", error instanceof Error ? error.message : String(error));
+  return jsonError("No fue posible procesar la solicitud del formulario publico.", 500);
 }
 
 function clean(value: unknown) {
@@ -94,73 +113,47 @@ function envValue(...keys: string[]) {
 }
 
 function localApiUrl() {
-  const value = envValue("NEXT_PUBLIC_API_URL", "API_URL");
-  if (!value) throw new Error("API_URL no configurada para service-requests.");
-  return value;
+  return envValue("NEXT_PUBLIC_API_URL", "API_URL").replace(/\/+$/, "");
 }
 
 function localDatabase() {
   try {
-    const value = envValue("DATABASE_URL");
-    const url = new URL(value);
-    const local = ["localhost", "127.0.0.1"].includes(url.hostname);
-    if (local && !process.env.DATABASE_URL) process.env.DATABASE_URL = value;
-    return local;
+    const url = new URL(envValue("DATABASE_URL"));
+    return ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
   } catch {
     return false;
   }
 }
 
-async function localTenant(request: NextRequest, companyId = "", companyName = "") {
-  const prisma = localPrisma();
-  if (companyId && isUuid(companyId)) {
-    const tenant = await prisma.tenant.findFirst({ where: { id: companyId, active: true } });
-    if (tenant) return tenant;
-  }
-  const requestedName = clean(companyName) || clean(request.nextUrl.searchParams.get("empresa"));
-  if (requestedName) {
-    const tenant = await prisma.tenant.findFirst({ where: { active: true, name: { contains: requestedName, mode: "insensitive" } }, orderBy: { created_at: "asc" } });
-    if (tenant) return tenant;
-  }
-  const reference = await prisma.serviceReference.findFirst({ where: { active: true }, select: { tenant_id: true }, orderBy: { code: "asc" } });
-  return reference ? prisma.tenant.findFirst({ where: { id: reference.tenant_id, active: true } }) : null;
-}
-
-function localCatalog(config: unknown, key: "service_types" | "service_stores") {
-  const root = config && typeof config === "object" ? config as Record<string, unknown> : {};
-  const services = root.services && typeof root.services === "object" ? root.services as Record<string, unknown> : {};
-  return services[key];
-}
-
-async function localPublicCatalog(request: NextRequest) {
-  const prisma = localPrisma();
-  const tenant = await localTenant(request);
-  if (!tenant) return null;
-  const references = await prisma.serviceReference.findMany({
-    where: { tenant_id: tenant.id, active: true },
-    select: { id: true, code: true, name: true, category: true, brand: true, model: true },
-    orderBy: { code: "asc" },
-    take: 500
-  });
-  return {
-    tenant,
-    references: references.map((item) => ({ ...item, id: String(item.id), company_id: tenant.id })),
-    serviceTypes: normalizeServiceTypes(localCatalog(tenant.config, "service_types")).filter((item) => item.active),
-    serviceStores: normalizeServiceStores(localCatalog(tenant.config, "service_stores")).filter((item) => item.active)
-  };
-}
-
 function supabaseConfig() {
-  return {
+  const config = {
     url: envValue("NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL"),
-    anonKey: envValue("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY"),
-    serviceRoleKey: envValue("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"),
-    publicCompanyId: envValue("APEXOS_PUBLIC_SERVICE_COMPANY_ID", "NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID")
+    anonKey: envValue("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY")
   };
+  const missing = [!config.url ? "SUPABASE_URL" : "", !config.anonKey ? "SUPABASE_ANON_KEY" : ""].filter(Boolean);
+  if (missing.length) {
+    throw new PublicServiceError(`Falta configuracion publica de Supabase: ${missing.join(", ")}.`, 503);
+  }
+  return config;
 }
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+// Allowlist de servidor: la unica fuente de la empresa destino del formulario publico.
+function publicCompanyId() {
+  const value = envValue("APEXOS_PUBLIC_SERVICE_COMPANY_ID", "NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID");
+  if (!value || !isUuid(value)) {
+    throw new PublicServiceError("El formulario publico no tiene empresa configurada (APEXOS_PUBLIC_SERVICE_COMPANY_ID).", 503);
+  }
+  return value;
+}
+
+function bearerToken(request: NextRequest) {
+  const header = request.headers.get("authorization") || "";
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : "";
 }
 
 function serviceTypeCode(value: unknown) {
@@ -216,159 +209,23 @@ function normalizeSatisfactionQuestions(rows: unknown) {
     .filter((item) => item.id && item.label && !seen.has(item.id) && seen.add(item.id));
 }
 
-async function supabaseRequest<T>(path: string, init: RequestInit = {}) {
-  const config = supabaseConfig();
-  if (!config.url || !config.anonKey || !config.serviceRoleKey) {
-    const missing = [
-      !config.url ? "SUPABASE_URL" : "",
-      !config.anonKey ? "SUPABASE_ANON_KEY" : "",
-      !config.serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : ""
-    ].filter(Boolean).join(", ");
-    throw new Error(`Falta configuracion de Supabase para recibir solicitudes publicas: ${missing}.`);
+function supabaseFailure(status: number, detail: unknown) {
+  const record = detail && typeof detail === "object" ? detail as Record<string, unknown> : {};
+  const code = clean(record.code);
+  if (status === 401 || status === 403 || code === "42501") {
+    return new PublicServiceError("No tienes permiso de administracion sobre la empresa del formulario publico.", 403);
   }
-  const response = await fetch(`${config.url}${path}`, {
+  if (status === 409 || code === "23505") {
+    return new PublicServiceError("El catalogo publico ya existe y no se pudo actualizar.", 409);
+  }
+  return new PublicServiceError("El servicio de datos publico no respondio la consulta.", 502);
+}
+
+async function supabasePublicRead<T>(requestPath: string, init: RequestInit = {}) {
+  const config = supabaseConfig();
+  const response = await fetch(`${config.url}${requestPath}`, {
     ...init,
-    headers: {
-      apikey: config.serviceRoleKey,
-      Authorization: `Bearer ${config.serviceRoleKey}`,
-      "Content-Type": "application/json",
-      ...init.headers
-    }
-  });
-  const body = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok) {
-    const detail = body?.message || body?.error_description || body?.error || response.statusText;
-    throw new Error(`Supabase ${response.status}: ${detail}`);
-  }
-  return body as T;
-}
-
-function jwtSubject(token: string) {
-  try {
-    const [, payload] = token.split(".");
-    if (!payload) return "";
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    return String(JSON.parse(Buffer.from(normalized, "base64").toString("utf8")).sub || "");
-  } catch {
-    return "";
-  }
-}
-
-function isAdministrativeRole(value: unknown) {
-  const role = String(value || "").trim().toLowerCase();
-  return ["owner", "admin", "superadmin", "administrador", "administrador de empresa", "apex_admin"].includes(role)
-    || role.includes("admin")
-    || role.includes("coordinador");
-}
-
-function actionList(value: unknown) {
-  if (Array.isArray(value)) return value.map((item) => String(item).trim().toLowerCase());
-  if (value && typeof value === "object") {
-    return Object.entries(value as Record<string, unknown>)
-      .filter(([, enabled]) => enabled === true)
-      .map(([action]) => action.trim().toLowerCase());
-  }
-  return [];
-}
-
-function permissionRows(value: unknown): PermissionRow[] {
-  if (Array.isArray(value)) return value.filter((item) => item && typeof item === "object") as PermissionRow[];
-  if (!value || typeof value !== "object") return [];
-  return Object.entries(value as Record<string, unknown>).map(([module, actions]) => ({ module, actions }));
-}
-
-function hasCatalogAdminPermission(value: unknown) {
-  const modules = new Set(["*", "admin", "administracion", "administracion_apex", "services", "servicios", "configuracion"]);
-  const actions = new Set(["*", "edit", "write", "configure", "administer", "manage", "manage_catalogs"]);
-  return permissionRows(value).some((permission) => {
-    const moduleName = String(permission.module || "").trim().toLowerCase();
-    return modules.has(moduleName) && actionList(permission.actions).some((action) => actions.has(action));
-  });
-}
-
-function metadataAllowsCatalogAdmin(metadata: Record<string, unknown>) {
-  const access = metadata.access && typeof metadata.access === "object" ? metadata.access as Record<string, unknown> : {};
-  return isAdministrativeRole(metadata.role_name)
-    || isAdministrativeRole(metadata.role_type)
-    || isAdministrativeRole(access.role_name)
-    || isAdministrativeRole(access.role_type)
-    || hasCatalogAdminPermission(metadata.permissions)
-    || hasCatalogAdminPermission(access.permissions)
-    || hasCatalogAdminPermission(metadata.role_permissions)
-    || hasCatalogAdminPermission(access.role_permissions);
-}
-
-async function currentSupabaseUser(authorization: string) {
-  const token = authorization.replace(/^Bearer\s+/i, "");
-  if (!token || !supabaseConfig().url || !supabaseConfig().anonKey) return null;
-  const response = await fetch(`${supabaseConfig().url}/auth/v1/user`, {
-    headers: {
-      apikey: supabaseConfig().anonKey,
-      Authorization: `Bearer ${token}`
-    }
-  });
-  if (!response.ok) return null;
-  return await response.json().catch(() => null) as SupabaseUser | null;
-}
-
-async function hasAdministrativeSession(authorization: string) {
-  if (!authorization.toLowerCase().startsWith("bearer ")) return false;
-  try {
-    const response = await fetch(`${localApiUrl()}/api/v1/auth/me`, { headers: { Authorization: authorization } });
-    if (response.ok) {
-      const data = await response.json().catch(() => ({})) as {
-        user?: {
-          role?: string;
-          role_metadata?: Record<string, unknown>;
-          role_permissions?: unknown;
-        };
-      };
-      if (isAdministrativeRole(data.user?.role)
-        || isAdministrativeRole(data.user?.role_metadata?.role_type)
-        || hasCatalogAdminPermission(data.user?.role_permissions)
-        || metadataAllowsCatalogAdmin(data.user?.role_metadata || {})) {
-        return true;
-      }
-    }
-  } catch {
-    // Production commonly uses Supabase Auth without a local API session.
-  }
-
-  const token = authorization.replace(/^Bearer\s+/i, "");
-  const user = await currentSupabaseUser(authorization);
-  const userId = user?.id || jwtSubject(token);
-  const config = supabaseConfig();
-  if (!userId || !config.url || !config.anonKey || !config.serviceRoleKey) return false;
-
-  const memberships = await supabaseRequest<Array<{ company_id: string; role?: string; status?: string }>>(
-    `/rest/v1/company_users?select=company_id,role,status&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=20`
-  ).catch(() => []);
-  if (memberships.some((membership) => isAdministrativeRole(membership.role))) return true;
-
-  const employees = await supabaseRequest<Array<{ metadata?: Record<string, unknown> }>>(
-    `/rest/v1/employees?select=metadata&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=20`
-  ).catch(() => []);
-  return employees.some((employee) => metadataAllowsCatalogAdmin(employee.metadata || {}));
-}
-
-async function supabaseRpc<T>(functionName: string, payload: Record<string, unknown>) {
-  return supabasePublicRead<T>(`/rest/v1/rpc/${functionName}`, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-}
-
-async function supabasePublicRead<T>(path: string, init: RequestInit = {}) {
-  const config = supabaseConfig();
-  if (!config.url || !config.anonKey) {
-    const missing = [
-      !config.url ? "SUPABASE_URL" : "",
-      !config.anonKey ? "SUPABASE_ANON_KEY" : ""
-    ].filter(Boolean).join(", ");
-    throw new Error(`Falta configuracion publica de Supabase para consultar referencias: ${missing}.`);
-  }
-  const response = await fetch(`${config.url}${path}`, {
-    ...init,
+    cache: "no-store",
     headers: {
       apikey: config.anonKey,
       Authorization: `Bearer ${config.anonKey}`,
@@ -377,82 +234,67 @@ async function supabasePublicRead<T>(path: string, init: RequestInit = {}) {
     }
   });
   const body = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok) {
-    const detail = body?.message || body?.error_description || body?.error || response.statusText;
-    throw new Error(`Supabase ${response.status}: ${detail}`);
-  }
+  if (!response.ok) throw supabaseFailure(response.status, body);
   return body as T;
 }
 
-async function resolveCompanyCandidates(body: PublicServiceRequest, request: NextRequest) {
-  const { publicCompanyId } = supabaseConfig();
-  const companyName = clean(body.company_name) || clean(request.nextUrl.searchParams.get("empresa"));
-  const candidates: string[] = [];
-
-  if (body.company_id && isUuid(clean(body.company_id))) candidates.push(clean(body.company_id));
-
-  if (companyName) {
-    const filter = `or=(name.ilike.*${encodeURIComponent(companyName)}*,legal_name.ilike.*${encodeURIComponent(companyName)}*,tax_id.eq.${encodeURIComponent(companyName)})&`;
-    const activeCompanies = await supabaseRequest<Array<{ id: string }>>(
-      `/rest/v1/companies?select=id&${filter}status=eq.active&order=created_at.asc&limit=5`
-    ).catch(() => []);
-    candidates.push(...activeCompanies.map((item) => item.id).filter(Boolean));
-    if (!activeCompanies.length) {
-      const namedCompanies = await supabaseRequest<Array<{ id: string }>>(
-        `/rest/v1/companies?select=id&${filter}order=created_at.asc&limit=5`
-      ).catch(() => []);
-      candidates.push(...namedCompanies.map((item) => item.id).filter(Boolean));
+async function supabaseUserRequest<T>(requestPath: string, token: string, init: RequestInit = {}) {
+  const config = supabaseConfig();
+  const response = await fetch(`${config.url}${requestPath}`, {
+    ...init,
+    cache: "no-store",
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...init.headers
     }
-  }
-
-  if (publicCompanyId && isUuid(publicCompanyId)) candidates.push(publicCompanyId);
-
-  const fallbackCompanies = await supabaseRequest<Array<{ id: string }>>(
-    "/rest/v1/companies?select=id&status=eq.active&order=created_at.asc&limit=10"
-  ).catch(() => []);
-  candidates.push(...fallbackCompanies.map((item) => item.id).filter(Boolean));
-
-  if (!candidates.length) {
-    const anyCompanies = await supabaseRequest<Array<{ id: string }>>(
-      "/rest/v1/companies?select=id&order=created_at.asc&limit=10"
-    ).catch(() => []);
-    candidates.push(...anyCompanies.map((item) => item.id).filter(Boolean));
-  }
-
-  if (!candidates.length) {
-    const referenceCompanies = await supabasePublicRead<Array<{ company_id?: string }>>(
-      `/rest/v1/service_references?select=company_id&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=50`
-    ).catch(() => []);
-    candidates.push(...referenceCompanies.map((item) => item.company_id || "").filter(Boolean));
-  }
-
-  return [...new Set(candidates)];
+  });
+  const body = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) throw supabaseFailure(response.status, body);
+  return body as T;
 }
 
-async function resolveCompanyId(body: PublicServiceRequest, request: NextRequest) {
-  return (await resolveCompanyCandidates(body, request))[0] || "";
+async function currentSupabaseUser(token: string) {
+  const config = supabaseConfig();
+  const response = await fetch(`${config.url}/auth/v1/user`, {
+    cache: "no-store",
+    headers: { apikey: config.anonKey, Authorization: `Bearer ${token}` }
+  }).catch(() => null);
+  if (!response?.ok) return null;
+  return await response.json().catch(() => null) as SupabaseUser | null;
 }
 
-async function resolveCompanyIdFromReference(referenceId: string) {
-  if (!isUuid(referenceId)) return "";
-  const references = await supabasePublicRead<Array<{ company_id?: string }>>(
-    `/rest/v1/service_references?select=company_id&id=eq.${encodeURIComponent(referenceId)}&active=eq.true&limit=1`
-  ).catch(() => []);
-  return references[0]?.company_id || "";
+async function proxyToApi<T>(apiPath: string, init: RequestInit = {}) {
+  const base = localApiUrl();
+  if (!base) throw new PublicServiceError("El API operativo no esta configurado para el formulario publico.", 503);
+  const response = await fetch(`${base}${apiPath}`, {
+    ...init,
+    cache: "no-store",
+    headers: { "Content-Type": "application/json", ...init.headers }
+  }).catch(() => null);
+  if (!response) throw new PublicServiceError("El API operativo no respondio la solicitud publica.", 502);
+  const payload = response.status === 204 ? null : await response.json().catch(() => null);
+  if (!response.ok) {
+    const record = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+    const message = clean(record.error) || clean(record.message) || "No fue posible procesar la solicitud publica.";
+    throw new PublicServiceError(message, response.status);
+  }
+  return payload as T;
 }
 
 async function resolveReferenceId(companyId: string, referenceId: string, productReference: string) {
   if (referenceId && isUuid(referenceId)) {
-    const references = await supabasePublicRead<Array<{ id: string }>>(
+    const rows = await supabasePublicRead<Array<{ id: string }>>(
       `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&id=eq.${encodeURIComponent(referenceId)}&limit=1`
     ).catch(() => []);
-    if (references[0]?.id) return references[0].id;
+    if (rows[0]?.id) return rows[0].id;
   }
   if (!productReference) return null;
-  const references = await supabasePublicRead<Array<{ id: string }>>(
+  const rows = await supabasePublicRead<Array<{ id: string }>>(
     `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&or=(code.ilike.*${encodeURIComponent(productReference)}*,name.ilike.*${encodeURIComponent(productReference)}*)&limit=1`
   ).catch(() => []);
-  return references[0]?.id || null;
+  return rows[0]?.id || null;
 }
 
 async function activeReferencesForCompany(companyId: string) {
@@ -461,71 +303,46 @@ async function activeReferencesForCompany(companyId: string) {
   );
 }
 
-async function activeReferencesWithoutCompany() {
-  return supabasePublicRead<PublicReferenceRow[]>(
-    `/rest/v1/service_references?select=id,company_id,code,name,category,brand,model&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
-  );
-}
-
-async function serviceTypesForCompany(companyId: string) {
+async function catalogMetadata(companyId: string) {
   const rows = await supabasePublicRead<Array<{ metadata?: Record<string, unknown> }>>(
     `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
   ).catch(() => []);
-  return normalizeServiceTypes(rows[0]?.metadata?.service_types).filter((item) => item.active);
+  return rows[0]?.metadata || {};
 }
 
-async function serviceStoresForCompany(companyId: string) {
-  const rows = await supabasePublicRead<Array<{ metadata?: Record<string, unknown> }>>(
-    `/rest/v1/service_references?select=metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
-  ).catch(() => []);
-  return normalizeServiceStores(rows[0]?.metadata?.service_stores).filter((item) => item.active);
-}
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     if (localDatabase()) {
-      const local = await localPublicCatalog(request);
-      if (!local?.references.length) return jsonError("No se encontro una empresa local con referencias activas para el formulario.", 404);
-      return NextResponse.json({ ok: true, company_id: local.tenant.id, references: local.references, service_types: local.serviceTypes, service_stores: local.serviceStores });
+      return NextResponse.json(await proxyToApi("/api/v1/public/services/catalog"));
     }
-    const companyIds = await resolveCompanyCandidates({}, request);
-    let companyId = companyIds[0] || "";
-    let references: Awaited<ReturnType<typeof activeReferencesForCompany>> = [];
-    if (companyId) {
-      for (const candidateId of companyIds) {
-        const rows = await activeReferencesForCompany(candidateId).catch(() => []);
-        if (rows.length || candidateId === companyId) {
-          companyId = candidateId;
-          references = rows;
-          if (rows.length) break;
-        }
-      }
-    }
-    if (!references.length) {
-      const rows = await activeReferencesWithoutCompany().catch(() => []);
-      companyId = rows[0]?.company_id || companyId;
-      references = companyId ? rows.filter((item) => item.company_id === companyId) : rows;
-    }
-    if (!companyId || !references.length) return jsonError("No se encontro una empresa con referencias activas para el formulario.", 404);
-    const [serviceTypes, serviceStores] = await Promise.all([serviceTypesForCompany(companyId), serviceStoresForCompany(companyId)]);
-    return NextResponse.json({ ok: true, company_id: companyId, references, service_types: serviceTypes, service_stores: serviceStores });
+    const companyId = publicCompanyId();
+    const [references, metadata] = await Promise.all([activeReferencesForCompany(companyId), catalogMetadata(companyId)]);
+    if (!references.length) return jsonError("No se encontro una empresa con referencias activas para el formulario.", 404);
+    return NextResponse.json({
+      ok: true,
+      company_id: companyId,
+      references,
+      service_types: normalizeServiceTypes(metadata.service_types).filter((item) => item.active),
+      service_stores: normalizeServiceStores(metadata.service_stores).filter((item) => item.active)
+    });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible consultar las referencias." }, { status: 500 });
+    return failure(error);
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as PublicServiceRequest;
+    const body = (await request.json().catch(() => null)) as PublicServiceRequest | null;
+    if (!body || typeof body !== "object") return jsonError("No se recibio la solicitud del formulario.");
     const requestedItems = Array.isArray(body.items) && body.items.length
       ? body.items
       : [{ reference_id: body.reference_id, service_type: body.service_type, quantity: 1, observation: body.notes }];
-    if (requestedItems.length > 20) return jsonError("Una orden admite maximo 20 solicitudes.");
-    const invalidItem = requestedItems.findIndex((item) => !clean(item.reference_id) || !clean(item.service_type) || !Number.isFinite(Number(item.quantity)) || Number(item.quantity) <= 0);
+    if (requestedItems.length > MAX_ITEMS) return jsonError(`Una orden admite maximo ${MAX_ITEMS} solicitudes.`);
+    const invalidItem = requestedItems.findIndex((item) => {
+      const quantity = Number(item.quantity);
+      return !clean(item.reference_id) || !clean(item.service_type) || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_ITEM_QUANTITY;
+    });
     if (invalidItem >= 0) return jsonError(`Completa referencia, servicio y cantidad de la solicitud ${invalidItem + 1}.`);
-    const firstItem = requestedItems[0];
-    body.reference_id = clean(firstItem.reference_id);
-    body.service_type = clean(firstItem.service_type);
     const required = [
       ["customer_name", "nombre completo"],
       ["customer_document", "cedula"],
@@ -533,7 +350,7 @@ export async function POST(request: NextRequest) {
       ["customer_phone_secondary", "telefono alterno"],
       ["customer_address", "direccion"],
       ["customer_neighborhood", "barrio"],
-      ["service_store", "almacen"],
+      ["service_store", "almacen"]
     ] as const;
     const missing = required.filter(([key]) => !clean(body[key])).map(([, label]) => label);
     if (missing.length) return jsonError(`Completa los campos obligatorios: ${missing.join(", ")}.`);
@@ -545,100 +362,87 @@ export async function POST(request: NextRequest) {
     }
 
     if (localDatabase()) {
-      const prisma = localPrisma();
-      const tenant = await localTenant(request, clean(body.company_id), clean(body.company_name));
-      if (!tenant) return jsonError("No se encontro una empresa local activa para registrar la solicitud.", 404);
-      const referenceIds = [...new Set(requestedItems.map((item) => Number(item.reference_id)))];
-      if (referenceIds.some((id) => !Number.isInteger(id) || id <= 0)) return jsonError("Selecciona referencias locales validas.");
-      const references = await prisma.serviceReference.findMany({ where: { tenant_id: tenant.id, id: { in: referenceIds }, active: true }, select: { id: true } });
-      if (references.length !== referenceIds.length) return jsonError("Una o mas referencias no estan activas para esta empresa.");
-      const serviceTypes = normalizeServiceTypes(localCatalog(tenant.config, "service_types")).filter((item) => item.active);
-      const normalizedItems = requestedItems.map((item, index) => ({
-        tenant_id: tenant.id,
-        reference_id: Number(item.reference_id),
-        service_type: serviceTypeCode(item.service_type),
-        quantity: Number(item.quantity),
-        observation: clean(item.observation),
-        display_order: index,
-        idempotency_key: `public-${Date.now()}-${index}`
-      }));
-      if (normalizedItems.some((item) => !serviceTypes.some((type) => type.code === item.service_type))) return jsonError("Selecciona tipos de servicio activos para esta empresa.");
-      const count = await prisma.serviceOrder.count({ where: { tenant_id: tenant.id } });
-      const order = await prisma.serviceOrder.create({
-        data: {
-          tenant_id: tenant.id,
-          number: `SOL-${new Date().getFullYear()}-${String(count + 1).padStart(5, "0")}`,
-          reference_id: normalizedItems[0].reference_id,
-          service_type: normalizedItems[0].service_type,
-          status: "agendado",
+      return NextResponse.json(await proxyToApi("/api/v1/public/services/orders", {
+        method: "POST",
+        body: JSON.stringify({
           customer_name: clean(body.customer_name),
-          customer_address: clean(body.customer_address),
+          customer_document: clean(body.customer_document),
           customer_phone: clean(body.customer_phone),
+          customer_phone_secondary: clean(body.customer_phone_secondary),
+          customer_email: clean(body.customer_email),
+          customer_address: clean(body.customer_address),
+          customer_neighborhood: clean(body.customer_neighborhood),
+          service_store: clean(body.service_store),
           invoice_number: clean(body.invoice_number),
-          notes: clean(body.notes) || "Solicitud creada por formulario publico local.",
-          metadata: { created_from: "public_service_request", public_request: true, requires_admin_completion: true, customer_document: clean(body.customer_document), customer_phone_secondary: clean(body.customer_phone_secondary), customer_email: clean(body.customer_email), customer_neighborhood: clean(body.customer_neighborhood), service_store: clean(body.service_store), request_count: normalizedItems.length },
-          items: { create: normalizedItems }
-        },
-        select: { id: true, number: true }
-      });
-      return NextResponse.json({ ok: true, order });
+          notes: clean(body.notes),
+          items: requestedItems.map((item) => ({
+            reference_id: clean(item.reference_id),
+            service_type: clean(item.service_type),
+            quantity: Number(item.quantity),
+            observation: clean(item.observation)
+          }))
+        })
+      }));
     }
 
-    let companyId = await resolveCompanyId(body, request);
-    if (!companyId) companyId = await resolveCompanyIdFromReference(clean(body.reference_id));
-    if (!companyId) return jsonError("No se encontro una empresa activa para registrar la solicitud.", 404);
-
-    const productReference = clean(body.product_reference) || clean(body.product_description);
-    const referenceId = await resolveReferenceId(companyId, clean(body.reference_id), productReference);
+    const companyId = publicCompanyId();
+    const referenceId = await resolveReferenceId(companyId, clean(body.reference_id), clean(body.product_reference) || clean(body.product_description));
     if (!referenceId) return jsonError("Selecciona una referencia activa para el producto que se va a instalar.");
-    const serviceTypes = await serviceTypesForCompany(companyId);
+    const metadata = await catalogMetadata(companyId);
     const serviceType = serviceTypeCode(clean(body.service_type) || "montaje");
+    const serviceTypes = normalizeServiceTypes(metadata.service_types).filter((item) => item.active);
     if (!serviceTypes.some((item) => item.code === serviceType)) return jsonError("Selecciona un tipo de servicio activo para esta empresa.");
-    const serviceStores = await serviceStoresForCompany(companyId);
-    const storeCode = serviceTypeCode(clean(body.service_store));
-    const store = serviceStores.find((item) => item.code === storeCode);
+    const store = normalizeServiceStores(metadata.service_stores).filter((item) => item.active)
+      .find((item) => item.code === serviceTypeCode(clean(body.service_store)));
     if (!store) return jsonError("Selecciona un almacen activo para esta empresa.");
-    const notes = clean(body.notes) || "Solicitud creada por formulario publico. Requiere revision administrativa.";
-    const metadata: Record<string, unknown> = {
-      created_from: "public_service_request",
-      public_request: true,
-      requires_admin_completion: true,
-      preorder_status: "agendado",
-      customer_document: clean(body.customer_document),
-      customer_phone_secondary: clean(body.customer_phone_secondary),
-      customer_email: clean(body.customer_email),
-      customer_neighborhood: clean(body.customer_neighborhood),
-      service_store: store.code,
-      service_store_label: store.label,
-      product_reference: clean(body.product_reference),
-      product_description: clean(body.product_description),
-      received_at: new Date().toISOString(),
-      items: requestedItems.map((item) => ({ reference_id: clean(item.reference_id), service_type: serviceTypeCode(item.service_type), quantity: Number(item.quantity), observation: clean(item.observation) }))
-    };
-    const inserted = await supabaseRpc<Array<{ id: string; number: string }>>("create_public_service_order", {
-      p_reference_id: referenceId,
-      p_service_type: serviceType,
-      p_customer_name: clean(body.customer_name),
-      p_customer_address: clean(body.customer_address),
-      p_customer_phone: clean(body.customer_phone),
-      p_invoice_number: clean(body.invoice_number) || null,
-      p_notes: notes,
-      p_metadata: metadata
+
+    const inserted = await supabasePublicRead<Array<{ id: string; number: string }>>("/rest/v1/rpc/create_public_service_order", {
+      method: "POST",
+      body: JSON.stringify({
+        p_reference_id: referenceId,
+        p_service_type: serviceType,
+        p_customer_name: clean(body.customer_name),
+        p_customer_address: clean(body.customer_address),
+        p_customer_phone: clean(body.customer_phone),
+        p_invoice_number: clean(body.invoice_number) || null,
+        p_notes: clean(body.notes) || "Solicitud creada por formulario publico. Requiere revision administrativa.",
+        p_metadata: {
+          created_from: "public_service_request",
+          public_request: true,
+          requires_admin_completion: true,
+          preorder_status: "agendado",
+          customer_document: clean(body.customer_document),
+          customer_phone_secondary: clean(body.customer_phone_secondary),
+          customer_email: clean(body.customer_email),
+          customer_neighborhood: clean(body.customer_neighborhood),
+          service_store: store.code,
+          service_store_label: store.label,
+          product_reference: clean(body.product_reference),
+          product_description: clean(body.product_description),
+          received_at: new Date().toISOString(),
+          items: requestedItems.map((item) => ({
+            reference_id: clean(item.reference_id),
+            service_type: serviceTypeCode(item.service_type),
+            quantity: Number(item.quantity),
+            observation: clean(item.observation)
+          }))
+        }
+      })
     });
 
     const order = inserted[0];
-    if (!order?.id) throw new Error("La solicitud fue enviada, pero no se recibio confirmacion de la orden.");
+    if (!order?.id) throw new PublicServiceError("La solicitud fue enviada, pero no se recibio confirmacion de la orden.", 502);
     return NextResponse.json({ ok: true, order });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible registrar la solicitud." }, { status: 500 });
+    return failure(error);
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    const authorization = request.headers.get("authorization") || "";
-    if (!await hasAdministrativeSession(authorization)) return jsonError("Sesion administrativa requerida para actualizar catalogos publicos.", 401);
-    const body = await request.json().catch(() => ({})) as { company_name?: string; service_types?: unknown; service_stores?: unknown; satisfaction_questions?: unknown };
+    const token = bearerToken(request);
+    if (!token) return jsonError("Sesion administrativa requerida para actualizar catalogos publicos.", 401);
+    const body = await request.json().catch(() => ({})) as { service_types?: unknown; service_stores?: unknown; satisfaction_questions?: unknown };
     const hasTypes = Array.isArray(body.service_types);
     const hasStores = Array.isArray(body.service_stores);
     const hasQuestions = Array.isArray(body.satisfaction_questions);
@@ -649,12 +453,34 @@ export async function PUT(request: NextRequest) {
     if (types && !types.some((item) => item.active)) return jsonError("Debe existir al menos un tipo de servicio activo.");
     if (stores && !stores.some((item) => item.active)) return jsonError("Debe existir al menos un almacen activo.");
     if (questions && !questions.some((item) => item.active)) return jsonError("Debe existir al menos una pregunta de satisfaccion activa.");
-    const companyIds = await resolveCompanyCandidates(body, request);
-    const companyId = companyIds[0] || "";
-    if (!companyId) return jsonError("No se encontro empresa para actualizar catalogos publicos.", 404);
-    const rows = await supabaseRequest<Array<{ id: string; metadata?: Record<string, unknown> }>>(
-      `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`
-    );
+
+    if (localDatabase()) {
+      // Local: el catalogo vive en el tenant de Prisma; el API aplica tenant + RBAC.
+      const authorization = { Authorization: `Bearer ${token}` };
+      const result: Record<string, unknown> = { ok: true };
+      if (types) {
+        result.service_types = await proxyToApi("/api/v1/services/service-types", { method: "PUT", headers: authorization, body: JSON.stringify({ types }) });
+      }
+      if (stores) {
+        result.service_stores = await proxyToApi("/api/v1/services/service-stores", { method: "PUT", headers: authorization, body: JSON.stringify({ stores }) });
+      }
+      if (questions) {
+        result.satisfaction_questions = await proxyToApi("/api/v1/services/satisfaction-questions", { method: "PUT", headers: authorization, body: JSON.stringify({ questions }) });
+      }
+      return NextResponse.json(result);
+    }
+
+    const companyId = publicCompanyId();
+    const user = await currentSupabaseUser(token);
+    if (!user?.id) return jsonError("La sesion no es valida para actualizar catalogos publicos.", 401);
+
+    const rows = await supabaseUserRequest<Array<{ id: string; metadata?: Record<string, unknown> }>>(
+      `/rest/v1/service_references?select=id,metadata&company_id=eq.${encodeURIComponent(companyId)}&code=eq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&limit=1`,
+      token
+    ).catch((error) => {
+      if (error instanceof PublicServiceError && error.status === 403) throw error;
+      return [] as Array<{ id: string; metadata?: Record<string, unknown> }>;
+    });
     const target = rows[0];
     const nextMetadata = {
       ...(target?.metadata || {}),
@@ -664,9 +490,11 @@ export async function PUT(request: NextRequest) {
       system_catalog: true,
       updated_at: new Date().toISOString()
     };
+
     if (!target?.id) {
-      await supabaseRequest("/rest/v1/service_references", {
+      await supabaseUserRequest("/rest/v1/service_references", token, {
         method: "POST",
+        headers: { Prefer: "return=minimal" },
         body: JSON.stringify({
           company_id: companyId,
           code: SERVICE_TYPES_REFERENCE_CODE,
@@ -681,11 +509,13 @@ export async function PUT(request: NextRequest) {
         })
       });
     } else {
-      await supabaseRequest(`/rest/v1/service_references?id=eq.${encodeURIComponent(target.id)}`, {
+      await supabaseUserRequest(`/rest/v1/service_references?id=eq.${encodeURIComponent(target.id)}`, token, {
         method: "PATCH",
+        headers: { Prefer: "return=minimal" },
         body: JSON.stringify({ metadata: nextMetadata })
       });
     }
+
     return NextResponse.json({
       ok: true,
       ...(types ? { service_types: types } : {}),
@@ -693,6 +523,6 @@ export async function PUT(request: NextRequest) {
       ...(questions ? { satisfaction_questions: questions } : {})
     });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof Error ? error.message : "No fue posible actualizar catalogos publicos." }, { status: 500 });
+    return failure(error);
   }
 }

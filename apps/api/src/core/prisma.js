@@ -2,48 +2,10 @@ const { AsyncLocalStorage } = require("node:async_hooks");
 const { PrismaClient } = require("@prisma/client");
 const { recordQuery } = require("./performanceContext");
 
+const { TENANT_MODELS } = require("./tenantModels");
+
 const tenantStorage = new AsyncLocalStorage();
 let prisma;
-
-const TENANT_MODELS = new Set([
-  "User", "Role", "Party", "Item", "Place", "Location", "ItemLocation",
-  "Transaction", "Movement", "Resource", "Document", "Event", "BOM",
-  "WorkOrder", "Employee", "WorkSchedule", "TimeRoute", "TimePunch",
-  "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer",
-  "RoutePreoperationalChecklistEvidence", "RoutePreoperationalFinding",
-  "RouteStartAuthorization", "RouteBlockEvent",
-  "ProcessedWorkday", "GpsPing", "WorkSession", "ActivityType", "WorkActivity", "ActivityEvidence",
-  "Vehicle", "ServiceOrder", "ServiceOrderItem", "ServiceOrderCorrection", "ServiceOrderCorrectionChange", "ServiceReference",
-  "VehicleDocument", "VehicleMasterAuditLog", "ServiceReferencePart", "ServiceIncident", "ServicePhoto",
-  "TransportTmsConfig", "TransportCarrier", "TransportDriver", "Sede", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportNeedLine",
-  "TransportPlan",
-  "TransportTrip", "TransportTripNeed", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt",
-  "TransportPod", "TransportSettlement", "TransportSettlementLine", "TransportGpsPosition", "TransportNotification",
-  "TransportSettlementType", "TransportSettlementPeriod", "TransportSettlementPackage", "TransportSettlementItem",
-  "TransportSettlementAdjustment", "TransportSettlementIssue", "TransportSettlementApproval", "TransportSettlementAccounting",
-  "EvidenceUploadAuthorization", "AuthorizationSession",
-  "Project", "ProjectCommitment", "ProjectDeliverable", "ProjectRisk", "ProjectResourceAssignment",
-  "ProjectComment", "ProjectEvidence", "ProjectAlert", "ProjectLog",
-  "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
-  "SalesInvoice", "SalesInvoiceLine", "CxcCabdoc", "CxcCuedoc", "CxcPayment", "RetentionMaster", "SkuValuation",
-  "PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine",
-  // Comercio (M-30): modulo aislado; sus tablas viven solo en comercio_*.
-  "ComercioProduct", "ComercioCustomer", "ComercioSale", "ComercioSaleItem", "ComercioCredit",
-  "ComercioInstallment", "ComercioPayment", "ComercioPurchase", "ComercioExpense",
-  "ComercioStockMovement", "ComercioSettings",
-  "ComercioPromotion", "ComercioPromotionCategory", "ComercioPromotionProduct", "ComercioPromotionSend",
-  "WarehouseTransfer", "WarehouseTransferLine", "InventoryAdjustment", "InventoryAdjustmentLine",
-  "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
-  "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
-  "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig",
-  // Recepcion y asignacion de facturas electronicas (Contabilidad).
-  "InvoiceSupplier", "InvoiceRecipient", "ReceivedInvoice", "ReceivedInvoiceDocument",
-  "ReceivedInvoiceAssignment", "ReceivedInvoiceChangeLog", "InvoiceProcessedEmail",
-  "InvoiceProcessingError", "InvoiceMailConfig",
-  // APEX Control: eventos, incidentes, notificaciones y reportes pueden ser
-  // globales (tenant_id NULL) cuando describen infraestructura compartida.
-  "ApexEvent", "ApexIncident", "ApexNotification", "ApexReportRun"
-]);
 
 const WRITE_OPS = new Set(["create", "createMany", "upsert"]);
 const READ_OPS = new Set(["findFirst", "findFirstOrThrow", "findMany", "count", "aggregate", "groupBy"]);

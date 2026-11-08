@@ -68,11 +68,11 @@ async function adminRoutes(fastify) {
 
   fastify.post("/admin/users", {
     preHandler: requireAdminCapability("users", "create")
-  }, async (request, reply) => reply.code(201).send(await service.createUser(request.user?.tenant_id, request.body, request.user?.id)));
+  }, async (request, reply) => reply.code(201).send(await service.createUser(request.user?.tenant_id, request.body, request.user?.id, request.user?.role?.name)));
 
   fastify.put("/admin/users/:id", {
     preHandler: requireAdminCapability("users", "edit")
-  }, async (request) => service.updateUser(request.user?.tenant_id, request.params.id, request.body, request.user?.id));
+  }, async (request) => service.updateUser(request.user?.tenant_id, request.params.id, request.body, request.user?.id, request.user?.role?.name));
 
   fastify.patch("/admin/users/:id/status", {
     preHandler: requireAdminCapability("users", "edit")
