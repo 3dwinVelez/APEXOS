@@ -33,37 +33,80 @@ const BASELINE_PATH = path.join(ROOT, "docs/qa/evidence/plan-candado-20261108/ba
 function parsePrismaSchema() {
   const schemaPath = path.join(ROOT, "apps/api/prisma/schema.prisma");
   const src = fs.readFileSync(schemaPath, "utf8");
-  const models = [];
+  const all = [];
+  const withTenantId = [];
   let currentModel = null;
-  let buf = [];
+  let hasTenantId = false;
 
   for (const line of src.split("\n")) {
-    const match = line.match(/^model\s+([A-Za-z0-9_]+)\s*\{/);
+    const match = line.match(/^\s*model\s+([A-Za-z0-9_]+)\s*\{/);
     if (match) {
       currentModel = match[1];
-      buf = [];
+      hasTenantId = false;
+      all.push(currentModel);
       continue;
     }
     if (currentModel) {
-      if (/^\}/.test(line)) {
-        if (/tenant_id\s+String/.test(buf.join("\n"))) {
-          models.push(currentModel);
-        }
+      // La llave de cierre puede estar indentada: exigir columna 0 descartaba
+      // modelos completos y media de menos.
+      if (/^\s*\}/.test(line)) {
+        if (hasTenantId) withTenantId.push(currentModel);
         currentModel = null;
-      } else {
-        buf.push(line);
+        hasTenantId = false;
+      } else if (/\btenant_id\s+String\b/.test(line)) {
+        hasTenantId = true;
       }
     }
   }
-  return models;
+  return { all, withTenantId };
 }
 
-function parseTenantModelsAllowlist() {
-  const prismaPath = path.join(ROOT, "apps/api/src/core/prisma.js");
-  const src = fs.readFileSync(prismaPath, "utf8");
-  const match = src.match(/const TENANT_MODELS = new Set\(\[([\s\S]*?)\]\);/);
-  if (!match) return [];
-  return (match[1].match(/"[A-Za-z0-9_]+"/g) || []).map((s) => s.slice(1, -1));
+function loadRuntimeTenantModels() {
+  // La fuente de verdad es el conjunto derivado del schema que usa el middleware.
+  // Se cruza contra el parseo del archivo porque un cliente Prisma generado viejo
+  // puede declarar un schema distinto al versionado.
+  const mod = require(path.join(ROOT, "apps/api/src/core/tenantModels.js"));
+  return { tenantModels: [...mod.TENANT_MODELS], globalModels: [...mod.GLOBAL_MODELS] };
+}
+
+function countPublicWebServiceRole() {
+  const publicDir = path.join(ROOT, "apps/web/app/api/public");
+  const apiDir = path.join(ROOT, "apps/web/app/api");
+  const scan = (dir) => {
+    const hits = [];
+    if (!fs.existsSync(dir)) return hits;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "node_modules") continue;
+        hits.push(...scan(full));
+      } else if (/\.(ts|tsx|mts|js)$/.test(entry.name)) {
+        const src = fs.readFileSync(full, "utf8");
+        if (/SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY/.test(src)) {
+          hits.push(path.relative(ROOT, full).replace(/\\/g, "/"));
+        }
+      }
+    }
+    return hits;
+  };
+  const publicHits = scan(publicDir);
+  const allHits = scan(apiDir);
+  const prismaPublic = [];
+  if (fs.existsSync(publicDir)) {
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (/\.(ts|tsx|mts|js)$/.test(entry.name)) {
+          if (/new PrismaClient|from "@prisma\/client"/.test(fs.readFileSync(full, "utf8"))) {
+            prismaPublic.push(path.relative(ROOT, full).replace(/\\/g, "/"));
+          }
+        }
+      }
+    };
+    walk(publicDir);
+  }
+  return { publicHits, allHits, prismaPublic };
 }
 
 function countRawQueries() {
@@ -97,6 +140,7 @@ function countRouteGuards() {
   let total = 0;
   const withoutAuth = [];
   const withoutPermission = [];
+  const publicRoutes = [];
 
   function balance(src, openIndex, open = "(", close = ")") {
     let depth = 0;
@@ -127,19 +171,33 @@ function countRouteGuards() {
   }
 
   const files = [];
+  const publicFiles = new Set();
   function walk(dir) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (/^routes.*\.js$/.test(entry.name)) files.push(full);
+      else if (/^public-routes.*\.js$/.test(entry.name)) {
+        // Las rutas publicas declaradas existen a proposito (vitrina, formulario anonimo).
+        // Se cuentan y se miden aparte: si se ignoraran, una ruta sin auth en un archivo
+        // llamado public-routes.js seria invisible para el candado.
+        files.push(full);
+        publicFiles.add(full);
+      }
     }
   }
   walk(modulesDir);
 
+  // El hook de un archivo publico no habla por su hermano routes.js ni al reves: los
+  // public-routes.js se registran en un scope aparte sin authenticate, asi que heredar el
+  // hook del modulo los pintaria como protegidos y el candado los volveria invisibles.
   const authHookByDir = new Map();
+  const authHookByFile = new Map();
   for (const file of files) {
     const src = fs.readFileSync(file, "utf8");
     const hasHook = /addHook\(\s*["']preHandler["'][\s\S]{0,160}?(authenticate|requireAuth)/.test(src);
+    authHookByFile.set(file, hasHook);
+    if (publicFiles.has(file)) continue;
     const dir = path.dirname(file);
     authHookByDir.set(dir, (authHookByDir.get(dir) || false) || hasHook);
   }
@@ -148,13 +206,15 @@ function countRouteGuards() {
     const src = fs.readFileSync(file, "utf8");
     const maps = localMaps(src);
     const dir = path.dirname(file);
+    const isPublicFile = publicFiles.has(file);
     const parentRoutes = path.join(path.dirname(dir), "routes.js");
-    const hasModuleAuth =
-      authHookByDir.get(dir) === true ||
-      (fs.existsSync(parentRoutes) &&
-        /addHook\(\s*["']preHandler["'][\s\S]{0,160}?(authenticate|requireAuth)/.test(
-          fs.readFileSync(parentRoutes, "utf8")
-        ));
+    const hasModuleAuth = isPublicFile
+      ? authHookByFile.get(file) === true
+      : authHookByDir.get(dir) === true ||
+        (fs.existsSync(parentRoutes) &&
+          /addHook\(\s*["']preHandler["'][\s\S]{0,160}?(authenticate|requireAuth)/.test(
+            fs.readFileSync(parentRoutes, "utf8")
+          ));
     const re = /fastify\.(get|post|put|patch|delete)\s*\(/g;
     let match;
     while ((match = re.exec(src)) !== null) {
@@ -169,12 +229,14 @@ function countRouteGuards() {
       const ref = `${method} ${routePath} (${rel})`;
       const hasAuth = hasModuleAuth || /authenticate|requireAuth|preHandler/.test(block);
       const hasPermission = PERMISSION_GUARDS.some((g) => block.includes(g));
-      if (!hasAuth) withoutAuth.push(ref);
-      else if (!hasPermission) withoutPermission.push(ref);
+      if (!hasAuth) {
+        if (publicFiles.has(file)) publicRoutes.push(ref);
+        else withoutAuth.push(ref);
+      } else if (!hasPermission) withoutPermission.push(ref);
     }
   }
 
-  return { total, withoutAuth, withoutPermission };
+  return { total, withoutAuth, withoutPermission, publicRoutes };
 }
 
 function countNpmAuditCriticalHigh() {
@@ -305,18 +367,23 @@ function checkEnforcementDefaults() {
 }
 
 function measure() {
-  const modelsWithTenantId = parsePrismaSchema();
-  const allowlist = parseTenantModelsAllowlist();
+  const schema = parsePrismaSchema();
+  const runtime = loadRuntimeTenantModels();
 
-  const outsideAllowlist = modelsWithTenantId.filter((m) => !allowlist.includes(m));
-  const inAllowlistWithoutColumn = allowlist.filter((m) => !modelsWithTenantId.includes(m));
+  const outsideFilter = schema.withTenantId.filter((m) => !runtime.tenantModels.includes(m));
+  const inFilterWithoutColumn = runtime.tenantModels.filter((m) => !schema.withTenantId.includes(m));
+  const globalNotInSchema = runtime.globalModels.filter((m) => !schema.all.includes(m));
+  const webServiceRole = countPublicWebServiceRole();
   const routes = countRouteGuards();
 
   return {
     timestamp: new Date().toISOString(),
     indicators: {
-      models_with_tenant_id_outside_allowlist: outsideAllowlist.length,
-      models_in_allowlist_without_tenant_id_column: inAllowlistWithoutColumn.length,
+      models_with_tenant_id_outside_allowlist: outsideFilter.length,
+      models_in_allowlist_without_tenant_id_column: inFilterWithoutColumn.length,
+      global_models_not_in_schema: globalNotInSchema.length,
+      public_web_routes_using_service_role: webServiceRole.publicHits.length,
+      public_web_routes_using_prisma_client: webServiceRole.prismaPublic.length,
       raw_sql_queries: countRawQueries(),
       routes_without_auth: routes.withoutAuth.length,
       npm_audit_critical_high: countNpmAuditCriticalHigh(),
@@ -327,11 +394,20 @@ function measure() {
     },
     informational: {
       routes_authenticated_without_permission_guard: routes.withoutPermission.length,
+      tenant_models_filtered: runtime.tenantModels.length,
+      global_models_declared: runtime.globalModels.length,
+      web_routes_using_service_role_total: webServiceRole.allHits.length,
+      public_routes_declared: routes.publicRoutes.length
     },
     details: {
       routes_total: routes.total,
-      outside_allowlist: outsideAllowlist,
-      in_allowlist_without_column: inAllowlistWithoutColumn,
+      outside_allowlist: outsideFilter,
+      in_allowlist_without_column: inFilterWithoutColumn,
+      global_models_not_in_schema: globalNotInSchema,
+      public_web_routes_using_service_role: webServiceRole.publicHits,
+      public_web_routes_using_prisma_client: webServiceRole.prismaPublic,
+      web_routes_using_service_role_total: webServiceRole.allHits,
+      public_routes_declared: routes.publicRoutes,
       routes_without_auth: routes.withoutAuth,
       routes_authenticated_without_permission_guard: routes.withoutPermission,
     },
@@ -342,6 +418,7 @@ function measure() {
 const BLOCKING = [
   "models_with_tenant_id_outside_allowlist",
   "models_in_allowlist_without_tenant_id_column",
+  "global_models_not_in_schema",
   "raw_sql_queries",
   "routes_without_auth",
   "npm_audit_critical_high",
@@ -356,6 +433,8 @@ const MUST_NOT_DROP = [
 ];
 // Indicators where a rise is the regression (we want them lower/zero).
 const MUST_NOT_RISE = [
+  "public_web_routes_using_service_role",
+  "public_web_routes_using_prisma_client",
   "object_src_not_none",
   "lax_default_credentials",
   "redis_without_password",

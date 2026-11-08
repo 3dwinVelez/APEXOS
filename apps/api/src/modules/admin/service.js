@@ -12,6 +12,43 @@ function badRequest(message) {
   return error;
 }
 
+function forbidden(message) {
+  const error = new Error(message);
+  error.statusCode = 403;
+  return error;
+}
+
+function preconditionRequired(message) {
+  const error = new Error(message);
+  error.statusCode = 428;
+  return error;
+}
+
+// El candado que ya protegia la edicion de roles (updateRole) vale igual para
+// asignar roles: sin esto, un usuario con `users:edit` podia ponerse a si mismo
+// —o a otro— en APEX_ADMIN y saltarse toda la matriz de permisos.
+function assertRoleAssignmentAllowed(role, actorRoleName) {
+  if (!role) return;
+  const isSuperAdminRole = role.name === "APEX_ADMIN" || role.metadata?.role_type === "superadmin";
+  if (isSuperAdminRole && actorRoleName !== "APEX_ADMIN") {
+    throw forbidden("Solo un superadministrador puede asignar el rol APEX_ADMIN.");
+  }
+}
+
+// Cambiar la clave de un usuario ya existente exige que el administrador pruebe
+// su propia clave: el permiso `users:edit` solo no debe bastar para apropiarse de
+// una cuenta. Se responde 428 cuando falta la prueba y 403 cuando no coincide.
+async function assertActorPassword(actorId, suppliedPassword) {
+  const currentPassword = String(suppliedPassword || "");
+  if (!currentPassword) {
+    throw preconditionRequired("Confirma tu clave actual para cambiar la clave de un usuario.");
+  }
+  const actor = actorId ? await prisma.user.findFirst({ where: { id: Number(actorId), active: true } }) : null;
+  if (!actor || !(await bcrypt.compare(currentPassword, actor.password))) {
+    throw forbidden("La clave del administrador no coincide.");
+  }
+}
+
 function normalizeTenantId(tenantId) {
   const value = String(tenantId ?? "").trim();
   if (!value) throw badRequest("Tenant requerido para operar administracion.");
@@ -1063,7 +1100,7 @@ async function listUsers(tenantId, query = {}) {
   });
 }
 
-async function createUser(tenantId, input, actorId = null) {
+async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
   tenantId = normalizeTenantId(tenantId);
   await ensureSystemRoles(tenantId);
   const { fullName, email } = validateRequiredUserInput(input, { requirePassword: true });
@@ -1084,6 +1121,7 @@ async function createUser(tenantId, input, actorId = null) {
     if (role?.metadata?.active === false) {
       throw badRequest("El rol seleccionado esta inactivo");
     }
+    assertRoleAssignmentAllowed(role, actorRoleName);
     const profileKind = normalizeProfileKind(input.profile_kind || input.user_kind || input.tipo_usuario || input.operational_classification || role.name);
     const userStatus = input.user_status || input.labor_status || input.estado_laboral || "activo";
     const active = !["inactivo", "suspendido", "retirado"].includes(userStatus) && input.active !== false && input.activo !== false;
@@ -1209,7 +1247,7 @@ async function createUser(tenantId, input, actorId = null) {
   }, { isolationLevel: "Serializable" }));
 }
 
-async function updateUser(tenantId, id, input, actorId = null) {
+async function updateUser(tenantId, id, input, actorId = null, actorRoleName = "") {
   tenantId = normalizeTenantId(tenantId);
   return prisma.runWithTenant(tenantId, async () => {
     const current = await prisma.user.findFirstOrThrow({ where: { id: Number(id), tenant_id: tenantId }, include: { employee: true } });
@@ -1233,11 +1271,17 @@ async function updateUser(tenantId, id, input, actorId = null) {
     const role = await prisma.role.findFirst({ where: { id: roleId, tenant_id: tenantId } });
     if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) throw badRequest("El rol seleccionado esta inactivo");
+    assertRoleAssignmentAllowed(role, actorRoleName);
+    const nextPassword = input.password || input.pas;
+    if (nextPassword) {
+      assertPasswordPolicy(nextPassword);
+      await assertActorPassword(actorId, input.current_password);
+    }
     const credentialSync = await syncSupabaseCredentials({
       userId: current.preferences?.supabase_user_id,
       currentEmail: current.email,
       nextEmail: email,
-      password: input.password || input.pas
+      password: nextPassword
     });
     const nameParts = fullName.split(/\s+/).filter(Boolean);
     const firstNames = cleanText(input.first_names) || (nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0] || "");
@@ -1251,9 +1295,8 @@ async function updateUser(tenantId, id, input, actorId = null) {
       role_id: roleId,
       active
     };
-    if (input.password || input.pas) {
-      assertPasswordPolicy(input.password || input.pas);
-      data.password = await bcrypt.hash(input.password || input.pas, 12);
+    if (nextPassword) {
+      data.password = await bcrypt.hash(nextPassword, 12);
     }
     await prisma.user.update({ where: { id: current.id }, data });
     await authorizationState.revokeAllUserSessions(current.id, "user_authorization_changed");
@@ -1402,7 +1445,10 @@ async function updateUserAccess(tenantId, id, input, actorId = null) {
     const metadata = current.employee?.metadata || {};
     const access = metadata.access || {};
     const nextSessionStatus = input.session_status || (input.blocked ? "bloqueada" : access.session_status || "sin_sesion");
-    if (input.password) assertPasswordPolicy(input.password);
+    if (input.password) {
+      assertPasswordPolicy(input.password);
+      await assertActorPassword(actorId, input.current_password);
+    }
     const credentialSync = await syncSupabaseCredentials({
       userId: current.preferences?.supabase_user_id,
       currentEmail: current.email,

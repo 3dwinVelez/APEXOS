@@ -1,0 +1,156 @@
+Plan candado — Fase 1 (C-01..C-04)
+Fecha: 2026-11-08
+Rama: desarrollo
+Alcance: aislamiento de empresa derivado del schema, candado de rol y re-autenticacion en
+administracion de usuarios, retiro del service role de la ruta publica de Servicios.
+Sin tokens, credenciales ni datos personales en este archivo.
+
+================================================================================
+C-01 / C-02 — El service role ya no vive en el formulario publico
+================================================================================
+
+apps/web/app/api/public/service-requests/route.ts
+  - Sin PrismaClient y sin SUPABASE_SERVICE_ROLE_KEY (grep 0 coincidencias en todo
+    apps/web/app/api/public/**).
+  - supabaseConfig() (linea 128) devuelve solo { url, anonKey }. Si falta, 503.
+  - publicCompanyId() (linea 145) toma APEXOS_PUBLIC_SERVICE_COMPANY_ID (alias
+    NEXT_PUBLIC_APEXOS_PUBLIC_COMPANY_ID). Sin id valido: 503. El body/query
+    company_id, company_name y ?empresa= son cosmeticos.
+  - Lectura en nube: consulta REST con apikey/bearer anon y company_id=eq.<allowlist>.
+  - Escritura de catalogos (PUT): exige JWT del administrador (linea 444, 401 sin
+    token), verifica la sesion contra /auth/v1/user (linea 475, 401 si invalida) y
+    deja decidir a RLS. Rechazo de RLS (401/403/42501) se traduce a 403 (linea 215).
+  - En local: delega en el API operativo (GET /api/v1/public/services/catalog,
+    POST /api/v1/public/services/orders) y reenvia el JWT al API para la edicion de
+    catalogos; el API aplica su RBAC existente (services:write).
+
+apps/api/src/modules/services/public-service.js (nuevo)
+  - publicTenantId() (linea 27): allowlist /^[A-Za-z0-9_-]{4,64}$/; sin valor o
+    invalida responde 503 EMPRESA_PUBLICA_NO_CONFIGURADA sin consultar la base.
+  - publicCatalog() proyecta 7 campos: id, code, name, category, brand, model,
+    company_id. No expone cost, stock ni tenant_id.
+  - createPublicOrder() valida que la referencia, el tipo y el almacen pertenezcan
+    a la empresa de la allowlist; el company_id del cuerpo se ignora.
+
+apps/api/src/modules/services/public-routes.js (nuevo) + apps/api/server.js:273
+  - Scope "services-public" sin hook de autenticacion. GET 60/min, POST 10/min,
+    bodyLimit 64 KB, AJV estricto (additionalProperties: false).
+
+Pruebas de rechazo medidas:
+  - GET sin allowlist -> 503 y cero consultas a la base.
+    apps/api/test/public-service-allowlist.test.js:107
+  - Allowlist con path traversal (../../etc/passwd) -> 503, sin busqueda implicita.
+    public-service-allowlist.test.js:118
+  - Referencia de otra empresa -> 400 REFERENCIA_INVALIDA.
+    public-service-allowlist.test.js:152
+  - company_id del cuerpo no cambia el tenant destinatario.
+    public-service-allowlist.test.js:162
+  - PUT sin JWT -> 401 y cero llamadas de red.
+    apps/web/test/public-service-requests-security.test.mjs:158
+  - PUT con sesion invalida -> 401 y cero escrituras.
+    public-service-requests-security.test.mjs:166
+  - PUT rechazado por RLS (42501) -> 403; el insert lleva la empresa de la
+    allowlist y el bearer del administrador.
+    public-service-requests-security.test.mjs:177
+  - La superficie publica no arrastra service role ni Prisma (estatico).
+    public-service-requests-security.test.mjs:109
+
+Resultado: node --test (api) 22/22 pass; npm run test:security (web) 10/10 pass.
+
+================================================================================
+C-03 — El filtro de empresa se deriva del schema, no de una lista a mano
+================================================================================
+
+apps/api/src/core/tenantModels.js (nuevo)
+  - TENANT_MODELS (linea 25) se calcula de Prisma.dmmf: todo modelo con columna
+    tenant_id queda filtrado. 179 modelos.
+  - GLOBAL_MODELS (linea 6) es corta y explicita (12 modelos sin columna).
+  - El modulo lanza al arrancar si un modelo global resulta tener tenant_id
+    (linea 31), lo que reabriria la fuga.
+apps/api/src/core/prisma.js:5,70 — consume TENANT_MODELS; la lista manual de ~180
+  nombres fue eliminada.
+
+Pruebas de contrato y de rechazo:
+  - Todo modelo con columna tenant_id esta en el filtro (0 faltantes).
+    apps/api/test/core-tenant-models.test.js:23
+  - Los 29 modelos que antes quedaban fuera (Treasury*, PurchaseImport*,
+    Subscription, ApexHeartReportSchedule, TransportPyg*, los 17 Commercial*)
+    ahora quedan dentro. core-tenant-models.test.js:29
+  - Ningun global tiene columna de empresa ni se solapa. :44
+  - ApexReportRun sale del filtro (los 5 modelos sin columna ya no reciben
+    where.tenant_id). :53
+  - El middleware estampa tenant_id al leer TreasuryBank, CommercialVisit y al
+    crear TransportPygConcept; un global no recibe la columna; sin contexto no
+    inventa el filtro. :76, :81, :88, :93
+
+Gate: models_with_tenant_id_outside_allowlist 29 -> 0;
+      models_in_allowlist_without_tenant_id_column 5 -> 0.
+
+================================================================================
+C-04 — Candado de rol y re-autenticacion para clave ajena
+================================================================================
+
+apps/api/src/modules/admin/service.js
+  - assertRoleAssignmentAllowed() (linea 29): solo APEX_ADMIN (o rol con
+    metadata.role_type = superadmin como objetivo) puede asignar APEX_ADMIN.
+    Aplicado en createUser (linea 1123) y updateUser (linea 1261).
+  - assertActorPassword() (linea 40): cambiar la clave de un usuario existente
+    exige la clave actual del administrador. Sin prueba -> 428
+    (preconditionRequired, linea 20); clave incorrecta -> 403. Aplicado en
+    updateUser (linea 1265) y updateUserAccess (linea 1437).
+  - El actor llega desde la ruta: apps/api/src/modules/admin/routes.js:71,74
+    pasan request.user.role.name.
+
+Pruebas de rechazo medidas (apps/api/test/admin-role-escalation.test.js):
+  - Admin de empresa no puede crear usuario con APEX_ADMIN. :163
+  - El bloqueo tambien aplica por metadata superadmin. :173
+  - APEX_ADMIN si puede crear APEX_ADMIN y la clave queda hasheada. :183
+  - Admin de empresa no puede elevar a APEX_ADMIN con updateUser. :194
+  - Cambiar clave ajena sin confirmar la propia -> 428. :204
+  - Clave de administrador incorrecta -> 403. :214
+  - Con la clave correcta se escribe el hash, nunca la clave en claro. :224
+  - /admin/users/:id/access aplica la misma re-autenticacion. :236
+
+================================================================================
+Gate del candado
+================================================================================
+
+  npm run security:candado:update   (refresco intencional de baseline)
+  npm run security:candado:block    exit 0, "Sin regresion frente a la baseline"
+  Detalle en gate-fase-1.txt.
+
+Indicadores que bajaron: 29 -> 0, 5 -> 0.
+Indicadores nuevos medidos: public_web_routes_using_service_role 0 y
+  public_web_routes_using_prisma_client 0; (info) public_routes_declared 3.
+
+================================================================================
+BLOQUEO declarado
+================================================================================
+
+BLOQUEO: el stack local esta caido (API :3000 y web :3001 no responden; `docker ps`
+  vacio) y APEXOS_PUBLIC_SERVICE_COMPANY_ID no esta configurado en config/local.env,
+  que no se modifica desde esta intervencion. Por eso la certificacion E2E del
+  formulario publico contra servicios reales NO se ejecuto: lo medido son las
+  pruebas de ruta y servicio arriba listadas, no un recorrido en navegador.
+  Prerrequisito de despliegue: definir APEXOS_PUBLIC_SERVICE_COMPANY_ID en cada
+  ambiente; sin ella, el formulario publico y la edicion de catalogos responden
+  503 EMPRESA_PUBLICA_NO_CONFIGURADA (falla cerrada, no abierta).
+
+BLOQUEO: la politika RLS anon `service_references_public_catalog_select` no filtra
+  por empresa (permite `active = true OR code='__SERVICE_TYPES__'`). La ruta web ya
+  consulta con company_id=eq.<allowlist>, pero quien tenga la llave anon podria leer
+  etiquetas de tipos de servicio de otras empresas directamente por REST. No se
+  corrige aqui: es cambio de RLS en la nube y exige autorizacion propia.
+
+================================================================================
+Hallazgos residuales (no corregidos en esta fase)
+================================================================================
+
+R-01 (Media) 7 rutas BFF administrativas de apps/web siguen usando service role:
+  app/api/v1/services/orders/[id], app/api/services/monitor-orders,
+  app/api/platform/company-sessions, app/api/platform/company-modules,
+  app/api/admin/users, app/api/platform/companies, app/api/admin/roles.
+  Quedan fuera de C-01/C-02 (ruta publica), pero son la misma clase de superficie.
+R-02 (Media) `routes_authenticated_without_permission_guard` sigue en 198 de 753
+  rutas autenticadas (informacional, sin regresion). Es materia de otra fase.
+R-03 (Media) La politica anon de service_references descrita en BLOQUEO.
