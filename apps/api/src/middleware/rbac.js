@@ -19,7 +19,8 @@ const MODULE_CODES = {
   "services.orders": ["M-26", "servicios", "services"],
   transport: ["M-14", "transporte", "transport"],
   "apex-heart": ["M-28", "apex_heart", "reportes", "apex-heart"],
-  "commercial-management": ["M-27", "gestion-comercial", "gestion_comercial", "commercial-management"]
+  "commercial-management": ["M-27", "gestion-comercial", "gestion_comercial", "commercial-management"],
+  comercio: ["M-30", "comercio", "commerce"]
 };
 
 function tenantHasModule(tenant, module) {

@@ -1,0 +1,560 @@
+{
+  "change_id": "comercio-main-20261108",
+  "certification": "comercio-nyvora-model-company-qa",
+  "environment": "QA",
+  "branch_under_test": "develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "supabase_project": "jbirkghkekuifgfsgquq",
+  "api_commit": "2cb064e2a896",
+  "expected_commit": "2cb064e2a896",
+  "model_company": {
+    "name": "NYVORA",
+    "tenant_id": "1d162ffd-bd27-4855-8141-b015388265fc",
+    "company_id": "5f713e65-a3c1-414b-9260-a411a5a2e2bd"
+  },
+  "generated_at": "2026-11-08T22:26:39.348Z",
+  "scope": {
+    "capability": "Comercio (M-30) con datos controlados de la empresa modelo NYVORA en el ambiente liberado: licencia de plataforma, rol autorizado, rol sin el permiso especial, usuario de otro tenant, empresa sin licencia, vitrina publica tematizada, bucket real y anuracion con reversa de inventario.",
+    "sujetos": {
+      "rol_autorizado": "comercio:read + comercio:write + comercio:approve (rol no administrativo creado por la corrida)",
+      "rol_sin_permiso_especial": "comercio:read solamente (escribir el tema, dar alta y anular deben salir 403 PERMISO_DENEGADO)",
+      "usuario_de_otro_tenant": "empresa efimera con M-30 habilitado, duena de sus propios documentos",
+      "empresa_sin_licencia": "empresa efimera sin M-30 en Tenant.active_modules"
+    }
+  },
+  "fixtures": {
+    "run_id": "20261108222639",
+    "ephemeral_tenants": [
+      "4e74f64c-3ba5-4bb6-a83e-79afb9719457",
+      "d07da1da-d572-4871-8fc8-d7c3fa30bba0"
+    ],
+    "users": [
+      639,
+      640,
+      641,
+      642
+    ],
+    "roles": [
+      930,
+      931
+    ],
+    "permissions": [
+      4088,
+      4086,
+      4087,
+      4089
+    ],
+    "nyvora_rows": [
+      {
+        "table": "comercio_settings",
+        "id": 15
+      },
+      {
+        "table": "comercio_products",
+        "id": 23
+      },
+      {
+        "table": "comercio_customers",
+        "id": 8
+      },
+      {
+        "table": "comercio_sales",
+        "id": 12
+      }
+    ]
+  },
+  "storage": {
+    "bucket": "comercio-assets",
+    "objects_created": [
+      "1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/23/466fcbc3-9641-440d-8962-de713659c8e4.png",
+      "1d162ffd-bd27-4855-8141-b015388265fc/comercio/storefront/banner-1794176829853-fb353c42-9fa8-4470-9ae5-deb1bf7f5586.png"
+    ],
+    "objects_left": 0
+  },
+  "baseline_nyvora": {
+    "comercio_promotion_sends": 0,
+    "comercio_promotion_products": 0,
+    "comercio_promotion_categories": 0,
+    "comercio_promotions": 0,
+    "comercio_payments": 0,
+    "comercio_installments": 0,
+    "comercio_credits": 0,
+    "comercio_sale_items": 0,
+    "comercio_sales": 0,
+    "comercio_purchases": 0,
+    "comercio_expenses": 0,
+    "comercio_stock_movements": 0,
+    "comercio_settings": 0,
+    "comercio_products": 0,
+    "comercio_customers": 0
+  },
+  "checks": [
+    {
+      "name": "el_api_desplegado_es_el_commit_esperado",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "commit": "2cb064e2a896",
+        "esperado": "2cb064e2a896",
+        "modulos": null
+      }
+    },
+    {
+      "name": "el_catalogo_de_plataforma_tiene_una_fila_comercio",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "filas": 1,
+        "route": "/dashboard/comercio",
+        "activo": true
+      }
+    },
+    {
+      "name": "company_modules_habilita_comercio_para_nyvora",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "enabled": true,
+        "source": "manual"
+      }
+    },
+    {
+      "name": "la_empresa_modelo_tiene_la_licencia_espejada_en_su_tenant",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "tenant": "NYVORA",
+        "modulos": 37,
+        "contiene_comercio": true
+      }
+    },
+    {
+      "name": "la_empresa_modelo_arranca_sin_documents_de_comercio",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "comercio_promotion_sends": 0,
+        "comercio_promotion_products": 0,
+        "comercio_promotion_categories": 0,
+        "comercio_promotions": 0,
+        "comercio_payments": 0,
+        "comercio_installments": 0,
+        "comercio_credits": 0,
+        "comercio_sale_items": 0,
+        "comercio_sales": 0,
+        "comercio_purchases": 0,
+        "comercio_expenses": 0,
+        "comercio_stock_movements": 0,
+        "comercio_settings": 0,
+        "comercio_products": 0,
+        "comercio_customers": 0
+      }
+    },
+    {
+      "name": "las_sesiones_de_la_empresa_modelo_son_de_nyvora",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "autorizado": true,
+        "limitado": true
+      }
+    },
+    {
+      "name": "el_rol_autorizado_lee_la_configuracion_de_nyvora",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "code": ""
+      }
+    },
+    {
+      "name": "la_empresa_modelo_configura_su_vitrina_publica",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "code": "",
+        "habilitado": true
+      }
+    },
+    {
+      "name": "la_configuracion_es_una_fila_propia_de_nyvora",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "filas": 1,
+        "codigo": "6geb45db"
+      }
+    },
+    {
+      "name": "la_superficie_privada_sin_sesion_es_401",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 401,
+        "code": "TOKEN_INVALIDO"
+      }
+    },
+    {
+      "name": "el_rol_autorizado_guarda_el_tema_de_la_vitrina",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "code": "",
+        "accent": "#1d4ed8"
+      }
+    },
+    {
+      "name": "el_tema_persiste_en_la_base_de_qa",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "preferences": "{\"theme\":{\"base\":\"#0b1220\",\"promo\":\"#be123c\",\"accent\":\"#1d4ed8\",\"subhead\":\"Certificacion de empresa modelo en el ambiente liberado\",\"headline\":\"Vitrina Nyvora 2"
+      }
+    },
+    {
+      "name": "el_tema_de_nyvora_llega_al_catalogo_publico",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "accent": "#1d4ed8"
+      }
+    },
+    {
+      "name": "la_vitrina_publica_inexistente_da_404_con_codigo",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404,
+        "code": "CATALOG_NOT_FOUND"
+      }
+    },
+    {
+      "name": "el_rol_sin_el_permiso_especial_si_lee",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "code": ""
+      }
+    },
+    {
+      "name": "el_rol_sin_el_permiso_especial_no_puede_escribir_el_tema",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "el_rol_sin_el_permiso_especial_no_puede_dar_alta_a_productos",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "la_negativa_de_permiso_no_persistio_nada",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "preferences": "{\"theme\":{\"base\":\"#0b1220\",\"promo\":\"#be123c\",\"accent\":\"#1d4ed8\",\"subhead\":\"Certificacion de empresa modelo en el ambient"
+      }
+    },
+    {
+      "name": "la_empresa_modelo_alta_un_producto",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": "P-0001",
+        "stock": 20
+      }
+    },
+    {
+      "name": "el_producto_se_reabre_con_los_mismos_datos",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "precio": 12000
+      }
+    },
+    {
+      "name": "la_edicion_del_producto_persiste",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "price": 13500
+      }
+    },
+    {
+      "name": "la_foto_del_producto_sube_al_bucket_real",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": "P-0001"
+      }
+    },
+    {
+      "name": "la_ficha_expone_la_url_publica_del_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "has_photo": true,
+        "url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/c"
+      }
+    },
+    {
+      "name": "la_foto_se_lee_sin_credenciales",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "el_banner_de_nyvora_se_sube_y_devuelve_url_publica",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": ""
+      }
+    },
+    {
+      "name": "el_banner_de_nyvora_se_ve_en_la_vitrina_publica",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "expuesto": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/c"
+      }
+    },
+    {
+      "name": "rechaza_un_banner_que_no_es_imagen",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 415,
+        "code": "VALIDACION"
+      }
+    },
+    {
+      "name": "la_empresa_modelo_alta_un_cliente",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": "C-0001"
+      }
+    },
+    {
+      "name": "la_vitrina_publica_muestra_el_producto_con_su_precio",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "price": 13500,
+        "base_price": 13500
+      }
+    },
+    {
+      "name": "la_vitrina_publica_no_revela_el_costo",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "claves": [
+          "code",
+          "name",
+          "category",
+          "unit",
+          "price",
+          "base_price",
+          "discount_percent",
+          "description",
+          "featured",
+          "available",
+          "photo_url"
+        ]
+      }
+    },
+    {
+      "name": "la_empresa_modelo_registra_una_venta",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "total": 27000,
+        "numero": "V-000001",
+        "code": ""
+      }
+    },
+    {
+      "name": "la_venta_descuenta_el_inventario",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "stock": 18
+      }
+    },
+    {
+      "name": "el_dashboard_de_nyvora_cuenta_su_propia_venta",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "ventas_recientes": 1
+      }
+    },
+    {
+      "name": "el_rol_sin_aprobacion_no_puede_anular",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 403,
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "el_rol_autorizado_anula_la_venta",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "estado": "voided",
+        "code": ""
+      }
+    },
+    {
+      "name": "la_anulacion_reversa_el_inventario",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "stock": 20
+      }
+    },
+    {
+      "name": "otro_tenant_no_ve_el_producto_de_nyvora",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404,
+        "code": "PRODUCT_NOT_FOUND"
+      }
+    },
+    {
+      "name": "otro_tenant_no_ve_la_venta_de_nyvora",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 404,
+        "code": "SALE_NOT_FOUND"
+      }
+    },
+    {
+      "name": "el_listado_del_otro_tenant_no_contiene_filas_de_nyvora",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "filas": 0
+      }
+    },
+    {
+      "name": "el_otro_tenant_tiene_su_propia_configuracion",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "ajeno": "sin_codigo",
+        "nyvora": "6geb45db"
+      }
+    },
+    {
+      "name": "la_empresa_sin_licencia_no_lee",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 403,
+        "code": "MODULO_NO_HABILITADO"
+      }
+    },
+    {
+      "name": "la_empresa_sin_licencia_ni_siquiera_tiene_fila_de_configuracion",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "filas": 0
+      }
+    },
+    {
+      "name": "la_empresa_sin_licencia_no_escribe",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 403,
+        "code": "MODULO_NO_HABILITADO"
+      }
+    },
+    {
+      "name": "nyvora_vuelve_a_su_linea_base_de_documents",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "sobrantes": []
+      }
+    },
+    {
+      "name": "ningun_objeto_de_la_corrida_sigue_en_el_origen_del_bucket",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "quedaron": []
+      }
+    },
+    {
+      "name": "ningun_usuario_efimero_sobrevive",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "quedaron": 0
+      }
+    },
+    {
+      "name": "ningun_rol_efimero_sobrevive",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "quedaron": 0
+      }
+    },
+    {
+      "name": "ninguna_empresa_efimera_sobrevive",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "quedaron": 0
+      }
+    }
+  ],
+  "status": "passed",
+  "summary": {
+    "total_checks": 48,
+    "fallidos": [],
+    "codigos_http": {
+      "200": 21,
+      "201": 5,
+      "401": 1,
+      "403": 5,
+      "404": 3,
+      "415": 1
+    },
+    "sin_5xx": true
+  }
+}

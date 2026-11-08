@@ -22,6 +22,7 @@ import {
   Route,
   Settings,
   ShieldCheck,
+  ShoppingCart,
   Truck,
   Users,
   Wrench
@@ -360,6 +361,17 @@ export const MODULES: ApexModule[] = [
     capabilities: ["Mi día", "Visitas", "Clientes", "Cotizaciones y pedidos", "Reportes gerenciales"],
     nextActions: ["Programar visita", "Abrir Mi día", "Consultar oportunidades"],
     icon: ContactRound
+  },
+  {
+    id: "M-30",
+    slug: "comercio",
+    name: "Comercio",
+    area: "Comercial",
+    status: "Base funcional",
+    summary: "Gestión autónoma para tiendas y pequeños comercios: productos con fotos, punto de venta, crédito con cuotas, cartera, compras de mercancia, gastos y reportes. Sus datos no se mezclan con los del ERP.",
+    capabilities: ["Productos e inventario propio", "Venta rápida y a crédito", "Cartera con abonos", "Compras, gastos y reportes"],
+    nextActions: ["Crear primer producto", "Registrar venta", "Consultar cartera"],
+    icon: ShoppingCart
   }
 ];
 

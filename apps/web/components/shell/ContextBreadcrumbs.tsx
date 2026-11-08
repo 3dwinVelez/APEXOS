@@ -7,6 +7,10 @@ import { usePathname } from "next/navigation";
 
 const labels: Record<string, string> = { dashboard: "Inicio", productos: "Productos", nuevo: "Nuevo", ordenes: "Órdenes", stock: "Stock", reportes: "Reportes", configuracion: "Configuración", maestros: "Maestros" };
 
+// Mismo segmento, distinto nombre de pantalla segun el modulo: /comercio/gastos se llama
+// "Ingresos y egresos" y /gastos-menores/gastos se llama "Gastos".
+const pathLabels: Record<string, string> = { "/dashboard/comercio/gastos": "Ingresos y egresos" };
+
 export function ContextBreadcrumbs() {
   const pathname = usePathname();
   const parts = pathname.split("/").filter(Boolean);
@@ -17,7 +21,7 @@ export function ContextBreadcrumbs() {
       {parts.slice(1).map((part, index) => {
         const href = `/${parts.slice(0, index + 2).join("/")}`;
         const moduleName = MODULES_BY_SLUG[part]?.name;
-        const label = moduleName || labels[part] || part.replace(/-/g, " ").replace(/^./, (value) => value.toUpperCase());
+        const label = moduleName || pathLabels[href] || labels[part] || part.replace(/-/g, " ").replace(/^./, (value) => value.toUpperCase());
         const current = index === parts.length - 2;
         return <span className="flex shrink-0 items-center gap-1" key={href}><ChevronRight size={12} /><Link aria-current={current ? "page" : undefined} className={current ? "font-semibold text-content-strong" : "hover:text-content-strong"} href={href}>{label}</Link></span>;
       })}

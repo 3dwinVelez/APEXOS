@@ -30,7 +30,8 @@ const MODULES = [
   "transport",
   "sales-invoice",
   "accounts-receivable",
-  "treasury"
+  "treasury",
+  "comercio"
 ];
 const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:3001", "http://127.0.0.1:3001"];
 
@@ -273,6 +274,9 @@ async function build() {
   registerRoutes("sales-invoice", require("./src/modules/sales-invoice/routes"), { prefix: "/api/v1" });
   registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });
   registerRoutes("treasury", require("./src/modules/treasury/routes"), { prefix: "/api/v1" });
+  registerRoutes("comercio", require("./src/modules/comercio/routes"), { prefix: "/api/v1" });
+  // Vitrina publica Comercio: scope aparte para que no herede los hooks auth/tenancy del modulo.
+  registerRoutes("comercio-public", require("./src/modules/comercio/public-routes"), { prefix: "/api/v1" });
   registerRoutes("commercial-management", require("./src/modules/commercial-management/routes"), { prefix: "/api/v1" });
   registerRoutes("apex-heart", require("./src/modules/apex-heart/routes"), { prefix: "/api/v1" });
   bootLog("Registered API modules");
@@ -354,28 +358,15 @@ async function build() {
   });
   bootLog("Registered health route");
 
+  const { mapApiError } = require("./src/core/api-error");
   fastify.setErrorHandler((error, request, reply) => {
     const requestId = request.id;
     reply.header("x-request-id", requestId);
-    const code = error.code;
-    if (code === "P2002") return reply.code(409).send({ error: "Registro duplicado", code: "DUPLICADO", request_id: requestId });
-    if (code === "P2025") return reply.code(404).send({ error: "No encontrado", code: "NO_ENCONTRADO", request_id: requestId });
-    if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
-      // details lleva diagnostico estructurado generado por el servidor (p. ej. los
-      // conflictos de MALLA_SOLAPADA): sin esto el cliente solo recibe una frase generica.
-      const details = error.details && typeof error.details === "object" && !Array.isArray(error.details) ? error.details : undefined;
-      return reply.code(error.statusCode).send({ error: error.message, code: error.code || "VALIDACION", request_id: requestId, ...(details ? { details } : {}) });
-    }
-    // Todo 503 con codigo es un fallo controlado "intente de nuevo", generado a proposito por un
-    // servicio (concurrencia de marcacion, de mallas, de ajuste de nomina). Si se listara codigo
-    // por codigo, el siguiente en apareceria caeria al 500 generico y volveria a verse como caida.
-    if (error.statusCode === 503 && error.code) {
-      return reply.code(503).send({ error: error.message, code: error.code, request_id: requestId });
-    }
-    if (error.statusCode === 400) return reply.code(400).send({ error: error.message, code: "VALIDACION", request_id: requestId });
-    if (error.statusCode === 429) return reply.code(429).send({ error: "Demasiadas solicitudes", code: "LIMITE_SOLICITUDES", request_id: requestId });
-    fastify.log.error({ err: error, requestId, url: request.url, method: request.method, userId: request.user?.id, tenantId: request.user?.tenant_id }, "Unhandled API error");
-    return reply.code(500).send({ error: "Error interno", code: "ERROR_INTERNO", request_id: requestId });
+    // La tabla de traduccion vive en core/api-error.js, que es lo que cubren las pruebas
+    // (levantar la app completa deja el proceso del test colgado de un handle).
+    const outcome = mapApiError(error, request, requestId);
+    if (outcome.log) fastify.log.error(outcome.log, "Unhandled API error");
+    return reply.code(outcome.statusCode).send(outcome.payload);
   });
 
   return fastify;

@@ -26,6 +26,11 @@ const TENANT_MODELS = new Set([
   "Payroll", "Account", "LedgerEntry", "CntCabdoc", "CntCuedoc", "CxpCabdoc", "CxpCuedoc", "CxpApplication", "PurchaseOrderInvoiceLine", "InventoryFamily", "InventoryFamilyAccounting", "ProductCost", "Payment",
   "SalesInvoice", "SalesInvoiceLine", "CxcCabdoc", "CxcCuedoc", "CxcPayment", "RetentionMaster", "SkuValuation",
   "WarehouseTransfer", "WarehouseTransferLine",
+  // Comercio (M-30): modulo aislado; sus tablas viven solo en comercio_*.
+  "ComercioProduct", "ComercioCustomer", "ComercioSale", "ComercioSaleItem", "ComercioCredit",
+  "ComercioInstallment", "ComercioPayment", "ComercioPurchase", "ComercioExpense",
+  "ComercioStockMovement", "ComercioSettings",
+  "ComercioPromotion", "ComercioPromotionCategory", "ComercioPromotionProduct", "ComercioPromotionSend",
   "BrainEvent", "BrainMetric", "CustomField", "AuditLog", "Workflow",
   "ApexHeartConfig", "ApexHeartAlertRule", "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "Category", "SensorReading", "OKR", "SoDRule", "EInvoice", "EInvoiceConfig"
@@ -42,6 +47,10 @@ const SOFT_DELETE = new Set([
   "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
   "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard",
   "TransportSettlementType",
+  // Comercio: solo los maestros (productos y clientes) tienen `active`. Ventas, creditos,
+  // cuotas, abonos, compras y gastos son documentos que se anulan por status ('voided'),
+  // nunca se borran (mismo criterio que los comprobantes contables).
+  "ComercioProduct", "ComercioCustomer",
   "Workflow", "CustomField", "EInvoiceConfig"
 ]);
 
@@ -54,7 +63,10 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
-  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem"
+  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem",
+  // Promociones: se archivan por status; solo el borrador se elimina fisicamente y sus
+  // categorias/productos/envios caen por ON DELETE CASCADE en la misma operacion.
+  "ComercioPromotion", "ComercioPromotionCategory", "ComercioPromotionProduct", "ComercioPromotionSend"
 ]);
 
 function currentTenantId() {

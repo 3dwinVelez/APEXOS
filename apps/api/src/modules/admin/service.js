@@ -31,6 +31,7 @@ const EXPORT_ACTIONS = new Set(["export"]);
 const TENANT_MODULE_CODES = {
   accounting: ["M-07", "contabilidad", "finance", "accounting"],
   admin: ["M-22", "administracion", "administracion_apex", "admin"],
+  comercio: ["M-30", "comercio", "commerce"],
   brain: ["AI-CORE", "apex-ai", "apex_ai", "brain"],
   hr: ["M-17", "talento-humano", "talento_humano", "hr"],
   time_tracking: ["M-17", "talento-humano", "talento_humano", "hr", "time_tracking", "marcaciones"],
@@ -104,7 +105,8 @@ const PERMISSION_CATALOG = [
   { key: "auditoria", label: "Auditoria", group: "sistema", module: "admin", submodule: "audit", actions: ["access", "view", "export", "download", "reports", "sensitive"], grants: grants("admin", ["access", "view", "export", "download", "reports", "sensitive"]) },
   { key: "notificaciones", label: "Notificaciones", group: "sistema", module: "admin", submodule: "notifications", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "execute", "configure"], grants: grants("admin", ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "execute", "configure"]) },
   { key: "ia", label: "IA / Asistente interno", group: "sistema", module: "brain", submodule: "assistant", actions: ["access", "view", "execute", "configure", "administer", "sensitive"], grants: grants("brain", ["access", "view", "execute", "configure", "administer", "sensitive"]) },
-  { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"], grants: grants("payroll", ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"]) }
+  { key: "nomina", label: "Nomina", group: "finanzas", module: "payroll", submodule: "payroll", actions: ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"], grants: grants("payroll", ["access", "view", "create", "edit", "approve", "export", "import", "sensitive", "reports"]) },
+  { key: "comercio", label: "Comercio", group: "comercial", module: "comercio", submodule: "commerce", actions: ["access", "view", "create", "edit", "approve", "void", "attach", "download", "export", "reports", "configure"], grants: grants("comercio", ["access", "view", "create", "edit", "approve", "void", "attach", "download", "export", "reports", "configure"]) }
 ].map(withPhysicalDeletePermission);
 
 function permissionPreset(keys, allowedActions) {

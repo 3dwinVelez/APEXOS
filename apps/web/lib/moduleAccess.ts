@@ -46,6 +46,7 @@ const moduleCodeBySlug: Record<string, string> = {
   cxc: "cxc",
   "facturacion-ventas": "facturacion",
   "comercio-exterior": "comercio_exterior",
+  comercio: "comercio",
   compras: "compras",
   contabilidad: "contabilidad",
   costos: "costos",
@@ -86,6 +87,7 @@ const permissionModulesBySlug: Record<string, string[]> = {
   cxc: ["accounts-receivable", "accounting"],
   crm: ["customers", "sales"],
   "comercio-exterior": ["imports", "exports"],
+  comercio: ["comercio"],
   tesoreria: ["treasury", "accounting"]
 };
 
@@ -105,6 +107,7 @@ const legacyPermissionKeysBySlug: Record<string, string[]> = {
   cxc: ["cxc", "contabilidad", "facturacion"],
   crm: ["clientes", "ventas"],
   "comercio-exterior": ["importaciones"],
+  comercio: ["comercio"],
   tesoreria: ["tesoreria", "contabilidad"]
 };
 
