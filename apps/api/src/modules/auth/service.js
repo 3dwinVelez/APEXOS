@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const { randomUUID } = require("node:crypto");
 const prisma = require("../../core/prisma");
 const { brainQueue } = require("../../fabric/queues");
 const { assertLoginAllowed, registerLoginFailure, registerLoginSuccess } = require("../../security/authGuard");
@@ -9,6 +10,10 @@ const authorizationState = require("../../security/authorizationState");
 
 const SEED_MODULES = ["M-01", "M-03", "M-04", "M-05", "M-07", "M-22"];
 const ALL_MODULES = Array.from({ length: 27 }, (_, index) => `M-${String(index + 1).padStart(2, "0")}`);
+
+// Hash de un valor aleatorio que nadie conoce: solo sirve para que el login de
+// un correo inexistente pague el mismo bcrypt.compare que uno real.
+const DUMMY_PASSWORD_HASH = "$2b$12$S36X7Uc8tRh0EPeuWmminO0Ne4xKFPVqp94hVC14zntOU4K1R3PLO";
 
 function publicUser(user) {
   const role = user.role || {};
@@ -117,22 +122,20 @@ async function registerTenant(input, fastify) {
 }
 
 async function login(input, fastify, request = {}) {
-  const email = input.email.toLowerCase();
+  const email = String(input.email || "").toLowerCase();
   assertLoginAllowed(email, request.ip);
   const user = await prisma.user.findFirst({
     where: { email },
     include: { role: { include: { permissions: true } } }
   });
 
-  if (!user || !(await bcrypt.compare(input.password, user.password))) {
+  // bcrypt corre siempre y la respuesta es la misma para correo inexistente,
+  // clave incorrecta y usuario desactivado: el login no puede ser un oraculo.
+  const matches = await bcrypt.compare(String(input.password || ""), user?.password || DUMMY_PASSWORD_HASH);
+  if (!user || !matches || !user.active) {
     registerLoginFailure(email, request.ip);
     const err = new Error("No fue posible iniciar sesion con esas credenciales.");
     err.statusCode = 401;
-    throw err;
-  }
-  if (!user.active) {
-    const err = new Error("Usuario desactivado");
-    err.statusCode = 403;
     throw err;
   }
 
@@ -178,8 +181,43 @@ async function refresh(input, fastify) {
     err.statusCode = 401;
     throw err;
   }
+
+  // Un refresh viejo solo se puede distinguir de uno revocado por logout si se
+  // mira por que se revoco la sesion. En modo observar se registra y se sigue;
+  // con enforcement encendido, validateAuthorization ya lo rechazo arriba.
+  const sessionRevoked = authorization.authorization_reason === "SESSION_REVOKED";
+  if (sessionRevoked) {
+    const revokedByRotation = authorization.authorization_session_revoke_reason === "refresh_rotated";
+    authorizationState.noteAuthEvent(
+      revokedByRotation ? "refresh_token_reused" : "refresh_session_revoked",
+      revokedByRotation ? "REFRESH_TOKEN_REUSED" : "REFRESH_SESSION_REVOKED",
+      payload,
+      { session_revoke_reason: authorization.authorization_session_revoke_reason || null }
+    );
+  }
+
+  const claims = {
+    id: user.id,
+    tenant_id: user.tenant_id,
+    uv: authorization.authorization_user_version,
+    tv: authorization.authorization_tenant_version
+  };
+
+  // Rotar sobre una sesion ya revocada la lavaria en una sesion nueva: el
+  // logout dejaria de valer para quien tenga el refresh. Se conserva el sid
+  // revocado y se devuelve el mismo refresh presentado, sin ganar otros 30
+  // dias; lo que se mide es el intento, no una sesion nueva.
+  if (sessionRevoked) {
+    return {
+      token: jwt.sign({ ...claims, role: user.role, sid: payload.sid }, { expiresIn: "8h" }),
+      refresh: input.refresh
+    };
+  }
+
+  const rotated = await authorizationState.rotateSession(user, authorization, payload.sid);
   return {
-    token: jwt.sign({ id: user.id, tenant_id: user.tenant_id, role: user.role, sid: payload.sid, uv: authorization.authorization_user_version, tv: authorization.authorization_tenant_version }, { expiresIn: "8h" })
+    token: jwt.sign({ ...claims, role: user.role, sid: rotated.id }, { expiresIn: "8h" }),
+    refresh: jwt.sign({ ...claims, sid: rotated.id, type: "refresh", jti: randomUUID() }, { expiresIn: "30d" })
   };
 }
 
