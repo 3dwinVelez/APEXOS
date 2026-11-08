@@ -1,0 +1,127 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "comercio-catalogo-20261107",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-comercio-catalogo-develop-20261107",
+  "base_commits": {
+    "develop": "2cb064e2a8968011e6497735921f8d36d9bd4768"
+  },
+  "target_head": "2cb064e2a8968011e6497735921f8d36d9bd4768",
+  "certified_commit": "094f8c02d1471fe5bb62b5b2c1915c31f34bbd87",
+  "candidate": {
+    "branch": "codex/qa-comercio-catalogo-develop-20261107",
+    "commits_over_baseline": 2,
+    "inventario": "7 A / 0 M / 0 D",
+    "nota": "el tip exacto lo registra el PR; el guard de CI recibe el candidato por linea de comando y lo contrasta contra origin/develop. Commit certificado 094f8c02d1471fe5bb62b5b2c1915c31f34bbd87 (las 5 rutas funcionales con su evidencia dentro) y commit de manifiestos el inmediato superior."
+  },
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "094f8c02d1471fe5bb62b5b2c1915c31f34bbd87",
+    "reconstruido_de": "d90aa4c9551b875e283c0e9d8bb8637f16e1390c",
+    "nota": "la migracion nacio en desarrollo (d90aa4c9) y el candidato se reconstruyo sobre el tip vigente de origin/develop (2cb064e2, merge PR #83) con esa unica ruta mas el certificador y su evidencia, porque el resto de la historia de desarrollo (paquete de gobernanza, torres de control, buzon y facturas recibidas) no pertenece a este alcance."
+  },
+  "change_intent": {
+    "summary": "Publicar el modulo Comercio (M-30) en el catalogo de modulos de plataforma para que Administracion APEX > Suscripciones lo muestre y se pueda habilitar por empresa. El codigo del modulo ya esta en develop desde 2cb064e2 y sus tablas y bucket existen; lo unico ausente era el renglon de public.modules, que es la unica fuente de la lista de activacion.",
+    "modules": [
+      "comercio",
+      "platform-administration",
+      "tenant-isolation",
+      "rbac",
+      "promotion-governance"
+    ]
+  },
+  "expected_changes": [
+    { "status": "A", "file": "supabase/migrations/20261107120000_comercio_module_catalog.sql" },
+    { "status": "A", "file": "scripts/certifications/comercio-module-catalog-qa.js" },
+    { "status": "A", "file": "docs/qa/evidence/comercio-catalogo-20261107/catalogo-qa.json" },
+    { "status": "A", "file": "docs/qa/evidence/comercio-catalogo-20261107/alta-y-activacion.txt" },
+    { "status": "A", "file": "docs/qa/evidence/comercio-catalogo-20261107/gates-candidato.txt" },
+    { "status": "A", "file": "docs/qa/manifests/comercio-catalogo-20261107-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/comercio-catalogo-20261107-preqa.json" }
+  ],
+  "allowed_paths": [
+    "supabase/migrations/20261107120000_comercio_module_catalog.sql",
+    "scripts/certifications/comercio-module-catalog-qa.js",
+    "docs/qa/evidence/comercio-catalogo-20261107/",
+    "docs/qa/manifests/comercio-catalogo-20261107-scope.json",
+    "docs/qa/manifests/comercio-catalogo-20261107-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "deletion_justification": "Ninguna. El candidato no borra rutas: el inventario es 7 A / 0 M / 0 D medido contra 2cb064e2.",
+  "certified_functional_paths": [
+    "supabase/migrations/20261107120000_comercio_module_catalog.sql",
+    "scripts/certifications/comercio-module-catalog-qa.js",
+    "docs/qa/evidence/comercio-catalogo-20261107/catalogo-qa.json",
+    "docs/qa/evidence/comercio-catalogo-20261107/alta-y-activacion.txt",
+    "docs/qa/evidence/comercio-catalogo-20261107/gates-candidato.txt"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "comercio_module_catalog_visibility",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../evidence/comercio-catalogo-20261107/alta-y-activacion.txt"
+      ]
+    },
+    {
+      "name": "company_module_enablement_and_tenant_isolation",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../evidence/comercio-catalogo-20261107/gates-candidato.txt"
+      ]
+    },
+    {
+      "name": "module_catalog_regression",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../../../supabase/migrations/20261011100000_petty_cash_module_catalog.sql"
+      ]
+    },
+    {
+      "name": "comercio_api_and_storefront_still_served",
+      "status": "passed",
+      "evidence": [
+        "../evidence/comercio-catalogo-20261107/catalogo-qa.json",
+        "../../../apps/api/test/comercio-service.test.js",
+        "../../../apps/web/test/comercio-storefront-theme.test.mjs"
+      ]
+    }
+  ],
+  "pending_certifications": [
+    "El espejo de Tenant.active_modules (ensureTenantMirror) corre con la sesion de un administrador de plataforma; la evidencia llega hasta company_modules, que es la entrada de esa cadena. Falta que el dueno confirme desde su sesion que Comercio aparece en el menu de Cliente Piloto QA al entrar.",
+    "Las 4 migraciones de Prisma del modulo restantes y el bucket en PRODUCCION no se tocan: este alcance es desarrollo -> develop y no autoriza main."
+  ],
+  "known_target_failures": [
+    "El catalogo de QA tiene cinco sort_order compartidos preexistentes (20 compras+apex_heart, 70 finanzas+contabilidad, 80 tesoreria+reportes, 90 costos+wms, 100 configuracion+presupuestos). No los introduce este cambio y la fila nueva usa 290, que esta libre."
+  ],
+  "observations": [
+    "La lista de activacion de Administracion APEX no sale de apps/web/lib/modules.ts sino de companies cross join public.modules (vista v_platform_company_module_access, supabase/migrations/20260517180000_platform_admin_and_scj_seed.sql:270-296). Un modulo puede estar desplegado, con tablas y API respondiendo, y seguir siendo inactivable por empresa si nadie le escribe su renglon de catalogo. Eso es exactamente lo que le paso al Comercio.",
+    "El modulo nace neutral: plan_modules y company_modules se siembran con enabled=false y solo dos empresas quedaron habilitadas, las dos autorizadas. Las otras siete conservan enabled=false, medido.",
+    "La migracion es idempotente (on conflict do update en modules, do nothing en plan_modules y company_modules), asi que volver a aplicarla no reactiva empresas que alguien apago despues."
+  ],
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-07",
+    "quality_gate_overridden": false,
+    "authorizations": [
+      "Terminar las tareas de llevar el modulo Comercio hasta la rama remota develop con sus tablas creadas y sus servicios habilitados, sin tocar nada mas.",
+      "Rama auxiliar + PR hacia develop como mecanismo de publicacion de esta migracion de catalogo.",
+      "Aplicar el contenido del catalogo en la base de QA con la clave de servicio (escritura autorizada expresamente en esta intervencion).",
+      "Habilitar Comercio en exactamente dos empresas: Cliente Piloto QA y Empresa Demo APEX-OS."
+    ],
+    "nota": "La autorizacion cubre desarrollo -> develop para este unico archivo de catalogo y su certificacion. No cubre main, ni force push, ni infraestructura, ni secretos, ni habilitar el modulo en produccion.",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "scoped_promotion_to_develop_only": true,
+      "qa_catalog_write_authorized": true,
+      "force_push": false,
+      "promotion_to_main": false
+    }
+  }
+}
