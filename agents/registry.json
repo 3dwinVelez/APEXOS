@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.31.0",
+      "version": "2.32.0",
       "updated_at": "2026-11-09",
-      "sha256": "b44715a16812f48a27432f881900161cfd464110171b74fb6e831d8b75773652",
+      "sha256": "b0341338c578dfd64af629657f3637d455771e817968c41a6a483cfd3710f39b",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -128,7 +128,8 @@
         "brief-registra-reparto-de-commits-y-limitaciones",
         "brief-de-promocion-con-deriva-declarada",
         "brief-candidato-main-con-compuerta-bloqueada",
-        "manifiesto-pendiente-versionado"
+        "manifiesto-pendiente-versionado",
+        "celda-construible-se-construye"
       ]
     },
     {
@@ -259,9 +260,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.37.0",
+      "version": "2.38.0",
       "updated_at": "2026-11-09",
-      "sha256": "79bcf1bdd7dbcf48a04a4bdc8e68369f33b4eda2eb37aadf7a0497a31901c5df",
+      "sha256": "d7ccf799381f68e5bb84235df2c5941a11d671df18fe4409a0bc9025f8fc73cb",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -309,7 +310,8 @@
         "certificacion-de-estados-con-servidor-real",
         "celda-navegador-pasa-el-guard-de-ruta",
         "inventario-sobre-el-indice-y-post-deploy-por-servicio",
-        "compuerta-anclada-al-build-desplegado"
+        "compuerta-anclada-al-build-desplegado",
+        "celda-con-sesion-se-cierra-construyendo-la-sesion"
       ]
     },
     {
@@ -354,9 +356,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.18.0",
-      "updated_at": "2026-11-08",
-      "sha256": "d63bee69fe3bbcae34425ecf1bffd31c57ded091e573bb4dc2dd06d83c7a50d4",
+      "version": "2.19.0",
+      "updated_at": "2026-11-09",
+      "sha256": "cdc29888bd96aa0e37a5fce5e76fcb2dc1a02c4851eb7d3de2abb5df3a5aee16",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -386,7 +388,8 @@
         "rojo-de-medicion-se-atribuye",
         "editar-fuente-no-espejo",
         "lo-publicado-se-retrotrae-a-desarrollo",
-        "incidente-de-produccion-distingue-despliegue"
+        "incidente-de-produccion-distingue-despliegue",
+        "sin-pendientes-construibles"
       ]
     }
   ],

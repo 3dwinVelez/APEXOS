@@ -1,0 +1,31 @@
+{
+  "run_id": "20261109202839-f61492",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "company_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+  "account": {
+    "email": "regresion-plataforma.20261109202839-f61492@certificacion.qa",
+    "supabase_user_id": "49322c26-d9c5-4699-b4d2-11e515246ae5"
+  },
+  "steps": {
+    "profile": 201,
+    "membership": 201,
+    "supabase_login": 200,
+    "mirror_me": "200",
+    "local_login": 200,
+    "regression": {
+      "exit_code": 0,
+      "output": "{\n  \"ok\": true,\n  \"environment\": \"QA\",\n  \"model_company\": null,\n  \"commit\": \"c72955d22f97\",\n  \"checks\": [\n    \"session\",\n    \"services_orders\",\n    \"services_references\",\n    \"hr_employees\",\n    \"inventory_items\",\n    \"accounting_accounts\"\n  ],\n  \"unauthorized_blocked\": true,\n  \"fixture\": null\n}"
+    },
+    "mirror_user": "id=677 active=true"
+  },
+  "cleanup": {
+    "mirror_status": "200",
+    "mirror_active_after": null,
+    "delete_membership": 204,
+    "delete_profile": 204,
+    "delete_auth_user": 200,
+    "remaining_company_users": 0,
+    "remaining_profiles": 0
+  },
+  "ok": true
+}

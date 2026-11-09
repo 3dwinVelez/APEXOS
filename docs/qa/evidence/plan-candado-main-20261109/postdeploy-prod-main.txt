@@ -1,0 +1,64 @@
+Post-despliegue de main en PROD — plan candado
+Medido: 2026-11-09 20:39–20:42 UTC (America/Bogota 15:39–15:42)
+Commit promovido: 4659292f4f23 (push db3e63a6..4659292f, fast-forward)
+Sin credenciales en este archivo. Solo ids de empresa y conteos.
+
+1. API de PROD — build servido
+   GET https://apexos-api-prod-production.up.railway.app/health
+   200 {"status":"OK","version":"2.0","modules":18,"commit":"4659292f4f23","service_certification":"products-v2"}
+   El commit coincide con el tip promovido; el bloque de seguridad está desplegado en PROD.
+
+2. API de PROD — catálogo público anónimo (allowlist)
+   GET /api/v1/public/services/catalog                -> 404 EMPRESA_PUBLICA_NO_ENCONTRADA
+   GET /api/v1/public/services/catalog?empresa=NYVORA -> 404 EMPRESA_PUBLICA_NO_ENCONTRADA
+   GET /api/v1/public/services/catalog?empresa=empresa piloto -> 404 EMPRESA_PUBLICA_NO_ENCONTRADA
+   GET /api/v1/public/services/catalog?empresa=inexistente   -> 404 EMPRESA_PUBLICA_NO_ENCONTRADA
+   Cuerpo idéntico salvo request_id: {"error":"La empresa del formulario publico no esta activa.","code":"EMPRESA_PUBLICA_NO_ENCONTRADA"}
+   Lectura: la allowlist manda (el parámetro no elige ni cambia la respuesta) y falla cerrado. No se sirve ninguna empresa ajena.
+
+   Causa medida, no supuesta. La variable APEXOS_PUBLIC_SERVICE_COMPANY_ID se declaró el 2026-11-09 con el id de
+   Supabase (companies.id) en los cuatro servicios de Railway, pero en el API el valor se resuelve contra
+   prisma.tenant.findFirst({ id }) (apps/api/src/modules/services/public-service.js:49), es decir contra "Tenant".id,
+   que es un id distinto.
+   Lectura de solo lectura contra la base de PROD (SELECT, sin escrituras):
+     Tenant.id                            | name                    | active
+     52db0658-a184-4fa1-a47b-c90b184914c3 | APEXOS Platform         | t
+     f7441347-fe00-4660-83cf-3f02035840d9 | Camila urrego           | t
+     67a5dcb8-100b-4a44-b5db-d024f2e57450 | IMPORTADORA SCJ SAS     | t
+     9a6ffc43-9aec-4b1b-8943-f098a4046b97 | NYVORA                  | t
+     71fd2545-2799-4468-8807-04cdf6339ef0 | NYVORA QA ISOLATION CONTROL | t
+   El id configurado (companies.id de SCJ, 6199e855-...) no existe como "Tenant".id en PROD, por eso 404.
+
+   Segundo hallazgo de datos, del mismo origen. El catálogo del API lee el almacén de Prisma, y ese almacén
+   no tiene el catálogo de SCJ:
+     SELECT tenant_id, count(*) FILTER (WHERE active), count(*) FROM "ServiceReference" GROUP BY 1
+     9a6ffc43-9aec-4b1b-8943-f098a4046b97 | 21 | 21   (NYVORA)
+   SCJ (67a5dcb8) tiene 0 referencias en Prisma. Aun corrigiendo la variable, el catálogo del API devolvería una
+   empresa sin referencias: el remedio completo exige escribir datos de negocio en PROD (sincronizar el catálogo
+   de SCJ desde el almacén de Supabase), no solo cambiar una variable.
+
+3. Web de PROD — formulario público (BFF de apps/web)
+   GET https://apexos-web-prod-production.up.railway.app/servicios/solicitar -> 200
+   GET .../api/public/service-requests               -> 200 company_id 6199e855-ed91-4db1-bf1f-6eb549868e1d, 18 referencias, 5 tipos, 63 almacenes
+   GET .../api/public/service-requests?empresa=NYVORA -> 200 misma empresa, 18 referencias
+   Lectura: el formulario público sigue operando y el parámetro no elige empresa. El BFF de la nube lee
+   service_references por companies.id con la llave anón (RLS de catálogo público), así que para ese servicio
+   el id de Supabase es el correcto: la misma variable tiene dos espacios de id según la capa.
+
+4. POST público del API (sin escritura)
+   POST /api/v1/public/services/orders {} -> 400 FST_ERR_VALIDATION (customer_name obligatorio)
+   La validación de esquema corre antes de resolver la empresa; no se creó ninguna preorden.
+
+5. Conclusión por servicio
+   API PROD: 4659292f4f23 desplegado y sano; rutas públicas del API cerradas por configuración (404), no por el código.
+   Web PROD: 200 y sirviendo SCJ con 18 referencias; el parámetro no elige empresa.
+   QA API: GET /api/v1/public/services/catalog -> 200 company_id cbbf3627-4336-4f23-95c6-1077414bcd17 con referencias
+           (en QA el id de Supabase y el de "Tenant" coinciden, por eso la misma variable sí resuelve).
+
+6. Remediación exacta (no ejecutada: es escritura de infraestructura y de datos de negocio en PROD)
+   a) APEXOS_PUBLIC_SERVICE_COMPANY_ID del servicio de API en PROD -> 67a5dcb8-100b-4a44-b5db-d024f2e57450 (Tenant.id de SCJ).
+   b) Sincronizar el catálogo de SCJ en el almacén de Prisma (0 referencias hoy) o declarar que la ruta pública del API
+      no se usa en la nube y que el BFF de apps/web es el único consumidor.
+   c) Unificar el espacio de id de la variable o validar al arranque que el valor resuelve, para que un valor correcto
+      para una capa no rompa la otra en silencio.
+   Requiere autorización expresa del dueño por tratarse de Railway y de datos de negocio en producción.

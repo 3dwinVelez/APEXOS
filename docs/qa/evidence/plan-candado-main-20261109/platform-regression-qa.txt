@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "model_company": null,
+  "commit": "c72955d22f97",
+  "checks": [
+    "session",
+    "services_orders",
+    "services_references",
+    "hr_employees",
+    "inventory_items",
+    "accounting_accounts"
+  ],
+  "unauthorized_blocked": true,
+  "fixture": null
+}

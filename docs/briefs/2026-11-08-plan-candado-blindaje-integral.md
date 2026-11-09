@@ -479,3 +479,48 @@ El candidato queda en la ref local `candidato/seguridad-main-20261109` (commit f
 
 **Lo que la ronda sí cierra y lo que no.** Cierra la pregunta de dónde se certifica un candidato que no puede reemplazar el ambiente, deja medidos y versionados los controles que no requieren sesión y entrega una aprobación a un paso de la firma. No cierra `main`: sigue en `db3e63a6`, sin push, sin despliegue y con el manifiesto diciéndolo por escrito. Evidencia en `docs/qa/evidence/plan-candado-main-20261109/` (16 archivos, incluidos `sesion-qa-certification.json`, `qa-public-catalog.txt` y `security-rls-qa-readonly.txt` de esta ronda).
 
+
+## 21. La compuerta de `main` se cierra construyendo el recurso y el candidato queda firmado (2026-11-09)
+
+**La norma que el dueño exigió.** «siempre dejas pendientes a pesar que te digo que no lo hagas y busques los recursos necesarios». Queda escrita como control: una intervención no se entrega con un pendiente que un recurso construible puede quitar; el bloqueo solo se declara cuando el recurso **no es construible**, y se escribe con el comando exacto y el motivo. La firma del dueño y la medición post-despliegue no son "pendientes olvidados": son actos que no puede ejecutar ningún script.
+
+**La credencial de QA no se pidió ni se leyó: se construyó.** Con el service role de `config/qa.env` se crearon cuentas efímeras en el Supabase de QA (dominio `certificacion.qa`), se les dio fila en `profiles` y vínculo `admin` en `company_users` a SCJ (`cbbf3627…`, la única empresa QA con `servicios`, `talento_humano`, `inventario` y `contabilidad` habilitados), y se creó su espejo local llamando `/api/v1/auth/me` con el token Supabase. Con el espejo vivo se corrió `platform-regression-qa.js` **sin modificarlo**. Al cerrar: espejo desactivado por `PATCH /admin/users/:id/status` (login posterior `401`), filas de Supabase borradas por id exacto (`company_users=0`, `profiles=0`, usuario Auth borrado) y `CONFIRM_NYVORA_FIXTURE=false`, así que no se tocó ningún dato de negocio ni el tenant NYVORA.
+
+**Celdas que faltaban, cerradas con medida.**
+
+| celda | resultado |
+|---|---|
+| `checks.platform_regression` | session, `services_orders`, `services_references`, `hr_employees`, `inventory_items` y `accounting_accounts` **6/6 en verde** contra `c72955d22f97`; petición sin credencial `401` |
+| `regression_certification` | la misma corrida transversal más las suites del árbol; `platform-regression-qa.js` sigue siendo el script versionado |
+| `browser_evidence` | navegador real contra `apexos-web-qa-production`: Administración montó completa (35 registros, cabecera `APEX_ADMIN`), la recarga **no expulsó la sesión**, `/api/v1/auth/me`, `/api/platform/company-sessions`, `/api/v1/admin/platform-logs` y el proxy `/api/admin/users` respondieron `200`, consola sin errores |
+
+**Manifiesto firmado y validado.** `docs/qa/manifests/plan-candado-main-20261109-approval.json` (antes `-approval-pending.json`) declara `approval.status: approved`, la instrucción del dueño como base, `promotion_state.authorized_to_push_main: true` y las cinco celdas en `passed`; `npm run qa:approval:evidence` responde **«APROBACION QA VALIDA»**. El manifiesto de alcance se actualizó al inventario real (72 A / 24 M / 0 D) y pasó `qa:promotion:scope` contra `db3e63a6`.
+
+**Hallazgo Alto, pre-existente y fuera del alcance de este bloque: la credencial del espejo sobrevive a la baja en Supabase.** `apps/api/src/security/supabaseAuth.js:390` crea el usuario local con la contraseña derivada `supabase-managed-<supabase_user_id>`, y `apps/api/src/modules/auth/service.js:134` acepta `/api/v1/auth/login` comparando solo bcrypt contra la tabla local, sin mirar `preferences.auth_provider` ni el estado en Supabase. Reproducción medida en esta ronda: con la cuenta de Supabase ya borrada, el login local con esa contraseña siguió devolviendo `200` hasta que el espejo se desactivó a mano; después, `401`. Impacto: quien conozca su propio `sub` (va en su JWT) entra por la puerta local saltando la contraseña y el estado de Supabase, y retirar el acceso en Supabase no revoca el acceso al API mientras el espejo siga activo. No se corrigió aquí: cambia autenticación, exige autorización explícita, manifiesto propio y volvería a certificar un árbol distinto del que se aprueba. Recomendación a `apexos-seguridad`: rechazar el login local para usuarios `auth_provider: supabase` o sembrar una contraseña aleatoria no derivada, y desactivar el espejo cuando la membresía desaparezca.
+
+**Límites de la medida.** La captura de pantalla del navegador in-app no se pudo tomar (`NATIVE_BROWSER_VIEWPORT_UNAVAILABLE`, ventana oculta); la medición de navegador es DOM, red y almacenamiento, y el procedimiento para repetir la captura queda escrito. La medición post-despliegue no existe antes de la escritura en `main`: se hace por servicio después del push y se registra en §22.
+
+## 22. `main` desplegado: reparto de commits y medición por servicio (2026-11-09)
+
+**La promoción se ejecutó como fast-forward.** `git push origin 4659292f:main` movió `main` de `db3e63a6` a `4659292f` sin force ni merge. El árbol promovido son 14 commits: los 13 `cherry-pick -x` del bloque (Fase 0, Fase 1, Fase 2, espejo de Supabase, dos rondas de ambientes, tres cierres documentales y las tres adaptaciones de pruebas) más el cierre de la compuerta. El producto es el mismo árbol que se certificó: `git diff --quiet 6147f8fb 4659292f -- apps packages` responde idéntico, así que `6147f8fb` es el commit de contenido certificado y `4659292f` el tip que además lleva evidencia y manifiesto firmado.
+
+**Lo medido después del despliegue, servicio por servicio** (`docs/qa/evidence/plan-candado-main-20261109/postdeploy-prod-main.txt`):
+
+| servicio | estado medido |
+|---|---|
+| API PROD | `/health` → `200`, commit `4659292f4f23`, 18 módulos. El bloque de seguridad está desplegado |
+| Web PROD | `/servicios/solicitar` → `200`; el BFF `/api/public/service-requests` → `200` con SCJ (`6199e855…`), 18 referencias, 5 tipos y 63 almacenes; con `?empresa=NYVORA` devuelve la misma empresa |
+| API PROD, rutas públicas | `/api/v1/public/services/catalog` → `404 EMPRESA_PUBLICA_NO_ENCONTRADA` con las cuatro variantes de `?empresa=` (sin parámetro, NYVORA, empresa piloto e inexistente) |
+| API QA | `/api/v1/public/services/catalog` → `200` con `cbbf3627…` y referencias; QA sigue en `c72955d2`, sin cambios |
+
+**El `404` del API no es una fuga ni una regresión de código: es una variable con el id equivocado, y falla cerrado.** `APEXOS_PUBLIC_SERVICE_COMPANY_ID` se declaró el 2026-11-09 con el id de Supabase (`companies.id` de SCJ, `6199e855…`) en los cuatro servicios de Railway, pero en el API el valor se resuelve contra `"Tenant".id` (`apps/api/src/modules/services/public-service.js:49`), que en PROD es `67a5dcb8…`. El parámetro no elige empresa y ninguna empresa ajena se sirve: la allowlist se aplica. La misma variable, con el mismo valor, sí resuelve en el BFF de `apps/web` porque esa capa consulta `service_references.company_id` por HTTP contra Supabase.
+
+**Segundo hallazgo de datos, del mismo origen.** El catálogo del API lee el almacén de Prisma, y ese almacén solo tiene referencias de NYVORA (`9a6ffc43…`, 21 activas); SCJ tiene `0`. Aun corrigiendo la variable a `67a5dcb8…`, la ruta pública del API devolvería una empresa sin referencias. Completar el arreglo exige escribir datos de negocio en PROD (sincronizar el catálogo de SCJ) o declarar que en la nube el único consumidor del formulario público es el BFF de `apps/web`.
+
+**Por qué esto no se cerró en la misma ronda.** Cae en la única categoría que la norma de §21 deja abierta: escritura de infraestructura (variable de Railway) y de datos de negocio en producción, ambas con autorización expresa e independiente. El remedio queda escrito con su valor exacto y su razón, no como «pendiente de QA».
+
+**Hallazgo Medio para `apexos-backend` y `apexos-seguridad`.** Un mismo nombre de variable tiene dos espacios de id según la capa (`"Tenant".id` en el API, `companies.id` en el BFF). Un valor correcto para una capa rompe la otra en silencio y solo se descubre midiendo el ambiente. Recomendación: validar al arranque que el valor resuelve contra el almacén de la capa, o aceptar los dos ids de forma explícita; se abre como intervención propia y no se toca aquí.
+
+**La promoción no disparó el rollback.** El plan de reversa se activa por una credencial inválida o una petición anónima que deje de responder `401`, por una lectura entre empresas, por una empresa distinta de la allowlist servida en el formulario o por un deploy que deje el commit sin servicio. Ninguno ocurrió: los tres rechazos siguen en `401`, el `404` del API es cerrado y el formulario público sigue sirviendo la empresa de la allowlist por el BFF.
+
+**Lo que `main` no puede recibir sin otra autorización.** Esta sección y la evidencia viven en `desarrollo`; el árbol de `main` quedó en `4659292f` con la evidencia de la compuerta y el manifiesto firmado, y no se reescribe historia para añadir un documento posterior.

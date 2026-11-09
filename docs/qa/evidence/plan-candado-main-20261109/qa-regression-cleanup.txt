@@ -1,0 +1,10 @@
+[regresion-plataforma] entorno=QA api=https://apexos-api-qa-production.up.railway.app commit=c72955d22f97
+[regresion-plataforma] cuenta_efimera=regresion-plataforma.20261109202839-f61492@certificacion.qa supabase_user_id=49322c26-d9c5-4699-b4d2-11e515246ae5 empresa=cbbf3627-4336-4f23-95c6-1077414bcd17 (SCJ)
+[regresion-plataforma] permisos=APEX_ADMIN via company_users.role=admin (membresia efimera, no toca datos de negocio de la empresa)
+[regresion-plataforma] controles=session, services_orders, services_references, hr_employees, inventory_items, accounting_accounts -> 6/6 en verde
+[regresion-plataforma] no_autorizado=/api/v1/services/orders sin credencial -> 401 (bloqueo conservado)
+[regresion-plataforma] espejo_local=user_id=677 creado por el camino Supabase y desactivado al cerrar (active=false)
+[regresion-plataforma] credencial_del_espejo_tras_cierre=POST /api/v1/auth/login -> 401
+[regresion-plataforma] limpieza_supabase=company_users=0 profiles=0 auth_user=borrado (204/204/200)
+[regresion-plataforma] filas_remanentes=0 en company_users y profiles; unica fila local es el espejo inactivo 677 (rastro de auditoria, no credencial valida)
+[regresion-plataforma] datos_de_negocio_tocados=0 (ninguna escritura sobre servicios, empleados, inventario ni contabilidad; CONFIRM_NYVORA_FIXTURE=false)
