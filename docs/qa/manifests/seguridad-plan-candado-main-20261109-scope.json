@@ -1,0 +1,484 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "plan-candado-main-20261109",
+  "source_branch": "desarrollo",
+  "target_branch": "main",
+  "promotion_method": "candidato reconstruido commit por commit sobre db3e63a6 y push directo del candidato; sin merge de rama",
+  "base_commits": {
+    "main": "db3e63a6ef108c2ec481097654603a68e4e64543"
+  },
+  "target_head": "db3e63a6ef108c2ec481097654603a68e4e64543",
+  "certified_commit": "6147f8fb8467e3f9010f1de03636031bfe149085",
+  "candidate": {
+    "branch": "detached en worktree aislado; ref local candidato/seguridad-main-20261109",
+    "commits_over_baseline": 13,
+    "inventario": "42 A / 24 M / 0 D en 66 rutas contra origin/main db3e63a6",
+    "nota": "main y develop no comparten historia: develop entero son 433 commits y 806 A / 59 D / 159 M. Este candidato aisla el bloque de seguridad, igual que la promocion a develop, para no arrastrar el backlog."
+  },
+  "candidate_source": {
+    "branch": "desarrollo (publicado en develop)",
+    "commit": "c72955d22f9749d628b6b67ab175deeaa1ad445c",
+    "commits": [
+      "1d47ba6f7502e5c8d3f59533a8542dd7cdb1e598",
+      "6147f8fb8467e3f9010f1de03636031bfe149085",
+      "740ea1a22c5cd7f9d99a48d6ab4cdf3b5573c36d",
+      "4f32a6ef2c3fe0b5661d44c6d1d42d2f91789995",
+      "953d91095fceba57b8cc20862f9422fc6799392b",
+      "b2e47f2de3f61524e4ec8d3dedcaa9908deb52a2",
+      "1e5b17ec61bbe377f81ebc5ee951d54414e0e362",
+      "d0d77d95314786360f8e8f7f08ccbdb6ccd2dc23",
+      "d00ffa86977c99a1f0475afd208e8db9eff2702b",
+      "c0e61e75ff79da6b00a9f6446e93bc6aca93f45e",
+      "913dc0e47b3fdedf4546839d91b81ec3139bb506",
+      "6ba90fe13911f5a1202c3dd86eee51573a3b944c"
+    ],
+    "nota": "Los 10 commits del bloque llegan de c72955d2 con su contenido; el undecimo (6147f8fb) adapta el contrato de tenant al esquema de main y el duodecimo versiona la evidencia local. El arbol de gobierno (agents/**, .qoder/skills/**) se excluye porque main no lo recibe en esta promocion, igual que en develop."
+  },
+  "change_intent": {
+    "summary": "Llevar a main el plan candado de seguridad ya publicado en develop: gates que fallan de verdad, filtro de empresa derivado del esquema Prisma, retiro del service role del formulario publico con allowlist por ambiente, candado de rol administrativo, revocacion medida en modo observar, rotacion de refresh, login uniforme, trustProxy acotado y el espejo Supabase que deja de reactivar cuentas y empresas desactivadas. No toca esquema, no trae migraciones, no toca infraestructura, secretos ni dependencias.",
+    "modules": [
+      "seguridad-autenticacion-sesion",
+      "rbac-tenancy",
+      "servicios-formulario-publico",
+      "administracion",
+      "gates-ci"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/src/core/tenantModels.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/src/security/trustProxy.js",
+    "apps/api/src/security/authorizationState.js",
+    "apps/api/src/modules/services/public-routes.js",
+    "apps/api/src/modules/services/public-service.js",
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/web/lib/sessionSecurity.ts",
+    "apps/web/app/api/public/service-requests/route.ts",
+    "scripts/certifications/auth-session-readiness.js",
+    "scripts/security/candado-gates.js",
+    "scripts/security/ci-audit-gate.js",
+    "docs/qa/evidence/plan-candado-main-20261109/gates-summary.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/certify-auth-session.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/public-form-local.json",
+    "docs/qa/evidence/plan-candado-main-20261109/api-suite.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/web-suite.txt"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": ".github/workflows/ci.yml"
+    },
+    {
+      "status": "M",
+      "file": ".gitignore"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/core/tenantModels.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/fabric/metrics.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/auth/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/services/public-routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/services/public-service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/services/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/authorizationState.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/supabaseAuth.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/security/trustProxy.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/admin-role-escalation.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/auth-session-hardening.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/authorization-observe.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/core-tenant-models.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/inventory-transfer-tenancy-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/public-service-allowlist.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/rbac-administrative-role.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/supabase-auth-mirror.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/trust-proxy.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/public/service-requests/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/sessionSecurity.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/module-access-role.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/next-server-stub-loader.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/public-service-requests-security.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "config/.env.example"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-08-plan-candado-blindaje-integral.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/servicios.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-20261108/baseline.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-20261108/gate-fase-0.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-20261108/gate-fase-1.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-20261108/security-ambientes.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-20261108/security-fase-1.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-20261108/security-fase-2.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-20261108/security-formulario-publico.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/api-suite-baseline-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/api-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/certify-auth-session.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/gates-summary.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/prisma-validate.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/public-form-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/qa-gate-pending.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/security-candado.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/security-ci-audit.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/security-rls-local.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/security-rls-qa-readonly.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/web-lint.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/web-suite-baseline-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/web-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/web-typecheck.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/seguridad-plan-candado-main-20261109-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "docs/SECURITY_CHANGELOG.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/SECURITY_THREAT_MODEL.md"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/auth-session-readiness.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/security/audit-allowlist.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/security/candado-gates.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/security/ci-audit-gate.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/security/inspect-rls-deployment.js"
+    }
+  ],
+  "allowed_paths": [
+    ".github/workflows/ci.yml",
+    ".gitignore",
+    "apps/api/server.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/core/tenantModels.js",
+    "apps/api/src/fabric/metrics.js",
+    "apps/api/src/modules/admin/routes.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/auth/service.js",
+    "apps/api/src/modules/services/public-routes.js",
+    "apps/api/src/modules/services/public-service.js",
+    "apps/api/src/modules/services/service.js",
+    "apps/api/src/security/authorizationState.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/src/security/trustProxy.js",
+    "apps/api/test/admin-role-escalation.test.js",
+    "apps/api/test/auth-session-hardening.test.js",
+    "apps/api/test/authorization-observe.test.js",
+    "apps/api/test/core-tenant-models.test.js",
+    "apps/api/test/inventory-transfer-tenancy-contract.test.js",
+    "apps/api/test/public-service-allowlist.test.js",
+    "apps/api/test/rbac-administrative-role.test.js",
+    "apps/api/test/supabase-auth-mirror.test.js",
+    "apps/api/test/trust-proxy.test.js",
+    "apps/web/app/api/public/service-requests/route.ts",
+    "apps/web/app/dashboard/administracion/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/sessionSecurity.ts",
+    "apps/web/package.json",
+    "apps/web/test/module-access-role.test.mjs",
+    "apps/web/test/next-server-stub-loader.mjs",
+    "apps/web/test/public-service-requests-security.test.mjs",
+    "config/.env.example",
+    "docs/SECURITY_CHANGELOG.md",
+    "docs/SECURITY_THREAT_MODEL.md",
+    "docs/briefs/2026-11-08-plan-candado-blindaje-integral.md",
+    "docs/project/modulos/servicios.md",
+    "docs/qa/evidence/plan-candado-20261108/baseline.json",
+    "docs/qa/evidence/plan-candado-20261108/gate-fase-0.txt",
+    "docs/qa/evidence/plan-candado-20261108/gate-fase-1.txt",
+    "docs/qa/evidence/plan-candado-20261108/security-ambientes.txt",
+    "docs/qa/evidence/plan-candado-20261108/security-fase-1.txt",
+    "docs/qa/evidence/plan-candado-20261108/security-fase-2.txt",
+    "docs/qa/evidence/plan-candado-20261108/security-formulario-publico.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/",
+    "docs/qa/evidence/plan-candado-main-20261109/api-suite-baseline-main.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/api-suite.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/certify-auth-session.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/gates-summary.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/prisma-validate.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/public-form-local.json",
+    "docs/qa/evidence/plan-candado-main-20261109/qa-gate-pending.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/security-candado.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/security-ci-audit.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/security-rls-local.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/security-rls-qa-readonly.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/web-lint.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/web-suite-baseline-main.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/web-suite.txt",
+    "docs/qa/evidence/plan-candado-main-20261109/web-typecheck.txt",
+    "docs/qa/manifests/seguridad-plan-candado-main-20261109-scope.json",
+    "package.json",
+    "scripts/certifications/auth-session-readiness.js",
+    "scripts/security/audit-allowlist.json",
+    "scripts/security/candado-gates.js",
+    "scripts/security/ci-audit-gate.js",
+    "scripts/security/inspect-rls-deployment.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "jwt_estricto_y_rechazos_medidos",
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-main-20261109/certify-auth-session.txt",
+        "../../../apps/api/test/auth-session-hardening.test.js",
+        "../evidence/plan-candado-main-20261109/security-candado.txt"
+      ],
+      "medida": "certify:auth-session contra la API del candidato en 127.0.0.1:6147f8fb: cinco rechazos (sin token, token basura, alg none, clave incorrecta, firma alterada) responden 401; login, consulta autenticada y sesion pasan. Revocacion measured=true, enforced=false: modo observar, no exigida en esta ronda."
+    },
+    {
+      "name": "aislamiento_por_tenant_derivado_del_esquema",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/core-tenant-models.test.js",
+        "../evidence/plan-candado-main-20261109/api-suite.txt",
+        "../evidence/plan-candado-main-20261109/security-candado.txt"
+      ],
+      "medida": "models_with_tenant_id_outside_allowlist=0 y models_in_allowlist_without_tenant_id_column=0; 157 modelos con tenant_id filtrados y 12 globales declarados. Deriva declarada: global_models_not_in_schema 0 -> 3 (ApexComponent, ApexHealthSample, ApexReportRun) y TransportPyg* ausentes del esquema de main; por eso el contrato nombrado se acota y la sonda de creacion usa un modelo que main tiene (commit 6147f8fb). La derivacion completa (todo modelo con tenant_id) sigue cubriendo el esquema real."
+    },
+    {
+      "name": "formulario_publico_sin_empresa_elegida_por_el_cliente",
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-main-20261109/public-form-local.json",
+        "../../../apps/api/test/public-service-allowlist.test.js",
+        "../../../apps/web/test/public-service-requests-security.test.mjs"
+      ],
+      "medida": "6/6 sondas anonimas en vivo: el catalogo fija la empresa de APEXOS_PUBLIC_SERVICE_COMPANY_ID, no publica costo, stock ni tenant_id; un body con company_id ajeno llega al handler (AJV descarta el campo) y la referencia de otro tenant se rechaza con 400 REFERENCIA_INVALIDA. No se creo ninguna orden."
+    },
+    {
+      "name": "rol_administrativo_y_reautenticacion",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/admin-role-escalation.test.js",
+        "../../../apps/api/test/rbac-administrative-role.test.js",
+        "../../../apps/web/test/module-access-role.test.mjs",
+        "../../../apps/api/test/supabase-auth-mirror.test.js"
+      ],
+      "medida": "El alta de usuario rechaza un rol no administrativo y exige re-autenticacion; el espejo Supabase deja de reactivar cuentas y empresas desactivadas. Las pruebas corren en la suite completa del candidato: 547 pruebas, 0 fallos atribuibles."
+    },
+    {
+      "name": "sin_regresiones_atribuibles_al_candidato",
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-main-20261109/api-suite.txt",
+        "../evidence/plan-candado-main-20261109/api-suite-baseline-main.txt",
+        "../evidence/plan-candado-main-20261109/web-suite.txt",
+        "../evidence/plan-candado-main-20261109/web-suite-baseline-main.txt",
+        "../evidence/plan-candado-main-20261109/web-typecheck.txt",
+        "../evidence/plan-candado-main-20261109/web-lint.txt"
+      ],
+      "medida": "API: 547 pruebas, 542 pasan, 2 fallan, 3 saltadas (baseline main db3e63a6: 500/495/2/3; las mismas 2 fallas). Web: 458 pruebas, 457 pasan, 1 falla (baseline: 445/444/1; la misma falla). typecheck y lint en 0 errores."
+    }
+  ],
+  "promotion_state": {
+    "authorized_to_push_main": false,
+    "reason": "La aprobacion funcional de QA sobre el commit exacto no se ejecuto: exige desplegar el candidato en QA y reemplazar el despliegue actual (c72955d2). Ver docs/qa/evidence/plan-candado-main-20261109/qa-gate-pending.txt.",
+    "required_before_push": "npm run qa:approval:evidence -- <manifiesto de aprobacion> con checks functional/error/support_scripts/regression/platform_regression, certificacion E2E, NYVORA, navegador, rollback_plan controlled_revert con previous_main_commit db3e63a6 y aprobacion firmada."
+  },
+  "authorization": {
+    "granted_by": "Edwin (dueno del producto)",
+    "granted_at": "2026-11-09",
+    "instruction": "procede con la implementacion certificada hacia el main y cierra el caso; ante el bloqueo, 'Preparar el candidato ahora'",
+    "covers": [
+      "Reconstruir el bloque de seguridad sobre origin/main y resolver sus conflictos.",
+      "Certificarlo en local con evidencia versionada y manifiesto de alcance v2."
+    ],
+    "does_not_cover": [
+      "Push, merge o despliegue a main: main sigue intocable sin aprobacion funcional de QA.",
+      "Desplegar el candidato en QA o reemplazar el despliegue actual.",
+      "Migraciones remotas, cambios de infraestructura o secretos en Railway/Supabase/Vercel.",
+      "Encender la revocacion obligatoria de sesion (modo observar medido, no exigido)."
+    ]
+  },
+  "post_deploy_verification_required": [
+    "Leer /health del ambiente de QA y contrastar que el commit desplegado es el candidato.",
+    "Repetir la sonda del formulario publico contra QA y confirmar que la allowlist desplegada fija una sola empresa.",
+    "Mientras /health muestre otro commit, ni la aprobacion ni la promocion se declaran verificadas."
+  ]
+}
