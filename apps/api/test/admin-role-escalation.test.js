@@ -70,6 +70,11 @@ function loadSubject({ role = ordinaryRole(), actor = null } = {}) {
   const target = targetUser();
 
   const prisma = {
+    // createUser envuelve el alta en $transaction; el doble debe exponer la misma
+    // superficie para que la prueba mida el candado de rol y no el cliente.
+    $transaction(fn) {
+      return fn(prisma);
+    },
     runWithTenant(_tenantId, fn) {
       return fn();
     },
@@ -112,6 +117,11 @@ function loadSubject({ role = ordinaryRole(), actor = null } = {}) {
       }
     },
     employee: {
+      // El alta en develop vincula el usuario con un empleado existente; el doble
+      // responde vacio para no fabricar un vinculo que la prueba no esta midiendo.
+      async findMany() {
+        return [];
+      },
       async update(args) {
         calls.employeeUpdates.push(args);
         return target.employee;
