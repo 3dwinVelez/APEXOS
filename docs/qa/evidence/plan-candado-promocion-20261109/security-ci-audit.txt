@@ -1,0 +1,2 @@
+[ci-audit] Tolerados por allowlist vigente (20): @eslint/config-array (high), @eslint/eslintrc (high), @fastify/busboy (high), brace-expansion (high), chromium-bidi (high), concurrently (critical), decode-uri-component (high), eslint (high), fast-uri (high), minimatch (high), minio (high), next (critical), node-forge (high), nodemailer (high), puppeteer-core (high), query-string (high), sharp (high), shell-quote (critical), source-map-js (high), zod (high)
+[ci-audit] OK: 0 advisories critical/high fuera de allowlist.

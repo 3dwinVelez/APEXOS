@@ -1,0 +1,34 @@
+[rls-inspect] target=local tables=216 policies=4 missing_rls=101 logic_differences=0
+[rls-inspect] report=C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\reports\security\rls-local-2026-11-09T15-12-49-187Z.json
+[rls-inspect][gate] missing_rls: 101
+  - apexos_accounting_private.standard_chart
+  - public.Account
+  - public.AuditLog
+  - public.BOM
+  - public.BOMLine
+  - public.BrainEvent
+  - public.BrainMetric
+  - public.Category
+  - public.Contact
+  - public.CustomField
+  - public.Document
+  - public.EInvoice
+  - public.EInvoiceConfig
+  - public.Employee
+  - public.Event
+  - public.GpsPing
+  - public.Item
+  - public.ItemLocation
+  - public.LedgerEntry
+  - public.Location
+[rls-inspect][gate] rls_without_force: 4
+  - public.transport_pyg_budgets (owner=apex)
+  - public.transport_pyg_concepts (owner=apex)
+  - public.transport_pyg_config (owner=apex)
+  - public.transport_pyg_source_map (owner=apex)
+[rls-inspect][gate] owner_bypass_tables: 4
+  - public.transport_pyg_budgets
+  - public.transport_pyg_concepts
+  - public.transport_pyg_config
+  - public.transport_pyg_source_map
+[rls-inspect] Gate RLS bloqueado por missing_rls, rls_without_force, owner_bypass_tables
