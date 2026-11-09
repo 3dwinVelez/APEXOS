@@ -287,10 +287,14 @@ async function ensureTenantMirror(context) {
     : null;
   const current = await prisma.tenant.findFirst({ where: { OR: [{ domain }, { name: companyName }] } });
   if (current) {
-    const data = { name: companyName, domain, active: true };
-    if (Array.isArray(activeModules) && !sameStringSet(current.active_modules, activeModules)) data.active_modules = activeModules;
-    if (Object.keys(data).some((key) => key !== "active" && current[key] !== data[key]) || data.active_modules) {
-      const updated = await prisma.tenant.update({ where: { id: current.id }, data });
+    // La desactivacion administrativa manda: sincronizar con Supabase no
+    // reactiva una empresa suspendida. Reactivarla es una decision explicita.
+    const patch = {};
+    if (current.name !== companyName) patch.name = companyName;
+    if (current.domain !== domain) patch.domain = domain;
+    if (Array.isArray(activeModules) && !sameStringSet(current.active_modules, activeModules)) patch.active_modules = activeModules;
+    if (Object.keys(patch).length) {
+      const updated = await prisma.tenant.update({ where: { id: current.id }, data: patch });
       await invalidateTenantCache(current.id);
       return updated;
     }
@@ -335,7 +339,6 @@ async function ensureUserMirror(supabaseUser, token, requestedCompanyId = "", pr
   if (existing) {
     const patch = {};
     if (existing.name !== fullName) patch.name = fullName;
-    if (!existing.active) patch.active = true;
     if (existing.role_id !== role.id) patch.role_id = role.id;
     const user = Object.keys(patch).length
       ? await prisma.user.update({ where: { id: existing.id }, data: patch, include: { role: { include: { permissions: true } } } })
@@ -383,6 +386,10 @@ async function authenticateSupabaseTokenUncached(token, requestedCompanyId = "")
   const context = await getSupabaseMembershipContext(token, supabaseUser, requestedCompanyId);
   const mirrored = await ensureUserMirror(supabaseUser, token, requestedCompanyId, context);
   if (!mirrored?.user) throw authorizationDenied("Esta cuenta no tiene una empresa activa asociada", "EMPRESA_NO_VINCULADA");
+  // Desactivar en el API tiene que cerrar el acceso tambien por esta via: antes
+  // el espejo reactivaba al usuario y a la empresa en cada inicio de sesion.
+  if (mirrored.tenant && mirrored.tenant.active === false) throw authorizationDenied("La empresa esta suspendida", "EMPRESA_SUSPENDIDA");
+  if (mirrored.user.active === false) throw authorizationDenied("La cuenta esta desactivada", "USUARIO_DESACTIVADO");
   const user = mirrored.user;
   return {
     id: user.id,
