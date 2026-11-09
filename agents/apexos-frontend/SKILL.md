@@ -2,8 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.12.0
-updated_at: 2026-11-08
+version: 2.13.0
+updated_at: 2026-11-09
 contract: 2
 ---
 
@@ -86,6 +86,8 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     Prueba de cierre: `node --experimental-strip-types --test test/module-access-role.test.mjs` (3/3 el 2026-11-08). Por qué: sin la primera regla, la detección de reuso mide un artefacto del cliente; sin la segunda, una pestaña administrativa se abre por un nombre que solo se parece.
 
 27. **El cliente trata cualquier 401 como sesión muerta, así que un 401 que no es de credencial se vive como «la sesión no aguanta».** Cuatro contratos del incidente del 2026-11-08: (a) en `apps/web/lib/api.ts` el 401 intenta refresh y, si no puede, llama `clearSession()` y hace `window.location.href = "/login"` dentro del propio `api()`; un `Promise.allSettled` alrededor **no** protege, porque el redirect ocurre antes de que el settled devuelva. (b) Un código de alcance (`EMPRESA_REQUERIDA`, `EMPRESA_NO_VINCULADA`, `EMPRESA_NO_AUTORIZADA`, `ROL_NO_DEFINIDO`) tiene que llegar como 403 y mostrarse nombrando la empresa o el rol que falta, más la afirmación explícita de que la sesión sigue activa; el mensaje genérico de «permiso denegado» deja al usuario sin acción. (c) La prueba es estructural: se verifica que ninguna ruta 403 alcanza `clearSession`, no solo el texto del mensaje. (d) Los demás módulos ni llegaban a la API —`supabaseApiFallback` no cubre `/api/v1/admin/*` y el resto lee Supabase desde el cliente—, así que «solo falla Administración» es evidencia de la ruta, no un misterio. Por qué: el literal que veía el usuario era «Sesion expirada, revocada o no autorizada» al abrir el módulo de administración en producción.
+
+28. **Un dialogo flota por portal, y su ancho se declara con la especificidad que la primitiva ya usa.** Una capa `fixed inset-0` escrita dentro de la pagina deja de ser relativa al viewport en cuanto un ancestro declara `transform`, `filter` o `contain: paint`; el shell del dashboard anima cada pagina con `.apex-page-enter`, asi que el dialogo toma como contenedor el bloque de contenido, se pinta incrustado en el listado y pierde el velo. Todo dialogo va por `ModalFrame` (`createPortal` sobre `document.body`, foco atrapado, Escape, scroll bloqueado). El ancho tambien es contrato: `ModalFrame` trae `md:max-w-[calc(100vw-3rem)]` en su cadena base y concatena el `maxWidth` al final, y en la cascada de Tailwind esa utilidad arbitraria gana sobre `md:max-w-2xl` — el panel sale a 1392 px en un viewport de 1440. Por eso el ancho se pide con `md:!max-w-*`, que es lo que ya hacen Compras e Inventario; no se cambia el tope de la primitiva compartida para arreglar una pantalla, porque reencuadra todos los dialogos del panel. Por que: el 2026-11-09 la ventana «Crear empresa» de Suscripciones llegaba asi a produccion y el modal se veia incrustado en el listado, sin velo ni centrado.
 
 ## Checklist de intervención
 
