@@ -13,6 +13,13 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 - **Prueba de fuente.** `apps/web/test/admin-company-modal-frame.test.mjs` (2/2) exige el import de `ModalFrame`, cero `className="fixed inset-0`, exactamente tres marcos y el cableado de formularios y titulos.
 - Agentes: `apexos-frontend` 2.12.0 → 2.13.0 (regla 28: un dialogo flota por portal y su ancho se declara con la especificidad que la primitiva ya usa), `apexos-qa` 2.32.0 → 2.33.0 (control 46: el modal se certifica portado, cubierto, centrado, acotado y estable al scroll, con la pintura medida en los dos temas), `apexos-brief` 2.25.0 → 2.26.0 (regla 39: el defecto de capa flotante se escribe con contenedor, primitiva y ancho medido, y el arreglo se acota a la pantalla).
 
+### El espejo de Supabase deja de reactivar cuentas y empresas desactivadas al sincronizar (`plan-candado-a01-a13-20261109`)
+
+- **Hallazgo R-04 / A-01 / A-13 cerrado en código.** `apps/api/src/security/supabaseAuth.js` armaba el patch del espejo con `active: true` (empresa, 317-322) y con `patch.active = true` (usuario, 365-376); iniciar sesión por Supabase reabría lo que un administrador había desactivado. Ahora el patch usa claves explícitas —`name`, `domain`, `active_modules`, `role_id`— y `authenticateSupabaseTokenUncached` responde 403 `EMPRESA_SUSPENDIDA` / `USUARIO_DESACTIVADO` después del espejo. `server.js` ya traducía el 403 sin destruir la sesión.
+- **Certificación de las dos mitades.** `apps/api/test/supabase-auth-mirror.test.js` (3/3) afirma que la escritura de sincronización no contiene `active` y que la sesión se rechaza, y conserva el caso legítimo de usuario y empresa activos; las suites vecinas de autenticación quedaron 30/30. Cada caso usa un token distinto porque la caché de 30 s por SHA-256 devolvería la respuesta anterior. Evidencia en `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`.
+- **Límite escrito.** La medida es de contrato (Prisma y fetch simulados); el entorno local no levanta Supabase y QA/PROD aún corren commits anteriores al bloque, así que repetir con un usuario inactivo real en QA queda como condición post-despliegue.
+- Agentes: `apexos-backend` 2.12.0 (regla 28: el espejo no es dueño del ciclo de vida), `apexos-seguridad` 2.16.1 (regla 30: desactivar en el API cierra también la puerta de Supabase), `apexos-qa` 2.34.0 (control 47: dos mitades y token distinto por caso), `apexos-brief` 2.27.0 (regla 40: la deuda residual se reescribe con la mitad medida y la pendiente).
+
 ## 2026-11-08
 
 ### El paquete de sesión se libera en `main` y la celda que faltaba era la que pasa el guard de ruta del cliente (`sesion-admin-produccion-20261108`, ronda 3)
