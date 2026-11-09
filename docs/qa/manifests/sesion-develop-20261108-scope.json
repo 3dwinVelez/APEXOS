@@ -1,0 +1,158 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "sesion-admin-produccion-20261108",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-sesion-develop-20261108",
+  "base_commits": {
+    "develop": "530334f25e55bfe9b0c0c634e60965b1f5936287"
+  },
+  "target_head": "530334f25e55bfe9b0c0c634e60965b1f5936287",
+  "certified_commit": "7687aed4b30d499731e4bc63266be6f6cdf96a7d",
+  "candidate": {
+    "branch": "codex/qa-sesion-develop-20261108",
+    "commits_over_baseline": 2,
+    "inventario": "7 M / 10 A / 0 D en 17 rutas contra origin/develop",
+    "nota": "El commit funcional 7687aed4 lleva las 15 rutas del paquete (codigo, pruebas, certificacion versionada y evidencia). El commit inmediato superior lleva unicamente los dos manifiestos de promocion, que el guard de CI trata como gobernanza y no como producto."
+  },
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "7687aed4b30d499731e4bc63266be6f6cdf96a7d",
+    "desarrollo_tips_reconstruidos": [
+      "8086570c3c6253f47df881182ab72e04eca2ff41",
+      "12424e299a96a26933b44753ed05430021c7d6ac"
+    ],
+    "reconstruido_de": [
+      "8086570c (fix 401 a 403 en supabaseAuth, server, tenancy, rbac y lib/api.ts con sus pruebas)",
+      "12424e29 (certificacion end-to-end versionada certify:sesion-admin:local y su evidencia)"
+    ],
+    "nota": "No es un merge de rama: desarrollo trae encima el contexto de agentes (SKILL.md, registry.json, CHANGELOG.md), la correccion del manifiesto de inventario y pruebas de otros modulos que no pertenecen a este alcance. El paquete se reconstruyo aplicando solo sus 15 rutas sobre la linea base vigente de develop (530334f2, merge PR #85 catalogo de Comercio) en un solo commit. El codigo de producto viaja byte a byte identico al de desarrollo; lo unico redactado aqui son los manifiestos y la seccion 8-9 del diagnostico que registra por que las salidas A y B son destructivas sobre el arbol desplegado."
+  },
+  "change_intent": {
+    "summary": "Promover el paquete de sesion que deja de expulsar al usuario al abrir Administracion: cuatro rechazos de alcance que respondian 401 pasan a 403 con su codigo de negocio, un fallo leyendo el tenant pasa a 500, y el cliente deja de borrar la sesion cuando la credencial si sirve. Incluye las dos suites que fijan la conducta, la puerta de certificacion versionada npm run certify:sesion-admin:local y su evidencia. No toca esquema, no trae migraciones, no toca infraestructura ni secretos, y no implementa el respaldo de plataforma (salida C), que queda en desarrollo para otra intervencion con revision de apexos-seguridad.",
+    "modules": [
+      "administracion",
+      "autenticacion-sesion",
+      "rbac-tenancy",
+      "cliente-http-compartido"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/server.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/middleware/tenancy.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/authorization-status-codes.test.js",
+    "apps/api/test/hr-route-physical-deletion.test.js",
+    "apps/web/lib/api.ts",
+    "apps/web/test/session-scope-403.test.mjs",
+    "docs/briefs/2026-11-08-sesion-administracion-produccion.md",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/diagnostico.txt",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/pruebas.txt",
+    "package.json",
+    "scripts/certifications/sesion-administracion-local.js"
+  ],
+  "expected_changes": [
+    { "status": "M", "file": "apps/api/server.js" },
+    { "status": "M", "file": "apps/api/src/middleware/rbac.js" },
+    { "status": "M", "file": "apps/api/src/middleware/tenancy.js" },
+    { "status": "M", "file": "apps/api/src/security/supabaseAuth.js" },
+    { "status": "A", "file": "apps/api/test/authorization-status-codes.test.js" },
+    { "status": "M", "file": "apps/api/test/hr-route-physical-deletion.test.js" },
+    { "status": "M", "file": "apps/web/lib/api.ts" },
+    { "status": "A", "file": "apps/web/test/session-scope-403.test.mjs" },
+    { "status": "A", "file": "docs/briefs/2026-11-08-sesion-administracion-produccion.md" },
+    { "status": "A", "file": "docs/qa/evidence/sesion-admin-produccion-20261108/certificacion-local.json" },
+    { "status": "A", "file": "docs/qa/evidence/sesion-admin-produccion-20261108/diagnostico.txt" },
+    { "status": "A", "file": "docs/qa/evidence/sesion-admin-produccion-20261108/gates-candidato.txt" },
+    { "status": "A", "file": "docs/qa/evidence/sesion-admin-produccion-20261108/pruebas.txt" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/sesion-administracion-local.js" },
+    { "status": "A", "file": "docs/qa/manifests/sesion-develop-20261108-scope.json" },
+    { "status": "A", "file": "docs/qa/manifests/sesion-develop-20261108-preqa.json" }
+  ],
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/middleware/tenancy.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/authorization-status-codes.test.js",
+    "apps/api/test/hr-route-physical-deletion.test.js",
+    "apps/web/lib/api.ts",
+    "apps/web/test/session-scope-403.test.mjs",
+    "docs/briefs/2026-11-08-sesion-administracion-produccion.md",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/diagnostico.txt",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/pruebas.txt",
+    "package.json",
+    "scripts/certifications/sesion-administracion-local.js",
+    "docs/qa/manifests/sesion-develop-20261108-scope.json",
+    "docs/qa/manifests/sesion-develop-20261108-preqa.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "una_sesion_valida_sobrevive_a_un_rechazo_de_alcance",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../../../apps/api/test/authorization-status-codes.test.js",
+        "../../../apps/web/test/session-scope-403.test.mjs"
+      ],
+      "medida": "403 EMPRESA_NO_VINCULADA medido con el servidor real escuchando en loopback sobre GET /api/v1/admin/roles; el contrato del cliente se fija con la asercion estructural de que ningun clearSession( queda bajo una rama que no sea 401 (5/5)."
+    },
+    {
+      "name": "la_autenticacion_no_se_relaja",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../../../apps/api/test/authorization-status-codes.test.js",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt"
+      ],
+      "medida": "El caso espejo se mide en la misma corrida: token que no resuelve identidad y peticion anonima siguen respondiendo 401 TOKEN_INVALIDO. El stub de Supabase solo reconoce el token del escenario, asi que un 403 en el token basura rompe la prueba en lugar de pasarla."
+    },
+    {
+      "name": "rbac_y_aislamiento_por_tenant",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/api/test/hr-route-physical-deletion.test.js",
+        "../../../apps/api/test/supabase-company-context.test.js",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt"
+      ],
+      "medida": "Las cuatro guardas de rbac conservan su rechazo y cambian solo de codigo (401 NO_AUTENTICADO a 403 ROL_NO_DEFINIDO), con la prueba que antes fijaba la conducta equivocada actualizada a la correcta. La resolucion de empresa por membresia sigue medido por supabase-company-context.test.js: suite API completa 1056 pruebas, 1053 pasan, 0 fallan."
+    },
+    {
+      "name": "el_resto_de_la_plataforma_no_regrime",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+        "../evidence/sesion-admin-produccion-20261108/pruebas.txt"
+      ],
+      "medida": "Suite web del arbol del candidato: 754 pruebas, 750 pasan, 4 fallan. Las mismas 4 fallan sobre origin/develop 530334f2 limpio (749/745/4F) y los nombres son identicos tras un diff ordenado: regresiones atribuibles al candidato = 0, pruebas nuevas aportadas = 5."
+    }
+  ],
+  "authorization": {
+    "granted_by": "Edwin (dueno del producto)",
+    "granted_at": "2026-11-08",
+    "instruction": "Si: a develop y luego a main (Recomendado si quieres que deje de botarte hoy)",
+    "covers": [
+      "Promover el paquete 401 a 403 de desarrollo a develop por rama auxiliar y PR.",
+      "Promover despues de develop a main con su gate de aprobacion QA y su guard de alcance."
+    ],
+    "does_not_cover": [
+      "Force push, reescritura de historia compartida o squash de ramas permanentes.",
+      "Migraciones remotas: este paquete no trae esquema, ninguna migracion se aplica desde la estacion.",
+      "Cambios de infraestructura o secretos en Railway/Supabase/Vercel.",
+      "Crear o modificar filas company_users en produccion (salidas A y B): sin autorizacion y medidas como destructivas sobre el codigo desplegado.",
+      "La salida C (respaldo de plataforma en supabaseAuth): autorizada para desarrollo, sin implementar y fuera de este candidato."
+    ]
+  },
+  "post_deploy_verification_required": [
+    "Leer /health del ambiente y contrastar el commit desplegado con el tip promovido.",
+    "Repetir la puerta de sesion contra el ambiente liberado y dejar constancia de que una cuenta sin empresa deja de ser expulsada.",
+    "Mientras el ambiente afectado corra 1b76376c, el incidente NO se declara resuelto."
+  ]
+}

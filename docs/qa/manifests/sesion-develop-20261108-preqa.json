@@ -1,0 +1,128 @@
+{
+  "change_id": "sesion-admin-produccion-20261108",
+  "commit": "7687aed4b30d499731e4bc63266be6f6cdf96a7d",
+  "certified_commit": "7687aed4b30d499731e4bc63266be6f6cdf96a7d",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-sesion-develop-20261108",
+  "target_head": "530334f25e55bfe9b0c0c634e60965b1f5936287",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-08",
+    "quality_gate_overridden": false,
+    "instruction_literal": "Si: a develop y luego a main (Recomendado si quieres que deje de botarte hoy)",
+    "authorizations": [
+      "Promover el paquete de sesion 401 a 403 de desarrollo a develop, con su certificacion end-to-end versionada.",
+      "Promover despues de develop a main, incluida la autorizacion de despliegue para que deje de expulsar hoy.",
+      "Rama auxiliar + PR hacia develop como mecanismo de publicacion, con push acotado a origin/desarrollo al cerrar la intervencion."
+    ],
+    "nota": "La autorizacion de promocionar no sustituye la verificacion post-despliegue: mientras /health del ambiente no muestre el commit nuevo, el incidente sigue abierto. No cubre force push, migraciones remotas, infraestructura, secretos, ni escribir filas company_users en produccion. La salida C (respaldo de plataforma) esta autorizada para desarrollo y no viaja en este candidato.",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "scoped_promotion_to_develop_only": true,
+      "promotion_to_main_authorized_separately": true,
+      "migrations_applied": false,
+      "force_push": false,
+      "production_data_writes": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+        "../../../apps/api/test/authorization-status-codes.test.js",
+        "../../../apps/web/test/session-scope-403.test.mjs"
+      ],
+      "medida": "npm run certify:sesion-admin:local sobre el arbol del candidato: 11 cheques, 0 fallos. El flujo pedido (abrir Administracion con sesion Supabase valida sin empresa) se mide contra el servidor real escuchando en loopback: 403 EMPRESA_NO_VINCULADA en 154 ms."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../../../apps/api/test/authorization-status-codes.test.js",
+        "../../../apps/api/test/hr-route-physical-deletion.test.js",
+        "../../../apps/web/test/hr-route-write-feedback.test.mjs"
+      ],
+      "medida": "Ningun rechazo de alcance queda en 401 y ninguna credencial mala quedo en 403: se miden los dos lados en la misma corrida (401 TOKEN_INVALIDO para token basura y para peticion anonima). El fallo leyendo el tenant sube a 500 EMPRESA_NO_RESUELTA en vez de tumbar sesiones. hr-route-write-feedback.test.mjs sigue fijando el literal 403 generico y pasa sin modificaciones."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/sesion-administracion-local.js",
+        "../../../scripts/certifications/auth-session-readiness.js",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt"
+      ],
+      "medida": "La puerta nueva esta versionada y es invocable por nombre en package.json (certify:sesion-admin:local). Termina con process.exit explicito porque app.close() no detiene el cron del arranque: sin eso la corrida quedaba colgada mas de diez minutos aun con todo en verde. Carga scripts/load-env porque require(server) abre Prisma. No usa credenciales reales: el borde Supabase es un servidor HTTP en 127.0.0.1."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+        "../../../apps/api/test/supabase-company-context.test.js",
+        "../../../apps/api/test/hr-route-physical-deletion.test.js",
+        "../../../apps/web/test/session-scope-403.test.mjs"
+      ],
+      "medida": "Suite API completa: 1056 pruebas, 1053 pasan, 0 fallan, 3 saltadas. Suite web: 754 pruebas, 750 pasan, 4 fallan, y las mismas 4 fallan sobre origin/develop 530334f2 limpio (749/745/4F); el diff ordenado de nombres sale vacio. Regresiones atribuibles al candidato: 0. La prueba que antes fijaba la conducta equivocada (401 NO_AUTENTICADO en el borrado fisico de RRHH) se corrigio a 403 ROL_NO_DEFINIDO."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+        "../evidence/sesion-admin-produccion-20261108/pruebas.txt",
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json"
+      ],
+      "medida": "Regresion de plataforma corrida sobre el arbol del candidato: las dos suites completas y la certificacion de contrato. El paquete no toca esquema, no toca dependencias y no toca configuracion de ambiente, salvo la linea de script en package.json. Limite declarado, no verde: no hay medicion en navegador contra el ambiente liberado porque el commit todavia no esta desplegado; esa verificacion es posterior al merge y esta exigida en el manifiesto de alcance."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/sesion-administracion-local.js",
+    "evidence": [
+      "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+      "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt"
+    ],
+    "resultado": "CERTIFICACION OK: 11 cheques, 0 fallos, ejecutada sobre el arbol del candidato con el servidor real escuchando en 127.0.0.1 y el borde Supabase simulado en localhost. El JSON registra 530334f2 porque esa era la punta desde la que arranco la corrida con el paquete aplicado y sin commitear: la evidencia no puede llevar el sha del commit que la publica."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/sesion-administracion-local.js",
+    "evidence": [
+      "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+      "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+      "../../../apps/web/test/session-scope-403.test.mjs",
+      "../../../apps/api/test/authorization-status-codes.test.js"
+    ],
+    "resultado": "El mismo script versionado es la puerta de regresion del contrato: invoca como subprocess las dos suites que fixean la conducta (apps/web/test/session-scope-403.test.mjs 5/5 y apps/api/test/authorization-status-codes.test.js 6/6 con AUTH_STATUS_INTEGRATION=1) y falla la corrida si alguna devuelve exit distinto de cero o # fail distinto de 0. No se cita auth-session-readiness.js como verde porque es la puerta remota del ambiente liberado y no se corrio contra este candidato."
+  },
+  "suites": {
+    "api_completa_candidato": "1056 pruebas, 1053 pasan, 0 fallan, 3 saltadas",
+    "web_candidato": "754 pruebas, 750 pasan, 4 fallan (las 4 reproducidas identicas en origin/develop limpio)",
+    "web_baseline_destino": "749 pruebas, 745 pasan, 4 fallan sobre 530334f2",
+    "contrato_sesion_api": "6/6 con AUTH_STATUS_INTEGRATION=1",
+    "contrato_sesion_web": "5/5",
+    "certificacion_end_to_end": "11 cheques, 0 fallos",
+    "regresiones_atribuibles": 0
+  },
+  "known_target_failures": [
+    "el registro de funciones cubre todas las rutas del dashboard",
+    "apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK",
+    "el respaldo preventivo tambien consulta el guard cuando no hay API configurada",
+    "react y react-dom/server salen de la misma instalacion de node_modules"
+  ],
+  "pending_certifications": [
+    "Verificacion post-despliegue en el ambiente de QA: leer /health, contrastar el commit y repetir la puerta de sesion contra el ambiente liberado.",
+    "Certificacion con la sesion real del dueno en el ambiente liberado: abrir Administracion y medir que la sesion aguanta.",
+    "Salida C (respaldo de plataforma en supabaseAuth): autorizada para desarrollo, sin implementar; pide revision de apexos-seguridad y no pertenece a este candidato."
+  ],
+  "certified_source_tree": {
+    "branch": "desarrollo",
+    "tip": "12424e299a96a26933b44753ed05430021c7d6ac",
+    "nota": "El candidato reconstruye las 15 rutas de los dos commits de desarrollo (8086570c y 12424e29) sobre 530334f2 y deja fuera el contexto de agentes (SKILL.md, registry.json, CHANGELOG.md), que no es codigo de producto del ambiente QA."
+  }
+}
