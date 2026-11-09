@@ -1,0 +1,142 @@
+================================================================================
+Formulario publico de Servicios - empresa destino por ambiente (2026-11-09)
+================================================================================
+Alcance: identificar con evidencia la empresa que debe recibir el formulario
+publico, declarar APEXOS_PUBLIC_SERVICE_COMPANY_ID en los servicios de Railway
+de QA y PROD, y medir el comportamiento real del build desplegado.
+
+Autorizacion: instruccion del propietario del 2026-11-09 ("corrige el formulario
+para que apunte a donde tiene que llegar y que no falle en la empresa que tiene
+que escribir"). Las lecturas de panel son de solo lectura y las sondas HTTP son
+anonimas. No se leyo ni imprimio el valor de ninguna credencial.
+
+================================================================================
+1. Identificacion de la empresa destino
+================================================================================
+Metodo: consultas de solo lectura a las bases de QA y PROD desde el pooler
+(psql), sin imprimir la cadena de conexion. En el SQL Editor de Supabase QA se
+repitio la lectura del catalogo publico.
+
+PROD - solicitudes creadas por el formulario publico
+  metadata->>'created_from' = 'public_service_request'
+    253 | IMPORTADORA SCJ SAS | ultima 2026-11-04 20:48:08+00
+     16 | NYVORA              | ultima 2026-08-22 00:49:30+00
+  Unica empresa con catalogo publico real: IMPORTADORA SCJ SAS
+  (6199e855-ed91-4db1-bf1f-6eb549868e1d), 18 referencias, 64 almacenes
+  (AMAGA, APARTADO, ARANJUEZ, BELLO 1/2/3, CEDI HYM...), metadata actualizada
+  el 2026-10-29. NYVORA (82c2da06-418d-4026-8c49-b28a2db4552d) conserva el
+  catalogo demo de julio (Demo user, Hogar y Moda 1/2).
+
+QA - solicitudes creadas por el formulario publico
+    19 | SCJ                | ultima 2026-10-04 18:50:31+00
+     6 | Cliente Piloto QA  | ultima 2026-09-29 03:00:16+00
+     2 | NYVORA             | ultima 2026-08-22 01:08:56+00
+  Unica empresa con fila __SERVICE_TYPES__ (catalogo publico editable):
+  SCJ (cbbf3627-4336-4f23-95c6-1077414bcd17), con tipos reales
+  ("DESARMES ALMACENES H Y M", "INSTALACION CLIENTES H Y M", "EXPRESS VIP"...)
+  y almacenes Hogar y Moda 1/2, LA BALLADERA, TAKEDA.
+
+Conclusion: PROD = IMPORTADORA SCJ SAS (6199e855-...); QA = SCJ
+(cbbf3627-...). No se eligio por conveniencia: es la empresa que recibio las
+solicitudes y la unica con catalogo publico configurado en cada ambiente.
+
+================================================================================
+2. Variables aplicadas en Railway
+================================================================================
+Servicios (proyecto APEXOS QA / APEXOS PROD, ambiente production):
+
+  APEXOS QA    apexos-api-qa   APEXOS_PUBLIC_SERVICE_COMPANY_ID = cbbf3627-4336-4f23-95c6-1077414bcd17
+  APEXOS QA    apexos-web-qa   APEXOS_PUBLIC_SERVICE_COMPANY_ID = cbbf3627-4336-4f23-95c6-1077414bcd17
+  APEXOS PROD  apexos-api-prod APEXOS_PUBLIC_SERVICE_COMPANY_ID = 6199e855-ed91-4db1-bf1f-6eb549868e1d
+  APEXOS PROD  apexos-web-prod APEXOS_PUBLIC_SERVICE_COMPANY_ID = 6199e855-ed91-4db1-bf1f-6eb549868e1d
+
+Inventario previo (solo nombres): la variable no existia en ninguno de los
+cuatro servicios (qa-api 29 variables, qa-web 23, prod-api 29, prod-web 31).
+La mutacion variableUpsert devolvio true en los cuatro.
+
+================================================================================
+3. Medicion del formulario desplegado
+================================================================================
+Antes del redespliegue (sondas anonimas GET):
+
+  QA   /api/public/service-requests  -> company_id c56bc5df... (Cliente Piloto QA)
+  PROD /api/public/service-requests  -> company_id 6199e855... (IMPORTADORA SCJ SAS)
+
+Despues del redespliegue de QA (build 414213603345, develop):
+
+  QA   /api/public/service-requests  -> company_id cbbf3627... (SCJ)
+
+Prueba de escritura en QA (POST con datos marcados como prueba, sin PII real):
+
+  POST /api/public/service-requests
+  { customer_name: "PRUEBA CONTROL APEXOS", customer_document: "99999999",
+    service_store: "hogar_y_moda_1", reference_id: e0e07f21-...,
+    service_type: "instalacion", notes: "Solicitud de prueba ... No ejecutar." }
+  -> 200 {"ok":true,"order":{"id":"8bcc3c13-...","number":"OS-00021"}}
+  Verificacion en QA: OS-00021 | SCJ | public_service_request.
+  La preorden de prueba queda en QA, marcada en sus notas; no se elimino porque
+  borrar filas es una escritura no autorizada en esta ronda. No se creo ninguna
+  preorden en PROD.
+
+  API publica: GET /api/v1/public/services/catalog responde 404 en QA y PROD.
+  Los commits desplegados (develop 41421360, main db3e63a6) no incluyen
+  apps/api/src/modules/services/, asi que la variable declarada en los servicios
+  de API no tiene efecto hasta que el bloque de seguridad se promueva.
+
+Estado final de los despliegues (verificado tras el build):
+
+  QA   api 414213603345 /health OK, 19 modulos; web 4142136033; formulario -> SCJ
+  PROD api db3e63a6ef10  /health OK, 18 modulos; web db3e63a6 SUCCESS; formulario -> IMPORTADORA SCJ SAS
+
+  Las sondas de la seccion 4 se repitieron despues de que PROD web termino en
+  SUCCESS con db3e63a6 y el resultado no cambio.
+
+================================================================================
+4. Hallazgo: la allowlist configurada no es la allowlist aplicada (Alta)
+================================================================================
+Reproduccion (2026-11-09, solo lectura, sonda anonima):
+
+  GET https://apexos-web-prod-production.up.railway.app/api/public/service-requests?empresa=NYVORA
+  -> 200 {"ok":true,"company_id":"82c2da06-418d-4026-8c49-b28a2db4552d", ...}
+
+  GET https://apexos-web-qa-production.up.railway.app/api/public/service-requests?empresa=Cliente%20Piloto%20QA
+  -> 200 {"ok":true,"company_id":"c56bc5df-c807-4deb-83f8-fbb4751be613", ...}
+
+El codigo desplegado en develop y main conserva el flujo anterior: arma una
+lista de empresas candidatas con company_id del body, el parametro ?empresa=,
+la variable de entorno y, si no hay ninguna, empresas activas por orden de
+creacion; y usa la primera (resolveCompanyCandidates / resolveCompanyId en
+apps/web/app/api/public/service-requests/route.ts del commit desplegado).
+La allowlist declarada hoy solo cambia el valor por defecto: cualquier cliente
+puede anteponer otra empresa en el cuerpo o en la URL, tanto para leer el
+catalogo como para crear una preorden.
+
+El arreglo (empresa solo desde el servidor, service role retirado, 503 sin
+variable) esta en desarrollo desde a87ce176 y no existe en develop ni main:
+
+  git branch -a --contains a87ce176  ->  desarrollo, origin/desarrollo
+  git show <commit desplegado>:apps/api/src/modules/services/public-service.js
+    -> ausente en develop 41421360 y en main db3e63a6
+
+Impacto: en PROD, un tercero puede hacer que el formulario publico escriba en
+la empresa que elija entre las activas, y leer su catalogo. No requiere sesion
+ni credenciales del sistema; usa la anon key publica.
+
+Recomendacion: promover el bloque de seguridad de desarrollo (manifiesto de
+alcance v2 + qa:preqa:evidence + QA funcional en Railway). Hasta ese despliegue,
+APEXOS_PUBLIC_SERVICE_COMPANY_ID es un valor por defecto, no un control.
+
+================================================================================
+5. Limites de esta medicion
+================================================================================
+  - No se ejecuto POST en PROD (crearia datos reales). La lectura con ?empresa=
+    demuestra la misma seleccion de empresa que usa el POST.
+  - No se leyo el valor de ninguna variable sensible; los inventarios son de
+    nombres y la evidencia no contiene cadenas de conexion.
+  - La variable en los servicios de API queda sin efecto hasta la promocion:
+    el modulo publico no existe en los commits desplegados (404 medido).
+  - El redespliegue de PROD lo disparo Railway al aplicar la variable y tomo el
+    tip de main (db3e63a6), no un commit elegido en esta ronda. El resultado se
+    verifica con /health y con las sondas de la seccion 3.
+  - R-03 sigue abierto: la politica de lectura anonima del catalogo no filtra
+    por empresa y no se modifico.

@@ -358,10 +358,25 @@ El propietario autorizó Docker y `config/local.env`; el stack se levantó (post
 - PROD API: `TRUST_PROXY=1`. Sin banderas de observación ni de enforcement.
 - Efecto real: ninguno hasta que el bloque se promueva y redespliegue; QA corre `2cb064e2` y PROD `938fc2b6`.
 
-**Pendiente que exige decisión del dueño.** `APEXOS_PUBLIC_SERVICE_COMPANY_ID` no se declaró: elige qué empresa recibe el formulario público y hay siete empresas candidatas en QA con referencias activas (SCJ 130, Puebla Operaciones 118, cinco con 18). Elegir por conveniencia expondría el catálogo equivocado; sin la variable el formulario falla cerrado con 503. Detalle y empresas en `docs/qa/evidence/plan-candado-20261108/security-ambientes.txt`.
+**Decisión ejecutada el 2026-11-09 (cierre en §17).** `APEXOS_PUBLIC_SERVICE_COMPANY_ID` se declaró en los cuatro servicios de Railway tras identificar la empresa con evidencia: QA = SCJ (`cbbf3627…`), PROD = IMPORTADORA SCJ SAS (`6199e855…`). La medición mostró que la variable sola no aplica la allowlist mientras el código desplegado siga aceptando `company_id`/`?empresa=`. Detalle y reproducción en `docs/qa/evidence/plan-candado-20261108/security-formulario-publico.txt`.
 
 **R-03 sigue abierto y sin cambios aplicados.** La política `service_references_public_catalog_select` de Supabase QA permite leer las referencias activas de todos los tenants con la anon key. Corregirlo exige una allowlist persistida en la base y una ventana de aplicación por ambiente; un cambio de RLS en producción no se hizo.
 
 **Hallazgo Vercel (Alta, requiere decisión).** El proyecto `apexos-api` conserva `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `JWT_SECRET`, sigue construyendo desde GitHub y su dominio de producción `https://apexos-api.vercel.app` responde 500 `FUNCTION_INVOCATION_FAILED` en `/` y `/health`. No hay evidencia de filtración. Recomendación: pausar/eliminar el proyecto o repararlo y rotar esas credenciales; no se modificó porque pausar o borrar un dominio público es destructivo y exige autorización explícita.
 
 **Certificación de esta ronda.** Dos commits publicados en `origin/desarrollo`: `dbc3cf9b` (modal de Suscripciones, 16/16 en navegador) y `674e191a` (espejo A-01/A-13, 3/3). La suite completa del API no se usó como evidencia: se interrumpió de forma inconcluyente tras el reinicio de Docker y las suites de autenticación se corrieron dirigidas.
+
+## 17. Empresa destino del formulario público: decisión, aplicación y medición (2026-11-09)
+
+**Decisión con evidencia, no por conveniencia.** La empresa destino ya no queda pendiente: se identificó por los datos reales del formulario y del catálogo público.
+
+- PROD: 253 solicitudes del formulario llegaron a IMPORTADORA SCJ SAS (`6199e855-ed91-4db1-bf1f-6eb549868e1d`), la última el 2026-11-04; NYVORA solo acumula 16 y está detenida desde el 2026-08-22. Es la única empresa con catálogo público real (64 almacenes, actualizado el 2026-10-29).
+- QA: SCJ (`cbbf3627-4336-4f23-95c6-1077414bcd17`) es la única con fila `__SERVICE_TYPES__` configurada y la última que recibió solicitudes (19, el 2026-10-04). "Cliente Piloto QA" (6) y NYVORA (2) son residuos anteriores.
+
+**Aplicación en Railway.** `APEXOS_PUBLIC_SERVICE_COMPANY_ID` se declaró y aplicó en `apexos-api-qa`, `apexos-web-qa`, `apexos-api-prod` y `apexos-web-prod` (mutación `variableUpsert` = true en los cuatro; inventario previo por nombres, sin leer valores). El redespliegue de QA tomó `41421360` (develop) y el de PROD `db3e63a6` (tip de main); al cierre, QA API reporta `/health commit=414213603345` (19 módulos) y PROD API `commit=db3e63a6ef10` (18 módulos), ambos OK, con `apexos-web-prod` en SUCCESS sobre `db3e63a6`.
+
+**Medición antes/después.** Antes QA servía el formulario con Cliente Piloto QA (`c56bc5df…`) por el fallback de empresas activas; después del redespliegue resuelve SCJ. PROD ya resolvía SCJ por orden de creación y se mantiene. La escritura en QA se certificó con una preorden marcada como prueba (`OS-00021`, empresa SCJ, `created_from=public_service_request`); no se creó ninguna en PROD.
+
+**Hallazgo Alta: la allowlist configurada no es la allowlist aplicada.** El código desplegado en develop y main aún acepta `company_id` del cuerpo y `?empresa=` y los antepone a la variable. Reproducción anónima: `GET …/api/public/service-requests?empresa=NYVORA` en PROD devolvió el catálogo de NYVORA (`82c2da06…`); en QA, `?empresa=Cliente Piloto QA` devolvió `c56bc5df…`. El arreglo (`a87ce176`) solo existe en `desarrollo`, y los commits desplegados tampoco incluyen el módulo público del API (404 medido en `/api/v1/public/services/catalog`). Impacto: cualquiera con la anon key puede hacer que el formulario lea y escriba en otra empresa activa. Recomendación: promover el bloque de seguridad con manifiesto v2, certificación pre-QA y QA funcional en Railway. Hasta entonces la variable es un valor por defecto, no un control.
+
+**Límites.** No se ejecutó POST en PROD; la lectura con `?empresa=` demuestra la misma resolución de empresa que usa el POST. R-03 sigue abierto. Evidencia completa en `docs/qa/evidence/plan-candado-20261108/security-formulario-publico.txt`.
