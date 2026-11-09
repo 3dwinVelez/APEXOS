@@ -122,7 +122,12 @@ async function build() {
           token,
           request.headers["x-company-id"]
         );
-      } catch {
+      } catch (error) {
+        // 401 solo cuando la credencial no sirve. Un 403 del vinculo de empresa no debe
+        // tumbar la sesion: el cliente destruye el token ante cualquier 401.
+        if (Number(error?.statusCode) === 403) {
+          return reply.code(403).send({ error: error.message, code: error.code || "AUTORIZACION_DENEGADA" });
+        }
         return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
       }
     }
@@ -144,7 +149,9 @@ async function build() {
         request.tenant = require("./src/security/supabaseAuth").tenantWithAuthorizationContext(tenant, request.user);
       }
     } catch {
-      return reply.code(401).send({ error: "Token invalido", code: "TOKEN_INVALIDO" });
+      // Un fallo leyendo el tenant es del servidor, no de la credencial: responder 401
+      // derribaba la sesion de usuarios validos cada vez que la cache o la base titubeaban.
+      return reply.code(500).send({ error: "No fue posible resolver la empresa de la sesion", code: "EMPRESA_NO_RESUELTA" });
     }
     });
   });

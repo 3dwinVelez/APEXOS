@@ -275,8 +275,8 @@ test("requirePhysicalDeleteGrant deniega sin rol, sin modulo y sin permiso espec
 
   const anonymousReply = fakeReply();
   await guard({ tenant: moduleTenant, user: {} }, anonymousReply);
-  assert.equal(anonymousReply.statusCode, 401);
-  assert.equal(anonymousReply.payload.code, "NO_AUTENTICADO");
+  assert.equal(anonymousReply.statusCode, 403);
+  assert.equal(anonymousReply.payload.code, "ROL_NO_DEFINIDO");
 
   const noModuleReply = fakeReply();
   await guard({ tenant: { active_modules: ["M-01"] }, user: { role: { id: 1, name: "APEX_ADMIN", permissions: [{ module: "*", action: "*" }] } } }, noModuleReply);

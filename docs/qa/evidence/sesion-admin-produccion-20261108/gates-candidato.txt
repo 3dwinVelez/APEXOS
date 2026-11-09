@@ -1,0 +1,95 @@
+Puertas medidas sobre el candidato de la promocion a develop
+Cambio: sesion-admin-produccion-20261108 (paquete 401 -> 403 de la sesion de Administracion)
+Fecha: 2026-11-08
+Rama auxiliar: codex/qa-sesion-develop-20261108
+Baseline del destino: 530334f2 (origin/develop)
+Contenido del candidato: 15 rutas (7 M + 8 A) en un solo commit funcional + 2 manifiestos
+
+
+1) Certificacion end-to-end versionada, corrida SOBRE el arbol del candidato
+
+   npm run certify:sesion-admin:local
+     -> 11 cheques, 0 fallos, exit 0
+     OK  sesion Supabase valida sin empresa responde 403 y conserva la sesion
+          :: 403 EMPRESA_NO_VINCULADA en 154 ms (servidor real escuchando en 127.0.0.1,
+             socket efimero, borde Supabase simulado en localhost)
+     OK  token que no resuelve identidad sigue respondiendo 401 TOKEN_INVALIDO
+     OK  peticion anonima sigue siendo 401
+     OK  apps/web: contrato de alcance y clearSession solo bajo 401 :: # tests 5 # fail 0
+     OK  apps/api: authorization-status-codes :: # tests 6 # pass 6 # fail 0
+          (AUTH_STATUS_INTEGRATION=1, dentro de la misma corrida)
+     OK  6 contratos de fuente (server 403/500, tenancy 403, rbac 403 x4, supabaseAuth 403,
+          lib/api.ts SESSION_SCOPE_CODES)
+
+   Como lee el commit el script: `certificacion-local.json` registra `530334f2`, que es la punta
+   desde la que ARRANCO la corrida, con el arbol del candidato aplicado y sin commitear. No es el
+   sha del commit que publica la evidencia: la evidencia no puede contener su propio sha, y
+   reescribir el JSON despues para que lo mostrara estaria afirmando una medicion que no ocurrio.
+   Lo que se certifica es el arbol, y ese arbol es el que viaja en el commit funcional certificado.
+
+
+2) Suite API completa sobre el arbol del candidato
+
+   node --env-file=.env --test --test-force-exit apps/api/test/*.test.js   (desde la raiz)
+     # tests 1056 / # pass 1053 / # fail 0 / # skipped 3   -> exit 0
+
+   Sin rojos. Las 3 saltadas son preexistentes del destino.
+
+
+3) Suite web completa, contrastada con el destino limpio
+
+   arbol del candidato : # tests 754 / # pass 750 / # fail 4
+   baseline 530334f2   : # tests 749 / # pass 745 / # fail 4   (origin/develop sin parchar)
+
+   Los 4 nombres que fallan son IDENTICOS en las dos corridas:
+     - el registro de funciones cubre todas las rutas del dashboard
+     - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+     - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+     - react y react-dom/server salen de la misma instalacion de node_modules
+
+   Regresiones atribuibles al candidato: 0 (diff de nombres vacio).
+   Pruebas y pases nuevos aportados por el candidato: +5 / +5 (session-scope-403.test.mjs).
+   Los 4 rojos son del destino y se reportan como deuda propia de develop, no de este paquete.
+
+
+4) Contrato de estado del paquete (las cuatro reclasificaciones medidas, no declaradas)
+
+   ruta                    antes              despues
+   supabaseAuth            401 Error simple   403 EMPRESA_NO_AUTORIZADA / EMPRESA_NO_VINCULADA
+   middleware/tenancy      401 EMPRESA_REQ.   403 EMPRESA_REQUERIDA
+   middleware/rbac (x4)    401 NO_AUTENTICADO 403 ROL_NO_DEFINIDO
+   server.js (catch Supab) 401 TOKEN_INVALIDO 403 con el codigo del error, 401 solo si no trae
+                                                statusCode 403
+   server.js (lee tenant)  401 TOKEN_INVALIDO 500 EMPRESA_NO_RESUELTA
+
+   El 401 de credencial que no resuelve identidad y el 401 anonimo se midieron en la misma
+   corrida: la autenticacion no se relajo.
+
+
+5) Lo que este candidato NO trae
+
+   - No trae agentes ni CHANGELOG: el contexto del equipo vive en desarrollo (commit 12424e29) y
+     no es codigo de producto del ambiente QA.
+   - No trae migraciones: el paquete es codigo de autorizacion y cliente, no esquema.
+   - No mide produccion: la verificacion contra el ambiente liberado es posterior al deploy y se
+     hace con el gate de despliegue, no con este manifiesto.
+   - No incluye la salida C (respaldo de plataforma en supabaseAuth): autorizada por el dueno y
+     sin implementar, pide revision de apexos-seguridad.
+
+
+6) Puertas de gobernanza de la promocion, corridas sobre este arbol
+
+   npm run qa:promotion:scope -- docs/qa/manifests/sesion-develop-20261108-scope.json HEAD origin/develop
+     -> ALCANCE DE PROMOCION VALIDO: sesion-admin-produccion-20261108 (17 rutas)
+
+   npm run qa:preqa:evidence -- docs/qa/manifests/sesion-develop-20261108-preqa.json
+     -> AUTORIZACION PRE-QA VALIDA: sesion-admin-produccion-20261108
+
+   node scripts/git-governance-guard.js ci-promotion <candidato> <origin/develop> develop \
+        codex/qa-sesion-develop-20261108
+     -> PROMOCION CI ALCANZADA: sesion-admin-produccion-20261108
+
+   Las tres medidas antes del push. La tercera es la que va a correr el PR en GitHub: reproduce
+   el modo `codex/qa-*` de .github/workflows/ci.yml:33-43 y exige que todo el producto este
+   dentro del commit certificado, que despues del certificado solo haya gobernanza, y que las
+   rutas funcionales certificadas viajen byte a byte identicas hasta el tip.

@@ -226,11 +226,21 @@ async function supabaseRest(path, { token, service = false } = {}) {
   return response.json();
 }
 
+// Un token valido cuya empresa no esta autorizada NO es un fallo de autenticacion. Si se
+// responde 401 el cliente tira la sesion y reenvia a /login, y el usuario ve "sesion expirada"
+// cuando lo que falta es un vinculo de empresa. 403 conserva la sesion y deja el motivo en pantalla.
+function authorizationDenied(message, code) {
+  const error = new Error(message);
+  error.statusCode = 403;
+  error.code = code;
+  return error;
+}
+
 function selectMembership(memberships, requestedCompanyId = "") {
   const requested = String(requestedCompanyId || "").trim();
   if (requested) {
     const selected = memberships.find((item) => String(item.company_id || "") === requested);
-    if (!selected) throw new Error("La empresa solicitada no pertenece al usuario");
+    if (!selected) throw authorizationDenied("La empresa solicitada no pertenece al usuario", "EMPRESA_NO_AUTORIZADA");
     return selected;
   }
   return memberships.find((item) => ["owner", "admin", "superadmin"].includes(String(item.role || "").toLowerCase()))
@@ -409,7 +419,7 @@ async function authenticateSupabaseTokenUncached(token, requestedCompanyId = "")
   if (!email) throw new Error("Supabase token sin email");
   const context = await getSupabaseMembershipContext(token, supabaseUser, requestedCompanyId);
   const mirrored = await ensureUserMirror(supabaseUser, token, requestedCompanyId, context);
-  if (!mirrored?.user) throw new Error("Usuario Supabase sin espejo Prisma para la empresa seleccionada");
+  if (!mirrored?.user) throw authorizationDenied("Esta cuenta no tiene una empresa activa asociada", "EMPRESA_NO_VINCULADA");
   const user = mirrored.user;
   return {
     id: user.id,
