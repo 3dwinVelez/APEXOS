@@ -106,4 +106,31 @@ que la revocacion con enforcement no participa en este incidente.
         rol de sistema de plataforma y cero memberships), que es una decision de autorizacion
         nueva y requiere revision de `apexos-seguridad`;
      D) invertir el orden del login para que una cuenta de plataforma use el camino local.
-   A y B escriben datos de produccion y C y D cambian autorizacion: ninguna esta autorizada.
+
+8) Medida adicional: A y B NO son seguras sobre el codigo desplegado (2026-11-08, ronda 2)
+
+   Se leyo el arbol desplegado de `main` (`1b76376c`) por si bastaba crear el vinculo de empresa.
+   No basta: `ensureTenantMirror` y `ensureUserMirror` en `supabaseAuth.js` escriben sobre el
+   espejo cuando el vinculo aparece, y lo que escriben destruye la cuenta de plataforma.
+     - `ensureTenantMirror` empareja por `{domain}` o por `{name: companyName}` y sobreescribe
+       `active_modules` con lo que devuelve `v_company_module_status` bajo el RLS del usuario. En
+       produccion `public.modules` tiene 0 filas para ese camino, asi que la lista resulta vacia:
+       el tenant perderia TODOS sus modulos. Tambien reescribe `domain`.
+     - `ensureUserMirror` (linea 329 del arbol desplegado) hace `if (existing.role_id !==
+       role.id) patch.role_id = role.id` y degrada `APEX_PLATFORM_SUPERADMIN` (9 permisos,
+       incluidos companies, platform, infrastructure, logs, support, users, roles, audit) a
+       `APEX_ADMIN`, que segun `roleBlueprint` solo tiene `*:*`. Es decir: la cuenta queda con
+       menos acceso que antes y sin forma de volverse a subir desde la propia pantalla.
+   Por eso la eleccion del dueno fue la salida C: resolver el usuario Prisma de plataforma por
+   correo verificado CUANDO hay cero memberships, sin escribir el espejo de tenant, sin tocar
+   `active_modules`, `domain` ni `role_id`. Queda autorizada para `desarrollo` y pendiente de
+   implementacion con revision de `apexos-seguridad`. A y B siguen sin autorizacion, y despues de
+   esta medida se consideran destructivas mientras el espejo automatico siga en el camino.
+
+9) Estado de las autorizaciones al cerrar la ronda 2
+
+   - Promocionar el paquete 401 -> 403 `desarrollo -> develop -> main`: AUTORIZADA por el dueno y
+     en ejecucion. El despliegue no esta verificado hasta que `/health` muestre el commit nuevo.
+   - Salida C: AUTORIZADA para `desarrollo`, SIN implementar.
+   - Salidas A y B: SIN autorizacion y, segumably, innecesarias si C se implementa bien.
+   - Salida D: SIN autorizacion (cambia el orden del login para todas las cuentas).
