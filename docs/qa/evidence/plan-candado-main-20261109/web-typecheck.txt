@@ -1,0 +1,4 @@
+
+> @apex-os/web@2.0.0 typecheck
+> tsc -p tsconfig.typecheck.json --noEmit
+

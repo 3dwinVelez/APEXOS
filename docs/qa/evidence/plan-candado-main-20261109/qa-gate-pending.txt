@@ -1,0 +1,42 @@
+COMPUERTA DE main - ESTADO DECLARADO PARA EL CANDIDATO 6147f8fb
+change_id: plan-candado-main-20261109
+fecha: 2026-11-09
+politica: docs/CHANGE_APPROVAL_QA_POLICY.md
+validador: npm run qa:approval:evidence -- <manifiesto>  (scripts/validate-change-approval-evidence.js)
+
+Este archivo declara, sin maquillaje, que la promocion a main NO esta autorizada todavia.
+El candidato esta reconstruido y certificado en local; lo que falta es la prueba funcional en QA
+sobre el commit exacto, que exige desplegarlo y reemplazar el despliegue actual de QA.
+
+LO QUE YA ESTA HECHO (evidencia en esta carpeta)
+- Alcance reconstruido y medido contra origin/main: 11 commits sobre db3e63a6, sin merge de rama.
+- Suite API 547/542/2 (mismas 2 fallas del baseline de main), suite web 458/457/1 (misma falla del baseline).
+- typecheck y lint en 0 errores; prisma validate OK; gate candado y auditoria de CI en 0 regresiones
+  atribuibles salvo la deriva declarada global_models_not_in_schema 0 -> 3.
+- certify:auth-session contra la API del candidato: 5/5 rechazos 401, revocacion medida y no exigida.
+- Formulario publico: 6/6 sondas anonimas; la empresa sale de la allowlist y el body no puede elegirla.
+- Manifiesto de alcance v2 validado con npm run qa:promotion:scope.
+
+LO QUE FALTA PARA main (campos del manifiesto de aprobacion)
+1. checks.functional: prueba funcional en QA sobre el commit desplegado = candidato. Requiere desplegar
+   el candidato en QA (hoy QA corre c72955d2 de develop) y ejecutar los flujos de Servicios, sesion,
+   Administracion y formulario publico. Estado: NO EJECUTADO.
+2. checks.error: escenarios de error/negativos en QA. Estado: NO EJECUTADO.
+3. checks.support_scripts: scripts de soporte de la corrida. Estado: NO EJECUTADO.
+4. checks.regression y checks.platform_regression: regresion de plataforma en QA
+   (npm --workspace apps/api run certify:platform-regression). Estado: NO EJECUTADO.
+5. certification y regression_certification: script E2E versionado + salida versionada con el commit
+   desplegado. Estado: NO EJECUTADO.
+6. model_company_certification: empresa NYVORA en QA con script versionado y evidencia. Estado: NO EJECUTADO.
+7. Evidencia de navegador del recorrido principal en QA. Estado: NO EJECUTADO.
+8. rollback_plan: controlled_revert con previous_main_commit = db3e63a6ef10. Estado: REDACTABLE; no se
+   ejecuta ni se simula aqui porque exige tocar main.
+9. approval: approved_by, approved_at y status "approved" del responsable funcional. Estado: PENDIENTE
+   de la decision del dueno.
+10. Despliegue del candidato en QA (Railway) y reinstalacion de credenciales de despliegue: en esta
+    sesion se perdieron archivos locales no versionados de la torre; el despliegue exige autorizacion
+    explicita y credenciales vigentes.
+
+CONSECUENCIA
+Mientras 1-10 no se cumplan, main no se toca: ni push, ni merge, ni despliegue. Un QA verde de suites
+locales no sustituye la prueba funcional en el ambiente.

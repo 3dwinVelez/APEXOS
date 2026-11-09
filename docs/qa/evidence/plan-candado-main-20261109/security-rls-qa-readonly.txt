@@ -1,0 +1,2 @@
+[rls-inspect] target=qa tables=251 policies=108 missing_rls=0 logic_differences=41
+[rls-inspect] report=<candidato>\reports\security\rls-qa-2026-11-09T19-29-01-095Z.json
