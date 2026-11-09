@@ -175,7 +175,63 @@ L-01 (Informativo) Dos pestanas pueden presentar el mismo refresh: una rota y la
   enforcement obligaria a re-login. La activacion necesita esa medicion.
 L-02 (Informativo) Los access tokens emitidos antes de una rotacion conservan el sid
   anterior; al encender enforcement caducan por revocacion. La ventana se mide antes.
-R-04 (Alta) A-01/A-13 siguen abiertos: apps/api/src/security/supabaseAuth.js reactiva
-  un usuario desactivado (linea 365) y un tenant suspendido (linea 317-322) al
-  sincronizar. No estaba en la opcion autorizada y toca autenticacion global por otro
-  camino; requiere autorizacion expresa.
+R-04 (Alta) A-01/A-13 CERRADO EN CODIGO el 2026-11-09 (detalle abajo). El espejo de
+  Supabase ya no reactiva al usuario ni a la empresa al sincronizar, y la sesion
+  rechaza explicitamente un estado inactivo despues del espejo. Queda pendiente la
+  medida contra Supabase real: el entorno local no tiene Supabase (54321 caido) y los
+  ambientes remotos aun corren commits anteriores a las fases 0-2.
+
+================================================================================
+Cierre de A-01/A-13: el espejo de Supabase deja de reactivar (2026-11-09)
+================================================================================
+
+Hallazgo reproducido por lectura y cubierto por prueba nueva. Antes:
+
+  - `ensureTenantMirror` (hoy en supabaseAuth.js:319) escribia
+    `{ name, domain, active: true }` y lo guardaba cuando cualquier campo cambiaba:
+    un cambio de nombre o de modulos en Supabase reactivaba una empresa suspendida
+    en el API.
+  - `ensureUserMirror` (hoy en supabaseAuth.js:365) agregaba `patch.active = true`
+    si el usuario estaba inactivo: cada inicio de sesion reabria una cuenta
+    desactivada.
+  - authenticateSupabaseTokenUncached no volvia a mirar `active` despues del
+    espejo, asi que la reactivacion llegaba como una sesion valida.
+
+Despues:
+
+  - ensureTenantMirror arma un `patch` con claves explicitas (name, domain,
+    active_modules) y nunca escribe `active`; la desactivacion administrativa manda
+    y reactivar es una decision explicita.
+  - ensureUserMirror conserva el mismo criterio: nombre y rol, nunca `active`.
+  - authenticateSupabaseTokenUncached rechaza despues del espejo con 403
+    `EMPRESA_SUSPENDIDA` (tenant.active === false) y 403 `USUARIO_DESACTIVADO`
+    (user.active === false). server.js traduce ese 403 sin destruir la sesion.
+  - El camino JWT local ya pasaba por validateAuthorization, que responde
+    USER_REVOKED / TENANT_REVOKED fuera de observacion; el hueco era solo la
+    reactivacion previa del espejo.
+
+Pruebas ejecutadas (2026-11-09, apps/api):
+
+  node --test test/supabase-auth-mirror.test.js
+    ok 1 - un usuario desactivado no se reactiva al sincronizar y la sesion se rechaza
+    ok 2 - una empresa suspendida no se reactiva y la sesion se rechaza
+    ok 3 - usuario y empresa activos siguen autenticando
+    3/3
+
+  node --test test/supabase-auth-mirror.test.js test/supabase-auth-modules.test.js \
+    test/supabase-company-context.test.js test/auth-session-hardening.test.js
+    30/30
+
+La prueba 1 y 2 afirman las dos mitades: la llamada de actualizacion no contiene
+`active: true` y la autenticacion responde 403 con el codigo correcto. La prueba 3
+impide que el cierre rompa el caso legitimo.
+
+Limites de la medida:
+
+  - La verificacion es de contrato (Prisma y fetch simulados), no un E2E contra
+    Supabase: el stack local no levanta Supabase en 54321 y generar un usuario
+    desactivado en la nube excede esta intervencion.
+  - Los ambientes Railway QA/PROD corren 2cb064e2 / 938fc2b6, anteriores a las
+    fases 0-2: la correccion solo toma efecto cuando el bloque se promueva y
+    redespliegue. QA/prod deben repetir la prueba con un usuario inactivo antes de
+    declarar el incidente cerrado en el ambiente.
