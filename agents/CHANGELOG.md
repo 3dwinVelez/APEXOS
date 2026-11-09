@@ -20,6 +20,14 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 - **Límite escrito.** La medida es de contrato (Prisma y fetch simulados); el entorno local no levanta Supabase y QA/PROD aún corren commits anteriores al bloque, así que repetir con un usuario inactivo real en QA queda como condición post-despliegue.
 - Agentes: `apexos-backend` 2.12.0 (regla 28: el espejo no es dueño del ciclo de vida), `apexos-seguridad` 2.16.1 (regla 30: desactivar en el API cierra también la puerta de Supabase), `apexos-qa` 2.34.0 (control 47: dos mitades y token distinto por caso), `apexos-brief` 2.27.0 (regla 40: la deuda residual se reescribe con la mitad medida y la pendiente).
 
+### Los ambientes remotos reciben su control de proxy y la ronda separa lo aplicado, lo diferido y lo que decide el dueño (`plan-candado-ambientes-20261109`)
+
+- **Railway, variables no secretas aplicadas.** QA API suma `TRUST_PROXY=1` y `AUTHORIZATION_VERSION_OBSERVATION_ENABLED=true`; PROD API suma `TRUST_PROXY=1`. Ningún valor de credencial se leyó: el inventario se hizo por nombre y estado del panel, y las sondas fueron anónimas. Efecto real ninguno todavía: QA corre `2cb064e2` y PROD `938fc2b6`, anteriores al código que las lee.
+- **Pendiente que no se adivina.** `APEXOS_PUBLIC_SERVICE_COMPANY_ID` queda sin declarar: siete empresas de QA tienen referencias activas y elegir por conveniencia expondría el catálogo equivocado; sin la variable el formulario falla cerrado con 503. R-03 (catálogo anónimo sin filtro de empresa) sigue abierto y sin cambios aplicados, porque exige allowlist persistida en la base y ventana propia.
+- **Hallazgo Vercel (Alta).** El proyecto `apexos-api` conserva `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `JWT_SECRET`, sigue construyendo desde GitHub y su dominio de producción responde 500 en `/` y `/health`. No se pausó ni eliminó: es destructivo y exige autorización explícita.
+- **Evidencia.** `docs/qa/evidence/plan-candado-20261108/security-ambientes.txt` y sección 16 del brief. Commits `dbc3cf9b` (modal, 16/16) y `674e191a` (A-01/A-13, 3/3) publicados en `origin/desarrollo`.
+- Agentes: `apexos-qa` 2.34.1 (control 48: la variable se registra aplicada, diferida o pendiente, y la credencial no se lee), `apexos-brief` 2.27.1 (regla 41: el cierre de ambientes separa lo aplicado, lo diferido y lo que exige decisión).
+
 ## 2026-11-08
 
 ### El paquete de sesión se libera en `main` y la celda que faltaba era la que pasa el guard de ruta del cliente (`sesion-admin-produccion-20261108`, ronda 3)

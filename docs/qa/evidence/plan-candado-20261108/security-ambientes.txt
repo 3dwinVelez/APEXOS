@@ -1,0 +1,126 @@
+Configuracion de ambientes del plan candado — 2026-11-09
+Solo lectura de paneles y cambios de variables no secretas. Ningun valor de
+credencial se leyo, copio ni registro en este archivo.
+
+================================================================================
+Railway — API de QA
+================================================================================
+Inventario antes: 15 variables (ALLOWED_ORIGINS, APP_ENV,
+AUTHORIZED_EVIDENCE_UPLOADS_ENABLED, CORS_ORIGIN, DATABASE_URL, DISABLE_REDIS,
+FRONTEND_URL, GIT_COMMIT_SHA, JWT_SECRET, NODE_ENV, REDIS_DISABLED,
+SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL, TARGET_ENV).
+
+Agregadas el 2026-11-09 (variables no secretas, via panel con sesion del dueno):
+
+  TRUST_PROXY=1
+    Habilita el resolutor de apps/api/src/security/trustProxy.js con un salto
+    declarado, en lugar de confiar en cualquier X-Forwarded-For. Sin esta
+    variable el limite global y el bloqueo de login se contaban por la IP del
+    proxy; con ella se usa la IP real del cliente.
+
+  AUTHORIZATION_VERSION_OBSERVATION_ENABLED=true
+    Enciende la observacion de Fase 2 (mide USER_REVOKED/TENANT_REVOKED y
+    rotacion de refresh) sin expulsar sesiones. La expulsion sigue apagada:
+    AUTHORIZATION_VERSION_ENFORCEMENT_ENABLED no se declara en ningun ambiente.
+
+Estado del panel despues de aplicar: 17 variables, sin cambios pendientes.
+
+Efecto real: NINGUNO todavia. El API de QA corre 2cb064e2, anterior a las fases
+0-2, que es el codigo que lee estas variables. Se aplican cuando el bloque se
+promueva y QA redespliegue.
+
+================================================================================
+Railway — API de PROD
+================================================================================
+Inventario antes: 16 variables; no incluia TRUST_PROXY ni las banderas de
+observacion.
+
+Agregada el 2026-11-09:
+
+  TRUST_PROXY=1
+
+Aplicada desde el panel (deploy de la variable). Mismo efecto diferido: el API de
+PROD corre 938fc2b6 y no lee la variable todavia. No se agrego ninguna bandera de
+observacion ni de enforcement en produccion.
+
+================================================================================
+Pendiente: allowlist del formulario publico de Servicios
+================================================================================
+APEXOS_PUBLIC_SERVICE_COMPANY_ID no se declaro en ningun servicio (API ni web).
+
+Motivo: la variable decide QUE empresa puede recibir solicitudes del formulario
+publico y su valor correcto es una decision de producto por ambiente. Elegirla
+por conveniencia expondria el catalogo de la empresa equivocada o, al reves,
+dejaria el formulario en 503 EMPRESA_PUBLICA_NO_CONFIGURADA (falla cerrada).
+
+Empresas con referencias de servicio en QA (consulta de solo lectura en el SQL
+Editor de Supabase QA):
+
+  cbbf3627-4336-4f23-95c6-1077414bcd17  SCJ                       130 activas / 131
+  f19f248e-e912-433a-9154-9a4bfbb0241a  Puebla Operaciones        118 / 118
+  f8205af8-219d-445a-beb2-10d4d2b57946  Prueba                     18 / 18
+  c56bc5df-c807-4deb-83f8-fbb4751be613  Cliente Piloto QA           18 / 18
+  2ecf8df3-f0d9-4481-9857-0c203beeae75  Cliente Produccion          18 / 18
+  e8fac747-e410-41dd-8784-2c0ca71660e8  Empresa Demo APEX-OS        18 / 18
+  c0254b9b-3226-4538-b04f-4575011fa594  QA Empresa B RLS            18 / 18
+
+Siete candidatas no permiten deducir la empresa publica. Se deja como decision
+del dueno; hasta que se declare, el formulario publico falla cerrado (503) en
+lugar de adivinar.
+
+================================================================================
+Supabase QA — R-03 sigue abierto, sin cambios aplicados
+================================================================================
+Politica vigente en service_references (pg_policy, leida el 2026-11-09):
+
+  service_references_public_catalog_select
+    USING ((active = true) OR (code = '__SERVICE_TYPES__'))
+
+  service_references_select_member
+    USING (app_private.is_company_member(company_id) AND
+           app_private.has_company_module(company_id, 'servicios'))
+
+  service_references_write_admin
+    USING (app_private.is_company_admin(company_id) AND
+           app_private.has_company_module(company_id, 'servicios'))
+
+El catalogo anonimo no filtra por empresa: cualquiera con la anon key puede leer
+las referencias activas de los 29 tenants (R-03, Alta). Corregirlo exige una
+allowlist persistida en la base (la politica no puede leer la variable de
+entorno del servidor) y aplicarla por ambiente; un cambio de RLS en produccion
+es de alto impacto y necesita autorizacion y ventana propias. No se aplico.
+
+================================================================================
+Vercel — proyecto apexos-api
+================================================================================
+Hallazgo (lectura de panel y sonda anonima permitida por la regla 15):
+
+  - Proyecto `apexos-api` (id prj_cXtEVEDen5tAuLLA5E68szV39WbG) en la cuenta
+    personal. Dominio de produccion https://apexos-api.vercel.app.
+  - La sonda anonima `GET https://apexos-api.vercel.app/health` y `/` responde
+    HTTP 500 `FUNCTION_INVOCATION_FAILED` (2026-11-09). El despliegue de
+    produccion esta roto.
+  - El proyecto conserva 10 variables, entre ellas DATABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY y JWT_SECRET (ultima actualizacion Oct 22). No
+    tiene TRUST_PROXY, ni allowlist publica, ni banderas de observacion.
+  - Los "Recents" del panel muestran despliegues preview disparados por pushes
+    recientes al repositorio (incluido el commit del modal de Suscripciones),
+    asi que el proyecto sigue construyendo desde GitHub.
+
+Riesgo: un despliegue abandonado y caido que conserva credenciales de produccion
+y sigue recibiendo builds. No hay evidencia de filtracion; la recomendacion es
+decision del dueno: pausar o eliminar el proyecto, o repararlo y rotar
+JWT_SECRET y la service role que tenga configuradas. No se modifico ni pauso
+nada: borrar o pausar un proyecto con dominio publico es una accion destructiva
+que exige autorizacion explicita.
+
+================================================================================
+Limites de esta medicion
+================================================================================
+  - No se leyo el valor de ninguna credencial; solo nombres de variables y
+    estados del panel. Las sondas fueron anonimas y sin Authorization.
+  - No se midio el resultado de los despliegues de Railway posteriores al
+    cambio de variables: el panel de despliegues no cargo su listado en la
+    sesion del navegador. Se verifica en el post-despliegue de la promocion.
+  - La Rama de produccion del proyecto Vercel no se pudo leer: la pagina de
+    ajustes de Git no expuso ese dato en el arbol del panel.
