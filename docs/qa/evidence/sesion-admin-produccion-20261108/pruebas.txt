@@ -1,0 +1,129 @@
+Pruebas de la correccion 401 -> 403 (sesion de Administracion, 2026-11-08)
+
+Se conservan solo los resumenes: la salida cruda del runner trae rutas absolutas de la estacion
+y no es evidencia.
+
+1) Prueba nueva de contrato, con el decorador real levantado
+
+   AUTH_STATUS_INTEGRATION=1 node --env-file=.env --test --test-force-exit \
+     apps/api/test/authorization-status-codes.test.js
+
+     ok 1 - tenancy sin empresa en la sesion responde 403 y no 401
+     ok 2 - usuario autenticado sin rol responde 403 ROL_NO_DEFINIDO y no 401
+     ok 3 - la empresa solicitada por fuera de las memberships es un rechazo de autorizacion
+     ok 4 - un usuario Supabase sin ninguna empresa activa se rechaza con 403, no con 401
+     ok 5 - un token que ni siquiera resuelve identidad sigue siendo 401
+     ok 6 - el decorador real responde 403 al usuario Supabase sin empresa y 401 al token basura
+     # tests 6 / # pass 6 / # fail 0 / # skipped 0
+
+   La 6 levanta `require("../server")`, inyecta GET /api/v1/admin/roles contra un borde Supabase
+   simulado en 127.0.0.1 y mide los dos codigos. El log de la peticion muestra
+   `res":{"statusCode":403}` para la cuenta sin empresa y 401 para el token basura.
+
+   Pasada intermedia que tambien se midio (control de la prueba, no del producto): con el stub
+   aceptando cualquier token, la 6 fallaba con `403 !== 401`. El defecto era del stub, no del
+   fix: se corrigio el stub para que solo reconozca el token de la cuenta sin empresa.
+
+2) Pruebas afectadas del API
+
+   node --env-file=.env --test --test-force-exit \
+     apps/api/test/hr-route-physical-deletion.test.js \
+     apps/api/test/supabase-company-context.test.js \
+     apps/api/test/comercio-bucket-provisioning.test.js
+     # tests 32 / # pass 32 / # fail 0 / # skipped 0
+
+3) Suite web completa, despues del cambio en apps/web/lib/api.ts
+
+   cd apps/web && node --experimental-strip-types --test test/*.test.mjs
+     # tests 666 / # pass 666 / # fail 0 / # skipped 0   (661 preexistentes + 5 nuevas)
+
+   apps/web/test/session-scope-403.test.mjs  5/5, incluida la asercion estructural de que
+   ninguna llamada a `clearSession(` esta bajo una rama que no sea 401.
+
+4) Lo que NO se certifico en esta intervencion
+
+   - No hay corrida end-to-end contra produccion con la sesion real del usuario: reproducir el
+     sintoma exige la clave de la cuenta, y ninguna prueba de este cierre la usa.
+   - El fix no esta desplegado: vive en `desarrollo`. En produccion sigue corriendo `1b76376c`,
+     que contesta 401 y por eso hoy todavia expulsa. Promover a `develop` y a `main` requiere
+     autorizacion independiente.
+   - La cuenta maestra sigue sin `company_users` en produccion; con el fix dejara de ser expulsada
+     pero vera el mensaje de empresa no asociada hasta que se decida la salida A/B/C/D del
+     diagnostico.
+
+5) Revalidacion sobre el arbol de cierre (despues de los cambios en agentes, changelog y brief)
+
+   Desde la raiz del repositorio, con el `.env` de la raiz (apps/api no tiene `.env` propio;
+   ejecutar `--env-file=.env` dentro de apps/api da `.env: not found` y eso no es un fallo del fix):
+
+     AUTH_STATUS_INTEGRATION=1 node --env-file=.env --test --test-force-exit \
+       apps/api/test/authorization-status-codes.test.js
+       # tests 6 / # pass 6 / # fail 0 / # skipped 0        exit=0
+
+     node --env-file=.env --test --test-force-exit \
+       apps/api/test/hr-route-physical-deletion.test.js \
+       apps/api/test/supabase-company-context.test.js \
+       apps/api/test/comercio-bucket-provisioning.test.js
+       # tests 32 / # pass 32 / # fail 0 / # skipped 0      exit=0
+
+     cd apps/web && node --experimental-strip-types --test test/*.test.mjs
+       # tests 666 / # pass 666 / # fail 0 / # skipped 0    exit=0
+
+     cd apps/web && npx tsc -p tsconfig.typecheck.json --noEmit
+       exit=0 (sin salida: typecheck limpio)
+
+   Los resumenes de arriba se copiaron del archivo que escribio el runner; ninguna corrida se
+   paso por una tuberia, porque `| tail` devuelve el exit de `tail` y no el del runner.
+
+6) Gates de contexto del equipo, sobre el arbol de cierre
+
+     npm run agents:sync      -> sincronizados 11 agentes y 11 documentos
+     npm run agents:check     -> OK: 11 agentes y 11 documentos verificados
+     npm run test:agents      -> # tests 46 / # pass 46 / # fail 0
+     npm run agents:preflight -> Veredicto: OK_CON_ADVERTENCIAS
+       (unica advertencia: `apps/api/server.js` sigue sin agente dueno; el preflight lo enruta a
+        equipo-apexos. Es la carencia de gobernanza que este cierre publica como deuda 4.)
+     npm run agents:coverage  -> OK: contexto del equipo actualizado para todas las rutas
+       apexos-brief 2.23.0 local-ahead  |  apexos-backend 2.11.0 local-ahead  |
+       apexos-frontend 2.12.0 local-ahead
+
+7) Certificacion end-to-end versionada del paquete (ronda 2, 2026-11-08)
+
+     npm run certify:sesion-admin:local
+       -> node scripts/certifications/sesion-administracion-local.js
+          --output=docs/qa/evidence/sesion-admin-produccion-20261108/certificacion-local.json
+
+     Cheques medidos (11/11, exit 0):
+       OK  sesion Supabase valida sin empresa responde 403 y conserva la sesion
+            :: 403 EMPRESA_NO_VINCULADA en 62 ms   (servidor real en 127.0.0.1, socket efimero)
+       OK  token que no resuelve identidad sigue respondiendo 401 TOKEN_INVALIDO
+       OK  peticion anonima sigue siendo 401
+       OK  apps/web: contrato de alcance y clearSession solo bajo 401 :: # tests 5 # fail 0
+       OK  apps/api: authorization-status-codes :: # tests 6 # pass 6 # fail 0
+            (AUTH_STATUS_INTEGRATION=1, corrida dentro de esta misma certificacion)
+       OK  6 contratos de fuente: server 403 por statusCode, server 500 EMPRESA_NO_RESUELTA,
+            tenancy 403 EMPRESA_REQUERIDA, rbac sin 401 por rol y 4 ROL_NO_DEFINIDO,
+            supabaseAuth statusCode 403 + EMPRESA_NO_VINCULADA, lib/api.ts SESSION_SCOPE_CODES
+
+     El borde de Supabase esta simulado en localhost y solo reconoce el token del escenario; no
+     se usan credenciales reales ni datos de produccion. El JSON de evidencia se verifico sin
+     rutas absolutas de la estacion y sin secretos.
+
+7.1) Dos defectos del arnes corregidos en esta ronda (del verifier, no del producto)
+
+     a) La primera corrida paso 11/11 y NO termino: `app.close()` no detiene el planificador de
+        cron que el arranque registra, asi que el proceso quedo vivo mas de diez minutos y el
+        `npm run` no devolvia exit. Se agrego `process.exit(0)` / `process.exit(1)` explicito, el
+        mismo patron de `accounting-standard-chart-local.js:212` y
+        `transport-income-accounting-local.js:141`. Un gate que no termina se lee como ausencia
+        de evidencia y bloquea la promocion igual que un rojo.
+     b) El script necesita el `.env` de la raiz (`scripts/load-env`) porque `require(server)` abre
+        Prisma al construirse; sin base de datos el fallo seria de infraestructura y se
+        reportaria como falla del contrato.
+
+8) Gates de contexto del equipo, ronda 2
+
+     npm run agents:sync      -> sincronizados 11 agentes y 11 documentos
+     npm run agents:check     -> OK: 11 agentes y 11 documentos verificados
+     npm run test:agents      -> # tests 46 / # pass 46 / # fail 0
+     npm run agents:preflight -> Veredicto: OK (rutea apexos-qa sobre las rutas nuevas)
