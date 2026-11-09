@@ -2,7 +2,7 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.11.0
+version: 2.12.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -84,6 +84,8 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     - **La renovación de sesión guarda el refresh nuevo.** `apps/web/lib/sessionSecurity.ts:125` escribe `body.refresh` en `localStorage` junto al token. Si el cliente conserva el refresh viejo, el API mide un reuso que produjo el propio cliente y la señal deja de valer para decidir el enforcement. Un `keepSessionAlive` que solo reescriba `token` está incompleto, aunque la pantalla siga funcionando.
     - **`isAdministrativeRole` no abre Administración por parecidos.** `apps/web/lib/moduleAccessPolicy.ts` compara nombre normalizado exacto contra la lista; `apps/web/test/module-access-role.test.mjs` fija que subcadenas, valores vacíos y roles ausentes no abren el módulo. Un `.includes("admin")` aquí repite el bypass que la API ya cerró.
     Prueba de cierre: `node --experimental-strip-types --test test/module-access-role.test.mjs` (3/3 el 2026-11-08). Por qué: sin la primera regla, la detección de reuso mide un artefacto del cliente; sin la segunda, una pestaña administrativa se abre por un nombre que solo se parece.
+
+27. **El cliente trata cualquier 401 como sesión muerta, así que un 401 que no es de credencial se vive como «la sesión no aguanta».** Cuatro contratos del incidente del 2026-11-08: (a) en `apps/web/lib/api.ts` el 401 intenta refresh y, si no puede, llama `clearSession()` y hace `window.location.href = "/login"` dentro del propio `api()`; un `Promise.allSettled` alrededor **no** protege, porque el redirect ocurre antes de que el settled devuelva. (b) Un código de alcance (`EMPRESA_REQUERIDA`, `EMPRESA_NO_VINCULADA`, `EMPRESA_NO_AUTORIZADA`, `ROL_NO_DEFINIDO`) tiene que llegar como 403 y mostrarse nombrando la empresa o el rol que falta, más la afirmación explícita de que la sesión sigue activa; el mensaje genérico de «permiso denegado» deja al usuario sin acción. (c) La prueba es estructural: se verifica que ninguna ruta 403 alcanza `clearSession`, no solo el texto del mensaje. (d) Los demás módulos ni llegaban a la API —`supabaseApiFallback` no cubre `/api/v1/admin/*` y el resto lee Supabase desde el cliente—, así que «solo falla Administración» es evidencia de la ruta, no un misterio. Por qué: el literal que veía el usuario era «Sesion expirada, revocada o no autorizada» al abrir el módulo de administración en producción.
 
 ## Checklist de intervención
 

@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.10.0",
+      "version": "2.11.0",
       "updated_at": "2026-11-08",
-      "sha256": "e78acc264fd5a1d867d2508f1093bf7caa7129db881d6318a9ce6350a69d7ad2",
+      "sha256": "9e12fa6d15f6c3f9a3e02a3cc8d6044ed3c4c76cf1060a2a4eefa1ac1e427ed0",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -83,15 +83,16 @@
         "strip-ajv-reconstruccion",
         "modos-tema-enum-tres-capas",
         "almacen-driver-configurado",
-        "fallo-dependencia-conserva-codigo"
+        "fallo-dependencia-conserva-codigo",
+        "401-es-credencial-403-es-alcance"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.22.0",
+      "version": "2.23.0",
       "updated_at": "2026-11-08",
-      "sha256": "6e1f1526d40846d8cbdc425f6071ad244fd4a8b788a8128228dc292ae6270101",
+      "sha256": "11abe028f56d34bd289ffb1a7bf05d1e4e35c2b8656030e91ad3fa29df655ccc",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -122,7 +123,8 @@
         "limitacion-ambiental-reproducida",
         "pasada-ux-registra-hallazgo-cancelado",
         "brief-separa-arnes-de-producto",
-        "paridad-contra-el-arbol-publicado"
+        "paridad-contra-el-arbol-publicado",
+        "incidente-separa-codigo-de-datos"
       ]
     },
     {
@@ -152,9 +154,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.11.0",
+      "version": "2.12.0",
       "updated_at": "2026-11-08",
-      "sha256": "8e73c44d11f4e5460a772c3a208d61b0a9a80f7f3961b2ebdb8e1ead3490646d",
+      "sha256": "4c3700743fdb8e5cbdb4128cdd48ca006ac0e16cf10d0c95e9007cea7d026575",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -183,7 +185,8 @@
         "enlace-accion-con-button-classes",
         "piso-tactil-24px-en-el-objetivo-real",
         "niveles-de-tinta-con-cota-aa-medida",
-        "lote-de-texto-se-revisa-en-el-diff"
+        "lote-de-texto-se-revisa-en-el-diff",
+        "403-de-alcance-no-toca-clear-session"
       ]
     },
     {
@@ -251,9 +254,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.29.0",
+      "version": "2.30.0",
       "updated_at": "2026-11-08",
-      "sha256": "4125fdc84161a0aad4ff842506652615d4eaf7f33007caec649d3618b4fd9bff",
+      "sha256": "5dfad9c7273d70102db19c6a532de583413364d519b48f1a06ea0b205847087a",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -297,15 +300,16 @@
         "estado-de-error-se-provoca-en-la-certificacion",
         "el-codigo-de-negocio-discrimina-la-causa",
         "evidencia-de-gates-con-execpath",
-        "gate-post-deploy-por-ambiente"
+        "gate-post-deploy-por-ambiente",
+        "certificacion-de-estados-con-servidor-real"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.14.0",
+      "version": "2.15.0",
       "updated_at": "2026-11-08",
-      "sha256": "23ee8e17f5dad97efc58cb36245f0e241e39a029b521dfa34e07264b9f989cbe",
+      "sha256": "66a924c58db137535927b93923fb9f07ed83673f03602ba23f45242944af360c",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -334,15 +338,16 @@
         "torre-etiquetas-de-grafico-agregadas",
         "enum-cerrado-modos-tema",
         "csp-img-solo-loopback-dev",
-        "lectura-anonima-solo-almacen-local"
+        "lectura-anonima-solo-almacen-local",
+        "reclasificacion-401-con-caso-espejo-medido"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.17.0",
+      "version": "2.18.0",
       "updated_at": "2026-11-08",
-      "sha256": "4890c20f6a311957a5f1959e9d64f900f505411dc594311a7d8b23b4b69f530f",
+      "sha256": "d63bee69fe3bbcae34425ecf1bffd31c57ded091e573bb4dc2dd06d83c7a50d4",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -371,7 +376,8 @@
         "pasada-ux-se-mide-antes-de-despachar",
         "rojo-de-medicion-se-atribuye",
         "editar-fuente-no-espejo",
-        "lo-publicado-se-retrotrae-a-desarrollo"
+        "lo-publicado-se-retrotrae-a-desarrollo",
+        "incidente-de-produccion-distingue-despliegue"
       ]
     }
   ],

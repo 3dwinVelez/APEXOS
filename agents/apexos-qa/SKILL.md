@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.29.0
+version: 2.30.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -136,6 +136,8 @@ Antes de actuar, leer en este orden:
     - La habilitación por empresa se **reporta**, nunca se afirma: encender un módulo en un tenant productivo es decisión del dueño. Si todas las empresas figuran con `enabled=false`, la certificación funcional end-to-end en ese ambiente se declara `BLOQUEO` con responsable y comando pendiente. Escribir «módulo liberado y verificado» con ese conteo en rojo es el mismo «passed» decorativo que la Fase 0 retiró.
     - La deuda de esquema ajena se mide contra el árbol desplegado, no contra `desarrollo`. El 2026-11-08: `audit:production:schema` sobre `1b76376c` → 166 modelos, 8 tablas faltantes (todas `TransportSettlement*`), 0 columnas; sobre `desarrollo` → 191 modelos, 34 tablas y 5 columnas. Presentar la segunda cifra como falla de la promoción es culparle un alcance que no llevó.
     Por qué: el pedido fue «el módulo completo de Comercio, nada más»; un `200` en la home o un build verde no distinguen un módulo desplegado de uno ausente, y sin DDL la vitrina pública falla igual por otra causa.
+
+43. **Un cambio de códigos de estado se certifica con el servidor real levantado y con el caso espejo, no con un clon del `catch`.** Cuatro mandatory del 2026-11-08: (a) arrancar `require("../server")` e inyectar la ruta afectada con `app.inject` —los tests que re-implementan el `preHandler` local prueban su propio borrador y no la app—; (b) medir el caso contrario (credencial inválida sigue 401) en la misma corrida; (c) el stub del borde externo (Supabase) **solo** reconoce el token del escenario: un stub que devuelve usuario válido para cualquier bearer hace que el token basura caiga en la rama de empresa y la prueba se rompa por defecto de la prueba, no del producto; (d) correr con `--test-force-exit` (los cron hijos del arranque no dejan cerrar el proceso) y **sin tuberías**: `... | tail -30` devuelve el exit de `tail`, y quedó registrado un resumen de 0 bytes con `exit=0`. Un resumen que no se escribió no es evidencia y no se presenta como verde. Por qué: la primera corrida real falló `403 !== 401` por el stub, y una corrida enmascarada por `tail` habría cerrado el incidente sin medición.
 
 ## Checklist de intervención
 

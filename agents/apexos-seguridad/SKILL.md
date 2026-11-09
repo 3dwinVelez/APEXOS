@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.14.0
+version: 2.15.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -92,6 +92,8 @@ Antes de actuar, leer en este orden:
     - **`bcrypt.compare` corre siempre y la respuesta es única.** `modules/auth/service.js:134-135` compara contra un hash señuelo cuando el correo no existe y devuelve el mismo `401` para correo inexistente, clave incorrecta y usuario desactivado; el `403 "Usuario desactivado"` desapareció porque confirmaba la cuenta.
     - **`trustProxy` es una allowlist, no un booleano.** `security/trustProxy.js:12` solo honra `X-Forwarded-For` con saltos, IP/CIDR o palabras de proxy-addr declaradas en `TRUST_PROXY`; `true` se rechaza a propósito. Sin declaración, rotar la cabecera no cambia la clave del rate limit ni la del bloqueo de login. El costo —detrás de un proxy no declarado los anónimos se agrupan por la IP del proxy— se declara como prerrequisito de ambiente; no se esconde ni se «arregla» volviendo a `true`.
     Cierre medido el 2026-11-08: 21/21 API (`authorization-observe`, `auth-session-hardening`, `trust-proxy`, `rbac-administrative-role`) y 3/3 web (`module-access-role`). Residual declarado: A-01/A-13 en `security/supabaseAuth.js:317,365` siguen reactivando usuario y empresa al sincronizar. Por qué: logout, expulsión y degradación de permisos no surtían efecto hasta que expirara el access token de 8 h, y el login distinguía una cuenta desactivada de una clave incorrecta.
+
+29. **Reclasificar un 401 como 403 solo se acepta con el caso espejo medido contra el decorador real.** Cuatro reglas del incidente de sesión del 2026-11-08: (a) la denegación no se relaja, pero el cambio puede leerse como «dejar pasar», así que la prueba fija las dos mitades en la misma corrida —token válido sin contexto de empresa responde 403 con su código, y el token que no resuelve identidad **sigue** respondiendo `401 TOKEN_INVALIDO`—; sin la segunda aserción no hay prueba de que la autenticación no se aflojó. (b) Una fila `company_users` es el único puente entre una identidad de Supabase y un tenant de Prisma: cuenta con sesión válida y cero vínculos es un **estado de datos**, no un ataque, y escribir ese vínculo en producción es autorización nueva. (c) El orden del login (Supabase primero, local como respaldo) es una decisión de autorización porque decide qué identidad llega a la API y con qué `auth_provider`. (d) `authorizationState.validateAuthorization` sigue expulsando con 401 `USER_REVOKED`/`TENANT_REVOKED`/`AUTHORIZATION_STATE_MISSING`: revocar es matar la sesión, no es un caso de alcance, y no se toca al reescribir los demás códigos. Por qué: la cuenta maestra de plataforma no tenía ninguna fila `company_users` en producción y el rechazo del vínculo se respondía 401, expulsando al único usuario legítimo de la administración.
 
 ## Checklist de intervención
 

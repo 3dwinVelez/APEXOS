@@ -1,0 +1,109 @@
+Diagnostico de la expulsion de sesion al abrir Administracion en produccion
+Fecha: 2026-11-08
+Ambiente afectado: produccion (Railway api/web), commit desplegado 1b76376c0c37 (el mismo que
+se certifico en el gate post-despliegue de Comercio). Rama analizada: origin/main, que es la
+unica que corre ahi. Las Fases 1 y 2 del candado (a87ce176, 95ced40b) NO estan en main, asi
+que la revocacion con enforcement no participa en este incidente.
+
+1) Sintoma medido, no relatado
+
+   La cuenta maestra de plataforma (espejo Prisma: usuario id 1, rol APEX_PLATFORM_SUPERADMIN,
+   tenant "APEXOS Platform", usuario activo, tenant activo) inicia sesion correctamente en
+   Supabase Auth y al abrir Administracion el navegador termina en /login de inmediato.
+
+2) La cadena que expulsa, leida en el arbol desplegado
+
+   a) `apps/web/app/login/page.tsx:133-146` intenta Supabase PRIMERO y solo cae al login local
+      si Supabase falla. La cuenta existe en `auth.users` y su login de Supabase funciona, de
+      modo que la sesion queda con `auth_provider=supabase` y el token es un JWT de Supabase.
+   b) `apps/api/server.js` (decorador `authenticate`): `jwt.verify` rechaza el JWT de Supabase y
+      delega en `authenticateSupabaseToken(token, x-company-id)`.
+   c) `apps/api/src/security/supabaseAuth.js`: `getSupabaseMembershipContext` lee
+      `company_users?user_id=eq.<uuid>&status=eq.active`. Para esta cuenta la consulta devuelve
+      **cero filas**. Con `x-company-id` enviado, `selectMembership` lanza
+      "La empresa solicitada no pertenece al usuario"; sin el header, `selectMembership` devuelve
+      null, `ensureUserMirror` devuelve null y se lanza
+      "Usuario Supabase sin espejo Prisma para la empresa seleccionada".
+   d) Los dos lanzos eran `Error` simples. El `catch` del decorador no miraba el motivo:
+      respondia **401 TOKEN_INVALIDO** para todo lo que no fuera credencial invalida.
+   e) `apps/web/lib/api.ts`: cualquier 401 intenta refresh, y si no funciona llama
+      `clearSession()` y hace `window.location.href = "/login"`. El mensaje que veia el usuario
+      era literalmente "Sesion expirada, revocada o no autorizada" cuando la sesion estaba viva
+      y lo que faltaba era un vinculo de empresa.
+   f) Por que solo Administracion: `supabaseApiFallback` no cubre `/api/v1/admin/*` y
+      `shouldPreferOperationalApi` tampoco, asi que los demas modulos nunca llegan a la API y
+      nunca ven el 401. Administracion es el unico modulo que si lee de la API en el montaje
+      (`apps/web/app/dashboard/administracion/page.tsx` dispara 8 GET en Promise.allSettled).
+
+3) Medida en la base de produccion (solo lectura, sin credenciales en este archivo)
+
+   auth.users                          107 (28 con inicio de sesion en los ultimos 30 dias)
+   company_users                       106 filas, todas status=active
+   usuarios con login reciente y CERO memberships    1   <- la cuenta maestra
+   companies                                    2   (IMPORTADORA SCJ SAS, NYVORA)
+   rol de la cuenta                  APEX_PLATFORM_SUPERADMIN, is_system=true
+   capacidades del rol               module="*" action="*" + companies/infrastructure/logs/
+                                     platform/roles/support/users:administer, audit:read
+   modulos activos del tenant        inicio, administracion_apex, platform_admin, auditoria,
+                                     configuracion, logs, soporte, infraestructura
+
+   Es decir: el rol y los modulos estan bien. Lo que no existe es la fila `company_users` que
+   enlace el uuid de Supabase con una empresa, y ese es el unico puente que el decorador conoce
+   para llegar a un usuario Prisma.
+
+4) Clasificacion del defecto
+
+   Un 401 significa "esta credencial no sirve"; el cliente responde tirando la sesion, y esa es
+   la reaccion correcta. Los cuatro casos encontrados son de otra naturaleza: la credencial sirve
+   y lo que falta es contexto (empresa no seleccionada, empresa que no pertenece al usuario,
+   cuenta sin empresa activa, usuario autenticado sin rol). Devolverlos como 401 convierte un
+   problema de alcance en una expulsion, y por eso "la sesion no aguanta".
+
+   Mismos 401 mal clasificados, medidos en el mismo arbol:
+     - `apps/api/src/middleware/tenancy.js:10`     401 EMPRESA_REQUERIDA
+     - `apps/api/src/middleware/rbac.js` (4 sitios) 401 NO_AUTENTICADO con `request.user.role` null
+     - `apps/api/server.js` (bloque de tenant)      401 TOKEN_INVALIDO cuando falla la lectura del
+       tenant: un titubeo de la base o de la cache derribaba sesiones validas.
+
+   Se conservo como 401 lo que si es autenticacion: `mobile-identity.js:112` (sesion inexistente)
+   y el rechazo de un token que no resuelve identidad en Supabase.
+
+5) Correccion aplicada en desarrollo (commiteada en esta intervencion)
+
+   - `supabaseAuth.js`: `authorizationDenied(message, code)` produce errores con `statusCode=403`
+     y codigos `EMPRESA_NO_AUTORIZADA` / `EMPRESA_NO_VINCULADA`.
+   - `server.js`: el catch del camino Supabase responde 403 con su codigo cuando el error lo trae;
+     sigue respondiendo 401 TOKEN_INVALIDO para credenciales invalidas. El bloque del tenant pasa
+     de 401 a 500 `EMPRESA_NO_RESUELTA`.
+   - `tenancy.js`: `EMPRESA_REQUERIDA` pasa de 401 a 403.
+   - `rbac.js`: los cuatro rechazos por rol ausente pasan de 401 NO_AUTENTICADO a
+     403 ROL_NO_DEFINIDO.
+   - `apps/web/lib/api.ts`: `SESSION_SCOPE_CODES` + mensajes que dicen que falta la empresa (o el
+     rol) y afirman que la sesion sigue activa, en lugar del 403 generico de "pide acceso".
+
+6) Pruebas que fijan la conducta
+
+   `apps/api/test/authorization-status-codes.test.js`  6/6 (la ultima, real, bajo
+     AUTH_STATUS_INTEGRATION=1: levanta el servidor con `require("../server")`, inyecta
+     `GET /api/v1/admin/roles` con un token Supabase de una cuenta sin empresa contra un borde
+     simulado en localhost y verifica **403 EMPRESA_NO_VINCULADA**; con un token basura verifica
+     **401 TOKEN_INVALIDO**, que es la prueba de que no se relajo la autenticacion).
+   `apps/web/test/session-scope-403.test.mjs`          5/5 (incluida la asercion estructural de
+     que ninguna ruta 403 puede alcanzar `clearSession`).
+   `apps/api/test/hr-route-physical-deletion.test.js`  actualizado de 401/NO_AUTENTICADO a
+     403/ROL_NO_DEFINIDO; antes de este cambio esa prueba fijaba la conducta equivocada.
+   Suites: API 32/32 en las pruebas tocadas, web 666/666 (661 preexistentes + 5 nuevas).
+
+7) Lo que esta correccion NO resuelve (todavia en manos del duenyo)
+
+   El 403 deja de expulsar, pero la cuenta maestra sigue sin poder cargar Administracion hasta
+   que exista el vinculo de empresa en produccion. Las salidas medidas son:
+     A) crear en produccion la empresa que representa a la plataforma y su `company_users` activa
+        para el uuid de Supabase de la cuenta;
+     B) vincular la cuenta a una de las dos empresas existentes, con lo que la administracion pasa
+        a resolverse contra el tenant de esa empresa y no contra "APEXOS Platform";
+     C) un respaldo de plataforma en `supabaseAuth` (email verificado + usuario Prisma activo con
+        rol de sistema de plataforma y cero memberships), que es una decision de autorizacion
+        nueva y requiere revision de `apexos-seguridad`;
+     D) invertir el orden del login para que una cuenta de plataforma use el camino local.
+   A y B escriben datos de produccion y C y D cambian autorizacion: ninguna esta autorizada.

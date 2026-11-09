@@ -150,6 +150,10 @@ function readFailurePayload(raw: string) {
   }
 }
 
+// La credencial sirve pero falta el contexto de empresa. No es un permiso negado y tampoco
+// una sesion muerta: hay que nombrar la empresa que falta, no expulsar al usuario.
+const SESSION_SCOPE_CODES = ["EMPRESA_REQUERIDA", "EMPRESA_NO_VINCULADA", "EMPRESA_NO_AUTORIZADA"];
+
 type FailureEnvelope = { code: string; requestId: string; detail: string };
 
 function failureFromJsonBody(body: { error?: string; message?: string; code?: string; request_id?: string } | null): FailureEnvelope {
@@ -174,6 +178,8 @@ function requestErrorMessage(path: string, status: number, detail: string, metho
   const action = writing ? "guardar" : "cargar";
   const cleanDetail = String(detail || "").replace(/^\s*\{.*\}\s*$/, "").trim().slice(0, 240);
   if (status === 401) return "Tu sesión venció. Inicia sesión de nuevo para continuar.";
+  if (status === 403 && SESSION_SCOPE_CODES.includes(code)) return "Tu cuenta no tiene una empresa activa asociada, por eso la administración no carga. Elige una empresa en el selector o pide que te asignen una. Tu sesión sigue activa.";
+  if (status === 403 && code === "ROL_NO_DEFINIDO") return "Tu usuario no tiene un rol definido, por eso la administración no carga. Pide a un administrador que le asigne un rol. Tu sesión sigue activa.";
   if (status === 403) return writing ? "No tienes permiso para guardar este registro. Pide el acceso a tu administrador." : "No tienes permiso para ver esta información. Pide el acceso a tu administrador.";
   if (status === 404) return writing ? "El registro que intentabas modificar ya no está disponible. Refresca la lista e inténtalo de nuevo." : `No encontramos la información solicitada en ${path}.`;
   if (RETRYABLE_BUSY_CODES.includes(code)) {

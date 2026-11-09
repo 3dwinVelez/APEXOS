@@ -2,7 +2,7 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.10.0
+version: 2.11.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -81,6 +81,8 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
     - **`bcrypt.compare` corre siempre y hay una sola respuesta de fallo.** `service.js:134-135` usa un hash señuelo cuando el correo no existe; correo inexistente, clave incorrecta y usuario desactivado comparten un `401`. El costo de bcrypt no puede depender de si la cuenta existe.
     - **`trustProxy` se declara, no se asume.** `server.js:16` resuelve `TRUST_PROXY` con `src/security/trustProxy.js:12`, que rechaza `true` y solo acepta saltos, IP/CIDR o palabras conocidas. Detrás de un proxy sin declarar, la clave del rate limit y del bloqueo de login pasa a ser la IP del proxy: es un costo de ambiente que se declara, no un motivo para volver a `true`.
     Prueba de cierre: `node --test test/authorization-observe.test.js test/auth-session-hardening.test.js test/trust-proxy.test.js` (17/17 el 2026-11-08). Por qué: la revocación no surtía efecto hasta que expirara el token y `/auth/refresh` entregaba un access token sin invalidar el refresh de 30 días.
+
+27. **El código de estado es parte del contrato de autorización: 401 es «esta credencial no sirve», 403 es «la credencial sirve pero esto no te toca» y un fallo del servidor leyendo el contexto es 5xx.** Cuatro contratos que dejó el incidente de producción del 2026-11-08: (a) todo `preHandler` que corre después de `authenticate` ya sabe que el token fundó identidad, así que un rechazo por alcance —tenant no seleccionado, empresa que no pertenece al usuario, cuenta sin vínculo de empresa, usuario sin rol— responde **403** con su código de negocio; responder 401 desde ahí borra sesiones válidas, porque el cliente destruye el token ante cualquier 401. (b) Un error **leyendo** el tenant (`tenantCache`, la base) es 500, no 401: un titubeo del servidor no puede expulsar al usuario. (c) Los sitios corregidos en el árbol desplegado eran `src/middleware/tenancy.js` (`401 EMPRESA_REQUERIDA`), los cuatro guardas de `src/middleware/rbac.js` (`401 NO_AUTENTICADO` con usuario ya autenticado) y `server.js`, que convertía cualquier lanzamiento del vínculo de empresa en `401 TOKEN_INVALIDO` y también cualquier excepción de la caché de tenants. (d) La corrección no afloja nada: la petición sigue denegada, cambia el motivo que ve el cliente, así que se comprueba con el decorador real y no con un borrador del `catch`. Prueba de cierre: `AUTH_STATUS_INTEGRATION=1 node --env-file=.env --test --test-force-exit test/authorization-status-codes.test.js` (6/6 el 2026-11-08). Por qué: Administración echaba al usuario a `/login` en el primer render y el síntoma reportado fue «no me aguanta la sesión».
 
 ## Checklist de intervención
 

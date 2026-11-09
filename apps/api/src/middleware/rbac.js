@@ -157,7 +157,7 @@ function requireAnyAdminCapability(requirements) {
   return async function adminCapabilityMiddleware(request, reply) {
     return measurePhase("authorization", async () => {
       const role = request.user.role;
-      if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
+      if (!role) return reply.code(403).send({ error: "El usuario autenticado no tiene un rol definido", code: "ROL_NO_DEFINIDO" });
       if (!tenantHasModule(request.tenant, "admin")) {
         return reply.code(403).send({
           error: "Modulo no habilitado para esta empresa",
@@ -221,7 +221,7 @@ function requirePhysicalDeleteGrant(resourceKey) {
   return async function physicalDeleteMiddleware(request, reply) {
     return measurePhase("authorization", async () => {
       const role = request.user.role;
-      if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
+      if (!role) return reply.code(403).send({ error: "El usuario autenticado no tiene un rol definido", code: "ROL_NO_DEFINIDO" });
       if (!tenantHasModule(request.tenant, resourceKey)) {
         return reply.code(403).send({
           error: "Modulo no habilitado para esta empresa",
@@ -259,7 +259,8 @@ function permissionMiddleware(module, action, allowAdministrativeBypass) {
   return async function rbacMiddleware(request, reply) {
     return measurePhase("authorization", async () => {
     const role = request.user.role;
-    if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
+    // Autenticado pero sin rol: es un problema de autorizacion. Un 401 aqui tira la sesion.
+    if (!role) return reply.code(403).send({ error: "El usuario autenticado no tiene un rol definido", code: "ROL_NO_DEFINIDO" });
     if (!tenantHasModule(request.tenant, module)) {
       return reply.code(403).send({
         error: "Modulo no habilitado para esta empresa",
@@ -321,7 +322,7 @@ function requireAnyPermission(requirements) {
   return async function anyPermissionMiddleware(request, reply) {
     return measurePhase("authorization", async () => {
       const role = request.user.role;
-      if (!role) return reply.code(401).send({ error: "No autenticado", code: "NO_AUTENTICADO" });
+      if (!role) return reply.code(403).send({ error: "El usuario autenticado no tiene un rol definido", code: "ROL_NO_DEFINIDO" });
 
       const enabled = requested.filter(({ module }) => tenantHasModule(request.tenant, module));
       if (!enabled.length) {
