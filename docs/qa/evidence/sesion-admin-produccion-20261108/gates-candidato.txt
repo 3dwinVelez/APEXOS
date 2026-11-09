@@ -95,4 +95,25 @@ del cierre de develop.
    Las 23 rutas son 16 A y 7 M, cero eliminaciones, y coinciden con el inventario exacto del
    manifiesto (scope_schema_version 2). El guard ademas verifica que el destino no se movio del
    baseline aprobado y que el commit funcional certificado 3fa6a5f0 esta contenido en el
-   candidato, asi que el arbol que se promotiona es el arbol que se certifico.
+   candidato, asi que el arbol que se promove es el arbol que se certifico.
+
+8) Post-despliegue en produccion (medido despues del push, 2026-11-08)
+
+   Push ejecutado: 1b76376c..b8a24c5c sobre origin/main, con APEXOS_PROMOTION_AUTH de
+   develop-to-main y las dos puertas de la seccion 7 corridas sobre el candidato final.
+
+   GET https://apexos-api-prod-production.up.railway.app/health
+     {"status":"OK","version":"2.0","modules":18,"commit":"b8a24c5c38c0","service_certification":"products-v2"}
+     Antes del push el mismo endpoint devolvia commit 1b76376c0c37. El deploy productivo trae el
+     arbol certificado.
+
+   GET /api/v1/admin/roles SIN autorizacion          -> 401 {"code":"TOKEN_INVALIDO"}
+   GET /api/v1/admin/roles con bearer firmado mal     -> 401 {"code":"TOKEN_INVALIDO"}
+     La autenticacion del ambiente liberado no se relajo: lo que no resuelve credencial sigue
+     siendo 401, igual que antes del cambio.
+
+   Queda por medir en produccion, y solo lo puede medir el dueno con su propia sesion (no hay
+   cuenta de prueba autorizada en produccion y no se cree una): abrir Administracion con la
+   cuenta maestra. Se espera 403 con codigo de causa (EMPRESA_NO_VINCULADA) y la sesion viva;
+   NO una expulsion a /login. Mientras el vinculo de empresa no exista, la pantalla sigue sin
+   datos: eso es la salida C, autorizada para desarrollo y aun sin implementar.

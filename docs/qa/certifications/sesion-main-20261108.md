@@ -84,6 +84,42 @@ La corrida escribe solo en QA: crea dos cuentas Supabase etiquetadas con el RUN_
 `profiles` para la empresa modelo, y los borra por id exacto. Aborta si la URL de API no es
 exactamente el host HTTPS de QA.
 
+## Celda de navegador en el ambiente desplegado (obligatoria por politica)
+
+Medida en `https://apexos-web-qa-production.up.railway.app` contra la API `6edf85c7d622`, con una
+cuenta efimera de plataforma ACTIVA en `platform_admins` y cero vinculos de empresa. Esa forma es
+la que abre el guard de ruta (`RouteAccessGuard.tsx:54` consulta `moduleAccess`; para un admin de
+plataforma sin empresa, `moduleAccess.ts:15` habilita `administracion`) y por lo tanto la que de
+verdad monta el modulo y dispara los GET contra `/api/v1/admin/*`. La corrida de API sola no cubre
+esta celda porque el 401 anterior se veia en el navegador, no en un curl.
+
+| Medida en navegador | Resultado |
+|---|---|
+| login con la cuenta fixture | `auth_provider=supabase`, sesion viva, `/dashboard` |
+| clic en "Administracion APEX" | URL final `/dashboard/administracion` (no `/login`) |
+| GET `/api/v1/admin/platform-logs?limit=120` | **403** |
+| GET `/api/admin/users` (proxy Next) | **403** |
+| estado de la sesion despues de los 403 | token vigente, misma `sub`, sin refresh |
+| clic en "Actualizar" (reintento) | 403 otra vez, sesion sigue viva |
+| GET `/api/v1/admin/roles` con el token vivo | **403 `EMPRESA_NO_VINCULADA`** con la causa en pantalla |
+
+Detalle en `../evidence/sesion-admin-produccion-20261108/sesion-qa-navegador.txt`. El fixture
+(plataforma, perfil y vinculos) se creo y se elimino dentro de la misma corrida: verificacion
+posterior con 0 filas en `platform_admins`, `profiles` y `company_users`, y la cuenta de Auth
+eliminada.
+
+## Post-despliegue en produccion
+
+Push `1b76376c..b8a24c5c` sobre `origin/main` con `APEXOS_PROMOTION_AUTH` de develop-to-main y las
+dos puertas de gobernanza en verde sobre el candidato final.
+
+- `/health` productivo: `commit=b8a24c5c38c0`, `status=OK` (antes del push devolvia `1b76376c0c37`).
+- `/api/v1/admin/roles` sin autorizacion → `401 TOKEN_INVALIDO`; con bearer firmado con clave ajena
+  → `401 TOKEN_INVALIDO`. La autenticacion del ambiente liberado no se relajo.
+- Falta la lectura con la sesion del dueno: abrir Administracion con la cuenta maestra debe dar
+  `403` con la causa nombrada y la sesion intacta. No se crea ninguna cuenta de prueba en
+  produccion, asi que esa medida le corresponde al dueno y queda abierta en esta hoja.
+
 ## Regresion
 
 - `platform-regression-qa.js` contra el deploy con el paquete: `ok: true`, commit `6edf85c7d622`,
@@ -97,12 +133,15 @@ exactamente el host HTTPS de QA.
 
 ## Lo que esta hoja no certifica
 
-1. No mide el ambiente productivo. La verificacion contra produccion es posterior al deploy y se
-   hace leyendo `/health` y la ruta de Administracion con una sesion real; queda registrada como
-   pendiente hasta ese paso.
-2. No hay certificacion end-to-end con la sesion del dueno: reproducir el sintoma con su cuenta
-   exige su clave y ninguna prueba de este cierre la usa. Lo que si existe es la reproduccion con
-   una cuenta real de QA en la misma condicion (cero vinculos de empresa).
+1. No certifica el flujo completo con la cuenta maestra en produccion. Lo que si esta medido despues
+   del deploy: el commit desplegado (`b8a24c5c38c0`) y que las credenciales que no resuelven
+   identidad siguen respondiendo 401. Lo que falta es la apertura de Administracion con la sesion
+   del dueno, y esa medida no se puede sustituir con una cuenta fabricada sin escribir en
+   produccion.
+2. No hay certificacion end-to-end con la clave del dueno: reproducir el sintoma con su cuenta
+   exige su clave y ninguna prueba de este cierre la usa. Lo que si existe es la reproduccion en
+   navegador real dentro del ambiente QA con una cuenta en la misma condicion (plataforma activa,
+   cero vinculos de empresa), con el 403 y la sesion viva medidos pantalla a pantalla.
 3. En QA la empresa modelo NYVORA no tiene el modulo de Administracion habilitado, por eso el
    control 07 termina en `MODULO_NO_HABILITADO`. En produccion el tenant de la cuenta maestra si
    trae `administracion_apex` y `platform_admin`, segun el diagnostico del 2026-11-08.
