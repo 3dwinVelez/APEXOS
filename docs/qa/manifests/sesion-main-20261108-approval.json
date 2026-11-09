@@ -1,0 +1,112 @@
+{
+  "change_id": "sesion-admin-produccion-20261108",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-sesion-main-20261108",
+  "commit": "3fa6a5f0819954b62de18a2c7e6b3a752a5ff13c",
+  "candidate_commit_note": "commit registra 3fa6a5f0, el commit de contenido del paquete de sesion sobre el tip de origin/main 1b76376c. Es antecesor directo del candidato final (el segundo commit solo agrega manifiestos, hoja de certificacion y evidencia), asi que el arbol certificado y el arbol promovido son el mismo arbol de producto.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification-salida.txt",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-navegador.txt",
+        "../certifications/sesion-main-20261108.md"
+      ],
+      "basis": "El flujo completo pedido por el dueno (entrar, abrir Administracion y que la sesion aguante) se mido dos veces: en el arbol del candidato con la puerta versionada sesion-administracion-local.js (11 cheques, 0 fallos) y contra el ambiente QA desplegado con sesion-administracion-qa.js (9 cheques, 0 fallos, commit medido 6edf85c7d622). La celda de navegador reprodujo el sintoma con una cuenta de plataforma activa y cero vinculos de empresa: el montaje de Administracion recibio 403 en /api/v1/admin/platform-logs y en el proxy /api/admin/users, la URL termino en /dashboard/administracion y el token siguio vigente; el reintento con el boton Actualizar dio el mismo resultado, y la lectura directa de /api/v1/admin/roles devolvio 403 code=EMPRESA_NO_VINCULADA con el mensaje de la causa."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json",
+        "../../../apps/api/test/authorization-status-codes.test.js",
+        "../../../apps/web/test/session-scope-403.test.mjs",
+        "../../../apps/api/src/security/supabaseAuth.js",
+        "../../../apps/api/server.js"
+      ],
+      "basis": "La reclasificacion 401 a 403 se midio en los dos sentidos. Los rechazos de alcance pasaron a 403 con codigo de negocio (supabaseAuth 403 EMPRESA_NO_AUTORIZADA / EMPRESA_NO_VINCULADA, tenancy 403 EMPRESA_REQUERIDA, rbac 403 ROL_NO_DEFINIDO, server.js 403 con el codigo del error y 500 EMPRESA_NO_RESUELTA cuando falla la lectura del tenant). La autenticacion no se relajo: peticion anonima, token basura y token firmado con una clave que no es la real siguen devolviendo 401 TOKEN_INVALIDO, medidos en el arbol y en el ambiente desplegado (controles 02, 03 y 04 de la corrida de QA)."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/sesion-administracion-local.js",
+        "../../../scripts/certifications/sesion-administracion-qa.js",
+        "../../../scripts/certifications/platform-regression-qa.js",
+        "../../../package.json"
+      ],
+      "basis": "Las dos puertas del alcance son scripts versionados invocables por nombre: certify:sesion:admin:local (arbol, con Supabase simulado) y la corrida de ambiente QA por archivo (Railway + Supabase de QA, aborta si la URL no es exactamente el host de QA). Ninguna devuelve 0 si falta un cheque: la salida de cada control se registra y el veredicto sale con exit code no nulo ante cualquier fallo."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/api-suite.txt",
+        "../evidence/sesion-admin-produccion-20261108/web-suite.txt",
+        "../evidence/sesion-admin-produccion-20261108/baseline-reds-main-1b76376c.txt",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt"
+      ],
+      "basis": "Suites completas corridas sobre el arbol del candidato, no sobre el de desarrollo. La atribucion de rojos se hizo comparando nombres contra una corrida limpia del destino 1b76376c en la misma maquina: los 4 rojos de web son preexistentes del destino y se reproducen con nombre identico sin el parche, y la suite de API queda sin rojos. Regresiones atribuibles al candidato: 0."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/platform-regression-qa.txt",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+        "../certifications/sesion-main-20261108.md"
+      ],
+      "basis": "El corredor transversal de QA (platform-regression-qa.js) ejercito session, servicios, ordenes, referencias, empleados, inventario y plan contable contra el ambiente desplegado con el fix puesto, con 6 controles en verde y el bloqueo de no autorizados verificado (un pedido sin autorizacion queda rechazado). El contrato de esas capacidades no cambia con este paquete: solo cambia el codigo de estado de los rechazos de alcance."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/sesion-administracion-qa.js",
+    "evidence": [
+      "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json",
+      "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification-salida.txt",
+      "../evidence/sesion-admin-produccion-20261108/sesion-qa-navegador.txt"
+    ],
+    "measured_on": "deploy de la rama de integracion en Railway, commit medido 6edf85c7d622, con el Supabase de QA",
+    "controls": 9,
+    "browser_controls": 6,
+    "equivalence_note": "La corrida de ambiente se hizo contra el build de la rama de integracion porque ese es el ambiente desplegado; el arbol que se promove a main es la reconstruccion puntual 3fa6a5f0 sobre 1b76376c. Las lineas del contrato (server.js 127 y 153, tenancy.js 12, rbac.js cuatro rechazos, supabaseAuth.js 197 y 385, api.ts 155) se verificaron una por una sobre ese arbol, y la puerta de arbol sesion-administracion-local.js se corrio sobre el mismo con 11 cheques en verde."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "../evidence/sesion-admin-produccion-20261108/platform-regression-qa.txt",
+      "../evidence/sesion-admin-produccion-20261108/api-suite.txt",
+      "../evidence/sesion-admin-produccion-20261108/web-suite.txt"
+    ],
+    "basis": "Regresion transversal del ERP que main ya tenia, medida contra el ambiente con el fix y contrastada en el arbol con las suites completas atribuidas por nombre contra el baseline limpio del destino."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/sesion-administracion-qa.js",
+    "evidence": [
+      "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json",
+      "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification-salida.txt"
+    ],
+    "basis": "NYVORA es la empresa modelo del ambiente QA y sobre ella se midio el contraste que la puerta de arbol no puede medir: la misma cuenta efimera, ya con vinculo activo en company_users contra el tenant de NYVORA, conserva su identidad (auth/me 200) y ninguna respuesta del flujo de sesion es 401; el 403 que aparece es MODULO_NO_HABILITADO, licencia de modulo y comportamiento anterior ajeno a este paquete. Al retirar el vinculo, la ruta vuelve a rechazar con 403 y no queda ninguna fila remanente (control 08, filas_remanentes=0)."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "1b76376c0c37accdb1b13e338ec6b58025dc6657",
+    "trigger": "cualquier 401 que siga derribando la sesion al abrir Administracion con una cuenta valida, cualquier credencial invalida o peticion anonima que deje de responder 401 (relajacion de la autenticacion), cualquier lectura de datos de una empresa desde otra o resolucion de tenant equivocada, cualquier regresion de las capacidades del ERP que main ya tenia (servicios, ordenes, referencias, talento humano, inventario, contabilidad, transporte, facturacion) atribuible a los seis hunks de estado de este candidato, o falla del deploy que deje el commit de main sin servicio.",
+    "mechanism": "revert controlado del par de commits 3fa6a5f0..HEAD sobre main. El candidato no elimina archivos ni mueve funciones fuera de su sitio, asi que el arbol de producto vuelve exactamente a 1b76376c. No hay migraciones que revertir: el paquete no toca esquema. El revert se hace con commits nuevos sobre main, nunca con force push ni reescritura de historia compartida.",
+    "rollback_requires_authorization": "el revert es una escritura en main y por lo tanto exige una autorizacion expresa e independiente, igual que este push."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_del_paquete_de_sesion_401_a_403_exclusivamente",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-08T23:55:00-05:00",
+    "authorization_basis": "La instruccion del usuario fue textual: 'acabo de ingresar a main con el usuario y nuevamente me bota', precedida del reporte del incidente con su cuenta de produccion. Preguntado el alcance, eligio 'Implementar el respaldo de plataforma (salida C) en desarrollo' y luego 'Si: a develop y luego a main (Recomendado si quieres que deje de botarte hoy)'. De esa autorizacion salen: promover el paquete de sesion desarrollo a develop (cerrado con merge 6edf85c7) y de develop a main con sus gates, incluyendo el despliegue del build resultante. NO estan otorgadas por este manifiesto: escritura de datos productivos, vincular la cuenta maestra a una empresa (salidas A y B, medidas y descartadas como destructivas sobre el codigo desplegado), implementar la salida C en main (autorizada solo para desarrollo y pendiente de revision de apexos-seguridad), migraciones remotas, secretos, force push o limpieza de worktrees y ramas."
+  }
+}

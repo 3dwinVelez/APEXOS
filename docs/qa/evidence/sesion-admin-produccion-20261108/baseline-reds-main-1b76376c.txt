@@ -1,0 +1,23 @@
+Rojos de la linea base: origin/main sin parchar
+===============================================
+
+Arbol medido    : 1b76376c0c37accdb1b13e338ec6b58025dc6657 (el tip vigente de main, sin este paquete)
+Comando API     : node --env-file=.env --test --test-force-exit apps/api/test/*.test.js
+Resultado API   : # tests 494 / # pass 490 / # fail 2 / # skipped 2   (exit 1)
+
+  - inventario ofrece lista de productos filtrable y exportable
+  - compras ventas IVA y retenciones reutilizan el control numerico
+
+Comando web     : node --env-file=.env --test --test-force-exit apps/web/test/*.test.mjs
+Resultado web   : # tests 438 / # pass 437 / # fail 1 / # skipped 0   (exit 1)
+
+  - Transporte organiza el trabajo por etapas sin navegación redundante
+
+Por que se corre aparte
+
+  La unica forma de atribuir un rojo al candidato es comparar contra el mismo arbol de destino sin
+  el parche: los totales de main (494 + 438) no son los de desarrollo ni los de develop porque en
+  main todavia no existen Gastos Menores, el tarifario con sedes ni la bandeja de facturas
+  recibidas. Diff de nombres candidato vs base: vacio en API (2 vs 2) y vacio en web (1 vs 1).
+
+Los tres rojos son deuda del destino, no de este paquete, y se reportan como tales en el manifiesto.

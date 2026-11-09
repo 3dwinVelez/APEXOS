@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.24.0",
+      "version": "2.25.0",
       "updated_at": "2026-11-08",
-      "sha256": "1145a3931b447754aa3069e7e1409dc92e84159e952e97271145799bae682231",
+      "sha256": "11a30f9ea326bdb611ce168aae539fd0c4ff0fce81275cf980b87129f08a831b",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -124,7 +124,8 @@
         "pasada-ux-registra-hallazgo-cancelado",
         "brief-separa-arnes-de-producto",
         "paridad-contra-el-arbol-publicado",
-        "incidente-separa-codigo-de-datos"
+        "incidente-separa-codigo-de-datos",
+        "brief-registra-reparto-de-commits-y-limitaciones"
       ]
     },
     {
@@ -192,9 +193,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.10.0",
+      "version": "2.11.0",
       "updated_at": "2026-11-08",
-      "sha256": "049ec76307e53522a80a7cd74ad6e4a79297b209b56969890ed4278e68671413",
+      "sha256": "968b49cf5cecbc8ec3f4eadce117e66e3fac91ad11bf3cf421b667f4ef9e771a",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -217,7 +218,8 @@
         "torre-residente-en-desarrollo",
         "evidencia-retirada-declarada",
         "candidato-reconstruido-se-audita-por-archivo",
-        "promocion-a-main-sin-pr"
+        "promocion-a-main-sin-pr",
+        "evidencia-de-manifiesto-resuelta-contra-su-directorio"
       ]
     },
     {
@@ -254,9 +256,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.31.0",
+      "version": "2.32.0",
       "updated_at": "2026-11-08",
-      "sha256": "c38ddd78698163c310e4dbcb07096c618d0bddae353b205c8c6468f2d452ba7c",
+      "sha256": "e622c47f6c529c60bbfd4b60fc03cc49b6125ebeffc45593a0dd30370cac6442",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -301,7 +303,8 @@
         "el-codigo-de-negocio-discrimina-la-causa",
         "evidencia-de-gates-con-execpath",
         "gate-post-deploy-por-ambiente",
-        "certificacion-de-estados-con-servidor-real"
+        "certificacion-de-estados-con-servidor-real",
+        "celda-navegador-pasa-el-guard-de-ruta"
       ]
     },
     {

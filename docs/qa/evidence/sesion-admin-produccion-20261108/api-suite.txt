@@ -1,0 +1,23 @@
+Suite API completa sobre el arbol del candidato a main
+=====================================================
+
+Arbol medido    : codex/qa-sesion-main-20261108, commit 3fa6a5f0 (reconstruido sobre origin/main 1b76376c)
+Comando         : node --env-file=.env --test --test-force-exit apps/api/test/*.test.js   (desde la raiz)
+Resultado       : # tests 500 / # pass 495 / # fail 2 / # cancelled 0 / # skipped 3       (exit 1)
+
+Los 2 rojos son preexistentes del destino y se reproducen con el MISMO nombre en la corrida limpia
+de 1b76376c (ver baseline-reds-main-1b76376c.txt):
+
+  - inventario ofrece lista de productos filtrable y exportable
+  - compras ventas IVA y retenciones reutilizan el control numerico
+
+Delta contra el destino limpio:
+
+  tests  494 -> 500   (+6)  apps/api/test/authorization-status-codes.test.js
+  pass   490 -> 495   (+5)
+  skipped  2 -> 3     (+1)  el sexto caso del archivo nuevo se salta si AUTH_STATUS_INTEGRATION no
+                            esta encendido; con el flag encendido corre y pasa 6/6, medido dentro de
+                            npm run certify:sesion-admin:local
+  fail      2 -> 2     (0)
+
+Regresiones atribuibles al candidato: 0.

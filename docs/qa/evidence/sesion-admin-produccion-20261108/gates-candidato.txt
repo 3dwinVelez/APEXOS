@@ -1,0 +1,119 @@
+Gates del candidato de sesion a main — 2026-11-08
+==================================================
+
+Candidato: codex/qa-sesion-main-20261108, commit funcional 3fa6a5f0 sobre origin/main 1b76376c.
+Todo lo de abajo se midio sobre este arbol o contra el ambiente desplegado; nada se transcribio
+del cierre de develop.
+
+
+1) Puerta de arbol: npm run certify:sesion-admin:local
+
+   11 cheques / 0 fallos -> certificacion-local.json (commit registrado: 3fa6a5f08199)
+
+   Levanta el Fastify real del arbol en loopback contra un borde Supabase simulado que solo
+   reconoce el token del escenario. En la misma corrida mide el caso del incidente (403
+   EMPRESA_NO_VINCULADA), su espejo (401 TOKEN_INVALIDO para credencial que no resuelve identidad),
+   el 401 anonimo, las dos suites del contrato (5/5 y 6/6) y seis contratos de fuente.
+
+   Que habria pasado con el codigo desplegado hoy: el mismo servidor devolvia 401 y el cliente
+   respondia con clearSession + /login. Ese es el comportamiento que el cheque 1 prueba que ya no
+   existe.
+
+
+2) Puerta de ambiente: node scripts/certifications/sesion-administracion-qa.js
+
+   9 controles / 0 fallos -> sesion-qa-certification.json, sesion-qa-certification-salida.txt
+
+   Corrida contra el deploy de develop (commit desplegado 6edf85c7d622, verificado en el control
+   01). El sintoma se reproduce con una cuenta Supabase real de QA con cero company_users y el
+   resultado medido es 403 EMPRESA_NO_VINCULADA, no 401. Con la misma cuenta vinculada a la empresa
+   modelo NYVORA la ruta autorizada responde sin expulsion (auth/me 200; el 403 que aparece es
+   MODULO_NO_HABILITADO, licencia de modulo, no sesion). Limpieza verificada: 0 vinculos remanentes
+   y 0 cuentas fixture.
+
+
+3) Regresion transversal en el ambiente: platform-regression-qa.js
+
+   ok: true, commit 6edf85c7d622, cheques session / services_orders / services_references /
+   hr_employees / inventory_items / accounting_accounts en verde y el pedido sin autorizacion
+   bloqueado -> platform-regression-qa.txt
+
+
+4) Suites sobre el arbol de main, contrastadas con la linea base
+
+   API  candidato : 500 pruebas / 495 pases / 2 fallos / 3 saltadas
+   API  base      : 494 / 490 / 2 / 2      (1b76376c sin parchar)
+   web  candidato : 443 / 442 / 1 fallo
+   web  base      : 438 / 437 / 1 fallo    (1b76376c sin parchar)
+
+   Los nombres que fallan son IDENTICOS en las dos corridas (diff vacio):
+     - inventario ofrece lista de productos filtrable y exportable
+     - compras ventas IVA y retenciones reutilizan el control numerico
+     - Transporte organiza el trabajo por etapas sin navegación redundante
+
+   Regresiones atribuibles al candidato: 0. Pruebas nuevas aportadas: +6 API (5 pasan, 1 se salta
+   sin AUTH_STATUS_INTEGRATION) y +5 web. Los 3 rojos son deuda del destino.
+
+
+5) Tabla de estados medida (las cuatro reclasificaciones, no declaradas)
+
+   ruta                    antes              despues
+   supabaseAuth            401 Error simple   403 EMPRESA_NO_AUTORIZADA / EMPRESA_NO_VINCULADA
+   middleware/tenancy      401 EMPRESA_REQ.   403 EMPRESA_REQUERIDA
+   middleware/rbac (x4)    401 NO_AUTENTICADO 403 ROL_NO_DEFINIDO
+   server.js (catch)       401 TOKEN_INVALIDO 403 con el codigo del error si lo trae, 401 si no
+   server.js (lee tenant)  401 TOKEN_INVALIDO 500 EMPRESA_NO_RESUELTA
+
+   El 401 de credencial que no resuelve identidad y el 401 anonimo se midieron en la misma corrida,
+   en el arbol y en el ambiente: la autenticacion no se relajo.
+
+
+6) Lo que este candidato NO trae
+
+   - No trae agentes ni CHANGELOG: el contexto del equipo vive en desarrollo y no es codigo de
+     producto del ambiente liberado.
+   - No trae migraciones: el paquete es codigo de autorizacion y de cliente, no esquema.
+   - No trae la salida C (respaldo de plataforma en supabaseAuth): autorizada por el dueno y sin
+     implementar; pide revision de apexos-seguridad porque cambia autorizacion.
+   - No mide produccion dentro de este manifiesto: la lectura de /health y de la ruta de
+     Administracion contra el ambiente liberado es posterior al deploy y esta exigida como
+     verificacion post-despliegue.
+   - No certifica la sesion real del dueno: ninguna prueba de este cierre usa su clave.
+
+
+7) Salidas de las puertas de gobernanza
+
+   Corridas contra el candidato final cd58c876 (3fa6a5f0 + manifiestos/evidencia), destino
+   origin/main = 1b76376c0c37, que es el baseline declarado en el manifiesto.
+
+   npm run qa:promotion:scope -- docs/qa/manifests/sesion-main-20261108-scope.json HEAD origin/main
+     ALCANCE DE PROMOCION VALIDO: sesion-admin-produccion-20261108 (23 rutas)
+
+   npm run qa:approval:evidence -- docs/qa/manifests/sesion-main-20261108-approval.json
+     APROBACION QA VALIDA: sesion-admin-produccion-20261108
+
+   Las 23 rutas son 16 A y 7 M, cero eliminaciones, y coinciden con el inventario exacto del
+   manifiesto (scope_schema_version 2). El guard ademas verifica que el destino no se movio del
+   baseline aprobado y que el commit funcional certificado 3fa6a5f0 esta contenido en el
+   candidato, asi que el arbol que se promove es el arbol que se certifico.
+
+8) Post-despliegue en produccion (medido despues del push, 2026-11-08)
+
+   Push ejecutado: 1b76376c..b8a24c5c sobre origin/main, con APEXOS_PROMOTION_AUTH de
+   develop-to-main y las dos puertas de la seccion 7 corridas sobre el candidato final.
+
+   GET https://apexos-api-prod-production.up.railway.app/health
+     {"status":"OK","version":"2.0","modules":18,"commit":"b8a24c5c38c0","service_certification":"products-v2"}
+     Antes del push el mismo endpoint devolvia commit 1b76376c0c37. El deploy productivo trae el
+     arbol certificado.
+
+   GET /api/v1/admin/roles SIN autorizacion          -> 401 {"code":"TOKEN_INVALIDO"}
+   GET /api/v1/admin/roles con bearer firmado mal     -> 401 {"code":"TOKEN_INVALIDO"}
+     La autenticacion del ambiente liberado no se relajo: lo que no resuelve credencial sigue
+     siendo 401, igual que antes del cambio.
+
+   Queda por medir en produccion, y solo lo puede medir el dueno con su propia sesion (no hay
+   cuenta de prueba autorizada en produccion y no se cree una): abrir Administracion con la
+   cuenta maestra. Se espera 403 con codigo de causa (EMPRESA_NO_VINCULADA) y la sesion viva;
+   NO una expulsion a /login. Mientras el vinculo de empresa no exista, la pantalla sigue sin
+   datos: eso es la salida C, autorizada para desarrollo y aun sin implementar.

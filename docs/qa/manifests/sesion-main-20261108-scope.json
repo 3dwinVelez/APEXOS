@@ -1,0 +1,258 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "sesion-admin-produccion-20261108",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-sesion-main-20261108",
+  "certified_commit": "3fa6a5f0819954b62de18a2c7e6b3a752a5ff13c",
+  "base_commit": "1b76376c0c37accdb1b13e338ec6b58025dc6657",
+  "base_commits": {
+    "main": "1b76376c0c37accdb1b13e338ec6b58025dc6657"
+  },
+  "change_intent": {
+    "summary": "Liberar en produccion el paquete que deja de expulsar al usuario al abrir Administracion y nada mas. El incidente medido: la cuenta maestra de plataforma inicia sesion en Supabase pero no tiene ninguna fila en company_users; el decorador del API convertia esa falta de contexto en 401 TOKEN_INVALIDO y el cliente respondia a cualquier 401 borrando la sesion y reenviando a /login. Administracion es el unico modulo que lee de la API al montarse, asi que era la pantalla que botaba al usuario. El paquete reclasifica cuatro rechazos de alcance a su codigo real (403 EMPRESA_NO_AUTORIZADA / EMPRESA_NO_VINCULADA en supabaseAuth, 403 EMPRESA_REQUERIDA en tenancy, 403 ROL_NO_DEFINIDO en los cuatro guardas de rbac) y distingue en server.js el motivo: 403 con el codigo del error cuando lo trae, 500 EMPRESA_NO_RESUELTA cuando falla leer el tenant, 401 TOKEN_INVALIDO solo para credenciales que no resuelven identidad. La peticion sigue denegada; cambia el motivo que ve el cliente, que ahora nombra la empresa o el rol faltante y declara que la sesion sigue activa. No es una fusion de develop: el candidato se reconstruyo con el parche puntual del paquete sobre el tip vigente de origin/main porque develop trae ademas Gastos Menores, el tarifario con sedes, la liquidacion por paquetes y la bandeja de facturas recibidas, con esquemas que no existen en produccion. Son 11 rutas de producto (7 M y 4 A) mas la evidencia y los manifiestos de esta promocion; 22 rutas en total y 0 archivos eliminados.",
+    "modules": [
+      "autenticacion-sesion",
+      "rbac-tenancy",
+      "administracion-apex",
+      "cliente-http-compartido",
+      "manifiesto-y-evidencia-de-promocion"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/server.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/middleware/tenancy.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/authorization-status-codes.test.js",
+    "apps/api/test/hr-route-physical-deletion.test.js",
+    "apps/web/lib/api.ts",
+    "apps/web/test/session-scope-403.test.mjs",
+    "package.json",
+    "scripts/certifications/sesion-administracion-local.js",
+    "scripts/certifications/sesion-administracion-qa.js"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/tenancy.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/supabaseAuth.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/authorization-status-codes.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-route-physical-deletion.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/session-scope-403.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/sesion-main-20261108.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/api-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/baseline-reds-main-1b76376c.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/certificacion-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/gates-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/platform-regression-qa.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/sesion-qa-certification-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/sesion-qa-navegador.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/sesion-admin-produccion-20261108/web-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/sesion-main-20261108-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/sesion-main-20261108-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/sesion-administracion-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/sesion-administracion-qa.js"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/server.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/middleware/tenancy.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/authorization-status-codes.test.js",
+    "apps/api/test/hr-route-physical-deletion.test.js",
+    "apps/web/lib/api.ts",
+    "apps/web/test/session-scope-403.test.mjs",
+    "package.json",
+    "scripts/certifications/sesion-administracion-local.js",
+    "scripts/certifications/sesion-administracion-qa.js",
+    "docs/qa/certifications/sesion-main-20261108.md",
+    "docs/qa/evidence/sesion-admin-produccion-20261108/",
+    "docs/qa/manifests/sesion-main-20261108-scope.json",
+    "docs/qa/manifests/sesion-main-20261108-approval.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Una sesion Supabase valida cuya cuenta no tiene empresa asociada abre Administracion sin ser expulsada: la respuesta es 403 con codigo de negocio y el cliente conserva la sesion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification-salida.txt",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+        "../../../apps/web/test/session-scope-403.test.mjs",
+        "../../../apps/api/test/authorization-status-codes.test.js",
+        "../certifications/sesion-main-20261108.md",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-navegador.txt"
+      ]
+    },
+    {
+      "name": "La autenticacion no se relajo: una credencial que no resuelve identidad, un token basura, una firma con clave ajena y una peticion anonima siguen respondiendo 401 TOKEN_INVALIDO, medidos en el arbol y contra el ambiente desplegado",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json",
+        "../../../apps/api/src/security/supabaseAuth.js",
+        "../../../apps/api/server.js",
+        "../certifications/sesion-main-20261108.md"
+      ]
+    },
+    {
+      "name": "Ninguna ruta 403 puede alcanzar clearSession en el cliente compartido: SESSION_SCOPE_CODES traduce el rechazo de alcance por su causa y el unico camino que derriba la sesion sigue siendo 401",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../../../apps/web/lib/api.ts",
+        "../../../apps/web/test/session-scope-403.test.mjs",
+        "../evidence/sesion-admin-produccion-20261108/web-suite.txt",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-navegador.txt"
+      ]
+    },
+    {
+      "name": "La empresa con vinculo activo sigue operando: la cuenta modelo NYVORA autenticada conserva su identidad (auth/me 200) y ningun rechazo del flujo de sesion es 401; el 403 que aparece es de licencia de modulo, comportamiento anterior y ajeno a este paquete",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification-salida.txt",
+        "../evidence/sesion-admin-produccion-20261108/platform-regression-qa.txt",
+        "../certifications/sesion-main-20261108.md"
+      ]
+    },
+    {
+      "name": "Regresion del ERP que main ya tenia: session, servicios, ordenes, referencias, empleados, inventario y plan contable siguen respondiendo en el ambiente con el mismo contrato y el bloqueo de no autorizados; en el arbol, las suites de API y web no agregan ni un rojo",
+      "status": "passed",
+      "evidence": [
+        "../evidence/sesion-admin-produccion-20261108/platform-regression-qa.txt",
+        "../evidence/sesion-admin-produccion-20261108/api-suite.txt",
+        "../evidence/sesion-admin-produccion-20261108/web-suite.txt",
+        "../evidence/sesion-admin-produccion-20261108/baseline-reds-main-1b76376c.txt",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt"
+      ]
+    },
+    {
+      "name": "El resto de main no se mueve: el candidato no toca esquema, no toca migraciones, no toca otros modulos y los unicos archivos compartidos que cambian son los seis hunks de estado inventariados linea por linea; las diferencias preexistentes entre main y develop (petty-cash, transport-pyg, handler serverless, rol Accionista, roleScopeViolation) quedaron intactas",
+      "status": "passed",
+      "evidence": [
+        "../certifications/sesion-main-20261108.md",
+        "../evidence/sesion-admin-produccion-20261108/gates-candidato.txt",
+        "../evidence/sesion-admin-produccion-20261108/api-suite.txt",
+        "../evidence/sesion-admin-produccion-20261108/web-suite.txt"
+      ]
+    },
+    {
+      "name": "Puertas versionadas e invocables por nombre: la puerta de arbol y la puerta de ambiente existen en el candidato, corren contra el arbol liberado y devuelven veredicto con salida no nula si falta un cheque",
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/sesion-administracion-local.js",
+        "../../../scripts/certifications/sesion-administracion-qa.js",
+        "../../../package.json",
+        "../evidence/sesion-admin-produccion-20261108/certificacion-local.json",
+        "../evidence/sesion-admin-produccion-20261108/sesion-qa-certification.json"
+      ]
+    }
+  ],
+  "authorization": {
+    "granted_by": "Edwin (dueno del producto)",
+    "granted_at": "2026-11-08",
+    "instruction": "Si: a develop y luego a main (Recomendado si quieres que deje de botarte hoy)",
+    "covers": [
+      "Promover el paquete 401 a 403 de desarrollo a develop por rama auxiliar y PR (cerrado: merge 6edf85c7).",
+      "Promover de develop a main con su gate de aprobacion QA y su guard de alcance, incluyendo el despliegue del build resultante."
+    ],
+    "does_not_cover": [
+      "Force push, reescritura de historia compartida o rebase de ramas permanentes.",
+      "Migraciones remotas, cambios de esquema, secretos o configuracion de Railway/Supabase/Vercel: no forman parte de este paquete.",
+      "Escribir o modificar datos productivos: la cuenta maestra sigue sin vinculo de empresa en produccion y ese queda como decision aparte (salida C), no una consecuencia de este push.",
+      "Eliminar el worktree, la rama auxiliar o las etiquetas de respaldo: limpieza queda a criterio del dueno."
+    ]
+  },
+  "post_deploy_verification_required": [
+    "Leer /health en el ambiente productivo y confirmar que el commit desplegado es el del candidato promocionado.",
+    "Confirmar en produccion que GET /api/v1/admin/roles con una sesion valida sin empresa devuelve 403 con codigo de negocio y no 401.",
+    "Confirmar en produccion que una credencial invalida sigue devolviendo 401 TOKEN_INVALIDO.",
+    "Reportar al dueno el resultado y, si el 403 aparece, que Administracion carga el aviso en pantalla sin expulsar la sesion."
+  ],
+  "notes": {
+    "generation": "Inventario exacto medido con `git diff --name-status origin/main..HEAD` sobre el candidato final: 23 rutas, 16 A y 7 M, cero eliminaciones. El inventario lo genera el mismo proceso que escribio este manifiesto.",
+    "why_reconstructed": "Fusionar origin/develop hacia main arrastraria Gastos Menores, el tarifario con sedes, la liquidacion por paquetes, los planes de despacho, la bandeja de facturas recibidas y sus migraciones, todo fuera de este alcance y con esquemas aun no aplicados en produccion. La politica lo prohibe, asi que el candidato se reconstruyo sobre el tip vigente de origin/main (1b76376c) con un commit de contenido del paquete (3fa6a5f0) y este segundo commit con manifiesto, hoja de certificacion y evidencia.",
+    "equivalencia_con_desarrollo": "El parche se genero de `git diff 530334f2..7687aed4` recortado a las rutas del alcance y se aplico con merge de tres vias (`git apply -3`), bajando los 7 archivos compartidos sin conflicto. Sobre el arbol parchado se midio la desviacion residual contra el arbol de develop: solo las diferencias preexistentes de main (registros de modulos ajenos, handler serverless, export roleScopeViolation, rol Accionista). Ninguna linea del contrato de sesion difiere.",
+    "medido_en_el_arbol_de_main": "Las suites se corrieron sobre este arbol, no sobre el de desarrollo: main tiene 494 pruebas de API y 438 de web antes del parche, contra 1056 y 749 en develop. Por eso la atribucion de rojos se hizo con una corrida limpia de 1b76376c en la misma maquina y comparando nombres, no totales.",
+    "sin_migraciones": "Este manifiesto NO autoriza ni requiere migraciones remotas. El paquete no cambia esquema: son codigos de estado en el middleware y en el cliente compartido.",
+    "evidencia_sanitizada": "La evidencia no contiene tokens, claves, conexiones ni rutas absolutas locales. Los unicos correos son fixtures sinteticos del arnes (dominio certificacion.qa e internal.apexos.local) y la cuenta del incidente no se nombra en ningun archivo versionado.",
+    "pendiente_de_autorizacion_aparte": "La salida C (respaldo de plataforma en supabaseAuth para la cuenta maestra) queda autorizada por el dueno y sin implementar: cambia autorizacion y pide revision de apexos-seguridad. Este push NO la incluye y NO deja a la cuenta maestra con contexto de empresa; deja de expulsarla y le nombra la causa.",
+    "celda_de_navegador": "La politica de aprobacion exige certificacion de navegador en el ambiente con el commit exacto. Se midio en QA contra 6edf85c7d622 con una cuenta de plataforma sin vinculo de empresa: el montaje de Administracion recibio 403 en /api/v1/admin/*, la URL no cambio y el token siguio vigente; el reintento dio el mismo resultado. El registro esta en sesion-qa-navegador.txt y el fixture se creo y se elimino dentro de la misma corrida, solo en QA."
+  }
+}
