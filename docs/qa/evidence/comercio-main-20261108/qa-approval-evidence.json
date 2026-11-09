@@ -1,0 +1,101 @@
+{
+  "change_id": "comercio-main-20261108",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-comercio-main-20261108",
+  "commit": "1a8b4a75",
+  "candidate_commit_note": "commit registra 1a8b4a75, el commit de contenido exclusivamente Comercio sobre el tip de origin/main 938fc2b6; es antecesor directo del candidato final, asi que el arbol certificado y el arbol promove son el mismo arbol de producto.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "comercio-qa-certification.json",
+        "nyvora-certification.json",
+        "comercio-qa-browser.json",
+        "../../certifications/comercio-main-20261108.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "comercio-qa-certification-salida.txt",
+        "../../../../apps/api/test/api-error-mapping.test.js",
+        "../../../../apps/api/test/comercio-storage.test.js",
+        "../../../../apps/api/src/core/api-error.js"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../../scripts/certifications/comercio-develop-remote.js",
+        "../../../../scripts/certifications/comercio-nyvora-qa.js",
+        "../../../../scripts/certifications/comercio-qa-browser.js",
+        "../../../../scripts/ensure-comercio-assets-bucket.js"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "api-suite.txt",
+        "web-suite.txt",
+        "web-build.txt",
+        "gates-candidato.txt",
+        "baseline-reds-main-938fc2b6.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "platform-regression-qa.txt",
+        "gates-candidato.txt",
+        "../../certifications/comercio-main-20261108.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/comercio-develop-remote.js",
+    "evidence": [
+      "comercio-qa-certification.json",
+      "comercio-qa-certification-salida.txt"
+    ],
+    "measured_on": "deploy de develop en Railway, commit 2cb064e2a896",
+    "controls": 79
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "platform-regression-qa.txt",
+      "api-suite.txt",
+      "web-suite.txt"
+    ],
+    "basis": "El corredor transversal de QA ejercita session, servicios, ordenes, referencias, empleados, inventario y plan contable contra el ambiente desplegado y comprueba que un pedido sin autorizacion queda bloqueado. En el arbol completo, API 490/494 y Web 437/438: los 3 rojos se reproducen con el mismo nombre de prueba sobre el commit target 938fc2b6 sin el modulo, por lo que la regresion atribuible al candidato es cero."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../../scripts/certifications/comercio-nyvora-qa.js",
+    "evidence": [
+      "nyvora-certification.json",
+      "comercio-qa-browser.json"
+    ],
+    "basis": "NYVORA fue habilitada como empresa modelo en el ambiente QA y sobre ella se midio el modulo de punta a punta: 48 controles de la certificacion de empresa modelo (alta de empresa y usuarios, activacion del modulo por catalogo de plataforma, productos, venta rapida y a credito, cartera con abonos, compras, gastos, reportes, promociones y el bloqueo de acceso para la empresa sin el modulo) y 33 controles de navegador real (menu del panel, configuracion de apariencia, vitrina tematizada en escritorio claro y oscuro y en movil). Ningun control se simulo: todos se leyeron del ambiente desplegado."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "938fc2b6f42cc54957b23c37446e0ad3f7560074",
+    "trigger": "cualquier falla funcional del panel de Comercio o de la vitrina publica en produccion, cualquier lectura de datos de una empresa desde otra (violacion de aislamiento tenant), cualquier exposicion de costo, stock crudo, ids internos o tenant_id en la vitrina publica, o regresion de las capacidades del ERP que main ya tenia (servicios, ordenes, referencias, talento humano, inventario, contabilidad, transporte, facturacion) atribuible a los hunks compartidos de este candidato",
+    "mechanism": "revert controlado del par de commits 1a8b4a75..HEAD sobre main: el arbol de producto vuelve exactamente a 938fc2b6 porque el candidato no elimino ningun archivo ni movio ninguna funcion fuera de su sitio. Las tablas commerce_* y la fila de catalogo en public.modules quedan intactas en la base (el DDL no se revierte para no destruir datos de tiendas ya operativas) y se reaplicarian sin cambio si el modulo vuelve."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_of_comercio_module_exclusively",
+    "approved_by": "Edwin (lead APEXOS) - autorizacion expresa para enviar el modulo completo de Comercio al main de manera controlada, exclusivamente el modulo y sin afectar ninguna otra funcion de la herramienta",
+    "approved_at": "2026-11-08T19:40:00-05:00",
+    "authorization_basis": "La instruccion del usuario fue textual: llevar el modulo completo de Comercio hacia main de manera controlada, migrando exclusivamente el modulo de comercio y nada mas, sin afectar ninguna otra funcion. De ahi salieron cuatro decisiones confirmadas por el mismo: (1) mecanismo de commits puntuales sobre origin/main con push a main, porque la CI no admite un PR de rama auxiliar a main y la fusion de develop entero arrastraria modulos ajenos; (2) aplicar en produccion solo el DDL de Comercio y registrar el ledger, dejando las demas migraciones pendientes como estan; (3) habilitar NYVORA en QA y certificar alli, que es la base de esta evidencia; (4) crear el bucket comercio-assets en produccion pero excluir las 131 fotos de demo del candidato. Las autorizaciones de infraestructura remota (migraciones en produccion, bucket productivo, despliegue en Railway) siguen siendo independientes y NO estan otorgadas por este manifiesto: quedan pendientes y se reportan como tales."
+  }
+}

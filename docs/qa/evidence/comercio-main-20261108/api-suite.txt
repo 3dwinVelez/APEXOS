@@ -1,0 +1,3733 @@
+TAP version 13
+# Subtest: EM auto-sana la numeracion contra el mayor document_number emitido
+ok 1 - EM auto-sana la numeracion contra el mayor document_number emitido
+  ---
+  duration_ms: 145.2799
+  type: 'test'
+  ...
+# Subtest: EM respeta el next_number configurado cuando es mayor al emitido
+ok 2 - EM respeta el next_number configurado cuando es mayor al emitido
+  ---
+  duration_ms: 9.7331
+  type: 'test'
+  ...
+# Subtest: EM adquiere el candado advisory de numeracion del tenant
+ok 3 - EM adquiere el candado advisory de numeracion del tenant
+  ---
+  duration_ms: 6.8562
+  type: 'test'
+  ...
+# Subtest: EM lee la numeracion legacy en formato objeto sin descartarla
+ok 4 - EM lee la numeracion legacy en formato objeto sin descartarla
+  ---
+  duration_ms: 5.9639
+  type: 'test'
+  ...
+# Subtest: AJ (cargue inicial) auto-sana la numeracion igual que EM
+ok 5 - AJ (cargue inicial) auto-sana la numeracion igual que EM
+  ---
+  duration_ms: 6.7541
+  type: 'test'
+  ...
+# Subtest: AE/AS (ajuste) auto-sana la numeracion y admite formato legacy
+ok 6 - AE/AS (ajuste) auto-sana la numeracion y admite formato legacy
+  ---
+  duration_ms: 8.341
+  type: 'test'
+  ...
+# Before loading environment
+# Environment loaded
+# After loading environment
+# Before require fastify
+# After require fastify
+# Entering build()
+# {"level":30,"time":1794182079033,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Entering build()"}
+# Starting APEX OS API bootstrap
+# Registering cors
+# Registered cors
+# Registering rate-limit
+# Registered rate-limit
+# Registering security headers
+# Registered security headers
+# Registering websocket
+# Registered websocket
+# Registering multipart
+# Registered multipart
+# Registering auth decorator
+# Registered auth decorator
+# Registering audit hook
+# Redis disabled - using noop queues
+# Registered audit hook
+# Registering platform technical log hooks
+# Registered platform technical log hooks
+# Registering performance logging
+# Registered performance logging
+# Registering API modules
+# Registering auth routes
+# Registered auth routes
+# Registering onboarding routes
+# Registered onboarding routes
+# Registering brain routes
+# Registered brain routes
+# Registering admin routes
+# Registered admin routes
+# Registering inventory routes
+# Registered inventory routes
+# Registering accounting routes
+# Registered accounting routes
+# Registering purchases routes
+# Registered purchases routes
+# Registering projects routes
+# Registered projects routes
+# Registering sales routes
+# Registered sales routes
+# Registering invoicing routes
+# Registered invoicing routes
+# Registering hr routes
+# Registered hr routes
+# Registering services routes
+# Registered services routes
+# Registering offline routes
+# Registered offline routes
+# Registering transport routes
+# Registered transport routes
+# Registering sales-invoice routes
+# Registered sales-invoice routes
+# Registering accounts-receivable routes
+# Registered accounts-receivable routes
+# Registering treasury routes
+# Registered treasury routes
+# Registering comercio routes
+# Registered comercio routes
+# Registering comercio-public routes
+# Registered comercio-public routes
+# Registering commercial-management routes
+# Registered commercial-management routes
+# Registering apex-heart routes
+# Registered apex-heart routes
+# Registered API modules
+# Registering brain websocket route
+# Registered brain websocket route
+# Registering collaboration-websocket routes
+# Registered collaboration-websocket routes
+# Starting background workers
+# Redis disabled: background workers and crons disabled
+# Finished background workers
+# Registering health route
+# Registered health route
+# Subtest: all accounting UI routes are registered under /api/v1
+ok 7 - all accounting UI routes are registered under /api/v1
+  ---
+  duration_ms: 7285.7462
+  type: 'test'
+  ...
+# {"level":30,"time":1794182079035,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Starting APEX OS API bootstrap"}
+# {"level":30,"time":1794182079035,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering cors"}
+# {"level":30,"time":1794182079257,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered cors"}
+# {"level":30,"time":1794182079257,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering rate-limit"}
+# {"level":30,"time":1794182079425,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered rate-limit"}
+# {"level":30,"time":1794182079425,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering security headers"}
+# {"level":30,"time":1794182079453,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered security headers"}
+# {"level":30,"time":1794182079453,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering websocket"}
+# {"level":30,"time":1794182080266,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered websocket"}
+# {"level":30,"time":1794182080266,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering multipart"}
+# {"level":30,"time":1794182080925,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered multipart"}
+# {"level":30,"time":1794182080925,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering auth decorator"}
+# {"level":30,"time":1794182080925,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered auth decorator"}
+# {"level":30,"time":1794182080925,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering audit hook"}
+# {"level":30,"time":1794182080956,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered audit hook"}
+# {"level":30,"time":1794182080956,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering platform technical log hooks"}
+# {"level":30,"time":1794182081047,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered platform technical log hooks"}
+# {"level":30,"time":1794182081047,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering performance logging"}
+# {"level":30,"time":1794182081047,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered performance logging"}
+# {"level":30,"time":1794182081047,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering API modules"}
+# {"level":30,"time":1794182081242,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering auth routes"}
+# {"level":30,"time":1794182081242,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered auth routes"}
+# {"level":30,"time":1794182081319,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering onboarding routes"}
+# {"level":30,"time":1794182081319,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered onboarding routes"}
+# {"level":30,"time":1794182081418,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering brain routes"}
+# {"level":30,"time":1794182081419,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered brain routes"}
+# {"level":30,"time":1794182081439,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering admin routes"}
+# {"level":30,"time":1794182081439,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered admin routes"}
+# {"level":30,"time":1794182081475,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering inventory routes"}
+# {"level":30,"time":1794182081476,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered inventory routes"}
+# {"level":30,"time":1794182081507,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering accounting routes"}
+# {"level":30,"time":1794182081507,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered accounting routes"}
+# {"level":30,"time":1794182081520,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering purchases routes"}
+# {"level":30,"time":1794182081520,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered purchases routes"}
+# {"level":30,"time":1794182081611,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering projects routes"}
+# {"level":30,"time":1794182081611,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered projects routes"}
+# {"level":30,"time":1794182081731,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering sales routes"}
+# {"level":30,"time":1794182081731,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered sales routes"}
+# {"level":30,"time":1794182081851,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering invoicing routes"}
+# {"level":30,"time":1794182081853,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered invoicing routes"}
+# {"level":30,"time":1794182081925,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering hr routes"}
+# {"level":30,"time":1794182081925,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered hr routes"}
+# {"level":30,"time":1794182081943,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering services routes"}
+# {"level":30,"time":1794182081943,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered services routes"}
+# {"level":30,"time":1794182082009,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering offline routes"}
+# {"level":30,"time":1794182082009,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered offline routes"}
+# {"level":30,"time":1794182083226,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering transport routes"}
+# {"level":30,"time":1794182083226,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered transport routes"}
+# {"level":30,"time":1794182083235,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering sales-invoice routes"}
+# {"level":30,"time":1794182083235,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered sales-invoice routes"}
+# {"level":30,"time":1794182083239,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering accounts-receivable routes"}
+# {"level":30,"time":1794182083239,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered accounts-receivable routes"}
+# {"level":30,"time":1794182083245,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering treasury routes"}
+# {"level":30,"time":1794182083245,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered treasury routes"}
+# {"level":30,"time":1794182083325,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering comercio routes"}
+# {"level":30,"time":1794182083325,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered comercio routes"}
+# {"level":30,"time":1794182083364,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering comercio-public routes"}
+# {"level":30,"time":1794182083364,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered comercio-public routes"}
+# {"level":30,"time":1794182083421,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering commercial-management routes"}
+# {"level":30,"time":1794182083421,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered commercial-management routes"}
+# {"level":30,"time":1794182083473,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering apex-heart routes"}
+# {"level":30,"time":1794182083474,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered apex-heart routes"}
+# {"level":30,"time":1794182083474,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered API modules"}
+# {"level":30,"time":1794182083474,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering brain websocket route"}
+# {"level":30,"time":1794182083476,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered brain websocket route"}
+# {"level":30,"time":1794182083510,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering collaboration-websocket routes"}
+# {"level":30,"time":1794182083510,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered collaboration-websocket routes"}
+# {"level":30,"time":1794182083515,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Starting background workers"}
+# {"level":30,"time":1794182083516,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Redis disabled: background workers and crons disabled"}
+# {"level":30,"time":1794182083516,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Finished background workers"}
+# {"level":30,"time":1794182083516,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registering health route"}
+# {"level":30,"time":1794182083519,"pid":10544,"hostname":"DESKTOP-6QIJ49H","msg":"Registered health route"}
+# {"level":30,"time":1794182085878,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1","req":{"method":"POST","url":"/api/v1/accounting/chart/init","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086070,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1","res":{"statusCode":401},"responseTime":13.352700000000368,"msg":"request completed"}
+# {"level":30,"time":1794182086071,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-2","req":{"method":"GET","url":"/api/v1/accounting/accounts","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086073,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-2","res":{"statusCode":401},"responseTime":1.704200000000128,"msg":"request completed"}
+# {"level":30,"time":1794182086074,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-3","req":{"method":"POST","url":"/api/v1/accounting/accounts","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086080,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-3","res":{"statusCode":400},"responseTime":4.810999999999694,"msg":"request completed"}
+# {"level":30,"time":1794182086082,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-4","req":{"method":"PUT","url":"/api/v1/accounting/accounts/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086083,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-4","res":{"statusCode":400},"responseTime":1.3182999999999083,"msg":"request completed"}
+# {"level":30,"time":1794182086084,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-5","req":{"method":"DELETE","url":"/api/v1/accounting/accounts/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086086,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-5","res":{"statusCode":401},"responseTime":1.4013000000004467,"msg":"request completed"}
+# {"level":30,"time":1794182086087,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-6","req":{"method":"POST","url":"/api/v1/accounting/journal","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086090,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-6","res":{"statusCode":400},"responseTime":2.737699999999677,"msg":"request completed"}
+# {"level":30,"time":1794182086090,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-7","req":{"method":"GET","url":"/api/v1/accounting/ledger/1105","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086092,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-7","res":{"statusCode":401},"responseTime":1.2521999999999025,"msg":"request completed"}
+# {"level":30,"time":1794182086093,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-8","req":{"method":"GET","url":"/api/v1/accounting/reports/balance-sheet","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086096,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-8","res":{"statusCode":401},"responseTime":1.7213999999994485,"msg":"request completed"}
+# {"level":30,"time":1794182086097,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-9","req":{"method":"GET","url":"/api/v1/accounting/reports/income-statement","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086105,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-9","res":{"statusCode":401},"responseTime":2.2487999999993917,"msg":"request completed"}
+# {"level":30,"time":1794182086106,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-a","req":{"method":"GET","url":"/api/v1/accounting/reports/trial-balance","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086109,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-a","res":{"statusCode":401},"responseTime":1.623899999999594,"msg":"request completed"}
+# {"level":30,"time":1794182086109,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-b","req":{"method":"GET","url":"/api/v1/accounting/reports/taxes","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086110,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-b","res":{"statusCode":401},"responseTime":0.7093000000004395,"msg":"request completed"}
+# {"level":30,"time":1794182086110,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-c","req":{"method":"GET","url":"/api/v1/accounting/reports/receivables","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086114,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-c","res":{"statusCode":401},"responseTime":2.9340000000001965,"msg":"request completed"}
+# {"level":30,"time":1794182086114,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-d","req":{"method":"GET","url":"/api/v1/accounting/reports/payables","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086116,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-d","res":{"statusCode":401},"responseTime":1.0453999999999724,"msg":"request completed"}
+# {"level":30,"time":1794182086116,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-e","req":{"method":"GET","url":"/api/v1/accounting/periods","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086118,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-e","res":{"statusCode":401},"responseTime":1.0851000000002387,"msg":"request completed"}
+# {"level":30,"time":1794182086118,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-f","req":{"method":"PATCH","url":"/api/v1/accounting/periods/2026-07","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086120,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-f","res":{"statusCode":400},"responseTime":1.2948999999998705,"msg":"request completed"}
+# {"level":30,"time":1794182086120,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-g","req":{"method":"GET","url":"/api/v1/accounting/organization-tree","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086121,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-g","res":{"statusCode":401},"responseTime":0.8791000000001077,"msg":"request completed"}
+# {"level":30,"time":1794182086122,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-h","req":{"method":"POST","url":"/api/v1/accounting/organization-tree","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086124,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-h","res":{"statusCode":400},"responseTime":1.9166000000004715,"msg":"request completed"}
+# {"level":30,"time":1794182086124,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-i","req":{"method":"DELETE","url":"/api/v1/accounting/organization-tree/branch/BOG","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086125,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-i","res":{"statusCode":401},"responseTime":0.7462999999997919,"msg":"request completed"}
+# {"level":30,"time":1794182086126,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-j","req":{"method":"GET","url":"/api/v1/accounting/document-masters","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086127,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-j","res":{"statusCode":401},"responseTime":0.6710999999995693,"msg":"request completed"}
+# {"level":30,"time":1794182086127,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-k","req":{"method":"POST","url":"/api/v1/accounting/document-masters/types","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086132,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-k","res":{"statusCode":400},"responseTime":4.506800000000112,"msg":"request completed"}
+# {"level":30,"time":1794182086132,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-l","req":{"method":"POST","url":"/api/v1/accounting/document-masters/numbering","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086134,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-l","res":{"statusCode":400},"responseTime":1.9255999999995765,"msg":"request completed"}
+# {"level":30,"time":1794182086135,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-m","req":{"method":"GET","url":"/api/v1/accounting/vat-masters","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086136,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-m","res":{"statusCode":401},"responseTime":0.8289999999997235,"msg":"request completed"}
+# {"level":30,"time":1794182086136,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-n","req":{"method":"POST","url":"/api/v1/accounting/vat-masters","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086138,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-n","res":{"statusCode":400},"responseTime":1.7974999999996726,"msg":"request completed"}
+# {"level":30,"time":1794182086139,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-o","req":{"method":"DELETE","url":"/api/v1/accounting/vat-masters/COMPRAS-19","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086156,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-o","res":{"statusCode":401},"responseTime":15.175600000000486,"msg":"request completed"}
+# {"level":30,"time":1794182086157,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-p","req":{"method":"GET","url":"/api/v1/accounting/retention-masters","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086158,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-p","res":{"statusCode":401},"responseTime":1.057400000000598,"msg":"request completed"}
+# {"level":30,"time":1794182086159,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-q","req":{"method":"POST","url":"/api/v1/accounting/retention-masters","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086171,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-q","res":{"statusCode":400},"responseTime":11.686999999999898,"msg":"request completed"}
+# {"level":30,"time":1794182086172,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-r","req":{"method":"GET","url":"/api/v1/accounting/suppliers/1/retentions","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086174,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-r","res":{"statusCode":401},"responseTime":1.236599999999271,"msg":"request completed"}
+# {"level":30,"time":1794182086174,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-s","req":{"method":"PUT","url":"/api/v1/accounting/suppliers/1/retentions","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086187,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-s","res":{"statusCode":400},"responseTime":12.09559999999965,"msg":"request completed"}
+# {"level":30,"time":1794182086187,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-t","req":{"method":"GET","url":"/api/v1/accounting/payable-accounts","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086189,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-t","res":{"statusCode":401},"responseTime":0.8108000000011089,"msg":"request completed"}
+# {"level":30,"time":1794182086189,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-u","req":{"method":"GET","url":"/api/v1/accounting/documents","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086190,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-u","res":{"statusCode":401},"responseTime":0.7002999999986059,"msg":"request completed"}
+# {"level":30,"time":1794182086190,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-v","req":{"method":"GET","url":"/api/v1/accounting/documents/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086191,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-v","res":{"statusCode":401},"responseTime":0.7566999999999098,"msg":"request completed"}
+# {"level":30,"time":1794182086192,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-w","req":{"method":"POST","url":"/api/v1/accounting/documents","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086202,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-w","res":{"statusCode":400},"responseTime":10.48869999999988,"msg":"request completed"}
+# {"level":30,"time":1794182086203,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-x","req":{"method":"GET","url":"/api/v1/accounting/payables/documents","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086204,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-x","res":{"statusCode":401},"responseTime":1.2484999999996944,"msg":"request completed"}
+# {"level":30,"time":1794182086205,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-y","req":{"method":"GET","url":"/api/v1/accounting/payables/open-invoices","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086206,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-y","res":{"statusCode":401},"responseTime":1.0247999999992317,"msg":"request completed"}
+# {"level":30,"time":1794182086207,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-z","req":{"method":"GET","url":"/api/v1/accounting/payables/suppliers/1/documents","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086220,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-z","res":{"statusCode":401},"responseTime":1.675200000001496,"msg":"request completed"}
+# {"level":30,"time":1794182086222,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-10","req":{"method":"POST","url":"/api/v1/accounting/payables/documents/simulate","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086226,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-10","res":{"statusCode":400},"responseTime":3.3492999999998574,"msg":"request completed"}
+# {"level":30,"time":1794182086226,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-11","req":{"method":"POST","url":"/api/v1/accounting/payables/documents","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086229,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-11","res":{"statusCode":400},"responseTime":1.856999999999971,"msg":"request completed"}
+# {"level":30,"time":1794182086230,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-12","req":{"method":"POST","url":"/api/v1/accounting/payables/applications","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086239,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-12","res":{"statusCode":400},"responseTime":8.322299999999814,"msg":"request completed"}
+# {"level":30,"time":1794182086239,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-13","req":{"method":"GET","url":"/api/v1/accounting/third-party-masters","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086240,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-13","res":{"statusCode":401},"responseTime":0.8603000000002794,"msg":"request completed"}
+# {"level":30,"time":1794182086241,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-14","req":{"method":"POST","url":"/api/v1/accounting/third-party-masters/document-types","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086242,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-14","res":{"statusCode":400},"responseTime":1.2137000000002445,"msg":"request completed"}
+# {"level":30,"time":1794182086243,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-15","req":{"method":"POST","url":"/api/v1/accounting/third-party-masters/locations","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086257,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-15","res":{"statusCode":400},"responseTime":10.797300000000178,"msg":"request completed"}
+# {"level":30,"time":1794182086257,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-16","req":{"method":"GET","url":"/api/v1/accounting/third-parties","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086258,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-16","res":{"statusCode":401},"responseTime":0.9194000000006781,"msg":"request completed"}
+# {"level":30,"time":1794182086259,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-17","req":{"method":"POST","url":"/api/v1/accounting/third-parties","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086272,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-17","res":{"statusCode":400},"responseTime":13.233799999999974,"msg":"request completed"}
+# {"level":30,"time":1794182086273,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-18","req":{"method":"PUT","url":"/api/v1/accounting/third-parties/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086274,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-18","res":{"statusCode":400},"responseTime":1.1637999999984459,"msg":"request completed"}
+# {"level":30,"time":1794182086275,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-19","req":{"method":"GET","url":"/api/v1/treasury/banks","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086276,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-19","res":{"statusCode":401},"responseTime":0.9567000000006374,"msg":"request completed"}
+# {"level":30,"time":1794182086276,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1a","req":{"method":"POST","url":"/api/v1/treasury/banks","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086280,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1a","res":{"statusCode":400},"responseTime":3.3435000000008586,"msg":"request completed"}
+# {"level":30,"time":1794182086282,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1b","req":{"method":"PATCH","url":"/api/v1/treasury/banks/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086283,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1b","res":{"statusCode":400},"responseTime":0.9002999999993335,"msg":"request completed"}
+# {"level":30,"time":1794182086284,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1c","req":{"method":"GET","url":"/api/v1/treasury/open-items","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086285,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1c","res":{"statusCode":401},"responseTime":0.8501999999989494,"msg":"request completed"}
+# {"level":30,"time":1794182086285,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1d","req":{"method":"GET","url":"/api/v1/treasury/payments","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086286,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1d","res":{"statusCode":401},"responseTime":0.7738000000008469,"msg":"request completed"}
+# {"level":30,"time":1794182086286,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1e","req":{"method":"GET","url":"/api/v1/treasury/payments/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086287,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1e","res":{"statusCode":401},"responseTime":0.7322000000003754,"msg":"request completed"}
+# {"level":30,"time":1794182086288,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1f","req":{"method":"POST","url":"/api/v1/treasury/payments","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086290,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1f","res":{"statusCode":400},"responseTime":1.7160000000003492,"msg":"request completed"}
+# {"level":30,"time":1794182086290,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1g","req":{"method":"POST","url":"/api/v1/treasury/payments/1/cancel","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086291,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1g","res":{"statusCode":401},"responseTime":0.7759999999998399,"msg":"request completed"}
+# {"level":30,"time":1794182086292,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1h","req":{"method":"GET","url":"/api/v1/treasury/advances","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086305,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1h","res":{"statusCode":401},"responseTime":12.471000000001368,"msg":"request completed"}
+# {"level":30,"time":1794182086306,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1i","req":{"method":"POST","url":"/api/v1/treasury/advances","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086308,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1i","res":{"statusCode":400},"responseTime":2.4673000000002503,"msg":"request completed"}
+# {"level":30,"time":1794182086309,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1j","req":{"method":"POST","url":"/api/v1/treasury/advances/1/apply","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182086310,"pid":10544,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1j","res":{"statusCode":400},"responseTime":1.0448000000014872,"msg":"request completed"}
+# Subtest: reconoce administradores confiables por role_type aunque el nombre sea personalizado
+ok 8 - reconoce administradores confiables por role_type aunque el nombre sea personalizado
+  ---
+  duration_ms: 4.3959
+  type: 'test'
+  ...
+# Subtest: un gestor de usuarios cumple solo las capacidades concedidas en su matriz
+ok 9 - un gestor de usuarios cumple solo las capacidades concedidas en su matriz
+  ---
+  duration_ms: 0.8798
+  type: 'test'
+  ...
+# Subtest: admin write agregado no permite crear usuarios cuando la matriz solo concede editar
+ok 10 - admin write agregado no permite crear usuarios cuando la matriz solo concede editar
+  ---
+  duration_ms: 0.758
+  type: 'test'
+  ...
+# Subtest: mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados
+ok 11 - mantiene compatibilidad con roles antiguos que solo tienen permisos RBAC agregados
+  ---
+  duration_ms: 2.5901
+  type: 'test'
+  ...
+# Subtest: la capacidad no omite suscripcion ni alcance del tenant
+ok 12 - la capacidad no omite suscripcion ni alcance del tenant
+  ---
+  duration_ms: 0.8861
+  type: 'test'
+  ...
+# Subtest: las rutas de usuarios y roles exigen capacidades granulares
+ok 13 - las rutas de usuarios y roles exigen capacidades granulares
+  ---
+  duration_ms: 1.0531
+  type: 'test'
+  ...
+# Subtest: la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior
+ok 14 - la edicion administrativa aplica los campos enviados y no conserva silenciosamente el valor anterior
+  ---
+  duration_ms: 1.046
+  type: 'test'
+  ...
+# Subtest: todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado
+ok 15 - todas las operaciones administrativas por id acotan usuario y rol al tenant autenticado
+  ---
+  duration_ms: 1.1832
+  type: 'test'
+  ...
+# Subtest: desactivar usuario responde con el registro inactivo y revoca sesiones
+ok 16 - desactivar usuario responde con el registro inactivo y revoca sesiones
+  ---
+  duration_ms: 50.8933
+  type: 'test'
+  ...
+# Subtest: el cambio de estado no puede operar sobre un usuario de otro tenant
+ok 17 - el cambio de estado no puede operar sobre un usuario de otro tenant
+  ---
+  duration_ms: 10.9636
+  type: 'test'
+  ...
+# Subtest: la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+ok 18 - la ruta publica el resultado exitoso del servicio sin convertirlo en 404
+  ---
+  duration_ms: 1.1389
+  type: 'test'
+  ...
+# Redis disabled - using noop queues
+# Subtest: Apex Heart clasifica productos por Pareto y calcula rentabilidad
+ok 19 - Apex Heart clasifica productos por Pareto y calcula rentabilidad
+  ---
+  duration_ms: 5.6377
+  type: 'test'
+  ...
+# Subtest: Apex Heart valida y calcula la siguiente entrega semanal
+ok 20 - Apex Heart valida y calcula la siguiente entrega semanal
+  ---
+  duration_ms: 3.0417
+  type: 'test'
+  ...
+# Subtest: Apex Heart rechaza programaciones sin destinatarios válidos
+ok 21 - Apex Heart rechaza programaciones sin destinatarios válidos
+  ---
+  duration_ms: 1.0433
+  type: 'test'
+  ...
+# Subtest: Apex Heart eleva alertas configurables por severidad
+ok 22 - Apex Heart eleva alertas configurables por severidad
+  ---
+  duration_ms: 0.7089
+  type: 'test'
+  ...
+# Subtest: Apex Heart distribuye cartera y proveedores en cinco edades
+ok 23 - Apex Heart distribuye cartera y proveedores en cinco edades
+  ---
+  duration_ms: 1.0062
+  type: 'test'
+  ...
+# Subtest: el seed YTD está limitado a Cliente Piloto QA y es idempotente
+ok 24 - el seed YTD está limitado a Cliente Piloto QA y es idempotente
+  ---
+  duration_ms: 2.8918
+  type: 'test'
+  ...
+# Subtest: el certificador exige cobertura de todos los datasets gráficos
+ok 25 - el certificador exige cobertura de todos los datasets gráficos
+  ---
+  duration_ms: 0.7658
+  type: 'test'
+  ...
+# Subtest: mapeo: el almacen caido se responde 502 con su codigo legible
+ok 26 - mapeo: el almacen caido se responde 502 con su codigo legible
+  ---
+  duration_ms: 11.4202
+  type: 'test'
+  ...
+# Subtest: mapeo: el generador sin cuota y el almacen sin configurar conservan su estado
+ok 27 - mapeo: el generador sin cuota y el almacen sin configurar conservan su estado
+  ---
+  duration_ms: 0.5057
+  type: 'test'
+  ...
+# Subtest: mapeo: un 502 sin codigo sigue siendo error interno
+ok 28 - mapeo: un 502 sin codigo sigue siendo error interno
+  ---
+  duration_ms: 0.7516
+  type: 'test'
+  ...
+# Subtest: mapeo: una excepcion inesperada se convierte en 500 y se registra
+ok 29 - mapeo: una excepcion inesperada se convierte en 500 y se registra
+  ---
+  duration_ms: 0.3363
+  type: 'test'
+  ...
+# Subtest: mapeo: los 4xx del negocio siguen saliendo con su mensaje y su detalle
+ok 30 - mapeo: los 4xx del negocio siguen saliendo con su mensaje y su detalle
+  ---
+  duration_ms: 0.465
+  type: 'test'
+  ...
+# Subtest: el hub aísla salas por tenant y retransmite presencia sanitizada
+ok 31 - el hub aísla salas por tenant y retransmite presencia sanitizada
+  ---
+  duration_ms: 8.2046
+  type: 'test'
+  ...
+# Subtest: el hub rechaza tipos ajenos a presencia
+ok 32 - el hub rechaza tipos ajenos a presencia
+  ---
+  duration_ms: 0.3353
+  type: 'test'
+  ...
+# Subtest: buildInstallmentSchedule: la ultima cuota absorbe el residuo y la suma cierra exacta
+ok 33 - buildInstallmentSchedule: la ultima cuota absorbe el residuo y la suma cierra exacta
+  ---
+  duration_ms: 9.6839
+  type: 'test'
+  ...
+# Subtest: buildInstallmentSchedule: mensual con recorte de fin de mes (31-ene -> 28-feb)
+ok 34 - buildInstallmentSchedule: mensual con recorte de fin de mes (31-ene -> 28-feb)
+  ---
+  duration_ms: 0.5598
+  type: 'test'
+  ...
+# Subtest: buildInstallmentSchedule: valida monto, count y frecuencia
+ok 35 - buildInstallmentSchedule: valida monto, count y frecuencia
+  ---
+  duration_ms: 1.1964
+  type: 'test'
+  ...
+# Subtest: allocateInstallments: oldest-first, salta cuotas pagadas y reporta sobrante
+ok 36 - allocateInstallments: oldest-first, salta cuotas pagadas y reporta sobrante
+  ---
+  duration_ms: 0.8604
+  type: 'test'
+  ...
+# Subtest: weightedAverageCost: promedio ponderado y casos borde
+ok 37 - weightedAverageCost: promedio ponderado y casos borde
+  ---
+  duration_ms: 0.6038
+  type: 'test'
+  ...
+# Subtest: normalizeDiscountPercent: techo 90%, vacio es cero y el fuera de rango se rechaza
+ok 38 - normalizeDiscountPercent: techo 90%, vacio es cero y el fuera de rango se rechaza
+  ---
+  duration_ms: 0.4892
+  type: 'test'
+  ...
+# Subtest: discountedPrice: aplica el porcentaje sobre el precio de lista y redondea a centavos
+ok 39 - discountedPrice: aplica el porcentaje sobre el precio de lista y redondea a centavos
+  ---
+  duration_ms: 1.136
+  type: 'test'
+  ...
+# Subtest: promotionActive: estado, porcentaje y ventana inclusiva
+ok 40 - promotionActive: estado, porcentaje y ventana inclusiva
+  ---
+  duration_ms: 0.5598
+  type: 'test'
+  ...
+# Subtest: bestPromotionFor: respeta alcance y gana el mayor descuento sin sumar
+ok 41 - bestPromotionFor: respeta alcance y gana el mayor descuento sin sumar
+  ---
+  duration_ms: 2.9488
+  type: 'test'
+  ...
+# Subtest: storefrontBanner: anuncia solo promociones de toda la tienda y manda el mayor
+ok 42 - storefrontBanner: anuncia solo promociones de toda la tienda y manda el mayor
+  ---
+  duration_ms: 1.2307
+  type: 'test'
+  ...
+# Subtest: renderPromotionMessage: personaliza marcadores y cae en un texto por defecto
+ok 43 - renderPromotionMessage: personaliza marcadores y cae en un texto por defecto
+  ---
+  duration_ms: 0.7222
+  type: 'test'
+  ...
+# Subtest: createSale: cobra el precio con el descuento del producto, no el de lista
+ok 44 - createSale: cobra el precio con el descuento del producto, no el de lista
+  ---
+  duration_ms: 8.5728
+  type: 'test'
+  ...
+# Subtest: createSale: la promocion vigente manda sobre el descuento del producto dentro de su ventana
+ok 45 - createSale: la promocion vigente manda sobre el descuento del producto dentro de su ventana
+  ---
+  duration_ms: 6.7335
+  type: 'test'
+  ...
+# Subtest: createSale: una promocion segmentada solo rebaja los productos de su alcance
+ok 46 - createSale: una promocion segmentada solo rebaja los productos de su alcance
+  ---
+  duration_ms: 4.9047
+  type: 'test'
+  ...
+# Subtest: updateProduct: persiste descuento y destacado; el DTO expone el precio final
+ok 47 - updateProduct: persiste descuento y destacado; el DTO expone el precio final
+  ---
+  duration_ms: 4.1045
+  type: 'test'
+  ...
+# Subtest: listProducts: sale_price es el precio del mostrador con la mejor promocion ponderada
+ok 48 - listProducts: sale_price es el precio del mostrador con la mejor promocion ponderada
+  ---
+  duration_ms: 9.2864
+  type: 'test'
+  ...
+# Subtest: updateSettings: deja de manejar campanas (ahora viven en Promociones)
+ok 49 - updateSettings: deja de manejar campanas (ahora viven en Promociones)
+  ---
+  duration_ms: 5.998
+  type: 'test'
+  ...
+# Subtest: promociones: valida alcance, ventana y activacion; edita segmentos
+ok 50 - promociones: valida alcance, ventana y activacion; edita segmentos
+  ---
+  duration_ms: 19.1803
+  type: 'test'
+  ...
+# Subtest: audiencia y envio: personaliza por cliente con WhatsApp y evita repetir envios
+ok 51 - audiencia y envio: personaliza por cliente con WhatsApp y evita repetir envios
+  ---
+  duration_ms: 12.5587
+  type: 'test'
+  ...
+# Subtest: publicCatalog: expone precio final, precio de lista, descuento y banner sin filtrar costo ni stock
+ok 52 - publicCatalog: expone precio final, precio de lista, descuento y banner sin filtrar costo ni stock
+  ---
+  duration_ms: 12.0148
+  type: 'test'
+  ...
+# Subtest: createSale en efectivo: numera V-000001, descuenta stock y traza movimientos
+ok 53 - createSale en efectivo: numera V-000001, descuenta stock y traza movimientos
+  ---
+  duration_ms: 3.3661
+  type: 'test'
+  ...
+# Subtest: createSale: stock insuficiente aborta con STOCK_INSUFFICIENT y no crea la venta
+ok 54 - createSale: stock insuficiente aborta con STOCK_INSUFFICIENT y no crea la venta
+  ---
+  duration_ms: 2.7294
+  type: 'test'
+  ...
+# Subtest: createSale: venta sin cliente no puede ser a credito
+ok 55 - createSale: venta sin cliente no puede ser a credito
+  ---
+  duration_ms: 1.7329
+  type: 'test'
+  ...
+# Subtest: createSale a credito: genera cronograma, descuenta el pago inicial y abre el credito
+ok 56 - createSale a credito: genera cronograma, descuenta el pago inicial y abre el credito
+  ---
+  duration_ms: 6.3987
+  type: 'test'
+  ...
+# Subtest: addCreditPayment: abono parcial deja cuota partial; saldo cero paga el credito
+ok 57 - addCreditPayment: abono parcial deja cuota partial; saldo cero paga el credito
+  ---
+  duration_ms: 4.352
+  type: 'test'
+  ...
+# Subtest: voidSale: devuelve el stock y anula; si el credito ya tiene abonos se bloquea
+ok 58 - voidSale: devuelve el stock y anula; si el credito ya tiene abonos se bloquea
+  ---
+  duration_ms: 4.0448
+  type: 'test'
+  ...
+# Subtest: createPurchase: actualiza costo promedio ponderado, stock y numero CMP-0001
+ok 59 - createPurchase: actualiza costo promedio ponderado, stock y numero CMP-0001
+  ---
+  duration_ms: 9.6263
+  type: 'test'
+  ...
+# Subtest: adjustStock: new_stock fijo, bloqueo optimista y negativo rechazado
+ok 60 - adjustStock: new_stock fijo, bloqueo optimista y negativo rechazado
+  ---
+  duration_ms: 3.8281
+  type: 'test'
+  ...
+# Subtest: createProduct: asigna codigo P-0001 y traza el movimiento inicial
+ok 61 - createProduct: asigna codigo P-0001 y traza el movimiento inicial
+  ---
+  duration_ms: 4.4036
+  type: 'test'
+  ...
+# Subtest: createProduct: el codigo no reinicia sobre productos archivados (unique tenant+code)
+ok 62 - createProduct: el codigo no reinicia sobre productos archivados (unique tenant+code)
+  ---
+  duration_ms: 9.1621
+  type: 'test'
+  ...
+# Subtest: setCustomerActive: no desactiva clientes con creditos vigentes
+ok 63 - setCustomerActive: no desactiva clientes con creditos vigentes
+  ---
+  duration_ms: 2.1463
+  type: 'test'
+  ...
+# Subtest: esquemas Fastify: el body de venta rechaza propiedades desconocidas
+ok 64 - esquemas Fastify: el body de venta rechaza propiedades desconocidas
+  ---
+  duration_ms: 0.2897
+  type: 'test'
+  ...
+# Subtest: esquemas Fastify: descuentos y promociones son propiedades escribibles con techo de 90
+ok 65 - esquemas Fastify: descuentos y promociones son propiedades escribibles con techo de 90
+  ---
+  duration_ms: 0.6428
+  type: 'test'
+  ...
+# Subtest: storage: una ruta de sitio se devuelve intacta sin Supabase
+ok 66 - storage: una ruta de sitio se devuelve intacta sin Supabase
+  ---
+  duration_ms: 125.3722
+  type: 'test'
+  ...
+# Subtest: storage: sin Supabase una clave del bucket no produce URL ni se puede firmar
+ok 67 - storage: sin Supabase una clave del bucket no produce URL ni se puede firmar
+  ---
+  duration_ms: 3.3394
+  type: 'test'
+  ...
+# Subtest: storage: el default de conductor es Supabase y solo se cambia por variable explicita
+ok 68 - storage: el default de conductor es Supabase y solo se cambia por variable explicita
+  ---
+  duration_ms: 9.4821
+  type: 'test'
+  ...
+# Subtest: storage: un conductor que no existe se rechaza nombrando los validos
+ok 69 - storage: un conductor que no existe se rechaza nombrando los validos
+  ---
+  duration_ms: 2.3166
+  type: 'test'
+  ...
+# Subtest: storage: el MinIO sin credenciales dice exactamente que falta
+ok 70 - storage: el MinIO sin credenciales dice exactamente que falta
+  ---
+  duration_ms: 2.219
+  type: 'test'
+  ...
+# Subtest: storage: almacen apagado responde 502 con causa legible, no 500
+ok 71 - storage: almacen apagado responde 502 con causa legible, no 500
+  ---
+  duration_ms: 29.5135
+  type: 'test'
+  ...
+# Subtest: storage: un DNS que no resuelve tampoco se disfraza de error interno
+ok 72 - storage: un DNS que no resuelve tampoco se disfraza de error interno
+  ---
+  duration_ms: 4.5267
+  type: 'test'
+  ...
+# Subtest: storage: la peticion al almacen sale con senal de tiempo limite
+ok 73 - storage: la peticion al almacen sale con senal de tiempo limite
+  ---
+  duration_ms: 2.1832
+  type: 'test'
+  ...
+# Subtest: storage: con MinIO la URL publica sale por el origen que ve el navegador
+ok 74 - storage: con MinIO la URL publica sale por el origen que ve el navegador
+  ---
+  duration_ms: 6.9092
+  type: 'test'
+  ...
+# Subtest: storage: MinIO mal configurado no rompe la lectura de la vitrina
+ok 75 - storage: MinIO mal configurado no rompe la lectura de la vitrina
+  ---
+  duration_ms: 3.718
+  type: 'test'
+  ...
+# Subtest: publicTheme: sin preferencias devuelve la paleta esmeralda/rosa vigente
+ok 76 - publicTheme: sin preferencias devuelve la paleta esmeralda/rosa vigente
+  ---
+  duration_ms: 40.4847
+  type: 'test'
+  ...
+# Subtest: publicTheme: descarta hex invalidos y valores maliciosos sin romper la vitrina
+ok 77 - publicTheme: descarta hex invalidos y valores maliciosos sin romper la vitrina
+  ---
+  duration_ms: 5.661
+  type: 'test'
+  ...
+# Subtest: publicTheme: un asset estatico del sitio se conserva tal cual
+ok 78 - publicTheme: un asset estatico del sitio se conserva tal cual
+  ---
+  duration_ms: 2.6356
+  type: 'test'
+  ...
+# Subtest: publicTheme: los cinco modos solo salen dentro de su enum
+ok 79 - publicTheme: los cinco modos solo salen dentro de su enum
+  ---
+  duration_ms: 6.4037
+  type: 'test'
+  ...
+# Subtest: publicCatalog: expone el tema del tenant junto al catalogo, sin costo, stock ni tenant
+ok 80 - publicCatalog: expone el tema del tenant junto al catalogo, sin costo, stock ni tenant
+  ---
+  duration_ms: 10.7996
+  type: 'test'
+  ...
+# Subtest: setStorefrontTheme: mezcla colores validas y conserva otras preferencias
+ok 81 - setStorefrontTheme: mezcla colores validas y conserva otras preferencias
+  ---
+  duration_ms: 7.4495
+  type: 'test'
+  ...
+# Subtest: setStorefrontTheme: ignora los campos que no le pertenecen (banner y compania)
+ok 82 - setStorefrontTheme: ignora los campos que no le pertenecen (banner y compania)
+  ---
+  duration_ms: 6.7213
+  type: 'test'
+  ...
+# Subtest: setStorefrontTheme: hex invalido se rechaza antes de escribir
+ok 83 - setStorefrontTheme: hex invalido se rechaza antes de escribir
+  ---
+  duration_ms: 9.2655
+  type: 'test'
+  ...
+# Subtest: setStorefrontTheme: null devuelve un color a la paleta por defecto
+ok 84 - setStorefrontTheme: null devuelve un color a la paleta por defecto
+  ---
+  duration_ms: 4.0844
+  type: 'test'
+  ...
+# Subtest: setStorefrontTheme: guarda los modos y rechaza uno fuera del enum antes de escribir
+ok 85 - setStorefrontTheme: guarda los modos y rechaza uno fuera del enum antes de escribir
+  ---
+  duration_ms: 8.143
+  type: 'test'
+  ...
+# Subtest: getSettings: el panel autenticado recibe el tema saneado y la URL publica del banner
+ok 86 - getSettings: el panel autenticado recibe el tema saneado y la URL publica del banner
+  ---
+  duration_ms: 2.874
+  type: 'test'
+  ...
+# Subtest: attachStorefrontBanner: valida, sube al bucket y persiste el path interno
+ok 87 - attachStorefrontBanner: valida, sube al bucket y persiste el path interno
+  ---
+  duration_ms: 3.7261
+  type: 'test'
+  ...
+# Subtest: attachStorefrontBanner: reemplazar borra el objeto anterior (best-effort)
+ok 88 - attachStorefrontBanner: reemplazar borra el objeto anterior (best-effort)
+  ---
+  duration_ms: 3.522
+  type: 'test'
+  ...
+# Subtest: detachStorefrontBanner: quita el path y elimina el objeto
+ok 89 - detachStorefrontBanner: quita el path y elimina el objeto
+  ---
+  duration_ms: 2.3659
+  type: 'test'
+  ...
+# Subtest: generateStorefrontBanner: sin Supabase configurado falla antes de gastar la generacion
+ok 90 - generateStorefrontBanner: sin Supabase configurado falla antes de gastar la generacion
+  ---
+  duration_ms: 6.2275
+  type: 'test'
+  ...
+# Subtest: generateStorefrontBanner: la imagen generada entra por el mismo validador que una subida
+ok 91 - generateStorefrontBanner: la imagen generada entra por el mismo validador que una subida
+  ---
+  duration_ms: 3.4842
+  type: 'test'
+  ...
+# Subtest: storefrontThemeSchema: solo hex de 6 digitos y textos acotados
+ok 92 - storefrontThemeSchema: solo hex de 6 digitos y textos acotados
+  ---
+  duration_ms: 2.7748
+  type: 'test'
+  ...
+# Subtest: imagegen: genera contra el host fijo con prompt codificado y nologo
+ok 93 - imagegen: genera contra el host fijo con prompt codificado y nologo
+  ---
+  duration_ms: 8.1407
+  type: 'test'
+  ...
+# Subtest: imagegen: prompt corto o larguisimo se rechaza sin salir a la red
+ok 94 - imagegen: prompt corto o larguisimo se rechaza sin salir a la red
+  ---
+  duration_ms: 0.8913
+  type: 'test'
+  ...
+# Subtest: imagegen: cleanPrompt compacta espacios y rechaza fuera de los limites
+ok 95 - imagegen: cleanPrompt compacta espacios y rechaza fuera de los limites
+  ---
+  duration_ms: 0.8836
+  type: 'test'
+  ...
+# Subtest: imagegen: proveedor caido, respuesta vacía o gigante devuelven códigos propios
+ok 96 - imagegen: proveedor caido, respuesta vacía o gigante devuelven códigos propios
+  ---
+  duration_ms: 5.8994
+  type: 'test'
+  ...
+# Subtest: valor suma todos los pedidos vigentes sin duplicar por cotizacion y respeta filtros
+ok 97 - valor suma todos los pedidos vigentes sin duplicar por cotizacion y respeta filtros
+  ---
+  duration_ms: 62.3314
+  type: 'test'
+  ...
+# Subtest: categorias excluyentes, cotizacion convertida y documentos cancelados
+ok 98 - categorias excluyentes, cotizacion convertida y documentos cancelados
+  ---
+  duration_ms: 1.8398
+  type: 'test'
+  ...
+# Subtest: filtros y agrupacion Colombia, semana de lunes incluso entre años
+ok 99 - filtros y agrupacion Colombia, semana de lunes incluso entre años
+  ---
+  duration_ms: 0.765
+  type: 'test'
+  ...
+# Subtest: cotizacion, cancelacion con motivo, pedido, visita y 360 en base local
+ok 100 - cotizacion, cancelacion con motivo, pedido, visita y 360 en base local # SKIP
+  ---
+  duration_ms: 1.6439
+  type: 'test'
+  ...
+# Subtest: rutas comerciales exigen autenticacion, tenancy y permisos propios
+ok 101 - rutas comerciales exigen autenticacion, tenancy y permisos propios
+  ---
+  duration_ms: 2.8612
+  type: 'test'
+  ...
+# Subtest: el modulo se licencia con M-27 y no reutiliza modelos ERP
+ok 102 - el modulo se licencia con M-27 y no reutiliza modelos ERP
+  ---
+  duration_ms: 2.7697
+  type: 'test'
+  ...
+# Subtest: las visitas conservan programacion, ejecucion y reprogramacion trazables
+ok 103 - las visitas conservan programacion, ejecucion y reprogramacion trazables
+  ---
+  duration_ms: 3.682
+  type: 'test'
+  ...
+# Subtest: asesores, zonas y categorias tienen mantenimiento sin borrado fisico
+ok 104 - asesores, zonas y categorias tienen mantenimiento sin borrado fisico
+  ---
+  duration_ms: 1.9317
+  type: 'test'
+  ...
+# Subtest: la consulta de visitas admite filtros operativos
+ok 105 - la consulta de visitas admite filtros operativos
+  ---
+  duration_ms: 3.5929
+  type: 'test'
+  ...
+# Subtest: motivos y resultados de visita son maestros editables y se usan en el flujo
+ok 106 - motivos y resultados de visita son maestros editables y se usan en el flujo
+  ---
+  duration_ms: 2.4808
+  type: 'test'
+  ...
+# Subtest: el cliente expone cupo, compromisos y perfil 360 comercial
+ok 107 - el cliente expone cupo, compromisos y perfil 360 comercial
+  ---
+  duration_ms: 3.2735
+  type: 'test'
+  ...
+# Subtest: las visitas bloquean solapamientos y guardan lead time con duracion
+ok 108 - las visitas bloquean solapamientos y guardan lead time con duracion
+  ---
+  duration_ms: 2.5156
+  type: 'test'
+  ...
+# Subtest: Mi dia prioriza trabajo y la agenda expone una validacion preventiva
+ok 109 - Mi dia prioriza trabajo y la agenda expone una validacion preventiva
+  ---
+  duration_ms: 2.2475
+  type: 'test'
+  ...
+# Subtest: el catalogo comercial se integra con inventarios sin diferencias de precio
+ok 110 - el catalogo comercial se integra con inventarios sin diferencias de precio
+  ---
+  duration_ms: 4.3368
+  type: 'test'
+  ...
+# Subtest: cotizaciones tienen vigencia, pdf operativo y conversion opcional a pedido
+ok 111 - cotizaciones tienen vigencia, pdf operativo y conversion opcional a pedido
+  ---
+  duration_ms: 4.4269
+  type: 'test'
+  ...
+# Subtest: los pedidos se consultan con detalle, alcance y filtros operativos
+ok 112 - los pedidos se consultan con detalle, alcance y filtros operativos
+  ---
+  duration_ms: 2.1216
+  type: 'test'
+  ...
+# Subtest: presupuestos soportan frecuencia mensual y diaria sin mezclar fechas
+ok 113 - presupuestos soportan frecuencia mensual y diaria sin mezclar fechas
+  ---
+  duration_ms: 13.9873
+  type: 'test'
+  ...
+# Subtest: duracion no se calcula desde null ni para reprogramaciones
+ok 114 - duracion no se calcula desde null ni para reprogramaciones
+  ---
+  duration_ms: 1.8765
+  type: 'test'
+  ...
+# Subtest: calcula total del pedido y descuento como monto
+ok 115 - calcula total del pedido y descuento como monto
+  ---
+  duration_ms: 0.5762
+  type: 'test'
+  ...
+# Subtest: rechaza descuentos superiores al bruto
+ok 116 - rechaza descuentos superiores al bruto
+  ---
+  duration_ms: 1.351
+  type: 'test'
+  ...
+# Subtest: calcula avance, proyeccion y semaforo dinamicos
+ok 117 - calcula avance, proyeccion y semaforo dinamicos
+  ---
+  duration_ms: 0.6668
+  type: 'test'
+  ...
+# Subtest: pedido cancelado no pertenece a estados de venta reconocida
+ok 118 - pedido cancelado no pertenece a estados de venta reconocida
+  ---
+  duration_ms: 1.4005
+  type: 'test'
+  ...
+# Subtest: valida un mes calendario completo usando la zona horaria de Colombia
+ok 119 - valida un mes calendario completo usando la zona horaria de Colombia
+  ---
+  duration_ms: 51.4261
+  type: 'test'
+  ...
+# Subtest: la cadena comercial crea su esquema antes de alterarlo
+ok 120 - la cadena comercial crea su esquema antes de alterarlo
+  ---
+  duration_ms: 3.4073
+  type: 'test'
+  ...
+# Subtest: las rutas que fallaron en QA permanecen registradas en el API
+ok 121 - las rutas que fallaron en QA permanecen registradas en el API
+  ---
+  duration_ms: 1.043
+  type: 'test'
+  ...
+# Subtest: conserva cotizacion, admite mas, menos, cero y nuevos productos
+ok 122 - conserva cotizacion, admite mas, menos, cero y nuevos productos
+  ---
+  duration_ms: 7.1615
+  type: 'test'
+  ...
+# Subtest: compara union de productos con valores netos y conserva fechas distintas
+ok 123 - compara union de productos con valores netos y conserva fechas distintas
+  ---
+  duration_ms: 4.5394
+  type: 'test'
+  ...
+# Subtest: pendiente no se etiqueta como no comprado y cancelados no suman pedidos
+ok 124 - pendiente no se etiqueta como no comprado y cancelados no suman pedidos
+  ---
+  duration_ms: 3.6479
+  type: 'test'
+  ...
+# Subtest: agrupa lineas repetidas sin duplicar cantidades ni valores
+ok 125 - agrupa lineas repetidas sin duplicar cantidades ni valores
+  ---
+  duration_ms: 0.6015
+  type: 'test'
+  ...
+# Subtest: el contenedor API instala la dependencia de métricas en su propio workspace
+ok 126 - el contenedor API instala la dependencia de métricas en su propio workspace
+  ---
+  duration_ms: 162.2072
+  type: 'test'
+  ...
+# Subtest: commitments y visits estan montadas en /api/v1 y bloquean acceso anonimo
+ok 127 - commitments y visits estan montadas en /api/v1 y bloquean acceso anonimo # SKIP
+  ---
+  duration_ms: 0.278
+  type: 'test'
+  ...
+# Subtest: runWithTenant propaga el tenant aunque el callback sea una funcion sincrona
+ok 128 - runWithTenant propaga el tenant aunque el callback sea una funcion sincrona
+  ---
+  duration_ms: 182.49
+  type: 'test'
+  ...
+# Subtest: runWithTenant propaga el tenant con callback asincrono y tras un await
+ok 129 - runWithTenant propaga el tenant con callback asincrono y tras un await
+  ---
+  duration_ms: 108.6907
+  type: 'test'
+  ...
+# Subtest: fuera de runWithTenant el middleware no inventa un filtro de tenant
+ok 130 - fuera de runWithTenant el middleware no inventa un filtro de tenant
+  ---
+  duration_ms: 54.3773
+  type: 'test'
+  ...
+# Subtest: el nucleo envuelve el callback del tenant en una funcion asincrona
+ok 131 - el nucleo envuelve el callback del tenant en una funcion asincrona
+  ---
+  duration_ms: 1.015
+  type: 'test'
+  ...
+# Subtest: traslados soportan captura consecutiva con búsqueda y disponibilidad
+ok 132 - traslados soportan captura consecutiva con búsqueda y disponibilidad
+  ---
+  duration_ms: 4.9103
+  type: 'test'
+  ...
+# Subtest: pagos filtran referencias y permiten marcar todo sin autoasignación
+ok 133 - pagos filtran referencias y permiten marcar todo sin autoasignación
+  ---
+  duration_ms: 1.1518
+  type: 'test'
+  ...
+# Subtest: documentos operativos ofrecen continuidad de captura
+ok 134 - documentos operativos ofrecen continuidad de captura
+  ---
+  duration_ms: 3.4038
+  type: 'test'
+  ...
+# Subtest: listDateAssignments acota al dia operativo con el mismo filtro que el chequeo de solapamiento
+ok 135 - listDateAssignments acota al dia operativo con el mismo filtro que el chequeo de solapamiento
+  ---
+  duration_ms: 98.4704
+  type: 'test'
+  ...
+# Subtest: listDateAssignments rechaza una fecha mal formada sin consultar la base
+ok 136 - listDateAssignments rechaza una fecha mal formada sin consultar la base
+  ---
+  duration_ms: 3.6846
+  type: 'test'
+  ...
+# Subtest: la marcacion diferida del dia anterior dentro de la ventana se acepta contra su propia ruta
+ok 137 - la marcacion diferida del dia anterior dentro de la ventana se acepta contra su propia ruta
+  ---
+  duration_ms: 107.351
+  type: 'test'
+  ...
+# Subtest: la marcacion diferida fuera de la ventana maxima se rechaza
+ok 138 - la marcacion diferida fuera de la ventana maxima se rechaza
+  ---
+  duration_ms: 12.7635
+  type: 'test'
+  ...
+# Subtest: la marcacion con fecha futura se rechaza
+ok 139 - la marcacion con fecha futura se rechaza
+  ---
+  duration_ms: 16.4627
+  type: 'test'
+  ...
+# Subtest: la regla del dia sigue bloqueando una ruta de otro dia marcada hoy
+ok 140 - la regla del dia sigue bloqueando una ruta de otro dia marcada hoy
+  ---
+  duration_ms: 8.1138
+  type: 'test'
+  ...
+# Subtest: la actividad con GPS declarado obligatorio y sin coordenadas se rechaza
+ok 141 - la actividad con GPS declarado obligatorio y sin coordenadas se rechaza
+  ---
+  duration_ms: 13.4727
+  type: 'test'
+  ...
+# Subtest: la correccion administrativa fuera del dia deja novedad de ajuste manual
+ok 142 - la correccion administrativa fuera del dia deja novedad de ajuste manual
+  ---
+  duration_ms: 13.4948
+  type: 'test'
+  ...
+# Subtest: la marcacion propia del dia en curso no genera ajuste manual
+ok 143 - la marcacion propia del dia en curso no genera ajuste manual
+  ---
+  duration_ms: 19.4726
+  type: 'test'
+  ...
+# Subtest: la migracion siembra el tipo de novedad de forma idempotente
+ok 144 - la migracion siembra el tipo de novedad de forma idempotente
+  ---
+  duration_ms: 1.2332
+  type: 'test'
+  ...
+# Subtest: el contrato de marcacion sin senal queda versionado en el servicio
+ok 145 - el contrato de marcacion sin senal queda versionado en el servicio
+  ---
+  duration_ms: 7.7981
+  type: 'test'
+  ...
+# Subtest: listRoutes gobierna el limite explicito entre 50 y 500
+ok 146 - listRoutes gobierna el limite explicito entre 50 y 500
+  ---
+  duration_ms: 101.3471
+  type: 'test'
+  ...
+# Subtest: listRouteEventSummaries consulta limite+1 y senala el truncamiento
+ok 147 - listRouteEventSummaries consulta limite+1 y senala el truncamiento
+  ---
+  duration_ms: 44.4433
+  type: 'test'
+  ...
+# Subtest: listRouteEventSummaries sin desborde reporta truncamiento en falso
+ok 148 - listRouteEventSummaries sin desborde reporta truncamiento en falso
+  ---
+  duration_ms: 3.8319
+  type: 'test'
+  ...
+# Subtest: listRouteEventSummaries vacio conserva la senal de truncamiento en la respuesta
+ok 149 - listRouteEventSummaries vacio conserva la senal de truncamiento en la respuesta
+  ---
+  duration_ms: 2.4375
+  type: 'test'
+  ...
+# Subtest: el certificador masivo exige QA, SHA exacto y niveles 20/50/100
+ok 150 - el certificador masivo exige QA, SHA exacto y niveles 20/50/100
+  ---
+  duration_ms: 2.7984
+  type: 'test'
+  ...
+# Subtest: el certificador comprueba idempotencia, perdida, duplicados y horario del dia
+ok 151 - el certificador comprueba idempotencia, perdida, duplicados y horario del dia
+  ---
+  duration_ms: 0.6885
+  type: 'test'
+  ...
+# Subtest: el certificador limpia eventos y desactiva identidades aun ante fallo
+ok 152 - el certificador limpia eventos y desactiva identidades aun ante fallo
+  ---
+  duration_ms: 0.4767
+  type: 'test'
+  ...
+# Subtest: self routes fuerza exclusivamente la fecha operativa actual
+ok 153 - self routes fuerza exclusivamente la fecha operativa actual
+  ---
+  duration_ms: 75.4127
+  type: 'test'
+  ...
+# Subtest: self routes entrega un unico horario y conserva el de la jornada activa
+ok 154 - self routes entrega un unico horario y conserva el de la jornada activa
+  ---
+  duration_ms: 5.4692
+  type: 'test'
+  ...
+# Subtest: los endpoints self rechazan un horario alterno distinto al activo del dia
+ok 155 - los endpoints self rechazan un horario alterno distinto al activo del dia
+  ---
+  duration_ms: 6.1695
+  type: 'test'
+  ...
+# Subtest: createPunch usa lock por empleado, idempotencia y opciones de transaccion resistentes
+ok 156 - createPunch usa lock por empleado, idempotencia y opciones de transaccion resistentes
+  ---
+  duration_ms: 12.2113
+  type: 'test'
+  ...
+# Subtest: fix concurrencia: la marcacion espera el lock con deadline y rinde un 503 controlado
+ok 157 - fix concurrencia: la marcacion espera el lock con deadline y rinde un 503 controlado
+  ---
+  duration_ms: 124.8581
+  type: 'test'
+  ...
+# Subtest: fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+ok 158 - fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+  ---
+  duration_ms: 2.0193
+  type: 'test'
+  ...
+# Subtest: el contrato versiona idempotencia y evita reintentar validaciones permanentes
+ok 159 - el contrato versiona idempotencia y evita reintentar validaciones permanentes
+  ---
+  duration_ms: 13.296
+  type: 'test'
+  ...
+# Subtest: el preoperacional reutiliza la transaccion de marcacion y no agota el pool
+ok 160 - el preoperacional reutiliza la transaccion de marcacion y no agota el pool
+  ---
+  duration_ms: 2.9385
+  type: 'test'
+  ...
+# Subtest: la correccion administrativa con empleado valido marca a ese empleado y genera el ajuste
+ok 161 - la correccion administrativa con empleado valido marca a ese empleado y genera el ajuste
+  ---
+  duration_ms: 98.5347
+  type: 'test'
+  ...
+# Subtest: un employee_id inexistente en el tenant falla explicitamente sin escribir nada
+ok 162 - un employee_id inexistente en el tenant falla explicitamente sin escribir nada
+  ---
+  duration_ms: 8.7291
+  type: 'test'
+  ...
+# Subtest: un employee_id con formato invalido (UUID) falla explicitamente sin escribir nada
+ok 163 - un employee_id con formato invalido (UUID) falla explicitamente sin escribir nada
+  ---
+  duration_ms: 5.4624
+  type: 'test'
+  ...
+# Subtest: el ambito self-service ignora un employee_id declarado y marca al usuario conectado
+ok 164 - el ambito self-service ignora un employee_id declarado y marca al usuario conectado
+  ---
+  duration_ms: 18.201
+  type: 'test'
+  ...
+# Subtest: la correccion administrativa sin employee_id conserva el respaldo sobre el propio usuario
+ok 165 - la correccion administrativa sin employee_id conserva el respaldo sobre el propio usuario
+  ---
+  duration_ms: 8.9557
+  type: 'test'
+  ...
+# Subtest: el servicio declara el rechazo explicito del empleado no resuelto
+ok 166 - el servicio declara el rechazo explicito del empleado no resuelto
+  ---
+  duration_ms: 8.6193
+  type: 'test'
+  ...
+# Subtest: FM-01: la salida vehicular sin renglon activo inserta kilometraje sin depender del indice
+ok 167 - FM-01: la salida vehicular sin renglon activo inserta kilometraje sin depender del indice
+  ---
+  duration_ms: 196.2594
+  type: 'test'
+  ...
+# Subtest: FM-01: con renglon activo previo la salida actualiza el kilometraje en lugar de duplicar
+ok 168 - FM-01: con renglon activo previo la salida actualiza el kilometraje en lugar de duplicar
+  ---
+  duration_ms: 8.6062
+  type: 'test'
+  ...
+# Subtest: FM-01: un fallo real del escritura de kilometraje se propaga y no envenena la transaccion en silencio
+ok 169 - FM-01: un fallo real del escritura de kilometraje se propaga y no envenena la transaccion en silencio
+  ---
+  duration_ms: 10.3551
+  type: 'test'
+  ...
+# Subtest: FM-01: el servicio resuelve kilometraje sin ON CONFLICT y sin tragar errores
+ok 170 - FM-01: el servicio resuelve kilometraje sin ON CONFLICT y sin tragar errores
+  ---
+  duration_ms: 2.2527
+  type: 'test'
+  ...
+# Subtest: time_tracking usa la habilitacion M-17 del tenant
+ok 171 - time_tracking usa la habilitacion M-17 del tenant
+  ---
+  duration_ms: 1.9267
+  type: 'test'
+  ...
+# Subtest: el rol exclusivo puede usar endpoints self de lectura y escritura
+ok 172 - el rol exclusivo puede usar endpoints self de lectura y escritura
+  ---
+  duration_ms: 2.3332
+  type: 'test'
+  ...
+# Subtest: el rol exclusivo no obtiene acceso al modulo general hr
+ok 173 - el rol exclusivo no obtiene acceso al modulo general hr
+  ---
+  duration_ms: 0.8368
+  type: 'test'
+  ...
+# Subtest: las rutas self fuerzan identidad y las rutas generales conservan hr
+ok 174 - las rutas self fuerzan identidad y las rutas generales conservan hr
+  ---
+  duration_ms: 2.7818
+  type: 'test'
+  ...
+# Subtest: carga la evidencia completa de actividad solo al solicitarla
+ok 175 - carga la evidencia completa de actividad solo al solicitarla
+  ---
+  duration_ms: 93.8215
+  type: 'test'
+  ...
+# Subtest: carga evidencia de marcacion sin exponer otro tenant
+ok 176 - carga evidencia de marcacion sin exponer otro tenant
+  ---
+  duration_ms: 14.3156
+  type: 'test'
+  ...
+# Subtest: rechaza origen o identificador invalido antes de consultar datos
+ok 177 - rechaza origen o identificador invalido antes de consultar datos
+  ---
+  duration_ms: 7.3197
+  type: 'test'
+  ...
+# Subtest: carga en lote la evidencia de marcaciones y actividades de una ruta
+ok 178 - carga en lote la evidencia de marcaciones y actividades de una ruta
+  ---
+  duration_ms: 15.7341
+  type: 'test'
+  ...
+# Subtest: el lote de evidencias no expone datos de otro tenant
+ok 179 - el lote de evidencias no expone datos de otro tenant
+  ---
+  duration_ms: 4.3078
+  type: 'test'
+  ...
+# Subtest: rechaza identificador de ruta invalido antes de consultar datos
+ok 180 - rechaza identificador de ruta invalido antes de consultar datos
+  ---
+  duration_ms: 6.1692
+  type: 'test'
+  ...
+# Subtest: listRoutes reconoce punch_only aunque las notas tengan escape \\n literal
+ok 181 - listRoutes reconoce punch_only aunque las notas tengan escape \\n literal
+  ---
+  duration_ms: 113.3947
+  type: 'test'
+  ...
+# Subtest: listRoutes sigue reconociendo punch_only con saltos de linea reales
+ok 182 - listRoutes sigue reconociendo punch_only con saltos de linea reales
+  ---
+  duration_ms: 4.8175
+  type: 'test'
+  ...
+# Subtest: listRoutes reporta gps para horarios sin marcador punch_only
+ok 183 - listRoutes reporta gps para horarios sin marcador punch_only
+  ---
+  duration_ms: 5.9637
+  type: 'test'
+  ...
+# Subtest: createOwnPunch con horario de ayer expone la ruta activa de hoy en el detalle 409
+ok 184 - createOwnPunch con horario de ayer expone la ruta activa de hoy en el detalle 409
+  ---
+  duration_ms: 10.1475
+  type: 'test'
+  ...
+# Subtest: createOwnPunch con horario de hoy que no es el activo expone la ruta activa en el detalle 409
+ok 185 - createOwnPunch con horario de hoy que no es el activo expone la ruta activa en el detalle 409
+  ---
+  duration_ms: 12.9873
+  type: 'test'
+  ...
+# Subtest: createClientPlatformLog trunca el mensaje a 1000 caracteres
+ok 186 - createClientPlatformLog trunca el mensaje a 1000 caracteres
+  ---
+  duration_ms: 44.7249
+  type: 'test'
+  ...
+# Subtest: createClientPlatformLog rechaza mensajes vacios
+ok 187 - createClientPlatformLog rechaza mensajes vacios
+  ---
+  duration_ms: 14.1137
+  type: 'test'
+  ...
+# Subtest: operations-map no transporta evidencia fotografica completa en cada refresco
+ok 188 - operations-map no transporta evidencia fotografica completa en cada refresco
+  ---
+  duration_ms: 2.1007
+  type: 'test'
+  ...
+# Subtest: la evidencia completa se consulta bajo demanda con permiso HR y aislamiento de tenant
+ok 189 - la evidencia completa se consulta bajo demanda con permiso HR y aislamiento de tenant
+  ---
+  duration_ms: 0.6338
+  type: 'test'
+  ...
+# Subtest: el listado dinamico usa agregados ligeros para todas las rutas
+ok 190 - el listado dinamico usa agregados ligeros para todas las rutas
+  ---
+  duration_ms: 4.1608
+  type: 'test'
+  ...
+# Subtest: reportes de Talento Humano consultan el rango inclusivo solicitado
+ok 191 - reportes de Talento Humano consultan el rango inclusivo solicitado
+  ---
+  duration_ms: 141.2381
+  type: 'test'
+  ...
+# Subtest: reportes rechazan rangos invertidos o mayores a 92 dias
+ok 192 - reportes rechazan rangos invertidos o mayores a 92 dias
+  ---
+  duration_ms: 17.3114
+  type: 'test'
+  ...
+# Subtest: crear mallas concurrentes superpuestas se serializa por advisory lock y una sola gana
+ok 193 - crear mallas concurrentes superpuestas se serializa por advisory lock y una sola gana
+  ---
+  duration_ms: 167.0886
+  type: 'test'
+  ...
+# Subtest: crear mallas masivas adquiere locks por empleado y fecha antes de validar y crear
+ok 194 - crear mallas masivas adquiere locks por empleado y fecha antes de validar y crear
+  ---
+  duration_ms: 9.7213
+  type: 'test'
+  ...
+# Subtest: editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento
+ok 195 - editar malla adquiere lock y excluye la malla editada del chequeo de solapamiento
+  ---
+  duration_ms: 3.7758
+  type: 'test'
+  ...
+# Subtest: fix P2028: las transacciones de mallas declaran timeout y maxWait ampliados
+ok 196 - fix P2028: las transacciones de mallas declaran timeout y maxWait ampliados
+  ---
+  duration_ms: 9.0118
+  type: 'test'
+  ...
+# Subtest: fix P2028: contencion externa del lock se reintenta y la creacion termina guardando la malla
+ok 197 - fix P2028: contencion externa del lock se reintenta y la creacion termina guardando la malla
+  ---
+  duration_ms: 453.7526
+  type: 'test'
+  ...
+# Subtest: fix P2028: si el lock no se libera en la ventana, falla 503 ROUTE_ASSIGNMENT_BUSY y no P2028
+ok 198 - fix P2028: si el lock no se libera en la ventana, falla 503 ROUTE_ASSIGNMENT_BUSY y no P2028
+  ---
+  duration_ms: 630.943
+  type: 'test'
+  ...
+# Subtest: combina marcaciones, actividades, evidencias y cierres por horario
+ok 199 - combina marcaciones, actividades, evidencias y cierres por horario
+  ---
+  duration_ms: 9.5213
+  type: 'test'
+  ...
+# Subtest: ignora fechas invalidas sin romper el resumen
+ok 200 - ignora fechas invalidas sin romper el resumen
+  ---
+  duration_ms: 0.5034
+  type: 'test'
+  ...
+# Subtest: asocia eventos sin route_id por fecha e identidad como el detalle
+ok 201 - asocia eventos sin route_id por fecha e identidad como el detalle
+  ---
+  duration_ms: 41.4234
+  type: 'test'
+  ...
+# Subtest: prioriza la ruta explicita en metadata para eventos historicos
+ok 202 - prioriza la ruta explicita en metadata para eventos historicos
+  ---
+  duration_ms: 1.6309
+  type: 'test'
+  ...
+# Subtest: cuenta evidencias de marcaciones visibles e ignora las vacias
+ok 203 - cuenta evidencias de marcaciones visibles e ignora las vacias
+  ---
+  duration_ms: 0.4754
+  type: 'test'
+  ...
+# Subtest: el borrado fisico de horarios se registra con la puerta dedicada y no con el permiso generico
+ok 204 - el borrado fisico de horarios se registra con la puerta dedicada y no con el permiso generico
+  ---
+  duration_ms: 2.4623
+  type: 'test'
+  ...
+# Subtest: la vista previa del impacto solo informa y el DELETE vuelve a autorizar
+ok 205 - la vista previa del impacto solo informa y el DELETE vuelve a autorizar
+  ---
+  duration_ms: 0.4835
+  type: 'test'
+  ...
+# Subtest: el DELETE oculta rutas ajenas antes de evaluar el permiso fisico
+ok 206 - el DELETE oculta rutas ajenas antes de evaluar el permiso fisico
+  ---
+  duration_ms: 0.796
+  type: 'test'
+  ...
+# Subtest: el esquema del borrado exige motivo y confirmacion explicita
+ok 207 - el esquema del borrado exige motivo y confirmacion explicita
+  ---
+  duration_ms: 0.5596
+  type: 'test'
+  ...
+# Subtest: Prisma permite el borrado fisico de la malla y su arbol preoperacional
+ok 208 - Prisma permite el borrado fisico de la malla y su arbol preoperacional
+  ---
+  duration_ms: 2.082
+  type: 'test'
+  ...
+# Subtest: el DELETE de la malla nunca cae al respaldo Supabase
+ok 209 - el DELETE de la malla nunca cae al respaldo Supabase
+  ---
+  duration_ms: 0.6296
+  type: 'test'
+  ...
+# Subtest: la pantalla de horarios elimina solo tras revisar el impacto y dejar motivo
+ok 210 - la pantalla de horarios elimina solo tras revisar el impacto y dejar motivo
+  ---
+  duration_ms: 0.6444
+  type: 'test'
+  ...
+# Subtest: la tolerancia de la vista previa viaja al servidor para detectar cambios
+ok 211 - la tolerancia de la vista previa viaja al servidor para detectar cambios
+  ---
+  duration_ms: 0.4115
+  type: 'test'
+  ...
+# Subtest: routeDeletionImpact responde 404 cuando el horario no existe o es de otro tenant
+ok 212 - routeDeletionImpact responde 404 cuando el horario no existe o es de otro tenant
+  ---
+  duration_ms: 83.4111
+  type: 'test'
+  ...
+# Subtest: routeDeletionImpact bloquea con checklist abierta y reporta la traza que se conserva
+ok 213 - routeDeletionImpact bloquea con checklist abierta y reporta la traza que se conserva
+  ---
+  duration_ms: 5.4761
+  type: 'test'
+  ...
+# Subtest: deleteRoute exige motivo suficiente y confirmacion sin tocar la base
+ok 214 - deleteRoute exige motivo suficiente y confirmacion sin tocar la base
+  ---
+  duration_ms: 5.8449
+  type: 'test'
+  ...
+# Subtest: deleteRoute rechaza una vista previa vieja y no elimina nada
+ok 215 - deleteRoute rechaza una vista previa vieja y no elimina nada
+  ---
+  duration_ms: 2.5868
+  type: 'test'
+  ...
+# Subtest: deleteRoute exige reconocer la traza operativa antes de borrar
+ok 216 - deleteRoute exige reconocer la traza operativa antes de borrar
+  ---
+  duration_ms: 2.3079
+  type: 'test'
+  ...
+# Subtest: deleteRoute elimina hijos y horario con tenant explicito y deja auditoria
+ok 217 - deleteRoute elimina hijos y horario con tenant explicito y deja auditoria
+  ---
+  duration_ms: 2.6385
+  type: 'test'
+  ...
+# Subtest: deleteRoute sin checklist ni traza no exige reconocimiento de traza
+ok 218 - deleteRoute sin checklist ni traza no exige reconocimiento de traza
+  ---
+  duration_ms: 4.2258
+  type: 'test'
+  ...
+# Subtest: hasPhysicalDeleteGrant solo acepta el permiso especial explicito
+ok 219 - hasPhysicalDeleteGrant solo acepta el permiso especial explicito
+  ---
+  duration_ms: 1.3781
+  type: 'test'
+  ...
+# Subtest: requirePhysicalDeleteGrant deniega sin rol, sin modulo y sin permiso especial
+ok 220 - requirePhysicalDeleteGrant deniega sin rol, sin modulo y sin permiso especial
+  ---
+  duration_ms: 2.0827
+  type: 'test'
+  ...
+# Subtest: requirePhysicalDeleteGrant habilita el borrado a un rol con el permiso especial
+ok 221 - requirePhysicalDeleteGrant habilita el borrado a un rol con el permiso especial
+  ---
+  duration_ms: 1.395
+  type: 'test'
+  ...
+# Subtest: requirePhysicalDeleteGrant respeta el alcance restringido del rol
+ok 222 - requirePhysicalDeleteGrant respeta el alcance restringido del rol
+  ---
+  duration_ms: 0.8813
+  type: 'test'
+  ...
+# Subtest: el certificador exige QA, SCJ y el commit desplegado exacto
+ok 223 - el certificador exige QA, SCJ y el commit desplegado exacto
+  ---
+  duration_ms: 2.0085
+  type: 'test'
+  ...
+# Subtest: el certificador prueba exposicion unica y rechazo del horario alterno
+ok 224 - el certificador prueba exposicion unica y rechazo del horario alterno
+  ---
+  duration_ms: 0.5844
+  type: 'test'
+  ...
+# Subtest: el certificador limpia eventos y rutas temporales aun ante error
+ok 225 - el certificador limpia eventos y rutas temporales aun ante error
+  ---
+  duration_ms: 0.8214
+  type: 'test'
+  ...
+# Subtest: hr routes expose talento humano aliases and route prevalidation
+ok 226 - hr routes expose talento humano aliases and route prevalidation
+  ---
+  duration_ms: 2.7912
+  type: 'test'
+  ...
+# Subtest: hr service blocks overlapping employee schedules without vehicle exclusivity
+ok 227 - hr service blocks overlapping employee schedules without vehicle exclusivity
+  ---
+  duration_ms: 2.1786
+  type: 'test'
+  ...
+# Subtest: closing punch with vehicle requires day mileage and writes novelty when unusual
+ok 228 - closing punch with vehicle requires day mileage and writes novelty when unusual
+  ---
+  duration_ms: 2.603
+  type: 'test'
+  ...
+# Subtest: migration seeds novelty types and labor parameters as editable data
+ok 229 - migration seeds novelty types and labor parameters as editable data
+  ---
+  duration_ms: 0.8617
+  type: 'test'
+  ...
+# Subtest: hr service supports labor entity CRUD and non-overlapping employee affiliations
+ok 230 - hr service supports labor entity CRUD and non-overlapping employee affiliations
+  ---
+  duration_ms: 6.503
+  type: 'test'
+  ...
+# Subtest: hr service stores labor configuration by validity instead of hardcoding rates
+ok 231 - hr service stores labor configuration by validity instead of hardcoding rates
+  ---
+  duration_ms: 2.2926
+  type: 'test'
+  ...
+# Subtest: accepts same-day shifts and rejects shifts that cross midnight
+ok 232 - accepts same-day shifts and rejects shifts that cross midnight
+  ---
+  duration_ms: 3.9364
+  type: 'test'
+  ...
+# Subtest: splits a same-day shift when it crosses the configured night start
+ok 233 - splits a same-day shift when it crosses the configured night start
+  ---
+  duration_ms: 0.9424
+  type: 'test'
+  ...
+# Subtest: validates closing mileage as positive decimal kilometers
+ok 234 - validates closing mileage as positive decimal kilometers
+  ---
+  duration_ms: 0.9309
+  type: 'test'
+  ...
+# Subtest: FM-08: los errores de kilometraje son 400 con codigo, no 500 genericos
+ok 235 - FM-08: los errores de kilometraje son 400 con codigo, no 500 genericos
+  ---
+  duration_ms: 1.355
+  type: 'test'
+  ...
+# Subtest: builds an idempotent novelty key from tenant, employee, date, route and type
+ok 236 - builds an idempotent novelty key from tenant, employee, date, route and type
+  ---
+  duration_ms: 0.5558
+  type: 'test'
+  ...
+# Subtest: AE y AS son documentos multiposicion atomicos con motivo
+ok 237 - AE y AS son documentos multiposicion atomicos con motivo
+  ---
+  duration_ms: 4.1589
+  type: 'test'
+  ...
+# Subtest: AE usa promedio o exige costo y AS bloquea saldo negativo
+ok 238 - AE usa promedio o exige costo y AS bloquea saldo negativo
+  ---
+  duration_ms: 2.7073
+  type: 'test'
+  ...
+# Subtest: contabilizacion usa cuentas manuales de familia y clases AE AS
+ok 239 - contabilizacion usa cuentas manuales de familia y clases AE AS
+  ---
+  duration_ms: 3.495
+  type: 'test'
+  ...
+# Subtest: frontend incluye creacion reporte detalle y navegacion
+ok 240 - frontend incluye creacion reporte detalle y navegacion
+  ---
+  duration_ms: 1.5701
+  type: 'test'
+  ...
+# Subtest: el contrato ofrece validacion y contabilizacion separadas con permisos
+ok 241 - el contrato ofrece validacion y contabilizacion separadas con permisos
+  ---
+  duration_ms: 3.9182
+  type: 'test'
+  ...
+# Subtest: el cargue es atomico y actualiza stock, kardex, valoracion y contabilidad
+ok 242 - el cargue es atomico y actualiza stock, kardex, valoracion y contabilidad
+  ---
+  duration_ms: 0.607
+  type: 'test'
+  ...
+# Subtest: la plantilla descargable conserva las columnas obligatorias
+ok 243 - la plantilla descargable conserva las columnas obligatorias
+  ---
+  duration_ms: 136.283
+  type: 'test'
+  ...
+# Subtest: reportes de inventario validan SKU libre y ofrecen buscador modal
+ok 244 - reportes de inventario validan SKU libre y ofrecen buscador modal
+  ---
+  duration_ms: 5.7153
+  type: 'test'
+  ...
+# Subtest: compras expone reporte de posiciones de OC con filtros y Excel
+ok 245 - compras expone reporte de posiciones de OC con filtros y Excel
+  ---
+  duration_ms: 4.0739
+  type: 'test'
+  ...
+# Subtest: traslado valida código SKU, completa nombre y abre buscador funcional
+ok 246 - traslado valida código SKU, completa nombre y abre buscador funcional
+  ---
+  duration_ms: 2.4445
+  type: 'test'
+  ...
+# Subtest: inventario ofrece lista de productos filtrable y exportable
+not ok 247 - inventario ofrece lista de productos filtrable y exportable
+  ---
+  duration_ms: 2.8397
+  type: 'test'
+  location: 'apps\\api\\test\\inventory-transfer-product-list-ux.test.js:19:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /Lista de productos/. Input:
+    
+    '"use client";\r\n' +
+      '\r\n' +
+      'import Link from "next/link";\r\n' +
+      'import { usePathname } from "next/navigation";\r\n' +
+      'import { ChevronDown } from "lucide-react";\r\n' +
+      'import { twMerge } from "tailwind-merge";\r\n' +
+      '\r\n' +
+      'const GROUPS = [\r\n' +
+      '  { id: "resumen", label: "Resumen", href: "/dashboard/inventario", items: [{ href: "/dashboard/inventario", label: "Resumen" }] },\r\n' +
+      '  {\r\n' +
+      '    id: "maestros",\r\n' +
+      '    label: "Maestros",\r\n' +
+      '    href: "/dashboard/inventario/productos",\r\n' +
+      '    items: [\r\n' +
+      '      { href: "/dashboard/inventario/productos", label: "Productos" },\r\n' +
+      '      { href: "/dashboard/inventario/productos/nuevo", label: "Nuevo producto" },\r\n' +
+      '      { href: "/dashboard/inventario/familias", label: "Familias" },\r\n' +
+      '      { href: "/dashboard/inventario/clasificaciones", label: "Clasificación" },\r\n' +
+      '      { href: "/dashboard/inventario/bodegas", label: "Bodegas" }\r\n' +
+      '    ]\r\n' +
+      '  },\r\n' +
+      '  {\r\n' +
+      '    id: "existencias",\r\n' +
+      '    label: "Existencias",\r\n' +
+      '    href: "/dashboard/inventario/stock",\r\n' +
+      '    items: [\r\n' +
+      '      { href: "/dashboard/inventario/stock", label: "Stock" },\r\n' +
+      '      { href: "/dashboard/inventario/reportes/kardex", label: "Kardex" },\r\n' +
+      '      { href: "/dashboard/inventario/reportes/costos", label: "Costos" }\r\n' +
+      '    ]\r\n' +
+      '  },\r\n' +
+      '  {\r\n' +
+      '    id: "movimientos",\r\n' +
+      '    label: "Movimientos",\r\n' +
+      '    href: "/dashboard/inventario/traslados",\r\n' +
+      '    items: [\r\n' +
+      '      { href: "/dashboard/inventario/traslados", label: "Traslados" },\r\n' +
+      '      { href: "/dashboard/inventario/ajustes", label: "Ajustes" },\r\n' +
+      '      { href: "/dashboard/inventario/cargue-inicial", label: "Cargue inicial" }\r\n' +
+      '    ]\r\n' +
+      '  }\r\n' +
+      '] as const;\r\n' +
+      '\r\n' +
+      'function isActive(pathname: string, href: string) {\r\n' +
+      '  if (href === "/dashboard/inventario") return pathname === href;\r\n' +
+      '  return pathname === href || pathname.startsWith(`${href}/`);\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      'export function InventoryNav() {\r\n' +
+      '  const pathname = usePathname();\r\n' +
+      '  const activeGroup = GROUPS.find((group) => group.items.some((item) => isActive(pathname, item.href))) || GROUPS[0];\r\n' +
+      '\r\n' +
+      '  return (\r\n' +
+      '    <nav aria-label="Navegación de inventario" className="mb-4 space-y-3">\r\n' +
+      '      <div className="grid gap-2 sm:grid-cols-4" role="tablist" aria-label="Dominios de inventario">\r\n' +
+      '        {GROUPS.map((group) => {\r\n' +
+      '          const active = group.id === activeGroup.id;\r\n' +
+      '          return (\r\n' +
+      '            <Link\r\n' +
+      '              aria-current={active ? "page" : undefined}\r\n' +
+      '              aria-selected={active}\r\n' +
+      '              className={twMerge(\r\n' +
+      '                "inline-flex h-10 items-center justify-center rounded-control border px-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex",\r\n' +
+      '                active ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body hover:border-apex hover:text-content-strong"\r\n' +
+      '              )}\r\n' +
+      '              href={group.href}\r\n' +
+      '              key={group.id}\r\n' +
+      '              role="tab"\r\n' +
+      '            >\r\n' +
+      '              {group.label}\r\n' +
+      '            </Link>\r\n' +
+      '          );\r\n' +
+      '        })}\r\n' +
+      '      </div>\r\n' +
+      '\r\n' +
+      '      <details className="group rounded-card border border-line bg-surface p-2 sm:hidden" open>\r\n' +
+      '        <summary className="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-sm font-semibold text-content-strong">\r\n' +
+      '          {activeGroup.label}\r\n' +
+      '          <ChevronDown className="transition group-open:rotate-180" size={16} />\r\n' +
+      '        </summary>\r\n' +
+      '        <InventorySubnav pathname={pathname} items={activeGroup.items} />\r\n' +
+      '      </details>\r\n' +
+      '\r\n' +
+      '      <div className="hidden rounded-card border border-line bg-surface p-2 sm:block">\r\n' +
+      '        <InventorySubnav pathname={pathname} items={activeGroup.items} />\r\n' +
+      '      </div>\r\n' +
+      '    </nav>\r\n' +
+      '  );\r\n' +
+      '}\r\n' +
+      '\r\n' +
+      'function InventorySubnav({ pathname, items }: { pathname: string; items: ReadonlyArray<{ href: string; label: string }> }) {\r\n' +
+      '  return (\r\n' +
+      '    <div className="flex flex-wrap gap-2" aria-label="Funciones del dominio activo">\r\n' +
+      '      {items.map((item) => {\r\n' +
+      '        const active = isActive(pathname, item.href);\r\n' +
+      '        return (\r\n' +
+      '          <Link\r\n' +
+      '            aria-current={active ? "page" : undefined}\r\n' +
+      '            className={twMerge(\r\n' +
+      '              "rounded-control px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex",\r\n' +
+      '              active ? "bg-apex text-white" : "text-content-muted hover:bg-paper hover:text-content-strong"\r\n' +
+      '            )}\r\n' +
+      '            href={item.href}\r\n' +
+      '            key={item.href}\r\n' +
+      '          >\r\n' +
+      '            {item.label}\r\n' +
+      '          </Link>\r\n' +
+      '        );\r\n' +
+      '      })}\r\n' +
+      '    </div>\r\n' +
+      '  );\r\n' +
+      '}\r\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    "use client";
+    
+    import Link from "next/link";
+    import { usePathname } from "next/navigation";
+    import { ChevronDown } from "lucide-react";
+    import { twMerge } from "tailwind-merge";
+    
+    const GROUPS = [
+      { id: "resumen", label: "Resumen", href: "/dashboard/inventario", items: [{ href: "/dashboard/inventario", label: "Resumen" }] },
+      {
+        id: "maestros",
+        label: "Maestros",
+        href: "/dashboard/inventario/productos",
+        items: [
+          { href: "/dashboard/inventario/productos", label: "Productos" },
+          { href: "/dashboard/inventario/productos/nuevo", label: "Nuevo producto" },
+          { href: "/dashboard/inventario/familias", label: "Familias" },
+          { href: "/dashboard/inventario/clasificaciones", label: "Clasificación" },
+          { href: "/dashboard/inventario/bodegas", label: "Bodegas" }
+        ]
+      },
+      {
+        id: "existencias",
+        label: "Existencias",
+        href: "/dashboard/inventario/stock",
+        items: [
+          { href: "/dashboard/inventario/stock", label: "Stock" },
+          { href: "/dashboard/inventario/reportes/kardex", label: "Kardex" },
+          { href: "/dashboard/inventario/reportes/costos", label: "Costos" }
+        ]
+      },
+      {
+        id: "movimientos",
+        label: "Movimientos",
+        href: "/dashboard/inventario/traslados",
+        items: [
+          { href: "/dashboard/inventario/traslados", label: "Traslados" },
+          { href: "/dashboard/inventario/ajustes", label: "Ajustes" },
+          { href: "/dashboard/inventario/cargue-inicial", label: "Cargue inicial" }
+        ]
+      }
+    ] as const;
+    
+    function isActive(pathname: string, href: string) {
+      if (href === "/dashboard/inventario") return pathname === href;
+      return pathname === href || pathname.startsWith(`${href}/`);
+    }
+    
+    export function InventoryNav() {
+      const pathname = usePathname();
+      const activeGroup = GROUPS.find((group) => group.items.some((item) => isActive(pathname, item.href))) || GROUPS[0];
+    
+      return (
+        <nav aria-label="Navegación de inventario" className="mb-4 space-y-3">
+          <div className="grid gap-2 sm:grid-cols-4" role="tablist" aria-label="Dominios de inventario">
+            {GROUPS.map((group) => {
+              const active = group.id === activeGroup.id;
+              return (
+                <Link
+                  aria-current={active ? "page" : undefined}
+                  aria-selected={active}
+                  className={twMerge(
+                    "inline-flex h-10 items-center justify-center rounded-control border px-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex",
+                    active ? "border-apex bg-apex/10 text-apex" : "border-line bg-surface text-content-body hover:border-apex hover:text-content-strong"
+                  )}
+                  href={group.href}
+                  key={group.id}
+                  role="tab"
+                >
+                  {group.label}
+                </Link>
+              );
+            })}
+          </div>
+    
+          <details className="group rounded-card border border-line bg-surface p-2 sm:hidden" open>
+            <summary className="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-sm font-semibold text-content-strong">
+              {activeGroup.label}
+              <ChevronDown className="transition group-open:rotate-180" size={16} />
+            </summary>
+            <InventorySubnav pathname={pathname} items={activeGroup.items} />
+          </details>
+    
+          <div className="hidden rounded-card border border-line bg-surface p-2 sm:block">
+            <InventorySubnav pathname={pathname} items={activeGroup.items} />
+          </div>
+        </nav>
+      );
+    }
+    
+    function InventorySubnav({ pathname, items }: { pathname: string; items: ReadonlyArray<{ href: string; label: string }> }) {
+      return (
+        <div className="flex flex-wrap gap-2" aria-label="Funciones del dominio activo">
+          {items.map((item) => {
+            const active = isActive(pathname, item.href);
+            return (
+              <Link
+                aria-current={active ? "page" : undefined}
+                className={twMerge(
+                  "rounded-control px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex",
+                  active ? "bg-apex text-white" : "text-content-muted hover:bg-paper hover:text-content-strong"
+                )}
+                href={item.href}
+                key={item.href}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      );
+    }
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (apps\api\test\inventory-transfer-product-list-ux.test.js:26:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: los traslados y sus lineas reciben tenant_id mediante el middleware Prisma
+ok 248 - los traslados y sus lineas reciben tenant_id mediante el middleware Prisma
+  ---
+  duration_ms: 2.7302
+  type: 'test'
+  ...
+# Subtest: la bodega de consignacion persiste y presenta el cliente enlazado
+ok 249 - la bodega de consignacion persiste y presenta el cliente enlazado
+  ---
+  duration_ms: 1.247
+  type: 'test'
+  ...
+# Redis disabled - using noop queues
+# Subtest: compra usa costo de la linea y recalcula promedio por sociedad
+ok 250 - compra usa costo de la linea y recalcula promedio por sociedad
+  ---
+  duration_ms: 6.6857
+  type: 'test'
+  ...
+# Subtest: venta reconoce el promedio vigente de la tabla de costo
+ok 251 - venta reconoce el promedio vigente de la tabla de costo
+  ---
+  duration_ms: 0.4311
+  type: 'test'
+  ...
+# Subtest: salida total deja costo y valor en cero
+ok 252 - salida total deja costo y valor en cero
+  ---
+  duration_ms: 0.3479
+  type: 'test'
+  ...
+# Subtest: venta no permite exceder el saldo de la sociedad
+ok 253 - venta no permite exceder el saldo de la sociedad
+  ---
+  duration_ms: 0.9841
+  type: 'test'
+  ...
+# Subtest: traslado no requiere recalculo: conserva cantidad, valor y promedio
+ok 254 - traslado no requiere recalculo: conserva cantidad, valor y promedio
+  ---
+  duration_ms: 0.4268
+  type: 'test'
+  ...
+# Subtest: descarga de traslado no acepta cantidades parciales en su contrato
+ok 255 - descarga de traslado no acepta cantidades parciales en su contrato
+  ---
+  duration_ms: 0.2071
+  type: 'test'
+  ...
+# Subtest: reportes de inventario conservan filtro por bodega, todos los SKU, Excel y asiento
+ok 256 - reportes de inventario conservan filtro por bodega, todos los SKU, Excel y asiento
+  ---
+  duration_ms: 2.1973
+  type: 'test'
+  ...
+# Subtest: el maestro persiste y busca el codigo anterior sin reemplazar el SKU
+ok 257 - el maestro persiste y busca el codigo anterior sin reemplazar el SKU
+  ---
+  duration_ms: 4.12
+  type: 'test'
+  ...
+# Subtest: inventario compras ventas y traslados filtran por codigo anterior
+ok 258 - inventario compras ventas y traslados filtran por codigo anterior
+  ---
+  duration_ms: 4.7
+  type: 'test'
+  ...
+# Subtest: the dynamic HR monitor certificate validates the summary contract
+ok 259 - the dynamic HR monitor certificate validates the summary contract
+  ---
+  duration_ms: 1.7134
+  type: 'test'
+  ...
+# Subtest: capacidad permanece apagada ante flag, ambiente, tenant o identidad no permitidos
+ok 260 - capacidad permanece apagada ante flag, ambiente, tenant o identidad no permitidos
+  ---
+  duration_ms: 7.4122
+  type: 'test'
+  ...
+# Subtest: capacidad autorizada es solo lectura y no habilita sync o evidencias
+ok 261 - capacidad autorizada es solo lectura y no habilita sync o evidencias
+  ---
+  duration_ms: 1.725
+  type: 'test'
+  ...
+# Subtest: cambio de rol bloquea bootstrap aunque el usuario este allowlisted
+ok 262 - cambio de rol bloquea bootstrap aunque el usuario este allowlisted
+  ---
+  duration_ms: 0.9031
+  type: 'test'
+  ...
+# Subtest: requiere perfil tecnico activo ligado a la sesion
+ok 263 - requiere perfil tecnico activo ligado a la sesion
+  ---
+  duration_ms: 1.1206
+  type: 'test'
+  ...
+# Subtest: genera snapshot minimo valido y deriva empresa y usuario de sesion
+ok 264 - genera snapshot minimo valido y deriva empresa y usuario de sesion
+  ---
+  duration_ms: 8.0013
+  type: 'test'
+  ...
+# Subtest: consulta solo tecnico asignado, estados autorizados y ventana de siete dias
+ok 265 - consulta solo tecnico asignado, estados autorizados y ventana de siete dias
+  ---
+  duration_ms: 3.3006
+  type: 'test'
+  ...
+# Subtest: DTO excluye datos administrativos, financieros y payload completo de metadata
+ok 266 - DTO excluye datos administrativos, financieros y payload completo de metadata
+  ---
+  duration_ms: 2.3315
+  type: 'test'
+  ...
+# Subtest: serverVersion es revision temporal de lectura basada en timestamp servidor
+ok 267 - serverVersion es revision temporal de lectura basada en timestamp servidor
+  ---
+  duration_ms: 0.5295
+  type: 'test'
+  ...
+# Subtest: indica hasMore sin truncamiento silencioso al superar ordenes
+ok 268 - indica hasMore sin truncamiento silencioso al superar ordenes
+  ---
+  duration_ms: 6.8787
+  type: 'test'
+  ...
+# Subtest: rechaza limite de checklist y payload maximo
+ok 269 - rechaza limite de checklist y payload maximo
+  ---
+  duration_ms: 10.1176
+  type: 'test'
+  ...
+# Subtest: error de base de datos se convierte en respuesta interna controlada
+ok 270 - error de base de datos se convierte en respuesta interna controlada
+  ---
+  duration_ms: 1.5281
+  type: 'test'
+  ...
+# Subtest: timeout se convierte en 503 sin detalles internos
+ok 271 - timeout se convierte en 503 sin detalles internos
+  ---
+  duration_ms: 507.7421
+  type: 'test'
+  ...
+# Subtest: limites quedan acotados aun con configuracion invalida
+ok 272 - limites quedan acotados aun con configuracion invalida
+  ---
+  duration_ms: 0.5559
+  type: 'test'
+  ...
+# Subtest: rutas rechazan query libre y configuran rate limit por usuario y empresa
+ok 273 - rutas rechazan query libre y configuran rate limit por usuario y empresa
+  ---
+  duration_ms: 2.866
+  type: 'test'
+  ...
+# Subtest: usuario no autenticado recibe 401 antes de ejecutar bootstrap
+ok 274 - usuario no autenticado recibe 401 antes de ejecutar bootstrap
+  ---
+  duration_ms: 696.2196
+  type: 'test'
+  ...
+# Subtest: los contratos offline se serializan y validan
+ok 275 - los contratos offline se serializan y validan
+  ---
+  duration_ms: 7.4166
+  type: 'test'
+  ...
+# Subtest: rechaza cada tipo de operacion invalido
+ok 276 - rechaza cada tipo de operacion invalido
+  ---
+  duration_ms: 0.482
+  type: 'test'
+  ...
+# Subtest: rechaza versiones, fechas y payloads invalidos
+ok 277 - rechaza versiones, fechas y payloads invalidos
+  ---
+  duration_ms: 0.4249
+  type: 'test'
+  ...
+# Subtest: valida resultados parciales por operacion
+ok 278 - valida resultados parciales por operacion
+  ---
+  duration_ms: 0.546
+  type: 'test'
+  ...
+# Subtest: importar fundamentos no inicializa almacenamiento, listeners ni Servicios
+ok 279 - importar fundamentos no inicializa almacenamiento, listeners ni Servicios
+  ---
+  duration_ms: 0.8039
+  type: 'test'
+  ...
+# Subtest: API y frontend conservan la misma version del contrato bootstrap
+ok 280 - API y frontend conservan la misma version del contrato bootstrap
+  ---
+  duration_ms: 1.5767
+  type: 'test'
+  ...
+# Subtest: todas las banderas estan desactivadas por defecto
+ok 281 - todas las banderas estan desactivadas por defecto
+  ---
+  duration_ms: 5.9131
+  type: 'test'
+  ...
+# Subtest: solo acepta booleanos estrictos true y false
+ok 282 - solo acepta booleanos estrictos true y false
+  ---
+  duration_ms: 1.158
+  type: 'test'
+  ...
+# Subtest: requiere bandera, ambiente, tenant e identidad permitidos
+ok 283 - requiere bandera, ambiente, tenant e identidad permitidos
+  ---
+  duration_ms: 1.0786
+  type: 'test'
+  ...
+# Subtest: un rol permitido puede habilitar identidad sin lista de usuario
+ok 284 - un rol permitido puede habilitar identidad sin lista de usuario
+  ---
+  duration_ms: 0.3886
+  type: 'test'
+  ...
+# Subtest: una manipulacion declarada por cliente no participa en la decision
+ok 285 - una manipulacion declarada por cliente no participa en la decision
+  ---
+  duration_ms: 0.5079
+  type: 'test'
+  ...
+# Subtest: capacidades dependientes no superan a la capacidad principal
+ok 286 - capacidades dependientes no superan a la capacidad principal
+  ---
+  duration_ms: 0.3087
+  type: 'test'
+  ...
+# Subtest: legacy Party.type remains an operational role
+ok 287 - legacy Party.type remains an operational role
+  ---
+  duration_ms: 4.251
+  type: 'test'
+  ...
+# Subtest: one party can be customer and supplier without duplicating the NIT
+ok 288 - one party can be customer and supplier without duplicating the NIT
+  ---
+  duration_ms: 0.4403
+  type: 'test'
+  ...
+# Subtest: canonical accounting edit can remove a role explicitly
+ok 289 - canonical accounting edit can remove a role explicitly
+  ---
+  duration_ms: 0.3982
+  type: 'test'
+  ...
+# Subtest: role filters include canonical flags and legacy type
+ok 290 - role filters include canonical flags and legacy type
+  ---
+  duration_ms: 1.3485
+  type: 'test'
+  ...
+# Subtest: role views expose independent balances and credit conditions
+ok 291 - role views expose independent balances and credit conditions
+  ---
+  duration_ms: 0.4662
+  type: 'test'
+  ...
+# Subtest: canonical party migration is additive and backfills legacy roles
+ok 292 - canonical party migration is additive and backfills legacy roles
+  ---
+  duration_ms: 2.1565
+  type: 'test'
+  ...
+# Subtest: payroll is enabled by the active human-resources module aliases
+ok 293 - payroll is enabled by the active human-resources module aliases
+  ---
+  duration_ms: 3.9817
+  type: 'test'
+  ...
+# Subtest: performance context accumulates named phases without leaking between requests
+ok 294 - performance context accumulates named phases without leaking between requests
+  ---
+  duration_ms: 7.9885
+  type: 'test'
+  ...
+# Subtest: purchase invoice posts accounting and PO controls in one extended transaction
+ok 295 - purchase invoice posts accounting and PO controls in one extended transaction
+  ---
+  duration_ms: 20.4951
+  type: 'test'
+  ...
+# Subtest: purchase invoice blocks an EM/RF account equal to the supplier payable account
+ok 296 - purchase invoice blocks an EM/RF account equal to the supplier payable account
+  ---
+  duration_ms: 5.4458
+  type: 'test'
+  ...
+# Redis disabled - using noop queues
+# Subtest: el cierre calcula únicamente el saldo pendiente y conserva lo recibido
+ok 297 - el cierre calcula únicamente el saldo pendiente y conserva lo recibido
+  ---
+  duration_ms: 5.9494
+  type: 'test'
+  ...
+# Subtest: el contrato exige motivo y solo expone el cierre cuando existe saldo
+ok 298 - el contrato exige motivo y solo expone el cierre cuando existe saldo
+  ---
+  duration_ms: 4.8922
+  type: 'test'
+  ...
+# Subtest: el PDF de la OC contiene cabecera, bodega, posiciones y totales
+ok 299 - el PDF de la OC contiene cabecera, bodega, posiciones y totales
+  ---
+  duration_ms: 301.3973
+  type: 'test'
+  ...
+# Subtest: la orden inicia con diez posiciones y permite escribir o buscar SKU
+ok 300 - la orden inicia con diez posiciones y permite escribir o buscar SKU
+  ---
+  duration_ms: 6.0219
+  type: 'test'
+  ...
+# Subtest: la orden excluye filas vacias y no captura IVA por posicion
+ok 301 - la orden excluye filas vacias y no captura IVA por posicion
+  ---
+  duration_ms: 0.4457
+  type: 'test'
+  ...
+# Subtest: el panel de ordenes no ofrece recepcion WMS
+ok 302 - el panel de ordenes no ofrece recepcion WMS
+  ---
+  duration_ms: 0.3733
+  type: 'test'
+  ...
+# Subtest: los borradores se pueden abrir y guardar sobre la misma orden
+ok 303 - los borradores se pueden abrir y guardar sobre la misma orden
+  ---
+  duration_ms: 0.4779
+  type: 'test'
+  ...
+# Subtest: cada documento EM expone las posiciones físicas con SKU y cantidad
+ok 304 - cada documento EM expone las posiciones físicas con SKU y cantidad
+  ---
+  duration_ms: 1.8807
+  type: 'test'
+  ...
+# Subtest: la remisión de traslado contiene origen, destino, tipo, detalle, observaciones y firmas
+ok 305 - la remisión de traslado contiene origen, destino, tipo, detalle, observaciones y firmas
+  ---
+  duration_ms: 256.6289
+  type: 'test'
+  ...
+# Subtest: la ruta de devolución está registrada con esquema y permiso de aprobación
+ok 306 - la ruta de devolución está registrada con esquema y permiso de aprobación
+  ---
+  duration_ms: 3.5153
+  type: 'test'
+  ...
+# Subtest: la devolución usa cuentas de familia y documento contable inverso
+ok 307 - la devolución usa cuentas de familia y documento contable inverso
+  ---
+  duration_ms: 0.7683
+  type: 'test'
+  ...
+# Subtest: la interfaz usa modal y exige doble clic para documentos
+ok 308 - la interfaz usa modal y exige doble clic para documentos
+  ---
+  duration_ms: 0.5483
+  type: 'test'
+  ...
+# Subtest: la importacion y sus costos persisten el tenant de la sesion
+ok 309 - la importacion y sus costos persisten el tenant de la sesion
+  ---
+  duration_ms: 1.8514
+  type: 'test'
+  ...
+# Subtest: proveedores usan maestros contables, DV, contacto de OC y ficha separada
+ok 310 - proveedores usan maestros contables, DV, contacto de OC y ficha separada
+  ---
+  duration_ms: 3.8851
+  type: 'test'
+  ...
+# Subtest: producto separa precio, clasificación y cierre controlado
+ok 311 - producto separa precio, clasificación y cierre controlado
+  ---
+  duration_ms: 3.2403
+  type: 'test'
+  ...
+# Subtest: ordenes ofrecen búsqueda asistida, cantidades y recepción multífiltro
+ok 312 - ordenes ofrecen búsqueda asistida, cantidades y recepción multífiltro
+  ---
+  duration_ms: 1.772
+  type: 'test'
+  ...
+# Subtest: facturas de compra tienen reporte, Excel y anulación trazable
+ok 313 - facturas de compra tienen reporte, Excel y anulación trazable
+  ---
+  duration_ms: 2.7384
+  type: 'test'
+  ...
+# Subtest: traslado nace en tránsito y Kardex/costos son funcionalidades separadas
+ok 314 - traslado nace en tránsito y Kardex/costos son funcionalidades separadas
+  ---
+  duration_ms: 2.7183
+  type: 'test'
+  ...
+# Subtest: la factura de compra reutiliza la transaccion para crear el documento contable
+ok 315 - la factura de compra reutiliza la transaccion para crear el documento contable
+  ---
+  duration_ms: 18.2601
+  type: 'test'
+  ...
+# Redis disabled - using noop queues
+# Subtest: supplier creation returns the complete UI contract
+ok 316 - supplier creation returns the complete UI contract
+  ---
+  duration_ms: 45.3981
+  type: 'test'
+  ...
+# Subtest: supplier partial update does not require name
+ok 317 - supplier partial update does not require name
+  ---
+  duration_ms: 4.3815
+  type: 'test'
+  ...
+# Subtest: supplier creation promotes an existing customer without overwriting canonical identity
+ok 318 - supplier creation promotes an existing customer without overwriting canonical identity
+  ---
+  duration_ms: 4.3685
+  type: 'test'
+  ...
+# Subtest: RBAC reconoce todos los identificadores vigentes de Inventario
+ok 319 - RBAC reconoce todos los identificadores vigentes de Inventario
+  ---
+  duration_ms: 1.8556
+  type: 'test'
+  ...
+# Subtest: RBAC normaliza espacios y mayusculas en los modulos del tenant
+ok 320 - RBAC normaliza espacios y mayusculas en los modulos del tenant
+  ---
+  duration_ms: 0.3721
+  type: 'test'
+  ...
+# Subtest: RBAC mantiene bloqueado Inventario cuando no esta habilitado
+ok 321 - RBAC mantiene bloqueado Inventario cuando no esta habilitado
+  ---
+  duration_ms: 0.4861
+  type: 'test'
+  ...
+# Subtest: RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion
+ok 322 - RBAC reconoce los identificadores tecnicos usados por permisos y sincronizacion
+  ---
+  duration_ms: 0.5907
+  type: 'test'
+  ...
+# Subtest: runtime schema accepts every column required by authenticated sessions
+ok 323 - runtime schema accepts every column required by authenticated sessions
+  ---
+  duration_ms: 2.9521
+  type: 'test'
+  ...
+# Subtest: runtime schema reports the production incident columns explicitly
+ok 324 - runtime schema reports the production incident columns explicitly
+  ---
+  duration_ms: 0.695
+  type: 'test'
+  ...
+# Subtest: runtime schema inspection blocks readiness when a required column is absent
+ok 325 - runtime schema inspection blocks readiness when a required column is absent
+  ---
+  duration_ms: 0.5437
+  type: 'test'
+  ...
+# Subtest: nueva factura permite descargar la plantilla oficial con ejemplo
+ok 326 - nueva factura permite descargar la plantilla oficial con ejemplo
+  ---
+  duration_ms: 6.1076
+  type: 'test'
+  ...
+# Redis disabled - using noop queues
+# Subtest: sales-invoice module exports its complete workflow
+ok 327 - sales-invoice module exports its complete workflow
+  ---
+  duration_ms: 23.9641
+  type: 'test'
+  ...
+# Subtest: sales-invoice schema keeps required headers and permits default SKU price
+ok 328 - sales-invoice schema keeps required headers and permits default SKU price
+  ---
+  duration_ms: 0.3973
+  type: 'test'
+  ...
+# Subtest: accounts-receivable module exports payments, aging and retention masters
+ok 329 - accounts-receivable module exports payments, aging and retention masters
+  ---
+  duration_ms: 6.8271
+  type: 'test'
+  ...
+# Subtest: accounts-receivable schemas cover receipt and tax configuration
+ok 330 - accounts-receivable schemas cover receipt and tax configuration
+  ---
+  duration_ms: 1.5942
+  type: 'test'
+  ...
+# Subtest: accounting CxC functions and pure helpers stay exported
+ok 331 - accounting CxC functions and pure helpers stay exported
+  ---
+  duration_ms: 1.8932
+  type: 'test'
+  ...
+# Subtest: calcula precio por defecto, descuento e IVA de una posicion
+ok 332 - calcula precio por defecto, descuento e IVA de una posicion
+  ---
+  duration_ms: 1.7284
+  type: 'test'
+  ...
+# Subtest: rechaza descuentos fuera del rango permitido
+ok 333 - rechaza descuentos fuera del rango permitido
+  ---
+  duration_ms: 1.3898
+  type: 'test'
+  ...
+# Subtest: normaliza encabezados de importacion Excel en espanol
+ok 334 - normaliza encabezados de importacion Excel en espanol
+  ---
+  duration_ms: 0.6592
+  type: 'test'
+  ...
+# Subtest: recaudo permite abono parcial y rechaza sobrepago
+ok 335 - recaudo permite abono parcial y rechaza sobrepago
+  ---
+  duration_ms: 0.9953
+  type: 'test'
+  ...
+# Subtest: migracion incluye factura, CxC, impuestos, reversion y costo por sociedad
+ok 336 - migracion incluye factura, CxC, impuestos, reversion y costo por sociedad
+  ---
+  duration_ms: 1.5712
+  type: 'test'
+  ...
+# Subtest: captura de factura usa maestros, buscadores e impuestos controlados
+ok 337 - captura de factura usa maestros, buscadores e impuestos controlados
+  ---
+  duration_ms: 0.9567
+  type: 'test'
+  ...
+# Subtest: los reportes de ventas filtran por cliente y producto en todas las vistas
+ok 338 - los reportes de ventas filtran por cliente y producto en todas las vistas
+  ---
+  duration_ms: 2.7878
+  type: 'test'
+  ...
+# Subtest: cliente y producto usan texto libre y buscador con Enter vacio
+ok 339 - cliente y producto usan texto libre y buscador con Enter vacio
+  ---
+  duration_ms: 0.9991
+  type: 'test'
+  ...
+# Subtest: acepta una sesion y versiones vigentes
+ok 340 - acepta una sesion y versiones vigentes
+  ---
+  duration_ms: 1.7663
+  type: 'test'
+  ...
+# Subtest: revocacion selectiva no invalida otra sesion
+ok 341 - revocacion selectiva no invalida otra sesion
+  ---
+  duration_ms: 0.3629
+  type: 'test'
+  ...
+# Subtest: incrementar version revoca globalmente tokens anteriores
+ok 342 - incrementar version revoca globalmente tokens anteriores
+  ---
+  duration_ms: 0.2813
+  type: 'test'
+  ...
+# Subtest: el calculo local de decision tiene sobrecosto despreciable
+ok 343 - el calculo local de decision tiene sobrecosto despreciable
+  ---
+  duration_ms: 75.7977
+  type: 'test'
+  ...
+# Subtest: detecta PNG por firma y extrae dimensiones
+ok 344 - detecta PNG por firma y extrae dimensiones
+  ---
+  duration_ms: 3.4991
+  type: 'test'
+  ...
+# Subtest: rechaza contenido HTML aunque se declare como imagen
+ok 345 - rechaza contenido HTML aunque se declare como imagen
+  ---
+  duration_ms: 0.3396
+  type: 'test'
+  ...
+# Subtest: los limites autoritativos permanecen acotados
+ok 346 - los limites autoritativos permanecen acotados
+  ---
+  duration_ms: 0.2346
+  type: 'test'
+  ...
+# Subtest: DELETE sin cuerpo no anuncia JSON y las solicitudes con cuerpo si
+ok 347 - DELETE sin cuerpo no anuncia JSON y las solicitudes con cuerpo si
+  ---
+  duration_ms: 0.7347
+  type: 'test'
+  ...
+# Subtest: la evidencia vincula identidades locales y externas al tenant
+ok 348 - la evidencia vincula identidades locales y externas al tenant
+  ---
+  duration_ms: 0.6177
+  type: 'test'
+  ...
+# Subtest: la autorizacion numerica devuelve la identidad canonica local
+ok 349 - la autorizacion numerica devuelve la identidad canonica local
+  ---
+  duration_ms: 0.5589
+  type: 'test'
+  ...
+# Subtest: la autorizacion UUID tambien devuelve la identidad canonica local
+ok 350 - la autorizacion UUID tambien devuelve la identidad canonica local
+  ---
+  duration_ms: 0.464
+  type: 'test'
+  ...
+# Subtest: una orden de otro tenant no puede autorizar evidencia
+ok 351 - una orden de otro tenant no puede autorizar evidencia
+  ---
+  duration_ms: 1.1065
+  type: 'test'
+  ...
+# Subtest: detecta las firmas binarias permitidas
+ok 352 - detecta las firmas binarias permitidas
+  ---
+  duration_ms: 2.3678
+  type: 'test'
+  ...
+# Subtest: acepta contenido valido que coincide con MIME y tamano
+ok 353 - acepta contenido valido que coincide con MIME y tamano
+  ---
+  duration_ms: 1.2794
+  type: 'test'
+  ...
+# Subtest: rechaza MIME falso, HTML disfrazado, ejecutable, vacio y truncado
+ok 354 - rechaza MIME falso, HTML disfrazado, ejecutable, vacio y truncado
+  ---
+  duration_ms: 1.3986
+  type: 'test'
+  ...
+# Subtest: rechaza archivos demasiado grandes
+ok 355 - rechaza archivos demasiado grandes
+  ---
+  duration_ms: 0.3589
+  type: 'test'
+  ...
+# Subtest: metrics secret comparison rejects missing and incorrect values
+ok 356 - metrics secret comparison rejects missing and incorrect values
+  ---
+  duration_ms: 2.534
+  type: 'test'
+  ...
+# Subtest: metrics secret comparison accepts the exact configured value
+ok 357 - metrics secret comparison accepts the exact configured value
+  ---
+  duration_ms: 1.5176
+  type: 'test'
+  ...
+# Subtest: la edicion especial usa un unico permiso explicito y no se hereda por nombre de rol
+ok 358 - la edicion especial usa un unico permiso explicito y no se hereda por nombre de rol
+  ---
+  duration_ms: 5.2769
+  type: 'test'
+  ...
+# Subtest: el middleware explicito responde 403 incluso para un rol administrativo sin el permiso
+ok 359 - el middleware explicito responde 403 incluso para un rol administrativo sin el permiso
+  ---
+  duration_ms: 1.1869
+  type: 'test'
+  ...
+# Subtest: motivo, descripcion, confirmacion y version son obligatorios
+ok 360 - motivo, descripcion, confirmacion y version son obligatorios
+  ---
+  duration_ms: 1.314
+  type: 'test'
+  ...
+# Subtest: permite cualquier destino reconocido y rechaza estados inexistentes
+ok 361 - permite cualquier destino reconocido y rechaza estados inexistentes
+  ---
+  duration_ms: 1.4373
+  type: 'test'
+  ...
+# Subtest: una orden facturada permite informacion y soportes con el permiso especial
+ok 362 - una orden facturada permite informacion y soportes con el permiso especial
+  ---
+  duration_ms: 0.7344
+  type: 'test'
+  ...
+# Subtest: rechaza una correccion de campo que no cambia el valor actual
+ok 363 - rechaza una correccion de campo que no cambia el valor actual
+  ---
+  duration_ms: 0.5343
+  type: 'test'
+  ...
+# Subtest: una orden pagada permite editar, reabrir y anexar novedades
+ok 364 - una orden pagada permite editar, reabrir y anexar novedades
+  ---
+  duration_ms: 1.0176
+  type: 'test'
+  ...
+# Subtest: valida la pieza faltante como una novedad estructurada
+ok 365 - valida la pieza faltante como una novedad estructurada
+  ---
+  duration_ms: 2.2579
+  type: 'test'
+  ...
+# Subtest: crear correccion aplica aislamiento por tenant, version e idempotencia
+ok 366 - crear correccion aplica aislamiento por tenant, version e idempotencia
+  ---
+  duration_ms: 4.0937
+  type: 'test'
+  ...
+# Subtest: resuelve una orden UUID por su identidad externa sin convertirla a NaN
+ok 367 - resuelve una orden UUID por su identidad externa sin convertirla a NaN
+  ---
+  duration_ms: 1.505
+  type: 'test'
+  ...
+# Subtest: rechaza identificadores vacios sin consultar Prisma
+ok 368 - rechaza identificadores vacios sin consultar Prisma
+  ---
+  duration_ms: 1.0017
+  type: 'test'
+  ...
+# Subtest: aplicar registra antes/despues, auditoria y version en una sola transaccion
+ok 369 - aplicar registra antes/despues, auditoria y version en una sola transaccion
+  ---
+  duration_ms: 2.8422
+  type: 'test'
+  ...
+# Subtest: aplicar una pieza faltante actualiza inspeccion, reporte e incidente sin cambiar el estado
+ok 370 - aplicar una pieza faltante actualiza inspeccion, reporte e incidente sin cambiar el estado
+  ---
+  duration_ms: 1.4291
+  type: 'test'
+  ...
+# Subtest: pieza y foto se guardan atomicamente con una sola actualizacion de version
+ok 371 - pieza y foto se guardan atomicamente con una sola actualizacion de version
+  ---
+  duration_ms: 6.3926
+  type: 'test'
+  ...
+# Subtest: un conflicto optimista responde 409 y no sobrescribe
+ok 372 - un conflicto optimista responde 409 y no sobrescribe
+  ---
+  duration_ms: 0.8227
+  type: 'test'
+  ...
+# Subtest: retirar evidencia es baja logica y conserva el registro
+ok 373 - retirar evidencia es baja logica y conserva el registro
+  ---
+  duration_ms: 1.2812
+  type: 'test'
+  ...
+# Subtest: un usuario sin el permiso unico no puede aplicar la correccion
+ok 374 - un usuario sin el permiso unico no puede aplicar la correccion
+  ---
+  duration_ms: 0.7814
+  type: 'test'
+  ...
+# Subtest: una correccion no cambia estado ni banderas financieras implicitamente
+ok 375 - una correccion no cambia estado ni banderas financieras implicitamente
+  ---
+  duration_ms: 0.892
+  type: 'test'
+  ...
+# Subtest: la migracion conserva archivos e impide mutar el detalle historico
+ok 376 - la migracion conserva archivos e impide mutar el detalle historico
+  ---
+  duration_ms: 0.938
+  type: 'test'
+  ...
+# Subtest: el certificador QA versionado cubre el flujo maestro y sus negativas
+ok 377 - el certificador QA versionado cubre el flujo maestro y sus negativas
+  ---
+  duration_ms: 1.2438
+  type: 'test'
+  ...
+# Subtest: accepts 1 service request(s) without changing query shape
+ok 378 - accepts 1 service request(s) without changing query shape
+  ---
+  duration_ms: 2.7761
+  type: 'test'
+  ...
+# Subtest: accepts 3 service request(s) without changing query shape
+ok 379 - accepts 3 service request(s) without changing query shape
+  ---
+  duration_ms: 0.3291
+  type: 'test'
+  ...
+# Subtest: accepts 10 service request(s) without changing query shape
+ok 380 - accepts 10 service request(s) without changing query shape
+  ---
+  duration_ms: 0.5161
+  type: 'test'
+  ...
+# Subtest: accepts 20 service request(s) without changing query shape
+ok 381 - accepts 20 service request(s) without changing query shape
+  ---
+  duration_ms: 0.2472
+  type: 'test'
+  ...
+# Subtest: rejects empty, oversized and invalid requests
+ok 382 - rejects empty, oversized and invalid requests
+  ---
+  duration_ms: 0.6779
+  type: 'test'
+  ...
+# Subtest: aggregates pending, active, partial and complete states without a new global status
+ok 383 - aggregates pending, active, partial and complete states without a new global status
+  ---
+  duration_ms: 6.2465
+  type: 'test'
+  ...
+# Subtest: legacy orders remain readable as one synthetic request
+ok 384 - legacy orders remain readable as one synthetic request
+  ---
+  duration_ms: 0.6484
+  type: 'test'
+  ...
+# Subtest: normalization keeps independent references, service types and quantities
+ok 385 - normalization keeps independent references, service types and quantities
+  ---
+  duration_ms: 0.3194
+  type: 'test'
+  ...
+# Subtest: item lookup binds tenant, order and item to prevent manipulated ids
+ok 386 - item lookup binds tenant, order and item to prevent manipulated ids
+  ---
+  duration_ms: 3.6424
+  type: 'test'
+  ...
+# Subtest: photos and incidents validate item membership before persistence
+ok 387 - photos and incidents validate item membership before persistence
+  ---
+  duration_ms: 0.444
+  type: 'test'
+  ...
+# Subtest: a non-executed closure keeps its incident on the selected request
+ok 388 - a non-executed closure keeps its incident on the selected request
+  ---
+  duration_ms: 0.7312
+  type: 'test'
+  ...
+# Subtest: concurrent and replayed status changes are protected
+ok 389 - concurrent and replayed status changes are protected
+  ---
+  duration_ms: 0.4466
+  type: 'test'
+  ...
+# Subtest: item mutations preserve RBAC and audit coverage
+ok 390 - item mutations preserve RBAC and audit coverage
+  ---
+  duration_ms: 0.5036
+  type: 'test'
+  ...
+# Subtest: migration is additive and evidence relations are optional
+ok 391 - migration is additive and evidence relations are optional
+  ---
+  duration_ms: 0.5208
+  type: 'test'
+  ...
+# Subtest: service order items participate in tenant enforcement and controlled deletion
+ok 392 - service order items participate in tenant enforcement and controlled deletion
+  ---
+  duration_ms: 0.4814
+  type: 'test'
+  ...
+# Subtest: item inspection and execution synchronize the owning order
+ok 393 - item inspection and execution synchronize the owning order
+  ---
+  duration_ms: 0.5087
+  type: 'test'
+  ...
+# Subtest: the order closes with one global signature after every request completed
+ok 394 - the order closes with one global signature after every request completed
+  ---
+  duration_ms: 1.5185
+  type: 'test'
+  ...
+# Subtest: administrative editing replaces only requests that have not started
+ok 395 - administrative editing replaces only requests that have not started
+  ---
+  duration_ms: 5.1632
+  type: 'test'
+  ...
+# Subtest: service order numbering ignores non-canonical stress and imported identifiers
+ok 396 - service order numbering ignores non-canonical stress and imported identifiers
+  ---
+  duration_ms: 1.8768
+  type: 'test'
+  ...
+# Subtest: service order numbering derives the next value from the highest canonical sequence
+ok 397 - service order numbering derives the next value from the highest canonical sequence
+  ---
+  duration_ms: 0.3971
+  type: 'test'
+  ...
+# Subtest: la transaccion revierte el lote completo si falla una referencia
+ok 398 - la transaccion revierte el lote completo si falla una referencia
+  ---
+  duration_ms: 6.3239
+  type: 'test'
+  ...
+# Subtest: la transaccion confirma juntas todas las referencias validas
+ok 399 - la transaccion confirma juntas todas las referencias validas
+  ---
+  duration_ms: 1.0677
+  type: 'test'
+  ...
+# Subtest: el backend agrupa filas validas sin omitir datos
+ok 400 - el backend agrupa filas validas sin omitir datos
+  ---
+  duration_ms: 2.6228
+  type: 'test'
+  ...
+# Subtest: el backend rechaza todo el lote ante una fila inconsistente
+ok 401 - el backend rechaza todo el lote ante una fila inconsistente
+  ---
+  duration_ms: 3.5616
+  type: 'test'
+  ...
+# Subtest: el backend no acepta duplicados, cantidades invalidas ni URLs inseguras
+ok 402 - el backend no acepta duplicados, cantidades invalidas ni URLs inseguras
+  ---
+  duration_ms: 0.597
+  type: 'test'
+  ...
+# Subtest: la ruta conserva autenticacion, tenant y permiso de escritura
+ok 403 - la ruta conserva autenticacion, tenant y permiso de escritura
+  ---
+  duration_ms: 1.1293
+  type: 'test'
+  ...
+# Subtest: does not synchronize when email and password are unchanged
+ok 404 - does not synchronize when email and password are unchanged
+  ---
+  duration_ms: 3.1428
+  type: 'test'
+  ...
+# Subtest: builds one atomic Supabase patch for email and password
+ok 405 - builds one atomic Supabase patch for email and password
+  ---
+  duration_ms: 0.6142
+  type: 'test'
+  ...
+# Subtest: password-only changes retain the current email
+ok 406 - password-only changes retain the current email
+  ---
+  duration_ms: 0.3689
+  type: 'test'
+  ...
+# Subtest: finds the Auth identity and confirms the updated credentials
+ok 407 - finds the Auth identity and confirms the updated credentials
+  ---
+  duration_ms: 75.3532
+  type: 'test'
+  ...
+# Subtest: repairs a historical email mismatch using the persisted Auth user id
+ok 408 - repairs a historical email mismatch using the persisted Auth user id
+  ---
+  duration_ms: 2.9961
+  type: 'test'
+  ...
+# Subtest: active module view is queried with the authenticated user identity
+ok 409 - active module view is queried with the authenticated user identity
+  ---
+  duration_ms: 38.3199
+  type: 'test'
+  ...
+# Subtest: el backend respeta la empresa seleccionada aunque otra membresia sea administradora
+ok 410 - el backend respeta la empresa seleccionada aunque otra membresia sea administradora
+  ---
+  duration_ms: 2.8061
+  type: 'test'
+  ...
+# Subtest: el backend conserva el fallback administrativo cuando no se envia empresa
+ok 411 - el backend conserva el fallback administrativo cuando no se envia empresa
+  ---
+  duration_ms: 0.3751
+  type: 'test'
+  ...
+# Subtest: el backend rechaza una empresa fuera de las membresias del usuario
+ok 412 - el backend rechaza una empresa fuera de las membresias del usuario
+  ---
+  duration_ms: 0.8654
+  type: 'test'
+  ...
+# Subtest: RBAC usa los modulos autoritativos de la autenticacion aunque el cache del tenant este obsoleto
+ok 413 - RBAC usa los modulos autoritativos de la autenticacion aunque el cache del tenant este obsoleto
+  ---
+  duration_ms: 1.5855
+  type: 'test'
+  ...
+# Subtest: sesiones locales conservan los modulos del tenant cacheado
+ok 414 - sesiones locales conservan los modulos del tenant cacheado
+  ---
+  duration_ms: 0.4784
+  type: 'test'
+  ...
+# Subtest: el permiso de catalogo para corregir servicios se traduce al permiso RBAC
+ok 415 - el permiso de catalogo para corregir servicios se traduce al permiso RBAC
+  ---
+  duration_ms: 0.6683
+  type: 'test'
+  ...
+# Subtest: el perfil Supabase de marcaciones no hereda permisos generales de RRHH
+ok 416 - el perfil Supabase de marcaciones no hereda permisos generales de RRHH
+  ---
+  duration_ms: 1.4595
+  type: 'test'
+  ...
+# Subtest: un rol especial recibe solo el permiso explicito y no un comodin administrativo
+ok 417 - un rol especial recibe solo el permiso explicito y no un comodin administrativo
+  ---
+  duration_ms: 0.5891
+  type: 'test'
+  ...
+# Subtest: un rol viewer sincronizado no recibe lectura administrativa comodin
+ok 418 - un rol viewer sincronizado no recibe lectura administrativa comodin
+  ---
+  duration_ms: 0.9675
+  type: 'test'
+  ...
+# Subtest: un rol member sincronizado no recibe lectura administrativa comodin
+ok 419 - un rol member sincronizado no recibe lectura administrativa comodin
+  ---
+  duration_ms: 1.5626
+  type: 'test'
+  ...
+# Subtest: la vista de modulos se consulta con el JWT del usuario para conservar auth.uid()
+ok 420 - la vista de modulos se consulta con el JWT del usuario para conservar auth.uid()
+  ---
+  duration_ms: 4.3535
+  type: 'test'
+  ...
+# Subtest: inventories public tables without mutating their access implicitly
+ok 421 - inventories public tables without mutating their access implicitly
+  ---
+  duration_ms: 2.2828
+  type: 'test'
+  ...
+# Subtest: quarantines only the explicit backend-owned allowlist
+ok 422 - quarantines only the explicit backend-owned allowlist
+  ---
+  duration_ms: 0.8144
+  type: 'test'
+  ...
+# Subtest: does not change default privileges for unrelated Data API objects
+ok 423 - does not change default privileges for unrelated Data API objects
+  ---
+  duration_ms: 0.5597
+  type: 'test'
+  ...
+# Subtest: hardens mutable and unversioned privileged functions
+ok 424 - hardens mutable and unversioned privileged functions
+  ---
+  duration_ms: 0.642
+  type: 'test'
+  ...
+# Subtest: does not include destructive data or schema operations
+ok 425 - does not include destructive data or schema operations
+  ---
+  duration_ms: 2.4957
+  type: 'test'
+  ...
+# Subtest: quarantine policy uses the private tenant membership helper and rejects malformed tenant ids
+ok 426 - quarantine policy uses the private tenant membership helper and rejects malformed tenant ids
+  ---
+  duration_ms: 3.4283
+  type: 'test'
+  ...
+# Redis disabled - using noop queues
+# Subtest: IVA separa maestros de compras y ventas
+ok 427 - IVA separa maestros de compras y ventas
+  ---
+  duration_ms: 5.6097
+  type: 'test'
+  ...
+# Subtest: Ventas exige IVA activo y contabiliza la cuenta del maestro
+ok 428 - Ventas exige IVA activo y contabiliza la cuenta del maestro
+  ---
+  duration_ms: 1.0369
+  type: 'test'
+  ...
+# Subtest: Contabilidad expone maestros fiscales sin captura libre de cuentas
+ok 429 - Contabilidad expone maestros fiscales sin captura libre de cuentas
+  ---
+  duration_ms: 1.3472
+  type: 'test'
+  ...
+# Subtest: Los maestros fiscales eliminan sin uso y desactivan cuando tienen movimientos
+ok 430 - Los maestros fiscales eliminan sin uso y desactivan cuando tienen movimientos
+  ---
+  duration_ms: 2.9388
+  type: 'test'
+  ...
+# Subtest: Ventas solo admite retenciones asignadas al cliente
+ok 431 - Ventas solo admite retenciones asignadas al cliente
+  ---
+  duration_ms: 138.1411
+  type: 'test'
+  ...
+# Subtest: La factura de ventas filtra y precarga retenciones del tercero
+ok 432 - La factura de ventas filtra y precarga retenciones del tercero
+  ---
+  duration_ms: 1.5173
+  type: 'test'
+  ...
+# Subtest: las cuentas asociadas se restringen a cuentas PUCC compatibles
+ok 433 - las cuentas asociadas se restringen a cuentas PUCC compatibles
+  ---
+  duration_ms: 1.9127
+  type: 'test'
+  ...
+# Subtest: las retenciones del tercero se normalizan y deben existir activas en su maestro
+ok 434 - las retenciones del tercero se normalizan y deben existir activas en su maestro
+  ---
+  duration_ms: 5.1586
+  type: 'test'
+  ...
+# Subtest: las retenciones de compra respetan maestro, base editable e importe editable
+ok 435 - las retenciones de compra respetan maestro, base editable e importe editable
+  ---
+  duration_ms: 0.9324
+  type: 'test'
+  ...
+# Subtest: la simulacion CXP incorpora retenciones al asiento y al saldo neto
+ok 436 - la simulacion CXP incorpora retenciones al asiento y al saldo neto
+  ---
+  duration_ms: 2.3807
+  type: 'test'
+  ...
+# Subtest: la factura calcula retenciones aunque el maestro llegue despues del detalle
+ok 437 - la factura calcula retenciones aunque el maestro llegue despues del detalle
+  ---
+  duration_ms: 1.4289
+  type: 'test'
+  ...
+# Subtest: el maestro de terceros usa listas PUCC y una pestaña separada de retenciones
+ok 438 - el maestro de terceros usa listas PUCC y una pestaña separada de retenciones
+  ---
+  duration_ms: 1.0837
+  type: 'test'
+  ...
+# Subtest: 24 real cartons fit with invariant checks and deterministic coordinates
+ok 439 - 24 real cartons fit with invariant checks and deterministic coordinates
+  ---
+  duration_ms: 64.5028
+  type: 'test'
+  ...
+# Subtest: weight, oversized, rotation and non-stackable constraints
+ok 440 - weight, oversized, rotation and non-stackable constraints
+  ---
+  duration_ms: 2.1703
+  type: 'test'
+  ...
+# Subtest: support load is propagated to every ancestor
+ok 441 - support load is propagated to every ancestor
+  ---
+  duration_ms: 1.8063
+  type: 'test'
+  ...
+# Subtest: compartments, temperature and obstacles are enforced
+ok 442 - compartments, temperature and obstacles are enforced
+  ---
+  duration_ms: 5.3572
+  type: 'test'
+  ...
+# Subtest: malformed and excessive input fails closed
+ok 443 - malformed and excessive input fails closed
+  ---
+  duration_ms: 2.5456
+  type: 'test'
+  ...
+# Subtest: 100 seeded mixed-load scenarios preserve physical invariants
+ok 444 - 100 seeded mixed-load scenarios preserve physical invariants
+  ---
+  duration_ms: 770.3882
+  type: 'test'
+  ...
+# Subtest: financial lines reject negative, forged and nonfinite totals
+ok 445 - financial lines reject negative, forged and nonfinite totals
+  ---
+  duration_ms: 1.3093
+  type: 'test'
+  ...
+# Subtest: partial deliveries preserve remaining quantities and reject duplicate SKU
+ok 446 - partial deliveries preserve remaining quantities and reject duplicate SKU
+  ---
+  duration_ms: 1.9384
+  type: 'test'
+  ...
+# Subtest: state machine allows documented transitions and blocks the rest
+ok 447 - state machine allows documented transitions and blocks the rest
+  ---
+  duration_ms: 5.9553
+  type: 'test'
+  ...
+# Subtest: RB-11 immutability: approved/accounted packages are not editable
+ok 448 - RB-11 immutability: approved/accounted packages are not editable
+  ---
+  duration_ms: 0.5483
+  type: 'test'
+  ...
+# Subtest: RB-12 optimistic locking detects concurrent overwrite
+ok 449 - RB-12 optimistic locking detects concurrent overwrite
+  ---
+  duration_ms: 0.5923
+  type: 'test'
+  ...
+# Subtest: RB-01 carrier eligibility blocks inactive/suspended carriers
+ok 450 - RB-01 carrier eligibility blocks inactive/suspended carriers
+  ---
+  duration_ms: 0.8611
+  type: 'test'
+  ...
+# Subtest: RB-02 documentary eligibility honours bloqueo vs alerta policy
+ok 451 - RB-02 documentary eligibility honours bloqueo vs alerta policy
+  ---
+  duration_ms: 0.9897
+  type: 'test'
+  ...
+# Subtest: RB-03 duplicate guide detection across and within scope
+ok 452 - RB-03 duplicate guide detection across and within scope
+  ---
+  duration_ms: 0.5911
+  type: 'test'
+  ...
+# Subtest: RB-04 resolveRate filters out-of-vigor tariffs
+ok 453 - RB-04 resolveRate filters out-of-vigor tariffs
+  ---
+  duration_ms: 5.2629
+  type: 'test'
+  ...
+# Subtest: RB-05 equal-priority tariffs raise an ambiguity error, never a silent pick
+ok 454 - RB-05 equal-priority tariffs raise an ambiguity error, never a silent pick
+  ---
+  duration_ms: 0.5439
+  type: 'test'
+  ...
+# Subtest: resolveRate picks the single highest-priority (lowest number) tariff
+ok 455 - resolveRate picks the single highest-priority (lowest number) tariff
+  ---
+  duration_ms: 0.9775
+  type: 'test'
+  ...
+# Subtest: missing tariff never yields a silent zero value
+ok 456 - missing tariff never yields a silent zero value
+  ---
+  duration_ms: 1.6189
+  type: 'test'
+  ...
+# Subtest: resolveRate ignores inactive tariffs and reports them in the trace
+ok 457 - resolveRate ignores inactive tariffs and reports them in the trace
+  ---
+  duration_ms: 0.9568
+  type: 'test'
+  ...
+# Subtest: RB-06 calculateItemAmount is explainable, applies fuel + minimum and freezes a snapshot
+ok 458 - RB-06 calculateItemAmount is explainable, applies fuel + minimum and freezes a snapshot
+  ---
+  duration_ms: 1.1002
+  type: 'test'
+  ...
+# Subtest: calculateItemAmount enforces the minimum charge and multiplies by quantity
+ok 459 - calculateItemAmount enforces the minimum charge and multiplies by quantity
+  ---
+  duration_ms: 0.6214
+  type: 'test'
+  ...
+# Subtest: money never drifts through float: 0.1 x 3 stays exact in cents
+ok 460 - money never drifts through float: 0.1 x 3 stays exact in cents
+  ---
+  duration_ms: 0.3058
+  type: 'test'
+  ...
+# Subtest: RB-07 totals separate calculated from adjusted values
+ok 461 - RB-07 totals separate calculated from adjusted values
+  ---
+  duration_ms: 0.4527
+  type: 'test'
+  ...
+# Subtest: RB-08 open blocking issues gate transitions
+ok 462 - RB-08 open blocking issues gate transitions
+  ---
+  duration_ms: 0.7618
+  type: 'test'
+  ...
+# Subtest: RB-09 segregation prevents the creator from approving their own package
+ok 463 - RB-09 segregation prevents the creator from approving their own package
+  ---
+  duration_ms: 0.4194
+  type: 'test'
+  ...
+# Subtest: RB-10 accounting idempotency key is deterministic and gated by status
+ok 464 - RB-10 accounting idempotency key is deterministic and gated by status
+  ---
+  duration_ms: 0.6935
+  type: 'test'
+  ...
+# Subtest: rejection requires a comment
+ok 465 - rejection requires a comment
+  ---
+  duration_ms: 1.9057
+  type: 'test'
+  ...
+# Subtest: la maquina de estados TMS permite solo el flujo operativo controlado
+ok 466 - la maquina de estados TMS permite solo el flujo operativo controlado
+  ---
+  duration_ms: 4.0179
+  type: 'test'
+  ...
+# Subtest: una necesidad incompleta hace visibles sus problemas logisticos
+ok 467 - una necesidad incompleta hace visibles sus problemas logisticos
+  ---
+  duration_ms: 0.654
+  type: 'test'
+  ...
+# Subtest: la capacidad vehicular se normaliza a kilogramos
+ok 468 - la capacidad vehicular se normaliza a kilogramos
+  ---
+  duration_ms: 0.3694
+  type: 'test'
+  ...
+# Subtest: el planeador secuencia por proximidad y conserva el detalle de los tramos
+ok 469 - el planeador secuencia por proximidad y conserva el detalle de los tramos
+  ---
+  duration_ms: 1.3174
+  type: 'test'
+  ...
+# Subtest: el tarifario calcula componentes, combustible y cobro minimo
+ok 470 - el tarifario calcula componentes, combustible y cobro minimo
+  ---
+  duration_ms: 0.935
+  type: 'test'
+  ...
+# Subtest: el tracking movil normaliza posiciones y rechaza coordenadas o tiempos imposibles
+ok 471 - el tracking movil normaliza posiciones y rechaza coordenadas o tiempos imposibles
+  ---
+  duration_ms: 3.1376
+  type: 'test'
+  ...
+# Subtest: la importacion CSV respeta encabezados y valores entre comillas
+ok 472 - la importacion CSV respeta encabezados y valores entre comillas
+  ---
+  duration_ms: 1.1804
+  type: 'test'
+  ...
+# Subtest: la entrada autonoma entiende encabezados de transporte en español y separador regional
+ok 473 - la entrada autonoma entiende encabezados de transporte en español y separador regional
+  ---
+  duration_ms: 1.7376
+  type: 'test'
+  ...
+# Subtest: la plantilla admite campos logísticos opcionales con nombres cotidianos
+ok 474 - la plantilla admite campos logísticos opcionales con nombres cotidianos
+  ---
+  duration_ms: 10.528
+  type: 'test'
+  ...
+# Subtest: la entrada de pedidos solo conecta modulos contratados y conserva la carga manual
+ok 475 - la entrada de pedidos solo conecta modulos contratados y conserva la carga manual
+  ---
+  duration_ms: 3.2763
+  type: 'test'
+  ...
+# Subtest: el monitoreo calcula ETA, geocerca y alertas de telemetria
+ok 476 - el monitoreo calcula ETA, geocerca y alertas de telemetria
+  ---
+  duration_ms: 44.9718
+  type: 'test'
+  ...
+# Subtest: Turf detecta geocercas poligonales y desvios del corredor
+ok 477 - Turf detecta geocercas poligonales y desvios del corredor
+  ---
+  duration_ms: 4.5971
+  type: 'test'
+  ...
+# Subtest: POD exige evidencias seguras y controla cantidades parciales
+ok 478 - POD exige evidencias seguras y controla cantidades parciales
+  ---
+  duration_ms: 2.1075
+  type: 'test'
+  ...
+# Before loading environment
+# Environment loaded
+# After loading environment
+# Before require fastify
+# After require fastify
+# Entering build()
+# {"level":30,"time":1794182093193,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Entering build()"}
+# Starting APEX OS API bootstrap
+# Registering cors
+# Subtest: la carga POD inspecciona contenido, dimensiones y MIME
+ok 479 - la carga POD inspecciona contenido, dimensiones y MIME
+  ---
+  duration_ms: 48.066
+  type: 'test'
+  ...
+# Registered cors
+# Registering rate-limit
+# Subtest: las novedades exigen causa, responsable, evidencia y reintento futuro
+ok 480 - las novedades exigen causa, responsable, evidencia y reintento futuro
+  ---
+  duration_ms: 2.377
+  type: 'test'
+  ...
+# Registered rate-limit
+# Registering security headers
+# Registered security headers
+# Registering websocket
+# Subtest: el esquema y la migracion contienen la cadena TMS auditable
+ok 481 - el esquema y la migracion contienen la cadena TMS auditable
+  ---
+  duration_ms: 4.7653
+  type: 'test'
+  ...
+# Registered websocket
+# Registering multipart
+# Registered multipart
+# Registering auth decorator
+# Registered auth decorator
+# Registering audit hook
+# Redis disabled - using noop queues
+# Registered audit hook
+# Registering platform technical log hooks
+# Registered platform technical log hooks
+# Registering performance logging
+# Registered performance logging
+# Registering API modules
+# Registering auth routes
+# Registered auth routes
+# Registering onboarding routes
+# Registered onboarding routes
+# Registering brain routes
+# Registered brain routes
+# Registering admin routes
+# Registered admin routes
+# Registering inventory routes
+# Registered inventory routes
+# Registering accounting routes
+# Registered accounting routes
+# Registering purchases routes
+# Registered purchases routes
+# Registering projects routes
+# Registered projects routes
+# Registering sales routes
+# Registered sales routes
+# Registering invoicing routes
+# Registered invoicing routes
+# Registering hr routes
+# Registered hr routes
+# Registering services routes
+# Registered services routes
+# Registering offline routes
+# Registered offline routes
+# Registering transport routes
+# Registered transport routes
+# Registering sales-invoice routes
+# Registered sales-invoice routes
+# Registering accounts-receivable routes
+# Registered accounts-receivable routes
+# Registering treasury routes
+# Registered treasury routes
+# Registering comercio routes
+# Registered comercio routes
+# Registering comercio-public routes
+# Registered comercio-public routes
+# Registering commercial-management routes
+# Registered commercial-management routes
+# Registering apex-heart routes
+# Registered apex-heart routes
+# Registered API modules
+# Registering brain websocket route
+# Registered brain websocket route
+# Registering collaboration-websocket routes
+# Registered collaboration-websocket routes
+# Starting background workers
+# Redis disabled: background workers and crons disabled
+# Finished background workers
+# Registering health route
+# Registered health route
+# {"level":30,"time":1794182093196,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Starting APEX OS API bootstrap"}
+# {"level":30,"time":1794182093198,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering cors"}
+# {"level":30,"time":1794182093223,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered cors"}
+# {"level":30,"time":1794182093223,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering rate-limit"}
+# {"level":30,"time":1794182093232,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered rate-limit"}
+# {"level":30,"time":1794182093232,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering security headers"}
+# {"level":30,"time":1794182093233,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered security headers"}
+# {"level":30,"time":1794182093233,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering websocket"}
+# {"level":30,"time":1794182093266,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered websocket"}
+# {"level":30,"time":1794182093266,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering multipart"}
+# {"level":30,"time":1794182093289,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered multipart"}
+# {"level":30,"time":1794182093289,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering auth decorator"}
+# {"level":30,"time":1794182093289,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered auth decorator"}
+# {"level":30,"time":1794182093289,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering audit hook"}
+# {"level":30,"time":1794182093299,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered audit hook"}
+# {"level":30,"time":1794182093299,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering platform technical log hooks"}
+# {"level":30,"time":1794182093301,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered platform technical log hooks"}
+# {"level":30,"time":1794182093301,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering performance logging"}
+# {"level":30,"time":1794182093301,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered performance logging"}
+# {"level":30,"time":1794182093302,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering API modules"}
+# {"level":30,"time":1794182093333,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering auth routes"}
+# {"level":30,"time":1794182093333,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered auth routes"}
+# {"level":30,"time":1794182093335,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering onboarding routes"}
+# {"level":30,"time":1794182093335,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered onboarding routes"}
+# {"level":30,"time":1794182093341,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering brain routes"}
+# {"level":30,"time":1794182093342,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered brain routes"}
+# {"level":30,"time":1794182093352,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering admin routes"}
+# {"level":30,"time":1794182093352,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered admin routes"}
+# {"level":30,"time":1794182093357,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering inventory routes"}
+# {"level":30,"time":1794182093357,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered inventory routes"}
+# {"level":30,"time":1794182093359,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering accounting routes"}
+# {"level":30,"time":1794182093359,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered accounting routes"}
+# {"level":30,"time":1794182093366,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering purchases routes"}
+# {"level":30,"time":1794182093366,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered purchases routes"}
+# {"level":30,"time":1794182093369,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering projects routes"}
+# {"level":30,"time":1794182093369,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered projects routes"}
+# {"level":30,"time":1794182093371,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering sales routes"}
+# {"level":30,"time":1794182093371,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered sales routes"}
+# {"level":30,"time":1794182093374,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering invoicing routes"}
+# {"level":30,"time":1794182093374,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered invoicing routes"}
+# {"level":30,"time":1794182093409,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering hr routes"}
+# {"level":30,"time":1794182093409,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered hr routes"}
+# {"level":30,"time":1794182093424,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering services routes"}
+# {"level":30,"time":1794182093424,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered services routes"}
+# {"level":30,"time":1794182093430,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering offline routes"}
+# {"level":30,"time":1794182093430,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered offline routes"}
+# {"level":30,"time":1794182093439,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering transport routes"}
+# {"level":30,"time":1794182093439,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered transport routes"}
+# {"level":30,"time":1794182093446,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering sales-invoice routes"}
+# {"level":30,"time":1794182093446,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered sales-invoice routes"}
+# {"level":30,"time":1794182093449,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering accounts-receivable routes"}
+# {"level":30,"time":1794182093449,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered accounts-receivable routes"}
+# {"level":30,"time":1794182093452,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering treasury routes"}
+# {"level":30,"time":1794182093452,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered treasury routes"}
+# {"level":30,"time":1794182093460,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering comercio routes"}
+# {"level":30,"time":1794182093460,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered comercio routes"}
+# {"level":30,"time":1794182093463,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering comercio-public routes"}
+# {"level":30,"time":1794182093463,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered comercio-public routes"}
+# {"level":30,"time":1794182093469,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering commercial-management routes"}
+# {"level":30,"time":1794182093469,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered commercial-management routes"}
+# {"level":30,"time":1794182093472,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering apex-heart routes"}
+# {"level":30,"time":1794182093472,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered apex-heart routes"}
+# {"level":30,"time":1794182093472,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered API modules"}
+# {"level":30,"time":1794182093472,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering brain websocket route"}
+# {"level":30,"time":1794182093473,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered brain websocket route"}
+# {"level":30,"time":1794182093475,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering collaboration-websocket routes"}
+# {"level":30,"time":1794182093475,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered collaboration-websocket routes"}
+# {"level":30,"time":1794182093475,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Starting background workers"}
+# {"level":30,"time":1794182093475,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Redis disabled: background workers and crons disabled"}
+# {"level":30,"time":1794182093475,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Finished background workers"}
+# {"level":30,"time":1794182093475,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registering health route"}
+# {"level":30,"time":1794182093479,"pid":11240,"hostname":"DESKTOP-6QIJ49H","msg":"Registered health route"}
+# {"level":30,"time":1794182094909,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1","req":{"method":"GET","url":"/api/v1/transport/control-tower","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095033,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-1","res":{"statusCode":401},"responseTime":11.543099999999868,"msg":"request completed"}
+# {"level":30,"time":1794182095034,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-2","req":{"method":"GET","url":"/api/v1/transport/monitoring/live","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095036,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-2","res":{"statusCode":401},"responseTime":1.365099999999984,"msg":"request completed"}
+# {"level":30,"time":1794182095037,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-3","req":{"method":"GET","url":"/api/v1/transport/monitoring/fleet","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095038,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-3","res":{"statusCode":401},"responseTime":0.9272000000000844,"msg":"request completed"}
+# {"level":30,"time":1794182095038,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-4","req":{"method":"GET","url":"/api/v1/transport/notifications","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095040,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-4","res":{"statusCode":401},"responseTime":1.0453999999999724,"msg":"request completed"}
+# {"level":30,"time":1794182095040,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-5","req":{"method":"GET","url":"/api/v1/transport/pod","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095042,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-5","res":{"statusCode":401},"responseTime":1.1591000000003078,"msg":"request completed"}
+# {"level":30,"time":1794182095042,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-6","req":{"method":"GET","url":"/api/v1/transport/pod/stats","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095046,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-6","res":{"statusCode":401},"responseTime":3.2597999999998137,"msg":"request completed"}
+# {"level":30,"time":1794182095047,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-7","req":{"method":"GET","url":"/api/v1/transport/pod/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095048,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-7","res":{"statusCode":401},"responseTime":0.9798999999998159,"msg":"request completed"}
+# {"level":30,"time":1794182095049,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-8","req":{"method":"POST","url":"/api/v1/transport/trips/1/stops/1/evidence","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095053,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-8","res":{"statusCode":401},"responseTime":1.16800000000012,"msg":"request completed"}
+# {"level":30,"time":1794182095055,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-9","req":{"method":"GET","url":"/api/v1/transport/evidence/view?reference=tms-evidence/acme/test.png","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095058,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-9","res":{"statusCode":401},"responseTime":2.3256000000001222,"msg":"request completed"}
+# {"level":30,"time":1794182095059,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-a","req":{"method":"POST","url":"/api/v1/transport/notifications/send","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095070,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-a","res":{"statusCode":401},"responseTime":10.564300000000003,"msg":"request completed"}
+# {"level":30,"time":1794182095070,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-b","req":{"method":"GET","url":"/api/v1/transport/config","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095072,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-b","res":{"statusCode":401},"responseTime":1.0551000000000386,"msg":"request completed"}
+# {"level":30,"time":1794182095072,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-c","req":{"method":"PUT","url":"/api/v1/transport/config/mobile","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095076,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-c","res":{"statusCode":401},"responseTime":3.5104999999998654,"msg":"request completed"}
+# {"level":30,"time":1794182095076,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-d","req":{"method":"GET","url":"/api/v1/transport/carriers","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095079,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-d","res":{"statusCode":401},"responseTime":2.082499999999982,"msg":"request completed"}
+# {"level":30,"time":1794182095080,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-e","req":{"method":"GET","url":"/api/v1/transport/delivery-points","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095081,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-e","res":{"statusCode":401},"responseTime":0.9364000000000487,"msg":"request completed"}
+# {"level":30,"time":1794182095081,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-f","req":{"method":"GET","url":"/api/v1/transport/origins","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095082,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-f","res":{"statusCode":401},"responseTime":0.7627999999999702,"msg":"request completed"}
+# {"level":30,"time":1794182095082,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-g","req":{"method":"GET","url":"/api/v1/transport/rate-cards","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095083,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-g","res":{"statusCode":401},"responseTime":0.7368999999998778,"msg":"request completed"}
+# {"level":30,"time":1794182095084,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-h","req":{"method":"GET","url":"/api/v1/transport/planning/workbench","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095085,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-h","res":{"statusCode":401},"responseTime":0.9565000000002328,"msg":"request completed"}
+# {"level":30,"time":1794182095085,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-i","req":{"method":"POST","url":"/api/v1/transport/planning/evaluate","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095088,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-i","res":{"statusCode":401},"responseTime":2.1966999999999643,"msg":"request completed"}
+# {"level":30,"time":1794182095088,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-j","req":{"method":"GET","url":"/api/v1/transport/needs","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095089,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-j","res":{"statusCode":401},"responseTime":0.5588000000002467,"msg":"request completed"}
+# {"level":30,"time":1794182095089,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-k","req":{"method":"GET","url":"/api/v1/transport/trips","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095090,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-k","res":{"statusCode":401},"responseTime":0.9030999999999949,"msg":"request completed"}
+# {"level":30,"time":1794182095090,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-l","req":{"method":"GET","url":"/api/v1/transport/orders","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095092,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-l","res":{"statusCode":401},"responseTime":0.789600000000064,"msg":"request completed"}
+# {"level":30,"time":1794182095092,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-m","req":{"method":"GET","url":"/api/v1/transport/orders/intake","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095093,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-m","res":{"statusCode":401},"responseTime":0.7471000000000458,"msg":"request completed"}
+# {"level":30,"time":1794182095093,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-n","req":{"method":"POST","url":"/api/v1/transport/orders/sync","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095097,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-n","res":{"statusCode":401},"responseTime":3.207300000000032,"msg":"request completed"}
+# {"level":30,"time":1794182095097,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-o","req":{"method":"GET","url":"/api/v1/transport/orders/1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095098,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-o","res":{"statusCode":401},"responseTime":0.8899000000001251,"msg":"request completed"}
+# {"level":30,"time":1794182095099,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-p","req":{"method":"POST","url":"/api/v1/transport/orders/import","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095101,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-p","res":{"statusCode":401},"responseTime":2.0183999999999287,"msg":"request completed"}
+# {"level":30,"time":1794182095101,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-q","req":{"method":"GET","url":"/api/v1/transport/orders/1/tracking","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095103,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-q","res":{"statusCode":401},"responseTime":0.7769000000002961,"msg":"request completed"}
+# {"level":30,"time":1794182095103,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-r","req":{"method":"GET","url":"/api/v1/transport/orders/1/pod","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095104,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-r","res":{"statusCode":401},"responseTime":0.7382999999999811,"msg":"request completed"}
+# {"level":30,"time":1794182095104,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-s","req":{"method":"GET","url":"/api/v1/transport/trips/1/tracking","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095105,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-s","res":{"statusCode":401},"responseTime":0.741399999999885,"msg":"request completed"}
+# {"level":30,"time":1794182095106,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-t","req":{"method":"POST","url":"/api/v1/transport/mobile/gps/batch","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095109,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-t","res":{"statusCode":401},"responseTime":2.9062999999996464,"msg":"request completed"}
+# {"level":30,"time":1794182095109,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-u","req":{"method":"POST","url":"/api/v1/transport/trips/1/stops/1/arrive","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095114,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-u","res":{"statusCode":401},"responseTime":4.452400000000125,"msg":"request completed"}
+# {"level":30,"time":1794182095114,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-v","req":{"method":"POST","url":"/api/v1/transport/trips/1/stops/1/depart","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1794182095116,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-v","res":{"statusCode":401},"responseTime":1.3420000000000982,"msg":"request completed"}
+# {"level":30,"time":1794182095116,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-w","req":{"method":"POST","url":"/api/v1/transport/trips/1/transition","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# Subtest: las rutas TMS se registran y exigen autenticacion
+ok 482 - las rutas TMS se registran y exigen autenticacion
+  ---
+  duration_ms: 2614.3277
+  type: 'test'
+  ...
+# {"level":30,"time":1794182095118,"pid":11240,"hostname":"DESKTOP-6QIJ49H","reqId":"req-w","res":{"statusCode":401},"responseTime":1.69170000000031,"msg":"request completed"}
+# Redis disabled - using noop queues
+# Subtest: anticipos usan clases y naturalezas contables independientes
+ok 483 - anticipos usan clases y naturalezas contables independientes
+  ---
+  duration_ms: 12.4233
+  type: 'test'
+  ...
+# Subtest: costos se distribuyen por valor y solo capitalizables
+ok 484 - costos se distribuyen por valor y solo capitalizables
+  ---
+  duration_ms: 0.6558
+  type: 'test'
+  ...
+# Subtest: migracion es aditiva y conserva Float
+ok 485 - migracion es aditiva y conserva Float
+  ---
+  duration_ms: 1.1281
+  type: 'test'
+  ...
+# Subtest: contratos exponen cruces, filtro por proveedor y recepcion completa
+ok 486 - contratos exponen cruces, filtro por proveedor y recepcion completa
+  ---
+  duration_ms: 1.639
+  type: 'test'
+  ...
+# Subtest: treasury separates receipt CI from supplier disbursement CE
+ok 487 - treasury separates receipt CI from supplier disbursement CE
+  ---
+  duration_ms: 4.1721
+  type: 'test'
+  ...
+# Subtest: partial and total applications never produce a negative invoice
+ok 488 - partial and total applications never produce a negative invoice
+  ---
+  duration_ms: 1.4094
+  type: 'test'
+  ...
+# Subtest: treasury schemas require bank, party, date and explicit applications
+ok 489 - treasury schemas require bank, party, date and explicit applications
+  ---
+  duration_ms: 1.8081
+  type: 'test'
+  ...
+# Subtest: treasury migration is additive and keeps audit/reversal structures
+ok 490 - treasury migration is additive and keeps audit/reversal structures
+  ---
+  duration_ms: 1.1593
+  type: 'test'
+  ...
+# Subtest: legacy CxC payment endpoints are replaced by treasury routes
+ok 491 - legacy CxC payment endpoints are replaced by treasury routes
+  ---
+  duration_ms: 1.1221
+  type: 'test'
+  ...
+# Subtest: payment service keeps accounting, balance concurrency and reversal atomic
+ok 492 - payment service keeps accounting, balance concurrency and reversal atomic
+  ---
+  duration_ms: 0.7408
+  type: 'test'
+  ...
+# Subtest: el control numerico permite vacio temporal y normaliza a cero al salir
+ok 493 - el control numerico permite vacio temporal y normaliza a cero al salir
+  ---
+  duration_ms: 19.2407
+  type: 'test'
+  ...
+# Subtest: compras ventas IVA y retenciones reutilizan el control numerico
+not ok 494 - compras ventas IVA y retenciones reutilizan el control numerico
+  ---
+  duration_ms: 3.7331
+  type: 'test'
+  location: 'apps\\api\\test\\zero-friendly-number-input.test.js:16:1'
+  failureType: 'testCodeFailure'
+  error: 'apps/web/app/dashboard/compras/proveedores/page.tsx'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    "use client";
+    import Link from "next/link";
+    import { FormEvent,useEffect,useMemo,useState } from "react";
+    import { Eye,Plus,Search,Settings2 } from "lucide-react";
+    import { api } from "@/lib/api";
+    import { ComprasNav } from "@/components/compras-nav";
+    import { ModalFrame } from "@/components/ui/ModalFrame";
+    import { LATAM_COUNTRIES } from "@/lib/latam";
+    type Master={code:string;description:string;active:boolean;days?:number};type Location={dane_code:string;city:string;department:string;active:boolean};type Masters={document_types:Master[];locations:Location[];supplier_categories:Master[];payment_terms:Master[]};type Supplier={id:number;name:string;tax_id?:string;city?:string;email?:string;phone?:string;metadata?:{verification_digit?:number;category?:string}};
+    const emptyMasters:Masters={document_types:[],locations:[],supplier_categories:[],payment_terms:[]};const emptyForm={name:"",document_type:"31",tax_id:"",country:"CO",dane_code:"",category_code:"GENERAL",payment_term_code:"AP30",email:"",phone:"",address:"",contact_name:"",contact_phone:"",contact_email:"",notes:""};
+    function dv(value:string){const digits=value.replace(/\D/g,"");if(!digits)return "";const weights=[71,67,59,53,47,43,41,37,29,23,19,17,13,7,3];const rest=digits.padStart(15,"0").slice(-15).split("").reduce((sum,n,index)=>sum+Number(n)*weights[index],0)%11;return String(rest>1?11-rest:rest)}
+    export default function Page(){const [rows,setRows]=useState<Supplier[]>([]),[masters,setMasters]=useState<Masters>(emptyMasters),[query,setQuery]=useState(""),[error,setError]=useState(""),[ok,setOk]=useState(""),[saving,setSaving]=useState(false),[createOpen,setCreateOpen]=useState(false),[categoryOpen,setCategoryOpen]=useState(false);const [form,setForm]=useState(emptyForm),[category,setCategory]=useState({code:"",description:"",active:true});async function load(){const [a,b]=await Promise.all([api<Supplier[]>("/api/v1/purchases/suppliers"),api<Masters>("/api/v1/accounting/third-party-masters")]);setRows(a||[]);setMasters(b||emptyMasters)}useEffect(()=>{void load().catch(e=>setError(e instanceof Error?e.message:"No se pudo cargar"))},[]);const filtered=useMemo(()=>{const n=query.toLowerCase().trim();return n?rows.filter(r=>[r.name,r.tax_id,r.city,r.email,r.metadata?.category].some(v=>String(v||"").toLowerCase().includes(n))):rows},[query,rows]);async function create(e:FormEvent){e.preventDefault();setSaving(true);setError("");try{const term=masters.payment_terms.find(r=>r.code===form.payment_term_code);await api("/api/v1/purchases/suppliers",{method:"POST",body:JSON.stringify({name:form.name,tax_id:form.tax_id,country:form.country,address:form.address,email:form.email||undefined,phone:form.phone||undefined,credit_days:Number(term?.days||0),metadata:{document_type:form.document_type,dane_code:form.dane_code,category_code:form.category_code,payment_term_code:form.payment_term_code,notes:form.notes,purchase_order_contact:{name:form.contact_name,phone:form.contact_phone,email:form.contact_email}}})});setCreateOpen(false);setForm(emptyForm);setOk("Proveedor creado");await load()}catch(e){setError(e instanceof Error?e.message:"No se pudo crear")}finally{setSaving(false)}}async function saveCategory(e:FormEvent){e.preventDefault();setSaving(true);try{setMasters(await api<Masters>("/api/v1/accounting/third-party-masters/supplier-categories",{method:"POST",body:JSON.stringify(category)}));setCategory({code:"",description:"",active:true});setOk("Categoria guardada")}catch(e){setError(e instanceof Error?e.message:"No se pudo guardar")}finally{setSaving(false)}}return <div className="space-y-5"><header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><p className="text-sm font-medium text-apex">Compras</p><h1 className="text-3xl font-semibold">Proveedores</h1><p className="text-sm text-neutral-600">Directorio de consulta; la edición se realiza desde la ficha individual.</p></div><div className="flex gap-2"><button className="btn-secondary" onClick={()=>setCategoryOpen(true)}><Settings2 size={16}/> Categorias</button><button className="btn-primary" onClick={()=>setCreateOpen(true)}><Plus size={16}/> Nuevo proveedor</button></div></header><ComprasNav/>{error?<Message tone="red">{error}</Message>:null}{ok?<Message tone="green">{ok}</Message>:null}<section className="rounded-md border border-line bg-white"><div className="border-b border-line p-4"><label className="relative block max-w-xl"><Search className="absolute left-3 top-3 text-neutral-400" size={16}/><input className="control pl-9" placeholder="Buscar por nombre, NIT, ciudad, correo o categoria" value={query} onChange={e=>setQuery(e.target.value)}/></label></div><div className="overflow-x-auto"><table className="w-full min-w-[850px] text-sm"><thead><tr className="border-b bg-paper text-left"><th className="p-3">Proveedor</th><th>NIT / DV</th><th>Ciudad</th><th>Categoria</th><th>Contacto</th><th className="pr-3 text-right">Accion</th></tr></thead><tbody>{filtered.map(r=><tr className="border-b" key={r.id}><td className="p-3 font-medium">{r.name}</td><td>{r.tax_id||"--"}{r.metadata?.verification_digit!==undefined?`-${r.metadata.verification_digit}`:""}</td><td>{r.city||"--"}</td><td>{r.metadata?.category||"General"}</td><td>{r.email||r.phone||"--"}</td><td className="pr-3 text-right"><Link className="btn-secondary" href={`/dashboard/compras/proveedores/${r.id}`}><Eye size={15}/> Ver información</Link></td></tr>)}{!filtered.length?<tr><td className="p-8 text-center text-neutral-500" colSpan={6}>No hay resultados.</td></tr>:null}</tbody></table></div></section>{createOpen?<ModalFrame title="Crear proveedor" onClose={()=>setCreateOpen(false)} maxWidth="md:max-w-5xl"><form className="space-y-4" onSubmit={create}><div className="grid gap-3 md:grid-cols-3"><F label="Nombre o razon social"><input className="control" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/></F><F label="Tipo de documento"><select className="control" value={form.document_type} onChange={e=>setForm({...form,document_type:e.target.value})}>{masters.document_types.filter(active).map(r=><option key={r.code} value={r.code}>{r.code} - {r.description}</option>)}</select></F><F label="Numero / DV"><div className="flex gap-2"><input className="control" value={form.tax_id} onChange={e=>setForm({...form,tax_id:e.target.value.replace(/\D/g,"")})}/><span className="rounded border border-line bg-paper px-3 py-2 font-mono">{dv(form.tax_id)||"-"}</span></div></F><F label="Pais"><select className="control" value={form.country} onChange={e=>setForm({...form,country:e.target.value})}>{LATAM_COUNTRIES.map(r=><option key={r.code} value={r.code}>{r.name}</option>)}</select></F><F label="Ciudad"><select className="control" value={form.dane_code} onChange={e=>setForm({...form,dane_code:e.target.value})} required><option value="">Seleccionar</option>{masters.locations.filter(active).map(r=><option key={r.dane_code} value={r.dane_code}>{r.city} - {r.department}</option>)}</select></F><F label="Categoria"><select className="control" value={form.category_code} onChange={e=>setForm({...form,category_code:e.target.value})}>{masters.supplier_categories.filter(active).map(r=><option key={r.code} value={r.code}>{r.description}</option>)}</select></F><F label="Condicion de pago"><select className="control" value={form.payment_term_code} onChange={e=>setForm({...form,payment_term_code:e.target.value})}>{masters.payment_terms.filter(active).map(r=><option key={r.code} value={r.code}>{r.code} - {r.description}</option>)}</select></F><F label="Correo"><input className="control" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/></F><F label="Telefono"><input className="control" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})}/></F><F label="Contacto para OC"><input className="control" value={form.contact_name} onChange={e=>setForm({...form,contact_name:e.target.value})}/></F><F label="Telefono contacto"><input className="control" value={form.contact_phone} onChange={e=>setForm({...form,contact_phone:e.target.value})}/></F><F label="Correo contacto"><input className="control" type="email" value={form.contact_email} onChange={e=>setForm({...form,contact_email:e.target.value})}/></F><F label="Direccion"><input className="control" value={form.address} onChange={e=>setForm({...form,address:e.target.value})}/></F><F label="Notas"><input className="control" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/></F></div><Actions saving={saving} cancel={()=>setCreateOpen(false)}/></form></ModalFrame>:null}{categoryOpen?<ModalFrame title="Categorias de proveedores" onClose={()=>setCategoryOpen(false)} maxWidth="md:max-w-2xl"><form className="grid gap-3 md:grid-cols-[160px_1fr_auto]" onSubmit={saveCategory}><F label="Codigo"><input className="control uppercase" value={category.code} onChange={e=>setCategory({...category,code:e.target.value.toUpperCase()})} required/></F><F label="Nombre"><input className="control" value={category.description} onChange={e=>setCategory({...category,description:e.target.value})} required/></F><button className="btn-primary mt-6" disabled={saving}>Guardar</button></form><div className="mt-4 divide-y rounded border border-line">{masters.supplier_categories.map(r=><button className="flex w-full justify-between p-3 text-sm" key={r.code} onClick={()=>setCategory({code:r.code,description:r.description,active:r.active!==false})}><span><b>{r.code}</b> {r.description}</span><span>{r.active!==false?"Activa":"Inactiva"}</span></button>)}</div></ModalFrame>:null}</div>}
+    function active(row:{active:boolean}){return row.active!==false}function F({label,children}:{label:string;children:React.ReactNode}){return <label className="text-sm"><span className="mb-1 block text-neutral-600">{label}</span>{children}</label>}function Actions({saving,cancel}:{saving:boolean;cancel:()=>void}){return <div className="flex justify-end gap-2 border-t border-line pt-4"><button className="btn-secondary" onClick={cancel} type="button">Cancelar</button><button className="btn-primary" disabled={saving}>{saving?"Guardando...":"Guardar"}</button></div>}function Message({tone,children}:{tone:"red"|"green";children:React.ReactNode}){return <p className={`rounded border p-3 text-sm ${tone==="red"?"border-red-200 bg-red-50 text-red-700":"border-emerald-200 bg-emerald-50 text-emerald-700"}`}>{children}</p>}
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (apps\api\test\zero-friendly-number-input.test.js:27:36)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..494
+# tests 494
+# suites 0
+# pass 490
+# fail 2
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 17295.4937
