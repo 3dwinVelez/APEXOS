@@ -1,0 +1,543 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "comercio-main-20261108",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-comercio-main-20261108",
+  "certified_commit": "1a8b4a75",
+  "base_commit": "938fc2b6f42cc54957b23c37446e0ad3f7560074",
+  "base_commits": {
+    "main": "938fc2b6f42cc54957b23c37446e0ad3f7560074"
+  },
+  "change_intent": {
+    "summary": "Llevar a produccion el modulo completo de Comercio (M-30) y nada mas. El modulo ya opera y ya fue certificado en el ambiente de develop: 15 modelos commerce_* con sus 6 migraciones, 11 paginas de panel, la vitrina publica /tienda/[code] sin autenticacion, el centro de promociones, el almacen de activos en Supabase y la generacion de imagenes con el modelo gratuito. En main el modulo nunca existio, asi que el candidato se reconstruyo con commits puntuales sobre el tip vigente de origin/main en lugar de fusionar la rama: fusionar develop entero arrastraria Gastos Menores, el tarifario y sedes de Transporte, el motor de liquidacion por paquetes, los planes de despacho, la bandeja de facturas recibidas y sus migraciones, todo fuera de este alcance y con migraciones de nube aun no aplicadas en produccion. El diff resultante son 58 archivos nuevos y 20 archivos compartidos con hunks acotados a Comercio; 0 archivos eliminados. Los unicos 42 lines que se reemplazan en esos 20 archivos estan inventariados hunks por hunks en docs/qa/certifications/comercio-main-20261108.md con la prueba, en los casos sensibles, de que el comportamiento de main fuera de Comercio no cambia.",
+    "modules": [
+      "comercio",
+      "comercio-vitrina-publica",
+      "catalogo-modulos-plataforma",
+      "ui-primitivos-compartidos",
+      "manifiesto-y-evidencia-de-promocion"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": ".env.example"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261026120000_comercio_foundation/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261026140000_comercio_payment_allocations/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261027120000_comercio_public_catalog/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261027150000_comercio_social_links/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261028120000_comercio_discounts/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261028190000_comercio_promotions/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/core/api-error.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/imagegen.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/public-routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/comercio/storage.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/api-error-mapping.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/comercio-service.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/comercio-storage.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/comercio-storefront-theme.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/ComercioCharts.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/cartera/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/clientes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/compras/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/configuracion/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/gastos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/productos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/promociones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/vender/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/comercio/ventas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/tienda/[code]/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/tienda/storefront.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/comercio/shared.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/comercio/storefront-theme.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/comercio/storefront.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/ContextBreadcrumbs.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/SearchField.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/SearchSelect.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/button.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/useOverlayA11y.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleAccess.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/modules.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/security/csp.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/next.config.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/tailwind.config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-reports-charts.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-storefront-resilience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-storefront-theme.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/comercio-ux-consistency.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/offline-csp.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/comercio-main-20261108.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/api-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/baseline-reds-main-938fc2b6.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/browser/01-panel-portada-menu.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/browser/02-panel-configuracion-apariencia.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/browser/03-vitrina-tema-oscuro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/browser/04-vitrina-tema-claro.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/browser/05-vitrina-movil.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/comercio-qa-browser-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/comercio-qa-browser.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/comercio-qa-certification-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/comercio-qa-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/gates-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/main-scope-manifest.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/nyvora-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/platform-regression-qa.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/qa-approval-evidence.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/web-build.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/comercio-main-20261108/web-suite.txt"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/comercio-develop-remote.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/comercio-nyvora-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/comercio-qa-browser.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/comercio-tenant-rbac-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/ensure-comercio-assets-bucket.js"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261107120000_comercio_module_catalog.sql"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/src/modules/comercio/",
+    "apps/web/app/dashboard/comercio/",
+    "apps/web/app/tienda/",
+    "apps/web/components/comercio/",
+    "docs/qa/evidence/comercio-main-20261108/",
+    "apps/api/src/core/api-error.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/server.js",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/prisma/migrations/20261026120000_comercio_foundation/migration.sql",
+    "apps/api/prisma/migrations/20261026140000_comercio_payment_allocations/migration.sql",
+    "apps/api/prisma/migrations/20261027120000_comercio_public_catalog/migration.sql",
+    "apps/api/prisma/migrations/20261027150000_comercio_social_links/migration.sql",
+    "apps/api/prisma/migrations/20261028120000_comercio_discounts/migration.sql",
+    "apps/api/prisma/migrations/20261028190000_comercio_promotions/migration.sql",
+    "supabase/migrations/20261107120000_comercio_module_catalog.sql",
+    "apps/api/test/comercio-service.test.js",
+    "apps/api/test/comercio-storage.test.js",
+    "apps/api/test/comercio-storefront-theme.test.js",
+    "apps/api/test/api-error-mapping.test.js",
+    "apps/web/components/ui/SearchField.tsx",
+    "apps/web/components/ui/SearchSelect.tsx",
+    "apps/web/components/ui/useOverlayA11y.ts",
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/components/ui/button.tsx",
+    "apps/web/components/ui/data-table.tsx",
+    "apps/web/components/shell/ContextBreadcrumbs.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/lib/moduleAccess.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/modules.ts",
+    "apps/web/lib/security/csp.ts",
+    "apps/web/next.config.ts",
+    "apps/web/tailwind.config.ts",
+    "apps/web/test/comercio-reports-charts.test.mjs",
+    "apps/web/test/comercio-storefront-resilience.test.mjs",
+    "apps/web/test/comercio-storefront-theme.test.mjs",
+    "apps/web/test/comercio-ux-consistency.test.mjs",
+    "apps/web/test/offline-csp.test.mjs",
+    "scripts/certifications/comercio-develop-remote.js",
+    "scripts/certifications/comercio-nyvora-qa.js",
+    "scripts/certifications/comercio-qa-browser.js",
+    "scripts/certifications/comercio-tenant-rbac-local.js",
+    "scripts/ensure-comercio-assets-bucket.js",
+    "docs/qa/certifications/comercio-main-20261108.md",
+    ".env.example",
+    "package.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Aislamiento multi-tenant de Comercio: los 15 modelos commerce_* entran en TENANT_MODELS, toda lectura/escritura cierra con runWithTenant y una empresa no ve los datos de otra, ni siquiera por la vitrina publica",
+      "status": "passed",
+      "evidence": [
+        "comercio-qa-certification.json",
+        "nyvora-certification.json",
+        "../../certifications/comercio-main-20261108.md",
+        "../../../../apps/api/src/core/prisma.js",
+        "../../../../apps/api/test/comercio-service.test.js"
+      ]
+    },
+    {
+      "name": "RBAC y compuerta del catalogo de plataforma: el modulo aparece solo para la empresa con Comercio activo; sin permiso explicito el endpoint responde 403 y el menu no se pinta",
+      "status": "passed",
+      "evidence": [
+        "nyvora-certification.json",
+        "comercio-qa-browser.json",
+        "../../certifications/comercio-main-20261108.md",
+        "../../../../apps/api/src/middleware/rbac.js",
+        "../../../../supabase/migrations/20261107120000_comercio_module_catalog.sql"
+      ]
+    },
+    {
+      "name": "Vitrina publica sin autenticacion: /public/comercio/catalog/:code y /tienda/[code] resuelven el tenant por codigo corto y nunca exponen costo, stock crudo, ids internos ni tenant_id",
+      "status": "passed",
+      "evidence": [
+        "comercio-qa-certification.json",
+        "comercio-qa-browser.json",
+        "../../certifications/comercio-main-20261108.md",
+        "../../../../apps/api/src/modules/comercio/public-routes.js",
+        "../../../../apps/api/src/modules/comercio/schema.js"
+      ]
+    },
+    {
+      "name": "Los datos de Comercio no se mezclan con el ERP: ventas, cartera, compras y reportes del modulo viven en su propio esquema y sus reportes cuadran contra Postgres real",
+      "status": "passed",
+      "evidence": [
+        "comercio-qa-certification.json",
+        "nyvora-certification.json",
+        "../../certifications/comercio-main-20261108.md"
+      ]
+    },
+    {
+      "name": "Subida de activos y generacion de imagenes: el almacén caido o rechazado se responde 502 con codigo declarado (ALMACEN_NO_RESPONDE / ALMACEN_RECHAZO), no como caida interna nuestra",
+      "status": "passed",
+      "evidence": [
+        "comercio-qa-certification.json",
+        "../../certifications/comercio-main-20261108.md",
+        "../../../../apps/api/src/modules/comercio/storage.js",
+        "../../../../apps/api/test/comercio-storage.test.js",
+        "../../../../apps/api/test/api-error-mapping.test.js"
+      ]
+    },
+    {
+      "name": "Regresion del ERP que main ya tenia: servicios, ordenes, referencias, talento humano, inventario, contabilidad, transporte y facturacion siguen respondiendo en QA con el mismo contrato y el bloqueo de no-autorizados",
+      "status": "passed",
+      "evidence": [
+        "platform-regression-qa.txt",
+        "api-suite.txt",
+        "web-suite.txt",
+        "gates-candidato.txt",
+        "baseline-reds-main-938fc2b6.txt",
+        "../../certifications/comercio-main-20261108.md"
+      ]
+    },
+    {
+      "name": "El mapeo de errores compartido (apps/api/src/core/api-error.js) no cambia las respuestas de main fuera de Comercio: los unicos productores de 502 previos no declaran code y siguen cayendo al 500 generic con log",
+      "status": "passed",
+      "evidence": [
+        "api-suite.txt",
+        "gates-candidato.txt",
+        "../../certifications/comercio-main-20261108.md",
+        "../../../../apps/api/test/api-error-mapping.test.js"
+      ]
+    },
+    {
+      "name": "Primitivas de UI compartidas (SearchField, SearchSelect, useOverlayA11y, ModalFrame, button, data-table, CommandPalette, tokens de tema) no rompen las pantallas existentes de main y el arnes compila",
+      "status": "passed",
+      "evidence": [
+        "web-suite.txt",
+        "web-build.txt",
+        "gates-candidato.txt",
+        "../../certifications/comercio-main-20261108.md",
+        "../../../../apps/web/test/comercio-ux-consistency.test.mjs"
+      ]
+    },
+    {
+      "name": "CSP y origenes configurados: la vitrina permite los hosts de activos e imagegen declarados y el resto sigue bloqueado por politica",
+      "status": "passed",
+      "evidence": [
+        "web-suite.txt",
+        "comercio-qa-certification.json",
+        "../../certifications/comercio-main-20261108.md",
+        "../../../../apps/web/lib/security/csp.ts",
+        "../../../../apps/web/test/offline-csp.test.mjs"
+      ]
+    },
+    {
+      "name": "Build de produccion y typecheck del candidato completo: next build en verde con las 11 rutas del panel y la vitrina server-rendered, tsc sin errores, esquema Prisma valido",
+      "status": "passed",
+      "evidence": [
+        "web-build.txt",
+        "gates-candidato.txt",
+        "../../certifications/comercio-main-20261108.md"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto medido con `git diff --name-status origin/main..HEAD` sobre el candidato final: 86 rutas, 66 A y 20 M, cero eliminaciones de archivo. El inventario lo genera el mismo proceso que escribio este manifiesto; no es una lista a mano.",
+    "why_reconstructed": "El modulo nacio y se certifico en desarrollo y se promociono a develop (merge 2cb064e2a896). De develop a main no se puede ir por fusion: develop trae ademas Gastos Menores, el tarifario con sedes, la liquidacion por paquetes, los planes de despacho, la bandeja de facturas recibidas y la torre, con migraciones de nube aun no aplicadas en produccion. La politica lo prohibe, asi que el candidato se reconstruyo sobre el tip vigente de origin/main (938fc2b6) con un commit de contenido exclusivamente Comercio (1a8b4a75) y este segundo commit con el manifiesto y su evidencia.",
+    "candidate_paths": {
+      "reconstruccion_puntual_aplicada": "codex/qa-comercio-main-20261108 sobre 938fc2b6: 1a8b4a75 trae el modulo completo y este commit trae manifiesto, hoja de certificacion y evidencia de gates. Ningun arbol viejo fue usado como baseline.",
+      "merge_de_develop_descartado": "Medido con git diff --name-status origin/main..origin/develop: fusionar develop entero arrastraria modulos ajenos y sus migraciones, muy por fuera de este inventario."
+    },
+    "certified_commit_contencion": "certified_commit = 1a8b4a75 es el commit de contenido del modulo y es antecesor directo del candidato, asi que el arbol certificado es exactamente el arbol que se promove. Las corridas vivas de QA se hicieron sobre el deploy de develop 2cb064e2a896, que contiene el mismo arbol de modulo; la equivalencia de producto entre ese deploy y el candidato esta documentada hunks por hunks en la hoja de certificacion.",
+    "hunks_compartidos": "Los 20 archivos M suman 42 lineas reemplazadas. Cada una esta inventariada en docs/qa/certifications/comercio-main-20261108.md. Cuatro de ellas cambiaban comportamiento y exigieron prueba explicita: api-error.js (nuevo contrato de 502/503/504 con code), apps/web/app/globals.css (bloque .apex-select), CommandPalette.tsx (manejo de Escape) y next.config.ts / csp.ts (origenes de imagen). En los cuatro se demostro que main no tenia consumidores previos del nuevo comportamiento.",
+    "contaminacion_descartada": "La migracion y el esquema de develop venian en un solo bloque de 599 lineas que incluia 9 modelos de facturas recibidas ajenos a Comercio; fueron recortados del candidato (schema.prisma queda con 368 lineas agregadas y 0 borradas, solo los 15 modelos commerce_*). Tambien quedaron fuera los 131 JPG de demo con sus sembradores, las dos certificaciones locales que dependen de esa siembra, el componente TransportSearchSelect y la prueba de bloqueo de ajuste de nomina, todos ajenos a main o a este alcance.",
+    "remote_migrations": "Este manifiesto NO autoriza migraciones remotas. Queda pendiente, con autorizacion independiente expresa: aplicar el DDL de las 6 migraciones commerce_* mas la de catalogo de plataforma en produccion via el pooler de sesion y registrarlas en _prisma_migrations, y crear el bucket comercio-assets con sus politicas en el Supabase productivo. Nada de eso esta hecho al momento de validar estas gates.",
+    "evidence_no_touch_prev_change": "No se reescribe ninguna evidencia de cambios anteriores. Toda la salida nueva vive en docs/qa/evidence/comercio-main-20261108/.",
+    "evidencia_sanitizada": "Los logs de suites y de build se sanitizaron: no contienen rutas absolutas locales, ni conexiones, ni tokens. Las unicas direcciones de correo son fixtures sinteticas del arnes."
+  }
+}

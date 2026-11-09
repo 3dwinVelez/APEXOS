@@ -89,9 +89,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.21.2",
+      "version": "2.22.0",
       "updated_at": "2026-11-08",
-      "sha256": "f07b7cbe5c0a9955653c22044a3e4badb4d79d2898dbfbdcccbfd188bca64a26",
+      "sha256": "6e1f1526d40846d8cbdc425f6071ad244fd4a8b788a8128228dc292ae6270101",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -121,15 +121,16 @@
         "brief-defecto-clasificado-por-capa",
         "limitacion-ambiental-reproducida",
         "pasada-ux-registra-hallazgo-cancelado",
-        "brief-separa-arnes-de-producto"
+        "brief-separa-arnes-de-producto",
+        "paridad-contra-el-arbol-publicado"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.0.0",
-      "updated_at": "2026-11-03",
-      "sha256": "5da8105005b7af78484822623f00e07034c09c6c393b1dbcfca4b6dace15aab2",
+      "version": "2.1.0",
+      "updated_at": "2026-11-08",
+      "sha256": "3a2c601acf0a2744f8b702814e06d381b41206722d7d6f20c5bde5cc2abc0db4",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -144,7 +145,8 @@
         "checklist-tabla-nueva",
         "migracion-forward-only",
         "indices-tenant",
-        "dinero-decimal"
+        "dinero-decimal",
+        "ddl-quirurgico-ledger-en-lf"
       ]
     },
     {
@@ -187,9 +189,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.9.0",
-      "updated_at": "2026-11-07",
-      "sha256": "d6610eea745e6fc35e5702fa986330e0f571bc5b5f70327442a66398cb50eb3c",
+      "version": "2.10.0",
+      "updated_at": "2026-11-08",
+      "sha256": "049ec76307e53522a80a7cd74ad6e4a79297b209b56969890ed4278e68671413",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -211,7 +213,8 @@
         "alcance-torre-modulos",
         "torre-residente-en-desarrollo",
         "evidencia-retirada-declarada",
-        "candidato-reconstruido-se-audita-por-archivo"
+        "candidato-reconstruido-se-audita-por-archivo",
+        "promocion-a-main-sin-pr"
       ]
     },
     {
@@ -248,9 +251,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.28.0",
+      "version": "2.29.0",
       "updated_at": "2026-11-08",
-      "sha256": "d03bd0a01b11616525ef96659b062082c4d4856f59cf09ce5903e69ee94ca9a9",
+      "sha256": "4125fdc84161a0aad4ff842506652615d4eaf7f33007caec649d3618b4fd9bff",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -293,7 +296,8 @@
         "contrato-ortografia-sobre-texto-extraido",
         "estado-de-error-se-provoca-en-la-certificacion",
         "el-codigo-de-negocio-discrimina-la-causa",
-        "evidencia-de-gates-con-execpath"
+        "evidencia-de-gates-con-execpath",
+        "gate-post-deploy-por-ambiente"
       ]
     },
     {
@@ -336,9 +340,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.16.0",
+      "version": "2.17.0",
       "updated_at": "2026-11-08",
-      "sha256": "64d5d418d7c3a840ac317828b67717faf982142e2ef79ff19c0e611eac8f3553",
+      "sha256": "4890c20f6a311957a5f1959e9d64f900f505411dc594311a7d8b23b4b69f530f",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -366,7 +370,8 @@
         "limitacion-de-ambiente-no-cubre-5xx",
         "pasada-ux-se-mide-antes-de-despachar",
         "rojo-de-medicion-se-atribuye",
-        "editar-fuente-no-espejo"
+        "editar-fuente-no-espejo",
+        "lo-publicado-se-retrotrae-a-desarrollo"
       ]
     }
   ],

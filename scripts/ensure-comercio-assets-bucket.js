@@ -25,11 +25,15 @@ const BUCKET = "comercio-assets";
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Faltan SUPABASE_URL (o NEXT_PUBLIC_SUPABASE_URL) y SUPABASE_SERVICE_ROLE_KEY.");
-}
-if (!CONFIRMED) {
-  throw new Error("Set CONFIRM_COMERCIO_BUCKET=true: el bucket de la vitrina se publica con lectura anonima.");
+// Las dos comprobaciones viven dentro de main para que el modulo pueda requerirse en pruebas
+// sin credenciales en el entorno; ejecutar el script sigue sin poder saltarselas.
+function assertConfig() {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+    throw new Error("Faltan SUPABASE_URL (o NEXT_PUBLIC_SUPABASE_URL) y SUPABASE_SERVICE_ROLE_KEY.");
+  }
+  if (!CONFIRMED) {
+    throw new Error("Set CONFIRM_COMERCIO_BUCKET=true: el bucket de la vitrina se publica con lectura anonima.");
+  }
 }
 
 const headers = { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}` };
@@ -48,7 +52,17 @@ async function request(path, options = {}) {
   return { status: response.status, payload };
 }
 
+// Supabase responde un bucket inexistente con HTTP 400 y `NoSuchBucket` en el cuerpo; el 404
+// limpio solo lo devuelven otras versiones del borde. Los dos significan "todavia no esta", y
+// leer solo el codigo de estado hacia abortar el script justo antes de poder crearlo.
+function bucketInexistente(response) {
+  if (response.status === 404) return true;
+  const code = String(response.payload?.code || response.payload?.error || "");
+  return response.status === 400 && code === "NoSuchBucket";
+}
+
 async function main() {
+  assertConfig();
   const cuerpo = {
     id: BUCKET,
     name: BUCKET,
@@ -57,7 +71,7 @@ async function main() {
     allowed_mime_types: ALLOWED_MIME_TYPES
   };
   const actual = await request(`/storage/v1/bucket/${BUCKET}`);
-  if (actual.status === 404) {
+  if (bucketInexistente(actual)) {
     const creado = await request("/storage/v1/bucket", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,7 +82,7 @@ async function main() {
     }
     acciones.push("created");
   } else if (actual.status !== 200) {
-    throw new Error(`GET bucket -> ${actual.status}`);
+    throw new Error(`GET bucket -> ${actual.status} ${String(JSON.stringify(actual.payload) || "").slice(0, 160)}`);
   } else {
     const publicado = actual.payload?.public === true;
     if (!publicado) {
@@ -123,7 +137,11 @@ async function main() {
   }));
 }
 
-main().catch((error) => {
-  console.error(`BUCKET_COMERCIO_INVALIDO: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(`BUCKET_COMERCIO_INVALIDO: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  });
+}
+
+module.exports = { assertConfig, bucketInexistente };

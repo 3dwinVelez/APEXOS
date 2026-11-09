@@ -1,0 +1,39 @@
+
+> apex-os@2.0.0 certify:comercio-browser:qa
+> node scripts/certifications/comercio-qa-browser.js --env-file=config/qa.env --output=docs/qa/evidence/comercio-main-20261108/comercio-qa-browser.json
+
+[browser] 01 OK   el_api_desplegado_es_el_commit_esperado
+[browser] 02 OK   la_web_desplegada_responde
+[browser] 03 OK   la_empresa_modelo_arranca_sin_documents_de_comercio
+[browser] 04 OK   el_api_autentica_al_usuario_de_la_corrida
+[browser] 05 OK   la_vitrina_publica_queda_habilitada
+[browser] 06 OK   la_corrida_prepara_un_producto_en_la_empresa_modelo
+[browser] 07 OK   la_corrida_deja_un_producto_con_foto_en_el_bucket
+[browser] 08 OK   la_corrida_deja_el_tema_oscuro_del_tenant
+[browser] 09 OK   la_sesion_de_la_empresa_modelo_abre_el_panel
+[browser] 10 OK   el_menu_del_panel_muestra_comercio
+[browser] 11 OK   las_once_rutas_del_panel_muestran_su_encabezado
+[browser] 12 OK   ninguna_ruta_del_panel_devuelve_5xx
+[browser] 13 OK   la_ruta_de_productos_muestra_el_producto_de_la_corrida
+[browser] 14 OK   la_configuracion_expone_la_apariencia_de_la_vitrina
+[browser] 15 OK   la_vitrina_publica_se_pinta_con_el_fondo_del_tenant
+[browser] 16 OK   el_acento_del_boton_de_la_vitrina_es_el_del_tema
+[browser] 17 OK   la_tinta_del_boton_publico_es_legible_sobre_el_acento
+[browser] 18 OK   el_titular_del_tenant_se_ve_en_la_vitrina
+[browser] 19 OK   el_producto_de_la_corrida_se_ve_con_su_precio
+[browser] 20 OK   la_foto_del_producto_se_pinta_desde_el_bucket
+[browser] 21 OK   la_corrida_cambia_el_tema_a_claro
+[browser] 22 OK   la_vitrina_clara_pinta_el_fondo_claro_del_tenant
+[browser] 23 OK   el_acento_claro_sigue_al_tema_y_se_contra_su_tinta
+[browser] 24 OK   la_vitrina_no_desborda_en_movil
+[browser] 25 OK   el_panel_de_comercio_sin_sesion_no_muestra_un_dato_del_tenant
+[browser] 26 OK   el_panel_sin_sesion_explica_el_bloqueo_de_acceso
+[browser] 27 OK   la_consola_no_registra_errores_de_javascript_del_producto
+[browser] 28 OK   ningun_recurso_de_la_web_falla_sin_explicacion_declarada
+[browser] 29 OK   ninguna_peticion_del_recorrido_completo_devuelve_5xx
+[browser] 30 OK   nyvora_vuelve_a_su_linea_base_de_documents
+[browser] 31 OK   el_inventario_del_bucket_de_la_empresa_modelo_queda_vacio
+[browser] 32 OK   ningun_usuario_efimero_sobrevive
+[browser] 33 OK   ningun_rol_efimero_sobrevive
+CERTIFICATION_PASSED checks=33 fallidos=[]
+evidencia=docs/qa/evidence/comercio-main-20261108/comercio-qa-browser.json

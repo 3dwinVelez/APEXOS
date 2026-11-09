@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.28.0
+version: 2.29.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -130,6 +130,12 @@ Antes de actuar, leer en este orden:
     - **El login no distingue cuentas.** `auth-session-hardening.test.js:141,152`: correo inexistente paga bcrypt y devuelve el mismo `401` que una clave incorrecta o un usuario desactivado. La prueba de tiempo y de código de estado es la que cierra A-03; un `403` con texto distinto la reprueba.
     - **`X-Forwarded-For` falsificado no cambia la clave sin proxy declarado.** `apps/api/test/trust-proxy.test.js:31,35` lo mide contra Fastify real con y sin `TRUST_PROXY`. Un test que solo importe `resolveTrustProxy` no prueba que `request.ip` quede fuera del control del cliente.
     Evidencia de la fase: `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`, con 21/21 API y 3/3 web, el `BLOQUEO` del stack caído y el de `TRUST_PROXY` sin declarar en Railway. Por qué: una fase en observación que se reporte como enforcement cumplido es exactamente el «passed» constante que la Fase 0 tuvo que retirar.
+
+42. **Una promoción a `main` se cierra con gate post-despliegue por ambiente, y un tenant sin el módulo habilitado es bloqueo escrito.** `scripts/audit-comercio-postdeploy.js` (`npm run audit:comercio:postdeploy:prod` y `:qa`, 9/9 en ambos el 2026-11-08) fija el patrón: `/health` con el commit realmente desplegado, la ruta protegida del módulo respondiendo `401 TOKEN_INVALIDO` sin credenciales (un 404 de router diría que el build no lo trae), la ruta pública respondiendo su código de negocio (`404 CATALOG_NOT_FOUND`, no `500 P2022`: prueba de que el DDL está aplicado y la consulta llegó a la tabla), las tablas del módulo, sus filas de ledger con `finished_at`, la fila del catálogo de plataforma y el bucket con los topes que el propio módulo valida.
+    - La misma gate se corre en QA y en producción con las mismas aserciones: lo que cambia entre ambientes tiene que aparecer en la diferencia medida, no en un texto optimista.
+    - La habilitación por empresa se **reporta**, nunca se afirma: encender un módulo en un tenant productivo es decisión del dueño. Si todas las empresas figuran con `enabled=false`, la certificación funcional end-to-end en ese ambiente se declara `BLOQUEO` con responsable y comando pendiente. Escribir «módulo liberado y verificado» con ese conteo en rojo es el mismo «passed» decorativo que la Fase 0 retiró.
+    - La deuda de esquema ajena se mide contra el árbol desplegado, no contra `desarrollo`. El 2026-11-08: `audit:production:schema` sobre `1b76376c` → 166 modelos, 8 tablas faltantes (todas `TransportSettlement*`), 0 columnas; sobre `desarrollo` → 191 modelos, 34 tablas y 5 columnas. Presentar la segunda cifra como falla de la promoción es culparle un alcance que no llevó.
+    Por qué: el pedido fue «el módulo completo de Comercio, nada más»; un `200` en la home o un build verde no distinguen un módulo desplegado de uno ausente, y sin DDL la vitrina pública falla igual por otra causa.
 
 ## Checklist de intervención
 

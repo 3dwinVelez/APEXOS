@@ -1,0 +1,48 @@
+Deuda preexistente del target main (no la introduce este candidato)
+
+El candidato de Comercio arroja 3 rojos en las suites del repositorio. Para separar
+"regresion del candidato" de "deuda que main ya traia", se monto un worktree desadossado
+exactamente en el commit target y se ejecutaron los mismos archivos de prueba.
+
+Target: origin/main = 938fc2b6f42cc54957b23c37446e0ad3f7560074
+Candidato: 1a8b4a75 (rama auxiliar codex/qa-comercio-main-20261108)
+
+Worktree de control (solo lectura del target, sin node_modules y sin variables de entorno):
+
+    git worktree add --detach <worktree-de-control> 938fc2b6f42cc54957b23c37446e0ad3f7560074
+
+1) Suites de API sobre el TARGET (los 2 rojos del candidato):
+
+    node --test apps/api/test/inventory-transfer-product-list-ux.test.js apps/api/test/zero-friendly-number-input.test.js
+
+    not ok 2 - inventario ofrece lista de productos filtrable y exportable
+    not ok 4 - compras ventas IVA y retenciones reutilizan el control numerico
+    # tests 4
+    # pass 2
+    # fail 2
+    # skipped 0
+
+   Sobre el CANDIDATO, los dos archivos producen el mismo par de rojos con el mismo nombre
+   de prueba. Ninguno toca comercio_*: el primero exige una columna exportable en la lista
+   de productos de Inventario y el segundo revisa el control numerico compartido de los
+   formularios de Compra/Venta. Son deudas del ERP, ajenas a este cambio.
+
+2) Suites de Web sobre el TARGET (el 1 rojo del candidato):
+
+    cd apps/web && node --experimental-strip-types --test test/transport-tms-ui.test.mjs
+
+    not ok 1 - Transporte organiza el trabajo por etapas sin navegacion redundante
+    # tests 16
+    # pass 15
+    # fail 1
+
+   El rojo es un contrato de fuente de Transporte (busca el literal "3. Preparar la
+   operacion" en la pagina de vehiculos). Falla igual en main sin el modulo Comercio y
+   falla igual en el candidato. No es regresion del candidato.
+
+3) Typecheck del candidato:
+
+    npm --workspace apps/web run typecheck    -> EXIT 0 (sin errores)
+
+Veredicto: 3 de 3 rojos del candidato se reproducen, con el mismo nombre de prueba, sobre
+el commit target 938fc2b6. La regresion atribuible al candidato es cero.

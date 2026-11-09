@@ -1,0 +1,104 @@
+Verificacion local del candidato exclusivamente Comercio sobre origin/main
+
+Candidato: 1a8b4a75 (rama auxiliar codex/qa-comercio-main-20261108)
+Target:    origin/main = 938fc2b6f42cc54957b23c37446e0ad3f7560074
+Inventario medido: 78 rutas (58 A, 20 M), 0 archivos eliminados, +19.287 lineas y -42 lineas.
+Las 42 lineas que se van no son archivos ni funciones que desaparezcan: son lineas unicas
+de 12 archivos compartidos que Comercio reemplaza porque el codigo nuevo vive en otra parte
+(la tabla de errores inline del server pasa a mapApiError, las listas de modelos y permisos
+ganan la entrada de Comercio, y cuatro componentes de UI adoptan el token de tema). El
+inventario hunk por hunk, con la prueba de que el comportamiento no-Comercio de main sigue
+igual, esta en docs/qa/certifications/comercio-main-20261108.md.
+
+1) Suites de API del repositorio (arbol completo del candidato, base de datos local)
+
+    node --test apps/api/test/*.test.js        (con DATABASE_URL y JWT_SECRET del entorno local)
+
+    # tests 494
+    # pass 490
+    # fail 2
+    # skipped 2
+
+   Salida integra: api-suite.txt (sanitizada: sin rutas absolutas locales).
+   Los 2 rojos son contratos de Inventario y de Compra/Venta, no de Comercio:
+     - inventario ofrece lista de productos filtrable y exportable
+     - compras ventas IVA y retenciones reutilizan el control numerico
+   Reproducidos identicamente sobre el target 938fc2b6: ver baseline-reds-main-938fc2b6.txt.
+
+2) Suites de Web del repositorio (arbol completo del candidato)
+
+    cd apps/web && node --experimental-strip-types --test test/*.test.mjs
+
+    # tests 438
+    # pass 437
+    # fail 1
+
+   Salida integra: web-suite.txt (sanitizada).
+   El unico rojo es un contrato de fuente de Transporte
+   (Transporte organiza el trabajo por etapas sin navegacion redundante) y se reproduce
+   identicamente sobre el target 938fc2b6: ver baseline-reds-main-938fc2b6.txt.
+
+3) Typecheck del workspace web
+
+    npm --workspace apps/web run typecheck     -> exit 0, sin errores
+
+   Cubre el nuevo apps/web/components/ui/SearchSelect.tsx y su cableado en las paginas
+   de compras y vender, que antes importaban el componente de Transporte.
+
+4) Build de produccion del workspace web
+
+    npm --workspace apps/web run build         -> exit 0
+
+   Salida integra: web-build.txt.
+    - Compiled successfully in 76s
+    - 120 paginas estaticas generadas
+    - 11 rutas de Comercio compiladas: /dashboard/comercio, cartera, clientes, compras,
+      configuracion, gastos, productos, promociones, reportes, vender, ventas
+    - la vitrina publica server-rendered: /tienda/[code]
+
+5) Validacion de esquema Prisma del candidato
+
+    npm run prisma:validate                    -> exit 0
+    The schema at apps/api/prisma/schema.prisma is valid
+
+6) Certificacion funcional en ambiente QA (el ambiente donde el modulo ya opera)
+
+   No se certifica contra simulaciones: las tres corridas vivas se ejecutaron contra el
+   deploy de develop en Railway, commit 2cb064e2a896, con la empresa NYVORA habilitada.
+     - comercio-qa-certification.json .......... 79 controles, passed
+     - nyvora-certification.json ............... 48 controles, passed (empresa modelo)
+     - comercio-qa-browser.json ................ 33 controles, passed (navegador real)
+     - platform-regression-qa.txt .............. regresion de plataforma sobre QA
+
+7) Que NO se midio aqui y por que no bloquea
+
+   - Certificaciones locales de Commerce que dependen de datos sembrados a mano
+     (certify:comercio-storefront-theme:local, certify:comercio-ux:local) y de los
+     sembradores de fotos de demo: quedan fuera por la decision de exclus de las 131
+     imagenes de demo del candidato productivo. Su equivalente en ambiente real si se
+     midio: la certificacion de navegador en QA (33 controles) ejercita la vitrina
+     tematizada contra el deploy.
+   - DDL de Comercio en produccion y alta del bucket comercio-assets en produccion:
+     son pasos posteriores al push, con autorizacion independiente explicita, y se
+     reportan aparte; este archivo no los declara hechos.
+
+Veredicto: 3 rojos en 932 pruebas del arbol, los 3 reproducidos sobre el commit target.
+Regresion atribuible al candidato: cero. Typecheck y build de produccion en verde.
+
+8) Gates de promocion ejecutados sobre el tip de la rama auxiliar
+
+    npm run qa:promotion:scope -- docs/qa/evidence/comercio-main-20261108/main-scope-manifest.json HEAD origin/main
+
+    ALCANCE DE PROMOCION VALIDO: comercio-main-20261108 (86 rutas)
+
+    npm run qa:approval:evidence -- docs/qa/evidence/comercio-main-20261108/qa-approval-evidence.json
+
+    APROBACION QA VALIDA: comercio-main-20261108
+
+   La gate de alcance comprueba contra el diff real `origin/main..HEAD`: inventario exacto
+   de 86 rutas sin duplicados, baseline declarado == tip vigente de main, cero eliminaciones
+   permitidas y declaradas, cada ruta bajo un allowed_paths puntual y las 10 capacidades
+   protegidas con evidencia que existe en disco. La gate de aprobacion comprueba el entorno
+   QA, los 5 checks, la certificacion versionada, la regresion transversal, la certificacion
+   de empresa modelo NYVORA y el plan de rollback contra 938fc2b6.
+

@@ -1,0 +1,114 @@
+Cierre en desarrollo de la promocion de Comercio (M-30) a main
+Fecha: 2026-11-08
+Rama: desarrollo (punto de partida 91927f04, a la par con origin/desarrollo)
+
+Lo que este archivo registra: que el trabajo publicado en `main` vuelve a `desarrollo`
+para que el proximo manifiesto de alcance calcule contra el mismo arbol, y las verificaciones
+ejecutadas para ese cierre. No es evidencia de la promocion: esa esta en
+`gates-candidato.txt`, `baseline-reds-main-938fc2b6.txt`, `prod-post-deploy.json` y
+`qa-post-deploy.json`.
+
+1) Que aterrizo desde el destino
+
+    git checkout origin/main -- docs/qa/evidence/comercio-main-20261108/{api-suite.txt,
+      baseline-reds-main-938fc2b6.txt,gates-candidato.txt,main-scope-manifest.json,
+      qa-approval-evidence.json,web-build.txt,web-suite.txt}
+    git checkout origin/main -- docs/qa/certifications/comercio-main-20261108.md
+
+   Motivo: el candidato se construyo con commits puntuales sobre `origin/main` en un worktree
+   auxiliar, asi que esos 8 archivos existian solo en `main`. Un proximo inventario
+   `desarrollo -> develop` calculado contra este arbol los habria tratado como sobrantes.
+
+2) Gate post-despliegue versionada (nueva)
+
+    scripts/audit-comercio-postdeploy.js
+    npm run audit:comercio:postdeploy:prod   -> ok=true, 9 checks, fallas=[]
+    npm run audit:comercio:postdeploy:qa    -> ok=true, 9 checks, fallas=[]
+
+   Produccion: `commit=1b76376c0c37`, `version=2.0`, `modulos=18`;
+   `401 TOKEN_INVALIDO` en `/api/v1/comercio/settings` sin credenciales;
+   `404 CATALOG_NOT_FOUND` en la vitrina publica (la consulta llego a la tabla);
+   15 tablas `comercio%`; 6 migraciones en `_prisma_migrations` con `finished_at`;
+   `comercio` publicado (`is_active=true`, `/dashboard/comercio`, `visibility_scope=tenant`);
+   bucket `comercio-assets` `public=true`, `file_size_limit=5242880`,
+   `allowed_mime_types=["image/png","image/jpeg","image/webp"]`;
+   lectura anonima de un objeto inexistente responde `400 NoSuchKey` (el almacen contesto,
+   sin apikey, y no quedo ningun residuo del sondeo).
+
+   QA (mismas aserciones): `commit=2cb064e2a896`, `modulos=19`, y el mismo resto en verde.
+
+   Reporte, no asercion: `IMPORTADORA SCJ SAS` y `NYVORA` con `comercio enabled=false`.
+
+3) Correccion de la herramienta de alta del bucket
+
+   `scripts/ensure-comercio-assets-bucket.js` abortaba con `GET bucket -> 400` porque solo
+   reconocia el `404`. Supabase responde un bucket inexistente con HTTP 400 y
+   `code: "NoSuchBucket"` en el cuerpo. Se agrego `bucketInexistente(response)`, se movio la
+   exigencia de credenciales y de `CONFIRM_COMERCIO_BUCKET=true` a `assertConfig()` dentro de
+   `main()` y se guardo la ejecucion con `if (require.main === module)` para poder probar la
+   logica sin que el archivo escriba nada al requerirse.
+
+   Prueba que fija la conducta:
+
+     node --test apps/api/test/comercio-bucket-provisioning.test.js
+       # tests 2 / # pass 2 / # fail 0
+
+   Smoke del guard, sin escritura:
+
+     node -e "const s=require('./scripts/ensure-comercio-assets-bucket'); s.assertConfig()"
+       assertConfig lanzo: Set CONFIRM_COMERCIO_BUCKET=true: ...
+     node --check scripts/ensure-comercio-assets-bucket.js  -> exito
+
+4) Puertas de contexto del equipo
+
+     npm run agents:sync    -> sincronizados 11 agentes y 11 documentos
+     npm run agents:check   -> OK: 11 agentes y 11 documentos verificados
+     npm run test:agents    -> 46 pruebas, 46 pasan, 0 fallan
+     npm run agents:preflight -- --paths "<las 9 rutas del cierre>"
+       -> Veredicto: OK_CON_ADVERTENCIAS; rutea equipo-apexos, apexos-brief y apexos-qa
+          (los tres bumpueados en este cierre; tambien apexos-db-nube y apexos-git-guardian
+          por sus controles nuevos de ledger y de promocion a main)
+     npm run agents:coverage -> OK: contexto del equipo actualizado para todas las rutas
+        (36 rutas cubiertas)
+
+5) Suites del arbol cerrado
+
+   Web, sobre el tree de este cierre (no sobre el candidato):
+
+     cd apps/web && node --experimental-strip-types --test test/*.test.mjs
+       # tests 661 / # pass 661 / # fail 0 / # skipped 0   (34,6 s)
+
+   API, sobre el tree de este cierre — LIMITACION DECLARADA, no sustituye una corrida:
+
+     1er intento con `--env-file=config/local.env` -> `Can't reach database server at
+       localhost:54320`: ese archivo apunta al Supabase local muerto, mientras `.env` apunta
+       al `infra-postgres-1` real en :55432.
+     2do intento con `--env-file=.env` -> 80 subtests `ok`, 0 `not ok` y el proceso deja de
+       avanzar: los children de cron (`extractReceivedInvoiceXml` de hasta 40 s y
+       `apexControlPulse` en bucle) mantienen vivo el runner sin emitir el resumen. Se
+       corto la corrida a los ~20 min; el registro en crudo queda fuera del repositorio
+       porque trae rutas locales.
+
+   Por eso la cifra de API de este modulo sigue siendo la versionada del candidato en
+   `gates-candidato.txt` (494 pruebas / 490 pasan / 2 fallan / 2 saltan) y las 2 fallas se
+   reprodujeron en la baseline de `main` (`baseline-reds-main-938fc2b6.txt`), no en Comercio.
+   Ningun numero de API de este cierre se presenta como verde: la suite completa del tree
+   cerrado no termino.
+
+6) Diferencias medidas que este cierre NO toca
+
+   - 3 rutas de Comercio distintas entre el candidato publicado (`1a8b4a75`) y `desarrollo`:
+     `apps/web/app/dashboard/comercio/compras/page.tsx`,
+     `apps/web/app/dashboard/comercio/vender/page.tsx` y
+     `apps/web/test/comercio-ux-consistency.test.mjs`. La causa es el rename
+     `components/ui/SearchSelect` -> `components/transport/TransportSearchSelect`
+     (`49dc0a2c`, `aa06c5a0`), posterior al corte del candidato. `main` conserva el
+     `SearchSelect` certificado en QA y su arbol compila. Le toca al proximo manifiesto
+     `desarrollo -> develop`, con su `D` explicito en `allowed_deletions`.
+   - Deuda de esquema no-Comercio en produccion, intacta: `npm run audit:production:schema`
+     sobre el arbol desplegado `1b76376c` -> 166 modelos, 8 tablas faltantes (todas
+     `TransportSettlement*`), 0 columnas. El mismo guard contra el esquema de `desarrollo`
+     marca 191 modelos, 34 tablas y 5 columnas: es cuanto va `desarrollo` por delante, no
+     una falla de esta promocion.
+   - `BLOQUEO`: no hay certificacion funcional end-to-end en produccion porque habilitar
+     `comercio` en una empresa productiva es decision del duenyo, sin autorizacion expresa.

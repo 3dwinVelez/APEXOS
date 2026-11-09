@@ -1,0 +1,138 @@
+{
+  "ok": true,
+  "ambiente": "qa",
+  "ejecutado_en": "2026-11-09T00:29:05.586Z",
+  "checks": [
+    {
+      "id": "health_publica_commit_desplegado",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "commit": "2cb064e2a896",
+        "version": "2.0",
+        "modulos": 19
+      }
+    },
+    {
+      "id": "ruta_protegida_sin_token_devuelve_401_del_modulo",
+      "ok": true,
+      "detalle": {
+        "status": 401,
+        "code": "TOKEN_INVALIDO"
+      }
+    },
+    {
+      "id": "ruta_publica_del_catalogo_llega_al_servicio",
+      "ok": true,
+      "detalle": {
+        "status": 404,
+        "code": "CATALOG_NOT_FOUND"
+      }
+    },
+    {
+      "id": "las_15_tablas_de_comercio_existen",
+      "ok": true,
+      "detalle": {
+        "total": 15,
+        "faltantes": []
+      }
+    },
+    {
+      "id": "el_ledger_registra_las_6_migraciones_de_comercio",
+      "ok": true,
+      "detalle": {
+        "registradas": 6,
+        "faltan": [],
+        "sin_finished_at": []
+      }
+    },
+    {
+      "id": "comercio_publicado_en_el_catalogo",
+      "ok": true,
+      "detalle": {
+        "encontrado": 1,
+        "fila": {
+          "route": "/dashboard/comercio",
+          "is_active": true,
+          "visibility_scope": "tenant"
+        }
+      }
+    },
+    {
+      "id": "lectura_de_habilitacion_por_empresa",
+      "ok": true,
+      "detalle": {
+        "empresas": [
+          {
+            "nombre": "Cliente Piloto QA",
+            "enabled": true,
+            "source": "manual"
+          },
+          {
+            "nombre": "Cliente Produccion",
+            "enabled": false,
+            "source": "manual"
+          },
+          {
+            "nombre": "Empresa Demo APEX-OS",
+            "enabled": true,
+            "source": "manual"
+          },
+          {
+            "nombre": "NYVORA",
+            "enabled": true,
+            "source": "manual"
+          },
+          {
+            "nombre": "Prueba",
+            "enabled": false,
+            "source": "manual"
+          },
+          {
+            "nombre": "Puebla Operaciones",
+            "enabled": false,
+            "source": "manual"
+          },
+          {
+            "nombre": "QA Empresa A RLS",
+            "enabled": false,
+            "source": "manual"
+          },
+          {
+            "nombre": "QA Empresa B RLS",
+            "enabled": false,
+            "source": "manual"
+          },
+          {
+            "nombre": "SCJ",
+            "enabled": false,
+            "source": "plan"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bucket_comercio_assets_publico_con_topes_del_modulo",
+      "ok": true,
+      "detalle": {
+        "status": 200,
+        "public": true,
+        "file_size_limit": 5242880,
+        "allowed_mime_types": [
+          "image/png",
+          "image/jpeg",
+          "image/webp"
+        ]
+      }
+    },
+    {
+      "id": "la_ruta_publica_del_objeto_responde_sin_apikey",
+      "ok": true,
+      "detalle": {
+        "status": 400,
+        "code": "NoSuchKey"
+      }
+    }
+  ],
+  "fallas": []
+}

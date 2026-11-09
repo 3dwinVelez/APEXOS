@@ -1,0 +1,629 @@
+{
+  "change_id": "comercio-main-20261108",
+  "certification": "comercio-browser-qa-deployed",
+  "environment": "QA",
+  "branch_under_test": "develop",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "web_url": "https://apexos-web-qa-production.up.railway.app",
+  "supabase_project": "jbirkghkekuifgfsgquq",
+  "api_commit": "2cb064e2a896",
+  "expected_commit": "2cb064e2a896",
+  "model_company": {
+    "name": "NYVORA",
+    "tenant_id": "1d162ffd-bd27-4855-8141-b015388265fc"
+  },
+  "generated_at": "2026-11-08T23:13:43.250Z",
+  "viewport": {
+    "escritorio": {
+      "width": 1440,
+      "height": 900
+    },
+    "movil": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "scope": {
+    "capability": "Build desplegado en QA: sesin autenticada de la empresa modelo, men del shell con Comercio, las once rutas del panel sin 5xx, vitrina pblica pintada con el tema del tenant (oscuro y claro), imgenes reales del bucket, mvil sin desborde y bloqueo de la superficie privada sin sesin.",
+    "exclusion_de_consola_declarada": "El login de la web intenta primero Supabase y, al fallar, usa la API propia del producto. El 4xx de ese intento (/auth/v1/token) y el favicon ausente son el probes del propio producto, no un error: se registran en consola_descartada por URL y solo cuentan como falla los recursos del build que no estan declarados. Los 'Failed to load resource' de consola se llevan aparte porque su texto no trae URL: la URL se mide en la red."
+  },
+  "fixtures": {
+    "run_id": "20261108231343",
+    "users": [
+      657
+    ],
+    "roles": [
+      943
+    ],
+    "permissions": [
+      4120,
+      4121
+    ],
+    "nyvora_rows": [
+      {
+        "table": "comercio_settings",
+        "id": 26
+      },
+      {
+        "table": "comercio_products",
+        "id": 33
+      }
+    ]
+  },
+  "storage": {
+    "bucket": "comercio-assets",
+    "objects_created": [
+      "1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/33/a76c8efc-7eb0-4d89-a0bf-4c3581fe6394.png"
+    ],
+    "objects_left": null
+  },
+  "baseline_nyvora": {
+    "comercio_promotion_sends": 0,
+    "comercio_promotion_products": 0,
+    "comercio_promotion_categories": 0,
+    "comercio_promotions": 0,
+    "comercio_payments": 0,
+    "comercio_installments": 0,
+    "comercio_credits": 0,
+    "comercio_sale_items": 0,
+    "comercio_sales": 0,
+    "comercio_purchases": 0,
+    "comercio_expenses": 0,
+    "comercio_stock_movements": 0,
+    "comercio_settings": 0,
+    "comercio_products": 0,
+    "comercio_customers": 0
+  },
+  "rutas": [
+    {
+      "url": "/dashboard/comercio",
+      "esperado": "Comercio",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/productos",
+      "esperado": "Productos",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/vender",
+      "esperado": "Vender",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/ventas",
+      "esperado": "Ventas",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/clientes",
+      "esperado": "Clientes",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/cartera",
+      "esperado": "Cartera",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/compras",
+      "esperado": "Compras de mercancia",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/gastos",
+      "esperado": "Ingresos y egresos",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/promociones",
+      "esperado": "Promociones",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/reportes",
+      "esperado": "Reportes",
+      "ok": true
+    },
+    {
+      "url": "/dashboard/comercio/configuracion",
+      "esperado": "Configuracion del comercio",
+      "ok": true
+    }
+  ],
+  "consola": {
+    "errores": [],
+    "descartados": [],
+    "recursos": [],
+    "recursos_descartados": [
+      {
+        "estado": 404,
+        "ruta": "https://apexos-web-qa-production.up.railway.app/favicon.ico"
+      },
+      {
+        "estado": 400,
+        "ruta": "[SUPABASE]/auth/v1/token?grant_type=password"
+      }
+    ],
+    "recursos_consola": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 400 ()"
+    ]
+  },
+  "red": {
+    "cinco_xx": [],
+    "comercio": [
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/dashboard"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/products?include_inactive=true&limit=500"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/customers?limit=500"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/products?limit=500"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/sales?limit=200"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/customers?include_inactive=true&limit=500"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/credits?limit=200&status=open"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/products?limit=500"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/purchases?limit=200"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/expenses?limit=200"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/promotions"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/products?limit=500"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/reports/summary?from=2026-11-01&to=2026-11-08"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/movements?limit=200&from=2026-11-01&to=2026-11-08"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/settings"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/products?include_inactive=true&limit=500"
+      },
+      {
+        "estado": 200,
+        "ruta": "/api/v1/comercio/products?include_inactive=true&limit=500"
+      },
+      {
+        "estado": 204,
+        "ruta": "/api/v1/comercio/settings"
+      },
+      {
+        "estado": 200,
+        "ruta": "/api/v1/comercio/settings"
+      }
+    ],
+    "storage": [
+      {
+        "estado": 200,
+        "ruta": "/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/33/a76c8efc-7eb0-4d89-a0bf-4c3581fe6394.png"
+      },
+      {
+        "estado": 304,
+        "ruta": "/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/33/a76c8efc-7eb0-4d89-a0bf-4c3581fe6394.png"
+      },
+      {
+        "estado": 304,
+        "ruta": "/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/33/a76c8efc-7eb0-4d89-a0bf-4c3581fe6394.png"
+      }
+    ],
+    "total_peticiones": 78
+  },
+  "capturas": [
+    "docs/qa/evidence/comercio-main-20261108/browser/01-panel-portada-menu.png",
+    "docs/qa/evidence/comercio-main-20261108/browser/02-panel-configuracion-apariencia.png",
+    "docs/qa/evidence/comercio-main-20261108/browser/03-vitrina-tema-oscuro.png",
+    "docs/qa/evidence/comercio-main-20261108/browser/04-vitrina-tema-claro.png",
+    "docs/qa/evidence/comercio-main-20261108/browser/05-vitrina-movil.png"
+  ],
+  "checks": [
+    {
+      "name": "el_api_desplegado_es_el_commit_esperado",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "commit": "2cb064e2a896",
+        "esperado": "2cb064e2a896"
+      }
+    },
+    {
+      "name": "la_web_desplegada_responde",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "url": "https://apexos-web-qa-production.up.railway.app"
+      }
+    },
+    {
+      "name": "la_empresa_modelo_arranca_sin_documents_de_comercio",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "comercio_promotion_sends": 0,
+        "comercio_promotion_products": 0,
+        "comercio_promotion_categories": 0,
+        "comercio_promotions": 0,
+        "comercio_payments": 0,
+        "comercio_installments": 0,
+        "comercio_credits": 0,
+        "comercio_sale_items": 0,
+        "comercio_sales": 0,
+        "comercio_purchases": 0,
+        "comercio_expenses": 0,
+        "comercio_stock_movements": 0,
+        "comercio_settings": 0,
+        "comercio_products": 0,
+        "comercio_customers": 0
+      }
+    },
+    {
+      "name": "el_api_autentica_al_usuario_de_la_corrida",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "code": ""
+      }
+    },
+    {
+      "name": "la_vitrina_publica_queda_habilitada",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "habilitado": true
+      }
+    },
+    {
+      "name": "la_corrida_prepara_un_producto_en_la_empresa_modelo",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 201,
+        "code": "P-0001"
+      }
+    },
+    {
+      "name": "la_corrida_deja_un_producto_con_foto_en_el_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "subida": 201,
+        "url": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/c"
+      }
+    },
+    {
+      "name": "la_corrida_deja_el_tema_oscuro_del_tenant",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "code": ""
+      }
+    },
+    {
+      "name": "la_sesion_de_la_empresa_modelo_abre_el_panel",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "ruta": "/dashboard",
+        "auth_provider": "local"
+      }
+    },
+    {
+      "name": "el_menu_del_panel_muestra_comercio",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "presente": true,
+        "visible": true,
+        "texto": "Comercio",
+        "ruta": "/dashboard/comercio"
+      }
+    },
+    {
+      "name": "las_once_rutas_del_panel_muestran_su_encabezado",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "total": 11,
+        "fallidas": []
+      }
+    },
+    {
+      "name": "ninguna_ruta_del_panel_devuelve_5xx",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "peticiones_api": 63,
+        "cinco_xx": []
+      }
+    },
+    {
+      "name": "la_ruta_de_productos_muestra_el_producto_de_la_corrida",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "ms_hasta_la_fila": 919
+      }
+    },
+    {
+      "name": "la_configuracion_expone_la_apariencia_de_la_vitrina",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "tiene_apariencia": true,
+        "tiene_vitrina": true
+      }
+    },
+    {
+      "name": "la_vitrina_publica_se_pinta_con_el_fondo_del_tenant",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "fondo": {
+          "r": 11,
+          "g": 18,
+          "b": 32,
+          "a": 1
+        },
+        "luminosidad": 0.0061,
+        "url": "https://apexos-web-qa-production.up.railway.app/tienda/ff7dfs4f"
+      }
+    },
+    {
+      "name": "el_acento_del_boton_de_la_vitrina_es_el_del_tema",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "colorBoton": {
+          "r": 29,
+          "g": 78,
+          "b": 216,
+          "a": 1
+        },
+        "tintaBoton": {
+          "r": 255,
+          "g": 255,
+          "b": 255,
+          "a": 1
+        }
+      }
+    },
+    {
+      "name": "la_tinta_del_boton_publico_es_legible_sobre_el_acento",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "contraste": 6.7
+      }
+    },
+    {
+      "name": "el_titular_del_tenant_se_ve_en_la_vitrina",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "titular": "Vitrina oscura 20261108231343",
+        "buscado": "Vitrina oscura 20261108231343"
+      }
+    },
+    {
+      "name": "el_producto_de_la_corrida_se_ve_con_su_precio",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "nombre": true,
+        "precio": true
+      }
+    },
+    {
+      "name": "la_foto_del_producto_se_pinta_desde_el_bucket",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "foto": {
+          "completa": true,
+          "ancho": 600,
+          "alto": 600
+        },
+        "ruta_objeto": "1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/33/a76c8efc-7eb0-4d89-a0bf-4c3581fe6394.png",
+        "src_navegador": "https://jbirkghkekuifgfsgquq.supabase.co/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/33/a76c8efc-7eb0-4d89-a0bf-4c3581fe6394.png",
+        "storage_http": [
+          {
+            "estado": 200,
+            "ruta": "/storage/v1/object/public/comercio-assets/1d162ffd-bd27-4855-8141-b015388265fc/comercio/products/33/a76c8efc-7eb0-4d89-a0bf-4c3581fe6394.png"
+          }
+        ]
+      }
+    },
+    {
+      "name": "la_corrida_cambia_el_tema_a_claro",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "status": 200,
+        "base": "#f8fafc"
+      }
+    },
+    {
+      "name": "la_vitrina_clara_pinta_el_fondo_claro_del_tenant",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "fondo": {
+          "r": 248,
+          "g": 250,
+          "b": 252,
+          "a": 1
+        },
+        "luminosidad": 0.9536
+      }
+    },
+    {
+      "name": "el_acento_claro_sigue_al_tema_y_se_contra_su_tinta",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "colorBoton": {
+          "r": 14,
+          "g": 116,
+          "b": 144,
+          "a": 1
+        },
+        "contraste": 5.36
+      }
+    },
+    {
+      "name": "la_vitrina_no_desborda_en_movil",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "desborde": 0,
+        "ancho_visual": 390,
+        "ancho_documento": 390
+      }
+    },
+    {
+      "name": "el_panel_de_comercio_sin_sesion_no_muestra_un_dato_del_tenant",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "ruta": "/dashboard/comercio",
+        "encabezado": "Acceso no autorizado",
+        "peticiones_comercio": [],
+        "lecturas_2xx_sin_token": 0
+      }
+    },
+    {
+      "name": "el_panel_sin_sesion_explica_el_bloqueo_de_acceso",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "ruta": "/dashboard/comercio",
+        "encabezado": "Acceso no autorizado",
+        "visto": "En línea Idioma ES EN PT Herramientas Centro de comandos Ctrl K Comercio Acceso no autorizado Tu rol no tiene permisos para abrir Comercio. Si necesitas acceso, solicita ajuste de rol a un administrador. Volver al tablero"
+      }
+    },
+    {
+      "name": "la_consola_no_registra_errores_de_javascript_del_producto",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "errores": [],
+        "descartados": []
+      }
+    },
+    {
+      "name": "ningun_recurso_de_la_web_falla_sin_explicacion_declarada",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "recursos": [],
+        "descartados_por_declaracion": [
+          {
+            "estado": 404,
+            "ruta": "https://apexos-web-qa-production.up.railway.app/favicon.ico"
+          },
+          {
+            "estado": 400,
+            "ruta": "[SUPABASE]/auth/v1/token?grant_type=password"
+          }
+        ],
+        "ecos_de_consola": 2
+      }
+    },
+    {
+      "name": "ninguna_peticion_del_recorrido_completo_devuelve_5xx",
+      "ok": true,
+      "blocking": true,
+      "detail": {
+        "peticiones_api": 78,
+        "cinco_xx": []
+      }
+    },
+    {
+      "name": "nyvora_vuelve_a_su_linea_base_de_documents",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "sobrantes": []
+      }
+    },
+    {
+      "name": "el_inventario_del_bucket_de_la_empresa_modelo_queda_vacio",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "carpetas": 0,
+        "estado": 200,
+        "entradas": []
+      }
+    },
+    {
+      "name": "ningun_usuario_efimero_sobrevive",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "filas": 0
+      }
+    },
+    {
+      "name": "ningun_rol_efimero_sobrevive",
+      "ok": true,
+      "blocking": false,
+      "detail": {
+        "filas": 0
+      }
+    }
+  ],
+  "limpiaza_ejecutada": true,
+  "status": "passed",
+  "summary": {
+    "total_checks": 33,
+    "fallidos": [],
+    "rutas": 11,
+    "capturas": 5,
+    "errores_de_consola": 0,
+    "recursos_con_falla": 0,
+    "peticiones_api": 78
+  },
+  "finished_at": "2026-11-08T23:15:20.405Z"
+}

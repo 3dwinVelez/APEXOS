@@ -2,8 +2,8 @@
 name: apexos-db-nube
 description: Experto en base de datos en la nube del Equipo APEXOS: PostgreSQL, Prisma (apps/api/prisma/schema.prisma), Supabase, Railway, migraciones SQL, RLS y aislamiento multi-tenant. Usar para cambios de esquema, migraciones, fallback Supabase, políticas RLS, conexiones locales/nube o auditoría de alineación de esquemas QA/Producción.
 when_to_use: Esquema Prisma, migraciones SQL, Supabase, RLS, aislamiento tenant, conexiones de base de datos locales o en la nube.
-version: 2.0.0
-updated_at: 2026-11-03
+version: 2.1.0
+updated_at: 2026-11-08
 contract: 2
 ---
 
@@ -40,6 +40,14 @@ Antes de actuar, leer en este orden:
 9. **Seeds por tenant real.** Nunca asumir un UUID fijo ni un único tenant.
 10. **Alineación comprobada, no afirmada.** Antes de declarar QA/Producción alineados: `npm run audit:qa:schema` y `npm run audit:production:schema`. Ramas y entornos pueden divergir.
 11. **Datos sensibles fuera del cliente.** La service role vive solo en servidor; nunca en cliente, commits ni `.env` versionado.
+
+12. **Un DDL quirúrgico en la nube se aplica a mano, con el checksum correcto y el guard del proyecto.** Cuando el destino tiene migraciones pendientes de otros módulos, `prisma migrate deploy` está prohibido por alcance, no por practicidad: aplicaría deuda ajena. El procedimiento medido en producción el 2026-11-08 (Comercio, 6 migraciones y 15 tablas):
+    - **El `checksum` de `_prisma_migrations` es el SHA-256 del `migration.sql` normalizado a LF**, que coincide con el hash del blob de git. El hash del archivo en el árbol de trabajo con CRLF **no** coincide; registrarlo deja al cliente Prisma viendo una migración corrupta. Se comprueba contra un ambiente que ya la tenga (QA) antes de escribir en producción.
+    - **`_prisma_migrations` en producción no tiene índice único sobre `migration_name`**, solo `PRIMARY KEY (id)`. La inserción se precede de una lectura de existencia y se fija `id = gen_random_uuid()::text`, `applied_steps_count = 1`, `logs = NULL`, `started_at`/`finished_at` en `now()`. Asumir un `on conflict` implícito es escribir filas duplicadas.
+    - **Las migraciones bajo `supabase/migrations/` no entran al ledger de Prisma.** Se aplican y se verifican por su efecto (la fila `comercio` en `public.modules`), imitando lo que ya está medido en QA.
+    - **Todo script que escribe en la nube declara el project ref esperado y aborta sin conectar** si `DATABASE_URL`/`SUPABASE_URL` no lo contienen (`jzbwzmkidfthknsohhnr` producción, `jbirkghkekuifgfsgquq` QA), y nunca imprime la clave. En producción la conexión válida es el pooler de sesión `:5432`; el host directo es IPv6-only desde este puesto.
+    - **La alineación residual se reporta con su número exacto y su dueño.** Medido el 2026-11-08 sobre el árbol desplegado `1b76376c`: 8 tablas faltantes, todas `TransportSettlement*`, 0 columnas. Continúa siendo deuda de Transporte y no se «aprovecha» para alinearsela de paso.
+    Por qué: el pedido fue «solo el módulo de Comercio, nada más»; un `migrate deploy` verde habría traído 28 migraciones ajenas a producción y un checksum mal calculado habría convertido el próximo `migrate status` en un falso fallo que empuja a corregir el ledger, no el producto.
 
 ## Checklist de intervención
 
