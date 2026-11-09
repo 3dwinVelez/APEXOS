@@ -84,3 +84,21 @@ igual, esta en docs/qa/certifications/comercio-main-20261108.md.
 
 Veredicto: 3 rojos en 932 pruebas del arbol, los 3 reproducidos sobre el commit target.
 Regresion atribuible al candidato: cero. Typecheck y build de produccion en verde.
+
+8) Gates de promocion ejecutados sobre el tip de la rama auxiliar
+
+    npm run qa:promotion:scope -- docs/qa/evidence/comercio-main-20261108/main-scope-manifest.json HEAD origin/main
+
+    ALCANCE DE PROMOCION VALIDO: comercio-main-20261108 (86 rutas)
+
+    npm run qa:approval:evidence -- docs/qa/evidence/comercio-main-20261108/qa-approval-evidence.json
+
+    APROBACION QA VALIDA: comercio-main-20261108
+
+   La gate de alcance comprueba contra el diff real `origin/main..HEAD`: inventario exacto
+   de 86 rutas sin duplicados, baseline declarado == tip vigente de main, cero eliminaciones
+   permitidas y declaradas, cada ruta bajo un allowed_paths puntual y las 10 capacidades
+   protegidas con evidencia que existe en disco. La gate de aprobacion comprueba el entorno
+   QA, los 5 checks, la certificacion versionada, la regresion transversal, la certificacion
+   de empresa modelo NYVORA y el plan de rollback contra 938fc2b6.
+
