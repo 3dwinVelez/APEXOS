@@ -614,8 +614,12 @@ test("los maestros quedan en SOFT_DELETE y fuera del borrado fisico", () => {
   assert.match(softDelete, /"PettyCashConcept", "PettyCashBox"/);
   const physical = core.slice(core.indexOf("const PHYSICAL_DELETE_ALLOWED"));
   assert.doesNotMatch(physical.slice(0, physical.indexOf("];")), /PettyCash/);
-  const tenantModels = core.slice(core.indexOf("const TENANT_MODELS"), core.indexOf("const WRITE_OPS"));
-  assert.match(tenantModels, /"PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine"/);
+  // El filtro por empresa se deriva del schema desde la Fase 1 del candado; la
+  // prueba comprueba el conjunto real en lugar de una lista escrita en prisma.js.
+  const { TENANT_MODELS } = require("../src/core/tenantModels");
+  for (const name of ["PettyCashConcept", "PettyCashBox", "PettyCashAdvance", "PettyCashVoucher", "PettyCashVoucherLine"]) {
+    assert.ok(TENANT_MODELS.has(name), `${name} debe quedar filtrado por empresa`);
+  }
 });
 
 test("la reporteria de T4 queda expuesta bajo /petty-cash/reports (solo lectura)", () => {
