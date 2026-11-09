@@ -1,0 +1,96 @@
+{
+  "certificacion": "sesion-administracion-produccion-20261108",
+  "flujo_certificado": "Abrir Administracion con una sesion Supabase valida sin contexto de empresa",
+  "ambiente": "local",
+  "ejecutado_en": "2026-11-09T03:20:27.865Z",
+  "commit": "8086570c3c6253f47df881182ab72e04eca2ff41",
+  "cheques": 11,
+  "fallos": 0,
+  "mediciones": {
+    "sesion_sin_empresa": {
+      "estado": 403,
+      "code": "EMPRESA_NO_VINCULADA",
+      "duracion_ms": 62
+    },
+    "credencial_invalida": {
+      "estado": 401,
+      "code": "TOKEN_INVALIDO",
+      "duracion_ms": 10
+    },
+    "anonimo": {
+      "estado": 401,
+      "code": "TOKEN_INVALIDO",
+      "duracion_ms": 10
+    },
+    "contratos_de_codigo": {
+      "server.js responde 403 cuando el error trae statusCode 403": true,
+      "server.js usa 500 EMPRESA_NO_RESUELTA al no poder leer el tenant": true,
+      "tenancy.js devuelve 403 EMPRESA_REQUERIDA": true,
+      "rbac.js no devuelve 401 por rol ausente": true,
+      "supabaseAuth.js tipa los rechazos con statusCode 403": true,
+      "lib/api.ts conoce los codigos de alcance": true
+    }
+  },
+  "resultados": [
+    {
+      "chequeo": "sesion Supabase valida sin empresa responde 403 y conserva la sesion",
+      "resultado": "OK",
+      "detalle": "403 EMPRESA_NO_VINCULADA en 62 ms"
+    },
+    {
+      "chequeo": "token que no resuelve identidad sigue respondiendo 401 TOKEN_INVALIDO",
+      "resultado": "OK",
+      "detalle": "401 TOKEN_INVALIDO"
+    },
+    {
+      "chequeo": "peticion anonima sigue siendo 401",
+      "resultado": "OK",
+      "detalle": "401 TOKEN_INVALIDO"
+    },
+    {
+      "chequeo": "apps/web: contrato de alcance y clearSession solo bajo 401 (5/5)",
+      "resultado": "OK",
+      "detalle": "exit=0 pass=5 # tests 5 # fail 0"
+    },
+    {
+      "chequeo": "apps/api: authorization-status-codes 6/6 con AUTH_STATUS_INTEGRATION=1",
+      "resultado": "OK",
+      "detalle": "# tests 6 # pass 6 # fail 0"
+    },
+    {
+      "chequeo": "contrato de codigo: server.js responde 403 cuando el error trae statusCode 403",
+      "resultado": "OK",
+      "detalle": "presente"
+    },
+    {
+      "chequeo": "contrato de codigo: server.js usa 500 EMPRESA_NO_RESUELTA al no poder leer el tenant",
+      "resultado": "OK",
+      "detalle": "presente"
+    },
+    {
+      "chequeo": "contrato de codigo: tenancy.js devuelve 403 EMPRESA_REQUERIDA",
+      "resultado": "OK",
+      "detalle": "presente"
+    },
+    {
+      "chequeo": "contrato de codigo: rbac.js no devuelve 401 por rol ausente",
+      "resultado": "OK",
+      "detalle": "presente"
+    },
+    {
+      "chequeo": "contrato de codigo: supabaseAuth.js tipa los rechazos con statusCode 403",
+      "resultado": "OK",
+      "detalle": "presente"
+    },
+    {
+      "chequeo": "contrato de codigo: lib/api.ts conoce los codigos de alcance",
+      "resultado": "OK",
+      "detalle": "presente"
+    }
+  ],
+  "notas": [
+    "El servidor real escucha en 127.0.0.1 y el borde de Supabase esta simulado en localhost; no se usan credenciales reales.",
+    "No hay medicion contra produccion en esta certificacion: ahi sigue corriendo el build anterior y expulsa hasta la promocion.",
+    "El 401 de credencial invalida y el 401 anonimo se miden en la misma corrida para probar que la autenticacion no se aflojo."
+  ]
+}

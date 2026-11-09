@@ -86,3 +86,44 @@ y no es evidencia.
      npm run agents:coverage  -> OK: contexto del equipo actualizado para todas las rutas
        apexos-brief 2.23.0 local-ahead  |  apexos-backend 2.11.0 local-ahead  |
        apexos-frontend 2.12.0 local-ahead
+
+7) Certificacion end-to-end versionada del paquete (ronda 2, 2026-11-08)
+
+     npm run certify:sesion-admin:local
+       -> node scripts/certifications/sesion-administracion-local.js
+          --output=docs/qa/evidence/sesion-admin-produccion-20261108/certificacion-local.json
+
+     Cheques medidos (11/11, exit 0):
+       OK  sesion Supabase valida sin empresa responde 403 y conserva la sesion
+            :: 403 EMPRESA_NO_VINCULADA en 62 ms   (servidor real en 127.0.0.1, socket efimero)
+       OK  token que no resuelve identidad sigue respondiendo 401 TOKEN_INVALIDO
+       OK  peticion anonima sigue siendo 401
+       OK  apps/web: contrato de alcance y clearSession solo bajo 401 :: # tests 5 # fail 0
+       OK  apps/api: authorization-status-codes :: # tests 6 # pass 6 # fail 0
+            (AUTH_STATUS_INTEGRATION=1, corrida dentro de esta misma certificacion)
+       OK  6 contratos de fuente: server 403 por statusCode, server 500 EMPRESA_NO_RESUELTA,
+            tenancy 403 EMPRESA_REQUERIDA, rbac sin 401 por rol y 4 ROL_NO_DEFINIDO,
+            supabaseAuth statusCode 403 + EMPRESA_NO_VINCULADA, lib/api.ts SESSION_SCOPE_CODES
+
+     El borde de Supabase esta simulado en localhost y solo reconoce el token del escenario; no
+     se usan credenciales reales ni datos de produccion. El JSON de evidencia se verifico sin
+     rutas absolutas de la estacion y sin secretos.
+
+7.1) Dos defectos del arnes corregidos en esta ronda (del verifier, no del producto)
+
+     a) La primera corrida paso 11/11 y NO termino: `app.close()` no detiene el planificador de
+        cron que el arranque registra, asi que el proceso quedo vivo mas de diez minutos y el
+        `npm run` no devolvia exit. Se agrego `process.exit(0)` / `process.exit(1)` explicito, el
+        mismo patron de `accounting-standard-chart-local.js:212` y
+        `transport-income-accounting-local.js:141`. Un gate que no termina se lee como ausencia
+        de evidencia y bloquea la promocion igual que un rojo.
+     b) El script necesita el `.env` de la raiz (`scripts/load-env`) porque `require(server)` abre
+        Prisma al construirse; sin base de datos el fallo seria de infraestructura y se
+        reportaria como falla del contrato.
+
+8) Gates de contexto del equipo, ronda 2
+
+     npm run agents:sync      -> sincronizados 11 agentes y 11 documentos
+     npm run agents:check     -> OK: 11 agentes y 11 documentos verificados
+     npm run test:agents      -> # tests 46 / # pass 46 / # fail 0
+     npm run agents:preflight -> Veredicto: OK (rutea apexos-qa sobre las rutas nuevas)

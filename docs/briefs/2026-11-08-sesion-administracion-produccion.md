@@ -61,6 +61,7 @@ Inventario: **20 M, 5 A, 0 D**. M = 6 de codigo y pruebas (`server.js`, `middlew
 | Prueba de contrato API (con integracion real) | 6/6 |
 | Pruebas API afectadas | 32/32 |
 | Suite web completa | 666/666 (661 preexistentes + 5 nuevas) |
+| Certificacion end-to-end versionada | `npm run certify:sesion-admin:local` 11 cheques / 0 fallos |
 
 ## Criterios de aceptacion observables
 
@@ -71,18 +72,32 @@ Inventario: **20 M, 5 A, 0 D**. M = 6 de codigo y pruebas (`server.js`, `middlew
 3. El mensaje en pantalla nombra la causa (empresa o rol faltante) y dice que la sesion sigue
    activa.
 4. Ninguna ruta 403 puede alcanzar `clearSession` (asercion estructural sobre la fuente).
+5. `npm run certify:sesion-admin:local` termina en verde con 11 cheques y deja el JSON de
+   evidencia en el repositorio. Un gate que no devuelve veredicto cuenta como fallo.
 
 ## Evidencia exigida
 
-`docs/qa/evidence/sesion-admin-produccion-20261108/diagnostico.txt` y `pruebas.txt`.
+`docs/qa/evidence/sesion-admin-produccion-20261108/diagnostico.txt`, `pruebas.txt` y
+`certificacion-local.json` (salida de `npm run certify:sesion-admin:local`,
+`scripts/certifications/sesion-administracion-local.js`).
+
+La certificacion levanta el servidor real escuchando en loopback contra un borde Supabase
+simulado, mide en la misma corrida el 403 de sesion valida sin empresa y el 401 de credencial
+invalida, corre las dos suites del contrato y cierra con seis contratos de fuente. Dos hallazgos
+del arnes quedaron escritos: `app.close()` no detiene el cron del arranque y habia que terminar
+con `process.exit` explicito (la corrida pasaba 11/11 y seguia colgada), y el script necesita el
+`.env` de la raíz porque `require(server)` abre Prisma.
 
 ## Deudas que este brief publica
 
-1. **Bloqueado por autorizacion:** el fix no esta en produccion. `main` sigue en `1b76376c` y hoy
-   expulsa. Promover a `develop` y a `main` pide autorizacion independiente.
-2. **Bloqueado por autorizacion:** la cuenta maestra necesita vinculo de empresa en produccion
-   (salidas A/B/C/D en el diagnostico). A y B escriben datos productivos; C y D cambian
-   autorizacion y les toca `apexos-seguridad`.
+1. **Autorizada y en curso:** el dueno autorizo promover el paquete `desarrollo -> develop -> main`
+   ("Si: a develop y luego a main"). Hasta que el deploy no cambie, `main` sigue en `1b76376c` y
+   hoy expulsa; la verificacion post-despliegue es obligatoria y no se declara resuelto antes de
+   medirla.
+2. **Autorizada y sin implementar:** la salida C (respaldo de plataforma en `supabaseAuth`) queda
+   autorizada para `desarrollo`. No se aplico en esta intervencion: cambia autorizacion y exige
+   revision de `apexos-seguridad`. Las salidas A y B siguen sin autorizacion porque escriben datos
+   productivos.
 3. Sin certificacion funcional end-to-end con la sesion real del usuario: reproducir el sintoma
    exige la clave de la cuenta y ninguna prueba de este cierre la usa.
 4. `apps/api/server.js` y `apps/api/test/**` no tienen agente dueno en el ruteo (`el preflight los

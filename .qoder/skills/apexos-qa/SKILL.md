@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.30.0
+version: 2.31.0
 updated_at: 2026-11-08
 contract: 2
 ---
@@ -138,6 +138,7 @@ Antes de actuar, leer en este orden:
     Por qué: el pedido fue «el módulo completo de Comercio, nada más»; un `200` en la home o un build verde no distinguen un módulo desplegado de uno ausente, y sin DDL la vitrina pública falla igual por otra causa.
 
 43. **Un cambio de códigos de estado se certifica con el servidor real levantado y con el caso espejo, no con un clon del `catch`.** Cuatro mandatory del 2026-11-08: (a) arrancar `require("../server")` e inyectar la ruta afectada con `app.inject` —los tests que re-implementan el `preHandler` local prueban su propio borrador y no la app—; (b) medir el caso contrario (credencial inválida sigue 401) en la misma corrida; (c) el stub del borde externo (Supabase) **solo** reconoce el token del escenario: un stub que devuelve usuario válido para cualquier bearer hace que el token basura caiga en la rama de empresa y la prueba se rompa por defecto de la prueba, no del producto; (d) correr con `--test-force-exit` (los cron hijos del arranque no dejan cerrar el proceso) y **sin tuberías**: `... | tail -30` devuelve el exit de `tail`, y quedó registrado un resumen de 0 bytes con `exit=0`. Un resumen que no se escribió no es evidencia y no se presenta como verde. Por qué: la primera corrida real falló `403 !== 401` por el stub, y una corrida enmascarada por `tail` habría cerrado el incidente sin medición.
+44. **La promoción de un paquete de sesión se despacha con una certificación versionada invocable por nombre, y un gate que no termina es un gate fallido.** `npm run certify:sesion-admin:local` (`scripts/certifications/sesion-administracion-local.js`) levanta el servidor real escuchando en un socket efímero, mide los tres casos (sesión Supabase sin empresa 403, credencial inválida 401, anónimo 401), corre las dos suites del contrato y cierra con los seis contratos de fuente; el JSON se escribe en `docs/qa/evidence/**` sin rutas locales ni credenciales. Dos cosas se aprendieron midiendo: (a) `app.close()` **no** detiene el planificador de cron del arranque, así que el proceso queda vivo y el gate nunca devuelve veredicto — hay que terminar con `process.exit(0)` explícito, como ya hacen `accounting-standard-chart-local.js` y `transport-income-accounting-local.js`; (b) el script carga `scripts/load-env` con el `.env` de la raíz porque `require(server)` abre Prisma: sin base de datos el fallo sería de infraestructura, no del contrato. Por qué: la corrida del 2026-11-08 pasó 11/11 y **siguió colgada más de diez minutos**; un verifier que se cuelga se lee como «no hay evidencia» y bloquea la promoción igual que un rojo.
 
 ## Checklist de intervención
 
