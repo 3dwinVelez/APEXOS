@@ -65,3 +65,7 @@ entorno: LOCAL (Docker infra-postgres/redis/minio/brain; API 127.0.0.1:3000 serv
     Un body con company_id ajeno llega al handler (AJV descarta el campo) y la referencia de otro tenant
     se rechaza con 400 REFERENCIA_INVALIDA; campos obligatorios ausentes responden 400 FST_ERR_VALIDATION.
     -> public-form-local.json
+
+11. VALIDADORES DE PROMOCION
+    qa:promotion:scope  -> ALCANCE DE PROMOCION VALIDO: plan-candado-seguridad-20261109 (66 rutas)
+    qa:preqa:evidence  -> AUTORIZACION PRE-QA VALIDA: plan-candado-seguridad-20261109
