@@ -33,6 +33,7 @@
 - 2026-06-11: El rol exacto `Tecnico` queda limitado a permisos de lectura y operacion de Servicios. Su navegacion no expone dashboard, administracion ni otros modulos.
 - 2026-06-11: El seed local crea y mantiene diez tecnicos demo activos con ficha laboral asociada para asignacion obligatoria en ordenes.
 - 2026-06-14: La insignia de sesion inicia con un estado estable entre servidor y navegador y sincroniza la identidad despues del montaje, eliminando advertencias de hidratacion sin ocultar errores de sesion.
+- 2026-11-09: Las ventanas de crear, editar e inactivar empresa de Suscripciones dejaron de ser capas `fixed inset-0` dentro de la pagina y usan `ModalFrame` portado sobre `document.body`: el alta se abre centrada con velo, foco atrapado, Escape y scroll del fondo bloqueado, en lugar de aparecer incrustada y recortada por la animacion de la pagina. El ancho del panel se declara con `md:!max-w-2xl` (panel de 672 px) y `md:!max-w-md` (confirmacion), y crear/editar comparten los mismos campos mediante `CompanyFields` con el submit del pie enlazado por `form`.
 
 ## Regla de experiencia
 

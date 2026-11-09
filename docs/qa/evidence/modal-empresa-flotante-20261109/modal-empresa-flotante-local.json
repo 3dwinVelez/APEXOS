@@ -1,0 +1,157 @@
+{
+  "certification": "modal-empresa-flotante-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://localhost:3311",
+  "target": "/dashboard/administracion/suscripciones",
+  "generatedAt": "2026-11-09T14:18:57.391Z",
+  "checks": [
+    {
+      "name": "servidor_web_levantado",
+      "passed": true,
+      "detail": {
+        "url": "http://localhost:3311"
+      }
+    },
+    {
+      "name": "pantalla_de_empresas_disponible",
+      "passed": true,
+      "detail": {
+        "estado": "ready"
+      }
+    },
+    {
+      "name": "el_modal_abre_como_dialogo",
+      "passed": true,
+      "detail": {
+        "title": "Crear empresa"
+      }
+    },
+    {
+      "name": "el_modal_se_porta_al_body",
+      "passed": true,
+      "detail": {
+        "portaled": true,
+        "insideTransition": false,
+        "insideMain": false
+      }
+    },
+    {
+      "name": "el_velo_cubre_toda_la_ventana",
+      "passed": true,
+      "detail": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 900,
+        "background": "rgba(10, 10, 10, 0.55)"
+      }
+    },
+    {
+      "name": "el_velo_pinta_fondo_oscuro",
+      "passed": true,
+      "detail": {
+        "background": "rgba(10, 10, 10, 0.55)"
+      }
+    },
+    {
+      "name": "el_modal_flota_centrado_en_el_viewport",
+      "passed": true,
+      "detail": {
+        "centeredX": 0,
+        "centeredY": 0,
+        "dialog": {
+          "x": 384,
+          "y": 36,
+          "width": 672,
+          "height": 828,
+          "top": 36,
+          "bottom": 864,
+          "right": 1056,
+          "scrollOverflow": 0
+        },
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "scrollY": 92
+      }
+    },
+    {
+      "name": "el_modal_no_se_recorta",
+      "passed": true,
+      "detail": {
+        "top": 36,
+        "bottom": 864,
+        "right": 1056,
+        "height": 900,
+        "scrollOverflow": 0
+      }
+    },
+    {
+      "name": "el_modal_abre_como_panel_acotado",
+      "passed": true,
+      "detail": {
+        "width": 672,
+        "viewport": 1440
+      }
+    },
+    {
+      "name": "el_fondo_bloquea_el_scroll",
+      "passed": true,
+      "detail": {
+        "bodyOverflow": "hidden"
+      }
+    },
+    {
+      "name": "el_foco_se_mantiene_al_escribir",
+      "passed": true,
+      "detail": {
+        "value": "AB",
+        "focused": true
+      }
+    },
+    {
+      "name": "escape_cierra_y_devuelve_el_foco",
+      "passed": true,
+      "detail": {
+        "focused": "Crear empresa",
+        "bodyOverflow": "hidden auto"
+      }
+    },
+    {
+      "name": "el_modal_conserva_la_posicion_con_la_pagina_desplazada",
+      "passed": true,
+      "detail": {
+        "topConLaPaginaDesplazada": 36,
+        "topArribaDelTodo": 36,
+        "scrollAlAbrir": 92
+      }
+    },
+    {
+      "name": "el_modal_pinta_la_superficie_clara",
+      "passed": true,
+      "detail": {
+        "background": "rgb(255, 255, 255)"
+      }
+    },
+    {
+      "name": "el_modal_respeta_el_tema_oscuro",
+      "passed": true,
+      "detail": {
+        "lightBackground": "rgb(255, 255, 255)",
+        "background": "rgb(23, 35, 45)",
+        "ink": "rgb(242, 245, 247)",
+        "contrast": 14.588086216177178
+      }
+    },
+    {
+      "name": "cancelar_cierra_el_modal",
+      "passed": true,
+      "detail": {
+        "cerrado": true
+      }
+    }
+  ],
+  "status": "passed",
+  "serverLogTail": "  We detected TypeScript in your project and reconfigured your tsconfig.json file for you. Strict-mode is set to false by default.\n  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:\n  \t- include was updated to add '.next-dev-company-modal/types/**/*.ts'\n  \t- include was updated to add '.next-dev-company-modal/dev/types/**/*.ts'\n- Experiments (use with caution):\n  · optimizePackageImports\n○ Compiling /login ...\n[apex-web] Web did not respond in time for CSS validation.\n GET /login 200 in 55s (next.js: 52s, application-code: 2.8s)\n GET /login 200 in 284ms (next.js: 145ms, application-code: 139ms)\n○ Compiling /manifest.webmanifest ...\n GET /manifest.webmanifest 200 in 6.0s (next.js: 5.8s, application-code: 196ms)\n GET /dashboard/administracion/suscripciones 200 in 7.7s (next.js: 7.4s, application-code: 282ms)\n GET /manifest.webmanifest 200 in 94ms (next.js: 82ms, application-code: 12ms)\n GET /dashboard 200 in 419ms (next.js: 10ms, application-code: 409ms)\n GET /login 200 in 420ms (next.js: 22ms, application-code: 398ms)\n GET /manifest.webmanifest 200 in 24ms (next.js: 11ms, application-code: 13ms)\n POST /api/platform/company-sessions 500 in 1990ms (next.js: 1803ms, application-code: 187ms)\n GET /api/platform/company-sessions?company_id=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&minutes=30 500 in 1580ms (next.js: 1228ms, application-code: 352ms)\n○ Compiling /api/platform/company-sessions ..."
+}

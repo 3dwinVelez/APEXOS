@@ -1,0 +1,44 @@
+Gates del candidato del modal de empresa a develop — 2026-11-09
+==============================================================
+
+Candidato: codex/qa-modal-empresa-flotante-20261109 (primer commit de la rama auxiliar, el que fija
+el manifiesto de alcance) sobre origin/develop 6edf85c7. Todo lo de abajo se midio sobre el mismo
+arbol de producto que ya se publico en origin/desarrollo (commit dbc3cf9b); la gobernanza de
+agentes no viaja a develop.
+
+1) Certificacion de navegador: node apps/web/test/certify-company-modal-floating-local.mjs
+
+   16 comprobaciones / 0 fallos -> modal-empresa-flotante-local.json (status passed)
+   Capturas: company-modal-light.png y company-modal-dark.png
+
+   Arnes aislado: stub de Supabase REST (platform_admins activo, v_user_companies, empresas y
+   modulos) + next dev propio, viewport 1440x900. Mide portal sobre document.body, velo 1440x900,
+   centrado por geometria, ausencia de recorte, ancho acotado de 672 px, bloqueo de scroll, foco
+   estable al teclear, Escape con retorno de foco, posicion independiente del scroll de la pagina,
+   pintura clara y oscura con contraste 14,59:1, y cierre por Cancelar.
+
+2) Prueba de fuente: node --test apps/web/test/admin-company-modal-frame.test.mjs
+
+   2/2. Exige el import de ModalFrame, cero className="fixed inset-0, exactamente tres marcos y el
+   cableado form/id de crear y editar mas los tres titulos.
+
+3) Arbol: lint, typecheck y build del workspace apps/web
+
+   npm --workspace apps/web run lint -> 0 errores, 22 advertencias preexistentes en archivos no
+   tocados por el candidato.
+   npm --workspace apps/web run typecheck -> sin salida (exit 0).
+   npm --workspace apps/web run build -> exit 0.
+
+4) Puertas de promocion (revalidadas sobre el commit del candidato)
+
+   npm run qa:promotion:scope -- docs/qa/manifests/modal-empresa-flotante-20261109-scope.json codex/qa-modal-empresa-flotante-20261109 origin/develop
+   -> ALCANCE DE PROMOCION VALIDO: modal-empresa-flotante-20261109 (11 rutas)
+
+   npm run qa:preqa:evidence -- docs/qa/manifests/modal-empresa-flotante-20261109-preqa.json
+   -> AUTORIZACION PRE-QA VALIDA: modal-empresa-flotante-20261109
+
+5) Limites de la medida
+
+   La apertura visual se certifico contra el arbol local con el borde simulado, no contra
+   produccion. La verificacion en el ambiente desplegado depende del despliegue de main y se
+   declara en el cierre de la promocion; este paquete no toca API, migraciones, Railway ni Supabase.

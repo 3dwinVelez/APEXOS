@@ -1,0 +1,25 @@
+Suite web completa sobre el arbol del candidato a main
+======================================================
+
+Arbol medido    : codex/qa-modal-empresa-main-20261109, reconstruido sobre origin/main 85fc46ec
+Comando         : node --env-file=<.env local> --test --test-force-exit apps/web/test/*.test.mjs   (desde la raiz del worktree)
+Resultado       : # tests 445 / # pass 444 / # fail 1 / # cancelled 0 / # skipped 0        (exit 1)
+
+El unico rojo es preexistente del destino y no depende del candidato:
+
+  - Transporte organiza el trabajo por etapas sin navegacion redundante  (transport-tms-ui.test.mjs)
+
+Atribucion medida, no supuesta: la prueba lee exclusivamente rutas de Transporte
+(app/dashboard/transporte/**, components/transport/**, components/tms-live-map.tsx) y su propio
+archivo. `git diff --name-only 85fc46ec..HEAD -- apps/web/test/transport-tms-ui.test.mjs
+apps/web/app/dashboard/transporte` devuelve 0 rutas: el candidato no toca ni la prueba ni las
+paginas que evalua. La prueba falla porque la pagina de Transporte de main no contiene el texto
+"3. Preparar la operacion" que la prueba espera; es la misma deuda ya documentada en la promocion
+sesion-main-20261108 contra 1b76376c.
+
+Delta del candidato frente al destino:
+  tests 443 -> 445   (+2)  apps/web/test/admin-company-modal-frame.test.mjs
+  pass  442 -> 444   (+2)
+  fail    1 -> 1     (0)   mismo nombre
+
+Regresiones atribuibles al candidato: 0.

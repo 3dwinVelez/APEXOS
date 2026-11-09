@@ -1,0 +1,51 @@
+Puertas del candidato a main - modal de crear empresa flotante
+==============================================================
+
+Arbol medido    : codex/qa-modal-empresa-main-20261109, reconstruido sobre origin/main 85fc46ec
+Destino         : origin/main 85fc46ec
+Alcance         : la pagina de Suscripciones, sus dos pruebas y la documentacion/evidencia del modal.
+                  No toca API, esquema, migraciones ni otros modulos. Cero eliminaciones.
+
+1. Certificacion de navegador sobre este arbol
+   Script    : apps/web/test/certify-company-modal-floating-local.mjs
+   Resultado : 16/16 comprobaciones, exit 0
+   Medicion  : panel 672 x 828 en viewport 1440 x 900, centrado exacto (centeredX 0, centeredY 0),
+               velo 1440 x 900 rgba(10,10,10,0.55), fondo con overflow hidden, foco estable al
+               escribir, Escape cierra y devuelve el foco, posicion estable con la pagina desplazada
+               (scrollY 92), superficie clara rgb(255,255,255) y oscura rgb(23,35,45) con
+               contraste 14.59 sobre rgb(242,245,247).
+   Evidencia : modal-empresa-flotante-local.json, company-modal-light.png, company-modal-dark.png
+
+2. Prueba de fuente sobre este arbol
+   Script    : apps/web/test/admin-company-modal-frame.test.mjs
+   Resultado : 2/2, exit 0 (cero capas fixed inline; tres ModalFrame; pie enlazado por form)
+
+3. Lint web
+   Comando   : npm --workspace apps/web run lint
+   Resultado : 0 errores, 13 advertencias preexistentes
+
+4. Typecheck
+   Comando   : npm --workspace apps/web run typecheck
+   Resultado : exit 0
+
+5. Build de produccion
+   Comando   : npm --workspace apps/web run build
+   Resultado : exit 0 (compila y prerenderiza el arbol sin errores)
+
+6. Suite web completa sobre este arbol
+   Comando   : node --env-file=<.env local> --test --test-force-exit apps/web/test/*.test.mjs
+   Resultado : 445 tests / 444 pass / 1 fail
+   Unico rojo: "Transporte organiza el trabajo por etapas sin navegacion redundante"
+   Atribucion: la prueba y las paginas de Transporte no aparecen en el diff del candidato
+               (0 rutas); el rojo es una deuda preexistente del destino, ya documentada en la
+               promocion sesion-main-20261108. Regresiones atribuibles: 0.
+   Evidencia : web-suite-main.txt
+
+7. Regresion transversal QA con empresa modelo NYVORA
+   Script    : scripts/certifications/platform-regression-qa.js
+   Comando   : QA_EXPECTED_COMMIT=414213603345 CONFIRM_NYVORA_FIXTURE=true
+   Resultado : ok, environment QA, model_company NYVORA, commit medido 414213603345
+               (el candidato de develop desplegado en QA, con el mismo arbol de producto),
+               6 capacidades en verde: session, services_orders, services_references,
+               hr_employees, inventory_items, accounting_accounts; no autorizados bloqueados (401).
+   Evidencia : platform-regression-qa.txt
