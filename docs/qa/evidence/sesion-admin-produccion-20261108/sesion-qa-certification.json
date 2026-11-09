@@ -1,0 +1,60 @@
+{
+  "certificacion": "sesion-administracion-qa",
+  "alcance": "sesion-admin-produccion-20261108",
+  "ambiente": "QA",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "empresa_modelo": "NYVORA",
+  "commit_esperado": "6edf85c7",
+  "commit_medido": "6edf85c7d622",
+  "run_id": "8qakmaa3fa",
+  "ejecutado_en": "2026-11-09T03:55:45.827Z",
+  "controles": [
+    {
+      "control": "01 salud_y_commit_desplegado",
+      "ok": true,
+      "detail": "health=OK commit=6edf85c7d622 esperado=6edf85c7"
+    },
+    {
+      "control": "02 administracion_sin_sesion_sigue_siendo_401",
+      "ok": true,
+      "detail": "401 TOKEN_INVALIDO"
+    },
+    {
+      "control": "03 token_basura_sigue_siendo_401",
+      "ok": true,
+      "detail": "401 TOKEN_INVALIDO"
+    },
+    {
+      "control": "04 token_firmado_sin_la_clave_real_sigue_siendo_401",
+      "ok": true,
+      "detail": "401 TOKEN_INVALIDO"
+    },
+    {
+      "control": "05 cuenta_valida_sin_empresa_responde_403_empresa_no_vinculada",
+      "ok": true,
+      "detail": "403 EMPRESA_NO_VINCULADA"
+    },
+    {
+      "control": "06_la_sesion_sin_empresa_no_es_expulsada",
+      "ok": true,
+      "detail": "auth/me=403 admin/roles=403 code=EMPRESA_NO_VINCULADA"
+    },
+    {
+      "control": "07_NYVORA_vinculada_no_es_expulsada",
+      "ok": true,
+      "detail": "auth/me=200 admin/roles=403 code=MODULO_NO_HABILITADO"
+    },
+    {
+      "control": "08 limpieza_verificada_sin_vinculos_remanentes",
+      "ok": true,
+      "detail": "sin_vinculo=403 MODULO_NO_HABILITADO filas_remanentes=0"
+    },
+    {
+      "control": "09 cuentas_efimeras_eliminadas_y_api_sana",
+      "ok": true,
+      "detail": "cuentas_restantes=0 health_final=OK"
+    }
+  ],
+  "cheques": 9,
+  "fallos": 0
+}

@@ -1,0 +1,23 @@
+Suite web completa sobre el arbol del candidato a main
+=====================================================
+
+Arbol medido    : codex/qa-sesion-main-20261108, commit 3fa6a5f0 (reconstruido sobre origin/main 1b76376c)
+Comando         : node --env-file=.env --test --test-force-exit apps/web/test/*.test.mjs   (desde la raiz)
+Resultado       : # tests 443 / # pass 442 / # fail 1 / # cancelled 0 / # skipped 0        (exit 1)
+
+El unico rojo es preexistente del destino y se reproduce con el MISMO nombre en la corrida limpia
+de 1b76376c:
+
+  - Transporte organiza el trabajo por etapas sin navegación redundante
+
+Delta contra el destino limpio:
+
+  tests 438 -> 443   (+5)  apps/web/test/session-scope-403.test.mjs
+  pass  437 -> 442   (+5)
+  fail    1 -> 1     (0)
+  skipped 0 -> 0     (0)
+
+Regresiones atribuibles al candidato: 0. Las 5 pruebas nuevas fijan el contrato del cliente: los
+codigos de alcance (EMPRESA_REQUERIDA, EMPRESA_NO_VINCULADA, EMPRESA_NO_AUTORIZADA) se traducen a
+un mensaje que nombra la causa y declara que la sesion sigue activa, y ningun clearSession( queda
+bajo una rama que no sea 401.

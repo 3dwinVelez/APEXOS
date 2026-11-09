@@ -1,0 +1,11 @@
+Certificacion de sesion en QA contra https://apexos-api-qa-production.up.railway.app (run 8qakmaa3fa)
+  OK  01 salud_y_commit_desplegado :: health=OK commit=6edf85c7d622 esperado=6edf85c7
+  OK  02 administracion_sin_sesion_sigue_siendo_401 :: 401 TOKEN_INVALIDO
+  OK  03 token_basura_sigue_siendo_401 :: 401 TOKEN_INVALIDO
+  OK  04 token_firmado_sin_la_clave_real_sigue_siendo_401 :: 401 TOKEN_INVALIDO
+  OK  05 cuenta_valida_sin_empresa_responde_403_empresa_no_vinculada :: 403 EMPRESA_NO_VINCULADA
+  OK  06_la_sesion_sin_empresa_no_es_expulsada :: auth/me=403 admin/roles=403 code=EMPRESA_NO_VINCULADA
+  OK  07_NYVORA_vinculada_no_es_expulsada :: auth/me=200 admin/roles=403 code=MODULO_NO_HABILITADO
+  OK  08 limpieza_verificada_sin_vinculos_remanentes :: sin_vinculo=403 MODULO_NO_HABILITADO filas_remanentes=0
+  OK  09 cuentas_efimeras_eliminadas_y_api_sana :: cuentas_restantes=0 health_final=OK
+CERTIFICACION QA OK: 9 cheques, 0 fallos -> docs\qa\evidence\sesion-main-20261108\sesion-qa-certification.json

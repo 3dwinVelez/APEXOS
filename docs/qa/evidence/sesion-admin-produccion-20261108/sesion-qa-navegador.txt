@@ -1,0 +1,85 @@
+Certificacion de navegador en el ambiente QA desplegado (celda obligatoria de CHANGE_APPROVAL_QA_POLICY)
+Alcance: contrato de sesion de Administracion 401 -> 403
+Fecha: 2026-11-08
+Ambiente medido: https://apexos-web-qa-production.up.railway.app (web) contra
+https://apexos-api-qa-production.up.railway.app (api) con el Supabase de QA.
+Commit desplegado medido en esta corrida: 6edf85c7d622 (salud OK; el mismo commit que certifica
+la corrida de API sesion-qa-certification-salida.txt, run 8qakmaa3fa).
+Arbol promovido a main: 3fa6a5f0, reconstruccion puntual del mismo paquete sobre 1b76376c. Las
+lineas del contrato se verificaron en el arbol de main, no copiadas del de develop:
+  apps/api/server.js:127 (403 con el codigo del error) y :153 (500 EMPRESA_NO_RESUELTA)
+  apps/api/src/middleware/tenancy.js:12 (403 EMPRESA_REQUERIDA)
+  apps/api/src/middleware/rbac.js (4 rechazos 403 ROL_NO_DEFINIDO)
+  apps/api/src/security/supabaseAuth.js:197 (statusCode 403) y :385 (EMPRESA_NO_VINCULADA)
+  apps/web/lib/api.ts:155 (SESSION_SCOPE_CODES, ningun 403 llega a clearSession)
+
+1) Que se reprodujo y por que esta es la celda que faltaba
+
+   La corrida de API (sesion-administracion-qa.js) mide codigos HTTP. La politica exige ademas
+   el sintoma reportado por el dueno visto desde el navegador: "abro Administracion y me bota".
+   El arnes anterior de QA no cubria ese caso porque el rechazo del cliente nunca llegaba a la
+   API: la pantalla de "Acceso no autorizado" se dibuja por el guard de ruta
+   (apps/web/components/shell/RouteAccessGuard.tsx:54), que corta antes de montar el modulo.
+
+   Se reconstruyo el escenario real de produccion: una cuenta de plataforma ACTIVA en
+   `platform_admins` y con CERO vinculos de empresa. Con esa forma, el guard si abre
+   (PLATFORM_ADMIN_MODULE_SLUGS incluye administracion, lib/moduleAccess.ts:15) y el montaje del
+   modulo si dispara los GET contra /api/v1/admin/*, que es la ruta que expulsaba al usuario.
+
+2) Fixture
+
+   Cuenta efimera de Supabase creada por el arnes (correo de fixture del arnes, nunca del dueno),
+   con perfil en `profiles` y fila activa en `platform_admins`, y cero filas en `company_users`.
+   Nadie mas que esa cuenta fue tocada. Al cerrar la corrida se elimino la fila de
+   `platform_admins`, la de `profiles`, la de `company_users` (no habia) y la cuenta de Auth.
+   Verificacion posterior a la limpieza: platform_admins=0 filas, profiles=0 filas,
+   company_users=0 filas, DELETE de auth devolvio 200.
+
+3) Medida en el navegador, en el orden en que ocurrio
+
+   a) Inicio de sesion por "Entrar de forma segura" con la cuenta efimera -> queda
+      auth_provider=supabase, token presente (878 caracteres), ruta /dashboard. No hubo expulsion
+      en el login.
+   b) /dashboard muestra "Administracion APEX" en Mis modulo (el guard de ruta abre para el
+      admin de plataforma sin empresa).
+   c) Clic en "Administracion APEX". Resultado medido:
+        - la URL final es /dashboard/administracion (NO /login);
+        - la pantalla monto el modulo: encabezado "Administracion APEX", catalogo administrativo
+          con 36 registros y banda de error explícita: "No fue posible consultar tipos de
+          servicio, almacenes de servicio, preguntas de satisfaccion. Revisa permisos RLS, empresa
+          activa o conectividad Supabase.";
+        - peticiones de red de la API durante el montaje:
+            GET /api/v1/admin/platform-logs?limit=120  -> 403
+            GET /api/admin/users (proxy Next hacia la API) -> 403
+        - sin peticion de refresh y sin redireccion: el 403 se quedo en 403.
+   d) Se leyo el estado de la sesion despues de los 403:
+        ruta_actual=/dashboard/administracion, sesion_sigue_viva=true, misma sub del token.
+   e) Se pulso "Actualizar" (reintento del usuario). Segunda ronda de rechazos, misma conducta:
+            GET /api/v1/admin/platform-logs?limit=120  -> 403
+            GET /api/admin/users                        -> 403
+      la sesion siguio viva y la URL no cambio. El rechazo repetido no acumula expulsiones.
+   f) Se consulto el endpoint exacto del sintoma desde la propia pagina, con el token vivo de la
+      sesion (se registran codigo y mensaje, nunca el token):
+            GET /api/v1/admin/roles -> 403  code=EMPRESA_NO_VINCULADA
+            error="Esta cuenta no tiene una empresa activa asociada"
+      Antes del fix este mismo request devolvia 401 TOKEN_INVALIDO y lib/api.ts ejecutaba
+      clearSession() + window.location.href="/login" (cadena leida en el arbol desplegado y
+      documentada en diagnostico.txt de la evidencia de develop, secciones 2 y 3).
+
+4) Veredicto de la celda
+
+   El sintoma reportado esta cerrado en un ambiente desplegado: abrir Administracion con una
+   cuenta de plataforma sin vinculo de empresa deja de expulsar la sesion, la pantalla nombra la
+   causa y el reintento no agrava el estado. La autenticacion no se relajo: los rechazos de
+   credencial siguen respondiendo 401 y estan medidos en los controles 02, 03 y 04 de la corrida
+   de API del mismo ambiente.
+
+5) Lo que esta celda NO afirma
+
+   - No afirma que la cuenta maestra de produccion pueda CARGAR Administracion: con 403 la
+     pantalla sigue sin datos. Eso depende de la salida C (respaldo de plataforma en
+     supabaseAuth), autorizada para desarrollo y aun sin implementar.
+   - No mide produccion: produccion corre 1b76376c hasta el push. La verificacion post-despliegue
+     se hace con el gate de despliegue despues del deploy, no con este archivo.
+   - No usa la cuenta del dueno ni escribe datos productivos: el fixture es una cuenta sintetica
+     del arnes en el Supabase de QA, creada y eliminada dentro de la misma corrida.
