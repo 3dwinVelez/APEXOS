@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.29.0",
+      "version": "2.30.0",
       "updated_at": "2026-11-09",
-      "sha256": "98921b979e2b438b5cc74d1f6a3a16c2a91a096d9ca2e361dc9a5480c509660f",
+      "sha256": "25999162a1515fd193ab7b9768e8f59ea2a12f1ca954e7498a4514b33e02f7ec",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -126,7 +126,8 @@
         "paridad-contra-el-arbol-publicado",
         "incidente-separa-codigo-de-datos",
         "brief-registra-reparto-de-commits-y-limitaciones",
-        "brief-de-promocion-con-deriva-declarada"
+        "brief-de-promocion-con-deriva-declarada",
+        "brief-candidato-main-con-compuerta-bloqueada"
       ]
     },
     {

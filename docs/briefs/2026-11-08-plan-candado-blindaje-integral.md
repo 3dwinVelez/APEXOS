@@ -414,3 +414,41 @@ Se excluyó el árbol de gobernanza (`agents/**`, `.qoder/skills/**`, `scripts/a
 
 **Lo que sigue abierto.** `main` requiere aprobación funcional de QA antes de promoverse; el enforcement de revocación sigue apagado y exige una corrida medida con autorización propia; R-03 y el proyecto Vercel en 500 con credenciales siguen como en §16/§17. `reports/security/` quedó sin versionar por ser salida local.
 
+## 19. Candidato de `main`: reconstrucción y certificación local (2026-11-09)
+
+**Instrucción literal del dueño:** «procede con la implementacion certificada hacia el main y cierra el caso». Al medir, la promoción directa resultó imposible sin violar el alcance: `main` no es ancestro de `develop` y la diferencia son **433 commits** (806 A / 59 D / 159 M / 1 R). El dueño eligió entonces, por pantalla, **«Preparar el candidato ahora»**: rehacer el bloque sobre `main`, resolver los conflictos, certificarlo en local **sin tocar `main` ni QA** y entregar el diff exacto y lo que falta para la prueba funcional. Eso es lo que se ejecutó.
+
+**El candidato se reconstruyó sobre `db3e63a6`, no se mergeó.** Trece commits: los diez del bloque reproducidos uno a uno, más la adaptación al esquema de `main`, la evidencia local y el manifiesto.
+
+| commit | contenido |
+|---|---|
+| `6ba90fe1` | Fase 0: gates del candado e inspección RLS |
+| `913dc0e4` | Fase 1: módulo público sin service role y empresa derivada del schema |
+| `c0e61e75` | Fase 2: revocación observable, rotación de refresh, login uniforme, `trustProxy` |
+| `d00ffa86` | Cierre de la Fase 2 contra el stack local |
+| `d0d77d95` | Evidencia E2E del formulario público |
+| `1e5b17ec` | Espejo Supabase que no reactiva cuentas ni empresas |
+| `b2e47f2d` | Variables de ambiente y `TRUST_PROXY` en Railway |
+| `953d9109` | Allowlist del formulario público por ambiente |
+| `4f32a6ef` | Candado de la Fase 1 sobre la línea base de `develop` |
+| `740ea1a2` | Contratos de tenant mirando `TENANT_MODELS` derivado |
+| `6147f8fb` | **Adaptación al esquema de `main`**: los `TransportPyg*` no existen allí |
+| `1d47ba6f` | Evidencia local de la certificación |
+| `6d8bf110` | Manifiesto de alcance v2 y compuerta QA pendiente |
+
+El candidato queda en la ref local `candidato/seguridad-main-20261109` (commit funcional certificado `6147f8fb`). No se hizo push, ni merge, ni despliegue: `main` sigue en `db3e63a6` y QA sigue en `c72955d2`.
+
+**Conflictos resueltos y su criterio.** `apps/api/src/core/prisma.js` conservó el archivo de `main` (con `SOFT_DELETE` y `PHYSICAL_DELETE_ALLOWED`) y solo sustituyó la lista escrita a mano por `const { TENANT_MODELS } = require("./tenantModels")`. La ruta BFF del formulario tomó la reescritura de seguridad completa: `serviceRoleKey` aparece **0 veces** y la empresa sale de `APEXOS_PUBLIC_SERVICE_COMPANY_ID`. `inventory-transfer-tenancy-contract.test.js` se adaptó a `TENANT_MODELS`. La adaptación de `petty-cash-masters.test.js` **no viaja**: `main` no tiene el modelo `PettyCash*` ni el archivo.
+
+**Deriva del esquema de `main`, declarada y no silenciada.** `TransportPygConcept/Budget/SourceMap/Config` solo existen en el esquema de `desarrollo`; el contrato nominado y la sonda de creación se acotaron a los modelos que `main` tiene (`6147f8fb`), sin tocar la garantía principal —«todo modelo con columna `tenant_id` queda dentro del filtro»— que cubre los 157 modelos reales. El candado marca `global_models_not_in_schema` de 0 a 3 (`ApexComponent`, `ApexHealthSample`, `ApexReportRun`), la misma deriva ya declarada en §18, y `tenant_models_filtered` es 157 frente a 176 de `develop` precisamente porque `main` tiene menos modelos. Ninguno de los archivos de código tocados referencia modelos ausentes.
+
+**Certificación local medida contra el destino.** API **547/542/2 fallos/3 omitidas** contra baseline `db3e63a6` **500/495/2/3**: las mismas dos fallas del árbol de `main` sin el bloque («lista de productos filtrable y exportable», «compras ventas IVA y retenciones»), 47 pruebas nuevas y **0 regresiones atribuibles**. Web **458/457/1** contra baseline **445/444/1**, con la misma falla de navegación de Transporte. `typecheck` y `lint` en 0 errores (13 warnings preexistentes), `prisma validate` válido, gate candado y auditoría de CI en verde (0 advisories fuera de la allowlist vigente, 20 tolerados). `certify:auth-session` contra la API del candidato: cinco manipulaciones del JWT responden 401 y la revocación queda `measured=true`, `enforced=false`. Formulario público **6/6** sondas anónimas sin crear órdenes. El gate RLS local falla por estado del Postgres compartido de desarrollo (216 tablas, 100 sin RLS, 4 sin `FORCE`), no por el candidato, que no trae migraciones; la inspección de QA en solo lectura reporta 251 tablas, 108 políticas, **0 sin RLS** y 41 diferencias de formato.
+
+**Manifiesto v2 validado.** `qa:promotion:scope` sobre `candidato/seguridad-main-20261109` contra `origin/main` responde **«ALCANCE DE PROMOCION VALIDO: plan-candado-main-20261109 (66 rutas)»**, con **42 A / 24 M / 0 D**, `base_commits.main = db3e63a6`, `certified_commit = 6147f8fb` y `allowed_deletions: []`. Evidencia en `docs/qa/evidence/plan-candado-main-20261109/` (15 archivos).
+
+**BLOQUEO declarado: la promoción a `main` no está autorizada todavía.** El manifiesto marca `promotion_state.authorized_to_push_main = false` y `qa-gate-pending.txt` enumera los diez requisitos sin cumplir: prueba funcional en QA sobre el commit exacto, escenarios de error, scripts de soporte, regresión de plataforma, certificación E2E y NYVORA versionadas, evidencia de navegador, `rollback_plan` con `previous_main_commit = db3e63a6` y la aprobación firmada del responsable. Ninguno se puede ejecutar sin desplegar el candidato en QA, lo que reemplaza el despliegue actual y exige credenciales de despliegue que esta sesión perdió (ver siguiente párrafo).
+
+**Incidente de la sesión, registrado.** Al limpiar un worktree con `node_modules` enlazados, `git worktree remove` y el borrado posterior arrastraron directorios del árbol principal: se recuperaron los 1061 archivos rastreados con `git restore` y las dependencias con `npm ci` + `prisma:generate` (suites de nuevo en verde), pero se perdieron archivos locales **no versionados**: `apps/control-tower/.env.local` (JWTs de ambiente y tokens de Railway/Supabase/Vercel) y los artefactos de `.next` y `apps/control-tower/data/`. El registro de la torre debe reingresarse por su dueño; no se copió ninguna copia residual porque contenía credenciales.
+
+**Límites de la medida.** No se desplegó el candidato en QA; el recorrido E2E de esta ronda es API + sondas anónimas, sin navegador; la base local es la de desarrollo, compartida, con tablas que `main` no declara. Ninguna de esas limitaciones convierte el candidato en «aprobado»: separan lo certificado en local de lo que solo el ambiente puede demostrar.
+
