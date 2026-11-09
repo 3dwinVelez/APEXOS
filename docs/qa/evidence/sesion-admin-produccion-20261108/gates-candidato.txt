@@ -83,4 +83,16 @@ del cierre de develop.
 
 7) Salidas de las puertas de gobernanza
 
-   (se registran despues de ejecutarlas; ver el final del archivo)
+   Corridas contra el candidato final cd58c876 (3fa6a5f0 + manifiestos/evidencia), destino
+   origin/main = 1b76376c0c37, que es el baseline declarado en el manifiesto.
+
+   npm run qa:promotion:scope -- docs/qa/manifests/sesion-main-20261108-scope.json HEAD origin/main
+     ALCANCE DE PROMOCION VALIDO: sesion-admin-produccion-20261108 (23 rutas)
+
+   npm run qa:approval:evidence -- docs/qa/manifests/sesion-main-20261108-approval.json
+     APROBACION QA VALIDA: sesion-admin-produccion-20261108
+
+   Las 23 rutas son 16 A y 7 M, cero eliminaciones, y coinciden con el inventario exacto del
+   manifiesto (scope_schema_version 2). El guard ademas verifica que el destino no se movio del
+   baseline aprobado y que el commit funcional certificado 3fa6a5f0 esta contenido en el
+   candidato, asi que el arbol que se promotiona es el arbol que se certifico.
