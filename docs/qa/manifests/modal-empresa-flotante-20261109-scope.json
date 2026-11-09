@@ -1,0 +1,136 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "modal-empresa-flotante-20261109",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-modal-empresa-flotante-20261109",
+  "certified_commit": "21a78214b43f8b08415ab809d0bedd9932cb9d58",
+  "base_commit": "6edf85c7d6222c5019336538e3dee78c0e404354",
+  "base_commits": {
+    "develop": "6edf85c7d6222c5019336538e3dee78c0e404354"
+  },
+  "target_head": "6edf85c7d6222c5019336538e3dee78c0e404354",
+  "change_intent": {
+    "summary": "La ventana «Crear empresa» de /dashboard/administracion/suscripciones deja de estar incrustada en el listado y se abre como dialogo flotante acotado. El defecto venia de produccion: los tres dialogos de la pantalla (crear, editar e inactivar empresa) eran capas `fixed inset-0` inline, y el shell del dashboard anima cada pagina con `.apex-page-enter`, cuyo keyframe declara `transform`; un `position: fixed` bajo un ancestro transformado se posiciona contra ese ancestro y no contra el viewport, asi que el formulario se pintaba dentro del contenido, recortado y sin velo. La intervencion migra los tres dialogos a `ModalFrame` (createPortal sobre document.body, foco atrapado, Escape, scroll bloqueado), reutiliza `CompanyFields` en crear y editar con el submit del pie enlazado por atributo `form`, y declara el ancho con `md:!max-w-2xl` / `md:!max-w-md` porque el tope base de la primitiva gana la cascada y el panel salia a 1392 px en un viewport de 1440. Se agregan una prueba de fuente y una certificacion de navegador de 16 comprobaciones con su evidencia; el arbol que se lleva a develop es el mismo que ya se publico en origin/desarrollo, recortado a producto, prueba, evidencia y manifiestos de esta promocion (la gobernanza de agentes no existe en develop y no viaja aqui).",
+    "modules": [
+      "administracion",
+      "modal-y-evidencia-de-promocion"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/administracion/suscripciones/page.tsx",
+    "apps/web/test/admin-company-modal-frame.test.mjs",
+    "apps/web/test/certify-company-modal-floating-local.mjs",
+    "docs/project/modulos/administracion.md",
+    "docs/qa/certifications/modal-empresa-flotante-20261109.md",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-dark.png",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/gates-candidato.txt",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/suscripciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/admin-company-modal-frame.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-company-modal-floating-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/administracion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/modal-empresa-flotante-20261109.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/gates-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/modal-empresa-flotante-20261109-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/modal-empresa-flotante-20261109-scope.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/administracion/suscripciones/page.tsx",
+    "apps/web/test/admin-company-modal-frame.test.mjs",
+    "apps/web/test/certify-company-modal-floating-local.mjs",
+    "docs/project/modulos/administracion.md",
+    "docs/qa/certifications/modal-empresa-flotante-20261109.md",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/",
+    "docs/qa/manifests/modal-empresa-flotante-20261109-preqa.json",
+    "docs/qa/manifests/modal-empresa-flotante-20261109-scope.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "El alta de empresa se abre como dialogo portado sobre document.body, ajena a la animacion de la pagina: el velo cubre el viewport y el formulario no se pinta dentro del listado",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+        "../../../apps/web/test/certify-company-modal-floating-local.mjs"
+      ]
+    },
+    {
+      "name": "El panel flota centrado, sin recorte y con ancho acotado (672 px en un viewport de 1440), no a pantalla completa",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+        "../../../apps/web/test/certify-company-modal-floating-local.mjs"
+      ]
+    },
+    {
+      "name": "Foco, Escape, Cancelar y scroll del fondo: el foco se mantiene al escribir, Escape cierra y devuelve el foco al disparador, el fondo no hace scroll y el modal conserva su posicion con la pagina desplazada",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../../../apps/web/test/certify-company-modal-floating-local.mjs"
+      ]
+    },
+    {
+      "name": "La superficie del panel se pinta con el tema de la app: claro rgb(255,255,255) y oscuro rgb(23,35,45) con contraste 14,59:1 en el titulo",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-dark.png"
+      ]
+    },
+    {
+      "name": "Los tres dialogos de la pantalla usan ModalFrame y el pie pegajoso envia los formularios de crear y editar por atributo form, sin capas fixed inline",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/admin-company-modal-frame.test.mjs",
+        "../../../apps/web/app/dashboard/administracion/suscripciones/page.tsx"
+      ]
+    }
+  ],
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "21a78214b43f8b08415ab809d0bedd9932cb9d58"
+  }
+}
