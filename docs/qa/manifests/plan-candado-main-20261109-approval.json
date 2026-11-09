@@ -1,0 +1,138 @@
+{
+  "change_id": "plan-candado-main-20261109",
+  "manifest_status": "FIRMADO",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_method": "reconstruction",
+  "commit": "6147f8fb8467e3f9010f1de03636031bfe149085",
+  "commit_note": "commit registra 6147f8fb, el commit de contenido del bloque de seguridad reconstruido sobre origin/main db3e63a6. Su descendiente 6d8bf110 solo agrega evidencia, manifiesto de alcance y este manifiesto, asi que el arbol de producto evaluado y el arbol promovido son el mismo.",
+  "evaluated_environment_commit": "c72955d22f9749d628b6b67ab175deeaa1ad445c",
+  "equivalence_note": "El ambiente QA sirve c72955d2 (tip de develop), que contiene el mismo bloque de seguridad que el candidato: se verifico linea por linea que assertActorPassword (admin/service.js 1211 y 1383), isAdministrativeRole y requireExplicitPermission (middleware/rbac.js), el espejo sin active:true y los 403 EMPRESA_SUSPENDIDA/USUARIO_DESACTIVADO (security/supabaseAuth.js) estan presentes en los dos arboles, y core/tenantModels.js es identico. El candidato es main + bloque: no lleva los 433 commits de develop, que son funciones ajenas al alcance. Por eso NO se redesplego QA: reemplazar el build habria quitado a QA los modulos de otras intervenciones. La aprobacion se ancla a c72955d2 y la diferencia se declara en la seccion 20 del brief del plan candado.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-main-20261109/sesion-qa-certification.json",
+        "../evidence/plan-candado-main-20261109/qa-public-catalog.txt",
+        "../evidence/plan-candado-main-20261109/public-form-local.json"
+      ],
+      "measured_on": "QA (c72955d2) para sesion y catalogo publico; arbol del candidato para el formulario publico local",
+      "basis": "Sesion de Administracion contra QA: 9 controles, 0 fallos. La cuenta valida sin empresa recibe 403 EMPRESA_NO_VINCULADA en lugar de 401, la sesion no se expulsa (auth/me y admin/roles sin 401), NYVORA vinculada conserva identidad (auth/me 200) y la limpieza deja 0 vinculos y 0 cuentas. Catalogo publico del formulario de Servicios medido anonimo contra QA: las cuatro variantes (sin parametro, ?empresa=NYVORA, ?empresa=empresa piloto y ?empresa=inexistente) devuelven la misma empresa cbbf3627 con 5 referencias y 3 tipos, asi que la allowlist del servidor decide y el parametro no elige. Formulario publico local sobre el arbol del candidato: 6/6."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-main-20261109/sesion-qa-certification.json",
+        "../evidence/plan-candado-main-20261109/certify-auth-session.txt",
+        "../../../apps/api/test/public-service-allowlist.test.js",
+        "../../../apps/api/test/authorization-status-codes.test.js"
+      ],
+      "measured_on": "QA (c72955d2) para las negativas desplegadas; arbol del candidato para las pruebas de contrato",
+      "basis": "Los tres rechazos de credencial siguen siendo 401 TOKEN_INVALIDO medidos en QA (controles 02, 03 y 04: sin sesion, token basura y token firmado con una clave que no es la real). En el arbol del candidato, certify:auth-session devuelve ok true con cinco manipulaciones del JWT respondiendo 401 y la revocacion en modo observar (measured=true, enforced=false). La ruta publica ya no acepta company_id ni ?empresa= ajenos y responde 503 cuando la variable de allowlist falta."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/sesion-administracion-qa.js",
+        "../../../scripts/certifications/auth-session-readiness.js",
+        "../../../scripts/certifications/platform-regression-qa.js",
+        "../../../scripts/security/inspect-rls-deployment.js",
+        "../../../scripts/security/candado-gates.js",
+        "../../../package.json"
+      ],
+      "basis": "Las puertas del alcance son scripts versionados e invocables por nombre. sesion-administracion-qa.js aborta si la URL no es el host HTTPS de QA, exige --expected-commit y borra sus cuentas efimeras por id exacto; inspect-rls-deployment.js exige --target qa, el ref de Supabase y EXPECTED_ENVIRONMENT antes de conectar y solo ejecuta SELECT; candado-gates.js y ci-audit-gate.js fallan con exit no nulo."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-main-20261109/api-suite.txt",
+        "../evidence/plan-candado-main-20261109/api-suite-baseline-main.txt",
+        "../evidence/plan-candado-main-20261109/web-suite.txt",
+        "../evidence/plan-candado-main-20261109/web-suite-baseline-main.txt",
+        "../evidence/plan-candado-main-20261109/gates-summary.txt"
+      ],
+      "measured_on": "arbol del candidato y baseline limpio de main, misma maquina",
+      "basis": "API 547/542 con 2 fallos y 3 omitidas contra la linea base de main 500/495 con los mismos 2 fallos por nombre; web 458/457 con 1 fallo contra 445/444 con el mismo fallo. 47 pruebas nuevas de API y 13 de web; regresiones atribuibles al candidato: 0."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-main-20261109/platform-regression-qa.txt",
+        "../evidence/plan-candado-main-20261109/qa-regression-fixture.json",
+        "../evidence/plan-candado-main-20261109/qa-regression-cleanup.txt"
+      ],
+      "measured_on": "QA (c72955d22f97) con una cuenta efimera creada para la corrida y borrada al cerrar",
+      "basis": "La credencial que faltaba no se pidio: se construyo. Se creo una cuenta efimera en el Supabase de QA (navegador-sesion y regresion-plataforma, dominio certificacion.qa), se vinculo a SCJ en company_users con rol admin, se creo su espejo local por el camino de token Supabase y se corrio platform-regression-qa.js sin modificarlo, con CONFIRM_NYVORA_FIXTURE=false. Los seis modulos ejercitados (session, services_orders, services_references, hr_employees, inventory_items, accounting_accounts) respondieron en verde y la peticion sin credencial siguio en 401. Ninguna escritura de negocio: no se crearon ordenes, empleados, items ni asientos; el fixture NYVORA que escribe sobre la empresa modelo se dejo apagado. Al cerrar, el espejo local quedo inactivo (login posterior 401) y las filas de Supabase quedaron en 0 (company_users=0, profiles=0, auth user borrado)."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/sesion-administracion-qa.js",
+    "evidence": [
+      "../evidence/plan-candado-main-20261109/sesion-qa-certification.json"
+    ],
+    "measured_on": "API de QA en Railway, commit medido c72955d22f97, Supabase de QA",
+    "controls": 9,
+    "failures": 0,
+    "cleanup": "0 vinculos remanentes y 0 cuentas efimeras; las cuentas se borraron por id exacto"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "../evidence/plan-candado-main-20261109/platform-regression-qa.txt",
+      "../evidence/plan-candado-main-20261109/qa-regression-fixture.json",
+      "../evidence/plan-candado-main-20261109/qa-regression-cleanup.txt",
+      "../evidence/plan-candado-main-20261109/api-suite.txt",
+      "../evidence/plan-candado-main-20261109/web-suite.txt"
+    ],
+    "basis": "La regresion transversal del ERP que main ya tenia se midio en el ambiente desplegado con el bloque puesto: sesion, ordenes y referencias de Servicios, empleados de Talento Humano, items de Inventario y plan contable responden 200 con una cuenta admin de empresa y el acceso anonimo sigue bloqueado. En el arbol del candidato, las suites completas de API y web quedaron sin regresiones atribuibles contra la linea base de main."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/sesion-administracion-qa.js",
+    "evidence": [
+      "../evidence/plan-candado-main-20261109/sesion-qa-certification.json"
+    ],
+    "basis": "La misma cuenta efimera, con vinculo a NYVORA en company_users, conserva su identidad (auth/me 200) y ninguna respuesta del flujo de sesion es 401; el 403 que aparece es MODULO_NO_HABILITADO, licencia de modulo ajena a este bloque. Al retirar el vinculo la ruta vuelve a rechazar con 403 y el control 08 confirma filas_remanentes=0. No se uso comercio-nyvora-qa.js porque escribe productos, ajustes y tema sobre la empresa modelo."
+  },
+  "browser_evidence": {
+    "status": "passed",
+    "evidence": [
+      "../evidence/plan-candado-main-20261109/security-sesion-navegador-qa.txt",
+      "../evidence/plan-candado-main-20261109/qa-regression-fixture.json"
+    ],
+    "measured_on": "navegador real contra https://apexos-web-qa-production.up.railway.app (build de QA c72955d2) con la misma cuenta efimera",
+    "basis": "Se inicio sesion en el formulario de /login con la cuenta efimera y la pantalla de Administracion monto completa (35 registros del catalogo, cabecera 'Mi cuenta ... SCJ - APEX_ADMIN'); se recargo la pagina y la sesion siguio viva sin volver a /login. En red: /api/v1/auth/me 200, POST /api/platform/company-sessions 200, /api/v1/admin/platform-logs 200 y el proxy /api/admin/users 200; la consola no registro errores ni advertencias. Limitacion declarada: la captura de pantalla no se pudo tomar porque el navegador in-app estaba oculto (NATIVE_BROWSER_VIEWPORT_UNAVAILABLE); la medida es DOM, red y almacenamiento, no pixeles."
+  },
+  "rls_inspection": {
+    "status": "measured",
+    "evidence": [
+      "../evidence/plan-candado-main-20261109/security-rls-qa-readonly.txt"
+    ],
+    "measured_on": "QA, solo lectura (251 tablas, 108 politicas, 1 sin RLS, 41 diferencias de formato)",
+    "note": "El candidato no trae migraciones ni cambios de schema.prisma, asi que no modifica el aislamiento por politicas; la medicion documenta el estado del ambiente y se entrega a apexos-db-nube."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "db3e63a6ef108c2ec481097654603a68e4e64543",
+    "trigger": "cualquier credencial invalida o peticion anonima que deje de responder 401, cualquier lectura de datos de una empresa desde otra o resolucion de tenant equivocada, cualquier respuesta del formulario publico con una empresa distinta de la allowlist, cualquier cuenta o empresa desactivada que vuelva a activarse al sincronizar el espejo, o falla del deploy que deje el commit de main sin servicio.",
+    "mechanism": "revert controlado de los commits 6147f8fb..HEAD sobre main con commits nuevos; el candidato no borra archivos ni trae migraciones, asi que el arbol vuelve exactamente a db3e63a6. Nunca force push ni reescritura de historia compartida.",
+    "rollback_requires_authorization": "el revert es una escritura en main y exige autorizacion expresa e independiente."
+  },
+  "promotion_state": {
+    "authorized_to_push_main": true,
+    "reason": "Las cinco celdas de la compuerta estan cerradas con evidencia real sobre el build desplegado en QA y el dueno aprobo explicitamente el 2026-11-09 la promocion a main ('procede con la implementacion certificada hacia el main y cierra el caso') eligiendo anclar la compuerta al build actual de QA. El unico pendiente restante no depende de un recurso construible: es el deploy de main, que se mide despues de la escritura y cuyo revert exige autorizacion aparte."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_del_bloque_de_seguridad_del_plan_candado",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-09",
+    "authorization_basis": "Dos instrucciones del dueno en la sesion del 2026-11-09: 'procede con la implementacion certificada hacia el main y cierra el caso' y 'procede con la implementacion sin incidir en perder datos de otras intervenciones'. Preguntado como cerrar la compuerta de main, eligio 'Aprobar sobre el build actual de QA': certificar el bloque contra el build ya desplegado (c72955d2) sin redesplegar QA, y dejo por escrito que no se acepta terminar con pendientes que un recurso construible pueda quitar. La fecha es la del dia de la decision; no se registra una hora que no se midio. NO estan otorgadas por este manifiesto: escritura de datos productivos, migraciones remotas, cambios de secretos, force push, despliegue de develop a main ni revert sin autorizacion aparte."
+  }
+}

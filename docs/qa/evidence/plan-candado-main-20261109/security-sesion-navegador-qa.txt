@@ -1,0 +1,12 @@
+[sesion-navegador] entorno=QA web=https://apexos-web-qa-production.up.railway.app api=https://apexos-api-qa-production.up.railway.app commit_api=c72955d22f97
+[sesion-navegador] cuenta_efimera=navegador-sesion.20261109203008-366f39@certificacion.qa supabase_user_id=493f020d-40f5-4dac-824f-274e19831dde empresa=SCJ cbbf3627-4336-4f23-95c6-1077414bcd17 rol=admin
+[sesion-navegador] paso_01_login=formulario de /login con la cuenta efimera -> /dashboard renderizado (12 modulos habilitados, "Mi cuenta ... SCJ - admin")
+[sesion-navegador] paso_02_administracion=GET /dashboard/administracion -> la pantalla monta "Administracion APEX" con 35 registros del catalogo y la barra de "Mi cuenta ... SCJ - APEX_ADMIN"
+[sesion-navegador] paso_03_recarga=reload completo de /dashboard/administracion -> sigue montada la misma pantalla, la URL no vuelve a /login y la sesion no se pierde
+[sesion-navegador] paso_04_almacen=localStorage token_present=true provider=supabase role=APEX_ADMIN company=SCJ
+[sesion-navegador] paso_05_api=GET /api/v1/auth/me -> 200; GET /api/v1/admin/users?limit=1 -> 200
+[sesion-navegador] paso_06_red=GET /api/v1/auth/me [200]; POST /api/platform/company-sessions [200]; GET /api/v1/admin/platform-logs?limit=120 [200]; GET /api/admin/users (BFF) [200]; v_company_module_status [200]
+[sesion-navegador] consola=0 mensajes de error y 0 advertencias
+[sesion-navegador] limitacion=captura de pantalla no disponible: el navegador in-app estaba oculto (NATIVE_BROWSER_VIEWPORT_UNAVAILABLE). La medicion es DOM + red + almacenamiento, no pixeles; abrir el navegador in-app permitiria repetir la captura sin cambiar el resto del procedimiento.
+[sesion-navegador] alcance=la cuenta es admin de la empresa modelo QA (SCJ), asi que el camino medido es el feliz (200). El rechazo 403 de alcance se mido aparte en la certificacion de sesion (controles 07/08) y en la puerta local del arbol.
+[sesion-navegador] limpieza=espejo local 678 desactivado (PATCH 200) y login del espejo tras el cierre -> 401; filas Supabase borradas por id exacto

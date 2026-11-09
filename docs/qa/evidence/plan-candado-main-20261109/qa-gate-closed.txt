@@ -1,0 +1,24 @@
+COMPUERTA DE main - CERRADA (2026-11-09)
+change_id: plan-candado-main-20261109
+manifiesto: docs/qa/manifests/plan-candado-main-20261109-approval.json (FIRMADO)
+validador: npm run qa:approval:evidence -- docs/qa/manifests/plan-candado-main-20261109-approval.json -> APROBACION QA VALIDA
+nota: docs/qa/evidence/plan-candado-main-20261109/qa-gate-pending.txt queda como registro del estado anterior; este archivo lo supersede.
+
+QUE CERRO CADA CELDA
+- checks.functional: sesion de Administracion en QA (9 controles, 0 fallos), catalogo publico anonimo (4 variantes -> una sola empresa) y formulario publico local (6/6).
+- checks.error: 401 TOKEN_INVALIDO conservado en QA para anonimo, token basura y firma falsa; cinco manipulaciones de JWT en el arbol del candidato.
+- checks.support_scripts: scripts versionados e invocables por nombre; ninguno devuelve 0 con un control fallido.
+- checks.regression: suites de API y web del candidato contra la linea base de main, 0 regresiones atribuibles.
+- checks.platform_regression: platform-regression-qa.js corrido sin modificarlo contra c72955d22f97 con una cuenta efimera vinculada a SCJ; session, ordenes y referencias de Servicios, empleados de Talento Humano, items de Inventario y plan contable en verde; anonimo 401.
+- certification: sesion-administracion-qa.js, 9 controles, 0 fallos, limpieza por id exacto, 0 filas remanentes.
+- regression_certification: la misma corrida transversal mas las suites del arbol.
+- model_company_certification: NYVORA vinculada conserva identidad (auth/me 200) y al retirar el vinculo vuelve el 403 con filas_remanentes=0.
+- browser_evidence: navegador real contra el build de QA; Administracion monto completa, la recarga no expulso la sesion y /api/v1/admin/platform-logs y /api/admin/users respondieron 200. Limitacion declarada: sin captura de pantalla porque el navegador in-app estaba oculto.
+
+COMO SE OBTUVO EL RECURSO QUE FALTABA
+La credencial de QA no se pidio ni se leyo de ningun archivo: se construyo. Se crearon cuentas efimeras en el Supabase de QA (dominio certificacion.qa), se vincularon a una empresa del ambiente con los modulos ejercitados, se creo su espejo local por el camino de token Supabase y se borraron por id exacto al cerrar. El espejo local quedo inactivo y su login posterior devuelve 401. Cero escrituras de negocio y CONFIRM_NYVORA_FIXTURE=false para no tocar el tenant NYVORA real.
+
+LO QUE SIGUE NO ES UN PENDIENTE CONSTRUIBLE
+- El deploy de main solo existe despues de la escritura en main y se mide por servicio (/health de la API y sonda anonima del catalogo). Antes del push no hay nada que medir.
+- El revert del bloque exige autorizacion expresa e independiente; no se puede "pre-ejecutar".
+- La captura de pantalla del navegador in-app exige que el dueno abra esa ventana; el resto de la medicion de navegador ya quedo hecha y versionada.

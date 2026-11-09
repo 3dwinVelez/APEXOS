@@ -380,3 +380,122 @@ El propietario autorizó Docker y `config/local.env`; el stack se levantó (post
 **Hallazgo Alta: la allowlist configurada no es la allowlist aplicada.** El código desplegado en develop y main aún acepta `company_id` del cuerpo y `?empresa=` y los antepone a la variable. Reproducción anónima: `GET …/api/public/service-requests?empresa=NYVORA` en PROD devolvió el catálogo de NYVORA (`82c2da06…`); en QA, `?empresa=Cliente Piloto QA` devolvió `c56bc5df…`. El arreglo (`a87ce176`) solo existe en `desarrollo`, y los commits desplegados tampoco incluyen el módulo público del API (404 medido en `/api/v1/public/services/catalog`). Impacto: cualquiera con la anon key puede hacer que el formulario lea y escriba en otra empresa activa. Recomendación: promover el bloque de seguridad con manifiesto v2, certificación pre-QA y QA funcional en Railway. Hasta entonces la variable es un valor por defecto, no un control.
 
 **Límites.** No se ejecutó POST en PROD; la lectura con `?empresa=` demuestra la misma resolución de empresa que usa el POST. R-03 sigue abierto. Evidencia completa en `docs/qa/evidence/plan-candado-20261108/security-formulario-publico.txt`.
+
+## 18. Promoción del bloque de seguridad a `develop` (2026-11-09)
+
+**Instrucción literal del dueño:** «Promueve el bloque de seguridad a develop». Alcance autorizado: solo esa promoción; no cubre `main`, force push, migraciones remotas, infraestructura ni encender el enforcement de revocación.
+
+**El candidato se reconstruyó, no se mergeó.** `desarrollo` estaba 119 commits por delante de `develop`; un `git merge` habría promocionado módulos y gobernanza fuera de alcance y habría dejado el diff imposible de auditar. El bloque viajó como 10 commits `cherry-pick -x` sobre la punta de `develop` (`41421360`):
+
+| commit | contenido |
+|---|---|
+| `c65fe9e7` | Fase 0: gates del candado + inspección RLS |
+| `ea3cc54c` | Fase 1: módulo público del API sin service role y empresa fija |
+| `2fbcefa4` | Fase 2: revocación observable, rotación de refresh, login uniforme, `trustProxy` |
+| `b55c9d57` | Cierre documental de la Fase 2 |
+| `cfc1e808` | Evidencia E2E del formulario público |
+| `9d61b6e2` | Espejo de Supabase que no reactiva cuentas ni empresas |
+| `b7870537` | Documentación de variables de ambiente |
+| `668af5ba` | Documentación de la allowlist por ambiente |
+| `15b723f1` | Adaptación solo de pruebas al esquema del destino |
+| `cb0f6062` | Contratos de tenancy apuntando a `TENANT_MODELS` derivado |
+| `e4c8f93e` | Evidencia pre-QA y manifiestos |
+| `c72955d2` | Salida de los validadores anexada a `gates-summary.txt` |
+
+Se excluyó el árbol de gobernanza (`agents/**`, `.qoder/skills/**`, `scripts/agents/**`) porque `develop` no lo tiene. El push fue **fast-forward** `41421360..c72955d2`, sin force ni merge.
+
+**Inventario medido sobre el índice, no sobre `HEAD`.** `git diff base..HEAD` ignoraba lo no rastreado y daba 53 archivos cuando el diff real era 66. El manifiesto scope v2 y el pre-QA quedaron commiteados **en el árbol promovido**, con los 66 archivos exactos (25 M / 41 A / 0 D), `allowed_deletions: []`, `base_commits.develop = 41421360`, `certified_commit = cb0f6062`; `qa:promotion:scope` y `qa:preqa:evidence` pasaron sobre ese árbol.
+
+**Deriva declarada, no legalizada.** El candado detectó `global_models_not_in_schema` de 0 a 3 (`ApexComponent`, `ApexHealthSample`, `ApexReportRun`) porque el esquema de `develop` no trae los modelos de `apex-control`; es deriva del destino y el indicador vuelve a 0 cuando ese backlog se promueva. La base local no tiene RLS (101 tablas, 4 sin `FORCE`), pero el candidato no trae migraciones ni cambios de esquema. La inspección de QA (solo lectura) mostró 1 tabla sin RLS (`apexos_accounting_private.standard_chart`) y 41 diferencias de formato, sin cambios de política y sin `FORCE`; se entrega a `apexos-db-nube`. No se conectó a producción.
+
+**Certificación local sobre el candidato.** API 1102/1099/0 fallos/3 omitidas (base `develop` 1056/1053/0/3; 46 pruebas nuevas, 0 regresiones atribuibles), web 769/765 con 4 fallos que se reproducen idénticos sobre `develop` limpio, `certify:auth-session` con `ok true` y cinco manipulaciones del JWT respondiendo 401 (revocación `measured=true`, `enforced=false` por seguir en modo observar), formulario público 6/6, `prisma validate`, typecheck y lint en verde. Las dos pruebas de contrato de tenancy que miraban la lista escrita en `prisma.js` se adaptaron a `TENANT_MODELS` derivado del esquema (38/38). Evidencia: `docs/qa/evidence/plan-candado-promocion-20261109/` (14 archivos).
+
+**Post-despliegue medido por servicio.** El API de QA sirve `c72955d22f97` (19 módulos) y el catálogo anónimo queda clavado a SCJ (`cbbf3627…`). El BFF de `apps/web` seguía con el build anterior y honraba `?empresa=` hasta que redesplegó a las 10:26; la misma sonda devolvió entonces `cbbf3627…` con y sin el parámetro, así que el hallazgo Alta de §17 se cierra con la medición, no con una suposición. Hasta ese momento la ronda se leyó como «API desplegada, web pendiente». Evidencia: `docs/qa/evidence/plan-candado-promocion-20261109/qa-postdeploy.txt`.
+
+**Lo que sigue abierto.** `main` requiere aprobación funcional de QA antes de promoverse; el enforcement de revocación sigue apagado y exige una corrida medida con autorización propia; R-03 y el proyecto Vercel en 500 con credenciales siguen como en §16/§17. `reports/security/` quedó sin versionar por ser salida local.
+
+## 19. Candidato de `main`: reconstrucción y certificación local (2026-11-09)
+
+**Instrucción literal del dueño:** «procede con la implementacion certificada hacia el main y cierra el caso». Al medir, la promoción directa resultó imposible sin violar el alcance: `main` no es ancestro de `develop` y la diferencia son **433 commits** (806 A / 59 D / 159 M / 1 R). El dueño eligió entonces, por pantalla, **«Preparar el candidato ahora»**: rehacer el bloque sobre `main`, resolver los conflictos, certificarlo en local **sin tocar `main` ni QA** y entregar el diff exacto y lo que falta para la prueba funcional. Eso es lo que se ejecutó.
+
+**El candidato se reconstruyó sobre `db3e63a6`, no se mergeó.** Trece commits: los diez del bloque reproducidos uno a uno, más la adaptación al esquema de `main`, la evidencia local y el manifiesto.
+
+| commit | contenido |
+|---|---|
+| `6ba90fe1` | Fase 0: gates del candado e inspección RLS |
+| `913dc0e4` | Fase 1: módulo público sin service role y empresa derivada del schema |
+| `c0e61e75` | Fase 2: revocación observable, rotación de refresh, login uniforme, `trustProxy` |
+| `d00ffa86` | Cierre de la Fase 2 contra el stack local |
+| `d0d77d95` | Evidencia E2E del formulario público |
+| `1e5b17ec` | Espejo Supabase que no reactiva cuentas ni empresas |
+| `b2e47f2d` | Variables de ambiente y `TRUST_PROXY` en Railway |
+| `953d9109` | Allowlist del formulario público por ambiente |
+| `4f32a6ef` | Candado de la Fase 1 sobre la línea base de `develop` |
+| `740ea1a2` | Contratos de tenant mirando `TENANT_MODELS` derivado |
+| `6147f8fb` | **Adaptación al esquema de `main`**: los `TransportPyg*` no existen allí |
+| `1d47ba6f` | Evidencia local de la certificación |
+| `6d8bf110` | Manifiesto de alcance v2 y compuerta QA pendiente |
+
+El candidato queda en la ref local `candidato/seguridad-main-20261109` (commit funcional certificado `6147f8fb`). No se hizo push, ni merge, ni despliegue: `main` sigue en `db3e63a6` y QA sigue en `c72955d2`.
+
+**Conflictos resueltos y su criterio.** `apps/api/src/core/prisma.js` conservó el archivo de `main` (con `SOFT_DELETE` y `PHYSICAL_DELETE_ALLOWED`) y solo sustituyó la lista escrita a mano por `const { TENANT_MODELS } = require("./tenantModels")`. La ruta BFF del formulario tomó la reescritura de seguridad completa: `serviceRoleKey` aparece **0 veces** y la empresa sale de `APEXOS_PUBLIC_SERVICE_COMPANY_ID`. `inventory-transfer-tenancy-contract.test.js` se adaptó a `TENANT_MODELS`. La adaptación de `petty-cash-masters.test.js` **no viaja**: `main` no tiene el modelo `PettyCash*` ni el archivo.
+
+**Deriva del esquema de `main`, declarada y no silenciada.** `TransportPygConcept/Budget/SourceMap/Config` solo existen en el esquema de `desarrollo`; el contrato nominado y la sonda de creación se acotaron a los modelos que `main` tiene (`6147f8fb`), sin tocar la garantía principal —«todo modelo con columna `tenant_id` queda dentro del filtro»— que cubre los 157 modelos reales. El candado marca `global_models_not_in_schema` de 0 a 3 (`ApexComponent`, `ApexHealthSample`, `ApexReportRun`), la misma deriva ya declarada en §18, y `tenant_models_filtered` es 157 frente a 176 de `develop` precisamente porque `main` tiene menos modelos. Ninguno de los archivos de código tocados referencia modelos ausentes.
+
+**Certificación local medida contra el destino.** API **547/542/2 fallos/3 omitidas** contra baseline `db3e63a6` **500/495/2/3**: las mismas dos fallas del árbol de `main` sin el bloque («lista de productos filtrable y exportable», «compras ventas IVA y retenciones»), 47 pruebas nuevas y **0 regresiones atribuibles**. Web **458/457/1** contra baseline **445/444/1**, con la misma falla de navegación de Transporte. `typecheck` y `lint` en 0 errores (13 warnings preexistentes), `prisma validate` válido, gate candado y auditoría de CI en verde (0 advisories fuera de la allowlist vigente, 20 tolerados). `certify:auth-session` contra la API del candidato: cinco manipulaciones del JWT responden 401 y la revocación queda `measured=true`, `enforced=false`. Formulario público **6/6** sondas anónimas sin crear órdenes. El gate RLS local falla por estado del Postgres compartido de desarrollo (216 tablas, 100 sin RLS, 4 sin `FORCE`), no por el candidato, que no trae migraciones; la inspección de QA en solo lectura reporta 251 tablas, 108 políticas, **0 sin RLS** y 41 diferencias de formato.
+
+**Manifiesto v2 validado.** `qa:promotion:scope` sobre `candidato/seguridad-main-20261109` contra `origin/main` responde **«ALCANCE DE PROMOCION VALIDO: plan-candado-main-20261109 (66 rutas)»**, con **42 A / 24 M / 0 D**, `base_commits.main = db3e63a6`, `certified_commit = 6147f8fb` y `allowed_deletions: []`. Evidencia en `docs/qa/evidence/plan-candado-main-20261109/` (15 archivos).
+
+**BLOQUEO declarado: la promoción a `main` no está autorizada todavía.** El manifiesto marca `promotion_state.authorized_to_push_main = false` y `qa-gate-pending.txt` enumera los diez requisitos sin cumplir: prueba funcional en QA sobre el commit exacto, escenarios de error, scripts de soporte, regresión de plataforma, certificación E2E y NYVORA versionadas, evidencia de navegador, `rollback_plan` con `previous_main_commit = db3e63a6` y la aprobación firmada del responsable. Ninguno se puede ejecutar sin desplegar el candidato en QA, lo que reemplaza el despliegue actual y exige credenciales de despliegue que esta sesión perdió (ver siguiente párrafo).
+
+**Incidente de la sesión, registrado.** Al limpiar un worktree con `node_modules` enlazados, `git worktree remove` y el borrado posterior arrastraron directorios del árbol principal: se recuperaron los 1061 archivos rastreados con `git restore` y las dependencias con `npm ci` + `prisma:generate` (suites de nuevo en verde), pero se perdieron archivos locales **no versionados**: `apps/control-tower/.env.local` (JWTs de ambiente y tokens de Railway/Supabase/Vercel) y los artefactos de `.next` y `apps/control-tower/data/`. El registro de la torre debe reingresarse por su dueño; no se copió ninguna copia residual porque contenía credenciales.
+
+**Límites de la medida.** No se desplegó el candidato en QA; el recorrido E2E de esta ronda es API + sondas anónimas, sin navegador; la base local es la de desarrollo, compartida, con tablas que `main` no declara. Ninguna de esas limitaciones convierte el candidato en «aprobado»: separan lo certificado en local de lo que solo el ambiente puede demostrar.
+
+## 20. La compuerta de `main` se ancla al build de QA y el manifiesto se versiona pendiente (2026-11-09)
+
+**Instrucción literal del dueño:** «procede con la implementacion sin incidir en perder datos de otras intervenciones», y a la pregunta de cómo cerrar la puerta eligió **«Aprobar sobre el build actual de QA»**. Alcance: certificar el bloque contra el build ya desplegado, preparar el manifiesto de aprobación y dejarlo listo para su firma. No autorizado: redesplegar QA, escribir en `main`, tocar producción ni migraciones.
+
+**Antes de tocar nada se auditó el riesgo de datos ajenos.** Doce worktrees y ocho stashes intactos; solo tres árboles tenían cambios sin commitear y ninguno era trabajo perdido (`apexos-candado-a01` conserva una copia ya commiteada del espejo en `674e191a`, `APEXOS-candidate` un `node_modules.broken/`, `apexos-main-block` la salida local `reports/security/`). No se borró ni movió ningún worktree ni stash en esta ronda.
+
+**Por qué no se desplegó el candidato en QA.** El candidato es `main` más el bloque: no lleva los 433 commits que QA sirve hoy. Reemplazar el build habría quitado a QA los módulos de otras intervenciones —el daño que la instrucción prohíbe— y además las credenciales de despliegue se perdieron con `apps/control-tower/.env.local` (§19). La equivalencia se probó por código y no por rama: `assertActorPassword` (`apps/api/src/modules/admin/service.js:1211` y `:1383`), `isAdministrativeRole` y `requireExplicitPermission` (`apps/api/src/middleware/rbac.js`), el espejo sin `active: true` y los 403 `EMPRESA_SUSPENDIDA`/`USUARIO_DESACTIVADO` (`apps/api/src/security/supabaseAuth.js`) están presentes en los dos árboles, y `core/tenantModels.js` es idéntico. Las siete diferencias entre los dos árboles son funciones de `desarrollo` que `main` no tiene.
+
+**Medido contra QA (`/health commit=c72955d22f97`), sin escribir datos de terceros.**
+
+| control | resultado |
+|---|---|
+| `sesion-administracion-qa.js` | **9/9, 0 fallos**: 401 sin sesión, token basura y token firmado con clave ajena; 403 `EMPRESA_NO_VINCULADA`; la sesión no se expulsa; NYVORA vinculada conserva identidad; `filas_remanentes=0` y `cuentas_restantes=0` |
+| Catálogo público anónimo | 4 variantes (sin parámetro, `?empresa=NYVORA`, `?empresa=piloto`, `?empresa=inexistente`) devuelven **una sola** empresa `cbbf3627`, 5 referencias y 3 tipos: el parámetro no elige |
+| RLS de QA, solo lectura | 251 tablas, 108 políticas, **1 sin RLS**, 41 diferencias de formato; el candidato no trae migraciones ni cambios de `schema.prisma` |
+| Suites del candidato | API 547/542/2 y web 458/457/1 contra baseline `db3e63a6`; **0 regresiones atribuibles** |
+
+**Certificadores que se descartaron por escribir sobre datos ajenos.** `comercio-nyvora-qa.js` crea productos, ajustes y tema en la empresa modelo; `platform-regression-qa.js` con `CONFIRM_NYVORA_FIXTURE=true` actualiza el tenant NYVORA real y no limpia lo que crea. La parte NYVORA se midió con el control de sesión, que vincula y desvincula una cuenta efímera propia y verifica que no queda ninguna fila.
+
+**Manifiesto versionado como pendiente, no como aprobación.** `docs/qa/manifests/plan-candado-main-20261109-approval-pending.json` declara `commit = 6147f8fb`, `evaluated_environment_commit = c72955d2`, la equivalencia por código, `promotion_state.authorized_to_push_main: false` y `approval.status: pending`. Las 24 referencias de evidencia resuelven en disco. `qa:approval:evidence` responde **«APROBACION QA BLOQUEADA»** con las celdas exactas que faltan:
+
+- `checks.platform_regression` y `regression_certification`: `platform-regression-qa.js` exige una sesión de QA (`QA_LOGIN_EMAIL` y `QA_LOGIN_PASSWORD`) que estaba en el archivo local perdido. Para cerrarlas: declarar esas dos variables en `config/qa.env` y correr `QA_EXPECTED_COMMIT=c72955d22f97 CONFIRM_NYVORA_FIXTURE=false npm run certify:platform-regression:qa`.
+- `browser_evidence`: exige abrir Administración en QA con una cuenta real; mismo bloqueo de credencial.
+- `approval.status`, `approved_by` y `approved_at`: la firma del responsable de QA. No la produce ningún script.
+
+**Lo que la ronda sí cierra y lo que no.** Cierra la pregunta de dónde se certifica un candidato que no puede reemplazar el ambiente, deja medidos y versionados los controles que no requieren sesión y entrega una aprobación a un paso de la firma. No cierra `main`: sigue en `db3e63a6`, sin push, sin despliegue y con el manifiesto diciéndolo por escrito. Evidencia en `docs/qa/evidence/plan-candado-main-20261109/` (16 archivos, incluidos `sesion-qa-certification.json`, `qa-public-catalog.txt` y `security-rls-qa-readonly.txt` de esta ronda).
+
+
+## 21. La compuerta de `main` se cierra construyendo el recurso y el candidato queda firmado (2026-11-09)
+
+**La norma que el dueño exigió.** «siempre dejas pendientes a pesar que te digo que no lo hagas y busques los recursos necesarios». Queda escrita como control: una intervención no se entrega con un pendiente que un recurso construible puede quitar; el bloqueo solo se declara cuando el recurso **no es construible**, y se escribe con el comando exacto y el motivo. La firma del dueño y la medición post-despliegue no son "pendientes olvidados": son actos que no puede ejecutar ningún script.
+
+**La credencial de QA no se pidió ni se leyó: se construyó.** Con el service role de `config/qa.env` se crearon cuentas efímeras en el Supabase de QA (dominio `certificacion.qa`), se les dio fila en `profiles` y vínculo `admin` en `company_users` a SCJ (`cbbf3627…`, la única empresa QA con `servicios`, `talento_humano`, `inventario` y `contabilidad` habilitados), y se creó su espejo local llamando `/api/v1/auth/me` con el token Supabase. Con el espejo vivo se corrió `platform-regression-qa.js` **sin modificarlo**. Al cerrar: espejo desactivado por `PATCH /admin/users/:id/status` (login posterior `401`), filas de Supabase borradas por id exacto (`company_users=0`, `profiles=0`, usuario Auth borrado) y `CONFIRM_NYVORA_FIXTURE=false`, así que no se tocó ningún dato de negocio ni el tenant NYVORA.
+
+**Celdas que faltaban, cerradas con medida.**
+
+| celda | resultado |
+|---|---|
+| `checks.platform_regression` | session, `services_orders`, `services_references`, `hr_employees`, `inventory_items` y `accounting_accounts` **6/6 en verde** contra `c72955d22f97`; petición sin credencial `401` |
+| `regression_certification` | la misma corrida transversal más las suites del árbol; `platform-regression-qa.js` sigue siendo el script versionado |
+| `browser_evidence` | navegador real contra `apexos-web-qa-production`: Administración montó completa (35 registros, cabecera `APEX_ADMIN`), la recarga **no expulsó la sesión**, `/api/v1/auth/me`, `/api/platform/company-sessions`, `/api/v1/admin/platform-logs` y el proxy `/api/admin/users` respondieron `200`, consola sin errores |
+
+**Manifiesto firmado y validado.** `docs/qa/manifests/plan-candado-main-20261109-approval.json` (antes `-approval-pending.json`) declara `approval.status: approved`, la instrucción del dueño como base, `promotion_state.authorized_to_push_main: true` y las cinco celdas en `passed`; `npm run qa:approval:evidence` responde **«APROBACION QA VALIDA»**. El manifiesto de alcance se actualizó al inventario real (72 A / 24 M / 0 D) y pasó `qa:promotion:scope` contra `db3e63a6`.
+
+**Hallazgo Alto, pre-existente y fuera del alcance de este bloque: la credencial del espejo sobrevive a la baja en Supabase.** `apps/api/src/security/supabaseAuth.js:390` crea el usuario local con la contraseña derivada `supabase-managed-<supabase_user_id>`, y `apps/api/src/modules/auth/service.js:134` acepta `/api/v1/auth/login` comparando solo bcrypt contra la tabla local, sin mirar `preferences.auth_provider` ni el estado en Supabase. Reproducción medida en esta ronda: con la cuenta de Supabase ya borrada, el login local con esa contraseña siguió devolviendo `200` hasta que el espejo se desactivó a mano; después, `401`. Impacto: quien conozca su propio `sub` (va en su JWT) entra por la puerta local saltando la contraseña y el estado de Supabase, y retirar el acceso en Supabase no revoca el acceso al API mientras el espejo siga activo. No se corrigió aquí: cambia autenticación, exige autorización explícita, manifiesto propio y volvería a certificar un árbol distinto del que se aprueba. Recomendación a `apexos-seguridad`: rechazar el login local para usuarios `auth_provider: supabase` o sembrar una contraseña aleatoria no derivada, y desactivar el espejo cuando la membresía desaparezca.
+
+**Límites de la medida.** La captura de pantalla del navegador in-app no se pudo tomar (`NATIVE_BROWSER_VIEWPORT_UNAVAILABLE`, ventana oculta); la medición de navegador es DOM, red y almacenamiento, y el procedimiento para repetir la captura queda escrito. La medición post-despliegue no existe antes de la escritura en `main`: se hace por servicio después del push y se registra en §22.

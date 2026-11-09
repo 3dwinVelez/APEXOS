@@ -13,7 +13,9 @@
     "branch": "detached en worktree aislado; ref local candidato/seguridad-main-20261109",
     "commits_over_baseline": 13,
     "inventario": "42 A / 24 M / 0 D en 66 rutas contra origin/main db3e63a6",
-    "nota": "main y develop no comparten historia: develop entero son 433 commits y 806 A / 59 D / 159 M. Este candidato aisla el bloque de seguridad, igual que la promocion a develop, para no arrastrar el backlog."
+    "nota": "main y develop no comparten historia: develop entero son 433 commits y 806 A / 59 D / 159 M. Este candidato aisla el bloque de seguridad, igual que la promocion a develop, para no arrastrar el backlog.",
+    "inventory_note": "72 A / 24 M / 0 D tras agregar el manifiesto de aprobacion firmado y las cuatro evidencias de la compuerta QA.",
+    "approval_manifest": "docs/qa/manifests/plan-candado-main-20261109-approval.json"
   },
   "candidate_source": {
     "branch": "desarrollo (publicado en develop)",
@@ -328,6 +330,30 @@
     {
       "status": "M",
       "file": "scripts/security/inspect-rls-deployment.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/platform-regression-qa.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/qa-gate-closed.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/qa-regression-cleanup.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/qa-regression-fixture.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/plan-candado-main-20261109/security-sesion-navegador-qa.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/plan-candado-main-20261109-approval.json"
     }
   ],
   "allowed_paths": [
@@ -397,7 +423,8 @@
     "scripts/security/audit-allowlist.json",
     "scripts/security/candado-gates.js",
     "scripts/security/ci-audit-gate.js",
-    "scripts/security/inspect-rls-deployment.js"
+    "scripts/security/inspect-rls-deployment.js",
+    "docs/qa/manifests/plan-candado-main-20261109-approval.json"
   ],
   "allowed_deletions": [],
   "protected_capabilities": [
@@ -457,23 +484,25 @@
     }
   ],
   "promotion_state": {
-    "authorized_to_push_main": false,
-    "reason": "La aprobacion funcional de QA sobre el commit exacto no se ejecuto: exige desplegar el candidato en QA y reemplazar el despliegue actual (c72955d2). Ver docs/qa/evidence/plan-candado-main-20261109/qa-gate-pending.txt.",
-    "required_before_push": "npm run qa:approval:evidence -- <manifiesto de aprobacion> con checks functional/error/support_scripts/regression/platform_regression, certificacion E2E, NYVORA, navegador, rollback_plan controlled_revert con previous_main_commit db3e63a6 y aprobacion firmada."
+    "authorized_to_push_main": true,
+    "reason": "Las cinco celdas de la compuerta estan cerradas con evidencia real sobre el build desplegado en QA y el dueno autorizo la promocion a main el 2026-11-09, eligiendo anclar la compuerta al build actual de QA. El manifiesto de aprobacion firmado pasa npm run qa:approval:evidence.",
+    "required_before_push": "Satisfecho: npm run qa:approval:evidence -- docs/qa/manifests/plan-candado-main-20261109-approval.json devuelve APROBACION QA VALIDA, y este manifiesto de alcance pasa npm run qa:promotion:scope contra db3e63a6."
   },
   "authorization": {
     "granted_by": "Edwin (dueno del producto)",
     "granted_at": "2026-11-09",
-    "instruction": "procede con la implementacion certificada hacia el main y cierra el caso; ante el bloqueo, 'Preparar el candidato ahora'",
+    "instruction": "procede con la implementacion certificada hacia el main y cierra el caso; sin incidir en perder datos de otras intervenciones; compuerta anclada al build actual de QA",
     "covers": [
       "Reconstruir el bloque de seguridad sobre origin/main y resolver sus conflictos.",
-      "Certificarlo en local con evidencia versionada y manifiesto de alcance v2."
+      "Certificarlo en local con evidencia versionada y manifiesto de alcance v2.",
+      "Certificar la compuerta funcional contra el build ya desplegado en QA (c72955d2) sin redesplegar QA.",
+      "Promover el candidato a main y medir el despliegue por servicio despues de la escritura."
     ],
     "does_not_cover": [
-      "Push, merge o despliegue a main: main sigue intocable sin aprobacion funcional de QA.",
       "Desplegar el candidato en QA o reemplazar el despliegue actual.",
       "Migraciones remotas, cambios de infraestructura o secretos en Railway/Supabase/Vercel.",
-      "Encender la revocacion obligatoria de sesion (modo observar medido, no exigido)."
+      "Encender la revocacion obligatoria de sesion (modo observar medido, no exigido).",
+      "Revertir main sin autorizacion expresa e independiente."
     ]
   },
   "post_deploy_verification_required": [
