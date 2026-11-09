@@ -347,3 +347,21 @@ El propietario autorizó Docker y `config/local.env`; el stack se levantó (post
 
 - `BLOQUEO` (cerrado 2026-11-08): la certificación E2E que faltaba por stack local caído ya se ejecutó; su salida queda en `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`.
 - `BLOQUEO`: `TRUST_PROXY` no está declarado en Railway desde esta intervención. Mientras no se declare en el ambiente desplegado, detrás del proxy toda petición anónima comparte la IP del proxy en el límite global (200/min) y en el bloqueo de login. Declararlo es cambio de ambiente y exige autorización propia; `config/.env.example` deja la instrucción.
+
+## 16. Configuración de ambientes y cierre del residual A-01/A-13 (2026-11-09)
+
+**Residual A-01/A-13 — cerrado en código.** El espejo de Supabase (`ensureTenantMirror` y `ensureUserMirror`) ya no escribe `active` al sincronizar y la sesión rechaza con 403 `EMPRESA_SUSPENDIDA` / `USUARIO_DESACTIVADO` después del espejo. La prueba `apps/api/test/supabase-auth-mirror.test.js` (3/3) fija las dos mitades —la escritura no contiene `active` y la autenticación se rechaza— y conserva el caso de usuario y empresa activos (suites vecinas 30/30). Queda como **verificación post-despliegue**: el entorno local no levanta Supabase y QA/PROD corren commits anteriores al bloque. Evidencia en `docs/qa/evidence/plan-candado-20261108/security-fase-2.txt`.
+
+**Railway.** Con la sesión del propietario en el panel se agregaron y aplicaron variables no secretas:
+
+- QA API: `TRUST_PROXY=1` y `AUTHORIZATION_VERSION_OBSERVATION_ENABLED=true`. La observación mide sin expulsar; el enforcement sigue sin declararse en ningún ambiente.
+- PROD API: `TRUST_PROXY=1`. Sin banderas de observación ni de enforcement.
+- Efecto real: ninguno hasta que el bloque se promueva y redespliegue; QA corre `2cb064e2` y PROD `938fc2b6`.
+
+**Pendiente que exige decisión del dueño.** `APEXOS_PUBLIC_SERVICE_COMPANY_ID` no se declaró: elige qué empresa recibe el formulario público y hay siete empresas candidatas en QA con referencias activas (SCJ 130, Puebla Operaciones 118, cinco con 18). Elegir por conveniencia expondría el catálogo equivocado; sin la variable el formulario falla cerrado con 503. Detalle y empresas en `docs/qa/evidence/plan-candado-20261108/security-ambientes.txt`.
+
+**R-03 sigue abierto y sin cambios aplicados.** La política `service_references_public_catalog_select` de Supabase QA permite leer las referencias activas de todos los tenants con la anon key. Corregirlo exige una allowlist persistida en la base y una ventana de aplicación por ambiente; un cambio de RLS en producción no se hizo.
+
+**Hallazgo Vercel (Alta, requiere decisión).** El proyecto `apexos-api` conserva `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `JWT_SECRET`, sigue construyendo desde GitHub y su dominio de producción `https://apexos-api.vercel.app` responde 500 `FUNCTION_INVOCATION_FAILED` en `/` y `/health`. No hay evidencia de filtración. Recomendación: pausar/eliminar el proyecto o repararlo y rotar esas credenciales; no se modificó porque pausar o borrar un dominio público es destructivo y exige autorización explícita.
+
+**Certificación de esta ronda.** Dos commits publicados en `origin/desarrollo`: `dbc3cf9b` (modal de Suscripciones, 16/16 en navegador) y `674e191a` (espejo A-01/A-13, 3/3). La suite completa del API no se usó como evidencia: se interrumpió de forma inconcluyente tras el reinicio de Docker y las suites de autenticación se corrieron dirigidas.
