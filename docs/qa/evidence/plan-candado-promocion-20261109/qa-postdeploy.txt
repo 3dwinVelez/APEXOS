@@ -1,0 +1,50 @@
+POST-DESPLIEGUE QA DEL BLOQUE DE SEGURIDAD (solo lectura anonima)
+change_id: plan-candado-seguridad-20261109
+candidato promovido: c72955d22f97 (fast-forward 41421360..c72955d2 en develop)
+entorno: QA (Railway), sondeos GET anonimos; no se creo ninguna solicitud
+fecha de la corrida final: 2026-11-09T15:27:06Z
+
+- API /health responde 200 con commit c72955d22f97 y 19 modulos: el servicio sirve el commit promovido.
+- Catalogo publico anonimo del API responde 200 y fija la empresa de la allowlist (cbbf3627...), no otra.
+- BFF de apps/web: la misma sonda con `?empresa=NYVORA` y sin parametro devuelve la misma empresa (cbbf3627...).
+  La primera medicion de la ronda (10:26) todavia devolvia otra empresa porque el servicio web no habia
+  redesplegado; al completarse el despliegue la sobreescritura dejo de tener efecto. Hallazgo cerrado, no
+  reinterpretado: hasta ese momento la promocion se leyo como "API desplegada, web pendiente".
+
+LIMITE DECLARADO: son GET anonimos; el POST no se ejecuto en QA en esta corrida (la escritura ya se
+certifico con la preorden OS-00021 en la ronda de la allowlist). No se conecto a produccion.
+
+Salida cruda del sondeo:
+
+{
+  "change_id": "plan-candado-seguridad-20261109",
+  "environment": "QA",
+  "api_base": "https://apexos-api-qa-production.up.railway.app",
+  "web_base": "https://apexos-web-qa-production.up.railway.app",
+  "generated_at": "2026-11-09T15:27:06.458Z",
+  "authenticated": false,
+  "note": "Solo GET anonimos; no se creo ninguna solicitud.",
+  "api_health": {
+    "status": 200,
+    "commit": "c72955d22f97",
+    "modules": 19
+  },
+  "api_catalog": {
+    "status": 200,
+    "company_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+    "ok": true
+  },
+  "web_form_with_override": {
+    "status": 200,
+    "company_id": "cbbf3627-4336-4f23-95c6-1077414bcd17"
+  },
+  "web_form_plain": {
+    "status": 200,
+    "company_id": "cbbf3627-4336-4f23-95c6-1077414bcd17"
+  },
+  "verdict": {
+    "deployment_matches_promotion": true,
+    "catalog_available": true,
+    "override_ignored": true
+  }
+}

@@ -1,0 +1,25 @@
+
+> apex-os@2.0.0 certify:auth-session
+> node scripts/certifications/auth-session-readiness.js
+
+{
+  "ok": true,
+  "environment": "local",
+  "commit": "cb0f6062",
+  "health": "OK",
+  "login": "passed",
+  "authenticated_query": "passed",
+  "session": "passed",
+  "rejections": {
+    "sin_token": 401,
+    "token_basura": 401,
+    "alg_none": 401,
+    "clave_incorrecta": 401,
+    "firma_alterada": 401
+  },
+  "revocation": {
+    "measured": true,
+    "enforced": false
+  },
+  "revocation_required": false
+}

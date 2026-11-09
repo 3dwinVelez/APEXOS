@@ -1,0 +1,71 @@
+PLAN CANDADO - RESUMEN DE GATES DEL CANDIDATO
+change_id: plan-candado-seguridad-20261109
+candidato: cb0f6062c8c98f8651001affd09462b705a727e2
+base: origin/develop 4142136033459013ed2c96149041f5862ed2b55c
+fecha: 2026-11-09
+entorno: LOCAL (Docker infra-postgres/redis/minio/brain; API 127.0.0.1:3000 servida desde el arbol del candidato)
+
+1. SUITE API COMPLETA
+   candidato: 1102 pruebas, 1099 pasan, 0 fallan, 3 saltadas            -> api-suite.txt
+   baseline develop: 1056 pruebas, 1053 pasan, 0 fallan, 3 saltadas     -> api-suite-baseline-develop.txt
+   pruebas nuevas aportadas: 46; regresiones atribuibles: 0.
+
+2. SUITE WEB
+   candidato: 769 pruebas, 765 pasan, 4 fallan                          -> web-suite.txt
+   Las 4 fallas se reproducen identicas sobre origin/develop limpio (fallas de destino conocidas):
+   - el registro de funciones cubre todas las rutas del dashboard
+   - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+   - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+   - react y react-dom/server salen de la misma instalacion de node_modules
+   Regresiones atribuibles al candidato: 0.
+
+3. CERTIFICACION END-TO-END DE SESION (npm run certify:auth-session)
+   ok=true, commit cb0f6062, health OK, login/authenticated_query/session passed.
+   Cinco manipulaciones del JWT responden 401: sin token, token basura, alg none, clave incorrecta, firma alterada.
+   Revocacion: measured=true, enforced=false (modo observar; no exigida en esta ronda).  -> certify-auth-session.txt
+
+4. GATE CANDADO (npm run security:candado)
+   exit 0 en modo reporte.
+   models_with_tenant_id_outside_allowlist=0; models_in_allowlist_without_tenant_id_column=0
+   public_web_routes_using_service_role=0; public_web_routes_using_prisma_client=0
+   routes_without_auth=4; raw_sql_queries=190; rls_enable_statements=41; rls_policies_declared=176
+   app_tenant_guc_sets_in_code=0; tenant_models_filtered=176; global_models_declared=12
+   npm_audit_critical_high=20 (todos tolerados por scripts/security/audit-allowlist.json)
+   Diferencia declarada, no ocultada: global_models_not_in_schema 0 -> 3
+   (ApexComponent, ApexHealthSample, ApexReportRun). No es regresion de aislamiento: esos modelos existen
+   en el esquema de desarrollo y no en el de develop; cuando ese backlog se promueva el indicador vuelve a 0.
+   -> security-candado.txt
+
+5. GATE CI AUDIT (npm run security:ci-audit)
+   exit 0. 0 advisories critical/high fuera de la allowlist vigente (20 tolerados).  -> security-ci-audit.txt
+
+6. GATE RLS LOCAL (security:inspect-rls --target=local --gate)
+   exit 1 por estado de la base local de desarrollo: 101 tablas sin RLS y 4 con RLS sin FORCE
+   (TransportPyg*). Es el Postgres de desarrollo, no el candidato: el candidato no trae migraciones
+   ni cambios de esquema (0 rutas en supabase/migrations y 0 en apps/api/prisma/schema.prisma).
+   -> security-rls-local.txt
+
+7. INSPECCION RLS DE QA (solo lectura, --target=qa)
+   251 tablas, 108 politicas, 1 tabla sin RLS (apexos_accounting_private.standard_chart).
+   41 diferencias de logica que son formato de serializacion de Postgres
+   (`bucket_id = 'x' and ...` vs `(bucket_id = 'x') and ...`), no cambios de politica.
+   Tablas con RLS habilitada sin FORCE: la proteccion real depende del rol de conexion.
+   Deriva preexistente del ambiente, no del candidato; se entrega a apexos-db-nube.
+   No se conecto a produccion.  -> security-rls-qa-readonly.txt
+
+8. ESQUEMA PRISMA (npx prisma validate)
+   valido sobre el esquema del candidato.  -> prisma-validate.txt
+
+9. FRONTEND
+   typecheck (tsc --noEmit): exit 0, sin errores.  -> web-typecheck.txt
+   lint (eslint): exit 0, 0 errores y 22 warnings preexistentes.  -> web-lint.txt
+
+10. FORMULARIO PUBLICO DE SERVICIOS (anonimo, sondas en vivo, sin crear ordenes)
+    6/6. El catalogo responde 200 y fija company_id de la allowlist; no publica cost, stock ni tenant_id.
+    Un body con company_id ajeno llega al handler (AJV descarta el campo) y la referencia de otro tenant
+    se rechaza con 400 REFERENCIA_INVALIDA; campos obligatorios ausentes responden 400 FST_ERR_VALIDATION.
+    -> public-form-local.json
+
+11. VALIDADORES DE PROMOCION
+    qa:promotion:scope  -> ALCANCE DE PROMOCION VALIDO: plan-candado-seguridad-20261109 (66 rutas)
+    qa:preqa:evidence  -> AUTORIZACION PRE-QA VALIDA: plan-candado-seguridad-20261109

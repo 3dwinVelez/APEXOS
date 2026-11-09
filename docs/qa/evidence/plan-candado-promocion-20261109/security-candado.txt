@@ -1,0 +1,29 @@
+[candado-gates] Midiendo postura de seguridad...
+[candado-gates] Indicadores:
+  models_with_tenant_id_outside_allowlist: 0
+  models_in_allowlist_without_tenant_id_column: 0
+  global_models_not_in_schema: 3
+  public_web_routes_using_service_role: 0
+  public_web_routes_using_prisma_client: 0
+  raw_sql_queries: 190
+  routes_without_auth: 4
+  npm_audit_critical_high: 20
+  script_src_unsafe_inline: 1
+  connect_src_scheme_wildcard: 1
+  object_src_not_none: 0
+  rls_force_statements: 0
+  rls_enable_statements: 41
+  rls_policies_declared: 176
+  app_tenant_guc_sets_in_code: 0
+  published_ports: 11
+  explicitly_bound_ports: 1
+  lax_default_credentials: 9
+  redis_without_password: 1
+  example_files_with_enforcement_disabled: 2
+  (info) routes_authenticated_without_permission_guard: 182
+  (info) tenant_models_filtered: 176
+  (info) global_models_declared: 12
+  (info) web_routes_using_service_role_total: 7
+  (info) public_routes_declared: 3
+[candado-gates] REGRESIÓN: global_models_not_in_schema subió de 0 a 3
+[candado-gates] Modo reporte: hay regresiones sin bloquear. Exit 0.

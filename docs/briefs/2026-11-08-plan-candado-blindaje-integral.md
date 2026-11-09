@@ -380,3 +380,37 @@ El propietario autorizó Docker y `config/local.env`; el stack se levantó (post
 **Hallazgo Alta: la allowlist configurada no es la allowlist aplicada.** El código desplegado en develop y main aún acepta `company_id` del cuerpo y `?empresa=` y los antepone a la variable. Reproducción anónima: `GET …/api/public/service-requests?empresa=NYVORA` en PROD devolvió el catálogo de NYVORA (`82c2da06…`); en QA, `?empresa=Cliente Piloto QA` devolvió `c56bc5df…`. El arreglo (`a87ce176`) solo existe en `desarrollo`, y los commits desplegados tampoco incluyen el módulo público del API (404 medido en `/api/v1/public/services/catalog`). Impacto: cualquiera con la anon key puede hacer que el formulario lea y escriba en otra empresa activa. Recomendación: promover el bloque de seguridad con manifiesto v2, certificación pre-QA y QA funcional en Railway. Hasta entonces la variable es un valor por defecto, no un control.
 
 **Límites.** No se ejecutó POST en PROD; la lectura con `?empresa=` demuestra la misma resolución de empresa que usa el POST. R-03 sigue abierto. Evidencia completa en `docs/qa/evidence/plan-candado-20261108/security-formulario-publico.txt`.
+
+## 18. Promoción del bloque de seguridad a `develop` (2026-11-09)
+
+**Instrucción literal del dueño:** «Promueve el bloque de seguridad a develop». Alcance autorizado: solo esa promoción; no cubre `main`, force push, migraciones remotas, infraestructura ni encender el enforcement de revocación.
+
+**El candidato se reconstruyó, no se mergeó.** `desarrollo` estaba 119 commits por delante de `develop`; un `git merge` habría promocionado módulos y gobernanza fuera de alcance y habría dejado el diff imposible de auditar. El bloque viajó como 10 commits `cherry-pick -x` sobre la punta de `develop` (`41421360`):
+
+| commit | contenido |
+|---|---|
+| `c65fe9e7` | Fase 0: gates del candado + inspección RLS |
+| `ea3cc54c` | Fase 1: módulo público del API sin service role y empresa fija |
+| `2fbcefa4` | Fase 2: revocación observable, rotación de refresh, login uniforme, `trustProxy` |
+| `b55c9d57` | Cierre documental de la Fase 2 |
+| `cfc1e808` | Evidencia E2E del formulario público |
+| `9d61b6e2` | Espejo de Supabase que no reactiva cuentas ni empresas |
+| `b7870537` | Documentación de variables de ambiente |
+| `668af5ba` | Documentación de la allowlist por ambiente |
+| `15b723f1` | Adaptación solo de pruebas al esquema del destino |
+| `cb0f6062` | Contratos de tenancy apuntando a `TENANT_MODELS` derivado |
+| `e4c8f93e` | Evidencia pre-QA y manifiestos |
+| `c72955d2` | Salida de los validadores anexada a `gates-summary.txt` |
+
+Se excluyó el árbol de gobernanza (`agents/**`, `.qoder/skills/**`, `scripts/agents/**`) porque `develop` no lo tiene. El push fue **fast-forward** `41421360..c72955d2`, sin force ni merge.
+
+**Inventario medido sobre el índice, no sobre `HEAD`.** `git diff base..HEAD` ignoraba lo no rastreado y daba 53 archivos cuando el diff real era 66. El manifiesto scope v2 y el pre-QA quedaron commiteados **en el árbol promovido**, con los 66 archivos exactos (25 M / 41 A / 0 D), `allowed_deletions: []`, `base_commits.develop = 41421360`, `certified_commit = cb0f6062`; `qa:promotion:scope` y `qa:preqa:evidence` pasaron sobre ese árbol.
+
+**Deriva declarada, no legalizada.** El candado detectó `global_models_not_in_schema` de 0 a 3 (`ApexComponent`, `ApexHealthSample`, `ApexReportRun`) porque el esquema de `develop` no trae los modelos de `apex-control`; es deriva del destino y el indicador vuelve a 0 cuando ese backlog se promueva. La base local no tiene RLS (101 tablas, 4 sin `FORCE`), pero el candidato no trae migraciones ni cambios de esquema. La inspección de QA (solo lectura) mostró 1 tabla sin RLS (`apexos_accounting_private.standard_chart`) y 41 diferencias de formato, sin cambios de política y sin `FORCE`; se entrega a `apexos-db-nube`. No se conectó a producción.
+
+**Certificación local sobre el candidato.** API 1102/1099/0 fallos/3 omitidas (base `develop` 1056/1053/0/3; 46 pruebas nuevas, 0 regresiones atribuibles), web 769/765 con 4 fallos que se reproducen idénticos sobre `develop` limpio, `certify:auth-session` con `ok true` y cinco manipulaciones del JWT respondiendo 401 (revocación `measured=true`, `enforced=false` por seguir en modo observar), formulario público 6/6, `prisma validate`, typecheck y lint en verde. Las dos pruebas de contrato de tenancy que miraban la lista escrita en `prisma.js` se adaptaron a `TENANT_MODELS` derivado del esquema (38/38). Evidencia: `docs/qa/evidence/plan-candado-promocion-20261109/` (14 archivos).
+
+**Post-despliegue medido por servicio.** El API de QA sirve `c72955d22f97` (19 módulos) y el catálogo anónimo queda clavado a SCJ (`cbbf3627…`). El BFF de `apps/web` seguía con el build anterior y honraba `?empresa=` hasta que redesplegó a las 10:26; la misma sonda devolvió entonces `cbbf3627…` con y sin el parámetro, así que el hallazgo Alta de §17 se cierra con la medición, no con una suposición. Hasta ese momento la ronda se leyó como «API desplegada, web pendiente». Evidencia: `docs/qa/evidence/plan-candado-promocion-20261109/qa-postdeploy.txt`.
+
+**Lo que sigue abierto.** `main` requiere aprobación funcional de QA antes de promoverse; el enforcement de revocación sigue apagado y exige una corrida medida con autorización propia; R-03 y el proyecto Vercel en 500 con credenciales siguen como en §16/§17. `reports/security/` quedó sin versionar por ser salida local.
+

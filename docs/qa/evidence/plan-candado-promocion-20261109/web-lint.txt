@@ -1,0 +1,57 @@
+
+> @apex-os/web@2.0.0 lint
+> eslint .
+
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\dashboard\reportes\apex-heart\page.tsx
+  25:37  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\dashboard\talento-humano\mapa\page.tsx
+  426:6  warning  React Hook useEffect has a missing dependency: 'visibleBounds'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\dashboard\talento-humano\nomina\page.tsx
+  179:10  warning  'selectedDocument' is assigned a value but never used                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  289:6   warning  React Hook useCallback has a missing dependency: 'preview.length'. Either include it or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSelectedDocument' needs the current value of 'preview.length'  react-hooks/exhaustive-deps
+  604:18  warning  'openPdf' is defined but never used                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\dashboard\talento-humano\novedades\page.tsx
+  55:37  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\dashboard\talento-humano\provisiones\page.tsx
+  125:9  warning  The 'rows' logical expression could make the dependencies of useMemo Hook (at line 130) change on every render. To fix this, wrap the initialization of 'rows' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  125:9  warning  The 'rows' logical expression could make the dependencies of useMemo Hook (at line 151) change on every render. To fix this, wrap the initialization of 'rows' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\dashboard\talento-humano\reportes\page.tsx
+   64:7   warning  'BENEFIT_LABELS' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  223:10  warning  'benefitEmployee' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  230:10  warning  'payrollEmployee' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  236:10  warning  'auxiliaryEmployee' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\dashboard\transporte\page.tsx
+  958:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\app\print\transport-settlement\page.tsx
+  98:834  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\components\accounting\AccountingPygBudget.tsx
+  322:15  warning  Elements with the ARIA role "combobox" must have the following attributes defined: aria-controls,aria-expanded  jsx-a11y/role-has-required-aria-props
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\components\shell\TechnicianWorkspaceHeader.tsx
+  10:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\components\shell\UserSessionBadge.tsx
+  68:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\components\transport\PlanningRouteMap.tsx
+  474:6  warning  React Hook useEffect has a missing dependency: 'selected'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\lib\api.ts
+   355:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  4655:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\mq1\AppData\Local\Temp\apexos-seguridad-develop\apps\web\lib\sessionSecurity.ts
+   73:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  130:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+✖ 22 problems (0 errors, 22 warnings)
+

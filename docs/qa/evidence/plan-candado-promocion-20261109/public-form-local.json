@@ -1,0 +1,73 @@
+{
+  "change_id": "plan-candado-promocion-20261109",
+  "environment": "LOCAL",
+  "api_base": "http://127.0.0.1:3000/api/v1",
+  "generated_at": "2026-11-09T15:18:40.304Z",
+  "authenticated": false,
+  "note": "Sondas anonimas; solo lectura y rechazos, no se creo ninguna orden.",
+  "checks": [
+    {
+      "name": "catalogo_anonimo_responde",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "references": 5
+      }
+    },
+    {
+      "name": "catalogo_fija_la_empresa_de_la_allowlist",
+      "passed": true,
+      "detail": {
+        "company_id": "c0d70738-9098-4b55-8f62-7aefa80d14ad",
+        "allowlist_sha256_12": "944e38e19306"
+      }
+    },
+    {
+      "name": "catalogo_no_publica_costo_stock_ni_tenant_interno",
+      "passed": true,
+      "detail": {
+        "catalog_keys": [
+          "company_id",
+          "ok",
+          "references",
+          "service_stores",
+          "service_types"
+        ],
+        "reference_keys": [
+          "brand",
+          "category",
+          "code",
+          "company_id",
+          "id",
+          "model",
+          "name"
+        ]
+      }
+    },
+    {
+      "name": "el_body_no_puede_inyectar_company_id",
+      "passed": true,
+      "detail": {
+        "status": 400,
+        "code": "REFERENCIA_INVALIDA",
+        "note": "AJV (removeAdditional de Fastify) descarta company_id del body; la peticion llega al handler y la referencia ajena se rechaza contra la empresa de la allowlist."
+      }
+    },
+    {
+      "name": "referencia_de_otra_empresa_se_rechaza",
+      "passed": true,
+      "detail": {
+        "status": 400,
+        "code": "REFERENCIA_INVALIDA"
+      }
+    },
+    {
+      "name": "campos_obligatorios_se_exigen",
+      "passed": true,
+      "detail": {
+        "status": 400,
+        "code": "FST_ERR_VALIDATION"
+      }
+    }
+  ]
+}
