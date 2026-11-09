@@ -1,0 +1,189 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "modal-empresa-flotante-main-20261109",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-modal-empresa-main-20261109",
+  "certified_commit": "ef39d1f97610bfe52745be7ccc5be2aa38dac24d",
+  "base_commit": "85fc46ecb069cebb50a027570461a683b5038822",
+  "base_commits": {
+    "main": "85fc46ecb069cebb50a027570461a683b5038822"
+  },
+  "change_intent": {
+    "summary": "Llevar a produccion solo la correccion del modal de crear empresa de Suscripciones: la ventana deja de ser una capa fixed incrustada en la pagina (recortada por la animacion .apex-page-enter, que crea un containing block) y pasa a abrirse con ModalFrame portado sobre document.body, centrada, con velo que cubre el viewport, foco atrapado, Escape, scroll del fondo bloqueado y un panel acotado de 672 px. Crear y editar comparten CompanyFields y el pie envia el formulario correcto por form; inactivar conserva su confirmacion con md:!max-w-md. El candidato se reconstruyo con los mismos 9 archivos certificados en develop (21a78214) sobre el tip vigente de main (85fc46ec), sin fusionar develop: main no recibe Gastos Menores, tarifario, liquidacion, planes de despacho ni sus migraciones. No toca API, esquema ni migraciones, y no elimina archivos.",
+    "modules": [
+      "administracion-suscripciones",
+      "componente-modal-compartido",
+      "manifiesto-y-evidencia-de-promocion"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/administracion/suscripciones/page.tsx",
+    "apps/web/test/admin-company-modal-frame.test.mjs",
+    "apps/web/test/certify-company-modal-floating-local.mjs",
+    "docs/project/modulos/administracion.md",
+    "docs/qa/certifications/modal-empresa-flotante-20261109.md",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-dark.png",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/gates-candidato.txt",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/suscripciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/admin-company-modal-frame.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/certify-company-modal-floating-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/administracion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/modal-empresa-flotante-20261109.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/company-modal-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/gates-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/platform-regression-qa.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/modal-empresa-flotante-20261109/web-suite-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/modal-empresa-flotante-main-20261109-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/modal-empresa-flotante-main-20261109-scope.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/dashboard/administracion/suscripciones/page.tsx",
+    "apps/web/test/admin-company-modal-frame.test.mjs",
+    "apps/web/test/certify-company-modal-floating-local.mjs",
+    "docs/project/modulos/administracion.md",
+    "docs/qa/certifications/modal-empresa-flotante-20261109.md",
+    "docs/qa/evidence/modal-empresa-flotante-20261109/",
+    "docs/qa/manifests/modal-empresa-flotante-main-20261109-scope.json",
+    "docs/qa/manifests/modal-empresa-flotante-main-20261109-approval.json"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "La ventana de crear empresa se abre como capa flotante portada al body, centrada, con velo completo y sin recorte sobre la pagina desplazada",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-dark.png",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../certifications/modal-empresa-flotante-20261109.md",
+        "../../../apps/web/test/certify-company-modal-floating-local.mjs"
+      ]
+    },
+    {
+      "name": "El fondo no se desplaza con el modal abierto y el foco permanece en el campo al escribir; Escape cierra y devuelve el foco al disparador",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ]
+    },
+    {
+      "name": "Crear y editar empresa comparten CompanyFields y el pie envia el formulario correcto; inactivar conserva su confirmacion y ninguna capa fixed inline queda en la pagina",
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/admin-company-modal-frame.test.mjs",
+        "../../../apps/web/app/dashboard/administracion/suscripciones/page.tsx",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ]
+    },
+    {
+      "name": "El modal pinta la superficie en tema claro y oscuro con contraste suficiente",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-dark.png",
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ]
+    },
+    {
+      "name": "El resto de main no se mueve: solo cambian la pagina de Suscripciones, sus pruebas y la evidencia; cero eliminaciones; lint, typecheck, build y suite web se miden sobre el arbol promovido",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../evidence/modal-empresa-flotante-20261109/web-suite-main.txt",
+        "../../../apps/web/app/dashboard/administracion/suscripciones/page.tsx"
+      ]
+    },
+    {
+      "name": "Regresion transversal del ERP en QA con la empresa modelo NYVORA: sesion, servicios, ordenes, referencias, empleados, inventario y plan contable responden y los no autorizados siguen bloqueados",
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/platform-regression-qa.txt",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../../../scripts/certifications/platform-regression-qa.js"
+      ]
+    }
+  ],
+  "authorization": {
+    "granted_by": "Edwin (dueno del producto)",
+    "granted_at": "2026-11-09",
+    "instruction": "necesito corregir desde desarrollo la creacion de una empresa ... este error esta en productivo necesito que hagas una intervencion adecuada que pase todas las certificaciones para que la ventana abra de la manera correcta, lleva todos los cambios desde desarrollo, develop y por ultimo a main. tienes mi autorizacion para esta intervencion",
+    "covers": [
+      "Corregir el modal de crear empresa en desarrollo y certificarlo con evidencia versionada.",
+      "Promover el paquete a develop (cerrado: candidato 41421360 en QA) y luego a main con sus gates de alcance y aprobacion QA, incluyendo el despliegue del build resultante."
+    ],
+    "does_not_cover": [
+      "Force push, reescritura de historia compartida o rebase de ramas permanentes.",
+      "Migraciones remotas, cambios de esquema, secretos o configuracion de Railway/Supabase: este paquete no los toca.",
+      "Fusionar develop completo hacia main: el candidato es una reconstruccion puntual de 9 archivos certificados."
+    ]
+  },
+  "post_deploy_verification_required": [
+    "Leer /health en el ambiente productivo y confirmar que el commit desplegado es el del candidato promocionado.",
+    "Confirmar que la ruta /dashboard/administracion/suscripciones responde y que el build sirve los assets del nuevo modal.",
+    "Reportar al dueno el resultado y pedir la confirmacion visual en produccion con su sesion, porque el agente no dispone de credenciales productivas para medir el navegador."
+  ],
+  "notes": {
+    "generation": "Inventario exacto medido con `git diff --name-status origin/main..HEAD` sobre el candidato final: 14 rutas, 12 A y 2 M, cero eliminaciones.",
+    "why_reconstructed": "Fusionar origin/develop hacia main arrastraria Gastos Menores, el tarifario con sedes, la liquidacion por paquetes, los planes de despacho y sus migraciones, todo fuera de este alcance y con esquemas que no existen en produccion. La politica prohibe fusiones fuera de alcance, asi que el candidato se reconstruyo sobre origin/main 85fc46ec con el commit de contenido ef39d1f9 y un segundo commit con manifiestos y esta evidencia.",
+    "equivalencia_con_develop": "La pagina de Suscripciones, ModalFrame y el documento de Administracion son byte a byte identicos entre origin/main 85fc46ec y la base del candidato de develop (6edf85c7); `git diff origin/main..6edf85c7` sobre esas rutas no devuelve lineas. Por eso los 9 archivos certificados se aplican exactos y el arbol de producto promovido es el mismo que se midio.",
+    "medido_en_el_arbol_de_main": "La certificacion de navegador, la prueba de fuente, lint, typecheck, build y la suite web se corrieron sobre este worktree reconstruido, no sobre desarrollo. El unico rojo de la suite es la deuda preexistente de Transporte, con cero rutas del candidato involucradas.",
+    "sin_migraciones": "Este manifiesto NO autoriza ni requiere migraciones remotas. El paquete solo cambia la pagina, sus pruebas y documentos.",
+    "evidencia_sanitizada": "La evidencia no contiene tokens, claves ni cadenas de conexion. Los correos del fixture Nyvora son sinteticos del arnes (dominio internal.apexos.local).",
+    "celda_de_ambiente": "La regresion transversal se midio contra el ambiente QA desplegado (commit 414213603345, el mismo arbol de producto que el candidato de develop) con el fixture controlado de NYVORA. La correccion visual se midio en navegador real sobre el arbol promovido con 16 comprobaciones."
+  }
+}

@@ -49,3 +49,12 @@ Alcance         : la pagina de Suscripciones, sus dos pruebas y la documentacion
                6 capacidades en verde: session, services_orders, services_references,
                hr_employees, inventory_items, accounting_accounts; no autorizados bloqueados (401).
    Evidencia : platform-regression-qa.txt
+
+8. Gate de alcance (qa:promotion:scope, origin/main 85fc46ec .. candidato)
+   Resultado : ALCANCE DE PROMOCION VALIDO: modal-empresa-flotante-main-20261109 (14 rutas)
+   Exige    : inventario exacto A/M, cero eliminaciones y destino sin cambios desde el baseline.
+
+9. Gate de aprobacion QA (qa:approval:evidence)
+   Resultado : APROBACION QA VALIDA: modal-empresa-flotante-main-20261109
+   Exige    : evidencia de los cinco frentes, certificacion y regresion con scripts versionados,
+              empresa modelo NYVORA en QA y plan de rollback controlado.

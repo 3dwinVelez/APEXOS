@@ -1,0 +1,107 @@
+{
+  "change_id": "modal-empresa-flotante-main-20261109",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-modal-empresa-main-20261109",
+  "commit": "ef39d1f97610bfe52745be7ccc5be2aa38dac24d",
+  "candidate_commit_note": "commit registra ef39d1f9, el commit de contenido reconstruido sobre origin/main 85fc46ec. El candidato final agrega un segundo commit solo con estos manifiestos y el registro de puertas; el arbol de producto promovido es el de ef39d1f9. La regresion transversal de QA se midio contra el candidato de develop desplegado (414213603345), cuyo arbol contiene exactamente los mismos archivos certificados.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+        "../evidence/modal-empresa-flotante-20261109/company-modal-dark.png",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ],
+      "basis": "El flujo pedido por el dueno (abrir Suscripciones, pulsar Crear empresa y obtener una ventana flotante usable) se midio en navegador real sobre el arbol promovido: 16 comprobaciones en verde. El panel se abre portado al body a 672 x 828 en un viewport de 1440 x 900, centrado exacto (centeredX 0, centeredY 0), con velo 1440 x 900 rgba(10,10,10,0.55) y el scroll del documento bloqueado aunque la pagina este desplazada 92 px. Antes del cambio la ventana era una capa fixed dentro de .apex-page-enter, cuyo transform la posicionaba contra la pagina y la recortaba."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/admin-company-modal-frame.test.mjs",
+        "../../../apps/web/app/dashboard/administracion/suscripciones/page.tsx",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ],
+      "basis": "La prueba de fuente fija los controles negativos: cero capas fixed inline en la pagina, exactamente tres ModalFrame (crear, editar, inactivar), titulos correctos y pie enlazado por form a company-create-form y company-edit-form. El modal compartido atrapa el foco, cierra con Escape devolviendo el foco al disparador y bloquea el scroll del fondo; las cuatro comprobaciones de navegador asociadas pasaron en el arbol promovido."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../apps/web/test/certify-company-modal-floating-local.mjs",
+        "../../../apps/web/test/admin-company-modal-frame.test.mjs",
+        "../../../package.json"
+      ],
+      "basis": "Ambas puertas son scripts versionados en el candidato. La de navegador levanta el building real de Next con un Supabase simulado y un API stub, y devuelve exit no nulo si cualquier cheque falla; la de fuente corre con node --test y afirma el contrato del modal. Ninguna depende de servicios externos."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/web-suite-main.txt",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../../../apps/web/test/admin-company-modal-frame.test.mjs"
+      ],
+      "basis": "Suite web completa sobre el arbol promovido: 445 pruebas, 444 en verde, 1 rojo. El unico rojo es 'Transporte organiza el trabajo por etapas sin navegacion redundante'; su prueba y todas las paginas de Transporte que lee no aparecen en el diff del candidato (0 rutas entre 85fc46ec y HEAD), asi que es una deuda preexistente del destino ya documentada en la promocion sesion-main-20261108. Regresiones atribuibles al candidato: 0. Lint 0 errores, typecheck y build de produccion en exit 0."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/platform-regression-qa.txt",
+        "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ],
+      "basis": "La regresion transversal (platform-regression-qa.js) se ejecuto contra la API de QA en Railway con el commit medido 414213603345, el candidato de develop desplegado que contiene los mismos archivos certificados. Verifico /health, login 200 y las seis capacidades (session, servicios/ordenes, referencias, empleados, inventario, plan contable), y confirmo que una peticion sin autorizacion sigue respondiendo 401."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../apps/web/test/certify-company-modal-floating-local.mjs",
+    "evidence": [
+      "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+      "../evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+      "../evidence/modal-empresa-flotante-20261109/company-modal-dark.png",
+      "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+      "../certifications/modal-empresa-flotante-20261109.md"
+    ],
+    "measured_on": "arbol reconstruido sobre origin/main 85fc46ec; evidencia regenerada en esa misma corrida",
+    "controls": 16,
+    "browser_controls": 16
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../apps/web/test/admin-company-modal-frame.test.mjs",
+    "evidence": [
+      "../evidence/modal-empresa-flotante-20261109/gates-main-candidato.txt",
+      "../evidence/modal-empresa-flotante-20261109/web-suite-main.txt"
+    ],
+    "basis": "Prueba de fuente 2/2 y suite web completa con atribucion del unico rojo contra rutas que el candidato no toca."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "../evidence/modal-empresa-flotante-20261109/platform-regression-qa.txt"
+    ],
+    "basis": "El fixture controlado de NYVORA se ejecuto contra el ambiente QA desplegado (commit 414213603345) y respondio con model_company NYVORA: tenant y usuarios de certificacion activos, referencia NYV-QA-EVIDENCE visible, login autorizado 200, las seis capacidades del ERP en verde y los no autorizados bloqueados con 401. La correccion promovida no altera el contrato de esas capacidades: solo cambia la presentacion del modal en el cliente web."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "85fc46ecb069cebb50a027570461a683b5038822",
+    "trigger": "cualquier regresion visual o funcional en Suscripciones (ventana que no abre, no se centra, no bloquea el fondo o rompe crear/editar/inactivar empresa), cualquier asset o build defectuoso del cliente web tras el despliegue, o cualquier respuesta de la API productiva que deje de servir /health con el commit promocionado.",
+    "mechanism": "revert controlado del commit de contenido ef39d1f9 sobre main con un commit nuevo. El candidato no elimina archivos ni toca API, esquema o migraciones, asi que el arbol de producto vuelve exactamente a 85fc46ec. Nunca con force push ni reescritura de historia compartida.",
+    "rollback_requires_authorization": "el revert es una escritura en main y exige autorizacion expresa e independiente, igual que este push."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_main_del_modal_de_crear_empresa_flotante_exclusivamente",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-09T10:05:00-05:00",
+    "authorization_basis": "La instruccion del usuario fue textual: 'necesito corregir desde desarrollo la creacion de una empresa como ves la ventana no es flotante, y este error esta en productivo necesito que hagas una intervencion adecuada que pase todas las certificaciones para que la ventana abra de la manera correcta, lleva todos los cambios desde desarrollo, develop y por ultimo a main. tienes mi autorizacion para esta intervencion'. De esa autorizacion salen la correccion, su certificacion y las dos promociones (desarrollo -> develop y develop -> main) con sus gates. NO estan otorgadas: migraciones remotas, cambios de esquema, secretos, force push, fusion de develop completo ni escritura de datos productivos."
+  }
+}
