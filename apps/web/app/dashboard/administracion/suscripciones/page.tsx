@@ -3,7 +3,8 @@
 import { createPlatformCompanyWithAdmin, deletePlatformCompany, listPlatformCompanies, listPlatformCompanyModuleAccess, listPlatformCompanySessions, PlatformCompany, PlatformCompanyModuleAccess, PlatformCompanySessions, setPlatformCompanyModuleAccess, updatePlatformCompany } from "@/lib/supabaseQa";
 import { loadModuleAccess } from "@/lib/moduleAccess";
 import { MODULES } from "@/lib/modules";
-import { ArrowLeft, Building2, Check, CircleUserRound, LockKeyhole, Pencil, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, UsersRound, X } from "lucide-react";
+import { ModalFrame } from "@/components/ui/ModalFrame";
+import { ArrowLeft, Building2, Check, CircleUserRound, LockKeyhole, Pencil, Plus, RefreshCw, ShieldCheck, SlidersHorizontal, Trash2, UsersRound } from "lucide-react";
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -517,177 +518,74 @@ export default function SuscripcionesPage() {
       </div>
 
       {showCompanyModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-          <div className="w-full max-w-2xl rounded-md border border-line bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <div>
-                <p className="text-sm font-medium text-apex">Nueva sociedad</p>
-                <h2 className="text-xl font-semibold">Crear empresa</h2>
-              </div>
-              <button className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setShowCompanyModal(false)} title="Cerrar" type="button">
-                <X size={17} />
+        <ModalFrame
+          footer={
+            <div className="flex flex-wrap justify-end gap-2">
+              <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => setShowCompanyModal(false)} type="button">
+                Cancelar
+              </button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving === "company" || !companyForm.name.trim() || !companyForm.admin_email.trim() || !companyForm.admin_full_name.trim() || companyForm.admin_password.length < 8} form="company-create-form" type="submit">
+                <Plus size={16} />
+                {saving === "company" ? "Creando..." : "Crear empresa"}
               </button>
             </div>
-
-            <form
-              className="grid gap-4 p-5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                createCompany();
-              }}
-            >
-              {companyModalMessage ? (
-                <p className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">{companyModalMessage}</p>
-              ) : null}
-
-              <div className="grid max-h-[70vh] gap-3 overflow-y-auto pr-1 md:grid-cols-2">
-                <label className="grid gap-1 text-sm font-medium">
-                  Nombre comercial
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.name} onChange={(event) => setCompanyForm((current) => ({ ...current, name: event.target.value }))} required />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Razon social
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.legal_name} onChange={(event) => setCompanyForm((current) => ({ ...current, legal_name: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Tipo de entidad
-                  <select className="h-10 rounded-md border border-line bg-white px-3 text-sm font-normal" value={companyForm.company_type} onChange={(event) => setCompanyForm((current) => ({ ...current, company_type: event.target.value, parent_company_id: event.target.value === "business_group" ? "" : current.parent_company_id }))}>
-                    <option value="business_group">Grupo empresarial</option>
-                    <option value="company">Sociedad / empresa</option>
-                    <option value="business_unit">Unidad de negocio</option>
-                    <option value="branch">Sucursal</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Empresa padre
-                  <select className="h-10 rounded-md border border-line bg-white px-3 text-sm font-normal disabled:bg-paper" disabled={companyForm.company_type === "business_group"} value={companyForm.parent_company_id} onChange={(event) => setCompanyForm((current) => ({ ...current, parent_company_id: event.target.value }))}>
-                    <option value="">Sin empresa padre</option>
-                    {companies.map((company) => (
-                      <option key={company.company_id} value={company.company_id}>{company.company_name}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  NIT / Tax ID
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.tax_id} onChange={(event) => setCompanyForm((current) => ({ ...current, tax_id: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Estado
-                  <select className="h-10 rounded-md border border-line bg-white px-3 text-sm font-normal" value={companyForm.status} onChange={(event) => setCompanyForm((current) => ({ ...current, status: event.target.value }))}>
-                    <option value="active">Activa</option>
-                    <option value="inactive">Inactiva</option>
-                    <option value="suspended">Suspendida</option>
-                  </select>
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Correo corporativo
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" type="email" value={companyForm.email} onChange={(event) => setCompanyForm((current) => ({ ...current, email: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Telefono
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.phone} onChange={(event) => setCompanyForm((current) => ({ ...current, phone: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Linea de negocio
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.business_line} onChange={(event) => setCompanyForm((current) => ({ ...current, business_line: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Pais
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.country} onChange={(event) => setCompanyForm((current) => ({ ...current, country: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Ciudad
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.city} onChange={(event) => setCompanyForm((current) => ({ ...current, city: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Direccion
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.address} onChange={(event) => setCompanyForm((current) => ({ ...current, address: event.target.value }))} />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Admin inicial
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.admin_full_name} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_full_name: event.target.value }))} required />
-                </label>
-                <label className="grid gap-1 text-sm font-medium">
-                  Correo de acceso
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" type="email" value={companyForm.admin_email} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_email: event.target.value }))} required />
-                </label>
-                <label className="grid gap-1 text-sm font-medium md:col-span-2">
-                  Clave temporal
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" minLength={8} type="password" value={companyForm.admin_password} onChange={(event) => setCompanyForm((current) => ({ ...current, admin_password: event.target.value }))} required />
-                </label>
-              </div>
-
-              <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-3">
-                <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => setShowCompanyModal(false)} type="button">
-                  Cancelar
-                </button>
-                <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving === "company" || !companyForm.name.trim() || !companyForm.admin_email.trim() || !companyForm.admin_full_name.trim() || companyForm.admin_password.length < 8} type="submit">
-                  <Plus size={16} />
-                  {saving === "company" ? "Creando..." : "Crear empresa"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+          }
+          maxWidth="md:!max-w-2xl"
+          onClose={() => setShowCompanyModal(false)}
+          title="Crear empresa"
+        >
+          <form
+            className="grid gap-4"
+            id="company-create-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              createCompany();
+            }}
+          >
+            <p className="text-sm font-medium text-apex">Nueva sociedad</p>
+            {companyModalMessage ? (
+              <p className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">{companyModalMessage}</p>
+            ) : null}
+            <CompanyFields companies={companies} companyForm={companyForm} setCompanyForm={setCompanyForm} includeAdmin />
+          </form>
+        </ModalFrame>
       ) : null}
 
       {editingCompany ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-          <div className="w-full max-w-2xl rounded-md border border-line bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <div>
-                <p className="text-sm font-medium text-apex">Editar sociedad</p>
-                <h2 className="text-xl font-semibold">{editingCompany.company_name}</h2>
-              </div>
-              <button className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line hover:bg-paper" onClick={() => setEditingCompany(null)} title="Cerrar" type="button">
-                <X size={17} />
+        <ModalFrame
+          footer={
+            <div className="flex flex-wrap justify-end gap-2">
+              <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => setEditingCompany(null)} type="button">
+                Cancelar
+              </button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving === "edit-company" || !companyForm.name.trim()} form="company-edit-form" type="submit">
+                <Check size={16} />
+                Guardar
               </button>
             </div>
-
-            <form
-              className="grid gap-4 p-5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                saveEditedCompany();
-              }}
-            >
-              <CompanyFields companies={companies.filter((company) => company.company_id !== editingCompany.company_id)} companyForm={companyForm} setCompanyForm={setCompanyForm} includeAdmin={false} />
-              <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
-                <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => setEditingCompany(null)} type="button">
-                  Cancelar
-                </button>
-                <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving === "edit-company" || !companyForm.name.trim()} type="submit">
-                  <Check size={16} />
-                  Guardar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+          }
+          maxWidth="md:!max-w-2xl"
+          onClose={() => setEditingCompany(null)}
+          title="Editar empresa"
+        >
+          <form
+            className="grid gap-4"
+            id="company-edit-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              saveEditedCompany();
+            }}
+          >
+            <p className="text-sm font-semibold">{editingCompany.company_name}</p>
+            <CompanyFields companies={companies.filter((company) => company.company_id !== editingCompany.company_id)} companyForm={companyForm} setCompanyForm={setCompanyForm} includeAdmin={false} />
+          </form>
+        </ModalFrame>
       ) : null}
 
       {deletingCompany ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 py-6">
-          <div className="w-full max-w-md rounded-md border border-line bg-white p-5 shadow-2xl">
-            <div className="flex items-start gap-3">
-              <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-rose-50 text-rose-700">
-                <Trash2 size={18} />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Inactivar empresa</h2>
-                <p className="mt-1 text-sm text-neutral-600">Esta accion conserva historial, usuarios, servicios y evidencias. La politica RLM no permite eliminar empresas fisicamente.</p>
-                <p className="mt-3 rounded-md bg-paper p-3 text-sm font-semibold">{deletingCompany.company_name}</p>
-                <label className="mt-4 grid gap-1 text-sm font-semibold">
-                  Motivo obligatorio
-                  <textarea className="min-h-24 rounded-md border border-line px-3 py-2 text-sm font-normal" value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} placeholder="Describe por que se inactiva esta empresa." />
-                </label>
-                <label className="mt-4 grid gap-1 text-sm font-semibold">
-                  Confirmacion
-                  <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} placeholder="Escribe INACTIVAR" />
-                </label>
-              </div>
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
+        <ModalFrame
+          footer={
+            <div className="flex justify-end gap-2">
               <button className="inline-flex h-10 items-center justify-center rounded-md border border-line px-4 text-sm font-semibold hover:bg-paper" onClick={() => { setDeletingCompany(null); setDeleteReason(""); setDeleteConfirmation(""); }} type="button">
                 Cancelar
               </button>
@@ -696,8 +594,29 @@ export default function SuscripcionesPage() {
                 Inactivar
               </button>
             </div>
+          }
+          maxWidth="md:!max-w-md"
+          onClose={() => { setDeletingCompany(null); setDeleteReason(""); setDeleteConfirmation(""); }}
+          title="Inactivar empresa"
+        >
+          <div className="flex items-start gap-3">
+            <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-rose-50 text-rose-700">
+              <Trash2 size={18} />
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600">Esta accion conserva historial, usuarios, servicios y evidencias. La politica RLM no permite eliminar empresas fisicamente.</p>
+              <p className="mt-3 rounded-md bg-paper p-3 text-sm font-semibold">{deletingCompany.company_name}</p>
+              <label className="mt-4 grid gap-1 text-sm font-semibold">
+                Motivo obligatorio
+                <textarea className="min-h-24 rounded-md border border-line px-3 py-2 text-sm font-normal" value={deleteReason} onChange={(event) => setDeleteReason(event.target.value)} placeholder="Describe por que se inactiva esta empresa." />
+              </label>
+              <label className="mt-4 grid gap-1 text-sm font-semibold">
+                Confirmacion
+                <input className="h-10 rounded-md border border-line px-3 text-sm font-normal" value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} placeholder="Escribe INACTIVAR" />
+              </label>
+            </div>
           </div>
-        </div>
+        </ModalFrame>
       ) : null}
     </div>
   );
@@ -705,7 +624,7 @@ export default function SuscripcionesPage() {
 
 function CompanyFields({ companies, companyForm, setCompanyForm, includeAdmin }: { companies: PlatformCompany[]; companyForm: CompanyForm; setCompanyForm: Dispatch<SetStateAction<CompanyForm>>; includeAdmin: boolean }) {
   return (
-    <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-1 md:grid-cols-2">
+    <div className="grid gap-3 md:grid-cols-2">
       <label className="grid gap-1 text-sm font-medium">
         Nombre comercial
         <input className="h-11 rounded-md border border-line px-3 text-sm font-normal" value={companyForm.name} onChange={(event) => setCompanyForm((current) => ({ ...current, name: event.target.value }))} required />
