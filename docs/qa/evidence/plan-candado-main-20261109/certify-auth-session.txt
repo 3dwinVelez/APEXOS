@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "environment": "local",
+  "commit": "6147f8fb8467",
+  "health": "OK",
+  "login": "passed",
+  "authenticated_query": "passed",
+  "session": "passed",
+  "rejections": {
+    "sin_token": 401,
+    "token_basura": 401,
+    "alg_none": 401,
+    "clave_incorrecta": 401,
+    "firma_alterada": 401
+  },
+  "revocation": {
+    "measured": true,
+    "enforced": false
+  },
+  "revocation_required": false
+}

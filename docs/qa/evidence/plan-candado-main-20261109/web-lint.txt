@@ -1,0 +1,42 @@
+
+> @apex-os/web@2.0.0 lint
+> eslint .
+
+
+<candidato>\apps\web\app\dashboard\compras\proveedores\[id]\page.tsx
+  5:826  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\compras\reportes\facturas\page.tsx
+  3:458  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\reportes\apex-heart\page.tsx
+  25:37  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\talento-humano\configuracion-laboral\page.tsx
+  93:37  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\talento-humano\entidades\page.tsx
+  4:21  warning  'Building2' is defined but never used  @typescript-eslint/no-unused-vars
+
+<candidato>\apps\web\app\dashboard\talento-humano\mapa\page.tsx
+  426:6  warning  React Hook useEffect has a missing dependency: 'visibleBounds'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\talento-humano\novedades\page.tsx
+  55:37  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\components\shell\TechnicianWorkspaceHeader.tsx
+  10:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+<candidato>\apps\web\components\shell\UserSessionBadge.tsx
+  68:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+<candidato>\apps\web\lib\api.ts
+   355:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  4356:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+<candidato>\apps\web\lib\sessionSecurity.ts
+   73:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+  130:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+✖ 13 problems (0 errors, 13 warnings)
+

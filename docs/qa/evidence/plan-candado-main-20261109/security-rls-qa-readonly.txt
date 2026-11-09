@@ -1,0 +1,2 @@
+[rls-inspect] target=qa tables=251 policies=108 missing_rls=1 logic_differences=41
+[rls-inspect] report=reports/security/rls-qa-2026-11-09T20-11-50-805Z.json (salida local, no versionada)

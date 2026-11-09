@@ -1,0 +1,13 @@
+Catálogo público del formulario de Servicios — medición anónima contra QA
+fecha: 2026-11-09T20:12:05.261Z
+api: https://apexos-api-qa-production.up.railway.app
+commit desplegado: c72955d22f97
+
+caso                 status  empresa_devuelta  referencias  tipos
+sin_parametro        200     cbbf3627          5            3
+empresa_nyvora       200     cbbf3627          5            3
+empresa_piloto       200     cbbf3627          5            3
+empresa_inexistente  200     cbbf3627          5            3
+
+empresas distintas devueltas: 1 (cbbf3627)
+veredicto: EL PARAMETRO NO ELIGE EMPRESA; LA ALLOWLIST DEL SERVIDOR DECIDE

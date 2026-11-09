@@ -1,0 +1,89 @@
+PLAN CANDADO - CERTIFICACION LOCAL DEL CANDIDATO DE main
+change_id: plan-candado-main-20261109
+candidato: 6147f8fb8467e3f9010f1de03636031bfe149085 (detached en worktree aislado)
+base: origin/main db3e63a6ef10 (punta de main al reconstruir)
+fecha: 2026-11-09
+entorno: LOCAL (Docker infra-postgres/redis/minio/brain; API 127.0.0.1:3000 servida desde el arbol del candidato)
+nota: main y QA no se tocaron. No se hizo push. La aprobacion funcional de QA sigue pendiente (qa-gate-pending.txt).
+
+POR QUE UN CANDIDATO RECONSTRUIDO
+develop y main no comparten historia (main no es ancestro de develop: 806 A / 59 D / 159 M / 1 R,
+433 commits). Promover develop entero habria excedido el alcance aprobado, asi que el bloque de
+seguridad se reconstruyo commit por commit sobre db3e63a6. Son 11 commits: los 10 del bloque mas
+uno de adaptacion al esquema de main. El arbol de gobierno (agents/**, .qoder/skills/**) se excluye,
+igual que en la promocion a develop.
+
+1. SUITE API
+   candidato: 547 pruebas, 542 pasan, 2 fallan, 3 saltadas            -> api-suite.txt
+   baseline main db3e63a6: 500 pruebas, 495 pasan, 2 fallan, 3 saltadas -> api-suite-baseline-main.txt
+   pruebas nuevas aportadas: 47.
+   Las 2 fallas son las mismas del baseline, sobre el arbol de main sin el bloque:
+   - "inventario ofrece lista de productos filtrable y exportable"
+   - "compras ventas IVA y retenciones reutilizan el control numerico"
+   Regresiones atribuibles al candidato: 0.
+
+2. SUITE WEB
+   candidato: 458 pruebas, 457 pasan, 1 falla                            -> web-suite.txt
+   baseline main db3e63a6: 445 pruebas, 444 pasan, 1 falla               -> web-suite-baseline-main.txt
+   La misma falla del baseline ("Transporte organiza el trabajo por etapas sin navegacion redundante").
+   Regresiones atribuibles al candidato: 0.
+
+3. FRONTEND
+   typecheck (tsc --noEmit): exit 0, sin errores.  -> web-typecheck.txt
+   lint (eslint): exit 0, 0 errores y 13 warnings preexistentes.  -> web-lint.txt
+
+4. ESQUEMA PRISMA
+   npx prisma validate: valido sobre el esquema del candidato.  -> prisma-validate.txt
+   El candidato no trae migraciones ni cambios de esquema.
+
+5. GATE CANDADO (npm run security:candado)
+   exit 0 en modo reporte.  -> security-candado.txt
+   models_with_tenant_id_outside_allowlist=0; models_in_allowlist_without_tenant_id_column=0
+   public_web_routes_using_service_role=0; public_web_routes_using_prisma_client=0
+   routes_without_auth=4; raw_sql_queries=51; rls_enable_statements=36; rls_policies_declared=170
+   app_tenant_guc_sets_in_code=0; tenant_models_filtered=157; global_models_declared=12
+   npm_audit_critical_high=20 (tolerados por scripts/security/audit-allowlist.json)
+   Diferencia declarada, no ocultada: global_models_not_in_schema 0 -> 3
+   (ApexComponent, ApexHealthSample, ApexReportRun). No es regresion de aislamiento: esos modelos
+   existen en el esquema de desarrollo y no en el de main; cuando ese backlog se promueva vuelve a 0.
+   tenant_models_filtered es 157 en main frente a 176 en develop porque main tiene menos modelos;
+   el conjunto se deriva del schema, no de una lista mantenida a mano.
+
+6. GATE CI AUDIT (npm run security:ci-audit)
+   exit 0. 0 advisories critical/high fuera de la allowlist vigente (20 tolerados).  -> security-ci-audit.txt
+
+7. GATE RLS LOCAL (security:inspect-rls --target=local --gate)
+   exit 1 por estado de la base local compartida: 216 tablas, 100 sin RLS y 4 con RLS sin FORCE
+   (TransportPyg*). Es el Postgres de desarrollo, no el candidato: el candidato no trae migraciones.
+   -> security-rls-local.txt
+
+8. INSPECCION RLS DE QA (solo lectura, --target=qa)
+   251 tablas, 108 politicas, 0 tablas sin RLS, 41 diferencias de logica que son formato de
+   serializacion de Postgres. Deriva preexistente del ambiente, no del candidato.
+   No se conecto a produccion.  -> security-rls-qa-readonly.txt
+
+9. CERTIFICACION END-TO-END DE SESION (npm run certify:auth-session)
+   ok=true, commit 6147f8fb, health OK, login/authenticated_query/session passed.
+   Cinco manipulaciones del JWT responden 401: sin token, token basura, alg none, clave incorrecta,
+   firma alterada. Revocacion: measured=true, enforced=false (modo observar).  -> certify-auth-session.txt
+
+10. FORMULARIO PUBLICO DE SERVICIOS (anonimo, sondas en vivo, sin crear ordenes)
+    6/6. El catalogo responde 200 y fija company_id de la allowlist; no publica cost, stock ni tenant_id.
+    Un body con company_id ajeno llega al handler (AJV descarta el campo) y la referencia de otro tenant
+    se rechaza con 400 REFERENCIA_INVALIDA; campos obligatorios ausentes responden 400 FST_ERR_VALIDATION.
+    -> public-form-local.json
+
+DERIVA DECLARADA DEL ESQUEMA DE main (resuelta en el candidato, no silenciada)
+- TransportPygConcept/Budget/SourceMap/Config existen solo en el esquema de desarrollo. El contrato
+  `core-tenant-models.test.js` nombraba esos cuatro modelos y sondeaba `transportPygConcept.create`;
+  ambos se acotan a los modelos que main tiene (commit 6147f8fb). La derivacion del filtro no se toca:
+  "todo modelo con columna tenant_id queda dentro" sigue cubriendo los 157 modelos de main.
+- `apps/api/test/petty-cash-masters.test.js` no se incorpora: main no tiene el modelo ni el archivo,
+  y el hunk del bloque solo adaptaba ese test al conjunto derivado.
+
+LIMITES DE ESTA MEDIDA
+- No se desplego el candidato en QA: la aprobacion funcional de main exige QA sobre el commit exacto
+  y esa ventana no se abrio en esta ronda (ver qa-gate-pending.txt).
+- No se ejecuto navegador contra el candidato: el recorrido E2E de esta ronda es API + sondas anonimas.
+- El entorno local usa el Postgres compartido de desarrollo, con tablas que main no declara; por eso
+  el gate RLS local falla y no es un veredicto del candidato.

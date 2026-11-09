@@ -452,3 +452,30 @@ El candidato queda en la ref local `candidato/seguridad-main-20261109` (commit f
 
 **Límites de la medida.** No se desplegó el candidato en QA; el recorrido E2E de esta ronda es API + sondas anónimas, sin navegador; la base local es la de desarrollo, compartida, con tablas que `main` no declara. Ninguna de esas limitaciones convierte el candidato en «aprobado»: separan lo certificado en local de lo que solo el ambiente puede demostrar.
 
+## 20. La compuerta de `main` se ancla al build de QA y el manifiesto se versiona pendiente (2026-11-09)
+
+**Instrucción literal del dueño:** «procede con la implementacion sin incidir en perder datos de otras intervenciones», y a la pregunta de cómo cerrar la puerta eligió **«Aprobar sobre el build actual de QA»**. Alcance: certificar el bloque contra el build ya desplegado, preparar el manifiesto de aprobación y dejarlo listo para su firma. No autorizado: redesplegar QA, escribir en `main`, tocar producción ni migraciones.
+
+**Antes de tocar nada se auditó el riesgo de datos ajenos.** Doce worktrees y ocho stashes intactos; solo tres árboles tenían cambios sin commitear y ninguno era trabajo perdido (`apexos-candado-a01` conserva una copia ya commiteada del espejo en `674e191a`, `APEXOS-candidate` un `node_modules.broken/`, `apexos-main-block` la salida local `reports/security/`). No se borró ni movió ningún worktree ni stash en esta ronda.
+
+**Por qué no se desplegó el candidato en QA.** El candidato es `main` más el bloque: no lleva los 433 commits que QA sirve hoy. Reemplazar el build habría quitado a QA los módulos de otras intervenciones —el daño que la instrucción prohíbe— y además las credenciales de despliegue se perdieron con `apps/control-tower/.env.local` (§19). La equivalencia se probó por código y no por rama: `assertActorPassword` (`apps/api/src/modules/admin/service.js:1211` y `:1383`), `isAdministrativeRole` y `requireExplicitPermission` (`apps/api/src/middleware/rbac.js`), el espejo sin `active: true` y los 403 `EMPRESA_SUSPENDIDA`/`USUARIO_DESACTIVADO` (`apps/api/src/security/supabaseAuth.js`) están presentes en los dos árboles, y `core/tenantModels.js` es idéntico. Las siete diferencias entre los dos árboles son funciones de `desarrollo` que `main` no tiene.
+
+**Medido contra QA (`/health commit=c72955d22f97`), sin escribir datos de terceros.**
+
+| control | resultado |
+|---|---|
+| `sesion-administracion-qa.js` | **9/9, 0 fallos**: 401 sin sesión, token basura y token firmado con clave ajena; 403 `EMPRESA_NO_VINCULADA`; la sesión no se expulsa; NYVORA vinculada conserva identidad; `filas_remanentes=0` y `cuentas_restantes=0` |
+| Catálogo público anónimo | 4 variantes (sin parámetro, `?empresa=NYVORA`, `?empresa=piloto`, `?empresa=inexistente`) devuelven **una sola** empresa `cbbf3627`, 5 referencias y 3 tipos: el parámetro no elige |
+| RLS de QA, solo lectura | 251 tablas, 108 políticas, **1 sin RLS**, 41 diferencias de formato; el candidato no trae migraciones ni cambios de `schema.prisma` |
+| Suites del candidato | API 547/542/2 y web 458/457/1 contra baseline `db3e63a6`; **0 regresiones atribuibles** |
+
+**Certificadores que se descartaron por escribir sobre datos ajenos.** `comercio-nyvora-qa.js` crea productos, ajustes y tema en la empresa modelo; `platform-regression-qa.js` con `CONFIRM_NYVORA_FIXTURE=true` actualiza el tenant NYVORA real y no limpia lo que crea. La parte NYVORA se midió con el control de sesión, que vincula y desvincula una cuenta efímera propia y verifica que no queda ninguna fila.
+
+**Manifiesto versionado como pendiente, no como aprobación.** `docs/qa/manifests/plan-candado-main-20261109-approval-pending.json` declara `commit = 6147f8fb`, `evaluated_environment_commit = c72955d2`, la equivalencia por código, `promotion_state.authorized_to_push_main: false` y `approval.status: pending`. Las 24 referencias de evidencia resuelven en disco. `qa:approval:evidence` responde **«APROBACION QA BLOQUEADA»** con las celdas exactas que faltan:
+
+- `checks.platform_regression` y `regression_certification`: `platform-regression-qa.js` exige una sesión de QA (`QA_LOGIN_EMAIL` y `QA_LOGIN_PASSWORD`) que estaba en el archivo local perdido. Para cerrarlas: declarar esas dos variables en `config/qa.env` y correr `QA_EXPECTED_COMMIT=c72955d22f97 CONFIRM_NYVORA_FIXTURE=false npm run certify:platform-regression:qa`.
+- `browser_evidence`: exige abrir Administración en QA con una cuenta real; mismo bloqueo de credencial.
+- `approval.status`, `approved_by` y `approved_at`: la firma del responsable de QA. No la produce ningún script.
+
+**Lo que la ronda sí cierra y lo que no.** Cierra la pregunta de dónde se certifica un candidato que no puede reemplazar el ambiente, deja medidos y versionados los controles que no requieren sesión y entrega una aprobación a un paso de la firma. No cierra `main`: sigue en `db3e63a6`, sin push, sin despliegue y con el manifiesto diciéndolo por escrito. Evidencia en `docs/qa/evidence/plan-candado-main-20261109/` (16 archivos, incluidos `sesion-qa-certification.json`, `qa-public-catalog.txt` y `security-rls-qa-readonly.txt` de esta ronda).
+
