@@ -12,7 +12,7 @@ test("dashboard usa el enfoque operativo aprobado con lobby corporativo V4", () 
   assert.match(source, /Tu operación, más simple y/);
   assert.match(source, /Acciones frecuentes/);
   assert.match(source, /Mis módulos/);
-  assert.match(source, /Continúa donde estabas/);
+  assert.doesNotMatch(source, /Continúa donde estabas/);
 });
 
 test("lobby V4 monta banner corporativo y tarjetas fotográficas por módulo", () => {
@@ -26,6 +26,22 @@ test("lobby V4 monta banner corporativo y tarjetas fotográficas por módulo", (
   assert.match(assets, /module-transporte\.webp/);
   assert.match(read("app/globals.css"), /--lobby-accent: 8 205 187/);
 });
+
+test("todos los módulos del catálogo tienen su fotografía en el lobby", () => {
+  const slugs = [...read("lib/modules.ts").matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
+  const assets = read("lib/lobbyAssets.ts");
+  const mapped = [...assets.matchAll(/^\s{2}"?([\w-]+)"?:\s*"([^"]+)"/gm)].map((match) => ({ slug: match[1], file: match[2] }));
+  assert.equal(slugs.length, 32);
+  const bySlug = Object.fromEntries(mapped.map((entry) => [entry.slug, entry.file]));
+  for (const slug of slugs) {
+    assert.ok(bySlug[slug], `módulo sin fotografía: ${slug}`);
+    const file = path.join(root, "public", bySlug[slug]);
+    assert.ok(fs.existsSync(file), `asset inexistente para ${slug}: ${bySlug[slug]}`);
+  }
+  const files = mapped.map((entry) => entry.file);
+  assert.equal(new Set(files).size, slugs.length, "cada módulo usa una fotografía propia");
+});
+
 
 test("dashboard ya no depende de KPIs ni graficas para la pantalla inicial", () => {
   const source = read("app/dashboard/page.tsx");
@@ -56,11 +72,11 @@ test("mis modulos se limita a permisos y suscripcion", () => {
   assert.match(source, /No tienes módulos habilitados/);
 });
 
-test("actividad reciente usa la traza real local y no datos inventados", () => {
+test("los módulos ocupan el ancho completo del lobby sin panel secundario", () => {
   const source = read("app/dashboard/page.tsx");
-  assert.match(source, /apex_navigation_trace_v1/);
-  assert.match(source, /localStorage\.getItem\(TRACE_KEY\)/);
-  assert.match(source, /enabledSlugs\.has\(traceModule\(item\.path\)\)/);
+  assert.match(source, /xl:grid-cols-4/);
+  assert.doesNotMatch(source, /apex_navigation_trace_v1/);
+  assert.doesNotMatch(source, /xl:grid-cols-\[1\.35fr_1fr\]/);
 });
 
 test("dashboard cubre estados de carga error y vacio", () => {
