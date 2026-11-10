@@ -4,6 +4,13 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-10
 
+### El hero del lobby habla con la frase de marca y se queda sin botones (`lobby-v4-hero-marca-20261110`)
+
+- **La frase memorable pasa a ser el titular.** «Creamos sistemas **a tu medida**.» ocupa el `h1` del hero —el fragmento distintivo en el acento turquesa—, el copy operativo («Tu operación, más simple y bajo control.») baja a línea de apoyo y el hero se compacta a 17–19 rem. El dueño la pidió como frase de marca; el copy funcional deja de competir por la jerarquía.
+- **Los dos CTA se retiraron con su residuo.** «Comenzar» y «Explorar módulos» salieron junto con `startHref`, los iconos `Play`/`LayoutGrid` y el ancla `#mis-modulos`, que quedaba sin destino. Una prueba nueva prohíbe los literales y las clases del CTA retirado, además de fijar la frase.
+- **Validación.** 671/671 pruebas web (una nueva), typecheck y lint en verde; evidencia CDP regenerada en las cuatro vistas (escritorio y móvil, ambos temas) en `docs/qa/evidence/lobby-v4-20261110/`, con la frase visible y sin botones.
+- Agentes: `apexos-frontend` 2.15.0 → 2.16.0 (control 31: la frase de marca manda en el hero y un CTA retirado se retira con su destino y su prueba de ausencia).
+
 ### El lobby retira su panel secundario y cada módulo estrena su propia fotografía (`lobby-v4-ronda2-20261110`)
 
 - **El dueño rechazó el panel y se retiró con su código.** «Hay un panel a la derecha que no me aporta valor»: «Continúa donde estabas» salió de `apps/web/app/dashboard/page.tsx` junto con su `useState`, su lectura de `apex_navigation_trace_v1`, sus helpers `readableLabel`/`traceModule` y sus imports; «Mis módulos» ocupa ahora el ancho completo con grilla de cuatro columnas en escritorio y el esqueleto de carga refleja la nueva composición. Las dos suites que afirmaban el copy del panel pasaron a afirmar su ausencia con `assert.doesNotMatch`, en la misma intervención.

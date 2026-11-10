@@ -160,9 +160,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.15.0",
+      "version": "2.16.0",
       "updated_at": "2026-11-10",
-      "sha256": "3c165a657e16743badedd0c753642b21baa08c9376ab918785b8c2f7468dcaa8",
+      "sha256": "930d5b1ca665bed64539788cb6a076180bf5e791e64516019c751292fc930342",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
