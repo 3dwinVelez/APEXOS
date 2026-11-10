@@ -20,10 +20,10 @@ test("command palette ofrece atajo global, búsqueda y acciones rápidas", () =>
 
 test("dashboard adapta el inicio al trabajo operativo", () => {
   const source = read("app/dashboard/page.tsx");
-  assert.match(source, /Mi operación/);
+  assert.match(source, /Tu operación, más simple y/);
   assert.match(source, /Acciones frecuentes/);
   assert.match(source, /Mis módulos/);
-  assert.match(source, /Actividad reciente/);
+  assert.match(source, /Continúa donde estabas/);
   assert.match(source, /actionsForWorkspace\(enabledSlugs, roleName\)/);
   assert.doesNotMatch(source, /dashboardRoleProfile/);
 });

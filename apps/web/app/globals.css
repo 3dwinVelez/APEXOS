@@ -1585,6 +1585,182 @@ html.dark .platform-alert-close:hover {
   }
 }
 
+/* ===== Design System V4 — Lobby corporativo (alcance: .apex-lobby) =====
+   Paleta corporativa aprobada: fondo #061D26, tarjeta #112B35, primario #006C70,
+   acento #08CDBB, texto #F2F8FA. El hero es oscuro en los dos temas (igual que
+   .apex-context-hero); las tarjetas de módulo heredan la superficie del tema. */
+.apex-lobby {
+  --lobby-deep: 6 29 38;
+  --lobby-card: 17 43 53;
+  --lobby-primary: 0 108 112;
+  --lobby-accent: 8 205 187;
+  --lobby-text: 242 248 250;
+}
+
+.apex-lobby-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid rgb(var(--lobby-card));
+  background: rgb(var(--lobby-deep));
+  color: rgb(var(--lobby-text));
+  isolation: isolate;
+}
+
+.apex-lobby-hero::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgb(var(--lobby-deep) / 0.92) 0%, rgb(var(--lobby-deep) / 0.55) 38%, transparent 62%),
+    linear-gradient(0deg, rgb(var(--lobby-deep) / 0.6) 0%, transparent 36%);
+  content: "";
+  pointer-events: none;
+}
+
+.apex-lobby-hero > img {
+  object-fit: cover;
+  object-position: center right;
+}
+
+.apex-lobby-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--lobby-accent) / 0.35);
+  background: rgb(var(--lobby-accent) / 0.12);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgb(var(--lobby-accent));
+}
+
+.apex-lobby-accent { color: rgb(var(--lobby-accent)); }
+
+.apex-lobby-cta-primary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: rgb(var(--lobby-accent));
+  padding: 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgb(var(--lobby-deep));
+  transition: background-color 160ms ease;
+}
+
+.apex-lobby-cta-primary:hover { background: rgb(var(--lobby-accent) / 0.88); }
+
+.apex-lobby-cta-secondary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgb(var(--lobby-text) / 0.28);
+  background: rgb(var(--lobby-text) / 0.08);
+  padding: 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--lobby-text));
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.apex-lobby-cta-secondary:hover {
+  border-color: rgb(var(--lobby-accent) / 0.6);
+  background: rgb(var(--lobby-text) / 0.14);
+}
+
+.apex-lobby-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  border: 1px solid rgb(var(--color-line));
+  background: rgb(var(--surface));
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.apex-lobby-tile:hover {
+  border-color: rgb(var(--lobby-primary));
+  box-shadow: var(--shadow-card);
+}
+
+.apex-lobby-tile-media {
+  position: relative;
+  display: block;
+  height: 7rem;
+  overflow: hidden;
+  background: rgb(var(--lobby-deep));
+}
+
+.apex-lobby-tile-media img {
+  object-fit: cover;
+  transition: transform 240ms ease;
+}
+
+.apex-lobby-tile:hover .apex-lobby-tile-media img { transform: scale(1.04); }
+
+.apex-lobby-tile-media::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgb(var(--lobby-deep) / 0.55), transparent 55%);
+  content: "";
+  pointer-events: none;
+}
+
+.apex-lobby-tile-fallback {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 82% 18%, rgb(var(--lobby-accent) / 0.22), transparent 60%),
+    linear-gradient(140deg, rgb(var(--lobby-card)), rgb(var(--lobby-deep)));
+  color: rgb(var(--lobby-accent));
+}
+
+.apex-lobby-tile-body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.875rem;
+}
+
+.apex-lobby-tile-icon {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.45rem;
+  background: rgb(var(--lobby-primary) / 0.16);
+  color: rgb(var(--lobby-primary));
+}
+
+html.dark .apex-lobby-tile-icon {
+  background: rgb(var(--lobby-accent) / 0.14);
+  color: rgb(var(--lobby-accent));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-lobby-tile:hover .apex-lobby-tile-media img { transform: none; }
+}
+
+@media (max-width: 640px) {
+  .apex-lobby-hero > img { object-position: 68% center; }
+  .apex-lobby-hero::before {
+    background:
+      linear-gradient(0deg, rgb(var(--lobby-deep) / 0.94) 8%, rgb(var(--lobby-deep) / 0.45) 55%, rgb(var(--lobby-deep) / 0.25));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .apex-public-shell *,
   .apex-public-shell *::before,
