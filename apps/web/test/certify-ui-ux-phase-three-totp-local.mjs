@@ -47,18 +47,13 @@ try {
     localStorage.setItem("apexos_company_id", data.tenant?.company_id || data.tenant?.id || "");
   }, { loginEmail: email, data: auth });
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: "domcontentloaded" });
-  await page.waitForSelector('button[aria-label="Centro de productividad"]', { timeout: 30_000 });
+  await page.waitForSelector('button[aria-label="Herramientas"]', { timeout: 30_000 });
   await page.evaluate(() => localStorage.setItem("auth_provider", "supabase"));
   await page.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
-  await page.waitForFunction(() => {
-    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
-    const details = summary?.closest("details");
-    if (!details) return false;
-    if (!details.open) summary.click();
-    return details.open;
-  }, { timeout: 5000 });
-  await page.evaluate(() => document.querySelector('button[aria-label="Centro de productividad"]')?.click());
-  await page.waitForSelector('[role="dialog"][aria-label="Centro de productividad"]', { timeout: 5000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Herramientas"]')?.click());
+  await page.waitForSelector('button[aria-label="Abrir centro de productividad"]', { timeout: 5000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Abrir centro de productividad"]')?.click());
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Tu progreso en APEX OS")), { timeout: 5000 });
   await page.waitForFunction(() => document.body.innerText.includes("Activar 2FA"));
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Activar 2FA")?.click());
   await page.waitForSelector('input[autocomplete="one-time-code"]');

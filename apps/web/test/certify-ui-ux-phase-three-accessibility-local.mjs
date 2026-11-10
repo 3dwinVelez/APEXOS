@@ -21,13 +21,9 @@ async function waitHydration(target = page) {
 }
 async function openWorkspaceTools(target = page) {
   await waitHydration(target);
-  await target.waitForFunction(() => {
-    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
-    const details = summary?.closest("details");
-    if (!details) return false;
-    if (!details.open) summary.click();
-    return details.open;
-  }, { timeout: 5000 });
+  await target.waitForSelector('button[aria-label="Herramientas"]', { timeout: 5000 });
+  await target.evaluate(() => document.querySelector('button[aria-label="Herramientas"]')?.click());
+  await target.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Ventanas de trabajo del escritorio APEX")), { timeout: 5000 });
 }
 let storageKey = "";
 let previous = null;
@@ -49,12 +45,12 @@ try {
     localStorage.setItem("apexos_company_id", data.tenant?.company_id || data.tenant?.id || "");
   }, { loginEmail: email, data: auth });
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: "domcontentloaded" });
-  await page.waitForSelector('button[aria-label="Preferencias de experiencia"]', { timeout: 30_000 });
+  await page.waitForSelector('button[aria-label="Herramientas"]', { timeout: 30_000 });
   ({ storageKey, previous } = await page.evaluate(() => { const key = `apex_experience_v1:${(localStorage.getItem("user_email") || "anonymous").toLocaleLowerCase()}`; return { storageKey: key, previous: localStorage.getItem(key) }; }));
 
   await openWorkspaceTools();
-  await page.evaluate(() => document.querySelector('button[aria-label="Preferencias de experiencia"]')?.click());
-  await page.waitForSelector('[role="dialog"][aria-label="Preferencias de experiencia"]');
+  await page.evaluate(() => document.querySelector('button[aria-label="Abrir preferencias de experiencia"]')?.click());
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Alto contraste")), { timeout: 5000 });
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Alto contraste")?.click());
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Reducir movimiento")?.click());
   await page.waitForFunction(() => document.documentElement.dataset.contrast === "high" && document.documentElement.dataset.reducedMotion === "true", { timeout: 5000 });

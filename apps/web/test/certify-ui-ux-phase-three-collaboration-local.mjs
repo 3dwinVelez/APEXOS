@@ -20,13 +20,14 @@ async function waitHydration(target) {
 }
 async function openWorkspaceTools(target) {
   await waitHydration(target);
-  await target.waitForFunction(() => {
-    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
-    const details = summary?.closest("details");
-    if (!details) return false;
-    if (!details.open) summary.click();
-    return details.open;
-  }, { timeout: 5000 });
+  await target.waitForSelector('button[aria-label="Herramientas"]', { timeout: 5000 });
+  await target.evaluate(() => document.querySelector('button[aria-label="Herramientas"]')?.click());
+  await target.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Ventanas de trabajo del escritorio APEX")), { timeout: 5000 });
+}
+async function openPresence(target) {
+  await openWorkspaceTools(target);
+  await target.evaluate(() => document.querySelector('button[aria-label="Abrir equipo"]')?.click());
+  await target.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Equipo activo")), { timeout: 5000 });
 }
 
 try {
@@ -37,15 +38,12 @@ try {
   await first.type('input[name="password"]', password);
   await first.click('button[type="submit"]');
   await first.waitForFunction(() => window.location.pathname.startsWith("/dashboard"), { timeout: 30_000 });
-  await first.waitForSelector('button[aria-label="Colaboración en tiempo real"]');
+  await first.waitForSelector('button[aria-label="Herramientas"]');
   await first.goto(`${baseUrl}/dashboard/inventario/productos/nuevo`, { waitUntil: "domcontentloaded" });
-  await first.waitForSelector('button[aria-label="Colaboración en tiempo real"]');
-  await openWorkspaceTools(first);
-  await first.evaluate(() => document.querySelector('button[aria-label="Colaboración en tiempo real"]')?.click());
-  await first.waitForSelector('[role="dialog"][aria-label="Colaboración en tiempo real"]', { timeout: 5000 });
-  record("presence_panel_available", await first.$('[role="dialog"][aria-label="Colaboración en tiempo real"]') !== null);
+  await first.waitForSelector('button[aria-label="Herramientas"]');
+  await openPresence(first);
+  record("presence_panel_available", await first.evaluate(() => document.body.innerText.includes("Equipo activo")));
   record("privacy_notice_visible", await first.evaluate(() => document.body.innerText.includes("no comparte el contenido de los formularios")));
-  await first.evaluate(() => document.querySelector('button[aria-label="Colaboración en tiempo real"]')?.click());
 
   const second = await browser.newPage();
   await second.setViewport({ width: 1440, height: 900 });

@@ -4,6 +4,15 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-10
 
+### La barra del panel estrena ventanas V4 y deja de comportarse como lista desplegable (`lobby-v4-ventanas-20261110`)
+
+- **Las cinco utilidades de la barra abren ventana, no desplegable.** «En línea», el idioma, «Herramientas», «Centro de comandos» y la campana pasan por `ModalFrame` con `tone="brand"`: degradado profundo, línea turquesa superior, cabecera translúcida, icono de contexto, descripción, trampa de foco, `Escape` y foco restaurado. La conducta se conserva —`navigator.onLine` con sus eventos, `Ctrl K` con `combobox`/`listbox`, claves y contador de notificaciones, `documentElement.lang` al cambiar idioma—; cambia la piel, no lo que la función sabe hacer.
+- **El tema V4 se hereda por alcance.** `.apex-window` en `apps/web/app/globals.css` redefine los semánticos (`--surface`, `--color-line`, `--color-apex`, `--text-*`) y declara `color-scheme: dark`, así que el contenido heredado se re-tematiza sin reescribir cada vista y los `<select>` nativos abren oscuros en los dos temas. Las ventanas son oscuras en claro y en oscuro, como el hero del lobby.
+- **«Herramientas» es un lanzador y los motores no se desmontan.** Trazabilidad, Equipo, Preferencias y Productividad dejan de ser `<details>` y abren su propia ventana por el evento `apex:open-workspace-tool` (`apps/web/lib/workspaceTools.ts`). Presencia en tiempo real, registro de `apex_navigation_trace_v1`, aplicación de preferencias al iniciar y captura de `beforeinstallprompt` siguen montados en `DashboardChrome`: la ventana decide qué se muestra, no interrumpe el motor.
+- **Los certificadores siguen el camino nuevo.** Los seis scripts `certify-ui-ux-phase-*` abren cada función desde el lanzador y esperan su texto propio (`Alto contraste`, `Equipo activo`, `Tu progreso en APEX OS`, `Recorrido reciente`) antes de afirmar; el idioma exige cambio de `lang` y cierre de la ventana.
+- **Validación.** 671/671 pruebas web desde `apps/web`, typecheck y ESLint sin hallazgos nuevos; 24 capturas CDP de las ventanas (escritorio claro/oscuro y móvil) en `docs/qa/evidence/lobby-v4-20261110/`. Los certificadores de navegador requieren el arnés aislado: se declaran como bloqueo, no como verde.
+- Agentes: `apexos-frontend` 2.16.0 → 2.17.0 (control 32: ventana única con tema por alcance y motor que sobrevive al cierre), `apexos-qa` 2.40.0 → 2.41.0 (control 54: si la barra cambia de control, el certificador cambia de camino y espera el texto propio de la ventana).
+
 ### El hero del lobby habla con la frase de marca y se queda sin botones (`lobby-v4-hero-marca-20261110`)
 
 - **La frase memorable pasa a ser el titular.** «Creamos sistemas **a tu medida**.» ocupa el `h1` del hero —el fragmento distintivo en el acento turquesa—, el copy operativo («Tu operación, más simple y bajo control.») baja a línea de apoyo y el hero se compacta a 17–19 rem. El dueño la pidió como frase de marca; el copy funcional deja de competir por la jerarquía.

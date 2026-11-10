@@ -17,15 +17,11 @@ const checks = [];
 const record = (name, passed, detail = {}) => { checks.push({ name, passed, detail }); assert.equal(passed, true, `${name}: ${JSON.stringify(detail)}`); };
 async function openPreferences() {
   await page.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
-  await page.waitForFunction(() => {
-    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
-    const details = summary?.closest("details");
-    if (!details) return false;
-    if (!details.open) summary.click();
-    return details.open;
-  }, { timeout: 5000 });
-  await page.evaluate(() => document.querySelector('button[aria-label="Preferencias de experiencia"]')?.click());
-  await page.waitForSelector('[role="dialog"][aria-label="Preferencias de experiencia"]', { timeout: 5000 });
+  await page.waitForSelector('button[aria-label="Herramientas"]', { timeout: 5000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Herramientas"]')?.click());
+  await page.waitForSelector('button[aria-label="Abrir preferencias de experiencia"]', { timeout: 5000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Abrir preferencias de experiencia"]')?.click());
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Alto contraste")), { timeout: 5000 });
 }
 let storageKey = "";
 let previous = null;

@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.40.0
+version: 2.41.0
 updated_at: 2026-11-10
 contract: 2
 ---
@@ -161,6 +161,8 @@ Antes de actuar, leer en este orden:
     - **Toda tubería que lee el DOM cambiado se re-ejecuta en la misma intervención.** `certify:control-tower:local` y `certify:control-tower:consolidado` leen el mismo panel; cerrar con una verde y la otra roja deja un commit que el siguiente lector no puede reproducir. El brief lista las dos con su recuento esperado (73/73 y 55/55).
     - **Se lee el DOM visible de la vista activa.** Un `document.querySelector('#gauges .measure-card').textContent` devuelve el texto de una sección oculta: la gate pasó en verde mientras el dueño miraba otra vista. El filtro `offsetParent !== null` (o la variable `${visible}` del arnés) es obligatorio en las gates de pintura, y el selector debe pertenecer a la vista en la que el dato se muestra hoy —las teselas de la vista API viven en `#kpis .metric-tile`, no en `#gauges`—.
     Por qué: el verde de una gate que lee texto escondido o que conserva un literal retirado no protege nada; en el primer caso la pantalla puede estar vacía y en el segundo bloquea una intervención correcta.
+
+54. **Si la barra cambia de control, el certificador cambia de camino: abre la ventana desde su entrada real y espera el texto propio de esa ventana.** El 2026-11-10 las utilidades del panel (`En línea`, idioma, `Herramientas`, `Centro de comandos`, campana) dejaron de ser desplegables y pasaron a ventanas V4 abiertas desde el lanzador. Reglas: (a) **el camino se reescribe, no se salta**: `certify:ui-ux:phase-*` abre «Herramientas» y elige la tarjeta (`button[aria-label="Abrir …"]`) en lugar de pulsar el `summary` o el `select` retirado; se espera el texto que solo existe dentro de la ventana (`Alto contraste`, `Equipo activo`, `Tu progreso en APEX OS`) antes de afirmar; (b) **la conducta se sigue midiendo**: seleccionar idioma exige que el `documentElement.lang` cambie y la ventana se cierre; el badge de presencia exige «2 sesiones activas» con la ventana abierta, no con la barra; la conexión exige su mensaje de estado real, no solo que el chip exista; (c) **un cambio visual no excusa un certificador en rojo**: si la gate busca un control que ya no existe, se corrige en la misma intervención y se declara en la evidencia, porque un certificador desactualizado da rojo sobre una pantalla correcta y empuja a revertir un diseño aprobado; (d) **lo no ejecutado se declara como bloqueo**: los certificadores de navegador que necesitan el arnés aislado (API y vista en 3310/3311) no se citan como verdes si no corrieron; se escribe `BLOQUEO:` con el comando exacto. Por qué: el dueño pidió que la barra dejara de comportarse como lista desplegable; la validación tiene que medir el mismo camino que el usuario recorre hoy, no el de la versión anterior.
 
 ## Checklist de intervención
 

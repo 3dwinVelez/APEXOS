@@ -20,13 +20,15 @@ async function waitHydration(target = page) {
 }
 async function openWorkspaceTools(target = page) {
   await waitHydration(target);
-  await target.waitForFunction(() => {
-    const summary = [...document.querySelectorAll("summary")].find((node) => node.textContent?.includes("Herramientas"));
-    const details = summary?.closest("details");
-    if (!details) return false;
-    if (!details.open) summary.click();
-    return details.open;
-  }, { timeout: 5000 });
+  await target.waitForSelector('button[aria-label="Herramientas"]', { timeout: 5000 });
+  await target.evaluate(() => document.querySelector('button[aria-label="Herramientas"]')?.click());
+  await target.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Ventanas de trabajo del escritorio APEX")), { timeout: 5000 });
+}
+async function chooseLocale(trigger, option) {
+  await page.evaluate((name) => document.querySelector(`button[aria-label="${name}"]`)?.click(), trigger);
+  await page.waitForFunction(() => Boolean(document.querySelector('[role="dialog"] button[aria-pressed]')), { timeout: 5000 });
+  await page.evaluate((name) => document.querySelector(`[role="dialog"] button[aria-label="${name}"]`)?.click(), option);
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"] button[aria-pressed]'), { timeout: 5000 });
 }
 
 try {
@@ -58,15 +60,16 @@ try {
   await page.goto(`${baseUrl}/dashboard/inventario/productos`, { waitUntil: "networkidle0" });
   record("advanced_breadcrumbs", await page.$('nav[aria-label="Ruta de navegación"]') !== null);
   await openWorkspaceTools();
-  await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Trazabilidad")?.click());
-  await page.waitForSelector('[aria-label="Trazabilidad de navegación"]', { timeout: 5000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Abrir trazabilidad"]')?.click());
+  await page.waitForSelector('section[aria-label="Trazabilidad de navegación"]', { timeout: 5000 });
   record("traceability_control", await page.evaluate(() => document.body.innerText.includes("Recorrido reciente")));
+  await page.keyboard.press("Escape");
 
-  await page.select('select[aria-label="Idioma"]', "en");
+  await chooseLocale("Idioma", "English");
   record("locale_en", await page.evaluate(() => document.documentElement.lang === "en" && document.body.innerText.includes("Command center")));
-  await page.select('select[aria-label="Language"]', "pt").catch(async () => page.select('select[aria-label="Idioma"]', "pt"));
+  await chooseLocale("Language", "Português");
   record("locale_pt", await page.evaluate(() => document.documentElement.lang === "pt" && document.body.innerText.includes("Central de comandos")));
-  await page.select('select[aria-label="Idioma"]', "es");
+  await chooseLocale("Idioma", "Español");
   record("locale_es", await page.evaluate(() => document.documentElement.lang === "es"));
 
   await page.setOfflineMode(true);
