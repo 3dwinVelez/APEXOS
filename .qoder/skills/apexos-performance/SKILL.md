@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.10.0
+version: 2.11.0
 updated_at: 2026-11-10
 contract: 2
 ---
@@ -60,6 +60,11 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
     - **El dato llega con dos ortografías.** El panel consume `latencyMs` y el API publica `latency_ms`; un anillo que lee solo una forma queda vacío según el camino por el que llegó la lectura. Igual el cloud: `latencyMs` es `null` cuando no hubo llamada HTTP, y eso se declara, no se suma como cero.
     - **Un alcance no se mezcla con otro.** El anillo es por ambiente (`local`/`develop`/`main`) y por la mesa del puesto (`puesto`); se persiste en `data/monitor-history.json` (gitignored) y sobrevive el reinicio, pero **no se retrollena**: la historia empieza cuando la versión arrancó y crece a la cadencia de sondeo. Decirlo al dueño es parte de la entrega.
     El eje acompaña: si la ventana medida dura menos de cinco minutos, las marcas `hh:mm` se repiten y el eje queda con una etiqueta, así que `axisTicks` baja al segundo. Por qué: el 2026-11-10 el dueño preguntó por qué los monitores seguían mostrando un número suelto cuando el mapa de módulos ya tenía ticks; la respuesta era que la historia no existía para el resto de los medidores, y pintarla con datos inventados habría sido peor que el número suelto.
+
+21. **Toda superficie de medición se pinta con la misma gramática del gráfico de latencia.** Desde el 2026-11-10 el dueño no acepta "etiquetas" donde esperaba un gráfico: *«todos los modelos de medición deben ser con el gráfico de latencia con umbrales definidos»*. El contrato es un solo renderer (`thresholdChart` en `public/app.js`) para las seis superficies —vista Latencia, tarjetas del Resumen, teselas de API/Base de datos/Operación, componentes, sondas y cada renglón del mapa de módulos— y tres reglas:
+    - **La fila sin lectura es un hueco honesto, no una franja pintada.** `mapRowChart()` no dibuja SVG con menos de dos lecturas medidas y escribe `sin historia: N de M lecturas medidas`; el catálogo congelado de `TOWER_SIMULATION=true` publica `data: null` por módulo, así que ahí **nunca** hay historia que pintar. Exigir lecturas en modo simulación es certificar un imposible.
+    - **El umbral se lee del medidor, no del eje.** Los cortes `óptimo`/`tope`/`piso` se dibujan sobre la ordenada que les corresponde y cada `<title>` lleva la lectura completa (hora, valor, banda y registros donde existen). Con cortes nulos (`pending`) no se traza línea: `Number(null) === 0` pintaba una franja en cero y un `0x` plano como perfectamente sano.
+    - **La altura de renglón es una variante, no un componente distinto.** El mapa usa `compact: true`, `axisTicks: false` y un solo eje horario al pie del mapa (`first → last`), porque repetir el eje en 33 filas no aporta una medición más. Por qué: el 2026-11-10 el panel mostraba tics sueltos y tarjetas número+etiqueta en cinco de las siete vistas, y el dueño lo leyó como que el trabajo no estaba hecho.
 
 ## Checklist de intervención
 

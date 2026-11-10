@@ -86,4 +86,14 @@ function measuredSeries(samples, family, key, bandOf) {
     });
 }
 
-module.exports = { MonitorHistory, measuredSeries, DEFAULT_SIZE };
+// Solo los numeros medidos de un monitor, en el orden en que sucedieron: los
+// necesita metrics.js para calcular la banda habitual de la ventana antes de
+// bandear nada. Un hueco sin lectura no entra, ni como cero.
+function measuredValues(samples, family, key) {
+  const list = Array.isArray(samples) ? samples : [];
+  return list
+    .filter((sample) => sample && sample[family] && finite(sample[family][key]) != null)
+    .map((sample) => finite(sample[family][key]));
+}
+
+module.exports = { MonitorHistory, measuredSeries, measuredValues, DEFAULT_SIZE };

@@ -26,8 +26,12 @@ const VERDICT_BREACH_RATIO = 0.2;
 const VERDICT_RUN_LENGTH = 3;
 
 // `direction: lower` castiga los valores altos (latencia, errores, memoria).
-// `higher` premia los altos (porcentaje de empresas con actividad).
+// `higher` premia los altos (porcentaje de empresas con actividad, uptime).
 // `informational` no tiene banda: es contexto, no diagnostico.
+// `relative` tampoco tiene presupuesto versionado, pero SI tiene umbral: el
+// servidor lo calcula sobre la ventana de lecturas que la torre ya guardo de ese
+// mismo monitor (`limitsFrom: "window"`). `watch` dice por donde duele: "up" se
+// pasa de su banda habitual, "down" se cae de ella.
 // Cada medidor declara ADEMAS la pregunta operativa que responde y la vista donde
 // vive su evidencia, para que el panel se ordene por pregunta y no por metrica.
 const GAUGES = Object.freeze({
@@ -97,16 +101,18 @@ const GAUGES = Object.freeze({
     risk: 3,
     source: "peor ratio age_minutes/expected_minutes entre modulos"
   },
+  // Uptime con tope real: un proceso que lleva menos de cinco minutos encendido
+  // se reinició hace poco, y eso es un hecho que atender, no un dato de contexto.
   uptime: {
     key: "uptime",
     label: "Uptime del proceso",
-    question: "¿El API aguanta la carga que tiene?",
+    question: "¿El API lleva estable el tiempo que parece?",
     view: "api",
     unit: "s",
-    direction: "informational",
-    optimal: null,
-    risk: null,
-    source: "uptime_seconds publicado por /health"
+    direction: "higher",
+    optimal: 900,
+    risk: 300,
+    source: "uptime_seconds publicado por /health · bajo 5 min = reinicio reciente"
   },
   dbLatency: {
     key: "dbLatency",
@@ -127,7 +133,9 @@ const GAUGES = Object.freeze({
     question: "¿Cuántos datos hay en la base?",
     view: "datos",
     unit: "",
-    direction: "informational",
+    direction: "relative",
+    limitsFrom: "window",
+    watch: "down",
     optimal: null,
     risk: null,
     source: "suma de records por modulo en /apex-control/modules"
@@ -163,16 +171,94 @@ const GAUGES = Object.freeze({
   },
   // La tasa se nombra por lo que es, no por "trafico actual": el dueno llamo a
   // esa etiqueta relleno, y un contador acumulado desde el arranque no dice nada.
+  // No existe un presupuesto de capacidad medido, asi que su corte es su propia
+  // banda habitual: lo que duele es que la carga se salga de lo que el API ya
+  // viene absorbiendo en la ventana guardada.
   requestRate: {
     key: "requestRate",
     label: "Peticiones por minuto",
     question: "¿El API aguanta la carga que tiene?",
     view: "api",
     unit: "req/min",
-    direction: "informational",
+    direction: "relative",
+    limitsFrom: "window",
+    watch: "up",
     optimal: null,
     risk: null,
     source: "usage.requests_total / uptime_seconds de /health (requiere >= 60 s de proceso)"
+  },
+  // Magnitudes de uso real. Tampoco tienen presupuesto versionado: su umbral es
+  // su propia ventana medida y lo que se vigila es la caida (dejo de haber uso),
+  // no el pico. Viven en la vista Modulos y no ensucian el resumen.
+  activityToday: {
+    key: "activityToday",
+    label: "Actividad de hoy",
+    question: "¿Hay uso real de los módulos hoy?",
+    view: "modulos",
+    unit: "",
+    direction: "relative",
+    limitsFrom: "window",
+    watch: "down",
+    optimal: null,
+    risk: null,
+    resumen: false,
+    source: "activity.today de /apex-control/activity"
+  },
+  activeUsers: {
+    key: "activeUsers",
+    label: "Usuarios activos",
+    question: "¿Hay uso real de los módulos hoy?",
+    view: "modulos",
+    unit: "",
+    direction: "relative",
+    limitsFrom: "window",
+    watch: "down",
+    optimal: null,
+    risk: null,
+    resumen: false,
+    source: "activity.active_users de /apex-control/activity"
+  },
+  activeSessions: {
+    key: "activeSessions",
+    label: "Sesiones activas",
+    question: "¿Las sesiones siguen vivas?",
+    view: "modulos",
+    unit: "",
+    direction: "relative",
+    limitsFrom: "window",
+    watch: "down",
+    optimal: null,
+    risk: null,
+    resumen: false,
+    source: "connections.active_sessions de /apex-control/activity"
+  },
+  websocketClients: {
+    key: "websocketClients",
+    label: "Conexiones WebSocket",
+    question: "¿El tiempo real está conectado?",
+    view: "modulos",
+    unit: "",
+    direction: "relative",
+    limitsFrom: "window",
+    watch: "down",
+    optimal: null,
+    risk: null,
+    resumen: false,
+    source: "connections.websocket.clients de /apex-control/activity"
+  },
+  gpsPings: {
+    key: "gpsPings",
+    label: "Pings GPS",
+    question: "¿Está llegando la telemetría de la flota?",
+    view: "modulos",
+    unit: "",
+    direction: "relative",
+    limitsFrom: "window",
+    watch: "down",
+    optimal: null,
+    risk: null,
+    resumen: false,
+    source: "connections.gps.pings_period de /apex-control/activity"
   },
   // Peor sonda a los servicios de la nube del ambiente. El viaje torre->SaaS
   // incluye DNS + TLS + el proveedor, por eso el corte es más ancho que el del
@@ -299,13 +385,20 @@ function bandForValue(definition, value) {
   const measured = number(value);
   if (measured == null) return "unknown";
   if (definition.direction === "informational") return "informational";
-  if (definition.direction === "higher") {
-    if (measured >= definition.optimal) return "optimal";
-    if (measured >= definition.risk) return "risk";
+  // Un relativo sin ventana suficiente todavia no tiene corte: es lectura medida
+  // sin diagnostico, no un cero pintado de verde.
+  const optimal = number(definition.optimal);
+  const risk = number(definition.risk);
+  if (optimal == null || risk == null) return definition.limitsFrom ? "informational" : "unknown";
+  const higher = definition.direction === "higher"
+    || (definition.direction === "relative" && definition.watch === "down");
+  if (higher) {
+    if (measured >= optimal) return "optimal";
+    if (measured >= risk) return "risk";
     return "critical";
   }
-  if (measured <= definition.optimal) return "optimal";
-  if (measured <= definition.risk) return "risk";
+  if (measured <= optimal) return "optimal";
+  if (measured <= risk) return "risk";
   return "critical";
 }
 
@@ -314,15 +407,23 @@ function bandForValue(definition, value) {
 // relee con la regla de hoy y la grafica no se queda con la regla vieja.
 function bandFromEntry(entry, value) {
   if (!entry) return "unknown";
+  // Sin lectura no hay banda que elegir: ni el informativo ni el de ventana sin
+  // corte pueden disfrazar de contexto medido un hueco del anillo.
+  if (number(value) == null) return "unknown";
   // Informativo es banda propia, no ausencia de medida: si se evaluara por cortes
   // caería en "unknown" y el panel pintaría como sin-dato una cifra medida.
-  if (entry.direction === "informational") return number(value) == null ? "unknown" : "informational";
+  if (entry.direction === "informational") return "informational";
   // El llamador puede traer la entrada publicada (con limits) o la del catalogo
   // (con optimal/risk crudos): son el mismo umbral en dos momentos del viaje.
   const limits = entry.limits || entry;
-  if (limits.optimal == null && limits.risk == null) return "unknown";
+  if (limits.optimal == null && limits.risk == null) {
+    // Relativo con ventana todavia corta: hay lectura, falta corte. Se pinta como
+    // contexto medido y el pie del grafico dice cuantas lecturas faltan.
+    return entry.limitsFrom === "window" ? "informational" : "unknown";
+  }
   return bandForValue({
     direction: entry.direction,
+    watch: entry.watch,
     optimal: limits.optimal,
     risk: limits.risk
   }, value);
@@ -341,14 +442,84 @@ function gauge(key, value, extra = {}, definition = null) {
     view: resolved.view,
     unit: resolved.unit,
     direction: resolved.direction,
+    watch: resolved.watch || null,
+    limitsFrom: resolved.limitsFrom || null,
+    resumen: resolved.resumen !== false,
     value: measured,
     band,
     tone: BAND_TONE[band],
     label_text: BAND_LABEL[band],
-    limits: { optimal: resolved.optimal, risk: resolved.risk },
+    limits: {
+      optimal: resolved.optimal,
+      risk: resolved.risk,
+      kind: resolved.limitsFrom === "window" ? "window" : "budget"
+    },
     source: resolved.source,
     ...extra
   };
+}
+
+// Percentil sobre la ventana guardada de un solo monitor. Se usa para el corte
+// propio de las magnitudes sin presupuesto versionado, nunca para reemplazar un
+// tope medido.
+function percentileOf(values, percentile) {
+  const list = (Array.isArray(values) ? values : [])
+    .map(number)
+    .filter((value) => value != null)
+    .sort((left, right) => left - right);
+  if (!list.length) return null;
+  const index = Math.min(list.length - 1, Math.max(0, Math.round((list.length - 1) * percentile)));
+  return list[index];
+}
+
+function tidy(value) {
+  if (!Number.isFinite(value)) return null;
+  return round(value, Math.abs(value) >= 100 ? 0 : 2);
+}
+
+// La banda habitual de un monitor, medida sobre sus propias lecturas guardadas.
+// Ocho lecturas es el mínimo: con menos, la "banda" sería dos puntos seguidos y
+// el corte dibujaría un diagnóstico que nadie midio.
+const WINDOW_MIN_READINGS = 8;
+
+function windowLimits(entry, values) {
+  if (!entry || entry.limitsFrom !== "window") return null;
+  const list = (Array.isArray(values) ? values : []).map(number).filter((value) => value != null);
+  if (list.length < WINDOW_MIN_READINGS) {
+    return { optimal: null, risk: null, kind: "pending", readings: list.length, needed: WINDOW_MIN_READINGS };
+  }
+  const down = entry.watch === "down";
+  // "up" (carga, latencias): 65 % de las lecturas por debajo del corte sigue siendo
+  // normal y 90 % es el borde. "down" (uso, registros): se invierte, porque lo que
+  // duele es caerse de la banda.
+  const optimal = tidy(down ? percentileOf(list, 0.35) : percentileOf(list, 0.65));
+  const risk = tidy(down ? percentileOf(list, 0.1) : percentileOf(list, 0.9));
+  if (optimal == null || risk == null) {
+    return { optimal: null, risk: null, kind: "pending", readings: list.length, needed: WINDOW_MIN_READINGS };
+  }
+  return {
+    optimal,
+    risk,
+    kind: "window",
+    watch: down ? "down" : "up",
+    readings: list.length,
+    source: `banda habitual de sus ${list.length} lecturas medidas (${down ? "p35/p10" : "p65/p90"} de su propia ventana)`
+  };
+}
+
+// Aplica el corte de ventana a la entrada ya publicada y rebanda el valor con él.
+// Se llama al leer el anillo, no al grabarlo: si manana cambian las lecturas, el
+// umbral se recalcula y el historial se relee con la regla de hoy.
+function applyWindowLimits(entry, values) {
+  if (!entry || entry.limitsFrom !== "window") return entry;
+  const limits = windowLimits(entry, values);
+  if (!limits) return entry;
+  entry.limits = limits;
+  if (limits.kind === "window") entry.source = `${entry.source} · ${limits.source}`;
+  entry.band = bandFromEntry(entry, entry.value);
+  entry.tone = BAND_TONE[entry.band];
+  entry.label_text = BAND_LABEL[entry.band];
+  return entry;
 }
 
 // Ratio de frescura de un modulo: cuanto del intervalo esperado ha pasado.
@@ -440,6 +611,13 @@ function gaugesFor(environment, options = {}) {
   const modules = environment.modules && Array.isArray(environment.modules.modules)
     ? environment.modules.modules
     : [];
+  // La actividad llega envuelta: payload.activity es la respuesta del API, y esa
+  // respuesta trae su propio bloque `activity` junto con `connections`.
+  const activityPayload = environment.activity && environment.activity.activity
+    ? environment.activity.activity
+    : null;
+  const activityNumbers = activityPayload && activityPayload.activity ? activityPayload.activity : {};
+  const connections = activityPayload && activityPayload.connections ? activityPayload.connections : {};
   const list = [
     gauge("p95", performance ? performance.p95 : null, {}, p95Definition(environment.id)),
     gauge("errorRate", performance ? performance.errorRate : null),
@@ -453,7 +631,12 @@ function gaugesFor(environment, options = {}) {
     gauge("dbLatency", componentLatency(environment.components, "db")),
     gauge("slowQueries", deployed && deployed.usage ? deployed.usage.slowQueries : null),
     gauge("dataVolume", totalRecords(modules)),
-    gauge("dataCoverage", coveragePercent(environment.activity))
+    gauge("dataCoverage", coveragePercent(environment.activity)),
+    gauge("activityToday", activityNumbers.today),
+    gauge("activeUsers", activityNumbers.active_users),
+    gauge("activeSessions", connections.active_sessions),
+    gauge("websocketClients", connections.websocket ? connections.websocket.clients : null),
+    gauge("gpsPings", connections.gps ? connections.gps.pings_period : null)
   ];
   return list.filter(Boolean);
 }
@@ -538,10 +721,15 @@ function formatGaugeValue(entry) {
 
 function limitText(entry) {
   if (!entry || !entry.limits) return "sin umbral publicado";
-  const { optimal, risk } = entry.limits;
+  const { optimal, risk, kind } = entry.limits;
+  if (kind === "pending") {
+    return `sin banda habitual todavía: ${entry.limits.readings || 0} de ${entry.limits.needed || 8} lecturas medidas`;
+  }
   if (optimal == null && risk == null) return "informativo, sin umbral";
-  if (entry.direction === "higher") return `óptimo ≥ ${optimal}, en riesgo ≥ ${risk}`;
-  return `óptimo ≤ ${optimal}, tope ${risk}`;
+  const suffix = kind === "window" ? " · banda de su propia ventana" : "";
+  const higher = entry.direction === "higher" || (entry.direction === "relative" && entry.watch === "down");
+  if (higher) return `óptimo ≥ ${optimal}, en riesgo ≥ ${risk}${suffix}`;
+  return `óptimo ≤ ${optimal}, tope ${risk}${suffix}`;
 }
 
 // Cuánto del heap ya pedido está ocupado. Sin heap total no hay razón: el
@@ -635,6 +823,10 @@ module.exports = {
   PROBE_BUDGET_MS,
   bandForValue,
   bandFromEntry,
+  percentileOf,
+  windowLimits,
+  applyWindowLimits,
+  WINDOW_MIN_READINGS,
   measuredValue: number,
   probeBand,
   gauge,

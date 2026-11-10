@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.20.0
+version: 2.21.0
 updated_at: 2026-11-10
 contract: 2
 ---
@@ -100,6 +100,11 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
     - **La historia no se retrorellena.** Un anillo de sondeos arranca vacío y crece a la cadencia de sondeo; la tentación es sembrarlo con datos sintéticos para que la pantalla se vea completa el primer minuto. Eso falsea justo lo que la herramienta promete (la marca dibujada es un sondeo que ocurrió), así que el cierre dice cuántas marcas hay, cada cuánto crecen y qué queda gris por ausencia de lectura. Un feature «visible en el demo» con dato inventado es un hallazgo, no una entrega.
     - **El producto de una herramienta de puesto es la instancia que el dueño tiene abierta.** Cuando el dueño reporta «no veo los cambios», el orquestador verifica primero el proceso vivo (puerto, PID, si la instancia es la de la sesión o la del escritorio, `cache-control: no-store`) antes de asumir un defecto de código: aquí confluían las dos causas —una pestaña con el JS viejo en memoria y una torre levantada por esta sesión que no era la del puesto—. La entrega incluye relanzar la herramienta y la tecla de recarga dura; y cuando la certificación necesita un solo lector, se detiene la instancia del dueño, se corre y **se vuelve a levantar**, declarándolo.
     Por qué: el mismo día, la intervención tenía 157/157 y 73/73 y el dueño seguía sin ver los ticks; lo que faltaba no era código, era cerrar con su herramienta corriendo la versión nueva y con la cota honesta de cuántos sondeos tenía que esperar.
+
+34. **Un rechazo visual del dueño se cierra con la misma vista que él está mirando, y un rojo del arnés se corrige en el arnés.** El 2026-11-10 el dueño devolvió la torre con «no veo que los gráficos sean como el de latencia con la barra de comportamiento», y dos cosas se demostraron con la ronda:
+    - **El veredicto se lee donde él lo vio.** No se responde con un diff ni con el recuento de una suite: se relanza la instancia del puesto, se abre la vista objetada y se certifica ese DOM. Un rojo del arnés se clasifica antes de tocar producto —en esta ronda, una gate pedía serie dibujada en fase simulada (el catálogo no publica `data` por módulo) y otra leía el panel antes de tener dos lecturas medidas—; la corrección vive en `scripts/certifications/**`, no en un umbral de `lib/metrics.js` relajado ni en la regla de «lo no medido no es cero» sacrificada para poner la pantalla verde.
+    - **Un verde comprado bajando el listón no cierra nada.** Si el gate y el producto discuten, primero se determina quién afirma qué y en qué modo; solo después se decide a quién se le corrige la afirmación. Borrar la cláusula exige nombrar dónde queda la misma afirmación en otro sitio (aquí, la profundidad de historia se movió a la fase real).
+    Por qué: el dueño no distingue un arnés desactualizado de una pantalla mal implementada, y ambos aparecen igual en su vista. El orquestador que resuelve el rojo donde nace —arnés o producto— y entrega la vista reopened es el que puede decir «míralo otra vez».
 
 ## Checklist de intervención
 

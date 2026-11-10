@@ -30,6 +30,10 @@ const {
   requestsPerMinute,
   worstCloudLatency,
   limitText,
+  windowLimits,
+  applyWindowLimits,
+  percentileOf,
+  WINDOW_MIN_READINGS,
   formatGaugeValue
 } = require("../lib/metrics");
 
@@ -56,8 +60,15 @@ test("bandForValue usa la direccion de la metrica y nunca adivina un valor ausen
   assert.equal(bandForValue(GAUGES.dataCoverage, 20), "optimal");
   assert.equal(bandForValue(GAUGES.dataCoverage, 10), "risk");
   assert.equal(bandForValue(GAUGES.dataCoverage, 1), "critical");
-  assert.equal(bandForValue(GAUGES.uptime, 7200), "informational");
+  // El uptime dejo de ser informativo: un API que lleva 2 minutos vivo empezo de
+  // nuevo y eso se ve, no se decora.
+  assert.equal(bandForValue(GAUGES.uptime, 7200), "optimal");
+  assert.equal(bandForValue(GAUGES.uptime, 600), "risk");
+  assert.equal(bandForValue(GAUGES.uptime, 120), "critical");
   assert.equal(bandForValue(GAUGES.uptime, null), "unknown");
+  // Un medidor de ventana todavia sin banda calculada no es "sin dato" ni verde:
+  // es informativo hasta que el servidor trace su corte sobre sus lecturas.
+  assert.equal(bandForValue(GAUGES.requestRate, 820), "informational");
 });
 
 test("gauge publica valor, banda, tono y los limites que la produjeron", () => {
@@ -65,7 +76,7 @@ test("gauge publica valor, banda, tono y los limites que la produjeron", () => {
   assert.equal(entry.band, "optimal");
   assert.equal(entry.tone, "ok");
   assert.equal(entry.label_text, "Óptimo");
-  assert.deepEqual(entry.limits, { optimal: 600, risk: 1000 });
+  assert.deepEqual(entry.limits, { optimal: 600, risk: 1000, kind: "budget" });
   assert.match(entry.source, /PERF_API_P95_MS/);
   assert.equal(gauge("inexistente", 1), null);
 });
@@ -124,7 +135,10 @@ test("gaugesFor banda cada medicion del ambiente por su propio umbral", () => {
   assert.equal(byKey.dbLatency.value, 42);
   assert.equal(byKey.dataVolume.band, "informational");
   assert.equal(byKey.dataVolume.value, 940);
-  assert.equal(byKey.uptime.band, "informational");
+  // El uptime ya no es contexto decorativo: dos horas de proceso es una banda
+  // medida y un reinicio hace dos minutos se ve en rojo.
+  assert.equal(byKey.uptime.band, "optimal");
+  assert.equal(gauge("uptime", 120).band, "critical");
   // Presion de heap: 18/40 = 45 %, dentro del optimo de 60 %.
   assert.equal(byKey.heapPressure.value, 45);
   assert.equal(byKey.heapPressure.band, "optimal");
@@ -241,7 +255,7 @@ test("limitText y formatGaugeValue dicen el corte en español, no en crudo", () 
   const p95 = gauge("p95", 182);
   assert.equal(limitText(p95), "óptimo ≤ 600, tope 1000");
   assert.equal(limitText(gauge("dataCoverage", 30)), "óptimo ≥ 20, en riesgo ≥ 5");
-  assert.equal(limitText(gauge("uptime", 7200)), "informativo, sin umbral");
+  assert.equal(limitText(gauge("uptime", 7200)), "óptimo ≥ 900, en riesgo ≥ 300");
   assert.equal(formatGaugeValue(p95), "182 ms");
   assert.equal(formatGaugeValue(gauge("errorRate", 2.5)), "2,5 %");
   assert.equal(formatGaugeValue(gauge("p95", null)), "sin dato");
@@ -281,7 +295,8 @@ test("los medidores salen en el orden de las preguntas del panel, no alfabeticos
   const keys = gaugesFor({ id: "local" }).map((entry) => entry.key);
   assert.deepEqual(keys, [
     "p95", "errorRate", "serverErrors", "memoryRss", "heapPressure", "requestRate",
-    "uptime", "cloudLatency", "freshness", "dbLatency", "slowQueries", "dataVolume", "dataCoverage"
+    "uptime", "cloudLatency", "freshness", "dbLatency", "slowQueries", "dataVolume", "dataCoverage",
+    "activityToday", "activeUsers", "activeSessions", "websocketClients", "gpsPings"
   ]);
 });
 
@@ -310,7 +325,7 @@ test("el viaje de la sonda se juzga por el corte del ambiente, no por el del API
 
 test("el medidor p95 publicado lleva el corte del ambiente, no el genérico", () => {
   const [entry] = gaugesFor({ id: "local", performance: { p95: 200 } });
-  assert.deepEqual(entry.limits, { optimal: 240, risk: 400 });
+  assert.deepEqual(entry.limits, { optimal: 240, risk: 400, kind: "budget" });
   assert.equal(entry.band, "optimal");
 });
 
@@ -418,4 +433,94 @@ test("bandFromEntry colorea la historia con el umbral del medidor", () => {
   assert.equal(bandFromEntry(GAUGES.p95, 42), "optimal");
   assert.equal(bandFromEntry(null, 42), "unknown");
   assert.equal(bandFromEntry({ direction: "lower", label: "sin cortes" }, 42), "unknown", "sin umbral no se inventa color");
+});
+
+// ---------------------------------------------------------------- banda de ventana
+
+// Las magnitudes sin presupuesto versionado (tráfico, registros, uso real) no
+// reciben un corte inventado: reciben el que sale de sus propias lecturas. Con
+// menos de ocho lecturas el servidor dice que todavía no tiene banda, y eso es
+// otra respuesta que un verde.
+test("la banda habitual necesita ocho lecturas medidas y no cuenta huecos", () => {
+  assert.equal(WINDOW_MIN_READINGS, 8);
+  assert.deepEqual(windowLimits(GAUGES.requestRate, [1, 2, 3, 4, 5, 6, 7]), {
+    optimal: null,
+    risk: null,
+    kind: "pending",
+    readings: 7,
+    needed: 8
+  });
+  assert.equal(windowLimits(GAUGES.requestRate, [null, "", 2, undefined, 2]).readings, 2, "lo no medido no es una lectura");
+  // Un medidor con presupuesto versionado nunca se banda por ventana.
+  assert.equal(windowLimits(GAUGES.p95, [1, 2, 3, 4, 5, 6, 7, 8, 9]), null);
+});
+
+test("la banda de ventana se calcula por percentiles y mira hacia donde duele", () => {
+  const carga = windowLimits(GAUGES.requestRate, [10, 10, 11, 11, 12, 12, 13, 40]);
+  assert.equal(carga.kind, "window");
+  assert.equal(carga.watch, "up");
+  assert.equal(carga.optimal, 12, "p65 de la ventana");
+  assert.equal(carga.risk, 13, "p90 de la ventana");
+  assert.equal(carga.readings, 8);
+  assert.match(carga.source, /p65\/p90/);
+  // En uso y registros lo que duele es caerse de la banda, asi que el corte es el
+  // piso: por encima del p35 todo es normal.
+  const registros = windowLimits(GAUGES.dataVolume, [100, 110, 120, 130, 140, 150, 160, 170]);
+  assert.equal(registros.watch, "down");
+  assert.equal(registros.optimal, 120);
+  assert.equal(registros.risk, 110);
+  assert.match(registros.source, /p35\/p10/);
+  assert.equal(percentileOf([], 0.5), null);
+});
+
+test("el corte de ventana cambia la banda del valor y queda firmado en la fuente", () => {
+  const entry = gauge("requestRate", 820.3);
+  assert.equal(entry.limits.kind, "window");
+  assert.equal(entry.band, "informational", "sin lecturas guardadas no hay semaforo que fingir");
+  applyWindowLimits(entry, [700, 720, 740, 760, 780, 800, 810, 820]);
+  assert.equal(entry.limits.kind, "window");
+  assert.equal(entry.limits.risk, 810);
+  assert.equal(entry.band, "critical", "820 req/min esta por encima del p90 de su ventana");
+  assert.match(entry.source, /banda habitual de sus 8 lecturas medidas/);
+  assert.equal(limitText(entry), "óptimo ≤ 800, tope 810 · banda de su propia ventana");
+  // Y con lecturas de menos, el pie dice cuantas faltan en lugar de pintar verde.
+  const tierno = gauge("dataVolume", 940);
+  applyWindowLimits(tierno, [900, 910]);
+  assert.equal(tierno.limits.kind, "pending");
+  assert.equal(tierno.band, "informational");
+  assert.equal(limitText(tierno), "sin banda habitual todavía: 2 de 8 lecturas medidas");
+});
+
+test("las magnitudes de uso real nacen como medidores de ventana", () => {
+  for (const key of ["activityToday", "activeUsers", "activeSessions", "websocketClients", "gpsPings"]) {
+    assert.equal(GAUGES[key].direction, "relative", `${key} se banda contra su propia ventana`);
+    assert.equal(GAUGES[key].limitsFrom, "window");
+    assert.equal(GAUGES[key].watch, "down", `${key} duele cuando cae, no cuando sube`);
+    assert.equal(GAUGES[key].view, "modulos");
+    assert.equal(GAUGES[key].resumen, false, `${key} es evidencia de la vista Módulos, no relleno del resumen`);
+    assert.match(GAUGES[key].question, /^¿.*\?$/);
+  }
+  const gauges = gaugesFor({
+    id: "local",
+    activity: {
+      source: "api",
+      activity: {
+        activity: { today: 4, period: 30, active_users: 7 },
+        connections: { active_sessions: 12, websocket: { clients: 3 }, gps: { pings_period: 9 } }
+      }
+    }
+  });
+  const byKey = Object.fromEntries(gauges.map((entry) => [entry.key, entry]));
+  assert.equal(byKey.activityToday.value, 4);
+  assert.equal(byKey.activeUsers.value, 7);
+  assert.equal(byKey.activeSessions.value, 12);
+  assert.equal(byKey.websocketClients.value, 3);
+  assert.equal(byKey.gpsPings.value, 9);
+  for (const key of ["activityToday", "activeUsers", "activeSessions", "websocketClients", "gpsPings"]) {
+    assert.equal(byKey[key].band, "informational", `${key} sin ventana medida sigue siendo contexto`);
+  }
+  // Una fuente sin payload no publica un cero comodo.
+  const vacio = Object.fromEntries(gaugesFor({ id: "local" }).map((entry) => [entry.key, entry]));
+  assert.equal(vacio.activityToday.value, null);
+  assert.equal(vacio.activityToday.band, "unknown");
 });

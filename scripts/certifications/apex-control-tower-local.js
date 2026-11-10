@@ -24,6 +24,20 @@ let liveTower = null;
 let chrome = null;
 let dataDir = null;
 
+// La regla que el propietario firmo: cada magnitud medida se pinta como el
+// grafico de latencia con sus cortes. Un recuadro sin grafica, o una serie
+// dibujada sin umbral y sin admision honesta ("sin banda habitual todavia",
+// "ninguno dejo lectura"), es el defecto que estos gates persiguen. Se expresa
+// como funcion JS fuente para poder inyectarla en el evaluate del navegador.
+const graficaConUmbral = `(tile) => {
+  const grafica = tile.querySelector('.monitor-chart, .map-strip.map-chart');
+  if (!grafica) return false;
+  if (grafica.querySelector('.chart-optimal, .chart-risk')) return true;
+  return /sin banda habitual todavía|ninguno dejó lectura|sin sondeos guardados|sin historia/.test(tile.textContent);
+}`;
+const sinGrafica = (sel) => `Array.from(document.querySelectorAll(${JSON.stringify(sel)}))
+  .filter((n) => n.offsetParent !== null && !(${graficaConUmbral})(n)).length`;
+
 function record(name, ok, detail = {}) {
   checks.push({ name, ok: Boolean(ok), detail });
   console.log(`${ok ? "PASS" : "FAIL"} ${name}${ok ? "" : ` -> ${JSON.stringify(detail)}`}`);
@@ -178,8 +192,14 @@ async function launchChrome(binary) {
   const portFile = path.join(profileDir, "DevToolsActivePort");
   const port = await waitFor(() => {
     if (!fs.existsSync(portFile)) return null;
-    const value = Number(fs.readFileSync(portFile, "utf8").split(/\r?\n/)[0]);
-    return Number.isInteger(value) && value > 0 ? value : null;
+    try {
+      // Chrome escribe el archivo y Windows puede negar la lectura por un instante
+      // (EBUSY): es el navegador arrancando, no un fallo de la certificación.
+      const value = Number(fs.readFileSync(portFile, "utf8").split(/\r?\n/)[0]);
+      return Number.isInteger(value) && value > 0 ? value : null;
+    } catch {
+      return null;
+    }
   }, 20000);
   if (!port) throw new Error("Chrome no expuso DevToolsActivePort");
 
@@ -416,7 +436,7 @@ async function run() {
         () => chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length >= 10
           && Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length === 3
           && document.querySelectorAll('.check').length >= 8
-          && document.querySelectorAll('#moduleMap .map-tick').length >= 3
+          && document.querySelectorAll('#moduleMap .map-strip.map-chart').length >= 3
           && Boolean(document.querySelector('#health [aria-label^="Salud "]'))`),
         15000
       );
@@ -428,16 +448,26 @@ async function run() {
 
       // Resumen = preguntas con semaforo y tope. Las filas tecnicas (sondas,
       // teselas, ramas) siguen en el DOM pero NO a la vista.
+      // El grafico se dibuja con dos lecturas medidas, asi que se espera a que el
+      // anillo tenga historia: certificar el Resumen en el primer sondeo certificaria
+      // un panel que todavia no tiene nada que pintar. Solo se espera a los medidores:
+      // en simulacion el catalogo congelado no publica datos por modulo, asi que el
+      // mapa queda honestamente en "sin historia" y su lectura real se certifica en
+      // la fase real, no aqui.
+      const historiaLista = await waitFor(() => chrome.cdp.evaluate(
+        `Array.from(document.querySelectorAll('#gauges .monitor-chart')).filter((n) => n.querySelector('svg')).length >= 5`), 60000).catch(() => false);
       const resumen = await chrome.cdp.evaluate(`({
         bandas: Array.from(document.querySelectorAll('#gauges .band-pill')).map((n) => n.textContent.trim()),
         preguntas: Array.from(document.querySelectorAll('#gauges .measure-question')).map((n) => n.textContent.trim()),
         enlaces: Array.from(document.querySelectorAll('#gauges .measure-link')).map((n) => n.dataset.view),
         metas: document.getElementById('gaugesMeta').textContent.trim(),
         tarjetas: document.querySelectorAll('#gauges .measure-card').length,
-        franjas: document.querySelectorAll('#gauges .monitor-ticks').length,
-        pies: document.querySelectorAll('#gauges .monitor-ticks-foot').length,
-        marcas: document.querySelectorAll('#gauges .map-tick').length,
-        tirasConLectura: Array.from(document.querySelectorAll('#gauges .monitor-ticks')).filter((n) => n.children.length).length,
+        rotulos: Array.from(document.querySelectorAll('#gauges .measure-label')).map((n) => n.textContent.trim()),
+        graficas: document.querySelectorAll('#gauges .monitor-chart').length,
+        pies: document.querySelectorAll('#gauges .monitor-chart-foot').length,
+        lineasUmbral: document.querySelectorAll('#gauges .threshold-chart .chart-optimal, #gauges .threshold-chart .chart-risk').length,
+        etiquetasUmbral: Array.from(document.querySelectorAll('#gauges .threshold-chart .chart-label')).map((n) => n.textContent.trim()),
+        tirasConLectura: Array.from(document.querySelectorAll('#gauges .monitor-chart')).filter((n) => n.querySelector('svg')).length,
         kpisVisibles: Array.from(document.querySelectorAll('#kpis .metric-tile')).filter(${visible}).length,
         checksVisibles: Array.from(document.querySelectorAll('#checks .check')).filter(${visible}).length,
         secciones: Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length
@@ -450,15 +480,25 @@ async function run() {
         kpisVisibles: resumen.kpisVisibles, checksVisibles: resumen.checksVisibles,
         secciones: resumen.secciones, metas: resumen.metas
       });
-      // Ningun medidor se queda en un numero suelto: cada tarjeta trae su franja y
-      // su pie. Donde todavia no hubo lectura la franja existe y el pie lo dice,
-      // por eso se cuenta por tiras y no por marcas totales.
-      assert("browser_cada_medidor_trae_su_historia", resumen.tarjetas >= 10
-        && resumen.franjas === resumen.tarjetas
+      // Ningun medidor se queda en un numero suelto: cada tarjeta trae su grafico
+      // tipo latencia y su pie. Donde todavia no hubo lectura el hueco existe y el
+      // pie dice cuantas lecturas faltan, por eso se cuenta por graficas dibujadas
+      // y no por marcas sueltas. Y el resumen solo muestra las preguntas de entrada:
+      // la evidencia por modulo vive en su vista, no rellena aqui.
+      assert("browser_cada_medidor_trae_su_grafica_con_umbral", Boolean(historiaLista)
+        && resumen.tarjetas === 13
+        && resumen.graficas === resumen.tarjetas
         && resumen.pies === resumen.tarjetas
-        && resumen.tirasConLectura >= 5, {
-        tarjetas: resumen.tarjetas, franjas: resumen.franjas, pies: resumen.pies,
-        tiras_con_lectura: resumen.tirasConLectura, marcas: resumen.marcas
+        && resumen.tirasConLectura >= 5
+        && resumen.lineasUmbral >= 8
+        && resumen.etiquetasUmbral.length >= 8
+        && resumen.etiquetasUmbral.every((texto) => /óptimo|tope|piso/.test(texto))
+        && !/Actividad de hoy|Usuarios activos|Sesiones activas|Conexiones WebSocket|Pings GPS/
+          .test(resumen.rotulos.join(" | ")), {
+        historia_esperada: Boolean(historiaLista),
+        tarjetas: resumen.tarjetas, graficas: resumen.graficas, pies: resumen.pies,
+        tiras_con_lectura: resumen.tirasConLectura, lineas_umbral: resumen.lineasUmbral,
+        etiquetas: resumen.etiquetasUmbral, rotulos: resumen.rotulos
       });
       // La lista de enlaces ya no se limita a cuatro vistas: el medidor de la nube
       // y el del puesto tambien responden desde el resumen.
@@ -636,10 +676,14 @@ async function run() {
             .map((n) => n.textContent.replace(/\\s+/g, " ").trim())
             .filter((texto) => /PostgreSQL|Base de datos/.test(texto))[0] || "",
           teselas: Array.from(document.querySelectorAll('#kpis .metric-tile')).filter(${visible}).length,
-          franjas: document.querySelectorAll('#kpis .monitor-ticks').length,
-          marcas: document.querySelectorAll('#kpis .map-tick').length,
-          franjasComponentes: document.querySelectorAll('#components .monitor-ticks').length,
-          franjasSondas: document.querySelectorAll('#checks .monitor-ticks').length,
+          graficas: document.querySelectorAll('#kpis .monitor-chart').length,
+          sinUmbral: ${sinGrafica("#kpis .metric-tile")},
+          lineasUmbral: document.querySelectorAll('#kpis .threshold-chart .chart-optimal, #kpis .threshold-chart .chart-risk').length,
+          etiquetasUmbral: Array.from(document.querySelectorAll('#kpis .threshold-chart .chart-label')).map((n) => n.textContent.trim()),
+          graficasComponentes: document.querySelectorAll('#components .monitor-chart').length,
+          sinUmbralComponentes: ${sinGrafica("#components .component-row")},
+          graficasSondas: document.querySelectorAll('#checks .monitor-chart').length,
+          sinUmbralSondas: ${sinGrafica("#checks .check")},
           memoria: (() => {
             const tarjeta = Array.from(document.querySelectorAll('#kpis .metric-tile'))
               .filter((n) => n.offsetParent !== null)
@@ -655,14 +699,19 @@ async function run() {
         && /\d+ componentes · \d+ con latencia medida/.test(apiVista.metas)
         && /\d+ ms/.test(apiVista.base), apiVista);
       // El recorte deja las seis teselas que responden "¿el API esta optimo con la
-      // carga que tiene?" y ninguna se pinta con un numero suelto.
+      // carga que tiene?" y ninguna se pinta con un numero suelto: cada una trae su
+      // grafica tipo latencia y, si el corte aun no existe, la propia tesela lo dice.
       assert("browser_vista_api_teselas_tecnicas", Boolean(apiVista)
         && apiVista.teselas === 6
-        && apiVista.franjas === apiVista.teselas
-        && apiVista.marcas >= apiVista.teselas, {
+        && apiVista.graficas === apiVista.teselas
+        && apiVista.sinUmbral === 0
+        && apiVista.lineasUmbral >= 4
+        && apiVista.etiquetasUmbral.every((texto) => /óptimo|tope|piso/.test(texto)), {
         teselas: apiVista ? apiVista.teselas : 0,
-        franjas: apiVista ? apiVista.franjas : 0,
-        marcas: apiVista ? apiVista.marcas : 0
+        graficas: apiVista ? apiVista.graficas : 0,
+        sin_umbral: apiVista ? apiVista.sinUmbral : 0,
+        lineas_umbral: apiVista ? apiVista.lineasUmbral : 0,
+        etiquetas: apiVista ? apiVista.etiquetasUmbral : []
       });
       // La memoria del proceso no se borro del panel: cambió de sitio y ahora
       // lleva su corte versionado visible, que es lo que la convierte en decision.
@@ -670,12 +719,17 @@ async function run() {
         && /\d/.test(apiVista.memoria) && /óptimo|tope/i.test(apiVista.memoria), {
         memoria: apiVista ? apiVista.memoria : "", runtimePublished
       });
+      // Cada sonda y cada componente es un medidor mas: su grafica con el corte
+      // que el servidor publico (el de la sonda de la torre, el propio del servicio).
       assert("browser_componentes_y_sondas_con_historia", Boolean(apiVista)
-        && apiVista.franjasComponentes === apiVista.componentes
-        && apiVista.franjasSondas >= 8, {
+        && apiVista.graficasComponentes === apiVista.componentes
+        && apiVista.sinUmbralComponentes === 0
+        && apiVista.graficasSondas >= 8
+        && apiVista.sinUmbralSondas === 0, {
         componentes: apiVista ? apiVista.componentes : 0,
-        franjas_componentes: apiVista ? apiVista.franjasComponentes : 0,
-        franjas_sondas: apiVista ? apiVista.franjasSondas : 0
+        graficas_componentes: apiVista ? apiVista.graficasComponentes : 0,
+        graficas_sondas: apiVista ? apiVista.graficasSondas : 0,
+        sondas_sin_umbral: apiVista ? apiVista.sinUmbralSondas : 0
       });
       const technicalDetails = apiVista ? apiVista.tecnicos : 0;
       assert("browser_technical_details", technicalDetails >= 8, { details: technicalDetails });
@@ -687,13 +741,20 @@ async function run() {
       const modulos = await waitFor(() => chrome.cdp.evaluate(`(() => {
         const leido = {
           filas: Array.from(document.querySelectorAll('#moduleMap .map-row')).filter(${visible}).length,
-          marcas: Array.from(document.querySelectorAll('#moduleMap .map-tick')).filter(${visible}).length,
+          graficas: Array.from(document.querySelectorAll('#moduleMap .map-strip.map-chart')).filter(${visible}).length,
+          sinUmbral: ${sinGrafica("#moduleMap .map-row")},
           leyenda: document.getElementById('moduleMapMeta').textContent.trim(),
           detalle: Array.from(document.querySelectorAll('#modules .module-row')).filter(${visible}).length
         };
-        return leido.filas >= 3 && leido.marcas >= 3 ? leido : null;
-      })()`), 8000);
-      assert("browser_modulos_mapa_unico", Boolean(modulos) && /sondeos/.test(modulos.leyenda), modulos);
+        return leido.filas >= 3 && leido.graficas === leido.filas ? leido : null;
+      })()`), 20000);
+      // Cada renglon del mapa es el mismo grafico de latencia en altura de renglon:
+      // ninguna fila queda como una tira de marcas sueltas. En simulacion el
+      // catalogo no publica datos por modulo, asi que la fila admite "sin historia"
+      // en lugar de dibujar una serie inventada; que la lectura existe si se certifica
+      // con datos reales en la fase real.
+      assert("browser_modulos_mapa_unico", Boolean(modulos) && /sondeos/.test(modulos.leyenda)
+        && modulos.graficas === modulos.filas && modulos.sinUmbral === 0, modulos);
       const shotModulos = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-modulos.png"));
       assert("browser_vista_modulos_capturada", shotModulos > 20000, { bytes: shotModulos });
 
@@ -705,7 +766,8 @@ async function run() {
           veredicto: (document.querySelector('#databaseVerdict .verdict-text') || {}).textContent || '',
           regla: (document.querySelector('#databaseVerdict .verdict-rule') || {}).textContent || '',
           teselas: Array.from(document.querySelectorAll('#databaseKpis .metric-tile')).filter(${visible}).length,
-          franjas: document.querySelectorAll('#databaseKpis .monitor-ticks').length,
+          graficas: document.querySelectorAll('#databaseKpis .monitor-chart').length,
+          sinUmbral: ${sinGrafica("#databaseKpis .metric-tile")},
           columnas: document.querySelectorAll('#databaseVolume th').length,
           vacio: (document.querySelector('#databaseVolume .empty') || {}).textContent || '',
           metas: document.getElementById('databaseMeta').textContent.trim(),
@@ -720,8 +782,10 @@ async function run() {
         && /· (Óptimo|En riesgo|Crítico)$/.test(datos.veredicto)
         && /óptimo ≤/.test(datos.regla)
         && /registros medidos|conteo de registros/.test(datos.regla), datos);
-      assert("browser_datos_teselas_con_historia", Boolean(datos) && datos.franjas === datos.teselas, {
-        teselas: datos ? datos.teselas : 0, franjas: datos ? datos.franjas : 0
+      assert("browser_datos_teselas_con_historia", Boolean(datos)
+        && datos.graficas === datos.teselas && datos.sinUmbral === 0, {
+        teselas: datos ? datos.teselas : 0, graficas: datos ? datos.graficas : 0,
+        sin_umbral: datos ? datos.sinUmbral : 0
       });
       assert("browser_datos_volumen_por_modulo", Boolean(datos) && datos.columnas === 0
         && /^0 módulos con conteo/.test(datos.metas)
@@ -739,16 +803,18 @@ async function run() {
           pregunta: (document.querySelector('#operationVerdict .verdict-question') || {}).textContent || '',
           veredicto: (document.querySelector('#operationVerdict .verdict-text') || {}).textContent || '',
           teselas: Array.from(document.querySelectorAll('#operationKpis .metric-tile')).filter(${visible}).length,
-          franjas: document.querySelectorAll('#operationKpis .monitor-ticks').length,
-          pies: document.querySelectorAll('#operationKpis .monitor-ticks-foot').length
+          graficas: document.querySelectorAll('#operationKpis .monitor-chart').length,
+          pies: document.querySelectorAll('#operationKpis .monitor-chart-foot').length,
+          sinUmbral: ${sinGrafica("#operationKpis .metric-tile")}
         };
         return leido.teselas === 2 && leido.pregunta ? leido : null;
       })()`), 12000);
       assert("browser_operacion_mesa_con_historia", Boolean(operacion)
         && operacion.pregunta === "¿Qué se está haciendo y qué falta?"
         && /· (Óptimo|En riesgo|Crítico|Sin dato)$/.test(operacion.veredicto)
-        && operacion.franjas === operacion.teselas
-        && operacion.pies === operacion.teselas, operacion);
+        && operacion.graficas === operacion.teselas
+        && operacion.pies === operacion.teselas
+        && operacion.sinUmbral === 0, operacion);
       const shotOperacion = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-operacion.png"));
       assert("browser_vista_operacion_capturada", shotOperacion > 20000, { bytes: shotOperacion });
       await chrome.cdp.evaluate(`document.querySelector('[data-view="resumen"]').click()`);
@@ -813,14 +879,32 @@ async function run() {
   try {
     const liveAddress = await live.start({ port: 0 });
     const liveBase = liveAddress.url;
-    const localReal = await waitFor(async () => {
-      const env = (await request(liveBase, "/api/status")).body.snapshot.environments.local;
-      const listo = env && env.modules && env.modules.source === "api"
-        && env.components && env.components.length
-        && metrics.totalRecords(env.modules.modules) > 0
-        && metrics.componentLatency(env.components, "db") !== null;
-      return listo ? env : null;
-    }, 90000, 2000);
+    // La fase real se espera leyendo el ambiente hasta que la API del puesto
+    // responda por si sola. Si no lo hace, la evidencia tiene que decir QUE parte
+    // falto (fuente, componentes, registros o latencia de la base), no un null.
+    let localReal = null;
+    let ultimaLectura = null;
+    const deadlineReal = Date.now() + 150000;
+    while (!localReal && Date.now() < deadlineReal) {
+      try {
+        const env = (await request(liveBase, "/api/status")).body.snapshot.environments.local;
+        ultimaLectura = {
+          fuente: env && env.modules ? env.modules.source : null,
+          componentes: env && env.components ? env.components.length : 0,
+          registros: env && env.modules ? metrics.totalRecords(env.modules.modules) : null,
+          db_ms: env && env.components ? metrics.componentLatency(env.components, "db") : null,
+          sondeos: env && env.moduleHistory ? env.moduleHistory.length : 0
+        };
+        const listo = env && env.modules && env.modules.source === "api"
+          && env.components && env.components.length
+          && metrics.totalRecords(env.modules.modules) > 0
+          && metrics.componentLatency(env.components, "db") !== null;
+        if (listo) localReal = env;
+      } catch (error) {
+        ultimaLectura = { error: String(error.message || error).slice(0, 160) };
+      }
+      if (!localReal) await sleep(2000);
+    }
     const registrosReales = localReal ? metrics.totalRecords(localReal.modules.modules) : null;
     const coberturaReal = localReal ? metrics.coveragePercent(localReal.activity) : null;
     const historiaReal = localReal && localReal.gauges
@@ -840,14 +924,16 @@ async function run() {
       cobertura_empresial: coberturaReal,
       medidores: localReal && localReal.gauges ? localReal.gauges.length : 0,
       medidores_con_historia: historiaReal,
-      muestras_latencia: localReal && localReal.latency ? localReal.latency.samples : 0
+      muestras_latencia: localReal && localReal.latency ? localReal.latency.samples : 0,
+      ultima_lectura: ultimaLectura
     });
     assert("mapa_real_de_modulos", Boolean(localReal) && localReal.moduleHistory.length >= 1
       && Object.keys(localReal.moduleHistory[localReal.moduleHistory.length - 1].ticks).length >= 3, {
       sondeos: localReal ? localReal.moduleHistory.length : 0,
       modulos_del_ultimo_sondeo: localReal
         ? Object.keys(localReal.moduleHistory[localReal.moduleHistory.length - 1].ticks).length
-        : 0
+        : 0,
+      ultima_lectura: ultimaLectura
     });
 
     if (chrome && !browserError && localReal) {
@@ -865,8 +951,8 @@ async function run() {
             veredicto: (document.querySelector('#databaseVerdict .verdict-text') || {}).textContent || '',
             regla: (document.querySelector('#databaseVerdict .verdict-rule') || {}).textContent || '',
             teselas: Array.from(document.querySelectorAll('#databaseKpis .metric-tile')).filter(${visibleReal}).length,
-            franjas: document.querySelectorAll('#databaseKpis .monitor-ticks').length,
-            marcas: document.querySelectorAll('#databaseKpis .map-tick').length
+            graficas: document.querySelectorAll('#databaseKpis .monitor-chart').length,
+            sinUmbral: ${sinGrafica("#databaseKpis .metric-tile")}
           };
           return leido.filas >= 3 && leido.columnas >= 6 ? leido : null;
         })()`).catch(() => null), 20000);
@@ -877,8 +963,8 @@ async function run() {
           && /· (Óptimo|En riesgo|Crítico)$/.test(datosReales.veredicto)
           && /registros medidos en \d+ módulos con conteo/.test(datosReales.regla)
           && datosReales.teselas === 5
-          && datosReales.franjas === datosReales.teselas
-          && datosReales.marcas >= datosReales.teselas, datosReales);
+          && datosReales.graficas === datosReales.teselas
+          && datosReales.sinUmbral === 0, datosReales);
         await chrome.cdp.evaluate(`window.scrollTo(0, 0)`);
         const shotReales = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-datos-reales.png"), { fullPage: false });
         assert("browser_vista_datos_reales_capturada", shotReales > 20000, { bytes: shotReales });
@@ -887,14 +973,17 @@ async function run() {
         const modulosReales = await waitFor(() => chrome.cdp.evaluate(`(() => {
           const leido = {
             filas: Array.from(document.querySelectorAll('#moduleMap .map-row')).filter(${visibleReal}).length,
-            marcas: Array.from(document.querySelectorAll('#moduleMap .map-tick')).filter(${visibleReal}).length,
-            conRegistros: Array.from(document.querySelectorAll('#moduleMap .map-tick'))
-              .filter((n) => /registros/.test(n.getAttribute('title') || '')).length,
+            graficas: Array.from(document.querySelectorAll('#moduleMap .map-strip.map-chart')).filter(${visibleReal}).length,
+            conRegistros: Array.from(document.querySelectorAll('#moduleMap .map-strip.map-chart svg title'))
+              .filter((n) => /registros/.test(n.textContent)).length,
+            sinUmbral: ${sinGrafica("#moduleMap .map-row")},
             leyenda: document.getElementById('moduleMapMeta').textContent.trim()
           };
-          return leido.filas >= 3 && leido.marcas >= 3 && leido.conRegistros > 0 ? leido : null;
+          return leido.filas >= 3 && leido.graficas === leido.filas && leido.conRegistros >= 3 ? leido : null;
         })()`).catch(() => null), 20000);
-        assert("browser_modulos_con_datos_reales", Boolean(modulosReales) && /sondeos/.test(modulosReales.leyenda), modulosReales);
+        assert("browser_modulos_con_datos_reales", Boolean(modulosReales)
+          && /sondeos/.test(modulosReales.leyenda)
+          && modulosReales.conRegistros >= 3 && modulosReales.sinUmbral === 0, modulosReales);
         await chrome.cdp.evaluate(`window.scrollTo(0, 0)`);
         const shotModulosReales = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-modulos-reales.png"), { fullPage: false });
         assert("browser_vista_modulos_reales_capturada", shotModulosReales > 20000, { bytes: shotModulosReales });

@@ -32,6 +32,18 @@ let dataDir = null;
 let richApi = null;
 let legacyApi = null;
 
+// La misma regla que el propietario firmo y que el script local ya persigue: cada
+// magnitud medida se pinta como el grafico de latencia con sus cortes. Se expresa
+// como fuente JS para inyectarla en el evaluate del navegador.
+const graficaConUmbral = `(tile) => {
+  const grafica = tile.querySelector('.monitor-chart, .map-strip.map-chart');
+  if (!grafica) return false;
+  if (grafica.querySelector('.chart-optimal, .chart-risk')) return true;
+  return /sin banda habitual todavía|ninguno dejó lectura|sin sondeos guardados|sin historia/.test(tile.textContent);
+}`;
+const sinGrafica = (sel) => `Array.from(document.querySelectorAll(${JSON.stringify(sel)}))
+  .filter((n) => n.offsetParent !== null && !(${graficaConUmbral})(n)).length`;
+
 function record(name, ok, detail = {}) {
   checks.push({ name, ok: Boolean(ok), detail });
   console.log(`${ok ? "PASS" : "FAIL"} ${name}${ok ? "" : ` -> ${JSON.stringify(detail)}`}`);
@@ -182,8 +194,14 @@ async function launchChrome(binary) {
   const portFile = path.join(profileDir, "DevToolsActivePort");
   const port = await waitFor(() => {
     if (!fs.existsSync(portFile)) return null;
-    const value = Number(fs.readFileSync(portFile, "utf8").split(/\r?\n/)[0]);
-    return Number.isInteger(value) && value > 0 ? value : null;
+    try {
+      // Chrome escribe el archivo y Windows puede negar la lectura por un instante
+      // (EBUSY): es el navegador arrancando, no un fallo de la certificación.
+      const value = Number(fs.readFileSync(portFile, "utf8").split(/\r?\n/)[0]);
+      return Number.isInteger(value) && value > 0 ? value : null;
+    } catch {
+      return null;
+    }
   }, 20000);
   if (!port) throw new Error("Chrome no expuso DevToolsActivePort");
 
@@ -636,12 +654,16 @@ async function run() {
       const medidores = await chrome.cdp.evaluate(`({
         medidores: [...document.querySelectorAll('#gauges .measure-card')].filter((n) => n.offsetParent !== null).length,
         conUmbral: [...document.querySelectorAll('#gauges .measure-limits')].filter((n) => /[≤≥]/.test(n.textContent)).length,
+        graficas: [...document.querySelectorAll('#gauges .monitor-chart')].filter((n) => n.offsetParent !== null).length,
+        sinGraficaConUmbral: ${sinGrafica("#gauges .measure-card")},
         bandas: [...document.querySelectorAll('#gauges .band-pill')].map((n) => n.textContent.trim()),
         teselasVisibles: [...document.querySelectorAll('#kpis .metric-tile, #companySummary .metric-tile')].filter((n) => n.offsetParent !== null).length,
         leyenda: document.getElementById('statusLegend').textContent.replace(/\\s+/g,' ').trim().slice(0,220)
       })`);
       assert("navegador_resumen_con_medidores", Boolean(resumenListo)
-        && medidores.medidores >= 6 && medidores.conUmbral >= 6, medidores);
+        && medidores.medidores >= 6 && medidores.conUmbral >= 6
+        && medidores.graficas === medidores.medidores
+        && medidores.sinGraficaConUmbral === 0, medidores);
       assert("navegador_bandas_sin_jerga", medidores.bandas.every((banda) => /Óptimo|En riesgo|Crítico|Sin dato|Informativo/.test(banda)), { bandas: medidores.bandas });
       assert("navegador_leyenda_de_estados", /Requiere atenci/.test(medidores.leyenda) && !/degrad/i.test(medidores.leyenda), { leyenda: medidores.leyenda });
       assert("navegador_resumen_sin_teselas", medidores.teselasVisibles === 0, { visibles: medidores.teselasVisibles });
@@ -653,11 +675,13 @@ async function run() {
       ), 15000);
       const mapa = await chrome.cdp.evaluate(`({
         filas: [...document.querySelectorAll('#moduleMap .map-row')].filter((n) => n.offsetParent !== null).length,
-        marcas: document.querySelectorAll('#moduleMap .map-tick').length,
+        graficas: [...document.querySelectorAll('#moduleMap .map-strip.map-chart')].filter((n) => n.offsetParent !== null).length,
+        sinUmbral: ${sinGrafica("#moduleMap .map-row")},
         meta: document.getElementById('moduleMapMeta').textContent.replace(/\\s+/g,' ').trim().slice(0,120),
         api: document.getElementById('moduleMap').textContent.includes('API /health')
       })`);
-      assert("navegador_mapa_de_modulos", Boolean(mapaListo) && mapa.filas >= 3 && mapa.marcas >= mapa.filas, mapa);
+      assert("navegador_mapa_de_modulos", Boolean(mapaListo) && mapa.filas >= 3
+        && mapa.graficas === mapa.filas && mapa.sinUmbral === 0, mapa);
       assert("navegador_mapa_incluye_la_api", mapa.api, { meta: mapa.meta });
 
       // Monitor consolidado por empresa: vista Base de datos.
@@ -789,19 +813,29 @@ async function run() {
       })()`).catch(() => null), 12000);
       assert("navegador_telemetria_proceso_con_umbral", Boolean(memoriaApi)
         && /\d/.test(memoriaApi) && /óptimo|tope/i.test(memoriaApi), { memoria: memoriaApi });
-      // Cada medidor de la vista tiene que traer su historia medida, no un numero
-      // suelto: una franja por tarjeta y su pie con el recuento de lecturas.
-      const historiaApi = await chrome.cdp.evaluate(`(() => {
+      // Cada medidor de la vista tiene que traer su grafica con el umbral dibujado,
+      // o admitir por texto que todavia no hay banda ni lectura medida. La franja se
+      // llena sondeo a sondeo (dos lecturas para el primer trazo), asi que se espera
+      // a que al menos una tesela tenga serie antes de afirmar: leida de una sola vez
+      // en el arranque, esta gate dependia del segundo en que abrio el navegador.
+      const leidoHistoriaApi = `(() => {
         const visibles = (n) => n.offsetParent !== null;
         const tarjetas = [...document.querySelectorAll('#kpis .metric-tile')].filter(visibles).length;
-        const franjas = [...document.querySelectorAll('#kpis .monitor-ticks')].filter(visibles).length;
-        const pies = [...document.querySelectorAll('#kpis .monitor-ticks-foot')].filter(visibles).length;
-        const conLectura = [...document.querySelectorAll('#kpis .monitor-ticks[role="img"]')].filter(visibles).length;
-        return { tarjetas, franjas, pies, conLectura };
-      })()`);
-      assert("navegador_api_teselas_con_historia", historiaApi.tarjetas >= 1
-        && historiaApi.franjas === historiaApi.tarjetas && historiaApi.pies === historiaApi.tarjetas
-        && historiaApi.conLectura >= 1, historiaApi);
+        const graficas = [...document.querySelectorAll('#kpis .monitor-chart')].filter(visibles).length;
+        const pies = [...document.querySelectorAll('#kpis .monitor-chart-foot')].filter(visibles).length;
+        const conLectura = [...document.querySelectorAll('#kpis .monitor-chart')].filter((n) => visibles(n) && n.querySelector('svg')).length;
+        const cortes = document.querySelectorAll('#kpis .threshold-chart .chart-optimal, #kpis .threshold-chart .chart-risk').length;
+        return { tarjetas, graficas, pies, conLectura, cortes, sinUmbral: ${sinGrafica("#kpis .metric-tile")} };
+      })()`;
+      const historiaListaApi = await waitFor(() => chrome.cdp.evaluate(
+        `[...document.querySelectorAll('#kpis .monitor-chart')].filter((n) => n.offsetParent !== null && n.querySelector('svg')).length >= 1`
+      ).catch(() => false), 40000);
+      const historiaApi = await chrome.cdp.evaluate(leidoHistoriaApi);
+      assert("navegador_api_teselas_con_historia", Boolean(historiaListaApi)
+        && historiaApi.tarjetas >= 1
+        && historiaApi.graficas === historiaApi.tarjetas && historiaApi.pies === historiaApi.tarjetas
+        && historiaApi.sinUmbral === 0 && historiaApi.conLectura >= 1 && historiaApi.cortes >= 1,
+      { espera_cumplida: Boolean(historiaListaApi), ...historiaApi });
       const umbralListo = await waitFor(() => chrome.cdp.evaluate(
         `document.querySelector('#latencyVerdict .verdict') !== null && /tope \\d/.test(document.getElementById('latencyVerdict').textContent)`
       ), 12000);

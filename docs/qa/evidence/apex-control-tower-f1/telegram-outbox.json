@@ -1,50 +1,50 @@
 {
-  "generated_at": "2026-11-10T16:49:32.791Z",
+  "generated_at": "2026-11-10T19:18:30.940Z",
   "mode": "dry-run",
   "allowed_chat_ids": [
     "cert-chat"
   ],
   "outbox": [
     {
-      "at": "2026-11-10T16:49:26.994Z",
+      "at": "2026-11-10T19:18:23.225Z",
       "chatId": "intruso",
-      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 10/11/2026, 11:49:26 a. m.\nReconocer: /ack ALR-1c0928",
+      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 10/11/2026, 2:18:23 p. m.\nReconocer: /ack ALR-02ab3a",
       "dryRun": true
     },
     {
-      "at": "2026-11-10T16:49:26.974Z",
+      "at": "2026-11-10T19:18:23.215Z",
       "chatId": "cert-chat",
-      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 10/11/2026, 11:49:26 a. m.\nReconocer: /ack ALR-1c0928",
+      "text": "[CRITICAL] API APEXOS: caído\nEstado simulado por certificacion\nHora: 10/11/2026, 2:18:23 p. m.\nReconocer: /ack ALR-02ab3a",
       "dryRun": true
     },
     {
-      "at": "2026-11-10T16:49:03.178Z",
+      "at": "2026-11-10T19:17:29.805Z",
       "chatId": "intruso",
-      "text": "Trabajo JOB-20261110-114903-f523 (Implementar en desarrollo) requiere aprobacion.\n\ncertificacion: agrega prueba de regresion al monitor\n\nDestino: desarrollo\n\nResponde /aprobar JOB-20261110-114903-f523 o usa los botones.",
+      "text": "Trabajo JOB-20261110-141729-3265 (Implementar en desarrollo) requiere aprobacion.\n\ncertificacion: agrega prueba de regresion al monitor\n\nDestino: desarrollo\n\nResponde /aprobar JOB-20261110-141729-3265 o usa los botones.",
       "dryRun": true
     },
     {
-      "at": "2026-11-10T16:49:03.146Z",
+      "at": "2026-11-10T19:17:29.770Z",
       "chatId": "intruso",
-      "text": "Estado: OK (10/19 ok)\nLectura: 10/11/2026, 11:49:02 a. m.\n\nAPI APEXOS: ok\nPostgreSQL: ok\nAPI QA: unknown\nSupabase QA: unknown\nAPI PROD: unknown\nSupabase PROD: unknown\nAPEX Control (API): ok\nBrain (Python): ok\nCrons: ok\nDocker: ok\nActividad LOCAL: unknown\nModulo Activos y mantenimiento: unknown\nModulo Administracion APEX: unknown\nModulo APEX AI Core: unknown\nModulo APEX Control: unknown\nModulo Calidad: unknown\nModulo Comercio: unknown\nModulo Comercio exterior: unknown\nModulo Compras: unknown\nModulo Configuracion inicial: unknown\nModulo Contabilidad: unknown\nModulo Costos: unknown\nModulo CRM: unknown\nModulo Cartera y CxC: unknown\nModulo Devoluciones: unknown\nModulo Facturacion: unknown\nModulo Facturacion electronica: unknown\nModulo Gastos Menores: unknown\nModulo Gestion Comercial: unknown\nModulo Inventario: unknown\nModulo Planeacion de demanda: unknown\nModulo Presupuestos: unknown\nModulo Produccion: unknown\nModulo Proyectos: unknown\nModulo Punto de venta: unknown\nModulo Recetas y BOM: unknown\nModulo Apex Heart: unknown\nModulo Servicios: unknown\nModulo Suscripciones: unknown\nModulo Talento Humano: unknown\nModulo Tesoreria: unknown\nModulo Transporte: unknown\nModulo Ventas: unknown\nModulos LOCAL: unknown\nCorreo: unknown\nMinIO: ok\nColas BullMQ: unknown\nRedis: ok\nWeb APEXOS: ok\nWebSocket: ok\nWeb QA: unknown\nWeb PROD: unknown\n\nAlertas abiertas: 0",
+      "text": "Estado: OK (10/19 ok)\nLectura: 10/11/2026, 2:17:29 p. m.\n\nAPI APEXOS: ok\nPostgreSQL: ok\nAPI QA: unknown\nSupabase QA: unknown\nAPI PROD: unknown\nSupabase PROD: unknown\nAPEX Control (API): ok\nBrain (Python): ok\nCrons: ok\nDocker: ok\nActividad LOCAL: unknown\nModulo Activos y mantenimiento: unknown\nModulo Administracion APEX: unknown\nModulo APEX AI Core: unknown\nModulo APEX Control: unknown\nModulo Calidad: unknown\nModulo Comercio: unknown\nModulo Comercio exterior: unknown\nModulo Compras: unknown\nModulo Configuracion inicial: unknown\nModulo Contabilidad: unknown\nModulo Costos: unknown\nModulo CRM: unknown\nModulo Cartera y CxC: unknown\nModulo Devoluciones: unknown\nModulo Facturacion: unknown\nModulo Facturacion electronica: unknown\nModulo Gastos Menores: unknown\nModulo Gestion Comercial: unknown\nModulo Inventario: unknown\nModulo Planeacion de demanda: unknown\nModulo Presupuestos: unknown\nModulo Produccion: unknown\nModulo Proyectos: unknown\nModulo Punto de venta: unknown\nModulo Recetas y BOM: unknown\nModulo Apex Heart: unknown\nModulo Servicios: unknown\nModulo Suscripciones: unknown\nModulo Talento Humano: unknown\nModulo Tesoreria: unknown\nModulo Transporte: unknown\nModulo Ventas: unknown\nModulos LOCAL: unknown\nCorreo: unknown\nMinIO: ok\nColas BullMQ: unknown\nRedis: ok\nWeb APEXOS: ok\nWebSocket: ok\nWeb QA: unknown\nWeb PROD: unknown\n\nAlertas abiertas: 0",
       "dryRun": true
     },
     {
-      "at": "2026-11-10T16:49:03.127Z",
+      "at": "2026-11-10T19:17:29.739Z",
       "chatId": "intruso",
       "text": "Emparejamiento exitoso. Ya puedes enviar instrucciones.",
       "dryRun": true
     },
     {
-      "at": "2026-11-10T16:49:03.100Z",
+      "at": "2026-11-10T19:17:29.706Z",
       "chatId": "intruso",
       "text": "Chat no autorizado. Envia /pair <codigo> usando el codigo que muestra APEX Control Tower en tu equipo local.",
       "dryRun": true
     },
     {
-      "at": "2026-11-10T16:49:03.023Z",
+      "at": "2026-11-10T19:17:29.628Z",
       "chatId": "cert-chat",
-      "text": "Trabajo JOB-20261110-114903-db88 (N2) requiere aprobacion.\n\ncertificacion: corrige el reintento de la cola de correo\n\nDestino: desarrollo",
+      "text": "Trabajo JOB-20261110-141729-1f54 (N2) requiere aprobacion.\n\ncertificacion: corrige el reintento de la cola de correo\n\nDestino: desarrollo",
       "dryRun": true
     }
   ]

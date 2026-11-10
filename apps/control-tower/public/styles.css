@@ -2103,37 +2103,6 @@ footer strong { color: var(--text); font-weight: 600; }
   color: var(--muted);
 }
 
-.measure-scale {
-  display: flex;
-  height: 5px;
-  border-radius: 999px;
-  overflow: hidden;
-  position: relative;
-  background: rgba(125, 156, 210, 0.14);
-}
-
-.measure-scale .seg { height: 100%; }
-.measure-scale .seg.optimal { background: rgba(56, 211, 159, 0.55); }
-.measure-scale .seg.risk { background: rgba(246, 196, 83, 0.55); }
-.measure-scale .seg.critical { background: rgba(255, 107, 107, 0.55); }
-.measure-scale .seg.flat { background: rgba(125, 156, 210, 0.22); }
-.measure-scale.idle { opacity: 0.6; }
-
-.measure-marker {
-  position: absolute;
-  top: -3px;
-  width: 3px;
-  height: 11px;
-  border-radius: 2px;
-  background: var(--text);
-  box-shadow: 0 0 0 1px rgba(5, 8, 15, 0.8);
-  transform: translateX(-1.5px);
-}
-
-.measure-marker.optimal { background: var(--ok); }
-.measure-marker.risk { background: var(--warn); }
-.measure-marker.critical { background: var(--down); }
-
 .measure-limits,
 .measure-foot {
   margin: 0;
@@ -2144,22 +2113,31 @@ footer strong { color: var(--text); font-weight: 600; }
 
 .measure-foot { font-family: var(--sans); font-size: 10.5px; }
 
-.measure-card.overflow .measure-limits::after {
-  content: " · fuera de escala";
-  color: var(--down);
+/* El grafico compacto es la misma gramatica de la vista Latencia reducida a la
+   tarjeta: area, linea, dos rayas de corte y horarios. Un monitor sin dos
+   lecturas medidas no pinta linea, solo el hueco con su pie honesto. */
+.monitor-chart {
+  margin: 8px 0 0;
+  min-height: 46px;
 }
 
-/* Historia medida de un monitor: la misma gramatica del mapa de modulos, en
-   miniatura. Cada barra es un sondeo con lectura; la altura viene de la banda. */
-.monitor-ticks {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 30px;
-  margin: 2px 0 0;
+.monitor-chart-svg {
+  display: block;
+  width: 100%;
+  height: 92px;
 }
-.monitor-ticks .map-tick { flex: 1 1 auto; min-width: 3px; max-width: 9px; }
-.monitor-ticks-foot { margin: 4px 0 0; font-size: 10.5px; color: var(--muted); }
+
+.monitor-chart.idle {
+  border-bottom: 1px dashed rgba(139, 155, 180, 0.35);
+  min-height: 20px;
+}
+
+.monitor-chart-foot {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+}
 
 /* Mapa unico: cada columna es un sondeo, cada fila un modulo, la ultima fila la API */
 .module-map { display: flex; flex-direction: column; gap: 10px; }
@@ -2243,28 +2221,27 @@ footer strong { color: var(--text); font-weight: 600; }
   border-bottom: 1px solid rgba(139, 155, 180, 0.22);
 }
 
-.map-tick {
-  display: block;
-  flex: 1 1 0;
-  min-width: 3px;
-  max-width: 12px;
-  min-height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: var(--unknown);
-  opacity: 0.9;
+/* La fila del mapa lleva el grafico de latencia en altura de renglon. El SVG
+   tiene su propia altura (mas alta que el renglon base) para que la raya del
+   tope y el area se lean sin descifrar una barra de 22 px. */
+.map-strip.map-chart {
+  height: 58px;
+  align-items: stretch;
+  border-bottom: none;
 }
 
-.map-tick.band-optimal { background: var(--ok); }
-.map-tick.band-risk { background: var(--warn); }
-.map-tick.band-critical { background: var(--down); }
-/* Sin medicion: el eje en reposo, no una barra. Un modulo sin fecha medida no
-   puede fingir altura ni color de banda. */
-.map-tick.band-unknown { background: rgba(139, 155, 180, 0.3); min-height: 1px; }
-/* Informativo: hay lectura medida, pero no umbral que decidir. Se pinta neutro
-   para que no compita con los semaforos que si piden atencion. */
-.map-tick.band-informational { background: rgba(139, 155, 180, 0.55); min-height: 1px; }
+.map-strip.map-chart .threshold-chart {
+  display: block;
+  width: 100%;
+  height: 58px;
+}
 
-.map-row.api-row .map-tick { border-radius: 2px; opacity: 0.75; }
+.map-strip.map-chart.idle {
+  align-items: center;
+  height: 24px;
+}
+
+.map-empty { font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
 
 .map-now { display: flex; justify-content: flex-end; }
 .map-now small { font-family: var(--mono); font-size: 10px; color: var(--muted); }
@@ -2298,8 +2275,11 @@ footer strong { color: var(--text); font-weight: 600; }
   .component-score { display: none; }
 }
 
-/* Grafico de latencia con topes: la linea del tope es la que responde a la
-   pregunta, asi que se pinta encima del area y etiquetada en el propio grafico. */
+/* Gramatica unica de todo grafico con umbral del panel. La vista Latencia lo usa
+   en tamano completo (`.latency-chart`) y cada monitor en tamano compacto
+   (`.monitor-chart-svg` o la fila del mapa): misma area, misma linea, mismas dos
+   rayas de corte. "Como el de latencia" no puede ser un estilo distinto por
+   pantalla, asi que las reglas viven en la clase comun. */
 .latency-chart {
   width: 100%;
   height: 208px;
@@ -2307,21 +2287,21 @@ footer strong { color: var(--text); font-weight: 600; }
   display: block;
 }
 
-.latency-chart .spark-area { fill: rgba(82, 200, 245, 0.12); }
-.latency-chart .chart-line { fill: none; stroke: var(--accent); stroke-width: 1.6; }
-.latency-chart .chart-risk { stroke: var(--down); stroke-width: 1.2; stroke-dasharray: 5 4; }
-.latency-chart .chart-optimal { stroke: var(--ok); stroke-width: 1; stroke-dasharray: 2 4; opacity: 0.75; }
-.latency-chart .chart-label { fill: var(--muted); font-size: 9px; paint-order: stroke; stroke: #0a1120; stroke-width: 3px; stroke-linejoin: round; }
-.latency-chart .chart-label.risk { fill: var(--down); }
-.latency-chart .spark-over { fill: var(--down); stroke: rgba(255, 255, 255, 0.6); stroke-width: 0.6; }
+.threshold-chart .spark-area { fill: rgba(82, 200, 245, 0.12); }
+.threshold-chart .chart-line { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+.threshold-chart .chart-risk { stroke: var(--down); stroke-width: 1.2; stroke-dasharray: 5 4; }
+.threshold-chart .chart-optimal { stroke: var(--ok); stroke-width: 1; stroke-dasharray: 2 4; opacity: 0.75; }
+.threshold-chart .chart-label { fill: var(--muted); font-size: 9px; paint-order: stroke; stroke: #0a1120; stroke-width: 3px; stroke-linejoin: round; }
+.threshold-chart .chart-label.risk { fill: var(--down); }
+.threshold-chart .spark-over { fill: var(--down); stroke: rgba(255, 255, 255, 0.6); stroke-width: 0.6; }
 
 /* Puntos inspeccionables: un blanco por muestra, su cursor y sus horarios. */
-.latency-chart .chart-hit { fill: transparent; cursor: pointer; }
-.latency-chart .chart-hit:hover { fill: rgba(82, 200, 245, 0.1); }
-.latency-chart .chart-hit:focus-visible { outline: none; fill: rgba(82, 200, 245, 0.18); stroke: var(--accent); stroke-width: 1; }
-.latency-chart .chart-cursor { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.85; }
-.latency-chart .chart-cursor-dot { fill: var(--accent); stroke: #04101c; stroke-width: 1.2; }
-.latency-chart .chart-tick { fill: var(--muted); font-size: 9px; }
+.threshold-chart .chart-hit { fill: transparent; cursor: pointer; }
+.threshold-chart .chart-hit:hover { fill: rgba(82, 200, 245, 0.1); }
+.threshold-chart .chart-hit:focus-visible { outline: none; fill: rgba(82, 200, 245, 0.18); stroke: var(--accent); stroke-width: 1; }
+.threshold-chart .chart-cursor { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.85; }
+.threshold-chart .chart-cursor-dot { fill: var(--accent); stroke: #04101c; stroke-width: 1.2; }
+.threshold-chart .chart-tick { fill: var(--muted); font-size: 9px; }
 
 .latency-explorer {
   display: grid;

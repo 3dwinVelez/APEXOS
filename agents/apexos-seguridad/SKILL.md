@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.19.0
-updated_at: 2026-11-09
+version: 2.20.0
+updated_at: 2026-11-10
 contract: 2
 ---
 
@@ -106,6 +106,12 @@ Antes de actuar, leer en este orden:
     - **Sin lectura no hay barra:** `finite()` devuelve `null` para `null`, `undefined` y `""`, y un sondeo sin ninguna lectura no agrega muestra. Convertir ausencia en `0` pintaría una marca **Óptimo** en un monitor que nunca respondió —la misma clase de engaño que el `Number(null) === 0` de la regla 20, pero ahora persistida y visible en 40 marcas—.
     - **La hora publicada es del sondeo de la torre**, no de un evento de negocio: la franja y el eje dicen cuándo midió la herramienta. El recorte de etiquetas que acompañó este cambio (la telemetría de proceso reubicada en la vista API, `Peticiones por minuto` en lugar de `Tráfico actual`) no agregó superficie: la tasa ya se calculaba en el servidor y seguía siendo agregada.
     Por qué: el 2026-11-10 se añadió historia a todos los monitores; un artefacto local que acumula series de los tres ambientes es dato, aunque nadie lo promocione, y las marcas inspeccionables son la superficie pública de ese dato.
+
+34. **Una gramática visual nueva es una superficie pública nueva: el saneado de la evidencia se vuelve a exigir y el gráfico compacto no ensancha lo que publica el servidor.** El 2026-11-10 la torre dejó de pintar números sueltos y pasó a un gráfico tipo latencia en las siete vistas —tarjetas del Resumen, teselas, componentes, sondas y cada renglón del mapa de módulos—, con su eje horario y sus `<title>` por punto:
+    - **Lo dibujado es exactamente lo publicado.** El renderer compacto pinta hora, valor, banda y los registros por módulo que `/health` y `/api/v1/apex-control/*` ya entregaban de ese ambiente. Ninguna ruta, tenant, usuario, consulta ni payload se suma en el navegador para "completar" la gráfica.
+    - **Cada superficie de texto nueva re-valida la fuga.** Un `<title>` y un pie de gráfica son texto exportable: la certificación vuelve a exigir que ni el token de la torre ni el JWT aparezcan en `certification.json`, en los JSON de evidencia ni en las capturas (`snapshot_no_filtra_el_token_de_la_torre`, `evidence_json`). La revisión de secretos se dispara por superficie expuesta, no solo por endpoint nuevo.
+    - **El hueco honesto es un control de veracidad.** `sin historia: N de M lecturas medidas`, `sin banda habitual todavía` y `ninguno dejó lectura de este monitor` existen para que ninguna franja se dibuje con un valor heredado de otro ambiente o de otra empresa: atribuir un número a quien no lo produjo es la fuga de contexto que el anillo tiene que impedir, aunque el panel se vea más vacío.
+    Por qué: el 2026-11-10 el cambio fue presentado como "solo estilos"; en esa pantalla vivían las etiquetas inspeccionables del historial de los tres ambientes, y una etiqueta es un canal de salida.
 
 ## Checklist de intervención
 

@@ -259,12 +259,118 @@ function sparkline(series) {
     </svg>`;
 }
 
-// Grafico de latencia con los topes dibujados. La escala siempre incluye el tope
-// de riesgo, aunque ninguna muestra lo alcance: si el techo del grafico fuera el
-// maximo medido, una serie pegada al limite pareceria plana y el ojo perderia la
-// unica referencia que responde a "Estamos dentro o fuera del tope?".
-// Cada muestra recibe ademas un blanco clicable con su hora, porque el dueno no
-// pregunta solo "cuanto tardo" sino "a que hora paso y fue pico o sostenido".
+// Geometria unica de TODO grafico con umbral del panel. La vista Latencia la usa
+// en tamano completo y cada monitor (tesela, tarjeta, sonda, componente, proveedor
+// y fila del mapa de modulos) en tamano compacto: la misma area, la misma linea,
+// las mismas dos rayas de corte y el mismo eje horario. "Como el de latencia" no
+// puede ser un estilo distinto por pantalla.
+// La escala siempre incluye el corte, aunque ninguna muestra lo alcance: si el
+// techo fuera el maximo medido, una serie pegada al limite pareceria plana y el
+// ojo perderia la unica referencia que responde "dentro o fuera del tope?".
+// Cuando el valor alto es el bueno (cobertura, uptime, uso) el corte que duele es
+// el piso, y la escala se abre sobre el optimo para que la raya se vea.
+function thresholdChart(options) {
+  const points = Array.isArray(options.points) ? options.points : [];
+  if (points.length < 2) return "";
+  const limits = options.limits || null;
+  const unit = options.unit || "";
+  const width = Number(options.width) || 320;
+  const height = Number(options.height) || 92;
+  const pad = Number(options.pad) || 6;
+  const axis = Number.isFinite(Number(options.axis)) ? Number(options.axis) : 14;
+  const plotBottom = height - axis;
+  const compact = options.compact === true;
+  const goodIsHigh = options.goodIsHigh === true;
+  // Number(null) es 0: un corte pendiente llegaba como "umbral en cero" y dibujaba
+  // una raya en el piso de la serie. Un corte nulo es un corte que no existe.
+  const cutOf = (raw) => (raw == null || !Number.isFinite(Number(raw)) ? null : Number(raw));
+  const optimal = limits ? cutOf(limits.optimal) : null;
+  const risk = limits ? cutOf(limits.risk) : null;
+  // Un corte no es una muestra: su rotulo lleva solo la cifra y su unidad. El
+  // formateador propio del medidor (registros, duraciones) describe lecturas, y
+  // pegarselo a "tope 400" diria que el umbral tiene registros.
+  // El "x" de un ratio va pegado a la cifra (3x), el resto de las unidades llevan
+  // su espacio (400 ms): la misma tipografia que usan los valores de las teselas.
+  const plainLabel = (value) => `${formatNumber(value)}${unit ? (unit.trim() === "x" ? "x" : ` ${unit.trim()}`) : ""}`;
+  // Un medidor de duraciones se lee en horas y minutos, no en 7200 s: el corte del
+  // grafico y el pie de la tesela tienen que nombrar el mismo numero igual.
+  const limitLabel = options.limitLabel || plainLabel;
+  const labelOf = options.formatValue || ((value) => plainLabel(value));
+  const bandOf = options.bandOf || ((sample, value) => sample.band || sampleBand(value, optimal, risk));
+  const values = points.map((sample) => Math.max(0, Number(sample.value) || 0));
+  const fromLimits = goodIsHigh
+    ? (optimal == null ? 0 : optimal * 1.6)
+    : (risk == null ? 0 : risk * 1.25);
+  const ceiling = Math.max(fromLimits, ...values, 1);
+  const step = (width - pad * 2) / (points.length - 1);
+  const y = (value) => plotBottom - (Math.min(value, ceiling) / ceiling) * (plotBottom - pad);
+  const coords = values.map((value, index) => ({ x: pad + index * step, y: y(value), value }));
+  const line = coords.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+  const area = `${pad},${plotBottom} ${line} ${width - pad},${plotBottom}`;
+  const optimalY = optimal == null ? null : y(optimal);
+  const riskY = risk == null ? null : y(risk);
+  const dots = coords
+    .map((point, index) => {
+      const sample = points[index] || {};
+      const band = bandOf(sample, point.value);
+      const failed = sample.ok === false;
+      if (band !== "critical" && !failed) return "";
+      return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="${compact ? 2.6 : 3.4}" class="${band === "critical" ? "spark-over" : "spark-fail"}" />`;
+    })
+    .join("");
+  const selected = Number.isInteger(options.selected) && coords[options.selected]
+    ? `<line class="chart-cursor" x1="${coords[options.selected].x.toFixed(1)}" y1="${pad}" x2="${coords[options.selected].x.toFixed(1)}" y2="${plotBottom}" /><circle class="chart-cursor-dot" cx="${coords[options.selected].x.toFixed(1)}" cy="${coords[options.selected].y.toFixed(1)}" r="4.6" />`
+    : "";
+  // Cada muestra medida deja un blanco con su hora, su cifra y su banda dentro del
+  // titulo. En el grafico grande el blanco es boton y abre el detalle del punto;
+  // en la tesela compacta queda como inspeccion rapida, sin robar la seleccion de
+  // la vista Latencia.
+  const hits = coords
+    .map((point, index) => {
+      const sample = points[index] || {};
+      const band = bandOf(sample, point.value);
+      const left = index === 0 ? pad : point.x - step / 2;
+      const caption = `${formatTime(sample.at)} · ${labelOf(point.value, sample)} · ${BAND_LABEL[band] || "Sin dato"}${sample.ok === false ? " · sonda fallida" : ""}`;
+      const control = compact
+        ? ""
+        : ` tabindex="0" role="button" aria-label="${escapeHtml(caption)}" data-chart-point-at="${escapeHtml(sample.at || "")}"`;
+      return `<rect class="chart-hit" x="${left.toFixed(1)}" y="${pad}" width="${step.toFixed(1)}" height="${(plotBottom - pad).toFixed(1)}"${control}><title>${escapeHtml(caption)}</title></rect>`;
+    })
+    .join("");
+  // Los cortes se rotulan a la izquierda, cada uno junto a su raya: el optimo
+  // debajo de su linea y el tope encima de la suya, con su propia altura tipografica
+  // de separacion. En la tesela compacta no hay aire para los dos textos y, cuando
+  // las lineas caen a menos de un renglon, se conserva solo el corte: el numero ya
+  // vive en el pie del medidor.
+  const gap = Math.abs((optimalY == null ? plotBottom : optimalY) - (riskY == null ? plotBottom : riskY));
+  // Un corte en cero no es un umbral que rotular: es una ventana sin variacion
+  // (latencias sub-milisegundo redondeadas a 0). La raya se dibuja, el numero no.
+  const cutVisible = (optimal == null ? 0 : optimal) > 0 || (risk == null ? 0 : risk) > 0;
+  const showOptimalLabel = options.labels !== false && optimalY != null && cutVisible
+    && (!compact || riskY == null || gap >= 13);
+  const riskLabelY = options.labels === false || !cutVisible || riskY == null
+    ? null : Math.max(pad + 9, riskY - 4).toFixed(1);
+  const optimalLabelY = optimalY == null ? null : Math.min(optimalY + (compact ? 9 : 11), plotBottom - 3).toFixed(1);
+  const riskText = risk == null ? "" : goodIsHigh ? `piso ${limitLabel(risk)}` : `tope ${limitLabel(risk)}`;
+  const optimalText = optimal == null ? "" : goodIsHigh ? `óptimo ≥ ${limitLabel(optimal)}` : `óptimo ${limitLabel(optimal)}`;
+  return `
+    <svg class="threshold-chart ${escapeHtml(options.className || "monitor-chart-svg")}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(options.ariaLabel || "Serie medida con sus topes dibujados")}">
+      ${optimalY == null ? "" : `<line class="chart-optimal" x1="${pad}" y1="${optimalY.toFixed(1)}" x2="${width - pad}" y2="${optimalY.toFixed(1)}" />`}
+      ${showOptimalLabel ? `<text class="chart-label" x="${pad + 2}" y="${optimalLabelY}" text-anchor="start">${escapeHtml(optimalText)}</text>` : ""}
+      ${riskY == null ? "" : `<line class="chart-risk" x1="${pad}" y1="${riskY.toFixed(1)}" x2="${width - pad}" y2="${riskY.toFixed(1)}" />`}
+      ${riskLabelY == null ? "" : `<text class="chart-label risk" x="${pad + 2}" y="${riskLabelY}" text-anchor="start">${escapeHtml(riskText)}</text>`}
+      <polygon class="spark-area" points="${area}" />
+      <polyline class="chart-line" points="${line}" />
+      ${dots}
+      ${selected}
+      ${hits}
+      ${options.axisTicks === false ? "" : axisTicks(points, coords, pad, width, plotBottom)}
+    </svg>`;
+}
+
+// La vista Latencia usa la misma geometria en tamano completo, con el tope del
+// presupuesto de sonda dibujado y cada muestra como punto inspeccionable. Con
+// menos de dos muestras no hay serie que dibujar.
 function latencyChart(series, entry, selectedIndex) {
   const points = Array.isArray(series) ? series : [];
   if (!entry || !entry.limits || points.length < 2) {
@@ -273,66 +379,99 @@ function latencyChart(series, entry, selectedIndex) {
   const optimal = Number(entry.limits.optimal);
   const risk = Number(entry.limits.risk);
   if (!Number.isFinite(risk) || risk <= 0) return sparkline(points);
-  const width = 620;
-  const height = 208;
-  const pad = 10;
-  const axis = 26;
-  const plotBottom = height - axis;
-  const values = points.map((sample) => Math.max(0, Number(sample.ms) || 0));
-  const ceiling = Math.max(risk * 1.25, ...values);
-  const step = (width - pad * 2) / (values.length - 1);
-  const y = (value) => plotBottom - (Math.min(value, ceiling) / ceiling) * (plotBottom - pad);
-  const coords = values.map((value, index) => ({ x: pad + index * step, y: y(value), value }));
-  const line = coords.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
-  const area = `${pad},${plotBottom} ${line} ${width - pad},${plotBottom}`;
-  const riskY = y(risk).toFixed(1);
-  const optimalY = Number.isFinite(optimal) ? y(optimal).toFixed(1) : null;
-  const over = coords
-    .map((point, index) => {
-      const beyond = point.value > risk;
-      const failed = points[index].ok === false;
-      if (!beyond && !failed) return "";
-      return `<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="3.4" class="${beyond ? "spark-over" : "spark-fail"}" />`;
-    })
-    .join("");
-  const hits = coords
-    .map((point, index) => {
-      const sample = points[index];
-      const band = sampleBand(point.value, optimal, risk);
-      const left = index === 0 ? pad : point.x - step / 2;
-      const bandWidth = index === 0 || index === coords.length - 1 ? step / 2 + step / 2 : step;
-      return `<rect class="chart-hit" x="${left.toFixed(1)}" y="${pad}" width="${bandWidth.toFixed(1)}" height="${(plotBottom - pad).toFixed(1)}" data-chart-point-at="${escapeHtml(sample.at || "")}" tabindex="0" role="button" aria-label="${escapeHtml(`${formatTime(sample.at)} · ${formatNumber(point.value)} ms · ${BAND_LABEL[band]}`)}"><title>${escapeHtml(`${formatTime(sample.at)} · ${formatNumber(point.value)} ms · ${BAND_LABEL[band]}${sample.ok === false ? " · sonda fallida" : ""}`)}</title></rect>`;
-    })
-    .join("");
-  const selected = Number.isInteger(selectedIndex) && coords[selectedIndex]
-    ? `<line class="chart-cursor" x1="${coords[selectedIndex].x.toFixed(1)}" y1="${pad}" x2="${coords[selectedIndex].x.toFixed(1)}" y2="${plotBottom}" /><circle class="chart-cursor-dot" cx="${coords[selectedIndex].x.toFixed(1)}" cy="${coords[selectedIndex].y.toFixed(1)}" r="4.6" />`
+  return thresholdChart({
+    points: points.map((sample) => ({ ...sample, value: Math.max(0, Number(sample.ms) || 0) })),
+    limits: { optimal, risk },
+    unit: " ms",
+    width: 620,
+    height: 208,
+    pad: 10,
+    axis: 26,
+    className: "latency-chart",
+    selected: Number.isInteger(selectedIndex) ? selectedIndex : null,
+    bandOf: (sample, value) => sampleBand(value, optimal, risk),
+    ariaLabel: `Latencia de la sonda con su tope de ${formatNumber(risk)} ms dibujado; cada muestra es un punto inspeccionable`
+  });
+}
+
+// Pie honesto del grafico compacto: cuantas lecturas hay dentro de cuantos
+// sondeos; y cuando el corte todavia no existe, cuantas lecturas faltan.
+function monitorChartFoot(entry, info) {
+  const limits = entry && entry.limits ? entry.limits : null;
+  if (limits && limits.kind === "pending") {
+    return `<p class="monitor-chart-foot">${escapeHtml(`sin banda habitual todavía: ${limits.readings || 0} de ${limits.needed || 8} lecturas medidas`)}</p>`;
+  }
+  if (info.readings < 2) {
+    return `<p class="monitor-chart-foot">${escapeHtml(
+      info.polls ? `${info.polls} sondeos guardados · ninguno dejó lectura de este monitor` : "sin sondeos guardados todavía"
+    )}</p>`;
+  }
+  const own = limits && limits.kind === "window" ? " · banda de su propia ventana" : "";
+  return `<p class="monitor-chart-foot">${escapeHtml(
+    `${info.readings} de ${Math.max(info.polls, info.readings)} sondeos con lectura · ${formatTime(info.first)} → ${formatTime(info.last)}${own}`
+  )}</p>`;
+}
+
+// El mismo grafico de latencia en tamano de tesela. Un monitor sin dos lecturas
+// no se disfraza con una linea inventada: se pinta el hueco y el pie dice que
+// faltan lecturas, porque lo no medido no es cero.
+function monitorChart(entry, options = {}) {
+  if (!entry) {
+    return `<div class="monitor-chart idle" aria-hidden="true"></div>${monitorChartFoot(null, { readings: 0, polls: 0 })}`;
+  }
+  const series = Array.isArray(entry.series) ? entry.series : [];
+  const polls = Number(entry.window) || 0;
+  const label = options.label || entry.label || "Medidor";
+  const unit = options.unit !== undefined ? options.unit : (entry.unit || "");
+  const limits = entry.limits || options.limits || null;
+  const direction = entry.direction || options.direction || null;
+  const watch = entry.watch || options.watch || null;
+  const goodIsHigh = direction === "higher" || (direction === "relative" && watch === "down");
+  const points = series.map((sample) => ({
+    at: sample.at,
+    value: Math.max(0, Number(sample.value) || 0),
+    band: sample.band,
+    ok: sample.ok
+  }));
+  const svg = points.length >= 2
+    ? thresholdChart({
+        points,
+        limits,
+        unit,
+        compact: true,
+        goodIsHigh,
+        width: 320,
+        height: 92,
+        pad: 6,
+        axis: 14,
+        className: "monitor-chart-svg",
+        formatValue: options.formatValue,
+        limitLabel: options.limitLabel || (entry.key === "uptime" ? (value) => humanDuration(value) : null),
+        ariaLabel: `${label}: ${points.length} lecturas medidas con ${limits && limits.kind === "window"
+          ? "su banda habitual dibujada"
+          : limits && limits.risk != null ? "sus topes dibujados" : "corte todavía pendiente"}`
+      })
     : "";
-  const ticks = axisTicks(points, coords, pad, width, plotBottom);
-  // Los dos cortes van a la izquierda y separados por su propia linea: "tope"
-  // arriba y "óptimo" abajo. Anclados a la derecha y a 3 px sobre la linea, con
-  // un techo de 2.6 s los textos de 240 y 400 ms caian encima uno del otro.
-  const riskLabelY = Math.max(pad + 9, Number(riskY) - 4).toFixed(1);
-  const optimalLabelY = optimalY ? Math.min(Number(optimalY) + 11, plotBottom - 3).toFixed(1) : null;
-  return `
-    <svg class="latency-chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Latencia de la sonda con su tope de ${formatNumber(risk)} ms dibujado; cada muestra es un punto inspeccionable">
-      ${optimalY ? `<line class="chart-optimal" x1="${pad}" y1="${optimalY}" x2="${width - pad}" y2="${optimalY}" /><text class="chart-label" x="${pad + 2}" y="${optimalLabelY}" text-anchor="start">óptimo ${formatNumber(optimal)} ms</text>` : ""}
-      <line class="chart-risk" x1="${pad}" y1="${riskY}" x2="${width - pad}" y2="${riskY}" />
-      <text class="chart-label risk" x="${pad + 2}" y="${riskLabelY}" text-anchor="start">tope ${formatNumber(risk)} ms</text>
-      <polygon class="spark-area" points="${area}" />
-      <polyline class="chart-line" points="${line}" />
-      ${over}
-      ${selected}
-      ${hits}
-      ${ticks}
-    </svg>`;
+  const wrap = `<div class="monitor-chart${points.length >= 2 ? "" : " idle"}"${points.length >= 2
+    ? ` role="img" aria-label="${escapeHtml(`${label}: ${points.length} lecturas medidas en ${Math.max(polls, points.length)} sondeos`)}"`
+    : ' aria-hidden="true"'}>${svg}</div>`;
+  return `${wrap}${monitorChartFoot(entry, {
+    readings: points.length,
+    polls,
+    first: series.length ? series[0].at : null,
+    last: series.length ? series[series.length - 1].at : null
+  })}`;
 }
 
 // Banda de una muestra contra los topes publicados por el servidor. El panel no
 // inventa el corte: usa el mismo optimal/risk del medidor p95 del ambiente.
 function sampleBand(value, optimal, risk) {
   if (!Number.isFinite(value)) return "unknown";
+  // Sin cortes no hay banda que afirmar: comparar contra null devolvia "critico"
+  // para cualquier cifra positiva y el panel pintaba rojo un medidor sin umbral.
+  if (!Number.isFinite(optimal) && !Number.isFinite(risk)) return "unknown";
   if (Number.isFinite(optimal) && value <= optimal) return "optimal";
-  if (value <= risk) return "risk";
+  if (Number.isFinite(risk) && value <= risk) return "risk";
   return "critical";
 }
 
@@ -523,7 +662,7 @@ function renderCloudCard(provider, data, compact = false) {
       </div>
       <p class="cloud-detail">${escapeHtml(data && data.detail ? data.detail : "Sin datos del proveedor.")}</p>
       ${renderCloudMetrics(data && data.metrics, latencyMs)}
-      ${latencyMs != null || (data && data.series) ? monitorTicks(data || {}, `${provider.label} · viaje a la nube`) : ""}
+      ${latencyMs != null || (data && data.series) ? monitorChart({ ...(data || {}), label: `${provider.label} · viaje a la nube`, unit: " ms" }) : ""}
       ${healthChips ? `<div class="cloud-service-health">${healthChips}</div>` : ""}
       ${!compact && deploymentItems ? `<ul class="cloud-list">${deploymentItems}</ul>` : ""}
       ${data && data.error ? `<p class="cloud-detail">${escapeHtml(data.error)}</p>` : ""}
@@ -777,43 +916,30 @@ function measureUnit(entry) {
   return entry.key === "uptime" ? "" : entry.unit;
 }
 
-// Geometría de la escala: tres tramos (verde / ámbar / rojo) y el marcador del
-// valor medido. `higher` premia los valores altos, así que invierte el orden.
-// Un medidor informativo no tiene cortes: pintarle una escala inventada lo
-// haría parecer un diagnóstico que el servidor nunca publicó.
-function scaleGeometry(entry) {
-  if (!entry || entry.direction === "informational") return null;
-  const optimal = Number(entry.limits && entry.limits.optimal);
-  const risk = Number(entry.limits && entry.limits.risk);
-  if (!Number.isFinite(optimal) || !Number.isFinite(risk)) return null;
-  if (entry.limits.optimal === null || entry.limits.risk === null) return null;
-  const higher = entry.direction === "higher";
-  const span = higher ? Math.max(optimal * 2, 100) : (risk > 0 ? risk * 1.5 : Math.max(optimal, 1) * 3);
-  if (!(span > 0)) return null;
-  const pct = (value) => Math.max(0, Math.min(100, (value / span) * 100));
-  const marker = entry.value == null ? null : pct(entry.value);
-  const segments = higher
-    ? [
-        { cls: "critical", width: pct(risk) },
-        { cls: "risk", width: pct(optimal) - pct(risk) },
-        { cls: "optimal", width: 100 - pct(optimal) }
-      ]
-    : [
-        { cls: "optimal", width: pct(optimal) },
-        { cls: "risk", width: pct(risk) - pct(optimal) },
-        { cls: "critical", width: 100 - pct(risk) }
-      ];
-  return { segments, marker, overflow: marker === 100 && entry.value != null && entry.value > span };
-}
-
+// Los cortes los publica el servidor; el panel solo los nombra. Un medidor con
+// banda calculada sobre su propia ventana dice cuántas lecturas le faltan antes
+// de poder afirmar nada, porque "sin banda todavía" es otra respuesta que "verde".
 function measureLimits(entry) {
-  if (!scaleGeometry(entry)) return "contexto del proceso, no diagnóstico";
-  const unit = entry.unit ? ` ${entry.unit}` : "";
-  const optimal = `${formatNumber(entry.limits.optimal)}${unit}`;
-  const risk = `${formatNumber(entry.limits.risk)}${unit}`;
-  return entry.direction === "higher"
-    ? `óptimo ≥ ${optimal} · en riesgo ≥ ${risk}`
-    : `óptimo ≤ ${optimal} · en riesgo ≤ ${risk}`;
+  const limits = entry && entry.limits ? entry.limits : null;
+  // Number(null) es 0: sin este guard, un medidor con ventana pendiente se leia
+  // "optimo <= 0" y parecia un umbral medido cuando todavia no lo hay.
+  const optimal = limits && limits.optimal != null ? Number(limits.optimal) : NaN;
+  const risk = limits && limits.risk != null ? Number(limits.risk) : NaN;
+  if (!Number.isFinite(optimal) || !Number.isFinite(risk)) {
+    if (limits && limits.kind === "pending") {
+      return `sin banda habitual todavía: ${limits.readings || 0} de ${limits.needed || 8} lecturas medidas`;
+    }
+    return "contexto del proceso, no diagnóstico";
+  }
+  const shown = (value) => entry.key === "uptime"
+    ? humanDuration(value)
+    : `${formatNumber(value)}${entry.unit ? (entry.unit === "x" ? "x" : ` ${entry.unit}`) : ""}`;
+  const higher = entry.direction === "higher"
+    || (entry.direction === "relative" && entry.watch === "down");
+  const own = limits.kind === "window" ? " · banda de su propia ventana" : "";
+  return higher
+    ? `óptimo ≥ ${shown(optimal)} · en riesgo ≥ ${shown(risk)}${own}`
+    : `óptimo ≤ ${shown(optimal)} · en riesgo ≤ ${shown(risk)}${own}`;
 }
 
 function measureFoot(entry, environment) {
@@ -871,30 +997,22 @@ function measureFoot(entry, environment) {
 
 function measureCard(entry, environment) {
   const tone = BAND_TONE[entry.band] || "unknown";
-  const geometry = scaleGeometry(entry);
-  const scale = geometry
-    ? `<div class="measure-scale" aria-hidden="true">
-        ${geometry.segments.map((segment) => `<span class="seg ${segment.cls}" style="width:${Math.max(0, segment.width).toFixed(1)}%"></span>`).join("")}
-        ${geometry.marker == null ? "" : `<span class="measure-marker ${entry.band}" style="left:${geometry.marker.toFixed(1)}%"></span>`}
-      </div>`
-    : '<div class="measure-scale idle" aria-hidden="true"><span class="seg flat" style="width:100%"></span></div>';
-  const ticks = monitorTicks(entry, entry.label);
+  const chart = monitorChart(entry);
   const verdict = entry.key === "p95" ? latencyVerdictText(environment) : "";
   const reading = `${entry.label}: ${measureValue(entry)}${measureUnit(entry) ? ` ${measureUnit(entry)}` : ""}. ${BAND_LABEL[entry.band] || "Sin dato"}. ${measureLimits(entry)}.`;
   const link = entry.view
     ? `<button class="measure-link" type="button" data-view="${escapeHtml(entry.view)}">Ver evidencia</button>`
     : "";
   return `
-    <article class="measure-card band-${entry.band}${geometry && geometry.overflow ? " overflow" : ""}" aria-label="${escapeHtml(reading)}" title="${escapeHtml(`${reading} Fuente: ${entry.source}`)}">
+    <article class="measure-card band-${entry.band}" aria-label="${escapeHtml(reading)}" title="${escapeHtml(`${reading} Fuente: ${entry.source}`)}">
       ${entry.question ? `<p class="measure-question">${escapeHtml(entry.question)}</p>` : ""}
       <div class="measure-head">
         <p class="measure-label">${escapeHtml(entry.label)}</p>
         <span class="band-pill ${tone}">${escapeHtml(BAND_LABEL[entry.band] || "Sin dato")}</span>
       </div>
       <p class="measure-value">${escapeHtml(measureValue(entry))}<span class="measure-unit">${escapeHtml(measureUnit(entry))}</span></p>
-      ${scale}
       <p class="measure-limits">${escapeHtml(measureLimits(entry))}</p>
-      ${ticks}
+      ${chart}
       ${verdict ? `<p class="measure-verdict tone-${escapeHtml(verdict.tone)}">${escapeHtml(verdict.text)}</p>` : ""}
       <p class="measure-foot">${escapeHtml(measureFoot(entry, environment))}</p>
       ${link}
@@ -958,29 +1076,25 @@ function renderGauges(environment) {
   const meta = document.getElementById("gaugesMeta");
   if (!container || !meta) return;
   verdictBand(environment, "resumen");
-  const gauges = environment && Array.isArray(environment.gauges) ? environment.gauges : [];
-  if (!gauges.length) {
+  const published = environment && Array.isArray(environment.gauges) ? environment.gauges : [];
+  if (!published.length) {
     meta.textContent = "Sin medidores";
     container.innerHTML = '<p class="empty">La torre aún no publicó los umbrales de este ambiente.</p>';
     return;
   }
-  const scored = gauges.filter((entry) => entry.direction !== "informational");
+  // El resumen muestra las preguntas de entrada; la evidencia que el catalogo
+  // reserva para una vista (uso real, sesiones, GPS) se pinta en esa vista, no aqui.
+  const gauges = published.filter((entry) => entry.resumen !== false);
+  // "Con umbral" es el medidor al que el servidor ya pudo firmarles un corte: una
+  // ventana pendiente tambien es informativa, pero por falta de lecturas, no por
+  // naturaleza, y el pie del grafico dice cuantas faltan.
+  const scored = gauges.filter((entry) => entry.limits
+    && entry.limits.kind !== "pending"
+    && (entry.limits.optimal != null || entry.limits.risk != null));
   const critical = scored.filter((entry) => entry.band === "critical").length;
   const risky = scored.filter((entry) => entry.band === "risk").length;
   meta.textContent = `${scored.length} medidores con umbral · ${critical} en rojo · ${risky} en riesgo`;
   container.innerHTML = gauges.map((entry) => measureCard(entry, environment)).join("");
-}
-
-// Altura de un tick: manda la frescura medida (ratio edad/esperado). Un módulo sin
-// fecha medida usa la altura base de su banda; nunca se pinta una altura inventada.
-const TICK_BASE_HEIGHT = { optimal: 30, risk: 58, critical: 86, informational: 22, unknown: 6 };
-
-function tickHeight(tick) {
-  if (!tick) return TICK_BASE_HEIGHT.unknown;
-  if (Number.isFinite(tick.ratio) && tick.ratio > 0) {
-    return Math.max(24, Math.min(100, 24 + (Math.min(tick.ratio, 4) / 4) * 72));
-  }
-  return TICK_BASE_HEIGHT[tick.band] || TICK_BASE_HEIGHT.unknown;
 }
 
 function moduleMapRows(environment, history) {
@@ -998,38 +1112,34 @@ function moduleMapRows(environment, history) {
   }));
 }
 
-// Un tick informativo si tiene lectura medida: lo que no tiene es umbral, no dato.
-// Por eso "informational" entra en el vocabulario de las barras aunque no sea una
-// banda de decision.
-const TICK_BANDS = ["optimal", "risk", "critical", "informational", "unknown"];
-
-function mapTick(band, height, title) {
-  const safe = TICK_BANDS.includes(band) ? band : "unknown";
-  return `<i class="map-tick band-${safe}" style="height:${Math.max(4, Math.min(100, height)).toFixed(0)}%" title="${escapeHtml(title)}"></i>`;
-}
-
-// La misma gramatica del mapa de modulos, aplicada a un solo monitor: un tick por
-// sondeo con lectura, con la hora y la cifra dentro del titulo. Donde no hubo
-// lectura no se dibuja nada y el pie lo dice ("18 de 24"), porque rellenar el
-// hueco con un punto en cero contaria como medida una muestra que no existio.
-// La altura sale de la banda que publico el servidor: el navegador no tiene umbral.
-function monitorTicks(entry, label) {
-  const series = Array.isArray(entry && entry.series) ? entry.series : [];
-  const polls = Number(entry && entry.window) || 0;
-  const unit = entry && entry.unit ? ` ${entry.unit}` : "";
-  const foot = `<p class="monitor-ticks-foot">${escapeHtml(
-    series.length
-      ? `${series.length} de ${Math.max(polls, series.length)} sondeos con lectura · ${formatTime(series[0].at)} → ${formatTime(series[series.length - 1].at)}`
-      : `${polls ? `${polls} sondeos guardados · ninguno dejó lectura de este monitor` : "sin sondeos guardados todavía"}`
-  )}</p>`;
-  if (!series.length) return `<div class="monitor-ticks" aria-hidden="true"></div>${foot}`;
-  const ticks = series.map((sample) => mapTick(
-    sample.band,
-    TICK_BASE_HEIGHT[sample.band] || TICK_BASE_HEIGHT.unknown,
-    `${label} · ${formatTime(sample.at)} · ${formatNumber(sample.value)}${unit} · ${BAND_LABEL[sample.band] || "Sin dato"}`
-  )).join("");
-  const aria = `${label}: ${series.length} lecturas medidas en ${Math.max(polls, series.length)} sondeos`;
-  return `<div class="monitor-ticks" role="img" aria-label="${escapeHtml(aria)}">${ticks}</div>${foot}`;
+// Una fila del mapa es el mismo grafico de latencia reducido a la altura del
+// renglon: la frescura medida (ratio edad/esperado) contra los cortes que el
+// servidor ya publico para ese medidor. Donde no hubo lectura no se dibuja
+// linea: la fila dice cuantas lecturas hay dentro de cuantos sondeos, porque un
+// hueco visible es otra respuesta que una serie plana. El eje horario vive una
+// sola vez al pie del mapa, no repetido en las 33 filas.
+function mapRowChart(points, limits, options = {}) {
+  const polls = Number(options.polls) || 0;
+  if (points.length < 2) {
+    const empty = polls
+      ? `sin historia: ${points.length} de ${Math.max(polls, points.length)} lecturas medidas`
+      : "sin lecturas medidas todavía";
+    return `<span class="map-strip map-chart idle" aria-hidden="true"><small class="map-empty">${escapeHtml(empty)}</small></span>`;
+  }
+  return `<span class="map-strip map-chart">${thresholdChart({
+    points,
+    limits,
+    unit: options.unit || "",
+    compact: true,
+    axisTicks: false,
+    goodIsHigh: options.goodIsHigh === true,
+    width: 320,
+    height: 58,
+    pad: 4,
+    axis: 0,
+    formatValue: options.formatValue,
+    ariaLabel: `${options.label}: ${points.length} lecturas medidas con sus topes dibujados`
+  })}</span>`;
 }
 
 function renderModuleMap(environment) {
@@ -1048,38 +1158,53 @@ function renderModuleMap(environment) {
     return;
   }
   const p95Gauge = gaugeOf(environment, "p95");
-  const riskCut = p95Gauge && p95Gauge.limits ? Number(p95Gauge.limits.risk) : 1000;
+  const freshnessGauge = gaugeOf(environment, "freshness");
+  const apiLimits = p95Gauge && p95Gauge.limits ? p95Gauge.limits : null;
+  const freshnessLimits = freshnessGauge && freshnessGauge.limits ? freshnessGauge.limits : null;
   const columns = history.length;
   const first = formatTime(history[0].at);
   const last = formatTime(history[history.length - 1].at);
-  meta.textContent = `${columns} sondeos · ${first} → ${last} · altura = frescura medida`;
+  meta.textContent = `${columns} sondeos · ${first} → ${last} · línea = frescura medida (x = edad/esperado)`;
 
-  const moduleRows = rows.map(({ module, cells, band }) => `
+  const moduleRows = rows.map(({ module, cells, band }) => {
+    // Number(null) vale 0: sin el guard, un modulo que nunca publico frescura se
+    // pintaba como una serie plana en 0x, es decir, como perfectamente sano.
+    const points = cells
+      .map((tick, index) => tick && tick.ratio != null && Number.isFinite(Number(tick.ratio))
+        ? { at: history[index].at, value: Number(tick.ratio), band: tick.band, records: tick.records }
+        : null)
+      .filter(Boolean);
+    return `
     <button class="map-row band-${band}" type="button" data-module="${escapeHtml(module.key)}" title="${escapeHtml(`${module.name} · ${BAND_LABEL[band]} · clic para ver el detalle`)}">
       <span class="map-name"><span class="dot status-${BAND_TONE[band]}" aria-hidden="true"></span>${escapeHtml(module.name)}</span>
-      <span class="map-strip" aria-hidden="true">${cells.map((tick) => mapTick(
-        tick ? tick.band : "unknown",
-        tickHeight(tick),
-        `${module.name} · ${tick ? BAND_LABEL[tick.band] : "sin sondeo"}${tick && tick.ratio != null ? ` · frescura ${tick.ratio}x` : ""}${tick && tick.records != null ? ` · ${formatNumber(tick.records)} registros` : ""}`
-      )).join("")}</span>
+      ${mapRowChart(points, freshnessLimits, {
+        polls: columns,
+        unit: "x",
+        label: module.name,
+        formatValue: (value, sample) => `${formatNumber(value)}x${sample.records != null ? ` · ${formatNumber(sample.records)} registros` : ""}`
+      })}
       <span class="map-now"><span class="band-pill ${BAND_TONE[band]}">${escapeHtml(BAND_LABEL[band])}</span></span>
-    </button>`).join("");
+    </button>`;
+  }).join("");
 
   const apiCells = history.map((sample) => sample.api || null);
   const lastApi = apiCells[apiCells.length - 1];
+  const apiPoints = history
+    .map((sample) => sample.api && sample.api.ms != null && Number.isFinite(Number(sample.api.ms))
+      ? { at: sample.at, value: Number(sample.api.ms), band: sample.api.band, ok: sample.api.ok !== false }
+      : null)
+    .filter(Boolean);
   const apiRow = `
     <div class="map-row api-row band-${lastApi && BAND_ORDER.includes(lastApi.band) ? lastApi.band : "unknown"}">
       <span class="map-name"><span class="dot status-accent" aria-hidden="true"></span>API /health</span>
-      <span class="map-strip" aria-hidden="true">${apiCells.map((cell) => cell
-        ? mapTick(cell.band, cell.ms == null ? 14 : Math.max(10, Math.min(100, (cell.ms / (riskCut * 1.5)) * 100)), `Sonda /health ${cell.ms == null ? "sin medición" : `${cell.ms} ms`} · objetivo ≤ ${riskCut} ms`)
-        : mapTick("unknown", 12, "Sondeo sin lectura de la API"))}</span>
+      ${mapRowChart(apiPoints, apiLimits, { polls: columns, unit: " ms", label: "Sonda /health de la torre" })}
       <span class="map-now"><small>${lastApi && lastApi.ms != null ? escapeHtml(`${lastApi.ms} ms`) : "sin sonda"}</small></span>
     </div>`;
 
   container.innerHTML = `
     <div class="map-legend">
       ${BAND_ORDER.map((band) => `<span class="legend-chip band-${band}"><i class="swatch" aria-hidden="true"></i>${escapeHtml(BAND_LABEL[band])}</span>`).join("")}
-      <span class="muted small">Cada marca es un sondeo real de la torre. La altura sale de la frescura medida; un módulo sin fecha medida usa la altura base de su banda.</span>
+      <span class="muted small">Cada fila es el mismo gráfico de latencia en altura de renglón: la frescura medida contra sus topes publicados. Un punto rojo es un sondeo por encima del tope; un tramo sin línea es un sondeo que no dejó lectura.</span>
     </div>
     <div class="map-body">${moduleRows}${apiRow}</div>
     <div class="map-axis"><span></span><span>${escapeHtml(first)}</span><span>${escapeHtml(last)}</span></div>`;
@@ -1474,13 +1599,13 @@ function applyView() {
   });
 }
 
-function tile({ label, value, unit = "", foot = "", status = "unknown", history = "" }) {
+function tile({ label, value, unit = "", foot = "", status = "unknown", chart = "" }) {
   return `
     <article class="metric-tile status-${pillClass(status)}">
       <p class="tile-label">${escapeHtml(label)}</p>
       <p class="tile-value">${escapeHtml(value)}<span class="tile-unit">${escapeHtml(unit)}</span></p>
       <p class="tile-foot">${escapeHtml(foot)}</p>
-      ${history}
+      ${chart}
     </article>`;
 }
 
@@ -1605,37 +1730,30 @@ function renderActivity(environment) {
   const company = activity.tenant && activity.tenant.name ? activity.tenant.name : "Empresa del token";
 
   meta.textContent = `${company} · últimos ${activity.days} días · ${formatTime(payload.checkedAt)}`;
+  // Las cinco magnitudes de uso salen de los medidores que el servidor ya bandeo
+  // (cada uno con su historia medida y su corte), no de una etiqueta suelta: un
+  // numero sin serie ni umbral no dice si hoy es poco para esta empresa.
+  const gaugeTiles = [
+    ["activityToday", `${formatNumber(activity.activity.period)} en la ventana`],
+    ["activeUsers", `${formatNumber(connections.distinct_users || 0)} con sesión abierta`],
+    ["activeSessions", connections.last_seen_at ? `última señal ${relative(connections.last_seen_at)}` : "sin señal"],
+    ["websocketClients", `${formatNumber(websocket.tenants || 0)} empresas · proceso`],
+    ["gpsPings", gps.last_ping_at ? `último ${relative(gps.last_ping_at)}` : "sin pings"]
+  ].map(([key, foot]) => {
+    const entry = gaugeOf(environment, key);
+    if (!entry) return null;
+    return tile({
+      label: entry.label,
+      value: measureValue(entry),
+      unit: measureUnit(entry),
+      foot,
+      status: entry.tone || "unknown",
+      chart: monitorChart(entry)
+    });
+  }).filter(Boolean);
+
   kpis.innerHTML = [
-    {
-      label: "Actividad hoy",
-      value: formatNumber(activity.activity.today),
-      foot: `${formatNumber(activity.activity.period)} en la ventana`,
-      status: activity.activity.today ? "ok" : "unknown"
-    },
-    {
-      label: "Usuarios activos",
-      value: formatNumber(activity.activity.active_users || 0),
-      foot: `${formatNumber(connections.distinct_users || 0)} con sesión abierta`,
-      status: activity.activity.active_users ? "ok" : "unknown"
-    },
-    {
-      label: "Sesiones activas",
-      value: formatNumber(connections.active_sessions || 0),
-      foot: connections.last_seen_at ? `última señal ${relative(connections.last_seen_at)}` : "sin señal",
-      status: connections.active_sessions ? "ok" : "unknown"
-    },
-    {
-      label: "WebSocket",
-      value: formatNumber(websocket.clients || 0),
-      foot: `${formatNumber(websocket.tenants || 0)} empresas · proceso`,
-      status: websocket.clients ? "ok" : "unknown"
-    },
-    {
-      label: "Pings GPS",
-      value: formatNumber(gps.pings_period || 0),
-      foot: gps.last_ping_at ? `último ${relative(gps.last_ping_at)}` : "sin pings",
-      status: gps.pings_period ? "ok" : "unknown"
-    },
+    ...gaugeTiles,
     {
       label: "Última actividad",
       value: activity.activity.last_activity_at ? relative(activity.activity.last_activity_at) : "nunca",
@@ -1736,14 +1854,16 @@ function consolidatedTiles(environment) {
       foot: deployed && deployed.memory
         ? `heap ${formatNumber(deployed.memory.heapUsed)}/${formatNumber(deployed.memory.heapTotal)} MB`
         : "El build desplegado no expone memoria",
-      status: deployed && deployed.memory ? measureStatus(environment, "memoryRss") : "unknown"
+      status: deployed && deployed.memory ? measureStatus(environment, "memoryRss") : "unknown",
+      chart: monitorChart(gaugeOf(environment, "memoryRss"))
     },
     {
       label: "Uso del API",
       value: deployed && deployed.usage ? formatNumber(deployed.usage.requestsTotal) : "—",
       unit: deployed && deployed.usage ? "req" : "",
       foot: usageFoot(deployed) || "El build desplegado no expone uso",
-      status: deployed && deployed.usage ? ((deployed.usage.byStatus && deployed.usage.byStatus["5xx"]) ? "degraded" : "ok") : "unknown"
+      status: deployed && deployed.usage ? ((deployed.usage.byStatus && deployed.usage.byStatus["5xx"]) ? "degraded" : "ok") : "unknown",
+      chart: monitorChart(gaugeOf(environment, "requestRate"))
     },
     {
       label: "Rendimiento p95",
@@ -1752,7 +1872,8 @@ function consolidatedTiles(environment) {
       foot: performance && performance.samples
         ? `${performance.samples} muestras · ${performance.errorRate || 0}% errores · ${uptimeFoot(deployed) || "sin uptime"}`
         : "Sin muestras de este ambiente",
-      status: measureStatus(environment, "p95")
+      status: measureStatus(environment, "p95"),
+      chart: monitorChart(gaugeOf(environment, "p95"))
     }
   ];
   return tiles;
@@ -2020,7 +2141,7 @@ function renderKpis(environment) {
     unit: measureUnit(entry),
     foot: `${measureLimits(entry)} · ${measureFoot(entry, environment)}`,
     status: BAND_TONE[entry.band] || "unknown",
-    history: monitorTicks(entry, entry.label)
+    chart: monitorChart(entry)
   })).join("");
 }
 
@@ -2042,7 +2163,7 @@ function renderOperation(data) {
     unit: measureUnit(entry),
     foot: measureLimits(entry),
     status: BAND_TONE[entry.band] || "unknown",
-    history: monitorTicks(entry, entry.label)
+    chart: monitorChart(entry)
   })).join("");
 }
 
@@ -2171,7 +2292,7 @@ function renderChecks(snapshot, environment) {
           </div>
           <p class="check-status">${escapeHtml(STATUS_LABEL[check.status] || check.status)}${check.critical ? " · crítico" : ""}${check.optional ? " · opcional" : ""}</p>
           <p class="check-detail">${escapeHtml(detail || "Sin detalle")}</p>
-          ${monitorTicks(check, check.label || String(check.id))}
+          ${monitorChart({ ...check, label: check.label || String(check.id), unit: " ms" })}
           ${check.functional ? `<p class="check-impact">${escapeHtml(check.functional)}</p>` : ""}
           ${check.action ? `<p class="check-action">Acción: ${escapeHtml(check.action)}</p>` : ""}
           ${check.technical ? `<details class="tech"><summary>Detalle técnico</summary>${technicalBlock(check.technical)}</details>` : ""}
@@ -2302,7 +2423,7 @@ function renderComponents(environment) {
             ${scoreText ? `<p class="component-score">${escapeHtml(scoreText)}</p>` : '<p class="component-score">—</p>'}
             <span class="band-pill ${tone}">${escapeHtml(component.label_text || BAND_LABEL[component.band] || "Sin dato")}</span>
             ${component.detail ? `<p class="component-detail">${escapeHtml(String(component.detail).slice(0, 160))}</p>` : ""}
-            <div class="component-history">${monitorTicks(component, component.name || component.key)}</div>
+            <div class="component-history">${monitorChart({ ...component, label: component.name || component.key, unit: " ms" })}</div>
           </div>`;
       }).join("")}
     </div>`;
@@ -2336,50 +2457,25 @@ function renderDatabase(environment) {
     volume.innerHTML = `<p class="empty">Este ambiente no entrega ni el componente de base de datos ni el conteo de registros: la API aún no publica /api/v1/apex-control/status o no hay token de lectura configurado.</p>`;
     return;
   }
-  const cap = db && db.limits ? `óptimo ≤ ${formatNumber(db.limits.optimal)} ms · en riesgo ≤ ${formatNumber(db.limits.risk)} ms` : "sin umbral publicado";
   const volumeText = dataVolume && dataVolume.value != null
     ? `${formatNumber(dataVolume.value)} registros medidos en ${withRecords.length} módulos con conteo`
     : "ningún módulo publicó conteo de registros";
   verdictBand(environment, "datos", volumeText);
   meta.textContent = `${withRecords.length} módulos con conteo · ${formatNumber(modules.length)} módulos leídos`;
   kpis.innerHTML = [
-    tile({
-      label: "Latencia de la base",
-      value: db && db.value != null ? formatNumber(db.value) : "—",
-      unit: db && db.value != null ? "ms" : "",
-      foot: cap,
-      status: db ? BAND_TONE[db.band] : "unknown",
-      history: monitorTicks(db, "Latencia de la base")
-    }),
-    tile({
-      label: "Consultas lentas",
-      value: slow && slow.value != null ? formatNumber(slow.value) : "—",
-      foot: slow && slow.limits ? `óptimo ≤ ${slow.limits.optimal} · en riesgo ≤ ${slow.limits.risk} · acumuladas desde el arranque` : "sin umbral publicado",
-      status: slow ? BAND_TONE[slow.band] : "unknown",
-      history: monitorTicks(slow, "Consultas lentas")
-    }),
-    tile({
-      label: "Registros medidos",
-      value: dataVolume && dataVolume.value != null ? formatNumber(dataVolume.value) : "—",
-      foot: "suma de records por módulo publicados por la API",
-      status: "unknown",
-      history: monitorTicks(dataVolume, "Registros medidos")
-    }),
-    tile({
-      label: "Empresas con actividad",
-      value: coverage && coverage.value != null ? `${formatNumber(coverage.value)} %` : "—",
-      foot: coverage && coverage.limits ? `óptimo ≥ ${formatNumber(coverage.limits.optimal)} %` : "sin lectura por empresa",
-      status: coverage ? BAND_TONE[coverage.band] : "unknown",
-      history: monitorTicks(coverage, "Empresas con actividad")
-    }),
-    tile({
-      label: "Frescura peor",
-      value: freshness && freshness.value != null ? `${formatNumber(freshness.value)}x` : "—",
-      foot: freshness && freshness.limits ? `óptimo ≤ ${freshness.limits.optimal}x · en riesgo ≤ ${freshness.limits.risk}x` : "sin módulos medidos",
-      status: freshness ? BAND_TONE[freshness.band] : "unknown",
-      history: monitorTicks(freshness, "Frescura peor")
-    })
-  ].join("");
+    [db, ""],
+    [slow, " · acumuladas desde el arranque"],
+    [dataVolume, " · suma de records por módulo"],
+    [coverage, ""],
+    [freshness, " · peor ratio entre módulos"]
+  ].filter(([entry]) => entry).map(([entry, extra]) => tile({
+    label: entry.label,
+    value: measureValue(entry),
+    unit: measureUnit(entry),
+    foot: `${measureLimits(entry)}${extra}`,
+    status: BAND_TONE[entry.band] || "unknown",
+    chart: monitorChart(entry)
+  })).join("");
   const rows = modules
     .filter((module) => measuredNumber(module.data ? module.data.records : null) !== null)
     .sort((left, right) => Number(right.data.records || 0) - Number(left.data.records || 0))

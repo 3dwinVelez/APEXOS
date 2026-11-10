@@ -15,9 +15,9 @@ const { diagnoseCheck } = require("./lib/diagnostics");
 const { collectGitState, runGit, clearRemoteCache } = require("./lib/git");
 const { fetchModules, REASON_DETAIL } = require("./lib/modules");
 const { recommendationsFor } = require("./lib/recommendations");
-const { GAUGES, gaugesFor, latencyVerdict, p95Definition, componentBands, viewVerdicts, viewVerdict, operationGauges, bandFromEntry, probeBand } = require("./lib/metrics");
+const { GAUGES, gaugesFor, latencyVerdict, p95Definition, componentBands, viewVerdicts, viewVerdict, operationGauges, bandFromEntry, bandForValue, probeBand, applyWindowLimits, windowLimits } = require("./lib/metrics");
 const { ModuleTelemetry } = require("./lib/telemetry");
-const { MonitorHistory, measuredSeries } = require("./lib/monitor-history");
+const { MonitorHistory, measuredSeries, measuredValues } = require("./lib/monitor-history");
 const { computeHealth, withModuleBands } = require("./lib/health");
 const { createAuthGuard, createRateLimiter, safeEqual, readToken, assertLoopback, redact, isPlainObject } = require("./lib/security");
 
@@ -35,8 +35,11 @@ const MIME = {
   ".webmanifest": "application/manifest+json"
 };
 
-function json(res, status, body) {
-  const payload = JSON.stringify(body);
+// Los tres destinos de la nube que la torre sondea: su viaje torre->SaaS tiene
+// un presupuesto propio (GAUGES.cloudLatency) y no se banda contra el del API.
+const CLOUD_SOURCES = Object.freeze(["railway", "vercel", "supabase"]);
+
+function json(res, status, body) {  const payload = JSON.stringify(body);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "content-length": Buffer.byteLength(payload),
@@ -102,11 +105,12 @@ function attachIndicators(snapshot, telemetry, monitors) {
     // vista Latencia conserva su veredicto propio (sostenido vs pico), que es mas
     // fino que la peor banda de un solo numero.
     environment.verdicts = viewVerdicts(environment.gauges);
-    // El resumen no inventa un umbral nuevo: es la peor banda entre TODOS los
-    // medidores del ambiente, para que la tarjeta de entrada y la vista donde
-    // vive el problema digan exactamente lo mismo. La pregunta no se reescribe
-    // aqui: es la canónica de la vista, publicada por metrics.
-    environment.verdicts.resumen = viewVerdict(environment.gauges, null, "resumen");
+    // El resumen no inventa un umbral nuevo: es la peor banda entre los medidores
+    // que el catalogo marca como evidencia de entrada. La prueba por modulo (uso
+    // real, sesiones, GPS) vive en su vista y no sube al resumen. La pregunta no se
+    // reescribe aqui: es la canonica de la vista, publicada por metrics.
+    environment.verdicts.resumen = viewVerdict(
+      environment.gauges.filter((entry) => entry.resumen !== false), null, "resumen");
     if (Array.isArray(environment.components) && environment.components.length) {
       environment.components = componentBands(environment.components);
     }
@@ -128,32 +132,53 @@ function attachIndicators(snapshot, telemetry, monitors) {
       // para que el panel pueda decir "20 de 24" en lugar de fingir una serie llena.
       const polls = history.length;
       for (const entry of environment.gauges) {
+        // Primero la ventana: un medidor sin presupuesto versionado recibe su corte
+        // calculado sobre sus propias lecturas, y solo despues se bandea. Asi el
+        // grafico del monitor siempre tiene su barra de comportamiento o dice
+        // cuantas lecturas faltan para trazarla.
+        applyWindowLimits(entry, measuredValues(history, "gauges", entry.key));
         entry.series = measuredSeries(history, "gauges", entry.key, (value) => bandFromEntry(entry, value));
         entry.window = polls;
       }
       for (const component of Array.isArray(environment.components) ? environment.components : []) {
-        // Solo la base tiene un tope versionado por componente; el resto se pinta
-        // con su valor medido y sin banda, porque inventar un corte daria un
-        // semaforo decorativo.
+        // La base tiene tope versionado; el resto de los componentes no, y su
+        // referencia es la banda habitual de sus propias lecturas. La banda del
+        // valor actual la firma el estado del componente (un caido es critico con
+        // cualquier latencia); el corte solo decide como se colorea la serie.
+        const windowed = { direction: "relative", watch: "up", limitsFrom: "window" };
+        component.limits = component.key === "db"
+          ? { optimal: GAUGES.dbLatency.optimal, risk: GAUGES.dbLatency.risk, kind: "budget", unit: "ms" }
+          : windowLimits(windowed, measuredValues(history, "components", component.key));
+        const reference = component.key === "db" ? GAUGES.dbLatency : { ...windowed, limits: component.limits };
         component.series = measuredSeries(history, "components", component.key, (value) =>
-          bandFromEntry(component.key === "db" ? GAUGES.dbLatency : null, value));
+          bandFromEntry(reference, value));
         component.window = polls;
       }
       for (const check of ownChecks) {
         // La sonda viaja desde la torre, asi que su corte es el presupuesto de
-        // sondeo del ambiente, no el del API sondeado.
-        check.series = measuredSeries(history, "checks", String(check.id), (value) => probeBand(value, true, id));
+        // sondeo del ambiente, no el del API sondeado. Excepto cuando el destino
+        // es un servicio de la nube: ese viaje incluye DNS + TLS + el proveedor y
+        // su corte es el de la nube, no el presupuesto local.
+        const cloud = CLOUD_SOURCES.includes(check.source);
+        const cuts = cloud ? GAUGES.cloudLatency : definition;
+        check.limits = { optimal: cuts.optimal, risk: cuts.risk, kind: "budget", unit: "ms" };
+        check.series = measuredSeries(history, "checks", String(check.id), (value) =>
+          cloud ? bandForValue(GAUGES.cloudLatency, value) : probeBand(value, true, id));
         check.window = polls;
       }
       // La tarjeta del proveedor se pinta con la historia de su propia sonda: el
       // viaje torre->proveedor es el unico numero medido de esa tarjeta, y el
-      // panel no debe buscarlo en otro sitio.
+      // panel no debe buscarlo en otro sitio. Los cortes viajan con la serie para
+      // que el grafico dibuje la misma raya que el servidor banda.
       if (environment.cloud) {
-        for (const source of ["railway", "vercel", "supabase"]) {
+        for (const source of CLOUD_SOURCES) {
           const match = ownChecks.find((check) => check.source === source);
           if (environment.cloud[source] && match) {
             environment.cloud[source].series = match.series;
             environment.cloud[source].window = match.window;
+            environment.cloud[source].limits = match.limits;
+            environment.cloud[source].direction = GAUGES.cloudLatency.direction;
+            environment.cloud[source].unit = GAUGES.cloudLatency.unit;
           }
         }
       }
