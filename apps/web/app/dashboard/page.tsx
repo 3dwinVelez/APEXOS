@@ -4,7 +4,7 @@ import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { LOBBY_BANNER, lobbyModuleImage } from "@/lib/lobbyAssets";
 import { MODULES } from "@/lib/modules";
 import { actionsForWorkspace } from "@/lib/operationalWorkspace";
-import { AlertCircle, ArrowRight, Grid2X2, LayoutGrid, Play, RefreshCw, Search, Sparkles, Zap } from "lucide-react";
+import { AlertCircle, ArrowRight, Grid2X2, RefreshCw, Search, Sparkles, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -39,22 +39,17 @@ export default function DashboardPage() {
   const activeModules = useMemo(() => MODULES.filter((module) => access.bySlug[module.slug] === true).sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999)), [access]);
   const enabledSlugs = useMemo(() => new Set(activeModules.map((module) => module.slug)), [activeModules]);
   const actions = useMemo(() => actionsForWorkspace(enabledSlugs, roleName).slice(0, 6), [enabledSlugs, roleName]);
-  const startHref = actions[0]?.href ?? (activeModules[0] ? `/dashboard/${activeModules[0].slug}` : "#mis-modulos");
 
   if (access.loading) return <WorkspaceLoading />;
   if (error) return <WorkspaceError message={error} retry={refreshAccess} />;
 
   return <div className="apex-lobby mx-auto max-w-[1500px] space-y-6 pb-8">
-    <section aria-labelledby="lobby-hero-title" className="apex-lobby-hero flex min-h-[19rem] sm:min-h-[21rem]">
+    <section aria-labelledby="lobby-hero-title" className="apex-lobby-hero flex min-h-[17rem] sm:min-h-[19rem]">
       <Image src={LOBBY_BANNER} alt="" fill priority sizes="(max-width: 1500px) 100vw, 1500px" />
-      <div className="relative z-10 flex max-w-2xl flex-col justify-center gap-4 p-6 sm:p-10">
+      <div className="relative z-10 flex max-w-2xl flex-col justify-center gap-3 p-6 sm:p-10">
         <span className="apex-lobby-eyebrow"><Sparkles size={13} /> Bienvenido{displayName ? `, ${displayName}` : ""} · {companyName}</span>
-        <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" id="lobby-hero-title">Tu operación, más simple y <span className="apex-lobby-accent">bajo control.</span></h1>
-        <p className="max-w-xl text-sm text-white/75 sm:text-base">Gestiona tu empresa en un solo lugar, de forma ágil, conectada y sin complicaciones.</p>
-        <div className="mt-1 flex flex-wrap gap-3">
-          <Link className="apex-lobby-cta-primary" href={startHref} prefetch={false}><Play size={16} /> Comenzar</Link>
-          <Link className="apex-lobby-cta-secondary" href="#mis-modulos" prefetch={false}><LayoutGrid size={16} /> Explorar módulos</Link>
-        </div>
+        <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl" id="lobby-hero-title">Creamos sistemas <span className="apex-lobby-accent">a tu medida.</span></h1>
+        <p className="max-w-xl text-sm text-white/75 sm:text-base">Tu operación, más simple y bajo control.</p>
       </div>
     </section>
 
@@ -75,6 +70,6 @@ export default function DashboardPage() {
   </div>;
 }
 
-function WorkspaceLoading() { return <div aria-busy="true" aria-label="Cargando espacio de trabajo" className="mx-auto max-w-[1500px] animate-pulse space-y-6"><div className="h-64 rounded-card bg-surface-muted" /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{Array.from({ length: 6 }).map((_, index) => <div className="h-20 rounded-card bg-surface-muted" key={index} />)}</div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => <div className="h-44 rounded-card bg-surface-muted" key={index} />)}</div></div>; }
+function WorkspaceLoading() { return <div aria-busy="true" aria-label="Cargando espacio de trabajo" className="mx-auto max-w-[1500px] animate-pulse space-y-6"><div className="h-56 rounded-card bg-surface-muted" /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{Array.from({ length: 6 }).map((_, index) => <div className="h-20 rounded-card bg-surface-muted" key={index} />)}</div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => <div className="h-44 rounded-card bg-surface-muted" key={index} />)}</div></div>; }
 function WorkspaceError({ message, retry }: { message: string; retry: () => void }) { return <section className="mx-auto max-w-xl rounded-card border border-red-200 bg-red-50 p-6 text-center" role="alert"><AlertCircle className="mx-auto text-red-600" size={28} /><h1 className="mt-3 text-lg font-semibold text-red-950">No fue posible preparar tu operación</h1><p className="mt-1 text-sm text-red-800">{message}</p><button className="mt-4 inline-flex h-10 items-center gap-2 rounded-control bg-red-700 px-4 text-sm font-semibold text-white" onClick={retry} type="button"><RefreshCw size={16} />Reintentar</button></section>; }
 function EmptyActions() { return <div className="rounded-card border border-dashed border-line bg-surface p-6 text-center"><Search className="mx-auto text-content-subtle" size={24} /><p className="mt-2 text-sm font-semibold text-content-strong">No hay acciones rápidas para estos módulos</p><p className="mt-1 text-xs text-content-muted">Puedes abrir cualquiera desde Mis módulos.</p></div>; }

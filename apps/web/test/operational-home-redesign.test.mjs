@@ -9,10 +9,20 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
 test("dashboard usa el enfoque operativo aprobado con lobby corporativo V4", () => {
   const source = read("app/dashboard/page.tsx");
+  assert.match(source, /Creamos sistemas/);
+  assert.match(source, /a tu medida\./);
   assert.match(source, /Tu operación, más simple y/);
   assert.match(source, /Acciones frecuentes/);
   assert.match(source, /Mis módulos/);
   assert.doesNotMatch(source, /Continúa donde estabas/);
+});
+
+test("el hero lleva la frase de marca y no botones de arranque", () => {
+  const source = read("app/dashboard/page.tsx");
+  assert.doesNotMatch(source, /Comenzar/);
+  assert.doesNotMatch(source, /Explorar módulos/);
+  assert.doesNotMatch(source, /apex-lobby-cta-/);
+  assert.doesNotMatch(source, /startHref/);
 });
 
 test("lobby V4 monta banner corporativo y tarjetas fotográficas por módulo", () => {

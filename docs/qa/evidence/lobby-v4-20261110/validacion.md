@@ -6,6 +6,13 @@ Fase piloto acotada al lobby del dashboard (`/dashboard`), con la imagen de refe
 corporativo oscuro con acentos turquesa como referencia obligatoria. El resto de la plataforma
 queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 
+## Ronda 3 (frase de marca)
+
+- **La frase memorable es el titular del hero.** «Creamos sistemas **a tu medida**.» sustituye a
+  «Tu operación, más simple y bajo control.» como `h1`; el copy operativo queda como línea de apoyo.
+- **Los dos CTA se retiraron** («Comenzar» / «Explorar módulos») junto con su destino (`startHref`),
+  sus iconos y el ancla `#mis-modulos`. Una prueba prohíbe su reaparición.
+
 ## Ronda 2 (retroalimentación del dueño)
 
 - **Panel secundario retirado.** «Continúa donde estabas» salió del lobby por decisión del dueño
@@ -28,7 +35,7 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 
 ## Validación ejecutada
 
-- Pruebas web: `node --test "test/*.test.mjs"` — **670/670** en verde.
+- Pruebas web: `node --test "test/*.test.mjs"` — **671/671** en verde.
 - Typecheck (`tsconfig.typecheck.json`) y ESLint sobre los archivos tocados: sin hallazgos.
 - Navegador real (headless Edge vía CDP, perfil limpio), cuatro capturas:
   - `evidence-lobby-desktop-light.png` — 1440 px, tema claro.
