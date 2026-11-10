@@ -36,12 +36,12 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (mode === "checking") {
-    return <main className="min-h-screen bg-paper p-6 text-sm text-neutral-600">Validando perfil de acceso...</main>;
+    return <main className="min-h-screen p-6 text-sm text-neutral-600">Validando perfil de acceso...</main>;
   }
 
   if (mode === "marking_only") {
     return (
-      <div className="min-h-screen bg-paper">
+      <div className="min-h-screen">
         <header className="sticky top-0 z-40 border-b border-line bg-white/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-md items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">

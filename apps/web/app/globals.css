@@ -36,6 +36,15 @@
   --radius-overlay: 1rem;
   --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px rgb(15 23 42 / 0.04);
   --shadow-overlay: 0 24px 70px rgb(15 23 42 / 0.2);
+  /* Fondo ambiente: luces corporativas detras del contenido (ver .apex-ambient). */
+  --ambient-glow-a: 8 205 187;
+  --ambient-glow-b: 0 108 112;
+  --ambient-glow-c: 13 148 136;
+  --ambient-alpha-a: 0.12;
+  --ambient-alpha-b: 0.09;
+  --ambient-alpha-c: 0.06;
+  --ambient-grain: 0.03;
+  --ambient-drift-alpha: 0.06;
 }
 
 html[data-font-scale="small"] { font-size: 15px; }
@@ -480,6 +489,11 @@ html.dark {
   --text-body: 202 211 216;
   --text-muted: 155 170 178;
   --text-subtle: 155 170 178;
+  --ambient-alpha-a: 0.1;
+  --ambient-alpha-b: 0.18;
+  --ambient-alpha-c: 0.1;
+  --ambient-grain: 0.06;
+  --ambient-drift-alpha: 0.12;
 }
 
 * {
@@ -526,6 +540,68 @@ textarea {
 
 body {
   overflow-x: hidden;
+  /* Aísla el apilado para que la capa ambiente (z-index negativo) quede sobre el
+     papel del body y debajo de todo el contenido, sin tapar ninguna superficie. */
+  isolation: isolate;
+}
+
+/* ===== Fondo ambiente del producto (todas las pantallas y ventanas) =====
+   Tres luces de la paleta corporativa, grano SVG inline y una deriva lenta
+   compuesta por transform. Sin JS, sin peticiones de red y sin pintar sobre las
+   tarjetas: en claro da profundidad al papel y en oscuro evita el negro plano.
+   La deriva solo corre en escritorio y nunca con movimiento reducido. */
+.apex-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(72rem 46rem at 8% -12%, rgb(var(--ambient-glow-a) / var(--ambient-alpha-a)), transparent 60%),
+    radial-gradient(64rem 44rem at 98% 6%, rgb(var(--ambient-glow-b) / var(--ambient-alpha-b)), transparent 62%),
+    radial-gradient(60rem 46rem at 48% 116%, rgb(var(--ambient-glow-c) / var(--ambient-alpha-c)), transparent 64%);
+}
+
+.apex-ambient-drift,
+.apex-ambient-grain {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.apex-ambient-drift {
+  inset: -20%;
+  background: radial-gradient(closest-side, rgb(var(--ambient-glow-a) / var(--ambient-drift-alpha)), transparent 70%);
+  transform: translate3d(0, 0, 0);
+}
+
+.apex-ambient-grain {
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  mix-blend-mode: overlay;
+  opacity: var(--ambient-grain);
+}
+
+@keyframes apex-ambient-drift {
+  from { transform: translate3d(-4%, -2%, 0) scale(1); }
+  to { transform: translate3d(5%, 3%, 0) scale(1.06); }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .apex-ambient-drift { animation: apex-ambient-drift 48s ease-in-out infinite alternate; }
+}
+
+html[data-reduced-motion="true"] .apex-ambient-drift {
+  animation: none;
+}
+
+html[data-contrast="high"] .apex-ambient {
+  display: none;
+}
+
+@media print {
+  .apex-ambient { display: none; }
 }
 
 html[data-role="tecnico"] .technician-hide {
@@ -615,7 +691,8 @@ textarea {
 
   .apex-page-enter,
   .apex-dialog-enter,
-  .apex-backdrop-enter {
+  .apex-backdrop-enter,
+  .apex-ambient-drift {
     animation: none !important;
   }
 
@@ -767,7 +844,10 @@ textarea {
 }
 
 .apex-app-gradient {
-  background: rgb(var(--color-paper));
+  /* El papel lo pinta el body y encima reposa .apex-ambient. El marco no pinta
+     fondo propio para que las luces del ambiente se vean en todas las pantallas;
+     las tarjetas y tablas siguen opacas sobre el. */
+  background: transparent;
 }
 
 .apex-context-hero {
@@ -1029,8 +1109,7 @@ html.dark .text-white\/70 {
 }
 
 html.dark .apex-section-card,
-html.dark .apex-soft-gradient,
-html.dark .apex-app-gradient {
+html.dark .apex-soft-gradient {
   background: rgb(var(--surface)) !important;
 }
 
