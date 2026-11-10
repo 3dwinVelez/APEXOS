@@ -4,7 +4,34 @@
 
 Fase piloto acotada al lobby del dashboard (`/dashboard`), con la imagen de referencia del lobby
 corporativo oscuro con acentos turquesa como referencia obligatoria. El resto de la plataforma
-queda sin intervenir hasta la aprobación explícita de la siguiente fase.
+queda sin intervenir hasta la aprobación explícita de la siguiente fase. La capa de fondo de la
+ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
+«aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
+
+## Ronda 6 (fondo ambiente en todas las ventanas)
+
+- **Una sola capa para todo el producto.** `apps/web/app/layout.tsx` monta `.apex-ambient` una vez
+  (`aria-hidden`, tres luces de la paleta corporativa, grano SVG inline y deriva compuesta por
+  `transform`): toda ruta y toda ventana emergente comparten el mismo fondo, sin repetirlo por
+  pantalla ni pedir recursos de red.
+- **El marco dejó de taparlo.** El dueño veía el fondo «triste» porque `.apex-app-gradient` pintaba
+  un papel opaco encima del ambiente. Ahora el marco es transparente (el papel lo sigue pintando
+  `html/body`), el override oscuro ya no repinta `--surface` sobre el marco y el panel de marcación
+  exclusiva no pinta `bg-paper` propio. La capa queda sobre el papel y debajo de tarjetas, tablas y
+  ventanas (`z-index: -1` dentro de `body { isolation: isolate }`). En oscuro el papel baja a
+  `#0F1720` y las superficies siguen en `#17232D`, lo que da separación sin tocar ninguna tarjeta.
+- **Claro y oscuro con intensidades propias.** Claro usa `0.12 / 0.09 / 0.06` y grano `0.03` para
+  dar profundidad al papel sin teñir el blanco; oscuro usa `0.10 / 0.18 / 0.10` y grano `0.06` para
+  evitar el negro plano. Las capturas confirman marco transparente en ambos temas y en todas las
+  vistas (`evidence-ambient-metrics.json`).
+- **Rendimiento medido, no supuesto.** Con la capa visible y oculta, durante 2 s de desplazamiento
+  en escritorio: **16,67 ms** de cuadro promedio, **p95 16,8 ms**, **0** cuadros sobre 33 ms,
+  **0** layouts y **0** scripts. La capa no añade ninguna petición de red (la única imagen es el
+  `apex-icon.svg` que ya existía). La deriva solo corre en escritorio (≥1024 px) y con
+  `prefers-reduced-motion: no-preference`; se apaga en el bloque compartido de movimiento reducido,
+  con `html[data-reduced-motion="true"]`, en alto contraste y en impresión.
+- **Ventanas incluidas.** Con el centro de comandos abierto el ambiente sigue detrás del velo y las
+  tarjetas y tablas permanecen opacas y legibles; el fondo no compite con la información.
 
 ## Ronda 5 (certificación aislada de las ventanas)
 
@@ -61,6 +88,11 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 
 | Archivo | Cambio |
 |---|---|
+| `apps/web/app/layout.tsx` | M — capa `.apex-ambient` única para todas las rutas y ventanas |
+| `apps/web/app/globals.css` | M — tokens y estilos del fondo ambiente; marco transparente y superficies oscuras sin el marco |
+| `apps/web/components/shell/DashboardChrome.tsx` | M — el panel de marcación deja de pintar `bg-paper` propio |
+| `apps/web/test/ambient-background.test.mjs` | A — 7 pruebas del ambiente: montaje único, apilado, temas, grano inline, deriva, reducción de movimiento, alto contraste/impresión y marco transparente |
+| `docs/qa/evidence/lobby-v4-20261110/evidence-ambient-*.png` y `evidence-ambient-metrics.json` | A — siete capturas (lobby y módulo en claro/oscuro, comandos y móvil en ambos temas) con métricas medidas |
 | `apps/web/app/dashboard/page.tsx` | M — ancho completo sin panel secundario; grilla `xl:grid-cols-4`; tarjetas con `sizes` de cuatro columnas |
 | `apps/web/lib/lobbyAssets.ts` | M — mapa slug→asset para los 32 módulos, sin imágenes compartidas |
 | `apps/web/app/globals.css` | M — altura de la franja fotográfica de tarjeta a 9rem |
@@ -80,14 +112,22 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 
 ## Validación ejecutada
 
-- Pruebas web: `node --test "test/*.test.mjs"` desde `apps/web` — **671/671** en verde.
-- Typecheck (`tsconfig.typecheck.json`) y ESLint sobre los archivos tocados: sin hallazgos (los 22
-  avisos de ESLint son previos y no se tocaron).
+- Pruebas web: `node --test "test/*.test.mjs"` desde `apps/web` — **678/678** en verde (7 de ellas
+  nuevas del fondo ambiente).
+- Typecheck (`tsconfig.typecheck.json`) y ESLint sobre los archivos tocados: sin hallazgos.
 - Navegador real (headless Edge vía CDP, perfil limpio):
   - Rondas 1–3, cuatro capturas del lobby:
     `evidence-lobby-{desktop,mobile}-{light,dark}.png`.
   - Ronda 4, 24 capturas de las ventanas (`evidence-windows-{desktop,mobile}-{theme}-{toolbar,connection,language,tools,preferences,team,commands,notifications}.png`)
     en escritorio y móvil. Cada captura se toma con la ventana abierta y espera su texto propio.
+  - Ronda 6, siete capturas del fondo (`evidence-ambient-{desktop,module}-{light,dark}.png`,
+    `evidence-ambient-dark-commands.png` y `evidence-ambient-mobile-{dark,light}.png`) más
+    `evidence-ambient-metrics.json`, que mide marco transparente, `z-index: -1`, `position: fixed`,
+    deriva activa solo en escritorio y ancho de desplazamiento igual al del cliente (390/390 y
+    1440/1440, sin desbordamiento).
+- Rendimiento del fondo medido en el arnés (2 s de desplazamiento, escritorio): con y sin la capa,
+  16,67 ms promedio, p95 16,8 ms, 0 cuadros sobre 33 ms, 0 layouts y 0 scripts; ninguna petición de
+  red nueva.
 - El certificador de captura recorre la página para forzar el lazy-load y **falla** si alguna
   imagen queda con `naturalWidth = 0`; las 33 imágenes (banner + 32 módulos) cargaron en todas
   las capturas (359 px de ancho natural en escritorio, 390 px en móvil).
@@ -99,8 +139,9 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 
 - Antes (ronda 1): panel secundario de actividad y 21 tarjetas con degradado genérico.
 - Después: módulos a ancho completo, 32 fotografías alusivas únicas, hero panorámico constante
-  (oscuro en ambos temas) con «Creamos sistemas a tu medida» y sin CTAs, y barra superior con
-  ventanas emergentes V4 en lugar de desplegables.
+  (oscuro en ambos temas) con «Creamos sistemas a tu medida» y sin CTAs, barra superior con
+  ventanas emergentes V4 en lugar de desplegables, y un fondo ambiente corporativo compartido por
+  todas las pantallas y ventanas, con las superficies y el contenido intactos.
 
 ## Pendientes
 
@@ -117,6 +158,14 @@ en `--remote-debugging-port=9225`, login contra `http://127.0.0.1:3000/api/v1/au
 `apps/web` no permite `localhost` en connect-src) y navegación a `/dashboard` en el dev server del
 puerto 3001. El script del lobby recorre la página, espera a que todas las imágenes carguen y solo
 entonces captura; el de ventanas abre cada función y espera su texto antes de capturar.
+
+La ronda 6 usa un cliente CDP equivalente sobre el arnés aislado: inicia sesión, fija
+`apex_theme` en `localStorage`, recorre lobby, módulo de inventario, centro de comandos y móvil en
+los dos temas, y escribe las capturas y `evidence-ambient-metrics.json` en este directorio:
+
+```bash
+node .tmp/recovery-isolated-launch.cjs script <repo>/.tmp/capture-ambient.cjs
+```
 
 Los seis certificadores se corren contra el arnés aislado del candidato, uno por script, con la
 vista y la API del arnés (3311/3310) y su JSON en este directorio, por ejemplo:

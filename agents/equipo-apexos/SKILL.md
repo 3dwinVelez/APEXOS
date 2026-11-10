@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.21.0
+version: 2.22.0
 updated_at: 2026-11-10
 contract: 2
 ---
@@ -105,6 +105,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
     - **El veredicto se lee donde él lo vio.** No se responde con un diff ni con el recuento de una suite: se relanza la instancia del puesto, se abre la vista objetada y se certifica ese DOM. Un rojo del arnés se clasifica antes de tocar producto —en esta ronda, una gate pedía serie dibujada en fase simulada (el catálogo no publica `data` por módulo) y otra leía el panel antes de tener dos lecturas medidas—; la corrección vive en `scripts/certifications/**`, no en un umbral de `lib/metrics.js` relajado ni en la regla de «lo no medido no es cero» sacrificada para poner la pantalla verde.
     - **Un verde comprado bajando el listón no cierra nada.** Si el gate y el producto discuten, primero se determina quién afirma qué y en qué modo; solo después se decide a quién se le corrige la afirmación. Borrar la cláusula exige nombrar dónde queda la misma afirmación en otro sitio (aquí, la profundidad de historia se movió a la fase real).
     Por qué: el dueño no distingue un arnés desactualizado de una pantalla mal implementada, y ambos aparecen igual en su vista. El orquestador que resuelve el rojo donde nace —arnés o producto— y entrega la vista reopened es el que puede decir «míralo otra vez».
+
+35. **Una queja estética se resuelve en la capa que pinta, se mide donde el dueño mira y no invade el contenido.** El 2026-11-10 el dueño dijo «el fondo lo veo triste» y la primera capa quedó invisible bajo el marco opaco de la aplicación. Reglas: (a) **buscar primero qué cubre el efecto**: antes de cambiar intensidades, se identifica el elemento que pinta encima (aquí `.apex-app-gradient` con `--color-paper`/`--surface`) y se corrige ese contrato; (b) **la vida del fondo no puede convertirse en invasión**: el ambiente se queda detrás del contenido, tarjetas y tablas siguen opacas y la legibilidad no cambia; (c) **medir el costo en el arnés**: misma cadencia de cuadros con y sin la capa, cero layouts, cero scripts y cero peticiones nuevas; (d) **enseñar la captura en los dos temas y en las dos formas** (escritorio y móvil, pantalla y ventana) con las métricas al lado, porque el veredicto del dueño se forma en su vista, no en el diff. Por qué: el primer intento era correcto en el CSS y aun así el dueño seguía viendo el fondo plano; lo que faltaba era detectar la capa que lo tapaba y demostrarlo en la vista que él usa.
 
 ## Checklist de intervención
 

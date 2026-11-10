@@ -1,0 +1,125 @@
+{
+  "shots": [
+    "evidence-ambient-desktop-light.png",
+    "evidence-ambient-module-light.png",
+    "evidence-ambient-desktop-dark.png",
+    "evidence-ambient-module-dark.png",
+    "evidence-ambient-dark-commands.png",
+    "evidence-ambient-mobile-dark.png",
+    "evidence-ambient-mobile-light.png"
+  ],
+  "views": [
+    {
+      "view": "dashboard-light",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "ambientBackgroundImage": true,
+      "grainOpacity": "0.03",
+      "driftAnimation": "apex-ambient-drift",
+      "shellBackground": "rgba(0, 0, 0, 0)",
+      "bodyBackground": "rgb(245, 247, 249)",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "ambientRequests": [
+        "http://127.0.0.1:3311/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "module-light",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "ambientBackgroundImage": true,
+      "grainOpacity": "0.03",
+      "driftAnimation": "apex-ambient-drift",
+      "shellBackground": "rgba(0, 0, 0, 0)",
+      "bodyBackground": "rgb(245, 247, 249)",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "ambientRequests": [
+        "http://127.0.0.1:3311/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "dashboard-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "ambientBackgroundImage": true,
+      "grainOpacity": "0.06",
+      "driftAnimation": "apex-ambient-drift",
+      "shellBackground": "rgba(0, 0, 0, 0)",
+      "bodyBackground": "rgb(15, 23, 32)",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "ambientRequests": [
+        "http://127.0.0.1:3311/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "module-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "ambientBackgroundImage": true,
+      "grainOpacity": "0.06",
+      "driftAnimation": "apex-ambient-drift",
+      "shellBackground": "rgba(0, 0, 0, 0)",
+      "bodyBackground": "rgb(15, 23, 32)",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "ambientRequests": [
+        "http://127.0.0.1:3311/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "commands-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "ambientBackgroundImage": true,
+      "grainOpacity": "0.06",
+      "driftAnimation": "apex-ambient-drift",
+      "shellBackground": "rgba(0, 0, 0, 0)",
+      "bodyBackground": "rgb(15, 23, 32)",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "ambientRequests": [
+        "http://127.0.0.1:3311/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "mobile-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "ambientBackgroundImage": true,
+      "grainOpacity": "0.06",
+      "driftAnimation": "none",
+      "shellBackground": "rgba(0, 0, 0, 0)",
+      "bodyBackground": "rgb(15, 23, 32)",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "ambientRequests": [
+        "http://127.0.0.1:3311/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "mobile-light",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "ambientBackgroundImage": true,
+      "grainOpacity": "0.03",
+      "driftAnimation": "none",
+      "shellBackground": "rgba(0, 0, 0, 0)",
+      "bodyBackground": "rgb(245, 247, 249)",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "ambientRequests": [
+        "http://127.0.0.1:3311/apex-icon.svg"
+      ]
+    }
+  ]
+}
