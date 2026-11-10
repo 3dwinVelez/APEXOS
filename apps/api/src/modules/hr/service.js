@@ -1974,80 +1974,19 @@ async function findEmployee(input) {
   });
 }
 
-async function resolveEmployeeForPunch(tenantId, input) {
-  const employee = await findEmployee(input);
-  if (employee) return employee;
-  const name = input.user_name?.trim();
-  if (!name) {
-    const err = new Error("Usuario requerido para registrar marcacion");
-    err.statusCode = 400;
-    throw err;
-  }
-  return prisma.employee.create({
-    data: {
-      tenant_id: tenantId,
-      code: name,
-      user_type: input.user_type || "operario",
-      position: input.position || "operario",
-      department: "Operacion",
-      salary_base: 0,
-      salary_type: "monthly",
-      hire_date: new Date(),
-      contract_type: "indefinite",
-      metadata: { name, document: "", company: "APEX", labor_status: "activo", user_type: input.user_type || "operario", classification: input.user_type || "operario", legacy: { autocreated_from: "marcacion" } }
-    }
-  });
+function employeeAssociationRequired() {
+  return validationError("El usuario conectado no tiene una ficha laboral asociada. Vincula la ficha existente en Talento Humano antes de marcar.", 404, "EMPLEADO_NO_ASOCIADO");
 }
 
 async function getCurrentEmployee(tenantId, user) {
+  if (!user?.id) throw employeeAssociationRequired();
   return prisma.runWithTenant(tenantId, async () => {
     const employee = await prisma.employee.findFirst({
-      where: {
-        OR: [
-          { user_id: user?.id },
-          { user: { email: user?.email || "" } },
-          { user: { name: user?.name || "" } }
-        ]
-      },
+      where: { tenant_id: tenantId, user_id: user.id, active: true },
       include: { user: { select: { id: true, name: true, email: true } } }
     });
-    if (employee) return employee;
-    if (!user?.id) {
-      const err = new Error("El usuario conectado no tiene empleado asociado.");
-      err.statusCode = 404;
-      err.code = "EMPLEADO_NO_ASOCIADO";
-      throw err;
-    }
-    const roleName = String(user.role?.name || "").toLowerCase();
-    const inferredType = roleName.includes("conductor") || roleName.includes("driver")
-      ? "conductor"
-      : roleName.includes("transport")
-        ? "transportador"
-        : "operario";
-    return prisma.employee.create({
-      data: {
-        tenant_id: tenantId,
-        user_id: user.id,
-        code: user.name || user.email || `usuario-${user.id}`,
-        user_type: inferredType,
-        position: inferredType,
-        department: "Operacion",
-        salary_base: 0,
-        salary_type: "monthly",
-        hire_date: new Date(),
-        contract_type: "indefinite",
-        metadata: {
-          name: user.name || user.email || `Usuario ${user.id}`,
-          document: "",
-          company: "APEX",
-          labor_status: "activo",
-          user_type: inferredType,
-          classification: inferredType,
-          legacy: { autocreated_from: "hr_current_employee" }
-        }
-      },
-      include: { user: { select: { id: true, name: true, email: true } } }
-    });
+    if (!employee) throw employeeAssociationRequired();
+    return employee;
   });
 }
 
@@ -2712,7 +2651,9 @@ async function createPunch(tenantId, input, user, options = {}) {
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
     const currentEmployee = user?.id ? await tx.employee.findFirst({
-      where: { tenant_id: tenantId, OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
+      where: ownScope
+        ? { tenant_id: tenantId, user_id: user.id, active: true }
+        : { tenant_id: tenantId, OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
       include: { user: { select: { name: true, email: true } } }
     }) : null;
     // El ambito self-service queda anclado al usuario autenticado: es lo que impide marcar
@@ -2736,7 +2677,8 @@ async function createPunch(tenantId, input, user, options = {}) {
     if (declaredEmployeeId != null && !declaredEmployee) {
       throw validationError(`El empleado ${input.employee_id} no existe o no pertenece a tu organizacion.`, 404, "EMPLEADO_NO_ENCONTRADO");
     }
-    const employee = declaredEmployee || currentEmployee || await resolveEmployeeForPunch(tenantId, input);
+    const employee = declaredEmployee || currentEmployee || (!ownScope ? await findEmployee(input) : null);
+    if (!employee) throw employeeAssociationRequired();
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
