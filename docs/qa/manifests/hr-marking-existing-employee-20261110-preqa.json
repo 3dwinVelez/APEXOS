@@ -1,0 +1,91 @@
+{
+  "change_id": "hr-marking-existing-employee-20261110",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "c72955d22f9749d628b6b67ab175deeaa1ad445c",
+  "commit": "1c388b7f1426012863a438df33de327f7f217832",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-existing-employee-local.js",
+    "evidence": [
+      "hr-marking-existing-employee-20261110-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-existing-employee-local.js",
+    "evidence": [
+      "hr-marking-existing-employee-20261110-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: Si despliega a qa",
+    "approved_at": "2026-11-10T23:55:03.595Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "1c388b7f1426012863a438df33de327f7f217832",
+    "target": "c72955d22f9749d628b6b67ab175deeaa1ad445c",
+    "unit_tests": {
+      "passed": 28,
+      "failed": 0
+    },
+    "full_flow": {
+      "status": "passed",
+      "checks": [
+        "authenticated unlinked profile and punches reject without writes",
+        "existing linked employee can mark"
+      ],
+      "finished_at": "2026-11-10T23:54:30.877Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1794354806459",
+      "source_database_modified": false,
+      "fixture_schema_hunk": "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-10T23:54:31.027Z"
+    }
+  }
+}
