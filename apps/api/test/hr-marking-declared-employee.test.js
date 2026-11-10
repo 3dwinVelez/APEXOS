@@ -68,6 +68,7 @@ function buildTx({ employees, capture }) {
     employee: {
       findFirst: async ({ where }) => {
         if (where?.id != null) return employees.find((e) => e.id === where.id) || null;
+        if (where?.user_id != null) return employees.find((e) => e.user_id === where.user_id) || null;
         if (where?.OR) return employees.find((e) => (where.OR[0]?.user_id != null && e.user_id === where.OR[0].user_id)
           || (where.OR[1]?.user?.email && e.user?.email === where.OR[1].user.email)) || null;
         return null;
@@ -221,4 +222,29 @@ test("el servicio declara el rechazo explicito del empleado no resuelto", () => 
   const block = service.slice(start, start + 1400);
   assert.match(block, /EMPLEADO_NO_ENCONTRADO/, "el bloque debe fallar con codigo estructurado");
   assert.match(block, /if \(declaredEmployeeId != null && !declaredEmployee\)/, "el empleado declarado sin resolver debe interrumpir la marcacion");
+});
+
+test("profile and punches require an existing employee and never provision one", async () => {
+  const user = adminUser();
+  const lookups = [];
+  const employee = {
+    findFirst: async ({ where }) => {
+      lookups.push(where);
+      return null;
+    },
+    create: async () => assert.fail("Operational flows must never create an employee")
+  };
+  const prisma = { ...prismaFor({ employee }), employee };
+  const { service, restore } = loadHrService(prisma);
+  try {
+    const expected = { code: "EMPLEADO_NO_ASOCIADO", statusCode: 404 };
+    await assert.rejects(service.getCurrentEmployee("tenant-qa", user), expected);
+    assert.deepEqual(lookups[0], { tenant_id: "tenant-qa", user_id: user.id, active: true });
+    await assert.rejects(service.createOwnPunch("tenant-qa", user, { user_name: "Homónimo" }), expected);
+    await assert.rejects(service.createPunch("tenant-qa", { user_name: "Homónimo" }, user, { scope: "own" }), expected);
+    assert.deepEqual(lookups.at(-1), lookups[0]);
+    await assert.rejects(service.createPunch("tenant-qa", { user_name: "Desconocido" }, user), expected);
+  } finally {
+    restore();
+  }
 });
