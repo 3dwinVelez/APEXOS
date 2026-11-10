@@ -18,23 +18,16 @@ import { StandardTableExperience } from "@/components/system/StandardTableExperi
 import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
 import { WorldClassToolkit } from "@/components/system/WorldClassToolkit";
 import { FieldProductivity } from "@/components/system/FieldProductivity";
-import { Skeleton } from "@/components/ui/feedback";
+import { ModalFrame } from "@/components/ui/ModalFrame";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
-import { PYG_EXPANDED_PATH } from "@/lib/pyg-expanded";
-import { ChevronDown, Clock3, SlidersHorizontal } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { openWorkspaceTool, type WorkspaceToolId } from "@/lib/workspaceTools";
+import { ChevronRight, Clock3, Route, Settings2, SlidersHorizontal, Sparkles, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// "checking" es el estado inicial idéntico en servidor y cliente (sin leer window/almacenamiento
-// en el render) para evitar desajustes de hidratación. Se resuelve en un efecto al montar.
 type ChromeMode = "checking" | "standard" | "marking_only";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const [mode, setMode] = useState<ChromeMode>("checking");
-  // Modo derivado de la ruta exacta de la vista ampliada; nunca se congela ni usa prefijos amplios,
-  // así una navegación SPA a otra ruta restaura el sidebar.
-  const expanded = pathname === PYG_EXPANDED_PATH;
 
   useEffect(() => {
     const markingOnly = isMarkingOnlyAccess();
@@ -43,15 +36,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (mode === "checking") {
-    return (
-      <div aria-busy="true" className="apex-app-gradient min-h-screen md:flex">
-        <main aria-label="Preparando tu espacio de trabajo" className="min-w-0 flex-1 p-3 sm:p-4 md:p-6" id="apex-main-content" tabIndex={-1}>
-          <span className="sr-only">Validando perfil de acceso…</span>
-          <div className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-9 w-64 max-w-full" /><Skeleton className="h-4 w-[32rem] max-w-full" /></div>
-          <div className="grid gap-3 md:grid-cols-3"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
-        </main>
-      </div>
-    );
+    return <main className="min-h-screen bg-paper p-6 text-sm text-neutral-600">Validando perfil de acceso...</main>;
   }
 
   if (mode === "marking_only") {
@@ -76,19 +61,6 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Ventana ampliada del PYG (abierta desde «Abrir en otra ventana»): sin sidebar ni chrome de
-  // workspace, pero conservando autenticación y el guard de módulo/permisos. Se evalúa después
-  // del modo de acceso inicial para no evadir checking ni marking_only.
-  if (expanded) {
-    return (
-      <div className="apex-app-gradient min-h-screen">
-        <main className="min-h-screen overflow-x-hidden p-3 sm:p-4" id="apex-main-content" tabIndex={-1}>
-          <RouteAccessGuard>{children}</RouteAccessGuard>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="apex-app-gradient min-h-screen md:flex">
       <div className="technician-hide"><Sidebar /></div>
@@ -96,6 +68,10 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
         <FieldProductivity />
         <StandardTableExperience />
         <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><SecondaryWorkspaceTools /><CommandPalette /><NotificationCenter /></div>
+        <TraceabilityCenter />
+        <CollaborationPresence />
+        <ExperiencePreferences />
+        <WorldClassToolkit />
         <ContextBreadcrumbs />
         <TechnicianWorkspaceHeader />
         <RouteAccessGuard><PageTransition>{children}</PageTransition></RouteAccessGuard>
@@ -106,20 +82,36 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   );
 }
 
+const workspaceTools: Array<{ id: WorkspaceToolId; label: string; description: string; action: string; icon: typeof Route }> = [
+  { id: "traceability", label: "Trazabilidad", description: "Recorrido reciente entre los módulos de esta sesión.", action: "Abrir trazabilidad", icon: Route },
+  { id: "team", label: "Equipo", description: "Presencia y edición concurrente en esta empresa.", action: "Abrir equipo", icon: Users },
+  { id: "preferences", label: "Preferencias", description: "Tema, densidad, foco y accesos guardados.", action: "Abrir preferencias de experiencia", icon: Settings2 },
+  { id: "productivity", label: "Productividad", description: "Progreso, confianza de la sesión y acciones rápidas.", action: "Abrir centro de productividad", icon: Sparkles }
+];
+
 function SecondaryWorkspaceTools() {
-  return (
-    <details className="group relative">
-      <summary className="apex-interactive inline-flex h-10 cursor-pointer list-none items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:text-content-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-apex">
-        <SlidersHorizontal size={15} />
-        <span className="hidden lg:inline">Herramientas</span>
-        <ChevronDown className="transition group-open:rotate-180" size={14} />
-      </summary>
-      <div className="absolute right-0 z-50 mt-2 grid w-[min(92vw,520px)] gap-2 rounded-card border border-line bg-surface p-3 shadow-overlay sm:grid-cols-2">
-        <TraceabilityCenter />
-        <CollaborationPresence />
-        <ExperiencePreferences />
-        <WorldClassToolkit />
+  const [open, setOpen] = useState(false);
+  const launch = (id: WorkspaceToolId) => { setOpen(false); openWorkspaceTool(id); };
+
+  return <>
+    <button aria-haspopup="dialog" aria-label="Herramientas" className="apex-interactive inline-flex h-10 items-center justify-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:text-content-strong" onClick={() => setOpen(true)} type="button">
+      <SlidersHorizontal size={15} />
+      <span className="hidden lg:inline">Herramientas</span>
+    </button>
+    {open ? <ModalFrame tone="brand" title="Herramientas" description="Ventanas de trabajo del escritorio APEX." icon={<SlidersHorizontal size={18} />} maxWidth="md:!max-w-2xl" onClose={() => setOpen(false)}>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {workspaceTools.map((tool) => {
+          const Icon = tool.icon;
+          return <button aria-label={tool.action} className="apex-window-card" key={tool.id} onClick={() => launch(tool.id)} type="button">
+            <span aria-hidden="true" className="apex-window-icon"><Icon size={18} /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-content-strong">{tool.label}</span>
+              <span className="mt-0.5 block text-xs text-content-muted">{tool.description}</span>
+            </span>
+            <ChevronRight aria-hidden="true" className="mt-1 shrink-0 text-content-subtle" size={16} />
+          </button>;
+        })}
       </div>
-    </details>
-  );
+    </ModalFrame> : null}
+  </>;
 }

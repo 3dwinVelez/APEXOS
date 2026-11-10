@@ -1,5 +1,7 @@
 "use client";
 
+import { ModalFrame } from "@/components/ui/ModalFrame";
+import { useWorkspaceToolWindow } from "@/lib/workspaceTools";
 import { Activity, Circle, Users, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -26,7 +28,7 @@ function routeLabel(path: string) {
 
 export function CollaborationPresence() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const { open, close } = useWorkspaceToolWindow("team");
   const [state, setState] = useState<PresenceState>("viewing");
   const [peers, setPeers] = useState<Record<string, Peer>>({});
   const channel = useRef<BroadcastChannel | null>(null);
@@ -104,17 +106,19 @@ export function CollaborationPresence() {
 
   return <>
     {conflicts.length ? <div aria-live="assertive" className="fixed bottom-4 left-1/2 z-[80] flex max-w-[min(92vw,680px)] -translate-x-1/2 items-center gap-3 rounded-card border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-overlay"><Activity className="shrink-0" size={18} /><p><strong>Edición concurrente:</strong> {conflicts[0].user} también está modificando esta pantalla. Verifica los cambios antes de guardar.</p><button aria-label="Ocultar aviso de edición concurrente" className="ml-auto rounded-control p-1 hover:bg-amber-100" onClick={() => setPeers((current) => Object.fromEntries(Object.entries(current).filter(([, peer]) => peer.path !== pathname || peer.state !== "editing")))} type="button"><X size={16} /></button></div> : null}
-    <div className="relative">
-      <button aria-expanded={open} aria-haspopup="dialog" aria-label="Colaboración en tiempo real" className="apex-interactive relative inline-flex h-10 items-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:text-content-strong" onClick={() => setOpen((value) => !value)} type="button"><Users size={15} /><span className="hidden xl:inline">Equipo</span><span aria-label={`${activePeers.length + 1} sesiones activas`} className="rounded-full bg-apex/10 px-1.5 text-[10px] text-apex">{activePeers.length + 1}</span></button>
-      {open ? <section aria-label="Colaboración en tiempo real" className="apex-dialog-enter absolute right-0 top-12 z-[70] w-[min(360px,calc(100vw-24px))] rounded-card border border-line bg-surface p-4 shadow-overlay" role="dialog">
-        <div className="flex items-start justify-between gap-3"><div><h2 className="text-sm font-semibold text-content-strong">Equipo activo</h2><p className="mt-1 text-xs text-content-muted">Presencia instantánea en esta empresa.</p></div><button className="rounded-control px-2 py-1 text-xs hover:bg-surface-muted" onClick={() => setOpen(false)} type="button">Cerrar</button></div>
-        <ul aria-live="polite" className="mt-3 space-y-2">
+    {open ? <ModalFrame tone="brand" title="Equipo" description="Presencia instantánea en esta empresa." icon={<Users size={18} />} maxWidth="md:!max-w-lg" onClose={close}>
+      <section aria-label="Colaboración en tiempo real">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-content-strong">Equipo activo</h3>
+          <span aria-label={`${activePeers.length + 1} sesiones activas`} className="rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold text-apex">{activePeers.length + 1} sesiones</span>
+        </div>
+        <ul className="mt-3 space-y-2">
           <li className="flex items-center gap-3 rounded-control bg-surface-muted p-3"><Circle className="fill-emerald-500 text-emerald-500" size={10} /><div className="min-w-0"><p className="truncate text-xs font-semibold text-content-strong">Tú · {currentIdentity().user}</p><p className="text-[11px] text-content-muted">{state === "editing" ? "Editando" : "Viendo"} {routeLabel(pathname)}</p></div></li>
           {activePeers.map((peer) => <li className="flex items-center gap-3 rounded-control border border-line p-3" key={peer.tabId}><Circle className="fill-emerald-500 text-emerald-500" size={10} /><div className="min-w-0"><p className="truncate text-xs font-semibold text-content-strong">{peer.user}</p><p className="text-[11px] text-content-muted">{peer.state === "editing" ? "Editando" : "Viendo"} {routeLabel(peer.path)}</p></div></li>)}
         </ul>
         {!activePeers.length ? <p className="mt-3 rounded-control border border-dashed border-line p-3 text-xs text-content-muted">No hay otras sesiones activas en este navegador. El canal está listo para recibirlas.</p> : null}
         <p className="mt-3 text-[10px] text-content-subtle">Canal local seguro · no comparte el contenido de los formularios.</p>
-      </section> : null}
-    </div>
+      </section>
+    </ModalFrame> : null}
   </>;
 }

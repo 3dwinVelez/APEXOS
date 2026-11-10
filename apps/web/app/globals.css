@@ -1775,3 +1775,131 @@ html.dark .apex-lobby-tile-icon {
   }
 }
 
+/* ===== Design System V4 — Ventanas de herramientas (alcance: .apex-window) =====
+   Misma paleta corporativa del lobby: fondo #061D26, tarjeta #112B35, acento #08CDBB,
+   texto #F2F8FA. Las utilidades semanticas del design system (bg-surface, border-line,
+   text-content-*) se re-resuelven en la ventana, asi el contenido existente hereda la
+   tinta corporativa sin duplicar clases. El alcance es la ventana, no el :root. */
+.apex-window {
+  --window-card: 17 43 53;
+  --window-deep: 6 29 38;
+  --window-line: 41 71 84;
+  --window-accent: 8 205 187;
+  --window-muted: 11 39 49;
+  --surface: 17 43 53;
+  --surface-soft: 10 35 44;
+  --surface-muted: 11 39 49;
+  --color-line: 41 71 84;
+  --color-apex: 8 205 187;
+  --color-apex-ink: 94 234 212;
+  --color-ink: 242 248 250;
+  --text-strong: 242 248 250;
+  --text-body: 209 228 234;
+  --text-muted: 158 183 193;
+  --text-subtle: 136 165 176;
+  position: relative;
+  color-scheme: dark;
+  background:
+    radial-gradient(130% 100% at 100% 0%, rgb(var(--window-accent) / 0.14), transparent 58%),
+    linear-gradient(165deg, rgb(var(--window-card)) 0%, rgb(var(--window-deep)) 100%);
+  box-shadow: 0 30px 90px rgb(3 20 27 / 0.6);
+}
+
+.apex-window::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 4%, rgb(var(--window-accent) / 0.85) 50%, transparent 96%);
+  content: "";
+  pointer-events: none;
+}
+
+.apex-window-backdrop {
+  background: rgb(3 20 27 / 0.74);
+  backdrop-filter: blur(6px);
+}
+
+.apex-window-header {
+  background: rgb(var(--window-card) / 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.apex-window-icon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  border: 1px solid rgb(var(--window-accent) / 0.32);
+  background: rgb(var(--window-accent) / 0.12);
+  color: rgb(var(--window-accent));
+}
+
+.apex-window-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-control);
+  border: 1px solid rgb(var(--window-line));
+  background: rgb(var(--window-muted) / 0.6);
+  padding: 0.75rem 0.875rem;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.apex-window-option:hover {
+  border-color: rgb(var(--window-accent) / 0.55);
+  background: rgb(var(--window-accent) / 0.08);
+}
+
+.apex-window-option[aria-pressed="true"] {
+  border-color: rgb(var(--window-accent) / 0.8);
+  background: rgb(var(--window-accent) / 0.14);
+}
+
+.apex-window-card {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.875rem;
+  border-radius: var(--radius-control);
+  border: 1px solid rgb(var(--window-line));
+  background: rgb(var(--window-muted) / 0.55);
+  padding: 0.875rem;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.apex-window-card:hover {
+  border-color: rgb(var(--window-accent) / 0.6);
+  background: rgb(var(--window-accent) / 0.09);
+}
+
+.apex-window-cta {
+  background: rgb(var(--window-accent));
+  color: rgb(var(--window-deep));
+}
+
+.apex-window-cta:hover { background: rgb(var(--window-accent) / 0.88); }
+
+.apex-window-badge-ok {
+  background: rgb(var(--window-accent) / 0.12);
+  color: rgb(153 246 228);
+}
+
+.apex-window-badge-warning {
+  background: rgb(245 158 11 / 0.16);
+  color: rgb(253 224 71);
+}
+
+.apex-window-danger { color: rgb(252 165 165); }
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-window-option,
+  .apex-window-card { transition: none; }
+}
+
