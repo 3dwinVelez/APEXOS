@@ -6,6 +6,23 @@ Fase piloto acotada al lobby del dashboard (`/dashboard`), con la imagen de refe
 corporativo oscuro con acentos turquesa como referencia obligatoria. El resto de la plataforma
 queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 
+## Ronda 5 (certificación aislada de las ventanas)
+
+- **Los seis certificadores de navegador corrieron contra el candidato aislado.** Arnés en `%TEMP%`
+  sobre el commit `fbd1c195`, PostgreSQL clonado, API en `127.0.0.1:3310` y vista en `127.0.0.1:3311`,
+  con compuerta de red que solo admite loopback. Recuento real: **45 comprobaciones en verde**
+  (fase 2: 14; accesibilidad: 11; colaboración: 5; personalización: 5; productividad: 6; TOTP: 4),
+  cada una con su JSON en este directorio (`cert-*.json`).
+- **El arnés se reparó antes de medir.** Su copia aislada había perdido el `.git`, la compuerta de
+  red y los `node_modules`; se reconstruyó materializando el HEAD sin tocar caché ni artefactos, se
+  volvieron a enlazar los paquetes y se inyectaron `APEX_LOCAL_WEB_URL` y `APEX_LOCAL_API_URL`,
+  que faltaban y hacían caer los certificadores al puerto `3000`.
+- **Tres rojos eran de hidratación, no de las ventanas.** `Ctrl K` se perdía si se pulsaba antes de
+  que React hidratara; el login tecleado en frío quedaba limpio al hidratar y el reintento concatenaba
+  credenciales en headless (`400`); y una pestaña de fondo no dispara `focusin` con `focus()`
+  programático. Los certificadores ahora esperan, limpian el campo y reintentan acotado, y la edición
+  concurrente se simula con clic y tecla reales. Ningún cambio de producto.
+
 ## Ronda 4 (ventanas emergentes de la barra)
 
 - **La barra superior deja de usar desplegables.** «En línea», el idioma, «Herramientas», «Centro de
@@ -56,6 +73,10 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 | `apps/web/components/shell/DashboardChrome.tsx` | M — lanzador «Herramientas» y motores montados bajo la barra |
 | `apps/web/components/system/{LocaleSwitcher,OfflineFirstStatus,NotificationCenter,CommandPalette,TraceabilityCenter,CollaborationPresence,ExperiencePreferences,WorldClassToolkit}.tsx` | M — de desplegable/panel a ventana V4 |
 | `apps/web/test/certify-ui-ux-phase-{two,three-accessibility,three-collaboration,three-personalization,three-toolkit,three-totp}-local.mjs` | M — abren cada función desde el lanzador de ventanas |
+| `apps/web/test/certify-ui-ux-phase-two-local.mjs` | M — `Ctrl K` reintentado hasta medir la apertura; copy del lobby vigente |
+| `apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs` | M — login que rellena tras hidratar; edición concurrente con clic y tecla reales |
+| `apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs` | M — login que rellena tras hidratar |
+| `docs/qa/evidence/lobby-v4-20261110/cert-*.json` | A — seis certificaciones medidas en el arnés aislado |
 
 ## Validación ejecutada
 
@@ -70,6 +91,7 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 - El certificador de captura recorre la página para forzar el lazy-load y **falla** si alguna
   imagen queda con `naturalWidth = 0`; las 33 imágenes (banner + 32 módulos) cargaron en todas
   las capturas (359 px de ancho natural en escritorio, 390 px en móvil).
+- Certificadores de navegador contra el arnés aislado: **45/45** (ver ronda 5 y `cert-*.json`).
 - Sin lógica de negocio alterada: acceso por `loadModuleAccess(MODULES)`, saludo derivado del
   correo. Sin datos inventados ni módulos fuera de autorización.
 
@@ -83,10 +105,8 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase.
 ## Pendientes
 
 1. Aprobación del dueño de esta fase piloto antes de extender el Design System V4 al resto del panel.
-2. Certificadores `certify:ui-ux:phase-*` actualizados pero no ejecutados en esta máquina (requieren
-   el arnés aislado con API/vista en 3310/3311); deben correr antes de promover a `develop`.
-3. Capturas tomadas sobre dev server; repetir contra build de producción (`next build && next start`) cuando la fase se promueva.
-4. Las imágenes se generaron con dirección de arte única (sin licencias de terceros); si el dueño
+2. Capturas tomadas sobre dev server; repetir contra build de producción (`next build && next start`) cuando la fase se promueva.
+3. Las imágenes se generaron con dirección de arte única (sin licencias de terceros); si el dueño
    prefiere fotografía real de la operación, se sustituyen los assets sin tocar código.
 
 ## Reproducir
@@ -97,3 +117,13 @@ en `--remote-debugging-port=9225`, login contra `http://127.0.0.1:3000/api/v1/au
 `apps/web` no permite `localhost` en connect-src) y navegación a `/dashboard` en el dev server del
 puerto 3001. El script del lobby recorre la página, espera a que todas las imágenes carguen y solo
 entonces captura; el de ventanas abre cada función y espera su texto antes de capturar.
+
+Los seis certificadores se corren contra el arnés aislado del candidato, uno por script, con la
+vista y la API del arnés (3311/3310) y su JSON en este directorio, por ejemplo:
+
+```bash
+node .tmp/recovery-isolated-launch.cjs script <copia>/apps/web/test/certify-ui-ux-phase-two-local.mjs --output=<repo>/docs/qa/evidence/lobby-v4-20261110/cert-phase-two.json
+```
+
+Cada certificador lee `APEX_LOCAL_WEB_URL` y `APEX_LOCAL_API_URL` (el arnés las inyecta) y usa la
+cuenta demo local; la salida es su recuento de comprobaciones y el JSON con `status: "passed"`.

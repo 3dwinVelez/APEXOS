@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.42.0
+version: 2.43.0
 updated_at: 2026-11-10
 contract: 2
 ---
@@ -170,6 +170,8 @@ Antes de actuar, leer en este orden:
     - **El recalentamiento espera solo lo que la fuente puede dar, y cada cláusula se puede nombrar.** Una conjunción que mezcla medidores y mapa no dice cuál no llegó: al fallar, se parte y la evidencia lo cuenta.
     - **El diagnóstico se versiona dentro de la gate.** La fase real guarda `ultima_lectura` (fuente, componentes, registros, `db_ms`, sondeos) para que un rojo diga qué faltó en lugar de un `null` mudo; con eso se distinguió un problema de ventana del arnés de uno del puesto, sin tocar el presupuesto `ENV_TIMEOUT_MS`. Y el arranque de Chrome por CDP reintenta la lectura de `DevToolsActivePort`: un `EBUSY` de Windows mientras el navegador escribe ese archivo abortaba la fase de navegador entera (25/26) sin que el panel tuviera nada que ver.
     Por qué: una gate insatisfaceable empuja a maquillar el panel o a bajar el umbral, y las dos cosas rompen la regla del dueño —«lo no medido no es cero»—.
+
+56. **Un certificador que interactúa re-entra después de la hidratación, y el arnés entrega las dos URLs del candidato.** El 2026-11-10, al correr los seis `certify:ui-ux:phase-*` en el arnés aislado (API 3310, vista 3311), tres rojos se resolvieron sin tocar producto: (a) **una keystroke o un clic a ciegas mide la ventana de hidratación de Next en dev, no la funcionalidad** —`Ctrl K` abría la ventana con el clic del botón pero la tecla enviada milisegundos antes se perdió, y el login hidratado limpió lo tecleado—; el certificador rellena y reintenta acotado (20 pulsaciones / 5 intentos) hasta medir el efecto, y la evidencia anota los intentos; (b) **el clic triple no selecciona en headless**: reintentar `type` sin limpiar concatenó `demo@apex.localdemo@apex.local` y el API respondió `400`; se limpia el campo (`value = ""`) antes de teclear; (c) **el arnés inyecta `APEX_LOCAL_WEB_URL` y `APEX_LOCAL_API_URL`** además de `CERT_*`/`LOCAL_*`: un certificador que cae al `3000` por defecto choca con la compuerta `CERT_NETWORK_TARGET_DENIED` y reporta un fallo de red que es un hueco del arnés; (d) **una pestaña de fondo no dispara `focusin` con `focus()` programático**: la edición concurrente se simula con clic y tecla reales, que es la conducta que la presencia observa; y (e) **el rojo se corrige en el certificador en la misma intervención y se re-ejecuta hasta el verde medido** —los seis cerraron **45 comprobaciones** (14 + 11 + 5 + 5 + 6 + 4) con su JSON versionado—; no se cita un certificador como verde sin su corrida. Por qué: un rojo del arnés parece un defecto del diseño recién aprobado y empuja a revertirlo; y un verde citado sin corrida es exactamente el bloqueo disfrazado que la regla 54 prohíbe.
 
 ## Checklist de intervención
 

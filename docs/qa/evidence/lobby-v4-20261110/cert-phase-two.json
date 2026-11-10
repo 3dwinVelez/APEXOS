@@ -1,0 +1,84 @@
+{
+  "certification": "ui-ux-phase-two-local",
+  "environment": "LOCAL",
+  "baseUrl": "http://127.0.0.1:3311",
+  "generatedAt": "2026-11-10T19:44:41.757Z",
+  "status": "passed",
+  "checks": [
+    {
+      "name": "authenticated_dashboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "role_context_dashboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "command_palette_keyboard",
+      "passed": true,
+      "detail": {
+        "attempts": 1
+      }
+    },
+    {
+      "name": "command_palette_search",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "advanced_breadcrumbs",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "traceability_control",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "locale_en",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "locale_pt",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "locale_es",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "offline_status",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "apex_ai_operational",
+      "passed": true,
+      "detail": {
+        "url": "http://127.0.0.1:3311/dashboard/apex-ai",
+        "excerpt": "saltar al contenido principal\npágina cargada: apex ai\n\napex os\n\nbuscar módulos y funciones\ninicio\noperación\ncomercial\nfinanzas\npersonas y gestión\ncontrol y plataforma\notros\nde\n\ndemo@apex.local\n\ndemo apex - apex_admin\n\nsesion activa\nmi cuenta\nen línea\nes\nherramientas\ncentro de comandos\nctrl k\napex ai core\n\napex ai core\n\ninteligencia transversal\n\nla ia interna observa el tenant, respeta permisos y convierte senales de inventario, compras, wms, ventas y finanzas en acciones simples.\n\ngenerar recomendaciones\n\nsalud operativa\n\n79%\n\nproductos\n\n9\n\noc abiertas\n\n3\n\npermisos\n\nfinanzas visibles\n\nco · cop"
+      }
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/inventario/productos",
+      "passed": true,
+      "detail": {}
+    },
+    {
+      "name": "mobile_no_overflow:/dashboard/apex-ai",
+      "passed": true,
+      "detail": {}
+    }
+  ]
+}
