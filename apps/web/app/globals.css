@@ -1693,7 +1693,7 @@ html.dark .platform-alert-close:hover {
 .apex-lobby-tile-media {
   position: relative;
   display: block;
-  height: 7rem;
+  height: 9rem;
   overflow: hidden;
   background: rgb(var(--lobby-deep));
 }

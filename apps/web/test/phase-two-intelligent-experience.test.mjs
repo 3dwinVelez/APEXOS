@@ -23,7 +23,7 @@ test("dashboard adapta el inicio al trabajo operativo", () => {
   assert.match(source, /Tu operación, más simple y/);
   assert.match(source, /Acciones frecuentes/);
   assert.match(source, /Mis módulos/);
-  assert.match(source, /Continúa donde estabas/);
+  assert.doesNotMatch(source, /Continúa donde estabas/);
   assert.match(source, /actionsForWorkspace\(enabledSlugs, roleName\)/);
   assert.doesNotMatch(source, /dashboardRoleProfile/);
 });
