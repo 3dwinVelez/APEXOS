@@ -7,12 +7,24 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("dashboard usa el enfoque operativo aprobado", () => {
+test("dashboard usa el enfoque operativo aprobado con lobby corporativo V4", () => {
   const source = read("app/dashboard/page.tsx");
-  assert.match(source, /Mi operación/);
+  assert.match(source, /Tu operación, más simple y/);
   assert.match(source, /Acciones frecuentes/);
   assert.match(source, /Mis módulos/);
-  assert.match(source, /Actividad reciente/);
+  assert.match(source, /Continúa donde estabas/);
+});
+
+test("lobby V4 monta banner corporativo y tarjetas fotográficas por módulo", () => {
+  const source = read("app/dashboard/page.tsx");
+  const assets = read("lib/lobbyAssets.ts");
+  assert.match(source, /apex-lobby-hero/);
+  assert.match(source, /LOBBY_BANNER/);
+  assert.match(source, /lobbyModuleImage\(module\.slug\)/);
+  assert.match(assets, /banner-truck\.webp/);
+  assert.match(assets, /module-inventario\.webp/);
+  assert.match(assets, /module-transporte\.webp/);
+  assert.match(read("app/globals.css"), /--lobby-accent: 8 205 187/);
 });
 
 test("dashboard ya no depende de KPIs ni graficas para la pantalla inicial", () => {

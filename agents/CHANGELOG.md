@@ -2,6 +2,17 @@
 
 Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue semver: major cambia rol/contrato, minor agrega control o especialidad, patch corrige redacción o rutas.
 
+## 2026-11-10
+
+### El lobby del dashboard se re-diseña como fase piloto del Design System V4 con referencia aprobada y tokens de alcance (`lobby-v4-20261110`)
+
+- **La fase se acotó al lobby, con referencia obligatoria aprobada por el dueño.** La paleta corporativa oscura con acentos turquesa (`#061D26`/`#112B35`/`#006C70`/`#08CDBB`/`#F2F8FA`) se implementó como tripletas `--lobby-*` bajo la clase `.apex-lobby` en `apps/web/app/globals.css`, heredando la técnica del hero contextual (`.apex-context-hero` oscuro en los dos temas): el hero del lobby permanece oscuro en claro y en oscuro, y las tarjetas de módulo heredan las superficies del tema. Ningún token global se repintó; el resto de la plataforma queda sin tocar hasta la aprobación de la siguiente fase.
+- **Las fotografías se generaron con dirección de arte única y se optimizaron a WebP.** Once assets (banner panorámico con camión y diez fotografías alusivas por módulo) generados, comprimidos a 38–56 KB con `sharp` y servidos desde `apps/web/public/assets/lobby/`; el mapa slug→asset vive en `apps/web/lib/lobbyAssets.ts` con fallback de degradado corporativo más icono del módulo. Cada tarjeta usa `Image` con `fill` + `sizes` y el banner lleva `priority` para LCP.
+- **La lógica de negocio no cambió y los datos siguen siendo los reales.** `apps/web/app/dashboard/page.tsx` conserva `loadModuleAccess(MODULES)`, la traza `apex_navigation_trace_v1` y el saludo derivado del correo del usuario; sin KPIs inventados, sin módulos sin autorización y sin animaciones permanentes, video ni 3D.
+- **El contrato de copy viajó con la pantalla.** Las suites `operational-home-redesign.test.mjs` y `phase-two-intelligent-experience.test.mjs` se actualizaron en el mismo cambio con los nuevos literales (`Tu operación, más simple y bajo control.`, `Continúa donde estabas`) y una prueba nueva fija banner, tarjetas fotográficas y la tripleta del acento. 669/669 pruebas web, typecheck y lint en verde.
+- **La evidencia se capturó con navegador real por CDP.** Headless Edge en 9225 con perfil limpio: escritorio claro, escritorio oscuro y móvil claro en `vibe_images/evidence-lobby-*`, con las imágenes verificadas cargadas (`naturalWidth > 0`) y el estado vacío honesto de «Continúa donde estabas» sin datos inventados. Dos defectos de pintura se corrigieron en la fuente (display del span de medios y fallback) antes de cerrar.
+- Agentes: `apexos-frontend` 2.13.0 → 2.14.0 (control 29: una fase del Design System con referencia aprobada se implementa con tokens de alcance, no repintando los globales), `apexos-qa` 2.38.0 → 2.39.0 (control 52: un rediseño visual aprobado por brief actualiza en la misma intervención las pruebas de contrato de copy y cierra con evidencia medida en ambos temas y dos anchuras).
+
 ## 2026-11-09
 
 ### La compuerta de `main` se cierra construyendo el recurso que faltaba y el candidato queda firmado y promovido (`plan-candado-main-cierre-20261109`)
