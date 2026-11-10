@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.32.0",
-      "updated_at": "2026-11-09",
-      "sha256": "b0341338c578dfd64af629657f3637d455771e817968c41a6a483cfd3710f39b",
+      "version": "2.33.0",
+      "updated_at": "2026-11-10",
+      "sha256": "4ce798696973c77e827a7aa2e8b7961b0e40fc9e9f4836c615ca1925a6e873e8",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -129,7 +129,8 @@
         "brief-de-promocion-con-deriva-declarada",
         "brief-candidato-main-con-compuerta-bloqueada",
         "manifiesto-pendiente-versionado",
-        "celda-construible-se-construye"
+        "celda-construible-se-construye",
+        "inventario-de-tuberias-de-certificacion"
       ]
     },
     {
@@ -229,9 +230,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.9.0",
-      "updated_at": "2026-11-05",
-      "sha256": "774b52f8f39bcd1bff72290e645d4fca5db7a811229b445050ee4144336b8922",
+      "version": "2.10.0",
+      "updated_at": "2026-11-10",
+      "sha256": "e6276012d4f9bec52b32cbfb9724f7fa265db245d9b1aedfef961d13f342be26",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -254,15 +255,16 @@
         "torre-residente-en-desarrollo",
         "torre-umbrales-fuente-unica",
         "torre-presupuesto-por-ambiente",
-        "torre-rejilla-y-punto-inspeccionable"
+        "torre-rejilla-y-punto-inspeccionable",
+        "torre-historia-medida-por-monitor"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.39.0",
+      "version": "2.40.0",
       "updated_at": "2026-11-10",
-      "sha256": "5ca465aeb33c4fbd91955cf0f77d11326a482eb7bc3ced6f52f47a6013ba4e93",
+      "sha256": "520098765322c33f6753e27fe2eaa8557e23ec4dda0234ed21002f030846bad7",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -311,15 +313,16 @@
         "celda-navegador-pasa-el-guard-de-ruta",
         "inventario-sobre-el-indice-y-post-deploy-por-servicio",
         "compuerta-anclada-al-build-desplegado",
-        "celda-con-sesion-se-cierra-construyendo-la-sesion"
+        "celda-con-sesion-se-cierra-construyendo-la-sesion",
+        "gate-lee-dom-visible-de-la-vista-activa"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.18.0",
+      "version": "2.19.0",
       "updated_at": "2026-11-09",
-      "sha256": "754bbc02d934831b2632481987ee6929c50b87294d927edd1e06e46fa890cc72",
+      "sha256": "671d3529d2951b9e36e1ad5a89717ea1555afd9aec7bce804bd06985b13b3218",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -350,15 +353,16 @@
         "csp-img-solo-loopback-dev",
         "lectura-anonima-solo-almacen-local",
         "reclasificacion-401-con-caso-espejo-medido",
-        "promocion-de-bloque-reconstruida"
+        "promocion-de-bloque-reconstruida",
+        "anillo-persistido-sin-dato-de-empresa"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.19.0",
-      "updated_at": "2026-11-09",
-      "sha256": "cdc29888bd96aa0e37a5fce5e76fcb2dc1a02c4851eb7d3de2abb5df3a5aee16",
+      "version": "2.20.0",
+      "updated_at": "2026-11-10",
+      "sha256": "f5cf1d74315876c5f9066933da4a7a119287cf9cf0461f899b6bbb60c8cfc3fc",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -389,7 +393,8 @@
         "editar-fuente-no-espejo",
         "lo-publicado-se-retrotrae-a-desarrollo",
         "incidente-de-produccion-distingue-despliegue",
-        "sin-pendientes-construibles"
+        "sin-pendientes-construibles",
+        "historia-sin-retrorelleno-y-herramienta-viva"
       ]
     }
   ],

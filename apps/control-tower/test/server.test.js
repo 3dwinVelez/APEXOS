@@ -105,6 +105,27 @@ test("torre local: salud, UI, auth, fabrica, puente, simulacion y telegram", asy
     assert.ok(["alta", "media", "baja"].includes(recommendation.priority), "toda accion tiene prioridad");
   }
 
+  // La historia medida viaja publicada: el navegador no reconstruye nada, pinta lo
+  // que el anillo del servidor guardo en este sondeo.
+  assert.equal(status.body.operation.gauges.length, 2, "la mesa del puesto publica sus dos medidores");
+  for (const entry of status.body.operation.gauges) {
+    assert.ok(Array.isArray(entry.series), `el medidor del puesto ${entry.key} publica su historia`);
+    assert.equal(typeof entry.window, "number");
+  }
+  for (const [id, ambientes] of Object.entries(environmentSnapshot)) {
+    for (const entry of ambientes.gauges) {
+      assert.ok(Array.isArray(entry.series), `${id}/${entry.key} publica su historia`);
+    }
+    for (const component of ambientes.components || []) {
+      assert.ok(Array.isArray(component.series), `${id}/componente ${component.key} publica su historia`);
+    }
+    const propias = status.body.snapshot.checks.filter((check) => String(check.environment || "local") === id);
+    assert.ok(propias.length > 0, `${id} tiene sondas propias`);
+    for (const check of propias) assert.ok(Array.isArray(check.series), `${id}/sonda ${check.id} publica su historia`);
+    assert.equal(new Set(ambientes.gauges.map((entry) => entry.window)).size, 1, `${id} comparte ventana entre monitores`);
+  }
+  assert.ok(fs.existsSync(path.join(dataDir, "monitor-history.json")), "la historia se persiste para sobrevivir el reinicio");
+
   const tenantUnauthorized = await call(base, "/api/tenants/tenant-a/modules?environment=local");
   assert.equal(tenantUnauthorized.status, 401);
   const tenantWithoutScope = await call(base, "/api/tenants/tenant-a/modules?environment=local", { token: UI_TOKEN });

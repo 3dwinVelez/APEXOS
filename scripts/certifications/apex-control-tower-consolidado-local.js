@@ -767,18 +767,41 @@ async function run() {
 
       await chrome.cdp.evaluate(`document.querySelector('[data-env="local"]').click()`);
       await waitFor(() => chrome.cdp.evaluate(`document.getElementById('overallPill').textContent.includes('LOCAL')`), 10000);
-      // El rendimiento del proceso vivo antes en "Detalle"; hoy es la vista
-      // Latencia, que ademas dibuja el tope del p95 sobre la serie medida.
+      // El recorte de la vista Latencia: se queda con los cuatro estadisticos que
+      // responden a su pregunta. La telemetria de proceso no se borro: se bandea
+      // con su corte versionado en las teselas de la vista API.
       await chrome.cdp.evaluate(`document.querySelector('[data-view="latencia"]').click()`);
       const detalle = await waitFor(() => chrome.cdp.evaluate(
-        `[...document.querySelectorAll('.perf-stat')].filter((n) => n.offsetParent !== null).length > 8 && [...document.querySelectorAll('.perf-stat')].some((s) => /Memoria RSS/.test(s.textContent))`
+        `[...document.querySelectorAll('.perf-stat')].filter((n) => n.offsetParent !== null).length === 4`
       ), 12000);
       const rendimiento = await chrome.cdp.evaluate(`[...document.querySelectorAll('.perf-stat')].map((s) => s.textContent.replace(/\\s+/g,' ').trim())`);
-      assert("navegador_rendimiento_con_memoria_y_uso", Boolean(detalle)
-        && rendimiento.some((s) => /Memoria RSS/.test(s))
-        && rendimiento.some((s) => /Peticiones/.test(s))
-        && rendimiento.some((s) => /Consultas lentas/.test(s))
-        && rendimiento.some((s) => /Uptime del proceso/.test(s)), { estadisticas: rendimiento.length });
+      assert("navegador_rendimiento_cuatro_estadisticos", Boolean(detalle)
+        && rendimiento.length === 4
+        && rendimiento.some((s) => /p95/i.test(s))
+        && !/Memoria RSS|Consultas lentas|Peticiones/.test(rendimiento.join(" ")), { estadisticas: rendimiento });
+
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="api"]').click()`);
+      const memoriaApi = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const tarjeta = Array.from(document.querySelectorAll('#kpis .metric-tile'))
+          .filter((n) => n.offsetParent !== null)
+          .find((n) => /Memoria del API|Uso de memoria/.test(n.textContent));
+        return tarjeta ? tarjeta.textContent.replace(/\\s+/g, " ").trim() : null;
+      })()`).catch(() => null), 12000);
+      assert("navegador_telemetria_proceso_con_umbral", Boolean(memoriaApi)
+        && /\d/.test(memoriaApi) && /óptimo|tope/i.test(memoriaApi), { memoria: memoriaApi });
+      // Cada medidor de la vista tiene que traer su historia medida, no un numero
+      // suelto: una franja por tarjeta y su pie con el recuento de lecturas.
+      const historiaApi = await chrome.cdp.evaluate(`(() => {
+        const visibles = (n) => n.offsetParent !== null;
+        const tarjetas = [...document.querySelectorAll('#kpis .metric-tile')].filter(visibles).length;
+        const franjas = [...document.querySelectorAll('#kpis .monitor-ticks')].filter(visibles).length;
+        const pies = [...document.querySelectorAll('#kpis .monitor-ticks-foot')].filter(visibles).length;
+        const conLectura = [...document.querySelectorAll('#kpis .monitor-ticks[role="img"]')].filter(visibles).length;
+        return { tarjetas, franjas, pies, conLectura };
+      })()`);
+      assert("navegador_api_teselas_con_historia", historiaApi.tarjetas >= 1
+        && historiaApi.franjas === historiaApi.tarjetas && historiaApi.pies === historiaApi.tarjetas
+        && historiaApi.conLectura >= 1, historiaApi);
       const umbralListo = await waitFor(() => chrome.cdp.evaluate(
         `document.querySelector('#latencyVerdict .verdict') !== null && /tope \\d/.test(document.getElementById('latencyVerdict').textContent)`
       ), 12000);

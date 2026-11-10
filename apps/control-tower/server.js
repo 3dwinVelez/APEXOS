@@ -15,8 +15,9 @@ const { diagnoseCheck } = require("./lib/diagnostics");
 const { collectGitState, runGit, clearRemoteCache } = require("./lib/git");
 const { fetchModules, REASON_DETAIL } = require("./lib/modules");
 const { recommendationsFor } = require("./lib/recommendations");
-const { gaugesFor, latencyVerdict, p95Definition, componentBands } = require("./lib/metrics");
+const { GAUGES, gaugesFor, latencyVerdict, p95Definition, componentBands, viewVerdicts, viewVerdict, operationGauges, bandFromEntry, probeBand } = require("./lib/metrics");
 const { ModuleTelemetry } = require("./lib/telemetry");
+const { MonitorHistory, measuredSeries } = require("./lib/monitor-history");
 const { computeHealth, withModuleBands } = require("./lib/health");
 const { createAuthGuard, createRateLimiter, safeEqual, readToken, assertLoopback, redact, isPlainObject } = require("./lib/security");
 
@@ -93,14 +94,70 @@ function eventId() {
 // historial de ticks. Es puro sobre el snapshot; el registro del sondeo ocurre
 // antes, sobre la lectura real, para que una simulacion no contamine el anillo
 // persistido.
-function attachIndicators(snapshot, telemetry) {
+function attachIndicators(snapshot, telemetry, monitors) {
   for (const [id, environment] of Object.entries((snapshot && snapshot.environments) || {})) {
     const definition = p95Definition(id);
-    environment.gauges = gaugesFor(environment);
+    environment.gauges = gaugesFor(environment, { checks: snapshot.checks });
+    // Un veredicto por vista-pregunta, con la peor banda entre sus medidores. La
+    // vista Latencia conserva su veredicto propio (sostenido vs pico), que es mas
+    // fino que la peor banda de un solo numero.
+    environment.verdicts = viewVerdicts(environment.gauges);
+    // El resumen no inventa un umbral nuevo: es la peor banda entre TODOS los
+    // medidores del ambiente, para que la tarjeta de entrada y la vista donde
+    // vive el problema digan exactamente lo mismo. La pregunta no se reescribe
+    // aqui: es la canónica de la vista, publicada por metrics.
+    environment.verdicts.resumen = viewVerdict(environment.gauges, null, "resumen");
     if (Array.isArray(environment.components) && environment.components.length) {
       environment.components = componentBands(environment.components);
     }
     environment.moduleHistory = telemetry ? telemetry.seriesFor(id, { size: 24 }) : [];
+    // El anillo guarda lo que este sondeo realmente midio, no lo que el navegador
+    // quiera dibujar: cada monitor se pinta con su propia historia y una muestra
+    // que no existio queda como hueco visible, nunca como un cero inventado.
+    if (monitors) {
+      const ownChecks = (Array.isArray(snapshot.checks) ? snapshot.checks : [])
+        .filter((check) => check && String(check.environment || "local") === id);
+      monitors.record(id, snapshot.at, {
+        gauges: environment.gauges,
+        components: environment.components,
+        checks: ownChecks
+      });
+      const history = monitors.seriesFor(id, { size: 24 });
+      // La ventana es el numero de sondeos guardados; las muestras que llegaron
+      // por otra via (un sondeo sin lectura de este monitor) se cuentan aparte,
+      // para que el panel pueda decir "20 de 24" en lugar de fingir una serie llena.
+      const polls = history.length;
+      for (const entry of environment.gauges) {
+        entry.series = measuredSeries(history, "gauges", entry.key, (value) => bandFromEntry(entry, value));
+        entry.window = polls;
+      }
+      for (const component of Array.isArray(environment.components) ? environment.components : []) {
+        // Solo la base tiene un tope versionado por componente; el resto se pinta
+        // con su valor medido y sin banda, porque inventar un corte daria un
+        // semaforo decorativo.
+        component.series = measuredSeries(history, "components", component.key, (value) =>
+          bandFromEntry(component.key === "db" ? GAUGES.dbLatency : null, value));
+        component.window = polls;
+      }
+      for (const check of ownChecks) {
+        // La sonda viaja desde la torre, asi que su corte es el presupuesto de
+        // sondeo del ambiente, no el del API sondeado.
+        check.series = measuredSeries(history, "checks", String(check.id), (value) => probeBand(value, true, id));
+        check.window = polls;
+      }
+      // La tarjeta del proveedor se pinta con la historia de su propia sonda: el
+      // viaje torre->proveedor es el unico numero medido de esa tarjeta, y el
+      // panel no debe buscarlo en otro sitio.
+      if (environment.cloud) {
+        for (const source of ["railway", "vercel", "supabase"]) {
+          const match = ownChecks.find((check) => check.source === source);
+          if (environment.cloud[source] && match) {
+            environment.cloud[source].series = match.series;
+            environment.cloud[source].window = match.window;
+          }
+        }
+      }
+    }
     // El veredicto lo firma el servidor sobre muestras medidas: un p95 aislado no
     // dice si la franja fue continua, y esa diferencia es la que separa
     // "atender" de "vigilar el evento".
@@ -153,6 +210,7 @@ function createTower(overrides = {}) {
   const store = new Store({ dataDir: config.dataDir, alertMax: config.alerts.max }).init();
   const performance = new PerformanceTracker({ persisted: store.readAux("performance", {}) });
   const telemetry = new ModuleTelemetry({ persisted: store.readAux("module-telemetry", {}) });
+  const monitors = new MonitorHistory({ persisted: store.readAux("monitor-history", {}) });
   const jobs = new Jobs({ store });
   const clients = new Set();
   const overridesMap = new Map();
@@ -162,6 +220,7 @@ function createTower(overrides = {}) {
   const state = {
     snapshot: null,
     git: null,
+    operation: null,
     bridge: { bridgeId: null, lastSeenAt: null },
     staleNotifiedFor: null
   };
@@ -270,6 +329,26 @@ function createTower(overrides = {}) {
     };
   }
 
+  // La mesa del puesto no vive en un ambiente: sus medidores se calculan con las
+  // alertas abiertas y los trabajos que esperan aprobación, con el mismo modelo de
+  // banda y de historia que el resto de las vistas. Se pide la lista completa de
+  // abiertas, no las 20 que pinta el panel, para no contar de menos. Se graba una
+  // vez por sondeo, no por lectura del navegador: la historia mide el puesto, no
+  // cuantas veces alguien abrio la pestaña.
+  function publishOperation() {
+    const list = operationGauges({
+      alerts: tower.alerts.list({ onlyOpen: true, limit: 200 }),
+      jobs: jobs.stats()
+    });
+    monitors.record("puesto", new Date().toISOString(), { gauges: list });
+    const history = monitors.seriesFor("puesto", { size: 24 });
+    for (const entry of list) {
+      entry.series = measuredSeries(history, "gauges", entry.key, (value) => bandFromEntry(entry, value));
+      entry.window = history.length;
+    }
+    return { gauges: list, verdict: viewVerdict(list, null, "operacion") };
+  }
+
   async function collect() {
     const [probeResult, gitResult] = await Promise.allSettled([runAllProbes(config), collectGitState(config)]);
 
@@ -287,7 +366,11 @@ function createTower(overrides = {}) {
       store.writeAux("module-telemetry", telemetry.toJSON());
       const snapshot = applyOverrides(probeResult.value);
       attachRecommendations(snapshot);
-      attachIndicators(snapshot, telemetry);
+      attachIndicators(snapshot, telemetry, monitors);
+      state.operation = publishOperation();
+      // El anillo se escribe despues de grabar los tres ambitos del ciclo (los tres
+      // ambientes y la mesa del puesto) para que el archivo sea una foto del sondeo.
+      store.writeAux("monitor-history", monitors.toJSON());
       state.snapshot = snapshot;
       store.setSnapshot({ ...snapshot, git: gitSummary(state.git) });
       tower.alerts.evaluate(snapshot);
@@ -403,6 +486,9 @@ function createTower(overrides = {}) {
     }
 
     if (method === "GET" && pathname === "/api/status") {
+      const alerts = tower.alerts.list({ limit: 20 });
+      const jobStats = jobs.stats();
+      if (!state.operation) state.operation = publishOperation();
       json(res, 200, {
         version: config.version,
         startedAt: tower.startedAt,
@@ -410,12 +496,13 @@ function createTower(overrides = {}) {
         config: safeConfig(config),
         snapshot: state.snapshot,
         git: state.git,
-        alerts: tower.alerts.list({ limit: 20 }),
+        alerts,
         events: store.events.slice(0, 30),
-        jobs: jobs.stats(),
+        jobs: jobStats,
         jobsList: jobs.list({ limit: 20 }),
         telegram: tower.telegram.status(),
         bridge: bridgeStatus(),
+        operation: state.operation,
         performance: performance.all(["local", "develop", "main"]),
         store: store.status()
       });
@@ -933,4 +1020,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createTower, isLoopbackHost, hostnameOf };
+module.exports = { createTower, isLoopbackHost, hostnameOf, attachIndicators };

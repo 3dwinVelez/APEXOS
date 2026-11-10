@@ -40,6 +40,7 @@ const GROUP_LABEL = {
   Plataforma: "Plataforma"
 };
 const METRIC_LABEL = {
+  latency_ms: "Latencia de la llamada",
   deployments: "Despliegues (muestra)",
   services: "Servicios",
   environments: "Ambientes",
@@ -172,6 +173,24 @@ function detailText(detail) {
   if (detail == null) return "";
   const text = typeof detail === "string" ? detail : JSON.stringify(detail);
   return text.length > 220 ? `${text.slice(0, 217)}...` : text;
+}
+
+// Linea legible de una sonda. El JSON crudo del payload no responde ninguna
+// pregunta del puesto: via de detalle, dice que hay detalle tecnico debajo.
+function checkDetailText(detail) {
+  if (detail == null) return "";
+  if (typeof detail === "string") return detailText(detail);
+  if (Array.isArray(detail)) return `${detail.length} entradas medidas · ver «Detalle técnico»`;
+  if (typeof detail !== "object") return String(detail);
+  const facts = [
+    detail.version ? `versión ${detail.version}` : null,
+    detail.commit ? `commit ${String(detail.commit).slice(0, 7)}` : null,
+    detail.environment ? `ambiente ${detail.environment}` : null,
+    detail.status ? `estado ${detail.status}` : null
+  ].filter(Boolean);
+  return facts.length
+    ? `${facts.join(" · ")} · ver «Detalle técnico»`
+    : "respuesta estructurada del servidor · ver «Detalle técnico»";
 }
 
 function activeEnvironment() {
@@ -321,22 +340,44 @@ function sampleBand(value, optimal, risk) {
 // marcan sobre la propia muestra medida, no sobre un tiempo teorico.
 function axisTicks(points, coords, pad, width, plotBottom) {
   if (points.length < 2) return "";
+  const primero = Date.parse(points[0].at);
+  const ultimo = Date.parse(points[points.length - 1].at);
+  // En una ventana de menos de cinco minutos la hora:minuto se repite en todas las
+  // marcas y el eje queda con una sola etiqueta: se baja al segundo para que cada
+  // muestra medida conserve su horario. Con la cadencia de sondeo normal (20 s) la
+  // ventana dura minutos y el eje sigue leyendo hora:minuto.
+  const conSegundos = Number.isFinite(primero) && Number.isFinite(ultimo) && ultimo - primero < 5 * 60 * 1000;
   const indexes = [0, Math.round((points.length - 1) / 3), Math.round(((points.length - 1) * 2) / 3), points.length - 1];
+  // Dos etiquetas con el mismo reloj son ruido, no información: en una ventana
+  // corta se repiten "09:16 09:16" y el eje deja de leerse. Se conserva la
+  // primera marca de cada hora:minute y el resto se omite.
   const seen = new Set();
-  return indexes
-    .filter((index) => !seen.has(index) && seen.add(index))
-    .map((index) => {
+  const ticks = [];
+  for (const index of indexes) {
+    if (seen.has(index)) continue;
+    seen.add(index);
+    const label = formatClock(points[index].at, conSegundos);
+    if (ticks.some((tick) => tick.label === label)) continue;
+    ticks.push({ index, label });
+  }
+  return ticks
+    .map(({ index, label }) => {
       const anchor = index === 0 ? "start" : index === points.length - 1 ? "end" : "middle";
-      return `<text class="chart-tick" x="${coords[index].x.toFixed(1)}" y="${plotBottom + 14}" text-anchor="${anchor}">${escapeHtml(formatClock(points[index].at))}</text>`;
+      return `<text class="chart-tick" x="${coords[index].x.toFixed(1)}" y="${plotBottom + 14}" text-anchor="${anchor}">${escapeHtml(label)}</text>`;
     })
     .join("");
 }
 
-function formatClock(iso) {
+function formatClock(iso, conSegundos = false) {
   if (!iso) return "—";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleTimeString("es-CO", { hour12: false, hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("es-CO", {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    ...(conSegundos ? { second: "2-digit" } : {})
+  });
 }
 
 // Explorador de la serie medida: primero los picos con su hora y despues el
@@ -418,15 +459,25 @@ const CLOUD_PROVIDERS = [
   { key: "vercel", label: "Vercel", hint: "VERCEL_TOKEN + ENV_<AMBIENTE>_VERCEL_PROJECT_ID" }
 ];
 
+// Las etiquetas que el propietario necesita para responder "¿la nube está bien?":
+// cuánto tardó la llamada y qué duele. Los catálogos de servicios, ambientes y
+// estados crudos del proveedor quedan fuera de la tarjeta: viven en el detalle.
+const CLOUD_METRIC_ORDER = ["latency_ms", "healthy", "unhealthy", "failed", "ready", "last_age_minutes"];
+
 function formatMetric(key, value) {
   if (key === "avg_duration_ms" && Number.isFinite(Number(value))) return `${Math.round(Number(value) / 1000)} s`;
+  if (key === "latency_ms" && Number.isFinite(Number(value))) return `${Math.round(Number(value))} ms`;
   if (key === "last_age_minutes" && Number.isFinite(Number(value))) return `${value} min`;
   return String(value);
 }
 
-function renderCloudMetrics(metrics) {
-  if (!metrics || typeof metrics !== "object") return "";
-  const entries = Object.entries(metrics).filter(([, value]) => value != null && value !== "");
+function renderCloudMetrics(metrics, latencyMs = null) {
+  if (!metrics && latencyMs == null) return "";
+  const source = metrics && typeof metrics === "object" ? metrics : {};
+  const values = { ...source, latency_ms: latencyMs };
+  const entries = CLOUD_METRIC_ORDER
+    .map((key) => [key, values[key]])
+    .filter(([, value]) => value != null && value !== "");
   if (!entries.length) return "";
   return `<div class="cloud-metrics">${entries.map(([key, value]) => `
     <div class="cloud-metric">
@@ -438,12 +489,14 @@ function renderCloudMetrics(metrics) {
 function renderCloudCard(provider, data, compact = false) {
   const status = data && data.configured === false ? "unknown" : pillClass(data && data.status ? data.status : "unknown");
   const statusLabel = data && data.configured === false ? "Sin credenciales" : (STATUS_LABEL[status] || status);
-  const services = data && Array.isArray(data.services) ? data.services : [];
   const deployments = data && Array.isArray(data.deployments) ? data.deployments : [];
   const health = data && Array.isArray(data.health) ? data.health : [];
   const projectName = data && data.project ? (data.project.name || data.project.id) : null;
-  const region = data && data.project && data.project.region ? ` · ${data.project.region}` : "";
-  const engine = data && data.project && data.project.database ? ` · PG ${data.project.database.version || data.project.database.engine || "—"}` : "";
+  const location = [
+    data && data.project && data.project.region ? data.project.region : null,
+    data && data.project && data.project.database ? `PG ${data.project.database.version || data.project.database.engine || "—"}` : null
+  ].filter(Boolean).join(" · ");
+  const latencyMs = data && Number.isFinite(Number(data.latencyMs)) ? Number(data.latencyMs) : null;
   const deploymentItems = deployments
     .slice(0, 3)
     .map((deployment) => {
@@ -464,13 +517,13 @@ function renderCloudCard(provider, data, compact = false) {
         <div>
           <p class="cloud-provider">${escapeHtml(provider.label)}</p>
           <h3>${escapeHtml(projectName || "Sin proyecto")}</h3>
+          ${location ? `<p class="cloud-provider">${escapeHtml(location)}</p>` : ""}
         </div>
         <span class="pill ${status}">${escapeHtml(statusLabel)}</span>
       </div>
       <p class="cloud-detail">${escapeHtml(data && data.detail ? data.detail : "Sin datos del proveedor.")}</p>
-      ${renderCloudMetrics(data && data.metrics)}
-      ${projectName ? `<p class="cloud-detail">Servicios: ${services.length}${escapeHtml(region)}${escapeHtml(engine)}</p>` : ""}
-      ${!compact && services.length ? `<ul class="cloud-list">${services.slice(0, 4).map((service) => `<li>${escapeHtml(service.name || service.id)}</li>`).join("")}</ul>` : ""}
+      ${renderCloudMetrics(data && data.metrics, latencyMs)}
+      ${latencyMs != null || (data && data.series) ? monitorTicks(data || {}, `${provider.label} · viaje a la nube`) : ""}
       ${healthChips ? `<div class="cloud-service-health">${healthChips}</div>` : ""}
       ${!compact && deploymentItems ? `<ul class="cloud-list">${deploymentItems}</ul>` : ""}
       ${data && data.error ? `<p class="cloud-detail">${escapeHtml(data.error)}</p>` : ""}
@@ -778,8 +831,28 @@ function measureFoot(entry, environment) {
   }
   if (entry.key === "memoryRss") {
     return deployed && deployed.memory
-      ? `heap ${formatNumber(deployed.memory.heapUsed)}/${formatNumber(deployed.memory.heapTotal)} MB`
+      ? `rss medido por el propio proceso · uptime ${humanDuration(deployed.uptimeSeconds)}`
       : "el build desplegado no expone memoria";
+  }
+  if (entry.key === "heapPressure") {
+    return deployed && deployed.memory
+      ? `heap ${formatNumber(deployed.memory.heapUsed)}/${formatNumber(deployed.memory.heapTotal)} MB`
+      : "el build desplegado no expone heap";
+  }
+  if (entry.key === "serverErrors") {
+    const usage = deployed ? deployed.usage : null;
+    return usage && usage.byStatus
+      ? `${formatNumber(usage.byStatus["5xx"] || 0)} de ${formatNumber(usage.requestsTotal || 0)} peticiones`
+      : "el build desplegado no expone uso";
+  }
+  if (entry.key === "requestRate") {
+    const usage = deployed ? deployed.usage : null;
+    return usage && usage.requestsTotal
+      ? `${formatNumber(usage.requestsTotal)} peticiones acumuladas desde el arranque`
+      : "sin contador de peticiones";
+  }
+  if (entry.key === "cloudLatency") {
+    return entry.value == null ? "ninguna sonda a la nube dejó duración medida" : "peor viaje torre→proveedor de este sondeo";
   }
   if (entry.key === "dataCoverage") {
     const summary = environment && environment.activity && environment.activity.tenants
@@ -793,29 +866,10 @@ function measureFoot(entry, environment) {
     return entry.value == null ? "ningún módulo publica fecha medida" : "peor ratio edad/esperado entre los módulos";
   }
   if (entry.key === "slowQueries") return "acumuladas desde el arranque del proceso";
-  if (entry.key === "requests") {
-    return deployed && deployed.usage
-      ? `5xx ${formatNumber((deployed.usage.byStatus && deployed.usage.byStatus["5xx"]) || 0)}`
-      : "el build desplegado no expone uso";
-  }
   return entry.source;
 }
 
-function microSparkline(series) {
-  const points = (Array.isArray(series) ? series : []).slice(-24);
-  if (points.length < 2) return "";
-  const width = 148;
-  const height = 26;
-  const values = points.map((sample) => Math.max(0, Number(sample.ms) || 0));
-  const max = Math.max(...values);
-  const step = width / (values.length - 1);
-  const line = values
-    .map((value, index) => `${(index * step).toFixed(1)},${(height - 2 - (value / Math.max(1, max)) * (height - 4)).toFixed(1)}`)
-    .join(" ");
-  return `<svg class="measure-spark" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${line}" /></svg>`;
-}
-
-function measureCard(entry, environment, { series = null } = {}) {
+function measureCard(entry, environment) {
   const tone = BAND_TONE[entry.band] || "unknown";
   const geometry = scaleGeometry(entry);
   const scale = geometry
@@ -824,7 +878,7 @@ function measureCard(entry, environment, { series = null } = {}) {
         ${geometry.marker == null ? "" : `<span class="measure-marker ${entry.band}" style="left:${geometry.marker.toFixed(1)}%"></span>`}
       </div>`
     : '<div class="measure-scale idle" aria-hidden="true"><span class="seg flat" style="width:100%"></span></div>';
-  const spark = entry.key === "p95" ? microSparkline(series) : "";
+  const ticks = monitorTicks(entry, entry.label);
   const verdict = entry.key === "p95" ? latencyVerdictText(environment) : "";
   const reading = `${entry.label}: ${measureValue(entry)}${measureUnit(entry) ? ` ${measureUnit(entry)}` : ""}. ${BAND_LABEL[entry.band] || "Sin dato"}. ${measureLimits(entry)}.`;
   const link = entry.view
@@ -840,7 +894,7 @@ function measureCard(entry, environment, { series = null } = {}) {
       <p class="measure-value">${escapeHtml(measureValue(entry))}<span class="measure-unit">${escapeHtml(measureUnit(entry))}</span></p>
       ${scale}
       <p class="measure-limits">${escapeHtml(measureLimits(entry))}</p>
-      ${spark}
+      ${ticks}
       ${verdict ? `<p class="measure-verdict tone-${escapeHtml(verdict.tone)}">${escapeHtml(verdict.text)}</p>` : ""}
       <p class="measure-foot">${escapeHtml(measureFoot(entry, environment))}</p>
       ${link}
@@ -861,11 +915,49 @@ function latencyVerdictText(environment) {
   return { text, tone };
 }
 
+// Las seis vistas-pregunta comparten la misma franja: la pregunta, el semaforo de
+// la peor banda medida, la cifra que la produjo y los topes al lado. El panel
+// pinta environment.verdicts (lib/metrics.js); no decide bandas propias.
+const VERDICT_TARGETS = {
+  resumen: "summaryVerdict",
+  api: "apiVerdict",
+  modulos: "modulesVerdict",
+  datos: "databaseVerdict",
+  nube: "cloudVerdict",
+  operacion: "operationVerdict"
+};
+
+// Las seis vistas-pregunta van al nodo que el HTML les reserva. La del puesto no
+// vive por ambiente: las alertas y los trabajos son del escritorio, asi que el
+// servidor los publica una sola vez en data.operation.
+function paintVerdict(id, verdict, extra = "") {
+  const band = document.getElementById(id);
+  if (!band) return;
+  if (!verdict) {
+    band.innerHTML = '<p class="verdict-empty">El servidor aún no publicó el veredicto de esta vista.</p>';
+    return;
+  }
+  const tone = verdict.tone || "unknown";
+  band.innerHTML = `
+    <div class="verdict tone-${tone}">
+      <span class="dot status-${tone}" aria-hidden="true"></span>
+      <p class="verdict-question">${escapeHtml(verdict.question || "")}</p>
+      <p class="verdict-text">${escapeHtml(verdict.text)}</p>
+      <p class="verdict-rule">${escapeHtml([verdict.rule, extra].filter(Boolean).join(" · "))}</p>
+    </div>`;
+}
+
+function verdictBand(environment, view, extra = "") {
+  const verdicts = environment && environment.verdicts ? environment.verdicts : {};
+  paintVerdict(VERDICT_TARGETS[view], verdicts[view], extra);
+}
+
 // Tarjeta de resumen de la vista: la pregunta, la cifra, el tope y el semaforo.
 function renderGauges(environment) {
   const container = document.getElementById("gauges");
   const meta = document.getElementById("gaugesMeta");
   if (!container || !meta) return;
+  verdictBand(environment, "resumen");
   const gauges = environment && Array.isArray(environment.gauges) ? environment.gauges : [];
   if (!gauges.length) {
     meta.textContent = "Sin medidores";
@@ -876,13 +968,12 @@ function renderGauges(environment) {
   const critical = scored.filter((entry) => entry.band === "critical").length;
   const risky = scored.filter((entry) => entry.band === "risk").length;
   meta.textContent = `${scored.length} medidores con umbral · ${critical} en rojo · ${risky} en riesgo`;
-  const performance = performanceData(environment) || {};
-  container.innerHTML = gauges.map((entry) => measureCard(entry, environment, { series: performance.series })).join("");
+  container.innerHTML = gauges.map((entry) => measureCard(entry, environment)).join("");
 }
 
 // Altura de un tick: manda la frescura medida (ratio edad/esperado). Un módulo sin
 // fecha medida usa la altura base de su banda; nunca se pinta una altura inventada.
-const TICK_BASE_HEIGHT = { optimal: 30, risk: 58, critical: 86, unknown: 6 };
+const TICK_BASE_HEIGHT = { optimal: 30, risk: 58, critical: 86, informational: 22, unknown: 6 };
 
 function tickHeight(tick) {
   if (!tick) return TICK_BASE_HEIGHT.unknown;
@@ -907,9 +998,38 @@ function moduleMapRows(environment, history) {
   }));
 }
 
+// Un tick informativo si tiene lectura medida: lo que no tiene es umbral, no dato.
+// Por eso "informational" entra en el vocabulario de las barras aunque no sea una
+// banda de decision.
+const TICK_BANDS = ["optimal", "risk", "critical", "informational", "unknown"];
+
 function mapTick(band, height, title) {
-  const safe = BAND_ORDER.includes(band) ? band : "unknown";
+  const safe = TICK_BANDS.includes(band) ? band : "unknown";
   return `<i class="map-tick band-${safe}" style="height:${Math.max(4, Math.min(100, height)).toFixed(0)}%" title="${escapeHtml(title)}"></i>`;
+}
+
+// La misma gramatica del mapa de modulos, aplicada a un solo monitor: un tick por
+// sondeo con lectura, con la hora y la cifra dentro del titulo. Donde no hubo
+// lectura no se dibuja nada y el pie lo dice ("18 de 24"), porque rellenar el
+// hueco con un punto en cero contaria como medida una muestra que no existio.
+// La altura sale de la banda que publico el servidor: el navegador no tiene umbral.
+function monitorTicks(entry, label) {
+  const series = Array.isArray(entry && entry.series) ? entry.series : [];
+  const polls = Number(entry && entry.window) || 0;
+  const unit = entry && entry.unit ? ` ${entry.unit}` : "";
+  const foot = `<p class="monitor-ticks-foot">${escapeHtml(
+    series.length
+      ? `${series.length} de ${Math.max(polls, series.length)} sondeos con lectura · ${formatTime(series[0].at)} → ${formatTime(series[series.length - 1].at)}`
+      : `${polls ? `${polls} sondeos guardados · ninguno dejó lectura de este monitor` : "sin sondeos guardados todavía"}`
+  )}</p>`;
+  if (!series.length) return `<div class="monitor-ticks" aria-hidden="true"></div>${foot}`;
+  const ticks = series.map((sample) => mapTick(
+    sample.band,
+    TICK_BASE_HEIGHT[sample.band] || TICK_BASE_HEIGHT.unknown,
+    `${label} · ${formatTime(sample.at)} · ${formatNumber(sample.value)}${unit} · ${BAND_LABEL[sample.band] || "Sin dato"}`
+  )).join("");
+  const aria = `${label}: ${series.length} lecturas medidas en ${Math.max(polls, series.length)} sondeos`;
+  return `<div class="monitor-ticks" role="img" aria-label="${escapeHtml(aria)}">${ticks}</div>${foot}`;
 }
 
 function renderModuleMap(environment) {
@@ -1354,12 +1474,13 @@ function applyView() {
   });
 }
 
-function tile({ label, value, unit = "", foot = "", status = "unknown" }) {
+function tile({ label, value, unit = "", foot = "", status = "unknown", history = "" }) {
   return `
     <article class="metric-tile status-${pillClass(status)}">
       <p class="tile-label">${escapeHtml(label)}</p>
       <p class="tile-value">${escapeHtml(value)}<span class="tile-unit">${escapeHtml(unit)}</span></p>
       <p class="tile-foot">${escapeHtml(foot)}</p>
+      ${history}
     </article>`;
 }
 
@@ -1805,7 +1926,6 @@ function render() {
   const environment = activeEnvironment();
   const environmentId = environment ? environment.id : "local";
   const alerts = environmentAlerts(data.alerts || [], environmentId);
-  const openAlerts = alerts.filter((alert) => !alert.resolvedAt);
 
   renderEnvironmentTabs(snapshot, environment);
   renderStatusLegend();
@@ -1821,7 +1941,7 @@ function render() {
     : snapshot ? `Sistema ${STATUS_LABEL[overall] || overall}` : "Sin lecturas";
   document.getElementById("lastUpdate").textContent = snapshot ? `Lectura ${relative(snapshot.at)} · ${formatTime(snapshot.at)}` : "Sin lecturas";
 
-  renderKpis(environment, data, git, openAlerts);
+  renderKpis(environment);
   renderModules(environment);
   renderActivity(environment);
   renderTenants(environment);
@@ -1833,6 +1953,7 @@ function render() {
   renderCloud(environment);
   renderGit(git, data, environment);
   renderAlerts(alerts);
+  renderOperation(data);
   renderCredentials(data.config && data.config.cloud ? data.config.cloud.credentials : null);
   renderJobs(data.jobsList || [], data.jobs);
   renderTelegram(telegram, state.telegram);
@@ -1880,95 +2001,49 @@ function renderEnvironmentTabs(snapshot, selected) {
   }).join("");
 }
 
-function renderKpis(environment, data, git, openAlerts) {
-  const summary = environment && environment.summary ? environment.summary : { ok: 0, total: 0, down: 0, degraded: 0, unknown: 0 };
-  const performance = environment && environment.performance ? environment.performance : {};
-  const branch = git && git.branches ? git.branches.find((item) => item.name === (environment && environment.branch)) : null;
-  const relation = branch ? branch.relation : "unknown";
-  const modulePayload = environment && environment.modules ? environment.modules : null;
-  const moduleSummary = modulePayload && modulePayload.summary ? modulePayload.summary : null;
-  const activityPayload = environment && environment.activity ? environment.activity : null;
-  const activity = activityPayload && activityPayload.activity ? activityPayload.activity : null;
-  const connections = activity ? activity.connections || {} : {};
-  const websocket = connections.websocket || {};
-  const tenantsSummary = activityPayload && activityPayload.tenants ? activityPayload.tenants.summary : null;
-  const health = environment ? environment.health : null;
-  const healthScore = health && Number.isFinite(health.score) ? health.score : null;
-  const healthBand = health && BAND_ORDER.includes(health.band) ? health.band : "unknown";
+// Vista API: solo los medidores que el servidor bandea para esa pregunta. Antes
+// esta rejilla mezclaba salud, empresas, rama git y fábrica de trabajos, que ya
+// tienen su propio panel en su vista; el propietario pidió ver rendimiento de la
+// máquina, no un inventario de etiquetas.
+function renderKpis(environment) {
+  const container = document.getElementById("kpis");
+  if (!container) return;
+  const gauges = (environment && Array.isArray(environment.gauges) ? environment.gauges : [])
+    .filter((entry) => entry.view === "api");
+  if (!gauges.length) {
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = gauges.map((entry) => tile({
+    label: entry.label,
+    value: measureValue(entry),
+    unit: measureUnit(entry),
+    foot: `${measureLimits(entry)} · ${measureFoot(entry, environment)}`,
+    status: BAND_TONE[entry.band] || "unknown",
+    history: monitorTicks(entry, entry.label)
+  })).join("");
+}
 
-  const tiles = [
-    {
-      label: `Salud ${environment ? environment.short : "general"}`,
-      value: healthScore == null ? "—" : String(healthScore),
-      unit: healthScore == null ? "" : "/100",
-      foot: health
-        ? `${BAND_LABEL[healthBand]} · módulos ${health.modules && health.modules.score != null ? health.modules.score : "—"} · infra ${health.infra && health.infra.score != null ? health.infra.score : "—"}`
-        : "Sin lectura de salud",
-      status: health ? BAND_TONE[healthBand] : "unknown"
-    },
-    {
-      label: "Módulos",
-      value: moduleSummary ? `${moduleSummary.ok || 0}/${moduleSummary.total || 0}` : "—",
-      foot: moduleSummary ? `${moduleSummary.degraded || 0} requieren atención · ${moduleSummary.down || 0} caídos` : "Sin datos por módulo",
-      status: moduleSummary ? (moduleSummary.down ? "down" : moduleSummary.degraded ? "degraded" : "ok") : "unknown"
-    },
-    {
-      label: "Registros",
-      value: moduleSummary && Number.isFinite(moduleSummary.records) ? formatNumber(moduleSummary.records) : "—",
-      foot: "medidos en los módulos",
-      status: "unknown"
-    },
-    {
-      label: "Actividad hoy",
-      value: activity ? formatNumber(activity.activity.today) : "—",
-      foot: activity ? `${formatNumber(activity.activity.period)} en ${activity.days} días` : "Sin datos de actividad",
-      status: activity && activity.activity.today ? "ok" : "unknown"
-    },
-    {
-      label: "Conexiones",
-      value: activity ? formatNumber(connections.active_sessions || 0) : "—",
-      foot: activity ? `${formatNumber(connections.distinct_users || 0)} usuarios · ${formatNumber(websocket.clients || 0)} WS` : "Sin datos de sesiones",
-      status: activity && connections.active_sessions ? "ok" : "unknown"
-    },
-    {
-      label: "Empresas",
-      value: tenantsSummary ? `${formatNumber(tenantsSummary.active || 0)}/${formatNumber(tenantsSummary.total || 0)}` : "—",
-      foot: tenantsSummary ? `${formatNumber(tenantsSummary.with_sessions || 0)} con sesión · ${formatNumber(tenantsSummary.with_gps || 0)} con GPS` : "Vista por empresa restringida",
-      status: tenantsSummary ? (tenantsSummary.active ? "ok" : "degraded") : "unknown"
-    },
-    {
-      label: "Servicios caídos",
-      value: String(summary.down || 0),
-      foot: `${summary.degraded || 0} requieren atención · ${summary.unknown || 0} sin dato`,
-      status: summary.down ? "down" : "ok"
-    },
-    {
-      label: "Alertas abiertas",
-      value: String(openAlerts.length),
-      foot: openAlerts.length ? openAlerts[0].title : "Sin incidentes abiertos",
-      status: openAlerts.some((alert) => ["critical", "high"].includes(alert.severity)) ? "down" : openAlerts.length ? "degraded" : "ok"
-    },
-    {
-      label: "API p95",
-      value: performance.p95 != null ? `${performance.p95} ms` : "—",
-      foot: performance.samples ? `${performance.samples} muestras · ${performance.errorRate || 0}% errores` : "Sin muestras",
-      status: measureStatus(environment, "p95")
-    },
-    {
-      label: `Rama ${environment ? environment.branch : "—"}`,
-      value: RELATION_LABEL[relation] || relation,
-      foot: branch ? `adelante ${branch.ahead ?? "—"} · atrás ${branch.behind ?? "—"}` : "Sin lectura git",
-      status: relation === "in_sync" ? "ok" : relation === "unknown" ? "unknown" : "degraded"
-    },
-    {
-      label: "Fábrica Qoder",
-      value: `${data.jobs ? data.jobs.active : 0} activos`,
-      foot: `${data.jobs ? data.jobs.counts.awaiting_approval : 0} por aprobar · ${data.jobs ? data.jobs.total : 0} históricos`,
-      status: data.jobs && data.jobs.counts.awaiting_approval ? "degraded" : "ok"
-    }
-  ];
-
-  document.getElementById("kpis").innerHTML = tiles.map((entry) => tile(entry)).join("");
+// Mesa del puesto: las dos cifras que si mandan (alertas abiertas y trabajos por
+// aprobar) con el mismo umbral publicado que el resto de las vistas.
+function renderOperation(data) {
+  const container = document.getElementById("operationKpis");
+  if (!container) return;
+  const operation = data && data.operation ? data.operation : null;
+  const gauges = operation && Array.isArray(operation.gauges) ? operation.gauges : [];
+  paintVerdict(VERDICT_TARGETS.operacion, operation && operation.verdict);
+  if (!gauges.length) {
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = gauges.map((entry) => tile({
+    label: entry.label,
+    value: measureValue(entry),
+    unit: measureUnit(entry),
+    foot: measureLimits(entry),
+    status: BAND_TONE[entry.band] || "unknown",
+    history: monitorTicks(entry, entry.label)
+  })).join("");
 }
 
 function formatNumber(value) {
@@ -2017,6 +2092,7 @@ function renderModules(environment) {
   const meta = document.getElementById("moduleMeta");
   const filterButton = document.getElementById("btnModuleFilter");
   const payload = environment && environment.modules ? environment.modules : null;
+  verdictBand(environment, "modulos");
 
   filterButton.setAttribute("aria-pressed", state.moduleFilter === "issues" ? "true" : "false");
   filterButton.textContent = state.moduleFilter === "issues" ? "Ver todos" : "Solo problemas";
@@ -2085,7 +2161,7 @@ function renderChecks(snapshot, environment) {
   }
   container.innerHTML = checks
     .map((check) => {
-      const detail = detailText(check.detail);
+      const detail = checkDetailText(check.detail);
       return `
         <article class="check status-${pillClass(check.status)}" title="${escapeHtml(check.source || "tower")}">
           <div class="check-top">
@@ -2095,6 +2171,7 @@ function renderChecks(snapshot, environment) {
           </div>
           <p class="check-status">${escapeHtml(STATUS_LABEL[check.status] || check.status)}${check.critical ? " · crítico" : ""}${check.optional ? " · opcional" : ""}</p>
           <p class="check-detail">${escapeHtml(detail || "Sin detalle")}</p>
+          ${monitorTicks(check, check.label || String(check.id))}
           ${check.functional ? `<p class="check-impact">${escapeHtml(check.functional)}</p>` : ""}
           ${check.action ? `<p class="check-action">Acción: ${escapeHtml(check.action)}</p>` : ""}
           ${check.technical ? `<details class="tech"><summary>Detalle técnico</summary>${technicalBlock(check.technical)}</details>` : ""}
@@ -2114,56 +2191,30 @@ function renderPerformance(environment) {
     container.innerHTML = `<p class="empty">Aún no hay muestras de rendimiento para ${escapeHtml(label)}.</p>`;
     return;
   }
-  const errorRate = performance.errorRate == null ? 0 : performance.errorRate;
   const p95 = performance.p95;
   const p95Entry = gaugeOf(environment, "p95");
   const errorEntry = gaugeOf(environment, "errorRate");
   const latencyTone = BAND_TONE[p95Entry ? p95Entry.band : "unknown"] || "unknown";
   const failureTone = BAND_TONE[errorEntry ? errorEntry.band : "unknown"] || "unknown";
   const tone = worstTone(latencyTone, failureTone);
-  const memoryTone = measureStatus(environment, "memoryRss");
-  const slowTone = measureStatus(environment, "slowQueries");
-  const limitText = p95Entry && p95Entry.limits
+  const limites = p95Entry && p95Entry.limits
     ? `óptimo ≤ ${formatNumber(p95Entry.limits.optimal)} ms · tope ${formatNumber(p95Entry.limits.risk)} ms`
     : "umbral del presupuesto no publicado";
   meta.textContent = `${performance.samples} muestras · ${formatTime(performance.last && performance.last.at)}`;
+  // La vista Latencia muestra solo la forma de la serie. La memoria, el tráfico,
+  // los 5xx y las consultas lentas ya se bandean en su propia vista con umbral;
+  // repetirlos aqui era una etiqueta técnica sin decisión asociada.
   const stats = [
-    { label: "p50", value: performance.p50, unit: "ms" },
-    { label: "p95", value: p95, unit: "ms", tone },
-    { label: "Promedio", value: performance.avg, unit: "ms" },
-    { label: "Mínimo", value: performance.min, unit: "ms" },
-    { label: "Máximo", value: performance.max, unit: "ms" },
-    { label: "Errores", value: performance.failures, unit: "", tone: failureTone },
-    { label: "Tasa error", value: errorRate, unit: "%", tone: failureTone },
+    { label: "p50", value: performance.p50, unit: " ms" },
+    { label: "p95", value: p95, unit: " ms", tone },
+    { label: "Máximo", value: performance.max, unit: " ms" },
     { label: "Muestras", value: performance.samples, unit: "" }
   ];
-  const deployed = environment ? environment.deployed : null;
-  if (deployed && deployed.memory) {
-    stats.push(
-      { label: "Memoria RSS", value: formatNumber(deployed.memory.rss), unit: " MB", tone: memoryTone },
-      { label: "Heap usado", value: formatNumber(deployed.memory.heapUsed), unit: " MB" },
-      { label: "Heap total", value: formatNumber(deployed.memory.heapTotal), unit: " MB" }
-    );
-  }
-  if (deployed && deployed.usage) {
-    const byStatus = deployed.usage.byStatus || {};
-    stats.push(
-      { label: "Peticiones", value: formatNumber(deployed.usage.requestsTotal), unit: "" },
-      { label: "2xx", value: formatNumber(byStatus["2xx"] || 0), unit: "" },
-      { label: "4xx", value: formatNumber(byStatus["4xx"] || 0), unit: "", tone: byStatus["4xx"] ? "degraded" : "ok" },
-      { label: "5xx", value: formatNumber(byStatus["5xx"] || 0), unit: "", tone: byStatus["5xx"] ? "down" : "ok" },
-      { label: "Consultas lentas", value: formatNumber(deployed.usage.slowQueries), unit: "", tone: slowTone }
-    );
-  }
-  if (deployed && Number.isFinite(deployed.uptimeSeconds)) {
-    stats.push({ label: "Uptime del proceso", value: uptimeFoot(deployed).replace(" encendido", ""), unit: "" });
-  }
-  const runtimeMissing = !deployed || (!deployed.memory && !deployed.usage);
   container.innerHTML = `
     <div class="perf-head">
       <div>
         <p class="perf-value">${p95 != null ? escapeHtml(p95) : "—"}<small>ms p95 · ${escapeHtml(label)}</small></p>
-        <p class="perf-sub">${escapeHtml(limitText)} · ${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"}</p>
+        <p class="perf-sub">${escapeHtml(limites)} · ${performance.avg != null ? `promedio ${escapeHtml(performance.avg)} ms` : "sin promedio"}</p>
       </div>
       <div class="perf-badges">
         <span class="band-pill ${latencyTone}" title="Banda del p95 contra el presupuesto de sonda de este ambiente">latencia · ${escapeHtml(p95Entry ? BAND_LABEL[p95Entry.band] : "Sin dato")}</span>
@@ -2172,15 +2223,14 @@ function renderPerformance(environment) {
     </div>
     ${latencyChart(performance.series, p95Entry, (performance.series || []).findIndex((sample) => sample && sample.at === state.chartPointAt))}
     ${latencyExplorer(performance, p95Entry, state.chartPointAt)}
-    <p class="perf-note-inline">${escapeHtml(p95Entry && p95Entry.source ? p95Entry.source : "")} · «sondas» mide los sondeos que la torre hace a /health y fallaron; «4xx/5xx» de abajo mide las peticiones reales de los usuarios. No son la misma señal.</p>
+    <p class="perf-note-inline">${escapeHtml(p95Entry && p95Entry.source ? p95Entry.source : "")} · «sondas» mide los sondeos que la torre hace a /health y fallaron; las peticiones reales de los usuarios se bandean en la vista API.</p>
     <div class="perf-grid">
       ${stats.map((stat) => `
         <div class="perf-stat ${stat.tone || ""}">
           <span>${escapeHtml(stat.label)}</span>
           <strong>${stat.value == null ? "—" : escapeHtml(stat.value)}${escapeHtml(stat.unit)}</strong>
         </div>`).join("")}
-    </div>
-    ${runtimeMissing ? `<p class="muted small perf-note">El build desplegado ${deployed && deployed.commit ? `(${String(deployed.commit).slice(0, 7)}) ` : ""}aún no expone memoria ni uso del API. Esta vista aparecerá completa cuando el ambiente corra un build con esas métricas.</p>` : ""}`;
+    </div>`;
 }
 
 // Franja de veredicto de la vista Latencia: una linea que dice si hay que atender
@@ -2219,6 +2269,7 @@ function renderComponents(environment) {
   const container = document.getElementById("components");
   const meta = document.getElementById("componentsMeta");
   if (!container || !meta) return;
+  verdictBand(environment, "api");
   const components = environment && Array.isArray(environment.components) ? environment.components : [];
   if (!components.length) {
     meta.textContent = "Sin componentes leidos";
@@ -2251,6 +2302,7 @@ function renderComponents(environment) {
             ${scoreText ? `<p class="component-score">${escapeHtml(scoreText)}</p>` : '<p class="component-score">—</p>'}
             <span class="band-pill ${tone}">${escapeHtml(component.label_text || BAND_LABEL[component.band] || "Sin dato")}</span>
             ${component.detail ? `<p class="component-detail">${escapeHtml(String(component.detail).slice(0, 160))}</p>` : ""}
+            <div class="component-history">${monitorTicks(component, component.name || component.key)}</div>
           </div>`;
       }).join("")}
     </div>`;
@@ -2259,23 +2311,19 @@ function renderComponents(environment) {
 // Vista Base de datos: rapidez medida desde adentro del API, volumen real de
 // registros y cobertura de empresas. El tope de la base lo pone el propio API:
 // 100 ms es el objetivo que pidio el propietario y 300 ms es lo que el API ya
-// cataloga como consulta lenta.
+// cataloga como consulta lenta. La franja de veredicto es la misma que firman
+// API, Módulos, Nube y Operación: la peor banda medida de la vista.
 function renderDatabase(environment) {
-  const verdictBand = document.getElementById("databaseVerdict");
+  const band = document.getElementById("databaseVerdict");
   const kpis = document.getElementById("databaseKpis");
   const volume = document.getElementById("databaseVolume");
   const meta = document.getElementById("databaseMeta");
-  if (!verdictBand || !kpis || !volume || !meta) return;
+  if (!band || !kpis || !volume || !meta) return;
   const db = gaugeOf(environment, "dbLatency");
   const slow = gaugeOf(environment, "slowQueries");
   const dataVolume = gaugeOf(environment, "dataVolume");
   const coverage = gaugeOf(environment, "dataCoverage");
   const freshness = gaugeOf(environment, "freshness");
-  const deployed = environment ? environment.deployed : null;
-  const tone = worstTone(
-    db ? BAND_TONE[db.band] : "unknown",
-    slow ? BAND_TONE[slow.band] : "unknown"
-  );
   const modules = environment && environment.modules && Array.isArray(environment.modules.modules)
     ? environment.modules.modules
     : [];
@@ -2283,24 +2331,16 @@ function renderDatabase(environment) {
 
   if (!modules.length && !db) {
     meta.textContent = "Sin lectura de la base";
-    verdictBand.innerHTML = "";
+    band.innerHTML = "";
     kpis.innerHTML = "";
     volume.innerHTML = `<p class="empty">Este ambiente no entrega ni el componente de base de datos ni el conteo de registros: la API aún no publica /api/v1/apex-control/status o no hay token de lectura configurado.</p>`;
     return;
   }
   const cap = db && db.limits ? `óptimo ≤ ${formatNumber(db.limits.optimal)} ms · en riesgo ≤ ${formatNumber(db.limits.risk)} ms` : "sin umbral publicado";
-  const dbText = db && db.value != null
-    ? `La base responde en ${formatNumber(db.value)} ms (medido por el propio API). ${BAND_LABEL[db.band]} · ${cap}.`
-    : `No hay lectura del componente de base de datos en este ambiente. ${cap}.`;
   const volumeText = dataVolume && dataVolume.value != null
-    ? `Hay ${formatNumber(dataVolume.value)} registros medidos en ${withRecords.length} módulos con conteo.`
-    : "Ningún módulo publicó conteo de registros.";
-  verdictBand.innerHTML = `
-    <div class="verdict tone-${tone}">
-      <span class="dot status-${tone}" aria-hidden="true"></span>
-      <p class="verdict-text">${escapeHtml(dbText)}</p>
-      <p class="verdict-rule">${escapeHtml(volumeText)}</p>
-    </div>`;
+    ? `${formatNumber(dataVolume.value)} registros medidos en ${withRecords.length} módulos con conteo`
+    : "ningún módulo publicó conteo de registros";
+  verdictBand(environment, "datos", volumeText);
   meta.textContent = `${withRecords.length} módulos con conteo · ${formatNumber(modules.length)} módulos leídos`;
   kpis.innerHTML = [
     tile({
@@ -2308,38 +2348,36 @@ function renderDatabase(environment) {
       value: db && db.value != null ? formatNumber(db.value) : "—",
       unit: db && db.value != null ? "ms" : "",
       foot: cap,
-      status: db ? BAND_TONE[db.band] : "unknown"
+      status: db ? BAND_TONE[db.band] : "unknown",
+      history: monitorTicks(db, "Latencia de la base")
     }),
     tile({
       label: "Consultas lentas",
       value: slow && slow.value != null ? formatNumber(slow.value) : "—",
       foot: slow && slow.limits ? `óptimo ≤ ${slow.limits.optimal} · en riesgo ≤ ${slow.limits.risk} · acumuladas desde el arranque` : "sin umbral publicado",
-      status: slow ? BAND_TONE[slow.band] : "unknown"
+      status: slow ? BAND_TONE[slow.band] : "unknown",
+      history: monitorTicks(slow, "Consultas lentas")
     }),
     tile({
       label: "Registros medidos",
       value: dataVolume && dataVolume.value != null ? formatNumber(dataVolume.value) : "—",
       foot: "suma de records por módulo publicados por la API",
-      status: "unknown"
+      status: "unknown",
+      history: monitorTicks(dataVolume, "Registros medidos")
     }),
     tile({
       label: "Empresas con actividad",
       value: coverage && coverage.value != null ? `${formatNumber(coverage.value)} %` : "—",
       foot: coverage && coverage.limits ? `óptimo ≥ ${formatNumber(coverage.limits.optimal)} %` : "sin lectura por empresa",
-      status: coverage ? BAND_TONE[coverage.band] : "unknown"
+      status: coverage ? BAND_TONE[coverage.band] : "unknown",
+      history: monitorTicks(coverage, "Empresas con actividad")
     }),
     tile({
       label: "Frescura peor",
       value: freshness && freshness.value != null ? `${formatNumber(freshness.value)}x` : "—",
       foot: freshness && freshness.limits ? `óptimo ≤ ${freshness.limits.optimal}x · en riesgo ≤ ${freshness.limits.risk}x` : "sin módulos medidos",
-      status: freshness ? BAND_TONE[freshness.band] : "unknown"
-    }),
-    tile({
-      label: "Memoria del API",
-      value: deployed && deployed.memory ? formatNumber(deployed.memory.rss) : "—",
-      unit: deployed && deployed.memory ? "MB" : "",
-      foot: memoryFoot(deployed) || "el build desplegado no expone memoria",
-      status: measureStatus(environment, "memoryRss")
+      status: freshness ? BAND_TONE[freshness.band] : "unknown",
+      history: monitorTicks(freshness, "Frescura peor")
     })
   ].join("");
   const rows = modules
@@ -2373,6 +2411,7 @@ function renderDatabase(environment) {
 function renderCloud(environment) {
   const container = document.getElementById("cloud");
   const meta = document.getElementById("cloudMeta");
+  verdictBand(environment, "nube");
   const cloud = environment && environment.cloud ? environment.cloud : null;
   if (!cloud) {
     meta.textContent = environment ? `${environment.label} · sin integración cloud` : "Sin datos";

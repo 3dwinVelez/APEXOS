@@ -44,6 +44,8 @@ function unconfigured(provider, detail) {
     health: [],
     metrics: null,
     error: null,
+    // Sin llamada HTTP no hay latencia medida: null, para que no se lea "instantanea".
+    latencyMs: null,
     checkedAt: new Date().toISOString()
   };
 }
@@ -72,6 +74,7 @@ function authError(provider, response) {
     environments: [],
     health: [],
     metrics: null,
+    latencyMs: Number.isFinite(response.durationMs) ? response.durationMs : null,
     error: redact(response.text).slice(0, 300) || null,
     checkedAt: new Date().toISOString()
   };
@@ -115,6 +118,7 @@ async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetch
       ...unconfigured(provider, "Sin conexión con Railway."),
       configured: true,
       status: "degraded",
+      latencyMs: projectResponse.durationMs,
       error: projectResponse.error,
       checkedAt: now.toISOString()
     };
@@ -128,6 +132,7 @@ async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetch
       ...unconfigured(provider, "Railway no devolvió el proyecto solicitado."),
       configured: true,
       status: "degraded",
+      latencyMs: projectResponse.durationMs,
       error: redact(graphErrors).slice(0, 300),
       checkedAt: now.toISOString()
     };
@@ -196,6 +201,7 @@ async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetch
     environments: environments.slice(0, 8).map((environment) => ({ id: environment.id, name: environment.name })),
     health: [],
     metrics,
+    latencyMs: projectResponse.durationMs,
     error: warnings.length ? redact(warnings.join("; ")).slice(0, 300) : null,
     checkedAt: now.toISOString()
   };
@@ -215,6 +221,7 @@ async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000
       ...unconfigured(provider, "Sin conexión con Vercel."),
       configured: true,
       status: "degraded",
+      latencyMs: projectResponse.durationMs,
       error: projectResponse.error,
       checkedAt: now.toISOString()
     };
@@ -224,6 +231,7 @@ async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000
       ...unconfigured(provider, "Vercel no devolvió el proyecto solicitado."),
       configured: true,
       status: "degraded",
+      latencyMs: projectResponse.durationMs,
       error: `HTTP ${projectResponse.status}`,
       checkedAt: now.toISOString()
     };
@@ -271,6 +279,7 @@ async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000
     environments: [],
     health: [],
     metrics,
+    latencyMs: projectResponse.durationMs,
     error: deploymentsResponse.error || null,
     checkedAt: now.toISOString()
   };
@@ -291,6 +300,7 @@ async function supabaseStatus({ accessToken, ref, apiUrl, timeoutMs = 8000, fetc
       ...unconfigured(provider, "Sin conexión con la API de Supabase."),
       configured: true,
       status: "degraded",
+      latencyMs: response.durationMs,
       error: response.error,
       checkedAt: now.toISOString()
     };
@@ -300,6 +310,7 @@ async function supabaseStatus({ accessToken, ref, apiUrl, timeoutMs = 8000, fetc
       ...unconfigured(provider, "Supabase no devolvió el proyecto solicitado."),
       configured: true,
       status: "degraded",
+      latencyMs: response.durationMs,
       error: `HTTP ${response.status}`,
       checkedAt: now.toISOString()
     };
@@ -328,6 +339,7 @@ async function supabaseStatus({ accessToken, ref, apiUrl, timeoutMs = 8000, fetc
     environments: [],
     health,
     metrics,
+    latencyMs: response.durationMs,
     error: null,
     healthError: healthResponse.ok
       ? null

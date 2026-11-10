@@ -627,6 +627,7 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
   const supabaseCheck = remoteCheck(environment, `${environment.id}.supabase`, `Supabase ${short}`, {
     severity: "critical",
     critical: true,
+    source: "supabase",
     optional: !environment.supabaseUrl || (!environment.supabaseAnonKey && !managementConfigured)
   });
   if (!supabaseResult) {
@@ -664,6 +665,9 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
     const check = remoteCheck(environment, `${environment.id}.${provider}`, label, { severity: "medium", optional: true, source: provider });
     check.status = data && data.status ? data.status : "unknown";
     check.detail = data ? data.detail : "Integración no configurada.";
+    // La latencia del viaje torre->proveedor es lo único que permite bandear la
+    // vista Nube por umbral. Un proveedor sin configurar no hizo viaje: sigue en 0.
+    check.durationMs = data && Number.isFinite(data.latencyMs) ? data.latencyMs : 0;
     check.technical = data ? {
       configured: data.configured,
       project: data.project,

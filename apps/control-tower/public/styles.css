@@ -2149,19 +2149,17 @@ footer strong { color: var(--text); font-weight: 600; }
   color: var(--down);
 }
 
-.measure-spark {
-  display: block;
-  width: 100%;
-  max-width: 152px;
-  height: 26px;
+/* Historia medida de un monitor: la misma gramatica del mapa de modulos, en
+   miniatura. Cada barra es un sondeo con lectura; la altura viene de la banda. */
+.monitor-ticks {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 30px;
+  margin: 2px 0 0;
 }
-
-.measure-spark polyline {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.4;
-  vector-effect: non-scaling-stroke;
-}
+.monitor-ticks .map-tick { flex: 1 1 auto; min-width: 3px; max-width: 9px; }
+.monitor-ticks-foot { margin: 4px 0 0; font-size: 10.5px; color: var(--muted); }
 
 /* Mapa unico: cada columna es un sondeo, cada fila un modulo, la ultima fila la API */
 .module-map { display: flex; flex-direction: column; gap: 10px; }
@@ -2262,6 +2260,9 @@ footer strong { color: var(--text); font-weight: 600; }
 /* Sin medicion: el eje en reposo, no una barra. Un modulo sin fecha medida no
    puede fingir altura ni color de banda. */
 .map-tick.band-unknown { background: rgba(139, 155, 180, 0.3); min-height: 1px; }
+/* Informativo: hay lectura medida, pero no umbral que decidir. Se pinta neutro
+   para que no compita con los semaforos que si piden atencion. */
+.map-tick.band-informational { background: rgba(139, 155, 180, 0.55); min-height: 1px; }
 
 .map-row.api-row .map-tick { border-radius: 2px; opacity: 0.75; }
 
@@ -2386,8 +2387,9 @@ footer strong { color: var(--text); font-weight: 600; }
   border: 1px solid var(--border);
   background: rgba(9, 15, 27, 0.55);
 }
-.verdict .dot { width: 11px; height: 11px; border-radius: 50%; }
-.verdict-text { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.verdict .dot { width: 11px; height: 11px; border-radius: 50%; grid-row: 1 / span 3; align-self: center; }
+.verdict-question { margin: 0; grid-column: 2; font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: none; color: var(--muted); }
+.verdict-text { margin: 0; grid-column: 2; font-size: 13.5px; font-weight: 600; color: var(--text); }
 .verdict-rule { margin: 0; grid-column: 2; font-size: 11px; color: var(--muted); }
 .verdict.tone-ok { border-color: rgba(74, 222, 128, 0.4); }
 .verdict.tone-degraded { border-color: rgba(250, 204, 21, 0.4); }
@@ -2435,7 +2437,9 @@ footer strong { color: var(--text); font-weight: 600; }
   background: rgba(9, 15, 27, 0.45);
 }
 .component-row .component-dot { width: 11px; height: 11px; border-radius: 50%; }
-.component-name { margin: 0; font-size: 13px; font-weight: 600; }
+/* La historia del componente baja a su propia fila: dentro de la rejilla de
+   columnas del numero no habria sitio para 24 barras legibles. */
+.component-row .component-history { grid-column: 1 / -1; }.component-name { margin: 0; font-size: 13px; font-weight: 600; }
 .component-sub { margin: 0; font-size: 11px; color: var(--muted); }
 .component-latency { margin: 0; font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; }
 .component-score { margin: 0; font-size: 11.5px; color: var(--muted); text-align: right; }

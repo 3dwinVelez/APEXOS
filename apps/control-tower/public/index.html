@@ -61,6 +61,7 @@
         </div>
         <span id="gaugesMeta" class="muted small"></span>
       </header>
+      <div id="summaryVerdict" class="verdict-band"></div>
       <div id="gauges" class="gauges"></div>
     </section>
 
@@ -75,7 +76,7 @@
       <div id="moduleMap" class="module-map"></div>
     </section>
 
-    <section id="kpis" class="kpis" data-views="api" aria-label="Indicadores"></section>
+    <section id="kpis" class="kpis" data-views="api" aria-label="Medidores del API con su umbral"></section>
 
     <section class="panel span-12" data-views="api" aria-labelledby="componentsTitle">
       <header class="panel-head">
@@ -85,6 +86,7 @@
         </div>
         <span id="componentsMeta" class="muted small"></span>
       </header>
+      <div id="apiVerdict" class="verdict-band"></div>
       <div id="components" class="components"></div>
     </section>
 
@@ -99,6 +101,7 @@
           <button id="btnModuleFilter" class="link" type="button" aria-pressed="false">Solo problemas</button>
         </div>
       </header>
+      <div id="modulesVerdict" class="verdict-band"></div>
       <div id="moduleSummary" class="module-summary"></div>
       <div id="modules" class="modules"></div>
     </section>
@@ -192,6 +195,8 @@
         </div>
         <button id="btnAckAll" class="link" type="button">Reconocer todas</button>
       </header>
+      <div id="operationVerdict" class="verdict-band"></div>
+      <div id="operationKpis" class="tile-grid"></div>
       <div id="alerts" class="alerts"></div>
     </section>
 
@@ -203,6 +208,7 @@
         </div>
         <span id="cloudMeta" class="muted small"></span>
       </header>
+      <div id="cloudVerdict" class="verdict-band"></div>
       <div id="cloud" class="cloud-grid"></div>
     </section>
 

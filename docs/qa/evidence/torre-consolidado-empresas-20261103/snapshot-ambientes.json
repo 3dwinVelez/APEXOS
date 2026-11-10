@@ -1,8 +1,8 @@
 {
-  "at": "2026-11-05T21:13:50.210Z",
+  "at": "2026-11-10T16:49:39.592Z",
   "source": "tower",
   "overall": "degraded",
-  "durationMs": 1957,
+  "durationMs": 256,
   "summary": {
     "ok": 13,
     "degraded": 4,
@@ -17,8 +17,8 @@
       "short": "LOCAL",
       "branch": "desarrollo",
       "enabled": true,
-      "apiBaseUrl": "http://127.0.0.1:58996",
-      "webBaseUrl": "http://127.0.0.1:58996",
+      "apiBaseUrl": "http://127.0.0.1:59039",
+      "webBaseUrl": "http://127.0.0.1:59039",
       "overall": "degraded",
       "summary": {
         "ok": 11,
@@ -62,7 +62,15 @@
           "detail": "p95 61 ms",
           "band": "optimal",
           "tone": "ok",
-          "label_text": "Óptimo"
+          "label_text": "Óptimo",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 42,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "redis",
@@ -76,7 +84,15 @@
           "detail": null,
           "band": "optimal",
           "tone": "ok",
-          "label_text": "Óptimo"
+          "label_text": "Óptimo",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 8,
+              "band": "unknown"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "queues",
@@ -90,7 +106,15 @@
           "detail": null,
           "band": "optimal",
           "tone": "ok",
-          "label_text": "Óptimo"
+          "label_text": "Óptimo",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 15,
+              "band": "unknown"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "crons",
@@ -104,7 +128,15 @@
           "detail": null,
           "band": "optimal",
           "tone": "ok",
-          "label_text": "Óptimo"
+          "label_text": "Óptimo",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 3,
+              "band": "unknown"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "mail",
@@ -118,7 +150,9 @@
           "detail": null,
           "band": "optimal",
           "tone": "ok",
-          "label_text": "Óptimo"
+          "label_text": "Óptimo",
+          "series": [],
+          "window": 1
         },
         {
           "key": "websocket",
@@ -132,14 +166,22 @@
           "detail": null,
           "band": "optimal",
           "tone": "ok",
-          "label_text": "Óptimo"
+          "label_text": "Óptimo",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 2,
+              "band": "unknown"
+            }
+          ],
+          "window": 1
         }
       ],
       "modules": {
         "source": "api",
         "configured": true,
         "reason": null,
-        "generated_at": "2026-11-05T21:13:50.070Z",
+        "generated_at": "2026-11-10T16:49:39.565Z",
         "scope": "environment",
         "tenant": null,
         "summary": {
@@ -160,7 +202,7 @@
             "data": {
               "state": "fresco",
               "records": 1240,
-              "last_activity_at": "2026-11-05T21:13:50.070Z",
+              "last_activity_at": "2026-11-10T16:49:39.565Z",
               "age_minutes": 2,
               "expected_minutes": 60
             },
@@ -185,7 +227,7 @@
             "data": {
               "state": "viejo",
               "records": 480,
-              "last_activity_at": "2026-11-05T21:13:50.070Z",
+              "last_activity_at": "2026-11-10T16:49:39.565Z",
               "age_minutes": 240,
               "expected_minutes": 30
             },
@@ -241,7 +283,7 @@
             "band": "critical"
           }
         ],
-        "checkedAt": "2026-11-05T21:13:50.068Z"
+        "checkedAt": "2026-11-10T16:49:39.564Z"
       },
       "health": {
         "score": 70,
@@ -301,7 +343,7 @@
         "configured": true,
         "reason": null,
         "activity": {
-          "generated_at": "2026-11-05T21:13:50.077Z",
+          "generated_at": "2026-11-10T16:49:39.568Z",
           "days": 7,
           "activity": {
             "today": 812,
@@ -326,7 +368,7 @@
           }
         },
         "tenants": {
-          "generated_at": "2026-11-05T21:13:50.079Z",
+          "generated_at": "2026-11-10T16:49:39.568Z",
           "scope": "cross-tenant",
           "days": 7,
           "restricted": false,
@@ -346,12 +388,12 @@
               "active": true,
               "modules": 12,
               "users_active": 240,
-              "last_login_at": "2026-11-05T21:13:47.642Z",
+              "last_login_at": "2026-11-10T16:49:39.253Z",
               "sessions_active": 18,
               "activity_period": 4200,
-              "last_activity_at": "2026-11-05T21:13:47.642Z",
+              "last_activity_at": "2026-11-10T16:49:39.253Z",
               "gps_period": 880,
-              "last_ping_at": "2026-11-05T21:13:47.642Z",
+              "last_ping_at": "2026-11-10T16:49:39.253Z",
               "status": "ok"
             },
             {
@@ -361,10 +403,10 @@
               "active": true,
               "modules": 8,
               "users_active": 40,
-              "last_login_at": "2026-11-05T21:13:47.642Z",
+              "last_login_at": "2026-11-10T16:49:39.253Z",
               "sessions_active": 2,
               "activity_period": 120,
-              "last_activity_at": "2026-11-05T21:13:47.642Z",
+              "last_activity_at": "2026-11-10T16:49:39.253Z",
               "gps_period": 4,
               "last_ping_at": null,
               "status": "degraded"
@@ -387,7 +429,7 @@
           ]
         },
         "tenantsReason": null,
-        "checkedAt": "2026-11-05T21:13:50.074Z"
+        "checkedAt": "2026-11-10T16:49:39.566Z"
       },
       "cloud": null,
       "performance": {
@@ -395,21 +437,21 @@
         "failures": 0,
         "errorRate": 0,
         "last": {
-          "at": "2026-11-05T21:13:48.254Z",
-          "ms": 358,
+          "at": "2026-11-10T16:49:39.336Z",
+          "ms": 62,
           "ok": true,
           "endpoint": "/health",
           "status": "ok"
         },
-        "avg": 358,
-        "min": 358,
-        "max": 358,
-        "p50": 358,
-        "p95": 358,
+        "avg": 62,
+        "min": 62,
+        "max": 62,
+        "p50": 62,
+        "p95": 62,
         "series": [
           {
-            "at": "2026-11-05T21:13:48.254Z",
-            "ms": 358,
+            "at": "2026-11-10T16:49:39.336Z",
+            "ms": 62,
             "ok": true
           }
         ]
@@ -442,15 +484,23 @@
           "view": "latencia",
           "unit": "ms",
           "direction": "lower",
-          "value": 358,
-          "band": "risk",
-          "tone": "degraded",
-          "label_text": "En riesgo",
+          "value": 62,
+          "band": "optimal",
+          "tone": "ok",
+          "label_text": "Óptimo",
           "limits": {
             "optimal": 240,
             "risk": 400
           },
-          "source": "presupuesto de sonda 400 ms (viaje torre->local, no latencia del API)"
+          "source": "presupuesto de sonda 400 ms (viaje torre->local, no latencia del API)",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 62,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "errorRate",
@@ -467,7 +517,40 @@
             "optimal": 1,
             "risk": 5
           },
-          "source": "serie de sondas /health de la torre"
+          "source": "serie de sondas /health de la torre",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 0,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
+        },
+        {
+          "key": "serverErrors",
+          "label": "Errores del servidor",
+          "question": "¿El API responde bien?",
+          "view": "api",
+          "unit": "%",
+          "direction": "lower",
+          "value": 0.08,
+          "band": "risk",
+          "tone": "degraded",
+          "label_text": "En riesgo",
+          "limits": {
+            "optimal": 0,
+            "risk": 1
+          },
+          "source": "usage.by_status.5xx sobre usage.requests_total de /health",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 0.08,
+              "band": "risk"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "memoryRss",
@@ -484,16 +567,49 @@
             "optimal": 512,
             "risk": 1024
           },
-          "source": "memory_mb.rss publicado por /health"
+          "source": "memory_mb.rss publicado por /health",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 214.6,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
         },
         {
-          "key": "requests",
-          "label": "Peticiones atendidas",
+          "key": "heapPressure",
+          "label": "Presión de heap",
           "question": "¿El API aguanta la carga que tiene?",
           "view": "api",
-          "unit": "",
+          "unit": "%",
+          "direction": "lower",
+          "value": 72.9,
+          "band": "risk",
+          "tone": "degraded",
+          "label_text": "En riesgo",
+          "limits": {
+            "optimal": 60,
+            "risk": 85
+          },
+          "source": "memory_mb.heap_used / memory_mb.heap_total publicado por /health",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 72.9,
+              "band": "risk"
+            }
+          ],
+          "window": 1
+        },
+        {
+          "key": "requestRate",
+          "label": "Peticiones por minuto",
+          "question": "¿El API aguanta la carga que tiene?",
+          "view": "api",
+          "unit": "req/min",
           "direction": "informational",
-          "value": 98432,
+          "value": 806.3,
           "band": "informational",
           "tone": "unknown",
           "label_text": "Informativo",
@@ -501,7 +617,15 @@
             "optimal": null,
             "risk": null
           },
-          "source": "usage.requests_total publicado por /health"
+          "source": "usage.requests_total / uptime_seconds de /health (requiere >= 60 s de proceso)",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 806.3,
+              "band": "informational"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "uptime",
@@ -518,7 +642,34 @@
             "optimal": null,
             "risk": null
           },
-          "source": "uptime_seconds publicado por /health"
+          "source": "uptime_seconds publicado por /health",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 7325,
+              "band": "informational"
+            }
+          ],
+          "window": 1
+        },
+        {
+          "key": "cloudLatency",
+          "label": "Latencia de la nube",
+          "question": "¿Los servicios de la nube están bien?",
+          "view": "nube",
+          "unit": "ms",
+          "direction": "lower",
+          "value": null,
+          "band": "unknown",
+          "tone": "unknown",
+          "label_text": "Sin dato",
+          "limits": {
+            "optimal": 250,
+            "risk": 800
+          },
+          "source": "peor duración medida de las sondas a Railway/Vercel/Supabase",
+          "series": [],
+          "window": 1
         },
         {
           "key": "freshness",
@@ -535,7 +686,15 @@
             "optimal": 1,
             "risk": 3
           },
-          "source": "peor ratio age_minutes/expected_minutes entre modulos"
+          "source": "peor ratio age_minutes/expected_minutes entre modulos",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 8,
+              "band": "critical"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "dbLatency",
@@ -552,7 +711,15 @@
             "optimal": 100,
             "risk": 300
           },
-          "source": "componente db de /apex-control/status (viaje medida por el API)"
+          "source": "componente db de /apex-control/status (viaje medida por el API)",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 42,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "slowQueries",
@@ -569,7 +736,15 @@
             "optimal": 0,
             "risk": 5
           },
-          "source": "usage.slow_queries_total publicado por /health"
+          "source": "usage.slow_queries_total publicado por /health",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 14,
+              "band": "critical"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "dataVolume",
@@ -586,7 +761,15 @@
             "optimal": null,
             "risk": null
           },
-          "source": "suma de records por modulo en /apex-control/modules"
+          "source": "suma de records por modulo en /apex-control/modules",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 1720,
+              "band": "informational"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "dataCoverage",
@@ -603,12 +786,69 @@
             "optimal": 20,
             "risk": 5
           },
-          "source": "tenants.summary.with_activity sobre active"
+          "source": "tenants.summary.with_activity sobre active",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 66.7,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
         }
       ],
+      "verdicts": {
+        "latencia": {
+          "state": "optimal",
+          "tone": "ok",
+          "text": "p95 de la sonda al API 62 ms · Óptimo",
+          "rule": "único medidor de la vista: óptimo ≤ 240, tope 400",
+          "question": "¿Cómo está la latencia?",
+          "worst_key": "p95"
+        },
+        "api": {
+          "state": "risk",
+          "tone": "degraded",
+          "text": "Errores del servidor 0,1 % · En riesgo",
+          "rule": "Sondas fallidas 0 % (óptimo ≤ 1, tope 5) · Memoria del API 214,6 MB (óptimo ≤ 512, tope 1024) · Presión de heap 72,9 % (óptimo ≤ 60, tope 85)",
+          "question": "¿El API responde bien con la carga que tiene?",
+          "worst_key": "serverErrors"
+        },
+        "nube": {
+          "state": "unknown",
+          "tone": "unknown",
+          "text": "Ningún medidor de esta vista tiene lectura: Latencia de la nube sin dato.",
+          "rule": "lo no medido no es cero",
+          "question": "¿Los servicios de la nube están bien?"
+        },
+        "modulos": {
+          "state": "critical",
+          "tone": "down",
+          "text": "Frescura de datos 8 x · Crítico",
+          "rule": "único medidor de la vista: óptimo ≤ 1, tope 3",
+          "question": "¿Los módulos están óptimos y al día?",
+          "worst_key": "freshness"
+        },
+        "datos": {
+          "state": "critical",
+          "tone": "down",
+          "text": "Consultas lentas 14 · Crítico",
+          "rule": "Latencia de la base 42 ms (óptimo ≤ 100, tope 300) · Empresas con actividad 66,7 % (óptimo ≥ 20, en riesgo ≥ 5)",
+          "question": "¿La base está rápida y con datos reales?",
+          "worst_key": "slowQueries"
+        },
+        "resumen": {
+          "state": "critical",
+          "tone": "down",
+          "text": "Frescura de datos 8 x · Crítico",
+          "rule": "p95 de la sonda al API 62 ms (óptimo ≤ 240, tope 400) · Sondas fallidas 0 % (óptimo ≤ 1, tope 5) · Errores del servidor 0,1 % (óptimo ≤ 0, tope 1)",
+          "question": "¿Cómo está APEXOS ahora mismo?",
+          "worst_key": "freshness"
+        }
+      },
       "moduleHistory": [
         {
-          "at": "2026-11-05T21:13:50.210Z",
+          "at": "2026-11-10T16:49:39.592Z",
           "ticks": {
             "hr": {
               "band": "optimal",
@@ -627,9 +867,9 @@
             }
           },
           "api": {
-            "ms": 358,
+            "ms": 62,
             "ok": true,
-            "band": "risk"
+            "band": "optimal"
           }
         }
       ],
@@ -650,8 +890,8 @@
       "short": "QA",
       "branch": "develop",
       "enabled": true,
-      "apiBaseUrl": "http://127.0.0.1:58997",
-      "webBaseUrl": "http://127.0.0.1:58997",
+      "apiBaseUrl": "http://127.0.0.1:59040",
+      "webBaseUrl": "http://127.0.0.1:59040",
       "overall": "degraded",
       "summary": {
         "ok": 1,
@@ -674,7 +914,7 @@
         "source": "catalog",
         "configured": false,
         "reason": "MODULO_NO_DESPLEGADO",
-        "generated_at": "2026-11-05T21:13:48.695Z",
+        "generated_at": "2026-11-10T16:49:39.409Z",
         "summary": {
           "total": 32,
           "ok": 0,
@@ -1675,7 +1915,7 @@
         "activity": null,
         "tenants": null,
         "tenantsReason": "NO_DISPONIBLE",
-        "checkedAt": "2026-11-05T21:13:48.701Z"
+        "checkedAt": "2026-11-10T16:49:39.410Z"
       },
       "cloud": {
         "railway": {
@@ -1690,7 +1930,10 @@
           "health": [],
           "metrics": null,
           "error": null,
-          "checkedAt": "2026-11-05T21:13:48.341Z"
+          "latencyMs": null,
+          "checkedAt": "2026-11-10T16:49:39.355Z",
+          "series": [],
+          "window": 1
         },
         "vercel": {
           "provider": "vercel",
@@ -1704,7 +1947,10 @@
           "health": [],
           "metrics": null,
           "error": null,
-          "checkedAt": "2026-11-05T21:13:48.342Z"
+          "latencyMs": null,
+          "checkedAt": "2026-11-10T16:49:39.355Z",
+          "series": [],
+          "window": 1
         },
         "supabase": {
           "provider": "supabase",
@@ -1718,7 +1964,10 @@
           "health": [],
           "metrics": null,
           "error": null,
-          "checkedAt": "2026-11-05T21:13:48.343Z"
+          "latencyMs": null,
+          "checkedAt": "2026-11-10T16:49:39.356Z",
+          "series": [],
+          "window": 1
         }
       },
       "performance": {
@@ -1726,21 +1975,21 @@
         "failures": 0,
         "errorRate": 0,
         "last": {
-          "at": "2026-11-05T21:13:48.629Z",
-          "ms": 290,
+          "at": "2026-11-10T16:49:39.400Z",
+          "ms": 46,
           "ok": true,
           "endpoint": "/health",
           "status": "ok"
         },
-        "avg": 290,
-        "min": 290,
-        "max": 290,
-        "p50": 290,
-        "p95": 290,
+        "avg": 46,
+        "min": 46,
+        "max": 46,
+        "p50": 46,
+        "p95": 46,
         "series": [
           {
-            "at": "2026-11-05T21:13:48.629Z",
-            "ms": 290,
+            "at": "2026-11-10T16:49:39.400Z",
+            "ms": 46,
             "ok": true
           }
         ]
@@ -1791,7 +2040,7 @@
           "view": "latencia",
           "unit": "ms",
           "direction": "lower",
-          "value": 290,
+          "value": 46,
           "band": "optimal",
           "tone": "ok",
           "label_text": "Óptimo",
@@ -1799,7 +2048,15 @@
             "optimal": 540,
             "risk": 900
           },
-          "source": "presupuesto de sonda 900 ms (viaje torre->develop, no latencia del API)"
+          "source": "presupuesto de sonda 900 ms (viaje torre->develop, no latencia del API)",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 46,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "errorRate",
@@ -1816,7 +2073,34 @@
             "optimal": 1,
             "risk": 5
           },
-          "source": "serie de sondas /health de la torre"
+          "source": "serie de sondas /health de la torre",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 0,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
+        },
+        {
+          "key": "serverErrors",
+          "label": "Errores del servidor",
+          "question": "¿El API responde bien?",
+          "view": "api",
+          "unit": "%",
+          "direction": "lower",
+          "value": null,
+          "band": "unknown",
+          "tone": "unknown",
+          "label_text": "Sin dato",
+          "limits": {
+            "optimal": 0,
+            "risk": 1
+          },
+          "source": "usage.by_status.5xx sobre usage.requests_total de /health",
+          "series": [],
+          "window": 1
         },
         {
           "key": "memoryRss",
@@ -1833,14 +2117,35 @@
             "optimal": 512,
             "risk": 1024
           },
-          "source": "memory_mb.rss publicado por /health"
+          "source": "memory_mb.rss publicado por /health",
+          "series": [],
+          "window": 1
         },
         {
-          "key": "requests",
-          "label": "Peticiones atendidas",
+          "key": "heapPressure",
+          "label": "Presión de heap",
           "question": "¿El API aguanta la carga que tiene?",
           "view": "api",
-          "unit": "",
+          "unit": "%",
+          "direction": "lower",
+          "value": null,
+          "band": "unknown",
+          "tone": "unknown",
+          "label_text": "Sin dato",
+          "limits": {
+            "optimal": 60,
+            "risk": 85
+          },
+          "source": "memory_mb.heap_used / memory_mb.heap_total publicado por /health",
+          "series": [],
+          "window": 1
+        },
+        {
+          "key": "requestRate",
+          "label": "Peticiones por minuto",
+          "question": "¿El API aguanta la carga que tiene?",
+          "view": "api",
+          "unit": "req/min",
           "direction": "informational",
           "value": null,
           "band": "unknown",
@@ -1850,7 +2155,9 @@
             "optimal": null,
             "risk": null
           },
-          "source": "usage.requests_total publicado por /health"
+          "source": "usage.requests_total / uptime_seconds de /health (requiere >= 60 s de proceso)",
+          "series": [],
+          "window": 1
         },
         {
           "key": "uptime",
@@ -1867,7 +2174,28 @@
             "optimal": null,
             "risk": null
           },
-          "source": "uptime_seconds publicado por /health"
+          "source": "uptime_seconds publicado por /health",
+          "series": [],
+          "window": 1
+        },
+        {
+          "key": "cloudLatency",
+          "label": "Latencia de la nube",
+          "question": "¿Los servicios de la nube están bien?",
+          "view": "nube",
+          "unit": "ms",
+          "direction": "lower",
+          "value": null,
+          "band": "unknown",
+          "tone": "unknown",
+          "label_text": "Sin dato",
+          "limits": {
+            "optimal": 250,
+            "risk": 800
+          },
+          "source": "peor duración medida de las sondas a Railway/Vercel/Supabase",
+          "series": [],
+          "window": 1
         },
         {
           "key": "freshness",
@@ -1884,7 +2212,9 @@
             "optimal": 1,
             "risk": 3
           },
-          "source": "peor ratio age_minutes/expected_minutes entre modulos"
+          "source": "peor ratio age_minutes/expected_minutes entre modulos",
+          "series": [],
+          "window": 1
         },
         {
           "key": "dbLatency",
@@ -1901,7 +2231,9 @@
             "optimal": 100,
             "risk": 300
           },
-          "source": "componente db de /apex-control/status (viaje medida por el API)"
+          "source": "componente db de /apex-control/status (viaje medida por el API)",
+          "series": [],
+          "window": 1
         },
         {
           "key": "slowQueries",
@@ -1918,7 +2250,9 @@
             "optimal": 0,
             "risk": 5
           },
-          "source": "usage.slow_queries_total publicado por /health"
+          "source": "usage.slow_queries_total publicado por /health",
+          "series": [],
+          "window": 1
         },
         {
           "key": "dataVolume",
@@ -1935,7 +2269,9 @@
             "optimal": null,
             "risk": null
           },
-          "source": "suma de records por modulo en /apex-control/modules"
+          "source": "suma de records por modulo en /apex-control/modules",
+          "series": [],
+          "window": 1
         },
         {
           "key": "dataCoverage",
@@ -1952,12 +2288,61 @@
             "optimal": 20,
             "risk": 5
           },
-          "source": "tenants.summary.with_activity sobre active"
+          "source": "tenants.summary.with_activity sobre active",
+          "series": [],
+          "window": 1
         }
       ],
+      "verdicts": {
+        "latencia": {
+          "state": "optimal",
+          "tone": "ok",
+          "text": "p95 de la sonda al API 46 ms · Óptimo",
+          "rule": "único medidor de la vista: óptimo ≤ 540, tope 900",
+          "question": "¿Cómo está la latencia?",
+          "worst_key": "p95"
+        },
+        "api": {
+          "state": "optimal",
+          "tone": "ok",
+          "text": "Sondas fallidas 0 % · Óptimo",
+          "rule": "único medidor de la vista: óptimo ≤ 1, tope 5",
+          "question": "¿El API responde bien con la carga que tiene?",
+          "worst_key": "errorRate"
+        },
+        "nube": {
+          "state": "unknown",
+          "tone": "unknown",
+          "text": "Ningún medidor de esta vista tiene lectura: Latencia de la nube sin dato.",
+          "rule": "lo no medido no es cero",
+          "question": "¿Los servicios de la nube están bien?"
+        },
+        "modulos": {
+          "state": "unknown",
+          "tone": "unknown",
+          "text": "Ningún medidor de esta vista tiene lectura: Frescura de datos sin dato.",
+          "rule": "lo no medido no es cero",
+          "question": "¿Los módulos están óptimos y al día?"
+        },
+        "datos": {
+          "state": "unknown",
+          "tone": "unknown",
+          "text": "Ningún medidor de esta vista tiene lectura: Latencia de la base, Consultas lentas, Registros medidos, Empresas con actividad sin dato.",
+          "rule": "lo no medido no es cero",
+          "question": "¿La base está rápida y con datos reales?"
+        },
+        "resumen": {
+          "state": "optimal",
+          "tone": "ok",
+          "text": "p95 de la sonda al API 46 ms · Óptimo",
+          "rule": "Sondas fallidas 0 % (óptimo ≤ 1, tope 5)",
+          "question": "¿Cómo está APEXOS ahora mismo?",
+          "worst_key": "p95"
+        }
+      },
       "moduleHistory": [
         {
-          "at": "2026-11-05T21:13:50.210Z",
+          "at": "2026-11-10T16:49:39.592Z",
           "ticks": {
             "inventario": {
               "band": "unknown",
@@ -2121,7 +2506,7 @@
             }
           },
           "api": {
-            "ms": 290,
+            "ms": 46,
             "ok": true,
             "band": "optimal"
           }
@@ -2144,8 +2529,8 @@
       "short": "PROD",
       "branch": "main",
       "enabled": true,
-      "apiBaseUrl": "http://127.0.0.1:58997",
-      "webBaseUrl": "http://127.0.0.1:58997",
+      "apiBaseUrl": "http://127.0.0.1:59040",
+      "webBaseUrl": "http://127.0.0.1:59040",
       "overall": "degraded",
       "summary": {
         "ok": 1,
@@ -2168,7 +2553,7 @@
         "source": "catalog",
         "configured": false,
         "reason": "MODULO_NO_DESPLEGADO",
-        "generated_at": "2026-11-05T21:13:48.728Z",
+        "generated_at": "2026-11-10T16:49:39.412Z",
         "summary": {
           "total": 32,
           "ok": 0,
@@ -3169,7 +3554,7 @@
         "activity": null,
         "tenants": null,
         "tenantsReason": "NO_DISPONIBLE",
-        "checkedAt": "2026-11-05T21:13:48.728Z"
+        "checkedAt": "2026-11-10T16:49:39.412Z"
       },
       "cloud": {
         "railway": {
@@ -3184,7 +3569,10 @@
           "health": [],
           "metrics": null,
           "error": null,
-          "checkedAt": "2026-11-05T21:13:48.346Z"
+          "latencyMs": null,
+          "checkedAt": "2026-11-10T16:49:39.357Z",
+          "series": [],
+          "window": 1
         },
         "vercel": {
           "provider": "vercel",
@@ -3198,7 +3586,10 @@
           "health": [],
           "metrics": null,
           "error": null,
-          "checkedAt": "2026-11-05T21:13:48.346Z"
+          "latencyMs": null,
+          "checkedAt": "2026-11-10T16:49:39.357Z",
+          "series": [],
+          "window": 1
         },
         "supabase": {
           "provider": "supabase",
@@ -3212,7 +3603,10 @@
           "health": [],
           "metrics": null,
           "error": null,
-          "checkedAt": "2026-11-05T21:13:48.346Z"
+          "latencyMs": null,
+          "checkedAt": "2026-11-10T16:49:39.357Z",
+          "series": [],
+          "window": 1
         }
       },
       "performance": {
@@ -3220,21 +3614,21 @@
         "failures": 0,
         "errorRate": 0,
         "last": {
-          "at": "2026-11-05T21:13:48.659Z",
-          "ms": 314,
+          "at": "2026-11-10T16:49:39.404Z",
+          "ms": 47,
           "ok": true,
           "endpoint": "/health",
           "status": "ok"
         },
-        "avg": 314,
-        "min": 314,
-        "max": 314,
-        "p50": 314,
-        "p95": 314,
+        "avg": 47,
+        "min": 47,
+        "max": 47,
+        "p50": 47,
+        "p95": 47,
         "series": [
           {
-            "at": "2026-11-05T21:13:48.659Z",
-            "ms": 314,
+            "at": "2026-11-10T16:49:39.404Z",
+            "ms": 47,
             "ok": true
           }
         ]
@@ -3285,7 +3679,7 @@
           "view": "latencia",
           "unit": "ms",
           "direction": "lower",
-          "value": 314,
+          "value": 47,
           "band": "optimal",
           "tone": "ok",
           "label_text": "Óptimo",
@@ -3293,7 +3687,15 @@
             "optimal": 840,
             "risk": 1400
           },
-          "source": "presupuesto de sonda 1400 ms (viaje torre->main, no latencia del API)"
+          "source": "presupuesto de sonda 1400 ms (viaje torre->main, no latencia del API)",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 47,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
         },
         {
           "key": "errorRate",
@@ -3310,7 +3712,34 @@
             "optimal": 1,
             "risk": 5
           },
-          "source": "serie de sondas /health de la torre"
+          "source": "serie de sondas /health de la torre",
+          "series": [
+            {
+              "at": "2026-11-10T16:49:39.592Z",
+              "value": 0,
+              "band": "optimal"
+            }
+          ],
+          "window": 1
+        },
+        {
+          "key": "serverErrors",
+          "label": "Errores del servidor",
+          "question": "¿El API responde bien?",
+          "view": "api",
+          "unit": "%",
+          "direction": "lower",
+          "value": null,
+          "band": "unknown",
+          "tone": "unknown",
+          "label_text": "Sin dato",
+          "limits": {
+            "optimal": 0,
+            "risk": 1
+          },
+          "source": "usage.by_status.5xx sobre usage.requests_total de /health",
+          "series": [],
+          "window": 1
         },
         {
           "key": "memoryRss",
@@ -3327,14 +3756,35 @@
             "optimal": 512,
             "risk": 1024
           },
-          "source": "memory_mb.rss publicado por /health"
+          "source": "memory_mb.rss publicado por /health",
+          "series": [],
+          "window": 1
         },
         {
-          "key": "requests",
-          "label": "Peticiones atendidas",
+          "key": "heapPressure",
+          "label": "Presión de heap",
           "question": "¿El API aguanta la carga que tiene?",
           "view": "api",
-          "unit": "",
+          "unit": "%",
+          "direction": "lower",
+          "value": null,
+          "band": "unknown",
+          "tone": "unknown",
+          "label_text": "Sin dato",
+          "limits": {
+            "optimal": 60,
+            "risk": 85
+          },
+          "source": "memory_mb.heap_used / memory_mb.heap_total publicado por /health",
+          "series": [],
+          "window": 1
+        },
+        {
+          "key": "requestRate",
+          "label": "Peticiones por minuto",
+          "question": "¿El API aguanta la carga que tiene?",
+          "view": "api",
+          "unit": "req/min",
           "direction": "informational",
           "value": null,
           "band": "unknown",
@@ -3344,7 +3794,9 @@
             "optimal": null,
             "risk": null
           },
-          "source": "usage.requests_total publicado por /health"
+          "source": "usage.requests_total / uptime_seconds de /health (requiere >= 60 s de proceso)",
+          "series": [],
+          "window": 1
         },
         {
           "key": "uptime",
@@ -3361,7 +3813,28 @@
             "optimal": null,
             "risk": null
           },
-          "source": "uptime_seconds publicado por /health"
+          "source": "uptime_seconds publicado por /health",
+          "series": [],
+          "window": 1
+        },
+        {
+          "key": "cloudLatency",
+          "label": "Latencia de la nube",
+          "question": "¿Los servicios de la nube están bien?",
+          "view": "nube",
+          "unit": "ms",
+          "direction": "lower",
+          "value": null,
+          "band": "unknown",
+          "tone": "unknown",
+          "label_text": "Sin dato",
+          "limits": {
+            "optimal": 250,
+            "risk": 800
+          },
+          "source": "peor duración medida de las sondas a Railway/Vercel/Supabase",
+          "series": [],
+          "window": 1
         },
         {
           "key": "freshness",
@@ -3378,7 +3851,9 @@
             "optimal": 1,
             "risk": 3
           },
-          "source": "peor ratio age_minutes/expected_minutes entre modulos"
+          "source": "peor ratio age_minutes/expected_minutes entre modulos",
+          "series": [],
+          "window": 1
         },
         {
           "key": "dbLatency",
@@ -3395,7 +3870,9 @@
             "optimal": 100,
             "risk": 300
           },
-          "source": "componente db de /apex-control/status (viaje medida por el API)"
+          "source": "componente db de /apex-control/status (viaje medida por el API)",
+          "series": [],
+          "window": 1
         },
         {
           "key": "slowQueries",
@@ -3412,7 +3889,9 @@
             "optimal": 0,
             "risk": 5
           },
-          "source": "usage.slow_queries_total publicado por /health"
+          "source": "usage.slow_queries_total publicado por /health",
+          "series": [],
+          "window": 1
         },
         {
           "key": "dataVolume",
@@ -3429,7 +3908,9 @@
             "optimal": null,
             "risk": null
           },
-          "source": "suma de records por modulo en /apex-control/modules"
+          "source": "suma de records por modulo en /apex-control/modules",
+          "series": [],
+          "window": 1
         },
         {
           "key": "dataCoverage",
@@ -3446,12 +3927,61 @@
             "optimal": 20,
             "risk": 5
           },
-          "source": "tenants.summary.with_activity sobre active"
+          "source": "tenants.summary.with_activity sobre active",
+          "series": [],
+          "window": 1
         }
       ],
+      "verdicts": {
+        "latencia": {
+          "state": "optimal",
+          "tone": "ok",
+          "text": "p95 de la sonda al API 47 ms · Óptimo",
+          "rule": "único medidor de la vista: óptimo ≤ 840, tope 1400",
+          "question": "¿Cómo está la latencia?",
+          "worst_key": "p95"
+        },
+        "api": {
+          "state": "optimal",
+          "tone": "ok",
+          "text": "Sondas fallidas 0 % · Óptimo",
+          "rule": "único medidor de la vista: óptimo ≤ 1, tope 5",
+          "question": "¿El API responde bien con la carga que tiene?",
+          "worst_key": "errorRate"
+        },
+        "nube": {
+          "state": "unknown",
+          "tone": "unknown",
+          "text": "Ningún medidor de esta vista tiene lectura: Latencia de la nube sin dato.",
+          "rule": "lo no medido no es cero",
+          "question": "¿Los servicios de la nube están bien?"
+        },
+        "modulos": {
+          "state": "unknown",
+          "tone": "unknown",
+          "text": "Ningún medidor de esta vista tiene lectura: Frescura de datos sin dato.",
+          "rule": "lo no medido no es cero",
+          "question": "¿Los módulos están óptimos y al día?"
+        },
+        "datos": {
+          "state": "unknown",
+          "tone": "unknown",
+          "text": "Ningún medidor de esta vista tiene lectura: Latencia de la base, Consultas lentas, Registros medidos, Empresas con actividad sin dato.",
+          "rule": "lo no medido no es cero",
+          "question": "¿La base está rápida y con datos reales?"
+        },
+        "resumen": {
+          "state": "optimal",
+          "tone": "ok",
+          "text": "p95 de la sonda al API 47 ms · Óptimo",
+          "rule": "Sondas fallidas 0 % (óptimo ≤ 1, tope 5)",
+          "question": "¿Cómo está APEXOS ahora mismo?",
+          "worst_key": "p95"
+        }
+      },
       "moduleHistory": [
         {
-          "at": "2026-11-05T21:13:50.210Z",
+          "at": "2026-11-10T16:49:39.592Z",
           "ticks": {
             "inventario": {
               "band": "unknown",
@@ -3615,7 +4145,7 @@
             }
           },
           "api": {
-            "ms": 314,
+            "ms": 47,
             "ok": true,
             "band": "optimal"
           }
@@ -3669,8 +4199,8 @@
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.254Z",
-        "latencyMs": 358,
+        "checkedAt": "2026-11-10T16:49:39.336Z",
+        "latencyMs": 62,
         "detail": {
           "status": "OK",
           "version": "2.0",
@@ -3695,17 +4225,25 @@
             "slow_queries_total": 14
           }
         },
-        "endpoint": "http://127.0.0.1:58996/health",
+        "endpoint": "http://127.0.0.1:59039/health",
         "method": "GET",
         "httpStatus": 200,
         "error": null,
         "response": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":19,\"commit\":\"cafebabe1234\",\"service_certification\":\"products-v2\",\"uptime_seconds\":7325,\"memory_mb\":{\"rss\":214.6,\"heap_used\":88.4,\"heap_total\":121.2,\"external\":10.1},\"usage\":{\"requests_total\":98432,\"by_status\":{\"2xx\":96100,\"3xx\":240,\"4xx\":2010,\"5xx\":82},\"slow_queries_total\":14}}"
       },
-      "durationMs": 358,
+      "durationMs": 62,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.254Z",
+      "checkedAt": "2026-11-10T16:49:39.336Z",
       "functional": "La API responde con errores o lentitud; algunas operaciones del negocio pueden fallar.",
-      "action": "Revisa el despliegue de la API, sus logs y la conectividad con la base de datos."
+      "action": "Revisa el despliegue de la API, sus logs y la conectividad con la base de datos.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 62,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "db",
@@ -3719,19 +4257,27 @@
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.276Z",
-        "latencyMs": 232,
+        "checkedAt": "2026-11-10T16:49:39.338Z",
+        "latencyMs": 40,
         "detail": "tcp 127.0.0.1:55432",
         "protocol": "tcp",
         "host": "127.0.0.1",
         "port": 55432,
         "error": null
       },
-      "durationMs": 232,
+      "durationMs": 40,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.276Z",
+      "checkedAt": "2026-11-10T16:49:39.338Z",
       "functional": "La base de datos responde con lentitud; las operaciones pueden demorar o fallar.",
-      "action": "Verifica el servicio PostgreSQL, sus conexiones activas, disco y réplicas."
+      "action": "Verifica el servicio PostgreSQL, sus conexiones activas, disco y réplicas.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 40,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "develop.api",
@@ -3751,8 +4297,8 @@
       "technical": {
         "environment": "develop",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.629Z",
-        "latencyMs": 290,
+        "checkedAt": "2026-11-10T16:49:39.400Z",
+        "latencyMs": 46,
         "detail": {
           "status": "OK",
           "version": "2.0",
@@ -3760,17 +4306,25 @@
           "commit": "938fc2b6f42c",
           "service_certification": "products-v2"
         },
-        "endpoint": "http://127.0.0.1:58997/health",
+        "endpoint": "http://127.0.0.1:59040/health",
         "method": "GET",
         "httpStatus": 200,
         "error": null,
         "response": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":17,\"commit\":\"938fc2b6f42c\",\"service_certification\":\"products-v2\"}"
       },
-      "durationMs": 290,
+      "durationMs": 46,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.629Z",
+      "checkedAt": "2026-11-10T16:49:39.400Z",
       "functional": "La API responde con errores o lentitud; algunas operaciones del negocio pueden fallar.",
-      "action": "Revisa el despliegue de la API, sus logs y la conectividad con la base de datos."
+      "action": "Revisa el despliegue de la API, sus logs y la conectividad con la base de datos.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 46,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "develop.supabase",
@@ -3783,17 +4337,19 @@
       "detail": "Supabase URL no configurada.",
       "technical": {
         "environment": "develop",
-        "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.629Z",
+        "source": "supabase",
+        "checkedAt": "2026-11-10T16:49:39.401Z",
         "latencyMs": 0,
         "detail": "Supabase URL no configurada.",
         "configured": false
       },
       "durationMs": 0,
-      "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.629Z",
+      "source": "supabase",
+      "checkedAt": "2026-11-10T16:49:39.401Z",
       "functional": "Supabase responde con lentitud o estado parcial; el inicio de sesión y los datos pueden fallar.",
-      "action": "Revisa el proyecto Supabase, su estado, pausas y límites de uso."
+      "action": "Revisa el proyecto Supabase, su estado, pausas y límites de uso.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.api",
@@ -3813,8 +4369,8 @@
       "technical": {
         "environment": "main",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.659Z",
-        "latencyMs": 314,
+        "checkedAt": "2026-11-10T16:49:39.404Z",
+        "latencyMs": 47,
         "detail": {
           "status": "OK",
           "version": "2.0",
@@ -3822,17 +4378,25 @@
           "commit": "938fc2b6f42c",
           "service_certification": "products-v2"
         },
-        "endpoint": "http://127.0.0.1:58997/health",
+        "endpoint": "http://127.0.0.1:59040/health",
         "method": "GET",
         "httpStatus": 200,
         "error": null,
         "response": "{\"status\":\"OK\",\"version\":\"2.0\",\"modules\":17,\"commit\":\"938fc2b6f42c\",\"service_certification\":\"products-v2\"}"
       },
-      "durationMs": 314,
+      "durationMs": 47,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.659Z",
+      "checkedAt": "2026-11-10T16:49:39.404Z",
       "functional": "La API responde con errores o lentitud; algunas operaciones del negocio pueden fallar.",
-      "action": "Revisa el despliegue de la API, sus logs y la conectividad con la base de datos."
+      "action": "Revisa el despliegue de la API, sus logs y la conectividad con la base de datos.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 47,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "main.supabase",
@@ -3845,17 +4409,19 @@
       "detail": "Supabase URL no configurada.",
       "technical": {
         "environment": "main",
-        "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.659Z",
+        "source": "supabase",
+        "checkedAt": "2026-11-10T16:49:39.405Z",
         "latencyMs": 0,
         "detail": "Supabase URL no configurada.",
         "configured": false
       },
       "durationMs": 0,
-      "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.659Z",
+      "source": "supabase",
+      "checkedAt": "2026-11-10T16:49:39.405Z",
       "functional": "Supabase responde con lentitud o estado parcial; el inicio de sesión y los datos pueden fallar.",
-      "action": "Revisa el proyecto Supabase, su estado, pausas y límites de uso."
+      "action": "Revisa el proyecto Supabase, su estado, pausas y límites de uso.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "apex-control",
@@ -3872,13 +4438,13 @@
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:50.063Z",
+        "checkedAt": "2026-11-10T16:49:39.560Z",
         "latencyMs": 3,
         "detail": {
           "overall": "ok",
           "components": 6
         },
-        "endpoint": "http://127.0.0.1:58996/api/v1/apex-control/status",
+        "endpoint": "http://127.0.0.1:59039/api/v1/apex-control/status",
         "method": "GET",
         "httpStatus": 200,
         "error": null,
@@ -3887,7 +4453,7 @@
       },
       "durationMs": 3,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:50.063Z",
+      "checkedAt": "2026-11-10T16:49:39.560Z",
       "components": [
         {
           "key": "db",
@@ -3959,7 +4525,15 @@
       "componentsScore": 94,
       "summaryCounts": null,
       "functional": "La telemetría profunda está limitada; algunas métricas internas pueden faltar.",
-      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API."
+      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 3,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "brain",
@@ -3977,8 +4551,8 @@
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.278Z",
-        "latencyMs": 386,
+        "checkedAt": "2026-11-10T16:49:39.339Z",
+        "latencyMs": 53,
         "detail": {
           "status": "OK",
           "version": "2.0",
@@ -3990,11 +4564,19 @@
         "error": null,
         "response": "{\"status\":\"OK\",\"version\":\"2.0\",\"service\":\"brain\"}"
       },
-      "durationMs": 386,
+      "durationMs": 53,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.278Z",
+      "checkedAt": "2026-11-10T16:49:39.339Z",
       "functional": "El servicio de IA responde con lentitud; los análisis pueden tardar o fallar.",
-      "action": "Revisa el servicio Brain, su salud y sus dependencias."
+      "action": "Revisa el servicio Brain, su salud y sus dependencias.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 53,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "crons",
@@ -4008,16 +4590,18 @@
       "technical": {
         "environment": "local",
         "source": "apex-control",
-        "checkedAt": "2026-11-05T21:13:50.068Z",
+        "checkedAt": "2026-11-10T16:49:39.564Z",
         "latencyMs": 0,
         "detail": null
       },
       "durationMs": 0,
       "source": "apex-control",
-      "checkedAt": "2026-11-05T21:13:50.068Z",
+      "checkedAt": "2026-11-10T16:49:39.564Z",
       "latencyMs": 3,
       "functional": "Las tareas programadas se ejecutan con retraso.",
-      "action": "Revisa el planificador de crons y sus últimos resultados."
+      "action": "Revisa el planificador de crons y sus últimos resultados.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "docker",
@@ -4028,49 +4612,57 @@
       "critical": false,
       "optional": true,
       "detail": {
-        "containers": 4,
+        "containers": 5,
         "listing": [
           {
+            "name": "infra-brain-1",
+            "status": "Up 3 hours (healthy)"
+          },
+          {
+            "name": "infra-pgbouncer-1",
+            "status": "Up 3 hours (healthy)"
+          },
+          {
             "name": "infra-postgres-1",
-            "status": "Up 31 hours (healthy)"
+            "status": "Up 3 hours (healthy)"
           },
           {
             "name": "infra-redis-1",
-            "status": "Up 31 hours (healthy)"
+            "status": "Up 3 hours (healthy)"
           },
           {
             "name": "infra-minio-1",
-            "status": "Up 31 hours (healthy)"
-          },
-          {
-            "name": "infra-brain-1",
-            "status": "Up 31 hours"
+            "status": "Up 3 hours (healthy)"
           }
         ]
       },
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.285Z",
-        "latencyMs": 1778,
+        "checkedAt": "2026-11-10T16:49:39.341Z",
+        "latencyMs": 219,
         "detail": {
-          "containers": 4,
+          "containers": 5,
           "listing": [
             {
+              "name": "infra-brain-1",
+              "status": "Up 3 hours (healthy)"
+            },
+            {
+              "name": "infra-pgbouncer-1",
+              "status": "Up 3 hours (healthy)"
+            },
+            {
               "name": "infra-postgres-1",
-              "status": "Up 31 hours (healthy)"
+              "status": "Up 3 hours (healthy)"
             },
             {
               "name": "infra-redis-1",
-              "status": "Up 31 hours (healthy)"
+              "status": "Up 3 hours (healthy)"
             },
             {
               "name": "infra-minio-1",
-              "status": "Up 31 hours (healthy)"
-            },
-            {
-              "name": "infra-brain-1",
-              "status": "Up 31 hours"
+              "status": "Up 3 hours (healthy)"
             }
           ]
         },
@@ -4078,28 +4670,40 @@
         "error": null,
         "containers": [
           {
+            "name": "infra-brain-1",
+            "status": "Up 3 hours (healthy)"
+          },
+          {
+            "name": "infra-pgbouncer-1",
+            "status": "Up 3 hours (healthy)"
+          },
+          {
             "name": "infra-postgres-1",
-            "status": "Up 31 hours (healthy)"
+            "status": "Up 3 hours (healthy)"
           },
           {
             "name": "infra-redis-1",
-            "status": "Up 31 hours (healthy)"
+            "status": "Up 3 hours (healthy)"
           },
           {
             "name": "infra-minio-1",
-            "status": "Up 31 hours (healthy)"
-          },
-          {
-            "name": "infra-brain-1",
-            "status": "Up 31 hours"
+            "status": "Up 3 hours (healthy)"
           }
         ]
       },
-      "durationMs": 1778,
+      "durationMs": 219,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.285Z",
+      "checkedAt": "2026-11-10T16:49:39.341Z",
       "functional": "Algunos contenedores locales no están operativos.",
-      "action": "Revisa Docker Desktop y el estado de los contenedores locales."
+      "action": "Revisa Docker Desktop y el estado de los contenedores locales.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 219,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "local.activity",
@@ -4114,12 +4718,12 @@
       "detail": "812 actividades hoy · 4320 en 7 dias · 20 conexiones (292 usuarios)",
       "durationMs": 0,
       "source": "activity",
-      "checkedAt": "2026-11-05T21:13:50.074Z",
+      "checkedAt": "2026-11-10T16:49:39.566Z",
       "functional": "El componente responde con errores o lentitud; algunas operaciones pueden fallar.",
       "technical": {
         "environment": "local",
         "source": "api",
-        "checkedAt": "2026-11-05T21:13:50.074Z",
+        "checkedAt": "2026-11-10T16:49:39.566Z",
         "latencyMs": 0,
         "detail": "812 actividades hoy · 4320 en 7 dias · 20 conexiones (292 usuarios)",
         "reason": null,
@@ -4149,7 +4753,9 @@
         "tenantsReason": null,
         "tenantsDetail": null
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "local.module.hr",
@@ -4165,16 +4771,16 @@
       "detail": "1.240 registros · ultima actividad hace 2 min",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:50.070Z",
+      "checkedAt": "2026-11-10T16:49:39.565Z",
       "functional": "El componente responde con errores o lentitud; algunas operaciones pueden fallar.",
       "technical": {
         "environment": "local",
         "source": "api",
-        "checkedAt": "2026-11-05T21:13:50.070Z",
+        "checkedAt": "2026-11-10T16:49:39.565Z",
         "latencyMs": 0,
         "detail": "1.240 registros · ultima actividad hace 2 min",
         "records": 1240,
-        "last_activity_at": "2026-11-05T21:13:50.070Z",
+        "last_activity_at": "2026-11-10T16:49:39.565Z",
         "age_minutes": 2,
         "expected_minutes": 60,
         "services": [
@@ -4186,7 +4792,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "local.module.services",
@@ -4202,16 +4810,16 @@
       "detail": "Ultima actividad hace 240 min (esperado <= 30 min)",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:50.070Z",
+      "checkedAt": "2026-11-10T16:49:39.565Z",
       "functional": "El componente responde con errores o lentitud; algunas operaciones pueden fallar.",
       "technical": {
         "environment": "local",
         "source": "api",
-        "checkedAt": "2026-11-05T21:13:50.070Z",
+        "checkedAt": "2026-11-10T16:49:39.565Z",
         "latencyMs": 0,
         "detail": "Ultima actividad hace 240 min (esperado <= 30 min)",
         "records": 480,
-        "last_activity_at": "2026-11-05T21:13:50.070Z",
+        "last_activity_at": "2026-11-10T16:49:39.565Z",
         "age_minutes": 240,
         "expected_minutes": 30,
         "services": [
@@ -4230,7 +4838,9 @@
           }
         ]
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "local.module.transport",
@@ -4246,12 +4856,12 @@
       "detail": "Dependencia de sincronizacion caida",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:50.070Z",
+      "checkedAt": "2026-11-10T16:49:39.565Z",
       "functional": "El componente no responde y puede estar bloqueando una función de negocio.",
       "technical": {
         "environment": "local",
         "source": "api",
-        "checkedAt": "2026-11-05T21:13:50.070Z",
+        "checkedAt": "2026-11-10T16:49:39.565Z",
         "latencyMs": 0,
         "detail": "Dependencia de sincronizacion caida",
         "records": null,
@@ -4274,7 +4884,9 @@
           }
         ]
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "local.modules",
@@ -4288,11 +4900,11 @@
       "detail": "1/3 modulos en objetivo · 1 requieren atencion · 1 caidos · 0 sin dato",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:50.070Z",
+      "checkedAt": "2026-11-10T16:49:39.565Z",
       "technical": {
         "environment": "local",
         "source": "api",
-        "checkedAt": "2026-11-05T21:13:50.070Z",
+        "checkedAt": "2026-11-10T16:49:39.565Z",
         "latencyMs": 0,
         "detail": "1/3 modulos en objetivo · 1 requieren atencion · 1 caidos · 0 sin dato",
         "configured": true,
@@ -4307,7 +4919,9 @@
         }
       },
       "functional": "El componente responde con errores o lentitud; algunas operaciones pueden fallar.",
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "mail",
@@ -4321,16 +4935,18 @@
       "technical": {
         "environment": "local",
         "source": "apex-control",
-        "checkedAt": "2026-11-05T21:13:50.068Z",
+        "checkedAt": "2026-11-10T16:49:39.564Z",
         "latencyMs": 0,
         "detail": null
       },
       "durationMs": 0,
       "source": "apex-control",
-      "checkedAt": "2026-11-05T21:13:50.068Z",
+      "checkedAt": "2026-11-10T16:49:39.564Z",
       "latencyMs": null,
       "functional": "La recepción de correos está limitada; algunas facturas pueden llegar con retraso.",
-      "action": "Revisa la conexión IMAP/Graph, credenciales y la cola de correo."
+      "action": "Revisa la conexión IMAP/Graph, credenciales y la cola de correo.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "minio",
@@ -4344,8 +4960,8 @@
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.283Z",
-        "latencyMs": 382,
+        "checkedAt": "2026-11-10T16:49:39.340Z",
+        "latencyMs": 54,
         "detail": "HTTP 200",
         "endpoint": "http://127.0.0.1:9000/minio/health/live",
         "method": "GET",
@@ -4353,11 +4969,19 @@
         "error": null,
         "response": null
       },
-      "durationMs": 382,
+      "durationMs": 54,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.283Z",
+      "checkedAt": "2026-11-10T16:49:39.340Z",
       "functional": "El almacenamiento responde con lentitud; las cargas y descargas pueden fallar.",
-      "action": "Revisa MinIO, sus buckets, credenciales y espacio disponible."
+      "action": "Revisa MinIO, sus buckets, credenciales y espacio disponible.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 54,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "queues",
@@ -4371,16 +4995,18 @@
       "technical": {
         "environment": "local",
         "source": "apex-control",
-        "checkedAt": "2026-11-05T21:13:50.067Z",
+        "checkedAt": "2026-11-10T16:49:39.564Z",
         "latencyMs": 0,
         "detail": null
       },
       "durationMs": 0,
       "source": "apex-control",
-      "checkedAt": "2026-11-05T21:13:50.067Z",
+      "checkedAt": "2026-11-10T16:49:39.564Z",
       "latencyMs": 15,
       "functional": "Las colas procesan con retraso; los trabajos pueden tardar más.",
-      "action": "Revisa BullMQ, Redis y los workers de la API."
+      "action": "Revisa BullMQ, Redis y los workers de la API.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "redis",
@@ -4394,19 +5020,27 @@
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.277Z",
-        "latencyMs": 385,
+        "checkedAt": "2026-11-10T16:49:39.339Z",
+        "latencyMs": 57,
         "detail": "PING -> PONG",
         "protocol": "redis",
         "host": "127.0.0.1",
         "port": 6379,
         "response": "+PONG"
       },
-      "durationMs": 385,
+      "durationMs": 57,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.277Z",
+      "checkedAt": "2026-11-10T16:49:39.339Z",
       "functional": "Redis responde con lentitud; las colas y tareas programadas pueden acumularse.",
-      "action": "Levanta Redis o revisa REDIS_URL, memoria y conexiones."
+      "action": "Levanta Redis o revisa REDIS_URL, memoria y conexiones.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 57,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "web",
@@ -4420,20 +5054,28 @@
       "technical": {
         "environment": "local",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.281Z",
-        "latencyMs": 338,
+        "checkedAt": "2026-11-10T16:49:39.339Z",
+        "latencyMs": 60,
         "detail": "HTTP 404",
-        "endpoint": "http://127.0.0.1:58996",
+        "endpoint": "http://127.0.0.1:59039",
         "method": "GET",
         "httpStatus": 404,
         "error": null,
         "response": "{\"error\":\"RUTA_NO_ENCONTRADA\",\"code\":\"NO_ENCONTRADO\"}"
       },
-      "durationMs": 338,
+      "durationMs": 60,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.281Z",
+      "checkedAt": "2026-11-10T16:49:39.339Z",
       "functional": "La plataforma web responde con errores o lentitud; al usuario le cuesta abrir la plataforma.",
-      "action": "Revisa el despliegue web, el DNS, el certificado y el enrutamiento."
+      "action": "Revisa el despliegue web, el DNS, el certificado y el enrutamiento.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 60,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "websocket",
@@ -4447,16 +5089,18 @@
       "technical": {
         "environment": "local",
         "source": "apex-control",
-        "checkedAt": "2026-11-05T21:13:50.068Z",
+        "checkedAt": "2026-11-10T16:49:39.564Z",
         "latencyMs": 0,
         "detail": null
       },
       "durationMs": 0,
       "source": "apex-control",
-      "checkedAt": "2026-11-05T21:13:50.068Z",
+      "checkedAt": "2026-11-10T16:49:39.564Z",
       "latencyMs": 2,
       "functional": "Las actualizaciones en vivo llegan con interrupciones.",
-      "action": "Revisa el WebSocket, el proxy y las conexiones activas."
+      "action": "Revisa el WebSocket, el proxy y las conexiones activas.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.activity",
@@ -4471,12 +5115,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control.",
       "durationMs": 0,
       "source": "activity",
-      "checkedAt": "2026-11-05T21:13:48.701Z",
+      "checkedAt": "2026-11-10T16:49:39.410Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.701Z",
+        "checkedAt": "2026-11-10T16:49:39.410Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control.",
         "reason": "MODULO_NO_DESPLEGADO",
@@ -4487,7 +5131,9 @@
         "tenantsReason": "NO_DISPONIBLE",
         "tenantsDetail": "El ambiente no expone la vista por empresa."
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.apex-control",
@@ -4501,21 +5147,29 @@
       "technical": {
         "environment": "develop",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.740Z",
-        "latencyMs": 26,
+        "checkedAt": "2026-11-10T16:49:39.418Z",
+        "latencyMs": 3,
         "detail": "Modulo apex-control no habilitado en la API",
-        "endpoint": "http://127.0.0.1:58997/api/v1/apex-control/status",
+        "endpoint": "http://127.0.0.1:59040/api/v1/apex-control/status",
         "method": "GET",
         "httpStatus": 404,
         "error": null,
         "tokenConfigured": true,
         "response": "{\"error\":\"RUTA_NO_ENCONTRADA\",\"code\":\"NO_ENCONTRADO\"}"
       },
-      "durationMs": 26,
+      "durationMs": 3,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.740Z",
+      "checkedAt": "2026-11-10T16:49:39.418Z",
       "functional": "La API no expone telemetría profunda; la torre sigue vigilando por sondas propias.",
-      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API."
+      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 3,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "develop.module.activos",
@@ -4531,12 +5185,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4552,7 +5206,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.administracion",
@@ -4568,12 +5224,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4589,7 +5245,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.apex-ai",
@@ -4605,12 +5263,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4631,7 +5289,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.apex-control",
@@ -4647,12 +5307,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "La API no expone telemetría profunda; la torre sigue vigilando por sondas propias.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4678,7 +5338,9 @@
         ],
         "alerts": []
       },
-      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API."
+      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.calidad",
@@ -4694,12 +5356,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4715,7 +5377,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.comercio",
@@ -4731,12 +5395,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4752,7 +5416,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.comercio-exterior",
@@ -4768,12 +5434,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4789,7 +5455,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.compras",
@@ -4805,12 +5473,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4831,7 +5499,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.configuracion-inicial",
@@ -4847,12 +5517,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4873,7 +5543,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.contabilidad",
@@ -4889,12 +5561,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4910,7 +5582,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.costos",
@@ -4926,12 +5600,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4947,7 +5621,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.crm",
@@ -4963,12 +5639,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -4984,7 +5660,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.cxc",
@@ -5000,12 +5678,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5021,7 +5699,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.devoluciones",
@@ -5037,12 +5717,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5058,7 +5738,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.facturacion",
@@ -5074,12 +5756,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5100,7 +5782,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.facturacion-electronica",
@@ -5116,12 +5800,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5142,7 +5826,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.gastos-menores",
@@ -5158,12 +5844,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5179,7 +5865,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.gestion-comercial",
@@ -5195,12 +5883,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5216,7 +5904,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.inventario",
@@ -5232,12 +5922,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5258,7 +5948,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.planeacion-demanda",
@@ -5274,12 +5966,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5300,7 +5992,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.presupuestos",
@@ -5316,12 +6010,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5337,7 +6031,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.produccion",
@@ -5353,12 +6049,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5374,7 +6070,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.proyectos",
@@ -5390,12 +6088,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5411,7 +6109,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.punto-de-venta",
@@ -5427,12 +6127,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5453,7 +6153,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.recetas",
@@ -5469,12 +6171,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5490,7 +6192,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.reportes",
@@ -5506,12 +6210,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5537,7 +6241,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.servicios",
@@ -5553,12 +6259,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5579,7 +6285,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.suscripciones",
@@ -5595,12 +6303,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5616,7 +6324,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.talento-humano",
@@ -5632,12 +6342,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5663,7 +6373,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.tesoreria",
@@ -5679,12 +6391,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5700,7 +6412,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.transporte",
@@ -5716,12 +6430,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5747,7 +6461,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.module.ventas",
@@ -5763,12 +6479,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5789,7 +6505,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.modules",
@@ -5803,11 +6521,11 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga. 0 con dependencia caida de 32.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.695Z",
+      "checkedAt": "2026-11-10T16:49:39.409Z",
       "technical": {
         "environment": "develop",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.695Z",
+        "checkedAt": "2026-11-10T16:49:39.409Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga. 0 con dependencia caida de 32.",
         "configured": false,
@@ -5821,7 +6539,9 @@
         }
       },
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.railway",
@@ -5835,7 +6555,7 @@
       "technical": {
         "environment": "develop",
         "source": "railway",
-        "checkedAt": "2026-11-05T21:13:48.341Z",
+        "checkedAt": "2026-11-10T16:49:39.355Z",
         "latencyMs": 0,
         "detail": "Railway sin token o proyecto configurado. Añade RAILWAY_TOKEN y ENV_*_RAILWAY_PROJECT_ID.",
         "configured": false,
@@ -5844,9 +6564,11 @@
       },
       "durationMs": 0,
       "source": "railway",
-      "checkedAt": "2026-11-05T21:13:48.629Z",
+      "checkedAt": "2026-11-10T16:49:39.401Z",
       "functional": "Railway reporta un despliegue fallido o en curso; el servicio puede estar inestable.",
-      "action": "Revisa el proyecto, los servicios y los últimos deployments en Railway."
+      "action": "Revisa el proyecto, los servicios y los últimos deployments en Railway.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.vercel",
@@ -5860,7 +6582,7 @@
       "technical": {
         "environment": "develop",
         "source": "vercel",
-        "checkedAt": "2026-11-05T21:13:48.342Z",
+        "checkedAt": "2026-11-10T16:49:39.355Z",
         "latencyMs": 0,
         "detail": "Vercel sin token o proyecto configurado. Añade VERCEL_TOKEN y ENV_*_VERCEL_PROJECT_ID.",
         "configured": false,
@@ -5869,9 +6591,11 @@
       },
       "durationMs": 0,
       "source": "vercel",
-      "checkedAt": "2026-11-05T21:13:48.629Z",
+      "checkedAt": "2026-11-10T16:49:39.401Z",
       "functional": "Vercel reporta un despliegue fallido, protegido o en curso.",
-      "action": "Revisa el deployment, la protección de acceso y los dominios en Vercel."
+      "action": "Revisa el deployment, la protección de acceso y los dominios en Vercel.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "develop.web",
@@ -5885,20 +6609,28 @@
       "technical": {
         "environment": "develop",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.629Z",
-        "latencyMs": 292,
+        "checkedAt": "2026-11-10T16:49:39.400Z",
+        "latencyMs": 47,
         "detail": "HTTP 404",
-        "endpoint": "http://127.0.0.1:58997",
+        "endpoint": "http://127.0.0.1:59040",
         "method": "GET",
         "httpStatus": 404,
         "error": null,
         "response": "{\"error\":\"RUTA_NO_ENCONTRADA\",\"code\":\"NO_ENCONTRADO\"}"
       },
-      "durationMs": 292,
+      "durationMs": 47,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.629Z",
+      "checkedAt": "2026-11-10T16:49:39.400Z",
       "functional": "La plataforma web responde con errores o lentitud; al usuario le cuesta abrir la plataforma.",
-      "action": "Revisa el despliegue web, el DNS, el certificado y el enrutamiento."
+      "action": "Revisa el despliegue web, el DNS, el certificado y el enrutamiento.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 47,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "main.activity",
@@ -5913,12 +6645,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control.",
       "durationMs": 0,
       "source": "activity",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control.",
         "reason": "MODULO_NO_DESPLEGADO",
@@ -5929,7 +6661,9 @@
         "tenantsReason": "NO_DISPONIBLE",
         "tenantsDetail": "El ambiente no expone la vista por empresa."
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.apex-control",
@@ -5943,21 +6677,29 @@
       "technical": {
         "environment": "main",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.744Z",
-        "latencyMs": 33,
+        "checkedAt": "2026-11-10T16:49:39.419Z",
+        "latencyMs": 3,
         "detail": "Modulo apex-control no habilitado en la API",
-        "endpoint": "http://127.0.0.1:58997/api/v1/apex-control/status",
+        "endpoint": "http://127.0.0.1:59040/api/v1/apex-control/status",
         "method": "GET",
         "httpStatus": 404,
         "error": null,
         "tokenConfigured": true,
         "response": "{\"error\":\"RUTA_NO_ENCONTRADA\",\"code\":\"NO_ENCONTRADO\"}"
       },
-      "durationMs": 33,
+      "durationMs": 3,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.744Z",
+      "checkedAt": "2026-11-10T16:49:39.419Z",
       "functional": "La API no expone telemetría profunda; la torre sigue vigilando por sondas propias.",
-      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API."
+      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 3,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     },
     {
       "id": "main.module.activos",
@@ -5973,12 +6715,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -5994,7 +6736,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.administracion",
@@ -6010,12 +6754,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6031,7 +6775,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.apex-ai",
@@ -6047,12 +6793,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6073,7 +6819,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.apex-control",
@@ -6089,12 +6837,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "La API no expone telemetría profunda; la torre sigue vigilando por sondas propias.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6120,7 +6868,9 @@
         ],
         "alerts": []
       },
-      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API."
+      "action": "Configura APEX_CONTROL_TOKEN y verifica el módulo apex-control en la API.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.calidad",
@@ -6136,12 +6886,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6157,7 +6907,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.comercio",
@@ -6173,12 +6925,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6194,7 +6946,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.comercio-exterior",
@@ -6210,12 +6964,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6231,7 +6985,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.compras",
@@ -6247,12 +7003,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6273,7 +7029,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.configuracion-inicial",
@@ -6289,12 +7047,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6315,7 +7073,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.contabilidad",
@@ -6331,12 +7091,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6352,7 +7112,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.costos",
@@ -6368,12 +7130,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6389,7 +7151,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.crm",
@@ -6405,12 +7169,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6426,7 +7190,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.cxc",
@@ -6442,12 +7208,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6463,7 +7229,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.devoluciones",
@@ -6479,12 +7247,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6500,7 +7268,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.facturacion",
@@ -6516,12 +7286,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6542,7 +7312,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.facturacion-electronica",
@@ -6558,12 +7330,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6584,7 +7356,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.gastos-menores",
@@ -6600,12 +7374,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6621,7 +7395,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.gestion-comercial",
@@ -6637,12 +7413,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6658,7 +7434,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.inventario",
@@ -6674,12 +7452,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6700,7 +7478,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.planeacion-demanda",
@@ -6716,12 +7496,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6742,7 +7522,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.presupuestos",
@@ -6758,12 +7540,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6779,7 +7561,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.produccion",
@@ -6795,12 +7579,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6816,7 +7600,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.proyectos",
@@ -6832,12 +7618,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6853,7 +7639,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.punto-de-venta",
@@ -6869,12 +7657,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6895,7 +7683,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.recetas",
@@ -6911,12 +7701,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6932,7 +7722,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.reportes",
@@ -6948,12 +7740,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -6979,7 +7771,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.servicios",
@@ -6995,12 +7789,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -7021,7 +7815,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.suscripciones",
@@ -7037,12 +7833,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -7058,7 +7854,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.talento-humano",
@@ -7074,12 +7872,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -7105,7 +7903,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.tesoreria",
@@ -7121,12 +7921,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -7142,7 +7942,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.transporte",
@@ -7158,12 +7960,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -7189,7 +7991,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.module.ventas",
@@ -7205,12 +8009,12 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga.",
         "records": null,
@@ -7231,7 +8035,9 @@
         ],
         "alerts": []
       },
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.modules",
@@ -7245,11 +8051,11 @@
       "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga. 0 con dependencia caida de 32.",
       "durationMs": 0,
       "source": "modules",
-      "checkedAt": "2026-11-05T21:13:48.728Z",
+      "checkedAt": "2026-11-10T16:49:39.412Z",
       "technical": {
         "environment": "main",
         "source": "catalog",
-        "checkedAt": "2026-11-05T21:13:48.728Z",
+        "checkedAt": "2026-11-10T16:49:39.412Z",
         "latencyMs": 0,
         "detail": "El build desplegado en el ambiente no incluye el modulo apex-control; no puede entregar salud por modulo hasta desplegar un build que lo contenga. 0 con dependencia caida de 32.",
         "configured": false,
@@ -7263,7 +8069,9 @@
         }
       },
       "functional": "No hay lectura suficiente para determinar el impacto funcional.",
-      "action": "Revisa el detalle técnico y los logs del componente."
+      "action": "Revisa el detalle técnico y los logs del componente.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.railway",
@@ -7277,7 +8085,7 @@
       "technical": {
         "environment": "main",
         "source": "railway",
-        "checkedAt": "2026-11-05T21:13:48.346Z",
+        "checkedAt": "2026-11-10T16:49:39.357Z",
         "latencyMs": 0,
         "detail": "Railway sin token o proyecto configurado. Añade RAILWAY_TOKEN y ENV_*_RAILWAY_PROJECT_ID.",
         "configured": false,
@@ -7286,9 +8094,11 @@
       },
       "durationMs": 0,
       "source": "railway",
-      "checkedAt": "2026-11-05T21:13:48.659Z",
+      "checkedAt": "2026-11-10T16:49:39.405Z",
       "functional": "Railway reporta un despliegue fallido o en curso; el servicio puede estar inestable.",
-      "action": "Revisa el proyecto, los servicios y los últimos deployments en Railway."
+      "action": "Revisa el proyecto, los servicios y los últimos deployments en Railway.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.vercel",
@@ -7302,7 +8112,7 @@
       "technical": {
         "environment": "main",
         "source": "vercel",
-        "checkedAt": "2026-11-05T21:13:48.346Z",
+        "checkedAt": "2026-11-10T16:49:39.357Z",
         "latencyMs": 0,
         "detail": "Vercel sin token o proyecto configurado. Añade VERCEL_TOKEN y ENV_*_VERCEL_PROJECT_ID.",
         "configured": false,
@@ -7311,9 +8121,11 @@
       },
       "durationMs": 0,
       "source": "vercel",
-      "checkedAt": "2026-11-05T21:13:48.660Z",
+      "checkedAt": "2026-11-10T16:49:39.405Z",
       "functional": "Vercel reporta un despliegue fallido, protegido o en curso.",
-      "action": "Revisa el deployment, la protección de acceso y los dominios en Vercel."
+      "action": "Revisa el deployment, la protección de acceso y los dominios en Vercel.",
+      "series": [],
+      "window": 1
     },
     {
       "id": "main.web",
@@ -7327,20 +8139,28 @@
       "technical": {
         "environment": "main",
         "source": "tower",
-        "checkedAt": "2026-11-05T21:13:48.659Z",
-        "latencyMs": 314,
+        "checkedAt": "2026-11-10T16:49:39.405Z",
+        "latencyMs": 48,
         "detail": "HTTP 404",
-        "endpoint": "http://127.0.0.1:58997",
+        "endpoint": "http://127.0.0.1:59040",
         "method": "GET",
         "httpStatus": 404,
         "error": null,
         "response": "{\"error\":\"RUTA_NO_ENCONTRADA\",\"code\":\"NO_ENCONTRADO\"}"
       },
-      "durationMs": 314,
+      "durationMs": 48,
       "source": "tower",
-      "checkedAt": "2026-11-05T21:13:48.659Z",
+      "checkedAt": "2026-11-10T16:49:39.405Z",
       "functional": "La plataforma web responde con errores o lentitud; al usuario le cuesta abrir la plataforma.",
-      "action": "Revisa el despliegue web, el DNS, el certificado y el enrutamiento."
+      "action": "Revisa el despliegue web, el DNS, el certificado y el enrutamiento.",
+      "series": [
+        {
+          "at": "2026-11-10T16:49:39.592Z",
+          "value": 48,
+          "band": "optimal"
+        }
+      ],
+      "window": 1
     }
   ],
   "performance": {
@@ -7349,21 +8169,21 @@
       "failures": 0,
       "errorRate": 0,
       "last": {
-        "at": "2026-11-05T21:13:48.254Z",
-        "ms": 358,
+        "at": "2026-11-10T16:49:39.336Z",
+        "ms": 62,
         "ok": true,
         "endpoint": "/health",
         "status": "ok"
       },
-      "avg": 358,
-      "min": 358,
-      "max": 358,
-      "p50": 358,
-      "p95": 358,
+      "avg": 62,
+      "min": 62,
+      "max": 62,
+      "p50": 62,
+      "p95": 62,
       "series": [
         {
-          "at": "2026-11-05T21:13:48.254Z",
-          "ms": 358,
+          "at": "2026-11-10T16:49:39.336Z",
+          "ms": 62,
           "ok": true
         }
       ]
@@ -7373,21 +8193,21 @@
       "failures": 0,
       "errorRate": 0,
       "last": {
-        "at": "2026-11-05T21:13:48.629Z",
-        "ms": 290,
+        "at": "2026-11-10T16:49:39.400Z",
+        "ms": 46,
         "ok": true,
         "endpoint": "/health",
         "status": "ok"
       },
-      "avg": 290,
-      "min": 290,
-      "max": 290,
-      "p50": 290,
-      "p95": 290,
+      "avg": 46,
+      "min": 46,
+      "max": 46,
+      "p50": 46,
+      "p95": 46,
       "series": [
         {
-          "at": "2026-11-05T21:13:48.629Z",
-          "ms": 290,
+          "at": "2026-11-10T16:49:39.400Z",
+          "ms": 46,
           "ok": true
         }
       ]
@@ -7397,21 +8217,21 @@
       "failures": 0,
       "errorRate": 0,
       "last": {
-        "at": "2026-11-05T21:13:48.659Z",
-        "ms": 314,
+        "at": "2026-11-10T16:49:39.404Z",
+        "ms": 47,
         "ok": true,
         "endpoint": "/health",
         "status": "ok"
       },
-      "avg": 314,
-      "min": 314,
-      "max": 314,
-      "p50": 314,
-      "p95": 314,
+      "avg": 47,
+      "min": 47,
+      "max": 47,
+      "p50": 47,
+      "p95": 47,
       "series": [
         {
-          "at": "2026-11-05T21:13:48.659Z",
-          "ms": 314,
+          "at": "2026-11-10T16:49:39.404Z",
+          "ms": 47,
           "ok": true
         }
       ]

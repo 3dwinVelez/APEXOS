@@ -108,17 +108,6 @@ const GAUGES = Object.freeze({
     risk: null,
     source: "uptime_seconds publicado por /health"
   },
-  requests: {
-    key: "requests",
-    label: "Peticiones atendidas",
-    question: "¿El API aguanta la carga que tiene?",
-    view: "api",
-    unit: "",
-    direction: "informational",
-    optimal: null,
-    risk: null,
-    source: "usage.requests_total publicado por /health"
-  },
   dbLatency: {
     key: "dbLatency",
     label: "Latencia de la base",
@@ -142,6 +131,86 @@ const GAUGES = Object.freeze({
     optimal: null,
     risk: null,
     source: "suma de records por modulo en /apex-control/modules"
+  },
+  // Presión de heap: cuánto del heap que el proceso ya pidió está ocupado. Es la
+  // señal de "la máquina aguanta" que el propietario pide, y un porcentaje dice
+  // más que heap_used y heap_total sueltos. 60 % deja margen antes del GC
+  // sostenido; 85 % es el punto donde el proceso ya vive recolectando.
+  heapPressure: {
+    key: "heapPressure",
+    label: "Presión de heap",
+    question: "¿El API aguanta la carga que tiene?",
+    view: "api",
+    unit: "%",
+    direction: "lower",
+    optimal: 60,
+    risk: 85,
+    source: "memory_mb.heap_used / memory_mb.heap_total publicado por /health"
+  },
+  // Porcentaje de peticiones que el propio servidor respondió con 5xx. A
+  // diferencia de «sondas fallidas», que mide los sondeos de la torre, esto mide
+  // a los usuarios reales. 0 % es el objetivo; 1 % ya es un incidente.
+  serverErrors: {
+    key: "serverErrors",
+    label: "Errores del servidor",
+    question: "¿El API responde bien?",
+    view: "api",
+    unit: "%",
+    direction: "lower",
+    optimal: 0,
+    risk: 1,
+    source: "usage.by_status.5xx sobre usage.requests_total de /health"
+  },
+  // La tasa se nombra por lo que es, no por "trafico actual": el dueno llamo a
+  // esa etiqueta relleno, y un contador acumulado desde el arranque no dice nada.
+  requestRate: {
+    key: "requestRate",
+    label: "Peticiones por minuto",
+    question: "¿El API aguanta la carga que tiene?",
+    view: "api",
+    unit: "req/min",
+    direction: "informational",
+    optimal: null,
+    risk: null,
+    source: "usage.requests_total / uptime_seconds de /health (requiere >= 60 s de proceso)"
+  },
+  // Peor sonda a los servicios de la nube del ambiente. El viaje torre->SaaS
+  // incluye DNS + TLS + el proveedor, por eso el corte es más ancho que el del
+  // API local: 250 ms es una llamada sana y 800 ms ya es el proveedor tardando.
+  cloudLatency: {
+    key: "cloudLatency",
+    label: "Latencia de la nube",
+    question: "¿Los servicios de la nube están bien?",
+    view: "nube",
+    unit: "ms",
+    direction: "lower",
+    optimal: 250,
+    risk: 800,
+    source: "peor duración medida de las sondas a Railway/Vercel/Supabase"
+  },
+  // Vista Operación: qué tan cargada está la mesa del puesto. Una alerta abierta
+  // ya merece atención; tres son una franja de incidente.
+  openAlerts: {
+    key: "openAlerts",
+    label: "Alertas abiertas",
+    question: "¿Qué pasa en el puesto?",
+    view: "operacion",
+    unit: "",
+    direction: "lower",
+    optimal: 0,
+    risk: 2,
+    source: "alertas abiertas (sin resolvedAt) del registro de la torre"
+  },
+  queuedJobs: {
+    key: "queuedJobs",
+    label: "Trabajos por aprobar",
+    question: "¿Qué pasa en el puesto?",
+    view: "operacion",
+    unit: "",
+    direction: "lower",
+    optimal: 0,
+    risk: 3,
+    source: "jobs.stats().counts.awaiting_approval de la torre"
   }
 });
 
@@ -238,6 +307,25 @@ function bandForValue(definition, value) {
   if (measured <= definition.optimal) return "optimal";
   if (measured <= definition.risk) return "risk";
   return "critical";
+}
+
+// Banda de un valor historico con el umbral ya publicado de un medidor. El anillo
+// de monitor guarda numeros, no colores: si manana sube el tope, el historial se
+// relee con la regla de hoy y la grafica no se queda con la regla vieja.
+function bandFromEntry(entry, value) {
+  if (!entry) return "unknown";
+  // Informativo es banda propia, no ausencia de medida: si se evaluara por cortes
+  // caería en "unknown" y el panel pintaría como sin-dato una cifra medida.
+  if (entry.direction === "informational") return number(value) == null ? "unknown" : "informational";
+  // El llamador puede traer la entrada publicada (con limits) o la del catalogo
+  // (con optimal/risk crudos): son el mismo umbral en dos momentos del viaje.
+  const limits = entry.limits || entry;
+  if (limits.optimal == null && limits.risk == null) return "unknown";
+  return bandForValue({
+    direction: entry.direction,
+    optimal: limits.optimal,
+    risk: limits.risk
+  }, value);
 }
 
 function gauge(key, value, extra = {}, definition = null) {
@@ -345,7 +433,7 @@ function coveragePercent(activity) {
 // Todo lo que el panel necesita para pintar un medidor, ya medido y ya bandado.
 // El orden es el orden de las preguntas del panel: latencia, API, carga, módulos y
 // base de datos. El navegador no reordena: pinta lo que el servidor publica.
-function gaugesFor(environment) {
+function gaugesFor(environment, options = {}) {
   if (!environment) return [];
   const performance = environment.performance || null;
   const deployed = environment.deployed || null;
@@ -355,9 +443,12 @@ function gaugesFor(environment) {
   const list = [
     gauge("p95", performance ? performance.p95 : null, {}, p95Definition(environment.id)),
     gauge("errorRate", performance ? performance.errorRate : null),
+    gauge("serverErrors", serverErrorPercent(deployed)),
     gauge("memoryRss", deployed && deployed.memory ? deployed.memory.rss : null),
-    gauge("requests", deployed && deployed.usage ? deployed.usage.requestsTotal : null),
+    gauge("heapPressure", heapPressurePercent(deployed)),
+    gauge("requestRate", requestsPerMinute(deployed)),
     gauge("uptime", deployed ? deployed.uptimeSeconds : null),
+    gauge("cloudLatency", worstCloudLatency(options.checks, environment.id)),
     gauge("freshness", worstFreshness(modules)),
     gauge("dbLatency", componentLatency(environment.components, "db")),
     gauge("slowQueries", deployed && deployed.usage ? deployed.usage.slowQueries : null),
@@ -365,6 +456,150 @@ function gaugesFor(environment) {
     gauge("dataCoverage", coveragePercent(environment.activity))
   ];
   return list.filter(Boolean);
+}
+
+// Medidores de la vista Operación. No viven en un ambiente: miden la mesa de
+// trabajo del puesto, así que el servidor los calcula al armar /api/status con
+// las alertas y los trabajos que esa respuesta ya lleva. Una alerta esta abierta
+// mientras no tenga resolvedAt; su campo `status` es el estado del componente, no
+// el ciclo de vida, y confundirlos contaría recuperados como pendientes.
+function operationGauges({ alerts = [], jobs = null } = {}) {
+  const open = (Array.isArray(alerts) ? alerts : []).filter((alert) => alert && !alert.resolvedAt);
+  const counts = jobs && jobs.counts ? jobs.counts : null;
+  return [
+    gauge("openAlerts", open.length),
+    gauge("queuedJobs", counts ? number(counts.awaiting_approval) : null)
+  ].filter(Boolean);
+}
+
+// Veredicto de una vista: la peor banda entre sus medidores, con la frase y la
+// regla que la produjeron. Es el mismo modelo que firma la vista Latencia,
+// aplicado a API, Módulos, Base de datos, Nube y Operación: el navegador pinta,
+// no decide cortes.
+const VIEW_BAND_ORDER = ["optimal", "risk", "critical"];
+
+// La pregunta de cada vista-pregunta vive aqui, junto al umbral que la responde:
+// la banda de veredicto pregunta siempre lo mismo, y el texto nombra al culpable.
+// Si el encabezado del panel se desincroniza de esta lista, una prueba lo rompe.
+const VIEW_QUESTIONS = Object.freeze({
+  resumen: "¿Cómo está APEXOS ahora mismo?",
+  latencia: "¿Cómo está la latencia?",
+  api: "¿El API responde bien con la carga que tiene?",
+  modulos: "¿Los módulos están óptimos y al día?",
+  datos: "¿La base está rápida y con datos reales?",
+  nube: "¿Los servicios de la nube están bien?",
+  operacion: "¿Qué se está haciendo y qué falta?"
+});
+
+function viewVerdict(gauges, question = null, view = null) {
+  const fallback = question || (view ? VIEW_QUESTIONS[view] : null) || "";
+  const list = (Array.isArray(gauges) ? gauges : []).filter((entry) => entry && entry.band !== "informational");
+  if (!list.length) {
+    return { state: "unknown", tone: "unknown", text: "Sin medidores para esta pregunta.", rule: "", question: fallback };
+  }
+  const measured = list.filter((entry) => entry.band !== "unknown");
+  if (!measured.length) {
+    return {
+      state: "unknown",
+      tone: "unknown",
+      text: `Ningún medidor de esta vista tiene lectura: ${list.map((entry) => entry.label).join(", ")} sin dato.`,
+      rule: "lo no medido no es cero",
+      question: fallback || list[0].question || ""
+    };
+  }
+  const worst = measured.reduce((left, right) => {
+    const rank = VIEW_BAND_ORDER.indexOf(right.band) > VIEW_BAND_ORDER.indexOf(left.band) ? right : left;
+    return rank;
+  }, measured[0]);
+  const tone = BAND_TONE[worst.band];
+  const state = worst.band === "optimal" ? "optimal" : worst.band === "risk" ? "risk" : "critical";
+  const text = `${worst.label} ${formatGaugeValue(worst)} · ${BAND_LABEL[worst.band]}`;
+  const rule = measured
+    .filter((entry) => entry.key !== worst.key)
+    .slice(0, 3)
+    .map((entry) => `${entry.label} ${formatGaugeValue(entry)} (${limitText(entry)})`)
+    .join(" · ");
+  return {
+    state,
+    tone,
+    text,
+    rule: rule || `único medidor de la vista: ${limitText(worst)}`,
+    question: fallback || worst.question || "",
+    worst_key: worst.key
+  };
+}
+
+function formatGaugeValue(entry) {
+  if (!entry || entry.value == null) return "sin dato";
+  const digits = Number.isInteger(entry.value) ? 0 : 1;
+  const value = entry.value.toLocaleString("es-CO", { maximumFractionDigits: digits });
+  return entry.unit ? `${value} ${entry.unit}` : value;
+}
+
+function limitText(entry) {
+  if (!entry || !entry.limits) return "sin umbral publicado";
+  const { optimal, risk } = entry.limits;
+  if (optimal == null && risk == null) return "informativo, sin umbral";
+  if (entry.direction === "higher") return `óptimo ≥ ${optimal}, en riesgo ≥ ${risk}`;
+  return `óptimo ≤ ${optimal}, tope ${risk}`;
+}
+
+// Cuánto del heap ya pedido está ocupado. Sin heap total no hay razón: el
+// porcentaje de una muestra que no existe es "sin dato", no 0 %.
+function heapPressurePercent(deployed) {
+  const used = number(deployed && deployed.memory ? deployed.memory.heapUsed : null);
+  const total = number(deployed && deployed.memory ? deployed.memory.heapTotal : null);
+  if (used == null || !total || total <= 0) return null;
+  return round((used / total) * 100, 1);
+}
+
+// 5xx sobre el total de peticiones que el proceso atendió desde el arranque.
+function serverErrorPercent(deployed) {
+  const usage = deployed && deployed.usage ? deployed.usage : null;
+  const total = number(usage ? usage.requestsTotal : null);
+  const errors = number(usage && usage.byStatus ? usage.byStatus["5xx"] : null);
+  if (!total || total <= 0 || errors == null) return null;
+  return round((errors / total) * 100, 2);
+}
+
+// Tasa real de tráfico. Un proceso recién encendido no tiene minuto medido, y
+// una tasa calculada sobre segundos inventaría carga que no existió.
+function requestsPerMinute(deployed) {
+  const total = number(deployed && deployed.usage ? deployed.usage.requestsTotal : null);
+  const uptime = number(deployed ? deployed.uptimeSeconds : null);
+  if (total == null || !uptime || uptime < 60) return null;
+  return round(total / (uptime / 60), 1);
+}
+
+const CLOUD_SOURCES = Object.freeze(["railway", "vercel", "supabase"]);
+
+// Peor sonda a la nube en este sondeo: se toma del inventario de checks, que es
+// donde vive la duración medida de cada llamada al proveedor. Un check sin
+// llamada real (proveedor sin token, ambiente desactivado) trae durationMs 0 y
+// NO cuenta: cero no es una latencia rapida, es la ausencia de medición.
+function worstCloudLatency(checks, environmentId) {
+  const list = Array.isArray(checks) ? checks : [];
+  const durations = list
+    .filter((check) => check && CLOUD_SOURCES.includes(check.source))
+    .filter((check) => !environmentId || String(check.environment || "local") === String(environmentId))
+    .map((check) => number(check.durationMs))
+    .filter((value) => value != null && value > 0);
+  return durations.length ? Math.max(...durations) : null;
+}
+
+// Un veredicto por vista, derivado de los medidores que el propio servidor ya
+// bandó. Cada medidor declara la vista donde vive su evidencia, así que el
+// agrupamiento no es una lista nueva que se pueda desincronizar del catalogo.
+function viewVerdicts(gauges) {
+  const byView = new Map();
+  for (const entry of gauges || []) {
+    if (!entry || !entry.view) continue;
+    if (!byView.has(entry.view)) byView.set(entry.view, []);
+    byView.get(entry.view).push(entry);
+  }
+  const verdicts = {};
+  for (const [view, list] of byView) verdicts[view] = viewVerdict(list, null, view);
+  return verdicts;
 }
 
 // Una sonda /health individual se compara contra el presupuesto de sonda del
@@ -399,10 +634,21 @@ module.exports = {
   BUDGET_API_P95_MS,
   PROBE_BUDGET_MS,
   bandForValue,
+  bandFromEntry,
   measuredValue: number,
   probeBand,
   gauge,
   gaugesFor,
+  operationGauges,
+  viewVerdict,
+  viewVerdicts,
+  VIEW_QUESTIONS,
+  heapPressurePercent,
+  serverErrorPercent,
+  requestsPerMinute,
+  worstCloudLatency,
+  limitText,
+  formatGaugeValue,
   freshnessRatio,
   moduleBand,
   moduleTicks,

@@ -20,12 +20,26 @@ const {
   totalRecords,
   componentLatency,
   componentBand,
-  componentBands
+  componentBands,
+  operationGauges,
+  bandFromEntry,
+  viewVerdict,
+  viewVerdicts,
+  heapPressurePercent,
+  serverErrorPercent,
+  requestsPerMinute,
+  worstCloudLatency,
+  limitText,
+  formatGaugeValue
 } = require("../lib/metrics");
 
 function module(extra = {}) {
   return { key: "hr", name: "Talento Humano", status: "ok", data: null, ...extra };
 }
+
+// Las seis vistas-pregunta con evidencia propia. "resumen" queda fuera porque no
+// es una fuente de datos: es la peor banda de todas las demas.
+const VIEWS = ["latencia", "api", "modulos", "datos", "nube", "operacion"];
 
 test("el corte de latencia sale del presupuesto versionado, no del navegador", () => {
   assert.equal(BUDGET_API_P95_MS, 1000);
@@ -92,7 +106,7 @@ test("gaugesFor banda cada medicion del ambiente por su propio umbral", () => {
     performance: { p95: 182, errorRate: 30.8, failures: 37, samples: 120 },
     deployed: {
       memory: { rss: 107.9, heapUsed: 18, heapTotal: 40 },
-      usage: { requestsTotal: 98432, slowQueries: 0, byStatus: {} },
+      usage: { requestsTotal: 98432, slowQueries: 0, byStatus: { "2xx": 98400, "4xx": 24, "5xx": 8 } },
       uptimeSeconds: 7200
     },
     activity: { tenants: { summary: { active: 200, with_activity: 1 } } },
@@ -111,15 +125,126 @@ test("gaugesFor banda cada medicion del ambiente por su propio umbral", () => {
   assert.equal(byKey.dataVolume.band, "informational");
   assert.equal(byKey.dataVolume.value, 940);
   assert.equal(byKey.uptime.band, "informational");
-  assert.equal(byKey.requests.band, "informational");
-  assert.equal(byKey.requests.label_text, "Informativo");
+  // Presion de heap: 18/40 = 45 %, dentro del optimo de 60 %.
+  assert.equal(byKey.heapPressure.value, 45);
+  assert.equal(byKey.heapPressure.band, "optimal");
+  // 8 de 98432 peticiones con 5xx = 0.01 %. El corte de esta vista es "cero
+  // errores": cualquier 5xx real ya es para mirar, aunque 1 % es incidente.
+  assert.equal(byKey.serverErrors.value, 0.01);
+  assert.equal(byKey.serverErrors.band, "risk");
+  assert.equal(gauge("serverErrors", 0).band, "optimal");
+  assert.equal(gauge("serverErrors", 1).band, "risk");
+  assert.equal(gauge("serverErrors", 2).band, "critical");
+  // Trafico como tasa: 98432 peticiones en 120 minutos de proceso.
+  assert.equal(byKey.requestRate.value, 820.3);
+  assert.equal(byKey.requestRate.band, "informational");
+  // Sin sondas a la nube en este sondeo, la latencia de la nube no se finge.
+  assert.equal(byKey.cloudLatency.value, null);
+  assert.equal(byKey.cloudLatency.band, "unknown");
 });
 
-test("un ambiente sin lecturas no inventa medidores verdes", () => {
+test("los medidores nuevos se calculan solo con datos que existen", () => {
+  assert.equal(heapPressurePercent(null), null);
+  assert.equal(heapPressurePercent({ memory: { heapUsed: 20 } }), null);
+  assert.equal(heapPressurePercent({ memory: { heapUsed: 30, heapTotal: 40 } }), 75);
+  assert.equal(serverErrorPercent({ usage: { requestsTotal: 200, byStatus: { "5xx": 4 } } }), 2);
+  assert.equal(serverErrorPercent({ usage: { byStatus: { "5xx": 4 } } }), null);
+  assert.equal(serverErrorPercent({ usage: { requestsTotal: 200, byStatus: {} } }), null);
+  // Un proceso con menos de un minuto de vida no tiene tasa: no se divide entre segundos.
+  assert.equal(requestsPerMinute({ uptimeSeconds: 30, usage: { requestsTotal: 10 } }), null);
+  assert.equal(requestsPerMinute({ uptimeSeconds: 120, usage: { requestsTotal: 10 } }), 5);
+});
+
+test("la latencia de la nube es la peor sonda medida al proveedor del ambiente", () => {
+  const checks = [
+    { source: "railway", environment: "main", durationMs: 640 },
+    { source: "supabase", environment: "main", durationMs: 190 },
+    { source: "apex-api", environment: "main", durationMs: 9000 },
+    { source: "railway", environment: "local", durationMs: 80 },
+    // Cero = no hubo viaje (proveedor sin token o simulacion), no una nube instantanea.
+    { source: "vercel", environment: "main", durationMs: 0 }
+  ];
+  assert.equal(worstCloudLatency(checks, "main"), 640);
+  assert.equal(worstCloudLatency(checks, "local"), 80);
+  assert.equal(worstCloudLatency([{ source: "vercel", environment: "main", durationMs: 0 }], "main"), null);
+  assert.equal(worstCloudLatency([], "main"), null);
+  assert.equal(worstCloudLatency(null, null), null);
+});
+
+test("gaugesFor publica cada medidor del catalogo que no sea de la mesa del puesto", () => {
   const gauges = gaugesFor({});
-  assert.equal(gauges.length, Object.keys(GAUGES).length);
+  const esperado = Object.keys(GAUGES).filter((key) => GAUGES[key].view !== "operacion");
+  assert.equal(gauges.length, esperado.length);
+  // El catalogo no define el orden del panel: gaugesFor publica en el orden de
+  // las preguntas, asi que se compara el conjunto y el orden se prueba aparte.
+  assert.deepEqual([...gauges.map((entry) => entry.key)].sort(), [...esperado].sort());
   assert.ok(gauges.every((entry) => entry.band === "unknown"));
   assert.deepEqual(gaugesFor(null), []);
+});
+
+test("la nube del ambiente se bandea con la peor sonda real del sondeo", () => {
+  const gauges = gaugesFor({ id: "main" }, { checks: [{ source: "railway", environment: "main", durationMs: 900 }] });
+  const cloud = gauges.find((entry) => entry.key === "cloudLatency");
+  assert.equal(cloud.value, 900);
+  assert.equal(cloud.band, "critical");
+  assert.equal(cloud.limits.risk, 800);
+});
+
+test("la vista Operacion mide la mesa del puesto, no un ambiente", () => {
+  const gauges = operationGauges({
+    alerts: [{ status: "down" }, { status: "degraded", resolvedAt: "2026-11-05T10:00:00.000Z" }, { status: "down" }],
+    jobs: { counts: { awaiting_approval: 4 } }
+  });
+  const byKey = Object.fromEntries(gauges.map((entry) => [entry.key, entry]));
+  assert.equal(byKey.openAlerts.value, 2);
+  assert.equal(byKey.openAlerts.band, "risk");
+  assert.equal(byKey.queuedJobs.value, 4);
+  assert.equal(byKey.queuedJobs.band, "critical");
+  // Con la mesa vacia, cero alertas es una medicion real; los trabajos sin
+  // lectura del almacen siguen siendo "sin dato", no un cero comodo.
+  const limpio = Object.fromEntries(operationGauges().map((entry) => [entry.key, entry]));
+  assert.equal(limpio.openAlerts.value, 0);
+  assert.equal(limpio.openAlerts.band, "optimal");
+  assert.equal(limpio.queuedJobs.band, "unknown");
+});
+
+// ---------------------------------------------------------------- veredicto por vista
+
+test("el veredicto de una vista es la peor banda entre sus medidores medidos", () => {
+  const gauges = [gauge("p95", 182), gauge("errorRate", 12), gauge("uptime", 7200)];
+  const verdict = viewVerdict(gauges);
+  assert.equal(verdict.state, "critical");
+  assert.equal(verdict.tone, "down");
+  assert.equal(verdict.worst_key, "errorRate");
+  assert.match(verdict.text, /Sondas fallidas 12 % · Crítico/);
+  assert.match(verdict.rule, /p95 de la sonda al API 182 ms \(óptimo ≤ 600, tope 1000\)/);
+  assert.equal(viewVerdict([gauge("p95", 100)]).state, "optimal");
+});
+
+test("lo no medido no es cero: una vista sin lecturas se declara sin dato", () => {
+  assert.equal(viewVerdict([]).state, "unknown");
+  assert.match(viewVerdict([gauge("p95", null)]).text, /Ningún medidor/);
+  assert.equal(viewVerdict([gauge("p95", null)]).rule, "lo no medido no es cero");
+  assert.equal(viewVerdict([gauge("p95", null)]).state, "unknown");
+});
+
+test("viewVerdicts agrupa por la vista que el propio medidor declara", () => {
+  const verdicts = viewVerdicts(gaugesFor({ id: "local", performance: { p95: 200 } }, {}));
+  for (const key of ["latencia", "api", "modulos", "datos", "nube"]) {
+    assert.ok(verdicts[key], `falta el veredicto de ${key}`);
+    assert.match(verdicts[key].question, /^¿.*\?$/);
+  }
+  assert.deepEqual(viewVerdicts([]), {});
+});
+
+test("limitText y formatGaugeValue dicen el corte en español, no en crudo", () => {
+  const p95 = gauge("p95", 182);
+  assert.equal(limitText(p95), "óptimo ≤ 600, tope 1000");
+  assert.equal(limitText(gauge("dataCoverage", 30)), "óptimo ≥ 20, en riesgo ≥ 5");
+  assert.equal(limitText(gauge("uptime", 7200)), "informativo, sin umbral");
+  assert.equal(formatGaugeValue(p95), "182 ms");
+  assert.equal(formatGaugeValue(gauge("errorRate", 2.5)), "2,5 %");
+  assert.equal(formatGaugeValue(gauge("p95", null)), "sin dato");
 });
 
 test("la sonda individual usa el mismo corte del p95 y una falla es critica", () => {
@@ -143,16 +268,21 @@ test("moduleTicks guarda la lectura de la API dentro del mismo tick", () => {
 test("cada medidor declara la pregunta que responde y la vista donde vive su evidencia", () => {
   for (const entry of Object.values(GAUGES)) {
     assert.match(entry.question, /^¿.*\?$/, `${entry.key} debe preguntar en español`);
-    assert.ok(["latencia", "api", "modulos", "datos"].includes(entry.view), `${entry.key} apunta a una vista inexistente: ${entry.view}`);
+    assert.ok(VIEWS.includes(entry.view), `${entry.key} apunta a una vista inexistente: ${entry.view}`);
   }
   assert.equal(GAUGES.p95.view, "latencia");
   assert.equal(GAUGES.dbLatency.view, "datos");
+  assert.equal(GAUGES.cloudLatency.view, "nube");
+  assert.equal(GAUGES.openAlerts.view, "operacion");
   assert.equal(gauge("p95", 182).question, "¿Cómo está la latencia?");
 });
 
 test("los medidores salen en el orden de las preguntas del panel, no alfabeticos", () => {
   const keys = gaugesFor({ id: "local" }).map((entry) => entry.key);
-  assert.deepEqual(keys, ["p95", "errorRate", "memoryRss", "requests", "uptime", "freshness", "dbLatency", "slowQueries", "dataVolume", "dataCoverage"]);
+  assert.deepEqual(keys, [
+    "p95", "errorRate", "serverErrors", "memoryRss", "heapPressure", "requestRate",
+    "uptime", "cloudLatency", "freshness", "dbLatency", "slowQueries", "dataVolume", "dataCoverage"
+  ]);
 });
 
 // ---------------------------------------------------------------- presupuestos por ambiente
@@ -271,4 +401,21 @@ test("componentBands publica banda, tono y etiqueta sin borrar lo que trajo el A
   assert.equal(db.label_text, "Crítico");
   assert.equal(db.detail, "pool 4/10");
   assert.deepEqual(componentBands(null), []);
+});
+
+// La marca de una historia se colorea con el umbral del medidor, no con un criterio
+// del navegador. La misma definicion llega en dos formas (entrada publicada con
+// limits o entrada del catalogo con optimal/risk crudos) y debe dar el mismo color.
+test("bandFromEntry colorea la historia con el umbral del medidor", () => {
+  assert.equal(bandFromEntry(gauge("dbLatency", 42), 42), "optimal");
+  assert.equal(bandFromEntry(GAUGES.dbLatency, 42), "optimal");
+  assert.equal(bandFromEntry(GAUGES.dbLatency, 150), "risk");
+  assert.equal(bandFromEntry(GAUGES.dbLatency, 900), "critical");
+  // Informativo es banda propia: hay lectura, lo que falta es umbral. Pintarla de
+  // "sin dato" contaria como no medido un numero que si se midio.
+  assert.equal(bandFromEntry(GAUGES.dataVolume, 940), "informational");
+  assert.equal(bandFromEntry(GAUGES.dataVolume, null), "unknown");
+  assert.equal(bandFromEntry(GAUGES.p95, 42), "optimal");
+  assert.equal(bandFromEntry(null, 42), "unknown");
+  assert.equal(bandFromEntry({ direction: "lower", label: "sin cortes" }, 42), "unknown", "sin umbral no se inventa color");
 });

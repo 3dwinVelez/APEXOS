@@ -149,6 +149,8 @@ async function mountedPanel(snapshot, options = {}) {
 }
 
 const { gaugesFor, moduleTicks, componentBands, p95Definition, latencyVerdict } = require("../lib/metrics");
+const { attachIndicators } = require("../server");
+const { MonitorHistory } = require("../lib/monitor-history");
 
 const environment = {
   id: "local",
@@ -188,14 +190,21 @@ const environment = {
   }
 };
 
-// Reconstruye lo que el servidor publica por ambiente: bandas, umbrales y
-// veredicto de latencia. El panel no calcula nada, solo pinta esta carga.
-function publishIndicators(snapshot) {
-  const env = snapshot.snapshot.environments.local;
-  env.components = componentBands(env.components);
-  env.gauges = gaugesFor(env);
-  env.latency = latencyVerdict(env.performance.series, p95Definition(env.id).risk);
-  return snapshot;
+// Reconstruye la publicacion del servidor replay de sondeos reales: se llama al
+// mismo attachIndicators del server, con el mismo anillo de historia, para que el
+// panel reciba la publicacion de verdad y no una imitacion que pueda divergir.
+// El telemetry entra como lectura del moduleHistory que la propia fixture armo,
+// porque los ticks de modulos se graban en el ciclo de sondeo, no aqui.
+function publishIndicators(outer, polls = 2) {
+  const inner = outer.snapshot;
+  const telemetry = { seriesFor: (id) => (inner.environments[id] || {}).moduleHistory || [] };
+  const monitors = new MonitorHistory();
+  const times = ["2026-11-05T09:59:00.000Z", "2026-11-05T10:00:00.000Z"];
+  for (let index = 0; index < polls; index += 1) {
+    inner.at = times[Math.min(index, times.length - 1)];
+    attachIndicators(inner, telemetry, monitors);
+  }
+  return outer;
 }
 
 function snapshotWithIndicators() {
@@ -203,7 +212,12 @@ function snapshotWithIndicators() {
     at: "2026-11-05T10:00:00.000Z",
     overall: "degraded",
     environments: { local: environment },
-    checks: [],
+    // Dos sondas con viaje medido: son las que dejan ticks en la vista Servicios
+    // y las que permiten afirmar que un sondeo sin viaje no pinta barra.
+    checks: [
+      { id: "api", label: "API", source: "http", environment: "local", status: "ok", durationMs: 53, detail: "Fastify 5" },
+      { id: "web", label: "Web", source: "http", environment: "local", status: "unknown", durationMs: 0, detail: "sin viaje medido" }
+    ],
     alerts: [],
     events: []
   }));
@@ -232,12 +246,19 @@ test("el panel pinta un medidor por cada umbral publicado por el servidor", asyn
   const html = byId("gauges").innerHTML;
   const cards = html.split('<article class="measure-card').length - 1;
   assert.equal(cards, snapshot.snapshot.environments.local.gauges.length);
-  assert.equal(cards, 10, "las diez preguntas que mide el servidor");
+  assert.equal(cards, 13, "las trece preguntas que mide el servidor");
   assert.match(html, /p95 de la sonda al API/);
   assert.match(html, /Sondas fallidas/);
   // El corte del p95 es el presupuesto de sonda del ambiente, no el del API.
   assert.match(html, /óptimo ≤ 240 ms · en riesgo ≤ 400 ms/);
-  assert.equal(byId("gaugesMeta").textContent, "7 medidores con umbral · 2 en rojo · 1 en riesgo");
+  // El recuento del pie solo cuenta los que tienen umbral: las tres informativas
+  // (tráfico, uptime y registros) miden contexto, no diagnostico.
+  const scored = snapshot.snapshot.environments.local.gauges.filter((entry) => entry.direction !== "informational");
+  assert.equal(scored.length, 10);
+  assert.equal(
+    byId("gaugesMeta").textContent,
+    `${scored.length} medidores con umbral · ${scored.filter((entry) => entry.band === "critical").length} en rojo · ${scored.filter((entry) => entry.band === "risk").length} en riesgo`
+  );
 });
 
 test("cada medidor empieza por la pregunta y termina en la vista que la responde", async () => {
@@ -247,7 +268,7 @@ test("cada medidor empieza por la pregunta y termina en la vista que la responde
   assert.match(html, /<p class="measure-question">¿La base de datos está rápida\?<\/p>/);
   assert.match(html, /<button class="measure-link" type="button" data-view="latencia">Ver evidencia<\/button>/);
   assert.match(html, /<button class="measure-link" type="button" data-view="datos">Ver evidencia<\/button>/);
-  assert.equal(html.split("measure-question").length - 1, 10, "ningún medidor se queda sin pregunta");
+  assert.equal(html.split("measure-question").length - 1, 13, "ningún medidor se queda sin pregunta");
 });
 
 test("cada medidor muestra su banda medida: latencia verde y sondas en rojo", async () => {
@@ -275,15 +296,20 @@ test("la tarjeta de latencia firma el veredicto del servidor, no uno propio", as
     /<p class="measure-verdict tone-down">Fuera del tope: atender · 3\/3 muestras sobre 400 ms · racha máxima 3<\/p>/);
 });
 
-// Uptime, peticiones y registros son contexto del proceso o de la base: el
-// servidor no publica cortes para ellos, asi que el panel no les dibuja escala.
+// Uptime, peticiones por minuto y registros son contexto del proceso o de la
+// base: el servidor no publica cortes para ellos, asi que el panel no les dibuja
+// escala.
 test("los medidores informativos no fingen una escala ni un veredicto", async () => {
   const { byId } = await mountedPanel(snapshotWithIndicators());
   const html = byId("gauges").innerHTML;
   assert.match(html, /<article class="measure-card band-informational"[^>]*aria-label="Uptime del proceso: 2 h\. Informativo\. contexto del proceso, no diagnóstico\./);
-  assert.match(html, /<article class="measure-card band-informational"[^>]*aria-label="Peticiones atendidas: 98\.432\. Informativo\./);
+  assert.match(html, /<article class="measure-card band-informational"[^>]*aria-label="Peticiones por minuto: 820,3 req\/min\. Informativo\./);
   assert.match(html, /<article class="measure-card band-informational"[^>]*aria-label="Registros medidos: 940\. Informativo\./);
   assert.equal(html.split('class="measure-scale idle"').length - 1, 3, "solo los informativos van sin tramos");
+  // Informativo no es "sin dato": hay lectura medida, lo que falta es umbral. Su
+  // franja se pinta neutra y con las horas dentro del titulo.
+  assert.match(html, /<div class="monitor-ticks" role="img" aria-label="Peticiones por minuto: 2 lecturas medidas en 2 sondeos"><i class="map-tick band-informational"/);
+  assert.equal(html.split('class="monitor-ticks"').length - 1, 13, "cada medidor publica su propia historia");
 });
 
 test("la latencia dibuja el tope y la zona optima sobre la serie medida", async () => {
@@ -427,13 +453,21 @@ test("sin componentes leidos la torre explica que falta en lugar de dejar el pan
 
 test("la vista Base de datos responde rapidez, volumen y cobertura medidos", async () => {
   const { byId } = await mountedPanel(snapshotWithIndicators());
-  assert.match(byId("databaseVerdict").innerHTML, /La base responde en 42 ms \(medido por el propio API\)\. Óptimo/);
-  assert.match(byId("databaseVerdict").innerHTML, /Hay 940 registros medidos en 3 módulos con conteo\./);
-  const tiles = byId("databaseKpis").innerHTML.split('<article class="metric-tile').length - 1;
-  assert.equal(tiles, 6);
-  assert.match(byId("databaseKpis").innerHTML, /Latencia de la base/);
-  assert.match(byId("databaseKpis").innerHTML, /Consultas lentas/);
-  assert.match(byId("databaseKpis").innerHTML, /Registros medidos/);
+  // La banda de la vista es la peor entre sus medidores: aqui la latencia esta en
+  // verde y es la cobertura por empresa la que manda el semaforo.
+  const verdict = byId("databaseVerdict").innerHTML;
+  assert.match(verdict, /<p class="verdict-question">¿La base está rápida y con datos reales\?<\/p>/);
+  assert.match(verdict, /<p class="verdict-text">Empresas con actividad 0,5 % · Crítico<\/p>/);
+  assert.match(verdict, /Latencia de la base 42 ms \(óptimo ≤ 100, tope 300\)/);
+  assert.match(verdict, /940 registros medidos en 3 módulos con conteo/);
+  const kpis = byId("databaseKpis").innerHTML;
+  const tiles = kpis.split('<article class="metric-tile').length - 1;
+  assert.equal(tiles, 5);
+  assert.match(kpis, /Latencia de la base/);
+  assert.match(kpis, /Consultas lentas/);
+  assert.match(kpis, /Registros medidos/);
+  // Cada tesela de la base carga su propia historia medida, no un numero suelto.
+  assert.equal(kpis.split('class="monitor-ticks" role="img"').length - 1, 5, "las cinco teselas pintan sus ticks");
   assert.match(byId("databaseVolume").innerHTML, /<th>Frescura<\/th>/);
   assert.match(byId("databaseVolume").innerHTML, /Talento Humano/);
   // La tabla se ordena por volumen: Servicios (900) antes que Talento Humano (40).
@@ -461,7 +495,12 @@ test("un modulo sin conteo no se cuenta como modulo medido", async () => {
   publishIndicators(snapshot);
   const { byId } = await mountedPanel(snapshot);
   assert.equal(byId("databaseMeta").textContent, "0 módulos con conteo · 3 módulos leídos");
-  assert.match(byId("databaseVerdict").innerHTML, /Ningún módulo publicó conteo de registros\./);
+  const verdict = byId("databaseVerdict").innerHTML;
+  assert.match(verdict, /<p class="verdict-text">Empresas con actividad 0,5 % · Crítico<\/p>/);
+  assert.match(verdict, /ningún módulo publicó conteo de registros/);
+  // El conteo que nunca llego tampoco se disfraza con barras: la franja admite que
+  // los sondeos guardados no dejaron lectura de este monitor.
+  assert.match(byId("databaseKpis").innerHTML, /<div class="monitor-ticks" aria-hidden="true"><\/div><p class="monitor-ticks-foot">2 sondeos guardados · ninguno dejó lectura de este monitor<\/p>/);
   assert.match(byId("databaseVolume").innerHTML,
     /Ningún módulo devolvió conteo de registros en este ambiente \(motivo: SIMULACION\)\./);
 });
@@ -476,6 +515,67 @@ test("un componente sin latencia publicada no se cuenta ni se pinta como medido"
   const { byId } = await mountedPanel(snapshot);
   assert.equal(byId("componentsMeta").textContent, "2 componentes · 1 con latencia medida · 0 requieren atención");
   assert.match(byId("components").innerHTML, /sin medición/);
+  // El componente que nunca devolvio viaje no recibe barras: recibe el hueco
+  // explicado. Lo no medido no es cero y tampoco es una marca en el grafico.
+  assert.match(byId("components").innerHTML, /Correo[\s\S]*?<div class="monitor-ticks" aria-hidden="true"><\/div><p class="monitor-ticks-foot">2 sondeos guardados · ninguno dejó lectura de este monitor<\/p>/);
+});
+
+// El recorte de etiquetas no puede dejar un monitor con un numero suelto: todo lo
+// que se compara contra un tope se ve con la historia de sondeos que lo sustenta.
+// La publicacion real de esta forma la verifica test/server.test.js.
+test("componentes, sondas y nube pintan sus ticks con las lecturas medidas", async () => {
+  const snapshot = snapshotWithIndicators();
+  const env = snapshot.snapshot.environments.local;
+  env.components.push({ key: "mail", name: "Correo", kind: "queue", status: "ok", latencyMs: null, score: null });
+  env.cloud = {
+    railway: { configured: true, status: "ok", latencyMs: 512, checkedAt: "2026-11-05T10:00:00.000Z", project: { name: "apex-api" } },
+    supabase: { configured: false, status: "unknown" },
+    vercel: null
+  };
+  snapshot.snapshot.checks.push({
+    id: "cloud_railway", label: "Railway", source: "railway", environment: "local", status: "ok", durationMs: 512, detail: "GraphQL"
+  });
+  publishIndicators(snapshot);
+  const { byId } = await mountedPanel(snapshot);
+
+  const components = byId("components").innerHTML;
+  assert.equal(components.split('class="monitor-ticks" role="img"').length - 1, 2, "API y base trajeron viaje en los dos sondeos");
+  assert.match(components, /<div class="component-history"><div class="monitor-ticks" role="img" aria-label="Base de datos: 2 lecturas medidas en 2 sondeos">/);
+  // El tick de la base usa el tope versionado de dbLatency (42 ms = optimo); el
+  // del API no tiene corte propio y se pinta sin banda de decision.
+  assert.match(components, /<i class="map-tick band-optimal" style="height:30%" title="Base de datos · /);
+  assert.match(components, /<i class="map-tick band-unknown" style="height:6%" title="API · /);
+
+  const checks = byId("checks").innerHTML;
+  assert.match(checks, /aria-label="API: 2 lecturas medidas en 2 sondeos"/);
+  // El presupuesto de sonda del ambiente (400 ms) manda el color del viaje: 512 ms
+  // a Railway esta fuera del tope y se pinta en rojo, no en verde decorativo.
+  assert.match(checks, /aria-label="Railway: 2 lecturas medidas en 2 sondeos"><i class="map-tick band-critical"/);
+  assert.equal(checks.split('class="monitor-ticks" role="img"').length - 1, 2, "la sonda sin viaje medido no pinta historia");
+
+  const cloud = byId("cloud").innerHTML;
+  assert.match(cloud, /aria-label="Railway · viaje a la nube: 2 lecturas medidas en 2 sondeos"/);
+  assert.equal(cloud.split('class="monitor-ticks"').length - 1, 1, "un proveedor sin sonda propia no inventa historia");
+});
+
+test("la mesa del puesto se pinta con su propia historia medida", async () => {
+  const snapshot = snapshotWithIndicators();
+  // Forma publicada por server.js#publishOperation: los medidores del puesto
+  // salen de alertas y trabajos, y llevan su serie en el mismo anillo.
+  snapshot.operation = {
+    gauges: [
+      { key: "openAlerts", label: "Alertas abiertas", value: 0, band: "optimal", unit: "", window: 2,
+        series: [{ at: "2026-11-05T09:59:00.000Z", value: 1, band: "risk" }, { at: "2026-11-05T10:00:00.000Z", value: 0, band: "optimal" }] },
+      { key: "queuedJobs", label: "Trabajos por aprobar", value: 2, band: "risk", unit: "", window: 2,
+        series: [{ at: "2026-11-05T09:59:00.000Z", value: 2, band: "risk" }, { at: "2026-11-05T10:00:00.000Z", value: 2, band: "risk" }] }
+    ],
+    verdict: { state: "risk", tone: "degraded", text: "Trabajos por aprobar 2 · En riesgo", rule: "Alertas abiertas 0 (óptimo ≤ 0, tope 3)", question: "¿Qué se está haciendo y qué falta?" }
+  };
+  const { byId } = await mountedPanel(snapshot);
+  const html = byId("operationKpis").innerHTML;
+  assert.equal(html.split('class="monitor-ticks" role="img"').length - 1, 2, "cada cifra del puesto trae sus ticks");
+  assert.match(html, /aria-label="Alertas abiertas: 2 lecturas medidas en 2 sondeos"><i class="map-tick band-risk"[\s\S]*?<i class="map-tick band-optimal"/);
+  assert.match(byId("operationVerdict").innerHTML, /<p class="verdict-question">¿Qué se está haciendo y qué falta\?<\/p>/);
 });
 
 test("el mapa dibuja una marca por sondeo y modulo, mas la fila de la API", async () => {
@@ -513,6 +613,10 @@ test("el panel ofrece las siete vistas-pregunta en orden y cada una con su pregu
   assert.deepEqual(Object.keys(questions), order);
   assert.equal(panel.buttons.length, 7, "un boton por vista en el HTML");
   assert.match(panel.buttons[0].className, /active/);
+  // La pregunta no se escribe dos veces: el panel reproduce la del servidor. Si
+  // alguien la cambia en un lado, la banda y el titulo dejarian de responderse.
+  const { VIEW_QUESTIONS } = require("../lib/metrics");
+  assert.deepEqual(questions, VIEW_QUESTIONS);
 });
 
 test("una vista deja visible solo las secciones que responden a esa pregunta", async () => {
