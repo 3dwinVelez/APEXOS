@@ -8,6 +8,33 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase. La ca
 ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
 «aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
 
+## Ronda 9 (el saludo del hero da protagonismo al usuario)
+
+- **El hueco vino de la pantalla del dueño, no de una suposición.** Sobre la captura del hero marcó
+  la píldora «Bienvenido, Demo · Demo APEX»: el nombre del usuario se leía a 11,5 px, en turquesa y
+  con el mismo peso que el resto de la línea, así que el saludo parecía una etiqueta de sistema.
+- **El saludo pasa a cápsula con identidad.** `.apex-lobby-eyebrow` se vuelve una cápsula que abraza
+  su contenido (`align-self: flex-start`) con borde y degradado de marca, avatar de iniciales
+  (componente `Avatar` existente, 36 px) y tres niveles de texto: «Bienvenido,» a 14 px, el nombre
+  a **19 px / 700** en blanco de la paleta (`rgb(242 248 250)`) y la empresa a 14 px en acento. La
+  frase de marca del `h1` sigue mandando (48 px escritorio, 36 px móvil); el chip no la compite.
+- **La caja se midió.** La primera versión se estiró a 592 px porque, como hijo flex en columna, la
+  cápsula adoptaba `align-items: stretch`: se corrigió con `align-self: flex-start` y quedó en
+  **291×49** con radio 999 px. El contrato de caja no cambia: sin `position` fija ni absoluta,
+  `max-width: 100%`, `min-width: 0` en la copia y desbordamiento horizontal `0` en escritorio
+  (1440×1000) y móvil (390×844).
+- **Se conserva el contrato del certificador.** El texto sigue conteniendo «Bienvenido,» como una
+  sola cadena legible en `innerText`, que es lo que exige `certify-ui-ux-phase-two-local.mjs`.
+- **Verificación.** Suite web **691/691** (dos pruebas nuevas en `lobby-greeting.test.mjs`),
+  `typecheck` sin hallazgos y ESLint sin errores (22 avisos preexistentes). Sin datos ni lógica:
+  el nombre sigue saliendo de `userDisplayName()` sobre `localStorage.user_email`; el cambio es
+  presentación y marcadores.
+- **Evidencia.** `evidence-greeting-{light,dark}.png` y
+  `evidence-greeting-mobile-{light,dark}.png` recortadas al hero con login verificado
+  (`demo@apex.local`, «Sesión activa»), más `evidence-greeting-metrics.json` con las medidas por
+  vista (cápsula, radio, degradado, avatar, tamaños y colores de cada nivel, `h1` y
+  desbordamiento).
+
 ## Ronda 8 (capa visual de operación — gráficos, tablas y estados vacíos)
 
 - **El hueco se fijó con una medición, no con una opinión.** La tabla comparativa del 2026-11-11
@@ -175,11 +202,15 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
 | `apps/web/components/ui/feedback.tsx` | M — marcadores `apex-empty`/`apex-empty-icon`; retiro de `text-apex` que tapaba el token del icono |
 | `apps/web/test/visual-operation.test.mjs` | A — 4 pruebas de contrato de la operación visual sin propiedades de caja |
 | `docs/qa/evidence/lobby-v4-20261110/evidence-operation-*.png` y `evidence-operation-metrics.json` | A — seis capturas (gráficos, tabla y estado vacío en claro/oscuro) con métricas medidas |
+| `apps/web/app/dashboard/page.tsx` | M — ronda 9: el saludo del hero usa `Avatar` de iniciales, nombre en `<strong>` destacado y empresa en acento, sobre marcadores `apex-lobby-eyebrow-*` |
+| `apps/web/app/globals.css` | M — ronda 9: `.apex-lobby-eyebrow` como cápsula que abraza su contenido, con avatar, copia, nombre y empresa por nivel tipográfico |
+| `apps/web/test/lobby-greeting.test.mjs` | A — 2 pruebas de contrato: estructura del saludo con avatar y nombre, y escala tipográfica sin desbordar el chip |
+| `docs/qa/evidence/lobby-v4-20261110/evidence-greeting-*.png` y `evidence-greeting-metrics.json` | A — cuatro capturas del hero (escritorio/móvil, claro/oscuro) con métricas medidas |
 
 ## Validación ejecutada
 
-- Pruebas web: `node --test "test/*.test.mjs"` desde `apps/web` — **689/689** en verde (4 de ellas
-  nuevas de la ronda 8, además de las 7 del fondo ambiente).
+- Pruebas web: `node --test "test/*.test.mjs"` desde `apps/web` — **691/691** en verde (2 de ellas
+  nuevas de la ronda 9, 4 de la ronda 8 y 7 del fondo ambiente).
 - Typecheck (`tsconfig.typecheck.json`) y ESLint sobre los archivos tocados: sin hallazgos.
 - Navegador real (headless Edge vía CDP, perfil limpio):
   - Rondas 1–3, cuatro capturas del lobby:
@@ -195,6 +226,10 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
     más `evidence-operation-metrics.json`, tomadas con login verificado (`demo@apex.local`): piel de
     gráficos, densidad de tabla y estado vacío medidos en el DOM, con desbordamiento horizontal `0`.
     La primera captura del estado vacío salió como pantalla de «Acceso no autorizado» y se descartó.
+  - Ronda 9, cuatro capturas del hero (`evidence-greeting-{desktop,mobile}-{light,dark}.png`) y
+    `evidence-greeting-metrics.json`, con login verificado: cápsula 291×49 con radio 999 px,
+    avatar 36×36 «D», nombre 19 px/700 `rgb(242 248 250)`, copia 14 px, empresa 14 px acento,
+    `h1` 48 px (escritorio) / 36 px (móvil) y desbordamiento horizontal `0`.
 - Rendimiento del fondo medido en el arnés (2 s de desplazamiento, escritorio): con y sin la capa,
   16,67 ms promedio, p95 16,8 ms, 0 cuadros sobre 33 ms, 0 layouts y 0 scripts; ninguna petición de
   red nueva.

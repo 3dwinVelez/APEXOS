@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.40.0",
+      "version": "2.41.0",
       "updated_at": "2026-11-11",
-      "sha256": "892166a8845f6546295052492d76192af761127f1e2251fe4c478a76cc5bc7d6",
+      "sha256": "4636e7c3ddd92ce9b46b3385308c56c218185fe0b2d764f3565ad4c297f86a98",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -131,7 +131,8 @@
         "manifiesto-pendiente-versionado",
         "celda-construible-se-construye",
         "inventario-de-tuberias-de-certificacion",
-        "encargo-nota-visual-brecha-medida"
+        "encargo-nota-visual-brecha-medida",
+        "encargo-protagonismo-jerarquia-tipografica"
       ]
     },
     {
@@ -161,9 +162,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.21.0",
+      "version": "2.22.0",
       "updated_at": "2026-11-11",
-      "sha256": "48e2c42db92752ab22f1848aead7f3e10102e3b3442138a5f3517bbe464c6fe8",
+      "sha256": "0b0ab6825721f1f4807200438db6044f2fecc6fe3e535d66028e5fdc8f7049d0",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -194,7 +195,8 @@
         "niveles-de-tinta-con-cota-aa-medida",
         "lote-de-texto-se-revisa-en-el-diff",
         "403-de-alcance-no-toca-clear-session",
-        "piel-operacion-medida-en-dom"
+        "piel-operacion-medida-en-dom",
+        "saludo-hero-capsula-con-identidad"
       ]
     },
     {
@@ -264,9 +266,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.49.0",
+      "version": "2.50.0",
       "updated_at": "2026-11-11",
-      "sha256": "79ee65a029e1af956a1ed2bde27b106ae5db1495102fe8d56f7d8b0e6f37f4f6",
+      "sha256": "be1796123045fb91073d9ac32378d97eff8d5c623074582e01917be5be02ccf2",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -317,7 +319,8 @@
         "compuerta-anclada-al-build-desplegado",
         "celda-con-sesion-se-cierra-construyendo-la-sesion",
         "gate-lee-dom-visible-de-la-vista-activa",
-        "fase-visual-metricas-dom-sesion"
+        "fase-visual-metricas-dom-sesion",
+        "saludo-evidencia-sesion-real-y-caja"
       ]
     },
     {
@@ -363,9 +366,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.27.0",
+      "version": "2.28.0",
       "updated_at": "2026-11-11",
-      "sha256": "96a4a6f7b2a4d371b4c6c78bdf37dd4d80628a809989e121d36d276cec5aa6cb",
+      "sha256": "086f84429124f6374794b996db0d471741218742d28e9d4622af0a1ede1b7eef",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -398,7 +401,8 @@
         "incidente-de-produccion-distingue-despliegue",
         "sin-pendientes-construibles",
         "historia-sin-retrorelleno-y-herramienta-viva",
-        "nota-visual-capa-exclusiva"
+        "nota-visual-capa-exclusiva",
+        "protagonismo-dato-jerarquia-visual"
       ]
     }
   ],

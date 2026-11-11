@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar } from "@/components/ui/avatar";
 import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { LOBBY_BANNER, lobbyModuleImage } from "@/lib/lobbyAssets";
 import { MODULES } from "@/lib/modules";
@@ -47,7 +48,12 @@ export default function DashboardPage() {
     <section aria-labelledby="lobby-hero-title" className="apex-lobby-hero flex min-h-[17rem] sm:min-h-[19rem]">
       <Image src={LOBBY_BANNER} alt="" fill priority sizes="(max-width: 1500px) 100vw, 1500px" />
       <div className="relative z-10 flex max-w-2xl flex-col justify-center gap-3 p-6 sm:p-10">
-        <span className="apex-lobby-eyebrow"><Sparkles size={13} /> Bienvenido{displayName ? `, ${displayName}` : ""} · {companyName}</span>
+        <span className="apex-lobby-eyebrow">
+          {displayName ? <Avatar aria-hidden="true" className="apex-lobby-eyebrow-avatar" name={displayName} /> : <Sparkles aria-hidden="true" size={15} />}
+          <span className="apex-lobby-eyebrow-copy">
+            {displayName ? <>Bienvenido, <strong className="apex-lobby-eyebrow-name">{displayName}</strong></> : "Bienvenido"}{" "}<span className="apex-lobby-eyebrow-company">· {companyName}</span>
+          </span>
+        </span>
         <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl" id="lobby-hero-title">Creamos sistemas <span className="apex-lobby-accent">a tu medida.</span></h1>
         <p className="max-w-xl text-sm text-white/75 sm:text-base">Tu operación, más simple y bajo control.</p>
       </div>
