@@ -297,6 +297,17 @@ async function resolveReferenceId(companyId: string, referenceId: string, produc
   return rows[0]?.id || null;
 }
 
+// Cierra en una sola consulta los ids que el cliente declara para cada producto:
+// una referencia de otra empresa o inactiva no existe para esta allowlist.
+async function activeReferenceIdSet(companyId: string, referenceIds: string[]) {
+  const ids = Array.from(new Set(referenceIds.filter(isUuid)));
+  if (!ids.length) return new Set<string>();
+  const rows = await supabasePublicRead<Array<{ id: string }>>(
+    `/rest/v1/service_references?select=id&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&id=in.(${ids.map((id) => encodeURIComponent(id)).join(",")})&limit=${ids.length}`
+  ).catch(() => []);
+  return new Set(rows.map((row) => row.id));
+}
+
 async function activeReferencesForCompany(companyId: string) {
   return supabasePublicRead<PublicReferenceRow[]>(
     `/rest/v1/service_references?select=id,company_id,code,name,category,brand,model&company_id=eq.${encodeURIComponent(companyId)}&active=eq.true&code=neq.${encodeURIComponent(SERVICE_TYPES_REFERENCE_CODE)}&order=code.asc&limit=500`
@@ -386,12 +397,35 @@ export async function POST(request: NextRequest) {
     }
 
     const companyId = publicCompanyId();
-    const referenceId = await resolveReferenceId(companyId, clean(body.reference_id), clean(body.product_reference) || clean(body.product_description));
-    if (!referenceId) return jsonError("Selecciona una referencia activa para el producto que se va a instalar.");
     const metadata = await catalogMetadata(companyId);
-    const serviceType = serviceTypeCode(clean(body.service_type) || "montaje");
     const serviceTypes = normalizeServiceTypes(metadata.service_types).filter((item) => item.active);
-    if (!serviceTypes.some((item) => item.code === serviceType)) return jsonError("Selecciona un tipo de servicio activo para esta empresa.");
+    const requestedServiceTypes = requestedItems.map((item) => serviceTypeCode(item.service_type));
+    const invalidTypeIndex = requestedServiceTypes.findIndex((code) => !serviceTypes.some((item) => item.code === code));
+    if (invalidTypeIndex >= 0) return jsonError(`Selecciona un tipo de servicio activo para la solicitud ${invalidTypeIndex + 1}.`);
+
+    const itemReferenceCandidates = requestedItems.map((item) => clean(item.reference_id));
+    const activeReferenceIds = await activeReferenceIdSet(companyId, itemReferenceCandidates);
+    const legacyProductReference = clean(body.product_reference) || clean(body.product_description);
+    const itemReferenceIds: string[] = [];
+    for (let index = 0; index < requestedItems.length; index += 1) {
+      const candidate = itemReferenceCandidates[index];
+      if (activeReferenceIds.has(candidate)) {
+        itemReferenceIds.push(candidate);
+        continue;
+      }
+      // Compatibilidad: clientes anteriores mandan un id que no es de esta base y el codigo
+      // del producto; se resuelve por codigo o nombre solo contra la allowlist.
+      const legacyReferenceId = index === 0 && !isUuid(candidate)
+        ? await resolveReferenceId(companyId, "", legacyProductReference)
+        : null;
+      if (legacyReferenceId) {
+        itemReferenceIds.push(legacyReferenceId);
+        continue;
+      }
+      return jsonError(`La referencia de la solicitud ${index + 1} no esta activa en el catalogo publico de esta empresa.`);
+    }
+    const referenceId = itemReferenceIds[0];
+    const serviceType = requestedServiceTypes[0];
     const store = normalizeServiceStores(metadata.service_stores).filter((item) => item.active)
       .find((item) => item.code === serviceTypeCode(clean(body.service_store)));
     if (!store) return jsonError("Selecciona un almacen activo para esta empresa.");
@@ -420,8 +454,8 @@ export async function POST(request: NextRequest) {
           product_reference: clean(body.product_reference),
           product_description: clean(body.product_description),
           received_at: new Date().toISOString(),
-          items: requestedItems.map((item) => ({
-            reference_id: clean(item.reference_id),
+          items: requestedItems.map((item, index) => ({
+            reference_id: itemReferenceIds[index],
             service_type: serviceTypeCode(item.service_type),
             quantity: Number(item.quantity),
             observation: clean(item.observation)

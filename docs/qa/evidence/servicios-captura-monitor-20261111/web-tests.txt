@@ -1,0 +1,34 @@
+Pruebas del paquete Servicios (captura publica -> monitor) — desarrollo, 2026-11-11
+Ejecutado en apps/web con Node 24 (node --test) y TypeScript del workspace.
+
+1) node --test test/public-service-requests-security.test.mjs
+   1..14
+   # tests 14
+   # pass 14
+   # fail 0
+   Cubre: por item, el reference_id se cierra contra la allowlist de la empresa (no se
+   guarda un id ajeno sin validar); una referencia inactiva/ajena responde 400 sin llamar
+   al RPC; la compatibilidad con clientes viejos (id no UUID + codigo de producto) solo
+   resuelve contra la allowlist; el item 2 con referencia de otra empresa se nombra en el
+   mensaje; el POST local sigue delegando en el API sin reenviar company_id/company_name.
+
+2) node --test test/service-monitor-live-refresh.test.mjs
+   1..13
+   # tests 13
+   # pass 13
+   # fail 0
+   Cubre: el contrato 403 del servidor (X-Apexos-Scope-Reason: no-eligible-membership) no
+   se relaja; el navegador, ante un company_id guardado obsoleto, limpia la clave, reintenta
+   sin empresa y adopta el X-Apexos-Scope-Company de la respuesta; la busqueda remota, la
+   paginacion, el refresco por foco e intervalo y la identidad/membresia del endpoint se
+   mantienen.
+
+3) node --test test/*.test.mjs (suite completa de apps/web)
+   1..685
+   # tests 685
+   # pass 685
+   # fail 0
+   Sin regresiones fuera de Servicios.
+
+4) npx tsc -p tsconfig.typecheck.json --noEmit
+   exit=0

@@ -1,0 +1,71 @@
+Cadena captura -> monitor en QA (build c72955d2) — 2026-11-11
+Script: probe efimero fuera del repositorio (crea usuario, perfil y membresia en la empresa
+de la allowlist de QA, pide token por password grant, mide y borra por id exacto).
+Datos sinteticos; sin correos, tokens ni llaves en la salida.
+
+1) Captura publica y monitor, con un usuario administrador de la empresa
+{
+  "steps": {
+    "capture":                 { "status": 200, "order": "OS-00023", "id": true },
+    "auth_user":               { "status": 200, "created": true },
+    "profile":                 { "status": 201 },
+    "membership":              { "status": 201 },
+    "grant":                   { "status": 200, "has_token": true },
+    "monitor_with_own_company":{ "status": 200, "total": 1, "rows": 1, "found": true, "number": "OS-00023" },
+    "monitor_without_company": { "status": 200, "total": 1, "rows": 1, "found": true, "number": "OS-00023" },
+    "monitor_with_foreign_company": {
+      "status": 403,
+      "rows": null,
+      "found": false,
+      "message": "El usuario no tiene permiso para consultar este monitor.",
+      "reason": "no-eligible-membership"
+    }
+  },
+  "cleanup": { "order": 200, "company_users": 200, "profiles": 200, "auth_user": 200 }
+}
+
+Lectura: la captura si llega al monitor cuando la empresa pedida es la del usuario o no se
+pedido empresa. Un company_id ajeno u obsoleto (el que guarda el navegador y que en PROD
+puede quedar de una base anterior) devuelve 403 y la pantalla queda vacia.
+
+2) Codigo corregido ejecutado contra la base real de QA (handler importado en Node con el
+   allowlist de QA; dos productos con referencias distintas, luego una referencia ajena)
+{
+  "catalog": { "refs": 130, "types": 7, "stores": 5 },
+  "capture": { "status": 200, "order": { "number": "OS-00023" } },
+  "persisted": [{
+    "number": "OS-00023",
+    "status": "agendado",
+    "company_id": "cbbf3627-...",
+    "reference_id": "8936ff56-...",
+    "items": [
+      { "reference_id": "8936ff56-...", "service_type": "demo", "quantity": 1, "observation": "item 1" },
+      { "reference_id": "e0e07f21-...", "service_type": "demo", "quantity": 1, "observation": "item 2" }
+    ]
+  }],
+  "tampered_reference": {
+    "status": 400,
+    "message": "La referencia de la solicitud 1 no esta activa en el catalogo publico de esta empresa."
+  },
+  "cleanup": 204
+}
+
+Lectura: la orden guarda la referencia real de cada producto (antes solo la del primero,
+resuelta por codigo) y una referencia de otra empresa no crea nada.
+
+3) Corrida versionada y reproducible de la cadena (build de QA c72955d2)
+   npm run certify:servicios-captura-monitor:qa
+   -> docs/qa/evidence/servicios-captura-monitor-20261111/qa-certification.json
+   summary: { passed: 9, failed: 0, total: 9 }
+   - catalogo_publico_responde                  ok  (200, referencias/tipos/almacenes)
+   - captura_crea_preorden                      ok  (200, OS-00023)
+   - usuario_efimero_creado                     ok  (200)
+   - membresia_efimera_creada                   ok  (profiles 201, company_users 201)
+   - token_efimero_emitido                      ok  (200)
+   - monitor_empresa_propia_encuentra_la_orden  ok  (200, found true, OS-00023)
+   - monitor_sin_empresa_encuentra_la_orden     ok  (200, found true, OS-00023)
+   - monitor_empresa_ajena_rechaza_con_403      ok  (403, no-eligible-membership)
+   - limpieza_por_id_exacto                     ok  (service_orders/profiles/company_users/auth_user 200)
+   La evidencia se sanea a si misma: si el JSON contuviera la llave de servicio o la anon,
+   el script aborta sin escribir archivo.
+

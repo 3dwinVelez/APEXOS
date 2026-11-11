@@ -216,6 +216,85 @@ test("GET local delega el catalogo en el API operativo", async () => {
   assert.equal(calls[0].url, `${LOCAL_API}/api/v1/public/services/catalog`);
 });
 
+const ACTIVE_REFERENCE = "33333333-3333-4333-8333-333333333333";
+const CATALOG_METADATA = {
+  service_types: [{ code: "montaje", label: "Montaje", active: true }],
+  service_stores: [{ code: "sede_1", label: "Sede 1", active: true }]
+};
+
+function cloudCaptureStub(referenceLookup) {
+  return stubFetch((call) => {
+    if (call.url.includes("code=eq.__SERVICE_TYPES__")) return jsonResponse([{ metadata: CATALOG_METADATA }]);
+    if (call.url.includes("select=id&")) return referenceLookup(call);
+    if (call.url.includes("/rest/v1/rpc/create_public_service_order")) return jsonResponse([{ id: "order-1", number: "OS-00001" }]);
+    return jsonResponse([]);
+  });
+}
+
+test("POST en nube cierra la referencia de cada producto contra la allowlist", async () => {
+  resetEnv(cloudEnv({ APEXOS_PUBLIC_SERVICE_COMPANY_ID: ALLOWED_COMPANY }));
+  const calls = cloudCaptureStub(() => jsonResponse([{ id: ACTIVE_REFERENCE }]));
+  const response = await route.POST(requestStub(validOrder({
+    reference_id: "",
+    product_reference: "",
+    items: [{ reference_id: ACTIVE_REFERENCE, service_type: "montaje", quantity: 1 }]
+  })));
+  assert.equal(response.status, 200);
+  const lookup = calls.find((call) => call.url.includes("select=id&"));
+  assert.match(lookup.url, new RegExp(`company_id=eq\\.${ALLOWED_COMPANY}`));
+  assert.match(lookup.url, /active=eq\.true/);
+  assert.match(lookup.url, new RegExp(`id=in\\.\\(${ACTIVE_REFERENCE}\\)`));
+  const rpc = calls.find((call) => call.url.includes("/rest/v1/rpc/create_public_service_order"));
+  const payload = JSON.parse(rpc.body);
+  assert.equal(payload.p_reference_id, ACTIVE_REFERENCE);
+  assert.equal(payload.p_metadata.items[0].reference_id, ACTIVE_REFERENCE);
+});
+
+test("POST en nube rechaza una referencia que no esta activa en la empresa", async () => {
+  resetEnv(cloudEnv({ APEXOS_PUBLIC_SERVICE_COMPANY_ID: ALLOWED_COMPANY }));
+  const calls = cloudCaptureStub(() => jsonResponse([]));
+  const response = await route.POST(requestStub(validOrder({
+    reference_id: "",
+    product_reference: "",
+    items: [{ reference_id: ACTIVE_REFERENCE, service_type: "montaje", quantity: 1 }]
+  })));
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).message, /no esta activa en el catalogo publico/i);
+  assert.equal(calls.some((call) => call.url.includes("/rest/v1/rpc/")), false);
+});
+
+test("POST en nube mantiene compatibilidad con el codigo del producto", async () => {
+  resetEnv(cloudEnv({ APEXOS_PUBLIC_SERVICE_COMPANY_ID: ALLOWED_COMPANY }));
+  const calls = cloudCaptureStub(() => jsonResponse([{ id: ACTIVE_REFERENCE }]));
+  const response = await route.POST(requestStub(validOrder({
+    reference_id: "",
+    product_reference: "A1",
+    items: [{ reference_id: "7", service_type: "montaje", quantity: 1 }]
+  })));
+  assert.equal(response.status, 200);
+  const legacyLookup = calls.find((call) => call.url.includes("or=(code.ilike"));
+  assert.ok(legacyLookup, "debe resolver por codigo cuando el cliente no manda un id de esta base");
+  assert.match(legacyLookup.url, /active=eq\.true/);
+  const rpc = calls.find((call) => call.url.includes("/rest/v1/rpc/create_public_service_order"));
+  assert.equal(JSON.parse(rpc.body).p_reference_id, ACTIVE_REFERENCE);
+});
+
+test("POST en nube nombra la solicitud cuya referencia no esta en la allowlist", async () => {
+  resetEnv(cloudEnv({ APEXOS_PUBLIC_SERVICE_COMPANY_ID: ALLOWED_COMPANY }));
+  const calls = cloudCaptureStub(() => jsonResponse([{ id: ACTIVE_REFERENCE }]));
+  const response = await route.POST(requestStub(validOrder({
+    reference_id: "",
+    product_reference: "",
+    items: [
+      { reference_id: ACTIVE_REFERENCE, service_type: "montaje", quantity: 1 },
+      { reference_id: OTHER_COMPANY, service_type: "montaje", quantity: 1 }
+    ]
+  })));
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).message, /solicitud 2/i);
+  assert.equal(calls.some((call) => call.url.includes("/rest/v1/rpc/")), false);
+});
+
 test("POST local delega en el API y no reenvia la empresa que envia el cliente", async () => {
   resetEnv(localEnv());
   const calls = stubFetch(() => jsonResponse({ ok: true, order: { id: "1", number: "SOL-2026-00001" } }));

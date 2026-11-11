@@ -1,0 +1,36 @@
+Inventario medido de Servicios por ambiente — 2026-11-11
+Rama: desarrollo. Solo lectura sobre QA y PROD (sin escrituras salvo ordenes efimeras de
+certificacion, borradas por id exacto). Sin tokens ni credenciales en este archivo.
+
+LOCAL
+  Captura GET /api/public/service-requests -> 200, 12 referencias, 4 tipos, 2 almacenes.
+  Causa de la caida observada: APEXOS_PUBLIC_SERVICE_COMPANY_ID apuntaba al tenant
+  c0d70738-... (destruido en la reconstruccion de la base local). Corregido en el .env
+  del puesto (gitignorado) a d5397071-... (Demo APEX). No es codigo.
+  Verificacion: catálogo servido por /api/v1/public/services/catalog (rama local del BFF).
+
+QA (build c72955d2)
+  v_company_module_status: 35 filas, servicios habilitado.
+  GET /api/public/service-requests -> 200; 130 referencias, 7 tipos, 5 almacenes.
+  POST /api/public/service-requests (payload real del formulario) -> 200, orden creada.
+  Monitor BFF con sesion de administrador de la empresa -> 200 con las ordenes.
+  Cadena completa: ver qa-cadena-captura-monitor.txt.
+
+PROD (web sirviendo 4659292f4f23)
+  companies: IMPORTADORA SCJ SAS 6199e855-..., NYVORA 82c2da06-..., Camila urrego cda7c089-...
+  company_users de SCJ: 38 activos (8 admin, 30 member).
+  company_modules de SCJ: 32 filas, 4 habilitadas, servicios = true.
+  service_orders: 302 totales; SCJ 285 (263 con metadata.created_from=public_service_request,
+  5 creadas hoy). La captura publica si esta escribiendo en PROD.
+  "Tenant" (Prisma) de SCJ: 67a5dcb8-..., config.company_id = 6199e855-...
+    -> el login del API guarda el id de Supabase (companies.id), no el del tenant Prisma.
+  "ServiceReference" (Prisma) en PROD: solo NYVORA tiene filas (21 activas); SCJ 0.
+    -> el catalogo de SCJ vive en Supabase service_references, que es lo que lee el BFF web.
+  APEXOS_PUBLIC_SERVICE_COMPANY_ID del API apunta a 67a5dcb8-... (tenant Prisma): correcto
+  para esa ruta, pero el API devuelve catalogo vacio para SCJ porque Prisma no tiene
+  referencias. No afecta al formulario publico de la web, que lee Supabase con la llave anon.
+
+LECTURA QUE ORIGINO EL HALLAZGO
+  Monitor BFF con company_id ajeno u obsoleto -> 403 con X-Apexos-Scope-Reason:
+  no-eligible-membership. La pantalla cae al respaldo /api/v1/services/orders (Prisma),
+  que en SCJ tiene 0 ordenes, y el monitor queda vacio aunque la captura si escriba.

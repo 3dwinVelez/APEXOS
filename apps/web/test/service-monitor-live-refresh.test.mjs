@@ -84,6 +84,14 @@ test("el endpoint limita entradas costosas y no expone errores internos", () => 
   assert.doesNotMatch(routeSource, /body\?\.message \|\| body\?\.error_description/);
 });
 
+test("una empresa obsoleta guardada en el navegador no deja el monitor vacio", () => {
+  assert.match(source, /response\.headers\.get\("x-apexos-scope-reason"\) === "no-eligible-membership"/);
+  assert.match(source, /localStorage\.removeItem\("apexos_company_id"\)/);
+  assert.match(source, /requestMonitor\(""\)/);
+  assert.match(source, /response\.headers\.get\("x-apexos-scope-company"\)/);
+  assert.match(routeSource, /"X-Apexos-Scope-Company": scope\.companyIds\[0\]/);
+});
+
 test("el monitor pagina y filtra en servidor sin ocultar ordenes historicas", () => {
   for (const parameter of ["q", "status", "date_from", "date_to", "offset", "limit"]) {
     assert.match(routeSource, new RegExp(`searchParams\\.get\\("${parameter}"\\)`));

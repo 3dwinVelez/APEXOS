@@ -122,6 +122,7 @@
     "test:service-corrections": "node --test apps/api/test/service-order-administrative-corrections.test.js",
     "certify:service-corrections:local": "node scripts/certify-service-order-corrections-local.js",
     "certify:service-order-items:local": "node scripts/certify-service-order-items-local.js",
+    "certify:servicios-captura-monitor:qa": "node scripts/certifications/servicios-captura-monitor-qa.js --env-file=config/qa.env --output=docs/qa/evidence/servicios-captura-monitor-20261111/qa-certification.json",
     "qa:migrate-service-evidence-storage": "node scripts/migrate-qa-service-evidence-storage.js",
     "qa:validate-service-storage": "node scripts/validate-qa-service-storage.js",
     "workflow:status": "node scripts/branch-workflow.js status",

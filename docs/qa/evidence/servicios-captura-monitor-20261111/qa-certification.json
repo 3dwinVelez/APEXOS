@@ -1,0 +1,107 @@
+{
+  "environment": {
+    "name": "QA",
+    "web_url": "https://apexos-web-qa-production.up.railway.app",
+    "company_id": "cbbf3627-4336-4f23-95c6-1077414bcd17",
+    "marker": "CERT-CAPTURA-MONITOR-1794424141633"
+  },
+  "executed_at": "2026-11-11T19:09:06.637Z",
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "failed_checks": []
+  },
+  "checks": [
+    {
+      "name": "catalogo_publico_responde",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "references": 130,
+        "service_types": 7,
+        "service_stores": 5
+      }
+    },
+    {
+      "name": "captura_crea_preorden",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "order": "OS-00023",
+        "message": ""
+      }
+    },
+    {
+      "name": "usuario_efimero_creado",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "membresia_efimera_creada",
+      "ok": true,
+      "detail": {
+        "profile": 201,
+        "membership": 201
+      }
+    },
+    {
+      "name": "token_efimero_emitido",
+      "ok": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "monitor_empresa_propia_encuentra_la_orden",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "total": 1,
+        "rows": 1,
+        "found": true,
+        "number": "OS-00023",
+        "message": "",
+        "reason": ""
+      }
+    },
+    {
+      "name": "monitor_sin_empresa_encuentra_la_orden",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "total": 1,
+        "rows": 1,
+        "found": true,
+        "number": "OS-00023",
+        "message": "",
+        "reason": ""
+      }
+    },
+    {
+      "name": "monitor_empresa_ajena_rechaza_con_403",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "total": null,
+        "rows": null,
+        "found": false,
+        "number": "",
+        "message": "El usuario no tiene permiso para consultar este monitor.",
+        "reason": "no-eligible-membership"
+      }
+    },
+    {
+      "name": "limpieza_por_id_exacto",
+      "ok": true,
+      "detail": {
+        "service_orders": 200,
+        "company_users": 200,
+        "profiles": 200,
+        "auth_user": 200
+      }
+    }
+  ]
+}

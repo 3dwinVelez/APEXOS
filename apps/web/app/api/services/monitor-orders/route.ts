@@ -618,7 +618,7 @@ export async function GET(request: NextRequest) {
       next_offset: hasMore ? nextOffset : null,
       warnings,
       kpis: kpisForOrders(mapped)
-    });
+    }, { headers: { "X-Apexos-Scope-Company": scope.companyIds[0] || "" } });
   } catch (error) {
     const status = error instanceof Error && error.message.startsWith("SUPABASE_REQUEST_FAILED:")
       ? Number(error.message.split(":")[1]) || 500

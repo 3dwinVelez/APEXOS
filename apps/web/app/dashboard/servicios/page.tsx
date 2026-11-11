@@ -483,19 +483,33 @@ async function loadSupabaseMonitorOrders(filters: MonitorQuery): Promise<Monitor
   if (!token) return null;
   const companyName = localStorage.getItem("apexos_company_name") || localStorage.getItem("company_name") || "SCJ";
   const companyId = localStorage.getItem("apexos_company_id") || "";
-  const query = new URLSearchParams({
-    empresa: companyName,
-    offset: String(filters.offset || 0),
-    limit: String(filters.limit || 50)
-  });
-  if (companyId) query.set("company_id", companyId);
-  if (filters.q) query.set("q", filters.q);
-  if (filters.status) query.set("status", filters.status);
-  if (filters.dateFrom) query.set("date_from", filters.dateFrom);
-  if (filters.dateTo) query.set("date_to", filters.dateTo);
-  const response = await fetch(`/api/services/monitor-orders?${query.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const requestMonitor = (requestedCompanyId: string) => {
+    const query = new URLSearchParams({
+      empresa: companyName,
+      offset: String(filters.offset || 0),
+      limit: String(filters.limit || 50)
+    });
+    if (requestedCompanyId) query.set("company_id", requestedCompanyId);
+    if (filters.q) query.set("q", filters.q);
+    if (filters.status) query.set("status", filters.status);
+    if (filters.dateFrom) query.set("date_from", filters.dateFrom);
+    if (filters.dateTo) query.set("date_to", filters.dateTo);
+    return fetch(`/api/services/monitor-orders?${query.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+  };
+  let response = await requestMonitor(companyId);
+  // La empresa guardada puede haber quedado obsoleta (por ejemplo tras reconstruir la
+  // base). El servidor la rechaza, y el monitor se queda vacío aunque el usuario si
+  // tenga membresia. Se descarta el id y se vuelve a pedir el alcance propio.
+  if (response.status === 403
+    && companyId
+    && response.headers.get("x-apexos-scope-reason") === "no-eligible-membership") {
+    localStorage.removeItem("apexos_company_id");
+    response = await requestMonitor("");
+    const effectiveCompanyId = response.ok ? response.headers.get("x-apexos-scope-company") || "" : "";
+    if (effectiveCompanyId) localStorage.setItem("apexos_company_id", effectiveCompanyId);
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => ({})) as { message?: string };
     throw new Error(body.message || "No fue posible consultar el monitor de servicios.");
