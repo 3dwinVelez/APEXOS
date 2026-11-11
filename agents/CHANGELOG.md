@@ -2,6 +2,15 @@
 
 Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue semver: major cambia rol/contrato, minor agrega control o especialidad, patch corrige redacción o rutas.
 
+## 2026-11-11
+
+### El commit del fondo ambiente se acota como contenedor de capa visual exclusiva (`lobby-v4-fondo-ambiente-acotacion-20261111`)
+
+- **El dueño fijó la naturaleza del paquete.** «El commit o paquete que estamos generando con esta intervención debe ir como un contenedor de capa visual exclusiva, no debe afectar ningún otro proceso funcional de la herramienta». El commit `dbc78e36` ya estaba publicado en `origin/desarrollo`, así que la acotación viajó como cierre documental —jamás reescribiendo historia publicada—.
+- **La definición se verificó contra git, no de memoria.** `git show --stat dbc78e36` (24 archivos): solo presentación web (`apps/web/app/layout.tsx`, `apps/web/app/globals.css`, `apps/web/components/shell/DashboardChrome.tsx`), una prueba web nueva, documentación/evidencia y espejos de agentes. Cero rutas en `apps/api/**`, `apps/api/prisma/**` y `apps/control-tower/**`: sin lógica de negocio, endpoints, esquema, migraciones, colas, telemetría, auth, RBAC ni aislamiento multi-tenant. La no-regresión funcional quedó escrita con cifra: suite web 678/678 y API intocada.
+- **La sección «Naturaleza del commit» manda sobre cualquier lectura posterior del diff** en `docs/briefs/2026-11-10-fondo-ambiente-v4.md`, y la regla de promoción quedó dentro del brief: los manifiestos futuros declaran el paquete como capa visual exclusiva (`web-shell`, `agentes-equipo`) con inventario A/M/D exacto; una ruta funcional dentro del diff rechaza el paquete y lo reconstruye.
+- Agentes: `apexos-brief` 2.35.0 → 2.36.0 (regla 49: un commit estético se declara como contenedor de capa exclusiva con el inventario que lo prueba y la frontera funcional escrita), `equipo-apexos` 2.22.0 → 2.23.0 (control 36: un paquete de capa visual se entrega con su naturaleza de contenedor exclusiva escrita y verificada, no como afirmación de la conversación).
+
 ## 2026-11-10
 
 ### El panel gana un fondo ambiente corporativo que comparten todas las ventanas (`lobby-v4-fondo-ambiente-20261110`)

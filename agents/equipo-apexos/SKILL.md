@@ -2,8 +2,8 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.22.0
-updated_at: 2026-11-10
+version: 2.23.0
+updated_at: 2026-11-11
 contract: 2
 ---
 
@@ -107,6 +107,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
     Por qué: el dueño no distingue un arnés desactualizado de una pantalla mal implementada, y ambos aparecen igual en su vista. El orquestador que resuelve el rojo donde nace —arnés o producto— y entrega la vista reopened es el que puede decir «míralo otra vez».
 
 35. **Una queja estética se resuelve en la capa que pinta, se mide donde el dueño mira y no invade el contenido.** El 2026-11-10 el dueño dijo «el fondo lo veo triste» y la primera capa quedó invisible bajo el marco opaco de la aplicación. Reglas: (a) **buscar primero qué cubre el efecto**: antes de cambiar intensidades, se identifica el elemento que pinta encima (aquí `.apex-app-gradient` con `--color-paper`/`--surface`) y se corrige ese contrato; (b) **la vida del fondo no puede convertirse en invasión**: el ambiente se queda detrás del contenido, tarjetas y tablas siguen opacas y la legibilidad no cambia; (c) **medir el costo en el arnés**: misma cadencia de cuadros con y sin la capa, cero layouts, cero scripts y cero peticiones nuevas; (d) **enseñar la captura en los dos temas y en las dos formas** (escritorio y móvil, pantalla y ventana) con las métricas al lado, porque el veredicto del dueño se forma en su vista, no en el diff. Por qué: el primer intento era correcto en el CSS y aun así el dueño seguía viendo el fondo plano; lo que faltaba era detectar la capa que lo tapaba y demostrarlo en la vista que él usa.
+
+36. **Un paquete de capa visual se entrega con su naturaleza de contenedor exclusiva escrita y verificada, no como afirmación de la conversación.** Cuando el dueño acota «este commit debe ir como contenedor de capa visual exclusiva y no afectar ningún otro proceso funcional», el cierre: (a) **verifica el diff contra git** —`git show --stat <sha>` enumerado ruta por ruta, con las familias funcionales ausentes nombradas (`apps/api/**`, `apps/api/prisma/**`, `apps/control-tower/**`, auth, RBAC, colas, telemetría)— en lugar de afirmarlo de memoria; (b) **la escribe en el brief como sección propia** («Naturaleza del commit») que manda sobre cualquier lectura posterior, con la cifra de no-regresión funcional al lado (aquí suite web 678/678 y API intocada); (c) **la convierte en regla de promoción**: los manifiestos futuros declaran el paquete como capa visual exclusiva con inventario A/M/D exacto, y una ruta funcional dentro del diff rechaza el paquete y lo reconstruye. El orquestador no acepta que la definición viva solo en el chat: si no está versionada, el siguiente manifiesto puede mezclar la piel con capacidades que nunca se certificaron. Por qué: el 2026-11-11 el dueño pidió exactamente esta acotación para el fondo ambiente; el commit ya estaba publicado, así que la acotación viajó como cierre documental (brief + agentes), jamás reescribiendo historia publicada.
 
 ## Checklist de intervención
 
