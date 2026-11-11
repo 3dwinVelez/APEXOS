@@ -3,9 +3,9 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-11T17:28:47.146Z",
-  "started_at": "2026-11-11T17:27:33.608Z",
-  "commit": "56aa28bb7ddf8dff67df3ee1a86f544d01b60cd4",
+  "generated_at": "2026-11-11T18:02:07.324Z",
+  "started_at": "2026-11-11T18:00:53.644Z",
+  "commit": "6141a8137acbc33d5db1c65fbf28063263494017",
   "working_tree_dirty": true,
   "environment": {
     "type": "local",
@@ -28,8 +28,8 @@
       "name": "tower_boot",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:49546",
-        "port": 49546
+        "url": "http://127.0.0.1:65196",
+        "port": 65196
       }
     },
     {
@@ -105,7 +105,7 @@
       "name": "local_componentes_reales",
       "ok": true,
       "detail": {
-        "db_ms": 16,
+        "db_ms": 12,
         "componentes": 9,
         "medidores": 19,
         "medidores_con_historia": 19,
@@ -138,7 +138,7 @@
       "name": "factory_create_n2",
       "ok": true,
       "detail": {
-        "id": "JOB-20261111-122734-05e2"
+        "id": "JOB-20261111-130054-d952"
       }
     },
     {
@@ -159,7 +159,7 @@
       "name": "bridge_claim_envelope",
       "ok": true,
       "detail": {
-        "job": "JOB-20261111-122734-05e2",
+        "job": "JOB-20261111-130054-d952",
         "scope": {
           "branch": "desarrollo",
           "allowCodeChanges": true,
@@ -183,7 +183,7 @@
       "name": "telegram_pairing_code",
       "ok": true,
       "detail": {
-        "expiresAt": "2026-11-11T17:37:34.941Z"
+        "expiresAt": "2026-11-11T18:10:54.644Z"
       }
     },
     {
@@ -223,7 +223,9 @@
         "diales": 2,
         "hero": 1,
         "secciones": 4,
-        "mapa": 5,
+        "mapa": 1,
+        "mapaVacio": 1,
+        "silencio": "32 módulo(s) sin lectura medida en la ventana: no se dibujan como sanos",
         "salud": true
       }
     },
@@ -251,7 +253,7 @@
         "etiquetas": [
           "óptimo 240 ms",
           "tope 400 ms",
-          "tope 5,1 req/min",
+          "tope 6,2 req/min",
           "óptimo 100 ms",
           "tope 300 ms",
           "óptimo 0 %",
@@ -327,7 +329,7 @@
       "name": "browser_dashboard_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 669912
+        "bytes": 673113
       }
     },
     {
@@ -356,14 +358,14 @@
         },
         "estadisticas": 4,
         "textoStats": [
-          "p50 44 ms",
-          "p95 74 ms",
-          "Máximo 74 ms",
+          "p50 49 ms",
+          "p95 79 ms",
+          "Máximo 79 ms",
           "Muestras 8"
         ],
         "checks": 4,
-        "sondas": "13 sondas · 9 en verde · 4 fallan o avisan · 335 ms",
-        "sondasContenido": 7466,
+        "sondas": "13 sondas · 9 en verde · 4 fallan o avisan · 339 ms",
+        "sondasContenido": 7546,
         "secciones": 2
       }
     },
@@ -395,7 +397,7 @@
       "ok": true,
       "detail": {
         "checks": 4,
-        "sondas": "13 sondas · 9 en verde · 4 fallan o avisan · 335 ms",
+        "sondas": "13 sondas · 9 en verde · 4 fallan o avisan · 339 ms",
         "secciones": 2
       }
     },
@@ -405,9 +407,9 @@
       "detail": {
         "stats": 4,
         "etiquetas": [
-          "p50 44 ms",
-          "p95 74 ms",
-          "Máximo 74 ms",
+          "p50 49 ms",
+          "p95 79 ms",
+          "Máximo 79 ms",
           "Muestras 8"
         ],
         "runtimePublished": true
@@ -440,19 +442,19 @@
         "explorador": {
           "blancos": 8,
           "horarios": [
-            "12:27:33",
-            "12:27:44",
-            "12:28:00",
-            "12:28:10"
+            "13:00:53",
+            "13:01:04",
+            "13:01:20",
+            "13:01:31"
           ],
           "picos": 5,
-          "hora": "2026-11-11T17:27:49.654Z"
+          "hora": "2026-11-11T18:01:20.706Z"
         },
         "detalle": {
           "filas": 8,
-          "hora": "11/11, 12:27:49",
-          "medicion": "74 ms · Óptimo",
-          "anterior": "11/11, 12:27:44 · 55 ms",
+          "hora": "11/11, 13:01:20",
+          "medicion": "79 ms · Óptimo",
+          "anterior": "11/11, 13:01:15 · 49 ms",
           "cursor": 1,
           "activo": 1
         }
@@ -463,10 +465,10 @@
       "ok": true,
       "detail": {
         "horarios": [
-          "12:27:33",
-          "12:27:44",
-          "12:28:00",
-          "12:28:10"
+          "13:00:53",
+          "13:01:04",
+          "13:01:20",
+          "13:01:31"
         ]
       }
     },
@@ -474,14 +476,14 @@
       "name": "browser_latencia_punto_capturado",
       "ok": true,
       "detail": {
-        "bytes": 457933
+        "bytes": 459471
       }
     },
     {
       "name": "browser_vista_latencia_capturada",
       "ok": true,
       "detail": {
-        "bytes": 439019
+        "bytes": 440739
       }
     },
     {
@@ -490,13 +492,13 @@
       "detail": {
         "componentes": 8,
         "metas": "9 componentes · 5 con latencia medida · 0 requieren atención",
-        "base": "PostgreSQL database · critical 24 ms 100/100 Óptimo [object Object] óptimo 100 ms tope 300 ms 11/11, 12:27:34 · 16 ms · Óptimo11/11, 12:27:39 · 16 ms · Óptimo11/11, 12:27:44 · 16 ms · Óptimo11/11, 12:27:50 · 10 ms · Óptimo11/11, 12:27:56 · 10 ms · Óptimo11/11, 12:28:01 · 24 ms · Óptimo11/11, 12:28:06 · 24 ms · Óptimo11/11, 12:28:11 · 24 ms · Óptimo 12:27:3412:27:4412:28:0112:28:11 8 de 8 sondeos con lectura · 11/11, 12:27:34 → 11/11, 12:28:11",
+        "base": "PostgreSQL database · critical 9 ms 100/100 Óptimo [object Object] óptimo 100 ms tope 300 ms 11/11, 13:00:54 · 12 ms · Óptimo11/11, 13:00:59 · 12 ms · Óptimo11/11, 13:01:04 · 41 ms · Óptimo11/11, 13:01:10 · 41 ms · Óptimo11/11, 13:01:15 · 7 ms · Óptimo11/11, 13:01:21 · 7 ms · Óptimo11/11, 13:01:26 · 7 ms · Óptimo11/11, 13:01:31 · 9 ms · Óptimo 13:00:5413:01:0413:01:2113:01:31 8 de 8 sondeos con lectura · 11/11, 13:00:54 → 11/11, 13:01:31",
         "teselas": 4,
         "graficas": 4,
         "sinUmbral": 0,
         "lineasUmbral": 8,
         "etiquetasUmbral": [
-          "tope 5,1 req/min",
+          "tope 6,2 req/min",
           "óptimo 1 %",
           "tope 5 %",
           "óptimo 0 %",
@@ -508,9 +510,9 @@
         "sinUmbralComponentes": 0,
         "graficasSondas": 4,
         "sinUmbralSondas": 0,
-        "presion": "Presión de heap 90,7% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 62,1/68,5 MB óptimo 60 % tope 85 % 11/11, 12:27:34 · 90,8 % · Crítico11/11, 12:27:39 · 90,4 % · Crítico11/11, 12:27:44 · 89,9 % · Crítico11/11, 12:27:50 · 89,1 % · Crítico11/11, 12:27:56 · 89,6 % · Crítico11/11, 12:28:01 · 90,4 % · Crítico11/11, 12:28:06 · 91,1 % · Crítico11/11, 12:28:11 · 90,7 % · Crítico 12:27:3412:27:4412:28:0112:28:11 8 de 8 sondeos con lectura · 11/11, 12:27:34 → 11/11, 12:28:11",
+        "presion": "Presión de heap 86,4% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 57,9/67 MB óptimo 60 % tope 85 % 11/11, 13:00:54 · 86,4 % · Crítico11/11, 13:00:59 · 85,3 % · Crítico11/11, 13:01:04 · 86 % · Crítico11/11, 13:01:10 · 86,6 % · Crítico11/11, 13:01:15 · 86,3 % · Crítico11/11, 13:01:21 · 86 % · Crítico11/11, 13:01:26 · 87 % · Crítico11/11, 13:01:31 · 86,4 % · Crítico 13:00:5413:01:0413:01:2113:01:31 8 de 8 sondeos con lectura · 11/11, 13:00:54 → 11/11, 13:01:31",
         "sondas": 4,
-        "tecnicos": 9
+        "tecnicos": 4
       }
     },
     {
@@ -522,7 +524,7 @@
         "sin_umbral": 0,
         "lineas_umbral": 8,
         "etiquetas": [
-          "tope 5,1 req/min",
+          "tope 6,2 req/min",
           "óptimo 1 %",
           "tope 5 %",
           "óptimo 0 %",
@@ -536,7 +538,7 @@
       "name": "browser_telemetria_proceso_con_umbral",
       "ok": true,
       "detail": {
-        "presion": "Presión de heap 90,7% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 62,1/68,5 MB óptimo 60 % tope 85 % 11/11, 12:27:34 · 90,8 % · Crítico11/11, 12:27:39 · 90,4 % · Crítico11/11, 12:27:44 · 89,9 % · Crítico11/11, 12:27:50 · 89,1 % · Crítico11/11, 12:27:56 · 89,6 % · Crítico11/11, 12:28:01 · 90,4 % · Crítico11/11, 12:28:06 · 91,1 % · Crítico11/11, 12:28:11 · 90,7 % · Crítico 12:27:3412:27:4412:28:0112:28:11 8 de 8 sondeos con lectura · 11/11, 12:27:34 → 11/11, 12:28:11",
+        "presion": "Presión de heap 86,4% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 57,9/67 MB óptimo 60 % tope 85 % 11/11, 13:00:54 · 86,4 % · Crítico11/11, 13:00:59 · 85,3 % · Crítico11/11, 13:01:04 · 86 % · Crítico11/11, 13:01:10 · 86,6 % · Crítico11/11, 13:01:15 · 86,3 % · Crítico11/11, 13:01:21 · 86 % · Crítico11/11, 13:01:26 · 87 % · Crítico11/11, 13:01:31 · 86,4 % · Crítico 13:00:5413:01:0413:01:2113:01:31 8 de 8 sondeos con lectura · 11/11, 13:00:54 → 11/11, 13:01:31",
         "runtimePublished": true
       }
     },
@@ -554,7 +556,7 @@
       "name": "browser_technical_details",
       "ok": true,
       "detail": {
-        "details": 9,
+        "details": 4,
         "sondas": 4
       }
     },
@@ -562,7 +564,7 @@
       "name": "browser_vista_api_capturada",
       "ok": true,
       "detail": {
-        "bytes": 636772
+        "bytes": 646248
       }
     },
     {
@@ -572,7 +574,7 @@
         "filas": 1,
         "graficas": 1,
         "sinUmbral": 0,
-        "leyenda": "0 de 32 módulos dibujados · 8 sondeos · 11/11, 12:27:34 → 11/11, 12:28:11",
+        "leyenda": "0 de 32 módulos dibujados · 8 sondeos · 11/11, 13:00:54 → 11/11, 13:01:31",
         "silencio": "32 módulo(s) sin lectura medida en la ventana: no se dibujan como sanos",
         "veredicto": "¿Los módulos están óptimos y al día?"
       }
@@ -588,7 +590,7 @@
       "name": "browser_vista_modulos_capturada",
       "ok": true,
       "detail": {
-        "bytes": 309878
+        "bytes": 309838
       }
     },
     {
@@ -596,7 +598,7 @@
       "ok": true,
       "detail": {
         "pregunta": "¿La base está rápida y con datos reales?",
-        "veredicto": "Latencia de la base 24 ms · Óptimo",
+        "veredicto": "Latencia de la base 9 ms · Óptimo",
         "regla": "Consultas lentas 0 (óptimo ≤ 0, tope 5) · ningún módulo publicó conteo de registros",
         "teselas": 4,
         "graficas": 4,
@@ -629,7 +631,7 @@
       "name": "browser_vista_datos_capturada",
       "ok": true,
       "detail": {
-        "bytes": 673128
+        "bytes": 674462
       }
     },
     {
@@ -648,7 +650,7 @@
       "name": "browser_vista_operacion_capturada",
       "ok": true,
       "detail": {
-        "bytes": 698104
+        "bytes": 597349
       }
     },
     {
@@ -682,7 +684,7 @@
       "name": "browser_environment_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 342026
+        "bytes": 342017
       }
     },
     {
@@ -690,8 +692,8 @@
       "ok": true,
       "detail": {
         "fuente": "api",
-        "db_ms": 15,
-        "registros": 7628,
+        "db_ms": 9,
+        "registros": 8825,
         "cobertura_empresial": 0,
         "medidores": 19,
         "medidores_con_historia": 19,
@@ -699,8 +701,8 @@
         "ultima_lectura": {
           "fuente": "api",
           "componentes": 9,
-          "registros": 7628,
-          "db_ms": 15,
+          "registros": 8825,
+          "db_ms": 9,
           "sondeos": 1
         }
       }
@@ -714,8 +716,8 @@
         "ultima_lectura": {
           "fuente": "api",
           "componentes": 9,
-          "registros": 7628,
-          "db_ms": 15,
+          "registros": 8825,
+          "db_ms": 9,
           "sondeos": 1
         }
       }
@@ -741,7 +743,7 @@
         "conteo": "25 módulos con conteo · 32 módulos leídos",
         "pregunta": "¿La base está rápida y con datos reales?",
         "veredicto": "Empresas con actividad 0 % · Crítico",
-        "regla": "Latencia de la base 41 ms (óptimo ≤ 100, tope 300) · Consultas lentas 0 (óptimo ≤ 0, tope 5) · 7.637 registros medidos en 25 módulos con conteo",
+        "regla": "Latencia de la base 14 ms (óptimo ≤ 100, tope 300) · Consultas lentas 0 (óptimo ≤ 0, tope 5) · 8.834 registros medidos en 25 módulos con conteo",
         "teselas": 4,
         "graficas": 4,
         "sinUmbral": 0
@@ -751,7 +753,7 @@
       "name": "browser_vista_datos_reales_capturada",
       "ok": true,
       "detail": {
-        "bytes": 400233
+        "bytes": 400721
       }
     },
     {
@@ -762,14 +764,14 @@
         "graficas": 11,
         "conRegistros": 20,
         "sinUmbral": 0,
-        "leyenda": "10 de 32 módulos dibujados · 2 sondeos · 11/11, 12:28:21 → 11/11, 12:28:37"
+        "leyenda": "10 de 32 módulos dibujados · 2 sondeos · 11/11, 13:01:43 → 11/11, 13:01:58"
       }
     },
     {
       "name": "browser_vista_modulos_reales_capturada",
       "ok": true,
       "detail": {
-        "bytes": 301305
+        "bytes": 301197
       }
     },
     {
@@ -812,14 +814,14 @@
       "ok": true,
       "detail": {
         "overall": "LOCAL Caído",
-        "alerts": 6
+        "alerts": 1
       }
     },
     {
       "name": "browser_degraded_screenshot",
       "ok": true,
       "detail": {
-        "bytes": 679809
+        "bytes": 674970
       }
     },
     {
@@ -855,7 +857,7 @@
       "name": "telegram_evidence",
       "ok": true,
       "detail": {
-        "messages": 20
+        "messages": 7
       }
     }
   ],
@@ -866,47 +868,47 @@
     "screenshots": [
       {
         "file": "tower-overview.png",
-        "bytes": 669912
+        "bytes": 673113
       },
       {
         "file": "tower-latencia-punto.png",
-        "bytes": 457933
+        "bytes": 459471
       },
       {
         "file": "tower-vista-latencia.png",
-        "bytes": 439019
+        "bytes": 440739
       },
       {
         "file": "tower-vista-api.png",
-        "bytes": 636772
+        "bytes": 646248
       },
       {
         "file": "tower-vista-modulos.png",
-        "bytes": 309878
+        "bytes": 309838
       },
       {
         "file": "tower-vista-datos.png",
-        "bytes": 673128
+        "bytes": 674462
       },
       {
         "file": "tower-vista-operacion.png",
-        "bytes": 698104
+        "bytes": 597349
       },
       {
         "file": "tower-env-main.png",
-        "bytes": 342026
+        "bytes": 342017
       },
       {
         "file": "tower-datos-reales.png",
-        "bytes": 400233
+        "bytes": 400721
       },
       {
         "file": "tower-modulos-reales.png",
-        "bytes": 301305
+        "bytes": 301197
       },
       {
         "file": "tower-api-down.png",
-        "bytes": 679809
+        "bytes": 674970
       }
     ],
     "console_errors": []

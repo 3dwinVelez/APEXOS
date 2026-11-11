@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.13.0
+version: 2.14.0
 updated_at: 2026-11-11
 contract: 2
 ---
@@ -73,6 +73,7 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
     - **El veredicto se calcula sobre lo pintado.** `cockpitFor()` firma `verdicts.resumen` sobre exactamente hero + diales + teselas, y cada vista sobre su lista. La coherencia entre lo que se afirma y lo que se muestra es parte de la medición, no del diseño.
     - **Todo tope de lista lleva su contabilidad.** `VIEW_TILE_MAX = 4`, `CHECK_LIST_MAX = 10`, `COMPONENT_LIST_MAX = 8`, `EVENT_LIST_MAX = 12`, `MAP_MAX_ROWS = 10`, `CLOUD_METRIC_MAX = 3`: recortar sin decir cuántos quedaron es ocultar dato, así que cada recorte imprime su línea de cuenta (`N módulo(s) sin lectura medida en la ventana`, `N más atrás · la torre conserva M en la ventana`, `fuera del top 8`).
     - **Menos elementos no es menos frescura.** El recorte cambió qué se pinta, no la cadencia ni el anillo: sondeo cada 10 s en el puesto, 40 muestras por monitor y por ambiente, y el presupuesto de sonda (`ENV_TIMEOUT_MS = 6000`) no se tocó para que el panel se viera lleno. Por qué: antes del recorte el Resumen eran trece tarjetas y la vista Módulos duplicaba el catálogo en tarjetas y en mapa; el dueño no podía responder «¿cómo está APEXOS ahora mismo?» mirando una pantalla de 13 cuadros iguales.
+    - **Y una ventana de arranque no es un presupuesto: es historia que todavía no existe.** Cuando el puesto recuperó su credencial, el barrido real bajó de `db_ms: 45` a `db_ms: 9` y aun así el mapa del Resumen pintó **una** tira (los 32 módulos ya son leídos, pero la serie sondeo-a-sondeo no empezó). La lectura de costo que hay que reportar es esa —el costo de barrido no es lo que limita la pantalla en el arranque, lo limita la historia acumulada— y la consecuencia de diseño es que el panel declara `32 módulo(s) sin lectura medida en la ventana` en lugar de acelerar la cadencia para llenar huecos. Por qué: la tentación ante un `mapa: 1` es subir la frecuencia de sondeo, y eso convierte un barrido de ~1 s en una carga continua sobre el API del puesto para fabricar una curva que el dueño leería como medición cuando es precipitación.
 
 ## Checklist de intervención
 

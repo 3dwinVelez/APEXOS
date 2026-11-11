@@ -441,10 +441,22 @@ async function run() {
         hero: document.querySelectorAll('#cockpitHero .cockpit-hero').length,
         secciones: Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length,
         mapa: document.querySelectorAll('#moduleMap .map-strip.map-chart').length,
+        mapaVacio: document.querySelectorAll('#moduleMap .map-strip .map-empty').length,
+        silencio: ((document.querySelector('#moduleMap .map-silent') || {}).textContent || '').trim(),
         salud: Boolean(document.querySelector('#cockpitDials [aria-label^="Salud de la plataforma"]'))
       })`);
+      // El mapa del Resumen se certifica en dos modos. SIN credencial el ambiente
+      // cae al catalogo y dibuja sus bandas, asi que se exigen filas. CON la
+      // credencial del puesto los 32 modulos reales son leidos por el API y la
+      // ventana del arranque todavia no tiene historia: pintar tres tiras ahi
+      // seria dibujar lo no medido. La gate acepta entonces el placeholder
+      // vacio, pero SOLO si el panel declara la cuenta de los que quedaron sin
+      // lectura. El crecimiento real a top 10 se certifica aparte, en la fase
+      // real (browser_modulos_con_datos_reales), no en el arranque.
       const listoEsCockpit = (leido) => Boolean(leido) && leido.teselas === 6 && leido.diales === 2
-        && leido.hero === 1 && leido.secciones === 4 && leido.mapa >= 3 && leido.salud === true;
+        && leido.hero === 1 && leido.secciones === 4 && leido.salud === true
+        && ((leido.mapa >= 3 && leido.mapa - leido.mapaVacio >= 3)
+          || (leido.mapa >= 1 && leido.mapaVacio >= 1 && leido.silencio.length > 0));
       const rendered = await waitFor(async () => listoEsCockpit(await cockpitListo().catch(() => null)), 15000);
       assert("browser_dashboard_rendered", Boolean(rendered), await cockpitListo().catch(() => ({})));
 
