@@ -4,10 +4,34 @@ import test from "node:test";
 
 const source = fs.readFileSync(new URL("../app/dashboard/talento-humano/page.tsx", import.meta.url), "utf8");
 
-test("la portada agrupa Talento Humano en mallas horarias y nomina", () => {
-  assert.match(source, /Mallas horarias/);
+const HR_ACCESS_ROUTES = [
+  "rutas",
+  "mallas",
+  "marcacion",
+  "novedades",
+  "mapa",
+  "empleados",
+  "entidades",
+  "configuracion-laboral",
+  "nomina",
+  "provisiones",
+  "aportes-sociales",
+  "prestaciones-pagos",
+  "libranzas",
+  "liquidacion-trabajador",
+  "reportes"
+];
+
+test("la portada usa el patron de hub por tarjetas de los demas modulos", () => {
+  assert.match(source, /import \{ ActionCard \} from "@\/components\/ui\/ActionCard"/);
+  assert.match(source, /className="apex-dense-actions"/);
+  assert.match(source, /actions\.map\(\(action\) => <ActionCard key=\{action\.href\} \{\.\.\.action\} \/>\)/);
+});
+
+test("la portada expone como acceso cada pantalla del modulo, incluida nomina", () => {
+  for (const route of HR_ACCESS_ROUTES) assert.match(source, new RegExp(`/dashboard/talento-humano/${route}"`));
   assert.match(source, /Nómina/);
-  assert.match(source, /Disponible próximamente/);
+  assert.doesNotMatch(source, /Disponible próximamente|cursor-not-allowed/, "ningun acceso funcional debe quedar bloqueado como proximamente");
 });
 
 test("mallas conserva acceso a planeacion, marcaciones, monitor y reportes", () => {

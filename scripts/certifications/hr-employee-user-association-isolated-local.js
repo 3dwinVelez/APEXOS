@@ -32,7 +32,8 @@ if (!hasSedes) {
   const migration = fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql'), 'utf8');
   apply(migration.split('-- 3.')[0]);
 }
-if (certificate === 'hr-punch-mobile-evidence-local.js') apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
+const hasRouteKind = docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'TimeRoute' AND column_name = 'kind')"]).toString().trim() === 't';
+if (!hasRouteKind) apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
 const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}`;
 const log = fs.openSync(path.join(output, 'certification.log'), 'w');
 const result = spawnSync(process.execPath, [path.join(__dirname, certificate), '--output=' + path.join(output, 'certification.json')], {
@@ -46,6 +47,6 @@ for (const line of fs.readFileSync(path.join(output, 'certification.log'), 'utf8
   try { const row = JSON.parse(line); if (row.req) requests.set(row.reqId, row.req.url); if (row.res?.statusCode >= 500) failures.push({ path: requests.get(row.reqId), status: row.res.statusCode }); } catch {}
 }
 const status = result.status === 0 && failures.length === 0 ? 'passed' : 'failed';
-fs.writeFileSync(path.join(output, 'isolated-certification.json'), JSON.stringify({ status, environment: 'LOCAL', database, source_database_modified: false, fixture_schema_hunk: hasSedes ? null : '20261016123000_sedes_replace_origins: sections 1-2 only', exit_code: result.status, unexpected_5xx: failures, checked_at: new Date().toISOString() }, null, 2) + '\n');
+fs.writeFileSync(path.join(output, 'isolated-certification.json'), JSON.stringify({ status, environment: 'LOCAL', database, source_database_modified: false, fixture_schema_hunks: [hasSedes ? null : '20261016123000_sedes_replace_origins: sections 1-2 only', hasRouteKind ? null : '20260919110000_time_route_kind_descanso'].filter(Boolean), exit_code: result.status, unexpected_5xx: failures, checked_at: new Date().toISOString() }, null, 2) + '\n');
 console.log(JSON.stringify({ status, database, exit_code: result.status, unexpected_5xx: failures }));
 process.exit(status === 'passed' ? 0 : 1);
