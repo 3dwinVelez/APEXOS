@@ -97,7 +97,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className={`sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-2 transition-[width,padding] duration-150 md:flex md:flex-col ${collapsed ? "w-14 px-2" : "w-56 px-2"}`}>
+    <aside className={`apex-chrome-sidebar sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-2 transition-[width,padding] duration-150 md:flex md:flex-col ${collapsed ? "w-14 px-2" : "w-56 px-2"}`}>
       <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className={collapsed ? "hidden" : "block"}>
           <p className="text-sm font-semibold tracking-normal">APEX OS</p>

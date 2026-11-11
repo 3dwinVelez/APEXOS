@@ -1,0 +1,123 @@
+{
+  "base": "http://127.0.0.1:3001",
+  "captured_at": "2026-11-11T16:22:15.847Z",
+  "shots": [
+    "evidence-craft-desktop-light.png",
+    "evidence-craft-module-light.png",
+    "evidence-craft-desktop-dark.png",
+    "evidence-craft-module-dark.png",
+    "evidence-craft-mobile-dark.png",
+    "evidence-craft-commands-dark.png",
+    "evidence-craft-module-card-dark.png"
+  ],
+  "views": [
+    {
+      "view": "dashboard-light",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "radial": 3,
+      "grainOpacity": "0.04",
+      "sidebarGradient": "none",
+      "sidebarBorder": "rgb(229, 231, 235)",
+      "toolbarBorder": "rgb(229, 231, 235)",
+      "cardShadow": null,
+      "bodyBackground": "rgb(245, 247, 249)",
+      "horizontalOverflow": 0,
+      "ambientRequests": [
+        "http://127.0.0.1:3001/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "module-light",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "radial": 3,
+      "grainOpacity": "0.04",
+      "sidebarGradient": "none",
+      "sidebarBorder": "rgb(229, 231, 235)",
+      "toolbarBorder": "rgb(229, 231, 235)",
+      "cardShadow": null,
+      "bodyBackground": "rgb(245, 247, 249)",
+      "horizontalOverflow": 0,
+      "ambientRequests": [
+        "http://127.0.0.1:3001/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "dashboard-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "radial": 3,
+      "grainOpacity": "0.06",
+      "sidebarGradient": "linear-gradient(rgb(24, 39, 48) 0%, rgb(16, 27, 34) 55%, rgb",
+      "sidebarBorder": "rgba(45, 212, 191, 0.14)",
+      "toolbarBorder": "rgba(45, 212, 191, 0.1)",
+      "cardShadow": null,
+      "bodyBackground": "rgb(15, 23, 32)",
+      "horizontalOverflow": 0,
+      "ambientRequests": [
+        "http://127.0.0.1:3001/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "module-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "radial": 3,
+      "grainOpacity": "0.06",
+      "sidebarGradient": "linear-gradient(rgb(24, 39, 48) 0%, rgb(16, 27, 34) 55%, rgb",
+      "sidebarBorder": "rgba(45, 212, 191, 0.14)",
+      "toolbarBorder": "rgba(45, 212, 191, 0.1)",
+      "cardShadow": null,
+      "bodyBackground": "rgb(15, 23, 32)",
+      "horizontalOverflow": 0,
+      "ambientRequests": [
+        "http://127.0.0.1:3001/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "mobile-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "radial": 3,
+      "grainOpacity": "0.06",
+      "sidebarGradient": "linear-gradient(rgb(24, 39, 48) 0%, rgb(16, 27, 34) 55%, rgb",
+      "sidebarBorder": "rgba(45, 212, 191, 0.14)",
+      "toolbarBorder": "rgba(45, 212, 191, 0.1)",
+      "cardShadow": null,
+      "bodyBackground": "rgb(15, 23, 32)",
+      "horizontalOverflow": 0,
+      "ambientRequests": [
+        "http://127.0.0.1:3001/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "commands-dark",
+      "ambientPresent": true,
+      "ambientZIndex": "-1",
+      "ambientPosition": "fixed",
+      "radial": 3,
+      "grainOpacity": "0.06",
+      "sidebarGradient": "linear-gradient(rgb(24, 39, 48) 0%, rgb(16, 27, 34) 55%, rgb",
+      "sidebarBorder": "rgba(45, 212, 191, 0.14)",
+      "toolbarBorder": "rgba(45, 212, 191, 0.1)",
+      "cardShadow": null,
+      "bodyBackground": "rgb(15, 23, 32)",
+      "horizontalOverflow": 0,
+      "ambientRequests": [
+        "http://127.0.0.1:3001/apex-icon.svg"
+      ]
+    },
+    {
+      "view": "module-card-dark",
+      "cardPresent": true,
+      "cardBorder": "rgba(45, 212, 191, 0.14)",
+      "cardShadow": "rgba(45, 212, 191, 0.05) 0px 0px 0px 1px, rgba(0, 0, 0, 0.65) 0px 14px 34px -22px"
+    }
+  ]
+}

@@ -42,7 +42,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   if (mode === "marking_only") {
     return (
       <div className="min-h-screen">
-        <header className="sticky top-0 z-40 border-b border-line bg-white/95 px-4 py-3 backdrop-blur">
+        <header className="apex-chrome-topbar sticky top-0 z-40 border-b border-line bg-white/95 px-4 py-3 backdrop-blur">
           <div className="mx-auto flex max-w-md items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-apex text-white"><Clock3 size={20} /></span>
@@ -67,7 +67,7 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
       <main className="min-w-0 flex-1 overflow-x-hidden p-3 pb-24 sm:p-4 md:p-6 md:pb-6" id="apex-main-content" tabIndex={-1}>
         <FieldProductivity />
         <StandardTableExperience />
-        <div className="mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><SecondaryWorkspaceTools /><CommandPalette /><NotificationCenter /></div>
+        <div className="apex-chrome-topbar mb-3 flex flex-wrap justify-end gap-2"><OfflineFirstStatus /><LocaleSwitcher /><SecondaryWorkspaceTools /><CommandPalette /><NotificationCenter /></div>
         <TraceabilityCenter />
         <CollaborationPresence />
         <ExperiencePreferences />

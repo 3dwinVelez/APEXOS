@@ -43,7 +43,7 @@
   --ambient-alpha-a: 0.12;
   --ambient-alpha-b: 0.09;
   --ambient-alpha-c: 0.06;
-  --ambient-grain: 0.03;
+  --ambient-grain: 0.04;
   --ambient-drift-alpha: 0.06;
 }
 
@@ -489,9 +489,9 @@ html.dark {
   --text-body: 202 211 216;
   --text-muted: 155 170 178;
   --text-subtle: 155 170 178;
-  --ambient-alpha-a: 0.1;
-  --ambient-alpha-b: 0.18;
-  --ambient-alpha-c: 0.1;
+  --ambient-alpha-a: 0.13;
+  --ambient-alpha-b: 0.22;
+  --ambient-alpha-c: 0.13;
   --ambient-grain: 0.06;
   --ambient-drift-alpha: 0.12;
 }
@@ -943,6 +943,7 @@ a.hover\:bg-apex\/90:hover {
   border: 1px solid rgb(var(--color-line));
   background: rgb(var(--surface));
   border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgb(15 23 32 / 0.05), 0 12px 30px -22px rgb(15 23 32 / 0.2);
 }
 
 .apex-soft-gradient {
@@ -1111,6 +1112,42 @@ html.dark .text-white\/70 {
 html.dark .apex-section-card,
 html.dark .apex-soft-gradient {
   background: rgb(var(--surface)) !important;
+}
+
+/* ===== Oficio del marco (solo tema oscuro) =====
+   El ambiente sigue viviendo detrás del contenido y las superficies siguen
+   opacas, pero el costado, la barra superior y las tarjetas de sección dejan
+   de leerse como rectángulos planos: gradientes opacos de la misma familia
+   cromática, filo de marca en los bordes del marco y sombra de elevación
+   dibujada con box-shadow, sin cambios de caja ni de layout. El alto contraste
+   restaura superficies planas y quita las sombras. */
+html.dark aside.apex-chrome-sidebar {
+  background: linear-gradient(180deg, rgb(24 39 48) 0%, rgb(16 27 34) 55%, rgb(13 22 28) 100%) !important;
+  border-right-color: rgb(45 212 191 / 0.14) !important;
+}
+
+html.dark header.apex-chrome-topbar {
+  background: rgb(20 32 41 / 0.94) !important;
+  border-bottom-color: rgb(45 212 191 / 0.12) !important;
+}
+
+html.dark main > .apex-chrome-topbar {
+  background: transparent !important;
+  border-bottom: 1px solid rgb(45 212 191 / 0.1);
+}
+
+html.dark .apex-section-card {
+  border-color: rgb(45 212 191 / 0.14);
+  box-shadow: 0 0 0 1px rgb(45 212 191 / 0.05), 0 14px 34px -22px rgb(0 0 0 / 0.65);
+}
+
+html.dark[data-contrast="high"] aside.apex-chrome-sidebar,
+html.dark[data-contrast="high"] header.apex-chrome-topbar {
+  background: rgb(var(--surface)) !important;
+}
+
+html[data-contrast="high"] .apex-section-card {
+  box-shadow: none !important;
 }
 
 html.dark .apex-context-hero {
