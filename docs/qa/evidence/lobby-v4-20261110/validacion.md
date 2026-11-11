@@ -8,6 +8,37 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase. La ca
 ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
 «aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
 
+## Ronda 8 (capa visual de operación — gráficos, tablas y estados vacíos)
+
+- **El hueco se fijó con una medición, no con una opinión.** La tabla comparativa del 2026-11-11
+  calificó visualización de datos en 5/10 y tablas/estados en 6/10: los gráficos heredaban colores
+  por atributo de presentación de Recharts (rejilla casi invisible en oscuro, ticks sin jerarquía),
+  el encabezado de tabla repetía el peso del cuerpo y el estado vacío era una línea de texto entre
+  dos bordes.
+- **Gráficos con piel de producto.** Superficie `.apex-chart-card` para el contenedor; por CSS sobre
+  las clases públicas de Recharts baja la rejilla a `rgb(var(--color-line) / 0.6)` (oscuro
+  `rgba(45 212 191 / 0.1)`), los ejes a línea plena, los ticks a `--text-muted` con
+  `tabular-nums` (oscuro `rgb(155 170 178)`), la leyenda a 12 px y el cursor del tooltip a un velo
+  turquesa. Todo exceptuando caja y posición.
+- **Tablas con lectura de tablero.** El encabezado estándar es rótulo (11 px, mayúsculas,
+  `letter-spacing: 0.06em`, tinta apagada); las celdas usan `tabular-nums`, la primera columna se
+  afirma como identidad y el hover pinta tinte de marca al 6 %. En oscuro, filo turquesa al 16 % en
+  el encabezado y viewport con halo. Alto contraste deja el hover en superficie neutra.
+- **Estados vacíos con oficio.** `.apex-empty` pasa a bloque punteado con degradado tenue del papel
+  y `.apex-empty-icon` a anillo de marca con halo de 6 px; en oscuro el icono sube a
+  `rgb(153 246 228)` y el bloque a un velo turquesa al 5 %. Alto contraste quita el degradado. El
+  envoltorio del icono retira la utilidad `text-apex` porque el `!important` heredado del tema
+  oscuro sobre esa utilidad estaba tapando el token del estado vacío.
+- **Evidencia con sesión verificada.** La primera captura del estado vacío devolvió una pantalla de
+  «Acceso no autorizado» por una corrida sin contexto de rol y se descartó; la válida se tomó con
+  `demo@apex.local` y «Sesión activa» visibles en el costado. `evidence-operation-metrics.json`
+  mide, en claro y oscuro: 3 tarjetas de gráfico `1134x300` con tick y rejilla por tema, tabla de
+  24 filas con encabezado `0.66px`/`11px` y cifras `tabular-nums`, estado vacío con borde
+  `dashed`, degradado, anillo e icono por tema, y desbordamiento horizontal `0` en las seis vistas.
+- **Verificación.** Suite web **689/689** (cuatro pruebas nuevas en `visual-operation.test.mjs`),
+  typecheck sin hallazgos. Sin lógica de negocio: los tres archivos de componente solo cambian
+  `className` y la API no se tocó. Todo CSS estático: sin animación, sin JS y sin red nuevos.
+
 ## Ronda 7 (superficies con oficio — el fondo deja de leerse apagado)
 
 - **El diagnóstico se midió, no se adivinó.** Se probaron seis variantes de fondo por inyección
@@ -139,11 +170,16 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
 | `apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs` | M — login que rellena tras hidratar; edición concurrente con clic y tecla reales |
 | `apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs` | M — login que rellena tras hidratar |
 | `docs/qa/evidence/lobby-v4-20261110/cert-*.json` | A — seis certificaciones medidas en el arnés aislado |
+| `apps/web/app/globals.css` | M — ronda 8: piel de Recharts, rótulo y cifras de `.apex-standard-table`, viewport oscuro y `.apex-empty`/`.apex-empty-icon` por tema |
+| `apps/web/components/accounting/AccountingPyg.tsx`, `apps/web/app/dashboard/comercio/ComercioCharts.tsx` | M — marcador `apex-chart-card` en el contenedor del gráfico (solo `className`) |
+| `apps/web/components/ui/feedback.tsx` | M — marcadores `apex-empty`/`apex-empty-icon`; retiro de `text-apex` que tapaba el token del icono |
+| `apps/web/test/visual-operation.test.mjs` | A — 4 pruebas de contrato de la operación visual sin propiedades de caja |
+| `docs/qa/evidence/lobby-v4-20261110/evidence-operation-*.png` y `evidence-operation-metrics.json` | A — seis capturas (gráficos, tabla y estado vacío en claro/oscuro) con métricas medidas |
 
 ## Validación ejecutada
 
-- Pruebas web: `node --test "test/*.test.mjs"` desde `apps/web` — **678/678** en verde (7 de ellas
-  nuevas del fondo ambiente).
+- Pruebas web: `node --test "test/*.test.mjs"` desde `apps/web` — **689/689** en verde (4 de ellas
+  nuevas de la ronda 8, además de las 7 del fondo ambiente).
 - Typecheck (`tsconfig.typecheck.json`) y ESLint sobre los archivos tocados: sin hallazgos.
 - Navegador real (headless Edge vía CDP, perfil limpio):
   - Rondas 1–3, cuatro capturas del lobby:
@@ -155,6 +191,10 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
     `evidence-ambient-metrics.json`, que mide marco transparente, `z-index: -1`, `position: fixed`,
     deriva activa solo en escritorio y ancho de desplazamiento igual al del cliente (390/390 y
     1440/1440, sin desbordamiento).
+  - Ronda 8, seis capturas de operación (`evidence-operation-{charts,table,empty}-{light,dark}.png`)
+    más `evidence-operation-metrics.json`, tomadas con login verificado (`demo@apex.local`): piel de
+    gráficos, densidad de tabla y estado vacío medidos en el DOM, con desbordamiento horizontal `0`.
+    La primera captura del estado vacío salió como pantalla de «Acceso no autorizado» y se descartó.
 - Rendimiento del fondo medido en el arnés (2 s de desplazamiento, escritorio): con y sin la capa,
   16,67 ms promedio, p95 16,8 ms, 0 cuadros sobre 33 ms, 0 layouts y 0 scripts; ninguna petición de
   red nueva.
