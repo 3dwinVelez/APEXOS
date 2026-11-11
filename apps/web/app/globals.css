@@ -1150,6 +1150,115 @@ html[data-contrast="high"] .apex-section-card {
   box-shadow: none !important;
 }
 
+/* ===== Operación: gráficos, tablas y estados (capa visual) =====
+   Las tres superficies donde el usuario pasa la jornada reciben el mismo oficio
+   del marco: el lienzo de los gráficos, la tabla operativa y el estado vacío.
+   Solo presentación (color, tipografía de encabezado, filo y sombra): ningún
+   ancho, alto ni posición de caja cambia, así que la densidad no salta. */
+.apex-chart-card {
+  border-radius: var(--radius-card);
+}
+
+.apex-chart-card .recharts-cartesian-grid line {
+  stroke: rgb(var(--color-line) / 0.6);
+}
+
+.apex-chart-card .recharts-cartesian-axis-line,
+.apex-chart-card .recharts-cartesian-axis-tick-line {
+  stroke: rgb(var(--color-line));
+}
+
+.apex-chart-card .recharts-cartesian-axis-tick-value {
+  fill: rgb(var(--text-muted));
+  font-variant-numeric: tabular-nums;
+}
+
+.apex-chart-card .recharts-legend-item-text {
+  font-size: 0.75rem;
+}
+
+html.dark .apex-chart-card .recharts-cartesian-grid line {
+  stroke: rgb(45 212 191 / 0.1);
+}
+
+html.dark .apex-chart-card .recharts-cartesian-axis-tick-value {
+  fill: rgb(155 170 178);
+}
+
+html.dark .apex-chart-card .recharts-tooltip-cursor {
+  fill: rgb(45 212 191 / 0.07);
+}
+
+html[data-contrast="high"] .apex-chart-card .recharts-cartesian-grid line {
+  stroke: rgb(var(--color-line));
+}
+
+.apex-standard-table thead th {
+  color: rgb(var(--text-muted));
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.apex-standard-table tbody td {
+  font-variant-numeric: tabular-nums;
+}
+
+.apex-standard-table tbody td:first-child {
+  color: rgb(var(--text-strong));
+  font-weight: 500;
+}
+
+.apex-standard-table tbody tr:hover {
+  background: rgb(var(--color-apex) / 0.06);
+}
+
+html.dark .apex-standard-table thead th {
+  border-bottom: 1px solid rgb(45 212 191 / 0.16);
+}
+
+html.dark .apex-standard-table tbody tr:hover {
+  background: rgb(45 212 191 / 0.06);
+}
+
+html.dark .apex-standard-table-viewport {
+  border-color: rgb(45 212 191 / 0.14);
+  box-shadow: 0 0 0 1px rgb(45 212 191 / 0.04), 0 16px 36px -28px rgb(0 0 0 / 0.7);
+}
+
+html[data-contrast="high"] .apex-standard-table tbody tr:hover {
+  background: rgb(var(--surface-muted)) !important;
+}
+
+.apex-empty {
+  border: 1px dashed rgb(var(--color-line));
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgb(var(--surface-muted) / 0.5) 0%, transparent 72%);
+}
+
+.apex-empty-icon {
+  border: 1px solid rgb(var(--color-apex) / 0.3);
+  background: rgb(var(--color-apex) / 0.12);
+  box-shadow: 0 0 0 6px rgb(var(--color-apex) / 0.06);
+  color: rgb(var(--color-apex-ink));
+}
+
+html.dark .apex-empty {
+  border-color: rgb(45 212 191 / 0.18);
+  background: linear-gradient(180deg, rgb(45 212 191 / 0.05) 0%, transparent 72%);
+}
+
+html.dark .apex-empty-icon {
+  border-color: rgb(94 234 212 / 0.3);
+  color: rgb(153 246 228);
+  box-shadow: 0 0 0 6px rgb(45 212 191 / 0.07);
+}
+
+html[data-contrast="high"] .apex-empty {
+  background: none;
+}
+
 html.dark .apex-context-hero {
   background: rgb(15 23 42) !important;
   color: white !important;

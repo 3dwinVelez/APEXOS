@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.39.0",
+      "version": "2.40.0",
       "updated_at": "2026-11-11",
-      "sha256": "bbd6301ecd3419b3bba69b2d06a23fb6eeab8e9c5e35b274d87139e6e3b67b52",
+      "sha256": "892166a8845f6546295052492d76192af761127f1e2251fe4c478a76cc5bc7d6",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -130,7 +130,8 @@
         "brief-candidato-main-con-compuerta-bloqueada",
         "manifiesto-pendiente-versionado",
         "celda-construible-se-construye",
-        "inventario-de-tuberias-de-certificacion"
+        "inventario-de-tuberias-de-certificacion",
+        "encargo-nota-visual-brecha-medida"
       ]
     },
     {
@@ -160,9 +161,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.20.0",
+      "version": "2.21.0",
       "updated_at": "2026-11-11",
-      "sha256": "c942a76afb418e36537fc589abf087be573188632f494992e04cbd09829be01a",
+      "sha256": "48e2c42db92752ab22f1848aead7f3e10102e3b3442138a5f3517bbe464c6fe8",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -192,7 +193,8 @@
         "piso-tactil-24px-en-el-objetivo-real",
         "niveles-de-tinta-con-cota-aa-medida",
         "lote-de-texto-se-revisa-en-el-diff",
-        "403-de-alcance-no-toca-clear-session"
+        "403-de-alcance-no-toca-clear-session",
+        "piel-operacion-medida-en-dom"
       ]
     },
     {
@@ -262,9 +264,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.48.0",
+      "version": "2.49.0",
       "updated_at": "2026-11-11",
-      "sha256": "a7d673af23a65790af5f6bed970d5080664be5d4007cfe8a57bf5821addc9d95",
+      "sha256": "79ee65a029e1af956a1ed2bde27b106ae5db1495102fe8d56f7d8b0e6f37f4f6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -314,7 +316,8 @@
         "inventario-sobre-el-indice-y-post-deploy-por-servicio",
         "compuerta-anclada-al-build-desplegado",
         "celda-con-sesion-se-cierra-construyendo-la-sesion",
-        "gate-lee-dom-visible-de-la-vista-activa"
+        "gate-lee-dom-visible-de-la-vista-activa",
+        "fase-visual-metricas-dom-sesion"
       ]
     },
     {
@@ -360,9 +363,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.26.0",
+      "version": "2.27.0",
       "updated_at": "2026-11-11",
-      "sha256": "6e108e2eb4a314b4ec793c40c5cf727f6f1f06d954d1b160c01034d7349876b3",
+      "sha256": "96a4a6f7b2a4d371b4c6c78bdf37dd4d80628a809989e121d36d276cec5aa6cb",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -394,7 +397,8 @@
         "lo-publicado-se-retrotrae-a-desarrollo",
         "incidente-de-produccion-distingue-despliegue",
         "sin-pendientes-construibles",
-        "historia-sin-retrorelleno-y-herramienta-viva"
+        "historia-sin-retrorelleno-y-herramienta-viva",
+        "nota-visual-capa-exclusiva"
       ]
     }
   ],

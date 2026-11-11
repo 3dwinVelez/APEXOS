@@ -426,7 +426,7 @@ export default function AccountingPyg() {
                     <h2 className="font-semibold text-content-strong">Resultado por sección</h2>
                     <p className="mb-3 text-xs text-content-muted">Actual vs. año anterior y presupuesto firmados por naturaleza contable.</p>
                     {chartData.length ? (
-                      <div className="h-[300px]"><ResponsiveContainer><BarChartLayout data={chartData} hasBudget={chartData.some((row) => "Presupuesto" in row)} /></ResponsiveContainer></div>
+                      <div className="apex-chart-card h-[300px]"><ResponsiveContainer><BarChartLayout data={chartData} hasBudget={chartData.some((row) => "Presupuesto" in row)} /></ResponsiveContainer></div>
                     ) : <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-content-muted">Sin datos para graficar.</p>}
                   </section>
                   <section className="apex-section-card p-4">

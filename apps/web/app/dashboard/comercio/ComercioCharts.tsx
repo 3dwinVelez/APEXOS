@@ -96,7 +96,7 @@ function endLabel(fill: string) {
 function ChartShell({ height, children }: { children: (palette: Palette) => ReactElement; height: string }) {
   const palette = useChartPalette();
   return (
-    <div className={`w-full ${height}`}>
+    <div className={`apex-chart-card w-full ${height}`}>
       {palette ? <ResponsiveContainer width="100%" height="100%">{children(palette)}</ResponsiveContainer> : null}
     </div>
   );
