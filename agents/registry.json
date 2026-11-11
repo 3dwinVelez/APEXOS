@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.36.0",
+      "version": "2.37.0",
       "updated_at": "2026-11-11",
-      "sha256": "211e94d1a71c80b4f4cb6d961fd39ba6af62ca8a21f1b92d31c06c07543d9a83",
+      "sha256": "8f8fc641532d90a8cd2b866bb9abc8c080d7450b7722a195ff285c7e11d31fbd",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -160,9 +160,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.18.0",
-      "updated_at": "2026-11-10",
-      "sha256": "abb044ed77a4c7aa6acfc4eaf6a83a87cf2e05e3f374272f9790ee25cb4d35a1",
+      "version": "2.19.0",
+      "updated_at": "2026-11-11",
+      "sha256": "2f20f3da20200ddb3366ba5103f041def25e72629098109a25dd5f7e4bd1ca37",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -230,9 +230,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.11.0",
-      "updated_at": "2026-11-10",
-      "sha256": "737e12bb952f540755dd38778795785ab3febbacc5305c5003df4b706e81ac18",
+      "version": "2.12.0",
+      "updated_at": "2026-11-11",
+      "sha256": "4d55ea5471d0bedf5434a32fe6a798ad3a6394b3ea8a81d821e52be98567169d",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -262,9 +262,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.44.0",
-      "updated_at": "2026-11-10",
-      "sha256": "c99ce10f5f8b5e65975b2ac17f3f6aad01b59de634a2b85a2d0a7c47c1643156",
+      "version": "2.45.0",
+      "updated_at": "2026-11-11",
+      "sha256": "1c9a97340a2f409fe373a0a93f0a5a07dd5bec8fc7093ecca0f4f0f906a26477",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -360,9 +360,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.23.0",
+      "version": "2.24.0",
       "updated_at": "2026-11-11",
-      "sha256": "44a5765414c5aa1f565514fe7824911a81d94495996664e52b1b0c540aecc497",
+      "sha256": "eeaf16ff85d2e9eee2b5a4055619abc9fd628419790a501522ee6cf6335d02c6",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [

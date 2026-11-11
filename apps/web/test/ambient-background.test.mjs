@@ -77,3 +77,54 @@ test("alto contraste e impresión se quedan sin ambiente", () => {
   assert.match(css, /html\[data-contrast="high"\] \.apex-ambient \{\s*display: none;/);
   assert.match(css, /@media print \{\s*\.apex-ambient \{ display: none; \}/);
 });
+
+test("las intensidades del ambiente quedan fijadas por tema", () => {
+  const css = read("app/globals.css");
+  const alphas = (block) => [...block.matchAll(/--ambient-alpha-[abc]:\s*([\d.]+)/g)].map((match) => Number(match[1]));
+  const grain = (block) => Number(block.match(/--ambient-grain:\s*([\d.]+)/)[1]);
+  const lightRoot = css.slice(css.indexOf(":root {"), css.indexOf("html[data-font-scale"));
+  const darkRoot = css.slice(css.indexOf("html.dark {"), css.indexOf("* {"));
+  assert.deepEqual(alphas(lightRoot), [0.12, 0.09, 0.06]);
+  assert.deepEqual(alphas(darkRoot), [0.13, 0.22, 0.13], "el oscuro alza las luces para que los huecos respiren");
+  assert.equal(grain(lightRoot), 0.04, "el grano claro sube a 0.04 para no perder textura en blanco");
+  assert.equal(grain(darkRoot), 0.06);
+});
+
+const ruleBlock = (css, selector, fromIndex = 0) => {
+  const start = css.indexOf(selector, fromIndex);
+  if (start === -1) return null;
+  const open = css.indexOf("{", start);
+  const close = css.indexOf("\n}", open);
+  return css.slice(start, close);
+};
+
+test("el marco del tema oscuro gana oficio sin mover layout", () => {
+  const css = read("app/globals.css");
+  assert.match(read("components/shell/Sidebar.tsx"), /apex-chrome-sidebar/, "el costado lleva su clase marcadora");
+  assert.match(read("components/shell/DashboardChrome.tsx"), /apex-chrome-topbar/, "la barra superior lleva su clase marcadora");
+
+  const sidebar = ruleBlock(css, "html.dark aside.apex-chrome-sidebar");
+  assert.ok(sidebar, "falta la regla del costado oscuro");
+  assert.match(sidebar, /linear-gradient\(180deg/);
+  assert.match(sidebar, /border-right-color: rgb\(45 212 191 \/ 0\.14\)/);
+
+  const header = ruleBlock(css, "html.dark header.apex-chrome-topbar");
+  assert.ok(header, "falta la regla de la barra superior real");
+  assert.match(header, /background: rgb\(20 32 41 \/ 0\.94\)/);
+
+  const toolbar = ruleBlock(css, "html.dark main > .apex-chrome-topbar");
+  assert.ok(toolbar, "falta la regla de la barra de herramientas del panel");
+  assert.match(toolbar, /border-bottom: 1px solid rgb\(45 212 191 \/ 0\.1\)/);
+
+  const card = ruleBlock(css, "html.dark .apex-section-card {", css.indexOf("html.dark .apex-section-card,"));
+  assert.ok(card, "falta la regla de oficio de las tarjetas de sección");
+  assert.match(card, /box-shadow: 0 0 0 1px rgb\(45 212 191/);
+  assert.doesNotMatch(card, /\b(width|height|margin|padding|border-width)\s*:/, "el oficio de las tarjetas no puede mover la caja");
+
+  const baseCard = ruleBlock(css, ".apex-section-card {");
+  assert.match(baseCard, /box-shadow: 0 1px 2px/, "la tarjeta base gana sombra suave en los dos temas");
+
+  const flatContrast = ruleBlock(css, "html.dark[data-contrast=\"high\"] aside.apex-chrome-sidebar");
+  assert.ok(flatContrast, "el alto contraste restaura superficies planas");
+  assert.match(css, /html\[data-contrast="high"\] \.apex-section-card \{\s*box-shadow: none !important;/);
+});

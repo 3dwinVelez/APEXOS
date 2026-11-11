@@ -2,8 +2,8 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.11.0
-updated_at: 2026-11-10
+version: 2.12.0
+updated_at: 2026-11-11
 contract: 2
 ---
 
@@ -65,6 +65,8 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
     - **La fila sin lectura es un hueco honesto, no una franja pintada.** `mapRowChart()` no dibuja SVG con menos de dos lecturas medidas y escribe `sin historia: N de M lecturas medidas`; el catálogo congelado de `TOWER_SIMULATION=true` publica `data: null` por módulo, así que ahí **nunca** hay historia que pintar. Exigir lecturas en modo simulación es certificar un imposible.
     - **El umbral se lee del medidor, no del eje.** Los cortes `óptimo`/`tope`/`piso` se dibujan sobre la ordenada que les corresponde y cada `<title>` lleva la lectura completa (hora, valor, banda y registros donde existen). Con cortes nulos (`pending`) no se traza línea: `Number(null) === 0` pintaba una franja en cero y un `0x` plano como perfectamente sano.
     - **La altura de renglón es una variante, no un componente distinto.** El mapa usa `compact: true`, `axisTicks: false` y un solo eje horario al pie del mapa (`first → last`), porque repetir el eje en 33 filas no aporta una medición más. Por qué: el 2026-11-10 el panel mostraba tics sueltos y tarjetas número+etiqueta en cinco de las siete vistas, y el dueño lo leyó como que el trabajo no estaba hecho.
+
+22. **Una propuesta visual que «desapaga» la interfaz lleva evidencia de costo al lado de la estética.** El 2026-11-11 la ronda «superficies con oficio» cambió gradientes, halos y bordes del marco y la primera pregunta de rendimiento no fue «¿se siente bien?» sino «¿qué añade?». El contrato: (a) **la elevación es por `box-shadow` y `border-color` exclusivamente** —un test prohíbe `width|height|margin|padding|border-width` en las reglas nuevas—, así la caja no se mueve y no hay layout shift que medir; (b) **no hay animación nueva, no hay JS y no hay peticiones de red**: si la propuesta exigiera un solo fotograma calculado por script o un recurso descargado, se descarta o se re-diseña antes de tocar código; (c) **las métricas CDP se toman por vista con su JSON** (desktop y móvil, claro y oscuro) y el acumulado se reporta como en la ronda 6 —cuadro promedio, p95, cuadros >33 ms, layouts, estilos—; y (d) **la deriva existente no se duplica**: un halo estático convive con la animación ya medida, no la reemplaza ni le suma una capa. Por qué: el dueño aceptó la opción recomendada precisamente porque venía con su costo demostrado en números; «es solo CSS» sin la medición es una afirmación, no una evidencia.
 
 ## Checklist de intervención
 

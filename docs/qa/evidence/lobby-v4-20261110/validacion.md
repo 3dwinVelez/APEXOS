@@ -8,6 +8,36 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase. La ca
 ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
 «aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
 
+## Ronda 7 (superficies con oficio — el fondo deja de leerse apagado)
+
+- **El diagnóstico se midió, no se adivinó.** Se probaron seis variantes de fondo por inyección
+  temporal sobre el entorno local y se muestrearon píxeles reales de las capturas: subir las alfas
+  del ambiente (tres intensidades) movió el papel visible ~1 unidad RGB — imperceptible. La causa es
+  estructural: las superficies que el ojo lee (costado, barra, tarjetas) son opacas por contrato, así
+  que la capa ambiente solo asoma en los huecos. La palabra «apagada» vivía en las superficies del
+  marco, no detrás de ellas.
+- **Costado con gradiente opaco.** `aside.apex-chrome-sidebar` gana un degradado vertical de la misma
+  familia cromática (`#182730` arriba → `#0D161C` abajo) y filo turquesa al 14% en el borde derecho.
+  Sigue siendo opaco y no deja ver el ambiente: cambia el matiz, no la transparencia.
+- **Barra superior y barra de herramientas.** El header real del panel de marcación gana fondo
+  cálido translúcido (`rgb(20 32 41 / 0.94)`) y línea inferior turquesa al 12%; la barra de
+  herramientas del dashboard (fila de píldoras) gana un filo inferior de 1 px turquesa al 10% a todo
+  el ancho, sin banda de fondo.
+- **Tarjetas de sección con halo y sombra.** `.apex-section-card` pasa de rectángulo plano a
+  superficie trabajada: en oscuro, borde turquesa al 14% + anillo de 1 px al 5% + sombra de
+  elevación; en claro, sombra suave neutra. Todo dibujado con `box-shadow` y `border-color` — cero
+  cambios de caja (la prueba lo afirma: ninguna propiedad de `width|height|margin|padding`).
+- **Ambiente oscuro alzado y grano claro.** Las alfas del tema oscuro suben de `0.10 / 0.18 / 0.10`
+  a `0.13 / 0.22 / 0.13` para que los huecos entre tarjetas respiren, y el grano claro sube de
+  `0.03` a `0.04` para no perder textura sobre blanco. El claro sigue intacto en lo demás.
+- **Alto contraste restaura lo plano.** Con `data-contrast="high"` el costado y la barra vuelven a
+  superficie plana y las tarjetas pierden la sombra: el oficio nunca compite con la legibilidad.
+- **Verificación.** Suite web **680/680** (dos pruebas nuevas: intensidades fijadas por tema y
+  contrato del marco sin layout shift), typecheck sin hallazgos. Capturas y métricas por vista en
+  `evidence-craft-*` y `evidence-craft-metrics.json`: gradiente del costado, filo turquesa y sombra
+  de tarjeta confirmados en escritorio, módulo, móvil y ventana de comandos, en claro y oscuro, sin
+  desbordamiento horizontal. Todo CSS estático: sin animación nueva, sin JS y sin peticiones de red.
+
 ## Ronda 6 (fondo ambiente en todas las ventanas)
 
 - **Una sola capa para todo el producto.** `apps/web/app/layout.tsx` monta `.apex-ambient` una vez
