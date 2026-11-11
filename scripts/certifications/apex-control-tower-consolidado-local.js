@@ -645,25 +645,35 @@ async function run() {
       chrome = await launchChrome(binary);
       await chrome.cdp.send("Page.navigate", { url: `${base}/?token=${UI_TOKEN}` });
 
-      // Resumen: solo los medidores con su umbral. Las teselas del consolidado viven
-      // ahora en la vista de base de datos, asi que aqui se certifica que no hay
-      // reguero de datos a la vista.
+      // Resumen: el cockpit del dueño. Un grafico dominante, dos medidores de peso
+      // y seis teselas: lo que se pinta es lo que decide, no los diecinueve
+      // medidores que el servidor publica.
+      // El cockpit se certifica con su historia dibujada: una tesela con una sola
+      // lectura admite el hueco honesto, pero el corte versionado solo es
+      // verificable cuando el grafico ya trazó. La ventana se espera a lo largo de
+      // varios sondeos, no de uno.
       const resumenListo = await waitFor(() => chrome.cdp.evaluate(
-        `[...document.querySelectorAll('#gauges .measure-card')].filter((n) => n.offsetParent !== null).length >= 6 && document.getElementById('statusLegend').textContent.length > 40`
-      ), 25000);
+        `[...document.querySelectorAll('#cockpitTiles .cockpit-tile')].filter((n) => n.offsetParent !== null).length === 6 && document.querySelectorAll('#cockpitDials .dial').length === 2 && document.querySelectorAll('#cockpitHero .monitor-chart svg, #cockpitTiles .monitor-chart svg').length >= 5 && document.getElementById('statusLegend').textContent.length > 40`
+      ), 45000);
       const medidores = await chrome.cdp.evaluate(`({
-        medidores: [...document.querySelectorAll('#gauges .measure-card')].filter((n) => n.offsetParent !== null).length,
-        conUmbral: [...document.querySelectorAll('#gauges .measure-limits')].filter((n) => /[≤≥]/.test(n.textContent)).length,
-        graficas: [...document.querySelectorAll('#gauges .monitor-chart')].filter((n) => n.offsetParent !== null).length,
-        sinGraficaConUmbral: ${sinGrafica("#gauges .measure-card")},
-        bandas: [...document.querySelectorAll('#gauges .band-pill')].map((n) => n.textContent.trim()),
+        hero: [...document.querySelectorAll('#cockpitHero .cockpit-hero')].filter((n) => n.offsetParent !== null).length,
+        diales: [...document.querySelectorAll('#cockpitDials .dial')].filter((n) => n.offsetParent !== null).length,
+        tarjetas: [...document.querySelectorAll('#cockpitTiles .cockpit-tile')].filter((n) => n.offsetParent !== null).length,
+        conUmbral: [...document.querySelectorAll('#cockpitHero .hero-limits, #cockpitDials .dial-limits, #cockpitTiles [aria-label]')]
+          .filter((n) => /[≤≥]/.test(n.getAttribute('aria-label') || n.textContent)).length,
+        graficas: [...document.querySelectorAll('#cockpitHero .monitor-chart, #cockpitTiles .monitor-chart')].filter((n) => n.offsetParent !== null).length,
+        sinGraficaConUmbral: ${sinGrafica("#cockpitTiles .cockpit-tile")},
+        cortes: document.querySelectorAll('#cockpitHero .threshold-chart .chart-optimal, #cockpitHero .threshold-chart .chart-risk, #cockpitTiles .threshold-chart .chart-optimal, #cockpitTiles .threshold-chart .chart-risk').length,
+        bandas: [...document.querySelectorAll('#cockpitHero .band-pill, #cockpitDials .band-pill, #cockpitTiles .band-pill')].map((n) => n.textContent.trim()),
+        metas: document.getElementById('cockpitMeta').textContent.replace(/\\s+/g,' ').trim(),
         teselasVisibles: [...document.querySelectorAll('#kpis .metric-tile, #companySummary .metric-tile')].filter((n) => n.offsetParent !== null).length,
         leyenda: document.getElementById('statusLegend').textContent.replace(/\\s+/g,' ').trim().slice(0,220)
       })`);
       assert("navegador_resumen_con_medidores", Boolean(resumenListo)
-        && medidores.medidores >= 6 && medidores.conUmbral >= 6
-        && medidores.graficas === medidores.medidores
-        && medidores.sinGraficaConUmbral === 0, medidores);
+        && medidores.hero === 1 && medidores.diales === 2 && medidores.tarjetas === 6
+        && medidores.conUmbral >= 4 && medidores.graficas === medidores.tarjetas + medidores.hero
+        && medidores.sinGraficaConUmbral === 0 && medidores.cortes >= 8, medidores);
+      assert("navegador_resumen_pinta_lo_que_decide", /^\d+ de \d+ medidores/.test(medidores.metas), { metas: medidores.metas });
       assert("navegador_bandas_sin_jerga", medidores.bandas.every((banda) => /Óptimo|En riesgo|Crítico|Sin dato|Informativo/.test(banda)), { bandas: medidores.bandas });
       assert("navegador_leyenda_de_estados", /Requiere atenci/.test(medidores.leyenda) && !/degrad/i.test(medidores.leyenda), { leyenda: medidores.leyenda });
       assert("navegador_resumen_sin_teselas", medidores.teselasVisibles === 0, { visibles: medidores.teselasVisibles });
@@ -733,6 +743,18 @@ async function run() {
         && panel.teselas.some((t) => /Actividad de la empresa/.test(t)), { teselas: panel.teselas });
       assert("navegador_empresa_con_acciones", panel.acciones >= 1 && panel.filas >= 3, { acciones: panel.acciones, filas: panel.filas });
 
+      // El dialogo de umbrales y formula sigue accesible desde el bloque de salud
+      // de la empresa: ahi es donde el dueño pregunta como se calculo la banda.
+      const detalleUmbral = await waitFor(() => chrome.cdp.evaluate(
+        `document.querySelector('#companyHealth [data-health-detail]') !== null`
+      ), 10000);
+      await chrome.cdp.evaluate(`(() => { const b = document.querySelector('#companyHealth [data-health-detail]'); if (b) b.click(); return Boolean(b); })()`);
+      const umbral = await waitFor(() => chrome.cdp.evaluate(
+        `document.getElementById('detailDialog').open && !/degrad/i.test(document.getElementById('detailBody').textContent)`
+      ), 8000);
+      assert("navegador_umbrales_sin_jerga", Boolean(detalleUmbral) && Boolean(umbral), { abierto: umbral });
+      await chrome.cdp.evaluate(`document.getElementById('btnDialogClose').click()`);
+
       const captura = await chrome.cdp.evaluate(`document.getElementById('companyPanel').scrollIntoView({block:'start'}) || true`);
       await sleep(400);
       const shotCompany = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "01-monitor-consolidado-empresa.png"), { fullPage: false });
@@ -770,7 +792,7 @@ async function run() {
       ), 15000);
       const prod = await chrome.cdp.evaluate(`({
         pill: document.getElementById('overallPill').textContent,
-        aviso: (document.querySelector('#health .health-notice') || {}).textContent,
+        aviso: (document.querySelector('#tenants .empty') || {}).textContent,
         titulo: (document.querySelector('#tenants .action-head h3') || {}).textContent,
         acciones: [...document.querySelectorAll('#tenants .action-item')].map((a) => a.textContent.replace(/\\s+/g,' ').trim().slice(0,140)),
         selectorVacio: document.getElementById('companySelect').disabled,
@@ -805,10 +827,12 @@ async function run() {
         && !/Memoria RSS|Consultas lentas|Peticiones/.test(rendimiento.join(" ")), { estadisticas: rendimiento });
 
       await chrome.cdp.evaluate(`document.querySelector('[data-view="api"]').click()`);
+      // La memoria del proceso dejo de pintarse como tesela suelta: la magnitud
+      // que decide es la presion de heap, y su corte versionado vive en ella.
       const memoriaApi = await waitFor(() => chrome.cdp.evaluate(`(() => {
         const tarjeta = Array.from(document.querySelectorAll('#kpis .metric-tile'))
           .filter((n) => n.offsetParent !== null)
-          .find((n) => /Memoria del API|Uso de memoria/.test(n.textContent));
+          .find((n) => /Presión de heap/.test(n.textContent));
         return tarjeta ? tarjeta.textContent.replace(/\\s+/g, " ").trim() : null;
       })()`).catch(() => null), 12000);
       assert("navegador_telemetria_proceso_con_umbral", Boolean(memoriaApi)
@@ -832,7 +856,7 @@ async function run() {
       ).catch(() => false), 40000);
       const historiaApi = await chrome.cdp.evaluate(leidoHistoriaApi);
       assert("navegador_api_teselas_con_historia", Boolean(historiaListaApi)
-        && historiaApi.tarjetas >= 1
+        && historiaApi.tarjetas >= 1 && historiaApi.tarjetas <= 4
         && historiaApi.graficas === historiaApi.tarjetas && historiaApi.pies === historiaApi.tarjetas
         && historiaApi.sinUmbral === 0 && historiaApi.conLectura >= 1 && historiaApi.cortes >= 1,
       { espera_cumplida: Boolean(historiaListaApi), ...historiaApi });
@@ -923,16 +947,16 @@ async function run() {
       const shotDetail = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "03-vista-latencia-consolidado.png"), { fullPage: false });
       assert("captura_vista_latencia", shotDetail > 20000, { bytes: shotDetail });
 
+      // Volver al Resumen despues de recorrer las vistas de detalle tiene que
+      // repintar el cockpit completo: un panel que se queda a medias al cambiar de
+      // vista es saturacion perdida, no recorte.
       await chrome.cdp.evaluate(`document.querySelector('[data-view="resumen"]').click()`);
-      await waitFor(() => chrome.cdp.evaluate(
-        `!document.getElementById('health').hidden && document.querySelector('#health [data-health-detail]') !== null`
-      ), 10000);
-      await chrome.cdp.evaluate(`document.querySelector('#health [data-health-detail]').click()`);
-      const umbral = await waitFor(() => chrome.cdp.evaluate(
-        `document.getElementById('detailDialog').open && !/degrad/i.test(document.getElementById('detailBody').textContent)`
-      ), 8000);
-      assert("navegador_umbrales_sin_jerga", Boolean(umbral), { abierto: umbral });
-      await chrome.cdp.evaluate(`document.getElementById('btnDialogClose').click()`);
+      const vueltaLista = await waitFor(() => chrome.cdp.evaluate(
+        `[...document.querySelectorAll('#cockpitTiles .cockpit-tile')].filter((n) => n.offsetParent !== null).length === 6 && document.querySelectorAll('#cockpitDials .dial').length === 2 && document.querySelector('#cockpitHero .monitor-chart svg') !== null`
+      ), 15000);
+      assert("navegador_resumen_vuelve_al_cockpit", Boolean(vueltaLista), {
+        leyenda: medidores.leyenda.slice(0, 120)
+      });
     } catch (error) {
       browserError = error;
       record("navegador_monitor_consolidado", false, { error: String(error.message || error) });

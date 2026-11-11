@@ -242,72 +242,93 @@ function snapshotWithIndicators() {
 
 // Corta el medidor que lleva la etiqueta pedida: las afirmaciones sobre el grafico
 // de un medidor no pueden salir cruzadas con las de otro.
-function cardByLabel(html, label) {
-  return html.split('<article class="measure-card').slice(1)
+function cardByLabel(html, label, open = '<article class="measure-card') {
+  return html.split(open).slice(1)
     .filter((chunk) => chunk.includes(label))
-    .map((chunk) => `<article class="measure-card${chunk}`)
+    .map((chunk) => `${open}${chunk}`)
     .join("\n");
 }
 
-test("el resumen pinta las trece preguntas de entrada y deja la evidencia por módulo en su vista", async () => {
+const tileByLabel = (html, label) => cardByLabel(html, label, '<article class="cockpit-tile');
+
+// Cuantas veces aparece una cadena: contar elementos pintados sin parsear HTML.
+const count = (html, needle) => html.split(needle).length - 1;
+
+test("el resumen pinta los nueve indicadores del cockpit y deja la evidencia por módulo en su vista", async () => {
   const snapshot = snapshotWithIndicators();
   const { byId } = await mountedPanel(snapshot);
-  const html = byId("gauges").innerHTML;
   const published = snapshot.snapshot.environments.local.gauges;
-  const summary = published.filter((entry) => entry.resumen !== false);
-  const cards = html.split('<article class="measure-card').length - 1;
-  assert.equal(published.length, 18, "el servidor publica dieciocho medidores");
-  assert.equal(cards, summary.length);
-  assert.equal(cards, 13, "las trece preguntas que se responden desde el resumen");
+  const cockpit = snapshot.snapshot.environments.local.cockpit;
+  const hero = byId("cockpitHero").innerHTML;
+  const dials = byId("cockpitDials").innerHTML;
+  const tiles = byId("cockpitTiles").innerHTML;
+  assert.equal(published.length, 19, "el servidor publica diecinueve medidores");
+  // El Resumen es un cockpit, no una lista: un grafico dominante, dos medidores de
+  // peso y seis teselas. Los nueve los eligio metrics.COCKPIT, no el navegador.
+  assert.equal(count(hero, '<article class="cockpit-hero'), 1);
+  assert.equal(count(dials, '<article class="dial '), 2);
+  assert.equal(count(tiles, '<article class="cockpit-tile'), 6);
+  assert.equal(cockpit.hero.key, "p95");
+  assert.deepEqual(cockpit.dials.map((entry) => entry.key), ["platformHealth", "heapPressure"]);
   // El uso real, las sesiones y el GPS son evidencia de la vista Módulos: el
   // catalogo los marca y el panel no los sube al resumen.
-  assert.doesNotMatch(html, /Actividad de hoy|Sesiones activas|Pings GPS/);
-  assert.match(html, /p95 de la sonda al API/);
-  assert.match(html, /Sondas fallidas/);
+  assert.doesNotMatch(tiles, /Actividad de hoy|Sesiones activas|Pings GPS/);
+  assert.match(hero, /p95 de la sonda al API/);
   // El corte del p95 es el presupuesto de sonda del ambiente, no el del API.
-  assert.match(html, /óptimo ≤ 240 ms · en riesgo ≤ 400 ms/);
-  // "Con umbral" solo cuenta el medidor al que el servidor ya le firmo un corte:
-  // la carga y los registros todavia estan construyendo su banda habitual.
-  const scored = summary.filter((entry) => entry.limits
-    && entry.limits.kind !== "pending"
-    && (entry.limits.optimal != null || entry.limits.risk != null));
-  assert.equal(scored.length, 11);
-  assert.equal(
-    byId("gaugesMeta").textContent,
-    `${scored.length} medidores con umbral · ${scored.filter((entry) => entry.band === "critical").length} en rojo · ${scored.filter((entry) => entry.band === "risk").length} en riesgo`
-  );
+  assert.match(hero, /óptimo ≤ 240 ms · en riesgo ≤ 400 ms/);
+  assert.equal(byId("cockpitMeta").textContent, "9 de 19 medidores · 1 en rojo · 1 en riesgo");
 });
 
-test("cada medidor empieza por la pregunta y termina en la vista que la responde", async () => {
+test("el pie del cockpit cuenta lo que se midio, no lo que se pintó", async () => {
   const { byId } = await mountedPanel(snapshotWithIndicators());
-  const html = byId("gauges").innerHTML;
-  assert.match(html, /<p class="measure-question">¿Cómo está la latencia\?<\/p>/);
-  assert.match(html, /<p class="measure-question">¿La base de datos está rápida\?<\/p>/);
-  assert.match(html, /<button class="measure-link" type="button" data-view="latencia">Ver evidencia<\/button>/);
-  assert.match(html, /<button class="measure-link" type="button" data-view="datos">Ver evidencia<\/button>/);
-  assert.equal(html.split("measure-question").length - 1, 13, "ningún medidor se queda sin pregunta");
+  const status = byId("cockpitStatus").innerHTML;
+  assert.match(status, /<span class="status-chip">Contadores: \d+<\/span>/);
+  assert.match(status, /<span class="status-chip">Errores: \d+<\/span>/);
+  assert.match(status, /<span class="status-chip">Advertencias: \d+<\/span>/);
+  assert.match(status, /<span class="status-chip">Alertas abiertas: 0<\/span>/);
 });
 
-test("cada medidor muestra su banda medida y su grafica con el tope cruzada", async () => {
+test("cada indicador del cockpit abre la vista que responde su pregunta", async () => {
+  const snapshot = snapshotWithIndicators();
+  const { byId } = await mountedPanel(snapshot);
+  const tiles = byId("cockpitTiles").innerHTML;
+  const cockpit = snapshot.snapshot.environments.local.cockpit;
+  // La pregunta del grafico dominante es la de la vista Latencia: el p95 se
+  // responde ahi, no en el Resumen.
+  assert.match(byId("cockpitHero").innerHTML, /<p class="hero-question">¿Cómo está la latencia\?<\/p>/);
+  const views = [...tiles.matchAll(/<button class="measure-link" type="button" data-view="([a-z]+)">Ver evidencia<\/button>/g)]
+    .map((match) => match[1]);
+  assert.deepEqual(views, cockpit.tiles.map((entry) => entry.view), "cada tesela apunta a su propia vista");
+  assert.equal(views.length, 6, "ninguna tesela se queda sin su evidencia");
+});
+
+test("cada indicador del cockpit muestra su banda medida y su grafica con el tope cruzada", async () => {
   const { byId } = await mountedPanel(snapshotWithIndicators());
-  const html = byId("gauges").innerHTML;
-  assert.match(html, /<article class="measure-card band-optimal"[^>]*aria-label="p95 de la sonda al API: 182 ms\. Óptimo\./);
-  assert.match(html, /<article class="measure-card band-critical"[^>]*aria-label="Sondas fallidas: 30,8 %\. Crítico\./);
+  const hero = byId("cockpitHero").innerHTML;
+  const tiles = byId("cockpitTiles").innerHTML;
+  assert.match(hero, /<article class="cockpit-hero band-optimal"[^>]*aria-label="p95 de la sonda al API: 182 ms\. Óptimo\./);
+  assert.match(tiles, /<article class="cockpit-tile band-critical"[^>]*aria-label="Empresas con actividad: 0,5 %\. Crítico\./);
   // La banda no es un adorno del titulo: cada lectura que pasa el tope se marca en
-  // su propia serie, y la raya del tope esta dibujada en la tesela.
-  const sondas = cardByLabel(html, "Sondas fallidas");
-  assert.match(sondas, /<line class="chart-risk"/);
-  assert.match(sondas, /<text class="chart-label risk"[^>]*>tope 5 %</);
-  assert.equal(sondas.split('class="spark-over"').length - 1, 2, "las dos lecturas medidas pasaron el tope");
-  assert.equal(html.split('class="threshold-chart').length - 1, 12, "todo medidor con dos lecturas pinta su grafica");
-  assert.equal(html.split('class="monitor-chart idle" aria-hidden="true"').length - 1, 1,
-    "la nube sin viaje medido admite el hueco en lugar de inventar una linea");
-  assert.doesNotMatch(html, /measure-scale|measure-marker|monitor-ticks/, "la escala de tramos ya no existe");
+  // su propia serie, y la raya del tope esta dibujada en la tesela. El grafico
+  // dominante reusa el mismo renderer de la vista Latencia, solo que mas grande.
+  assert.match(hero, /<svg class="threshold-chart cockpit-hero-svg"/);
+  const cobertura = tileByLabel(tiles, "Empresas con actividad");
+  assert.match(cobertura, /<line class="chart-risk"/);
+  assert.match(cobertura, /<text class="chart-label risk"[^>]*>piso 5 %</);
+  assert.equal(count(cobertura, 'class="spark-over"'), 2, "las dos lecturas medidas pasaron el piso");
+  assert.equal(count(hero, 'class="threshold-chart'), 1, "un solo grafico dominante");
+  assert.equal(count(tiles, 'class="threshold-chart'), 6, "toda tesela pinta su historia");
+  assert.doesNotMatch(byId("cockpitDials").innerHTML, /threshold-chart/, "el dial no es una serie: es una aguja sobre el presupuesto");
 });
 
-test("la tarjeta de latencia firma el veredicto del servidor, no uno propio", async () => {
+test("el cockpit firma el veredicto del servidor, no uno propio", async () => {
   const { byId } = await mountedPanel(snapshotWithIndicators());
-  assert.match(byId("gauges").innerHTML, /<p class="measure-verdict tone-ok">Dentro del tope de 400 ms<\/p>/);
+  assert.match(byId("cockpitHero").innerHTML, /<p class="hero-verdict tone-ok">Dentro del tope de 400 ms<\/p>/);
+  // La banda del Resumen sale de los nueve que se pintan: aqui la manda el
+  // semáforo de empresas con actividad, no un medidor que el dueño no ve.
+  const verdict = byId("cockpitVerdict").innerHTML;
+  assert.match(verdict, /<p class="verdict-question">¿Cómo está APEXOS ahora mismo\?<\/p>/);
+  assert.match(verdict, /<p class="verdict-text">Empresas con actividad 0,5 % · Crítico<\/p>/);
 
   const conRacha = snapshotWithIndicators();
   conRacha.snapshot.environments.local.performance.series = [
@@ -318,32 +339,29 @@ test("la tarjeta de latencia firma el veredicto del servidor, no uno propio", as
   publishIndicators(conRacha);
   assert.equal(conRacha.snapshot.environments.local.latency.state, "sustained");
   const second = await mountedPanel(conRacha);
-  assert.match(second.byId("gauges").innerHTML,
-    /<p class="measure-verdict tone-down">Fuera del tope: atender · 3\/3 muestras sobre 400 ms · racha máxima 3<\/p>/);
+  assert.match(second.byId("cockpitHero").innerHTML,
+    /<p class="hero-verdict tone-down">Fuera del tope: atender · 3\/3 muestras sobre 400 ms · racha máxima 3<\/p>/);
 });
 
-// Un medidor cuya banda es su propia ventana no puede afirmarla con dos lecturas.
-// Lo que pinta entonces es la serie medida sin rayas inventadas y un pie que dice
-// cuantas lecturas faltan: "sin banda todavia" es otra respuesta que "verde".
-test("el medidor sin banda calculada dice cuantas lecturas le faltan, no finge un veredicto", async () => {
-  const { byId } = await mountedPanel(snapshotWithIndicators());
-  const html = byId("gauges").innerHTML;
-  const carga = cardByLabel(html, "Peticiones por minuto");
-  assert.match(carga, /<article class="measure-card band-informational"[^>]*aria-label="Peticiones por minuto: 820,3 req\/min\. Informativo\. sin banda habitual todavía: 2 de 8 lecturas medidas\./);
-  assert.match(carga, /<p class="measure-limits">sin banda habitual todavía: 2 de 8 lecturas medidas<\/p>/);
+// Un medidor cuya banda es su propia ventana no puede afirmarla con dos lecturas,
+// y un dial sin lectura no puede inventar la aguja. Lo que pinta entonces es la
+// serie medida sin rayas inventadas y un pie que dice cuantas lecturas faltan:
+// "sin banda todavia" y "sin lectura" son respuestas, no un verde ni un cero.
+test("el cockpit dice cuantas lecturas faltan en lugar de fingir una banda o una aguja", async () => {
+  const snapshot = snapshotWithIndicators();
+  const { byId } = await mountedPanel(snapshot);
+  const tiles = byId("cockpitTiles").innerHTML;
+  const carga = tileByLabel(tiles, "Peticiones por minuto");
+  assert.match(carga, /<article class="cockpit-tile band-informational"[^>]*aria-label="Peticiones por minuto: 820,3 req\/min\. Informativo\. sin banda habitual todavía: 2 de 8 lecturas medidas\./);
   assert.match(carga, /aria-label="Peticiones por minuto: 2 lecturas medidas con corte todavía pendiente"/);
   assert.match(carga, /<polyline class="chart-line"/, "la lectura medida si se dibuja");
   assert.doesNotMatch(carga, /class="chart-risk"/, "el corte que no existe no se raya");
-  assert.match(cardByLabel(html, "Registros medidos"), /sin banda habitual todavía: 2 de 8 lecturas medidas/);
-  // Uptime ya no es contexto: el catalogo le dio presupuesto versionado, su banda
-  // se firma con el numero de decimales que el medidor usa (horas, no 7200 s).
-  const uptime = cardByLabel(html, "Uptime del proceso");
-  assert.match(uptime, /<article class="measure-card band-optimal"/);
-  assert.match(uptime, /<p class="measure-limits">óptimo ≥ 15 min · en riesgo ≥ 5 min<\/p>/);
-  assert.match(uptime, /<text class="chart-label risk"[^>]*>piso 5 min</);
-  // Cada medidor publicado conserva su historia: la franja del grafico existe aun
-  // cuando la banda todavia este pendiente.
-  assert.equal(html.split('<div class="monitor-chart').length - 1, 13, "ningún medidor se queda sin su historia");
+  assert.match(tileByLabel(tiles, "Registros medidos"), /sin banda habitual todavía: 2 de 8 lecturas medidas/);
+  // El dial de la salud solo dibuja aguja si el servidor publico la cifra: Number
+  // de un valor nulo es cero, y una aguja en cero seria un dato inventado.
+  assert.equal(snapshot.snapshot.environments.local.cockpit.dials[0].key, "platformHealth");
+  assert.match(byId("cockpitDials").innerHTML, /<p class="dial-empty">sin lectura medida: el dial no dibuja una aguja inventada<\/p>/);
+  assert.match(byId("cockpitDials").innerHTML, /<article class="dial band-optimal"[\s\S]*?<line class="dial-needle"/);
 });
 
 test("la latencia dibuja el tope y la zona optima sobre la serie medida", async () => {
@@ -489,24 +507,26 @@ test("sin componentes leidos la torre explica que falta en lugar de dejar el pan
 
 test("la vista Base de datos responde rapidez, volumen y cobertura medidos", async () => {
   const { byId } = await mountedPanel(snapshotWithIndicators());
-  // La banda de la vista es la peor entre sus medidores: aqui la latencia esta en
-  // verde y es la cobertura por empresa la que manda el semaforo.
+  // La banda de la vista es la peor entre los cuatro medidores que se pintan:
+  // aqui la latencia esta en verde y es la cobertura por empresa la que manda el
+  // semaforo.
   const verdict = byId("databaseVerdict").innerHTML;
   assert.match(verdict, /<p class="verdict-question">¿La base está rápida y con datos reales\?<\/p>/);
   assert.match(verdict, /<p class="verdict-text">Empresas con actividad 0,5 % · Crítico<\/p>/);
   assert.match(verdict, /Latencia de la base 42 ms \(óptimo ≤ 100, tope 300\)/);
   assert.match(verdict, /940 registros medidos en 3 módulos con conteo/);
   const kpis = byId("databaseKpis").innerHTML;
-  const tiles = kpis.split('<article class="metric-tile').length - 1;
-  assert.equal(tiles, 5);
+  assert.equal(kpis.split('<article class="metric-tile').length - 1, 4, "cuatro teselas: el maximo que publica el servidor por vista");
   assert.match(kpis, /Latencia de la base/);
   assert.match(kpis, /Consultas lentas/);
   assert.match(kpis, /Registros medidos/);
+  assert.match(kpis, /Empresas con actividad/);
+  // La frescura es evidencia de la vista Módulos: la vista Base no la repite.
+  assert.doesNotMatch(kpis, /Frescura de datos/);
   // Cada tesela de la base carga su propia historia medida, no un numero suelto.
-  assert.equal(kpis.split('class="monitor-chart" role="img"').length - 1, 5, "las cinco teselas pintan su gráfico");
-  assert.equal(kpis.split('<line class="chart-risk"').length - 1, 4,
-    "cuatro con corte firmado; registros todavía está construyendo su banda habitual");
-  assert.match(kpis, /Frescura de datos[\s\S]{0,400}óptimo ≤ 1x · en riesgo ≤ 3x/);
+  assert.equal(kpis.split('class="monitor-chart" role="img"').length - 1, 4, "las cuatro teselas pintan su gráfico");
+  assert.equal(kpis.split('<line class="chart-risk"').length - 1, 3,
+    "tres con corte firmado; registros todavía está construyendo su banda habitual");
   assert.match(byId("databaseVolume").innerHTML, /<th>Frescura<\/th>/);
   assert.match(byId("databaseVolume").innerHTML, /Talento Humano/);
   // La tabla se ordena por volumen: Servicios (900) antes que Talento Humano (40).
@@ -537,9 +557,10 @@ test("un modulo sin conteo no se cuenta como modulo medido", async () => {
   const verdict = byId("databaseVerdict").innerHTML;
   assert.match(verdict, /<p class="verdict-text">Empresas con actividad 0,5 % · Crítico<\/p>/);
   assert.match(verdict, /ningún módulo publicó conteo de registros/);
-  // El conteo que nunca llego tampoco se disfraza con una linea: el grafico admite
-  // que los sondeos guardados no dejaron lectura de este monitor.
-  assert.match(byId("databaseKpis").innerHTML, /<div class="monitor-chart idle" aria-hidden="true"><\/div><p class="monitor-chart-foot">2 sondeos guardados · ninguno dejó lectura de este monitor<\/p>/);
+  // El conteo que nunca llego tampoco se disfraza con una linea: la tesela queda
+  // sin serie y el pie dice cuantas lecturas faltan para trazar su banda.
+  assert.match(byId("databaseKpis").innerHTML, /<div class="monitor-chart idle" aria-hidden="true"><\/div><p class="monitor-chart-foot">sin banda habitual todavía: 0 de 8 lecturas medidas<\/p>/);
+  assert.match(byId("databaseKpis").innerHTML, /<p class="tile-value">—<span class="tile-unit"><\/span><\/p>/, "un conteo que no existe se pinta como hueco, no como cero");
   assert.match(byId("databaseVolume").innerHTML,
     /Ningún módulo devolvió conteo de registros en este ambiente \(motivo: SIMULACION\)\./);
 });
@@ -587,12 +608,15 @@ test("componentes, sondas y nube pintan su grafica con las lecturas medidas", as
   assert.equal(components.split('class="threshold-chart').length - 1, 2, "cada componente con historia pinta su grafica");
 
   const checks = byId("checks").innerHTML;
-  // El presupuesto de sonda del ambiente manda el viaje: la sonda HTTP se corta en
-  // 400 ms y la de la nube en 800 ms, porque miden trayectos distintos.
-  assert.match(checks, /aria-label="API: 2 lecturas medidas en 2 sondeos"[\s\S]*?<text class="chart-label risk"[^>]*>tope 400 ms</);
+  // La lista de sondas ya no se pinta entera: se dibujan las que tienen problema
+  // y las demas se cuentan. El presupuesto de sonda del ambiente manda el viaje:
+  // la sonda HTTP se corta en 400 ms y la de la nube en 800 ms.
+  assert.equal(checks.split('<article class="check').length - 1, 2, "la sonda en verde no ocupa pantalla");
+  assert.doesNotMatch(checks, /<h3>API<\/h3>/, "la sonda que respondio dentro del optimo queda en la cuenta");
+  assert.equal(byId("probeMeta").textContent, "3 sondas · 1 en verde · 2 fallan o avisan");
   assert.match(checks, /aria-label="Railway: 2 lecturas medidas en 2 sondeos"[\s\S]*?<text class="chart-label risk"[^>]*>tope 800 ms</);
   assert.match(checks, /512 ms · En riesgo/, "512 ms a Railway pasa el optimo de 250 y se nombra como riesgo");
-  assert.equal(checks.split('class="monitor-chart" role="img"').length - 1, 2, "la sonda sin viaje medido no pinta historia");
+  assert.equal(checks.split('class="monitor-chart" role="img"').length - 1, 1, "la sonda sin viaje medido no pinta historia");
   assert.match(checks, /<div class="monitor-chart idle" aria-hidden="true"><\/div><p class="monitor-chart-foot">2 sondeos guardados · ninguno dejó lectura de este monitor<\/p>/);
 
   const cloud = byId("cloud").innerHTML;
@@ -641,7 +665,10 @@ test("el mapa pinta cada módulo como el gráfico de latencia, en altura de reng
   // de dibujar una serie plana en cero.
   assert.match(html, /<span class="map-strip map-chart idle" aria-hidden="true"><small class="map-empty">sin historia: 0 de 2 lecturas medidas<\/small><\/span>/);
   assert.doesNotMatch(html, /map-tick/, "el mapa ya no pinta marcas sueltas");
-  assert.match(byId("moduleMapMeta").textContent, /^2 sondeos/);
+  // El mapa es la unica vista de modulos: lleva su propio veredicto y cuenta
+  // cuantos renglones se dibujaron de los leidos, porque el recorte se admite.
+  assert.match(byId("moduleMapMeta").textContent, /^3 de 3 módulos dibujados · 2 sondeos/);
+  assert.match(byId("modulesVerdict").innerHTML, /<p class="verdict-question">¿Los módulos están óptimos y al día\?<\/p>/);
 });
 
 test("un ambiente sin historia de sondeos no deja filas vacías", async () => {
@@ -688,10 +715,10 @@ test("la vista Latencia muestra el grafico con su tope y las sondas, nada mas", 
   assert.deepEqual(panel.sections.filter((section) => !section.hidden).map((section) => section.views), ["latencia", "latencia api"]);
 });
 
-test("la vista Resumen se queda con salud, medidores y alertas", async () => {
+test("la vista Resumen se queda con el cockpit y su barra de estado", async () => {
   const panel = await mountedPanel(snapshotWithIndicators());
   assert.deepEqual(panel.sections.filter((section) => !section.hidden).map((section) => section.name),
-    ["healthTitle", "gaugesTitle", "alertsTitle"]);
+    ["cockpitTitle", "cockpitDialsTitle", "cockpitTilesTitle", "cockpitStatusPanel"]);
 });
 
 test("toda vista declarada en el HTML existe y toda vista tiene secciones que mostrar", async () => {
@@ -710,6 +737,6 @@ test("toda vista declarada en el HTML existe y toda vista tiene secciones que mo
 
 test("una vista antigua guardada en el navegador cae en Resumen y no deja el panel en blanco", async () => {
   const panel = await mountedPanel(snapshotWithIndicators(), { view: "summary" });
-  assert.equal(panel.sections.filter((section) => !section.hidden).length, 3);
+  assert.equal(panel.sections.filter((section) => !section.hidden).length, 4);
   assert.equal(panel.store.get("towerView"), "resumen");
 });

@@ -25,6 +25,10 @@ const {
   bandFromEntry,
   viewVerdict,
   viewVerdicts,
+  COCKPIT,
+  cockpitFor,
+  VIEW_SHORTLIST,
+  viewGaugesFor,
   heapPressurePercent,
   serverErrorPercent,
   requestsPerMinute,
@@ -41,9 +45,11 @@ function module(extra = {}) {
   return { key: "hr", name: "Talento Humano", status: "ok", data: null, ...extra };
 }
 
-// Las seis vistas-pregunta con evidencia propia. "resumen" queda fuera porque no
-// es una fuente de datos: es la peor banda de todas las demas.
-const VIEWS = ["latencia", "api", "modulos", "datos", "nube", "operacion"];
+// Las siete vistas del panel. "resumen" ahora si es una vista con medidor propio
+// (la salud de la plataforma), pero su veredicto lo firma el cockpit, no la
+// suma de todas las demas.
+const VIEWS = ["resumen", "latencia", "api", "modulos", "datos", "nube", "operacion"];
+const { THRESHOLDS: HEALTH_THRESHOLDS } = require("../lib/health");
 
 test("el corte de latencia sale del presupuesto versionado, no del navegador", () => {
   assert.equal(BUDGET_API_P95_MS, 1000);
@@ -296,8 +302,82 @@ test("los medidores salen en el orden de las preguntas del panel, no alfabeticos
   assert.deepEqual(keys, [
     "p95", "errorRate", "serverErrors", "memoryRss", "heapPressure", "requestRate",
     "uptime", "cloudLatency", "freshness", "dbLatency", "slowQueries", "dataVolume", "dataCoverage",
-    "activityToday", "activeUsers", "activeSessions", "websocketClients", "gpsPings"
+    "activityToday", "activeUsers", "activeSessions", "websocketClients", "gpsPings", "platformHealth"
   ]);
+});
+
+// El cockpit es la respuesta del servidor a "solo los elementos mas importantes":
+// nueve indicadores exactos, y el puntaje de la plataforma bandeado con los
+// mismos cortes que firma lib/health.js (no un umbral inventado aqui).
+test("el cockpit del Resumen es un grafico, dos diales y seis teselas", () => {
+  assert.equal(COCKPIT.hero, "p95");
+  assert.equal(COCKPIT.dials.length, 2);
+  assert.equal(COCKPIT.tiles.length, 6);
+  for (const key of [COCKPIT.hero].concat(COCKPIT.dials, COCKPIT.tiles)) {
+    assert.ok(GAUGES[key], `el cockpit eligio un medidor que no existe en el catalogo: ${key}`);
+  }
+  const cockpit = cockpitFor({
+    gauges: gaugesFor({ id: "local", performance: { p95: 320 }, health: { score: 96 } })
+  });
+  assert.equal(cockpit.hero.key, "p95");
+  assert.deepEqual(cockpit.dials.map((entry) => entry.key), ["platformHealth", "heapPressure"]);
+  assert.equal(cockpit.tiles.length, 6);
+  assert.equal(cockpit.verdict.question, "¿Cómo está APEXOS ahora mismo?");
+});
+
+test("la salud de la plataforma se bande con los cortes de lib/health.js", () => {
+  const score = (value) => gaugesFor({ id: "local", health: { score: value } })
+    .find((entry) => entry.key === "platformHealth");
+  assert.equal(score(96).band, "optimal");
+  assert.equal(score(85).band, "optimal");
+  assert.equal(score(72).band, "risk");
+  assert.equal(score(60).band, "risk");
+  assert.equal(score(40).band, "critical");
+  assert.equal(score(null).band, "unknown");
+  assert.equal(score(96).limits.optimal, HEALTH_THRESHOLDS.optimal);
+  assert.equal(score(96).limits.risk, HEALTH_THRESHOLDS.risk);
+});
+
+// El dueno rechazo la torre por saturada: la cantidad por vista es contrato, y
+// la firma el servidor. Si alguien agrega un medidor a una vista sin pasarela,
+// esta prueba lo rompe antes de que llegue a la pantalla.
+test("ninguna vista de detalle pinta mas de cuatro medidores", () => {
+  const gauges = gaugesFor({ id: "local", health: { score: 90 } });
+  const operation = operationGauges({ alerts: [], jobs: null });
+  const byView = viewGaugesFor({ gauges }, operation);
+  for (const [view, keys] of Object.entries(VIEW_SHORTLIST)) {
+    assert.ok(keys.length <= 4, `${view} pide ${keys.length} medidores`);
+    for (const key of keys) {
+      assert.ok(gauges.some((entry) => entry.key === key) || operation.some((entry) => entry.key === key),
+        `${view} eligio ${key}, que no publica ningun medidor`);
+    }
+    assert.ok(byView[view].length <= 4);
+  }
+  assert.deepEqual(byView.operacion.map((entry) => entry.key), ["openAlerts", "queuedJobs"]);
+});
+
+test("el veredicto de una vista se firma solo sobre lo que esa vista pinta", () => {
+  const gauges = gaugesFor({
+    id: "local",
+    performance: { p95: 120, errorRate: 0, p50: 40, samples: 20 },
+    deployed: {
+      memory: { rss: 1024 * 1024 * 120, heapTotal: 1024 * 1024 * 256 },
+      uptimeSeconds: 3600,
+      usage: { requests: 600, slowQueries: 0 }
+    }
+  });
+  // memoryRss esta medido pero NO esta en la seleccion de la vista API (la
+  // presion de heap la representa): si estuviera, el panel entero diria
+  // "critico" por un numero que el dueno no tiene en pantalla.
+  const withBad = gauges.map((entry) => entry.key === "memoryRss"
+    ? { ...entry, value: 9999999, band: "critical" }
+    : entry);
+  const verdicts = viewVerdicts(withBad);
+  assert.notEqual(verdicts.api.state, "critical");
+  const inShortlist = gauges.map((entry) => entry.key === "requestRate"
+    ? { ...entry, value: 99999, band: "critical" }
+    : entry);
+  assert.equal(viewVerdicts(inShortlist).api.state, "critical");
 });
 
 // ---------------------------------------------------------------- presupuestos por ambiente

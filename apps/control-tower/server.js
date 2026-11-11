@@ -15,7 +15,7 @@ const { diagnoseCheck } = require("./lib/diagnostics");
 const { collectGitState, runGit, clearRemoteCache } = require("./lib/git");
 const { fetchModules, REASON_DETAIL } = require("./lib/modules");
 const { recommendationsFor } = require("./lib/recommendations");
-const { GAUGES, gaugesFor, latencyVerdict, p95Definition, componentBands, viewVerdicts, viewVerdict, operationGauges, bandFromEntry, bandForValue, probeBand, applyWindowLimits, windowLimits } = require("./lib/metrics");
+const { GAUGES, gaugesFor, latencyVerdict, p95Definition, componentBands, viewVerdicts, viewVerdict, cockpitFor, viewGaugesFor, operationGauges, bandFromEntry, bandForValue, probeBand, applyWindowLimits, windowLimits } = require("./lib/metrics");
 const { ModuleTelemetry } = require("./lib/telemetry");
 const { MonitorHistory, measuredSeries, measuredValues } = require("./lib/monitor-history");
 const { computeHealth, withModuleBands } = require("./lib/health");
@@ -97,7 +97,7 @@ function eventId() {
 // historial de ticks. Es puro sobre el snapshot; el registro del sondeo ocurre
 // antes, sobre la lectura real, para que una simulacion no contamine el anillo
 // persistido.
-function attachIndicators(snapshot, telemetry, monitors) {
+function attachIndicators(snapshot, telemetry, monitors, operation = []) {
   for (const [id, environment] of Object.entries((snapshot && snapshot.environments) || {})) {
     const definition = p95Definition(id);
     environment.gauges = gaugesFor(environment, { checks: snapshot.checks });
@@ -105,12 +105,10 @@ function attachIndicators(snapshot, telemetry, monitors) {
     // vista Latencia conserva su veredicto propio (sostenido vs pico), que es mas
     // fino que la peor banda de un solo numero.
     environment.verdicts = viewVerdicts(environment.gauges);
-    // El resumen no inventa un umbral nuevo: es la peor banda entre los medidores
-    // que el catalogo marca como evidencia de entrada. La prueba por modulo (uso
-    // real, sesiones, GPS) vive en su vista y no sube al resumen. La pregunta no se
-    // reescribe aqui: es la canonica de la vista, publicada por metrics.
-    environment.verdicts.resumen = viewVerdict(
-      environment.gauges.filter((entry) => entry.resumen !== false), null, "resumen");
+    // El Resumen ya no firma su veredicto sobre los dieciseis medidores del
+    // ambiente: lo firma el cockpit, sobre los nueve que efectivamente se pintan.
+    // Asi el encabezado no puede gritar "critico" por una magnitud que el dueño
+    // no tiene en pantalla.
     if (Array.isArray(environment.components) && environment.components.length) {
       environment.components = componentBands(environment.components);
     }
@@ -161,9 +159,17 @@ function attachIndicators(snapshot, telemetry, monitors) {
         // su corte es el de la nube, no el presupuesto local.
         const cloud = CLOUD_SOURCES.includes(check.source);
         const cuts = cloud ? GAUGES.cloudLatency : definition;
+        const bandOfTrip = (value) =>
+          (cloud ? bandForValue(GAUGES.cloudLatency, value) : probeBand(value, true, id));
         check.limits = { optimal: cuts.optimal, risk: cuts.risk, kind: "budget", unit: "ms" };
-        check.series = measuredSeries(history, "checks", String(check.id), (value) =>
-          cloud ? bandForValue(GAUGES.cloudLatency, value) : probeBand(value, true, id));
+        // La banda de la sonda la firma el servidor sobre su viaje medido: una
+        // sonda puede responder "ok" y aun asi pasar el tope del trayecto (el
+        // viaje a la nube incluye DNS + TLS + proveedor). La lista de sondas con
+        // problema se filtra con esta banda y no con un criterio del navegador.
+        check.band = check.status && check.status !== "ok"
+          ? "critical"
+          : bandOfTrip(check.durationMs);
+        check.series = measuredSeries(history, "checks", String(check.id), bandOfTrip);
         check.window = polls;
       }
       // La tarjeta del proveedor se pinta con la historia de su propia sonda: el
@@ -183,6 +189,14 @@ function attachIndicators(snapshot, telemetry, monitors) {
         }
       }
     }
+    // La seleccion del cockpit y la de cada vista la firma el servidor: el
+    // navegador pinta los nueve indicadores del Resumen y las cuatro teselas de
+    // cada detalle, y no decide cantidades ni nombres. La vista Operacion no vive
+    // en el ambiente sino en el puesto, asi que sus medidores entran por el
+    // parametro: sin ellos la publicacion diria "ningun medidor" donde si hay dos.
+    environment.cockpit = cockpitFor(environment, operation);
+    environment.viewGauges = viewGaugesFor(environment, operation);
+    environment.verdicts.resumen = environment.cockpit.verdict;
     // El veredicto lo firma el servidor sobre muestras medidas: un p95 aislado no
     // dice si la franja fue continua, y esa diferencia es la que separa
     // "atender" de "vigilar el evento".
@@ -391,8 +405,11 @@ function createTower(overrides = {}) {
       store.writeAux("module-telemetry", telemetry.toJSON());
       const snapshot = applyOverrides(probeResult.value);
       attachRecommendations(snapshot);
-      attachIndicators(snapshot, telemetry, monitors);
+      // La mesa del puesto se publica antes de adjuntar los indicadores: la
+      // seleccion versionada de la vista Operacion necesita sus medidores para no
+      // dejar la vista publicada en vacio.
       state.operation = publishOperation();
+      attachIndicators(snapshot, telemetry, monitors, state.operation ? state.operation.gauges : []);
       // El anillo se escribe despues de grabar los tres ambitos del ciclo (los tres
       // ambientes y la mesa del puesto) para que el archivo sea una foto del sondeo.
       store.writeAux("monitor-history", monitors.toJSON());

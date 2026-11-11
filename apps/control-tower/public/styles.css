@@ -599,8 +599,6 @@ details.tech summary:focus-visible { outline: 2px solid var(--accent); outline-o
 .cloud-head h3 { margin: 0; font-size: 12.5px; font-weight: 620; }
 .cloud-provider { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .cloud-detail { margin: 6px 0 0; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
-.cloud-list { margin: 6px 0 0; padding-left: 16px; font-size: 10.5px; color: #b9c9e2; overflow-wrap: anywhere; }
-.cloud-list li { margin: 2px 0; }
 .cloud-hint { margin: 7px 0 0; font-size: 10.5px; color: var(--accent); }
 
 .alert-impact {
@@ -925,98 +923,8 @@ footer strong { color: var(--text); font-weight: 600; }
   justify-content: flex-end;
 }
 
-.module-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.module-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(9, 15, 27, 0.55);
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-.module-chip strong { color: var(--text); font-weight: 620; }
-
-.modules {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.module-group h3 {
-  margin: 0 0 8px;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.module-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 10px;
-}
-
-.module-card {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--unknown);
-  border-radius: 12px;
-  background: rgba(9, 15, 27, 0.6);
-  padding: 11px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.module-card.status-ok { border-left-color: var(--ok); }
-.module-card.status-degraded { border-left-color: var(--warn); }
-.module-card.status-down { border-left-color: var(--down); background: rgba(64, 18, 24, 0.32); }
-
-.module-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.module-top h4 {
-  margin: 0;
-  font-size: 12.5px;
-  font-weight: 620;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.module-detail {
-  margin: 0;
-  font-size: 11.5px;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-
-.module-metrics {
-  margin: 0;
-  font-size: 11px;
-  color: var(--muted);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-}
-
-.module-metrics b { color: var(--text); font-weight: 600; }
-
+/* La vista Modulos se pinta en el mapa (.module-map); las tarjetas por modulo
+   viven ahora en el dialog de detalle, que reusa .module-services y .service-dot. */
 .module-services {
   display: flex;
   flex-wrap: wrap;
@@ -1034,12 +942,6 @@ footer strong { color: var(--text); font-weight: 600; }
 .service-dot.status-ok { border-color: rgba(56, 211, 159, 0.45); color: var(--ok); }
 .service-dot.status-degraded { border-color: rgba(246, 196, 83, 0.45); color: var(--warn); }
 .service-dot.status-down { border-color: rgba(255, 107, 107, 0.5); color: var(--down); }
-
-.module-alert {
-  margin: 0;
-  font-size: 11px;
-  color: var(--down);
-}
 
 .cloud-metrics {
   display: grid;
@@ -1065,11 +967,22 @@ footer strong { color: var(--text); font-weight: 600; }
 
 .cloud-metric strong { font-size: 13px; font-weight: 620; }
 
-.cloud-service-health {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 6px;
+.cloud-foot {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* Una linea que cuenta lo que NO se dibujo. La ausencia explicada es parte del
+   contrato: un modulo o una sonda fuera del top sigue medida, solo cambia de
+   sitio. */
+.map-silent {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
 }
 
 ::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -2037,13 +1950,14 @@ footer strong { color: var(--text); font-weight: 600; }
 }
 
 /* Medidores con umbral: el valor medido, su banda y los limites que la produjeron */
-.gauges {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
-  gap: 12px;
-}
+/* El cockpit del Resumen: un grafico dominante, dos diales de peso y seis
+   teselas. La seleccion la publica lib/metrics.js (COCKPIT) en
+   environment.cockpit; aqui solo vive el tamano, nunca la decision. */
+.cockpit-hero-box { display: flex; }
 
-.measure-card {
+.cockpit-hero,
+.cockpit-tile,
+.dial {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -2055,7 +1969,9 @@ footer strong { color: var(--text); font-weight: 600; }
   overflow: hidden;
 }
 
-.measure-card::before {
+.cockpit-hero::before,
+.cockpit-tile::before,
+.dial::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
@@ -2063,19 +1979,81 @@ footer strong { color: var(--text); font-weight: 600; }
   background: var(--unknown);
 }
 
-.measure-card.band-optimal::before { background: var(--ok); }
-.measure-card.band-risk::before { background: var(--warn); }
-.measure-card.band-critical::before { background: var(--down); }
-.measure-card.band-critical { border-color: rgba(255, 107, 107, 0.34); }
+.cockpit-hero.band-optimal::before,
+.cockpit-tile.band-optimal::before,
+.dial.band-optimal::before { background: var(--ok); }
+.cockpit-hero.band-risk::before,
+.cockpit-tile.band-risk::before,
+.dial.band-risk::before { background: var(--warn); }
+.cockpit-hero.band-critical::before,
+.cockpit-tile.band-critical::before,
+.dial.band-critical::before { background: var(--down); }
+.cockpit-hero.band-critical,
+.cockpit-tile.band-critical,
+.dial.band-critical { border-color: rgba(255, 107, 107, 0.34); }
 
-.measure-head {
+.hero-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.measure-label {
+.hero-question {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 620;
+  color: var(--text);
+}
+
+.hero-value {
+  margin: 0;
+  font-size: 42px;
+  font-weight: 660;
+  line-height: 1.02;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.cockpit-hero.band-optimal .hero-value { color: var(--ok); }
+.cockpit-hero.band-risk .hero-value { color: var(--warn); }
+.cockpit-hero.band-critical .hero-value { color: var(--down); }
+
+.hero-unit {
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 5px;
+  color: var(--muted);
+}
+
+.hero-limits,
+.hero-foot,
+.dial-limits,
+.dial-foot {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+.hero-foot { font-family: var(--sans); font-size: 11px; }
+.hero-verdict { margin: 2px 0 0; font-size: 11.5px; font-weight: 600; }
+.hero-verdict.tone-ok { color: var(--ok); }
+.hero-verdict.tone-degraded { color: var(--warn); }
+.hero-verdict.tone-down { color: var(--down); }
+
+/* El alto CSS y el viewBox del SVG dominante son el mismo numero (208): si
+   difieren, el cursor cae fuera de la curva. */
+.cockpit-hero-svg {
+  display: block;
+  width: 100%;
+  height: 208px;
+}
+
+.cockpit-dials { display: grid; gap: 12px; }
+
+.dial-label,
+.tile-label {
   margin: 0;
   font-size: 10px;
   letter-spacing: 0.12em;
@@ -2083,35 +2061,69 @@ footer strong { color: var(--text); font-weight: 600; }
   color: var(--muted);
 }
 
-.measure-value {
+.dial-value {
   margin: 0;
-  font-size: 27px;
+  font-size: 30px;
   font-weight: 660;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
-  color: var(--text);
 }
 
-.measure-card.band-optimal .measure-value { color: var(--ok); }
-.measure-card.band-risk .measure-value { color: var(--warn); }
-.measure-card.band-critical .measure-value { color: var(--down); }
+.dial.band-optimal .dial-value { color: var(--ok); }
+.dial.band-risk .dial-value { color: var(--warn); }
+.dial.band-critical .dial-value { color: var(--down); }
 
-.measure-unit {
-  font-size: 12px;
-  font-weight: 500;
-  margin-left: 4px;
-  color: var(--muted);
+.dial-unit { font-size: 12px; font-weight: 500; margin-left: 4px; color: var(--muted); }
+.dial-empty { margin: 0; font-size: 10.5px; color: var(--muted); }
+.dial .band-pill,
+.cockpit-tile .band-pill { position: absolute; top: 12px; right: 12px; }
+
+.dial-svg { display: block; width: 100%; height: 116px; }
+.dial-band { fill: none; stroke-width: 11; }
+.dial-band.tone-ok { stroke: var(--ok); }
+.dial-band.tone-degraded { stroke: var(--warn); }
+.dial-band.tone-down { stroke: var(--down); }
+.dial-band.tone-unknown { stroke: rgba(139, 155, 180, 0.35); }
+.dial-track { stroke: var(--border); stroke-width: 1; }
+.dial-needle { stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; }
+.dial-pivot { fill: var(--text); }
+
+.cockpit-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(212px, 1fr));
+  gap: 12px;
 }
 
-.measure-limits,
-.measure-foot {
+.tile-value {
   margin: 0;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  color: var(--muted);
+  font-size: 24px;
+  font-weight: 660;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
 }
 
-.measure-foot { font-family: var(--sans); font-size: 10.5px; }
+.cockpit-tile.band-optimal .tile-value { color: var(--ok); }
+.cockpit-tile.band-risk .tile-value { color: var(--warn); }
+.cockpit-tile.band-critical .tile-value { color: var(--down); }
+
+.cockpit-status-panel { padding: 2px 0 6px; }
+
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(9, 14, 25, 0.6);
+}
+
+.status-chip {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
 
 /* El grafico compacto es la misma gramatica de la vista Latencia reducida a la
    tarjeta: area, linea, dos rayas de corte y horarios. Un monitor sin dos
@@ -2266,7 +2278,7 @@ footer strong { color: var(--text); font-weight: 600; }
 .perf-note-inline { margin: 0; font-size: 10.5px; color: var(--muted); }
 
 @media (max-width: 720px) {
-  .gauges { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .cockpit-tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .map-row,
   .map-axis { grid-template-columns: minmax(96px, 1fr) minmax(0, 2fr); }
   .map-row .map-now { display: none; }
@@ -2376,21 +2388,7 @@ footer strong { color: var(--text); font-weight: 600; }
 .verdict.tone-down { border-color: rgba(248, 113, 113, 0.45); }
 .verdict-empty { margin: 0; font-size: 12px; color: var(--muted); }
 
-/* La pregunta encima de cada medidor: el panel se lee como respuestas, no como
-   una lista de metricas sueltas. */
-.measure-question {
-  margin: 0 0 6px;
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  color: var(--accent);
-  text-transform: none;
-}
-
-.measure-verdict { margin: 6px 0 0; font-size: 11px; font-weight: 600; }
-.measure-verdict.tone-ok { color: var(--ok); }
-.measure-verdict.tone-degraded { color: var(--warn); }
-.measure-verdict.tone-down { color: var(--down); }
-
+/* El enlace a la vista de evidencia vive en cada tesela del cockpit. */
 .measure-link {
   margin-top: 8px;
   border: 1px solid var(--border);

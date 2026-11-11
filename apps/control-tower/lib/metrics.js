@@ -6,6 +6,7 @@
 // de rendimiento (docs/PERFORMANCE_ENGINEERING_STANDARD.md y
 // scripts/performance/performance-budget-check.js), no de estimaciones del UI.
 const BUDGET_API_P95_MS = Number(process.env.PERF_API_P95_MS || 1000);
+const { THRESHOLDS: HEALTH_THRESHOLDS } = require("./health");
 
 // La sonda de la torre mide el viaje completo desde el puesto: DNS + TCP + TLS +
 // servidor + cuerpo. Ese número NO es la latencia del API, y exigirle el
@@ -297,6 +298,21 @@ const GAUGES = Object.freeze({
     optimal: 0,
     risk: 3,
     source: "jobs.stats().counts.awaiting_approval de la torre"
+  },
+  // El score que ya publica lib/health.js, ahora como medidor: es la respuesta a
+  // «¿cómo está APEXOS ahora mismo?» y, al vivir en el catálogo, entra al anillo
+  // de lecturas con su propio pie Mín/Prom/Máx. Los cortes no se repiten aqui:
+  // se leen de THRESHOLDS, la misma fuente que bandea el score.
+  platformHealth: {
+    key: "platformHealth",
+    label: "Salud de la plataforma",
+    question: "¿Cómo está APEXOS ahora mismo?",
+    view: "resumen",
+    unit: "",
+    direction: "higher",
+    optimal: HEALTH_THRESHOLDS.optimal,
+    risk: HEALTH_THRESHOLDS.risk,
+    source: "score de lib/health.js sobre los servicios medidos (óptimo ≥85, tope ≥60)"
   }
 });
 
@@ -636,7 +652,8 @@ function gaugesFor(environment, options = {}) {
     gauge("activeUsers", activityNumbers.active_users),
     gauge("activeSessions", connections.active_sessions),
     gauge("websocketClients", connections.websocket ? connections.websocket.clients : null),
-    gauge("gpsPings", connections.gps ? connections.gps.pings_period : null)
+    gauge("gpsPings", connections.gps ? connections.gps.pings_period : null),
+    gauge("platformHealth", environment.health ? environment.health.score : null)
   ];
   return list.filter(Boolean);
 }
@@ -654,6 +671,65 @@ function operationGauges({ alerts = [], jobs = null } = {}) {
     gauge("queuedJobs", counts ? number(counts.awaiting_approval) : null)
   ].filter(Boolean);
 }
+
+// El dueño pidió «solo los elementos más importantes para el estado de la
+// plataforma». La selección del cockpit vive aqui, versionada: la vista pinta lo
+// que el servidor elige y ninguna decision de cantidad se toma en el navegador.
+// Nueve indicadores: un grafico dominante, dos medidores de peso y seis teselas.
+const COCKPIT = Object.freeze({
+  hero: "p95",
+  dials: ["platformHealth", "heapPressure"],
+  tiles: ["requestRate", "dbLatency", "dataVolume", "freshness", "dataCoverage", "serverErrors"]
+});
+
+// El veredicto del Resumen sale de lo que si se ve en el Resumen. Si se eligiera
+// sobre los dieciseis medidores del ambiente, el encabezado podria gritar critico
+// por una magnitud que el dueño no tiene en pantalla.
+function cockpitFor(environment, operation = []) {
+  const entries = (Array.isArray(environment && environment.gauges) ? environment.gauges : [])
+    .concat(Array.isArray(operation) ? operation : [])
+    .filter(Boolean);
+  const byKey = new Map(entries.map((entry) => [entry.key, entry]));
+  const pick = (key) => byKey.get(key) || null;
+  const hero = pick(COCKPIT.hero);
+  const dials = COCKPIT.dials.map(pick);
+  const tiles = COCKPIT.tiles.map(pick);
+  return {
+    hero,
+    dials,
+    tiles,
+    verdict: viewVerdict([hero].concat(dials, tiles).filter(Boolean), VIEW_QUESTIONS.resumen, "resumen")
+  };
+}
+
+
+// La misma regla del cockpit se aplica a las seis vistas de detalle: el servidor
+// publica cuales medidores se pintan y cuantos, con un maximo de cuatro por
+// vista. Un medidor que no esta en la lista sigue bandeando y puede entrar al
+// veredicto del Resumen si el cockpit lo elige, pero deja de ser ruido de
+// pantalla; y como el veredicto de la vista se calcula sobre esta misma lista,
+// ningun encabezado puede gritar critico por algo que el dueño no ve.
+const VIEW_SHORTLIST = Object.freeze({
+  latencia: ["p95", "errorRate"],
+  api: ["requestRate", "errorRate", "serverErrors", "heapPressure"],
+  modulos: ["freshness", "activityToday", "activeUsers", "gpsPings"],
+  datos: ["dbLatency", "slowQueries", "dataVolume", "dataCoverage"],
+  nube: ["cloudLatency"],
+  operacion: ["openAlerts", "queuedJobs"]
+});
+
+function viewGaugesFor(environment, operation = []) {
+  const entries = (Array.isArray(environment && environment.gauges) ? environment.gauges : [])
+    .concat(Array.isArray(operation) ? operation : [])
+    .filter(Boolean);
+  const byKey = new Map(entries.map((entry) => [entry.key, entry]));
+  const out = {};
+  for (const [view, keys] of Object.entries(VIEW_SHORTLIST)) {
+    out[view] = keys.map((key) => byKey.get(key) || null).filter(Boolean);
+  }
+  return out;
+}
+
 
 // Veredicto de una vista: la peor banda entre sus medidores, con la frase y la
 // regla que la produjeron. Es el mismo modelo que firma la vista Latencia,
@@ -786,7 +862,14 @@ function viewVerdicts(gauges) {
     byView.get(entry.view).push(entry);
   }
   const verdicts = {};
-  for (const [view, list] of byView) verdicts[view] = viewVerdict(list, null, view);
+  for (const [view, list] of byView) {
+    // El veredicto se firma sobre los medidores que la vista efectivamente
+    // pinta; si la seleccion no trajo ninguno (ambiente sin ese bloque), se
+    // conserva la lista completa para no anunciar "sin medidores" donde si hay.
+    const short = VIEW_SHORTLIST[view];
+    const picked = short ? list.filter((entry) => short.includes(entry.key)) : list;
+    verdicts[view] = viewVerdict(picked.length ? picked : list, null, view);
+  }
   return verdicts;
 }
 
@@ -834,6 +917,10 @@ module.exports = {
   operationGauges,
   viewVerdict,
   viewVerdicts,
+  COCKPIT,
+  cockpitFor,
+  VIEW_SHORTLIST,
+  viewGaugesFor,
   VIEW_QUESTIONS,
   heapPressurePercent,
   serverErrorPercent,

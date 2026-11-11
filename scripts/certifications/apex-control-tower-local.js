@@ -429,84 +429,112 @@ async function run() {
     try {
       chrome = await launchChrome(binary);
       await chrome.cdp.send("Page.navigate", { url: base });
-      // El arranque cae en Resumen: salud, medidores y alertas. Nada de sondas,
+      // El arranque cae en el cockpit del Resumen: un grafico dominante, dos
+      // medidores de peso, seis teselas y la barra de estado. Nada de sondas,
       // ramas ni nubes mezcladas con la respuesta de "¿cómo está APEXOS?".
       const visible = `(n) => n.offsetParent !== null`;
-      const rendered = await waitFor(
-        () => chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length >= 10
-          && Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length === 3
-          && document.querySelectorAll('.check').length >= 8
-          && document.querySelectorAll('#moduleMap .map-strip.map-chart').length >= 3
-          && Boolean(document.querySelector('#health [aria-label^="Salud "]'))`),
-        15000
-      );
-      assert("browser_dashboard_rendered", Boolean(rendered), {
-        medidores: await chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length`),
-        seccionesVisibles: await chrome.cdp.evaluate(`Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length`),
-        gauge: await chrome.cdp.evaluate(`Boolean(document.querySelector('#health [aria-label^="Salud "]'))`)
-      });
+      // Cada clause se lee por separado: un rojo en el arranque tiene que decir
+      // cual de las cinco piezas del cockpit falto, no dejar un `false` mudo.
+      const cockpitListo = () => chrome.cdp.evaluate(`({
+        teselas: document.querySelectorAll('#cockpitTiles .cockpit-tile').length,
+        diales: document.querySelectorAll('#cockpitDials .dial').length,
+        hero: document.querySelectorAll('#cockpitHero .cockpit-hero').length,
+        secciones: Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length,
+        mapa: document.querySelectorAll('#moduleMap .map-strip.map-chart').length,
+        salud: Boolean(document.querySelector('#cockpitDials [aria-label^="Salud de la plataforma"]'))
+      })`);
+      const listoEsCockpit = (leido) => Boolean(leido) && leido.teselas === 6 && leido.diales === 2
+        && leido.hero === 1 && leido.secciones === 4 && leido.mapa >= 3 && leido.salud === true;
+      const rendered = await waitFor(async () => listoEsCockpit(await cockpitListo().catch(() => null)), 15000);
+      assert("browser_dashboard_rendered", Boolean(rendered), await cockpitListo().catch(() => ({})));
 
       // Resumen = preguntas con semaforo y tope. Las filas tecnicas (sondas,
       // teselas, ramas) siguen en el DOM pero NO a la vista.
       // El grafico se dibuja con dos lecturas medidas, asi que se espera a que el
       // anillo tenga historia: certificar el Resumen en el primer sondeo certificaria
-      // un panel que todavia no tiene nada que pintar. Solo se espera a los medidores:
-      // en simulacion el catalogo congelado no publica datos por modulo, asi que el
-      // mapa queda honestamente en "sin historia" y su lectura real se certifica en
-      // la fase real, no aqui.
+      // un panel que todavia no tiene nada que pintar. Se esperan los cuatro
+      // medidores que el puesto SI publica en simulacion (p95, peticiones por
+      // minuto, latencia de la base y errores del servidor): registros, frescura y
+      // cobertura nacen del modulo de datos por empresa, y ahi la simulacion congela
+      // el catalogo, asi que su hueco honesto es el comportamiento correcto y su
+      // profundidad se exige con dato real en la fase real.
+      const cortesDelCockpit = `document.querySelectorAll('#cockpitHero .threshold-chart .chart-optimal, #cockpitHero .threshold-chart .chart-risk, #cockpitTiles .threshold-chart .chart-optimal, #cockpitTiles .threshold-chart .chart-risk').length`;
       const historiaLista = await waitFor(() => chrome.cdp.evaluate(
-        `Array.from(document.querySelectorAll('#gauges .monitor-chart')).filter((n) => n.querySelector('svg')).length >= 5`), 60000).catch(() => false);
+        `document.querySelectorAll('#cockpitHero .monitor-chart svg, #cockpitTiles .monitor-chart svg').length >= 4 && ${cortesDelCockpit} >= 8`), 90000).catch(() => false);
       const resumen = await chrome.cdp.evaluate(`({
-        bandas: Array.from(document.querySelectorAll('#gauges .band-pill')).map((n) => n.textContent.trim()),
-        preguntas: Array.from(document.querySelectorAll('#gauges .measure-question')).map((n) => n.textContent.trim()),
-        enlaces: Array.from(document.querySelectorAll('#gauges .measure-link')).map((n) => n.dataset.view),
-        metas: document.getElementById('gaugesMeta').textContent.trim(),
-        tarjetas: document.querySelectorAll('#gauges .measure-card').length,
-        rotulos: Array.from(document.querySelectorAll('#gauges .measure-label')).map((n) => n.textContent.trim()),
-        graficas: document.querySelectorAll('#gauges .monitor-chart').length,
-        pies: document.querySelectorAll('#gauges .monitor-chart-foot').length,
-        lineasUmbral: document.querySelectorAll('#gauges .threshold-chart .chart-optimal, #gauges .threshold-chart .chart-risk').length,
-        etiquetasUmbral: Array.from(document.querySelectorAll('#gauges .threshold-chart .chart-label')).map((n) => n.textContent.trim()),
-        tirasConLectura: Array.from(document.querySelectorAll('#gauges .monitor-chart')).filter((n) => n.querySelector('svg')).length,
+        bandas: Array.from(document.querySelectorAll('#cockpitHero .band-pill, #cockpitDials .band-pill, #cockpitTiles .band-pill')).map((n) => n.textContent.trim()),
+        pregunta: (document.querySelector('#cockpitHero .hero-question') || {}).textContent || '',
+        enlaces: Array.from(document.querySelectorAll('#cockpitTiles .measure-link')).map((n) => n.dataset.view),
+        metas: document.getElementById('cockpitMeta').textContent.trim(),
+        tarjetas: document.querySelectorAll('#cockpitTiles .cockpit-tile').length,
+        diales: document.querySelectorAll('#cockpitDials .dial').length,
+        agujas: document.querySelectorAll('#cockpitDials .dial-needle').length,
+        dialSinLectura: document.querySelectorAll('#cockpitDials .dial-empty').length,
+        rotulos: Array.from(document.querySelectorAll('#cockpitTiles .tile-label')).map((n) => n.textContent.trim()),
+        graficas: document.querySelectorAll('#cockpitTiles .monitor-chart').length,
+        pies: document.querySelectorAll('#cockpitTiles .monitor-chart-foot').length,
+        lineasUmbral: document.querySelectorAll('#cockpitHero .threshold-chart .chart-optimal, #cockpitHero .threshold-chart .chart-risk, #cockpitTiles .threshold-chart .chart-optimal, #cockpitTiles .threshold-chart .chart-risk').length,
+        etiquetasUmbral: Array.from(document.querySelectorAll('#cockpitHero .threshold-chart .chart-label, #cockpitTiles .threshold-chart .chart-label')).map((n) => n.textContent.trim()),
+        tirasConLectura: document.querySelectorAll('#cockpitHero .monitor-chart svg, #cockpitTiles .monitor-chart svg').length,
+        sinUmbral: ${sinGrafica("#cockpitTiles .cockpit-tile")},
+        chips: Array.from(document.querySelectorAll('#cockpitStatus .status-chip')).map((n) => n.textContent.trim()),
         kpisVisibles: Array.from(document.querySelectorAll('#kpis .metric-tile')).filter(${visible}).length,
         checksVisibles: Array.from(document.querySelectorAll('#checks .check')).filter(${visible}).length,
         secciones: Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length
       })`);
       assert("browser_summary_uses_gauges", resumen.kpisVisibles === 0
         && resumen.checksVisibles === 0
-        && resumen.secciones === 3
-        && resumen.preguntas.length >= 10
-        && /medidores con umbral/.test(resumen.metas), {
+        && resumen.secciones === 4
+        && resumen.tarjetas === 6
+        && /\d+ de \d+ medidores/.test(resumen.metas), {
         kpisVisibles: resumen.kpisVisibles, checksVisibles: resumen.checksVisibles,
         secciones: resumen.secciones, metas: resumen.metas
       });
-      // Ningun medidor se queda en un numero suelto: cada tarjeta trae su grafico
-      // tipo latencia y su pie. Donde todavia no hubo lectura el hueco existe y el
-      // pie dice cuantas lecturas faltan, por eso se cuenta por graficas dibujadas
-      // y no por marcas sueltas. Y el resumen solo muestra las preguntas de entrada:
-      // la evidencia por modulo vive en su vista, no rellena aqui.
+      // Ningun medidor del cockpit se queda en un numero suelto: cada tesela trae
+      // su grafico tipo latencia y su pie. Donde todavia no hubo lectura el hueco
+      // existe y el pie dice cuantas lecturas faltan (`sinUmbral = 0` es la regla
+      // estructural), por eso se cuenta por graficas dibujadas y no por marcas
+      // sueltas. Y el Resumen solo muestra los nueve elegidos por el servidor: la
+      // evidencia por modulo vive en su vista.
       assert("browser_cada_medidor_trae_su_grafica_con_umbral", Boolean(historiaLista)
-        && resumen.tarjetas === 13
+        && resumen.tarjetas === 6
         && resumen.graficas === resumen.tarjetas
         && resumen.pies === resumen.tarjetas
-        && resumen.tirasConLectura >= 5
+        && resumen.tirasConLectura >= 4
+        && resumen.sinUmbral === 0
         && resumen.lineasUmbral >= 8
-        && resumen.etiquetasUmbral.length >= 8
+        && resumen.etiquetasUmbral.length >= 6
         && resumen.etiquetasUmbral.every((texto) => /óptimo|tope|piso/.test(texto))
+        // Un dial sin lectura admite el hueco: una aguja en cero seria un dato
+        // inventado, y lo no medido no es cero.
+        && (resumen.agujas + resumen.dialSinLectura) === resumen.diales
         && !/Actividad de hoy|Usuarios activos|Sesiones activas|Conexiones WebSocket|Pings GPS/
           .test(resumen.rotulos.join(" | ")), {
         historia_esperada: Boolean(historiaLista),
         tarjetas: resumen.tarjetas, graficas: resumen.graficas, pies: resumen.pies,
-        tiras_con_lectura: resumen.tirasConLectura, lineas_umbral: resumen.lineasUmbral,
-        etiquetas: resumen.etiquetasUmbral, rotulos: resumen.rotulos
+        tiras_con_lectura: resumen.tirasConLectura, sin_umbral: resumen.sinUmbral,
+        lineas_umbral: resumen.lineasUmbral,
+        etiquetas: resumen.etiquetasUmbral, rotulos: resumen.rotulos,
+        diales: resumen.diales, agujas: resumen.agujas, dial_sin_lectura: resumen.dialSinLectura
       });
+      // La barra del pie del cockpit es la cuenta del puesto: cuantos contadores
+      // se midieron y que sigue abierto, no un numero inventado por la interfaz.
+      assert("browser_cockpit_status_bar", resumen.chips.length >= 4
+        && /Contadores: \d+/.test(resumen.chips.join(" | "))
+        && /Errores: \d+/.test(resumen.chips.join(" | "))
+        && /Advertencias: \d+/.test(resumen.chips.join(" | "))
+        && /Alertas abiertas: \d+/.test(resumen.chips.join(" | ")), { chips: resumen.chips });
       // La lista de enlaces ya no se limita a cuatro vistas: el medidor de la nube
       // y el del puesto tambien responden desde el resumen.
       assert("browser_bandas_sin_jerga", resumen.bandas.every((banda) => /Óptimo|En riesgo|Crítico|Sin dato|Informativo/.test(banda))
         && resumen.enlaces.every((view) => /latencia|api|modulos|datos|nube|operacion/.test(view)), {
         bandas: resumen.bandas, enlaces: resumen.enlaces
       });
-      assert("browser_cada_pregunta_apunta_a_su_vista", new Set(resumen.enlaces).size >= 4, { vistas: resumen.enlaces });
+      // Las seis teselas del cockpit reparten la pantalla entre las tres vistas que
+      // responden sus preguntas (API, Base de datos y Modulos): lo que se exige es que
+      // ninguna se quede sin destino y que el Resumen no mande todo a un solo sitio.
+      assert("browser_cada_pregunta_apunta_a_su_vista", new Set(resumen.enlaces).size >= 3
+        && resumen.enlaces.length === 6, { vistas: resumen.enlaces, pregunta: resumen.pregunta });
 
       await waitFor(() => chrome.cdp.evaluate(`document.getElementById('livePill').textContent.includes('SSE en vivo')`), 8000);
       const size = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-overview.png"));
@@ -526,8 +554,8 @@ async function run() {
           veredicto: (document.querySelector('#latencyVerdict .verdict-text') || {}).textContent || '',
           regla: (document.querySelector('#latencyVerdict .verdict-rule') || {}).textContent || '',
           medidor: (() => {
-            const tarjeta = Array.from(document.querySelectorAll('#gauges .measure-card')).find((n) => /p95/.test(n.textContent));
-            return tarjeta ? (tarjeta.querySelector('.measure-limits') || {}).textContent || '' : '';
+            const hero = document.querySelector('#cockpitHero .cockpit-hero');
+            return hero ? (hero.querySelector('.hero-limits') || {}).textContent || '' : '';
           })(),
           tope: (() => {
             const linea = Array.from(document.querySelectorAll('#performance .chart-label'))
@@ -537,6 +565,8 @@ async function run() {
           estadisticas: document.querySelectorAll('.perf-stat').length,
           textoStats: Array.from(document.querySelectorAll('.perf-stat')).map((n) => n.textContent.replace(/\\s+/g, " ").trim()),
           checks: Array.from(document.querySelectorAll('#checks .check')).filter(${visible}).length,
+          sondas: document.getElementById('probeMeta').textContent.trim(),
+          sondasContenido: document.getElementById('checks').innerHTML.trim().length,
           secciones: Array.from(document.querySelectorAll('[data-views]')).filter(${visible}).length
         };
         return leido.chart === 1 && leido.veredicto && leido.medidor ? leido : null;
@@ -558,8 +588,16 @@ async function run() {
         && topesMedidor.includes(topeGrafico), {
         grafico: topeGrafico, medidor: topesMedidor, lineas: latencia ? latencia.lineas : null
       });
-      assert("browser_latencia_muestra_las_sondas", Boolean(latencia) && latencia.checks >= 8 && latencia.secciones === 2, {
-        checks: latencia ? latencia.checks : 0, secciones: latencia ? latencia.secciones : 0
+      // La lista de sondas ya no se pinta entera: se dibujan las que tienen
+      // problema (la que no respondio o cuyo viaje cruzo el tope firmado por el
+      // servidor) y el pie dice cuantas quedan en verde. Ciento veinte tarjetas no
+      // responden ninguna pregunta.
+      assert("browser_latencia_muestra_las_sondas", Boolean(latencia) && latencia.checks >= 0
+        && latencia.checks <= 10 && latencia.sondasContenido > 40
+        && / sondas · \d+ en verde · \d+ fallan o avisan/.test(latencia.sondas)
+        && latencia.secciones === 2, {
+        checks: latencia ? latencia.checks : 0, sondas: latencia ? latencia.sondas : "",
+        secciones: latencia ? latencia.secciones : 0
       });
       // El recorte de la vista Latencia: la grafica se queda con los cuatro
       // estadisticos que responden a su pregunta y suelta la telemetria de proceso,
@@ -684,25 +722,28 @@ async function run() {
           sinUmbralComponentes: ${sinGrafica("#components .component-row")},
           graficasSondas: document.querySelectorAll('#checks .monitor-chart').length,
           sinUmbralSondas: ${sinGrafica("#checks .check")},
-          memoria: (() => {
+          presion: (() => {
             const tarjeta = Array.from(document.querySelectorAll('#kpis .metric-tile'))
               .filter((n) => n.offsetParent !== null)
-              .find((n) => /Memoria del API|Uso de memoria/.test(n.textContent));
+              .find((n) => /Presión de heap/.test(n.textContent));
             return tarjeta ? tarjeta.textContent.replace(/\\s+/g, " ").trim() : "";
           })(),
+          sondas: document.querySelectorAll('#checks .check').length,
           tecnicos: document.querySelectorAll('details.tech').length
         };
         return leido.componentes >= 6 && /\d/.test(leido.base) ? leido : null;
       })()`), 45000);
       assert("browser_vista_api_con_componentes_reales", Boolean(apiVista)
         && apiVista.componentes >= 6
+        && apiVista.componentes <= 8
         && /\d+ componentes · \d+ con latencia medida/.test(apiVista.metas)
         && /\d+ ms/.test(apiVista.base), apiVista);
-      // El recorte deja las seis teselas que responden "¿el API esta optimo con la
-      // carga que tiene?" y ninguna se pinta con un numero suelto: cada una trae su
-      // grafica tipo latencia y, si el corte aun no existe, la propia tesela lo dice.
+      // El recorte deja las cuatro teselas que responden "¿el API esta optimo con la
+      // carga que tiene?" (la seleccion la firma metrics.VIEW_SHORTLIST) y ninguna se
+      // pinta con un numero suelto: cada una trae su grafica tipo latencia y, si el
+      // corte aun no existe, la propia tesela lo dice.
       assert("browser_vista_api_teselas_tecnicas", Boolean(apiVista)
-        && apiVista.teselas === 6
+        && apiVista.teselas === 4
         && apiVista.graficas === apiVista.teselas
         && apiVista.sinUmbral === 0
         && apiVista.lineasUmbral >= 4
@@ -713,48 +754,66 @@ async function run() {
         lineas_umbral: apiVista ? apiVista.lineasUmbral : 0,
         etiquetas: apiVista ? apiVista.etiquetasUmbral : []
       });
-      // La memoria del proceso no se borro del panel: cambió de sitio y ahora
-      // lleva su corte versionado visible, que es lo que la convierte en decision.
+      // La memoria del proceso no se borro del panel: la magnitud que decide es la
+      // presion de heap (usage sobre el presupuesto), y ahora lleva su corte
+      // versionado visible. El RSS sigue publicado por el servidor, pero dejo de
+      // ocupar pantalla porque no responde ninguna pregunta del dueno.
       assert("browser_telemetria_proceso_con_umbral", Boolean(apiVista)
-        && /\d/.test(apiVista.memoria) && /óptimo|tope/i.test(apiVista.memoria), {
-        memoria: apiVista ? apiVista.memoria : "", runtimePublished
+        && /\d/.test(apiVista.presion) && /óptimo|tope/i.test(apiVista.presion), {
+        presion: apiVista ? apiVista.presion : "", runtimePublished
       });
       // Cada sonda y cada componente es un medidor mas: su grafica con el corte
       // que el servidor publico (el de la sonda de la torre, el propio del servicio).
       assert("browser_componentes_y_sondas_con_historia", Boolean(apiVista)
         && apiVista.graficasComponentes === apiVista.componentes
         && apiVista.sinUmbralComponentes === 0
-        && apiVista.graficasSondas >= 8
+        && apiVista.graficasSondas >= 1
+        && apiVista.graficasSondas <= 10
         && apiVista.sinUmbralSondas === 0, {
         componentes: apiVista ? apiVista.componentes : 0,
         graficas_componentes: apiVista ? apiVista.graficasComponentes : 0,
         graficas_sondas: apiVista ? apiVista.graficasSondas : 0,
         sondas_sin_umbral: apiVista ? apiVista.sinUmbralSondas : 0
       });
+      // El detalle tecnico sigue vivo, pero viaja con las sondas que tienen
+      // problema: ya no se abren ciento veinte bloques para leer uno.
       const technicalDetails = apiVista ? apiVista.tecnicos : 0;
-      assert("browser_technical_details", technicalDetails >= 8, { details: technicalDetails });
+      assert("browser_technical_details", technicalDetails >= 1 && apiVista.sondas <= 10, {
+        details: technicalDetails, sondas: apiVista ? apiVista.sondas : 0
+      });
       const shotApi = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-api.png"));
       assert("browser_vista_api_capturada", shotApi > 20000, { bytes: shotApi });
 
       // --- Vista Modulos: un solo mapa con la API arriba de cada modulo.
       await chrome.cdp.evaluate(`document.querySelector('[data-view="modulos"]').click()`);
-      const modulos = await waitFor(() => chrome.cdp.evaluate(`(() => {
-        const leido = {
-          filas: Array.from(document.querySelectorAll('#moduleMap .map-row')).filter(${visible}).length,
-          graficas: Array.from(document.querySelectorAll('#moduleMap .map-strip.map-chart')).filter(${visible}).length,
+      // En simulacion el catalogo no publica frescura ni registros por modulo, asi
+      // que el mapa dibuja lo que si tiene lectura o una banda mala y cuenta en una
+      // sola linea lo que no: exigirle tres renglones dibujados seria certificar un
+      // imposible. La estructura (un renglon = una grafica, ninguna sin umbral, la
+      // cabecera que cuenta los sondeos y la linea que admite los silentes) se
+      // afirma aqui; la profundidad con dato real se afirma en la fase real.
+      const leidoMapa = `(() => {
+        const visibles = (n) => n.offsetParent !== null;
+        return {
+          filas: Array.from(document.querySelectorAll('#moduleMap .map-row')).filter(visibles).length,
+          graficas: Array.from(document.querySelectorAll('#moduleMap .map-strip.map-chart')).filter(visibles).length,
           sinUmbral: ${sinGrafica("#moduleMap .map-row")},
           leyenda: document.getElementById('moduleMapMeta').textContent.trim(),
-          detalle: Array.from(document.querySelectorAll('#modules .module-row')).filter(${visible}).length
+          silencio: (document.querySelector('#moduleMap .map-silent') || {}).textContent || '',
+          veredicto: (document.querySelector('#modulesVerdict .verdict-question') || {}).textContent || ''
         };
-        return leido.filas >= 3 && leido.graficas === leido.filas ? leido : null;
-      })()`), 20000);
-      // Cada renglon del mapa es el mismo grafico de latencia en altura de renglon:
-      // ninguna fila queda como una tira de marcas sueltas. En simulacion el
-      // catalogo no publica datos por modulo, asi que la fila admite "sin historia"
-      // en lugar de dibujar una serie inventada; que la lectura existe si se certifica
-      // con datos reales en la fase real.
-      assert("browser_modulos_mapa_unico", Boolean(modulos) && /sondeos/.test(modulos.leyenda)
-        && modulos.graficas === modulos.filas && modulos.sinUmbral === 0, modulos);
+      })()`;
+      const mapaListo = await waitFor(async () => {
+        const leido = await chrome.cdp.evaluate(leidoMapa);
+        return leido.filas >= 1 && leido.graficas === leido.filas && /módulos dibujados · \d+ sondeos/.test(leido.leyenda) ? leido : null;
+      }, 20000);
+      assert("browser_modulos_mapa_unico", Boolean(mapaListo)
+        && mapaListo.sinUmbral === 0
+        && (mapaListo.filas >= 3 || /sin lectura medida/.test(mapaListo.silencio)), mapaListo);
+      assert("browser_modulos_veredicto_preguntado", mapaListo
+        && mapaListo.veredicto === "¿Los módulos están óptimos y al día?", {
+        veredicto: mapaListo ? mapaListo.veredicto : null
+      });
       const shotModulos = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "tower-vista-modulos.png"));
       assert("browser_vista_modulos_capturada", shotModulos > 20000, { bytes: shotModulos });
 
@@ -773,7 +832,7 @@ async function run() {
           metas: document.getElementById('databaseMeta').textContent.trim(),
           empresas: Array.from(document.querySelectorAll('#tenants .metric-tile, #tenants .action-item')).filter(${visible}).length
         };
-        return leido.teselas === 5 && leido.veredicto && leido.columnas === 0 && /SIMULACION/.test(leido.vacio) ? leido : null;
+        return leido.teselas === 4 && leido.veredicto && leido.columnas === 0 && /SIMULACION/.test(leido.vacio) ? leido : null;
       })()`), 12000);
       // La banda de la vista ya no redacta una frase propia: nombra el peor
       // medidor medido y su banda, y la regla cita los topes del servidor.
@@ -940,7 +999,29 @@ async function run() {
       const visibleReal = `(n) => n.offsetParent !== null`;
       try {
         await chrome.cdp.send("Page.navigate", { url: liveBase });
-        await waitFor(() => chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length >= 10`).catch(() => false), 20000);
+        await waitFor(() => chrome.cdp.evaluate(`document.querySelectorAll('#cockpitTiles .cockpit-tile').length === 6`).catch(() => false), 20000);
+        // La profundidad del cockpit se pide aqui, no en simulacion: con la fuente
+        // real del puesto, registros, frescura y cobertura dejan de ser un hueco y
+        // el grafico de la tesela se traza con sus dos lecturas.
+        const cockpitRealListo = await waitFor(() => chrome.cdp.evaluate(
+          `document.querySelectorAll('#cockpitHero .monitor-chart svg, #cockpitTiles .monitor-chart svg').length >= 5`
+        ).catch(() => false), 90000);
+        const cockpitReal = await chrome.cdp.evaluate(`(() => {
+          const visibles = (n) => n.offsetParent !== null;
+          return {
+            tarjetas: Array.from(document.querySelectorAll('#cockpitTiles .cockpit-tile')).filter(visibles).length,
+            graficas: Array.from(document.querySelectorAll('#cockpitTiles .monitor-chart')).filter(visibles).length,
+            tirasConLectura: document.querySelectorAll('#cockpitHero .monitor-chart svg, #cockpitTiles .monitor-chart svg').length,
+            sinUmbral: ${sinGrafica("#cockpitTiles .cockpit-tile")},
+            metas: document.getElementById('cockpitMeta').textContent.trim()
+          };
+        })()`).catch(() => null);
+        assert("browser_cockpit_con_historia_real", Boolean(cockpitRealListo) && Boolean(cockpitReal)
+          && cockpitReal.tarjetas === 6 && cockpitReal.graficas === cockpitReal.tarjetas
+          && cockpitReal.tirasConLectura >= 5 && cockpitReal.sinUmbral === 0
+          && /\d+ de \d+ medidores/.test(cockpitReal.metas), {
+          espera: Boolean(cockpitRealListo), ...(cockpitReal || {})
+        });
         await chrome.cdp.evaluate(`document.querySelector('[data-view="datos"]').click()`);
         const datosReales = await waitFor(() => chrome.cdp.evaluate(`(() => {
           const leido = {
@@ -962,7 +1043,7 @@ async function run() {
           && datosReales.pregunta === "¿La base está rápida y con datos reales?"
           && /· (Óptimo|En riesgo|Crítico)$/.test(datosReales.veredicto)
           && /registros medidos en \d+ módulos con conteo/.test(datosReales.regla)
-          && datosReales.teselas === 5
+          && datosReales.teselas === 4
           && datosReales.graficas === datosReales.teselas
           && datosReales.sinUmbral === 0, datosReales);
         await chrome.cdp.evaluate(`window.scrollTo(0, 0)`);
@@ -992,7 +1073,7 @@ async function run() {
         // sus reintentos de SSE llenarian la consola de errores y el resto del
         // script esta leerian otra interfaz distinta a la que se certifica.
         await chrome.cdp.send("Page.navigate", { url: base }).catch(() => {});
-        await waitFor(() => chrome.cdp.evaluate(`document.querySelectorAll('#gauges .measure-card').length >= 10`).catch(() => false), 20000);
+        await waitFor(() => chrome.cdp.evaluate(`document.querySelectorAll('#cockpitTiles .cockpit-tile').length === 6`).catch(() => false), 20000);
       }
     }
   } catch (error) {
