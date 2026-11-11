@@ -86,6 +86,11 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       data: { tenant_id: tenant.id, name: 'QA Hub Talento', email: `hub-${run}@example.invalid`, password: await bcrypt.hash(password, 10), role_id: role.id }
     });
 
+    await db.employee.create({ data: {
+      tenant_id: tenant.id, user_id: user.id, code: 'QA-HUB', position: 'Operario',
+      department: 'Operacion', salary_base: 2000000, hire_date: new Date(), metadata: { name: user.name }
+    } });
+
     app = await require('../../apps/api/server')();
     const origin = await app.listen({ host: '127.0.0.1', port: 0 });
     const login = await fetch(origin + '/api/v1/auth/login', {
@@ -127,6 +132,9 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
         }
         async function waitSettled() {
           await until(() => [...document.querySelectorAll('h1')].some((node) => node.textContent.trim().length > 3), [], 'el titulo del destino');
+          // Leave time for authenticated requests to settle before navigating again.
+          await page.waitForNetworkIdle({ idleTime: 500, timeout: 15000 });
+          await new Promise(resolve => setTimeout(resolve, 5000));
         }
         async function warm(href) {
           await fetch(site + href, { signal: AbortSignal.timeout(240000) }).then((response) => response.text()).catch(() => {});
