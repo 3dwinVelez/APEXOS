@@ -1,0 +1,120 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-landing-hub-20261110",
+  "base_commits": {
+    "develop": "d4edd81528278636619fe2529035edbd7d0845a3"
+  },
+  "target_head": "d4edd81528278636619fe2529035edbd7d0845a3",
+  "certified_commit": "9b2257c6ebc54aaa8ac31213fe62f1e16bf66a66",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "9b2257c6ebc54aaa8ac31213fe62f1e16bf66a66",
+    "original_commits": [
+      "ee56b0fa",
+      "c3c4f1ba"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/scripts/certifications/hr-landing-qa.js",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-landing-hub-20261104.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-landing-hub-local.js"
+  ],
+  "change_intent": {
+    "summary": "Organize the fifteen Talento Humano destinations in a task-card landing.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/scripts/certifications/hr-landing-qa.js",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-landing-hub-20261104.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-landing-hub-local.js",
+    "docs/qa/manifests/hr-landing-hub-20261110-scope.json",
+    "docs/qa/manifests/hr-landing-hub-20261110-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/scripts/certifications/hr-landing-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-landing-hub-20261104.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-landing-hub-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-landing-hub-20261110-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-landing-hub-20261110-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "hub_card_navigation",
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "fifteen_destinations_render",
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "return_navigation",
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    {
+      "name": "no_unexpected_hr_api_errors",
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    }
+  ],
+  "traceability": "Reconstruct Qoder task-card hub and recertify against current develop."
+}
