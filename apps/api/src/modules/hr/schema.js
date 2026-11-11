@@ -210,6 +210,7 @@ const employeeSchema = {
     type: "object",
     required: ["name"],
     properties: {
+      user_id: { type: "integer", minimum: 1 },
       name: { type: "string" },
       code: { type: "string" },
       document: { type: "string" },

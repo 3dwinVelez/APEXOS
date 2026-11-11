@@ -603,7 +603,7 @@ const DEFAULT_ACTIVITY_TYPES = [
   "Apoyo operativo"
 ];
 
-const safeUserSelect = { id: true, name: true, email: true };
+const safeUserSelect = { id: true, name: true, email: true, active: true };
 
 function getPreoperationalTemplate() {
   return { sections: Array.from(new Set(PREOP_TEMPLATE.map((item) => item.section))), items: PREOP_TEMPLATE };
@@ -1348,7 +1348,13 @@ async function updateEmployee(tenantId, id, input = {}) {
     return prisma.$transaction(async (tx) => {
       const latest = await tx.employee.findFirst({ where: { tenant_id: tenantId, id: employeeId } });
       if (!latest) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
-      const linkedUserId = latest.user_id || await findUserForEmployee(tx, tenantId, nextMetadata, employeeId);
+      if (latest.user_id && input.user_id !== undefined && Number(input.user_id) !== latest.user_id) {
+        const error = new Error("El empleado ya tiene un usuario asociado. No se permite reemplazar el vinculo.");
+        error.statusCode = 409;
+        error.code = "EMPLEADO_USUARIO_CONFLICTO";
+        throw error;
+      }
+      const linkedUserId = latest.user_id || await findUserForEmployee(tx, tenantId, { ...nextMetadata, ...(input.user_id !== undefined ? { user_id: input.user_id } : {}) }, employeeId);
       const employee = await tx.employee.update({
       where: { id: employeeId },
       data: {

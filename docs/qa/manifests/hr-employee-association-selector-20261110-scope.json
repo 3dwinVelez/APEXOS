@@ -1,0 +1,121 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-employee-association-selector-20261110",
+  "base_commits": {
+    "develop": "b9600b8ada6367442d45a5f38c5544345778e4a7"
+  },
+  "target_head": "b9600b8ada6367442d45a5f38c5544345778e4a7",
+  "certified_commit": "f339f61877b6f21a42cb1ef3f4785b97362e261c",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "f339f61877b6f21a42cb1ef3f4785b97362e261c",
+    "original_commit": "c7c9613609d6f93793d326373c76c92f02ff7ed4"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/employeeUserLink.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-user-association.test.js",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/components/hr/EmployeeUserAssociation.tsx",
+    "docs/qa/certifications/hr-employee-user-association-ui-20261104.md",
+    "scripts/certifications/hr-employee-user-link-local.js"
+  ],
+  "change_intent": {
+    "summary": "Expose user lookup and assignment on employee records.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/employeeUserLink.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-user-association.test.js",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/components/hr/EmployeeUserAssociation.tsx",
+    "docs/qa/certifications/hr-employee-user-association-ui-20261104.md",
+    "scripts/certifications/hr-employee-user-link-local.js",
+    "docs/qa/manifests/hr-employee-association-selector-20261110-scope.json",
+    "docs/qa/manifests/hr-employee-association-selector-20261110-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/employeeUserLink.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-user-association.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/EmployeeUserAssociation.tsx"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-association-ui-20261104.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-link-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-employee-association-selector-20261110-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-employee-association-selector-20261110-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "employee_user_association",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    },
+    {
+      "name": "tenant_isolation_and_permissions",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    },
+    {
+      "name": "no_duplicate_employee",
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    }
+  ],
+  "traceability": "Reconstruct c7c96136 over current develop and preserve existing certification helpers."
+}
