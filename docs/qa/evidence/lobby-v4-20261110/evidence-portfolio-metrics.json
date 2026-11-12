@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-12T18:33:41.757Z",
+  "captured_at": "2026-11-12T19:14:36.597Z",
   "base": "http://127.0.0.1:3001",
   "views": [
     {
@@ -14,6 +14,7 @@
         "h": 44
       },
       "tileMedia": 0,
+      "assistantBubbles": 0,
       "tileCount": 11,
       "tileLabels": [
         "Inventario",
@@ -60,6 +61,7 @@
         "h": 44
       },
       "tileMedia": 0,
+      "assistantBubbles": 0,
       "tileCount": 11,
       "tileLabels": [
         "Inventario",
