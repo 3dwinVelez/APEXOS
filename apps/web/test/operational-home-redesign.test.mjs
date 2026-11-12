@@ -25,31 +25,31 @@ test("el hero lleva la frase de marca y no botones de arranque", () => {
   assert.doesNotMatch(source, /startHref/);
 });
 
-test("lobby V4 monta banner corporativo y tarjetas fotográficas por módulo", () => {
+test("lobby V4 monta el banner de red y tarjetas de icono por módulo", () => {
   const source = read("app/dashboard/page.tsx");
   const assets = read("lib/lobbyAssets.ts");
+  const css = read("app/globals.css");
   assert.match(source, /apex-lobby-hero/);
   assert.match(source, /LOBBY_BANNER/);
-  assert.match(source, /lobbyModuleImage\(module\.slug\)/);
-  assert.match(assets, /banner-truck\.webp/);
-  assert.match(assets, /module-inventario\.webp/);
-  assert.match(assets, /module-transporte\.webp/);
-  assert.match(read("app/globals.css"), /--lobby-accent: 8 205 187/);
+  assert.match(source, /loading="eager"/);
+  assert.match(source, /const Icon = module\.icon/);
+  assert.match(source, /apex-lobby-tile-glyph/);
+  assert.doesNotMatch(source, /lobbyModuleImage/);
+  assert.doesNotMatch(source, /apex-lobby-tile-media/);
+  assert.match(assets, /banner-network\.webp/);
+  assert.doesNotMatch(assets, /module-|banner-truck/);
+  assert.match(css, /--lobby-accent: 8 205 187/);
+  assert.match(css, /\.apex-lobby-tile-glyph \{/);
+  assert.doesNotMatch(css, /\.apex-lobby-tile-media/);
 });
 
-test("todos los módulos del catálogo tienen su fotografía en el lobby", () => {
-  const slugs = [...read("lib/modules.ts").matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
-  const assets = read("lib/lobbyAssets.ts");
-  const mapped = [...assets.matchAll(/^\s{2}"?([\w-]+)"?:\s*"([^"]+)"/gm)].map((match) => ({ slug: match[1], file: match[2] }));
+test("cada módulo del catálogo declara el icono que pinta su tarjeta", () => {
+  const catalog = read("lib/modules.ts");
+  const slugs = [...catalog.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
   assert.equal(slugs.length, 32);
-  const bySlug = Object.fromEntries(mapped.map((entry) => [entry.slug, entry.file]));
-  for (const slug of slugs) {
-    assert.ok(bySlug[slug], `módulo sin fotografía: ${slug}`);
-    const file = path.join(root, "public", bySlug[slug]);
-    assert.ok(fs.existsSync(file), `asset inexistente para ${slug}: ${bySlug[slug]}`);
-  }
-  const files = mapped.map((entry) => entry.file);
-  assert.equal(new Set(files).size, slugs.length, "cada módulo usa una fotografía propia");
+  assert.equal([...catalog.matchAll(/^\s{4}icon: [A-Z]\w+$/gm)].length, 32, "cada ficha declara un icono lucide");
+  const banner = path.join(root, "public", "/assets/lobby/banner-network.webp");
+  assert.ok(fs.existsSync(banner), "falta el banner del lobby");
 });
 
 

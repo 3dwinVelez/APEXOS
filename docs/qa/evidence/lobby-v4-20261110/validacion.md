@@ -8,6 +8,26 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase. La ca
 ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
 «aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
 
+## Ronda 13 (iconos de módulo y banner de red)
+
+- **El dueño señaló saturación en las imágenes.** «Las imágenes podrían estar generando una saturación
+  visual; propondría colocar unos iconos modernos atractivos y el banner cambiarlo por la imagen que te
+  envié». Las tarjetas de módulo pierden la franja fotográfica de 9 rem y pasan a una fila compacta con
+  el icono lucide que cada ficha ya declara (`module.icon`); el hero estrena la constelación turquesa
+  adjunta, convertida a WebP local de 852×480.
+- **Un solo asset nuevo, cero borrados.** `LOBBY_MODULE_IMAGES` y `lobbyModuleImage()` salen de
+  `lib/lobbyAssets.ts` porque ya no tienen consumidor, pero las 32 fotografías y `banner-truck.webp`
+  siguen en disco: revertir la ronda es un `git revert`, no una reconstrucción de assets.
+- **Defecto medido en el camino.** Con `priority` en la versión instalada de Next, el `<img>` del hero no
+  recibía atributo de carga y el navegador no pedía el banner: `complete: false`, `naturalWidth: 0` y el
+  hero quedaba como bloque plano. Se corrigió con `loading="eager"` explícito; la prueba lo fija y la
+  evidencia mide el banner ya cargado (`complete: true`, recurso de 665×375 px) en ambos temas; el
+  archivo origen es de 852×480 y la medición registra el recurso que entrega el optimizador.
+- **Medido, no afirmado.** Con sesión real: banner cargado en ambos temas, `glyphBox` de 44×44 px,
+  `tileMedia = 0`, 11 tiles, 11 enlaces de módulo, 0 retirados visibles, 0 candados y desbordamiento
+  horizontal 0. El buscador conserva el contrato de la ronda 12.
+- **Verificación.** Suite web **697/697**, `typecheck` limpio y ESLint sin errores (22 avisos previos).
+
 ## Ronda 12 (Contabilidad vuelve a la oferta)
 
 - **Corrección del dueño sobre el corte.** «Veo que estás eliminando visuales que no te pedí … has
@@ -289,6 +309,12 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
 | `apps/web/test/module-portfolio.test.mjs` | A — 6 pruebas del corte (fichas, pantallas con cinco excepciones de ruta heredada y una bloqueada, consumidores, 404, estados y funciones) |
 | `apps/web/test/command-palette-module-functions.test.mjs`, `apps/web/test/commercial-visit-selection.test.mjs` | M — contrato actualizado al filtro de portafolio, a `moduleHome`, a la exención de rutas de un retirado, a que PYG vuelve con Contabilidad y a que CxC deja de ofrecerse |
 | `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png` y `evidence-portfolio-metrics.json` | A — lobby y métricas del corte con sesión real |
+| `apps/web/lib/lobbyAssets.ts` | M — ronda 13: sale el mapa slug→fotografía; queda solo `LOBBY_BANNER = "/assets/lobby/banner-network.webp"` |
+| `apps/web/app/dashboard/page.tsx` | M — ronda 13: tarjeta compacta con `module.icon` en `.apex-lobby-tile-glyph`; banner con `loading="eager"` y esqueleto de 20 rem |
+| `apps/web/app/globals.css` | M — ronda 13: se retiran las reglas de tira fotográfica y entran tile flex, glyph claro/oscuro con hover y velo izquierdo del hero a 0,95/0,62 |
+| `apps/web/public/assets/lobby/banner-network.webp` | A — constelación turquesa del dueño en WebP 852×480 (39.840 bytes) |
+| `apps/web/test/operational-home-redesign.test.mjs` | M — ronda 13: afirma banner, carga eager, glyph, ausencia de tira fotográfica y las 32 fichas con icono |
+| `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png` y `evidence-portfolio-metrics.json` | M — ronda 13: recaptura con banner cargado, glyph 44×44 y `tileMedia = 0` |
 
 ## Validación ejecutada
 
@@ -333,12 +359,21 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
     devuelve 10 opciones y «pyg» una, mientras «tesoreria», «proyectos», «apex control», «apex ai»,
     «cuentas por cobrar» y «crm» siguen en 0; `/dashboard/contabilidad` y su monitor de facturas
     recibidas cargan, y las cuatro URLs de CxC siguen terminando en `/dashboard`.
+  - Ronda 13, mismas dos capturas y métricas regeneradas tras sustituir fotografías por iconos y el
+    banner: `banner.complete` verdadero con 665×375 px servidos en ambos temas, `.apex-lobby-tile-glyph`
+    de 44×44 px como primer glyph de cada tarjeta, `tileMedia = 0` (ninguna tira fotográfica), 11 tiles,
+    11 enlaces de barra, 0 retirados visibles, 0 candados y desbordamiento `0` en ambos temas. El primer
+    muestreo del hero salió plano porque el `<img>` no se solicitaba (`complete: false`,
+    `naturalWidth: 0`); la causa se midió en el DOM (sin atributo de carga con `priority` en esta versión
+    de Next) y se corrigió con `loading="eager"` antes de recapturar.
 - Rendimiento del fondo medido en el arnés (2 s de desplazamiento, escritorio): con y sin la capa,
   16,67 ms promedio, p95 16,8 ms, 0 cuadros sobre 33 ms, 0 layouts y 0 scripts; ninguna petición de
   red nueva.
 - El certificador de captura recorre la página para forzar el lazy-load y **falla** si alguna
-  imagen queda con `naturalWidth = 0`; las 33 imágenes (banner + 32 módulos) cargaron en todas
-  las capturas (359 px de ancho natural en escritorio, 390 px en móvil).
+  imagen queda con `naturalWidth = 0`. En las rondas con fotografía cargaban las 33 imágenes
+  (banner + 32 módulos, 359 px de ancho natural en escritorio y 390 px en móvil); desde la ronda 13
+  queda una sola petición de imagen —el banner de la constelación— y la medición exige que llegue
+  completa en ambos temas.
 - Certificadores de navegador contra el arnés aislado: **45/45** (ver ronda 5 y `cert-*.json`).
 - Sin lógica de negocio alterada: acceso por `loadModuleAccess(MODULES)`, saludo derivado del
   correo. Sin datos inventados ni módulos fuera de autorización.
@@ -346,17 +381,19 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
 ## Línea base vs después
 
 - Antes (ronda 1): panel secundario de actividad y 21 tarjetas con degradado genérico.
-- Después: módulos a ancho completo, 32 fotografías alusivas únicas, hero panorámico constante
-  (oscuro en ambos temas) con «Creamos sistemas a tu medida» y sin CTAs, barra superior con
-  ventanas emergentes V4 en lugar de desplegables, y un fondo ambiente corporativo compartido por
-  todas las pantallas y ventanas, con las superficies y el contenido intactos.
+- Después (ronda 13): módulos a ancho completo en tarjetas compactas con el icono lucide de su ficha,
+  hero con la constelación turquesa del dueño (oscuro en ambos temas) y «Creamos sistemas a tu medida»
+  sin CTAs, barra superior con ventanas emergentes V4 en lugar de desplegables, y un fondo ambiente
+  corporativo compartido por todas las pantallas y ventanas. Las 32 fotografías de módulo y el banner
+  del camión quedan en disco sin pintarse, para revertir la ronda sin reconstruir assets.
 
 ## Pendientes
 
 1. Aprobación del dueño de esta fase piloto antes de extender el Design System V4 al resto del panel.
 2. Capturas tomadas sobre dev server; repetir contra build de producción (`next build && next start`) cuando la fase se promueva.
-3. Las imágenes se generaron con dirección de arte única (sin licencias de terceros); si el dueño
-   prefiere fotografía real de la operación, se sustituyen los assets sin tocar código.
+3. Desde la ronda 13 las tarjetas pintan iconos del catálogo y el hero usa el banner del dueño; las
+   fotografías siguen en disco sin uso. Si se retoman, se reengancha `lobbyAssets.ts` sin tocar la
+   estructura de la tarjeta.
 4. Los seeds del backend (`SEED_MODULES` y el plan corona en
    `apps/api/src/modules/auth/service.js`) siguen habilitando `M-01…M-27` por decisión del dueño:
    el corte es de catálogo y no de suscripción, así que los 20 retirados siguen viajando en

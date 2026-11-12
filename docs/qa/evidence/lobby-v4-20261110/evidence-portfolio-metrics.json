@@ -1,9 +1,19 @@
 {
-  "captured_at": "2026-11-12T15:34:12.808Z",
+  "captured_at": "2026-11-12T18:33:41.757Z",
   "base": "http://127.0.0.1:3001",
   "views": [
     {
       "view": "portfolio-light",
+      "banner": {
+        "width": 665,
+        "height": 375,
+        "complete": true
+      },
+      "glyphBox": {
+        "w": 44,
+        "h": 44
+      },
+      "tileMedia": 0,
       "tileCount": 11,
       "tileLabels": [
         "Inventario",
@@ -40,6 +50,16 @@
     },
     {
       "view": "portfolio-dark",
+      "banner": {
+        "width": 665,
+        "height": 375,
+        "complete": true
+      },
+      "glyphBox": {
+        "w": 44,
+        "h": 44
+      },
+      "tileMedia": 0,
       "tileCount": 11,
       "tileLabels": [
         "Inventario",
