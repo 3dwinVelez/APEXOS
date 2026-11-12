@@ -36,7 +36,6 @@ const RETIRED = [
   "facturacion-electronica",
   "configuracion-inicial",
   "suscripciones",
-  "contabilidad",
   "tesoreria",
   "proyectos",
   "apex-control",
@@ -45,7 +44,7 @@ const RETIRED = [
 ];
 
 // Retirados que ya tenían pantalla operativa publicada: salen de la oferta, no del código.
-const RETIRED_WITH_LEGACY_ROUTE = ["facturacion", "contabilidad", "tesoreria", "proyectos", "apex-control", "apex-ai"];
+const RETIRED_WITH_LEGACY_ROUTE = ["facturacion", "tesoreria", "proyectos", "apex-control", "apex-ai"];
 
 // Retirados sin pantalla propia que se bloquean por completo: su raíz y sus subrutas vuelven al lobby.
 const RETIRED_BLOCKED = ["cxc"];
@@ -55,6 +54,7 @@ const VISIBLE = [
   "inventario",
   "compras",
   "ventas",
+  "contabilidad",
   "transporte",
   "talento-humano",
   "administracion",
@@ -64,14 +64,14 @@ const VISIBLE = [
   "comercio"
 ];
 
-test("el catálogo conserva 32 fichas y el portafolio publica 11", () => {
+test("el catálogo conserva 32 fichas y el portafolio publica 12", () => {
   const slugs = catalogSlugs();
   assert.equal(slugs.length, 32);
   assert.deepEqual(new Set(retiredSlugs()), new Set(RETIRED));
-  assert.equal(retiredSlugs().length, 21);
+  assert.equal(retiredSlugs().length, 20);
   const visible = slugs.filter((slug) => !retiredSlugs().includes(slug));
   assert.deepEqual(new Set(visible), new Set(VISIBLE));
-  assert.equal(visible.length, 11);
+  assert.equal(visible.length, 12);
 });
 
 test("todo módulo visible tiene pantalla propia y el retirado sin ruta deja de publicarse", () => {

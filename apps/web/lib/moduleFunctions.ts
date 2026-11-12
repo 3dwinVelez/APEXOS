@@ -34,8 +34,21 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-comercio-configuracion", label: "Configurar la vitrina del comercio", description: "Datos del negocio, redes, WhatsApp y campana de descuentos", href: "/dashboard/comercio/configuracion", module: "comercio", keywords: "configuracion vitrina publica codigo whatsapp instagram facebook campana descuento moneda comercio" },
   { id: "fn-comercio-promociones", label: "Gestionar promociones del comercio", description: "Campanas de descuento por categoria o producto y envio por WhatsApp", href: "/dashboard/comercio/promociones", module: "comercio", keywords: "promocion campana descuento mercadeo audiencia categoria producto whatsapp cliente comercio" },
 
-  // Contabilidad, Tesoreria, Facturacion y Cartera y CxC salieron de la oferta: sus rutas siguen
-  // publicadas, pero no se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
+  // Tesoreria, Facturacion y Cartera y CxC salieron de la oferta: sus rutas siguen publicadas,
+  // pero no se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
+
+  // Contabilidad
+  { id: "fn-contab-facturas-recibidas", label: "Recibir facturas electrónicas", description: "Monitor de facturas por correo: extracción XML/PDF, revisión y asignación", href: "/dashboard/contabilidad/facturas-recibidas", module: "contabilidad", keywords: "factura electronica recibida recibir correo imap zip xml pdf cufe asignar responsable revision dian proveedor monitor" },
+  { id: "fn-contab-saldos-iniciales", label: "Importar saldos iniciales", description: "Cargue de saldos contables de apertura", href: "/dashboard/contabilidad/importar-saldos-iniciales", module: "contabilidad", keywords: "saldo apertura inicial importar contabilidad" },
+  { id: "fn-contab-pyg", label: "Ver PYG por vehiculo", description: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto", href: "/dashboard/contabilidad/pyg", module: "contabilidad", keywords: "pyg estado resultados utilidad gastos vehiculo placa centro costo presupuesto cumplimiento rentabilidad" },
+  { id: "fn-contab-asientos", label: "Consultar asientos contables", description: "Revisa el registro contable y sus movimientos", href: "/dashboard/contabilidad/asientos", module: "contabilidad", keywords: "asiento contable libro diario comprobante registro movimiento" },
+  { id: "fn-contab-cxp", label: "Gestionar cuentas por pagar", description: "Obligaciones con proveedores y pagos", href: "/dashboard/contabilidad/cuentas-por-pagar", module: "contabilidad", keywords: "cuentas por pagar cxp proveedor obligacion pago cartera" },
+  { id: "fn-contab-estructura", label: "Configurar estructura contable", description: "Centros de costo, periodos y cierre", href: "/dashboard/contabilidad/estructura", module: "contabilidad", keywords: "estructura centro de costo periodo cierre configuracion" },
+  { id: "fn-contab-iva", label: "Gestionar IVA", description: "Maestro y control del impuesto sobre las ventas", href: "/dashboard/contabilidad/iva", module: "contabilidad", keywords: "iva impuesto declaracion ventas tributo" },
+  { id: "fn-contab-plan", label: "Ver plan de cuentas", description: "Catalogo contable de la empresa", href: "/dashboard/contabilidad/plan-cuentas", module: "contabilidad", keywords: "plan cuentas puc catalogo contable" },
+  { id: "fn-contab-reportes", label: "Ver balance de prueba", description: "Estados financieros y saldos por cuenta", href: "/dashboard/contabilidad/reportes", module: "contabilidad", keywords: "balance prueba estados financieros reporte contable libro mayor" },
+  { id: "fn-contab-retenciones", label: "Gestionar retenciones contables", description: "Retenciones practicadas y registradas", href: "/dashboard/contabilidad/retenciones", module: "contabilidad", keywords: "retencion retefuente reteiva impuesto" },
+  { id: "fn-contab-terceros", label: "Gestionar terceros contables", description: "Clientes, proveedores y su informacion fiscal", href: "/dashboard/contabilidad/terceros", module: "contabilidad", keywords: "tercero cliente proveedor nit informacion fiscal" },
 
   // Gastos Menores
   { id: "fn-gm-nuevo-gasto", label: "Registrar gasto menor", description: "Crear un comprobante de caja menor", href: "/dashboard/gastos-menores/gastos/nuevo", module: "gastos-menores", keywords: "nuevo gasto menor registrar comprobante" },

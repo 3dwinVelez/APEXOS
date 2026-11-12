@@ -1,14 +1,15 @@
 {
-  "captured_at": "2026-11-12T15:04:58.118Z",
+  "captured_at": "2026-11-12T15:34:12.808Z",
   "base": "http://127.0.0.1:3001",
   "views": [
     {
       "view": "portfolio-light",
-      "tileCount": 10,
+      "tileCount": 11,
       "tileLabels": [
         "Inventario",
         "Compras",
         "Ventas",
+        "Contabilidad",
         "Transporte",
         "Talento humano",
         "Administración APEX",
@@ -21,6 +22,7 @@
         "/dashboard/inventario",
         "/dashboard/compras",
         "/dashboard/ventas",
+        "/dashboard/contabilidad",
         "/dashboard/transporte",
         "/dashboard/talento-humano",
         "/dashboard/administracion",
@@ -31,18 +33,19 @@
       ],
       "retiredVisible": [],
       "retiredLabelsInSidebar": [],
-      "sidebarModuleLinks": 10,
+      "sidebarModuleLinks": 11,
       "sidebarLockedButtons": 0,
       "sidebarSearchPresent": true,
       "horizontalOverflow": 0
     },
     {
       "view": "portfolio-dark",
-      "tileCount": 10,
+      "tileCount": 11,
       "tileLabels": [
         "Inventario",
         "Compras",
         "Ventas",
+        "Contabilidad",
         "Transporte",
         "Talento humano",
         "Administración APEX",
@@ -55,6 +58,7 @@
         "/dashboard/inventario",
         "/dashboard/compras",
         "/dashboard/ventas",
+        "/dashboard/contabilidad",
         "/dashboard/transporte",
         "/dashboard/talento-humano",
         "/dashboard/administracion",
@@ -65,7 +69,7 @@
       ],
       "retiredVisible": [],
       "retiredLabelsInSidebar": [],
-      "sidebarModuleLinks": 10,
+      "sidebarModuleLinks": 11,
       "sidebarLockedButtons": 0,
       "sidebarSearchPresent": true,
       "horizontalOverflow": 0
@@ -85,9 +89,10 @@
       "empty": false
     },
     "presupuesto": {
-      "options": 1,
+      "options": 2,
       "labels": [
-        "Gestionar presupuestos comerciales"
+        "Gestionar presupuestos comerciales",
+        "Ver PYG por vehiculo"
       ],
       "empty": false
     },
@@ -111,9 +116,23 @@
       "labels": [],
       "empty": false
     },
+    "contabilidad": {
+      "options": 10,
+      "labels": [
+        "Contabilidad",
+        "Recibir facturas electrónicas",
+        "Importar saldos iniciales",
+        "Ver PYG por vehiculo",
+        "Consultar asientos contables",
+        "Gestionar cuentas por pagar"
+      ],
+      "empty": false
+    },
     "pyg": {
-      "options": 0,
-      "labels": [],
+      "options": 1,
+      "labels": [
+        "Ver PYG por vehiculo"
+      ],
       "empty": false
     },
     "cuentas por cobrar": {
@@ -137,8 +156,8 @@
   "probes": {
     "retired-punto-de-venta": {
       "finalPath": "/dashboard/punto-de-venta",
-      "text": "Saltar al contenido principal Página cargada: punto de venta APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion ac",
-      "notFound": false,
+      "text": "Saltar al contenido principal Página cargada: punto de venta 404 This page could not be found.",
+      "notFound": true,
       "denied": false
     },
     "retired-configuracion-inicial": {
@@ -149,97 +168,97 @@
     },
     "retired-with-route-facturacion": {
       "finalPath": "/dashboard/facturacion",
-      "text": "Saltar al contenido principal Página cargada: facturacion APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activ",
+      "text": "Saltar al contenido principal Página cargada: facturacion APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Ses",
       "notFound": false,
       "denied": false
     },
-    "retired-with-route-contabilidad": {
+    "visible-contabilidad": {
       "finalPath": "/dashboard/contabilidad",
-      "text": "Saltar al contenido principal Página cargada: contabilidad APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion acti",
+      "text": "Saltar al contenido principal Página cargada: contabilidad APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Se",
       "notFound": false,
       "denied": false
     },
-    "retired-with-route-contabilidad-facturas": {
+    "visible-contabilidad-facturas": {
       "finalPath": "/dashboard/contabilidad/facturas-recibidas",
-      "text": "Saltar al contenido principal Página cargada: contabilidad · facturas recibidas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - A",
+      "text": "Saltar al contenido principal Página cargada: contabilidad · facturas recibidas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo",
       "notFound": false,
       "denied": false
     },
     "retired-with-route-tesoreria": {
       "finalPath": "/dashboard/tesoreria",
-      "text": "Saltar al contenido principal Página cargada: tesoreria APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "text": "Saltar al contenido principal Página cargada: tesoreria APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
       "notFound": false,
       "denied": false
     },
     "retired-with-route-proyectos": {
       "finalPath": "/dashboard/proyectos",
-      "text": "Saltar al contenido principal Página cargada: proyectos APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "text": "Saltar al contenido principal Página cargada: proyectos APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
       "notFound": false,
       "denied": false
     },
     "retired-with-route-apex-control": {
       "finalPath": "/dashboard/apex-control",
-      "text": "Saltar al contenido principal Página cargada: apex control APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion acti",
+      "text": "Saltar al contenido principal Página cargada: apex control APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Se",
       "notFound": false,
       "denied": false
     },
     "retired-with-route-apex-ai": {
       "finalPath": "/dashboard/apex-ai",
-      "text": "Saltar al contenido principal Página cargada: apex ai APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa Mi",
+      "text": "Saltar al contenido principal Página cargada: apex ai APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion ",
       "notFound": false,
       "denied": false
     },
     "blocked-root-cxc": {
       "finalPath": "/dashboard",
-      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
       "notFound": false,
       "denied": false
     },
     "blocked-subroute-cxc-documentos": {
       "finalPath": "/dashboard",
-      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
       "notFound": false,
       "denied": false
     },
     "blocked-subroute-cxc-retenciones": {
       "finalPath": "/dashboard",
-      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
       "notFound": false,
       "denied": false
     },
     "blocked-subroute-cxc-estado-cuenta": {
       "finalPath": "/dashboard",
-      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
       "notFound": false,
       "denied": false
     },
     "visible-compras": {
       "finalPath": "/dashboard/compras",
-      "text": "Saltar al contenido principal Página cargada: compras APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa Mi",
+      "text": "Saltar al contenido principal Página cargada: compras APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion ",
       "notFound": false,
       "denied": false
     },
     "visible-comercio": {
       "finalPath": "/dashboard/comercio",
-      "text": "Saltar al contenido principal Página cargada: comercio APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa M",
+      "text": "Saltar al contenido principal Página cargada: comercio APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion",
       "notFound": false,
       "denied": false
     },
     "visible-inventario": {
       "finalPath": "/dashboard/inventario",
-      "text": "Saltar al contenido principal Página cargada: inventario APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa",
+      "text": "Saltar al contenido principal Página cargada: inventario APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesi",
       "notFound": false,
       "denied": false
     },
     "visible-ventas": {
       "finalPath": "/dashboard/ventas",
-      "text": "Saltar al contenido principal Página cargada: ventas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa Mi ",
+      "text": "Saltar al contenido principal Página cargada: ventas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion a",
       "notFound": false,
       "denied": false
     },
     "visible-traslado-mallas": {
       "finalPath": "/dashboard/talento-humano/rutas",
-      "text": "Saltar al contenido principal Página cargada: talento humano · rutas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN S",
+      "text": "Saltar al contenido principal Página cargada: talento humano · rutas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APE",
       "notFound": false,
       "denied": false
     }

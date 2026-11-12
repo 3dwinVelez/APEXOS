@@ -8,6 +8,28 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase. La ca
 ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
 «aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
 
+## Ronda 12 (Contabilidad vuelve a la oferta)
+
+- **Corrección del dueño sobre el corte.** «Veo que estás eliminando visuales que no te pedí … has
+  eliminado de la visual el módulo de Contabilidad sin autorización». El slug `contabilidad` sale de
+  `RETIRED_MODULE_SLUGS` y sus **11 funciones vuelven** al centro de comandos; el portafolio queda en
+  **12 visibles / 20 retirados** sobre 32 fichas. La ficha, sus pantallas y sus assets nunca se
+  borraron, así que la reversión fue quitar el slug del set.
+- **Sin tocar lo que sí se pidió.** Tesorería, Proyectos, APEX Control, APEX AI Core, Facturación y
+  Cartera y CxC siguen retirados, y CxC conserva la guardia que redirige al lobby. La tarjeta y el
+  enlace «Cuentas por cobrar» de Contabilidad siguen fuera: su destino es una ruta bloqueada, y
+  restaurarlos devolvería al usuario al lobby desde una acción anunciada.
+- **Medido, no afirmado.** Con sesión real: **11 tiles** en el lobby (12 publicados menos Gastos
+  Menores, sin derecho en el tenant demo), 11 enlaces de módulo en la barra, 0 slugs retirados en
+  tiles o barra, 0 candados y desbordamiento horizontal 0 en ambos temas. En el buscador
+  «contabilidad» devuelve **10 opciones** (ficha, facturas electrónicas, saldos iniciales, PYG,
+  asientos, cuentas por pagar…) y «pyg» devuelve «Ver PYG por vehiculo»; «tesoreria», «proyectos»,
+  «apex control», «apex ai», «cuentas por cobrar» y «crm» siguen en 0.
+- **Rutas.** `/dashboard/contabilidad` y `/dashboard/contabilidad/facturas-recibidas` cargan su
+  pantalla real; las cuatro URLs de CxC siguen terminando en `/dashboard`.
+- **Verificación.** Suite web **697/697**, `module-portfolio.test.mjs` **6/6** (32 fichas / 12
+  visibles / 20 retirados), `typecheck` limpio y ESLint sin errores.
+
 ## Ronda 11 (Cartera y CxC se bloquea con redirección)
 
 - **El dueño pidió cerrar el acceso, no solo la oferta.** «Bloquear las rutas de CxC con redirección»: la raíz `/dashboard/cxc` y sus cuatro subrutas vuelven al lobby con `redirect("/dashboard")`. Las pantallas permanecen en el repositorio detrás de la guardia para cuando el módulo vuelva, pero ya no se renderizan.
@@ -260,12 +282,12 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
 | `apps/web/app/globals.css` | M — ronda 9: `.apex-lobby-eyebrow` como cápsula que abraza su contenido, con avatar, copia, nombre y empresa por nivel tipográfico |
 | `apps/web/test/lobby-greeting.test.mjs` | A — 2 pruebas de contrato: estructura del saludo con avatar y nombre, y escala tipográfica sin desbordar el chip |
 | `docs/qa/evidence/lobby-v4-20261110/evidence-greeting-*.png` y `evidence-greeting-metrics.json` | A — cuatro capturas del hero (escritorio/móvil, claro/oscuro) con métricas medidas |
-| `apps/web/lib/modules.ts` | M — ronda 10: `RETIRED_MODULE_SLUGS`, helpers y listas del portafolio (11 visibles / 21 retirados); estados corregidos en Ventas, Facturación, Tesorería, Transporte y Talento humano |
+| `apps/web/lib/modules.ts` | M — ronda 10: `RETIRED_MODULE_SLUGS`, helpers y listas del portafolio (12 visibles / 20 retirados tras la ronda 12); estados corregidos en Ventas, Facturación, Tesorería, Transporte y Talento humano |
 | `apps/web/app/dashboard/page.tsx`, `apps/web/components/shell/Sidebar.tsx` | M — filtran por `PORTFOLIO_MODULES` y enlazan con `moduleHome`; los retirados dejan de pintarse |
 | `apps/web/components/system/CommandPalette.tsx`, `apps/web/app/dashboard/[module]/page.tsx` | M — el buscador exige portafolio y la ficha genérica de un retirado responde 404 |
-| `apps/web/lib/moduleFunctions.ts`, `apps/web/lib/operationalWorkspace.ts` | M — salen 17 entradas de oferta (2 de Facturación, 11 de Contabilidad, 1 de Tesorería y 3 de CxC); sus rutas siguen operativas |
-| `apps/web/test/module-portfolio.test.mjs` | A — 6 pruebas del corte (fichas, pantallas con seis excepciones de ruta heredada y una de subrutas, consumidores, 404, estados y funciones) |
-| `apps/web/test/command-palette-module-functions.test.mjs`, `apps/web/test/commercial-visit-selection.test.mjs` | M — contrato actualizado al filtro de portafolio, a `moduleHome`, a la exención de rutas de un retirado y a que PYG y CxC dejan de ofrecerse |
+| `apps/web/lib/moduleFunctions.ts`, `apps/web/lib/operationalWorkspace.ts` | M — salen 6 entradas de oferta (2 de Facturación, 1 de Tesorería y 3 de CxC) y vuelven las 11 de Contabilidad en la ronda 12; sus rutas siguen operativas |
+| `apps/web/test/module-portfolio.test.mjs` | A — 6 pruebas del corte (fichas, pantallas con cinco excepciones de ruta heredada y una bloqueada, consumidores, 404, estados y funciones) |
+| `apps/web/test/command-palette-module-functions.test.mjs`, `apps/web/test/commercial-visit-selection.test.mjs` | M — contrato actualizado al filtro de portafolio, a `moduleHome`, a la exención de rutas de un retirado, a que PYG vuelve con Contabilidad y a que CxC deja de ofrecerse |
 | `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png` y `evidence-portfolio-metrics.json` | A — lobby y métricas del corte con sesión real |
 
 ## Validación ejecutada
@@ -305,6 +327,12 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
     `/dashboard/contabilidad/facturas-recibidas`; las cuatro URLs de Cartera y CxC —`/dashboard/cxc`,
     `/documentos`, `/retenciones` y `/clientes/1/estado-cuenta`— terminan en `/dashboard` por la
     guardia de la ronda 11. Compras, Comercio, Inventario, Ventas y mallas abren pantallas reales.
+  - Ronda 12, mismas dos capturas y métricas regeneradas tras devolver Contabilidad: **11 tarjetas**
+    (12 publicadas menos Gastos Menores), 11 enlaces de módulo, `retiredVisible` y
+    `retiredLabelsInSidebar` vacíos, 0 candados y desbordamiento `0` en ambos temas; «contabilidad»
+    devuelve 10 opciones y «pyg» una, mientras «tesoreria», «proyectos», «apex control», «apex ai»,
+    «cuentas por cobrar» y «crm» siguen en 0; `/dashboard/contabilidad` y su monitor de facturas
+    recibidas cargan, y las cuatro URLs de CxC siguen terminando en `/dashboard`.
 - Rendimiento del fondo medido en el arnés (2 s de desplazamiento, escritorio): con y sin la capa,
   16,67 ms promedio, p95 16,8 ms, 0 cuadros sobre 33 ms, 0 layouts y 0 scripts; ninguna petición de
   red nueva.
@@ -331,11 +359,11 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
    prefiere fotografía real de la operación, se sustituyen los assets sin tocar código.
 4. Los seeds del backend (`SEED_MODULES` y el plan corona en
    `apps/api/src/modules/auth/service.js`) siguen habilitando `M-01…M-27` por decisión del dueño:
-   el corte es de catálogo y no de suscripción, así que los 21 retirados siguen viajando en
+   el corte es de catálogo y no de suscripción, así que los 20 retirados siguen viajando en
    `active_modules` aunque ninguna superficie los ofrezca. Alinearlos es una ronda de backend aparte.
-   Los seis retirados con ruta raíz publicada (Facturación, Contabilidad, Tesorería, Proyectos,
-   APEX Control y APEX AI Core) las conservan accesibles por URL directa; el monitor de Facturas
-   recibidas es el caso más visible de esa asimetría entre oferta y código. Cartera y CxC ya no
+   Los cinco retirados con ruta raíz publicada (Facturación, Tesorería, Proyectos, APEX Control y
+   APEX AI Core) las conservan accesibles por URL directa; el monitor de Facturas recibidas ya no es
+   una asimetría desde la ronda 12, porque vuelve a anunciarse con Contabilidad. Cartera y CxC ya no
    presenta asimetría: su raíz y sus subrutas redirigen al lobby desde la ronda 11.
 
 ## Reproducir
