@@ -102,7 +102,7 @@ test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => 
   assert.match(paletteSource, /moduleHome\(/);
   assert.match(paletteSource, /const taken = new Set\(\[\.\.\.actions, \.\.\.functions\]\.map\(\(item\) => item\.href\)\)/);
   assert.match(paletteSource, /MODULES\.filter\(\(module\) => isPortfolioModule\(module\) && enabled\(module\.slug\) && !taken\.has\(moduleHome\(module\.slug\)\)\)/);
-  assert.match(functionsSource, /cxc: "\/dashboard\/cxc\/documentos"/);
+  assert.doesNotMatch(functionsSource, /\/dashboard\/cxc/);
 });
 
 test("la busqueda ignora acentos y prioriza coincidencias de etiqueta", () => {

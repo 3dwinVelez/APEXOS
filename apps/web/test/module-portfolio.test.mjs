@@ -47,8 +47,8 @@ const RETIRED = [
 // Retirados que ya tenían pantalla operativa publicada: salen de la oferta, no del código.
 const RETIRED_WITH_LEGACY_ROUTE = ["facturacion", "contabilidad", "tesoreria", "proyectos", "apex-control", "apex-ai"];
 
-// Retirados sin página raíz cuyas subrutas operativas siguen publicadas (CxC nunca tuvo ficha propia).
-const RETIRED_WITH_LEGACY_SUBROUTES = ["cxc"];
+// Retirados sin pantalla propia que se bloquean por completo: su raíz y sus subrutas vuelven al lobby.
+const RETIRED_BLOCKED = ["cxc"];
 
 const VISIBLE = [
   "reportes",
@@ -84,7 +84,7 @@ test("todo módulo visible tiene pantalla propia y el retirado sin ruta deja de 
   for (const slug of VISIBLE) {
     assert.ok(pagesIn(slug).length >= 1, `módulo visible sin pantalla: ${slug}`);
   }
-  const declared = [...RETIRED_WITH_LEGACY_ROUTE, ...RETIRED_WITH_LEGACY_SUBROUTES];
+  const declared = [...RETIRED_WITH_LEGACY_ROUTE, ...RETIRED_BLOCKED];
   for (const slug of RETIRED.filter((item) => !declared.includes(item))) {
     assert.equal(pagesIn(slug).length, 0, `módulo retirado con pantalla operativa: ${slug}`);
   }
@@ -92,10 +92,11 @@ test("todo módulo visible tiene pantalla propia y el retirado sin ruta deja de 
     assert.ok(VISIBLE.includes(slug) === false, `${slug} no puede estar en el portafolio`);
     assert.ok(fs.existsSync(path.join(root, "app/dashboard", slug, "page.tsx")), `${slug} conserva su pantalla operativa`);
   }
-  for (const slug of RETIRED_WITH_LEGACY_SUBROUTES) {
+  for (const slug of RETIRED_BLOCKED) {
     assert.ok(VISIBLE.includes(slug) === false, `${slug} no puede estar en el portafolio`);
-    assert.ok(!fs.existsSync(path.join(root, "app/dashboard", slug, "page.tsx")), `${slug} no tiene ficha raíz`);
-    assert.ok(pagesIn(slug).length >= 1, `${slug} conserva sus subrutas operativas`);
+    assert.match(read(`app/dashboard/${slug}/layout.tsx`), /redirect\("\/dashboard"\)/, `${slug} no guarda sus subrutas`);
+    assert.match(read(`app/dashboard/${slug}/page.tsx`), /redirect\("\/dashboard"\)/, `${slug} no redirige su raíz`);
+    assert.doesNotMatch(read("lib/moduleFunctions.ts"), new RegExp(`/dashboard/${slug}`), `${slug} sigue teniendo destino en la oferta`);
   }
 });
 

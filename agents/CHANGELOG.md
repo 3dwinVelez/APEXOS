@@ -4,6 +4,14 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-12
 
+### Cartera y CxC se bloquea con redirección al lobby (`curaduria-portafolio-bloqueo-20261112`)
+
+- **Pedido directo del dueño.** «Bloquear las rutas de CxC con redirección», después del retiro de oferta del mismo día. La raíz `/dashboard/cxc` y sus cuatro subrutas vuelven a `/dashboard` con `redirect("/dashboard")`; el portafolio sigue en **11 visibles / 21 retirados**.
+- **Guardia en el layout, no en cada pantalla.** Las cuatro vistas de CxC son componentes cliente y no pueden redirigir por sí mismas: `app/dashboard/cxc/layout.tsx` corta cualquier subruta actual o futura y `app/dashboard/cxc/page.tsx` cubre la raíz, que antes caía en la ficha genérica con 404. Las pantallas se conservan detrás de la guardia para cuando el módulo vuelva.
+- **Sin destinos vivos.** Salen la tarjeta «Cuentas por cobrar» de `/dashboard/contabilidad` y la entrada de `contabilidad-nav`, y se elimina el override `moduleHome("cxc")`: `moduleHome` vuelve a ser `/dashboard/<slug>` y la prueba impide que la oferta nombre `/dashboard/cxc`.
+- **Medido, no afirmado.** Suite web **697/697** (`module-portfolio.test.mjs` 6/6 con la guardia asertada), `tsc --noEmit` limpio y ESLint sin errores. Evidencia recapturada con sesión real: las cuatro URLs de CxC terminan en `/dashboard`; 10 tiles, 10 enlaces, 0 candados, «cuentas por cobrar» → 0 opciones y desbordamiento horizontal 0 en ambos temas; las seis rutas heredadas de los otros retirados siguen cargando.
+- Agentes: `apexos-frontend` 2.23.3 → 2.23.4 (control 38.j: el bloqueo es una guardia de layout con la raíz cubierta y sin destinos que apunten a la ruta cerrada), `apexos-qa` 2.52.2 → 2.52.3 (control 64.i: un bloqueo se certifica por la URL final con navegador, no por el código de la primera respuesta), `equipo-apexos` 2.30.2 → 2.30.3 (control 42.i: cerrar el acceso se despacha como guardia y limpieza, conservando las pantallas), `apexos-brief` 2.43.2 → 2.43.3 (regla 55: la excepción de subrutas se reescribe como guardia y se recaptura la evidencia que afirmaba lo contrario).
+
 ### Cartera y CxC sale de la oferta: 11 visibles y 21 retirados (`curaduria-portafolio-11-20261112`)
 
 - **Pedido directo del dueño.** «Cartera y cxc también debemos ocultarlo aún no tiene funcionalidad». `cxc` entra a `RETIRED_MODULE_SLUGS`: el portafolio queda en **11 visibles / 21 retirados** sobre 32 fichas, sin borrar ficha ni asset.

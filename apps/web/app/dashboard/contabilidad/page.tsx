@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Building2, FilePlus2, Inbox, Landmark, ReceiptText, Users, WalletCards, Upload } from "lucide-react";
+import { BarChart3, BookOpen, Building2, FilePlus2, Inbox, ReceiptText, Users, WalletCards, Upload } from "lucide-react";
 import { ActionCard } from "@/components/ui/ActionCard";
 
 const actions = [
@@ -7,7 +7,6 @@ const actions = [
   { href: "/dashboard/contabilidad/facturas-recibidas", title: "Facturas recibidas", detail: "Recibe, revisa, visualiza y asigna facturas electrónicas por correo.", icon: Inbox },
   { href: "/dashboard/contabilidad/plan-cuentas", title: "Plan de cuentas", detail: "Administrar cuentas PUCC y su naturaleza.", icon: BookOpen },
   { href: "/dashboard/contabilidad/cuentas-por-pagar", title: "Cuentas por pagar", detail: "Registrar obligaciones, notas y vencimientos de proveedores.", icon: WalletCards },
-  { href: "/dashboard/cxc/documentos", title: "Cuentas por cobrar", detail: "Consultar documentos, saldos y cartera de clientes.", icon: Landmark },
   { href: "/dashboard/contabilidad/terceros", title: "Terceros", detail: "Gestionar identificación, roles y datos fiscales.", icon: Users },
   { href: "/dashboard/contabilidad/iva", title: "IVA", detail: "Configurar tarifas activas para compras y ventas.", icon: ReceiptText },
   { href: "/dashboard/contabilidad/retenciones", title: "Retenciones", detail: "Administrar conceptos, bases y cuentas asociadas.", icon: ReceiptText },

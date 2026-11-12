@@ -10,7 +10,6 @@ const ITEMS = [
   { href: "/dashboard/contabilidad/importar-saldos-iniciales", label: "Saldos iniciales" },
   { href: "/dashboard/contabilidad/facturas-recibidas", label: "Facturas recibidas" },
   { href: "/dashboard/contabilidad/cuentas-por-pagar", label: "Cuentas por pagar" },
-  { href: "/dashboard/cxc/documentos", label: "Cuentas por cobrar" },
   { href: "/dashboard/tesoreria", label: "Tesorería" },
   { href: "/dashboard/contabilidad/terceros", label: "Terceros" },
   { href: "/dashboard/contabilidad/iva", label: "IVA" },
