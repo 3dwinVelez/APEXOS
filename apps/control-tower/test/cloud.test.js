@@ -2,7 +2,28 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const path = require("node:path");
 const { cloudForEnvironment, railwayStatus, vercelStatus, supabaseStatus, deploymentStatus } = require("../lib/cloud");
+const { railwaySessionToken, resolveRailwayToken, sessionFile } = require("../lib/railway-session");
+
+const SESSION_HOME = "C:/puesto";
+const SESSION_FILE = "C:/puesto/.railway/config.json";
+
+// El almacen del CLI se simula aqui: la prueba no depende de que el operador tenga
+// o no sesion de Railway en su maquina.
+function fakeFs(files) {
+  return {
+    readFileSync(file) {
+      const key = String(file).replace(/\\/g, "/");
+      if (key in files) return files[key];
+      throw Object.assign(new Error(`ENOENT: ${key}`), { code: "ENOENT" });
+    }
+  };
+}
+
+function sessionFs(token) {
+  return fakeFs({ [SESSION_FILE]: JSON.stringify({ user: { accessToken: token } }) });
+}
 
 function response(status, body) {
   return {
@@ -343,4 +364,69 @@ test("cloudForEnvironment sin credenciales no hace red", async () => {
   assert.equal(cloud.railway.configured, false);
   assert.equal(cloud.vercel.configured, false);
   assert.equal(cloud.supabase.configured, false);
+});
+
+test("la sesión del CLI de Railway se lee de su almacén y RAILWAY_CONFIG_DIR la redirige", () => {
+  assert.equal(railwaySessionToken({ homeDir: SESSION_HOME, fsImpl: sessionFs("cli-token-de-prueba") }), "cli-token-de-prueba");
+  assert.equal(sessionFile({}, SESSION_HOME), path.join(SESSION_HOME, ".railway", "config.json"));
+  assert.equal(sessionFile({ RAILWAY_CONFIG_DIR: "D:/otro-sitio" }, SESSION_HOME), path.join("D:/otro-sitio", "config.json"));
+});
+
+test("una sesión ausente, ilegible o vacía no produce token ni rompe la sonda", () => {
+  assert.equal(railwaySessionToken({ homeDir: SESSION_HOME, fsImpl: fakeFs({}) }), "");
+  assert.equal(railwaySessionToken({ homeDir: SESSION_HOME, fsImpl: fakeFs({ [SESSION_FILE]: "{ token roto" }) }), "");
+  assert.equal(railwaySessionToken({ homeDir: SESSION_HOME, fsImpl: sessionFs("   ") }), "");
+  assert.equal(railwaySessionToken({ homeDir: SESSION_HOME, fsImpl: fakeFs({ [SESSION_FILE]: JSON.stringify({ user: null }) }) }), "");
+});
+
+test("resolveRailwayToken: la variable manda y la sesión sólo se lee si el puesto la encendió", () => {
+  const options = { homeDir: SESSION_HOME, fsImpl: sessionFs("cli-token-de-prueba") };
+  assert.deepEqual(
+    resolveRailwayToken({ token: " variable-token ", sessionEnabled: true }, options),
+    { token: "variable-token", source: "variable RAILWAY_TOKEN" }
+  );
+  assert.deepEqual(
+    resolveRailwayToken({ token: "", sessionEnabled: true }, options),
+    { token: "cli-token-de-prueba", source: "sesión del CLI de Railway" }
+  );
+  assert.deepEqual(resolveRailwayToken({ token: "", sessionEnabled: false }, options), { token: "", source: "" });
+  // Un config armado a mano (arnés aislado) no lee el almacén del operador.
+  assert.deepEqual(resolveRailwayToken({ token: "" }, options), { token: "", source: "" });
+});
+
+test("cloudForEnvironment mide Railway con la sesión del CLI y no la publica", async () => {
+  const seen = [];
+  const fetchImpl = async (url, options) => {
+    seen.push({ url: String(url), auth: options && options.headers ? options.headers.authorization : null });
+    if (String(url).includes("/graphql")) {
+      const body = JSON.parse(options.body);
+      if (body.query.includes("Project")) {
+        return response(200, { data: { project: { id: "proj", name: "APEXOS QA", services: { edges: [] }, environments: { edges: [{ node: { id: "e", name: "production" } }] } } } });
+      }
+      return response(200, { data: { deployments: { edges: [{ node: { id: "d", status: "SUCCESS", createdAt: "2026-11-12T11:00:00.000Z" } }] } } });
+    }
+    return response(404, "no esperado");
+  };
+  const config = {
+    cloud: {
+      timeoutMs: 2000,
+      railway: { token: "", sessionEnabled: true, apiUrl: "https://railway.test/graphql" },
+      vercel: { token: "", sessionEnabled: true, apiUrl: "https://vercel.test" },
+      supabase: { accessToken: "", apiUrl: "https://supabase.test" }
+    }
+  };
+  const cloud = await cloudForEnvironment(
+    config,
+    { id: "develop", railwayProjectId: "proj", vercelProjectId: "", supabaseRef: "" },
+    { fetchImpl, homeDir: SESSION_HOME, fsImpl: sessionFs("secreto-del-cli") }
+  );
+  assert.equal(cloud.railway.configured, true);
+  assert.equal(cloud.railway.status, "ok");
+  assert.equal(cloud.railway.credentialSource, "sesión del CLI de Railway");
+  assert.equal(seen.length, 2, "proyecto y deployments: la sesión habilita la llamada real");
+  assert.equal(seen[0].auth, "Bearer secreto-del-cli");
+  assert.equal(cloud.vercel.applies, false);
+  assert.equal(cloud.supabase.applies, false);
+  assert.match(cloud.vercel.detail, /topología/);
+  assert.doesNotMatch(JSON.stringify(cloud), /secreto-del-cli/, "la tarjeta publicada no arrastra el token");
 });

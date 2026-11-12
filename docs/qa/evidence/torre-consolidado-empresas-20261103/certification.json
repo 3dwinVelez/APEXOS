@@ -3,21 +3,23 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-12T14:11:40.409Z",
-  "started_at": "2026-11-12T14:11:27.896Z",
-  "commit": "7fd3f2c2c2e8fb17f54aa0a25ad26365293103bb",
+  "generated_at": "2026-11-12T15:01:03.887Z",
+  "started_at": "2026-11-12T15:00:37.117Z",
+  "commit": "34bf117bfad6a03d0ce024c96a6cfe5d20720c8a",
   "working_tree_dirty": true,
   "alcance": [
     "siete vistas-pregunta del panel (resumen, latencia, api, modulos, datos, nube, operacion) con sus medidores y umbrales publicados por el servidor",
     "monitor consolidado por empresa (empresas, carga, actividad, memoria, uso del API, rendimiento)",
     "selector de empresa y panel por empresa con acciones sugeridas",
     "componentes de /apex-control/status con latencia medida y 'sin medicion' cuando el servidor no la publica",
+    "puntos de medicion de la nube: sesion del CLI de Railway adoptada en el sondeo, viaje medido, y 'no aplica' para un proveedor fuera de la topologia del ambiente",
     "/health del API con runtime agregado (uptime, memoria, uso) y su normalizacion en la torre",
     "motor de acciones sugeridas por ambiente y por empresa",
     "ambientes bloqueados por build sin apex-control: bloqueo explicado con accion y responsable"
   ],
   "no_certifica": [
     "datos reales por empresa en QA y PROD: sus builds desplegados no incluyen apex-control",
+    "la nube real de los proveedores: el viaje se certifica contra un ferrocarril local y una sesion de marcador, sin salir a internet",
     "promocion a develop o main",
     "despliegue en Railway"
   ],
@@ -25,7 +27,7 @@
     "type": "local",
     "node": "v22.23.1",
     "chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "modo": "torre real contra API rica (con runtime) y API legada (sin apex-control)",
+    "modo": "torre real contra API rica (con runtime) y API legada (sin apex-control), mas ferrocarril local con sesion del CLI en almacen propio",
     "tokens": "roles locales de certificacion, nunca credenciales reales"
   },
   "checks": [
@@ -40,14 +42,21 @@
       "name": "api_rica_sondeada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:58022"
+        "base": "http://127.0.0.1:50880"
       }
     },
     {
       "name": "api_legada_bloqueada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:58023"
+        "base": "http://127.0.0.1:50881"
+      }
+    },
+    {
+      "name": "ferrocarril_falso_sondeable",
+      "ok": true,
+      "detail": {
+        "base": "http://127.0.0.1:50882/graphql/v2"
       }
     },
     {
@@ -63,7 +72,7 @@
       "name": "torre_iniciada",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:58025"
+        "url": "http://127.0.0.1:50884"
       }
     },
     {
@@ -127,14 +136,14 @@
       "name": "acciones_develop",
       "ok": true,
       "detail": {
-        "count": 4
+        "count": 1
       }
     },
     {
       "name": "acciones_main",
       "ok": true,
       "detail": {
-        "count": 4
+        "count": 1
       }
     },
     {
@@ -246,7 +255,7 @@
       "name": "snapshot_no_filtra_el_token_de_la_torre",
       "ok": true,
       "detail": {
-        "tamano": 226617
+        "tamano": 223364
       }
     },
     {
@@ -257,6 +266,94 @@
           "snapshot-ambientes.json",
           "empresa-tenant-demo.json"
         ]
+      }
+    },
+    {
+      "name": "nube_sesion_del_cli_adoptada",
+      "ok": true,
+      "detail": {
+        "fuente": "sesión del CLI de Railway",
+        "configured": true
+      }
+    },
+    {
+      "name": "nube_sonda_viaja_con_la_sesion",
+      "ok": true,
+      "detail": {
+        "llamadas": 2,
+        "autorizacion": "Bearer sesio"
+      }
+    },
+    {
+      "name": "nube_railway_medido_con_viaje",
+      "ok": true,
+      "detail": {
+        "latenciaMs": 82,
+        "estado": "ok",
+        "detalle": "Último deployment SUCCESS en production · 2026-11-12T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "nube_proveedor_sin_topologia_no_pide_token",
+      "ok": true,
+      "detail": {
+        "vercel": "false/not_applicable",
+        "supabase": "false/not_applicable",
+        "acciones": [
+          "MODULO_NO_DESPLEGADO"
+        ]
+      }
+    },
+    {
+      "name": "nube_ambiente_sin_proyecto_no_inventa",
+      "ok": true,
+      "detail": {
+        "railway": {
+          "aplica": false,
+          "latenciaMs": null
+        }
+      }
+    },
+    {
+      "name": "nube_local_no_pide_credenciales_cloud",
+      "ok": true,
+      "detail": {
+        "tarjetas": [
+          "railway:not_applicable",
+          "vercel:not_applicable",
+          "supabase:not_applicable"
+        ],
+        "acciones": [
+          "CREDENCIAL_SIN_CONEXION",
+          "MODULO_CAIDO",
+          "MODULO_ATENCION"
+        ]
+      }
+    },
+    {
+      "name": "nube_no_publica_la_sesion_del_puesto",
+      "ok": true,
+      "detail": {
+        "tamano": 223364
+      }
+    },
+    {
+      "name": "nube_ids_reales_cableados_en_el_config",
+      "ok": true,
+      "detail": {
+        "qa": "33726923-021d-47a7-a263-b8b287f164f1",
+        "prod": "0afe38cc-6080-49d2-aa24-2d5625250ac2",
+        "local": ""
+      }
+    },
+    {
+      "name": "evidencia_nube",
+      "ok": true,
+      "detail": {
+        "archivos": [
+          "nube-certificada.json"
+        ],
+        "llamadas_ferrocarril": 2
       }
     },
     {
@@ -331,7 +428,7 @@
         "filas": 4,
         "graficas": 4,
         "sinUmbral": 0,
-        "meta": "3 de 3 módulos dibujados · 2 sondeos · 12/11, 09:11:28 → 12/11, 09:11:33",
+        "meta": "3 de 3 módulos dibujados · 2 sondeos · 12/11, 10:00:38 → 12/11, 10:00:45",
         "api": true
       }
     },
@@ -339,7 +436,7 @@
       "name": "navegador_mapa_incluye_la_api",
       "ok": true,
       "detail": {
-        "meta": "3 de 3 módulos dibujados · 2 sondeos · 12/11, 09:11:28 → 12/11, 09:11:33"
+        "meta": "3 de 3 módulos dibujados · 2 sondeos · 12/11, 10:00:38 → 12/11, 10:00:45"
       }
     },
     {
@@ -362,8 +459,8 @@
       "name": "navegador_memoria_y_uso_reales",
       "ok": true,
       "detail": {
-        "memoria": "Memoria del API 214,6MB heap 88,4/121,2 MB óptimo 512 MB tope 1.024 MB 12/11, 09:11:28 · 214,6 MB · Óptimo12/11, 09:11:33 · 214,6 MB · Óptimo 09:11:2809:11:33 2 de 2 sondeos con lectura · 12/11, 09:11:28 → 12/11, 09:11:33",
-        "uso": "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas 12/11, 09:11:28 · 806,3 req/min · Informativo12/11, 09:11:33 · 806,3 req/min · Informativo 09:11:2809:11:33 sin banda habitual todavía: 2 de 8 lecturas medidas"
+        "memoria": "Memoria del API 214,6MB heap 88,4/121,2 MB óptimo 512 MB tope 1.024 MB 12/11, 10:00:38 · 214,6 MB · Óptimo12/11, 10:00:45 · 214,6 MB · Óptimo 10:00:3810:00:45 2 de 2 sondeos con lectura · 12/11, 10:00:38 → 12/11, 10:00:45",
+        "uso": "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas 12/11, 10:00:38 · 806,3 req/min · Informativo12/11, 10:00:45 · 806,3 req/min · Informativo 10:00:3810:00:45 sin banda habitual todavía: 2 de 8 lecturas medidas"
       }
     },
     {
@@ -382,10 +479,10 @@
         "teselas": [
           "Estado operativo 58/100 Crítico · 1/3 módulos operativos",
           "Carga de datos 1.720 1/3 módulos con datos · 1 caídos · 0 sin medir",
-          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 8 s",
+          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 13 s",
           "Memoria del API 214,6MB heap 88,4/121,2 MB",
           "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas",
-          "Rendimiento p95 65ms 2 h 2 min encendido"
+          "Rendimiento p95 83ms 2 h 2 min encendido"
         ]
       }
     },
@@ -408,7 +505,7 @@
       "name": "captura_monitor_consolidado",
       "ok": true,
       "detail": {
-        "bytes": 883555,
+        "bytes": 885283,
         "scroll": true
       }
     },
@@ -461,7 +558,7 @@
       "name": "captura_producto_bloqueado",
       "ok": true,
       "detail": {
-        "bytes": 652109
+        "bytes": 652569
       }
     },
     {
@@ -469,9 +566,9 @@
       "ok": true,
       "detail": {
         "estadisticas": [
-          "p50 38 ms",
-          "p95 65 ms",
-          "Máximo 65 ms",
+          "p50 54 ms",
+          "p95 83 ms",
+          "Máximo 83 ms",
           "Muestras 2"
         ]
       }
@@ -480,7 +577,7 @@
       "name": "navegador_telemetria_proceso_con_umbral",
       "ok": true,
       "detail": {
-        "memoria": "Presión de heap 72,9% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 88,4/121,2 MB óptimo 60 % tope 85 % 12/11, 09:11:28 · 72,9 % · En riesgo12/11, 09:11:33 · 72,9 % · En riesgo 09:11:2809:11:33 2 de 2 sondeos con lectura · 12/11, 09:11:28 → 12/11, 09:11:33"
+        "memoria": "Presión de heap 72,9% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 88,4/121,2 MB óptimo 60 % tope 85 % 12/11, 10:00:38 · 72,9 % · En riesgo12/11, 10:00:45 · 72,9 % · En riesgo 10:00:3810:00:45 2 de 2 sondeos con lectura · 12/11, 10:00:38 → 12/11, 10:00:45"
       }
     },
     {
@@ -531,23 +628,23 @@
         "picos": {
           "blancos": 2,
           "horarios": [
-            "09:11:27",
-            "09:11:32"
+            "10:00:37",
+            "10:00:43"
           ],
           "titulos": [
-            "12/11, 09:11:27 · 65 ms · Óptimo",
-            "12/11, 09:11:32 · 38 ms · Óptimo"
+            "12/11, 10:00:37 · 83 ms · Óptimo",
+            "12/11, 10:00:43 · 54 ms · Óptimo"
           ],
           "lista": 2,
-          "muestras": "2 muestras · 12/11, 09:11:32"
+          "muestras": "2 muestras · 12/11, 10:00:43"
         },
-        "elegido": "2026-11-12T14:11:27.982Z",
+        "elegido": "2026-11-12T15:00:37.398Z",
         "punto": {
           "filas": 8,
-          "hora": "12/11, 09:11:27",
-          "medicion": "65 ms · Óptimo",
+          "hora": "12/11, 10:00:37",
+          "medicion": "83 ms · Óptimo",
           "anterior": "es la primera de la ventana",
-          "siguiente": "12/11, 09:11:32 · 38 ms",
+          "siguiente": "12/11, 10:00:43 · 54 ms",
           "cursor": 1,
           "activo": 1
         }
@@ -565,7 +662,55 @@
       "name": "captura_vista_latencia",
       "ok": true,
       "detail": {
-        "bytes": 549233
+        "bytes": 608664
+      }
+    },
+    {
+      "name": "navegador_nube_con_viaje_medido",
+      "ok": true,
+      "detail": {
+        "railway": "Railway APEXOS CERT Operativo Último deployment SUCCESS en production · 2026-11-12T00:00:00.000Z Latencia de la llamada 82 ms Fallidos 0 Último (min) 901 min óptimo 250 ms tope 800 ms 12/11, 10:00:38 ",
+        "meta": "1/3 integraciones con credenciales · 12/11, 10:00:37"
+      }
+    },
+    {
+      "name": "navegador_nube_dice_la_fuente_de_la_credencial",
+      "ok": true,
+      "detail": {
+        "pistas": [
+          "Credencial leída de: sesión del CLI de Railway."
+        ]
+      }
+    },
+    {
+      "name": "navegador_nube_no_pide_configurar_lo_que_no_aplica",
+      "ok": true,
+      "detail": {
+        "noAplica": 2,
+        "pideConfigurar": 0,
+        "sinCredenciales": 0
+      }
+    },
+    {
+      "name": "navegador_nube_grafica_del_viaje",
+      "ok": true,
+      "detail": {
+        "graficas": 3,
+        "clase": "cloud-card status-ok"
+      }
+    },
+    {
+      "name": "navegador_nube_no_imprime_la_sesion",
+      "ok": true,
+      "detail": {
+        "veredicto": "\n    \n      \n      ¿Los servicios de la nube están bien?\n      Latencia de la nube 82 ms · Óptimo\n      único medidor de"
+      }
+    },
+    {
+      "name": "captura_vista_nube",
+      "ok": true,
+      "detail": {
+        "bytes": 362538
       }
     },
     {
@@ -584,21 +729,25 @@
     }
   ],
   "summary": {
-    "passed": 57,
+    "passed": 73,
     "failed": 0,
-    "total": 57,
+    "total": 73,
     "screenshots": [
       {
         "file": "01-monitor-consolidado-empresa.png",
-        "bytes": 883555
+        "bytes": 885283
       },
       {
         "file": "02-producto-bloqueado-con-acciones.png",
-        "bytes": 652109
+        "bytes": 652569
       },
       {
         "file": "03-vista-latencia-consolidado.png",
-        "bytes": 549233
+        "bytes": 608664
+      },
+      {
+        "file": "04-vista-nube-medida.png",
+        "bytes": 362538
       }
     ],
     "console_errors": []
@@ -609,6 +758,7 @@
     "empresa-tenant-demo.json",
     "01-monitor-consolidado-empresa.png",
     "02-producto-bloqueado-con-acciones.png",
-    "03-vista-latencia-consolidado.png"
+    "03-vista-latencia-consolidado.png",
+    "04-vista-nube-medida.png"
   ]
 }

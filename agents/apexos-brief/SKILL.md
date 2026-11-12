@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.43.3
+version: 2.44.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -127,6 +127,14 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **El inventario incluye lo que hace ejecutable la promesa.** El comando `npm run control:credential` que la torre ofrece como remedio obligó a entrar `package.json` en el alcance (`M`) y a registrar el módulo `tooling-package-scripts`; un brief que solo lista `apps/control-tower/**` describiría una acción que no corre.
     - **El pendiente que ningún recurso local construye se nombra, y el que sí se construye se cierra.** Las credenciales cloud y los JWT de QA/PROD siguen siendo acción del dueño (una suscripción no la fabrica el puesto); el par local se emitió con el seed del propio puesto y quedó resuelto en el mismo cambio. No se hereda de intervención a intervención un «configuration pending» que la máquina puede cerrar.
     Por qué: «conecta los puntos» dicho a un panel con gráficos bonitos se contesta con CSS, y el resultado es una interfaz viva sobre datos muertos; el brief es el lugar donde se fija que la vida del dato es el entregable.
+
+57. **Un encargo de «conecta la nube» se escribe con los pendientes clasificados en tres cajones y el vocabulario `applies`/`configured` fijado antes del código.** La segunda mitad del mismo pedido del 2026-11-12 —los tres proveedores de nube estaban ciegos en los tres ambientes— exigió cinco piezas que la ronda de credenciales del API no cubría:
+    - **Cada pendiente se clasifica, no se acumula.** El brief escribe tres listas: *se construye ahora* (los identificadores de proyecto y las refs de Supabase, que se miden con el CLI del puesto y quedan versionados), *se adopta* (la sesión ya iniciada de `~/.railway/config.json`, que es una credencial existente que nadie tenía que emitir) y *solo el dueño puede cerrarlo* (`SUPABASE_ACCESS_TOKEN`, porque la organización no tiene cuenta en ese proveedor). Sin esa clasificación, «falta configurar la nube» vuelve interventions después como si los tres tuvieran el mismo responsable y el mismo remedio.
+    - **El identificador real va medido en el brief, no deducido.** Los UUIDs de Railway de QA y PROD se citan con el proyecto que devuelven (`APEXOS QA`, `APEXOS PROD`); un brief que dice «añadir el project id» deja al siguiente lector adivinando cuál de los proyectos del usuario es el de APEXOS.
+    - **La vista que no aplica se escribe en el inventario de aceptación.** Con `applies: false` el ambiente local deja de exigir tres tokens que jamás usará, y esa frase —«no hay nada que sondear»— es un criterio de aceptación observable en el panel, no un detalle de implementación. El vocabulario se fija aquí: `applies` es topología, `configured` es el hueco del puesto; mezclarlos produce que un ambiente sin Vercel se reporte como «sin credenciales» y empuje a conseguirlas.
+    - **Adoptar la sesión de un CLI ajeno es leer un secreto de terceros y el brief lo dice.** Queda nombrado el lector único, que la torre no imprime ni publica el token, que la fuente de la credencial sí se publica, y que la aceptación exige demostrar la adopción en la cabecera de la petición. Omitirlo hace que el revisor lo lea como un `copy` de token a `.env.local`, que es exactamente lo que no se puede hacer.
+    - **El script de certificación entra al inventario.** Una promesa de «queda certificado» sin el gate versionado es decoración: el brief lista el archivo de certificación que se modifica y los checks nuevos por nombre, para que el cierre de la intervención se pueda contrastar con el diff.
+    Por qué: un encargo de nube escrito como lista de variables de ambiente termina en un panel que pide credenciales de proveedores que la topología no usa, y en un pendiente heredado indefinidamente porque nadie separó lo construible de lo que no lo es.
 
 ## Checklist de intervención
 

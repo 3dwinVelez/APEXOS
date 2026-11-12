@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.23.0
+version: 2.24.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -129,6 +129,14 @@ Antes de actuar, leer en este orden:
     - **El dictamen publicado no lleva credencial.** `statusFor()` exporta `mode`, `status`, `reason`, `expiresAt`, `lastRefreshAt`, `nextRetryAt`, `attempts`, `refreshConfigured`, `tokenConfigured` —booleanos y horas, nunca el string del token—, y la certificación busca `eyJ…` en él. El par rotado persiste en `apps/control-tower/data/credential.json` (gitignored); la torre **no** reescribe `.env.local`, eso lo hace una herramienta que el operador ejecuta con la contraseña por variable de entorno, nunca por argumento, y con `chmod 0600`.
     - **Un `401` se llama `TOKEN_INVALIDO` y un `403` se llama `PERMISO_DENEGADO`.** La lectura entre empresas sigue needing `apex-control:read_all_tenants` (regla 14); confundirlos abre la puerta a «arreglar» permisos para tapar una credencial vieja. Y la acción que proponga un comando tiene que ser ejecutable: una acción que manda a `npm run <script>` inexistente no remedia, decora.
     Por qué: el riesgo de una herramienta que «se conecta sola» es que la comodidad del renuevo automático se lleve por delante el aislamiento por ambiente, la trazabilidad de la rotación o el secreto que jamás debe salir del puesto.
+
+38. **Adoptar la sesión de un CLI del puesto es leer un secreto ajeno: se lee al sondear, se nombra la fuente, nunca se duplica ni se publica.** El 2026-11-12, para conectar la vista Nube, el atajo era copiar el token de Railway a `apps/control-tower/.env.local`. Se hizo distinto y eso fija cinco reglas:
+    - **Un solo lector, y defensivo.** `apps/control-tower/lib/railway-session.js` es la única ruta que toca el almacén del CLI (`~/.railway/config.json`, reubicable con `RAILWAY_CONFIG_DIR`) y solo toma `user.accessToken`. Archivo ilegible, JSON roto, `user` nulo o token con espacios devuelven cadena vacía: la torre no puede romperse por el estado de un almacén que no es suyo, y un texto con espacios jamás viaja como cabecera.
+    - **Adoptar no es reemplazar la autoridad del ambiente.** `RAILWAY_TOKEN` manda si existe; la adopción ocurre **solo** con `sessionEnabled === true`. Así una prueba o un `config` armado a mano quedan fuera del almacén real del operador —lo aprendimos al revés: un test que pasó porque la máquina tenía sesión viva era un test que medía a la persona—.
+    - **Se publica la fuente, no el valor.** `credentialSource` dice «sesión del CLI de Railway»; `safeConfig` publica `railwayTokenSource` y el reporte de credenciales, nunca el string. La certificación busca la sesión en el snapshot (`nube_no_publica_la_sesion_del_puesto`), en la pantalla (`navegador_nube_no_imprime_la_sesion`) y `redactEnv` la purga de la evidencia. La lectura se hace en cada sondeo: un `railway logout` se ve en la torre sin reiniciarla, y la revocación no queda escondida en una copia vieja.
+    - **Pedir una credencial que la topología no usa también es un mal manejo de permisos.** Un proveedor sin identificador en el ambiente se publica `applies:false` / `not_applicable` y no genera `CLOUD_SIN_TOKEN`. Antes de este cambio la barra del panel pedía `VERCEL_TOKEN` y `SUPABASE_ACCESS_TOKEN` en un ambiente Docker local que no tiene nube: empujar al dueño a crear y pegar tokens innecesarios es exactamente la superficie que la regla 18 protege.
+    - **Lo que el puesto no puede construir se declara, no se simula.** Sin `SUPABASE_ACCESS_TOKEN` la tarjeta queda `unknown` con su acción y su variable nombrada; `latencyMs` sigue siendo `null` porque no hubo llamada (regla 20). Ningún estado `ok` se inventa para limpiar la pantalla.
+    Por qué: conectar un punto de medición con la credencial que ya existe es legítimo; lo que no lo es es multiplicar copias de ese secreto, exponerlo en una superficie exportable, o convertir cada proveedor que no existe en un pendiente que empuja a generar permisos de más.
 
 ## Checklist de intervención
 

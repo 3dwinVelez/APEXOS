@@ -2,7 +2,7 @@
 name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
-version: 2.15.0
+version: 2.16.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -82,6 +82,14 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
     - **Lo no medido no es un estado sano.** `SIN_CONEXION`, `REVOCADA`, `TOKEN_VENCIDO` y `SIN_CREDENCIAL` viajan en `environment.credential` y alimentan las acciones; un ambiente apagado también abre registro. La contraparte: con `TOWER_SIMULATION=true` el bombeo es `SIMULACION` y la certificación no puede exigir ahí renovaciones reales.
     - **La causa remota se mide antes de tocar estilos.** La sonda anónima de `/health` separa credencial de despliegue: el 2026-11-12 QA (`3595a9bbca23`, 19 módulos) y PROD (`4659292f4f23`, 18 módulos) responden `404` en `/api/v1/apex-control/*`, así que allí el cuello es el build, no el token. Ninguna credencial resuelve una ruta que no está en el artefacto.
     Por qué: el dueño pide que la torre «tome vida» y la vida es una serie continua; la forma barata de conseguirla —reetiquetar la pantalla o inyectar un token fresco para la foto— deja el gráfico vivo durante doce horas y otra vez ciego después.
+
+25. **La topología se cablea versionada y cada proveedor se mide con su propio viaje; lo que no está en la topología no consume sondeo ni pantalla.** El 2026-11-12 la vista Nube estaba ciega en los tres ambientes. Lo medido y lo que queda como contrato en `apps/control-tower/lib/{config,cloud,probes,railway-session}.js`:
+    - **El identificador de proyecto es un default versionado, no un ajuste del puesto.** QA `33726923-021d-47a7-a263-b8b287f164f1` (`APEXOS QA`) y PROD `0afe38cc-6080-49d2-aa24-2d5625250ac2` (`APEXOS PROD`) viven en `ENV_DEFAULTS` y los fija una prueba; un puesto nuevo mide la nube sin copiar nada. Es un identificador público, no un secreto.
+    - **El viaje torre→proveedor es la magnitud.** La sonda de nube se banda con `GAUGES.cloudLatency` (óptimo 250 ms, tope 800 ms) porque el trayecto incluye DNS + TLS + el proveedor; local quedó en 662 ms (QA) y 470 ms (PROD) medidos en vivo. La cache `CLOUD_CACHE_MS` (60 s) manda: un proveedor del SaaS no se castiga cada 10 s, y la historia del monitor sigue llenándose a la cadencia del sondeo.
+    - **Sin llamada no hay latencia: `latencyMs = null`.** Un `0` pintaría «viaje instantáneo» donde no hubo petición, la misma clase de engaño que el `Number(null) === 0` de las rondas anteriores.
+    - **`applies` es topología; `configured` es el puesto.** Un ambiente sin identificador no sondea, no pinta tarjeta «Sin credenciales» y no genera `CLOUD_SIN_TOKEN`. El ambiente local —Docker, sin nube— pasó de pedir tres tokens a declarar «no aplica, se mide en el puesto»: menos ruido y ninguna deuda falsa en la barra.
+    - **La certificación de la nube es hermética por construcción.** El ferrocarril falso escucha en `127.0.0.1`, retrasa 20 ms para que la latencia sea medida y no cero, y la corrida redirige `RAILWAY_CONFIG_DIR` a un almacén propio y limpia `RAILWAY_TOKEN` antes de crear la torre, restaurando el entorno al cerrar. Sin ese aislamiento el verde dependería de con quién estuviera autenticado el operador: medir al usuario en vez de medir el código.
+    Por qué: conectar la nube era un problema de cableado y de presupuesto, no de tintes; y un panel que pide credenciales de servicios que no existen inflige trabajo al dueño sin acortar ninguna latencia.
 
 ## Checklist de intervención
 

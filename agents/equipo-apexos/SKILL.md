@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.30.3
+version: 2.31.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -129,6 +129,14 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
     - **Rechaza el arreglo de una sola vez.** Un token fresco re-mintado deja el panel vivo ocho horas; el orquestador pidió explícitamente el mecanismo que se sostiene (refresh persistido, margen, respaldo, comando ejecutable) y no cerró con el atajo que ya había usado en la intervención anterior.
     - **Integra con la gobernanza del panel.** La torre reposa solo en `desarrollo`, no se promociona ni se despliega: sus `77/77` y `57/57` se reportan como estado del puesto, nunca como evidencia de promoción, y lo que sí viaja (el módulo `apex-control` del API) sigue su propio manifiesto.
     Por qué: la tentación de un «no está conectado» es responder con lo visible; el entregable era que la conexión no dependiera de que alguien escriba un token cada mañana.
+
+44. **Un pendiente de credencial se clasifica en construida / adoptada / del dueño antes de despachar, y «no aplica» se separa de «sin dato».** Ronda 2 del mismo pedido (2026-11-12): la nube de la torre seguía ciega en los tres ambientes. El orquestador no despachó «pida los tres tokens»; clasificó cada pendiente:
+    - **Construible con lo que ya se puede medir → se construye y se versiona.** Los identificadores de proyecto de QA y PROD se leyeron con la sesión existente (`railway status` + API GraphQL del CLI) y quedaron como default en `lib/config.js`, con una prueba que los fija. Dejarlos como «tarea del dueño» habría sido un pendiente falso.
+    - **Adoptable de un almacén que el puesto ya tiene → se adopta, no se duplica.** La sesión del CLI de Railway se lee en cada sondeo (`lib/railway-session.js`), con `RAILWAY_TOKEN` por delante y `TOWER_RAILWAY_SESSION` como interruptor. Copiar el token a `.env.local` era el atajo: envejece, duplica el secreto y sobrevive a un `railway logout`.
+    - **Emitible solo por el dueño → se declara con su variable y su acción.** `SUPABASE_ACCESS_TOKEN` es el único pendiente de nube real; queda escrito como tal en brief, README y `no_certifica`, sin simularlo.
+    - **Y lo que la topología no usa no es un pendiente.** Vercel (y la nube entera en el ambiente local) se publica `applies:false`, sin tarjeta «Sin credenciales» ni acción. El panel pedía tres credenciales en un Docker sin nube: ruido que el propio dueño había señalado como saturación.
+    - **El plan de expertos salió del preflight, no de la narrativa:** `apexos-seguridad`, `apexos-performance`, `apexos-qa`, `equipo-apexos`, `apexos-brief`. La gate de nube se puso en la tubería consolidada porque la local nunca sondea la nube —elegir la tubería también es una decisión de integración—; el `apexos-db-nube` no entró porque no se tocó esquema ni base.
+    Por qué: «conecten la nube» tiene tres respuestas distintas y mezclarlas produce lo que ya se veía: una barra llena de pendientes imposibles y ningún dato midiendo.
 
 ## Checklist de intervención
 

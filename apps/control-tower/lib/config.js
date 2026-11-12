@@ -3,6 +3,8 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+const { resolveRailwayToken } = require("./railway-session");
+
 const APP_DIR = path.resolve(__dirname, "..");
 const DEFAULT_REPO_ROOT = path.resolve(APP_DIR, "..", "..");
 let envLoaded = false;
@@ -68,13 +70,18 @@ const ENV_DEFAULTS = {
     apiBaseUrl: "https://apexos-api-qa-production.up.railway.app",
     webBaseUrl: "https://apexos-web-qa-production.up.railway.app",
     supabaseUrl: "https://jbirkghkekuifgfsgquq.supabase.co",
-    supabaseRef: "jbirkghkekuifgfsgquq"
+    supabaseRef: "jbirkghkekuifgfsgquq",
+    // Identificador publico del proyecto en Railway, medido con la sesion del CLI
+    // del puesto (railway status: "APEXOS QA"). No es un secreto: sin token, la
+    // sonda no llama a la API.
+    railwayProjectId: "33726923-021d-47a7-a263-b8b287f164f1"
   },
   main: {
     apiBaseUrl: "https://apexos-api-prod-production.up.railway.app",
     webBaseUrl: "https://apexos-web-prod-production.up.railway.app",
     supabaseUrl: "https://jzbwzmkidfthknsohhnr.supabase.co",
-    supabaseRef: "jzbwzmkidfthknsohhnr"
+    supabaseRef: "jzbwzmkidfthknsohhnr",
+    railwayProjectId: "0afe38cc-6080-49d2-aa24-2d5625250ac2"
   }
 };
 
@@ -168,7 +175,7 @@ function loadConfig(overrides = {}) {
         supabaseAnonKey: env.ENV_DEVELOP_SUPABASE_ANON_KEY || "",
         railwayUrl: urlValue(env.ENV_DEVELOP_RAILWAY_URL, ""),
         vercelUrl: urlValue(env.ENV_DEVELOP_VERCEL_URL, ""),
-        railwayProjectId: env.ENV_DEVELOP_RAILWAY_PROJECT_ID || "",
+        railwayProjectId: env.ENV_DEVELOP_RAILWAY_PROJECT_ID || ENV_DEFAULTS.develop.railwayProjectId,
         vercelProjectId: env.ENV_DEVELOP_VERCEL_PROJECT_ID || "",
         supabaseRef: env.ENV_DEVELOP_SUPABASE_REF || ENV_DEFAULTS.develop.supabaseRef,
         apexToken: env.ENV_DEVELOP_APEX_TOKEN || "",
@@ -186,7 +193,7 @@ function loadConfig(overrides = {}) {
         supabaseAnonKey: env.ENV_MAIN_SUPABASE_ANON_KEY || "",
         railwayUrl: urlValue(env.ENV_MAIN_RAILWAY_URL, ""),
         vercelUrl: urlValue(env.ENV_MAIN_VERCEL_URL, ""),
-        railwayProjectId: env.ENV_MAIN_RAILWAY_PROJECT_ID || "",
+        railwayProjectId: env.ENV_MAIN_RAILWAY_PROJECT_ID || ENV_DEFAULTS.main.railwayProjectId,
         vercelProjectId: env.ENV_MAIN_VERCEL_PROJECT_ID || "",
         supabaseRef: env.ENV_MAIN_SUPABASE_REF || ENV_DEFAULTS.main.supabaseRef,
         apexToken: env.ENV_MAIN_APEX_TOKEN || "",
@@ -208,6 +215,10 @@ function loadConfig(overrides = {}) {
       cacheMs: intValue(env.CLOUD_CACHE_MS, 60000, 5000, 600000),
       railway: {
         token: env.RAILWAY_TOKEN || "",
+        // El puesto puede ya tener sesion del CLI de Railway: adoptarla evita
+        // duplicar el token. TOWER_RAILWAY_SESSION=false la apaga (pruebas, o un
+        // operador que no quiera que la torre lea ese almacen).
+        sessionEnabled: boolValue(env.TOWER_RAILWAY_SESSION, true),
         apiUrl: urlValue(env.RAILWAY_API_URL, "https://backboard.railway.app/graphql/v2")
       },
       vercel: {
@@ -233,7 +244,7 @@ function resolveTelegramMode(telegram) {
   return telegram.mode;
 }
 
-function credentialReport(config) {
+function credentialReport(config, sessionOptions = {}) {
   const cloud = config.cloud;
   const environments = config.environments || {};
   const railwayEnvs = {};
@@ -242,6 +253,11 @@ function credentialReport(config) {
   const railwayMissing = [];
   const supabaseMissing = [];
   const vercelMissing = [];
+
+  // Railway admite la sesion del CLI del puesto, asi que reportar solo la variable
+  // diria "falta RAILWAY_TOKEN" en un puesto que ya esta midiendo deployments.
+  const railwayCred = resolveRailwayToken(cloud.railway, sessionOptions);
+  const railwayToken = railwayCred.token;
 
   for (const id of ["develop", "main"]) {
     const environment = environments[id] || {};
@@ -252,7 +268,7 @@ function credentialReport(config) {
     if (!environment.supabaseRef) supabaseMissing.push(`ENV_${id.toUpperCase()}_SUPABASE_REF`);
     if (!environment.vercelProjectId) vercelMissing.push(`ENV_${id.toUpperCase()}_VERCEL_PROJECT_ID`);
   }
-  if (!cloud.railway.token) railwayMissing.unshift("RAILWAY_TOKEN");
+  if (!railwayToken) railwayMissing.unshift("RAILWAY_TOKEN o sesión del CLI de Railway");
   if (!cloud.supabase.accessToken) supabaseMissing.unshift("SUPABASE_ACCESS_TOKEN");
   if (!cloud.vercel.token) vercelMissing.unshift("VERCEL_TOKEN");
 
@@ -260,10 +276,11 @@ function credentialReport(config) {
     {
       provider: "railway",
       label: "Railway",
-      tokenConfigured: Boolean(cloud.railway.token),
+      tokenConfigured: Boolean(railwayToken),
+      tokenSource: railwayCred.source || null,
       environments: { local: "not_required", ...railwayEnvs },
       missing: railwayMissing,
-      configured: Boolean(cloud.railway.token) && Object.values(railwayEnvs).some(Boolean)
+      configured: Boolean(railwayToken) && Object.values(railwayEnvs).some(Boolean)
     },
     {
       provider: "supabase",
@@ -285,6 +302,8 @@ function credentialReport(config) {
 }
 
 function safeConfig(config) {
+  const credentials = credentialReport(config);
+  const railway = credentials.find((item) => item.provider === "railway") || {};
   return {
     version: config.version,
     repoRoot: config.repoRoot,
@@ -320,10 +339,11 @@ function safeConfig(config) {
       }])
     ),
     cloud: {
-      railwayConfigured: Boolean(config.cloud.railway.token),
+      railwayConfigured: Boolean(railway.tokenConfigured),
+      railwayTokenSource: railway.tokenSource || null,
       vercelConfigured: Boolean(config.cloud.vercel.token),
       supabaseConfigured: Boolean(config.cloud.supabase.accessToken),
-      credentials: credentialReport(config)
+      credentials
     }
   };
 }

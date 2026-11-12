@@ -1,0 +1,108 @@
+{
+  "railway": {
+    "provider": "railway",
+    "applies": true,
+    "configured": true,
+    "credentialSource": "sesión del CLI de Railway",
+    "status": "ok",
+    "detail": "Último deployment SUCCESS en production · 2026-11-12T00:00:00.000Z",
+    "project": {
+      "id": "cert-railway-project-0000",
+      "name": "APEXOS CERT"
+    },
+    "services": [
+      {
+        "id": "svc-api",
+        "name": "apexos-api-cert"
+      },
+      {
+        "id": "svc-web",
+        "name": "apexos-web-cert"
+      }
+    ],
+    "deployments": [
+      {
+        "environment": "production",
+        "id": "deployment-cert",
+        "status": "SUCCESS",
+        "createdAt": "2026-11-12T00:00:00.000Z"
+      }
+    ],
+    "environments": [
+      {
+        "id": "env-production",
+        "name": "production"
+      }
+    ],
+    "health": [],
+    "metrics": {
+      "services": 2,
+      "environments": 1,
+      "deployments": 1,
+      "failed": 0,
+      "last_age_minutes": 901,
+      "last_status": "SUCCESS"
+    },
+    "latencyMs": 82,
+    "error": null,
+    "checkedAt": "2026-11-12T15:00:37.430Z",
+    "series": [
+      {
+        "at": "2026-11-12T15:00:38.001Z",
+        "value": 82,
+        "band": "optimal"
+      }
+    ],
+    "window": 1,
+    "limits": {
+      "optimal": 250,
+      "risk": 800,
+      "kind": "budget",
+      "unit": "ms"
+    },
+    "direction": "lower",
+    "unit": "ms"
+  },
+  "vercel": {
+    "provider": "vercel",
+    "applies": false,
+    "configured": false,
+    "status": "not_applicable",
+    "detail": "Vercel no forma parte de la topología de este ambiente: no hay nada que sondear.",
+    "project": null,
+    "services": [],
+    "deployments": [],
+    "environments": [],
+    "health": [],
+    "metrics": null,
+    "error": null,
+    "latencyMs": null,
+    "checkedAt": "2026-11-12T15:00:37.433Z"
+  },
+  "supabase": {
+    "provider": "supabase",
+    "applies": false,
+    "configured": false,
+    "status": "not_applicable",
+    "detail": "Supabase no forma parte de la topología de este ambiente: no hay nada que sondear.",
+    "project": null,
+    "services": [],
+    "deployments": [],
+    "environments": [],
+    "health": [],
+    "metrics": null,
+    "error": null,
+    "latencyMs": null,
+    "checkedAt": "2026-11-12T15:00:37.433Z",
+    "series": [],
+    "window": 1,
+    "limits": {
+      "optimal": 250,
+      "risk": 800,
+      "kind": "budget",
+      "unit": "ms"
+    },
+    "direction": "lower",
+    "unit": "ms"
+  }
+}

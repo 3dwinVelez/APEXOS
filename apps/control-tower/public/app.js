@@ -876,8 +876,13 @@ function renderCloudMetrics(metrics, latencyMs = null) {
 }
 
 function renderCloudCard(provider, data) {
+  // "No aplica" y "Sin credenciales" son frases distintas: la primera es un hecho
+  // de la topologia del ambiente, la segunda un pendiente del puesto.
+  const applies = !(data && data.applies === false);
   const status = data && data.configured === false ? "unknown" : pillClass(data && data.status ? data.status : "unknown");
-  const statusLabel = data && data.configured === false ? "Sin credenciales" : (STATUS_LABEL[status] || status);
+  const statusLabel = !applies
+    ? "No aplica"
+    : (data && data.configured === false ? "Sin credenciales" : (STATUS_LABEL[status] || status));
   const deployments = data && Array.isArray(data.deployments) ? data.deployments : [];
   const projectName = data && data.project ? (data.project.name || data.project.id) : null;
   const location = [
@@ -911,7 +916,8 @@ function renderCloudCard(provider, data) {
       ${latencyMs != null || (data && data.series) ? monitorChart({ ...(data || {}), label: `${provider.label} · viaje a la nube`, unit: " ms" }) : ""}
       ${deployLine}
       ${data && (data.error || data.healthError) ? `<p class="cloud-detail">${escapeHtml([data.error, data.healthError ? `Salud: ${data.healthError}` : null].filter(Boolean).join(" · "))}</p>` : ""}
-      ${data && data.configured === false ? `<p class="cloud-hint">Configura ${escapeHtml(provider.hint)}.</p>` : ""}
+      ${applies && data && data.configured === false ? `<p class="cloud-hint">Configura ${escapeHtml(provider.hint)}.</p>` : ""}
+      ${applies && data && data.credentialSource ? `<p class="cloud-hint">Credencial leída de: ${escapeHtml(data.credentialSource)}.</p>` : ""}
     </article>`;
 }
 

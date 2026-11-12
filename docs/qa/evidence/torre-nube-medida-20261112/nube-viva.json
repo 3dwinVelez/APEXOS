@@ -1,0 +1,169 @@
+{
+  "generado_en": "2026-11-12T15:05:26.610Z",
+  "fuente": "http://127.0.0.1:4310/api/status (torre del puesto, sin simulacion)",
+  "nota": "Se listan solo campos medidos. Ningun token viaja en este archivo: credentialSource nombra el almacen, no su contenido.",
+  "ambientes": {
+    "local": {
+      "label": "Local",
+      "nube": {
+        "railway": {
+          "applies": false,
+          "configured": false,
+          "status": "not_applicable",
+          "latencyMs": null,
+          "detail": "Railway no aplica al ambiente local: se mide en el puesto, no en la nube.",
+          "checkedAt": "2026-11-12T15:05:15.369Z",
+          "metrics": null,
+          "project": null
+        },
+        "vercel": {
+          "applies": false,
+          "configured": false,
+          "status": "not_applicable",
+          "latencyMs": null,
+          "detail": "Vercel no aplica al ambiente local: se mide en el puesto, no en la nube.",
+          "checkedAt": "2026-11-12T15:05:15.369Z",
+          "metrics": null,
+          "project": null
+        },
+        "supabase": {
+          "applies": false,
+          "configured": false,
+          "status": "not_applicable",
+          "latencyMs": null,
+          "detail": "Supabase no aplica al ambiente local: se mide en el puesto, no en la nube.",
+          "checkedAt": "2026-11-12T15:05:15.369Z",
+          "metrics": null,
+          "project": null
+        }
+      },
+      "acciones_nube": [],
+      "acciones": [
+        "MODULO_ATENCION",
+        "MODULO_ATENCION",
+        "MODULO_ATENCION",
+        "MODULO_ATENCION",
+        "MODULO_ATENCION"
+      ]
+    },
+    "develop": {
+      "label": "Develop · QA",
+      "nube": {
+        "railway": {
+          "applies": true,
+          "configured": true,
+          "status": "ok",
+          "latencyMs": 662,
+          "credentialSource": "sesión del CLI de Railway",
+          "detail": "Último deployment SUCCESS en production · 2026-11-11T00:49:23.819Z",
+          "checkedAt": "2026-11-12T15:04:25.787Z",
+          "metrics": {
+            "services": 2,
+            "environments": 1,
+            "deployments": 3,
+            "failed": 1,
+            "last_age_minutes": 2295,
+            "last_status": "SUCCESS"
+          },
+          "project": {
+            "id": "33726923-021d-47a7-a263-b8b287f164f1",
+            "name": "APEXOS QA"
+          }
+        },
+        "vercel": {
+          "applies": false,
+          "configured": false,
+          "status": "not_applicable",
+          "latencyMs": null,
+          "detail": "Vercel no forma parte de la topología de este ambiente: no hay nada que sondear.",
+          "checkedAt": "2026-11-12T15:04:25.988Z",
+          "metrics": null,
+          "project": null
+        },
+        "supabase": {
+          "applies": true,
+          "configured": false,
+          "status": "unknown",
+          "latencyMs": null,
+          "detail": "Supabase sin token de gestión. Añade SUPABASE_ACCESS_TOKEN en apps/control-tower/.env.local: la ref del proyecto ya está configurada.",
+          "checkedAt": "2026-11-12T15:04:25.975Z",
+          "metrics": null,
+          "project": null
+        }
+      },
+      "acciones_nube": [
+        {
+          "code": "CLOUD_SIN_TOKEN",
+          "title": "Configurar SUPABASE_ACCESS_TOKEN",
+          "priority": "media",
+          "owner": "apexos-performance · apexos-seguridad"
+        }
+      ],
+      "acciones": [
+        "MODULO_NO_DESPLEGADO",
+        "CREDENCIAL_AUSENTE",
+        "CLOUD_SIN_TOKEN"
+      ]
+    },
+    "main": {
+      "label": "Main · Producción",
+      "nube": {
+        "railway": {
+          "applies": true,
+          "configured": true,
+          "status": "ok",
+          "latencyMs": 470,
+          "credentialSource": "sesión del CLI de Railway",
+          "detail": "Último deployment SUCCESS en production · 2026-11-11T20:01:38.020Z",
+          "checkedAt": "2026-11-12T15:04:25.986Z",
+          "metrics": {
+            "services": 2,
+            "environments": 1,
+            "deployments": 3,
+            "failed": 1,
+            "last_age_minutes": 1143,
+            "last_status": "SUCCESS"
+          },
+          "project": {
+            "id": "0afe38cc-6080-49d2-aa24-2d5625250ac2",
+            "name": "APEXOS PROD"
+          }
+        },
+        "vercel": {
+          "applies": false,
+          "configured": false,
+          "status": "not_applicable",
+          "latencyMs": null,
+          "detail": "Vercel no forma parte de la topología de este ambiente: no hay nada que sondear.",
+          "checkedAt": "2026-11-12T15:04:25.988Z",
+          "metrics": null,
+          "project": null
+        },
+        "supabase": {
+          "applies": true,
+          "configured": false,
+          "status": "unknown",
+          "latencyMs": null,
+          "detail": "Supabase sin token de gestión. Añade SUPABASE_ACCESS_TOKEN en apps/control-tower/.env.local: la ref del proyecto ya está configurada.",
+          "checkedAt": "2026-11-12T15:04:25.989Z",
+          "metrics": null,
+          "project": null
+        }
+      },
+      "acciones_nube": [
+        {
+          "code": "CLOUD_SIN_TOKEN",
+          "title": "Configurar SUPABASE_ACCESS_TOKEN",
+          "priority": "media",
+          "owner": "apexos-performance · apexos-seguridad"
+        }
+      ],
+      "acciones": [
+        "MODULO_NO_DESPLEGADO",
+        "CREDENCIAL_AUSENTE",
+        "CLOUD_SIN_TOKEN",
+        "RENDIMIENTO"
+      ]
+    }
+  }
+}

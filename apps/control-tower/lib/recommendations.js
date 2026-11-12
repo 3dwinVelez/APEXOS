@@ -206,13 +206,16 @@ function addCloud(list, seen, environment) {
   for (const provider of Object.keys(CLOUD_TOKENS)) {
     const data = cloud[provider];
     if (!data) continue;
+    // Un proveedor que no esta en la topologia del ambiente (Vercel en Railway,
+    // la nube entera en el local de Docker) no es una credencial que falte.
+    if (data.applies === false) continue;
     if (!data.configured) {
       add(list, seen, {
         id: `${environment.id}:cloud:${provider}`,
         priority: "media",
         code: "CLOUD_SIN_TOKEN",
         title: `Configurar ${CLOUD_TOKENS[provider]}`,
-        action: `La tarjeta ${provider} queda sin dato porque falta ${CLOUD_TOKENS[provider]}. Cárgalo solo en apps/control-tower/.env.local para medir memoria, despliegues y salud del servicio.`,
+        action: `La tarjeta ${provider} queda sin dato porque falta ${CLOUD_TOKENS[provider]}${provider === "railway" ? ", o una sesión activa del CLI de Railway en el puesto" : ""}. Cárgalo solo en apps/control-tower/.env.local para medir memoria, despliegues y salud del servicio.`,
         owner: "apexos-performance · apexos-seguridad"
       });
       continue;

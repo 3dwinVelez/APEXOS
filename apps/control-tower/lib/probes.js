@@ -4,7 +4,7 @@ const http = require("node:http");
 const https = require("node:https");
 const net = require("node:net");
 const { execFile } = require("node:child_process");
-const { cloudForEnvironment } = require("./cloud");
+const { cloudForEnvironment, notApplicable } = require("./cloud");
 const { diagnoseCheck } = require("./diagnostics");
 const { redact } = require("./security");
 const { fetchModules, enrichWithChecks, moduleChecks } = require("./modules");
@@ -485,10 +485,16 @@ function cloudPlaceholder(provider, configured, detail) {
 }
 
 function simulatedCloud(config, environment) {
+  // En simulacion la torre no llama a ningún proveedor, pero la topologia del
+  // ambiente sigue siendo la misma: lo que no se usa se declara "no aplica", no
+  // "sin dato", para que el arnes aislado mida lo mismo que el puesto real.
+  const card = (provider, label, token, identifier, detail) => (identifier
+    ? cloudPlaceholder(provider, token, detail)
+    : notApplicable(provider, label));
   return {
-    railway: cloudPlaceholder("railway", config.cloud.railway.token && environment.railwayProjectId, "Simulación: integración Railway omitida."),
-    vercel: cloudPlaceholder("vercel", config.cloud.vercel.token && environment.vercelProjectId, "Simulación: integración Vercel omitida."),
-    supabase: cloudPlaceholder("supabase", config.cloud.supabase.accessToken && environment.supabaseRef, "Simulación: integración Supabase omitida.")
+    railway: card("railway", "Railway", config.cloud.railway.token, environment.railwayProjectId, "Simulación: integración Railway omitida."),
+    vercel: card("vercel", "Vercel", config.cloud.vercel.token, environment.vercelProjectId, "Simulación: integración Vercel omitida."),
+    supabase: card("supabase", "Supabase", config.cloud.supabase.accessToken, environment.supabaseRef, "Simulación: integración Supabase omitida.")
   };
 }
 
@@ -514,6 +520,22 @@ function deployedInfo(apiCheck) {
       byStatus: usage.by_status && typeof usage.by_status === "object" ? usage.by_status : null,
       slowQueries: Number(usage.slow_queries_total) || 0
     } : null
+  };
+}
+
+// El ambiente local no se sondea contra la nube: su API, su base y sus colas viven
+// en el puesto y se miden en las vistas API y Datos. Publicar las tres tarjetas como
+// "no aplica" (en lugar de null) evita que la vista Nube pida tokens de proveedores
+// que este ambiente no tiene.
+function localCloudCards() {
+  const card = (label) => ({
+    ...notApplicable(label.toLowerCase(), label),
+    detail: `${label} no aplica al ambiente local: se mide en el puesto, no en la nube.`
+  });
+  return {
+    railway: card("Railway"),
+    vercel: card("Vercel"),
+    supabase: card("Supabase")
   };
 }
 
@@ -665,6 +687,10 @@ async function runEnvironmentProbes(config, environment, { fetchImpl = global.fe
 
   for (const [provider, label] of [["railway", `Railway ${short}`], ["vercel", `Vercel ${short}`]]) {
     const data = cloud[provider];
+    // Un proveedor que no esta en la topologia del ambiente no es un punto que no
+    // se pudo medir: no hay nada que medir, y registrarlo como "sin dato" llenaria
+    // la lista de checks del puesto con casillas que nunca van a llenarse.
+    if (data && data.applies === false) continue;
     const check = remoteCheck(environment, `${environment.id}.${provider}`, label, { severity: "medium", optional: true, source: provider });
     check.status = data && data.status ? data.status : "unknown";
     check.detail = data ? data.detail : "Integración no configurada.";
@@ -751,7 +777,7 @@ async function runAllProbes(config, { fetchImpl = global.fetch } = {}) {
     ...main.checks
   ].map(diagnoseCheck));
   const environments = {
-    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), null, local.modules, local.activity, local.api, local.components),
+    local: buildEnvironmentMeta(config, config.environments.local, checks.filter((check) => check.environment === "local"), localCloudCards(), local.modules, local.activity, local.api, local.components),
     develop: buildEnvironmentMeta(config, config.environments.develop, checks.filter((check) => check.environment === "develop"), develop.cloud, develop.modules, develop.activity, develop.api, develop.components),
     main: buildEnvironmentMeta(config, config.environments.main, checks.filter((check) => check.environment === "main"), main.cloud, main.modules, main.activity, main.api, main.components)
   };
@@ -775,6 +801,7 @@ module.exports = {
   runProbes,
   runEnvironmentProbes,
   runAllProbes,
+  localCloudCards,
   computeOverall,
   computeSummary,
   probeApi,

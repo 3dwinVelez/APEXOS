@@ -19,8 +19,17 @@ const UI_TOKEN = "consolidado-ui-token";
 const APEX_TOKEN = "consolidado-apex-token";
 const RICH_COMMIT = "cafebabe1234";
 const LEGACY_COMMIT = "938fc2b6f42c";
+// Sesion falsa del CLI de Railway: la torre debe leerla de su almacen y nunca
+// publicarla. No es un JWT real, es un marcador de filtracion.
+const CLOUD_SESSION_TOKEN = "sesion-cli-de-certificacion-NO-PUBLICAR";
+const CERT_RAILWAY_PROJECT_ID = "cert-railway-project-0000";
+// Identificadores medidos de los proyectos reales. Se certifican como cableado
+// versionado del config: cambian solo cuando cambia la topologia del puesto.
+const QA_RAILWAY_PROJECT_ID = "33726923-021d-47a7-a263-b8b287f164f1";
+const PROD_RAILWAY_PROJECT_ID = "0afe38cc-6080-49d2-aa24-2d5625250ac2";
 
 const { createTower } = require(path.join(TOWER_DIR, "server.js"));
+const { loadConfig } = require(path.join(TOWER_DIR, "lib/config.js"));
 
 const startedAt = new Date().toISOString();
 const checks = [];
@@ -31,6 +40,18 @@ let chrome = null;
 let dataDir = null;
 let richApi = null;
 let legacyApi = null;
+let fakeRailway = null;
+// La torre adopta la sesion del CLI del puesto leyendo RAILWAY_CONFIG_DIR. La cert
+// redirige esa variable a un almacen propio y retira RAILWAY_TOKEN: sin esto el
+// resultado dependeria de con quien este sesion el operador que ejecuta.
+const savedCloudEnv = { RAILWAY_CONFIG_DIR: process.env.RAILWAY_CONFIG_DIR, RAILWAY_TOKEN: process.env.RAILWAY_TOKEN };
+
+function restoreCloudEnv() {
+  for (const [key, value] of Object.entries(savedCloudEnv)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+}
 
 // La misma regla que el propietario firmo y que el script local ya persigue: cada
 // magnitud medida se pinta como el grafico de latencia con sus cortes. Se expresa
@@ -418,6 +439,44 @@ function startLegacyApi() {
   });
 }
 
+// Ferrocarril falso: contesta el GraphQL de Railway con un proyecto, sus
+// ambientes y un deployment SUCCESS, y registra el encabezado de autorizacion
+// que realmente llego. Retrasa la respuesta para que el viaje tenga una
+// latencia medida no nula.
+function startFakeRailway() {
+  const log = [];
+  return new Promise((resolve) => {
+    const server = http.createServer((req, res) => {
+      let raw = "";
+      req.on("data", (chunk) => { raw += chunk; });
+      req.on("end", () => {
+        log.push({ auth: String(req.headers.authorization || ""), path: req.url });
+        let query = "";
+        try { query = String(JSON.parse(raw).query || ""); } catch { query = ""; }
+        const body = query.includes("Deployments(")
+          ? { data: { deployments: { edges: [{ node: { id: "deployment-cert", status: "SUCCESS", createdAt: "2026-11-12T00:00:00.000Z" } }] } } }
+          : {
+            data: {
+              project: {
+                id: CERT_RAILWAY_PROJECT_ID,
+                name: "APEXOS CERT",
+                services: { edges: [{ node: { id: "svc-api", name: "apexos-api-cert" } }, { node: { id: "svc-web", name: "apexos-web-cert" } }] },
+                environments: { edges: [{ node: { id: "env-production", name: "production" } }] }
+              }
+            }
+          };
+        setTimeout(() => {
+          res.writeHead(200, { "content-type": "application/json" });
+          res.end(JSON.stringify(body));
+        }, 20);
+      });
+    });
+    server.listen(0, "127.0.0.1", () => {
+      resolve({ server, log, base: `http://127.0.0.1:${server.address().port}/graphql/v2` });
+    });
+  });
+}
+
 function commitSha() {
   try {
     return execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT }).toString().trim();
@@ -437,6 +496,7 @@ function workingTreeDirty() {
 function redactEnv(payload) {
   const text = JSON.stringify(payload);
   return JSON.parse(text
+    .replace(new RegExp(CLOUD_SESSION_TOKEN, "g"), "[sesion-railway]")
     .replace(new RegExp(APEX_TOKEN, "g"), "[apex-token]")
     .replace(new RegExp(UI_TOKEN, "g"), "[ui-token]"));
 }
@@ -452,6 +512,17 @@ async function run() {
   legacyApi = await startLegacyApi();
   record("api_rica_sondeada", Boolean(richApi.base), { base: richApi.base });
   record("api_legada_bloqueada", Boolean(legacyApi.base), { base: legacyApi.base });
+
+  // Fase de nube: un ferrocarril local y un almacen de sesion del CLI propio. La
+  // torre debe adoptar la sesion (no duplicarla en un segundo archivo) y sondear
+  // solo el ambiente cuya topologia declara el proyecto.
+  fakeRailway = await startFakeRailway();
+  const railwayConfigDir = path.join(dataDir, "railway-cli");
+  fs.mkdirSync(railwayConfigDir, { recursive: true });
+  fs.writeFileSync(path.join(railwayConfigDir, "config.json"), `${JSON.stringify({ user: { accessToken: CLOUD_SESSION_TOKEN } })}\n`, "utf8");
+  process.env.RAILWAY_CONFIG_DIR = railwayConfigDir;
+  process.env.RAILWAY_TOKEN = "";
+  record("ferrocarril_falso_sondeable", Boolean(fakeRailway.base), { base: fakeRailway.base });
 
   const richHealth = await request(richApi.base, "/health");
   assert("health_expone_runtime", richHealth.status === 200
@@ -477,7 +548,7 @@ async function run() {
     telegram: { mode: "off", token: "", allowedChatIds: [] },
     git: { remoteEnabled: false },
     cloud: {
-      railway: { token: "", projectId: "" },
+      railway: { token: "", projectId: "", apiUrl: fakeRailway.base, sessionEnabled: true },
       vercel: { token: "" },
       supabase: { accessToken: "" }
     },
@@ -496,7 +567,7 @@ async function run() {
         webBaseUrl: legacyApi.base,
         apexToken: APEX_TOKEN,
         supabaseUrl: "",
-        railwayProjectId: "",
+        railwayProjectId: CERT_RAILWAY_PROJECT_ID,
         vercelProjectId: "",
         supabaseRef: ""
       },
@@ -638,6 +709,79 @@ async function run() {
   fs.writeFileSync(path.join(EVIDENCE_DIR, "snapshot-ambientes.json"), `${JSON.stringify(redactEnv(first), null, 2)}\n`, "utf8");
   fs.writeFileSync(path.join(EVIDENCE_DIR, "empresa-tenant-demo.json"), `${JSON.stringify(redactEnv(tenantOk.body), null, 2)}\n`, "utf8");
   record("evidencia_json", true, { archivos: ["snapshot-ambientes.json", "empresa-tenant-demo.json"] });
+
+  // ---- Fase de nube medida --------------------------------------------------
+  // Lo que el dueno pregunto: que los puntos de medicion de la nube esten
+  // conectados de verdad. Se certifica el viaje completo —sesion del CLI, sonda
+  // con credencial, tarjeta medida y accion solo donde falta algo— sin tocar
+  // internet y sin depender de con quien este autenticado quien ejecuta.
+  const cloudDevelop = await waitFor(async () => {
+    const status = await request(base, "/api/status", { token: UI_TOKEN });
+    const environment = status.body && status.body.snapshot && status.body.snapshot.environments.develop;
+    return environment && environment.cloud && environment.cloud.railway && environment.cloud.railway.checkedAt ? environment.cloud : null;
+  }, 30000);
+  assert("nube_sesion_del_cli_adoptada", Boolean(cloudDevelop)
+    && cloudDevelop.railway.configured === true
+    && /CLI de Railway/.test(cloudDevelop.railway.credentialSource || ""), {
+    fuente: cloudDevelop && cloudDevelop.railway.credentialSource,
+    configured: cloudDevelop && cloudDevelop.railway.configured
+  });
+  assert("nube_sonda_viaja_con_la_sesion", fakeRailway.log.length >= 1
+    && fakeRailway.log.every((call) => call.auth === `Bearer ${CLOUD_SESSION_TOKEN}`), {
+    llamadas: fakeRailway.log.length,
+    autorizacion: fakeRailway.log.length ? fakeRailway.log[0].auth.slice(0, 12) : null
+  });
+  assert("nube_railway_medido_con_viaje", cloudDevelop
+    && cloudDevelop.railway.applies === true
+    && cloudDevelop.railway.status === "ok"
+    && Number.isFinite(cloudDevelop.railway.latencyMs) && cloudDevelop.railway.latencyMs > 0
+    && cloudDevelop.railway.project && cloudDevelop.railway.project.name === "APEXOS CERT"
+    && cloudDevelop.railway.metrics.deployments === 1
+    && /SUCCESS/.test(cloudDevelop.railway.detail || ""), {
+    latenciaMs: cloudDevelop && cloudDevelop.railway.latencyMs,
+    estado: cloudDevelop && cloudDevelop.railway.status,
+    detalle: cloudDevelop && cloudDevelop.railway.detail
+  });
+  // Un proveedor fuera de la topologia del ambiente no es un pendiente del puesto:
+  // no genera tarjeta "sin credenciales" ni accion de configurar.
+  assert("nube_proveedor_sin_topologia_no_pide_token", cloudDevelop
+    && cloudDevelop.vercel.applies === false
+    && cloudDevelop.vercel.status === "not_applicable"
+    && cloudDevelop.supabase.applies === false
+    && !develop.recommendations.some((item) => item.code === "CLOUD_SIN_TOKEN"
+      && /Vercel|Supabase/.test(`${item.title} ${item.action}`)), {
+    vercel: cloudDevelop && `${cloudDevelop.vercel.applies}/${cloudDevelop.vercel.status}`,
+    supabase: cloudDevelop && `${cloudDevelop.supabase.applies}/${cloudDevelop.supabase.status}`,
+    acciones: develop.recommendations.map((item) => item.code)
+  });
+  assert("nube_ambiente_sin_proyecto_no_inventa", main.cloud
+    && main.cloud.railway.applies === false
+    && main.cloud.railway.configured === false
+    && main.cloud.railway.latencyMs === null, {
+    railway: main.cloud && { aplica: main.cloud.railway.applies, latenciaMs: main.cloud.railway.latencyMs }
+  });
+  assert("nube_local_no_pide_credenciales_cloud", local.cloud
+    && Object.keys(local.cloud).every((provider) => local.cloud[provider].applies === false)
+    && !local.recommendations.some((item) => item.code === "CLOUD_SIN_TOKEN"), {
+    tarjetas: local.cloud && Object.keys(local.cloud).map((provider) => `${provider}:${local.cloud[provider].status}`),
+    acciones: local.recommendations.map((item) => item.code)
+  });
+  assert("nube_no_publica_la_sesion_del_puesto", !JSON.stringify(first).includes(CLOUD_SESSION_TOKEN), {
+    tamano: JSON.stringify(first).length
+  });
+
+  const versionado = loadConfig();
+  assert("nube_ids_reales_cableados_en_el_config",
+    versionado.environments.develop.railwayProjectId === QA_RAILWAY_PROJECT_ID
+    && versionado.environments.main.railwayProjectId === PROD_RAILWAY_PROJECT_ID
+    && versionado.environments.local.railwayProjectId === "", {
+    qa: versionado.environments.develop.railwayProjectId,
+    prod: versionado.environments.main.railwayProjectId,
+    local: versionado.environments.local.railwayProjectId
+  });
+
+  fs.writeFileSync(path.join(EVIDENCE_DIR, "nube-certificada.json"), `${JSON.stringify(cloudDevelop, null, 2)}\n`, "utf8");
+  record("evidencia_nube", true, { archivos: ["nube-certificada.json"], llamadas_ferrocarril: fakeRailway.log.length });
 
   let browserError = null;
   if (binary) {
@@ -947,6 +1091,61 @@ async function run() {
       const shotDetail = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "03-vista-latencia-consolidado.png"), { fullPage: false });
       assert("captura_vista_latencia", shotDetail > 20000, { bytes: shotDetail });
 
+      // Vista Nube en QA: el dueno pregunto por los puntos de medicion de la nube.
+      // Aqui se ve lo que el servidor firmo —viaje medido, ultimo despliegue y de
+      // donde salio la credencial— y "No aplica" donde el ambiente no usa proveedor.
+      await chrome.cdp.evaluate(`document.querySelector('[data-env="develop"]').click()`);
+      await chrome.cdp.evaluate(`document.querySelector('[data-view="nube"]').click()`);
+      const nubeLista = await waitFor(() => chrome.cdp.evaluate(`(() => {
+        const tarjetas = [...document.querySelectorAll('#cloud .cloud-card')].filter((n) => n.offsetParent !== null);
+        if (tarjetas.length !== 3) return null;
+        const railway = tarjetas.find((n) => /Railway/.test(n.textContent));
+        const texto = railway ? railway.textContent.replace(/\\s+/g, ' ').trim() : '';
+        return /\\d+ ms/.test(texto) && /CLI de Railway/.test(texto) ? tarjetas : null;
+      })()`).catch(() => null), 30000);
+      const nube = await chrome.cdp.evaluate(`(() => {
+        const visibles = (sel) => [...document.querySelectorAll(sel)].filter((n) => n.offsetParent !== null);
+        const tarjetas = visibles('#cloud .cloud-card');
+        return {
+          tarjetas: tarjetas.map((n) => n.textContent.replace(/\\s+/g, ' ').trim().slice(0, 220)),
+          pistasRailway: (() => {
+            const r = tarjetas.find((n) => /Railway/.test(n.textContent));
+            return r ? [...r.querySelectorAll('.cloud-hint')].map((p) => p.textContent.replace(/\\s+/g, ' ').trim()) : [];
+          })(),
+          noAplica: tarjetas.filter((n) => /No aplica/.test(n.textContent)).length,
+          pideConfigurar: tarjetas.filter((n) => /Configura /.test(n.textContent)).length,
+          sinCredenciales: tarjetas.filter((n) => /Sin credenciales/.test(n.textContent)).length,
+          estado: (tarjetas.find((n) => /Railway/.test(n.textContent)) || {}).className,
+          graficas: visibles('#cloud .monitor-chart').length,
+          meta: document.getElementById('cloudMeta').textContent.replace(/\\s+/g, ' ').trim(),
+          veredicto: (document.getElementById('cloudVerdict') || {}).textContent || ''
+        };
+      })()`);
+      const tarjetaRailway = nube.tarjetas.find((texto) => /Railway/.test(texto)) || "";
+      assert("navegador_nube_con_viaje_medido", Boolean(nubeLista) && /APEXOS CERT/.test(tarjetaRailway)
+        && /SUCCESS/.test(tarjetaRailway) && /\d+ ms/.test(tarjetaRailway), {
+        railway: tarjetaRailway.slice(0, 200), meta: nube.meta
+      });
+      assert("navegador_nube_dice_la_fuente_de_la_credencial", nube.pistasRailway.some((pista) => /Credencial le[ií]da de:.*CLI de Railway/.test(pista)), {
+        pistas: nube.pistasRailway
+      });
+      assert("navegador_nube_no_pide_configurar_lo_que_no_aplica", nube.noAplica === 2
+        && nube.pideConfigurar === 0 && nube.sinCredenciales === 0, {
+        noAplica: nube.noAplica, pideConfigurar: nube.pideConfigurar, sinCredenciales: nube.sinCredenciales
+      });
+      assert("navegador_nube_grafica_del_viaje", nube.graficas >= 1 && /status-ok/.test(nube.estado || ""), {
+        graficas: nube.graficas, clase: nube.estado
+      });
+      assert("navegador_nube_no_imprime_la_sesion", !nube.tarjetas.some((texto) => texto.includes(CLOUD_SESSION_TOKEN))
+        && !(nube.veredicto || "").includes(CLOUD_SESSION_TOKEN), { veredicto: (nube.veredicto || "").slice(0, 120) });
+      await chrome.cdp.evaluate(`document.getElementById('cloud').scrollIntoView({block:'center'})`);
+      await sleep(300);
+      const shotNube = await chrome.cdp.screenshot(path.join(EVIDENCE_DIR, "04-vista-nube-medida.png"), { fullPage: false });
+      assert("captura_vista_nube", shotNube > 20000, { bytes: shotNube });
+
+      await chrome.cdp.evaluate(`document.querySelector('[data-env="local"]').click()`);
+      await waitFor(() => chrome.cdp.evaluate(`document.getElementById('overallPill').textContent.includes('LOCAL')`), 10000);
+
       // Volver al Resumen despues de recorrer las vistas de detalle tiene que
       // repintar el cockpit completo: un panel que se queda a medias al cambiar de
       // vista es saturacion perdida, no recorte.
@@ -993,6 +1192,14 @@ async function main() {
         }
       }
     }
+    if (fakeRailway) {
+      try {
+        fakeRailway.server.close();
+      } catch {
+        // ignore
+      }
+    }
+    restoreCloudEnv();
     if (dataDir) {
       try {
         fs.rmSync(dataDir, { recursive: true, force: true });
@@ -1019,12 +1226,14 @@ async function main() {
       "monitor consolidado por empresa (empresas, carga, actividad, memoria, uso del API, rendimiento)",
       "selector de empresa y panel por empresa con acciones sugeridas",
       "componentes de /apex-control/status con latencia medida y 'sin medicion' cuando el servidor no la publica",
+      "puntos de medicion de la nube: sesion del CLI de Railway adoptada en el sondeo, viaje medido, y 'no aplica' para un proveedor fuera de la topologia del ambiente",
       "/health del API con runtime agregado (uptime, memoria, uso) y su normalizacion en la torre",
       "motor de acciones sugeridas por ambiente y por empresa",
       "ambientes bloqueados por build sin apex-control: bloqueo explicado con accion y responsable"
     ],
     no_certifica: [
       "datos reales por empresa en QA y PROD: sus builds desplegados no incluyen apex-control",
+      "la nube real de los proveedores: el viaje se certifica contra un ferrocarril local y una sesion de marcador, sin salir a internet",
       "promocion a develop o main",
       "despliegue en Railway"
     ],
@@ -1032,7 +1241,7 @@ async function main() {
       type: "local",
       node: process.version,
       chrome: chromePath() || "no disponible",
-      modo: "torre real contra API rica (con runtime) y API legada (sin apex-control)",
+      modo: "torre real contra API rica (con runtime) y API legada (sin apex-control), mas ferrocarril local con sesion del CLI en almacen propio",
       tokens: "roles locales de certificacion, nunca credenciales reales"
     },
     checks,
@@ -1049,7 +1258,8 @@ async function main() {
       "empresa-tenant-demo.json",
       "01-monitor-consolidado-empresa.png",
       "02-producto-bloqueado-con-acciones.png",
-      "03-vista-latencia-consolidado.png"
+      "03-vista-latencia-consolidado.png",
+      "04-vista-nube-medida.png"
     ]
   };
   fs.writeFileSync(path.join(EVIDENCE_DIR, "certification.json"), `${JSON.stringify(certification, null, 2)}\n`, "utf8");

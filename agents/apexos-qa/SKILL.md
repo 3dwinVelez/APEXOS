@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.52.3
+version: 2.53.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -201,6 +201,15 @@ Antes de actuar, leer en este orden:
     - **Los dictámenes de error se prueban por código, no por sensación.** `test/activity.test.js` fija `401 → TOKEN_INVALIDO`, `403 → PERMISO_DENEGADO`, red caída → `SIN_CONEXION`, y `test/recommendations.test.js` que la credencial eclipse el motivo genérico. Un reetiquetado sin su prueba de las dos mitades (regla 29 del seguridad) es media certificación.
     - **La no-regresión del resto del panel se corre igual.** La intervención no tocó `public/**`, y aun así `certify:control-tower:consolidado` (`57/57`) y las once capturas de la fase uno se regeneraron: la evidencia de «esto no cambió» también son las gates que siguen verdes con el cableado nuevo.
     Por qué: el patrón de esta torre fue Verde → rojo por ambiente → verde con atajo; la única salida es que la certificación exija que el punto se mantenga vivo sin la intervención que lo encendió.
+
+66. **Una certificación de nube se corre contra un proveedor local con la sesión inyectada, y afirma las dos mitades: lo medido y lo que no aplica.** El 2026-11-12 se conectaron los puntos de medición de la nube de la torre; `certify:control-tower:consolidado` pasó de `57/57` a `73/73` con dieciséis verificaciones nuevas y la disciplina quedó así:
+    - **Hermético por construcción, no por buena fe.** La corrida levanta su propio ferrocarril en `127.0.0.1`, le pone 20 ms de retardo para que la latencia afirmada sea medida y no redondeada a cero, redirige `RAILWAY_CONFIG_DIR` a un almacén de sesión de marcador y limpia `RAILWAY_TOKEN` antes de crear la torre; el entorno se restaura al cerrar. Sin eso el verde habría dependido de con quién estuviera autenticado el que ejecutaba —y una prueba de este repo falló precisamente por lo contrario: pasó porque la máquina tenía sesión real y salió a internet—.
+    - **Las dos mitades en la misma corrida.** `nube_railway_medido_con_viaje` (aplica, `ok`, latencia > 0, proyecto y deployment leídos) y `nube_proveedor_sin_topologia_no_pide_token` (Vercel/Supabase `not_applicable` y **cero** acciones). Afirmar solo la primera dejaría pasar el ruido que el dueño denunciaba; afirmar solo la segunda dejaría ciego el punto.
+    - **El viaje se prueba en la cabecera que llegó al proveedor.** `nube_sonda_viaja_con_la_sesion` cuenta las llamadas recibidas y exige `Authorization: Bearer <sesión>`. Que la tarjeta diga «sesión del CLI» sin probar la cabecera es certificar la etiqueta, no el mecanismo.
+    - **Una captura de texto recortado no es un contrato.** `navegador_nube_dice_la_fuente_de_la_credencial` falló primero leyendo `textContent` limitado a 220 caracteres: la línea «Credencial leída de: …» vivía más abajo y el slice la cortaba. Se lee el elemento (`.cloud-hint`), no una ventana de caracteres; un gate que pasa o falla según dónde corte el `slice` no mide nada.
+    - **La evidencia de campo se escribe con guarda de fuga.** El volcado del puesto (`nube-viva.json`) niega a escribirse si el JSON contiene `accessToken` o `Bearer `, y la certificación busca la sesión de marcador en el snapshot y en la pantalla. Un archivo de evidencia que filtra una credencial es un incidente, no una prueba.
+    - **Lo bloqueado se declara por clase.** Supabase sin `SUPABASE_ACCESS_TOKEN`, QA/PROD sin el módulo desplegado (404 medido) y la credencial APEX de esos ambientes quedan escritos como pendientes que ninguna gate puede volver verdes; `no_certifica` lo dice en el propio `certification.json`.
+    Por qué: conectar un punto de medición con dato real es fácil de simular y difícil de certificar; si la gate depende del operador, del internet o de un texto recortado, mañana vuelve a estar ciega y nadie sabe en qué sentido falló.
 
 ## Checklist de intervención
 

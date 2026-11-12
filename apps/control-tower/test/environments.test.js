@@ -3,7 +3,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const http = require("node:http");
-const { loadConfig, safeConfig } = require("../lib/config");
+const { loadConfig, safeConfig, credentialReport } = require("../lib/config");
 const { diagnoseCheck, baseComponent } = require("../lib/diagnostics");
 const { PerformanceTracker, percentile } = require("../lib/performance");
 const { runEnvironmentProbes, computeOverall, computeSummary } = require("../lib/probes");
@@ -34,7 +34,9 @@ function remoteConfig(base) {
       }
     },
     cloud: {
-      railway: { token: "" },
+      // Puesto hermetico: sin variable y sin sesion del CLI, la sonda no debe
+      // tocar la red ni depender de lo que el operador tenga instalado.
+      railway: { token: "", sessionEnabled: false },
       vercel: { token: "" },
       supabase: { accessToken: "" }
     }
@@ -178,7 +180,10 @@ test("sondas remotas consultan API, web y Supabase y dejan cloud sin credenciale
   assert.equal(byId["develop.web"].status, "ok");
   assert.equal(byId["develop.supabase"].status, "ok");
   assert.equal(byId["develop.railway"].status, "unknown");
-  assert.equal(byId["develop.vercel"].status, "unknown");
+  assert.equal(byId["develop.vercel"], undefined, "Vercel no está en la topología: no se registra como punto sin dato");
+  assert.equal(result.cloud.railway.applies, true);
+  assert.equal(result.cloud.vercel.applies, false);
+  assert.match(result.cloud.vercel.detail, /topología/);
   assert.equal(result.cloud.railway.configured, false);
   assert.equal(result.cloud.vercel.configured, false);
   assert.equal(result.cloud.supabase.configured, false);
@@ -230,4 +235,35 @@ test("ambiente desactivado reporta configuracion pendiente", async () => {
   assert.equal(result.checks[0].id, "develop.config");
   assert.equal(result.checks[0].status, "unknown");
   assert.equal(result.cloud.railway.configured, false);
+});
+
+test("el puesto conoce el proyecto de Railway de cada ambiente remoto y la ausencia del local", () => {
+  const config = loadConfig();
+  // Identificadores medidos con la sesion del CLI (railway status): apuntar a otro
+  // proyecto llenaria la vista Nube con los deployments de otra aplicacion.
+  assert.equal(config.environments.develop.railwayProjectId, "33726923-021d-47a7-a263-b8b287f164f1", "APEXOS QA");
+  assert.equal(config.environments.main.railwayProjectId, "0afe38cc-6080-49d2-aa24-2d5625250ac2", "APEXOS PROD");
+  assert.equal(config.environments.local.railwayProjectId, "", "el local corre en Docker: no tiene nube que sondear");
+  assert.equal(config.environments.develop.vercelProjectId, "", "APEXOS no publica su web en Vercel");
+});
+
+test("la sesión del CLI cuenta como credencial de Railway y no se publica", () => {
+  const config = loadConfig({ cloud: { railway: { token: "", sessionEnabled: true } } });
+  const sessionOptions = {
+    homeDir: "C:/puesto",
+    fsImpl: { readFileSync: () => JSON.stringify({ user: { accessToken: "secreto-del-cli" } }) }
+  };
+  const report = credentialReport(config, sessionOptions);
+  const railway = report.find((item) => item.provider === "railway");
+  assert.equal(railway.tokenConfigured, true);
+  assert.equal(railway.tokenSource, "sesión del CLI de Railway");
+  assert.ok(!railway.missing.some((item) => /RAILWAY_TOKEN/.test(item)), "no se pide lo que el puesto ya tiene");
+
+  const apagada = credentialReport(loadConfig({ cloud: { railway: { token: "", sessionEnabled: false } } }), sessionOptions);
+  const sinSesion = apagada.find((item) => item.provider === "railway");
+  assert.equal(sinSesion.tokenConfigured, false);
+  assert.equal(sinSesion.tokenSource, null);
+  assert.ok(sinSesion.missing.some((item) => /RAILWAY_TOKEN/.test(item)));
+
+  assert.doesNotMatch(JSON.stringify(safeConfig(config)), /secreto-del-cli/, "la config publicada no arrastra el token");
 });

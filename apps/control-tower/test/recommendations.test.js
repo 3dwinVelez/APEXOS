@@ -185,3 +185,20 @@ test("ambiente desactivado u optimo no produce acciones", () => {
     modules: { reason: null, modules: [{ key: "hr", name: "Talento Humano", status: "ok" }] }
   })), []);
 });
+
+test("un proveedor fuera de la topología del ambiente no exige credencial", () => {
+  const items = recommendationsFor(environment({
+    modules: { reason: null, modules: [{ key: "hr", name: "Talento Humano", status: "ok" }] },
+    cloud: {
+      railway: { applies: true, configured: false, status: "unknown" },
+      vercel: { applies: false, configured: false, status: "not_applicable" },
+      supabase: { applies: false, configured: false, status: "not_applicable" }
+    }
+  }));
+  const cloud = items.filter((item) => String(item.code).startsWith("CLOUD"));
+  assert.deepEqual(cloud.map((item) => item.code), ["CLOUD_SIN_TOKEN"]);
+  assert.match(cloud[0].title, /RAILWAY_TOKEN/);
+  assert.match(cloud[0].action, /sesión activa del CLI de Railway/);
+  assert.ok(!items.some((item) => /VERCEL|SUPABASE/.test(`${item.title} ${item.action}`)),
+    "Vercel y Supabase no están desplegados en este ambiente: no son un pendiente del puesto");
+});

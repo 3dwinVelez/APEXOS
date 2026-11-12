@@ -4,7 +4,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const net = require("node:net");
 const http = require("node:http");
-const { redisPing, probeApexControl, runProbes } = require("../lib/probes");
+const { redisPing, probeApexControl, runProbes, localCloudCards } = require("../lib/probes");
+const { recommendationsFor } = require("../lib/recommendations");
 
 function closedPort() {
   return new Promise((resolve, reject) => {
@@ -133,4 +134,18 @@ test("la lectura de apex-control usa el presupuesto del ambiente, no el de la in
   assert.ok(apex.durationMs >= 700, `la lectura tardo ${apex.durationMs} ms`);
   assert.equal(apex.status, "ok");
   assert.equal(checks.find((check) => check.id === "db").status, "down");
+});
+
+test("el ambiente local declara la nube como no aplicable, no como pendiente de token", () => {
+  const cloud = localCloudCards();
+  assert.deepEqual(Object.keys(cloud), ["railway", "vercel", "supabase"]);
+  for (const card of Object.values(cloud)) {
+    assert.equal(card.applies, false);
+    assert.equal(card.configured, false);
+    assert.equal(card.status, "not_applicable");
+    assert.equal(card.latencyMs, null, "sin llamada no hay viaje que inventar");
+    assert.match(card.detail, /no aplica al ambiente local/);
+  }
+  const items = recommendationsFor({ id: "local", short: "LOCAL", enabled: true, cloud, modules: { reason: null, modules: [] } }, {});
+  assert.ok(!items.some((item) => String(item.code).startsWith("CLOUD")), "la vista Nube del local no pide credenciales");
 });

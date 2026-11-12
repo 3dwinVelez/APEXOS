@@ -1,6 +1,7 @@
 "use strict";
 
 const { redact } = require("./security");
+const { resolveRailwayToken } = require("./railway-session");
 
 async function requestJson(fetchImpl, url, { method = "GET", headers = {}, body = null, timeoutMs = 8000 } = {}) {
   const startedAt = Date.now();
@@ -34,6 +35,9 @@ async function requestJson(fetchImpl, url, { method = "GET", headers = {}, body 
 function unconfigured(provider, detail) {
   return {
     provider,
+    // "aplica" es la topologia, "configurado" es el puesto: un proveedor que el
+    // ambiente no usa no debe aparecer como una credencial que falta.
+    applies: true,
     configured: false,
     status: "unknown",
     detail,
@@ -47,6 +51,14 @@ function unconfigured(provider, detail) {
     // Sin llamada HTTP no hay latencia medida: null, para que no se lea "instantanea".
     latencyMs: null,
     checkedAt: new Date().toISOString()
+  };
+}
+
+function notApplicable(provider, label) {
+  return {
+    ...unconfigured(provider, `${label} no forma parte de la topología de este ambiente: no hay nada que sondear.`),
+    applies: false,
+    status: "not_applicable"
   };
 }
 
@@ -65,6 +77,7 @@ function average(values) {
 function authError(provider, response) {
   return {
     provider,
+    applies: true,
     configured: true,
     status: "degraded",
     detail: `Token de ${provider} inválido o sin permiso (HTTP ${response.status}).`,
@@ -88,10 +101,12 @@ function deploymentStatus(state) {
   return "unknown";
 }
 
-async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetchImpl = global.fetch, now = new Date() } = {}) {
+async function railwayStatus({ token, projectId, apiUrl, credentialSource = "", timeoutMs = 8000, fetchImpl = global.fetch, now = new Date() } = {}) {
   const provider = "railway";
   if (!token || !projectId) {
-    return unconfigured(provider, "Railway sin token o proyecto configurado. Añade RAILWAY_TOKEN y ENV_*_RAILWAY_PROJECT_ID.");
+    return unconfigured(provider, token
+      ? "Railway sin proyecto configurado. Añade ENV_*_RAILWAY_PROJECT_ID."
+      : "Railway sin credencial: añade RAILWAY_TOKEN en apps/control-tower/.env.local o inicia sesión con el CLI de Railway en el puesto.");
   }
   const headers = {
     authorization: `Bearer ${token}`,
@@ -190,7 +205,9 @@ async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetch
   };
   return {
     provider,
+    applies: true,
     configured: true,
+    credentialSource: credentialSource || null,
     status,
     detail: latest
       ? `Último deployment ${latest.status || "sin estado"} en ${latest.environment || "Railway"} · ${formatDate(latest.createdAt)}`
@@ -210,7 +227,9 @@ async function railwayStatus({ token, projectId, apiUrl, timeoutMs = 8000, fetch
 async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000, fetchImpl = global.fetch, now = new Date() } = {}) {
   const provider = "vercel";
   if (!token || !projectId) {
-    return unconfigured(provider, "Vercel sin token o proyecto configurado. Añade VERCEL_TOKEN y ENV_*_VERCEL_PROJECT_ID.");
+    return unconfigured(provider, token
+      ? "Vercel sin proyecto configurado. Añade ENV_*_VERCEL_PROJECT_ID."
+      : "Vercel sin token. Añade VERCEL_TOKEN en apps/control-tower/.env.local.");
   }
   const suffix = teamId ? `?teamId=${encodeURIComponent(teamId)}` : "";
   const headers = { authorization: `Bearer ${token}` };
@@ -268,6 +287,7 @@ async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000
   };
   return {
     provider,
+    applies: true,
     configured: true,
     status: latest ? deploymentStatus(latest.state) : "unknown",
     detail: latest
@@ -288,7 +308,9 @@ async function vercelStatus({ token, teamId, projectId, apiUrl, timeoutMs = 8000
 async function supabaseStatus({ accessToken, ref, apiUrl, timeoutMs = 8000, fetchImpl = global.fetch, now = new Date() } = {}) {
   const provider = "supabase";
   if (!accessToken || !ref) {
-    return unconfigured(provider, "Supabase sin token de gestión o ref configurada. Añade SUPABASE_ACCESS_TOKEN y ENV_*_SUPABASE_REF.");
+    return unconfigured(provider, accessToken
+      ? "Supabase sin ref de proyecto. Añade ENV_*_SUPABASE_REF."
+      : `Supabase sin token de gestión. Añade SUPABASE_ACCESS_TOKEN en apps/control-tower/.env.local${ref ? ": la ref del proyecto ya está configurada." : " y ENV_*_SUPABASE_REF."}`);
   }
   const response = await requestJson(fetchImpl, `${apiUrl}/v1/projects/${encodeURIComponent(ref)}`, {
     headers: { authorization: `Bearer ${accessToken}` },
@@ -330,6 +352,7 @@ async function supabaseStatus({ accessToken, ref, apiUrl, timeoutMs = 8000, fetc
   const metrics = { services: health.length, healthy: health.length - unhealthy, unhealthy };
   return {
     provider,
+    applies: true,
     configured: true,
     status,
     detail: `Proyecto ${response.json.name || ref}: ${statusRaw || "sin estado"}${response.json.region ? ` · ${response.json.region}` : ""} · ${health.length} servicios${unhealthy ? ` (${unhealthy} con falla)` : ""}`,
@@ -387,7 +410,7 @@ function remember(key, now, value) {
   return value;
 }
 
-async function cloudForEnvironment(config, environment, { fetchImpl = global.fetch, now = new Date() } = {}) {
+async function cloudForEnvironment(config, environment, { fetchImpl = global.fetch, now = new Date(), env = process.env, homeDir, fsImpl } = {}) {
   const options = { timeoutMs: config.cloud.timeoutMs, fetchImpl, now };
   const ttlMs = config.cloud.cacheMs || 0;
   const load = async (key, loader) => {
@@ -395,26 +418,47 @@ async function cloudForEnvironment(config, environment, { fetchImpl = global.fet
     if (cached) return cached;
     return remember(key, now, await loader());
   };
+  // El token de Railway vive donde ya lo tiene el puesto: la variable del ambiente
+  // manda y, si no hay, la torre adopta la sesion del CLI en cada sondeo. Copiar el
+  // token a un segundo archivo lo envejeceria; leerlo hace que un nuevo
+  // `railway login` alcance a la torre sin reiniciarla.
+  const railwayToken = resolveRailwayToken(config.cloud.railway, { env, homeDir, fsImpl });
+  const probe = (applies, label, card) => (applies
+    ? card()
+    : Promise.resolve(notApplicable(label.toLowerCase(), label)));
   const [railway, vercel, supabase] = await Promise.all([
-    load(`railway:${environment.railwayProjectId || "none"}`, () => railwayStatus({
-      token: config.cloud.railway.token,
-      projectId: environment.railwayProjectId,
-      apiUrl: config.cloud.railway.apiUrl,
-      ...options
-    })),
-    load(`vercel:${environment.vercelProjectId || "none"}`, () => vercelStatus({
-      token: config.cloud.vercel.token,
-      teamId: config.cloud.vercel.teamId,
-      projectId: environment.vercelProjectId,
-      apiUrl: config.cloud.vercel.apiUrl,
-      ...options
-    })),
-    load(`supabase:${environment.supabaseRef || "none"}`, () => supabaseStatus({
-      accessToken: config.cloud.supabase.accessToken,
-      ref: environment.supabaseRef,
-      apiUrl: config.cloud.supabase.apiUrl,
-      ...options
-    }))
+    load(`railway:${environment.railwayProjectId || "none"}`, () => probe(
+      environment.railwayProjectId,
+      "Railway",
+      () => railwayStatus({
+        token: railwayToken.token,
+        credentialSource: railwayToken.source,
+        projectId: environment.railwayProjectId,
+        apiUrl: config.cloud.railway.apiUrl,
+        ...options
+      })
+    )),
+    load(`vercel:${environment.vercelProjectId || "none"}`, () => probe(
+      environment.vercelProjectId,
+      "Vercel",
+      () => vercelStatus({
+        token: config.cloud.vercel.token,
+        teamId: config.cloud.vercel.teamId,
+        projectId: environment.vercelProjectId,
+        apiUrl: config.cloud.vercel.apiUrl,
+        ...options
+      })
+    )),
+    load(`supabase:${environment.supabaseRef || "none"}`, () => probe(
+      environment.supabaseRef,
+      "Supabase",
+      () => supabaseStatus({
+        accessToken: config.cloud.supabase.accessToken,
+        ref: environment.supabaseRef,
+        apiUrl: config.cloud.supabase.apiUrl,
+        ...options
+      })
+    ))
   ]);
   return { railway, vercel, supabase };
 }
@@ -425,5 +469,6 @@ module.exports = {
   vercelStatus,
   supabaseStatus,
   deploymentStatus,
+  notApplicable,
   requestJson
 };
