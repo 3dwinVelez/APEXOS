@@ -301,6 +301,6 @@ test("Gestión Comercial se publica como M-27 en la navegación lateral", () => 
   const modules = read("lib/modules.ts");
   const sidebar = read("components/shell/Sidebar.tsx");
   assert.match(modules, /id: "M-27"[\s\S]*slug: "gestion-comercial"[\s\S]*name: "Gestión Comercial"/);
-  assert.match(sidebar, /MODULES\.map/);
-  assert.match(sidebar, /href: `\/dashboard\/\$\{module\.slug\}`/);
+  assert.match(sidebar, /PORTFOLIO_MODULES\.map/);
+  assert.match(sidebar, /href: moduleHome\(module\.slug\)/);
 });

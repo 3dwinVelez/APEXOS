@@ -1,7 +1,7 @@
 "use client";
 
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
-import { MODULES, MODULES_BY_SLUG } from "@/lib/modules";
+import { MODULES, MODULES_BY_SLUG, isPortfolioModule } from "@/lib/modules";
 import { MODULE_FUNCTIONS, moduleHome } from "@/lib/moduleFunctions";
 import { OPERATIONAL_ACTIONS } from "@/lib/operationalWorkspace";
 import { useI18n } from "@/lib/i18n";
@@ -41,12 +41,12 @@ export function CommandPalette() {
   const input = useRef<HTMLInputElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const items = useMemo<CommandItem[]>(() => {
-    const enabled = (slug: string) => access.bySlug[slug] === true;
+    const enabled = (slug: string) => access.bySlug[slug] === true && Boolean(MODULES_BY_SLUG[slug]) && isPortfolioModule(MODULES_BY_SLUG[slug]);
     const actions = OPERATIONAL_ACTIONS.filter((action) => enabled(action.module)).map<CommandItem>((action) => ({ id: action.id, label: action.label, detail: action.description, href: action.href, icon: action.icon, keywords: action.keywords, group: moduleName(action.module) }));
     const functions = MODULE_FUNCTIONS.filter((item) => enabled(item.module)).map<CommandItem>((item) => ({ id: item.id, label: item.label, detail: item.description, href: item.href, icon: MODULES_BY_SLUG[item.module]?.icon || Search, keywords: item.keywords, group: moduleName(item.module) }));
     // Un modulo no repite destino ya ofrecido por una accion o funcion mas especifica.
     const taken = new Set([...actions, ...functions].map((item) => item.href));
-    const modules = MODULES.filter((module) => enabled(module.slug) && !taken.has(moduleHome(module.slug))).map<CommandItem>((module) => ({ id: `module-${module.slug}`, label: module.name, detail: module.area, href: moduleHome(module.slug), icon: module.icon, keywords: `${module.capabilities.join(" ")} ${module.nextActions.join(" ")}`, group: module.area }));
+    const modules = MODULES.filter((module) => isPortfolioModule(module) && enabled(module.slug) && !taken.has(moduleHome(module.slug))).map<CommandItem>((module) => ({ id: `module-${module.slug}`, label: module.name, detail: module.area, href: moduleHome(module.slug), icon: module.icon, keywords: `${module.capabilities.join(" ")} ${module.nextActions.join(" ")}`, group: module.area }));
     return [...actions, ...functions, ...modules];
   }, [access]);
   const visible = useMemo(() => {

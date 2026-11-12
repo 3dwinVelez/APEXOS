@@ -1,7 +1,8 @@
 "use client";
 
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
-import { MODULES } from "@/lib/modules";
+import { MODULES, PORTFOLIO_MODULES } from "@/lib/modules";
+import { moduleHome } from "@/lib/moduleFunctions";
 import { groupModules } from "@/lib/operationalWorkspace";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { ChevronLeft, ChevronRight, Home, LockKeyhole, Search, X } from "lucide-react";
@@ -38,8 +39,8 @@ export function Sidebar() {
   }
 
   const normalizedQuery = normalizeSearch(moduleQuery);
-  const items = MODULES.map((module) => ({
-    href: `/dashboard/${module.slug}`,
+  const items = PORTFOLIO_MODULES.map((module) => ({
+    href: moduleHome(module.slug),
     slug: module.slug,
     label: module.name,
     icon: module.icon,
@@ -52,7 +53,7 @@ export function Sidebar() {
       if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
       return (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999);
     });
-  const groupedItems = groupModules(orderedItems.map((item) => MODULES.find((module) => module.slug === item.slug)!).filter(Boolean))
+  const groupedItems = groupModules(orderedItems.map((item) => PORTFOLIO_MODULES.find((module) => module.slug === item.slug)!).filter(Boolean))
     .map((group) => ({ ...group, items: group.items.map((module) => orderedItems.find((item) => item.slug === module.slug)!).filter(Boolean) }));
 
   function linkClass(active: boolean, enabled = true) {

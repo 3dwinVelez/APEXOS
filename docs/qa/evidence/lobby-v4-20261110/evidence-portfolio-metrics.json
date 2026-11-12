@@ -1,0 +1,166 @@
+{
+  "captured_at": "2026-11-12T13:45:05.845Z",
+  "base": "http://127.0.0.1:3001",
+  "views": [
+    {
+      "view": "portfolio-light",
+      "tileCount": 17,
+      "tileLabels": [
+        "Inventario",
+        "Compras",
+        "Ventas",
+        "Facturación",
+        "Cartera y CxC",
+        "Contabilidad",
+        "Tesorería",
+        "Transporte",
+        "Talento humano",
+        "Proyectos",
+        "Administración APEX",
+        "APEX Control",
+        "Servicios",
+        "Gestión Comercial",
+        "Apex Heart",
+        "APEX AI Core",
+        "Comercio"
+      ],
+      "tileHrefs": [
+        "/dashboard/inventario",
+        "/dashboard/compras",
+        "/dashboard/ventas",
+        "/dashboard/facturacion",
+        "/dashboard/cxc/documentos",
+        "/dashboard/contabilidad",
+        "/dashboard/tesoreria",
+        "/dashboard/transporte",
+        "/dashboard/talento-humano",
+        "/dashboard/proyectos",
+        "/dashboard/administracion",
+        "/dashboard/apex-control",
+        "/dashboard/servicios",
+        "/dashboard/gestion-comercial",
+        "/dashboard/reportes",
+        "/dashboard/apex-ai",
+        "/dashboard/comercio"
+      ],
+      "retiredVisible": [],
+      "retiredLabelsInSidebar": [],
+      "sidebarModuleLinks": 17,
+      "sidebarLockedButtons": 0,
+      "sidebarSearchPresent": true,
+      "horizontalOverflow": 0
+    },
+    {
+      "view": "portfolio-dark",
+      "tileCount": 17,
+      "tileLabels": [
+        "Inventario",
+        "Compras",
+        "Ventas",
+        "Facturación",
+        "Cartera y CxC",
+        "Contabilidad",
+        "Tesorería",
+        "Transporte",
+        "Talento humano",
+        "Proyectos",
+        "Administración APEX",
+        "APEX Control",
+        "Servicios",
+        "Gestión Comercial",
+        "Apex Heart",
+        "APEX AI Core",
+        "Comercio"
+      ],
+      "tileHrefs": [
+        "/dashboard/inventario",
+        "/dashboard/compras",
+        "/dashboard/ventas",
+        "/dashboard/facturacion",
+        "/dashboard/cxc/documentos",
+        "/dashboard/contabilidad",
+        "/dashboard/tesoreria",
+        "/dashboard/transporte",
+        "/dashboard/talento-humano",
+        "/dashboard/proyectos",
+        "/dashboard/administracion",
+        "/dashboard/apex-control",
+        "/dashboard/servicios",
+        "/dashboard/gestion-comercial",
+        "/dashboard/reportes",
+        "/dashboard/apex-ai",
+        "/dashboard/comercio"
+      ],
+      "retiredVisible": [],
+      "retiredLabelsInSidebar": [],
+      "sidebarModuleLinks": 17,
+      "sidebarLockedButtons": 0,
+      "sidebarSearchPresent": true,
+      "horizontalOverflow": 0
+    }
+  ],
+  "palette": {
+    "punto de venta": {
+      "options": 1,
+      "labels": [
+        "Vender en el mostrador"
+      ],
+      "empty": false
+    },
+    "crm": {
+      "options": 0,
+      "labels": [],
+      "empty": false
+    },
+    "presupuesto": {
+      "options": 2,
+      "labels": [
+        "Gestionar presupuestos comerciales",
+        "Ver PYG por vehiculo"
+      ],
+      "empty": false
+    },
+    "inventario": {
+      "options": 10,
+      "labels": [
+        "Inventario",
+        "Ajustar inventario",
+        "Consultar ajustes de inventario",
+        "Cargue inicial de inventario",
+        "Ver reportes de inventario",
+        "Crear producto"
+      ],
+      "empty": false
+    }
+  },
+  "probes": {
+    "retired-punto-de-venta": {
+      "finalPath": "/dashboard/punto-de-venta",
+      "text": "Saltar al contenido principal Página cargada: punto de venta 404 This page could not be found.",
+      "notFound": true,
+      "denied": false
+    },
+    "retired-configuracion-inicial": {
+      "finalPath": "/dashboard/configuracion-inicial",
+      "text": "Saltar al contenido principal Página cargada: configuracion inicial 404 This page could not be found.",
+      "notFound": true,
+      "denied": false
+    },
+    "visible-cxc": {
+      "finalPath": "/dashboard/cxc/documentos",
+      "text": "Saltar al contenido principal Página cargada: cxc · documentos APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMI",
+      "notFound": false,
+      "denied": false
+    },
+    "visible-inventario": {
+      "finalPath": "/dashboard/inventario",
+      "text": "Saltar al contenido principal Página cargada: inventario APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesi",
+      "notFound": false,
+      "denied": false
+    }
+  },
+  "shots": [
+    "evidence-portfolio-lobby-light.png",
+    "evidence-portfolio-lobby-dark.png"
+  ]
+}

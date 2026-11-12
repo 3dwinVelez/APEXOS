@@ -94,7 +94,7 @@ test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => 
   assert.match(paletteSource, /MODULES_BY_SLUG/);
   assert.match(paletteSource, /moduleHome\(/);
   assert.match(paletteSource, /const taken = new Set\(\[\.\.\.actions, \.\.\.functions\]\.map\(\(item\) => item\.href\)\)/);
-  assert.match(paletteSource, /MODULES\.filter\(\(module\) => enabled\(module\.slug\) && !taken\.has\(moduleHome\(module\.slug\)\)\)/);
+  assert.match(paletteSource, /MODULES\.filter\(\(module\) => isPortfolioModule\(module\) && enabled\(module\.slug\) && !taken\.has\(moduleHome\(module\.slug\)\)\)/);
   assert.match(functionsSource, /cxc: "\/dashboard\/cxc\/documentos"/);
 });
 
