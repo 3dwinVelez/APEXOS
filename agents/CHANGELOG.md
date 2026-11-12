@@ -4,6 +4,14 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-12
 
+### Lobby con iconos de módulo y banner de red (`lobby-iconos-banner-20261112`)
+
+- **Pedido directo del dueño.** «Analizando nuestro resultado final veo que las imágenes podrían estar generando una saturación visual; propondría colocar unos iconos modernos atractivos y el banner cambiarlo por la imagen que te envié». Las tarjetas de módulo pierden la franja fotográfica de 9 rem y pasan a una fila compacta con el `icon` lucide que el catálogo ya declara; el hero estrena la constelación turquesa adjunta como WebP local de 852×480.
+- **Un solo asset nuevo, cero borrados.** `LOBBY_MODULE_IMAGES`/`lobbyModuleImage()` salen de `lib/lobbyAssets.ts` porque ya no tienen consumidor y queda solo `LOBBY_BANNER`; las 32 fotografías y `banner-truck.webp` siguen en disco para revertir sin reconstruir assets.
+- **Defecto medido en el camino.** Con `priority` en la versión instalada de Next, el `<img>` del hero no recibía atributo de carga y el navegador no pedía el banner: `complete: false`, `naturalWidth: 0` y el hero se veía como bloque plano. Se corrigió con `loading="eager"` explícito, que la prueba de contrato fija; la evidencia mide `naturalWidth = 852`.
+- **Medido, no afirmado.** Suite web **697/697**, `tsc --noEmit` limpio y ESLint sin errores (solo avisos previos). Evidencia recapturada con sesión real: banner cargado en ambos temas, `.apex-lobby-tile-glyph` de 44×44 px, `tileMedia = 0`, 11 tiles, 11 enlaces de barra, 0 retirados visibles, 0 candados y desbordamiento 0; el buscador conserva los números de la ronda 12.
+- Agentes: `apexos-frontend` 2.24.0 → 2.25.0 (control 39: la saturación se resuelve quitando superficie de imagen, el icono sale del catálogo, los assets retirados no se borran y `priority` no sustituye `loading="eager"`), `apexos-qa` 2.54.0 → 2.55.0 (control 68: una imagen que no se pide no carga; se mide `naturalWidth` y se recaptura después del arreglo), `apexos-brief` 2.45.0 → 2.46.0 (regla 59: la sustitución de superficie nombra lo que sale, lo que entra, la procedencia del adjunto y los cero borrados), `equipo-apexos` 2.32.0 → 2.33.0 (control 46: la saturación se despacha como decisión de superficie más un hecho medido, y el adjunto del dueño se convierte en asset versionado).
+
 ### Contabilidad vuelve a la oferta: 12 visibles y 20 retirados (`curaduria-portafolio-conta-20261112`)
 
 - **Corrección directa del dueño.** «Veo que estás eliminando visuales que no te pedí, es importante acatar las instrucciones de manera clara; has eliminado de la visual el módulo de Contabilidad sin autorización». El registro muestra que el retiro se aplicó en `3448632c` sobre la captura con X del mismo día; la instrucción posterior manda, así que `contabilidad` sale de `RETIRED_MODULE_SLUGS` y el corte queda en **12 visibles / 20 retirados**.

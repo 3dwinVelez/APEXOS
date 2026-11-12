@@ -2,7 +2,7 @@
 
 import { Avatar } from "@/components/ui/avatar";
 import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
-import { LOBBY_BANNER, lobbyModuleImage } from "@/lib/lobbyAssets";
+import { LOBBY_BANNER } from "@/lib/lobbyAssets";
 import { MODULES, PORTFOLIO_MODULES } from "@/lib/modules";
 import { moduleHome } from "@/lib/moduleFunctions";
 import { actionsForWorkspace } from "@/lib/operationalWorkspace";
@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
   return <div className="apex-lobby mx-auto max-w-[1500px] space-y-6 pb-8">
     <section aria-labelledby="lobby-hero-title" className="apex-lobby-hero flex min-h-[17rem] sm:min-h-[19rem]">
-      <Image src={LOBBY_BANNER} alt="" fill priority sizes="(max-width: 1500px) 100vw, 1500px" />
+      <Image alt="" fill loading="eager" priority sizes="(max-width: 640px) 100vw, 1500px" src={LOBBY_BANNER} />
       <div className="relative z-10 flex max-w-2xl flex-col justify-center gap-3 p-6 sm:p-10">
         <span className="apex-lobby-eyebrow">
           {displayName ? <Avatar aria-hidden="true" className="apex-lobby-eyebrow-avatar" name={displayName} /> : <Sparkles aria-hidden="true" size={15} />}
@@ -68,15 +68,15 @@ export default function DashboardPage() {
 
       <section aria-labelledby="modules-title" className="rounded-card border border-line bg-surface p-4 sm:p-5" id="mis-modulos">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="text-lg font-semibold text-content-strong" id="modules-title">Mis módulos</h2><p className="text-sm text-content-muted">Habilitados para tu empresa y perfil.</p></div><span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-content-muted">{activeModules.length}</span></div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{activeModules.map((module) => { const Icon = module.icon; const image = lobbyModuleImage(module.slug); return <Link className="apex-lobby-tile group" href={moduleHome(module.slug)} key={module.slug} prefetch={false}>
-          <span className="apex-lobby-tile-media">{image ? <Image src={image} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 360px" /> : <span className="apex-lobby-tile-fallback"><Icon size={30} /></span>}</span>
-          <span className="apex-lobby-tile-body"><span className="apex-lobby-tile-icon"><Icon size={16} /></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-content-strong">{module.name}</strong><small className="block truncate text-content-muted">{module.area}</small></span><ArrowRight className="shrink-0 text-content-subtle transition group-hover:translate-x-1 group-hover:text-apex" size={16} /></span>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{activeModules.map((module) => { const Icon = module.icon; return <Link className="apex-lobby-tile group" href={moduleHome(module.slug)} key={module.slug} prefetch={false}>
+          <span aria-hidden="true" className="apex-lobby-tile-glyph"><Icon size={24} strokeWidth={1.7} /></span>
+          <span className="apex-lobby-tile-body"><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-content-strong">{module.name}</strong><small className="block truncate text-content-muted">{module.area}</small></span><ArrowRight className="shrink-0 text-content-subtle transition group-hover:translate-x-1 group-hover:text-apex" size={16} /></span>
         </Link>; })}</div>
       </section>
     </> : <section className="rounded-card border border-dashed border-line bg-surface p-8 text-center"><Grid2X2 className="mx-auto text-content-subtle" size={30} /><h2 className="mt-3 text-lg font-semibold text-content-strong">No tienes módulos habilitados</h2><p className="mx-auto mt-1 max-w-md text-sm text-content-muted">Solicita al administrador de tu empresa que active los módulos y permisos necesarios para tu operación.</p></section>}
   </div>;
 }
 
-function WorkspaceLoading() { return <div aria-busy="true" aria-label="Cargando espacio de trabajo" className="mx-auto max-w-[1500px] animate-pulse space-y-6"><div className="h-56 rounded-card bg-surface-muted" /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{Array.from({ length: 6 }).map((_, index) => <div className="h-20 rounded-card bg-surface-muted" key={index} />)}</div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => <div className="h-44 rounded-card bg-surface-muted" key={index} />)}</div></div>; }
+function WorkspaceLoading() { return <div aria-busy="true" aria-label="Cargando espacio de trabajo" className="mx-auto max-w-[1500px] animate-pulse space-y-6"><div className="h-56 rounded-card bg-surface-muted" /><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">{Array.from({ length: 6 }).map((_, index) => <div className="h-20 rounded-card bg-surface-muted" key={index} />)}</div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => <div className="h-20 rounded-card bg-surface-muted" key={index} />)}</div></div>; }
 function WorkspaceError({ message, retry }: { message: string; retry: () => void }) { return <section className="mx-auto max-w-xl rounded-card border border-red-200 bg-red-50 p-6 text-center" role="alert"><AlertCircle className="mx-auto text-red-600" size={28} /><h1 className="mt-3 text-lg font-semibold text-red-950">No fue posible preparar tu operación</h1><p className="mt-1 text-sm text-red-800">{message}</p><button className="mt-4 inline-flex h-10 items-center gap-2 rounded-control bg-red-700 px-4 text-sm font-semibold text-white" onClick={retry} type="button"><RefreshCw size={16} />Reintentar</button></section>; }
 function EmptyActions() { return <div className="rounded-card border border-dashed border-line bg-surface p-6 text-center"><Search className="mx-auto text-content-subtle" size={24} /><p className="mt-2 text-sm font-semibold text-content-strong">No hay acciones rápidas para estos módulos</p><p className="mt-1 text-xs text-content-muted">Puedes abrir cualquiera desde Mis módulos.</p></div>; }

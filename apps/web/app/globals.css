@@ -1838,7 +1838,7 @@ html.dark .platform-alert-close:hover {
   inset: 0;
   z-index: 1;
   background:
-    linear-gradient(90deg, rgb(var(--lobby-deep) / 0.92) 0%, rgb(var(--lobby-deep) / 0.55) 38%, transparent 62%),
+    linear-gradient(90deg, rgb(var(--lobby-deep) / 0.95) 0%, rgb(var(--lobby-deep) / 0.62) 42%, transparent 66%),
     linear-gradient(0deg, rgb(var(--lobby-deep) / 0.6) 0%, transparent 36%);
   content: "";
   pointer-events: none;
@@ -1937,80 +1937,79 @@ html.dark .platform-alert-close:hover {
 
 .apex-lobby-tile {
   position: relative;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
   overflow: hidden;
   border-radius: var(--radius-control);
   border: 1px solid rgb(var(--color-line));
   background: rgb(var(--surface));
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  padding: 0.85rem 0.95rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.apex-lobby-tile::after {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 150% at 0% 0%, rgb(var(--lobby-primary) / 0.1), transparent 62%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
 }
 
 .apex-lobby-tile:hover {
-  border-color: rgb(var(--lobby-primary));
+  border-color: rgb(var(--lobby-primary) / 0.55);
   box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
 }
 
-.apex-lobby-tile-media {
+.apex-lobby-tile:hover::after { opacity: 1; }
+
+.apex-lobby-tile-glyph {
   position: relative;
-  display: block;
-  height: 9rem;
-  overflow: hidden;
-  background: rgb(var(--lobby-deep));
-}
-
-.apex-lobby-tile-media img {
-  object-fit: cover;
-  transition: transform 240ms ease;
-}
-
-.apex-lobby-tile:hover .apex-lobby-tile-media img { transform: scale(1.04); }
-
-.apex-lobby-tile-media::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(0deg, rgb(var(--lobby-deep) / 0.55), transparent 55%);
-  content: "";
-  pointer-events: none;
-}
-
-.apex-lobby-tile-fallback {
+  z-index: 1;
   display: flex;
-  height: 100%;
-  width: 100%;
+  height: 2.75rem;
+  width: 2.75rem;
+  flex: none;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 82% 18%, rgb(var(--lobby-accent) / 0.22), transparent 60%),
-    linear-gradient(140deg, rgb(var(--lobby-card)), rgb(var(--lobby-deep)));
-  color: rgb(var(--lobby-accent));
+  border-radius: 0.8rem;
+  border: 1px solid rgb(var(--lobby-primary) / 0.26);
+  background: linear-gradient(145deg, rgb(var(--lobby-primary) / 0.18), rgb(var(--lobby-accent) / 0.08));
+  color: rgb(var(--lobby-primary));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55);
+  transition: border-color 160ms ease, transform 160ms ease;
 }
+
+html.dark .apex-lobby-tile-glyph {
+  border-color: rgb(var(--lobby-accent) / 0.3);
+  background: linear-gradient(145deg, rgb(var(--lobby-accent) / 0.22), rgb(var(--lobby-primary) / 0.18));
+  color: rgb(var(--lobby-accent));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+.apex-lobby-tile:hover .apex-lobby-tile-glyph {
+  border-color: rgb(var(--lobby-primary) / 0.5);
+  transform: scale(1.04);
+}
+
+html.dark .apex-lobby-tile:hover .apex-lobby-tile-glyph { border-color: rgb(var(--lobby-accent) / 0.55); }
 
 .apex-lobby-tile-body {
+  position: relative;
+  z-index: 1;
   display: flex;
+  min-width: 0;
+  flex: 1;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.7rem 0.875rem;
-}
-
-.apex-lobby-tile-icon {
-  display: flex;
-  height: 2rem;
-  width: 2rem;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.45rem;
-  background: rgb(var(--lobby-primary) / 0.16);
-  color: rgb(var(--lobby-primary));
-}
-
-html.dark .apex-lobby-tile-icon {
-  background: rgb(var(--lobby-accent) / 0.14);
-  color: rgb(var(--lobby-accent));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .apex-lobby-tile:hover .apex-lobby-tile-media img { transform: none; }
+  .apex-lobby-tile:hover { transform: none; }
+  .apex-lobby-tile:hover .apex-lobby-tile-glyph { transform: none; }
 }
 
 @media (max-width: 640px) {
