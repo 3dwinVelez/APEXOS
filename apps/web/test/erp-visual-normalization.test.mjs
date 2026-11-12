@@ -23,9 +23,10 @@ test("los accesos ERP muestran únicamente herramientas activas y usan el sistem
     assert.match(inventory, new RegExp(href.replaceAll("/", "\\/")));
   }
   assert.doesNotMatch(inventory, /\/dashboard\/inventario\/wms|title: "WMS"/);
-  for (const href of ["/asientos", "/plan-cuentas", "/cuentas-por-pagar", "/cxc/documentos", "/terceros", "/iva", "/retenciones", "/estructura", "/reportes"]) {
+  for (const href of ["/asientos", "/plan-cuentas", "/cuentas-por-pagar", "/terceros", "/iva", "/retenciones", "/estructura", "/reportes"]) {
     assert.match(accounting, new RegExp(href.replaceAll("/", "\\/")));
   }
+  assert.doesNotMatch(accounting, /\/dashboard\/cxc/);
   for (const href of ["/ordenes/nueva", "/ordenes", "/facturas/nueva", "/facturas", "/clientes", "/reportes"]) {
     assert.match(sales, new RegExp(href.replaceAll("/", "\\/")));
   }

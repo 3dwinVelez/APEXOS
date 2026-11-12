@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-12T14:46:57.640Z",
+  "captured_at": "2026-11-12T15:04:58.118Z",
   "base": "http://127.0.0.1:3001",
   "views": [
     {
@@ -137,8 +137,8 @@
   "probes": {
     "retired-punto-de-venta": {
       "finalPath": "/dashboard/punto-de-venta",
-      "text": "Saltar al contenido principal Página cargada: punto de venta 404 This page could not be found.",
-      "notFound": true,
+      "text": "Saltar al contenido principal Página cargada: punto de venta APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion ac",
+      "notFound": false,
       "denied": false
     },
     "retired-configuracion-inicial": {
@@ -189,15 +189,27 @@
       "notFound": false,
       "denied": false
     },
-    "retired-root-cxc": {
-      "finalPath": "/dashboard/cxc",
-      "text": "Saltar al contenido principal Página cargada: cxc 404 This page could not be found.",
-      "notFound": true,
+    "blocked-root-cxc": {
+      "finalPath": "/dashboard",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "notFound": false,
       "denied": false
     },
-    "retired-with-subroutes-cxc": {
-      "finalPath": "/dashboard/cxc/documentos",
-      "text": "Saltar al contenido principal Página cargada: cxc · documentos APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion ",
+    "blocked-subroute-cxc-documentos": {
+      "finalPath": "/dashboard",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "notFound": false,
+      "denied": false
+    },
+    "blocked-subroute-cxc-retenciones": {
+      "finalPath": "/dashboard",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
+      "notFound": false,
+      "denied": false
+    },
+    "blocked-subroute-cxc-estado-cuenta": {
+      "finalPath": "/dashboard",
+      "text": "Saltar al contenido principal Página cargada: Dashboard APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion activa ",
       "notFound": false,
       "denied": false
     },

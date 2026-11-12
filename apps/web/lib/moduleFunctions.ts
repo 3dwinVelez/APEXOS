@@ -111,11 +111,6 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-ventas-reportes", label: "Ver reportes de ventas", description: "Indicadores de venta y margen", href: "/dashboard/ventas/reportes", module: "ventas", keywords: "reporte venta indicador margen" }
 ];
 
-const MODULE_HOME_OVERRIDES: Record<string, string> = {
-  // Cartera no tiene landing propio: su superficie real son los documentos de cartera.
-  cxc: "/dashboard/cxc/documentos"
-};
-
 export function moduleHome(slug: string) {
-  return MODULE_HOME_OVERRIDES[slug] || `/dashboard/${slug}`;
+  return `/dashboard/${slug}`;
 }

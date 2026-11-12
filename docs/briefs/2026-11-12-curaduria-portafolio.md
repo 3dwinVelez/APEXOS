@@ -12,9 +12,10 @@
   borran: quedan en el catálogo con su ficha y sus assets por si se retoman.
 - **Inventario esperado**: `apps/web/lib/modules.ts`, `apps/web/lib/moduleFunctions.ts`,
   `apps/web/app/dashboard/page.tsx`, `apps/web/app/dashboard/[module]/page.tsx`,
-  `apps/web/components/shell/Sidebar.tsx`, `apps/web/components/system/CommandPalette.tsx`, dos
-  pruebas existentes cuyo contrato de código cambia, la prueba nueva `module-portfolio.test.mjs`,
-  documentación y evidencia, y agentes.
+  `apps/web/app/dashboard/cxc/{layout,page}.tsx`, `apps/web/app/dashboard/contabilidad/page.tsx`,
+  `apps/web/components/shell/Sidebar.tsx`, `apps/web/components/contabilidad-nav.tsx`,
+  `apps/web/components/system/CommandPalette.tsx`, dos pruebas existentes cuyo contrato de código
+  cambia, la prueba nueva `module-portfolio.test.mjs`, documentación y evidencia, y agentes.
 - **Cero cambios en el backend**: por decisión del dueño no se tocan `SEED_MODULES` ni el plan crown
   de `apps/api/src/modules/auth/service.js`. Los códigos retirados que un tenant ya tenga en
   `active_modules` dejan de verse igual, porque el portafolio filtra antes de la habilitación.
@@ -27,18 +28,19 @@
   para trabajarlos» (12/20) y, al final, pidió ocultar **Cartera y CxC** porque «aún no tiene
   funcionalidad». El corte final es **11 visibles / 21 retirados**.
 - **Siete retirados conservan superficie: se retiran de la oferta, no del código.** Facturación,
-  Contabilidad, Tesorería, Proyectos, APEX Control y APEX AI Core tenían pantalla raíz publicada;
-  **Cartera y CxC** nunca tuvo ficha raíz —`/dashboard/cxc` da 404 por el `notFound()` de la ficha
-  genérica— y conserva sus cuatro subrutas (`/documentos`, `/clientes`, `/reportes/cartera`,
-  `/retenciones`). Se quitan **17 entradas de oferta** en total (2 de Facturación, 11 de
-  Contabilidad, 1 de Tesorería y 3 de CxC) para que no aparezcan en acciones frecuentes ni en el
-  buscador, y las rutas siguen respondiendo para quien las tenga guardadas. La prueba del portafolio
-  declara las siete excepciones: seis con ruta heredada y una con subrutas heredadas sin raíz; la
-  del buscador exime sus rutas de la cobertura.
-- **Consecuencia declarada: dos superficies solo por URL.** El monitor certificado de **Facturas
-  recibidas** (`/dashboard/contabilidad/facturas-recibidas`) pierde su entrada de oferta y la
-  bandeja de documentos de **CxC** pierde sus tres. Ambas pantallas siguen cargando por URL directa,
-  pero dejan de anunciarse en el centro de comandos hasta que su módulo vuelva al portafolio.
+  Contabilidad, Tesorería, Proyectos, APEX Control y APEX AI Core tenían pantalla raíz publicada y
+  siguen respondiendo por URL; **Cartera y CxC** nunca tuvo ficha raíz y, por pedido posterior del
+  dueño («bloquear las rutas de CxC con redirección»), se **cierra con redirección al lobby**: la
+  guardia vive en `app/dashboard/cxc/layout.tsx` para todas sus subrutas y `app/dashboard/cxc/page.tsx`
+  cubre la raíz. Sus pantallas quedan en el repositorio detrás de la guardia para cuando el módulo
+  vuelva. Se quitan **17 entradas de oferta** (2 de Facturación, 11 de Contabilidad, 1 de Tesorería y
+  3 de CxC), la tarjeta y el enlace que Contabilidad todavía apuntaban a CxC, y el override
+  `moduleHome("cxc")`; ninguna ruta bloqueada puede seguir siendo destino anunciado. La prueba del
+  portafolio declara seis excepciones con ruta heredada y una bloqueada con redirect.
+- **Consecuencia declarada: una superficie queda solo por URL.** El monitor certificado de **Facturas
+  recibidas** (`/dashboard/contabilidad/facturas-recibidas`) pierde su entrada de oferta, sigue
+  cargando por URL directa y deja de anunciarse en el centro de comandos hasta que Contabilidad
+  vuelva al portafolio. La bandeja de CxC, en cambio, ya no es alcanzable.
 - **Verificación funcional de no-regresión**: suite web **697/697**, `typecheck` limpio y ESLint
   sin errores.
 
@@ -55,7 +57,7 @@ perder el trabajo de fichas y assets:
    Facturación electrónica, Configuración inicial, Suscripciones, Contabilidad, Tesorería,
    Proyectos, APEX Control, APEX AI Core y Cartera y CxC dejan de ofrecerse; las 14 sin pantalla
    solo abrían la página genérica `[module]`, las seis con raíz conservan sus rutas publicadas y
-   CxC conserva sus cuatro subrutas sin raíz.
+   CxC se bloquea con redirección al lobby.
 3. **Corregir la ficha de lo que sí opera.** Ventas, Facturación y Tesorería pasan a «Base
    funcional»; Transporte y Talento humano a «Listo para operar».
 
@@ -67,10 +69,12 @@ perder el trabajo de fichas y assets:
 | `M` | `apps/web/app/dashboard/page.tsx` | Lobby filtra por `PORTFOLIO_MODULES` y enlaza con `moduleHome` (CxC abre su superficie real, no la ficha genérica) |
 | `M` | `apps/web/components/shell/Sidebar.tsx` | La barra solo construye ítems del portafolio y usa `moduleHome`: los retirados desaparecen en lugar de quedar como candados |
 | `M` | `apps/web/components/system/CommandPalette.tsx` | Acciones, funciones y módulos del buscador exigen que el módulo esté en el portafolio |
-| `M` | `apps/web/lib/moduleFunctions.ts`, `apps/web/lib/operationalWorkspace.ts` | Salen 17 entradas de oferta: 2 de Facturación, 11 de Contabilidad, 1 de Tesorería y 3 de CxC; sus rutas siguen activas |
+| `M` | `apps/web/lib/moduleFunctions.ts`, `apps/web/lib/operationalWorkspace.ts` | Salen 17 entradas de oferta: 2 de Facturación, 11 de Contabilidad, 1 de Tesorería y 3 de CxC; además se retira el override `moduleHome("cxc")` porque su destino ya no es alcanzable |
 | `M` | `apps/web/app/dashboard/[module]/page.tsx` | Un slug retirado responde `notFound()` aunque el tenant conserve su código en `active_modules` |
-| `M` | `apps/web/test/command-palette-module-functions.test.mjs`, `apps/web/test/commercial-visit-selection.test.mjs` | Afirman el nuevo contrato de filtro, `moduleHome`, la exención de rutas de un retirado y que PYG deja de ofrecerse |
-| `A` | `apps/web/test/module-portfolio.test.mjs` | 6 pruebas: 32 fichas / 11 visibles / 21 retirados, pantalla propia por visible, retirado sin pantalla fuera de la ficha genérica, seis excepciones con ruta heredada y una con subrutas, consumidores filtrados, 404 directo, estados corregidos y funciones sin destinos retirados |
+| `A` | `apps/web/app/dashboard/cxc/layout.tsx`, `apps/web/app/dashboard/cxc/page.tsx` | Guardia de la ruta bloqueada: `redirect("/dashboard")` para todas las subrutas de CxC y para su raíz |
+| `M` | `apps/web/app/dashboard/contabilidad/page.tsx`, `apps/web/components/contabilidad-nav.tsx` | Salen la tarjeta y el enlace «Cuentas por cobrar» que todavía apuntaban a la ruta bloqueada |
+| `M` | `apps/web/test/command-palette-module-functions.test.mjs`, `apps/web/test/commercial-visit-selection.test.mjs` | Afirman el nuevo contrato de filtro, `moduleHome`, la exención de rutas de un retirado, que PYG deja de ofrecerse y que la oferta no nombra `/dashboard/cxc` |
+| `A` | `apps/web/test/module-portfolio.test.mjs` | 6 pruebas: 32 fichas / 11 visibles / 21 retirados, pantalla propia por visible, retirado sin pantalla fuera de la ficha genérica, seis excepciones con ruta heredada y una bloqueada con redirect (layout y página), consumidores filtrados, 404 directo, estados corregidos y funciones sin destinos retirados |
 | `A` | `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png`, `evidence-portfolio-metrics.json` | Capturas del lobby con sesión real y métricas de tiles, barra, buscador y URL directa |
 | `M` | `docs/qa/evidence/lobby-v4-20261110/validacion.md` | Ronda 10, filas de cambios y recuento de suite |
 | `A` | `docs/briefs/2026-11-12-curaduria-portafolio.md` | Este brief |
@@ -91,7 +95,9 @@ perder el trabajo de fichas y assets:
 - Assets del lobby: las 32 fotografías siguen en `public/assets/lobby/`; las retiradas simplemente
   no se ofrecen.
 - Datos de tenants: no se reescribe `active_modules` de ningún tenant.
-- Páginas operativas de los módulos retirados: siguen publicadas y sin cambios de negocio.
+- Páginas operativas de los módulos retirados con ruta heredada: siguen publicadas y sin cambios de
+  negocio. Cartera y CxC es la excepción: sus pantallas se conservan en el repositorio, pero la ruta
+  redirige al lobby.
 - Promoción a `develop`/`main`, despliegues, migraciones remotas e infraestructura: requieren
   autorización explícita e independiente.
 - `.tmp/`: herramientas locales, no entran al commit.
@@ -103,7 +109,7 @@ perder el trabajo de fichas y assets:
   perfil»; el lobby conserva ambos.
 - Un módulo visible no puede carecer de pantalla; la prueba lo verifica contra el sistema de archivos.
 - Un retirado no puede reaparecer por `active_modules`, buscador ni URL directa, salvo las seis rutas
-  heredadas declaradas y las cuatro subrutas de CxC.
+  heredadas declaradas. CxC no es una de ellas: su raíz y sus subrutas redirigen.
 
 ## 5. Criterios de aceptación
 
@@ -114,11 +120,12 @@ perder el trabajo de fichas y assets:
    (11 publicados menos Gastos Menores, que no está habilitado en ese tenant), **0** slugs retirados
    en tiles o barra, **0** candados en la barra, buscador sin fichas ni funciones retiradas
    («tesoreria», «proyectos», «apex control», «apex ai», «pyg», «cuentas por cobrar» y «crm» → 0) y
-   las fichas genéricas de `punto-de-venta`, `configuracion-inicial` y `/dashboard/cxc` con **404**.
+   las fichas genéricas de `punto-de-venta` y `configuracion-inicial` con **404**.
    Las seis rutas heredadas —`/dashboard/facturacion`, `/dashboard/contabilidad`,
    `/dashboard/contabilidad/facturas-recibidas`, `/dashboard/tesoreria`, `/dashboard/proyectos`,
-   `/dashboard/apex-control` y `/dashboard/apex-ai`— y las cuatro subrutas de CxC siguen cargando su
-   pantalla. Desbordamiento horizontal `0` en claro y oscuro. `/dashboard/compras`,
+   `/dashboard/apex-control` y `/dashboard/apex-ai`— siguen cargando su pantalla, y las cuatro URLs
+   de CxC —`/dashboard/cxc`, `/documentos`, `/retenciones` y `/clientes/1/estado-cuenta`— terminan
+   en `/dashboard`. Desbordamiento horizontal `0` en claro y oscuro. `/dashboard/compras`,
    `/dashboard/comercio`, `/dashboard/inventario`, `/dashboard/ventas` y
    `/dashboard/talento-humano/rutas` abren pantallas reales.
 5. Las capturas muestran sesión real (`demo@apex.local`, «Sesión activa»).
@@ -127,7 +134,7 @@ perder el trabajo de fichas y assets:
 
 - Pruebas: suite web **697/697** y `module-portfolio.test.mjs` **6/6**.
 - Evidencia: `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png` y
-  `evidence-portfolio-metrics.json`; ronda 10 en `validacion.md`.
+  `evidence-portfolio-metrics.json`; rondas 10 y 11 en `validacion.md`.
 - Nota de lectura del buscador: «punto de venta» devuelve «Vender en el mostrador» y «presupuesto»
   «Gestionar presupuestos comerciales», ambas funciones de módulos visibles; las consultas de los
   retirados —incluida «cuentas por cobrar»— devuelven cero resultados; ninguna coincidencia es una
@@ -138,7 +145,7 @@ perder el trabajo de fichas y assets:
 
 - **Acceso por tenant** — `loadModuleAccess` no cambia; el portafolio filtra presentación, no permisos.
 - **Trazabilidad** — las 32 fichas siguen en el catálogo; retirar es reversible quitando el slug del set.
-- **Navegación real** — todo módulo publicado tiene al menos una pantalla; CxC usa `moduleHome`.
+- **Navegación real** — todo módulo publicado tiene al menos una pantalla; `moduleHome` resuelve el destino de los visibles y CxC deja de tenerlo por estar bloqueado.
 - **Rendimiento** — sin peticiones, librerías ni animaciones nuevas.
 
 ## 8. Riesgos y rollback
@@ -152,19 +159,18 @@ perder el trabajo de fichas y assets:
 - Riesgo: que el buscador siga mostrando palabras de un retirado → Medido: solo aparecen funciones
   de módulos visibles; la prueba impide que una función apunte a un retirado.
 - Riesgo: que un flujo certificado dependa de una entrada de oferta retirada → Medido: Facturas
-  recibidas y la bandeja de documentos de CxC siguen cargando por URL y se declaran como
-  consecuencia; si el dueño las quiere de vuelta en el buscador, basta devolver sus entradas sin
-  reabrir el módulo completo.
+  recibidas sigue cargando por URL y se declara como consecuencia; si el dueño la quiere de vuelta en
+  el buscador, basta devolver su entrada sin reabrir el módulo completo. CxC ya no es alcanzable y
+  por eso se quitaron también los enlaces que desde Contabilidad apuntaban a ella.
 
 ## 9. Supuestos y preguntas abiertas
 
 - Supuesto: retirar del portafolio no exige borrar fichas ni assets; se conservan para retomarlos.
 - Decisión del dueño: el portafolio queda en **11 visibles**; Contabilidad, Tesorería, Proyectos,
-  APEX Control, APEX AI Core y Cartera y CxC se ocultan por completo de la oferta aunque sus rutas
-  sigan activas. Bloquear también esas rutas es una ronda aparte con redirección y aviso.
-- Cartera y CxC es un caso distinto: nunca tuvo pantalla raíz, así que `/dashboard/cxc` da 404 con
-  el corte y lo que sobrevive son sus cuatro subrutas. Si el dueño quiere bloquearlas, es la misma
-  ronda aparte que las rutas heredadas.
+  APEX Control y APEX AI Core salen de la oferta y conservan sus rutas publicadas. Cartera y CxC
+  sale de la oferta **y se bloquea con redirección al lobby**, por pedido explícito posterior.
+- CxC conserva sus pantallas en el repositorio detrás de `app/dashboard/cxc/layout.tsx`; reabrir el
+  módulo es quitar la guardia y devolver su oferta, no reconstruir la pantalla.
 - Deuda declarada: alinear `SEED_MODULES` y el plan crown en la API requiere su propia ronda con
   agentes de backend, seguridad y QA.
 
@@ -174,6 +180,8 @@ perder el trabajo de fichas y assets:
 - [x] Portafolio en 11 visibles con Contabilidad, Tesorería, Proyectos, APEX Control, APEX AI Core y
   Cartera y CxC retirados de la oferta (decisión explícita del dueño, la última con el texto
   «cartera y cxc también debemos ocultarlo aún no tiene funcionalidad»).
+- [x] Bloqueo de las rutas de Cartera y CxC con redirección al lobby (pedido explícito del dueño:
+  «bloquear las rutas de CxC con redirección»).
 - [x] No tocar seeds del backend (decisión explícita del dueño).
 - [ ] Promoción a `develop`/`main`: no solicitada ni incluida.
 
@@ -181,9 +189,10 @@ perder el trabajo de fichas y assets:
 
 - **Preflight de agentes**: `OK`; ruteo `equipo-apexos`, `apexos-brief`, `apexos-frontend` y
   `apexos-qa`.
-- **Documentación actualizada**: este brief y `validacion.md` (ronda 10).
-- **Agentes actualizados**: `apexos-frontend` 2.23.3, `apexos-qa` 2.52.2, `equipo-apexos` 2.30.2 y
-  `apexos-brief` 2.43.2 (el corte de 21 retirados con seis rutas heredadas y una de subrutas).
+- **Documentación actualizada**: este brief y `validacion.md` (rondas 10 y 11).
+- **Agentes actualizados**: `apexos-frontend` 2.23.4, `apexos-qa` 2.52.3, `equipo-apexos` 2.30.3 y
+  `apexos-brief` 2.43.3 (el corte de 21 retirados con seis rutas heredadas y CxC bloqueado con
+  redirección).
 - **Registro**: `agents/registry.json` y `agents/CHANGELOG.md` en el mismo commit.
 - **Secuencia de cierre**: `agents:sync` → `agents:check` → `test:agents` → `agents:preflight` →
   `agents:coverage` → pruebas → commit → `git push origin desarrollo`.
