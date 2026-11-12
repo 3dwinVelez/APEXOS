@@ -29,7 +29,7 @@ test("el monitor presenta rango configurable y paginacion observable", () => {
   assert.match(source, /monitorResponse\?\.has_more/);
   assert.match(source, /monitorResponse\?\.next_offset/);
   assert.match(source, /Cargar mas ordenes/);
-  assert.match(source, /La consulta devolvio advertencias/);
+  assert.match(source, /La consulta devolvió advertencias/);
 });
 
 test("la busqueda local de respaldo incluye datos operativos completos", () => {

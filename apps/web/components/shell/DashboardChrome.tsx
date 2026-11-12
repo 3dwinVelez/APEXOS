@@ -18,6 +18,7 @@ import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
 import { WorldClassToolkit } from "@/components/system/WorldClassToolkit";
 import { FieldProductivity } from "@/components/system/FieldProductivity";
 import { ModalFrame } from "@/components/ui/ModalFrame";
+import { Skeleton } from "@/components/ui/feedback";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
 import { openWorkspaceTool, type WorkspaceToolId } from "@/lib/workspaceTools";
 import { ChevronRight, Clock3, Route, Settings2, SlidersHorizontal, Sparkles, Users } from "lucide-react";
@@ -35,7 +36,11 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (mode === "checking") {
-    return <main className="min-h-screen p-6 text-sm text-neutral-600">Validando perfil de acceso...</main>;
+    return <main aria-busy="true" aria-label="Preparando tu espacio de trabajo" className="mx-auto min-h-screen max-w-[1500px] space-y-5 p-6">
+      <span className="sr-only">Validando perfil de acceso…</span>
+      <div className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-9 w-64 max-w-full" /><Skeleton className="h-4 w-[32rem] max-w-full" /></div>
+      <div className="grid gap-3 md:grid-cols-3"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
+    </main>;
   }
 
   if (mode === "marking_only") {

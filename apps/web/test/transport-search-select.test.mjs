@@ -5,11 +5,16 @@ import test from 'node:test';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
-const source = fs.readFileSync(new URL('../components/transport/TransportSearchSelect.tsx', import.meta.url), 'utf8');
+const alias = fs.readFileSync(new URL('../components/transport/TransportSearchSelect.tsx', import.meta.url), 'utf8');
+const source = fs.readFileSync(new URL('../lib/selectMatch.ts', import.meta.url), 'utf8');
 const exports = {};
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS } }).outputText, { exports, require });
+test('el alias de Transporte delega en la primitiva compartida', () => {
+  assert.match(alias, /matchesSelectOption as matchesTransportOption/, 'reexporta el comparador compartido');
+  assert.match(alias, /SearchSelect as TransportSearchSelect/, 'reexporta el selector compartido');
+});
 test('busca iniciales, texto, códigos y términos sin depender de tildes ni mayúsculas', () => {
-  const match = exports.matchesTransportOption;
+  const match = exports.matchesSelectOption;
   for (const query of ['tan', 'T A N', 'aguila', 'NORTE transportes', '']) assert.equal(match('Transportes Águila Norte', query), true, query);
   assert.equal(match('ABC123 · Bogotá Centro', 'abc123'), true);
   assert.equal(match('ABC123 · Bogotá Centro', 'bogota'), true);

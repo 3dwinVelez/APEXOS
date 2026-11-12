@@ -16,7 +16,8 @@ test('planeación y portales no fuerzan fondos claros en modo oscuro', () => {
   const global = read('../app/globals.css');
   assert.doesNotMatch(planning, /\[&_.*\]:!|bg-\[#|text-\[#/);
   assert.doesNotMatch(global, /html\.dark \.transport-planning-modal/);
-  assert.match(read('../components/transport/TransportSearchSelect.tsx'), /bg-surface/);
+  assert.match(read('../components/ui/search-select.tsx'), /bg-surface/);
+  assert.match(read('../components/transport/TransportSearchSelect.tsx'), /SearchSelect as TransportSearchSelect/);
   assert.match(global, /\.transport-map\.leaflet-container \.leaflet-popup-content-wrapper/);
 });
 test('las superficies neutrales de Transporte usan tokens en vez de depender de parches globales o del tema del sistema operativo', () => {

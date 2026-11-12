@@ -1709,7 +1709,8 @@ html.dark .platform-alert-close:hover {
   width: 100%;
   border-radius: 0.375rem;
   border: 1px solid rgb(var(--color-line, 217 223 221));
-  background: white;
+  background: rgb(var(--surface));
+  color: rgb(var(--text-strong));
   padding: 0 0.75rem;
   font-size: 0.875rem;
 }
