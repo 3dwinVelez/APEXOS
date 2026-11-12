@@ -90,11 +90,10 @@ test("los alias excluidos si son redirecciones y no destinos propios", () => {
   assert.match(read("app/dashboard/talento-humano/mallas/page.tsx"), /export \{ default \} from "\.\.\/rutas\/page"/);
 });
 
-test("PYG pertenece exclusivamente al buscador de Contabilidad", () => {
+test("PYG no se ofrece: vive en Contabilidad, retirada de la oferta, y el alias de Transporte redirige", () => {
   const entries = functionEntries.filter((entry) => /\/pyg$/.test(routePath(entry.href)));
-  assert.equal(entries.length, 1);
-  assert.equal(entries[0].module, "contabilidad");
-  assert.equal(entries[0].href, "/dashboard/contabilidad/pyg");
+  assert.deepEqual(entries, []);
+  assert.match(read("app/dashboard/transporte/pyg/page.tsx"), /redirect\("\/dashboard\/contabilidad\/pyg"\)/);
 });
 
 test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => {

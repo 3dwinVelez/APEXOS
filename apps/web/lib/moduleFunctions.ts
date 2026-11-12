@@ -34,17 +34,8 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-comercio-configuracion", label: "Configurar la vitrina del comercio", description: "Datos del negocio, redes, WhatsApp y campana de descuentos", href: "/dashboard/comercio/configuracion", module: "comercio", keywords: "configuracion vitrina publica codigo whatsapp instagram facebook campana descuento moneda comercio" },
   { id: "fn-comercio-promociones", label: "Gestionar promociones del comercio", description: "Campanas de descuento por categoria o producto y envio por WhatsApp", href: "/dashboard/comercio/promociones", module: "comercio", keywords: "promocion campana descuento mercadeo audiencia categoria producto whatsapp cliente comercio" },
 
-  // Contabilidad
-  { id: "fn-contab-saldos-iniciales", label: "Importar saldos iniciales", description: "Cargue de saldos contables de apertura", href: "/dashboard/contabilidad/importar-saldos-iniciales", module: "contabilidad", keywords: "saldo apertura inicial importar contabilidad" },
-  { id: "fn-contab-pyg", label: "Ver PYG por vehiculo", description: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto", href: "/dashboard/contabilidad/pyg", module: "contabilidad", keywords: "pyg estado resultados utilidad gastos vehiculo placa centro costo presupuesto cumplimiento rentabilidad" },
-  { id: "fn-contab-asientos", label: "Consultar asientos contables", description: "Revisa el registro contable y sus movimientos", href: "/dashboard/contabilidad/asientos", module: "contabilidad", keywords: "asiento contable libro diario comprobante registro movimiento" },
-  { id: "fn-contab-cxp", label: "Gestionar cuentas por pagar", description: "Obligaciones con proveedores y pagos", href: "/dashboard/contabilidad/cuentas-por-pagar", module: "contabilidad", keywords: "cuentas por pagar cxp proveedor obligacion pago cartera" },
-  { id: "fn-contab-estructura", label: "Configurar estructura contable", description: "Centros de costo, periodos y cierre", href: "/dashboard/contabilidad/estructura", module: "contabilidad", keywords: "estructura centro de costo periodo cierre configuracion" },
-  { id: "fn-contab-iva", label: "Gestionar IVA", description: "Maestro y control del impuesto sobre las ventas", href: "/dashboard/contabilidad/iva", module: "contabilidad", keywords: "iva impuesto declaracion ventas tributo" },
-  { id: "fn-contab-plan", label: "Ver plan de cuentas", description: "Catalogo contable de la empresa", href: "/dashboard/contabilidad/plan-cuentas", module: "contabilidad", keywords: "plan cuentas puc catalogo contable" },
-  { id: "fn-contab-reportes", label: "Ver balance de prueba", description: "Estados financieros y saldos por cuenta", href: "/dashboard/contabilidad/reportes", module: "contabilidad", keywords: "balance prueba estados financieros reporte contable libro mayor" },
-  { id: "fn-contab-retenciones", label: "Gestionar retenciones contables", description: "Retenciones practicadas y registradas", href: "/dashboard/contabilidad/retenciones", module: "contabilidad", keywords: "retencion retefuente reteiva impuesto" },
-  { id: "fn-contab-terceros", label: "Gestionar terceros contables", description: "Clientes, proveedores y su informacion fiscal", href: "/dashboard/contabilidad/terceros", module: "contabilidad", keywords: "tercero cliente proveedor nit informacion fiscal" },
+  // Contabilidad y Tesoreria salieron de la oferta: sus pantallas siguen publicadas, pero no
+  // se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
 
   // Cartera y CxC
   { id: "fn-cxc-documentos", label: "Consultar cuentas por cobrar", description: "Documentos de cartera, vencimientos y estado de cuenta", href: "/dashboard/cxc/documentos", module: "cxc", keywords: "cartera cxc cuentas por cobrar documentos vencidos cobro cliente" },
@@ -103,9 +94,6 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-hr-aportes", label: "Gestionar aportes sociales", description: "Planilla de aportes a seguridad social y parafiscales", href: "/dashboard/talento-humano/aportes-sociales", module: "talento-humano", keywords: "aporte social seguridad social planilla parafiscal salud pension arl caja" },
   { id: "fn-hr-libranzas", label: "Gestionar libranzas", description: "Conceptos y descuentos por libranza de empleados", href: "/dashboard/talento-humano/libranzas", module: "talento-humano", keywords: "libranza descuento empleado credito cuota" },
   { id: "fn-hr-liquidacion-trabajador", label: "Liquidar trabajador", description: "Liquidacion final de contrato y saldos", href: "/dashboard/talento-humano/liquidacion-trabajador", module: "talento-humano", keywords: "liquidacion trabajador contrato retiro terminacion saldo final" },
-
-  // Tesoreria
-  { id: "fn-teso-anticipos", label: "Gestionar anticipos", description: "Anticipos a proveedores y su aplicacion", href: "/dashboard/tesoreria/anticipos", module: "tesoreria", keywords: "anticipo proveedor pago anticipado tesoreria" },
 
   // Transporte
   { id: "fn-transp-config", label: "Configurar transporte", description: "Preferencias y parametros de la operacion", href: "/dashboard/transporte/configuracion", module: "transporte", keywords: "configuracion transporte preferencia parametro operacion" },

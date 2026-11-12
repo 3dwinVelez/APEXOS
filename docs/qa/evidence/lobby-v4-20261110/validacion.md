@@ -8,41 +8,49 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase. La ca
 ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
 «aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
 
-## Ronda 10 (curaduría del portafolio: 17 visibles y 15 retirados)
+## Ronda 10 (curaduría del portafolio: 12 visibles y 20 retirados)
 
 - **El corte salió de pantallas, API y certificación, no del campo `status`.** El catálogo tiene 32
   fichas; 14 solo abrían la página genérica `[module]` y 5 visibles estaban mal clasificadas como
   «En construcción» (Ventas, Facturación, Tesorería, Transporte y Talento humano).
-- **Se retiraron 15 fichas sin borrarlas**: Punto de venta, Costos, Presupuestos, Producción,
+- **Se retiraron 20 fichas sin borrarlas**: Punto de venta, Costos, Presupuestos, Producción,
   Recetas, Calidad, Devoluciones, Comercio exterior, Activos, CRM, Planeación de demanda,
-  **Facturación**, Facturación electrónica, Configuración inicial y Suscripciones. Conservan ficha y
-  fotografía en el repositorio; solo dejan de ofrecerse.
+  Facturación, Facturación electrónica, Configuración inicial, Suscripciones, **Contabilidad,
+  Tesorería, Proyectos, APEX Control y APEX AI Core**. Conservan ficha y fotografía en el
+  repositorio; solo dejan de ofrecerse.
 - **Una sola marca manda en los cuatro consumidores.** `RETIRED_MODULE_SLUGS` en `lib/modules.ts`
   alimenta `PORTFOLIO_MODULES`; el lobby, la barra lateral, el buscador y la ficha `[module]` la
   respetan. La barra deja de pintar candados de retirados y el slug retirado responde **404** aunque
   el tenant conserve su código en `active_modules`.
-- **Facturación se retira de la oferta, no del código.** Ya tenía pantallas propias publicadas
-  (`/dashboard/facturacion`, `/documentos`, `/emitir`), así que deja de aparecer en el lobby, la
-  barra, el buscador y las acciones frecuentes —se retiraron sus dos entradas de función— pero sus
-  rutas siguen respondiendo para quien las tenga guardadas. La prueba del portafolio la declara como
-  única excepción con ruta heredada.
+- **Seis retirados conservan ruta operativa: se retiran de la oferta, no del código.** Facturación,
+  Contabilidad, Tesorería, Proyectos, APEX Control y APEX AI Core ya tenían pantallas propias
+  publicadas. Salen del lobby, la barra, el buscador y las acciones frecuentes —se retiraron 14
+  entradas de función (2 de Facturación, 11 de Contabilidad y 1 de Tesorería)— pero sus rutas
+  siguen respondiendo para quien las tenga guardadas. La prueba del portafolio los declara como
+  excepciones con ruta heredada, y la del buscador deja de exigir la cobertura de esas rutas.
+- **Consecuencia declarada: el monitor de Facturas recibidas queda solo por URL.** Su única entrada
+  de oferta era `fn-contab-facturas-recibidas`; al retirar Contabilidad, la pantalla certificada
+  `/dashboard/contabilidad/facturas-recibidas` sigue cargando pero ya no se anuncia en el centro de
+  comandos. Vuelve a ofrecerse cuando el módulo retorne al portafolio.
 - **CxC y los enlaces de tiles.** El lobby y la barra pasan a `moduleHome()`, así Cartera y CxC abre
   sus documentos reales en lugar de la ficha genérica.
-- **Cifra final acordada con el dueño: 17 visibles / 15 retirados.** El catálogo tiene un módulo con
-  id no numérico (`AI-CORE`, APEX AI Core) que la tabla previa omitió; está desarrollado y queda
-  visible. Tras la aprobación de los 18, el dueño pidió bajar a 17 retirando también Facturación.
+- **Cifra final acordada con el dueño: 12 visibles / 20 retirados.** El catálogo tiene un módulo con
+  id no numérico (`AI-CORE`, APEX AI Core) que la tabla previa omitió. La secuencia de decisiones
+  fue: 18/14 aprobados, luego 17/15 al retirar Facturación, y finalmente 12/20 cuando el dueño marcó
+  con X Contabilidad, Tesorería, Proyectos, APEX Control y APEX AI Core porque «aún falta mucho para
+  trabajarlos» y quiere que APEX muestre solo lo que opera.
 - **Seeds intactos por decisión del dueño.** No se tocó `apps/api`; los códigos retirados que algún
   tenant tenga habilitados quedan invisibles para la oferta, pero siguen en sus datos. Queda como
   deuda declarada alinear `SEED_MODULES` y el plan crown en una ronda de backend aparte.
 - **Evidencia.** `evidence-portfolio-lobby-{light,dark}.png` y `evidence-portfolio-metrics.json` con
-  sesión verificada: **16 tiles** en el tenant demo (17 publicados menos Gastos Menores, que no está
-  habilitado), 0 retirados en tiles o barra, 16 enlaces de módulo, 0 candados, buscador sin fichas ni
-  funciones retiradas («crm» y «documentos de facturacion» → 0), `punto-de-venta` y
-  `configuracion-inicial` con 404, `/dashboard/facturacion` cargando su pantalla (excepción
-  declarada), CxC e Inventario abriendo pantallas reales y desbordamiento horizontal 0 en ambos
-  temas.
+  sesión verificada: **11 tiles** en el tenant demo (12 publicados menos Gastos Menores, que no está
+  habilitado), 0 retirados en tiles o barra, 11 enlaces de módulo, 0 candados, buscador sin fichas ni
+  funciones retiradas («tesoreria», «proyectos», «apex control», «apex ai», «pyg» → 0; «crm» → 0),
+  `punto-de-venta` y `configuracion-inicial` con 404, las seis rutas heredadas cargando su pantalla
+  (incluido el monitor de facturas recibidas), Inventario, Ventas, CxC y mallas abriendo pantallas
+  reales y desbordamiento horizontal 0 en ambos temas.
 - **Verificación.** Suite web **697/697** (6 pruebas de `module-portfolio.test.mjs`, incluida la
-  excepción de ruta heredada), `typecheck` limpio y ESLint sin errores (22 avisos preexistentes).
+  excepción de rutas heredadas), `typecheck` limpio y ESLint sin errores (22 avisos preexistentes).
 
 ## Ronda 9 (el saludo del hero da protagonismo al usuario)
 
@@ -242,12 +250,12 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
 | `apps/web/app/globals.css` | M — ronda 9: `.apex-lobby-eyebrow` como cápsula que abraza su contenido, con avatar, copia, nombre y empresa por nivel tipográfico |
 | `apps/web/test/lobby-greeting.test.mjs` | A — 2 pruebas de contrato: estructura del saludo con avatar y nombre, y escala tipográfica sin desbordar el chip |
 | `docs/qa/evidence/lobby-v4-20261110/evidence-greeting-*.png` y `evidence-greeting-metrics.json` | A — cuatro capturas del hero (escritorio/móvil, claro/oscuro) con métricas medidas |
-| `apps/web/lib/modules.ts` | M — ronda 10: `RETIRED_MODULE_SLUGS`, helpers y listas del portafolio (17 visibles / 15 retirados); estados corregidos en Ventas, Facturación, Tesorería, Transporte y Talento humano |
+| `apps/web/lib/modules.ts` | M — ronda 10: `RETIRED_MODULE_SLUGS`, helpers y listas del portafolio (12 visibles / 20 retirados); estados corregidos en Ventas, Facturación, Tesorería, Transporte y Talento humano |
 | `apps/web/app/dashboard/page.tsx`, `apps/web/components/shell/Sidebar.tsx` | M — filtran por `PORTFOLIO_MODULES` y enlazan con `moduleHome`; los retirados dejan de pintarse |
 | `apps/web/components/system/CommandPalette.tsx`, `apps/web/app/dashboard/[module]/page.tsx` | M — el buscador exige portafolio y la ficha genérica de un retirado responde 404 |
-| `apps/web/lib/moduleFunctions.ts`, `apps/web/lib/operationalWorkspace.ts` | M — salen las dos entradas de Facturación (documentos y emisión); sus rutas siguen operativas |
-| `apps/web/test/module-portfolio.test.mjs` | A — 6 pruebas del corte (fichas, pantallas con la excepción de Facturación, consumidores, 404, estados y funciones) |
-| `apps/web/test/command-palette-module-functions.test.mjs`, `apps/web/test/commercial-visit-selection.test.mjs` | M — contrato actualizado al filtro de portafolio, a `moduleHome` y a la exención de rutas de un retirado |
+| `apps/web/lib/moduleFunctions.ts`, `apps/web/lib/operationalWorkspace.ts` | M — salen 14 entradas de oferta (2 de Facturación, 11 de Contabilidad y 1 de Tesorería); sus rutas siguen operativas |
+| `apps/web/test/module-portfolio.test.mjs` | A — 6 pruebas del corte (fichas, pantallas con seis excepciones de ruta heredada, consumidores, 404, estados y funciones) |
+| `apps/web/test/command-palette-module-functions.test.mjs`, `apps/web/test/commercial-visit-selection.test.mjs` | M — contrato actualizado al filtro de portafolio, a `moduleHome`, a la exención de rutas de un retirado y a que PYG deja de ofrecerse |
 | `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png` y `evidence-portfolio-metrics.json` | A — lobby y métricas del corte con sesión real |
 
 ## Validación ejecutada
@@ -274,14 +282,17 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
     avatar 36×36 «D», nombre 19 px/700 `rgb(242 248 250)`, copia 14 px, empresa 14 px acento,
     `h1` 48 px (escritorio) / 36 px (móvil) y desbordamiento horizontal `0`.
   - Ronda 10, dos capturas del lobby con el corte (`evidence-portfolio-lobby-{light,dark}.png`) y
-    `evidence-portfolio-metrics.json`, con login verificado: 16 tarjetas del portafolio para el
-    tenant demo (17 publicadas menos Gastos Menores, sin derecho en ese tenant), `retiredVisible`
-    y `retiredLabelsInSidebar` vacíos, 16 enlaces de módulo en la barra, 0 botones bloqueados y
+    `evidence-portfolio-metrics.json`, con login verificado: 11 tarjetas del portafolio para el
+    tenant demo (12 publicadas menos Gastos Menores, sin derecho en ese tenant), `retiredVisible`
+    y `retiredLabelsInSidebar` vacíos, 11 enlaces de módulo en la barra, 0 botones bloqueados y
     desbordamiento horizontal `0` en ambos temas. El buscador deja de devolver los retirados
-    («crm» y «documentos de facturacion» → 0 opciones) y sus direcciones directas
-    (`/dashboard/punto-de-venta`, `/dashboard/configuracion-inicial`) responden 404, mientras
-    `/dashboard/facturacion` sigue cargando su pantalla por ser una ruta heredada declarada, y CxC
-    abre `/dashboard/cxc/documentos` e Inventario su pantalla real.
+    («tesoreria», «proyectos», «apex control», «apex ai», «pyg» y «crm» → 0 opciones; «punto de
+    venta» y «presupuesto» solo devuelven funciones de Comercio y Gestión Comercial, que siguen
+    visibles) y las fichas genéricas (`/dashboard/punto-de-venta`, `/dashboard/configuracion-inicial`)
+    responden 404. Las seis rutas heredadas —`/dashboard/facturacion`, `/dashboard/contabilidad`,
+    `/dashboard/tesoreria`, `/dashboard/proyectos`, `/dashboard/apex-control` y `/dashboard/apex-ai`—
+    siguen cargando su pantalla, igual que el monitor `/dashboard/contabilidad/facturas-recibidas`;
+    Inventario, Ventas, CxC y mallas abren pantallas reales.
 - Rendimiento del fondo medido en el arnés (2 s de desplazamiento, escritorio): con y sin la capa,
   16,67 ms promedio, p95 16,8 ms, 0 cuadros sobre 33 ms, 0 layouts y 0 scripts; ninguna petición de
   red nueva.
@@ -308,10 +319,11 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
    prefiere fotografía real de la operación, se sustituyen los assets sin tocar código.
 4. Los seeds del backend (`SEED_MODULES` y el plan corona en
    `apps/api/src/modules/auth/service.js`) siguen habilitando `M-01…M-27` por decisión del dueño:
-   el corte es de catálogo y no de suscripción, así que los 15 retirados siguen viajando en
+   el corte es de catálogo y no de suscripción, así que los 20 retirados siguen viajando en
    `active_modules` aunque ninguna superficie los ofrezca. Alinearlos es una ronda de backend aparte.
-   Facturación conserva además sus rutas operativas publicadas, que quedan accesibles por URL
-   directa aunque el módulo ya no se ofrezca.
+   Los seis retirados con rutas publicadas (Facturación, Contabilidad, Tesorería, Proyectos, APEX
+   Control y APEX AI Core) las conservan accesibles por URL directa aunque sus módulos ya no se
+   ofrezcan; el monitor de Facturas recibidas es el caso más visible de esa asimetría.
 
 ## Reproducir
 
