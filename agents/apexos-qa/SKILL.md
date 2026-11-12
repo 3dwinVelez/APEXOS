@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.53.0
+version: 2.54.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -210,6 +210,8 @@ Antes de actuar, leer en este orden:
     - **La evidencia de campo se escribe con guarda de fuga.** El volcado del puesto (`nube-viva.json`) niega a escribirse si el JSON contiene `accessToken` o `Bearer `, y la certificación busca la sesión de marcador en el snapshot y en la pantalla. Un archivo de evidencia que filtra una credencial es un incidente, no una prueba.
     - **Lo bloqueado se declara por clase.** Supabase sin `SUPABASE_ACCESS_TOKEN`, QA/PROD sin el módulo desplegado (404 medido) y la credencial APEX de esos ambientes quedan escritos como pendientes que ninguna gate puede volver verdes; `no_certifica` lo dice en el propio `certification.json`.
     Por qué: conectar un punto de medición con dato real es fácil de simular y difícil de certificar; si la gate depende del operador, del internet o de un texto recortado, mañana vuelve a estar ciega y nadie sabe en qué sentido falló.
+
+67. **Revertir un corte de portafolio se certifica midiendo el retorno, no el diff, y la lista de retirados se vuelve a contar.** El 2026-11-12 el dueño corrigió el corte anterior —Contabilidad había salido de la visual «sin autorización»— y la disciplina fue: (a) **el número se recalcula desde el código**, no se edita el brief: `RETIRED_MODULE_SLUGS` queda en 20 slugs, la prueba del portafolio baja a 12 visibles y el título del brief cambia con la cifra; (b) **la evidencia se recaptura** porque la anterior afirmaba una ausencia que el dueño rechazó: el lobby pasa de 10 a **11 tiles** (12 publicados menos Gastos Menores), 11 enlaces de barra, 0 candados y desbordamiento 0 en ambos temas, y el buscador devuelve **10 opciones** para «contabilidad» y **1** para «pyg» mientras los retirados restantes siguen en 0; (c) **el retorno no reabre lo que sigue cerrado**: las cuatro URLs de CxC siguen terminando en `/dashboard` y «cuentas por cobrar» sigue en 0, porque devolver el módulo no es devolver los enlaces a una ruta bloqueada; (d) **la suite completa corre en verde** (697/697) con el contrato de PYG reescrito —ya no «deja de ofrecerse», ahora se ofrece por Contabilidad— y la garantía de que ninguna función apunta a un retirado se mantiene sobre la lista nueva. Por qué: un diff que solo quita un slug parece suficiente y no certifica nada; lo que el dueño ve es el lobby, la barra y el buscador, y esos tres se vuelven a medir después de la corrección.
 
 ## Checklist de intervención
 

@@ -423,7 +423,6 @@ const RETIRED_MODULE_SLUGS = new Set([
   "facturacion-electronica",
   "configuracion-inicial",
   "suscripciones",
-  "contabilidad",
   "tesoreria",
   "proyectos",
   "apex-control",

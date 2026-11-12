@@ -2,7 +2,7 @@
 name: equipo-apexos
 description: Orquestador del Equipo APEXOS. Descompone una tarea por disciplinas, despacha los expertos que el preflight marca, integra resultados, resuelve conflictos con la gobernanza del repositorio y entrega un veredicto con evidencia y agentes actualizados. Usar cuando el usuario invoque /equipo-apexos, pida trabajar "el equipo" o el preflight devuelva dos o más disciplinas.
 when_to_use: Tareas multi-disciplinarias en APEXOS; el usuario menciona el equipo o el orquestador; o el preflight de agentes devuelve dos o más expertos.
-version: 2.31.0
+version: 2.32.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -137,6 +137,8 @@ Si la tarea es una auditoría de Talento Humano, leer además `.qoder/skills/ape
     - **Y lo que la topología no usa no es un pendiente.** Vercel (y la nube entera en el ambiente local) se publica `applies:false`, sin tarjeta «Sin credenciales» ni acción. El panel pedía tres credenciales en un Docker sin nube: ruido que el propio dueño había señalado como saturación.
     - **El plan de expertos salió del preflight, no de la narrativa:** `apexos-seguridad`, `apexos-performance`, `apexos-qa`, `equipo-apexos`, `apexos-brief`. La gate de nube se puso en la tubería consolidada porque la local nunca sondea la nube —elegir la tubería también es una decisión de integración—; el `apexos-db-nube` no entró porque no se tocó esquema ni base.
     Por qué: «conecten la nube» tiene tres respuestas distintas y mezclarlas produce lo que ya se veía: una barra llena de pendientes imposibles y ningún dato midiendo.
+
+45. **Una instrucción del dueño que contradice el registro previo se despacha como reversión puntual, no como debate de autoría.** El 2026-11-12, después de aplicar la X sobre Contabilidad, el dueño afirmó que el módulo había salido de la visual «sin autorización». El orquestador: (a) **verifica el hecho antes de responder** —leyó `RETIRED_MODULE_SLUGS`, el commit que retiró el módulo y la captura que originó la decisión— y separa dos cosas: el antecedente existió, la instrucción vigente es la contraria; (b) **revierte exactamente lo objetado**: sale `contabilidad` del set, vuelven sus 11 funciones, el corte queda en 12/20 y no se toca lo que el dueño sí pidió —CxC sigue bloqueado y sus enlaces siguen fuera—; (c) **re-mide los consumidores con sesión real** (11 tiles, 11 enlaces, buscador con Contabilidad) y actualiza brief, validación, pruebas y agentes en el mismo commit; y (d) **no convierte la corrección en una ronda de portafolio nueva**: no reabre Tesorería, Proyectos, APEX Control ni APEX AI Core. Por qué: la autorización del dueño no se discute con un registro, pero revertir de más deshace decisiones que sí están vigentes; la reversión puntual conserva la trazabilidad y deja el mismo criterio para la próxima corrección.
 
 ## Checklist de intervención
 

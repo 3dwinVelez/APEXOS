@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.44.0
+version: 2.45.0
 updated_at: 2026-11-12
 contract: 2
 ---
@@ -135,6 +135,8 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **Adoptar la sesión de un CLI ajeno es leer un secreto de terceros y el brief lo dice.** Queda nombrado el lector único, que la torre no imprime ni publica el token, que la fuente de la credencial sí se publica, y que la aceptación exige demostrar la adopción en la cabecera de la petición. Omitirlo hace que el revisor lo lea como un `copy` de token a `.env.local`, que es exactamente lo que no se puede hacer.
     - **El script de certificación entra al inventario.** Una promesa de «queda certificado» sin el gate versionado es decoración: el brief lista el archivo de certificación que se modifica y los checks nuevos por nombre, para que el cierre de la intervención se pueda contrastar con el diff.
     Por qué: un encargo de nube escrito como lista de variables de ambiente termina en un panel que pide credenciales de proveedores que la topología no usa, y en un pendiente heredado indefinidamente porque nadie separó lo construible de lo que no lo es.
+
+58. **Una corrección del dueño sobre un módulo ya retirado se escribe como reversión puntual, con el antecedente conservado y la cifra nueva.** El 2026-11-12, el mismo día del corte 11/21, el dueño escribió «has eliminado de la visual el modulo de contabilidad sin autorizacion». El brief: (a) **no borra la decisión anterior ni la defiende**: deja constancia de la X sobre la captura y de que el corte se aplicó, y declara que la instrucción posterior es la vigente; (b) **rehace las dos listas y todas las cifras derivadas** —20 retirados, 12 visibles, cinco rutas heredadas, 6 entradas de oferta retiradas y 11 de Contabilidad devueltas— incluido el título, el inventario y los criterios de aceptación, porque una reversión con números heredados se lee como corte inconcluso; (c) **delimita el alcance de la reversión**: vuelve el módulo, no los enlaces hacia una ruta bloqueada, y esa exclusión se declara con su razón para que no parezca una limpieza a medias; (d) **exige la evidencia recapturada** —11 tiles, buscador con las funciones devueltas— y registra la ronda nueva en `validacion.md` sin reescribir las rondas anteriores, que siguen siendo historia cierta de lo aprobado en su momento. Por qué: una corrección del dueño no es una errata del brief; es una decisión nueva que necesita su propio registro, sus propias cifras y su propia evidencia, y conservar el antecedente evita que la próxima ronda reabra lo ya decidido.
 
 ## Checklist de intervención
 
