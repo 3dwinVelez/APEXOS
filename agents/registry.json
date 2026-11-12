@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.42.1",
+      "version": "2.43.0",
       "updated_at": "2026-11-12",
-      "sha256": "8767daae0412379ba3f424fe5d66020186a7fb1f2b02d0d928c0cfb316553d1b",
+      "sha256": "95736d05869755e58d46d12dfe8c63eba952696f4c4280666a5026032facd3f4",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -204,9 +204,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.14.0",
-      "updated_at": "2026-11-11",
-      "sha256": "cd03f20208a0758f404172d98f78adffcf699efd95a3b7e1db60d94614fc5910",
+      "version": "2.15.0",
+      "updated_at": "2026-11-12",
+      "sha256": "023f50c2a19dbfe86d23a00013bbc49e5e8978905a0d336fdd2e2b8c68195f86",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -236,9 +236,9 @@
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.14.0",
-      "updated_at": "2026-11-11",
-      "sha256": "3237ecba5eebf527a5541887927fc265b0527c4e62f7f1a58fa023f28dca1538",
+      "version": "2.15.0",
+      "updated_at": "2026-11-12",
+      "sha256": "640a2df8744add97f8330dc7bb1a02818ebbac73c52a51c4a2a98fef82f184ef",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -268,9 +268,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.51.1",
+      "version": "2.52.0",
       "updated_at": "2026-11-12",
-      "sha256": "f066d5533b900e13160fd31e41828119496e76ac724a053139222243b3f45c81",
+      "sha256": "87a616dbcaa359436d9281ba76a4cabd5bd37b72c126b16b9ff87e90480187fc",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -329,9 +329,9 @@
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.22.0",
-      "updated_at": "2026-11-11",
-      "sha256": "d267cce47ca5571e389f9725bc7f6b22df111de5ce9ff3b244af3c34c0511f72",
+      "version": "2.23.0",
+      "updated_at": "2026-11-12",
+      "sha256": "05f2de585cb9099535ac0b48ff0db4fd30283343aa48225b0cabc66658493cb7",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -369,9 +369,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.29.1",
+      "version": "2.30.0",
       "updated_at": "2026-11-12",
-      "sha256": "3007ad9971ce91e0f58f36060dfff77aa880371bb96261308c8d2d3ae0508b6f",
+      "sha256": "bd4236d32040ab1293487d7bc32ee4e3eda977abf868f0b65aea02c3d575a559",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [

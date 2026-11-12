@@ -11,6 +11,61 @@ function tokenVar(environment) {
   return `ENV_${String((environment && environment.id) || "").toUpperCase()}_APEX_TOKEN`;
 }
 
+function refreshVar(environment) {
+  return `ENV_${String((environment && environment.id) || "").toUpperCase()}_APEX_REFRESH`;
+}
+
+// La credencial solo merece accion cuando la torre ya no puede sostenerla sola.
+// "renovada" y "vigente" son lecturas vivas, no hallazgos.
+const CREDENTIAL_BLOCKERS = ["TOKEN_VENCIDO", "REVOCADA", "SIN_CREDENCIAL", "SIN_CONEXION"];
+
+function credentialStatus(environment) {
+  const credential = environment && environment.credential;
+  if (!credential || !CREDENTIAL_BLOCKERS.includes(credential.status)) return null;
+  return credential;
+}
+
+function addCredential(list, seen, environment, short, credential) {
+  const command = `npm run control:credential -- --environment ${environment.id}`;
+  if (credential.status === "SIN_CONEXION") {
+    add(list, seen, {
+      id: `${environment.id}:credencial-conexion`,
+      priority: "alta",
+      code: "CREDENCIAL_SIN_CONEXION",
+      title: `Renovar la credencial de ${short}: la API no respondio`,
+      action: `La torre no pudo renovar la credencial porque la API del ambiente no contesto. Verifica el servicio; mientras tanto las lecturas con permiso de ${short} quedan en sin dato.`,
+      owner: "apexos-performance · apexos-seguridad",
+      command: `GET ${environment.apiBaseUrl || ""}/health`
+    });
+    return;
+  }
+  if (credential.status === "SIN_CREDENCIAL") {
+    add(list, seen, {
+      id: `${environment.id}:credencial`,
+      priority: "alta",
+      code: "CREDENCIAL_AUSENTE",
+      title: `Emitir la credencial de ${short}`,
+      action: `${short} no tiene credencial propia, así que módulos, actividad, empresas y frescura quedan en sin dato. Emite el par con un usuario vigente del ambiente: la torre guardará el token de renovación y se auto-mantendrá desde ahí.`,
+      owner: "apexos-seguridad",
+      command
+    });
+    return;
+  }
+  add(list, seen, {
+    id: `${environment.id}:credencial-${credential.status.toLowerCase()}`,
+    priority: "alta",
+    code: credential.status === "REVOCADA" ? "CREDENCIAL_REVOCADA" : "CREDENCIAL_VENCIDA",
+    title: credential.status === "REVOCADA"
+      ? `Reponer el token de renovación de ${short}`
+      : `Emitir la credencial renovable de ${short}`,
+    action: credential.status === "REVOCADA"
+      ? `La API rechazo el token de renovación (${credential.reason || "credencial revocada"}). La torre no reintenta cada sondeo para no castigar el puesto: hay que emitir un par nuevo.`
+      : `El JWT fijo de ${short} vencio sin token de renovación que lo respalde. Emite el par de nuevo: la torre escribe ${refreshVar(environment)} y ${tokenVar(environment)} y renueva sola antes de que venza.`,
+    owner: "apexos-seguridad",
+    command
+  });
+}
+
 function buildLabel(environment) {
   const commit = environment && environment.deployed && environment.deployed.commit;
   return commit ? String(commit).slice(0, 7) : "";
@@ -233,7 +288,13 @@ function recommendationsFor(environment, options = {}) {
   if (!environment || !environment.enabled) return list;
   const short = environment.short || environment.id;
   const build = buildLabel(environment);
-  const reasons = [moduleReason(environment), activityReason(environment)].filter(Boolean);
+  const credential = credentialStatus(environment);
+  // La credencial es la causa mas especifica que un 401 suelto: cuando la torre ya
+  // sabe que su propia credencial se cayo, esa accion reemplaza a la del modulo.
+  const shadowedByCredential = new Set(["SIN_TOKEN", "TOKEN_INVALIDO"]);
+  const reasons = [moduleReason(environment), activityReason(environment)]
+    .filter((code) => code && !(credential && shadowedByCredential.has(code)));
+  if (credential) addCredential(list, seen, environment, short, credential);
   for (const code of new Set(reasons)) addReason(list, seen, environment, code, short, build);
   addCloud(list, seen, environment);
   addModules(list, seen, environment);
@@ -248,6 +309,8 @@ function recommendationsFor(environment, options = {}) {
 module.exports = {
   recommendationsFor,
   tokenVar,
+  refreshVar,
+  credentialStatus,
   CLOUD_TOKENS,
   PRIORITY_ORDER
 };

@@ -61,6 +61,8 @@ function mergeSection(base, override) {
   return merged;
 }
 
+const ENV_KEYS = Object.freeze(["local", "develop", "main"]);
+
 const ENV_DEFAULTS = {
   develop: {
     apiBaseUrl: "https://apexos-api-qa-production.up.railway.app",
@@ -151,7 +153,8 @@ function loadConfig(overrides = {}) {
         railwayProjectId: env.ENV_LOCAL_RAILWAY_PROJECT_ID || "",
         vercelProjectId: env.ENV_LOCAL_VERCEL_PROJECT_ID || "",
         supabaseRef: env.ENV_LOCAL_SUPABASE_REF || "",
-        apexToken: env.ENV_LOCAL_APEX_TOKEN || env.APEX_CONTROL_TOKEN || ""
+        apexToken: env.ENV_LOCAL_APEX_TOKEN || env.APEX_CONTROL_TOKEN || "",
+        apexRefresh: env.ENV_LOCAL_APEX_REFRESH || ""
       },
       develop: {
         id: "develop",
@@ -168,7 +171,8 @@ function loadConfig(overrides = {}) {
         railwayProjectId: env.ENV_DEVELOP_RAILWAY_PROJECT_ID || "",
         vercelProjectId: env.ENV_DEVELOP_VERCEL_PROJECT_ID || "",
         supabaseRef: env.ENV_DEVELOP_SUPABASE_REF || ENV_DEFAULTS.develop.supabaseRef,
-        apexToken: env.ENV_DEVELOP_APEX_TOKEN || ""
+        apexToken: env.ENV_DEVELOP_APEX_TOKEN || "",
+        apexRefresh: env.ENV_DEVELOP_APEX_REFRESH || ""
       },
       main: {
         id: "main",
@@ -185,10 +189,20 @@ function loadConfig(overrides = {}) {
         railwayProjectId: env.ENV_MAIN_RAILWAY_PROJECT_ID || "",
         vercelProjectId: env.ENV_MAIN_VERCEL_PROJECT_ID || "",
         supabaseRef: env.ENV_MAIN_SUPABASE_REF || ENV_DEFAULTS.main.supabaseRef,
-        apexToken: env.ENV_MAIN_APEX_TOKEN || ""
+        apexToken: env.ENV_MAIN_APEX_TOKEN || "",
+        apexRefresh: env.ENV_MAIN_APEX_REFRESH || ""
       }
     },
     environmentTimeoutMs: intValue(env.ENV_TIMEOUT_MS, 6000, 1000, 30000),
+    credentials: {
+      // Renovar antes de que venza, no despues del primer 401. El presupuesto de
+      // la sonda de ambientes (ENV_TIMEOUT_MS) no se toca: este es el tiempo de la
+      // llamada de renovacion, que va antes del sondeo.
+      marginMs: intValue(env.TOWER_CREDENTIAL_MARGIN_MS, 600000, 30000, 3600000),
+      retryMs: intValue(env.TOWER_CREDENTIAL_RETRY_MS, 60000, 5000, 600000),
+      deniedRetryMs: intValue(env.TOWER_CREDENTIAL_DENIED_RETRY_MS, 300000, 30000, 3600000),
+      timeoutMs: intValue(env.TOWER_CREDENTIAL_TIMEOUT_MS, 5000, 500, 15000)
+    },
     cloud: {
       timeoutMs: intValue(env.CLOUD_TIMEOUT_MS, 8000, 1000, 30000),
       cacheMs: intValue(env.CLOUD_CACHE_MS, 60000, 5000, 600000),
@@ -301,7 +315,8 @@ function safeConfig(config) {
         supabaseUrl: environment.supabaseUrl,
         railwayUrl: environment.railwayUrl,
         vercelUrl: environment.vercelUrl,
-        apexTokenConfigured: Boolean(environment.apexToken)
+        apexTokenConfigured: Boolean(environment.apexToken),
+        apexRefreshConfigured: Boolean(environment.apexRefresh)
       }])
     ),
     cloud: {
@@ -316,6 +331,7 @@ function safeConfig(config) {
 module.exports = {
   APP_DIR,
   DEFAULT_REPO_ROOT,
+  ENV_KEYS,
   loadConfig,
   safeConfig,
   credentialReport,

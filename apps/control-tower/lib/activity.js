@@ -12,6 +12,8 @@ const REASON_DETAIL = {
 const TENANT_REASON_DETAIL = {
   CROSS_TENANT_DESHABILITADO: "La lectura entre empresas esta deshabilitada en este ambiente.",
   PERMISO_DENEGADO: "El token de la torre no tiene permiso de lectura entre empresas.",
+  TOKEN_INVALIDO: "La API rechazo la credencial de la torre: esta vencida o revocada.",
+  SIN_TOKEN: "Sin credencial propia, la torre no puede listar empresas.",
   MODULO_NO_HABILITADO: "APEX Control no esta habilitado para la empresa del token.",
   NO_DISPONIBLE: "El ambiente no expone la vista por empresa.",
   SIN_CONEXION: "Sin conexion con la API para leer empresas."
@@ -29,10 +31,14 @@ function emptyPayload(reason, now) {
   };
 }
 
-function tenantReasonFrom(status, json) {
+function tenantReasonFrom(status, json, tokenConfigured = true) {
   if (json && json.code && TENANT_REASON_DETAIL[json.code]) return json.code;
-  if (status === 401 || status === 403) return "PERMISO_DENEGADO";
+  // Un 401 es credencial, no permiso: confundirlos mandaba al dueño a pedir un
+  // read_all_tenants que ya tenia, mientras el JWT de la torre estaba vencido.
+  if (status === 401) return tokenConfigured ? "TOKEN_INVALIDO" : "SIN_TOKEN";
+  if (status === 403) return "PERMISO_DENEGADO";
   if (status === 404) return "NO_DISPONIBLE";
+  if (status === 0) return "SIN_CONEXION";
   return "NO_DISPONIBLE";
 }
 
@@ -70,7 +76,7 @@ async function fetchActivity(config, environment, { httpRequest, now = new Date(
     return {
       ...emptyPayload(reason, now),
       configured: Boolean(token),
-      tenantsReason: tenants.ok ? null : tenantReasonFrom(tenants.status, tenants.json)
+      tenantsReason: tenants.ok ? null : tenantReasonFrom(tenants.status, tenants.json, Boolean(token))
     };
   }
 
@@ -80,7 +86,7 @@ async function fetchActivity(config, environment, { httpRequest, now = new Date(
     reason: null,
     activity: activity.json,
     tenants: tenants.ok ? tenants.json : null,
-    tenantsReason: tenants.ok ? null : tenantReasonFrom(tenants.status, tenants.json),
+    tenantsReason: tenants.ok ? null : tenantReasonFrom(tenants.status, tenants.json, Boolean(token)),
     checkedAt: now.toISOString()
   };
 }

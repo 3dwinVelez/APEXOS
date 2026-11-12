@@ -74,6 +74,7 @@
     "certify:control-tower:local": "node scripts/certifications/apex-control-tower-local.js",
     "certify:control-tower:consolidado": "node scripts/certifications/apex-control-tower-consolidado-local.js",
     "control:start": "node apps/control-tower/server.js",
+    "control:credential": "node apps/control-tower/tools/issue-credential.js",
     "control:test": "npm --workspace apps/control-tower run test",
     "certify:commercial-population:qa": "node scripts/certifications/commercial-management-population-qa.js",
     "certify:service-order-edit:qa": "node scripts/certifications/service-order-edit-qa.js",

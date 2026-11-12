@@ -125,6 +125,28 @@ test("401 en actividad y caida de red se reportan sin inventar datos", async () 
   assert.equal(missing.reason, "MODULO_NO_DESPLEGADO");
 });
 
+test("el 401 de empresas se lee como credencial, no como falta de permiso", async () => {
+  const denied = await fetchActivity(BASE, environment(), {
+    httpRequest: async () => ({ ok: false, status: 401, json: null })
+  });
+  assert.equal(denied.tenantsReason, "TOKEN_INVALIDO", "un JWT vencido no es un read_all_tenants ausente");
+  const checks = activityChecks(denied, environment());
+  assert.match(checks[0].technical.tenantsDetail, /credencial/i);
+
+  const forbidden = await fetchActivity(BASE, environment(), {
+    httpRequest: async (url) => {
+      if (url.endsWith("/activity")) return { ok: true, status: 200, json: activityPayload() };
+      return { ok: false, status: 403, json: null };
+    }
+  });
+  assert.equal(forbidden.tenantsReason, "PERMISO_DENEGADO", "el 403 si es el permiso explicito");
+
+  const offline = await fetchActivity(BASE, environment({ apexToken: "" }), {
+    httpRequest: async () => ({ ok: false, status: 0, json: null, error: "ECONNREFUSED" })
+  });
+  assert.equal(offline.tenantsReason, "SIN_CONEXION");
+});
+
 test("sin token un 404 acusa build anterior y no falta de credencial", async () => {
   const payload = await fetchActivity(
     { ...BASE, apexToken: "token-local" },

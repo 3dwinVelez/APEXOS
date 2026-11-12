@@ -1007,6 +1007,25 @@ async function run() {
       ultima_lectura: ultimaLectura
     });
 
+    // La conexion viva no es un golpe de suerte del arranque. Esta torre levanta con
+    // un dataDir nuevo: si el ambiente tiene dato es porque la torre renovo su
+    // credencial contra la API del puesto, y el dictamen publicado no arrastra JWT.
+    const credencialViva = await request(liveBase, "/api/status")
+      .then((response) => (response.body.snapshot.environments || {}).local?.credential || null)
+      .catch(() => null);
+    assert("local_credencial_autorenovable", Boolean(credencialViva)
+      && credencialViva.mode === "renovacion"
+      && ["RENOVADA", "VIGENTE"].includes(credencialViva.status)
+      && Date.parse(credencialViva.expiresAt) > Date.now()
+      && credencialViva.attempts === 0
+      && !/eyJ[A-Za-z0-9_-]{10,}\./.test(JSON.stringify(credencialViva)), {
+      estado: credencialViva ? credencialViva.status : null,
+      modo: credencialViva ? credencialViva.mode : null,
+      expira: credencialViva ? credencialViva.expiresAt : null,
+      ultima_renovacion: credencialViva ? credencialViva.lastRefreshAt : null,
+      reintentos: credencialViva ? credencialViva.attempts : null
+    });
+
     if (chrome && !browserError && localReal) {
       const visibleReal = `(n) => n.offsetParent !== null`;
       try {

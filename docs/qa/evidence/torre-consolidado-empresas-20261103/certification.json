@@ -3,9 +3,9 @@
   "version": 1,
   "status": "passed",
   "certification_status": "local_passed_qa_pending",
-  "generated_at": "2026-11-11T18:02:37.040Z",
-  "started_at": "2026-11-11T18:02:24.288Z",
-  "commit": "6141a8137acbc33d5db1c65fbf28063263494017",
+  "generated_at": "2026-11-12T14:11:40.409Z",
+  "started_at": "2026-11-12T14:11:27.896Z",
+  "commit": "7fd3f2c2c2e8fb17f54aa0a25ad26365293103bb",
   "working_tree_dirty": true,
   "alcance": [
     "siete vistas-pregunta del panel (resumen, latencia, api, modulos, datos, nube, operacion) con sus medidores y umbrales publicados por el servidor",
@@ -40,14 +40,14 @@
       "name": "api_rica_sondeada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:60786"
+        "base": "http://127.0.0.1:58022"
       }
     },
     {
       "name": "api_legada_bloqueada",
       "ok": true,
       "detail": {
-        "base": "http://127.0.0.1:60787"
+        "base": "http://127.0.0.1:58023"
       }
     },
     {
@@ -63,7 +63,7 @@
       "name": "torre_iniciada",
       "ok": true,
       "detail": {
-        "url": "http://127.0.0.1:60789"
+        "url": "http://127.0.0.1:58025"
       }
     },
     {
@@ -120,7 +120,7 @@
       "name": "acciones_local",
       "ok": true,
       "detail": {
-        "count": 2
+        "count": 3
       }
     },
     {
@@ -143,14 +143,14 @@
       "detail": {
         "ejemplo": [
           {
+            "code": "CREDENCIAL_SIN_CONEXION",
+            "priority": "alta",
+            "owner": "apexos-performance · apexos-seguridad"
+          },
+          {
             "code": "MODULO_CAIDO",
             "priority": "alta",
             "owner": "apexos-backend"
-          },
-          {
-            "code": "MODULO_ATENCION",
-            "priority": "media",
-            "owner": "apexos-performance"
           }
         ]
       }
@@ -246,7 +246,7 @@
       "name": "snapshot_no_filtra_el_token_de_la_torre",
       "ok": true,
       "detail": {
-        "tamano": 225302
+        "tamano": 226617
       }
     },
     {
@@ -331,7 +331,7 @@
         "filas": 4,
         "graficas": 4,
         "sinUmbral": 0,
-        "meta": "3 de 3 módulos dibujados · 2 sondeos · 11/11, 13:02:24 → 11/11, 13:02:29",
+        "meta": "3 de 3 módulos dibujados · 2 sondeos · 12/11, 09:11:28 → 12/11, 09:11:33",
         "api": true
       }
     },
@@ -339,7 +339,7 @@
       "name": "navegador_mapa_incluye_la_api",
       "ok": true,
       "detail": {
-        "meta": "3 de 3 módulos dibujados · 2 sondeos · 11/11, 13:02:24 → 11/11, 13:02:29"
+        "meta": "3 de 3 módulos dibujados · 2 sondeos · 12/11, 09:11:28 → 12/11, 09:11:33"
       }
     },
     {
@@ -362,8 +362,8 @@
       "name": "navegador_memoria_y_uso_reales",
       "ok": true,
       "detail": {
-        "memoria": "Memoria del API 214,6MB heap 88,4/121,2 MB óptimo 512 MB tope 1.024 MB 11/11, 13:02:24 · 214,6 MB · Óptimo11/11, 13:02:29 · 214,6 MB · Óptimo 13:02:2413:02:29 2 de 2 sondeos con lectura · 11/11, 13:02:24 → 11/11, 13:02:29",
-        "uso": "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas 11/11, 13:02:24 · 806,3 req/min · Informativo11/11, 13:02:29 · 806,3 req/min · Informativo 13:02:2413:02:29 sin banda habitual todavía: 2 de 8 lecturas medidas"
+        "memoria": "Memoria del API 214,6MB heap 88,4/121,2 MB óptimo 512 MB tope 1.024 MB 12/11, 09:11:28 · 214,6 MB · Óptimo12/11, 09:11:33 · 214,6 MB · Óptimo 09:11:2809:11:33 2 de 2 sondeos con lectura · 12/11, 09:11:28 → 12/11, 09:11:33",
+        "uso": "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas 12/11, 09:11:28 · 806,3 req/min · Informativo12/11, 09:11:33 · 806,3 req/min · Informativo 09:11:2809:11:33 sin banda habitual todavía: 2 de 8 lecturas medidas"
       }
     },
     {
@@ -382,10 +382,10 @@
         "teselas": [
           "Estado operativo 58/100 Crítico · 1/3 módulos operativos",
           "Carga de datos 1.720 1/3 módulos con datos · 1 caídos · 0 sin medir",
-          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 7 s",
+          "Actividad de la empresa 120 2 sesiones · 4 GPS · hace 8 s",
           "Memoria del API 214,6MB heap 88,4/121,2 MB",
           "Uso del API 98.432req 98.432 peticiones · 2.092 con error · 14 consultas lentas",
-          "Rendimiento p95 70ms 2 h 2 min encendido"
+          "Rendimiento p95 65ms 2 h 2 min encendido"
         ]
       }
     },
@@ -408,7 +408,7 @@
       "name": "captura_monitor_consolidado",
       "ok": true,
       "detail": {
-        "bytes": 883264,
+        "bytes": 883555,
         "scroll": true
       }
     },
@@ -461,7 +461,7 @@
       "name": "captura_producto_bloqueado",
       "ok": true,
       "detail": {
-        "bytes": 651953
+        "bytes": 652109
       }
     },
     {
@@ -469,9 +469,9 @@
       "ok": true,
       "detail": {
         "estadisticas": [
-          "p50 40 ms",
-          "p95 70 ms",
-          "Máximo 70 ms",
+          "p50 38 ms",
+          "p95 65 ms",
+          "Máximo 65 ms",
           "Muestras 2"
         ]
       }
@@ -480,7 +480,7 @@
       "name": "navegador_telemetria_proceso_con_umbral",
       "ok": true,
       "detail": {
-        "memoria": "Presión de heap 72,9% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 88,4/121,2 MB óptimo 60 % tope 85 % 11/11, 13:02:24 · 72,9 % · En riesgo11/11, 13:02:29 · 72,9 % · En riesgo 13:02:2413:02:29 2 de 2 sondeos con lectura · 11/11, 13:02:24 → 11/11, 13:02:29"
+        "memoria": "Presión de heap 72,9% óptimo ≤ 60 % · en riesgo ≤ 85 % · heap 88,4/121,2 MB óptimo 60 % tope 85 % 12/11, 09:11:28 · 72,9 % · En riesgo12/11, 09:11:33 · 72,9 % · En riesgo 09:11:2809:11:33 2 de 2 sondeos con lectura · 12/11, 09:11:28 → 12/11, 09:11:33"
       }
     },
     {
@@ -531,23 +531,23 @@
         "picos": {
           "blancos": 2,
           "horarios": [
-            "13:02:24",
-            "13:02:29"
+            "09:11:27",
+            "09:11:32"
           ],
           "titulos": [
-            "11/11, 13:02:24 · 70 ms · Óptimo",
-            "11/11, 13:02:29 · 40 ms · Óptimo"
+            "12/11, 09:11:27 · 65 ms · Óptimo",
+            "12/11, 09:11:32 · 38 ms · Óptimo"
           ],
           "lista": 2,
-          "muestras": "2 muestras · 11/11, 13:02:29"
+          "muestras": "2 muestras · 12/11, 09:11:32"
         },
-        "elegido": "2026-11-11T18:02:24.373Z",
+        "elegido": "2026-11-12T14:11:27.982Z",
         "punto": {
           "filas": 8,
-          "hora": "11/11, 13:02:24",
-          "medicion": "70 ms · Óptimo",
+          "hora": "12/11, 09:11:27",
+          "medicion": "65 ms · Óptimo",
           "anterior": "es la primera de la ventana",
-          "siguiente": "11/11, 13:02:29 · 40 ms",
+          "siguiente": "12/11, 09:11:32 · 38 ms",
           "cursor": 1,
           "activo": 1
         }
@@ -565,7 +565,7 @@
       "name": "captura_vista_latencia",
       "ok": true,
       "detail": {
-        "bytes": 548582
+        "bytes": 549233
       }
     },
     {
@@ -590,15 +590,15 @@
     "screenshots": [
       {
         "file": "01-monitor-consolidado-empresa.png",
-        "bytes": 883264
+        "bytes": 883555
       },
       {
         "file": "02-producto-bloqueado-con-acciones.png",
-        "bytes": 651953
+        "bytes": 652109
       },
       {
         "file": "03-vista-latencia-consolidado.png",
-        "bytes": 548582
+        "bytes": 549233
       }
     ],
     "console_errors": []

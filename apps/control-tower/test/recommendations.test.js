@@ -91,6 +91,30 @@ test("el motivo de empresas se lee aunque la actividad general este sana", () =>
   assert.deepEqual(items.map((item) => item.code), ["CROSS_TENANT_DESHABILITADO"]);
 });
 
+test("la credencial vencida es la causa: reemplaza la accion generica de token", () => {
+  const items = recommendationsFor(environment({
+    modules: { reason: "TOKEN_INVALIDO" },
+    credential: { status: "TOKEN_VENCIDO", reason: "El JWT fijo vencio y no hay token de renovacion." }
+  }));
+  assert.deepEqual(items.map((item) => item.code), ["CREDENCIAL_VENCIDA"], "no duplica el hallazgo con la accion de token");
+  assert.equal(items[0].priority, "alta");
+  assert.match(items[0].command, /npm run control:credential -- --environment develop/);
+  assert.match(items[0].action, /ENV_DEVELOP_APEX_REFRESH/);
+});
+
+test("el ambiente sin credencial y el refresh revocado nombran su emision", () => {
+  const ausente = recommendationsFor(environment({ credential: { status: "SIN_CREDENCIAL" } }));
+  assert.equal(ausente[0].code, "CREDENCIAL_AUSENTE");
+  assert.match(ausente[0].action, /sin dato/);
+
+  const revocada = recommendationsFor(environment({ credential: { status: "REVOCADA" } }));
+  assert.equal(revocada[0].code, "CREDENCIAL_REVOCADA");
+  assert.match(revocada[0].title, /renovaci/i);
+
+  const viva = recommendationsFor(environment({ credential: { status: "VIGENTE", mode: "renovacion" } }));
+  assert.deepEqual(viva, [], "una credencial viva no es un hallazgo");
+});
+
 test("simulacion no inventa acciones", () => {
   assert.deepEqual(recommendationsFor(environment({
     modules: { reason: "SIMULACION", modules: [] },

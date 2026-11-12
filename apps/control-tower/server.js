@@ -17,6 +17,7 @@ const { fetchModules, REASON_DETAIL } = require("./lib/modules");
 const { recommendationsFor } = require("./lib/recommendations");
 const { GAUGES, gaugesFor, latencyVerdict, p95Definition, componentBands, viewVerdicts, viewVerdict, cockpitFor, viewGaugesFor, operationGauges, bandFromEntry, bandForValue, probeBand, applyWindowLimits, windowLimits } = require("./lib/metrics");
 const { ModuleTelemetry } = require("./lib/telemetry");
+const { createCredentialPump } = require("./lib/credential");
 const { MonitorHistory, measuredSeries, measuredValues } = require("./lib/monitor-history");
 const { computeHealth, withModuleBands } = require("./lib/health");
 const { createAuthGuard, createRateLimiter, safeEqual, readToken, assertLoopback, redact, isPlainObject } = require("./lib/security");
@@ -250,6 +251,9 @@ function createTower(overrides = {}) {
   const performance = new PerformanceTracker({ persisted: store.readAux("performance", {}) });
   const telemetry = new ModuleTelemetry({ persisted: store.readAux("module-telemetry", {}) });
   const monitors = new MonitorHistory({ persisted: store.readAux("monitor-history", {}) });
+  // La credencial de cada ambiente se renueva antes de vencer: sin este bombeo el
+  // JWT de ocho horas caducaba y los puntos de medicion bajaban solos a catalogo.
+  const credentials = createCredentialPump({ config, store });
   const jobs = new Jobs({ store });
   const clients = new Set();
   const overridesMap = new Map();
@@ -269,6 +273,7 @@ function createTower(overrides = {}) {
     store,
     jobs,
     performance,
+    credentials,
     state,
     server: null,
     timer: null,
@@ -389,6 +394,9 @@ function createTower(overrides = {}) {
   }
 
   async function collect() {
+    // El bombeo va antes del sondeo: las sondas leen con la credencial del ciclo,
+    // no con la que quedo en el archivo al arrancar la torre.
+    await credentials.ensure();
     const [probeResult, gitResult] = await Promise.allSettled([runAllProbes(config), collectGitState(config)]);
 
     if (probeResult.status === "fulfilled") {
@@ -399,6 +407,7 @@ function createTower(overrides = {}) {
       probeResult.value.performance = summaries;
       for (const [id, environment] of Object.entries(probeResult.value.environments)) {
         environment.performance = summaries[id] || null;
+        environment.credential = credentials.statusFor(id) || null;
       }
       store.writeAux("performance", performance.toJSON());
       recordModuleTicks(probeResult.value, telemetry, probeMetrics);

@@ -358,9 +358,12 @@ async function probeApexControl(config, environment = null, options = {}) {
         results.push(probeFromStatus(id, label, byKey[id]));
       }
     }
-  } else if (result.status === 401 || result.status === 403) {
+  } else if (result.status === 401) {
     deep.status = "degraded";
-    deep.detail = "Token APEX Control invalido o sin permiso";
+    deep.detail = "Credencial de la torre rechazada (401): vencida o revocada, no un problema de permiso";
+  } else if (result.status === 403) {
+    deep.status = "degraded";
+    deep.detail = "El token de la torre no tiene permiso apex-control (403)";
   } else if (result.status === 404) {
     deep.status = "unknown";
     deep.detail = "Modulo apex-control no habilitado en la API";
