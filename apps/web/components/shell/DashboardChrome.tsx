@@ -18,6 +18,7 @@ import { StandardTableExperience } from "@/components/system/StandardTableExperi
 import { TraceabilityCenter } from "@/components/system/TraceabilityCenter";
 import { WorldClassToolkit } from "@/components/system/WorldClassToolkit";
 import { FieldProductivity } from "@/components/system/FieldProductivity";
+import { Skeleton } from "@/components/ui/feedback";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
 import { PYG_EXPANDED_PATH } from "@/lib/pyg-expanded";
 import { ChevronDown, Clock3, SlidersHorizontal } from "lucide-react";
@@ -44,7 +45,11 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
   if (mode === "checking") {
     return (
       <div aria-busy="true" className="apex-app-gradient min-h-screen md:flex">
-        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6" id="apex-main-content" tabIndex={-1} />
+        <main aria-label="Preparando tu espacio de trabajo" className="min-w-0 flex-1 p-3 sm:p-4 md:p-6" id="apex-main-content" tabIndex={-1}>
+          <span className="sr-only">Validando perfil de acceso…</span>
+          <div className="space-y-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-9 w-64 max-w-full" /><Skeleton className="h-4 w-[32rem] max-w-full" /></div>
+          <div className="grid gap-3 md:grid-cols-3"><Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
+        </main>
       </div>
     );
   }

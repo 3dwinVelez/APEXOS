@@ -937,7 +937,7 @@ export default function ServicesPage() {
             <ArrowLeft size={18} />
           </Link>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-apex">{technicianMode ? "Perfil tecnico operativo" : "M-26 · Operacion de campo"}</p>
+            <p className="text-sm font-semibold text-apex">{technicianMode ? "Perfil técnico operativo" : "M-26 · Operación de campo"}</p>
             <h1 className="truncate text-2xl font-semibold md:text-3xl">{technicianMode ? "Mis servicios activos" : "Servicios"}</h1>
             <p className="mt-1 hidden text-sm text-neutral-600 sm:block">{mainMessage}</p>
           </div>
@@ -950,7 +950,7 @@ export default function ServicesPage() {
         <div className="flex flex-col gap-4 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase text-apex">Centro operativo de servicios</p>
-            <h2 className="mt-1 text-xl font-semibold">{technicianMode ? "Siguiente servicio" : "Ordenes listas para gestionar"}</h2>
+            <h2 className="mt-1 text-xl font-semibold">{technicianMode ? "Siguiente servicio" : "Órdenes listas para gestionar"}</h2>
             <p className="mt-1 max-w-3xl text-sm text-neutral-600">{technicianMode ? "Selecciona una orden para iniciar o continuar el trabajo." : "Filtra, abre y ejecuta sin salir del monitor."}</p>
           </div>
           {!technicianMode ? <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap">
@@ -978,7 +978,7 @@ export default function ServicesPage() {
       {ordersError ? <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-900">{ordersError}</div> : null}
       {monitorWarnings.length ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-          <p className="font-semibold">La consulta devolvio advertencias</p>
+          <p className="font-semibold">La consulta devolvió advertencias</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">{monitorWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
         </div>
       ) : null}
@@ -987,14 +987,14 @@ export default function ServicesPage() {
         <aside className="apex-section-card min-w-0 p-3 sm:p-4">
           <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
             <div>
-            <h2 className="font-semibold">{technicianMode ? "Que debes atender primero" : "Atencion prioritaria"}</h2>
+            <h2 className="font-semibold">{technicianMode ? "Qué debes atender primero" : "Atención prioritaria"}</h2>
             <p className="mt-1 text-sm text-neutral-500">{technicianMode ? "Tus servicios ordenados por urgencia y avance." : "Servicios abiertos, en proceso o con novedad."}</p>
             </div>
             <span className="rounded-md bg-paper px-3 py-1.5 text-xs font-semibold text-neutral-600">{operational.attention.length} por atender</span>
           </div>
           {operational.publicRequests.length ? (
             <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              <strong>{operational.publicRequests.length} solicitud(es) publica(s)</strong> requieren completar referencia o tecnico antes de pasar a operacion.
+              <strong>{operational.publicRequests.length} solicitud(es) pública(s)</strong> requieren completar referencia o técnico antes de pasar a operación.
             </div>
           ) : null}
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -1020,7 +1020,7 @@ export default function ServicesPage() {
                 <div className="flex items-center gap-2">
                   <span className="flex h-9 w-9 items-center justify-center rounded-md bg-apex/10 text-apex"><SlidersHorizontal size={17} /></span>
                   <div>
-                    <h2 className="font-semibold">Consulta de ordenes</h2>
+                    <h2 className="font-semibold">Consulta de órdenes</h2>
                     <p className="text-sm text-neutral-500">Encuentra y prioriza trabajo sin recargar la pantalla.</p>
                   </div>
                 </div>

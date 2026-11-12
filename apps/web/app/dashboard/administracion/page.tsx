@@ -2644,8 +2644,8 @@ export default function AdministracionPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-apex">Configuracion y gobierno</p>
-          <h1 className="mt-1 text-3xl font-semibold">Administracion APEX</h1>
+          <p className="text-sm font-medium text-apex">Configuración y gobierno</p>
+          <h1 className="mt-1 text-3xl font-semibold">Administración APEX</h1>
           <p className="mt-2 max-w-3xl text-sm text-neutral-600">{platformAdmin ? "Gestiona accesos, permisos, empresas y maestros desde un centro administrativo ordenado." : "Gestiona usuarios, roles y maestros propios de esta empresa desde un centro administrativo ordenado."}</p>
         </div>
         <div className="flex flex-wrap gap-2">

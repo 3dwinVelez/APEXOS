@@ -271,21 +271,21 @@ export default function SuscripcionesPage() {
   }
 
   if (platformAdmin === null) {
-    return <div className="rounded-md border border-line bg-white p-8 text-sm text-neutral-600">Validando permisos de administracion de plataforma...</div>;
+    return <div className="rounded-md border border-line bg-white p-8 text-sm text-neutral-600">Validando permisos de administración de plataforma...</div>;
   }
 
   if (!platformAdmin) {
     return (
       <div className="mx-auto max-w-3xl rounded-md border border-line bg-white p-6">
         <Link className="mb-4 inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard/administracion">
-          <ArrowLeft size={16} /> Volver a Administracion
+          <ArrowLeft size={16} /> Volver a Administración
         </Link>
         <div className="flex items-start gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-paper text-apex"><LockKeyhole size={20} /></span>
           <div>
             <p className="text-sm font-semibold text-apex">Acceso restringido</p>
-            <h1 className="mt-1 text-2xl font-semibold">Empresas y suscripciones es solo para superadmin</h1>
-            <p className="mt-2 text-sm leading-6 text-neutral-600">Los administradores de empresa gestionan usuarios, roles y maestros propios desde Administracion APEX. La creacion y configuracion global de empresas queda reservada para administradores de plataforma.</p>
+            <h1 className="mt-1 text-2xl font-semibold">Empresas y suscripciones son solo para superadmin</h1>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">Los administradores de empresa gestionan usuarios, roles y maestros propios desde Administración APEX. La creación y configuración global de empresas queda reservada para administradores de plataforma.</p>
           </div>
         </div>
       </div>

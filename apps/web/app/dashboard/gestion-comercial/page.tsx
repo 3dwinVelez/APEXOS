@@ -92,9 +92,6 @@ export default function CommercialManagementPage() {
             <p className="mt-0.5 text-sm text-neutral-600">Programa, busca, ejecuta y reprograma visitas desde el calendario comercial.</p>
           </div>
         </div>
-        <Link className="inline-flex items-center gap-1 text-sm font-semibold text-apex" href="/dashboard/gestion-comercial/agenda?calendario=1">
-          Abrir calendario <ArrowRight size={16} />
-        </Link>
       </section>
     </div>
   );

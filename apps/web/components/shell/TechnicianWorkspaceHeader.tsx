@@ -23,7 +23,7 @@ export function TechnicianWorkspaceHeader() {
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <UserSessionBadge compact />
-        <button aria-label="Cerrar sesion" className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-600 hover:border-red-300 hover:text-red-700" onClick={logout} type="button">
+        <button aria-label="Cerrar sesión" className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-600 hover:border-red-300 hover:text-red-700" onClick={logout} type="button">
           <LogOut size={16} />
           <span className="hidden sm:inline">Salir</span>
         </button>

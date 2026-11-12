@@ -673,7 +673,7 @@ function ProductProfile({ families, item, saving, onPatch }: { families: Invento
 
       <div className="grid gap-4 border-t border-line p-4 lg:grid-cols-2">
         <div>
-          <h3 className="mb-3 text-sm font-semibold">Configuracion operativa</h3>
+          <h3 className="mb-3 text-sm font-semibold">Configuración operativa</h3>
           <InfoLine icon={Tag} label="Familia" value={item.family_code || item.metadata.family || "Sin familia"} />
           <InfoLine icon={Warehouse} label="WMS" value={item.metadata.wms_profile || "almacenable"} />
           <InfoLine icon={ClipboardCheck} label="Compras" value={item.metadata.purchase_profile || "comprable"} />

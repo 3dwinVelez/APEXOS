@@ -66,7 +66,7 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
 
   if (state === "checking") {
     return (
-      <section aria-label="Validando permisos" aria-live="polite" className="space-y-5 rounded-md border border-line bg-white p-6">
+      <section aria-label="Validando permisos" aria-live="polite" className="space-y-5 rounded-card border border-line bg-surface p-6">
         <span className="sr-only">Validando permisos</span>
         <div className="space-y-2">
           <Skeleton className="h-3 w-24" />
@@ -83,19 +83,19 @@ export function RouteAccessGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (state === "denied") {
-    const moduleName = slug ? MODULES_BY_SLUG[slug]?.name : "este modulo";
+    const moduleName = slug ? MODULES_BY_SLUG[slug]?.name : "este módulo";
     return (
-      <section className="rounded-md border border-red-200 bg-white p-6">
+      <section className="rounded-card border border-line bg-surface p-6">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-700">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-error/10 text-error-ink">
             <ShieldAlert size={18} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold text-neutral-900">Acceso no autorizado</h1>
-            <p className="mt-1 text-sm text-neutral-600">
-              Tu rol no tiene permisos para abrir {moduleName || "este modulo"}. Si necesitas acceso, solicita ajuste de rol a un administrador.
+            <h1 className="text-lg font-semibold text-content-strong">Acceso no autorizado</h1>
+            <p className="mt-1 text-sm text-content-body">
+              Tu rol no tiene permisos para abrir {moduleName || "este módulo"}. Si necesitas acceso, solicita ajuste de rol a un administrador.
             </p>
-            <Link className="mt-4 inline-flex h-9 items-center rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard">
+            <Link className="mt-4 inline-flex h-9 items-center rounded-control border border-line px-3 text-sm font-semibold hover:bg-paper" href="/dashboard">
               Volver al tablero
             </Link>
           </div>

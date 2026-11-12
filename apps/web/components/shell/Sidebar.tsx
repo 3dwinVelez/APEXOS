@@ -123,7 +123,7 @@ export function Sidebar() {
               type="search"
               value={moduleQuery}
             />
-            {moduleQuery ? <button aria-label="Limpiar busqueda" className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
+            {moduleQuery ? <button aria-label="Limpiar búsqueda" className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
           </label>
         ) : null}
         {!technicianMode ? <SidebarTooltip collapsed={collapsed} label="Inicio"><Link aria-current={pathname === "/dashboard" ? "page" : undefined} aria-label={collapsed ? "Inicio" : undefined} className={linkClass(pathname === "/dashboard")} href="/dashboard" prefetch={false}>
@@ -134,7 +134,7 @@ export function Sidebar() {
           <summary className="flex cursor-pointer list-none items-center justify-between px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-600 transition-colors hover:text-neutral-900"><span>{group.label}</span><ChevronRight className="transition group-open/sidebar:rotate-90" size={13} /></summary>
           <div className="space-y-0.5">{group.items.map(renderItem)}</div>
         </details>)}
-        {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay modulos disponibles para esta busqueda.</p> : null}
+        {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay módulos disponibles para esta búsqueda.</p> : null}
       </nav>
       {!collapsed ? (
         <div className="mt-2 shrink-0">
