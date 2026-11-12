@@ -1,0 +1,11 @@
+{
+  "reason": "Fallos medidos en la suite web de origin/develop (3595a9bb) antes de la intervencion visual; el candidato debe mantenerlos identicos y no agregar ninguno nuevo.",
+  "measured_on": "develop control worktree at 3595a9bb, node --experimental-strip-types --test test/*.test.mjs",
+  "web": [
+    "el registro de funciones cubre todas las rutas del dashboard",
+    "apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK",
+    "el respaldo preventivo tambien consulta el guard cuando no hay API configurada",
+    "la impresión aísla el tema claro y restaura el tema previo al salir sin persistir cambios",
+    "react y react-dom/server salen de la misma instalacion de node_modules"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "change_id": "homologacion-visual-20261112",
+  "commit": "8ba301c0db7bd272fac6ab21a78384a290ba2409",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "pending",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "",
+    "approved_at": "",
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": false,
+      "deploy_qa": false,
+      "promote_main": false,
+      "create_auxiliary_branch": true,
+      "run_remote_migrations": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json",
+        "../certifications/homologacion-visual-20261112.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json",
+        "../certifications/homologacion-visual-20261112.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/visual-homologation-regression.json",
+        "../certifications/homologacion-visual-20261112.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/visual-homologation-regression.json",
+        "../certifications/homologacion-visual-20261112.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json",
+        "../certifications/homologacion-visual-20261112.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "head": "8ba301c0db7bd272fac6ab21a78384a290ba2409",
+    "environment": "LOCAL",
+    "web_base": "http://127.0.0.1:3002 (build de produccion del candidato)",
+    "script": "../../../scripts/certifications/visual-homologation-browser.cjs",
+    "evidence": [
+      "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json",
+      "../certifications/homologacion-visual-20261112.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "head": "8ba301c0db7bd272fac6ab21a78384a290ba2409",
+    "script": "../../../scripts/certifications/visual-homologation-regression.cjs",
+    "evidence": [
+      "../evidence/homologacion-visual-candidate-20261112/visual-homologation-regression.json",
+      "../certifications/homologacion-visual-20261112.md"
+    ]
+  },
+  "notes": {
+    "gate": "La compuerta pre-QA solo habilita el despliegue del candidato para QA funcional; nunca acredita QA ni autoriza main.",
+    "approval_pending": "approval.status queda en pending hasta que el propietario autorice explicitamente mover la intervencion a develop (QA)."
+  }
+}

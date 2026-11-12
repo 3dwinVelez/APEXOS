@@ -1,0 +1,1443 @@
+{
+  "commit": "8ba301c0",
+  "environment": "LOCAL",
+  "status": "passed",
+  "web_base": "http://127.0.0.1:3002",
+  "started_at": "2026-11-12T22:13:26.610Z",
+  "fixtures": {
+    "customers": "/api/v1/sales/customers",
+    "commercialCustomers": "/api/v1/commercial-management/customers",
+    "advisors": "/api/v1/commercial-management/advisors",
+    "zones": "/api/v1/commercial-management/zones",
+    "reasons": "/api/v1/commercial-management/visit-reasons",
+    "results": "/api/v1/commercial-management/visit-results",
+    "settings": "/api/v1/commercial-management/settings"
+  },
+  "writes_intercepted": [
+    {
+      "method": "POST",
+      "path": "/sales/orders",
+      "body": "{\"customer_id\":987654,\"lines\":[{\"item_id\":3,\"qty\":1,\"unit_price\":95000}]}"
+    }
+  ],
+  "checks": [
+    {
+      "name": "login por la interfaz real",
+      "status": "passed",
+      "detail": {
+        "webBase": "http://127.0.0.1:3002"
+      }
+    },
+    {
+      "name": "lobby 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Mi operación",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "lobby 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Mi operación",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "lobby 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Mi operación",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "inventario 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Inventario",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "inventario 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Inventario",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "inventario 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Inventario",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "compras 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Compras",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "compras 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Compras",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "compras 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Compras",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "ventas 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Ventas",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "ventas 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Ventas",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "ventas 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Ventas",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gestion-comercial 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "visibleSelects": 4,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Gestión Comercial",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gestion-comercial 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "visibleSelects": 4,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Gestión Comercial",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gestion-comercial 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "visibleSelects": 4,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Gestión Comercial",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "comercio 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Comercio",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "comercio 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Comercio",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "comercio 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Comercio",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "contabilidad 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Contabilidad",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "contabilidad 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Contabilidad",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "contabilidad 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Contabilidad",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "transporte 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Transporte",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "transporte 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Transporte",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "transporte 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Transporte",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "talento-humano 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Talento Humano",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "talento-humano 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Talento Humano",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "talento-humano 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Talento Humano",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "servicios 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "visibleSelects": 7,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Servicios",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "servicios 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "visibleSelects": 7,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Servicios",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "servicios 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "visibleSelects": 7,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Servicios",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "reportes 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Reportes",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "reportes 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Reportes",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "reportes 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Reportes",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "administracion 1440 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "visibleSelects": 3,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Administración APEX",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "administracion 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "visibleSelects": 3,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Administración APEX",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "administracion 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "visibleSelects": 3,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Administración APEX",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gastos-menores 1440 acceso coherente (documented_denied)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Acceso no autorizado",
+        "denied": true,
+        "broken": false
+      }
+    },
+    {
+      "name": "gastos-menores 1440 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Acceso no autorizado",
+        "denied": true,
+        "broken": false
+      }
+    },
+    {
+      "name": "gastos-menores 1440 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Acceso no autorizado",
+        "denied": true,
+        "broken": false
+      }
+    },
+    {
+      "name": "lobby 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Mi operación",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "lobby 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Mi operación",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "lobby 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Mi operación",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "inventario 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Inventario",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "inventario 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Inventario",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "inventario 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Inventario",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "compras 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Compras",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "compras 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Compras",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "compras 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Compras",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "ventas 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Ventas",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "ventas 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Ventas",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "ventas 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Ventas",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gestion-comercial 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "visibleSelects": 4,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Gestión Comercial",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gestion-comercial 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "visibleSelects": 4,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Gestión Comercial",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gestion-comercial 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "visibleSelects": 4,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Gestión Comercial",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "comercio 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Comercio",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "comercio 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Comercio",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "comercio 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Comercio",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "contabilidad 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Contabilidad",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "contabilidad 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Contabilidad",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "contabilidad 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Contabilidad",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "transporte 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Transporte",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "transporte 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Transporte",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "transporte 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Transporte",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "talento-humano 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Talento Humano",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "talento-humano 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Talento Humano",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "talento-humano 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Talento Humano",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "servicios 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "visibleSelects": 7,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Servicios",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "servicios 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "visibleSelects": 7,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Servicios",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "servicios 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "visibleSelects": 7,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Servicios",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "reportes 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Reportes",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "reportes 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Reportes",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "reportes 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Reportes",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "administracion 980 acceso coherente (allowed)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "visibleSelects": 3,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Administración APEX",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "administracion 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "visibleSelects": 3,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Administración APEX",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "administracion 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "visibleSelects": 3,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Administración APEX",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "gastos-menores 980 acceso coherente (documented_denied)",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Acceso no autorizado",
+        "denied": true,
+        "broken": false
+      }
+    },
+    {
+      "name": "gastos-menores 980 sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Acceso no autorizado",
+        "denied": true,
+        "broken": false
+      }
+    },
+    {
+      "name": "gastos-menores 980 sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 0,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Acceso no autorizado",
+        "denied": true,
+        "broken": false
+      }
+    },
+    {
+      "name": "nueva-ov sin select nativo visible en el formulario",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 2,
+        "formSelects": 0,
+        "formComboboxes": 2,
+        "h1": "Nueva orden de venta",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "nueva-ov expone dos combobox",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 2,
+        "formSelects": 0,
+        "formComboboxes": 2,
+        "h1": "Nueva orden de venta",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "nueva-ov abre listbox de clientes",
+      "status": "passed",
+      "detail": {
+        "opened": true,
+        "options": [
+          "PRUEBA HOMOLOGACION"
+        ]
+      }
+    },
+    {
+      "name": "nueva-ov escribe el valor en el select nativo",
+      "status": "passed",
+      "detail": [
+        "987654",
+        "0"
+      ]
+    },
+    {
+      "name": "nueva-ov abre listbox de productos del API real",
+      "status": "passed",
+      "detail": {
+        "opened": true,
+        "options": [
+          "RAW-AZU-25 · Azucar saco 25kg"
+        ]
+      }
+    },
+    {
+      "name": "nueva-ov publica la orden",
+      "status": "passed",
+      "detail": []
+    },
+    {
+      "name": "nueva-ov conserva el contrato del payload",
+      "status": "passed",
+      "detail": {
+        "customer_id": 987654,
+        "lines": [
+          {
+            "item_id": 3,
+            "qty": 1,
+            "unit_price": 95000
+          }
+        ]
+      }
+    },
+    {
+      "name": "nueva-ov tema oscuro sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 2,
+        "formSelects": 0,
+        "formComboboxes": 2,
+        "h1": "Nueva orden de venta",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "nueva-ov movil sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 2,
+        "formSelects": 0,
+        "formComboboxes": 2,
+        "h1": "Nueva orden de venta",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "nueva-ov sin clientes solo ofrece el marcador vacio",
+      "status": "passed",
+      "detail": {
+        "opened": true,
+        "options": [
+          "Seleccionar cliente ✓"
+        ]
+      }
+    },
+    {
+      "name": "nueva-ov sin clientes no escribe la orden",
+      "status": "passed",
+      "detail": {
+        "writes": [],
+        "blocked": {
+          "disabled": true,
+          "alert": []
+        }
+      }
+    },
+    {
+      "name": "agendar-visita abre el dialogo",
+      "status": "passed",
+      "detail": null
+    },
+    {
+      "name": "agendar-visita usa SearchSelect sin select nativo",
+      "status": "passed",
+      "detail": {
+        "comboboxes": 4,
+        "visibleSelects": 0
+      }
+    },
+    {
+      "name": "agendar-visita lista clientes controlados",
+      "status": "passed",
+      "detail": [
+        "Sin cliente / prospecciónLa visita podrá vincular un cliente durante su ejecución.",
+        "PRUEBA-01 · PRUEBA HOMOLOGACIONBogota"
+      ]
+    },
+    {
+      "name": "nuevo-producto sin pantalla rota",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario/productos/nuevo",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 15,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Lista de productos",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "nuevo-producto movil sin desbordamiento",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/inventario/productos/nuevo",
+        "overflow": 0,
+        "visibleSelects": 1,
+        "comboboxes": 15,
+        "formSelects": 0,
+        "formComboboxes": 0,
+        "h1": "Lista de productos",
+        "denied": false,
+        "broken": false
+      }
+    },
+    {
+      "name": "consola sin errores",
+      "status": "passed",
+      "detail": []
+    }
+  ],
+  "screenshots": [
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-lobby-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-inventario-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-compras-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-ventas-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-gestion-comercial-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-comercio-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-contabilidad-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-transporte-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-talento-humano-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-servicios-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-reportes-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-administracion-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-gastos-menores-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-lobby-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-inventario-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-compras-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-ventas-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-gestion-comercial-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-comercio-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-contabilidad-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-transporte-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-talento-humano-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-servicios-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-reportes-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-administracion-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-gastos-menores-desktop-980.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-nueva-ov-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-nueva-ov-dark-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-nueva-ov-mobile-390.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-nueva-ov-empty-masters-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-agendar-visita-modal-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-nuevo-producto-desktop-1440.png",
+    "docs/qa/evidence/homologacion-visual-candidate-20261112/candidate-nuevo-producto-mobile-390.png"
+  ],
+  "payloads": {
+    "sales_order": {
+      "customer_id": 987654,
+      "lines": [
+        {
+          "item_id": 3,
+          "qty": 1,
+          "unit_price": 95000
+        }
+      ]
+    }
+  },
+  "console_errors": [],
+  "http_errors": [],
+  "finished_at": "2026-11-12T22:14:52.353Z",
+  "writes_observed": [
+    {
+      "method": "POST",
+      "path": "/sales/orders",
+      "body": "{\"customer_id\":987654,\"lines\":[{\"item_id\":3,\"qty\":1,\"unit_price\":95000}]}"
+    }
+  ]
+}

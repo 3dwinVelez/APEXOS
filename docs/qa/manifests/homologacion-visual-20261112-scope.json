@@ -1,0 +1,478 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "homologacion-visual-20261112",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-capa-visual-20261112",
+  "certified_commit": "8ba301c0db7bd272fac6ab21a78384a290ba2409",
+  "target_head": "3595a9bbca239fbf0ff7e186aa765e22700f7420",
+  "base_commit": "3595a9bbca239fbf0ff7e186aa765e22700f7420",
+  "base_commits": [
+    "develop"
+  ],
+  "change_intent": {
+    "summary": "Reconstruccion aislada de la capa visual homologada sobre el develop vigente: primitiva SearchSelect (el select nativo sigue siendo la autoridad del formulario), migracion de los selectores de venta y agenda comercial, tokens y estados de espera del shell, textos visibles corregidos y retiro de enlaces duplicados. No incluye otros commits pendientes de desarrollo (API, Prisma, control-tower, bundle de modulos locales).",
+    "modules": [
+      "web",
+      "shared-ui",
+      "design-tokens",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/suscripciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/servicios/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/RouteAccessGuard.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/Sidebar.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/TechnicianWorkspaceHeader.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/UserSessionBadge.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/PlatformAlerts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/TransportSearchSelect.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/search-select.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/selectMatch.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/comercio-ux-consistency.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/search-select-contract.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/service-monitor-live-refresh.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-search-select.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-theme.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/design/AUDITORIA_VISUAL.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-administracion-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-administracion-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-agendar-visita-dark-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-agendar-visita-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-agendar-visita-mobile-390.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-agendar-visita-modal-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-comercio-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-comercio-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-compras-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-compras-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-contabilidad-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-contabilidad-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-gastos-menores-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-gastos-menores-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-gestion-comercial-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-gestion-comercial-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-inventario-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-inventario-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-lobby-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-lobby-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-metrics.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-nueva-ov-dark-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-nueva-ov-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-nueva-ov-mobile-390.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-nueva-ov-select-open-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-nuevo-producto-dark-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-nuevo-producto-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-nuevo-producto-mobile-390.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-payloads.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-reportes-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-reportes-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-servicios-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-servicios-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-talento-humano-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-talento-humano-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-transporte-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-transporte-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-ventas-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/after-ventas-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-administracion-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-administracion-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-agendar-visita-dark-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-agendar-visita-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-agendar-visita-mobile-390.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-comercio-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-comercio-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-compras-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-compras-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-contabilidad-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-contabilidad-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-gastos-menores-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-gastos-menores-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-gestion-comercial-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-gestion-comercial-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-inventario-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-inventario-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-lobby-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-lobby-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-metrics.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-nueva-ov-dark-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-nueva-ov-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-nueva-ov-mobile-390.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-nuevo-producto-dark-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-nuevo-producto-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-nuevo-producto-mobile-390.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-reportes-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-reportes-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-servicios-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-servicios-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-talento-humano-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-talento-humano-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-transporte-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-transporte-desktop-980.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-ventas-desktop-1440.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/visual-homologation-20261112/before-ventas-desktop-980.png"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/",
+    "apps/web/components/",
+    "apps/web/lib/",
+    "apps/web/test/",
+    "docs/design/",
+    "docs/qa/evidence/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Contrato de escritura de los formularios de venta, agenda comercial e inventario",
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json"
+      ]
+    },
+    {
+      "name": "Selectores canonicos con busqueda sobre el select nativo y su evento change",
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json",
+        "../certifications/homologacion-visual-20261112.md"
+      ]
+    },
+    {
+      "name": "Shell y estados de espera del panel sin pantalla bloqueada ni desbordamiento",
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json",
+        "../certifications/homologacion-visual-20261112.md"
+      ]
+    },
+    {
+      "name": "Autenticacion, sesion y navegacion de los hubs del portafolio",
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/candidate-certification.json"
+      ]
+    },
+    {
+      "name": "Suite web y verificacion de tipos sin regresiones nuevas frente a develop",
+      "status": "passed",
+      "evidence": [
+        "../evidence/homologacion-visual-candidate-20261112/visual-homologation-regression.json"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario generado de git diff --name-status <destino>..<candidato>; ninguna ruta se agrega ni se retira a mano.",
+    "isolation": "La rama candidata contiene unicamente esta intervencion visual. No arrastra apps/control-tower/**, apps/api/**, apps/api/prisma/**, el bundle de modulos locales ni commits previos sin promover.",
+    "scope_exclusion": "docs/design/APEXOS_COMPONENT_CATALOG.md se excluye: no existe en develop y viaja con su propia promocion.",
+    "qa_status": "La aprobacion para desplegar el candidato a QA la otorga exclusivamente el propietario."
+  }
+}
