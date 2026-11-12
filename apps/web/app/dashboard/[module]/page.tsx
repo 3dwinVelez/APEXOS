@@ -1,4 +1,4 @@
-import { MODULES_BY_SLUG } from "@/lib/modules";
+import { MODULES_BY_SLUG, isRetiredModuleSlug } from "@/lib/modules";
 import { ArrowRight, Brain, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 export default async function ModulePage({ params }: { params: Promise<{ module: string }> }) {
   const { module: slug } = await params;
   const moduleConfig = MODULES_BY_SLUG[slug];
-  if (!moduleConfig) notFound();
+  if (!moduleConfig || isRetiredModuleSlug(slug)) notFound();
 
   const Icon = moduleConfig.icon;
   const inventoryActionLinks: Record<string, string> = {

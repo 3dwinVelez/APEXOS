@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-11",
+  "generated_at": "2026-11-12",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.41.0",
-      "updated_at": "2026-11-11",
-      "sha256": "4636e7c3ddd92ce9b46b3385308c56c218185fe0b2d764f3565ad4c297f86a98",
+      "version": "2.42.0",
+      "updated_at": "2026-11-12",
+      "sha256": "cf51725cc2882e4df93e27e69c4a6e89d8f515feacdf18b906fe2435c59a2554",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -132,7 +132,8 @@
         "celda-construible-se-construye",
         "inventario-de-tuberias-de-certificacion",
         "encargo-nota-visual-brecha-medida",
-        "encargo-protagonismo-jerarquia-tipografica"
+        "encargo-protagonismo-jerarquia-tipografica",
+        "brief-corte-portafolio-listas-exactas"
       ]
     },
     {
@@ -162,9 +163,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.22.0",
-      "updated_at": "2026-11-11",
-      "sha256": "0b0ab6825721f1f4807200438db6044f2fecc6fe3e535d66028e5fdc8f7049d0",
+      "version": "2.23.0",
+      "updated_at": "2026-11-12",
+      "sha256": "3ab6da67edc766086d4945694e959ff7393f22ac4c9d34722195d35101227419",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -196,7 +197,8 @@
         "lote-de-texto-se-revisa-en-el-diff",
         "403-de-alcance-no-toca-clear-session",
         "piel-operacion-medida-en-dom",
-        "saludo-hero-capsula-con-identidad"
+        "saludo-hero-capsula-con-identidad",
+        "portafolio-publicado-catalogo"
       ]
     },
     {
@@ -266,9 +268,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.50.0",
-      "updated_at": "2026-11-11",
-      "sha256": "be1796123045fb91073d9ac32378d97eff8d5c623074582e01917be5be02ccf2",
+      "version": "2.51.0",
+      "updated_at": "2026-11-12",
+      "sha256": "8dd414f9a5b49575b4eabd1e7610ebcd43fde42a55708d42030b8e87edc633a6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -320,7 +322,8 @@
         "celda-con-sesion-se-cierra-construyendo-la-sesion",
         "gate-lee-dom-visible-de-la-vista-activa",
         "fase-visual-metricas-dom-sesion",
-        "saludo-evidencia-sesion-real-y-caja"
+        "saludo-evidencia-sesion-real-y-caja",
+        "corte-portafolio-evidencia-por-consumidor"
       ]
     },
     {
@@ -366,9 +369,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.28.0",
-      "updated_at": "2026-11-11",
-      "sha256": "086f84429124f6374794b996db0d471741218742d28e9d4622af0a1ede1b7eef",
+      "version": "2.29.0",
+      "updated_at": "2026-11-12",
+      "sha256": "c70f9bafaf4666f7262958e5fd1ae5a50873bc516d53c6afbf490b8280a5fb1d",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -402,7 +405,8 @@
         "sin-pendientes-construibles",
         "historia-sin-retrorelleno-y-herramienta-viva",
         "nota-visual-capa-exclusiva",
-        "protagonismo-dato-jerarquia-visual"
+        "protagonismo-dato-jerarquia-visual",
+        "curaduria-portafolio-por-evidencia"
       ]
     }
   ],

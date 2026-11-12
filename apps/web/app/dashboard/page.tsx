@@ -3,7 +3,8 @@
 import { Avatar } from "@/components/ui/avatar";
 import { loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
 import { LOBBY_BANNER, lobbyModuleImage } from "@/lib/lobbyAssets";
-import { MODULES } from "@/lib/modules";
+import { MODULES, PORTFOLIO_MODULES } from "@/lib/modules";
+import { moduleHome } from "@/lib/moduleFunctions";
 import { actionsForWorkspace } from "@/lib/operationalWorkspace";
 import { AlertCircle, ArrowRight, Grid2X2, RefreshCw, Search, Sparkles, Zap } from "lucide-react";
 import Image from "next/image";
@@ -37,7 +38,7 @@ export default function DashboardPage() {
     void refreshAccess();
   }, []);
 
-  const activeModules = useMemo(() => MODULES.filter((module) => access.bySlug[module.slug] === true).sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999)), [access]);
+  const activeModules = useMemo(() => PORTFOLIO_MODULES.filter((module) => access.bySlug[module.slug] === true).sort((a, b) => (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999)), [access]);
   const enabledSlugs = useMemo(() => new Set(activeModules.map((module) => module.slug)), [activeModules]);
   const actions = useMemo(() => actionsForWorkspace(enabledSlugs, roleName).slice(0, 6), [enabledSlugs, roleName]);
 
@@ -67,7 +68,7 @@ export default function DashboardPage() {
 
       <section aria-labelledby="modules-title" className="rounded-card border border-line bg-surface p-4 sm:p-5" id="mis-modulos">
         <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="text-lg font-semibold text-content-strong" id="modules-title">Mis módulos</h2><p className="text-sm text-content-muted">Habilitados para tu empresa y perfil.</p></div><span className="rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-content-muted">{activeModules.length}</span></div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{activeModules.map((module) => { const Icon = module.icon; const image = lobbyModuleImage(module.slug); return <Link className="apex-lobby-tile group" href={`/dashboard/${module.slug}`} key={module.slug} prefetch={false}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{activeModules.map((module) => { const Icon = module.icon; const image = lobbyModuleImage(module.slug); return <Link className="apex-lobby-tile group" href={moduleHome(module.slug)} key={module.slug} prefetch={false}>
           <span className="apex-lobby-tile-media">{image ? <Image src={image} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 360px" /> : <span className="apex-lobby-tile-fallback"><Icon size={30} /></span>}</span>
           <span className="apex-lobby-tile-body"><span className="apex-lobby-tile-icon"><Icon size={16} /></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-content-strong">{module.name}</strong><small className="block truncate text-content-muted">{module.area}</small></span><ArrowRight className="shrink-0 text-content-subtle transition group-hover:translate-x-1 group-hover:text-apex" size={16} /></span>
         </Link>; })}</div>
