@@ -134,8 +134,9 @@ test("barra superior conserva lo esencial y agrupa herramientas secundarias", ()
   }
 });
 
-test("chrome no muestra el banner global de AI en ningun modulo", () => {
+test("chrome no muestra el banner global de AI ni el asistente flotante", () => {
   const source = read("components/shell/DashboardChrome.tsx");
   assert.doesNotMatch(source, /ApexAiHeader/);
-  assert.match(source, /<AiExperienceLayer/);
+  assert.doesNotMatch(source, /AiExperienceLayer/);
+  assert.doesNotMatch(source, /apex-ai-mascot/);
 });

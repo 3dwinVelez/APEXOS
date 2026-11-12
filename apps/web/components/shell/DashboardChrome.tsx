@@ -1,6 +1,5 @@
 "use client";
 
-import { AiExperienceLayer } from "@/components/brain/AiExperienceLayer";
 import { ContextBreadcrumbs } from "@/components/shell/ContextBreadcrumbs";
 import { MobileNav } from "@/components/shell/MobileNav";
 import { PageTransition } from "@/components/shell/PageTransition";
@@ -77,7 +76,6 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
         <RouteAccessGuard><PageTransition>{children}</PageTransition></RouteAccessGuard>
       </main>
       <MobileNav />
-      <div className="technician-hide"><AiExperienceLayer /></div>
     </div>
   );
 }

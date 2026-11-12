@@ -8,6 +8,25 @@ queda sin intervenir hasta la aprobación explícita de la siguiente fase. La ca
 ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pidió que el fondo sea
 «aplicable a todas las ventanas», sin cambiar el contenido ni la lógica de ningún módulo.
 
+## Ronda 14 (retiro del asistente flotante)
+
+- **El dueño pidió recuperar el espacio.** «También requiero que retiremos la ayuda o asistente, ya que
+  actualmente no aporta valor y es espacio que ocupamos sin necesidad», señalando en una captura el botón
+  del cerebro con el globo «1» sobre la esquina inferior.
+- **Se retira el montaje, no la funcionalidad.** `DashboardChrome` deja de montar `AiExperienceLayer`; con
+  él desaparecen el botón, la bandeja de recomendaciones y la guía contextual, porque las tres solo se
+  abrían desde ese botón. `components/brain/**` y sus estilos **siguen en disco**: reponer el asistente es
+  una línea, y la pantalla `/dashboard/apex-ai` y su API de insights no se tocan.
+- **Efecto colateral.** El dashboard deja de consultar `/api/v1/brain/insights` en cada cambio de módulo y
+  deja de registrar los listeners de resize, scroll y storage del layer.
+- **Medido, no afirmado.** Con sesión real en ambos temas: `assistantBubbles = 0` (selector
+  `.apex-ai-mascot` y etiquetas de APEX AI), esquina inferior libre en las capturas, y sin regresión:
+  banner cargado (665×375 px de recurso), `glyphBox` 44×44, 11 tiles, 11 enlaces de barra, 0 retirados
+  visibles, 0 candados, desbordamiento 0. El buscador conserva los números de la ronda 12.
+- **Verificación.** Suite web **697/697**, `typecheck` limpio y ESLint sin errores (22 avisos previos). El
+  contrato del chrome pasa de exigir `<AiExperienceLayer` a prohibirlo junto con `ApexAiHeader` y
+  `apex-ai-mascot`.
+
 ## Ronda 13 (iconos de módulo y banner de red)
 
 - **El dueño señaló saturación en las imágenes.** «Las imágenes podrían estar generando una saturación
@@ -315,6 +334,10 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
 | `apps/web/public/assets/lobby/banner-network.webp` | A — constelación turquesa del dueño en WebP 852×480 (39.840 bytes) |
 | `apps/web/test/operational-home-redesign.test.mjs` | M — ronda 13: afirma banner, carga eager, glyph, ausencia de tira fotográfica y las 32 fichas con icono |
 | `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png` y `evidence-portfolio-metrics.json` | M — ronda 13: recaptura con banner cargado, glyph 44×44 y `tileMedia = 0` |
+| `apps/web/components/shell/DashboardChrome.tsx` | M — ronda 14: sale el import de `AiExperienceLayer` y su bloque de montaje (botón, bandeja y guía) |
+| `apps/web/test/operational-home-redesign.test.mjs` | M — ronda 14: el contrato del chrome prohíbe `AiExperienceLayer`, `ApexAiHeader` y `apex-ai-mascot` |
+| `docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-{light,dark}.png` y `evidence-portfolio-metrics.json` | M — ronda 14: recaptura con `assistantBubbles = 0` y esquina inferior libre |
+| `docs/briefs/2026-11-12-retiro-asistente-flotante.md` | A — ronda 14: brief del retiro con componentes conservados y criterio de ausencia |
 
 ## Validación ejecutada
 
@@ -366,6 +389,10 @@ ronda 6 es la excepción deliberada: vive en el layout raíz porque el dueño pi
     muestreo del hero salió plano porque el `<img>` no se solicitaba (`complete: false`,
     `naturalWidth: 0`); la causa se midió en el DOM (sin atributo de carga con `priority` en esta versión
     de Next) y se corrigió con `loading="eager"` antes de recapturar.
+  - Ronda 14, mismas dos capturas y métricas regeneradas tras retirar el asistente flotante:
+    `assistantBubbles = 0` en ambos temas (ningún `.apex-ai-mascot` ni etiqueta de APEX AI), esquina
+    inferior libre, y sin regresión del banner (665×375 px de recurso), glyph 44×44, 11 tiles, 11 enlaces
+    de barra, 0 retirados, 0 candados y desbordamiento `0`.
 - Rendimiento del fondo medido en el arnés (2 s de desplazamiento, escritorio): con y sin la capa,
   16,67 ms promedio, p95 16,8 ms, 0 cuadros sobre 33 ms, 0 layouts y 0 scripts; ninguna petición de
   red nueva.
