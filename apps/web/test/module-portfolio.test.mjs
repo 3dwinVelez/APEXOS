@@ -35,11 +35,16 @@ const RETIRED = [
   "facturacion",
   "facturacion-electronica",
   "configuracion-inicial",
-  "suscripciones"
+  "suscripciones",
+  "contabilidad",
+  "tesoreria",
+  "proyectos",
+  "apex-control",
+  "apex-ai"
 ];
 
 // Retirados que ya tenían pantalla operativa publicada: salen de la oferta, no del código.
-const RETIRED_WITH_LEGACY_ROUTE = ["facturacion"];
+const RETIRED_WITH_LEGACY_ROUTE = ["facturacion", "contabilidad", "tesoreria", "proyectos", "apex-control", "apex-ai"];
 
 const VISIBLE = [
   "reportes",
@@ -47,28 +52,23 @@ const VISIBLE = [
   "compras",
   "ventas",
   "cxc",
-  "contabilidad",
-  "tesoreria",
   "transporte",
   "talento-humano",
-  "proyectos",
   "administracion",
   "servicios",
-  "apex-ai",
   "gestion-comercial",
   "gastos-menores",
-  "comercio",
-  "apex-control"
+  "comercio"
 ];
 
-test("el catálogo conserva 32 fichas y el portafolio publica 17", () => {
+test("el catálogo conserva 32 fichas y el portafolio publica 12", () => {
   const slugs = catalogSlugs();
   assert.equal(slugs.length, 32);
   assert.deepEqual(new Set(retiredSlugs()), new Set(RETIRED));
-  assert.equal(retiredSlugs().length, 15);
+  assert.equal(retiredSlugs().length, 20);
   const visible = slugs.filter((slug) => !retiredSlugs().includes(slug));
   assert.deepEqual(new Set(visible), new Set(VISIBLE));
-  assert.equal(visible.length, 17);
+  assert.equal(visible.length, 12);
 });
 
 test("todo módulo visible tiene pantalla propia y el retirado sin ruta deja de publicarse", () => {
@@ -113,7 +113,7 @@ test("la ficha genérica de un módulo retirado no se publica", () => {
   assert.match(page, /isRetiredModuleSlug\(slug\)\) notFound\(\)/);
 });
 
-test("las fichas visibles dejan de declararse en construcción", () => {
+test("las fichas corrigen el estado que declaraban antes de operar", () => {
   for (const slug of ["ventas", "facturacion", "tesoreria"]) {
     assert.match(moduleBlock(slug), /status: "Base funcional"/, `${slug} sigue en construcción`);
   }

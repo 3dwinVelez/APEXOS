@@ -404,8 +404,9 @@ export const MODULES_BY_ID = Object.fromEntries(MODULES.map((module) => [module.
 export const ALL_MODULE_IDS = MODULES.map((module) => module.id);
 
 // Portafolio publicado: los retirados conservan ficha y assets, pero dejan de ofrecerse en
-// lobby, barra y buscador; sin pantalla propia, su ficha genérica responde 404. Facturación
-// se retira de la oferta y mantiene sus rutas operativas ya publicadas.
+// lobby, barra y buscador; sin pantalla propia, su ficha genérica responde 404. Los retirados
+// con rutas ya publicadas (Facturación, Contabilidad, Tesorería, Proyectos, APEX Control y
+// APEX AI Core) las mantienen: salen de la oferta, no del código.
 const RETIRED_MODULE_SLUGS = new Set([
   "punto-de-venta",
   "costos",
@@ -421,7 +422,12 @@ const RETIRED_MODULE_SLUGS = new Set([
   "facturacion",
   "facturacion-electronica",
   "configuracion-inicial",
-  "suscripciones"
+  "suscripciones",
+  "contabilidad",
+  "tesoreria",
+  "proyectos",
+  "apex-control",
+  "apex-ai"
 ]);
 
 export function isPortfolioModule(module: ApexModule) {

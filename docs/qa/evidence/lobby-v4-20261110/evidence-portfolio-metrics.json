@@ -1,26 +1,21 @@
 {
-  "captured_at": "2026-11-12T14:06:08.855Z",
+  "captured_at": "2026-11-12T14:35:27.870Z",
   "base": "http://127.0.0.1:3001",
   "views": [
     {
       "view": "portfolio-light",
-      "tileCount": 16,
+      "tileCount": 11,
       "tileLabels": [
         "Inventario",
         "Compras",
         "Ventas",
         "Cartera y CxC",
-        "Contabilidad",
-        "Tesorería",
         "Transporte",
         "Talento humano",
-        "Proyectos",
         "Administración APEX",
-        "APEX Control",
         "Servicios",
         "Gestión Comercial",
         "Apex Heart",
-        "APEX AI Core",
         "Comercio"
       ],
       "tileHrefs": [
@@ -28,45 +23,35 @@
         "/dashboard/compras",
         "/dashboard/ventas",
         "/dashboard/cxc/documentos",
-        "/dashboard/contabilidad",
-        "/dashboard/tesoreria",
         "/dashboard/transporte",
         "/dashboard/talento-humano",
-        "/dashboard/proyectos",
         "/dashboard/administracion",
-        "/dashboard/apex-control",
         "/dashboard/servicios",
         "/dashboard/gestion-comercial",
         "/dashboard/reportes",
-        "/dashboard/apex-ai",
         "/dashboard/comercio"
       ],
       "retiredVisible": [],
       "retiredLabelsInSidebar": [],
-      "sidebarModuleLinks": 16,
+      "sidebarModuleLinks": 11,
       "sidebarLockedButtons": 0,
       "sidebarSearchPresent": true,
       "horizontalOverflow": 0
     },
     {
       "view": "portfolio-dark",
-      "tileCount": 16,
+      "tileCount": 11,
       "tileLabels": [
         "Inventario",
         "Compras",
         "Ventas",
         "Cartera y CxC",
-        "Contabilidad",
-        "Tesorería",
         "Transporte",
         "Talento humano",
-        "Proyectos",
         "Administración APEX",
-        "APEX Control",
         "Servicios",
         "Gestión Comercial",
         "Apex Heart",
-        "APEX AI Core",
         "Comercio"
       ],
       "tileHrefs": [
@@ -74,22 +59,17 @@
         "/dashboard/compras",
         "/dashboard/ventas",
         "/dashboard/cxc/documentos",
-        "/dashboard/contabilidad",
-        "/dashboard/tesoreria",
         "/dashboard/transporte",
         "/dashboard/talento-humano",
-        "/dashboard/proyectos",
         "/dashboard/administracion",
-        "/dashboard/apex-control",
         "/dashboard/servicios",
         "/dashboard/gestion-comercial",
         "/dashboard/reportes",
-        "/dashboard/apex-ai",
         "/dashboard/comercio"
       ],
       "retiredVisible": [],
       "retiredLabelsInSidebar": [],
-      "sidebarModuleLinks": 16,
+      "sidebarModuleLinks": 11,
       "sidebarLockedButtons": 0,
       "sidebarSearchPresent": true,
       "horizontalOverflow": 0
@@ -109,11 +89,35 @@
       "empty": false
     },
     "presupuesto": {
-      "options": 2,
+      "options": 1,
       "labels": [
-        "Gestionar presupuestos comerciales",
-        "Ver PYG por vehiculo"
+        "Gestionar presupuestos comerciales"
       ],
+      "empty": false
+    },
+    "tesoreria": {
+      "options": 0,
+      "labels": [],
+      "empty": false
+    },
+    "proyectos": {
+      "options": 0,
+      "labels": [],
+      "empty": false
+    },
+    "apex control": {
+      "options": 0,
+      "labels": [],
+      "empty": false
+    },
+    "apex ai": {
+      "options": 0,
+      "labels": [],
+      "empty": false
+    },
+    "pyg": {
+      "options": 0,
+      "labels": [],
       "empty": false
     },
     "inventario": {
@@ -126,11 +130,6 @@
         "Ver reportes de inventario",
         "Crear producto"
       ],
-      "empty": false
-    },
-    "documentos de facturacion": {
-      "options": 0,
-      "labels": [],
       "empty": false
     }
   },
@@ -153,6 +152,42 @@
       "notFound": false,
       "denied": false
     },
+    "retired-with-route-contabilidad": {
+      "finalPath": "/dashboard/contabilidad",
+      "text": "Saltar al contenido principal Página cargada: contabilidad APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Se",
+      "notFound": false,
+      "denied": false
+    },
+    "retired-with-route-contabilidad-facturas": {
+      "finalPath": "/dashboard/contabilidad/facturas-recibidas",
+      "text": "Saltar al contenido principal Página cargada: contabilidad · facturas recibidas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo",
+      "notFound": false,
+      "denied": false
+    },
+    "retired-with-route-tesoreria": {
+      "finalPath": "/dashboard/tesoreria",
+      "text": "Saltar al contenido principal Página cargada: tesoreria APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
+      "notFound": false,
+      "denied": false
+    },
+    "retired-with-route-proyectos": {
+      "finalPath": "/dashboard/proyectos",
+      "text": "Saltar al contenido principal Página cargada: proyectos APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesio",
+      "notFound": false,
+      "denied": false
+    },
+    "retired-with-route-apex-control": {
+      "finalPath": "/dashboard/apex-control",
+      "text": "Saltar al contenido principal Página cargada: apex control APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Se",
+      "notFound": false,
+      "denied": false
+    },
+    "retired-with-route-apex-ai": {
+      "finalPath": "/dashboard/apex-ai",
+      "text": "Saltar al contenido principal Página cargada: apex ai APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion ",
+      "notFound": false,
+      "denied": false
+    },
     "visible-cxc": {
       "finalPath": "/dashboard/cxc/documentos",
       "text": "Saltar al contenido principal Página cargada: cxc · documentos APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMI",
@@ -162,6 +197,18 @@
     "visible-inventario": {
       "finalPath": "/dashboard/inventario",
       "text": "Saltar al contenido principal Página cargada: inventario APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesi",
+      "notFound": false,
+      "denied": false
+    },
+    "visible-ventas": {
+      "finalPath": "/dashboard/ventas",
+      "text": "Saltar al contenido principal Página cargada: ventas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Sesion a",
+      "notFound": false,
+      "denied": false
+    },
+    "visible-traslado-mallas": {
+      "finalPath": "/dashboard/talento-humano/rutas",
+      "text": "Saltar al contenido principal Página cargada: talento humano · rutas APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APE",
       "notFound": false,
       "denied": false
     }
