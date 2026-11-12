@@ -34,13 +34,8 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-comercio-configuracion", label: "Configurar la vitrina del comercio", description: "Datos del negocio, redes, WhatsApp y campana de descuentos", href: "/dashboard/comercio/configuracion", module: "comercio", keywords: "configuracion vitrina publica codigo whatsapp instagram facebook campana descuento moneda comercio" },
   { id: "fn-comercio-promociones", label: "Gestionar promociones del comercio", description: "Campanas de descuento por categoria o producto y envio por WhatsApp", href: "/dashboard/comercio/promociones", module: "comercio", keywords: "promocion campana descuento mercadeo audiencia categoria producto whatsapp cliente comercio" },
 
-  // Contabilidad y Tesoreria salieron de la oferta: sus pantallas siguen publicadas, pero no
-  // se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
-
-  // Cartera y CxC
-  { id: "fn-cxc-documentos", label: "Consultar cuentas por cobrar", description: "Documentos de cartera, vencimientos y estado de cuenta", href: "/dashboard/cxc/documentos", module: "cxc", keywords: "cartera cxc cuentas por cobrar documentos vencidos cobro cliente" },
-  { id: "fn-cxc-cartera", label: "Ver reporte de cartera", description: "Aging y comportamiento de la cartera", href: "/dashboard/cxc/reportes/cartera", module: "cxc", keywords: "reporte cartera aging vencido cobranza indicador" },
-  { id: "fn-cxc-retenciones", label: "Gestionar retenciones de cartera", description: "Retenciones aplicadas por clientes", href: "/dashboard/cxc/retenciones", module: "cxc", keywords: "retencion cartera cliente retefuente" },
+  // Contabilidad, Tesoreria, Facturacion y Cartera y CxC salieron de la oferta: sus rutas siguen
+  // publicadas, pero no se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
 
   // Gastos Menores
   { id: "fn-gm-nuevo-gasto", label: "Registrar gasto menor", description: "Crear un comprobante de caja menor", href: "/dashboard/gastos-menores/gastos/nuevo", module: "gastos-menores", keywords: "nuevo gasto menor registrar comprobante" },
