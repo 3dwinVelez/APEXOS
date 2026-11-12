@@ -51,9 +51,6 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-cxc-cartera", label: "Ver reporte de cartera", description: "Aging y comportamiento de la cartera", href: "/dashboard/cxc/reportes/cartera", module: "cxc", keywords: "reporte cartera aging vencido cobranza indicador" },
   { id: "fn-cxc-retenciones", label: "Gestionar retenciones de cartera", description: "Retenciones aplicadas por clientes", href: "/dashboard/cxc/retenciones", module: "cxc", keywords: "retencion cartera cliente retefuente" },
 
-  // Facturacion
-  { id: "fn-fact-documentos", label: "Consultar documentos de facturacion", description: "Facturas emitidas y sus consecutivos", href: "/dashboard/facturacion/documentos", module: "facturacion", keywords: "factura emitida documento consecutivo historial dian" },
-
   // Gastos Menores
   { id: "fn-gm-nuevo-gasto", label: "Registrar gasto menor", description: "Crear un comprobante de caja menor", href: "/dashboard/gastos-menores/gastos/nuevo", module: "gastos-menores", keywords: "nuevo gasto menor registrar comprobante" },
   { id: "fn-gm-conceptos", label: "Gestionar conceptos de gasto menor", description: "Maestro de conceptos de egreso de caja menor", href: "/dashboard/gastos-menores/conceptos", module: "gastos-menores", keywords: "concepto gasto egreso caja menor maestro cuenta contable" },

@@ -1,15 +1,14 @@
 {
-  "captured_at": "2026-11-12T13:45:05.845Z",
+  "captured_at": "2026-11-12T14:06:08.855Z",
   "base": "http://127.0.0.1:3001",
   "views": [
     {
       "view": "portfolio-light",
-      "tileCount": 17,
+      "tileCount": 16,
       "tileLabels": [
         "Inventario",
         "Compras",
         "Ventas",
-        "Facturación",
         "Cartera y CxC",
         "Contabilidad",
         "Tesorería",
@@ -28,7 +27,6 @@
         "/dashboard/inventario",
         "/dashboard/compras",
         "/dashboard/ventas",
-        "/dashboard/facturacion",
         "/dashboard/cxc/documentos",
         "/dashboard/contabilidad",
         "/dashboard/tesoreria",
@@ -45,19 +43,18 @@
       ],
       "retiredVisible": [],
       "retiredLabelsInSidebar": [],
-      "sidebarModuleLinks": 17,
+      "sidebarModuleLinks": 16,
       "sidebarLockedButtons": 0,
       "sidebarSearchPresent": true,
       "horizontalOverflow": 0
     },
     {
       "view": "portfolio-dark",
-      "tileCount": 17,
+      "tileCount": 16,
       "tileLabels": [
         "Inventario",
         "Compras",
         "Ventas",
-        "Facturación",
         "Cartera y CxC",
         "Contabilidad",
         "Tesorería",
@@ -76,7 +73,6 @@
         "/dashboard/inventario",
         "/dashboard/compras",
         "/dashboard/ventas",
-        "/dashboard/facturacion",
         "/dashboard/cxc/documentos",
         "/dashboard/contabilidad",
         "/dashboard/tesoreria",
@@ -93,7 +89,7 @@
       ],
       "retiredVisible": [],
       "retiredLabelsInSidebar": [],
-      "sidebarModuleLinks": 17,
+      "sidebarModuleLinks": 16,
       "sidebarLockedButtons": 0,
       "sidebarSearchPresent": true,
       "horizontalOverflow": 0
@@ -131,6 +127,11 @@
         "Crear producto"
       ],
       "empty": false
+    },
+    "documentos de facturacion": {
+      "options": 0,
+      "labels": [],
+      "empty": false
     }
   },
   "probes": {
@@ -144,6 +145,12 @@
       "finalPath": "/dashboard/configuracion-inicial",
       "text": "Saltar al contenido principal Página cargada: configuracion inicial 404 This page could not be found.",
       "notFound": true,
+      "denied": false
+    },
+    "retired-with-route-facturacion": {
+      "finalPath": "/dashboard/facturacion",
+      "text": "Saltar al contenido principal Página cargada: facturacion APEX OS Buscar módulos y funciones Inicio OPERACIÓN COMERCIAL FINANZAS PERSONAS Y GESTIÓN CONTROL Y PLATAFORMA OTROS DE demo@apex.local Demo APEX - APEX_ADMIN Ses",
+      "notFound": false,
       "denied": false
     },
     "visible-cxc": {
