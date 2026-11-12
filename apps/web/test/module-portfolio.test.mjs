@@ -40,18 +40,21 @@ const RETIRED = [
   "tesoreria",
   "proyectos",
   "apex-control",
-  "apex-ai"
+  "apex-ai",
+  "cxc"
 ];
 
 // Retirados que ya tenían pantalla operativa publicada: salen de la oferta, no del código.
 const RETIRED_WITH_LEGACY_ROUTE = ["facturacion", "contabilidad", "tesoreria", "proyectos", "apex-control", "apex-ai"];
+
+// Retirados sin página raíz cuyas subrutas operativas siguen publicadas (CxC nunca tuvo ficha propia).
+const RETIRED_WITH_LEGACY_SUBROUTES = ["cxc"];
 
 const VISIBLE = [
   "reportes",
   "inventario",
   "compras",
   "ventas",
-  "cxc",
   "transporte",
   "talento-humano",
   "administracion",
@@ -61,35 +64,38 @@ const VISIBLE = [
   "comercio"
 ];
 
-test("el catálogo conserva 32 fichas y el portafolio publica 12", () => {
+test("el catálogo conserva 32 fichas y el portafolio publica 11", () => {
   const slugs = catalogSlugs();
   assert.equal(slugs.length, 32);
   assert.deepEqual(new Set(retiredSlugs()), new Set(RETIRED));
-  assert.equal(retiredSlugs().length, 20);
+  assert.equal(retiredSlugs().length, 21);
   const visible = slugs.filter((slug) => !retiredSlugs().includes(slug));
   assert.deepEqual(new Set(visible), new Set(VISIBLE));
-  assert.equal(visible.length, 12);
+  assert.equal(visible.length, 11);
 });
 
 test("todo módulo visible tiene pantalla propia y el retirado sin ruta deja de publicarse", () => {
+  const pagesIn = (slug) => {
+    const dir = path.join(root, "app/dashboard", slug);
+    return fs.existsSync(dir)
+      ? fs.readdirSync(dir, { recursive: true }).filter((file) => String(file).endsWith("page.tsx"))
+      : [];
+  };
   for (const slug of VISIBLE) {
-    const dir = path.join(root, "app/dashboard", slug);
-    const pages = fs.existsSync(dir)
-      ? fs.readdirSync(dir, { recursive: true }).filter((file) => String(file).endsWith("page.tsx"))
-      : [];
-    assert.ok(pages.length >= 1, `módulo visible sin pantalla: ${slug}`);
+    assert.ok(pagesIn(slug).length >= 1, `módulo visible sin pantalla: ${slug}`);
   }
-  for (const slug of RETIRED.filter((item) => !RETIRED_WITH_LEGACY_ROUTE.includes(item))) {
-    const dir = path.join(root, "app/dashboard", slug);
-    const pages = fs.existsSync(dir)
-      ? fs.readdirSync(dir, { recursive: true }).filter((file) => String(file).endsWith("page.tsx"))
-      : [];
-    assert.equal(pages.length, 0, `módulo retirado con pantalla operativa: ${slug}`);
+  const declared = [...RETIRED_WITH_LEGACY_ROUTE, ...RETIRED_WITH_LEGACY_SUBROUTES];
+  for (const slug of RETIRED.filter((item) => !declared.includes(item))) {
+    assert.equal(pagesIn(slug).length, 0, `módulo retirado con pantalla operativa: ${slug}`);
   }
   for (const slug of RETIRED_WITH_LEGACY_ROUTE) {
     assert.ok(VISIBLE.includes(slug) === false, `${slug} no puede estar en el portafolio`);
-    const dir = path.join(root, "app/dashboard", slug);
-    assert.ok(fs.existsSync(path.join(dir, "page.tsx")), `${slug} conserva su pantalla operativa`);
+    assert.ok(fs.existsSync(path.join(root, "app/dashboard", slug, "page.tsx")), `${slug} conserva su pantalla operativa`);
+  }
+  for (const slug of RETIRED_WITH_LEGACY_SUBROUTES) {
+    assert.ok(VISIBLE.includes(slug) === false, `${slug} no puede estar en el portafolio`);
+    assert.ok(!fs.existsSync(path.join(root, "app/dashboard", slug, "page.tsx")), `${slug} no tiene ficha raíz`);
+    assert.ok(pagesIn(slug).length >= 1, `${slug} conserva sus subrutas operativas`);
   }
 });
 
