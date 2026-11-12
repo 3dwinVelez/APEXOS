@@ -1,0 +1,93 @@
+{
+  "captured_at": "2026-11-12T20:18:19.413Z",
+  "base": "http://127.0.0.1:3001",
+  "forms": [
+    {
+      "name": "nueva-ov",
+      "ready": true,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/sales/orders",
+          "body": "{\"customer_id\":987654,\"lines\":[{\"item_id\":3,\"qty\":1,\"unit_price\":95000}]}"
+        }
+      ],
+      "dom": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "nativeSelects": [
+          {
+            "hidden": true,
+            "value": "987654"
+          },
+          {
+            "hidden": true,
+            "value": "3"
+          }
+        ],
+        "visibleText": "Saltar al contenido principal\nPágina cargada: ventas · ordenes · nueva\n\nOrden creada — PRUEBA-VISUAL-0001\n\nLa orden quedó disponible para continuar su flujo comercial.\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nDE\n\ndemo@apex"
+      }
+    },
+    {
+      "name": "agendar-visita",
+      "savedClick": true,
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/commercial-management/visits/check-availability",
+          "body": "{\"advisor_id\":222,\"visit_date\":\"2026-11-12T15:18:00-05:00\",\"duration_minutes\":60}"
+        },
+        {
+          "method": "POST",
+          "path": "/commercial-management/visits",
+          "body": "{\"customer_id\":111,\"reason_id\":444,\"visit_date\":\"2026-11-12T15:18:00-05:00\",\"duration_minutes\":60,\"visit_type\":\"PHONE\",\"notes\":\"\"}"
+        }
+      ],
+      "dom": {
+        "path": "/dashboard/gestion-comercial/agenda",
+        "nativeSelects": [
+          {
+            "hidden": true,
+            "value": ""
+          },
+          {
+            "hidden": true,
+            "value": ""
+          },
+          {
+            "hidden": true,
+            "value": ""
+          },
+          {
+            "hidden": true,
+            "value": ""
+          }
+        ],
+        "visibleText": "Saltar al contenido principal\nPágina cargada: gestion comercial · agenda\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de coma"
+      }
+    },
+    {
+      "name": "nuevo-producto",
+      "requests": [
+        {
+          "method": "POST",
+          "path": "/inventory/items",
+          "body": "{\"name\":\"PRUEBA VISUAL HOMOLOGACION\",\"legacy_code\":\"\",\"type\":\"product\",\"unit\":\"UND\",\"family_code\":\"FAM-210029\",\"society_code\":\"SOC-01\",\"branch_code\":\"BR-0029\",\"costing_method\":\"weighted_average\",\"tax_rate\":0,\"stock_min\":0,\"stock_max\":null,\"weight_kg\":0,\"volume_m3\":0,\"metadata\":{\"family\":\"FAM-210029\",\"society_code\":\"SOC-01\",\"branch_code\":\"BR-0029\",\"category_id\":null,\"subcategory_id\":null,\"line_id\":null,\"subline_id\":null,\"brand_id\":null,\"reference_id\":null,\"brand\":\"\",\"reference\":\"\",\"channel\":\"omnicanal\",\"purchase_profile\":\"comprable\",\"sales_profile\":\"vendible\",\"costing_method\":\"weighted_average\",\"currency\":\"USD\",\"lot_control\":false,\"expiry_control\":false,\"serial_control\":false,\"notes\":\"\"}}"
+        }
+      ],
+      "dom": {
+        "path": "/dashboard/inventario/productos",
+        "nativeSelects": [
+          {
+            "hidden": true,
+            "value": ""
+          },
+          {
+            "hidden": true,
+            "value": "all"
+          }
+        ],
+        "visibleText": "Saltar al contenido principal\nPágina cargada: inventario · productos\n\nProducto creado — undefined\n\nYa está disponible según su tipo operativo.\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nCONTROL Y PLATAFORMA\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_"
+      }
+    }
+  ]
+}

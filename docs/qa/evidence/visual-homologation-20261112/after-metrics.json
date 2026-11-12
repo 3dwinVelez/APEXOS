@@ -1,0 +1,575 @@
+{
+  "captured_at": "2026-11-12T20:10:56.105Z",
+  "base": "http://127.0.0.1:3001",
+  "results": [
+    {
+      "name": "lobby",
+      "route": "/dashboard",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Creamos sistemas a tu medida.",
+        "errorText": false
+      }
+    },
+    {
+      "name": "inventario",
+      "route": "/dashboard/inventario",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Inventario",
+        "errorText": false
+      }
+    },
+    {
+      "name": "compras",
+      "route": "/dashboard/compras",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Compras",
+        "errorText": false
+      }
+    },
+    {
+      "name": "ventas",
+      "route": "/dashboard/ventas",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Ventas",
+        "errorText": false
+      }
+    },
+    {
+      "name": "gestion-comercial",
+      "route": "/dashboard/gestion-comercial",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "selects": 3,
+        "searchSelects": 0,
+        "tables": 2,
+        "h1": "Gestión Comercial",
+        "errorText": false
+      }
+    },
+    {
+      "name": "comercio",
+      "route": "/dashboard/comercio",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Comercio",
+        "errorText": false
+      }
+    },
+    {
+      "name": "contabilidad",
+      "route": "/dashboard/contabilidad",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "",
+        "errorText": false
+      }
+    },
+    {
+      "name": "transporte",
+      "route": "/dashboard/transporte",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Transporte",
+        "errorText": false
+      }
+    },
+    {
+      "name": "talento-humano",
+      "route": "/dashboard/talento-humano",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Gestión de talento y tiempo laboral",
+        "errorText": false
+      }
+    },
+    {
+      "name": "servicios",
+      "route": "/dashboard/servicios",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "selects": 6,
+        "searchSelects": 0,
+        "tables": 1,
+        "h1": "Servicios",
+        "errorText": false
+      }
+    },
+    {
+      "name": "reportes",
+      "route": "/dashboard/reportes",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Reportes",
+        "errorText": false
+      }
+    },
+    {
+      "name": "administracion",
+      "route": "/dashboard/administracion",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "selects": 2,
+        "searchSelects": 0,
+        "tables": 1,
+        "h1": "Administración APEX",
+        "errorText": false
+      }
+    },
+    {
+      "name": "gastos-menores",
+      "route": "/dashboard/gastos-menores",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Acceso no autorizado",
+        "errorText": false
+      }
+    },
+    {
+      "name": "lobby",
+      "route": "/dashboard",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Creamos sistemas a tu medida.",
+        "errorText": false
+      }
+    },
+    {
+      "name": "inventario",
+      "route": "/dashboard/inventario",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/inventario",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Inventario",
+        "errorText": false
+      }
+    },
+    {
+      "name": "compras",
+      "route": "/dashboard/compras",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/compras",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Compras",
+        "errorText": false
+      }
+    },
+    {
+      "name": "ventas",
+      "route": "/dashboard/ventas",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/ventas",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Ventas",
+        "errorText": false
+      }
+    },
+    {
+      "name": "gestion-comercial",
+      "route": "/dashboard/gestion-comercial",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/gestion-comercial",
+        "overflow": 0,
+        "selects": 3,
+        "searchSelects": 0,
+        "tables": 3,
+        "h1": "Gestión Comercial",
+        "errorText": false
+      }
+    },
+    {
+      "name": "comercio",
+      "route": "/dashboard/comercio",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/comercio",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Comercio",
+        "errorText": false
+      }
+    },
+    {
+      "name": "contabilidad",
+      "route": "/dashboard/contabilidad",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/contabilidad",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Contabilidad",
+        "errorText": false
+      }
+    },
+    {
+      "name": "transporte",
+      "route": "/dashboard/transporte",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/transporte",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Transporte",
+        "errorText": false
+      }
+    },
+    {
+      "name": "talento-humano",
+      "route": "/dashboard/talento-humano",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/talento-humano",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Gestión de talento y tiempo laboral",
+        "errorText": false
+      }
+    },
+    {
+      "name": "servicios",
+      "route": "/dashboard/servicios",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/servicios",
+        "overflow": 0,
+        "selects": 6,
+        "searchSelects": 0,
+        "tables": 1,
+        "h1": "Servicios",
+        "errorText": false
+      }
+    },
+    {
+      "name": "reportes",
+      "route": "/dashboard/reportes",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/reportes",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Reportes",
+        "errorText": false
+      }
+    },
+    {
+      "name": "administracion",
+      "route": "/dashboard/administracion",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/administracion",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "",
+        "errorText": false
+      }
+    },
+    {
+      "name": "gastos-menores",
+      "route": "/dashboard/gastos-menores",
+      "width": 980,
+      "metrics": {
+        "path": "/dashboard/gastos-menores",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 0,
+        "tables": 0,
+        "h1": "Acceso no autorizado",
+        "errorText": false
+      }
+    },
+    {
+      "name": "nuevo-producto",
+      "route": "/dashboard/inventario/productos/nuevo",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/inventario/productos/nuevo",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 15,
+        "tables": 0,
+        "h1": "Lista de productos",
+        "errorText": false
+      }
+    },
+    {
+      "name": "nueva-ov",
+      "route": "/dashboard/ventas/ordenes/nueva",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 2,
+        "tables": 0,
+        "h1": "Nueva orden de venta",
+        "errorText": false
+      }
+    },
+    {
+      "name": "agendar-visita",
+      "route": "/dashboard/gestion-comercial/agenda",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/gestion-comercial/agenda",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 4,
+        "tables": 2,
+        "h1": "Agenda y visitas",
+        "errorText": false
+      }
+    },
+    {
+      "name": "nuevo-producto",
+      "route": "/dashboard/inventario/productos/nuevo",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/inventario/productos/nuevo",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 15,
+        "tables": 1,
+        "h1": "Lista de productos",
+        "errorText": false
+      }
+    },
+    {
+      "name": "nueva-ov",
+      "route": "/dashboard/ventas/ordenes/nueva",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 2,
+        "tables": 0,
+        "h1": "Nueva orden de venta",
+        "errorText": false
+      }
+    },
+    {
+      "name": "agendar-visita",
+      "route": "/dashboard/gestion-comercial/agenda",
+      "width": 1440,
+      "metrics": {
+        "path": "/dashboard/gestion-comercial/agenda",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 4,
+        "tables": 2,
+        "h1": "Agenda y visitas",
+        "errorText": false
+      }
+    },
+    {
+      "name": "nuevo-producto",
+      "route": "/dashboard/inventario/productos/nuevo",
+      "width": 390,
+      "metrics": {
+        "path": "/dashboard/inventario/productos/nuevo",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 15,
+        "tables": 1,
+        "h1": "Lista de productos",
+        "errorText": false
+      }
+    },
+    {
+      "name": "nueva-ov",
+      "route": "/dashboard/ventas/ordenes/nueva",
+      "width": 390,
+      "metrics": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 2,
+        "tables": 0,
+        "h1": "Nueva orden de venta",
+        "errorText": false
+      }
+    },
+    {
+      "name": "agendar-visita",
+      "route": "/dashboard/gestion-comercial/agenda",
+      "width": 390,
+      "metrics": {
+        "path": "/dashboard/gestion-comercial/agenda",
+        "overflow": 0,
+        "selects": 0,
+        "searchSelects": 4,
+        "tables": 2,
+        "h1": "Agenda y visitas",
+        "errorText": false
+      }
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Connecting to 'http://localhost:54321/auth/v1/token?grant_type=password' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Fetch API cannot load http://localhost:54321/auth/v1/token?grant_type=password. Refused to connect because it violates the document's Content Security Policy.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked.",
+    "Connecting to 'ws://localhost:3000/collaboration/live' violates the following Content Security Policy directive: \"connect-src 'self' https: wss: http://127.0.0.1:3000\". The action has been blocked."
+  ]
+}

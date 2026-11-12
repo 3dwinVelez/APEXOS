@@ -57,7 +57,8 @@ Clases CSS de comportamiento ya existentes: `apex-page-shell`, `apex-section-car
 | Pestañas | `TabsList`, `TabLink`, `TabButton` | `@/components/ui/tabs` | Navegación interna | Menús propios |
 | Feedback | `Badge`, `Alert`, `Skeleton`, `EmptyState` | `@/components/ui/feedback` | Estados, errores, vacíos y carga | Texto plano sin estado |
 | Números editables | `ZeroFriendlyNumberInput` | `@/components/ui/ZeroFriendlyNumberInput` | Valores numéricos con cero amigable | `type="number"` con ceros forzados |
-| Selects nativos | clase `apex-select` | `apps/web/app/globals.css` | Popup tematizado | `<select>` sin `apex-select` |
+| Selects con búsqueda | `SearchSelect` | `@/components/ui/search-select` | Cualquier `<select>` de formulario o filtro: busca por nombre, código e iniciales, navega con teclado y deja el select nativo como autoridad del valor | `<select>` nativo visible; listas simples sin búsqueda |
+| Selects nativos sin migrar | clase `apex-select` | `apps/web/app/globals.css` | Solo mientras la pantalla espera su migración a `SearchSelect`; tematiza el popup del sistema | `<select>` sin `apex-select` |
 
 Regla: si una pantalla necesita una primitiva que no existe, primero se propone, se agrega a este catálogo y se implementa como componente compartido. No se crea un componente local que duplique uno existente.
 
@@ -91,7 +92,7 @@ Durante:
 - [ ] Modales con `ModalFrame`; formularios con `form-controls` y `layout`.
 - [ ] Estados vacío, carga y error con `feedback`.
 - [ ] Tokens oficiales; cero hex y cero espaciados arbitrarios.
-- [ ] Selects con `apex-select`; foco de celdas con `apex-cell`.
+- [ ] Selects con `SearchSelect` (los aún no migrados, con `apex-select`); foco de celdas con `apex-cell`.
 - [ ] Ambos temas y móvil (objetivos táctiles, una mano).
 - [ ] Toda pantalla hija dice dónde está el usuario (brújula con `aria-current="page"`); el texto visible no explica códigos internos del módulo.
 
