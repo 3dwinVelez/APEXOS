@@ -32,17 +32,20 @@ const RETIRED = [
   "activos",
   "crm",
   "planeacion-demanda",
+  "facturacion",
   "facturacion-electronica",
   "configuracion-inicial",
   "suscripciones"
 ];
+
+// Retirados que ya tenían pantalla operativa publicada: salen de la oferta, no del código.
+const RETIRED_WITH_LEGACY_ROUTE = ["facturacion"];
 
 const VISIBLE = [
   "reportes",
   "inventario",
   "compras",
   "ventas",
-  "facturacion",
   "cxc",
   "contabilidad",
   "tesoreria",
@@ -58,17 +61,17 @@ const VISIBLE = [
   "apex-control"
 ];
 
-test("el catálogo conserva 32 fichas y el portafolio publica 18", () => {
+test("el catálogo conserva 32 fichas y el portafolio publica 17", () => {
   const slugs = catalogSlugs();
   assert.equal(slugs.length, 32);
   assert.deepEqual(new Set(retiredSlugs()), new Set(RETIRED));
-  assert.equal(retiredSlugs().length, 14);
+  assert.equal(retiredSlugs().length, 15);
   const visible = slugs.filter((slug) => !retiredSlugs().includes(slug));
   assert.deepEqual(new Set(visible), new Set(VISIBLE));
-  assert.equal(visible.length, 18);
+  assert.equal(visible.length, 17);
 });
 
-test("todo módulo visible tiene pantalla propia y todo retirado carece de ella", () => {
+test("todo módulo visible tiene pantalla propia y el retirado sin ruta deja de publicarse", () => {
   for (const slug of VISIBLE) {
     const dir = path.join(root, "app/dashboard", slug);
     const pages = fs.existsSync(dir)
@@ -76,12 +79,17 @@ test("todo módulo visible tiene pantalla propia y todo retirado carece de ella"
       : [];
     assert.ok(pages.length >= 1, `módulo visible sin pantalla: ${slug}`);
   }
-  for (const slug of RETIRED) {
+  for (const slug of RETIRED.filter((item) => !RETIRED_WITH_LEGACY_ROUTE.includes(item))) {
     const dir = path.join(root, "app/dashboard", slug);
     const pages = fs.existsSync(dir)
       ? fs.readdirSync(dir, { recursive: true }).filter((file) => String(file).endsWith("page.tsx"))
       : [];
     assert.equal(pages.length, 0, `módulo retirado con pantalla operativa: ${slug}`);
+  }
+  for (const slug of RETIRED_WITH_LEGACY_ROUTE) {
+    assert.ok(VISIBLE.includes(slug) === false, `${slug} no puede estar en el portafolio`);
+    const dir = path.join(root, "app/dashboard", slug);
+    assert.ok(fs.existsSync(path.join(dir, "page.tsx")), `${slug} conserva su pantalla operativa`);
   }
 });
 

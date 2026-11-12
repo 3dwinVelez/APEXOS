@@ -403,8 +403,9 @@ export const MODULES_BY_SLUG = Object.fromEntries(MODULES.map((module) => [modul
 export const MODULES_BY_ID = Object.fromEntries(MODULES.map((module) => [module.id, module]));
 export const ALL_MODULE_IDS = MODULES.map((module) => module.id);
 
-// Portafolio publicado: solo módulos con pantalla operativa. Los retirados conservan
-// ficha y assets, pero no se ofrecen en lobby, barra, buscador ni por URL directa.
+// Portafolio publicado: los retirados conservan ficha y assets, pero dejan de ofrecerse en
+// lobby, barra y buscador; sin pantalla propia, su ficha genérica responde 404. Facturación
+// se retira de la oferta y mantiene sus rutas operativas ya publicadas.
 const RETIRED_MODULE_SLUGS = new Set([
   "punto-de-venta",
   "costos",
@@ -417,6 +418,7 @@ const RETIRED_MODULE_SLUGS = new Set([
   "activos",
   "crm",
   "planeacion-demanda",
+  "facturacion",
   "facturacion-electronica",
   "configuracion-inicial",
   "suscripciones"

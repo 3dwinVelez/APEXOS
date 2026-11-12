@@ -38,6 +38,14 @@ const functionEntries = functionsSource.split("\n")
 const moduleSlugs = [...modulesSource.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
 const actionHrefs = [...actionsSource.matchAll(/href: "([^"]+)"/g)].map((match) => match[1]);
 
+// Un modulo retirado del portafolio conserva sus pantallas operativas, pero deja de ofrecerse:
+// sus rutas no se exigen en el centro de comandos porque alli tambien se filtran.
+const retiredSlugs = (() => {
+  const block = modulesSource.slice(modulesSource.indexOf("const RETIRED_MODULE_SLUGS"));
+  return [...block.slice(0, block.indexOf("]);")).matchAll(/"([\w-]+)"/g)].map((match) => match[1]);
+})();
+const belongsToRetired = (route) => retiredSlugs.some((slug) => route === `/dashboard/${slug}` || route.startsWith(`/dashboard/${slug}/`));
+
 test("el registro de funciones cubre todas las rutas del dashboard", () => {
   assert.ok(staticRoutes.length >= 80, `el inventario de rutas solo encontro ${staticRoutes.length} destinos`);
   const covered = new Set([
@@ -45,7 +53,7 @@ test("el registro de funciones cubre todas las rutas del dashboard", () => {
     ...actionHrefs,
     ...functionEntries.map((entry) => routePath(entry.href))
   ]);
-  const uncovered = staticRoutes.filter((route) => !covered.has(route));
+  const uncovered = staticRoutes.filter((route) => !covered.has(route) && !belongsToRetired(route));
   assert.deepEqual(uncovered, [], `rutas sin acceso desde el centro de comandos: ${uncovered.join(", ")}`);
 });
 

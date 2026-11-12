@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.42.0",
+      "version": "2.42.1",
       "updated_at": "2026-11-12",
-      "sha256": "cf51725cc2882e4df93e27e69c4a6e89d8f515feacdf18b906fe2435c59a2554",
+      "sha256": "8767daae0412379ba3f424fe5d66020186a7fb1f2b02d0d928c0cfb316553d1b",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -163,9 +163,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.23.0",
+      "version": "2.23.1",
       "updated_at": "2026-11-12",
-      "sha256": "3ab6da67edc766086d4945694e959ff7393f22ac4c9d34722195d35101227419",
+      "sha256": "7086069c6d3484fe4799c56a123d47b19ef8fe72a7daf3e2dcf7b3e128c902aa",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -268,9 +268,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.51.0",
+      "version": "2.51.1",
       "updated_at": "2026-11-12",
-      "sha256": "8dd414f9a5b49575b4eabd1e7610ebcd43fde42a55708d42030b8e87edc633a6",
+      "sha256": "f066d5533b900e13160fd31e41828119496e76ac724a053139222243b3f45c81",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -369,9 +369,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.29.0",
+      "version": "2.29.1",
       "updated_at": "2026-11-12",
-      "sha256": "c70f9bafaf4666f7262958e5fd1ae5a50873bc516d53c6afbf490b8280a5fb1d",
+      "sha256": "3007ad9971ce91e0f58f36060dfff77aa880371bb96261308c8d2d3ae0508b6f",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
