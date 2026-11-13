@@ -20,14 +20,18 @@ import { FieldProductivity } from "@/components/system/FieldProductivity";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Skeleton } from "@/components/ui/feedback";
 import { isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from "@/lib/accessProfile";
+import { PYG_EXPANDED_PATH } from "@/lib/pyg-expanded";
 import { openWorkspaceTool, type WorkspaceToolId } from "@/lib/workspaceTools";
 import { ChevronRight, Clock3, Route, Settings2, SlidersHorizontal, Sparkles, Users } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type ChromeMode = "checking" | "standard" | "marking_only";
 
 export function DashboardChrome({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [mode, setMode] = useState<ChromeMode>("checking");
+  const expanded = pathname === PYG_EXPANDED_PATH;
 
   useEffect(() => {
     const markingOnly = isMarkingOnlyAccess();
@@ -59,6 +63,18 @@ export function DashboardChrome({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="mx-auto min-w-0 max-w-lg overflow-x-hidden p-3 pb-8 sm:p-4">
+          <RouteAccessGuard>{children}</RouteAccessGuard>
+        </main>
+      </div>
+    );
+  }
+
+  // Ventana ampliada del PYG: sin sidebar ni chrome de workspace, pero conservando
+  // autenticación y el guard de módulo/permisos. Se evalúa después de checking y marking_only.
+  if (expanded) {
+    return (
+      <div className="apex-app-gradient min-h-screen">
+        <main className="min-h-screen overflow-x-hidden p-3 sm:p-4" id="apex-main-content" tabIndex={-1}>
           <RouteAccessGuard>{children}</RouteAccessGuard>
         </main>
       </div>

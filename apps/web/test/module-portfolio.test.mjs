@@ -44,7 +44,8 @@ const RETIRED = [
 ];
 
 // Retirados que ya tenían pantalla operativa publicada: salen de la oferta, no del código.
-const RETIRED_WITH_LEGACY_ROUTE = ["facturacion", "tesoreria", "proyectos", "apex-control", "apex-ai"];
+// APEX Control no tiene pantalla web en develop: la ficha existe en el catálogo pero no hay ruta.
+const RETIRED_WITH_LEGACY_ROUTE = ["facturacion", "tesoreria", "proyectos", "apex-ai"];
 
 // Retirados sin pantalla propia que se bloquean por completo: su raíz y sus subrutas vuelven al lobby.
 const RETIRED_BLOCKED = ["cxc"];
@@ -64,9 +65,9 @@ const VISIBLE = [
   "comercio"
 ];
 
-test("el catálogo conserva 32 fichas y el portafolio publica 12", () => {
+test("el catálogo conserva 31 fichas y el portafolio publica 12", () => {
   const slugs = catalogSlugs();
-  assert.equal(slugs.length, 32);
+  assert.equal(slugs.length, 31);
   assert.deepEqual(new Set(retiredSlugs()), new Set(RETIRED));
   assert.equal(retiredSlugs().length, 20);
   const visible = slugs.filter((slug) => !retiredSlugs().includes(slug));
