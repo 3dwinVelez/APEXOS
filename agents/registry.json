@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.48.0",
-      "updated_at": "2026-11-12",
-      "sha256": "5a5d044a63f77e901e1968221cb4d1a95dacb0403b6966d996677c51cbdc32e7",
+      "version": "2.49.0",
+      "updated_at": "2026-11-13",
+      "sha256": "e825eaf1316ecaef1308668f96b9ed8a9c86ab2bd928c4da2f52dea203757f74",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -133,7 +133,8 @@
         "inventario-de-tuberias-de-certificacion",
         "encargo-nota-visual-brecha-medida",
         "encargo-protagonismo-jerarquia-tipografica",
-        "brief-corte-portafolio-listas-exactas"
+        "brief-corte-portafolio-listas-exactas",
+        "brief-brecha-despliegue-reconstruccion"
       ]
     },
     {
@@ -163,9 +164,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.27.0",
-      "updated_at": "2026-11-12",
-      "sha256": "a6d08ceab3cecf55c54f1bcb1cc8f6c9b749afc837df3d93e94a4e3b4cba734c",
+      "version": "2.28.0",
+      "updated_at": "2026-11-13",
+      "sha256": "1ddc9d5cbb82785930437e2a698eae0e887de70b1811e1a1a9b293ce58542afb",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -198,7 +199,8 @@
         "403-de-alcance-no-toca-clear-session",
         "piel-operacion-medida-en-dom",
         "saludo-hero-capsula-con-identidad",
-        "portafolio-publicado-catalogo"
+        "portafolio-publicado-catalogo",
+        "capa-visual-rebasada-y-recertificada"
       ]
     },
     {
@@ -268,9 +270,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.60.0",
+      "version": "2.61.0",
       "updated_at": "2026-11-13",
-      "sha256": "4e1f636afe7211331a79d6477faa971b823ce4ba647959b19062cc3fef680510",
+      "sha256": "9cd8b35519ef0f3709037d6b53b203cd8d905dbb40fe67750a4f48f8188da32b",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -323,7 +325,8 @@
         "gate-lee-dom-visible-de-la-vista-activa",
         "fase-visual-metricas-dom-sesion",
         "saludo-evidencia-sesion-real-y-caja",
-        "corte-portafolio-evidencia-por-consumidor"
+        "corte-portafolio-evidencia-por-consumidor",
+        "arnes-mide-pintura-y-fixtures-cors"
       ]
     },
     {

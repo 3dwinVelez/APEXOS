@@ -1,0 +1,67 @@
+{
+  "commit": "beff5132",
+  "environment": "LOCAL",
+  "repo": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa",
+  "status": "passed",
+  "started_at": "2026-11-13T15:58:15.038Z",
+  "baseline": {
+    "file": "scripts/certifications/visual-homologation-known-failures.json",
+    "web": [
+      "el registro de funciones cubre todas las rutas del dashboard",
+      "apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK",
+      "el respaldo preventivo tambien consulta el guard cuando no hay API configurada",
+      "react y react-dom/server salen de la misma instalacion de node_modules"
+    ],
+    "reason": "Fallos medidos en la suite web de origin/develop (8ba301c0) antes de la capa visual completa; el candidato debe mantenerlos identicos y no agregar ninguno nuevo. La impresion del tema claro paso a verde al remedirse sobre el tip de develop."
+  },
+  "steps": [
+    {
+      "name": "typecheck",
+      "status": "passed",
+      "exit_code": 0
+    },
+    {
+      "name": "lint",
+      "status": "passed",
+      "exit_code": 0
+    },
+    {
+      "name": "web_suite",
+      "status": "passed",
+      "exit_code": 1,
+      "files": 108,
+      "names": [
+        "el registro de funciones cubre todas las rutas del dashboard",
+        "apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK",
+        "el respaldo preventivo tambien consulta el guard cuando no hay API configurada",
+        "react y react-dom/server salen de la misma instalacion de node_modules"
+      ],
+      "tests": 801,
+      "pass": 797,
+      "fail": 4,
+      "skipped": 0
+    }
+  ],
+  "typecheck_output": "",
+  "lint_output": "  'payrollEmployee' is assigned a value but never used    @typescript-eslint/no-unused-vars\n  236:10  warning  'auxiliaryEmployee' is assigned a value but never used  @typescript-eslint/no-unused-vars\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\app\\dashboard\\transporte\\page.tsx\n  958:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\app\\print\\transport-settlement\\page.tsx\n  98:834  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\components\\accounting\\AccountingPygBudget.tsx\n  322:15  warning  Elements with the ARIA role \"combobox\" must have the following attributes defined: aria-controls,aria-expanded  jsx-a11y/role-has-required-aria-props\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\components\\shell\\TechnicianWorkspaceHeader.tsx\n  10:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\components\\shell\\UserSessionBadge.tsx\n  68:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\components\\transport\\PlanningRouteMap.tsx\n  474:6  warning  React Hook useEffect has a missing dependency: 'selected'. Either include it or remove the dependency array  react-hooks/exhaustive-deps\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\lib\\api.ts\n   355:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination\n  4655:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination\n\nC:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-visual-completa\\apps\\web\\lib\\sessionSecurity.ts\n   73:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination\n  130:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination\n\n✖ 22 problems (0 errors, 22 warnings)\n\n",
+  "suite": {
+    "names": [
+      "el registro de funciones cubre todas las rutas del dashboard",
+      "apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK",
+      "el respaldo preventivo tambien consulta el guard cuando no hay API configurada",
+      "react y react-dom/server salen de la misma instalacion de node_modules"
+    ],
+    "tests": 801,
+    "pass": 797,
+    "fail": 4,
+    "skipped": 0,
+    "known_failures": [
+      "el registro de funciones cubre todas las rutas del dashboard",
+      "apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK",
+      "el respaldo preventivo tambien consulta el guard cuando no hay API configurada",
+      "react y react-dom/server salen de la misma instalacion de node_modules"
+    ],
+    "unexpected_failures": [],
+    "raw_tail": "el boton Ver solo aparece con archivo real y la fuente del archivo se etiqueta\nok 784 - el boton Ver solo aparece con archivo real y la fuente del archivo se etiqueta\n  ---\n  duration_ms: 0.6368\n  type: 'test'\n  ...\n# Subtest: los maestros vehiculares y de tarifas viven en los defaults persistentes de user-master-data\nok 785 - los maestros vehiculares y de tarifas viven en los defaults persistentes de user-master-data\n  ---\n  duration_ms: 10.5689\n  type: 'test'\n  ...\n# Subtest: la carga y escritura Supabase transportan parent_code para la jerarquia marca-linea\nok 786 - la carga y escritura Supabase transportan parent_code para la jerarquia marca-linea\n  ---\n  duration_ms: 23.0704\n  type: 'test'\n  ...\n# Subtest: la escritura de maestros va a un catalogo por empresa y nunca pisa el global\nok 787 - la escritura de maestros va a un catalogo por empresa y nunca pisa el global\n  ---\n  duration_ms: 6.1793\n  type: 'test'\n  ...\n# Subtest: la carga fusiona catalogos global y de empresa por codigo\nok 788 - la carga fusiona catalogos global y de empresa por codigo\n  ---\n  duration_ms: 1.3316\n  type: 'test'\n  ...\n# Subtest: loadVehicleMasterCatalogs expone los catálogos que consumen la ficha vehicular y el tarifario\nok 789 - loadVehicleMasterCatalogs expone los catálogos que consumen la ficha vehicular y el tarifario\n  ---\n  duration_ms: 5.7007\n  type: 'test'\n  ...\n# Subtest: la ficha vehicular consume los maestros con selects nativos y cascada marca-linea\nok 790 - la ficha vehicular consume los maestros con selects nativos y cascada marca-linea\n  ---\n  duration_ms: 0.809\n  type: 'test'\n  ...\n# Subtest: la ficha enlaza sucursal y crea el centro de costo en la estructura contable\nok 791 - la ficha enlaza sucursal y crea el centro de costo en la estructura contable\n  ---\n  duration_ms: 0.5661\n  type: 'test'\n  ...\n# Subtest: año y unidad son seleccionables en la ficha\nok 792 - año y unidad son seleccionables en la ficha\n  ---\n  duration_ms: 0.4868\n  type: 'test'\n  ...\n# Subtest: administracion administra los catálogos vehiculares y de tarifas con jerarquía padre-hijo\nok 793 - administracion administra los catálogos vehiculares y de tarifas con jerarquía padre-hijo\n  ---\n  duration_ms: 4.5743\n  type: 'test'\n  ...\n# Subtest: las sedes se gestionan completas dentro de Configuracion del administrador\nok 794 - las sedes se gestionan completas dentro de Configuracion del administrador\n  ---\n  duration_ms: 3.168\n  type: 'test'\n  ...\n# Subtest: la creacion y edicion de registros ocurre en ventana emergente y el catalogo queda limpio\nok 795 - la creacion y edicion de registros ocurre en ventana emergente y el catalogo queda limpio\n  ---\n  duration_ms: 15.1994\n  type: 'test'\n  ...\n# Subtest: el tarifario usa ModalFrame y selects alimentados por los maestros del módulo\nok 796 - el tarifario usa ModalFrame y selects alimentados por los maestros del módulo\n  ---\n  duration_ms: 1.3553\n  type: 'test'\n  ...\n# Subtest: los maestros se agrupan por modulo para no perder al usuario\nok 797 - los maestros se agrupan por modulo para no perder al usuario\n  ---\n  duration_ms: 2.0984\n  type: 'test'\n  ...\n# Subtest: el lienzo de gráficos usa tokens y no mueve la caja\nok 798 - el lienzo de gráficos usa tokens y no mueve la caja\n  ---\n  duration_ms: 11.0006\n  type: 'test'\n  ...\n# Subtest: los dos gráficos del producto declaran su lienzo\nok 799 - los dos gráficos del producto declaran su lienzo\n  ---\n  duration_ms: 1.3979\n  type: 'test'\n  ...\n# Subtest: la tabla operativa gana jerarquía de encabezado sin cambiar densidad de caja\nok 800 - la tabla operativa gana jerarquía de encabezado sin cambiar densidad de caja\n  ---\n  duration_ms: 1.849\n  type: 'test'\n  ...\n# Subtest: el estado vacío compartido pinta oficio y se apaga en alto contraste\nok 801 - el estado vacío compartido pinta oficio y se apaga en alto contraste\n  ---\n  duration_ms: 7.6707\n  type: 'test'\n  ...\n1..801\n# tests 801\n# suites 0\n# pass 797\n# fail 4\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 46029.1651\n"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "change_id": "capa-visual-completa-20261113",
+  "commit": "beff513200abe22a29d05d25a586307d24487139",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (propietario APEXOS)",
+    "approved_at": "2026-11-13T11:00:00-05:00",
+    "authorization": "Capa visual completa (Recomendado): reconstruir las rondas visuales sobre develop, certificarlas, promoverlas y desplegar la web en QA",
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": false,
+      "create_auxiliary_branch": false,
+      "run_remote_migrations": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/capa-visual-certification.json",
+        "../certifications/capa-visual-completa-20261113.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/capa-visual-certification.json",
+        "../certifications/capa-visual-completa-20261113.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/visual-homologation-regression.json",
+        "../certifications/capa-visual-completa-20261113.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/visual-homologation-regression.json",
+        "../certifications/capa-visual-completa-20261113.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/capa-visual-certification.json",
+        "../certifications/capa-visual-completa-20261113.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "head": "beff513200abe22a29d05d25a586307d24487139",
+    "environment": "LOCAL",
+    "web_base": "http://localhost:3002 (build de produccion del candidato)",
+    "script": "../../../scripts/certifications/visual-homologation-browser.cjs",
+    "evidence": [
+      "../evidence/capa-visual-completa-20261113/capa-visual-certification.json",
+      "../certifications/capa-visual-completa-20261113.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "head": "beff513200abe22a29d05d25a586307d24487139",
+    "script": "../../../scripts/certifications/visual-homologation-regression.cjs",
+    "evidence": [
+      "../evidence/capa-visual-completa-20261113/visual-homologation-regression.json",
+      "../certifications/capa-visual-completa-20261113.md"
+    ]
+  },
+  "notes": {
+    "gate": "La compuerta pre-QA solo habilita el despliegue del candidato para QA funcional; nunca acredita QA ni autoriza main.",
+    "target_advance": "origin/develop avanzo a 6589af8e (talento humano) despues de la certificacion inicial; el candidato se rebaso y se recertifico sobre el tip vigente."
+  }
+}

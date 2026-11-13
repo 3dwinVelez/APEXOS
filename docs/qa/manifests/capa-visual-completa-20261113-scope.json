@@ -1,0 +1,649 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "capa-visual-completa-20261113",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "desarrollo",
+  "certified_commit": "beff513200abe22a29d05d25a586307d24487139",
+  "target_head": "6589af8e1d3213b8f14b17877c8c5af5f9352f21",
+  "base_commit": "6589af8e1d3213b8f14b17877c8c5af5f9352f21",
+  "base_commits": [
+    "develop"
+  ],
+  "change_intent": {
+    "summary": "Reconstruccion sobre el develop vigente de las 16 rondas de capa visual que ya viven en desarrollo: lobby V4 curado (12 modulos visibles, 20 retirados, banner de red e iconos por tarjeta), tokens de color y superficies, chrome sin asistente flotante, estados de espera homologados, SearchSelect sobre el select nativo y la ventana ampliada del PYG. Excluye cambios funcionales ajenos a la capa visual (seguridad, comercio, talento humano, facturas recibidas, APEX Control).",
+    "modules": [
+      "web",
+      "shared-ui",
+      "design-tokens",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/[module]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/comercio/ComercioCharts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/cxc/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/cxc/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/accounting/AccountingPyg.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/contabilidad-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/Sidebar.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CollaborationPresence.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/ExperiencePreferences.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/LocaleSwitcher.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/NotificationCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/OfflineFirstStatus.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/TraceabilityCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/WorldClassToolkit.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/feedback.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/lobbyAssets.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/modules.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/operationalWorkspace.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/workspaceTools.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/banner-network.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/banner-truck.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-activos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-administracion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-apex-ai.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-apex-control.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-calidad.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-comercio-exterior.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-comercio.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-compras.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-configuracion-inicial.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-contabilidad.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-costos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-crm.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-cxc.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-devoluciones.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-facturacion-electronica.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-facturacion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-gastos-menores.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-gestion-comercial.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-inventario.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-planeacion-demanda.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-presupuestos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-produccion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-proyectos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-punto-de-venta.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-recetas.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-reportes.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-servicios.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-suscripciones.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-talento-humano.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-tesoreria.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-transporte.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-ventas.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/ambient-background.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-two-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/commercial-visit-selection.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/erp-visual-normalization.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/lobby-greeting.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/module-portfolio.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/operational-home-redesign.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/phase-two-intelligent-experience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/visual-operation.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-10-fondo-ambiente-v4.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-11-operacion-visual.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-11-saludo-hero.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-11-superficies-con-oficio.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-12-curaduria-portafolio.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-12-lobby-iconos-y-banner.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-12-retiro-asistente-flotante.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-dark-commands.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-desktop-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-desktop-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-metrics.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-mobile-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-mobile-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-module-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-ambient-module-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-commands-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-desktop-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-desktop-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-metrics.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-mobile-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-module-card-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-module-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-craft-module-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-greeting-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-greeting-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-greeting-metrics.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-greeting-mobile-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-greeting-mobile-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-lobby-desktop-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-lobby-desktop-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-lobby-mobile-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-lobby-mobile-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-operation-charts-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-operation-charts-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-operation-empty-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-operation-empty-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-operation-metrics.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-operation-table-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-operation-table-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-dark.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-lobby-light.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-portfolio-metrics.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-commands.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-connection.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-language.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-notifications.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-preferences.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-team.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-toolbar.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-dark-tools.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-commands.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-connection.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-language.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-notifications.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-preferences.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-team.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-toolbar.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-desktop-light-tools.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-commands.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-connection.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-language.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-notifications.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-preferences.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-team.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-toolbar.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/evidence-windows-mobile-dark-tools.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/lobby-v4-20261110/validacion.md"
+    }
+  ],
+  "allowed_paths": [
+    "apps/web/app/",
+    "apps/web/components/",
+    "apps/web/lib/",
+    "apps/web/test/",
+    "apps/web/public/assets/lobby/",
+    "docs/briefs/",
+    "docs/qa/evidence/lobby-v4-20261110/"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Contrato de escritura de los formularios de venta, agenda comercial e inventario",
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/capa-visual-certification.json"
+      ]
+    },
+    {
+      "name": "Selectores con busqueda sobre el select nativo y su evento change",
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/capa-visual-certification.json",
+        "../certifications/capa-visual-completa-20261113.md"
+      ]
+    },
+    {
+      "name": "Shell, estados de espera y ventana ampliada del PYG sin pantalla bloqueada ni desbordamiento",
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/capa-visual-certification.json",
+        "../certifications/capa-visual-completa-20261113.md"
+      ]
+    },
+    {
+      "name": "Autenticacion, sesion y navegacion de los hubs del portafolio",
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/capa-visual-certification.json"
+      ]
+    },
+    {
+      "name": "Suite web y verificacion de tipos sin regresiones nuevas frente a develop",
+      "status": "passed",
+      "evidence": [
+        "../evidence/capa-visual-completa-20261113/visual-homologation-regression.json"
+      ]
+    }
+  ],
+  "notes": {
+    "gate": "El inventario exacto se midio con git diff --name-status origin/develop..beff5132 el 2026-11-13; no contiene eliminaciones ni rutas de API, Prisma o talento humano.",
+    "exclusion": "Los commits funcionales presentes en desarrollo pero no en develop (seguridad, comercio, talento humano, facturas recibidas, APEX Control) no forman parte de este candidato."
+  }
+}

@@ -118,7 +118,9 @@ async function main() {
   page.on("request", (request) => {
     const url = request.url();
     const method = request.method();
-    const json = (body) => request.respond({ status: 200, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    // La web certificada corre en otro puerto que el API: una respuesta interceptada sin
+    // la cabecera CORS queda bloqueada por el navegador y el formulario se ve sin maestros.
+    const json = (body) => request.respond({ status: 200, headers: { "content-type": "application/json", "access-control-allow-origin": webBase }, body: JSON.stringify(body) });
     if (url.endsWith("/favicon.ico")) return request.respond({ status: 204, body: "" });
     if (method === "GET" && url.includes("/api/v1/")) {
       const fixture = Object.values(FIXTURES).find((rule) => url.includes(rule.match));
@@ -175,6 +177,8 @@ async function main() {
       await sleep(attempt === 1 ? 1200 : 2500);
       if (!(await page.evaluate(() => document.body.innerText.includes("Acceso no autorizado")))) break;
     }
+    // La pantalla puede seguir en esqueletos de acceso despues de que el guard resuelve.
+    await waitFor(page, () => Boolean(document.querySelector("h1")?.innerText.trim()), 20000);
     await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {});
   }
 
@@ -238,6 +242,36 @@ async function main() {
         await shot(`${name}-desktop-${width}`);
       }
     }
+
+    // Capa visual V4: lobby curado, banner de red, iconos por tarjeta y sin asistente flotante.
+    await page.setViewport({ width: 1440, height: 960, deviceScaleFactor: 1 });
+    await setTheme("light");
+    await gotoRoute("/dashboard");
+    // El <img> del hero resuelve su fuente tras el primer layout; medir antes de ese punto
+    // reporta currentSrc vacio aunque la captura posterior muestre el banner.
+    await waitFor(page, () => {
+      const img = document.querySelector(".apex-lobby-hero img");
+      return Boolean(img && img.complete && img.naturalWidth > 0);
+    }, 15000);
+    const visualLayer = await page.evaluate(() => {
+      const tiles = [...document.querySelectorAll(".apex-lobby-tile")];
+      const retired = ["punto-de-venta", "costos", "presupuestos", "produccion", "recetas", "calidad", "devoluciones", "comercio-exterior", "activos", "crm", "planeacion-demanda", "facturacion", "facturacion-electronica", "configuracion-inicial", "suscripciones", "tesoreria", "proyectos", "apex-control", "apex-ai", "cxc"];
+      const banner = document.querySelector(".apex-lobby-hero img");
+      return {
+        tiles: tiles.length,
+        retiredOffered: retired.filter((slug) => tiles.some((node) => (node.getAttribute("href") || "") === `/dashboard/${slug}`)),
+        glyphs: document.querySelectorAll(".apex-lobby-tile-glyph svg").length,
+        hero: Boolean(document.querySelector(".apex-lobby-hero")),
+        banner: Boolean(banner && banner.complete && banner.naturalWidth > 0 && `${banner.currentSrc}${banner.getAttribute("src")}`.includes("banner-network")),
+        ambient: Boolean(document.querySelector(".apex-ambient .apex-ambient-drift")),
+        assistant: Boolean(document.querySelector('[aria-label^="APEX AI Core"]'))
+      };
+    });
+    check("lobby V4 publica solo el portafolio curado", visualLayer.tiles > 0 && visualLayer.tiles <= 12 && visualLayer.retiredOffered.length === 0, visualLayer);
+    check("lobby V4 pinta un icono por tarjeta", visualLayer.glyphs === visualLayer.tiles, visualLayer);
+    check("lobby V4 conserva hero, banner de red y fondo ambiente", visualLayer.hero && visualLayer.banner && visualLayer.ambient, visualLayer);
+    check("el chrome no monta el asistente flotante", !visualLayer.assistant, visualLayer);
+    await shot("lobby-v4-desktop-1440");
 
     // Nueva orden de venta: dos SearchSelect sobre el contrato real del select nativo.
     await page.setViewport({ width: 1440, height: 960, deviceScaleFactor: 1 });
