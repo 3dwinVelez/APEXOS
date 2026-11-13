@@ -1698,12 +1698,16 @@
       "file": "docs/qa/certifications/hr-route-p2028-20261026.md"
     },
     {
-      "status": "A",
+      "status": "M",
       "file": "docs/qa/certifications/promocion-paquetes-main-20261113.md"
     },
     {
       "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/api-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/approval-gate.txt"
     },
     {
       "status": "A",
@@ -1774,7 +1778,7 @@
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte.png"
     },
     {
-      "status": "A",
+      "status": "M",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/scope-gate.txt"
     },
     {
@@ -1838,7 +1842,7 @@
       "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/12-talento-humano.json"
     },
     {
-      "status": "A",
+      "status": "M",
       "file": "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json"
     },
     {
@@ -2396,6 +2400,7 @@
     "docs/qa/certifications/hr-route-p2028-20261026.md",
     "docs/qa/certifications/promocion-paquetes-main-20261113.md",
     "docs/qa/evidence/promocion-paquetes-main-20261113/api-suite.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/approval-gate.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/candidato-commits.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt",

@@ -147,10 +147,15 @@ certificados.
 ## 5. Puerta de alcance
 
 El manifiesto `../manifests/promocion-paquetes-main-20261113-scope.json` declara el inventario exacto
-A/M/D de las 464 entradas, `base_commit 4659292f`, `certified_commit 01e9b8f6`, `allowed_deletions`
+A/M/D de las 480 entradas, `base_commit 4659292f`, `certified_commit 01e9b8f6`, `allowed_deletions`
 con `apps/web/components/ui/SearchSelect.tsx` y cinco capacidades protegidas con evidencia existente.
 La corrida de `npm run qa:promotion:scope -- <manifiesto> HEAD origin/main` y su salida quedan en
 `../evidence/promocion-paquetes-main-20261113/scope-gate.txt`.
+
+El manifiesto `../manifests/promocion-paquetes-main-20261113-approval.json` registra la aprobación de
+QA con los cinco controles exigidos, los dos certificados, la empresa modelo NYVORA y el plan de
+reversión controlada sobre `4659292f`. La corrida de `npm run qa:approval:evidence -- <manifiesto>` y
+su salida quedan en `../evidence/promocion-paquetes-main-20261113/approval-gate.txt`.
 
 Los inventarios por commit (padre..commit) quedan en `../manifests/promocion-paquetes-main-20261113-inventarios/`
 para auditar que ningún commit mezcla módulos; la compuerta de promoción se corre sobre el candidato
