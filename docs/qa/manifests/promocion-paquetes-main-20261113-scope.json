@@ -1698,7 +1698,7 @@
       "file": "docs/qa/certifications/hr-route-p2028-20261026.md"
     },
     {
-      "status": "M",
+      "status": "A",
       "file": "docs/qa/certifications/promocion-paquetes-main-20261113.md"
     },
     {
@@ -1778,7 +1778,7 @@
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte.png"
     },
     {
-      "status": "M",
+      "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/scope-gate.txt"
     },
     {
@@ -1842,7 +1842,7 @@
       "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/12-talento-humano.json"
     },
     {
-      "status": "M",
+      "status": "A",
       "file": "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json"
     },
     {
