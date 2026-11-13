@@ -1,0 +1,474 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-12-talento-humano",
+  "commit": "01e9b8f63a8576edcda2f1880a10bd739c0730aa",
+  "parent": "901f2dd1b7adb3b517f9052ef4f58ef55dde7b3e",
+  "subject": "feat(hr): nomina, prestaciones y evidencia movil llegan a main como paquete aislado",
+  "modules": [
+    "talento-humano",
+    "nomina",
+    "prestaciones",
+    "aportes-sociales",
+    "libranzas",
+    "marcaciones",
+    "evidencia-movil"
+  ],
+  "shortstat": "114 files changed, 17433 insertions(+), 1028 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918100000_hr_labor_deductions_parameters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918140000_hr_payroll_liquidation_documents/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918150000_hr_payroll_concepts_detail/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918160000_hr_employee_termination_liquidations/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918170000_hr_social_contributions/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918180000_hr_payroll_period_closures/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918190000_hr_social_contribution_exoneration_parameters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918200000_hr_pension_solidarity_parameter/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918210000_hr_payroll_libranzas/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918220000_hr_employee_contract_history/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919100000_hr_overtime_concept_value_type/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919120000_hr_monthly_ordinary_hours_param/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919130000_hr_social_benefit_payments/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/scripts/certifications/hr-landing-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/employeeUserLink.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/laborEntityPartyMatcher.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/organization.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/payrollWorkdays.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/punchEvidence.d.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/punchEvidence.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routeEventSummaries.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/socialContributionSegments.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-employee-organization.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-employee-user-link.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-concurrency.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-declared-employee.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-adjustment-lock.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-adjustment-permission.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-social-contributions-bulk.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-workdays.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-punch-mobile-evidence.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-route-assignment-lock.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-social-contribution-segments.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-user-association.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/labor-entity-party-matcher.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/entidades/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/libranzas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/provisiones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/EmployeeUserAssociation.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/HrTimelineEvidence.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payrollEntities.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payrollOrganization.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-contention-write-feedback.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-monitor-identity-selfie.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-punch-mobile-evidence.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-report-punch-alerts.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-report-punch-selfie.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-fallback.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/ibc-nomina-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/payroll-employee-entity-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-contention-message-browser-20261026.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/certifications/hr-contention-p2028-20261026.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-association-ui-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-link-20261103.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-ibc-novelties-20261016.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-landing-hub-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-payroll-markings-20261106.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-punch-mobile-evidence-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-report-activity-photos-20261104.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/certifications/hr-route-p2028-20261026.md"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-contention-message-browser-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-contention-p2028-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-association-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-link-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-ibc-novelties-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-landing-hub-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-existing-employee-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-mobile-identity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-mobile-identity-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-payroll-markings-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-report-punch-alerts-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-termination-document-search-local.js"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918100000_hr_labor_deductions_parameters.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918140000_hr_payroll_liquidation_documents.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918150000_hr_payroll_concepts_detail.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918160000_hr_employee_termination_liquidations.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918170000_hr_social_contributions.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918180000_hr_payroll_period_closures.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918190000_hr_social_contribution_exoneration_parameters.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918200000_hr_pension_solidarity_parameter.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918210000_hr_payroll_libranzas.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918220000_hr_employee_contract_history.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919100000_hr_overtime_concept_value_type.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919110000_time_route_kind_descanso.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919120000_hr_monthly_ordinary_hours_param.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919130000_hr_social_benefit_payments.sql"
+    }
+  ]
+}

@@ -8,10 +8,30 @@ fc99488e5362e1b817d037bac1b22a8d57c00d5556da5a2a5f7fa95c9d4f65af  1 lineas  apps
 31b07cd287f1150b8868b66aa720421cf0ef20d93f1ce210824ff461166230a1  2 lineas  apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle
 
 Declaradas en main y NO aplicadas en produccion (brecha preexistente):
-20260919130000_align_kilometraje_unique_index_shape
 20260921000000_gps_inactivo_sin_senal_novelty_type
 20261001120000_transport_settlement_packages
 
 Objetos Supabase que el codigo promovido consume y produccion no tiene:
 apexos_accounting_private.standard_chart (migracion 20261020173515_standard_chart_piloto.sql)
 catalogo de modulos M-29 (_petty_cash_module_catalog.sql)
+
+Paquete 12 Talento Humano (14 migraciones Prisma + 14 SQL, todas aditivas salvo dos ajustes compatibles):
+70edf7f84cd28a270be94eed9c3550bda346eb37a935db34855cf310fa1a71a6  18 lineas  apps/api/prisma/migrations/20260918100000_hr_labor_deductions_parameters
+8eae06c79f184bac4618e318f1c4ceb9cb9fb80ba4d4a5125937aff07d08e385  45 lineas  apps/api/prisma/migrations/20260918140000_hr_payroll_liquidation_documents
+2fb27e61b49522c2b1e24f831c20f443b71d389ec4b1fc37e5f6453f131ce2ef  42 lineas  apps/api/prisma/migrations/20260918150000_hr_payroll_concepts_detail
+02377f8319e10a63ed145c3d687b4bd70239d1518df8097c757c7f978c7af7e3  45 lineas  apps/api/prisma/migrations/20260918160000_hr_employee_termination_liquidations
+c65b3afed6ca1dfd4a682cf5f1b667533f47f9f2c9c5b3ad6ea700be42c446a9  58 lineas  apps/api/prisma/migrations/20260918170000_hr_social_contributions
+b715e6b397071937031830ca43c9cedba436cdfbe3069771d8657a383c12d294  27 lineas  apps/api/prisma/migrations/20260918180000_hr_payroll_period_closures
+b9ae05d8673c7362972829ac4099b6f4951b0d8aa371b03ac2afc714e5673b00  12 lineas  apps/api/prisma/migrations/20260918190000_hr_social_contribution_exoneration_parameters
+befda96dac66c179454791dd9491313c2104abdb74830d3c0e9f66bb436ba6e3  42 lineas  apps/api/prisma/migrations/20260918200000_hr_pension_solidarity_parameter
+bd23863fac18099f19bc347d572962d810cd2f686a24a21eb8115c270c4184c2  65 lineas  apps/api/prisma/migrations/20260918210000_hr_payroll_libranzas
+cd365c18aed34250593f236dd9783e5e3df7af48fe0bdaddd7650d581717d1d6  36 lineas  apps/api/prisma/migrations/20260918220000_hr_employee_contract_history
+6815256fed973058e8b8666ba2c8cd6d0e9117b41d7d9d2cd5d4b9affb171ecd  9 lineas  apps/api/prisma/migrations/20260919100000_hr_overtime_concept_value_type
+c1c4949e17f21aad4f69b4a3e2bd6a89f760b90ccc7f10bfdbf79196cae43c70  4 lineas  apps/api/prisma/migrations/20260919110000_time_route_kind_descanso
+48070f1d88115e3948aeb8ccb295f9dc88a7da3e4dbfce557953ee8dd15e7262  16 lineas  apps/api/prisma/migrations/20260919120000_hr_monthly_ordinary_hours_param
+d22c062986694fe2126768f496816a2e121bf3ef22fbfed297665465ac2caa93  37 lineas  apps/api/prisma/migrations/20260919130000_hr_social_benefit_payments
+
+Operaciones no aditivas de Talento Humano, verificadas una por una:
+20260919100000_hr_overtime_concept_value_type: UPDATE th_conceptos_recargo fija value_type='factor_total' para HED/HEN/HEDD/HEND; corrige el factor de horas extra, no borra filas ni columnas.
+20260919110000_time_route_kind_descanso: ALTER TABLE TimeRoute ADD COLUMN kind TEXT NOT NULL DEFAULT 'trabajo'; columna nueva con valor por defecto, sin reescritura destructiva.
+El resto crea tablas th_* nuevas (IF NOT EXISTS) e inserta parametros y conceptos de catalogo; no altera tablas productivas existentes.

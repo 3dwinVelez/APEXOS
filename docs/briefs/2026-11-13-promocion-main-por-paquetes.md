@@ -143,3 +143,19 @@ detienen.
 2. Ventana de producción y autorización para aplicar migraciones y desplegar.
 3. Gastos Menores: si se quiere en `main`, habilitar M-29 en NYVORA o aceptar certificarlo en QA
    únicamente, declarándolo.
+
+## 11. Actualización 2026-11-13 — decisión del propietario sobre Talento Humano
+
+El propietario confirmó el alcance P0–P4 y pidió expresamente **incluir Talento Humano** como paquete
+12 aislado. Se agregó el commit `01e9b8f6` con el árbol de `develop`: motor de nómina, prestaciones,
+aportes, libranzas, liquidación de trabajador y evidencia móvil, con sus 14 migraciones Prisma y sus 14
+espejos SQL, las cinco pantallas nuevas del hub y sus pruebas.
+
+La decisión **no cierra** el bloqueador §5.1: la auditoría del 2026-10-30 sigue **NO APTO** con sus 13
+hallazgos abiertos y no existe reauditoría. El paquete viaja con esa salvedad declarada en
+`docs/qa/certifications/promocion-paquetes-main-20261113.md`; certificar que la pantalla carga y que
+el árbol compila no certifica que el cálculo de nómina sea correcto.
+
+Los bloqueadores §5.2 (M-29 no licenciado en NYVORA), §5.3 (plan de cuentas estándar ausente) y §5.4
+(3 migraciones preexistentes sin aplicar en producción) siguen vigentes y condicionan la ventana de
+producción. Las autorizaciones §10.2 y §10.3 siguen pendientes.
