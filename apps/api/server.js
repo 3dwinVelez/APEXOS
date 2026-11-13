@@ -35,6 +35,7 @@ const MODULES = [
   "sales-invoice",
   "accounts-receivable",
   "treasury",
+  "petty-cash",
   "comercio"
 ];
 const DEFAULT_ALLOWED_ORIGINS = ["http://localhost:3001", "http://127.0.0.1:3001"];
@@ -287,6 +288,7 @@ async function build() {
   registerRoutes("sales-invoice", require("./src/modules/sales-invoice/routes"), { prefix: "/api/v1" });
   registerRoutes("accounts-receivable", require("./src/modules/accounts-receivable/routes"), { prefix: "/api/v1" });
   registerRoutes("treasury", require("./src/modules/treasury/routes"), { prefix: "/api/v1" });
+  registerRoutes("petty-cash", require("./src/modules/petty-cash/routes"), { prefix: "/api/v1" });
   registerRoutes("comercio", require("./src/modules/comercio/routes"), { prefix: "/api/v1" });
   // Vitrina publica Comercio: scope aparte para que no herede los hooks auth/tenancy del modulo.
   registerRoutes("comercio-public", require("./src/modules/comercio/public-routes"), { prefix: "/api/v1" });

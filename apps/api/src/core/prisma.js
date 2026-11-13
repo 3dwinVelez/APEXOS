@@ -18,9 +18,14 @@ const SOFT_DELETE = new Set([
   "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
   "TransportCarrier", "TransportDriver", "Sede", "TransportDeliveryPoint", "TransportRateCard",
   "TransportSettlementType",
+  // Gastos menores: solo los maestros tienen campo `active`. PettyCashAdvance, PettyCashVoucher
+  // y PettyCashVoucherLine quedan fuera de SOFT_DELETE y de PHYSICAL_DELETE_ALLOWED a proposito,
+  // igual que CntCabdoc/CntCuedoc/TreasuryAdvance: son documentos contables inmutables que se
+  // anulan por reverso (status = "cancelled"), nunca se borran.
+  "PettyCashConcept", "PettyCashBox",
   // Comercio: solo los maestros (productos y clientes) tienen `active`. Ventas, creditos,
   // cuotas, abonos, compras y gastos son documentos que se anulan por status ('voided'),
-  // nunca se borran (mismo criterio que los comprobantes contables).
+  // nunca se borran (mismo criterio que los comprobantes contables de caja menor).
   "ComercioProduct", "ComercioCustomer",
   "Workflow", "CustomField", "EInvoiceConfig"
 ]);

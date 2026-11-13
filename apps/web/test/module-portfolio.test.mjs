@@ -40,8 +40,7 @@ const RETIRED = [
   "proyectos",
   "apex-control",
   "apex-ai",
-  "cxc",
-  "gastos-menores"
+  "cxc"
 ];
 
 // Retirados que ya tenían pantalla operativa publicada: salen de la oferta, no del código.
@@ -62,17 +61,18 @@ const VISIBLE = [
   "administracion",
   "servicios",
   "gestion-comercial",
+  "gastos-menores",
   "comercio"
 ];
 
-test("el catálogo conserva 31 fichas y el portafolio publica 11 en este paquete", () => {
+test("el catálogo conserva 31 fichas y el portafolio publica 12 con cajas menores", () => {
   const slugs = catalogSlugs();
   assert.equal(slugs.length, 31);
   assert.deepEqual(new Set(retiredSlugs()), new Set(RETIRED));
-  assert.equal(retiredSlugs().length, 21);
+  assert.equal(retiredSlugs().length, 20);
   const visible = slugs.filter((slug) => !retiredSlugs().includes(slug));
   assert.deepEqual(new Set(visible), new Set(VISIBLE));
-  assert.equal(visible.length, 11);
+  assert.equal(visible.length, 12);
 });
 
 test("todo módulo visible tiene pantalla propia y el retirado sin ruta deja de publicarse", () => {

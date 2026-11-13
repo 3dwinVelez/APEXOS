@@ -49,7 +49,13 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-contab-retenciones", label: "Gestionar retenciones contables", description: "Retenciones practicadas y registradas", href: "/dashboard/contabilidad/retenciones", module: "contabilidad", keywords: "retencion retefuente reteiva impuesto" },
   { id: "fn-contab-terceros", label: "Gestionar terceros contables", description: "Clientes, proveedores y su informacion fiscal", href: "/dashboard/contabilidad/terceros", module: "contabilidad", keywords: "tercero cliente proveedor nit informacion fiscal" },
 
-  // Gastos Menores: sus funciones viajan con el paquete M-29, cuando existan sus pantallas.
+  // Gastos Menores
+  { id: "fn-gm-nuevo-gasto", label: "Registrar gasto menor", description: "Crear un comprobante de caja menor", href: "/dashboard/gastos-menores/gastos/nuevo", module: "gastos-menores", keywords: "nuevo gasto menor registrar comprobante" },
+  { id: "fn-gm-conceptos", label: "Gestionar conceptos de gasto menor", description: "Maestro de conceptos de egreso de caja menor", href: "/dashboard/gastos-menores/conceptos", module: "gastos-menores", keywords: "concepto gasto egreso caja menor maestro cuenta contable" },
+  { id: "fn-gm-cajas", label: "Gestionar cajas menores", description: "Cajas, custodios, limites y anticipos", href: "/dashboard/gastos-menores/cajas", module: "gastos-menores", keywords: "caja menor custodio limite anticipo fondo efectivo" },
+  { id: "fn-gm-anticipos", label: "Gestionar anticipos de caja menor", description: "Giros al custodio, liquidacion y reintegro", href: "/dashboard/gastos-menores/anticipos", module: "gastos-menores", keywords: "anticipo caja menor giro custodio liquidacion reintegro legalizar documento apc" },
+  { id: "fn-gm-gastos", label: "Registrar comprobantes de gasto", description: "Digitacion de gastos con IVA por linea y contabilizacion inmediata", href: "/dashboard/gastos-menores/gastos", module: "gastos-menores", keywords: "comprobante gasto caja menor digitar registrar iva linea factura proveedor asiento contable gm" },
+  { id: "fn-gm-reportes", label: "Consultar reportes de gastos menores", description: "Gasto por caja, concepto y dimension con exportacion a Excel", href: "/dashboard/gastos-menores/reportes", module: "gastos-menores", keywords: "reporte gasto caja menor ranking concepto centro costo proveedor cuenta exportar excel totales filtros" },
 
   // Gestion comercial
   { id: "fn-gc-agenda", label: "Ver calendario comercial", description: "Agenda de visitas y citas con clientes", href: "/dashboard/gestion-comercial/agenda", module: "gestion-comercial", keywords: "agenda calendario visita cita cliente comercial" },

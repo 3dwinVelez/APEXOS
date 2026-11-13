@@ -415,10 +415,7 @@ const RETIRED_MODULE_SLUGS = new Set([
   "proyectos",
   "apex-control",
   "apex-ai",
-  "cxc",
-  // M-29 viaja en su propio paquete: hasta que sus pantallas existan en main, la ficha
-  // se conserva y el módulo no se ofrece en lobby, barra ni buscador.
-  "gastos-menores"
+  "cxc"
 ]);
 
 export function isPortfolioModule(module: ApexModule) {
