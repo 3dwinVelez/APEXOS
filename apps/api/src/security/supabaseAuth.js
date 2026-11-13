@@ -84,6 +84,28 @@ function tenantSyncPlan() {
   return isProductionEnv() ? "production_sync" : "qa_sync";
 }
 
+// Accionista: consulta reportes financieros y la operacion de transporte, nada mas.
+// El rol se crea en la web (catalogo de roles de Supabase) y aqui se traduce a un
+// rol del API con solo lectura. Sin este caso caia en "Supabase Member", que da
+// escritura en servicios, RRHH y transporte y ningun permiso contable.
+// Se aceptan singular y plural: en la web es facil nombrar el rol "Accionistas".
+const SHAREHOLDER_ROLE_NAMES = new Set(["accionista", "accionistas", "shareholder", "shareholders"]);
+
+function normalizeRoleKey(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function isShareholderRole(employeeRole) {
+  return SHAREHOLDER_ROLE_NAMES.has(normalizeRoleKey(employeeRole.name))
+    || SHAREHOLDER_ROLE_NAMES.has(normalizeRoleKey(employeeRole.accessProfile));
+}
+
 function roleBlueprint(companyRole, employee) {
   const normalized = String(companyRole || "member").toLowerCase();
   if (["owner", "admin", "superadmin"].includes(normalized)) {
@@ -105,6 +127,21 @@ function roleBlueprint(companyRole, employee) {
       permissions: [
         { module: "time_tracking", action: "read" },
         { module: "time_tracking", action: "write" }
+      ]
+    };
+  }
+  if (isShareholderRole(employeeRole)) {
+    // Nombre fijo y no por identidad: es el que reconoce la app movil para
+    // mostrar solo Finanzas y Transporte. `managed` retira cualquier permiso
+    // de mas en la siguiente sincronizacion, aunque el rol de la web traiga
+    // otros modulos marcados.
+    return {
+      name: "Accionista",
+      description: "Accionista: consulta reportes financieros y la operacion de transporte.",
+      managed: true,
+      permissions: [
+        { module: "accounting", action: "read" },
+        { module: "transport", action: "read" }
       ]
     };
   }
