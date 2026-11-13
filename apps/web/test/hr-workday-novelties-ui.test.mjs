@@ -270,6 +270,10 @@ test("libranzas page manages concepts, employee balances and recurrent deduction
 test("employee termination liquidation page supports severance balances and indemnization", () => {
   const source = read("app/dashboard/talento-humano/liquidacion-trabajador/page.tsx");
   const landing = read("app/dashboard/talento-humano/page.tsx");
+  assert.match(source, /type="search"[\s\S]*?placeholder="Número de documento"/);
+  assert.match(source, /empleados\?document_search=/);
+  assert.match(source, /employee_id: String\(employee.id\)/);
+  assert.doesNotMatch(source, /<select[^>]+value=\{form.employee_id\}/);
   assert.match(landing, /Liquidaci[oó]n de trabajador/);
   assert.match(source, /Liquidacion de trabajador/);
   assert.match(source, /sin_justa_causa/);
