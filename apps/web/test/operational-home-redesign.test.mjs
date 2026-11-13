@@ -46,8 +46,8 @@ test("lobby V4 monta el banner de red y tarjetas de icono por módulo", () => {
 test("cada módulo del catálogo declara el icono que pinta su tarjeta", () => {
   const catalog = read("lib/modules.ts");
   const slugs = [...catalog.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
-  assert.equal(slugs.length, 32);
-  assert.equal([...catalog.matchAll(/^\s{4}icon: [A-Z]\w+$/gm)].length, 32, "cada ficha declara un icono lucide");
+  assert.equal(slugs.length, 31);
+  assert.equal([...catalog.matchAll(/^\s{4}icon: [A-Z]\w+$/gm)].length, 31, "cada ficha declara un icono lucide");
   const banner = path.join(root, "public", "/assets/lobby/banner-network.webp");
   assert.ok(fs.existsSync(banner), "falta el banner del lobby");
 });
