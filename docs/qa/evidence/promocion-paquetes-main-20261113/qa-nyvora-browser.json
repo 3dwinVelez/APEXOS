@@ -1,0 +1,173 @@
+{
+  "ok": true,
+  "change_id": "promocion-paquetes-main-20261113",
+  "environment": "QA",
+  "company": "NYVORA",
+  "run_id": "20261113qa04",
+  "web_base": "https://apexos-web-qa-production.up.railway.app",
+  "api_base": "https://apexos-api-qa-production.up.railway.app",
+  "expected_commit": "6589af8e",
+  "commit": "6589af8e1d32",
+  "certification_user_id": 695,
+  "certification_user_deactivated": true,
+  "screens": [
+    {
+      "name": "lobby",
+      "target": "/dashboard",
+      "path": "/dashboard",
+      "heading": "Creamos sistemas a tu medida.",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "inventario",
+      "target": "/dashboard/inventario",
+      "path": "/dashboard/inventario",
+      "heading": "Inventario",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "compras",
+      "target": "/dashboard/compras",
+      "path": "/dashboard/compras",
+      "heading": "Compras",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "ventas",
+      "target": "/dashboard/ventas",
+      "path": "/dashboard/ventas",
+      "heading": "Ventas",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "contabilidad",
+      "target": "/dashboard/contabilidad",
+      "path": "/dashboard/contabilidad",
+      "heading": "Contabilidad",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "transporte",
+      "target": "/dashboard/transporte",
+      "path": "/dashboard/transporte",
+      "heading": "Transporte",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "talento-humano",
+      "target": "/dashboard/talento-humano",
+      "path": "/dashboard/talento-humano",
+      "heading": "Talento Humano",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "servicios",
+      "target": "/dashboard/servicios",
+      "path": "/dashboard/servicios",
+      "heading": "Servicios",
+      "denied": false,
+      "rows": 18,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "transporte-flota",
+      "target": "/dashboard/transporte/flota",
+      "path": "/dashboard/transporte/flota",
+      "heading": "Vehiculos",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "transporte-liquidaciones",
+      "target": "/dashboard/transporte/liquidaciones",
+      "path": "/dashboard/transporte/liquidaciones",
+      "heading": "Torre de liquidaciones",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    },
+    {
+      "name": "contabilidad-pyg",
+      "target": "/dashboard/contabilidad/pyg",
+      "path": "/dashboard/contabilidad/pyg",
+      "heading": "PYG Contable · PUC",
+      "denied": false,
+      "rows": 0,
+      "ok": true,
+      "new_errors": 0
+    }
+  ],
+  "excluded_screens": [
+    {
+      "name": "proyectos",
+      "path": "/dashboard/proyectos",
+      "reason": "monitor operacional en carga; lectura /api/v1/projects verde en la certificacion de API"
+    },
+    {
+      "name": "transporte-maestros",
+      "path": "/dashboard/transporte/maestros",
+      "reason": "page.tsx redirige a /dashboard/administracion (M-22 no licenciado para NYVORA en QA)"
+    }
+  ],
+  "console_errors": [],
+  "http_errors": [],
+  "known_console_noise": [
+    {
+      "phase": "login",
+      "status": 404,
+      "url": "https://apexos-web-qa-production.up.railway.app/favicon.ico"
+    },
+    {
+      "phase": "login",
+      "text": "Failed to load resource: the server responded with a status of 404 ()",
+      "location": {
+        "url": "https://apexos-web-qa-production.up.railway.app/favicon.ico"
+      }
+    },
+    {
+      "phase": "login",
+      "status": 400,
+      "url": "https://jbirkghkekuifgfsgquq.supabase.co/auth/v1/token?grant_type=password"
+    },
+    {
+      "phase": "login",
+      "text": "Failed to load resource: the server responded with a status of 400 ()",
+      "location": {
+        "url": "https://jbirkghkekuifgfsgquq.supabase.co/auth/v1/token?grant_type=password"
+      }
+    }
+  ],
+  "screenshots": [
+    "qa-lobby.png",
+    "qa-transporte.png",
+    "qa-talento-humano.png",
+    "qa-servicios.png",
+    "qa-transporte-liquidaciones.png",
+    "qa-contabilidad-pyg.png"
+  ]
+}

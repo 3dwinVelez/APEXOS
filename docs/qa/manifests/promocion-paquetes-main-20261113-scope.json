@@ -1167,10 +1167,6 @@
     },
     {
       "status": "M",
-      "file": "apps/web/components/ui/ModalFrame.tsx"
-    },
-    {
-      "status": "M",
       "file": "apps/web/components/ui/data-table.tsx"
     },
     {
@@ -1178,12 +1174,16 @@
       "file": "apps/web/components/ui/feedback.tsx"
     },
     {
-      "status": "D",
-      "file": "apps/web/components/ui/SearchSelect.tsx"
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
     },
     {
       "status": "A",
       "file": "apps/web/components/ui/search-select.tsx"
+    },
+    {
+      "status": "D",
+      "file": "apps/web/components/ui/SearchSelect.tsx"
     },
     {
       "status": "A",
@@ -1711,6 +1711,10 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt"
     },
     {
@@ -1723,7 +1727,51 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/platform-regression-qa.txt"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/prisma-validate.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-contabilidad-pyg.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-lobby.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-servicios.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-talento-humano.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte-liquidaciones.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte.png"
     },
     {
       "status": "A",
@@ -1736,6 +1784,10 @@
     {
       "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/web-typecheck.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-approval.json"
     },
     {
       "status": "A",
@@ -1783,7 +1835,15 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/12-talento-humano.json"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "ocs/qa/certifications/promocion-paquetes-main-20261113.md"
     },
     {
       "status": "M",
@@ -1848,6 +1908,14 @@
     {
       "status": "A",
       "file": "scripts/certifications/hr-termination-document-search-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promocion-paquetes-main-qa-browser.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promocion-paquetes-main-qa.js"
     },
     {
       "status": "A",
@@ -1920,10 +1988,6 @@
     {
       "status": "A",
       "file": "supabase/migrations/20261020173515_standard_chart_piloto.sql"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/12-talento-humano.json"
     }
   ],
   "allowed_paths": [
@@ -2201,11 +2265,11 @@
     "apps/web/components/transport/TransportSearchSelect.tsx",
     "apps/web/components/transport/TransportUI.tsx",
     "apps/web/components/transport/VehicleProfilePicker.tsx",
-    "apps/web/components/ui/ModalFrame.tsx",
-    "apps/web/components/ui/SearchSelect.tsx",
     "apps/web/components/ui/data-table.tsx",
     "apps/web/components/ui/feedback.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
     "apps/web/components/ui/search-select.tsx",
+    "apps/web/components/ui/SearchSelect.tsx",
     "apps/web/lib/accounting-account-tree.ts",
     "apps/web/lib/api.ts",
     "apps/web/lib/hrScheduleMonitor.ts",
@@ -2337,13 +2401,26 @@
     "docs/qa/certifications/promocion-paquetes-main-20261113.md",
     "docs/qa/evidence/promocion-paquetes-main-20261113/api-suite.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/candidato-commits.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/migraciones-inventario.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/next-build.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/platform-regression-qa.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/prisma-validate.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-contabilidad-pyg.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-lobby.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser-salida.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser.json",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification-salida.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-servicios.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-talento-humano.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte-liquidaciones.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte.png",
     "docs/qa/evidence/promocion-paquetes-main-20261113/scope-gate.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/web-suite.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/web-typecheck.txt",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-approval.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/01-capa-visual.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/02-transporte.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/03-contabilidad.json",
@@ -2357,6 +2434,7 @@
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/11-contrato-visual.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/12-talento-humano.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json",
+    "ocs/qa/certifications/promocion-paquetes-main-20261113.md",
     "package-lock.json",
     "package.json",
     "scripts/certifications/hr-contention-message-browser-local.js",
@@ -2373,6 +2451,8 @@
     "scripts/certifications/hr-punch-mobile-evidence-local.js",
     "scripts/certifications/hr-report-punch-alerts-local.js",
     "scripts/certifications/hr-termination-document-search-local.js",
+    "scripts/certifications/promocion-paquetes-main-qa-browser.js",
+    "scripts/certifications/promocion-paquetes-main-qa.js",
     "supabase/migrations/20260918100000_hr_labor_deductions_parameters.sql",
     "supabase/migrations/20260918140000_hr_payroll_liquidation_documents.sql",
     "supabase/migrations/20260918150000_hr_payroll_concepts_detail.sql",

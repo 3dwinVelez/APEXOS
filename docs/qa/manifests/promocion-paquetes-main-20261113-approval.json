@@ -1,0 +1,113 @@
+{
+  "change_id": "promocion-paquetes-main-20261113",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "worktree detachado sobre origin/main (sin rama publicada)",
+  "commit": "01e9b8f63a8576edcda2f1880a10bd739c0730aa",
+  "candidate_commit_note": "commit registra 01e9b8f6, el ultimo commit de contenido de producto de los 12 paquetes reconstruidos sobre origin/main 4659292f. El tip final del candidato solo agrega los manifiestos, la hoja de certificacion y la evidencia de QA, de modo que el arbol de producto medido y el arbol promovido son el mismo; el contraste archivo por archivo contra el build desplegado esta en ../evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json",
+        "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification-salida.txt",
+        "../evidence/promocion-paquetes-main-20261113/qa-nyvora-browser.json",
+        "../evidence/promocion-paquetes-main-20261113/qa-nyvora-browser-salida.txt",
+        "../evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt",
+        "../certifications/promocion-paquetes-main-20261113.md"
+      ],
+      "basis": "El flujo pedido por el propietario (la aplicacion completa operando con la empresa modelo NYVORA) se midio dos veces contra el ambiente QA desplegado: lecturas de API de 96 endpoints en 15 grupos con una cuenta efimera de NYVORA, todas en verde, y un recorrido de navegador por lobby, inventario, compras, ventas, contabilidad, transporte, talento humano, servicios, flota, torre de liquidaciones y PYG contable, con titulo renderizado, sin denegacion, cero errores de consola y cero respuestas HTTP >=400. El ambiente QA corre develop 6589af8e (API) y develop beff5132 (web), sin commits de apps/api posteriores en develop; las unicas diferencias con el arbol del candidato son assets demo, modelos Invoice* sin API ni migracion, tres scripts y las tres pruebas web ajustadas de forma deliberada."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json",
+        "../../../apps/api/test/authorization-status-codes.test.js",
+        "../../../apps/web/test/hr-route-write-fallback.test.mjs",
+        "../../../apps/api/test/hr-route-p2028-containment.test.js"
+      ],
+      "basis": "Los rechazos que no deben relajarse siguen medidos en QA: peticion anonima a /api/v1/services/orders devuelve 401 y una credencial invalida devuelve 401. En el arbol, las pruebas de estado de autorizacion y el contrato de escritura de horarios (sin caida silenciosa al respaldo Supabase) pasan dentro de la suite completa de API y web, y el contrato de contencion P2028 de mallas se ejercita en la suite de API."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/promocion-paquetes-main-qa.js",
+        "../../../scripts/certifications/promocion-paquetes-main-qa-browser.js",
+        "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification-salida.txt",
+        "../evidence/promocion-paquetes-main-20261113/qa-nyvora-browser-salida.txt"
+      ],
+      "basis": "Los dos certificadores viajan con el cambio. Ambos abortan si el host del API o del web no es el servicio QA en Railway o si DATABASE_URL no corresponde al proyecto Supabase de QA, crean un usuario efimero de NYVORA con rol propio de la corrida, no escriben documentos ni asientos y lo desactivan al terminar (certification_user_deactivated=true en ambas evidencias)."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/api-suite.txt",
+        "../evidence/promocion-paquetes-main-20261113/web-suite.txt",
+        "../evidence/promocion-paquetes-main-20261113/prisma-validate.txt",
+        "../evidence/promocion-paquetes-main-20261113/web-typecheck.txt",
+        "../evidence/promocion-paquetes-main-20261113/next-build.txt"
+      ],
+      "basis": "Suites completas sobre el arbol del candidato: API 1104 pruebas (1101 pass, 0 fail, 3 skipped), web 802 pruebas (801 pass, 1 rojo de arnes documentado en la certificacion por react resuelto fuera del worktree), prisma validate en verde, typecheck de web exit 0 y next build con webpack exitoso con la tabla de rutas completa. La atribucion de rojos contra el destino se hizo con la corrida limpia de origin/main y esta en la certificacion."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/platform-regression-qa.txt",
+        "../evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt",
+        "../../../apps/api/scripts/certifications/platform-regression-qa.js"
+      ],
+      "basis": "platform-regression-qa.js con fixture NYVORA midio contra 6589af8e1d32 las lecturas de sesion, ordenes de servicio, referencias, empleados, inventario, plan contable y el bloqueo de no autorizados: 6 controles y el 401 en verde. Es la misma regresion transversal que la promocion anterior uso para main."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/promocion-paquetes-main-qa.js",
+    "evidence": [
+      "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json",
+      "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification-salida.txt"
+    ],
+    "measured_on": "deploy de develop en QA (API 6589af8e1d32, web beff5132) con el Supabase de QA",
+    "controls": 96,
+    "groups": 15,
+    "negatives": 2,
+    "equivalence_note": "La corrida de ambiente se hizo contra el build desplegado en QA porque ese es el ambiente vivo; el arbol que se promueve es la reconstruccion por paquetes sobre origin/main 4659292f. La equivalencia de codigo de producto esta medida archivo por archivo en equivalencia-candidato-qa.txt y las tres diferencias de prueba son deliberadas y estan documentadas en la certificacion."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../apps/api/scripts/certifications/platform-regression-qa.js",
+    "evidence": [
+      "../evidence/promocion-paquetes-main-20261113/platform-regression-qa.txt",
+      "../evidence/promocion-paquetes-main-20261113/api-suite.txt",
+      "../evidence/promocion-paquetes-main-20261113/web-suite.txt"
+    ],
+    "basis": "Regresion transversal del ERP que main ya tenia, medida contra el ambiente con el candidato desplegado y contrastada en el arbol con las suites completas. Las capacidades protegidas del manifiesto de alcance (multi-tenant, RBAC, datos de clientes, perimetro del propietario y build de produccion) conservan su evidencia."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/promocion-paquetes-main-qa-browser.js",
+    "evidence": [
+      "../evidence/promocion-paquetes-main-20261113/qa-nyvora-browser.json",
+      "../evidence/promocion-paquetes-main-20261113/qa-nyvora-browser-salida.txt",
+      "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json"
+    ],
+    "basis": "NYVORA es la empresa modelo del ambiente QA. Con una cuenta efimera de su tenant se midio la aplicacion completa: 11 pantallas del navegador con el lobby 'Creamos sistemas a tu medida.', Transporte, Torre de liquidaciones, PYG Contable - PUC y Talento Humano renderizados sin errores, y 96 lecturas de API en verde, incluidas sedes, planes, tarifario, liquidaciones, PYG, cajas menores, nomina, prestaciones y aportes. Se miden como contrato, no como fallo, las denegaciones por licenciamiento de NYVORA: M-22 Administracion (403 MODULO_NO_HABILITADO en los tres endpoints admin) y M-29 Gastos Menores (no licenciado; sus lecturas se certifican por API con permiso de contabilidad). Las capturas qa-lobby.png, qa-servicios.png, qa-transporte.png, qa-transporte-liquidaciones.png, qa-talento-humano.png y qa-contabilidad-pyg.png quedan en la carpeta de evidencia."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "4659292f4f23014ee4b0e990fb66e4a2ce6646c1",
+    "trigger": "cualquier 401 en el flujo de sesion de una cuenta valida, cualquier peticion anonima que deje de responder 401, cualquier lectura cruzada entre empresas, cualquier error 500 sostenido en los modulos promovidos (transporte, liquidaciones, PYG, cajas menores, contabilidad, talento humano), cualquier perdida o alteracion de filas de NYVORA atribuible a las migraciones, o un despliegue de main que deje los servicios sin responder /health.",
+    "mechanism": "revert controlado de los commits del candidato sobre main, de atras hacia adelante (paquete 12 a P0), nunca con force push ni reescritura de historia. Las migraciones se revierten solo si el revert de codigo no basta: son aditivas salvo 20261016123000 (sedes), que conserva filas y archiva los campos de origen en metadata; el rollback de esquema exige restaurar el backup verificado prod-20261113-pre-promocion.dump (210 MB, sha256 9236ef32...) o PITR.",
+    "rollback_requires_authorization": "el revert es una escritura en main y exige autorizacion expresa e independiente, igual que este push."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promocion_a_main_de_la_promocion_por_paquetes_20261113_completa, incluido el paquete 12 de Talento Humano",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-13T12:00:00-05:00",
+    "authorization_basis": "Instruccion textual del propietario: 'procede a iniciar el plan de implementacion en main, inclyendo todo incluso los cambios de talento humano todos por separado pero que todos llegen promovidos de manera correcta hacia el main no pares hasta que termines, ya tienes toda mi autorizacion verificando que nada se rompa bajo las codniciones de migracion y el resguardo de los datos de productivo, no efectuar ningun cambio destructivo'; seguida de 'procede con lo qe hace falta para promover de la manera acordaba' y de la instruccion de usar la cuenta de la empresa modelo NYVORA en produccion para certificar los cambios, entregada por el propietario en el canal privado (la credencial no se escribe aqui). De esa autorizacion salen: promover los 12 paquetes a main, aplicar las migraciones con resguardo previo y verificar con NYVORA. NO estan otorgadas por este manifiesto: force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni cerrar el veredicto NO APTO de la auditoria de Talento Humano del 2026-10-30."
+  }
+}

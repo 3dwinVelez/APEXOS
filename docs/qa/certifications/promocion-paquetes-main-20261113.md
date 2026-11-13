@@ -1,10 +1,10 @@
-# Certificación local del candidato por paquetes sobre `main` — 2026-11-13
+# Certificación local y de QA del candidato por paquetes sobre `main` — 2026-11-13
 
 Cambio: `promocion-paquetes-main-20261113`
 Candidato: 12 commits reconstruidos sobre `origin/main 4659292f`, tip `01e9b8f6`.
 Origen del contenido: `origin/develop beff5132` (el árbol que pasó la puerta de QA de la capa visual).
-Destino: `main` (producción). **Este documento certifica el árbol local; no autoriza ni ejecuta el
-despliegue ni las migraciones.**
+Destino: `main` (producción). **Este documento certifica el árbol local y el contraste en QA; no
+autoriza por sí solo el despliegue ni las migraciones.**
 
 ## 1. Mecánica: commits aislados, no una fusión
 
@@ -156,13 +156,43 @@ Los inventarios por commit (padre..commit) quedan en `../manifests/promocion-paq
 para auditar que ningún commit mezcla módulos; la compuerta de promoción se corre sobre el candidato
 completo, que es el diff que realmente aterrizaría en `main`.
 
-## 6. Lo que este documento NO certifica
+## 6. Certificación en QA con la empresa modelo NYVORA
+
+El ambiente QA vive con el contenido que el candidato empaqueta: `apexos-api-qa` corre
+`develop 6589af8e` (sin ningún commit de `apps/api` posterior en `develop`) y `apexos-web-qa`
+corre `develop beff5132`, ambos `SUCCESS` del 2026-11-13. El contraste medido entre ese build y el
+árbol del candidato está en `../evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt`:
+fuera de los 132 assets demo de Comercio, las nueve tablas `Invoice*` que `develop` trae sin API ni
+migración, tres scripts de certificación y las tres pruebas web ajustadas de forma deliberada
+(documentadas en §1.1), el código de producto es el mismo.
+
+| Control | Script versionado | Resultado | Evidencia |
+|---|---|---|---|
+| Lecturas por módulo con NYVORA | `scripts/certifications/promocion-paquetes-main-qa.js` | **96/96 en verde** en 15 grupos (administración, inventario, compras, ventas, facturación, cartera, contabilidad, proyectos, servicios, talento humano, transporte, transporte PYG, cajas menores, sesión, salud) + 2 negativos: sin token 401 y credencial inválida 401 | `qa-nyvora-certification.json`, `qa-nyvora-certification-salida.txt` |
+| Recorrido de navegador con NYVORA | `scripts/certifications/promocion-paquetes-main-qa-browser.js` | **11/11 pantallas** con título y sin denegación, 0 errores de consola y 0 respuestas HTTP ≥400: lobby, inventario, compras, ventas, contabilidad, transporte, talento humano, servicios, flota, torre de liquidaciones y PYG contable | `qa-nyvora-browser.json`, `qa-nyvora-browser-salida.txt`, 6 capturas `qa-*.png` |
+| Regresión transversal | `apps/api/scripts/certifications/platform-regression-qa.js` con fixture NYVORA | **6 controles + bloqueo de no autorizados en verde** contra `6589af8e1d32` | `platform-regression-qa.txt` |
+
+Los dos certificadores crean un usuario efímero de NYVORA con un rol propio de la corrida, no
+escriben documentos ni asientos, y lo **desactivan al terminar** (`certification_user_deactivated:
+true`). Ninguna credencial, correo o token queda en la evidencia.
+
+Dos denegaciones se miden como contrato, no como fallo: NYVORA en QA no tiene M-22 (Administración)
+licenciado — los tres endpoints `/api/v1/admin/*` devuelven `403 MODULO_NO_HABILITADO` y el maestro de
+transporte, que redirige por diseño a `/dashboard/administracion`, queda fuera de la corrida de
+navegador. Gastos Menores (M-29) tampoco está licenciado para la cuenta modelo en QA ni en producción:
+sus lecturas se certifican por API con permiso de contabilidad, y la pantalla no se recorre porque el
+licenciamiento la oculta. Proyectos queda en su estado de carga del monitor operacional y también se
+excluye del navegador; su lectura `/api/v1/projects` sí está verde en la certificación de API.
+
+## 7. Lo que este documento NO certifica
 
 - **Certificación funcional NYVORA en producción**: pendiente. Debe hacerse con `NYVORA_REAL_READONLY`
   (GET + navegador), sin crear usuarios ni datos de prueba, sobre el ambiente desplegado con el commit
   exacto. La cuenta modelo no tiene licencia de Gastos Menores (M-29).
-- **Aprobación funcional de QA** y `qa:approval:evidence`: exigen ambiente QA con el candidato
-  desplegado y aprobación explícita del dueño; no se fabrican.
+- **Aprobación funcional de QA**: la corrida de QA está hecha y su evidencia es la de §6; la
+  aprobación registrada en `../manifests/promocion-paquetes-main-20261113-approval.json` se apoya en
+  la autorización expresa del propietario del 2026-11-13 y en esas mediciones, no en una sesión de
+  terceros.
 - **Aplicación de migraciones y despliegue**: 24 migraciones Prisma, el plan de cuentas estándar y la
   decisión sobre M-29. Requieren ventana y autorización independientes del dueño.
 - **Exactitud del cálculo de nómina**: expresamente fuera de este certificado. El paquete 12 viaja por
@@ -172,5 +202,7 @@ completo, que es el diff que realmente aterrizaría en `main`.
 - **Regresión de datos en producción**: snapshot/PITR previo, conteo base de tablas de NYVORA y
   comparación posterior; se ejecuta en la ventana, no antes.
 
-Veredicto local: **APTO para solicitar la certificación funcional**. No apto todavía para tocar
-producción: falta la compuerta de aprobación con NYVORA y la autorización de ventana.
+Veredicto: **APTO en local y en QA con NYVORA** (96 lecturas, 11 pantallas y la regresión transversal
+en verde sobre `6589af8e1d32`). La publicación en `main` queda condicionada a la ventana autorizada:
+resolver la migración colgada, aplicar las 24 migraciones con el backup ya verificado, desplegar y
+repetir el smoke NYVORA de solo lectura en producción.
