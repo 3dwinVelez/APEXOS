@@ -2,6 +2,16 @@
 
 Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue semver: major cambia rol/contrato, minor agrega control o especialidad, patch corrige redacción o rutas.
 
+## 2026-11-13
+
+### Plan de despliegue controlado de la capa visual a QA (`homologacion-visual-20261112-deploy`)
+
+- **Pedido directo del dueño.** «Monta el plan de despliegue hacia QA "develop" garantizando que no surjan problemas de funcionalidades ajenas a la intervencion estetica que vamos a empujar». Se monta el plan; la promocion sigue sin ejecutarse.
+- **Estado verificado contra el remoto, no contra el baseline local.** `origin/develop` sigue en `3595a9bb`; el candidato `8ba301c0` tiene un solo commit, su padre es ese tip y el merge es fast-forward; árbol certificado `4c870b26…`; diff exacto de 100 rutas, 0 fuera de `apps/web`/`docs`, 0 dependencias, 0 rutas de API/Prisma y 0 eliminaciones.
+- **Plan con invariantes, no con buenas intenciones.** `docs/qa/homologacion-visual-20261112-promotion-runbook.md` fija: preflight bloqueante de frescura y alcance; fast-forward obligatorio desde un worktree detachado; igualdad de árbol entre lo promovido y lo certificado; no redespliegue ni migracion del API (su árbol queda identico y `/health` conserva `3595a9bb`); smoke tecnico de QA; certificacion funcional de persistencia; rollback doble por Railway y `git revert`; y punto de parada si el destino avanza antes de la autorizacion.
+- **Compuertas re-medidas.** `qa:promotion:scope` → verde (100 rutas); `qa:preqa:evidence` → bloqueada solo por `approval.status` pendiente. `develop`, `main`, despliegues y migraciones intactos.
+- Agentes: `apexos-qa` 2.58.0 → 2.59.0 (control 72: el despliegue de un candidato visual se planifica como fast-forward con árbol idéntico, smoke de flujos vivos y rollback doble), `apexos-git-guardian` 2.15.0 → 2.16.0 (control 32: promocion pre-QA solo por fast-forward desde worktree detachado, árbol identico al certificado, API intacto y snapshot previo para revertir).
+
 ## 2026-11-12
 
 ### Paquete de QA de la capa visual: candidato aislado, certificación y compuerta pendiente (`homologacion-visual-20261112-qa`)

@@ -2,8 +2,8 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.15.0
-updated_at: 2026-11-12
+version: 2.16.0
+updated_at: 2026-11-13
 contract: 2
 ---
 
@@ -81,6 +81,8 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
     - **Un verde que cambia de mecanismo se re-mide con el mecanismo nuevo.** La corrida anterior estaba obtenida con `ENV_LOCAL_APEX_TOKEN` inyectado por entorno; la de cierre salió de `.env.local` + el bombeo, así que se regeneraron las dos certificaciones y la evidencia (`local_credencial_autorenovable` en `certification.json`). Un `77/77` heredado de otra forma de encender el dato no es evidencia de este cambio.
     - **La regla se relee antes de cerrarla con un atajo.** Si la intervención vuelve a necesitar un token por `process.env`, no es que el control 30 autorice el atajo: es que el cableado no quedó, y el cierre se declara incompleto.
     Por qué: el riesgo de un panel que se auto-mantiene es que la comodidad mueva el secreto a un lugar equivocado —un archivo commiteado, un argumento visible, un log— justo cuando nadie está mirando el manejo manual que antes lo controlaba.
+
+32. **Una promoción pre-QA de un candidato reconstruido se ejecuta solo por fast-forward, con árbol idéntico al certificado y desde un worktree detachado.** El 2026-11-13 se montó el plan de despliegue de la capa visual a QA. El guardián: (a) **verifica que el candidato sea un solo commit cuyo padre sea el tip remoto del destino** (`git rev-parse candidato^ == git rev-parse origin/develop`), y si el destino avanzó desde la certificación, **detiene la promoción** y exige forward-port + recertificación en vez de un merge a ciegas; (b) **promueve en un worktree `--detach` de `origin/develop`** con `git merge --ff-only` y `git push origin HEAD:develop`, sin `--no-ff`, squash, force push ni creación de ramas locales nuevas; (c) **compara árboles** (`git rev-parse HEAD^{tree}` contra el árbol certificado) después de promover: si difieren, lo desplegado no es lo probado y no se declara despliegue; (d) **confirma que el diff no toca API, Prisma, dependencias ni migraciones**, de modo que el API de QA conserva su commit y `/health` lo demuestra; (e) **conserva la rama candidata** y define el rollback como `git revert` del commit visual más rollback del deployment, nunca `reset --hard`, `clean -fd` ni reescritura de historia; y (f) **deja escrito el snapshot del destino y del deployment anterior antes de tocar nada**, porque sin ese dato el rollback depende de la memoria. Por qué: un candidato de una sola capa se contamina justo en el merge; fast-forward, igualdad de árbol y snapshot previo son la garantía de que el equipo no recibe trabajo ajeno ni un artefacto distinto al certificado.
 
 ## Checklist de intervención
 
