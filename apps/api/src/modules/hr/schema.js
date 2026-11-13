@@ -53,6 +53,21 @@ const punchSchema = {
   }
 };
 
+const biometricEnrollmentSchema = {
+  body: {
+    type: "object",
+    required: ["device_id", "public_key", "signed_at", "signature"],
+    properties: {
+      device_id: { type: "string", minLength: 8, maxLength: 128 },
+      public_key: { type: "string", minLength: 40, maxLength: 1024 },
+      signed_at: { type: "string", maxLength: 40 },
+      signature: { type: "string", minLength: 40, maxLength: 512 },
+      platform: { type: "string", maxLength: 40 },
+      device_model: { type: "string", maxLength: 120 }
+    }
+  }
+};
+
 const routeSchema = {
   body: {
     type: "object",
@@ -67,7 +82,8 @@ const routeSchema = {
       notes: { type: "string" },
       gps_required: { type: "boolean" },
       tracking_mode: { type: "string" },
-      status: { type: "string" }
+      status: { type: "string" },
+      kind: { type: "string", enum: ["trabajo", "descanso"] }
     }
   }
 };
@@ -88,7 +104,8 @@ const routeBulkSchema = {
       notes: { type: "string" },
       gps_required: { type: "boolean" },
       tracking_mode: { type: "string" },
-      status: { type: "string" }
+      status: { type: "string" },
+      kind: { type: "string", enum: ["trabajo", "descanso"] }
     }
   }
 };
@@ -193,6 +210,7 @@ const employeeSchema = {
     type: "object",
     required: ["name"],
     properties: {
+      user_id: { type: "integer", minimum: 1 },
       name: { type: "string" },
       code: { type: "string" },
       document: { type: "string" },
@@ -208,22 +226,33 @@ const employeeSchema = {
       site: { type: "string" },
       area: { type: "string" },
       cost_center: { type: "string" },
-      weekly_hours: { type: "number" },
+      society_code: { type: "string" },
+      branch_code: { type: "string" },
+      cost_center_code: { type: "string" },
+      weekly_hours: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
       currency: { type: "string" },
       eps_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       pension_fund_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       arl_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      arl_risk_class: { anyOf: [{ type: "integer" }, { type: "string" }] },
       compensation_fund_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       icbf_entity_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       user_type: { type: "string" },
       position: { type: "string" },
       department: { type: "string" },
-      salary_base: { type: "number" },
+      salary_base: { anyOf: [{ type: "number" }, { type: "string" }] },
       salary_type: { type: "string" },
       hire_date: { type: "string" },
+      end_date: { anyOf: [{ type: "string" }, { type: "null" }] },
       contract_type: { type: "string" },
       company: { type: "string" },
       labor_status: { type: "string" },
+      regime: { type: "string" },
+      regimen: { type: "string" },
+      sector: { type: "string" },
+      exoneration_eligible: { type: "boolean" },
+      exoneration_support: { type: "string" },
+      sln_pension_employer_percent: { anyOf: [{ type: "number" }, { type: "string" }] },
       legacy: { type: "object" }
     }
   }
@@ -236,10 +265,48 @@ const employeePatchSchema = {
   }
 };
 
+const employeeContractAddendumSchema = {
+  body: {
+    type: "object",
+    required: ["valid_from"],
+    properties: {
+      valid_from: { type: "string" },
+      end_date: { anyOf: [{ type: "string" }, { type: "null" }] },
+      contract_type: { type: "string" },
+      salary_base: { anyOf: [{ type: "number" }, { type: "string" }] },
+      cost_center: { type: "string" },
+      society_code: { anyOf: [{ type: "string" }, { type: "null" }] },
+      branch_code: { anyOf: [{ type: "string" }, { type: "null" }] },
+      cost_center_code: { anyOf: [{ type: "string" }, { type: "null" }] },
+      reason: { type: "string" },
+      notes: { type: "string" }
+    }
+  }
+};
+
+const employeeRehireSchema = {
+  body: {
+    type: "object",
+    required: ["new_hire_date", "contract_type", "salary_base"],
+    properties: {
+      new_hire_date: { type: "string" },
+      end_date: { anyOf: [{ type: "string" }, { type: "null" }] },
+      contract_type: { type: "string" },
+      salary_base: { anyOf: [{ type: "number" }, { type: "string" }] },
+      cost_center: { type: "string" },
+      society_code: { anyOf: [{ type: "string" }, { type: "null" }] },
+      branch_code: { anyOf: [{ type: "string" }, { type: "null" }] },
+      cost_center_code: { anyOf: [{ type: "string" }, { type: "null" }] },
+      reason: { type: "string" },
+      notes: { type: "string" }
+    }
+  }
+};
+
 const laborEntitySchema = {
   body: {
     type: "object",
-    required: ["entity_type", "internal_code", "nit", "legal_name"],
+    required: ["entity_type"],
     properties: {
       entity_type: { type: "string" },
       internal_code: { type: "string" },
@@ -358,6 +425,327 @@ const surchargeConceptPatchSchema = {
   }
 };
 
+const payrollLiquidationSchema = {
+  body: {
+    type: "object",
+    required: ["fecha_inicio", "fecha_fin"],
+    properties: {
+      fecha_inicio: { type: "string" },
+      fecha_fin: { type: "string" },
+      period_type: { type: "string" },
+      period_key: { type: "string" },
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }, { type: "null" }] },
+      recalculate: { type: "boolean" }
+    }
+  }
+};
+
+const payrollLiquidationDeleteSchema = {
+  body: {
+    type: "object",
+    required: ["period_key"],
+    properties: {
+      period_key: { type: "string" }
+    }
+  }
+};
+
+const socialBenefitProvisionSchema = {
+  body: {
+    type: "object",
+    required: ["fecha_inicio", "fecha_fin"],
+    properties: {
+      fecha_inicio: { type: "string" },
+      fecha_fin: { type: "string" },
+      period_type: { type: "string" },
+      period_key: { type: "string" },
+      recalculate: { type: "boolean" }
+    }
+  }
+};
+
+const socialBenefitPaymentSchema = {
+  body: {
+    type: "object",
+    required: ["payment_type", "fecha_inicio", "fecha_fin", "payment_date"],
+    properties: {
+      payment_type: { type: "string" },
+      fecha_inicio: { type: "string" },
+      fecha_fin: { type: "string" },
+      payment_date: { type: "string" },
+      period_type: { type: "string" },
+      period_key: { type: "string" },
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }, { type: "null" }] },
+      recalculate: { type: "boolean" }
+    }
+  }
+};
+
+const payrollAdjustmentSchema = {
+  body: {
+    type: "object",
+    required: ["employee_id", "period_key", "concept_code"],
+    properties: {
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      period_key: { type: "string" },
+      adjustment_type: { type: "string" },
+      concept_code: { type: "string" },
+      description: { type: "string" },
+      work_date: { type: "string" },
+      start_time: { type: "string" },
+      end_time: { type: "string" },
+      minutes: { anyOf: [{ type: "integer" }, { type: "number" }, { type: "string" }] },
+      amount: { anyOf: [{ type: "number" }, { type: "string" }] },
+      days: { anyOf: [{ type: "number" }, { type: "string" }] },
+      date_start: { type: "string" },
+      date_end: { type: "string" },
+      paid_by: { type: "string" },
+      pila_ibc_amount: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+      ibc_reference_amount: { anyOf: [{ type: "number" }, { type: "string" }] },
+      ibc_reference_period: { type: "string" },
+      ibc_reference_captured_at: { type: "string" },
+      ibc_referencia_inicio: { anyOf: [{ type: "number" }, { type: "string" }] },
+      periodo_ibc_referencia: { type: "string" },
+      continuidad_key: { type: "string" },
+      continuity_key: { type: "string" },
+      recognized_value: { anyOf: [{ type: "number" }, { type: "string" }] },
+      document_support: { type: "string" },
+      documento_soporte: { type: "string" },
+      reference_source: { type: "string" },
+      reported_pila_id: { type: "string" },
+      advance_obligation_id: { type: "string" },
+      advance_retention_health: { anyOf: [{ type: "number" }, { type: "string" }] },
+      advance_retention_pension: { anyOf: [{ type: "number" }, { type: "string" }] },
+      suspension_cause: { type: "string" },
+      suspension_kind: { type: "string" },
+      taxable: { type: "boolean" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const payrollExternalWorkdaysImportSchema = {
+  body: {
+    type: "object",
+    required: ["period_key", "rows"],
+    properties: {
+      period_key: { type: "string" },
+      rows: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["document", "concept_code"],
+          properties: {
+            document: { type: "string" },
+            employee_code: { type: "string" },
+            concept_code: { type: "string" },
+            description: { type: "string" },
+            date_start: { type: "string" },
+            date_end: { type: "string" },
+            work_date: { type: "string" },
+            days: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+            hours: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+            minutes: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+            amount: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+            observation: { type: "string" }
+          }
+        }
+      }
+    }
+  }
+};
+
+const payrollExternalWorkdaysDeleteSchema = {
+  body: {
+    type: "object",
+    required: ["period_key"],
+    properties: {
+      period_key: { type: "string" }
+    }
+  }
+};
+
+const payrollConceptSchema = {
+  body: {
+    type: "object",
+    required: ["code", "name", "concept_type", "valid_from"],
+    properties: {
+      country: { type: "string" },
+      code: { type: "string" },
+      name: { type: "string" },
+      concept_type: { type: "string" },
+      salary_constitutive: { type: "boolean" },
+      affects_ibc: { type: "boolean" },
+      default_operation: { type: "string" },
+      debit_account_code: { type: "string" },
+      credit_account_code: { type: "string" },
+      valid_from: { type: "string" },
+      valid_to: { anyOf: [{ type: "string" }, { type: "null" }] },
+      priority: { type: "integer" },
+      active: { type: "boolean" },
+      source_note: { type: "string" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const payrollConceptPatchSchema = {
+  body: {
+    type: "object",
+    properties: payrollConceptSchema.body.properties
+  }
+};
+
+const employeeSalarySchema = {
+  body: {
+    type: "object",
+    required: ["monthly_salary", "valid_from"],
+    properties: {
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      monthly_salary: { anyOf: [{ type: "number" }, { type: "string" }] },
+      currency: { type: "string" },
+      valid_from: { type: "string" },
+      reason: { type: "string" }
+    }
+  }
+};
+
+const calendarDaySchema = {
+  body: {
+    type: "object",
+    required: ["date", "name", "day_type"],
+    properties: {
+      country: { type: "string" },
+      territory: { type: "string" },
+      company_id: { type: "string" },
+      date: { type: "string" },
+      name: { type: "string" },
+      day_type: { type: "string" },
+      source: { type: "string" },
+      active: { type: "boolean" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const calendarDayPatchSchema = {
+  body: {
+    type: "object",
+    properties: calendarDaySchema.body.properties
+  }
+};
+
+const libranzaConceptSchema = {
+  body: {
+    type: "object",
+    required: ["code", "name"],
+    properties: {
+      code: { type: "string" },
+      name: { type: "string" },
+      description: { type: "string" },
+      entity_id: { anyOf: [{ type: "integer" }, { type: "string" }, { type: "null" }] },
+      debit_account_code: { type: "string" },
+      credit_account_code: { type: "string" },
+      active: { type: "boolean" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const libranzaConceptPatchSchema = {
+  body: {
+    type: "object",
+    properties: libranzaConceptSchema.body.properties
+  }
+};
+
+const employeeLibranzaSchema = {
+  body: {
+    type: "object",
+    required: ["employee_id", "concept_id", "frequency", "mode", "start_date"],
+    properties: {
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      concept_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      description: { type: "string" },
+      frequency: { type: "string" },
+      mode: { type: "string" },
+      original_amount: { anyOf: [{ type: "number" }, { type: "string" }, { type: "null" }] },
+      installment_amount: { anyOf: [{ type: "number" }, { type: "string" }] },
+      installments_total: { anyOf: [{ type: "integer" }, { type: "string" }, { type: "null" }] },
+      start_date: { type: "string" },
+      end_date: { anyOf: [{ type: "string" }, { type: "null" }] },
+      inactive_at: { anyOf: [{ type: "string" }, { type: "null" }] },
+      status: { type: "string" },
+      metadata: { type: "object" }
+    }
+  }
+};
+
+const employeeLibranzaPatchSchema = {
+  body: {
+    type: "object",
+    properties: employeeLibranzaSchema.body.properties
+  }
+};
+
+const employeeTerminationLiquidationSchema = {
+  body: {
+    type: "object",
+    required: ["employee_id", "termination_date", "termination_reason"],
+    properties: {
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
+      termination_date: { type: "string" },
+      termination_reason: { type: "string" },
+      contract_type: { type: "string" },
+      salary_base: { anyOf: [{ type: "number" }, { type: "string" }] },
+      pending_salary_days: { anyOf: [{ type: "number" }, { type: "string" }] },
+      remaining_days: { anyOf: [{ type: "number" }, { type: "string" }] },
+      recalculate: { type: "boolean" },
+      mark_inactive: { type: "boolean" }
+    }
+  }
+};
+
+const socialContributionSchema = {
+  body: {
+    type: "object",
+    required: ["fecha_inicio", "fecha_fin"],
+    properties: {
+      fecha_inicio: { type: "string" },
+      fecha_fin: { type: "string" },
+      period_type: { type: "string" },
+      period_key: { type: "string" },
+      employee_id: { anyOf: [{ type: "integer" }, { type: "string" }, { type: "null" }] },
+      recalculate: { type: "boolean" }
+    }
+  }
+};
+
+const payrollPeriodClosureSchema = {
+  body: {
+    type: "object",
+    required: ["fecha_inicio", "fecha_fin"],
+    properties: {
+      fecha_inicio: { type: "string" },
+      fecha_fin: { type: "string" },
+      period_type: { type: "string" },
+      period_key: { type: "string" },
+      recalculate: { type: "boolean" },
+      force: { type: "boolean" }
+    }
+  }
+};
+
+const payrollPeriodReopenSchema = {
+  body: {
+    type: "object",
+    required: ["period_key"],
+    properties: {
+      period_key: { type: "string" }
+    }
+  }
+};
+
 const preopSubmitSchema = {
   body: {
     type: "object",
@@ -403,6 +791,7 @@ const preopSubmitSchema = {
 module.exports = {
   scheduleSchema,
   punchSchema,
+  biometricEnrollmentSchema,
   routeSchema,
   routeBulkSchema,
   routePrevalidateSchema,
@@ -412,6 +801,8 @@ module.exports = {
   workActivitySchema,
   employeeSchema,
   employeePatchSchema,
+  employeeContractAddendumSchema,
+  employeeRehireSchema,
   laborEntitySchema,
   laborEntityPatchSchema,
   laborEntityLinkSchema,
@@ -421,5 +812,25 @@ module.exports = {
   laborParameterPatchSchema,
   surchargeConceptSchema,
   surchargeConceptPatchSchema,
+  payrollLiquidationSchema,
+  payrollLiquidationDeleteSchema,
+  socialBenefitProvisionSchema,
+  socialBenefitPaymentSchema,
+  payrollAdjustmentSchema,
+  payrollExternalWorkdaysImportSchema,
+  payrollExternalWorkdaysDeleteSchema,
+  payrollConceptSchema,
+  payrollConceptPatchSchema,
+  employeeSalarySchema,
+  calendarDaySchema,
+  calendarDayPatchSchema,
+  libranzaConceptSchema,
+  libranzaConceptPatchSchema,
+  employeeLibranzaSchema,
+  employeeLibranzaPatchSchema,
+  employeeTerminationLiquidationSchema,
+  socialContributionSchema,
+  payrollPeriodClosureSchema,
+  payrollPeriodReopenSchema,
   preopSubmitSchema
 };

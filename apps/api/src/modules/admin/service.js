@@ -1,3 +1,4 @@
+const { findEmployeeForUser } = require("../hr/employeeUserLink");
 const bcrypt = require("bcrypt");
 const { syncSupabaseCredentials } = require("../../security/supabaseAdminCredentials");
 const prisma = require("../../core/prisma");
@@ -1191,6 +1192,18 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
       user_audit_trail: [{ at: new Date().toISOString(), action: "created", module: "administracion" }],
       legacy: { migrated_from: "APEX", module: "personal" }
     };
+    const matchingEmployee = await findEmployeeForUser(tx, tenantId, { document: metadata.document, document_type: metadata.document_type, email });
+    if (matchingEmployee) {
+      // Access belongs to the user; keep payroll, contracts and personal labor data.
+      await tx.employee.update({ where: { id: matchingEmployee.id }, data: { metadata: {
+        ...matchingEmployee.metadata,
+        access: metadata.access,
+        operational: { ...(matchingEmployee.metadata?.operational || {}), ...metadata.operational },
+        profile_kind: metadata.profile_kind,
+        user_kind: metadata.user_kind,
+        user_audit_trail: [...(matchingEmployee.metadata?.user_audit_trail || []), ...metadata.user_audit_trail]
+      } } });
+    }
     const user = await tx.user.create({
       data: {
         tenant_id: tenantId,
@@ -1199,7 +1212,7 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
         password,
         role_id: role?.id || null,
         active,
-        employee: {
+        employee: matchingEmployee ? { connect: { id: matchingEmployee.id } } : {
           create: {
             tenant_id: tenantId,
             code: input.code || input.id_interno || `EMP-${Date.now()}`,

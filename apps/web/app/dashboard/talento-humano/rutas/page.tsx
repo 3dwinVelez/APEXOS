@@ -16,12 +16,12 @@ import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string }; user: { name: string } };
 type Vehicle = { id: number | string; plate: string; type: string; model: string };
-type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
+type TimeRoute = { id: number | string; code?: string; display_id?: number | string; date: string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number; notes?: string; gps_required?: boolean; tracking_mode?: string; kind?: string; metadata?: Record<string, unknown> };
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; status?: string; latitude?: number | null; longitude?: number | null; age_seconds?: number | null; last_punch_type?: string; last_punch_time?: string; last_activity_type?: string; last_activity_time?: string };
-type MonitorEvidence = { id?: number | string; source?: "activity" | "punch"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean };
-type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence };
+type MonitorEvidence = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean; items?: MonitorEvidence[] };
+type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence; identity_evidence?: MonitorEvidence; metadata?: { identity_verification?: { status?: string } } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
 type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[]; truncation?: ScheduleTruncationSignal };
@@ -29,7 +29,7 @@ type MonitorMark = { id: number | string; type: string; time?: string };
 type MonitorMarksByUser = { user_name: string; marks: MonitorMark[] };
 type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[] };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; truncation?: ScheduleTruncationSignal; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
-type MonitorEvidenceBatch = { route_id: number | string; generated_at: string; punch_evidence: Record<string, MonitorEvidence>; activity_evidence: Record<string, MonitorEvidence[]>; counts: { punches: number; punch_evidence: number; activities: number; activity_evidence: number } };
+type MonitorEvidenceBatch = { route_id: number | string; generated_at: string; punch_evidence: Record<string, MonitorEvidence>; identity_evidence?: Record<string, MonitorEvidence>; activity_evidence: Record<string, MonitorEvidence[]>; counts: { punches: number; punch_evidence: number; activities: number; activity_evidence: number } };
 type RouteDeletionBlocker = { code: string; message: string; detail?: Record<string, unknown> };
 type RouteDeletionImpact = {
   route_id: number | string;
@@ -82,7 +82,13 @@ type TimelineEvent = {
   accuracy_meters?: number | null;
   observation: string;
   evidence: MonitorEvidence[];
+  // Marcacion de la app firmada con la huella del telefono registrado.
+  identityVerified?: boolean;
 };
+
+function hasEvidenceFile(item?: MonitorEvidence | null): item is MonitorEvidence {
+  return Boolean(item && (item.base64_data || item.file_url || item.has_base64_data));
+}
 
 const punchSequence = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchShortNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
@@ -421,7 +427,7 @@ export default function RoutesPlanningPage() {
   const [savingRoute, setSavingRoute] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [saveNotice, setSaveNotice] = useState<{ tone: "info" | "error"; text: string } | null>(null);
-  const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true });
+  const [form, setForm] = useState({ date: initialDate, vehicle_plate: "", employees: [] as string[], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true, kind: "trabajo" });
   const [scheduleKind, setScheduleKind] = useState<"administrative" | "operational">("administrative");
   const [administrativeSite, setAdministrativeSite] = useState("SEDE-PRINCIPAL");
   const [bulkMode, setBulkMode] = useState(false);
@@ -550,7 +556,7 @@ export default function RoutesPlanningPage() {
 
   function resetForm() {
     const today = localCalendarDate();
-    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true });
+    setForm({ date: today, vehicle_plate: "", employees: [], start_time: "08:00", end_time: "17:00", tolerance_minutes: 15, notes: "", gps_required: true, kind: "trabajo" });
     setScheduleKind("administrative");
     setAdministrativeSite("SEDE-PRINCIPAL");
     setBulk({ start_date: today, end_date: addDays(today, 4), weekdays: [1, 2, 3, 4, 5] });
@@ -583,15 +589,19 @@ export default function RoutesPlanningPage() {
   }
 
   const loadTimelineEvidence = useCallback(async (event: TimelineEvent) => {
-    const summary = event.evidence?.[0];
-    if (summary?.id == null || loadingEvidence[event.id]) return;
-    const source = event.kind === "marca" ? "punch" : "activity";
+    const summaries = (event.evidence || []).filter((item) => item?.id != null);
+    if (!summaries.length || loadingEvidence[event.id]) return;
     setLoadingEvidence((current) => ({ ...current, [event.id]: true }));
     setEvidenceErrors((current) => ({ ...current, [event.id]: "" }));
     try {
-      const evidence = await api<MonitorEvidence>(`/api/v1/hr/monitor-evidence/${source}/${encodeURIComponent(String(summary.id))}`, { cache: "no-store" });
-      if (!evidence.base64_data && !evidence.file_url) throw new Error("La evidencia no contiene un archivo visible.");
-      setLoadedEvidence((current) => ({ ...current, [event.id]: [evidence] }));
+      const loaded = await Promise.all(summaries.map((summary) => {
+        const source = summary.source || (event.kind === "marca" ? "punch" : "activity");
+        return api<MonitorEvidence>(`/api/v1/hr/monitor-evidence/${source}/${encodeURIComponent(String(summary.id))}`, { cache: "no-store" });
+      }));
+      const files = loaded.flatMap((item) => item.items?.length ? item.items : [item]);
+      const evidence = files.filter((item, index) => (item.base64_data || item.file_url) && files.findIndex(other => (other.base64_data || other.file_url) === (item.base64_data || item.file_url)) === index);
+      if (!evidence.length) throw new Error("La evidencia no contiene un archivo visible.");
+      setLoadedEvidence((current) => ({ ...current, [event.id]: evidence }));
     } catch (error) {
       setEvidenceErrors((current) => ({ ...current, [event.id]: error instanceof Error ? error.message : "No fue posible cargar la evidencia." }));
     } finally {
@@ -604,7 +614,12 @@ export default function RoutesPlanningPage() {
     try {
       const batch = await api<MonitorEvidenceBatch>(`/api/v1/hr/monitor-evidence/route/${encodeURIComponent(String(routeId))}`, { cache: "no-store" });
       const merged: Record<string, MonitorEvidence[]> = {};
-      for (const [id, payload] of Object.entries(batch.punch_evidence || {})) merged[`punch-${id}`] = [payload];
+      const punchIds = new Set([...Object.keys(batch.punch_evidence || {}), ...Object.keys(batch.identity_evidence || {})]);
+      for (const id of punchIds) {
+        const files = [batch.punch_evidence?.[id], batch.identity_evidence?.[id]].flatMap(item => item?.items?.length ? item.items : [item]).filter((item): item is MonitorEvidence => Boolean(item?.base64_data || item?.file_url));
+        const items = files.filter((item, index) => files.findIndex(other => (other.base64_data || other.file_url) === (item.base64_data || item.file_url)) === index);
+        if (items.length) merged[`punch-${id}`] = items;
+      }
       for (const [id, items] of Object.entries(batch.activity_evidence || {})) merged[`activity-${id}`] = items;
       setLoadedEvidence((current) => ({ ...current, ...merged }));
     } catch {
@@ -631,7 +646,8 @@ export default function RoutesPlanningPage() {
         end_time: route.end_time || "17:00",
         tolerance_minutes: route.tolerance_minutes ?? 15,
         notes: notesWithoutAdministrativeSite(route.notes || ""),
-        gps_required: scheduleGpsRequired(route)
+        gps_required: scheduleGpsRequired(route),
+        kind: route.kind === "descanso" ? "descanso" : "trabajo"
       });
       setBulk({ start_date: date, end_date: addDays(date, 4), weekdays: [1, 2, 3, 4, 5] });
     }
@@ -653,7 +669,8 @@ export default function RoutesPlanningPage() {
       end_time: route.end_time || "17:00",
       tolerance_minutes: route.tolerance_minutes ?? 15,
       notes: notesWithoutAdministrativeSite(route.notes || ""),
-      gps_required: scheduleGpsRequired(route)
+      gps_required: scheduleGpsRequired(route),
+      kind: route.kind === "descanso" ? "descanso" : "trabajo"
     });
     setModal("edit");
   }
@@ -880,7 +897,7 @@ export default function RoutesPlanningPage() {
   const selectedTimeline = useMemo(() => {
     if (!selectedRoute) return [];
     return [
-      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, type: event.type, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: event.extra_evidence?.base64_data || event.extra_evidence?.file_url || event.extra_evidence?.has_base64_data ? [event.extra_evidence] : [] })),
+      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, type: event.type, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: [event.extra_evidence, event.identity_evidence].filter(hasEvidenceFile), identityVerified: event.metadata?.identity_verification?.status === "verified" })),
       ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, type: event.type, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
@@ -1181,6 +1198,19 @@ export default function RoutesPlanningPage() {
               </div>
             </div>
             <div className="md:col-span-2">
+              <p className="mb-1.5 text-sm font-semibold text-content-strong">Tipo de jornada</p>
+              <div className="grid gap-2 rounded-md border border-line bg-surface p-1.5 sm:grid-cols-2">
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.kind !== "descanso" ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setForm((prev) => ({ ...prev, kind: "trabajo" }))} type="button">
+                  Trabajo
+                  <span className="mt-1 block text-xs font-medium opacity-80">Dia laborable: se espera marcacion.</span>
+                </button>
+                <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.kind === "descanso" ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setForm((prev) => ({ ...prev, kind: "descanso" }))} type="button">
+                  Descanso
+                  <span className="mt-1 block text-xs font-medium opacity-80">Dia de descanso: se paga sin marcacion.</span>
+                </button>
+              </div>
+            </div>
+            <div className="md:col-span-2">
               <p className="mb-1.5 text-sm font-semibold text-content-strong">Control de marcacion</p>
               <div className="grid gap-2 rounded-md border border-line bg-surface p-1.5 sm:grid-cols-2">
                 <button className={`rounded-md px-3 py-2 text-left text-sm font-semibold ${form.gps_required ? "bg-apex text-white" : "bg-paper text-content-body"}`} onClick={() => setForm((prev) => ({ ...prev, gps_required: true }))} type="button">
@@ -1293,7 +1323,7 @@ export default function RoutesPlanningPage() {
           <section
             aria-label="Monitor de horario"
             aria-modal="true"
-            className="flex max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay"
+            className="flex h-dvh md:h-auto max-h-[calc(100dvh-1rem)] w-full max-w-full flex-col overflow-hidden rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-6xl md:rounded-overlay"
             ref={monitorDialogRef}
             role="dialog"
             tabIndex={-1}
@@ -1505,6 +1535,7 @@ export default function RoutesPlanningPage() {
                                   <p className="font-semibold text-content-strong">{event.title}</p>
                                   <Badge tone={event.kind === "marca" ? "neutral" : "info"}>{event.kind === "marca" ? "Marcacion" : "Actividad"}</Badge>
                                   {punctuality ? <Badge tone={punctuality.tone}><PunctualityIcon size={12} /> {punctuality.label}</Badge> : null}
+                                  {"identityVerified" in event && event.identityVerified ? <Badge tone="success">Identidad verificada</Badge> : null}
                                 </div>
                                 <p className="mt-1 text-sm text-content-muted">{event.user_name} · <span className="font-semibold text-content-body">{formatHour(event.time)}</span></p>
                                 {event.observation ? <p className="mt-1.5 text-sm text-content-body">{event.observation}</p> : null}

@@ -38,7 +38,7 @@ const REPORT_PAGE = path.join(WEB, "app/dashboard/talento-humano/reportes/page.t
 const ROUTES_PAGE = path.join(WEB, "app/dashboard/talento-humano/rutas/page.tsx");
 
 const result = {
-  change_id: "hr-report-punch-alerts-20260928",
+  change_id: String(args.changeId || "hr-report-alerts-presentation-20261001"),
   certification: "hr-report-punch-alerts-local",
   environment: "LOCAL",
   generated_at: new Date().toISOString(),
@@ -98,10 +98,15 @@ function main() {
   check("report_renders_alert_column_and_badges", [
     /from "@\/lib\/punchPunctuality"/,
     /"Cierre", "Alertas", "Laboradas"/,
-    /row\.punchAlerts\.map/,
-    /<Badge key=\{`\$\{row\.key\}-\$\{alert\.type\}`\} tone=\{alert\.tone\}/,
+    /function PunchAlertStack/,
+    /function reportPunchAlerts/,
+    /alerts\.map/,
+    /rowKey=\{row\.key\}/,
+    /w-\[22rem\]/,
+    /const punchAlerts = reportPunchAlerts\(entry, exit, route\)/,
+    /<Badge className="min-h-8 w-full justify-start gap-2 rounded-md px-2.5 py-1.5 text-left leading-4"/,
     /colSpan=\{13\}/
-  ].every((pattern) => pattern.test(reportSrc)), { column: /"Alertas"/.test(reportSrc) });
+  ].every((pattern) => pattern.test(reportSrc)) && !/const punchAlerts = events\.flatMap/.test(reportSrc), { column: /"Alertas"/.test(reportSrc) });
 
   check("report_exports_alerts_in_xlsx", [
     /alerta_entrada: row\.punchAlerts\.find\(\(alert\) => alert\.type === "entrada"\)/,
@@ -111,6 +116,25 @@ function main() {
   ].every((pattern) => pattern.test(reportSrc)), { xlsx: true });
 
   check("report_detail_shows_alert_badge", /event\.alert \? <Badge tone=\{event\.alert\.tone\}>\{event\.alert\.label\}<\/Badge> : null/.test(reportSrc), { detail: true });
+  check("report_detail_uses_modern_timeline", [
+    /Trazabilidad cronologica del equipo/,
+    /selected\.events\.filter\(\(event\) => event\.kind === "Marcacion"\)\.length\} marcaciones/,
+    /MapPin size=\{12\}/,
+    /Sin evidencia fotografica/,
+    /evidenceCount/,
+    /<ol className="space-y-3">/,
+    /className="relative pl-14"/,
+    /ring-4 ring-paper/,
+    /\{isMark \? "Marcacion" : "Actividad"\}/,
+    /event\.userName\} · <span className="font-semibold text-content-body">/,
+    /fixed inset-0 z-50 flex items-end justify-center/,
+    /document\.body\.style\.overflow = "hidden"/,
+    /detailDialogRef\.current\?\.focus\(\)/,
+    /overscroll-contain/,
+    /md:max-w-6xl md:rounded-overlay/,
+    /role="dialog"/,
+    /lg:grid-cols-\[320px_1fr\]/
+  ].every((pattern) => pattern.test(reportSrc)) && !/ml-auto flex h-full/.test(reportSrc), { timeline: true });
 
   const routesSrc = readSource(ROUTES_PAGE);
   check("routes_monitor_shares_lib_without_duplication", [

@@ -34,12 +34,35 @@ test("el reporte de talento humano refleja las alertas por marcacion en tabla, d
   const page = fs.readFileSync(path.join(root, "apps/web/app/dashboard/talento-humano/reportes/page.tsx"), "utf8");
   assert.match(page, /from "@\/lib\/punchPunctuality"/);
   assert.match(page, /"Cierre", "Alertas", "Laboradas"/);
-  assert.match(page, /row\.punchAlerts\.map/);
+  assert.match(page, /function PunchAlertStack/);
+  assert.match(page, /function reportPunchAlerts/);
+  assert.match(page, /alerts\.map/);
+  assert.match(page, /rowKey=\{row\.key\}/);
+  assert.match(page, /w-\[22rem\]/);
+  assert.match(page, /const punchAlerts = reportPunchAlerts\(entry, exit, route\)/);
+  assert.doesNotMatch(page, /const punchAlerts = events\.flatMap/);
   assert.match(page, /alerta_entrada: row\.punchAlerts\.find\(\(alert\) => alert\.type === "entrada"\)/);
   assert.match(page, /alerta_cierre: row\.punchAlerts\.find\(\(alert\) => alert\.type === "salida"\)/);
   assert.match(page, /alerta: event\.alert\?\.label \|\| ""/);
   assert.match(page, /Jornadas con alerta critica/);
   assert.match(page, /event\.alert \? <Badge tone=\{event\.alert\.tone\}/);
+  assert.match(page, /Trazabilidad cronologica del equipo/);
+  assert.match(page, /selected\.events\.filter\(\(event\) => event\.kind === "Marcacion"\)\.length\} marcaciones/);
+  assert.match(page, /MapPin size=\{12\}/);
+  assert.match(page, /Sin evidencia fotografica/);
+  assert.match(page, /<ol className="space-y-3">/);
+  assert.match(page, /className="relative pl-14"/);
+  assert.match(page, /ring-4 ring-paper/);
+  assert.match(page, /\{isMark \? "Marcacion" : "Actividad"\}/);
+  assert.match(page, /event\.userName\} · <span className="font-semibold text-content-body">/);
+  assert.match(page, /fixed inset-0 z-50 flex items-end justify-center/);
+  assert.match(page, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(page, /detailDialogRef\.current\?\.focus\(\)/);
+  assert.match(page, /overscroll-contain/);
+  assert.match(page, /md:max-w-6xl md:rounded-overlay/);
+  assert.match(page, /role="dialog"/);
+  assert.match(page, /lg:grid-cols-\[320px_1fr\]/);
+  assert.doesNotMatch(page, /ml-auto flex h-full/);
 });
 
 test("el monitor de rutas y el reporte comparten la misma fuente de puntualidad", () => {
