@@ -66,9 +66,38 @@ function fail(statusCode, code, message, details) {
   throw new SettlementError(statusCode, code, message, details);
 }
 
+function nextSettlementPackageCode(codes = []) {
+  let maximum = 0n;
+  for (const code of codes) {
+    const match = /^LIQ-(\d+)$/i.exec(String(code));
+    if (match) { const value = BigInt(match[1]); if (value > maximum) maximum = value; }
+  }
+  const code = `LIQ-${String(maximum + 1n).padStart(6, "0")}`;
+  if (code.length > 40) fail(409, "TMS_SETTLEMENT_CODE_LIMIT", "Se agoto el rango del consecutivo de liquidaciones.");
+  return code;
+}
+
 function numberValue(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+// Configuracion aditiva de la etapa 4 del tarifario (todo opcional; sin metadata
+// extra el comportamiento es identico al tarifario legacy). Se replica en
+// calculateRateQuote del TMS para mantener una sola semantica de negocio.
+function rateCostConfig(rate) {
+  const meta = rate?.metadata && typeof rate.metadata === "object" ? rate.metadata : {};
+  const nonNegative = (value) => Math.max(0, numberValue(value));
+  return {
+    stops_included: nonNegative(meta.stops_included),
+    wait_included_min: nonNegative(meta.wait_time_included_min),
+    wait_rate_per_min: nonNegative(meta.wait_time_rate_per_min),
+    load_unload_flat: nonNegative(meta.load_unload_flat),
+    other_costs_amount: nonNegative(meta.other_costs_amount),
+    other_costs_label: String(meta.other_costs_label || "").trim(),
+    fuel_mode: meta.fuel_mode === "estimated" ? "estimated" : "surcharge",
+    fuel_estimated_cost: nonNegative(meta.fuel_estimated_cost)
+  };
 }
 
 function cents(value) {
@@ -205,6 +234,7 @@ function rateIsValidOn(rate, date) {
 function rateMatchesContext(rate, context) {
   if (rate.carrier_id != null && context.carrier_id != null && numberValue(rate.carrier_id) !== numberValue(context.carrier_id)) return false;
   if (rate.destination_city && context.destination_city && normalizeMatch(rate.destination_city) !== normalizeMatch(context.destination_city)) return false;
+  if (rate.destination_municipality && context.destination_municipality && normalizeMatch(rate.destination_municipality) !== normalizeMatch(context.destination_municipality)) return false;
   if (rate.destination_department && context.destination_department && normalizeMatch(rate.destination_department) !== normalizeMatch(context.destination_department)) return false;
   if (rate.vehicle_type && context.vehicle_type && normalizeMatch(rate.vehicle_type) !== normalizeMatch(context.vehicle_type)) return false;
   if (rate.service_level && context.service_level && normalizeMatch(rate.service_level) !== normalizeMatch(context.service_level)) return false;
@@ -215,7 +245,7 @@ function rateMatchesContext(rate, context) {
 // Nunca asume valor cero ni elige en silencio entre tarifas de igual prioridad.
 function resolveRate(candidates, context = {}) {
   const serviceDate = toDate(context.service_date) || new Date();
-  const trace = { context: { carrier_id: context.carrier_id ?? null, service_date: serviceDate.toISOString(), destination_city: context.destination_city ?? null, vehicle_type: context.vehicle_type ?? null, service_level: context.service_level ?? null }, evaluated: [], rejected: [] };
+  const trace = { context: { carrier_id: context.carrier_id ?? null, service_date: serviceDate.toISOString(), destination_city: context.destination_city ?? null, destination_department: context.destination_department ?? null, destination_municipality: context.destination_municipality ?? null, vehicle_type: context.vehicle_type ?? null, service_level: context.service_level ?? null }, evaluated: [], rejected: [] };
 
   const active = (candidates || []).filter((rate) => normalizeMatch(rate.status) === "activa" && rate.active !== false);
   for (const rate of candidates || []) {
@@ -258,22 +288,29 @@ function resolveRate(candidates, context = {}) {
 // en centavos enteros, y multiplica por la cantidad/base del detalle.
 function calculateItemAmount(rate, item = {}) {
   const quantity = numberValue(item.quantity, 1) || 1;
+  const config = rateCostConfig(rate);
   const metrics = {
     distance_km: numberValue(item.distance_km),
     weight_kg: numberValue(item.weight_kg),
     volume_m3: numberValue(item.volume_m3),
-    stop_count: numberValue(item.stop_count, 1)
+    stop_count: numberValue(item.stop_count, 1),
+    wait_minutes: numberValue(item.wait_minutes)
   };
   const components = {
     base: numberValue(rate.base_rate),
     distance: numberValue(rate.price_per_km) * metrics.distance_km,
     weight: numberValue(rate.price_per_kg) * metrics.weight_kg,
     volume: numberValue(rate.price_per_m3) * metrics.volume_m3,
-    stops: numberValue(rate.price_per_stop) * metrics.stop_count,
+    stops: numberValue(rate.price_per_stop) * Math.max(0, metrics.stop_count - config.stops_included),
     tolls: numberValue(rate.tolls_flat)
   };
+  const billableWaitMin = Math.max(0, metrics.wait_minutes - config.wait_included_min);
+  if (config.wait_rate_per_min > 0 && billableWaitMin > 0) components.wait_time = config.wait_rate_per_min * billableWaitMin;
+  if (config.load_unload_flat > 0) components.load_unload = config.load_unload_flat;
+  if (config.other_costs_amount > 0) components.other_costs = config.other_costs_amount;
   const beforeFuelCents = Object.values(components).reduce((sum, value) => sum + cents(value), 0);
-  const fuelCents = Math.round((beforeFuelCents / 100) * numberValue(rate.fuel_surcharge_pct) );
+  // Combustible estimado (costo fijo del simulador) REEMPLAZA al recargo porcentual: nunca ambos.
+  const fuelCents = config.fuel_mode === "estimated" ? cents(config.fuel_estimated_cost) : Math.round((beforeFuelCents / 100) * numberValue(rate.fuel_surcharge_pct) );
   const calculatedCents = beforeFuelCents + fuelCents;
   const minimumCents = cents(rate.minimum_charge);
   const unitCents = Math.max(calculatedCents, minimumCents);
@@ -297,9 +334,54 @@ function calculateItemAmount(rate, item = {}) {
       currency: rate.currency || "COP",
       priority: numberValue(rate.priority, 100),
       components: roundedComponents,
-      minimum_applied: unitCents > calculatedCents
+      minimum_applied: unitCents > calculatedCents,
+      ...(config.fuel_mode === "estimated" ? { fuel_mode: "estimated", fuel_estimated_cost: round2(config.fuel_estimated_cost) } : {}),
+      ...(config.other_costs_label ? { other_costs_label: config.other_costs_label } : {})
     }
   };
+}
+
+// Cobros pactados por documento: el soporte identifica el documento afectado,
+// no es una URL que el servidor deba descargar ni un importe confiado al cliente.
+function normalizeChargeCriteria(criteria) {
+  if (!Array.isArray(criteria) || !criteria.length || criteria.length > 50) fail(400, "TMS_SETTLEMENT_CRITERIA_REQUIRED", "Cada documento requiere entre 1 y 50 criterios de cobro.");
+  return criteria.map((entry) => {
+    const concept = String(entry?.concept || "").trim();
+    const support = String(entry?.support || "").trim();
+    const quantity = Number(entry?.quantity);
+    const unit_value = Number(entry?.unit_value);
+    if (!concept || concept.length > 160 || !support || support.length > 1000 || !Number.isFinite(quantity) || quantity <= 0 || quantity > 1e6 || !Number.isFinite(unit_value) || unit_value < 0 || unit_value > 1e10) fail(400, "TMS_SETTLEMENT_CRITERION_INVALID", "Indique concepto, cantidad positiva, valor no negativo y soporte por criterio.");
+    const linked = entry?.rate_card_id != null;
+    if (linked && (!Number.isInteger(entry.rate_card_id) || entry.rate_card_id <= 0)) fail(400, "TMS_SETTLEMENT_RATE_INVALID", "Seleccione un tarifario valido.");
+    const metrics = {};
+    if (linked) for (const key of ["distance_km", "weight_kg", "volume_m3", "stop_count", "wait_minutes"]) {
+      if (entry.metrics?.[key] == null) continue;
+      const value = Number(entry.metrics[key]);
+      if (!Number.isFinite(value) || value < 0 || value > 1e9 || (key === "stop_count" && !Number.isInteger(value))) fail(400, "TMS_SETTLEMENT_RATE_METRICS_INVALID", "Las cantidades del servicio deben ser validas y no negativas.");
+      metrics[key] = value;
+    }
+    return { concept, support, quantity, unit_value: round2(unit_value), ...(linked ? { rate_card_id: entry.rate_card_id, ...(entry.rate_version != null ? { rate_version: entry.rate_version } : {}), metrics } : {}) };
+  });
+}
+
+function settlementRateMetrics(rate, supplied = {}) {
+  const simulation = rate.metadata?.simulation || {};
+  const validPoint = (point) => point?.latitude != null && point?.longitude != null;
+  const defaults = { distance_km: numberValue(simulation.distance_km), weight_kg: 1, volume_m3: 1, stop_count: (simulation.stops || []).filter(validPoint).length + (simulation.destination_latitude != null && simulation.destination_longitude != null ? 1 : 0), wait_minutes: 0 };
+  defaults.stop_count = defaults.stop_count || 1;
+  const metrics = { ...defaults, ...supplied };
+  for (const [field, coefficient] of [["distance_km", rate.price_per_km], ["weight_kg", rate.price_per_kg], ["volume_m3", rate.price_per_m3]]) {
+    if (numberValue(coefficient) > 0 && !(numberValue(metrics[field]) > 0)) fail(400, "TMS_SETTLEMENT_RATE_METRIC_REQUIRED", `La tarifa requiere ${field === "distance_km" ? "distancia en kilometros" : field === "weight_kg" ? "peso en kilogramos" : "volumen en metros cubicos"}.`);
+  }
+  return metrics;
+}
+
+function calculateChargeCriteria(criteria) {
+  const normalized = normalizeChargeCriteria(criteria);
+  const lines = normalized.map((entry) => ({ ...entry, amount: fromCents(Math.round(cents(entry.unit_value) * entry.quantity)) }));
+  const total = lines.reduce((sum, entry) => sum + cents(entry.amount), 0);
+  if (!Number.isSafeInteger(total) || total > 1e14) fail(400, "TMS_SETTLEMENT_CRITERIA_LIMIT", "El total excede el limite permitido.");
+  return { amount: fromCents(total), criteria: lines };
 }
 
 // ---- RB-07: totales separando calculado vs ajustado (nunca un unico campo opaco) ----
@@ -366,7 +448,94 @@ function assertDecisionComment(decision, comment) {
   }
 }
 
+// ---- Consolidacion de ingresos por vehiculo (vista torre de liquidacion) ----
+// Agrupa las lineas de los paquetes por placa normalizada para exponer el ingreso que
+// genera cada vehiculo. Es pura: recibe paquetes ya serializados (items con montos numericos).
+// Los montos se acumulan en centavos enteros, jamas en float.
+function consolidateByVehicle(packages = []) {
+  const buckets = new Map();
+  for (const pkg of packages) {
+    for (const item of pkg.items || []) {
+      const plate = String(item.vehicle_plate || "").trim();
+      const key = normalizeMatch(plate) || "sin-placa";
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = {
+          vehicle_key: key,
+          vehicle_plate: plate ? plate.toUpperCase() : "SIN PLACA",
+          vehicle_type: null,
+          line_count: 0,
+          calculated_cents: 0,
+          adjusted_cents: 0,
+          approved_cents: 0,
+          weight_kg: 0,
+          volume_m3: 0,
+          distance_km: 0,
+          package_map: new Map(),
+          guides: new Set(),
+          lines: []
+        };
+        buckets.set(key, bucket);
+      }
+      if (!bucket.vehicle_type && item.vehicle_type) bucket.vehicle_type = item.vehicle_type;
+      bucket.line_count += 1;
+      const guideKey = normalizeMatch(item.guide_reference);
+      if (guideKey) bucket.guides.add(guideKey);
+      bucket.weight_kg += numberValue(item.weight_kg);
+      bucket.volume_m3 += numberValue(item.volume_m3);
+      bucket.distance_km += numberValue(item.distance_km);
+      bucket.calculated_cents += cents(item.calculated_amount);
+      bucket.adjusted_cents += cents(item.adjusted_amount);
+      bucket.approved_cents += cents(item.approved_amount);
+      if (!bucket.package_map.has(pkg.id)) {
+        bucket.package_map.set(pkg.id, {
+          id: pkg.id,
+          code: pkg.code,
+          carrier_name: pkg.carrier_name || null,
+          status: pkg.status,
+          period_code: pkg.period_code || pkg.period?.code || null
+        });
+      }
+      bucket.lines.push({
+        package_id: pkg.id,
+        package_code: pkg.code,
+        carrier_name: pkg.carrier_name || null,
+        package_status: pkg.status,
+        guide_reference: item.guide_reference || null,
+        route_description: item.route_description || null,
+        origin_name: item.origin_name || null,
+        destination_city: item.destination_city || null,
+        service_date: item.service_date || null,
+        calculated_amount: fromCents(cents(item.calculated_amount)),
+        adjusted_amount: fromCents(cents(item.adjusted_amount)),
+        approved_amount: fromCents(cents(item.approved_amount))
+      });
+    }
+  }
+  return Array.from(buckets.values())
+    .map((bucket) => ({
+      vehicle_key: bucket.vehicle_key,
+      vehicle_plate: bucket.vehicle_plate,
+      vehicle_type: bucket.vehicle_type,
+      line_count: bucket.line_count,
+      guide_count: bucket.guides.size,
+      weight_kg: round2(bucket.weight_kg),
+      volume_m3: round2(bucket.volume_m3),
+      distance_km: round2(bucket.distance_km),
+      calculated_total: fromCents(bucket.calculated_cents),
+      adjusted_total: fromCents(bucket.adjusted_cents),
+      approved_total: fromCents(bucket.approved_cents),
+      packages: Array.from(bucket.package_map.values()),
+      lines: bucket.lines
+    }))
+    .sort((a, b) => b.adjusted_total - a.adjusted_total || a.vehicle_plate.localeCompare(b.vehicle_plate));
+}
+
 module.exports = {
+  nextSettlementPackageCode,
+  settlementRateMetrics,
+  normalizeChargeCriteria,
+  calculateChargeCriteria,
   RESERVED_TYPE_CODES,
   PACKAGE_STATUS,
   PACKAGE_TRANSITIONS,
@@ -377,6 +546,7 @@ module.exports = {
   SettlementError,
   fail,
   numberValue,
+  rateCostConfig,
   cents,
   fromCents,
   round2,
@@ -401,5 +571,6 @@ module.exports = {
   assertSegregation,
   accountingIdempotencyKey,
   assertAccountingAllowed,
-  assertDecisionComment
+  assertDecisionComment,
+  consolidateByVehicle
 };

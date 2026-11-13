@@ -7,11 +7,9 @@ const { Prisma } = require("@prisma/client");
 // alguien mantiene a mano. Un modelo con columna `tenant_id` que no este en
 // TENANT_MODELS pierde el filtro de empresa en todas sus lecturas, y un modelo
 // sin la columna que este dentro recibe un `where.tenant_id` que Prisma rechaza.
-// El conjunto se deriva del schema (DMMF) y esta prueba fija el contrato: los 25
-// modelos que estaban fuera en este esquema (tesoreria, importaciones,
-// suscripciones, apex-heart y los 17 Commercial*) quedan dentro. Los 4
-// TransportPyg* solo existen en el esquema de desarrollo; no se nombran aqui
-// porque un modelo ausente del schema de main no puede filtrarse por empresa.
+// El conjunto se deriva del schema (DMMF) y esta prueba fija el contrato: los 29
+// modelos que estaban fuera (tesoreria, importaciones, suscripciones, apex-heart,
+// los 17 Commercial* y los 4 TransportPyg*) quedan dentro.
 
 const tenantModelsPath = require.resolve("../src/core/tenantModels");
 const prismaPath = require.resolve("../src/core/prisma");
@@ -32,6 +30,7 @@ test("los modelos que estaban fuera ahora estan cubiertos", () => {
   const formerlyMissing = [
     "TreasuryBank", "TreasuryAdvance", "TreasuryAdvanceApplication", "TreasuryPayment", "TreasuryPaymentApplication",
     "PurchaseImport", "PurchaseImportCost", "Subscription", "ApexHeartReportSchedule",
+    "TransportPygConcept", "TransportPygBudget", "TransportPygSourceMap", "TransportPygConfig",
     "CommercialAdvisor", "CommercialCustomer", "CommercialCustomerCommitment", "CommercialZone",
     "CommercialCustomerCategory", "CommercialPeriod", "CommercialAdvisorBudget", "CommercialCustomerBudget",
     "CommercialVisit", "CommercialVisitEvent", "CommercialSettings", "CommercialVisitReason",
@@ -82,10 +81,10 @@ test("el middleware filtra un modelo de tesoreria que antes quedaba fuera", asyn
   assert.equal(read.where.tenant_id, "empresa-a");
 });
 
-test("el middleware filtra gestion comercial y estampa la empresa al crear", async () => {
+test("el middleware filtra gestion comercial y pyg, y estampa la empresa al crear", async () => {
   const read = await probe((prisma) => prisma.runWithTenant("empresa-a", () => prisma.commercialVisit.findMany({})));
   assert.equal(read.where.tenant_id, "empresa-a");
-  const write = await probe((prisma) => prisma.runWithTenant("empresa-a", () => prisma.commercialCustomer.create({ data: { name: "X" } })));
+  const write = await probe((prisma) => prisma.runWithTenant("empresa-a", () => prisma.transportPygConcept.create({ data: { code: "X" } })));
   assert.equal(write.data.tenant_id, "empresa-a");
 });
 

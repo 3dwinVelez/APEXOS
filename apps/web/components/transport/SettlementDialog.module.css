@@ -1,0 +1,22 @@
+.dialog {
+  color: rgb(var(--text-strong));
+  background: rgb(var(--surface));
+}
+
+/* El portal sale de los contenedores transformados del dashboard. */
+:global(div.fixed):has(> .dialog) {
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.dialog {
+  max-height: calc(100dvh - 2rem);
+  max-width: min(64rem, calc(100vw - 2rem));
+  border-radius: .85rem;
+}
+:global(div.fixed):has(> .nested) { z-index: 120; }
+.nested { max-width: min(30rem, calc(100vw - 2rem)); }
+
+.dialog.dialog :global(.settlement-store-tag) { background: rgb(var(--color-apex) / .1); color: rgb(var(--text-strong)); border-color: rgb(var(--color-apex) / .3); }
+.dialog.dialog :global(.settlement-store-search),
+.dialog.dialog :global(.settlement-store-search:focus) { border: 0 !important; box-shadow: none !important; outline: none !important; }

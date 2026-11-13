@@ -1,4 +1,5 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 import type { CargoContainer } from "./packing-types";
 
 export type StandardVehicleProfile = {
@@ -37,9 +38,9 @@ export function VehicleProfilePicker({
   const active = profiles.find((profile) => profile.id === selected);
   return (
     <div className="space-y-2">
-      <select
+      <TransportSearchSelect
         aria-label="Tipo de vehículo estándar"
-        className="h-11 w-full rounded-lg border border-line bg-white px-3 text-sm font-medium outline-none transition focus:border-apex focus:ring-2 focus:ring-apex/20"
+        className="h-11 w-full rounded-lg border border-line bg-surface px-3 text-sm font-medium outline-none transition focus:border-apex focus:ring-2 focus:ring-apex/20"
         value={selected}
         onChange={(event) => {
           const profile = profiles.find((item) => item.id === event.target.value);
@@ -50,22 +51,22 @@ export function VehicleProfilePicker({
         {profiles.map((profile) => (
           <option key={profile.id} value={profile.id}>{profile.name} · {dimensions(profile.container)}</option>
         ))}
-      </select>
+      </TransportSearchSelect>
       {active ? (
         <div className="rounded-lg border border-apex/30 bg-apex/5 p-3" aria-live="polite">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{active.name}</p>
-              <p className="mt-0.5 text-xs text-neutral-600">{active.description}</p>
+              <p className="mt-0.5 text-xs text-content-body">{active.description}</p>
             </div>
-            <span className="shrink-0 rounded-md bg-paper px-2 py-1 text-[11px] font-semibold text-neutral-600">{kindLabel[active.kind] || active.kind}</span>
+            <span className="shrink-0 rounded-md bg-paper px-2 py-1 text-[11px] font-semibold text-content-body">{kindLabel[active.kind] || active.kind}</span>
           </div>
           <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-            <div><dt className="text-neutral-500">Espacio interior</dt><dd className="mt-0.5 font-semibold">{dimensions(active.container)}</dd></div>
-            <div><dt className="text-neutral-500">Carga útil</dt><dd className="mt-0.5 font-semibold">{active.container.max_weight.toLocaleString("es-CO")} kg</dd></div>
+            <div><dt className="text-content-muted">Espacio interior</dt><dd className="mt-0.5 font-semibold">{dimensions(active.container)}</dd></div>
+            <div><dt className="text-content-muted">Carga útil</dt><dd className="mt-0.5 font-semibold">{active.container.max_weight.toLocaleString("es-CO")} kg</dd></div>
           </dl>
         </div>
-      ) : <p className="text-xs text-neutral-500">Elige una referencia y después ajusta sus medidas si tu vehículo es diferente.</p>}
+      ) : <p className="text-xs text-content-muted">Elige una referencia y después ajusta sus medidas si tu vehículo es diferente.</p>}
     </div>
   );
 }

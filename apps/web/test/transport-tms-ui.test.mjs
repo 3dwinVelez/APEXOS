@@ -6,9 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const operation = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/operacion/page.tsx"), "utf8");
-const masters = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
+const masters = fs.readFileSync(path.resolve(directory, "../components/transport/TransportAdminCatalog.tsx"), "utf8");
 const transportLayout = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/layout.tsx"), "utf8");
 const planning = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/planeacion/page.tsx"), "utf8");
+const planningMap = fs.readFileSync(path.resolve(directory, "../components/transport/PlanningRouteMap.tsx"), "utf8");
 const rates = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/tarifas/page.tsx"), "utf8");
 const configuration = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/configuracion/page.tsx"), "utf8");
 const orders = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/ordenes/page.tsx"), "utf8");
@@ -49,9 +50,17 @@ test("Transporte organiza el trabajo por etapas sin navegación redundante", () 
 });
 
 test("Transporte separa flota, operacion y maestros TMS", () => {
-  for (const route of ["flota", "operacion", "maestros", "planeacion", "tarifas", "configuracion", "ordenes", "monitoreo", "notificaciones", "pod"]) {
+  for (const route of ["flota", "operacion", "planeacion", "tarifas", "configuracion", "ordenes", "monitoreo", "notificaciones", "pod"]) {
     assert.match(fleet, new RegExp(`/dashboard/transporte/${route}`));
   }
+  assert.doesNotMatch(fleet, /\/dashboard\/transporte\/maestros/);
+});
+test("los maestros TMS viven en Configuracion bajo su categoria", () => {
+  const adminHub = fs.readFileSync(path.resolve(directory, "../app/dashboard/administracion/page.tsx"), "utf8");
+  const redirectPage = fs.readFileSync(path.resolve(directory, "../app/dashboard/transporte/maestros/page.tsx"), "utf8");
+  assert.match(adminHub, /key: "transport_destinations"/);
+  assert.doesNotMatch(adminHub, /key: "maestros-transporte"/);
+  assert.match(redirectPage, /redirect\("\/dashboard\/administracion"\)/);
 });
 test("POD expone KPIs, filtros y evidencia", () => { assert.match(pod, /\/transport\/pod\/stats/); assert.match(pod, /Primer intento/); assert.match(pod, /photos/); assert.match(pod, /signature/); });
 test("la operacion carga foto y firma POD como archivos", () => { assert.match(operation, /pod_photo/); assert.match(operation, /pod_signature_file/); assert.match(operation, /\/evidence/); assert.match(operation, /FormData/); });
@@ -69,7 +78,10 @@ test("las ordenes TMS conectan modulos activos y ofrecen una plantilla Excel gui
   assert.match(orders, /\/transport\/orders\/intake/);
   assert.match(orders, /\/transport\/orders\/sync/);
   assert.match(orders, /Conexión automática activa/);
-  assert.match(orders, /Pedidos externos/);
+  assert.match(orders, /Monitor de pedidos/);
+  assert.match(orders, /ModalFrame/);
+  assert.match(orders, /Subir Excel/);
+  assert.match(orders, /Nuevo plan/);
   assert.match(orders, /Plantilla_Pedidos_Transporte\.xlsx/);
   assert.match(orders, /Descargar plantilla Excel/);
   assert.match(orders, /Seleccionar Excel/);
@@ -92,8 +104,14 @@ test("las pantallas críticas explican la tarea y el siguiente paso en lenguaje 
   assert.match(operation, /Prepara el primer pedido para comenzar/);
   assert.match(packing, /Empieza aquí/);
   assert.match(packing, /Todavía no hay una simulación/);
-  assert.match(orders, /Paso 1 de 6 · Preparar/);
   assert.match(orders, /Debes completar/);
+});
+
+test("las ordenes abren con el monitor como protagonista sin encabezado decorativo", () => {
+  assert.doesNotMatch(orders, /<h1/);
+  assert.doesNotMatch(orders, /Paso 1 de 6/);
+  assert.match(orders, /Monitor de pedidos/);
+  assert.match(orders, /Actualizar pedidos/);
 });
 
 test("cubicaje respeta las restricciones visuales del Design System", () => {
@@ -103,7 +121,7 @@ test("cubicaje respeta las restricciones visuales del Design System", () => {
 
 test("pedidos adapta la consulta a móvil", () => {
   assert.match(orders, /md:hidden/);
-  assert.match(orders, /hidden overflow-x-auto md:block/);
+  assert.match(orders, /hidden max-h-\[560px\] overflow-auto md:block/);
   assert.match(orders, /md:grid-cols-3/);
 });
 
@@ -118,8 +136,63 @@ test("el planeador evalua consolidacion, capacidad, ruta y alternativas", () => 
   assert.match(planning, /\/transport\/planning\/workbench/);
   assert.match(planning, /\/transport\/planning\/evaluate/);
   assert.match(planning, /\/transport\/planning\/commit/);
-  assert.match(planning, /Mapa esquemático del plan/);
-  assert.match(planning, /Alternativas tarifarias/);
+  assert.match(planning, /PlanningRouteMap/);
+  assert.match(planning, /Evaluar escenarios/);
+  assert.match(planning, /Parámetros bloqueados del escenario/);
+  assert.match(planning, /Monitor de escenarios logísticos/);
+  assert.match(planning, /Selecciona vehículo y compara 4 estrategias/);
+  assert.match(planning, /Sin tarifa activa para este escenario\./);
+  assert.match(planning, /route_variants/);
+});
+
+test("el planeador distingue clave invalida y cuota agotada de Google Routes", () => {
+  assert.match(planning, /invalid_key/);
+  assert.match(planning, /quota_exceeded/);
+  assert.match(planning, /Clave Google Routes rechazada/);
+  assert.match(planning, /Cuota de Google Routes agotada/);
+});
+
+test("el mapa del planeador corrige tooltips duplicados, enriquece etiquetas y garantiza alternativas reales", () => {
+  assert.doesNotMatch(planningMap, /permanent sticky/);
+  assert.match(planningMap, /detourViaPoint/);
+  assert.match(planningMap, /osrmVariantsForScenario/);
+  assert.match(planningMap, /complementWithOsrmDetours/);
+  assert.match(planningMap, /Ruta alterna/);
+  assert.match(planningMap, /delay_min/);
+  assert.match(planningMap, /Tráfico/);
+  assert.match(planningMap, /variants\.length < 2/);
+});
+
+test("el planeador valida la conexión de Google Routes en vivo desde la pantalla", () => {
+  assert.match(planning, /\/api\/v1\/transport\/route-intelligence\/status\?probe=1/);
+  assert.doesNotMatch(planning, /api<\{ probe[^\n]*\(`\/transport\/route-intelligence/);
+  assert.match(planning, /Validar conexión/);
+  assert.match(planning, /reinicia el proceso de la API/);
+});
+
+test("el mapa del planeador detecta tramos difíciles reales y compara rutas", () => {
+  assert.match(planningMap, /annotations=speed,distance/);
+  assert.match(planningMap, /difficultSegments/);
+  assert.match(planningMap, /Tramo difícil/);
+  assert.match(planningMap, /Velocidad reducida/);
+  assert.match(planningMap, /Comparación de rutas/);
+  assert.match(planningMap, /Tramos difíciles/);
+  assert.match(planningMap, /Lectura estática de velocidad de vía/);
+  assert.match(planningMap, /tramos difíciles por velocidad de vía/);
+});
+
+test("el mapa del planeador garantiza rutas alternativas dibujadas con ETA propia", () => {
+  assert.match(planningMap, /ensureAlternatives/);
+  assert.match(planningMap, /DETOUR_FACTORS/);
+  assert.match(planningMap, /DETOUR_ATTEMPT_LIMIT/);
+  assert.match(planningMap, /ratio < 1\.01 \|\| ratio > 1\.75/);
+  assert.match(planningMap, /withRouteEstimates/);
+  assert.match(planningMap, /estimateDurationMin/);
+  assert.match(planningMap, /plannedVariant/);
+  assert.match(planningMap, /ETA estimada/);
+  assert.match(planningMap, /Ruta planeada/);
+  assert.match(planningMap, /osrmCache/);
+  assert.doesNotMatch(planningMap, /route\.alternates/);
 });
 
 test("los tarifarios exponen vigencias, versiones y componentes de costo", () => {
@@ -128,6 +201,26 @@ test("los tarifarios exponen vigencias, versiones y componentes de costo", () =>
   assert.match(rates, /\/activate/);
   assert.match(rates, /price_per_km/);
   assert.match(rates, /fuel_surcharge_pct/);
+});
+
+test("el asistente no incluye ámbito geográfico y conserva la lectura de tarifas históricas", () => {
+  assert.doesNotMatch(rates, /\/api\/v1\/transport\/origins/);
+  assert.doesNotMatch(rates, /OriginQuickCreate|origin_id/);
+  assert.doesNotMatch(rates, /GeoCascade|Ámbito geográfico/);
+  assert.match(rates, /Red nacional/);
+});
+
+test("los tarifarios se editan desde el monitor con permiso dedicado manage_rates", () => {
+  const adminHub = fs.readFileSync(path.resolve(directory, "../app/dashboard/administracion/page.tsx"), "utf8");
+  const apiClient = fs.readFileSync(path.resolve(directory, "../lib/api.ts"), "utf8");
+  assert.match(rates, /Editar tarifario/);
+  assert.match(rates, /startEdit/);
+  assert.match(rates, /draftFromRate/);
+  assert.match(rates, /Guardar como nueva version/);
+  assert.match(rates, /method: "PUT"/);
+  assert.match(rates, /hasStoredRolePermission\("transport", "manage_rates"\)/);
+  assert.match(adminHub, /manage_rates: "Gestionar tarifarios"/);
+  assert.match(apiClient, /"configure", "manage_rates"/);
 });
 
 test("la torre cubre demanda, viaje, entrega y liquidacion", () => {
@@ -147,9 +240,9 @@ test("la torre cubre demanda, viaje, entrega y liquidacion", () => {
 });
 
 test("los maestros consumen contratos tenant-first del TMS", () => {
-  assert.match(masters, /\/transport\/carriers/);
-  assert.match(masters, /\/transport\/drivers/);
+  assert.match(masters, /route: "carriers"/);
+  assert.doesNotMatch(masters, /route: "drivers"/);
   assert.match(masters, /\/transport\/delivery-points/);
-  assert.match(masters, /Direccion normalizada/);
-  assert.match(masters, /window_start/);
+  assert.match(masters, /Dirección/);
+  assert.match(masters, /TransportAdminCatalog/);
 });

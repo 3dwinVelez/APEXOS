@@ -16,7 +16,7 @@ const SOFT_DELETE = new Set([
   "Tenant", "User", "InventoryFamily", "InventoryFamilyAccounting",
   "Location", "Account", "ProjectResourceAssignment", "WorkSchedule",
   "ActivityType", "Vehicle", "VehicleDocument", "ServiceReference",
-  "TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard",
+  "TransportCarrier", "TransportDriver", "Sede", "TransportDeliveryPoint", "TransportRateCard",
   "TransportSettlementType",
   // Comercio: solo los maestros (productos y clientes) tienen `active`. Ventas, creditos,
   // cuotas, abonos, compras y gastos son documentos que se anulan por status ('voided'),
@@ -34,7 +34,7 @@ const PHYSICAL_DELETE_ALLOWED = new Set([
   "ApexHeartAlert", "ApexHeartInventorySnapshot",
   "RoutePreoperationalChecklist", "RoutePreoperationalChecklistAnswer", "RoutePreoperationalChecklistEvidence",
   "RoutePreoperationalFinding", "RouteStartAuthorization", "RouteBlockEvent",
-  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem",
+  "ItemLocation", "ServiceReferencePart", "TimeRoute", "TransportSettlementItem", "TransportPlan",
   // Promociones: se archivan por status; solo el borrador se elimina fisicamente y sus
   // categorias/productos/envios caen por ON DELETE CASCADE en la misma operacion.
   "ComercioPromotion", "ComercioPromotionCategory", "ComercioPromotionProduct", "ComercioPromotionSend"

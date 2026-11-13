@@ -53,15 +53,15 @@ test("el tracking movil normaliza posiciones y rechaza coordenadas o tiempos imp
 });
 
 test("la importacion CSV respeta encabezados y valores entre comillas", () => {
-  const rows = parseCsv('code,origin_code,delivery_point_code,available_at,due_at,weight_kg,volume_m3,source_reference\nORD-1,ORI-1,PTO-1,2026-09-05T08:00:00Z,2026-09-05T17:00:00Z,120,2.5,"PED,001"');
+  const rows = parseCsv('code,sede_code,delivery_point_code,available_at,due_at,weight_kg,volume_m3,source_reference\nORD-1,SEDE-1,PTO-1,2026-09-05T08:00:00Z,2026-09-05T17:00:00Z,120,2.5,"PED,001"');
   assert.equal(rows.length, 1);
   assert.equal(rows[0].row, 2);
   assert.equal(rows[0].data.source_reference, "PED,001");
 });
 
 test("la entrada autonoma entiende encabezados de transporte en español y separador regional", () => {
-  const rows = parseCsv("pedido;origen;destino;fecha_disponible;fecha_entrega;peso_kg;volumen_m3;referencia\nPED-1;ORI-1;PTO-1;2026-09-15;2026-09-16;120;2.5;CLIENTE-1");
-  assert.deepEqual(rows[0].data, { code: "PED-1", origin_code: "ORI-1", delivery_point_code: "PTO-1", available_at: "2026-09-15", due_at: "2026-09-16", weight_kg: "120", volume_m3: "2.5", source_reference: "CLIENTE-1" });
+  const rows = parseCsv("pedido;origen;destino;fecha_disponible;fecha_entrega;peso_kg;volumen_m3;referencia\nPED-1;SEDE-1;PTO-1;2026-09-15;2026-09-16;120;2.5;CLIENTE-1");
+  assert.deepEqual(rows[0].data, { code: "PED-1", sede_code: "SEDE-1", delivery_point_code: "PTO-1", available_at: "2026-09-15", due_at: "2026-09-16", weight_kg: "120", volume_m3: "2.5", source_reference: "CLIENTE-1" });
 });
 
 test("la plantilla admite campos logísticos opcionales con nombres cotidianos", () => {
@@ -91,15 +91,25 @@ test("POD exige evidencias seguras y controla cantidades parciales", () => { con
 test("la carga POD inspecciona contenido, dimensiones y MIME", async () => { const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"); assert.deepEqual(await validateEvidence(png, "image/png"), { mime: "image/png", extension: "png", width: 1, height: 1, checksum_sha256: require("node:crypto").createHash("sha256").update(png).digest("hex") }); await assert.rejects(validateEvidence(png, "image/jpeg"), (error) => error.statusCode === 415); const truncated = png.subarray(0, 24); await assert.rejects(validateEvidence(truncated, "image/png"), (error) => error.statusCode === 422); });
 test("las novedades exigen causa, responsable, evidencia y reintento futuro", () => { const valid = { result: "rechazada", cause_code: "CLIENTE_NO_RECIBE", responsible: "cliente", evidence: ["tms-evidence/acme/novedad.jpg"], next_attempt_at: new Date(Date.now() + 3600000).toISOString() }; assert.doesNotThrow(() => validateAttemptInput(valid)); assert.throws(() => validateAttemptInput({ ...valid, evidence: [] }), (error) => error.code === "TMS_NOVELTY_EVIDENCE_REQUIRED"); assert.throws(() => validateAttemptInput({ ...valid, next_attempt_at: new Date(Date.now() - 1000).toISOString() }), (error) => error.code === "TMS_RETRY_DATE_INVALID"); });
 
+test("la actualizacion de sede alcanza registros inactivos para reactivarlos", () => {
+  const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/transport/tms-service.js"), "utf8");
+  assert.match(service, /async function saveSede\(tenantId, id, input\) \{[\s\S]+?await prisma\.sede\.findFirstOrThrow\(\{ where: \{ id: Number\(id\), __includeInactive: true \} \}\);[\s\S]+?prisma\.sede\.update\(\{ where: \{ id: Number\(id\) \}, data \}\);/);
+  assert.match(service, /async function listSedes\(tenantId, query = \{\}\) \{[\s\S]+?query\.include_inactive === "true" \? \{ __includeInactive: true \}/);
+});
+
 test("el esquema y la migracion contienen la cadena TMS auditable", () => {
   const schema = fs.readFileSync(path.resolve(__dirname, "../prisma/schema.prisma"), "utf8");
   const migration = fs.readFileSync(path.resolve(__dirname, "../prisma/migrations/20260904120000_transport_tms_foundation/migration.sql"), "utf8");
-  for (const model of ["TransportCarrier", "TransportDriver", "TransportOrigin", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportTrip", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt", "TransportPod", "TransportSettlement"]) {
+  for (const model of ["TransportCarrier", "TransportDriver", "Sede", "TransportDeliveryPoint", "TransportRateCard", "TransportNeed", "TransportTrip", "TransportStop", "TransportTripEvent", "TransportDeliveryAttempt", "TransportPod", "TransportSettlement"]) {
     assert.match(schema, new RegExp(`model ${model}\\s+\\{`));
-    if (!["TransportOrigin", "TransportRateCard"].includes(model)) assert.match(migration, new RegExp(`CREATE TABLE "${model}"`));
+    if (!["Sede", "TransportRateCard"].includes(model)) assert.match(migration, new RegExp(`CREATE TABLE "${model}"`));
   }
+  assert.match(schema, /@@map\("sedes"\)/);
+  const sedesMigration = fs.readFileSync(path.resolve(__dirname, "../prisma/migrations/20261016123000_sedes_replace_origins/migration.sql"), "utf8");
+  assert.match(sedesMigration, /RENAME TO sedes/);
+  assert.match(sedesMigration, /RENAME COLUMN origin_id TO sede_id/);
+  assert.match(sedesMigration, /DROP COLUMN origin_id/);
   const planningMigration = fs.readFileSync(path.resolve(__dirname, "../prisma/migrations/20260904160000_transport_tms_planning/migration.sql"), "utf8");
-  assert.match(planningMigration, /CREATE TABLE "TransportOrigin"/);
   assert.match(planningMigration, /CREATE TABLE "TransportRateCard"/);
   assert.match(schema, /estimated_cost\s+Decimal/);
   assert.match(schema, /committed_cost\s+Decimal/);
@@ -139,10 +149,10 @@ test("las rutas TMS se registran y exigen autenticacion", async () => {
       { method: "PUT", url: "/api/v1/transport/config/mobile", payload: { tracking_enabled: true } },
       { method: "GET", url: "/api/v1/transport/carriers" },
       { method: "GET", url: "/api/v1/transport/delivery-points" },
-      { method: "GET", url: "/api/v1/transport/origins" },
+      { method: "GET", url: "/api/v1/transport/sedes" },
       { method: "GET", url: "/api/v1/transport/rate-cards" },
       { method: "GET", url: "/api/v1/transport/planning/workbench" },
-      { method: "POST", url: "/api/v1/transport/planning/evaluate", payload: { origin_id: 1, need_ids: [1] } },
+      { method: "POST", url: "/api/v1/transport/planning/evaluate", payload: { sede_id: 1, need_ids: [1] } },
       { method: "GET", url: "/api/v1/transport/needs" },
       { method: "GET", url: "/api/v1/transport/trips" },
       { method: "GET", url: "/api/v1/transport/orders" },

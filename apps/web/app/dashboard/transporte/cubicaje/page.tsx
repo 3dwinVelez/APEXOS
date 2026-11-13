@@ -1,4 +1,5 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
@@ -9,7 +10,7 @@ import type { CargoContainer, CargoItem, PackingPlan } from "@/components/transp
 
 const CargoScene = dynamic(() => import("@/components/transport/CargoScene"), {
   ssr: false,
-  loading: () => <div className="grid h-[480px] place-items-center rounded-xl border border-line bg-paper text-sm text-neutral-500">Preparando ilustrador 3D…</div>
+  loading: () => <div className="grid h-[480px] place-items-center rounded-xl border border-line bg-paper text-sm text-content-muted">Preparando ilustrador 3D…</div>
 });
 
 type Need = {
@@ -174,18 +175,18 @@ export default function CubicajePage() {
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Planeación de carga</p>
           <h1 className="text-2xl font-semibold md:text-3xl">Comprobar la carga del vehículo</h1>
-          <p className="mt-1 text-sm text-neutral-600">Selecciona un vehículo y los pedidos. APEXOS te mostrará qué cabe y cómo acomodarlo antes del cargue físico.</p>
+          <p className="mt-1 text-sm text-content-body">Selecciona un vehículo y los pedidos. APEXOS te mostrará qué cabe y cómo acomodarlo antes del cargue físico.</p>
         </div>
       </header>
 
       {error ? <p role="alert" className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">{error}</p> : null}
       {notice ? <p role="status" className="rounded-lg border border-apex p-3 text-sm text-apex">{notice}</p> : null}
 
-      <section className="rounded-md border border-line bg-white p-3" aria-label="Configurar carga">
+      <section className="rounded-md border border-line bg-surface p-3" aria-label="Configurar carga">
         <p className="text-xs font-semibold uppercase tracking-wide text-apex">Empieza aquí</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
           <button className="h-12 rounded-md bg-apex px-4 text-left text-sm font-semibold text-white" onClick={() => setPanel("space")}>1. Seleccionar vehículo</button>
-          <button className="h-12 rounded-md border border-line px-4 text-left text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("orders")}>2. Agregar pedidos <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-xs text-neutral-800">{needIds.length}</span></button>
+          <button className="h-12 rounded-md border border-line px-4 text-left text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("orders")}>2. Agregar pedidos <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-xs text-content-strong">{needIds.length}</span></button>
           <button className="h-12 rounded-md border border-line px-4 text-left text-sm font-semibold hover:border-apex hover:text-apex" onClick={() => setPanel("products")}>3. Revisar productos <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-xs">{items.length}</span></button>
         </div>
       </section>
@@ -195,19 +196,19 @@ export default function CubicajePage() {
         <TransportMetric label="Espacio utilizado" value={`${plan.volume_utilization_pct.toFixed(1)}%`} percent={plan.volume_utilization_pct || 0} hint={`${plan.packed_volume.toFixed(2)} m³`} />
         <TransportMetric label="Peso utilizado" value={`${plan.weight_utilization_pct.toFixed(1)}%`} percent={plan.weight_utilization_pct || 0} hint={`${plan.total_weight.toLocaleString()} kg`} />
         <TransportMetric label="Resultado" value={busy ? "Calculando…" : plan.feasible ? "La carga cabe" : "Requiere ajustes"} />
-      </section> : <p className="rounded-md border border-line bg-paper p-3 text-sm text-neutral-600">Todavía no hay una simulación. Completa los tres pasos para ver el acomodo y validar la capacidad.</p>}
+      </section> : <p className="rounded-md border border-line bg-paper p-3 text-sm text-content-body">Todavía no hay una simulación. Completa los tres pasos para ver el acomodo y validar la capacidad.</p>}
 
       <div className="min-w-0">
         <section className="min-w-0 space-y-4">
           <CargoScene container={plan?.container || container} plan={plan} step={step} selected={selected} onSelect={setSelected} />
 
           {plan ? (
-            <div className="rounded-md border border-line bg-white p-4">
+            <div className="rounded-md border border-line bg-surface p-4">
               <label className="flex flex-wrap items-center gap-3 text-sm">
                 Cargue virtual: {step} de {plan.placements.length}
                 <input aria-label="Paso de cargue" className="min-w-40 flex-1 accent-apex" type="range" min="0" max={plan.placements.length} value={step} onChange={e => setStep(Number(e.target.value))} />
               </label>
-              <p className="mt-2 text-xs text-neutral-500">
+              <p className="mt-2 text-xs text-content-muted">
                 {selectedBox
                   ? `${selectedBox.label} · ${selectedBox.weight} kg · posición ${selectedBox.x.toFixed(2)}, ${selectedBox.y.toFixed(2)}, ${selectedBox.z.toFixed(2)} m · carga superior ${selectedBox.load_above.toFixed(1)} kg`
                   : "Selecciona un bulto en el camión o en la tabla para inspeccionarlo. Punto rojo: centro de gravedad de la carga."}
@@ -224,7 +225,7 @@ export default function CubicajePage() {
           ) : null}
 
           {plan ? (
-            <details className="rounded-md border border-line bg-white p-4">
+            <details className="rounded-md border border-line bg-surface p-4">
               <summary className="cursor-pointer text-sm font-semibold">Ver posiciones y secuencia de cargue</summary>
               <div className="mt-3 max-h-72 overflow-auto">
                 <table className="w-full text-left text-xs">
@@ -244,8 +245,8 @@ export default function CubicajePage() {
             </details>
           ) : null}
 
-          <footer className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white p-4">
-            <p className="max-w-lg text-xs text-neutral-500">Acomodo factible por búsqueda heurística; no garantiza óptimo global. Verifica sujeción, estabilidad dinámica y límites por eje antes de cargar físicamente.</p>
+          <footer className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface p-4">
+            <p className="max-w-lg text-xs text-content-muted">Acomodo factible por búsqueda heurística; no garantiza óptimo global. Verifica sujeción, estabilidad dinámica y límites por eje antes de cargar físicamente.</p>
             <div className="flex gap-2">
               <button disabled={!plan || busy} className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-40" onClick={exportPlan}>Exportar</button>
               <button className={transportButton} disabled={!canWrite || !tripId || !plan?.feasible || busy} onClick={() => void save()}>Guardar en viaje</button>
@@ -257,16 +258,16 @@ export default function CubicajePage() {
           <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-md border border-line bg-paper p-3 sm:p-5" onMouseDown={event => event.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between gap-4 px-1">
               <div><p className="text-xs font-semibold uppercase tracking-wide text-apex">Comprobar carga</p><h2 className="text-xl font-semibold">{panel === "space" ? "1. Seleccionar vehículo" : panel === "orders" ? "2. Agregar pedidos" : "3. Revisar productos"}</h2></div>
-              <button aria-label="Cerrar configuración" className="grid h-10 w-10 place-items-center rounded-full border border-line bg-white text-xl hover:border-apex" onClick={() => setPanel(null)}>×</button>
+              <button aria-label="Cerrar configuración" className="grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-xl hover:border-apex" onClick={() => setPanel(null)}>×</button>
             </div>
           <div className={panel === "space" ? "block" : "hidden"}>
           <TransportCard title="1. Espacio de carga">
             <fieldset disabled={!canWrite} className="space-y-3">
               <label className="block text-sm">Vehículo
-                <select className={transportInput} value={vehicle} onChange={e => { setVehicle(e.target.value); const c = work.vehicles.find(v => v.id === Number(e.target.value))?.metadata?.cargo_space; if (c) setContainer(c); }}>
+                <TransportSearchSelect className={transportInput} value={vehicle} onChange={e => { setVehicle(e.target.value); const c = work.vehicles.find(v => v.id === Number(e.target.value))?.metadata?.cargo_space; if (c) setContainer(c); }}>
                   <option value="">Simular un espacio</option>
                   {work.vehicles.map(v => <option key={v.id} value={v.id}>{v.plate}</option>)}
-                </select>
+                </TransportSearchSelect>
               </label>
               <div className="space-y-1">
                 <span className="block text-sm font-medium">Tipo de vehículo estándar</span>
@@ -274,18 +275,18 @@ export default function CubicajePage() {
               </div>
               {work.profiles.length ? (
                 <label className="block text-sm">Perfil de la empresa
-                  <select className={transportInput} value="" onChange={e => { const p = work.profiles.find(p => p.id === e.target.value); if (p) applyProfile(p); }}>
+                  <TransportSearchSelect className={transportInput} value="" onChange={e => { const p = work.profiles.find(p => p.id === e.target.value); if (p) applyProfile(p); }}>
                     <option value="">Seleccionar perfil guardado</option>
                     {work.profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  </TransportSearchSelect>
                 </label>
               ) : null}
               <label className="block text-sm">Unidad de dimensiones
-                <select value={unit} className={transportInput} onChange={e => setUnit(e.target.value)}>
+                <TransportSearchSelect value={unit} className={transportInput} onChange={e => setUnit(e.target.value)}>
                   <option value="cm">Centímetros</option>
                   <option value="m">Metros</option>
                   <option value="mm">Milímetros</option>
-                </select>
+                </TransportSearchSelect>
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {([[
@@ -305,8 +306,8 @@ export default function CubicajePage() {
               </label>
               <details>
                 <summary className="cursor-pointer text-sm text-apex">Compartimientos y obstáculos</summary>
-                <p className="mt-2 text-xs text-neutral-500">Coordenadas en metros desde la cabina. Espacios separados pueden restringir grupos y temperatura. Un espacio elevado se interpreta como un piso estructural.</p>
-                <textarea aria-label="Configuración de espacios" className="mt-2 min-h-36 w-full rounded border border-line bg-white p-2 font-mono text-xs" placeholder={'{"spaces":[{"id":"principal","x":0,"y":0,"z":0,"length":6,"width":2.4,"height":2.4}],"obstacles":[]}'} value={advanced} onChange={e => setAdvanced(e.target.value)} />
+                <p className="mt-2 text-xs text-content-muted">Coordenadas en metros desde la cabina. Espacios separados pueden restringir grupos y temperatura. Un espacio elevado se interpreta como un piso estructural.</p>
+                <textarea aria-label="Configuración de espacios" className="mt-2 min-h-36 w-full rounded border border-line bg-surface p-2 font-mono text-xs" placeholder={'{"spaces":[{"id":"principal","x":0,"y":0,"z":0,"length":6,"width":2.4,"height":2.4}],"obstacles":[]}'} value={advanced} onChange={e => setAdvanced(e.target.value)} />
                 <button type="button" className="mt-2 text-sm text-apex" onClick={() => {
                   try {
                     const value = JSON.parse(advanced);
@@ -329,16 +330,16 @@ export default function CubicajePage() {
           <div className={panel === "orders" ? "block" : "hidden"}>
           <TransportCard title="2. Pedidos y viaje">
             <label className="block text-sm">Viaje para guardar
-              <select className={transportInput} value={tripId} onChange={e => selectTrip(e.target.value)}>
+              <TransportSearchSelect className={transportInput} value={tripId} onChange={e => selectTrip(e.target.value)}>
                 <option value="">Escenario sin viaje</option>
                 {work.trips.map(t => <option key={t.id} value={t.id}>{t.code}</option>)}
-              </select>
+              </TransportSearchSelect>
             </label>
             <div className="mt-3 max-h-52 space-y-2 overflow-y-auto">
               {work.needs.map(n => (
                 <label key={n.id} className="flex items-start gap-2 text-sm">
                   <input type="checkbox" className="mt-1" checked={needIds.includes(n.id)} disabled={!canWrite || !!tripId} onChange={e => loadNeeds(e.target.checked ? [...needIds, n.id] : needIds.filter(id => id !== n.id))} />
-                  <span>{n.code}<small className="block text-neutral-500">{n.lines.length} productos{!n.lines.length ? " · Falta detalle" : ""}</small></span>
+                  <span>{n.code}<small className="block text-content-muted">{n.lines.length} productos{!n.lines.length ? " · Falta detalle" : ""}</small></span>
                 </label>
               ))}
             </div>
@@ -346,13 +347,13 @@ export default function CubicajePage() {
               <input type="checkbox" checked={respectStops} onChange={e => setRespectStops(e.target.checked)} />
               Respetar orden de descarga
             </label>
-            <p className="mt-2 text-xs text-neutral-500">La primera entrega queda accesible desde la puerta trasera. Cantidades de pedidos protegidas contra cambios accidentales.</p>
+            <p className="mt-2 text-xs text-content-muted">La primera entrega queda accesible desde la puerta trasera. Cantidades de pedidos protegidas contra cambios accidentales.</p>
           </TransportCard>
           </div>
           <div className={panel === "products" ? "block" : "hidden"}>
           <TransportCard title="3. Productos y restricciones">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-neutral-500">Dimensiones por bulto ({unit}) · Peso por bulto (kg) · Máximo 250 bultos.</p>
+              <p className="text-xs text-content-muted">Dimensiones por bulto ({unit}) · Peso por bulto (kg) · Máximo 250 bultos.</p>
               {!needIds.length ? <button disabled={!canWrite} className="text-sm font-semibold text-apex" onClick={() => setItems(rows => [...rows, blankItem(`manual-${Date.now()}`)])}>Añadir producto</button> : null}
             </div>
             <div className="overflow-x-auto">
@@ -368,11 +369,11 @@ export default function CubicajePage() {
                       ))}
                       <td className="min-w-20 px-1"><input aria-label={`Peso ${item.label}`} className={transportInput} type="number" min="0.01" step="any" value={item.weight} disabled={!canWrite} onChange={e => changeItem(item.id, { weight: Number(e.target.value) })} /></td>
                       <td className="px-1">
-                        <select aria-label={`Orientación ${item.label}`} className={transportInput} value={item.rotation} disabled={!canWrite} onChange={e => changeItem(item.id, { rotation: e.target.value as CargoItem["rotation"] })}>
+                        <TransportSearchSelect aria-label={`Orientación ${item.label}`} className={transportInput} value={item.rotation} disabled={!canWrite} onChange={e => changeItem(item.id, { rotation: e.target.value as CargoItem["rotation"] })}>
                           <option value="upright">Vertical</option>
                           <option value="free">Libre</option>
                           <option value="none">Fija</option>
-                        </select>
+                        </TransportSearchSelect>
                       </td>
                       <td className="min-w-24 px-1"><input aria-label={`Carga superior ${item.label}`} className={transportInput} type="number" min="0" value={item.stackable ? item.max_top_load : 0} disabled={!canWrite} onChange={e => changeItem(item.id, { max_top_load: Number(e.target.value), stackable: Number(e.target.value) > 0 })} /></td>
                       <td className="min-w-16 px-1"><input aria-label={`Entrega ${item.label}`} className={transportInput} type="number" min="1" value={item.stop} disabled={!!item.order_id || !canWrite} onChange={e => changeItem(item.id, { stop: Number(e.target.value) })} /></td>
@@ -382,8 +383,8 @@ export default function CubicajePage() {
                 </tbody>
               </table>
             </div>
-            {!items.length ? <p className="py-6 text-center text-sm text-neutral-500">Selecciona pedidos o añade productos para comenzar.</p> : null}
-            <p className="mt-3 text-xs text-neutral-500">Carga encima = 0 impide apilar sobre el bulto. Vertical conserva su altura. No se admiten piezas flotantes ni solapamientos.</p>
+            {!items.length ? <p className="py-6 text-center text-sm text-content-muted">Selecciona pedidos o añade productos para comenzar.</p> : null}
+            <p className="mt-3 text-xs text-content-muted">Carga encima = 0 impide apilar sobre el bulto. Vertical conserva su altura. No se admiten piezas flotantes ni solapamientos.</p>
           </TransportCard>
           </div>
           </div>

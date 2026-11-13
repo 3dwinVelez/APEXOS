@@ -1,5 +1,14 @@
 const prisma = require("../../core/prisma");
-const { MAX_DOCUMENT_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
+const { ensureVehicleCenterTx, invalidateVehicleAccounting } = require("./vehicle-accounting");
+const { normalizeFileName } = require("../../security/policy");
+const {
+  BUCKET,
+  SIGNED_URL_TTL_SECONDS,
+  objectKey,
+  signedViewUrl,
+  uploadVehicleDocument,
+  validateVehicleDocument
+} = require("./vehicle-document-storage");
 
 const REQUIRED_DOCUMENTS = ["soat", "revision_tecnico_mecanica"];
 const EXPIRY_WARNING_DAYS = 30;
@@ -142,7 +151,7 @@ function vehicleData(input) {
     status,
     active: !["retirado", "inactivo"].includes(status),
     deleted_at: status === "retirado" ? new Date() : null,
-    metadata: input.metadata || {}
+    metadata: { ...(input.metadata || {}), ...(input.accounting_branch_code ? { accounting_branch_code: input.accounting_branch_code } : {}) }
   };
 }
 
@@ -201,11 +210,20 @@ function calculateVehicleMaster(vehicle, docs = []) {
   };
 }
 
+function serializeVehicleDocument(document) {
+  const { base64_data, ...rest } = document;
+  return {
+    ...rest,
+    has_attachment: Boolean(base64_data) || /^https?:\/\//i.test(String(document.file_url || "")) || String(document.storage_path || "").startsWith(`${BUCKET}/`)
+  };
+}
+
 function serializeVehicle(vehicle) {
   const master = calculateVehicleMaster(vehicle, vehicle.documents || []);
   return {
     ...vehicle,
     ...master,
+    ...(vehicle.documents ? { documents: vehicle.documents.map(serializeVehicleDocument) } : {}),
     id: Number(vehicle.id),
     audit_logs: (vehicle.audit_logs || []).map((entry) => ({ ...entry, id: String(entry.id) })),
     dashboard_metrics: master.metrics
@@ -228,10 +246,10 @@ async function refreshVehicleMaster(vehicleId) {
   return serializeVehicle({ ...vehicle, ...master });
 }
 
-async function auditVehicle(user, vehicle, action, changes, reason = "") {
+async function auditVehicle(user, vehicle, action, changes, reason = "", client = prisma) {
   const rows = changes.length ? changes : [{ field: null, old_value: null, new_value: null }];
   const toJson = (value) => value === undefined ? null : JSON.parse(JSON.stringify(value));
-  await prisma.vehicleMasterAuditLog.createMany({
+  await client.vehicleMasterAuditLog.createMany({
     data: rows.map((change) => ({
       vehicle_id: vehicle.id,
       plate: vehicle.plate,
@@ -269,6 +287,10 @@ async function listVehicles(tenantId, query = {}) {
   });
 }
 
+async function getVehicleAccountingStructure(tenantId) {
+  return require("../accounting/service").getOrganizationTree(tenantId);
+}
+
 async function createVehicle(tenantId, user, input) {
   validateVehicleInput(input);
   return prisma.runWithTenant(tenantId, async () => {
@@ -290,8 +312,14 @@ async function createVehicle(tenantId, user, input) {
       error.statusCode = 409;
       throw error;
     }
-    const vehicle = await prisma.vehicle.create({ data });
-    await auditVehicle(user, vehicle, "created", [{ field: "plate", old_value: null, new_value: vehicle.plate }]);
+    const vehicle = await prisma.$transaction(async tx => {
+      await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+      const created = await tx.vehicle.create({ data });
+      const center = await ensureVehicleCenterTx(tx, tenantId, created);
+      await auditVehicle(user, created, "created", [{ field: "plate", old_value: null, new_value: created.plate }, { field: "cost_center", old_value: null, new_value: center.code }], "", tx);
+      return created;
+    });
+    await invalidateVehicleAccounting(tenantId);
     return refreshVehicleMaster(vehicle.id);
   });
 }
@@ -320,8 +348,15 @@ async function updateVehicle(tenantId, user, id, input) {
         throw error;
       }
     }
-    const updated = await prisma.vehicle.update({ where: { id: Number(id) }, data });
-    await auditVehicle(user, updated, "updated", criticalChanges(previous, updated), input.reason || "");
+    const updated = await prisma.$transaction(async tx => {
+      await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+      const saved = await tx.vehicle.update({ where: { id: Number(id) }, data });
+      const center = await ensureVehicleCenterTx(tx, tenantId, saved, previous);
+      saved.cost_center = center.code;
+      await auditVehicle(user, saved, "updated", criticalChanges(previous, saved), input.reason || "", tx);
+      return saved;
+    });
+    await invalidateVehicleAccounting(tenantId);
     return refreshVehicleMaster(updated.id);
   });
 }
@@ -336,37 +371,66 @@ async function getVehicle(tenantId, id) {
   });
 }
 
+async function synchronizeVehicleCenters(tenantId, user, input = {}) {
+  const branchCode = String(input.branch_code || "").trim();
+  if (!branchCode) {
+    const error = new Error("Seleccione la sucursal contable para los vehiculos existentes.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const result = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    const vehicles = await tx.vehicle.findMany({ where: { tenant_id: String(tenantId), __includeInactive: true }, orderBy: { id: "asc" } });
+    const centers = [];
+    for (const vehicle of vehicles) {
+      const center = await ensureVehicleCenterTx(tx, tenantId, { ...vehicle, metadata: { ...vehicle.metadata, accounting_branch_code: branchCode } }, vehicle);
+      await auditVehicle(user, vehicle, "accounting_center_linked", [{ field: "cost_center", old_value: vehicle.cost_center, new_value: center.code }], `Sucursal contable ${branchCode}`, tx);
+      centers.push({ vehicle_id: vehicle.id, plate: vehicle.plate, cost_center: center.code, branch_code: center.branch_code });
+    }
+    return { synchronized: centers.length, centers };
+  }, { maxWait: 10000, timeout: 30000 }));
+  await invalidateVehicleAccounting(tenantId);
+  return result;
+}
+
 async function addVehicleDocument(tenantId, user, id, input) {
+  const file = input.file || null;
+  if (!file?.bytes?.length) {
+    const error = new Error("Adjunta un archivo para el documento.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const documentType = String(input.document_type || "").trim();
+  if (!documentType) {
+    const error = new Error("El tipo documental es obligatorio.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const issuedAt = dateOrNull(input.issued_at);
+  const expiresAt = dateOrNull(input.expires_at);
+  if (issuedAt && expiresAt && expiresAt < issuedAt) {
+    const error = new Error("La fecha de vencimiento del documento no puede ser anterior a la emision.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const validated = validateVehicleDocument(file.bytes, file.mimetype);
   return prisma.runWithTenant(tenantId, async () => {
     const vehicle = await prisma.vehicle.findFirstOrThrow({ where: { id: Number(id) } });
-    const issuedAt = dateOrNull(input.issued_at);
-    const expiresAt = dateOrNull(input.expires_at);
-    if (issuedAt && expiresAt && expiresAt < issuedAt) {
-      const error = new Error("La fecha de vencimiento del documento no puede ser anterior a la emision.");
-      error.statusCode = 400;
-      throw error;
-    }
-    const documentType = String(input.document_type || "").trim();
-    if (!documentType) {
-      const error = new Error("El tipo documental es obligatorio.");
-      error.statusCode = 400;
-      throw error;
-    }
-    assertSafeFile(input, { maxBytes: MAX_DOCUMENT_BYTES });
-    const fileName = normalizeFileName(input.file_name || input.name || `${documentType}-${vehicle.plate}`);
+    const fileName = normalizeFileName(file.filename || `${documentType}-${vehicle.plate}.${validated.extension}`);
     const version = await prisma.vehicleDocument.count({ where: { vehicle_id: vehicle.id, document_type: documentType } }) + 1;
-    const storagePath = input.storage_path || secureStoragePath({ tenantId, module: "transport", entity: "vehicle-documents", entityId: vehicle.id, fileName });
+    const objectPath = objectKey({ tenantId: user?.company_id || tenantId, vehicleId: vehicle.id, extension: validated.extension });
+    const storagePath = await uploadVehicleDocument({ objectPath, bytes: file.bytes, contentType: validated.mime });
     const document = await prisma.vehicleDocument.create({
       data: {
         vehicle_id: vehicle.id,
         plate: vehicle.plate,
         document_type: documentType,
         file_name: fileName,
-        file_url: input.file_url || "",
+        file_url: "",
         storage_path: storagePath,
-        base64_data: input.base64_data || "",
-        mime_type: input.mime_type || "",
-        file_size: numberOrNull(input.file_size),
+        base64_data: "",
+        mime_type: validated.mime,
+        file_size: file.bytes.length,
         issued_at: issuedAt,
         expires_at: expiresAt,
         document_status: input.document_status || documentStatus(expiresAt),
@@ -374,12 +438,62 @@ async function addVehicleDocument(tenantId, user, id, input) {
         observations: input.observations || "",
         version,
         active: input.active !== false,
-        metadata: input.metadata || {}
+        metadata: {
+          ...(input.metadata && typeof input.metadata === "object" ? input.metadata : {}),
+          storage_provider: "supabase",
+          storage_bucket: BUCKET,
+          checksum_sha256: validated.checksum_sha256,
+          ...(validated.width ? { width: validated.width, height: validated.height } : {})
+        }
       }
     });
     await auditVehicle(user, vehicle, "document_uploaded", [{ field: documentType, old_value: null, new_value: { document_id: document.id, expires_at: document.expires_at } }]);
     await refreshVehicleMaster(vehicle.id);
-    return document;
+    return serializeVehicleDocument(document);
+  });
+}
+
+async function getVehicleDocumentView(tenantId, vehicleId, documentId) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const vehicle = await prisma.vehicle.findFirstOrThrow({ where: { id: Number(vehicleId) }, select: { id: true } });
+    const document = await prisma.vehicleDocument.findFirstOrThrow({ where: { id: Number(documentId), vehicle_id: vehicle.id } });
+    const storagePath = String(document.storage_path || "");
+    const fileUrl = String(document.file_url || "");
+    const base64 = String(document.base64_data || "");
+    if (storagePath.startsWith(`${BUCKET}/`)) {
+      return {
+        document_id: document.id,
+        file_name: document.file_name,
+        mime_type: document.mime_type || "",
+        source: "storage",
+        url: await signedViewUrl(storagePath),
+        expires_in: SIGNED_URL_TTL_SECONDS
+      };
+    }
+    if (base64.startsWith("data:")) {
+      const match = /^data:([^;,]+)/i.exec(base64);
+      return {
+        document_id: document.id,
+        file_name: document.file_name,
+        mime_type: document.mime_type || (match ? match[1] : ""),
+        source: "database",
+        url: base64,
+        expires_in: null
+      };
+    }
+    if (/^https?:\/\//i.test(fileUrl)) {
+      return {
+        document_id: document.id,
+        file_name: document.file_name,
+        mime_type: document.mime_type || "",
+        source: "external",
+        url: fileUrl,
+        expires_in: null
+      };
+    }
+    const error = new Error("El documento no tiene un archivo almacenado.");
+    error.statusCode = 404;
+    throw error;
   });
 }
 
@@ -408,7 +522,7 @@ async function updateVehicleDocument(tenantId, user, vehicleId, documentId, inpu
     });
     await auditVehicle(user, vehicle, "document_updated", [{ field: previous.document_type, old_value: previous, new_value: document }], input.reason || "");
     await refreshVehicleMaster(vehicle.id);
-    return document;
+    return serializeVehicleDocument(document);
   });
 }
 
@@ -484,11 +598,14 @@ async function getVehicleDashboardMetrics(tenantId) {
 }
 
 module.exports = {
+  getVehicleAccountingStructure,
+  synchronizeVehicleCenters,
   listVehicles,
   createVehicle,
   updateVehicle,
   getVehicle,
   addVehicleDocument,
+  getVehicleDocumentView,
   updateVehicleDocument,
   getPlanningVehicleStatus,
   getVehicleDashboardMetrics

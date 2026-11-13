@@ -1,9 +1,11 @@
 "use client";
 
+import { TransportAdminCatalog, type TransportAdminCatalogKey } from "@/components/transport/TransportAdminCatalog";
 import { Button } from "@/components/ui/button";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { api, fallbackAdminPermissionCatalog } from "@/lib/api";
 import { loadModuleAccess } from "@/lib/moduleAccess";
+import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { MODULES } from "@/lib/modules";
 import { getUserDocumentUrl, uploadUserDocument } from "@/lib/supabaseStorage";
 import {
@@ -37,7 +39,7 @@ import {
   X
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type InputHTMLAttributes } from "react";
 
 const SUPABASE_PROJECT_REF = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_REF || "";
 
@@ -59,7 +61,19 @@ type Role = {
   permissions: Record<string, Record<string, boolean>>;
 };
 type RoleScopes = { locations: string[]; areas: string[]; cost_centers: string[]; processes: string[] };
-type MasterOption = { code: string; name: string; description?: string; active?: boolean; sort_order?: number };
+type MasterOption = { code: string; name: string; description?: string; active?: boolean; sort_order?: number; parent_code?: string | null };
+type SedeRow = {
+  id: number; code: string; name: string; address: string; city: string;
+  department?: string | null; country?: string;
+  latitude?: number | null; longitude?: number | null;
+  operation_start?: string | null; operation_end?: string | null;
+  service_minutes?: number; active: boolean;
+};
+type SedeDraft = {
+  code: string; name: string; address: string; city: string; department: string; country: string;
+  latitude: string; longitude: string; operation_start: string; operation_end: string; service_minutes: string;
+};
+const emptySedeDraft: SedeDraft = { code: "", name: "", address: "", city: "", department: "", country: "CO", latitude: "", longitude: "", operation_start: "", operation_end: "", service_minutes: "60" };
 type ServiceType = { code: string; label: string; active?: boolean };
 type ServiceStore = { code: string; label: string; active?: boolean };
 type SatisfactionQuestion = { id: string; label: string; active?: boolean };
@@ -93,6 +107,19 @@ type UserMasterData = {
   work_shifts: MasterOption[];
   activity_types: MasterOption[];
   banks: MasterOption[];
+  units_of_measure?: MasterOption[];
+  vehicle_types?: MasterOption[];
+  vehicle_categories?: MasterOption[];
+  vehicle_brands?: MasterOption[];
+  vehicle_lines?: MasterOption[];
+  vehicle_colors?: MasterOption[];
+  vehicle_fuels?: MasterOption[];
+  vehicle_body_types?: MasterOption[];
+  service_levels?: MasterOption[];
+  departments?: MasterOption[];
+  cities?: MasterOption[];
+  municipalities?: MasterOption[];
+  currencies?: MasterOption[];
   roles?: Role[];
 };
 type AdminUser = {
@@ -131,7 +158,7 @@ type ConfigItem = {
   title: string;
   description: string;
   status: "configurado" | "pendiente" | "activo" | "restringido";
-  modal: "roles" | "users" | "masters" | "logs" | "info";
+  modal: "roles" | "users" | "masters" | "logs" | "info" | "sedes";
   href?: string;
 };
 type ConfigCategory = {
@@ -229,11 +256,15 @@ const actionLabels: Record<string, string> = {
   sensitive: "Sensible",
   manage_users: "Gestionar usuarios",
   manage_roles: "Gestionar roles",
+  manage_rates: "Gestionar tarifarios",
+  approve_settlements: "Aprobar liquidaciones",
+  account_settlements: "Contabilizar liquidaciones",
+  liquidate_settlements: "Liquidar liquidaciones",
   edit_any_state: "Edicion especial"
 };
 
-const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles"];
-const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles"];
+const roleActions = ["access", "view", "create", "edit", "edit_any_state", "delete", "delete_physical_records", "approve", "reject", "void", "export", "import", "attach", "download", "configure", "administer", "execute", "reports", "sensitive", "manage_users", "manage_roles", "manage_rates", "approve_settlements", "account_settlements", "liquidate_settlements"];
+const compactRoleActions = ["access", "view", "create", "edit", "edit_any_state", "approve", "export", "configure", "sensitive", "manage_users", "manage_roles", "manage_rates", "approve_settlements", "account_settlements", "liquidate_settlements"];
 const defaultRoleScopes: RoleScopes = { locations: [], areas: [], cost_centers: [], processes: [] };
 
 const emptyUser: UserForm = {
@@ -321,8 +352,147 @@ const fallbackUserMasterData: UserMasterData = {
     { code: "ACT-03", name: "Entrega en tienda" },
     { code: "ACT-04", name: "Novedad en ruta" }
   ],
-  banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }]
+  banks: [{ code: "BANCOLOMBIA", name: "Bancolombia" }, { code: "BOGOTA", name: "Banco de Bogota" }, { code: "DAVIVIENDA", name: "Davivienda" }],
+  units_of_measure: [{ code: "UND", name: "Unidad" }, { code: "KG", name: "Kilogramo" }, { code: "TON", name: "Tonelada" }, { code: "M3", name: "Metro cubico" }, { code: "LB", name: "Libra" }, { code: "HORA", name: "Hora" }],
+  vehicle_types: [{ code: "camioneta", name: "Camioneta" }, { code: "furgon", name: "Furgon" }, { code: "camion", name: "Camion" }, { code: "motocicleta", name: "Motocicleta" }, { code: "automovil", name: "Automovil" }, { code: "buseta", name: "Buseta" }, { code: "bus", name: "Bus" }, { code: "camion_tracto", name: "Camion tracto" }, { code: "volqueta", name: "Volqueta" }],
+  vehicle_categories: [{ code: "motocicleta", name: "Motocicleta" }, { code: "liviano", name: "Liviano" }, { code: "utilitario", name: "Utilitario" }, { code: "camion_liviano", name: "Camion liviano" }, { code: "camion_mediano", name: "Camion mediano" }, { code: "camion_pesado", name: "Camion pesado" }, { code: "articulado", name: "Articulado / tractomula" }],
+  vehicle_brands: [{ code: "toyota", name: "Toyota" }, { code: "chevrolet", name: "Chevrolet" }, { code: "renault", name: "Renault" }, { code: "nissan", name: "Nissan" }, { code: "mazda", name: "Mazda" }, { code: "ford", name: "Ford" }, { code: "volkswagen", name: "Volkswagen" }, { code: "mercedes_benz", name: "Mercedes-Benz" }, { code: "hyundai", name: "Hyundai" }, { code: "kia", name: "Kia" }, { code: "iveco", name: "Iveco" }, { code: "hino", name: "Hino" }],
+  vehicle_lines: [
+    { code: "hilux", name: "Hilux", parent_code: "toyota" }, { code: "fortuner", name: "Fortuner", parent_code: "toyota" },
+    { code: "nhr", name: "NHR", parent_code: "chevrolet" }, { code: "npr", name: "NPR", parent_code: "chevrolet" }, { code: "dmax", name: "D-Max", parent_code: "chevrolet" }, { code: "spark_gt", name: "Spark GT", parent_code: "chevrolet" },
+    { code: "kangoo", name: "Kangoo", parent_code: "renault" }, { code: "trafic", name: "Trafic", parent_code: "renault" }, { code: "logan", name: "Logan", parent_code: "renault" },
+    { code: "frontier", name: "Frontier", parent_code: "nissan" }, { code: "urvan", name: "Urvan", parent_code: "nissan" },
+    { code: "bt50", name: "BT-50", parent_code: "mazda" },
+    { code: "ranger", name: "Ranger", parent_code: "ford" }, { code: "transit", name: "Transit", parent_code: "ford" },
+    { code: "amarok", name: "Amarok", parent_code: "volkswagen" }, { code: "delivery", name: "Delivery", parent_code: "volkswagen" },
+    { code: "sprinter", name: "Sprinter", parent_code: "mercedes_benz" }, { code: "atego", name: "Atego", parent_code: "mercedes_benz" },
+    { code: "daily", name: "Daily", parent_code: "iveco" },
+    { code: "dutro", name: "Dutro", parent_code: "hino" }
+  ],
+  vehicle_colors: [{ code: "blanco", name: "Blanco" }, { code: "negro", name: "Negro" }, { code: "gris", name: "Gris" }, { code: "plata", name: "Plata" }, { code: "rojo", name: "Rojo" }, { code: "azul", name: "Azul" }, { code: "verde", name: "Verde" }, { code: "amarillo", name: "Amarillo" }, { code: "naranja", name: "Naranja" }, { code: "beige", name: "Beige" }, { code: "cafe", name: "Cafe" }, { code: "vinotinto", name: "Vinotinto" }],
+  vehicle_fuels: [{ code: "gasolina", name: "Gasolina" }, { code: "diesel", name: "Diesel" }, { code: "gnv", name: "Gas natural (GNV)" }, { code: "gnv_gasolina", name: "Gasolina + GNV" }, { code: "electrico", name: "Electrico" }, { code: "hibrido", name: "Hibrido" }],
+  vehicle_body_types: [{ code: "estacas", name: "Estacas" }, { code: "caja_seca", name: "Caja seca" }, { code: "furgon", name: "Furgon" }, { code: "plataforma", name: "Plataforma" }, { code: "tanque", name: "Tanque" }, { code: "volco", name: "Volco" }, { code: "refrigerado", name: "Refrigerado" }, { code: "porta_contenedores", name: "Porta contenedores" }, { code: "cama_baja", name: "Cama baja" }],
+  service_levels: [{ code: "normal", name: "Normal" }, { code: "express", name: "Express" }, { code: "programado", name: "Programado" }, { code: "dedicado", name: "Dedicado" }],
+  departments: [
+    { code: "amazonas", name: "Amazonas" }, { code: "antioquia", name: "Antioquia" }, { code: "arauca", name: "Arauca" }, { code: "atlantico", name: "Atlantico" }, { code: "bogota_dc", name: "Bogota D.C." },
+    { code: "bolivar", name: "Bolivar" }, { code: "boyaca", name: "Boyaca" }, { code: "caldas", name: "Caldas" }, { code: "caqueta", name: "Caqueta" }, { code: "casanare", name: "Casanare" },
+    { code: "cauca", name: "Cauca" }, { code: "cesar", name: "Cesar" }, { code: "choco", name: "Choco" }, { code: "cordoba", name: "Cordoba" }, { code: "cundinamarca", name: "Cundinamarca" },
+    { code: "guainia", name: "Guainia" }, { code: "guaviare", name: "Guaviare" }, { code: "huila", name: "Huila" }, { code: "la_guajira", name: "La Guajira" }, { code: "magdalena", name: "Magdalena" },
+    { code: "meta", name: "Meta" }, { code: "narino", name: "Narino" }, { code: "norte_de_santander", name: "Norte de Santander" }, { code: "putumayo", name: "Putumayo" }, { code: "quindio", name: "Quindio" },
+    { code: "risaralda", name: "Risaralda" }, { code: "san_andres", name: "San Andres y Providencia" }, { code: "santander", name: "Santander" }, { code: "sucre", name: "Sucre" }, { code: "tolima", name: "Tolima" },
+    { code: "valle_del_cauca", name: "Valle del Cauca" }, { code: "vaupes", name: "Vaupes" }, { code: "vichada", name: "Vichada" }
+  ],
+  cities: [
+    { code: "bogota", name: "Bogota", parent_code: "bogota_dc" }, { code: "medellin", name: "Medellin", parent_code: "antioquia" }, { code: "cali", name: "Cali", parent_code: "valle_del_cauca" },
+    { code: "barranquilla", name: "Barranquilla", parent_code: "atlantico" }, { code: "cartagena", name: "Cartagena", parent_code: "bolivar" }, { code: "bucaramanga", name: "Bucaramanga", parent_code: "santander" },
+    { code: "pereira", name: "Pereira", parent_code: "risaralda" }, { code: "manizales", name: "Manizales", parent_code: "caldas" }, { code: "ibague", name: "Ibague", parent_code: "tolima" },
+    { code: "villavicencio", name: "Villavicencio", parent_code: "meta" }, { code: "cucuta", name: "Cucuta", parent_code: "norte_de_santander" }, { code: "armenia", name: "Armenia", parent_code: "quindio" },
+    { code: "monteria", name: "Monteria", parent_code: "cordoba" }, { code: "santa_marta", name: "Santa Marta", parent_code: "magdalena" }, { code: "neiva", name: "Neiva", parent_code: "huila" },
+    { code: "popayan", name: "Popayan", parent_code: "cauca" }, { code: "pasto", name: "Pasto", parent_code: "narino" }, { code: "sincelejo", name: "Sincelejo", parent_code: "sucre" },
+    { code: "tunja", name: "Tunja", parent_code: "boyaca" }, { code: "florencia", name: "Florencia", parent_code: "caqueta" }, { code: "yopal", name: "Yopal", parent_code: "casanare" },
+    { code: "riohacha", name: "Riohacha", parent_code: "la_guajira" }, { code: "valledupar", name: "Valledupar", parent_code: "cesar" }, { code: "quibdo", name: "Quibdo", parent_code: "choco" }
+  ],
+  municipalities: [
+    { code: "bogota", name: "Bogota", parent_code: "bogota" }, { code: "soacha", name: "Soacha", parent_code: "bogota" }, { code: "chia", name: "Chia", parent_code: "bogota" },
+    { code: "zipaquira", name: "Zipaquira", parent_code: "bogota" }, { code: "mosquera", name: "Mosquera", parent_code: "bogota" }, { code: "funza", name: "Funza", parent_code: "bogota" },
+    { code: "madrid", name: "Madrid", parent_code: "bogota" }, { code: "facatativa", name: "Facatativa", parent_code: "bogota" }, { code: "fusagasuga", name: "Fusagasuga", parent_code: "bogota" },
+    { code: "cajica", name: "Cajica", parent_code: "bogota" }, { code: "tabio", name: "Tabio", parent_code: "bogota" }, { code: "tenjo", name: "Tenjo", parent_code: "bogota" },
+    { code: "medellin", name: "Medellin", parent_code: "medellin" }, { code: "envigado", name: "Envigado", parent_code: "medellin" }, { code: "itagui", name: "Itagui", parent_code: "medellin" },
+    { code: "bello", name: "Bello", parent_code: "medellin" }, { code: "copacabana", name: "Copacabana", parent_code: "medellin" }, { code: "sabaneta", name: "Sabaneta", parent_code: "medellin" },
+    { code: "la_estrella", name: "La Estrella", parent_code: "medellin" }, { code: "girardota", name: "Girardota", parent_code: "medellin" }, { code: "barbosa", name: "Barbosa", parent_code: "medellin" },
+    { code: "rionegro", name: "Rionegro", parent_code: "medellin" },
+    { code: "cali", name: "Cali", parent_code: "cali" }, { code: "palmira", name: "Palmira", parent_code: "cali" }, { code: "jamundi", name: "Jamundi", parent_code: "cali" },
+    { code: "yumbo", name: "Yumbo", parent_code: "cali" }, { code: "buga", name: "Buga", parent_code: "cali" }, { code: "tulua", name: "Tulua", parent_code: "cali" },
+    { code: "cartago", name: "Cartago", parent_code: "cali" }, { code: "florida", name: "Florida", parent_code: "cali" }, { code: "cerrito", name: "Cerrito", parent_code: "cali" },
+    { code: "barranquilla", name: "Barranquilla", parent_code: "barranquilla" }, { code: "soledad", name: "Soledad", parent_code: "barranquilla" },
+    { code: "puerto_colombia", name: "Puerto Colombia", parent_code: "barranquilla" }, { code: "malambo", name: "Malambo", parent_code: "barranquilla" },
+    { code: "galapa", name: "Galapa", parent_code: "barranquilla" }, { code: "sabanalarga", name: "Sabanalarga", parent_code: "barranquilla" },
+    { code: "cartagena", name: "Cartagena", parent_code: "cartagena" }, { code: "turbaco", name: "Turbaco", parent_code: "cartagena" }, { code: "turbana", name: "Turbana", parent_code: "cartagena" },
+    { code: "clemencia", name: "Clemencia", parent_code: "cartagena" }, { code: "maria_la_baja", name: "Maria La Baja", parent_code: "cartagena" },
+    { code: "bucaramanga", name: "Bucaramanga", parent_code: "bucaramanga" }, { code: "floridablanca", name: "Floridablanca", parent_code: "bucaramanga" },
+    { code: "giron", name: "Giron", parent_code: "bucaramanga" }, { code: "piedecuesta", name: "Piedecuesta", parent_code: "bucaramanga" }, { code: "lebrija", name: "Lebrija", parent_code: "bucaramanga" },
+    { code: "pereira", name: "Pereira", parent_code: "pereira" }, { code: "dosquebradas", name: "Dosquebradas", parent_code: "pereira" }, { code: "la_virginia", name: "La Virginia", parent_code: "pereira" },
+    { code: "santa_rosa_de_cabal", name: "Santa Rosa de Cabal", parent_code: "pereira" }, { code: "marsella", name: "Marsella", parent_code: "pereira" }, { code: "apia", name: "Apia", parent_code: "pereira" },
+    { code: "manizales", name: "Manizales", parent_code: "manizales" }, { code: "villamaria", name: "Villamaria", parent_code: "manizales" }, { code: "neira", name: "Neira", parent_code: "manizales" },
+    { code: "chinchina", name: "Chinchina", parent_code: "manizales" }, { code: "palestina", name: "Palestina", parent_code: "manizales" }, { code: "la_dorada", name: "La Dorada", parent_code: "manizales" },
+    { code: "ibague", name: "Ibague", parent_code: "ibague" }, { code: "cajamarca", name: "Cajamarca", parent_code: "ibague" }, { code: "espinal", name: "Espinal", parent_code: "ibague" },
+    { code: "natagaima", name: "Natagaima", parent_code: "ibague" }, { code: "chaparral", name: "Chaparral", parent_code: "ibague" }, { code: "guamo", name: "Guamo", parent_code: "ibague" },
+    { code: "villavicencio", name: "Villavicencio", parent_code: "villavicencio" }, { code: "acacias", name: "Acacias", parent_code: "villavicencio" },
+    { code: "granada", name: "Granada", parent_code: "villavicencio" }, { code: "san_martin", name: "San Martin", parent_code: "villavicencio" }, { code: "restrepo", name: "Restrepo", parent_code: "villavicencio" },
+    { code: "cucuta", name: "Cucuta", parent_code: "cucuta" }, { code: "los_patios", name: "Los Patios", parent_code: "cucuta" }, { code: "villa_del_rosario", name: "Villa del Rosario", parent_code: "cucuta" },
+    { code: "el_zulia", name: "El Zulia", parent_code: "cucuta" }, { code: "pamplona", name: "Pamplona", parent_code: "cucuta" }, { code: "ocana", name: "Ocana", parent_code: "cucuta" },
+    { code: "armenia", name: "Armenia", parent_code: "armenia" }, { code: "calarca", name: "Calarca", parent_code: "armenia" }, { code: "montenegro", name: "Montenegro", parent_code: "armenia" },
+    { code: "quimbaya", name: "Quimbaya", parent_code: "armenia" }, { code: "la_tebaida", name: "La Tebaida", parent_code: "armenia" }, { code: "salento", name: "Salento", parent_code: "armenia" },
+    { code: "filandia", name: "Filandia", parent_code: "armenia" }, { code: "cordoba", name: "Cordoba", parent_code: "armenia" },
+    { code: "monteria", name: "Monteria", parent_code: "monteria" }, { code: "cerete", name: "Cerete", parent_code: "monteria" }, { code: "lorica", name: "Lorica", parent_code: "monteria" },
+    { code: "san_pelayo", name: "San Pelayo", parent_code: "monteria" }, { code: "canalete", name: "Canalete", parent_code: "monteria" },
+    { code: "santa_marta", name: "Santa Marta", parent_code: "santa_marta" }, { code: "cienaga", name: "Cienaga", parent_code: "santa_marta" }, { code: "fundacion", name: "Fundacion", parent_code: "santa_marta" },
+    { code: "aracataca", name: "Aracataca", parent_code: "santa_marta" }, { code: "el_banco", name: "El Banco", parent_code: "santa_marta" },
+    { code: "neiva", name: "Neiva", parent_code: "neiva" }, { code: "pitalito", name: "Pitalito", parent_code: "neiva" }, { code: "garzon", name: "Garzon", parent_code: "neiva" },
+    { code: "la_plata", name: "La Plata", parent_code: "neiva" }, { code: "palermo", name: "Palermo", parent_code: "neiva" }, { code: "rivera", name: "Rivera", parent_code: "neiva" },
+    { code: "popayan", name: "Popayan", parent_code: "popayan" }, { code: "timbio", name: "Timbio", parent_code: "popayan" }, { code: "piendamo", name: "Piendamo", parent_code: "popayan" },
+    { code: "santander_de_quilichao", name: "Santander de Quilichao", parent_code: "popayan" }, { code: "el_bordo", name: "El Bordo", parent_code: "popayan" },
+    { code: "pasto", name: "Pasto", parent_code: "pasto" }, { code: "ipiales", name: "Ipiales", parent_code: "pasto" }, { code: "tuquerres", name: "Tuquerres", parent_code: "pasto" },
+    { code: "consaca", name: "Consaca", parent_code: "pasto" }, { code: "guaitarilla", name: "Guaitarilla", parent_code: "pasto" },
+    { code: "sincelejo", name: "Sincelejo", parent_code: "sincelejo" }, { code: "corozal", name: "Corozal", parent_code: "sincelejo" }, { code: "sampues", name: "Sampues", parent_code: "sincelejo" },
+    { code: "los_palmitos", name: "Los Palmitos", parent_code: "sincelejo" }, { code: "magangue", name: "Magangue", parent_code: "sincelejo" }, { code: "toluviejo", name: "Toluviejo", parent_code: "sincelejo" },
+    { code: "tunja", name: "Tunja", parent_code: "tunja" }, { code: "duitama", name: "Duitama", parent_code: "tunja" }, { code: "sogamoso", name: "Sogamoso", parent_code: "tunja" },
+    { code: "chiquinquira", name: "Chiquinquira", parent_code: "tunja" }, { code: "moniquira", name: "Moniquira", parent_code: "tunja" }, { code: "villa_de_leyva", name: "Villa de Leyva", parent_code: "tunja" },
+    { code: "paipa", name: "Paipa", parent_code: "tunja" },
+    { code: "florencia", name: "Florencia", parent_code: "florencia" }, { code: "morelia", name: "Morelia", parent_code: "florencia" }, { code: "puerto_rico", name: "Puerto Rico", parent_code: "florencia" },
+    { code: "san_vicente_del_caguan", name: "San Vicente del Caguan", parent_code: "florencia" }, { code: "el_doncello", name: "El Doncello", parent_code: "florencia" },
+    { code: "belen_de_los_andaquies", name: "Belen de los Andaquies", parent_code: "florencia" },
+    { code: "yopal", name: "Yopal", parent_code: "yopal" }, { code: "aguazul", name: "Aguazul", parent_code: "yopal" }, { code: "villanueva", name: "Villanueva", parent_code: "yopal" },
+    { code: "paz_de_ariporo", name: "Paz de Ariporo", parent_code: "yopal" }, { code: "tauramena", name: "Tauramena", parent_code: "yopal" }, { code: "monterrey", name: "Monterrey", parent_code: "yopal" },
+    { code: "riohacha", name: "Riohacha", parent_code: "riohacha" }, { code: "maicao", name: "Maicao", parent_code: "riohacha" }, { code: "barrancas", name: "Barrancas", parent_code: "riohacha" },
+    { code: "fonseca", name: "Fonseca", parent_code: "riohacha" }, { code: "san_juan_del_cesar", name: "San Juan del Cesar", parent_code: "riohacha" },
+    { code: "distraccion", name: "Distraccion", parent_code: "riohacha" }, { code: "albania", name: "Albania", parent_code: "riohacha" },
+    { code: "valledupar", name: "Valledupar", parent_code: "valledupar" }, { code: "aguachica", name: "Aguachica", parent_code: "valledupar" }, { code: "bosconia", name: "Bosconia", parent_code: "valledupar" },
+    { code: "chiriguana", name: "Chiriguana", parent_code: "valledupar" }, { code: "la_paz", name: "La Paz", parent_code: "valledupar" }, { code: "pueblo_bello", name: "Pueblo Bello", parent_code: "valledupar" },
+    { code: "quibdo", name: "Quibdo", parent_code: "quibdo" }, { code: "istmina", name: "Istmina", parent_code: "quibdo" }, { code: "condoto", name: "Condoto", parent_code: "quibdo" }, { code: "nuqui", name: "Nuqui", parent_code: "quibdo" }
+  ],
+  currencies: [{ code: "COP", name: "Peso colombiano (COP)" }, { code: "USD", name: "Dolar estadounidense (USD)" }, { code: "EUR", name: "Euro (EUR)" }]
 };
+
+const CATALOG_PARENT_CONFIG: Record<string, { parentCatalog: Exclude<keyof UserMasterData, "roles">; fieldLabel: string; emptyLabel: string; columnLabel: string }> = {
+  vehicle_lines: { parentCatalog: "vehicle_brands", fieldLabel: "Marca (padre)", emptyLabel: "Sin marca (uso general)", columnLabel: "Marca" },
+  cities: { parentCatalog: "departments", fieldLabel: "Departamento (padre)", emptyLabel: "Sin departamento (uso general)", columnLabel: "Departamento" },
+  municipalities: { parentCatalog: "cities", fieldLabel: "Ciudad (padre)", emptyLabel: "Sin ciudad (uso general)", columnLabel: "Ciudad" }
+};
+
+const CATALOG_CREATE_LABELS: Record<string, string> = {
+  user_types: "tipo de usuario",
+  user_statuses: "estado de usuario",
+  document_types: "tipo de documento",
+  user_document_types: "tipo documental",
+  positions: "cargo",
+  areas: "area",
+  cost_centers: "centro de costo",
+  contract_types: "tipo de contrato",
+  work_shifts: "turno",
+  activity_types: "tipo de actividad",
+  vehicle_types: "tipo de vehiculo",
+  vehicle_categories: "categoria de vehiculo",
+  vehicle_brands: "marca de vehiculo",
+  vehicle_lines: "linea de vehiculo",
+  vehicle_colors: "color de vehiculo",
+  vehicle_fuels: "combustible de vehiculo",
+  vehicle_body_types: "carroceria de vehiculo",
+  units_of_measure: "unidad de medida",
+  service_levels: "nivel de servicio",
+  departments: "departamento",
+  cities: "ciudad",
+  municipalities: "municipio",
+  service_types: "tipo de servicio",
+  service_stores: "almacen de servicio",
+  satisfaction_questions: "pregunta de satisfaccion",
+  banks: "banco",
+  currencies: "moneda"
+};
+
+function catalogCreateLabel(catalog: string) {
+  return CATALOG_CREATE_LABELS[catalog] || "registro";
+}
 
 const defaultServiceTypes: ServiceType[] = [
   { code: "instalacion", label: "Instalacion", active: true },
@@ -398,7 +568,7 @@ const categories: ConfigCategory[] = [
     icon: Building2,
     items: [
       { key: "empresas", title: "Empresas y modulos", description: "Crear empresas, editar datos y habilitar modulos por compania.", status: "activo", modal: "info", href: "/dashboard/administracion/suscripciones" },
-      { key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones.", status: "pendiente", modal: "masters" },
+      { key: "sedes", title: "Sedes", description: "Puntos de operacion asociados a usuarios, rutas y marcaciones.", status: "activo", modal: "sedes" },
       { key: "areas", title: "Areas y centros de costo", description: "Clasificacion para usuarios, nomina futura y costos.", status: "pendiente", modal: "masters" },
       { key: "parametros", title: "Maestros de plataforma", description: "Catalogos transversales para usuarios, documentos, sedes, turnos y bancos.", status: "configurado", modal: "masters" }
     ]
@@ -422,6 +592,9 @@ const categories: ConfigCategory[] = [
     icon: Truck,
     items: [
       { key: "vehiculos", title: "Vehiculos", description: "Flota, documentos y conductor autorizado.", status: "activo", modal: "info", href: "/dashboard/transporte" },
+      { key: "transport_destinations", title: "Destinos / tiendas", description: "Destinos cubiertos por los paquetes de liquidacion y puntos de entrega.", status: "activo", modal: "masters" },
+      { key: "transport_settlement_types", title: "Tipos de liquidacion", description: "Politicas de soportes y aprobacion de liquidaciones.", status: "activo", modal: "masters" },
+      { key: "transport_carriers", title: "Transportadoras", description: "Transportadoras del maestro existente de la empresa.", status: "activo", modal: "masters" },
       { key: "rutas", title: "Rutas", description: "Planeacion y asignacion operativa.", status: "activo", modal: "info", href: "/dashboard/talento-humano/rutas" },
       { key: "marcaciones", title: "Marcaciones", description: "Reglas operativas de jornada y trazabilidad.", status: "activo", modal: "info", href: "/dashboard/talento-humano/marcacion" },
       { key: "almacenes-servicio", title: "Almacenes de servicio", description: "Catalogo usado en solicitudes externas y ordenes de servicio.", status: "configurado", modal: "masters" },
@@ -658,21 +831,24 @@ function scoreUser(form: UserForm) {
   return Math.min(score, 100);
 }
 
-function Field({ label, value, onChange, type = "text", placeholder = "" }: { label: string; value: string; onChange: (value: string) => void; type?: string; placeholder?: string }) {
+type FieldExtraProps = Omit<InputHTMLAttributes<HTMLInputElement>, "label" | "value" | "onChange" | "type" | "placeholder">;
+function Field({ label, value, onChange, type = "text", placeholder = "", ...attrs }: { label: string; value: string; onChange: (value: string) => void; type?: string; placeholder?: string } & FieldExtraProps) {
   return (
     <label className="block text-sm">
       <span className="mb-1 block font-medium text-neutral-700">{label}</span>
-      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder={placeholder} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input {...attrs} className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder={placeholder} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
 }
 
-function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: Array<[string, string]> }) {
+function SelectField({ label, value, onChange, options = [], optionGroups }: { label: string; value: string; onChange: (value: string) => void; options?: Array<[string, string]>; optionGroups?: Array<[string, Array<[string, string]>]> }) {
   return (
     <label className="block text-sm">
       <span className="mb-1 block font-medium text-neutral-700">{label}</span>
       <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
-        {options.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{labelText}</option>)}
+        {optionGroups
+          ? optionGroups.map(([group, items]) => <optgroup key={group} label={group}>{items.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{labelText}</option>)}</optgroup>)
+          : options.map(([optionValue, labelText]) => <option key={optionValue} value={optionValue}>{labelText}</option>)}
       </select>
     </label>
   );
@@ -724,7 +900,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 export default function AdministracionPage() {
   const initializedRole = useRef(false);
   const toastTimer = useRef<number | null>(null);
-  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | null>(null);
+  const [activeModal, setActiveModal] = useState<"roles" | "users" | "masters" | "logs" | "info" | "sedes" | null>(null);
   const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -755,10 +931,16 @@ export default function AdministracionPage() {
   const [userStatusFilter, setUserStatusFilter] = useState("all");
   const [documentDraft, setDocumentDraft] = useState({ document_type: "identity", file_name: "", file_url: "", storage_path: "", mime_type: "", file_size: "", observations: "" });
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
-  const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "" });
+  const [catalogDraft, setCatalogDraft] = useState({ catalog: "positions", code: "", name: "", description: "", parent_code: "" });
   const [editingCatalogCode, setEditingCatalogCode] = useState<string | null>(null);
   const [catalogSaving, setCatalogSaving] = useState("");
   const [catalogNotice, setCatalogNotice] = useState<ToastState | null>(null);
+  const [sedeMasterRows, setSedeMasterRows] = useState<SedeRow[]>([]);
+  const [sedeMasterState, setSedeMasterState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [sedeDraft, setSedeDraft] = useState<SedeDraft>({ ...emptySedeDraft });
+  const [editingSedeId, setEditingSedeId] = useState<number | null>(null);
+  const [catalogEditorOpen, setCatalogEditorOpen] = useState(false);
+  const [sedeEditorOpen, setSedeEditorOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [userAccessSaving, setUserAccessSaving] = useState(false);
@@ -972,8 +1154,13 @@ export default function AdministracionPage() {
 
   function openConfig(item: ConfigItem) {
     setSelectedConfig(item);
+    if (item.key.startsWith("transport_")) setCatalogDraft(current => ({ ...current, catalog: item.key }));
     if (item.key === "almacenes-servicio") {
       setCatalogDraft((current) => ({ ...current, catalog: "service_stores", code: "", name: "", description: "" }));
+    }
+    if (item.key === "sedes") {
+      resetSedeDraft();
+      void loadSedeMasterRows();
     }
     setActiveModal(item.modal);
   }
@@ -1470,7 +1657,8 @@ export default function AdministracionPage() {
           code: catalogDraft.code.trim(),
           name: catalogDraft.name.trim(),
           description: catalogDraft.description.trim(),
-          active: true
+          active: true,
+          ...(CATALOG_PARENT_CONFIG[catalogDraft.catalog] ? { parent_code: catalogDraft.parent_code.trim() } : {})
         })
       });
       setMasterData({ ...fallbackUserMasterData, ...next });
@@ -1484,8 +1672,123 @@ export default function AdministracionPage() {
   }
 
   function resetCatalogDraft(catalog = catalogDraft.catalog) {
-    setCatalogDraft({ catalog, code: "", name: "", description: "" });
+    setCatalogDraft({ catalog, code: "", name: "", description: "", parent_code: "" });
     setEditingCatalogCode(null);
+    setCatalogEditorOpen(false);
+  }
+
+  function openCatalogCreator() {
+    setCatalogDraft({ catalog: catalogDraft.catalog, code: "", name: "", description: "", parent_code: "" });
+    setEditingCatalogCode(null);
+    setCatalogEditorOpen(true);
+  }
+
+  function resetSedeDraft() {
+    setSedeDraft({ ...emptySedeDraft });
+    setEditingSedeId(null);
+  }
+
+  async function loadSedeMasterRows() {
+    setSedeMasterState("loading");
+    try {
+      const rows = await api<SedeRow[]>("/api/v1/transport/sedes?include_inactive=true");
+      setSedeMasterRows(rows);
+      setSedeMasterState("ready");
+    } catch {
+      setSedeMasterRows([]);
+      setSedeMasterState("error");
+    }
+  }
+
+  function editSedeRow(row: SedeRow) {
+    setSedeDraft({
+      code: row.code,
+      name: row.name,
+      address: row.address,
+      city: row.city,
+      department: row.department || "",
+      country: row.country || "CO",
+      latitude: row.latitude == null ? "" : String(row.latitude),
+      longitude: row.longitude == null ? "" : String(row.longitude),
+      operation_start: row.operation_start || "",
+      operation_end: row.operation_end || "",
+      service_minutes: row.service_minutes == null ? "60" : String(row.service_minutes)
+    });
+    setEditingSedeId(row.id);
+    setSedeEditorOpen(true);
+  }
+
+  async function saveSedeMaster() {
+    if (catalogSaving) return;
+    const code = sedeDraft.code.trim().toUpperCase().replace(/\s+/g, "-");
+    const name = sedeDraft.name.trim();
+    const address = sedeDraft.address.trim();
+    const city = sedeDraft.city.trim();
+    const latitude = Number(sedeDraft.latitude);
+    const longitude = Number(sedeDraft.longitude);
+    if (!code || !name || !address || !city) {
+      confirmCatalogAction("Datos requeridos", "Codigo, nombre, direccion y ciudad son obligatorios.", "warning");
+      return;
+    }
+    if (!sedeDraft.latitude.trim() || !sedeDraft.longitude.trim() || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+      confirmCatalogAction("Coordenadas requeridas", "Latitud y longitud son obligatorias para georreferenciar la sede.", "warning");
+      return;
+    }
+    setCatalogSaving(editingSedeId ? "save-sede" : "create-sede");
+    try {
+      const payload = {
+        code, name, address, city,
+        department: sedeDraft.department.trim() || null,
+        country: sedeDraft.country.trim() || "CO",
+        latitude, longitude,
+        operation_start: sedeDraft.operation_start || null,
+        operation_end: sedeDraft.operation_end || null,
+        service_minutes: Number(sedeDraft.service_minutes) > 0 ? Number(sedeDraft.service_minutes) : 60,
+        active: true
+      };
+      if (editingSedeId) {
+        await api(`/api/v1/transport/sedes/${editingSedeId}`, { method: "PUT", body: JSON.stringify(payload) });
+        confirmCatalogAction("Sede actualizada", `${name} quedo guardada correctamente.`);
+      } else {
+        await api("/api/v1/transport/sedes", { method: "POST", body: JSON.stringify(payload) });
+        confirmCatalogAction("Sede creada", `${name} quedo guardada correctamente.`);
+      }
+      resetSedeDraft();
+      setSedeEditorOpen(false);
+      await loadSedeMasterRows();
+    } catch (error) {
+      confirmCatalogAction("No se pudo guardar la sede", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
+  }
+
+  async function toggleSedeRow(row: SedeRow) {
+    if (catalogSaving) return;
+    if (row.latitude == null || row.longitude == null) {
+      confirmCatalogAction("Sede sin coordenadas", "Completa latitud y longitud de la sede antes de cambiar su estado.", "warning");
+      return;
+    }
+    setCatalogSaving(`toggle-sede:${row.id}`);
+    try {
+      await api(`/api/v1/transport/sedes/${row.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          code: row.code, name: row.name, address: row.address, city: row.city,
+          department: row.department || null, country: row.country || "CO",
+          latitude: row.latitude, longitude: row.longitude,
+          operation_start: row.operation_start || null, operation_end: row.operation_end || null,
+          service_minutes: row.service_minutes ?? 60,
+          active: !row.active
+        })
+      });
+      confirmCatalogAction(row.active ? "Sede inactivada" : "Sede activada", `${row.name} quedo ${row.active ? "inactiva" : "activa"}.`);
+      await loadSedeMasterRows();
+    } catch (error) {
+      confirmCatalogAction("No se pudo actualizar la sede", error instanceof Error ? error.message : "Operacion interrumpida.", "error");
+    } finally {
+      setCatalogSaving("");
+    }
   }
 
   function editCatalogRow(item: MasterOption) {
@@ -1493,9 +1796,11 @@ export default function AdministracionPage() {
       catalog: catalogDraft.catalog,
       code: item.code,
       name: item.name,
-      description: item.description || ""
+      description: item.description || "",
+      parent_code: item.parent_code || ""
     });
     setEditingCatalogCode(item.code);
+    setCatalogEditorOpen(true);
   }
 
   async function toggleBaseCatalogItem(item: MasterOption) {
@@ -1766,32 +2071,68 @@ export default function AdministracionPage() {
     );
   }
 
+  useEffect(() => {
+    const catalog = new URLSearchParams(window.location.search).get("catalog");
+    if (["transport_destinations", "transport_settlement_types", "transport_carriers"].includes(catalog || "")) {
+      setCatalogDraft(current => ({ ...current, catalog: catalog! })); setActiveModal("masters");
+    }
+  }, []);
+
   function renderMasterCatalogManager() {
-    const catalogOptions: Array<[string, string]> = [
-      ["user_types", "Tipos de usuario"],
-      ["user_statuses", "Estados de usuario"],
-      ["document_types", "Tipos de documento"],
-      ["positions", "Cargos"],
-      ["areas", "Areas"],
-      ["locations", "Sedes"],
-      ["cost_centers", "Centros de costo"],
-      ["contract_types", "Tipos de contrato"],
-      ["work_shifts", "Turnos"],
-      ["activity_types", "Tipos de actividad"],
-      ["user_document_types", "Tipos documentales"],
-      ["banks", "Bancos"],
-      ["service_types", "Tipos de servicio"],
-      ["service_stores", "Almacenes de servicio"],
-      ["satisfaction_questions", "Preguntas de satisfaccion"]
+    if (["transport_destinations", "transport_settlement_types", "transport_carriers"].includes(catalogDraft.catalog)) return <div className="space-y-4"><button type="button" className="text-sm text-apex underline" onClick={() => resetCatalogDraft("positions")}>Ver todos los maestros</button><TransportAdminCatalog key={catalogDraft.catalog} catalog={catalogDraft.catalog as TransportAdminCatalogKey} /></div>;
+    const catalogGroups: Array<[string, Array<[string, string]>]> = [
+      ["Usuarios y acceso", [
+        ["user_types", "Tipos de usuario"],
+        ["user_statuses", "Estados de usuario"],
+        ["document_types", "Tipos de documento"],
+        ["user_document_types", "Tipos documentales"]
+      ]],
+      ["Organizacion", [
+        ["positions", "Cargos"],
+        ["areas", "Areas"],
+        ["cost_centers", "Centros de costo"],
+        ["contract_types", "Tipos de contrato"],
+        ["work_shifts", "Turnos"],
+        ["activity_types", "Tipos de actividad"]
+      ]],
+      ["Vehiculos y transporte", [
+        ["vehicle_types", "Tipos de vehiculo"],
+        ["vehicle_categories", "Categorias de vehiculo"],
+        ["vehicle_brands", "Marcas de vehiculo"],
+        ["vehicle_lines", "Lineas de vehiculo"],
+        ["vehicle_colors", "Colores de vehiculo"],
+        ["transport_destinations", "Destinos / tiendas"],
+        ["transport_settlement_types", "Tipos de liquidacion"],
+        ["transport_carriers", "Transportadoras"],
+        ["vehicle_fuels", "Combustibles de vehiculo"],
+        ["vehicle_body_types", "Carrocerias de vehiculo"],
+        ["units_of_measure", "Unidades de medida"],
+        ["service_levels", "Niveles de servicio"],
+        ["departments", "Departamentos"],
+        ["cities", "Ciudades"],
+        ["municipalities", "Municipios"]
+      ]],
+      ["Servicios", [
+        ["service_types", "Tipos de servicio"],
+        ["service_stores", "Almacenes de servicio"],
+        ["satisfaction_questions", "Preguntas de satisfaccion"]
+      ]],
+      ["Financiero", [
+        ["banks", "Bancos"],
+        ["currencies", "Monedas"]
+      ]]
     ];
+    const catalogOptions = catalogGroups.flatMap(([, items]) => items);
     const isServiceTypeCatalog = catalogDraft.catalog === "service_types";
     const isServiceStoreCatalog = catalogDraft.catalog === "service_stores";
     const isSatisfactionQuestionCatalog = catalogDraft.catalog === "satisfaction_questions";
     const isOperationalCatalog = isServiceTypeCatalog || isServiceStoreCatalog || isSatisfactionQuestionCatalog;
+    const parentConfig = CATALOG_PARENT_CONFIG[catalogDraft.catalog];
     const selectedItems = !isOperationalCatalog && Array.isArray((masterData as Record<string, unknown>)[catalogDraft.catalog])
       ? (((masterData as unknown) as Record<string, MasterOption[]>)[catalogDraft.catalog] || [])
       : [];
     const selectedCatalogLabel = catalogOptions.find(([value]) => value === catalogDraft.catalog)?.[1] || "Catalogo";
+    const selectedCatalogGroup = catalogGroups.find(([, items]) => items.some(([value]) => value === catalogDraft.catalog))?.[0] || "General";
     const catalogRows: Array<MasterOption & { active?: boolean }> = isServiceTypeCatalog
       ? serviceTypes.map((item) => ({ code: item.code, name: item.label, active: item.active !== false }))
       : isServiceStoreCatalog
@@ -1800,14 +2141,31 @@ export default function AdministracionPage() {
         ? satisfactionQuestions.map((item) => ({ code: item.id, name: item.label, active: item.active !== false }))
       : selectedItems.map((item) => ({ ...item, active: item.active !== false }));
     const activeCatalogRows = catalogRows.filter((item) => item.active !== false).length;
+    const visibleCatalogRows = catalogRows.length;
+    const parentOptions: Array<[string, string]> = (() => {
+      if (!parentConfig) return [];
+      const options: Array<[string, string]> = [["", parentConfig.emptyLabel]];
+      const seen = new Set<string>();
+      for (const parent of (masterData[parentConfig.parentCatalog] || [])) {
+        if (parent.active === false && parent.code !== catalogDraft.parent_code) continue;
+        if (seen.has(parent.code)) continue;
+        seen.add(parent.code);
+        options.push([parent.code, parent.name]);
+      }
+      if (catalogDraft.parent_code && !seen.has(catalogDraft.parent_code)) {
+        options.push([catalogDraft.parent_code, catalogDraft.parent_code]);
+      }
+      return options;
+    })();
     return (
       <div className="space-y-3">
-        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr] md:items-end">
-          <SelectField label="Catalogo maestro" value={catalogDraft.catalog} onChange={(value) => resetCatalogDraft(value)} options={catalogOptions} />
+        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[minmax(240px,320px)_1fr_auto] md:items-end">
+          <SelectField label="Catalogo maestro" value={catalogDraft.catalog} onChange={(value) => resetCatalogDraft(value)} optionGroups={catalogGroups} />
           <div>
             <p className="text-xs font-semibold uppercase text-neutral-500">{selectedCatalogLabel}</p>
-            <p className="mt-1 text-sm text-neutral-600">{catalogRows.length} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
+            <p className="mt-1 text-sm text-neutral-600"><span className="mr-2 inline-block rounded-full border border-line bg-white px-2 py-0.5 text-xs font-medium text-neutral-600">{selectedCatalogGroup}</span>{visibleCatalogRows} registro(s), {activeCatalogRows} activo(s). Todos se administran desde esta seccion.</p>
           </div>
+          <Button onClick={openCatalogCreator} type="button"><Plus size={16} /> Nuevo {catalogCreateLabel(catalogDraft.catalog)}</Button>
         </div>
         {catalogNotice ? (
           <div className={`rounded-md border px-3 py-2 text-sm ${catalogNotice.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : catalogNotice.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : catalogNotice.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-sky-200 bg-sky-50 text-sky-900"}`} role="status">
@@ -1823,29 +2181,13 @@ export default function AdministracionPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <div className="rounded-md border border-line bg-white p-3">
-            <div className="grid gap-3">
-              <p className="text-sm font-semibold">{editingCatalogCode ? "Editar maestro" : "Nuevo maestro"}</p>
-              <Field label={isOperationalCatalog ? "Codigo" : "Codigo"} value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
-              <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
-              {!isOperationalCatalog ? <Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /> : null}
-              <div className="grid gap-2">
-                <Button disabled={Boolean(catalogSaving)} onClick={saveCatalogItem} type="button">
-                  {catalogSaving === "create" || catalogSaving === "save" ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
-                  {catalogSaving === "create" ? "Creando..." : catalogSaving === "save" ? "Guardando..." : editingCatalogCode ? "Guardar cambios" : "Crear maestro"}
-                </Button>
-                {editingCatalogCode ? <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={Boolean(catalogSaving)} onClick={() => resetCatalogDraft()} type="button"><X size={16} /> Cancelar edicion</Button> : null}
-              </div>
-            </div>
-          </div>
-
-          <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
-            <table className="w-full min-w-[760px] text-sm">
+        <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
+          <table className="w-full min-w-[760px] text-sm">
             <thead className="sticky top-0 bg-white">
               <tr className="border-b border-line text-left text-xs text-neutral-500">
                 <th className="px-3 py-2">Codigo</th>
                 <th className="px-3 py-2">{isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"}</th>
+                {parentConfig ? <th className="px-3 py-2">{parentConfig.columnLabel}</th> : null}
                 {!isOperationalCatalog ? <th className="px-3 py-2">Descripcion</th> : null}
                 <th className="px-3 py-2">Estado</th>
                 <th className="px-3 py-2 text-right">Acciones</th>
@@ -1856,6 +2198,7 @@ export default function AdministracionPage() {
                 <tr className={`border-b border-line/70 ${editingCatalogCode === item.code ? "bg-apex/5" : ""}`} key={item.code}>
                   <td className="px-3 py-2 font-mono text-xs">{item.code}</td>
                   <td className="px-3 py-2">{item.name}</td>
+                  {parentConfig ? <td className="px-3 py-2 text-neutral-600">{((masterData[parentConfig.parentCatalog] || []) as MasterOption[]).find((parent) => parent.code === item.parent_code)?.name || item.parent_code || "-"}</td> : null}
                   {!isOperationalCatalog ? <td className="px-3 py-2 text-neutral-600">{item.description || "-"}</td> : null}
                   <td className="px-3 py-2">
                     <span className={`rounded-md px-2 py-1 text-xs font-semibold ${item.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>
@@ -1877,13 +2220,139 @@ export default function AdministracionPage() {
               ))}
               {!catalogRows.length ? (
                 <tr>
-                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={isOperationalCatalog ? 4 : 5}>No hay registros configurados.</td>
+                  <td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={(isOperationalCatalog ? 4 : 5) + (parentConfig ? 1 : 0)}>No hay registros configurados.</td>
                 </tr>
               ) : null}
             </tbody>
           </table>
           </div>
+        {catalogEditorOpen ? (
+          <ModalFrame
+            maxWidth="md:max-w-xl"
+            onClose={() => resetCatalogDraft()}
+            title={editingCatalogCode ? `Editar ${catalogDraft.name || editingCatalogCode}` : `Nuevo ${catalogCreateLabel(catalogDraft.catalog)}`}
+          >
+            <p className="mb-3 text-xs text-neutral-500">{selectedCatalogGroup} · {selectedCatalogLabel}. Completa los datos y guarda el registro.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Codigo" value={catalogDraft.code} onChange={(value) => setCatalogDraft((current) => ({ ...current, code: isOperationalCatalog ? normalizeServiceTypeCode(value) : value.toUpperCase().replace(/\s+/g, "-") }))} />
+              <Field label={isSatisfactionQuestionCatalog ? "Pregunta" : "Nombre"} value={catalogDraft.name} onChange={(value) => setCatalogDraft((current) => ({ ...current, name: value }))} />
+              {parentConfig ? <SelectField label={parentConfig.fieldLabel} value={catalogDraft.parent_code} onChange={(value) => setCatalogDraft((current) => ({ ...current, parent_code: value }))} options={parentOptions} /> : null}
+              {!isOperationalCatalog ? <div className="sm:col-span-2"><Field label="Descripcion" value={catalogDraft.description} onChange={(value) => setCatalogDraft((current) => ({ ...current, description: value }))} /></div> : null}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button disabled={Boolean(catalogSaving)} onClick={saveCatalogItem} type="button">
+                {catalogSaving === "create" || catalogSaving === "save" ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                {catalogSaving === "create" ? "Creando..." : catalogSaving === "save" ? "Guardando..." : editingCatalogCode ? "Guardar cambios" : `Crear ${catalogCreateLabel(catalogDraft.catalog)}`}
+              </Button>
+              <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={Boolean(catalogSaving)} onClick={() => resetCatalogDraft()} type="button"><X size={16} /> Cancelar</Button>
+            </div>
+          </ModalFrame>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderSedesManager() {
+    const canWriteSedes = hasStoredRolePermission("transport", "write");
+    const activeSedeCount = sedeMasterRows.filter((row) => row.active).length;
+    return (
+      <div className="space-y-3">
+        <div className="grid gap-3 rounded-md border border-line bg-paper p-3 md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <p className="text-xs font-semibold uppercase text-neutral-500">Sedes operativas</p>
+            <p className="mt-1 text-sm text-neutral-600">{sedeMasterRows.length} registro(s), {activeSedeCount} activo(s). Cada sede es el punto de despacho georreferenciado que alimenta planeacion, tarifarios y liquidacion de Transporte.</p>
+          </div>
+          <Button onClick={() => { resetSedeDraft(); setSedeEditorOpen(true); }} type="button"><Plus size={16} /> Nueva sede</Button>
         </div>
+        {catalogNotice ? (
+          <div className={`rounded-md border px-3 py-2 text-sm ${catalogNotice.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : catalogNotice.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : catalogNotice.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-sky-200 bg-sky-50 text-sky-900"}`} role="status">
+            <div className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0">
+                {catalogNotice.tone === "success" ? <Check size={16} /> : catalogNotice.tone === "error" || catalogNotice.tone === "warning" ? <AlertTriangle size={16} /> : <RefreshCw className={catalogSaving ? "animate-spin" : ""} size={16} />}
+              </span>
+              <span>
+                <span className="block font-semibold">{catalogNotice.title}</span>
+                {catalogNotice.detail ? <span className="mt-0.5 block">{catalogNotice.detail}</span> : null}
+              </span>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-3">
+          {sedeMasterState === "loading" || sedeMasterState === "idle" ? <p className="text-sm text-neutral-500">Cargando sedes...</p> : null}
+          {sedeMasterState === "error" ? <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">No fue posible cargar las sedes. Verifica el acceso de lectura al modulo de Transporte y reintenta.</p> : null}
+          {sedeMasterState === "ready" ? (
+            <div className="max-h-[62vh] overflow-auto rounded-md border border-line">
+              <table className="w-full min-w-[820px] text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b border-line text-left text-xs text-neutral-500">
+                    <th className="px-3 py-2">Codigo</th>
+                    <th className="px-3 py-2">Nombre</th>
+                    <th className="px-3 py-2">Ubicacion</th>
+                    <th className="px-3 py-2">Horario</th>
+                    <th className="px-3 py-2">Estado</th>
+                    <th className="px-3 py-2 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sedeMasterRows.map((row) => (
+                    <tr className={`border-b border-line/70 ${editingSedeId === row.id ? "bg-apex/5" : ""}`} key={row.id}>
+                      <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
+                      <td className="px-3 py-2">{row.name}</td>
+                      <td className="px-3 py-2 text-neutral-600">{row.address} · {row.city}{row.latitude == null || row.longitude == null ? " · sin coordenadas" : ""}</td>
+                      <td className="px-3 py-2 text-neutral-600">{row.operation_start && row.operation_end ? `${row.operation_start} - ${row.operation_end}` : "-"}</td>
+                      <td className="px-3 py-2">
+                        <span className={`rounded-md px-2 py-1 text-xs font-semibold ${row.active ? "bg-emerald-50 text-emerald-700" : "bg-neutral-100 text-neutral-600"}`}>{row.active ? "Activo" : "Inactivo"}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex justify-end gap-2">
+                          <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-50" disabled={Boolean(catalogSaving) || !canWriteSedes} onClick={() => editSedeRow(row)} type="button"><Edit3 size={13} /></button>
+                          <button className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:bg-paper disabled:cursor-wait disabled:opacity-50" disabled={Boolean(catalogSaving) || !canWriteSedes} onClick={() => void toggleSedeRow(row)} type="button">
+                            {catalogSaving === `toggle-sede:${row.id}` ? "Guardando..." : row.active ? "Inactivar" : "Activar"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!sedeMasterRows.length ? (
+                    <tr><td className="px-3 py-6 text-center text-sm text-neutral-500" colSpan={6}>No hay sedes configuradas.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+
+        {sedeEditorOpen ? (
+          <ModalFrame
+            maxWidth="md:max-w-3xl"
+            onClose={() => { setSedeEditorOpen(false); resetSedeDraft(); }}
+            title={editingSedeId ? `Editar sede ${sedeDraft.code}` : "Nueva sede"}
+          >
+            <p className="mb-3 text-xs text-neutral-500">Sede georreferenciada que alimenta planeacion, tarifarios y liquidacion de Transporte.</p>
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Codigo *" value={sedeDraft.code} onChange={(value) => setSedeDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "-") }))} />
+              <Field label="Nombre *" value={sedeDraft.name} onChange={(value) => setSedeDraft((current) => ({ ...current, name: value }))} />
+              <Field label="Direccion normalizada *" value={sedeDraft.address} onChange={(value) => setSedeDraft((current) => ({ ...current, address: value }))} />
+              <Field label="Ciudad *" value={sedeDraft.city} onChange={(value) => setSedeDraft((current) => ({ ...current, city: value }))} />
+              <Field label="Departamento/estado" value={sedeDraft.department} onChange={(value) => setSedeDraft((current) => ({ ...current, department: value }))} />
+              <Field label="Pais" value={sedeDraft.country} onChange={(value) => setSedeDraft((current) => ({ ...current, country: value }))} />
+              <Field label="Latitud *" step="any" type="number" value={sedeDraft.latitude} onChange={(value) => setSedeDraft((current) => ({ ...current, latitude: value }))} />
+              <Field label="Longitud *" step="any" type="number" value={sedeDraft.longitude} onChange={(value) => setSedeDraft((current) => ({ ...current, longitude: value }))} />
+              <Field label="Inicio operacion" type="time" value={sedeDraft.operation_start} onChange={(value) => setSedeDraft((current) => ({ ...current, operation_start: value }))} />
+              <Field label="Fin operacion" type="time" value={sedeDraft.operation_end} onChange={(value) => setSedeDraft((current) => ({ ...current, operation_end: value }))} />
+              <Field label="Preparacion (minutos)" type="number" value={sedeDraft.service_minutes} onChange={(value) => setSedeDraft((current) => ({ ...current, service_minutes: value }))} />
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button disabled={Boolean(catalogSaving) || !canWriteSedes} onClick={() => void saveSedeMaster()} type="button">
+                {catalogSaving === "create-sede" || catalogSaving === "save-sede" ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                {catalogSaving === "create-sede" ? "Creando..." : catalogSaving === "save-sede" ? "Guardando..." : editingSedeId ? "Guardar cambios" : "Crear sede"}
+              </Button>
+              <Button className="border border-line bg-white text-neutral-800 hover:bg-paper" disabled={Boolean(catalogSaving)} onClick={() => { setSedeEditorOpen(false); resetSedeDraft(); }} type="button"><X size={16} /> Cancelar</Button>
+              {!canWriteSedes ? <span className="text-xs text-neutral-500">Requieres permiso de escritura en Transporte para gestionar sedes.</span> : null}
+            </div>
+          </ModalFrame>
+        ) : null}
       </div>
     );
   }
@@ -2175,8 +2644,8 @@ export default function AdministracionPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-apex">Configuracion y gobierno</p>
-          <h1 className="mt-1 text-3xl font-semibold">Administracion APEX</h1>
+          <p className="text-sm font-medium text-apex">Configuración y gobierno</p>
+          <h1 className="mt-1 text-3xl font-semibold">Administración APEX</h1>
           <p className="mt-2 max-w-3xl text-sm text-neutral-600">{platformAdmin ? "Gestiona accesos, permisos, empresas y maestros desde un centro administrativo ordenado." : "Gestiona usuarios, roles y maestros propios de esta empresa desde un centro administrativo ordenado."}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -2386,6 +2855,12 @@ export default function AdministracionPage() {
       {activeModal === "masters" ? (
         <ModalFrame title="Maestros de plataforma" onClose={() => setActiveModal(null)} maxWidth="md:max-w-5xl">
           {renderMasterCatalogManager()}
+        </ModalFrame>
+      ) : null}
+
+      {activeModal === "sedes" ? (
+        <ModalFrame title="Sedes" onClose={() => setActiveModal(null)} maxWidth="md:max-w-5xl">
+          {renderSedesManager()}
         </ModalFrame>
       ) : null}
 

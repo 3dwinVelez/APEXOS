@@ -118,5 +118,5 @@ test("todas las operaciones administrativas por id acotan usuario y rol al tenan
   assert.ok(userLookups.length >= 10);
   for (const lookup of userLookups) assert.match(lookup, /tenant_id: tenantId/);
   assert.match(source, /prisma\.role\.findFirst\(\{ where: \{ id: roleId, tenant_id: tenantId \}/);
-  assert.match(source, /prisma\.role\.findFirst\(\{ where: \{ id: Number\(input\.role_id\), tenant_id: tenantId \}/);
+  assert.match(source, /tx\.role\.findFirst\(\{ where: \{ id: Number\(input\.role_id\), tenant_id: tenantId \}/);
 });

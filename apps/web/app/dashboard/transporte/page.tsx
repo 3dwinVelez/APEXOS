@@ -1,10 +1,13 @@
 "use client";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 
-import { api } from "@/lib/api";
+import { api, isActiveMasterItem, loadVehicleMasterCatalogs } from "@/lib/api";
+import type { VehicleMasterCatalogs, VehicleMasterItem } from "@/lib/api";
+import { inspectFileSignature } from "@/lib/fileSignature";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { ActionCard } from "@/components/ui/ActionCard";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
-import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Users, Wallet, Wrench } from "lucide-react";
+import { Archive, Bell, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Cuboid, Eye, FileCheck2, Filter, History, MapPin, Navigation, Paperclip, Plus, RadioTower, ReceiptText, RotateCcw, Route, Save, Search, Settings, Truck, Wallet, Wrench } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -14,7 +17,6 @@ type VehicleDocument = {
   file_name: string;
   file_url?: string;
   storage_path?: string;
-  base64_data?: string;
   mime_type?: string;
   file_size?: number;
   issued_at?: string;
@@ -24,6 +26,26 @@ type VehicleDocument = {
   version: number;
   active: boolean;
   uploaded_at?: string;
+  has_attachment?: boolean;
+};
+
+type DocumentView = {
+  document_id: number;
+  file_name: string;
+  mime_type: string;
+  source: string;
+  url: string;
+  expires_in: number | null;
+};
+
+type DocumentPreview = {
+  document: VehicleDocument;
+  url: string;
+  mime_type: string;
+  source: string;
+  expires_in: number | null;
+  loading: boolean;
+  error?: string;
 };
 
 type VehicleAudit = {
@@ -64,6 +86,7 @@ type Vehicle = {
   owner_document?: string;
   linked_company?: string;
   cost_center?: string;
+  metadata?: { accounting_branch_code?: string };
   base_site: string;
   authorized_driver_id?: number;
   authorized_driver_name?: string;
@@ -124,6 +147,7 @@ const emptyVehicle = {
   owner_document: "",
   linked_company: "",
   cost_center: "",
+  accounting_branch_code: "",
   base_site: "",
   authorized_driver_id: 0,
   authorized_driver_name: "",
@@ -181,9 +205,19 @@ const documentTypes = [
   ["foto_general", "Foto general"],
   ["otro", "Otro documento"]
 ];
+const DOCUMENT_ACCEPT = ".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp";
+const MAX_DOCUMENT_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 function dateOnly(value?: string | null) {
   return value ? String(value).slice(0, 10) : "";
+}
+
+function formatFileSize(bytes?: number) {
+  const value = Number(bytes || 0);
+  if (!value) return "";
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function statusLabel(status: string) {
@@ -209,7 +243,7 @@ function statusClass(status: string) {
   if (status === "apto_documentalmente") return "border-emerald-200 bg-emerald-50 text-emerald-800";
   if (status === "documento_proximo_a_vencer") return "border-amber-200 bg-amber-50 text-amber-800";
   if (status === "bloqueado_documental") return "border-red-200 bg-red-50 text-red-800";
-  return "border-line bg-paper text-neutral-700";
+  return "border-line bg-paper text-content-body";
 }
 
 function vehicleCompletion(source: object) {
@@ -224,15 +258,6 @@ function vehicleCompletion(source: object) {
   };
 }
 
-function readFile(file: File) {
-  return new Promise<{ base64_data: string; file_name: string; mime_type: string; file_size: number }>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve({ base64_data: String(reader.result || ""), file_name: file.name, mime_type: file.type, file_size: file.size });
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 function vehiclePayload(form: typeof emptyVehicle) {
   const payload: Record<string, string | number> = { ...form, plate: form.plate.toUpperCase().replace(/\s+/g, "") };
   if (!Number(payload.capacity_value)) delete payload.capacity_value;
@@ -240,12 +265,39 @@ function vehiclePayload(form: typeof emptyVehicle) {
   return payload;
 }
 
+function catalogPairs(items: VehicleMasterItem[] | undefined, current: string): Array<[string, string]> {
+  const pairs: Array<[string, string]> = [];
+  const seen = new Set<string>();
+  for (const item of items || []) {
+    if (!isActiveMasterItem(item)) continue;
+    const label = item.name || item.code;
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    pairs.push([label, label]);
+  }
+  const trimmed = (current || "").trim();
+  if (trimmed && !seen.has(trimmed.toLowerCase())) pairs.push([trimmed, `${trimmed} (actual)`]);
+  return pairs;
+}
+
+function selectProps(pairs: Array<[string, string]>) {
+  return { options: pairs.map(([value]) => value), optionLabels: Object.fromEntries(pairs) as Record<string, string> };
+}
+
+type OrgSociety = { code: string; name: string; active?: boolean };
+type OrgBranch = { code: string; name: string; society_code: string; active?: boolean };
+type OrgCostCenter = { code: string; name: string; society_code: string; branch_code: string; active?: boolean };
+type OrgTree = { societies: OrgSociety[]; branches: OrgBranch[]; cost_centers: OrgCostCenter[] };
+
 export function TransportFleetPage() {
   const [access, setAccess] = useState({ ready: false, canRead: false, canWrite: false, canReadHr: false });
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selected, setSelected] = useState<Vehicle | null>(null);
   const [form, setForm] = useState({ ...emptyVehicle });
+  const [syncBranch, setSyncBranch] = useState("");
+  const [syncingCenters, setSyncingCenters] = useState(false);
   const [activeTab, setActiveTab] = useState(tabs[0]);
   const [showEditor, setShowEditor] = useState(false);
   const [message, setMessage] = useState("");
@@ -257,14 +309,30 @@ export function TransportFleetPage() {
   const [saving, setSaving] = useState(false);
   const [documentDraft, setDocumentDraft] = useState({
     document_type: "soat",
-    file_name: "",
-    base64_data: "",
-    mime_type: "",
-    file_size: 0,
     issued_at: "",
     expires_at: "",
     observations: ""
   });
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentSaving, setDocumentSaving] = useState(false);
+  const [documentInputKey, setDocumentInputKey] = useState(0);
+  const [documentPreview, setDocumentPreview] = useState<DocumentPreview | null>(null);
+  const [vehicleCatalogs, setVehicleCatalogs] = useState<VehicleMasterCatalogs | null>(null);
+  const [orgTree, setOrgTree] = useState<OrgTree | null>(null);
+  const [orgCreator, setOrgCreator] = useState<"branch" | "">("");
+  const [orgDraft, setOrgDraft] = useState({ society_code: "", code: "", name: "" });
+  const [orgSaving, setOrgSaving] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    loadVehicleMasterCatalogs()
+      .then((catalogs) => { if (alive) setVehicleCatalogs(catalogs); })
+      .catch(() => undefined);
+    api<OrgTree>("/api/v1/transport/vehicle-accounting-structure")
+      .then((tree) => { if (alive) setOrgTree(tree); })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
 
   const load = useCallback(async () => {
     setMessage("");
@@ -303,9 +371,12 @@ export function TransportFleetPage() {
   async function openVehicle(vehicle: Vehicle) {
     const detail = await api<Vehicle>(`/api/v1/transport/vehicles/${vehicle.id}`).catch(() => vehicle);
     setSelected(detail);
+    setDocumentPreview(null);
+    setDocumentFile(null);
     setForm({
       ...emptyVehicle,
       ...detail,
+      accounting_branch_code: detail.metadata?.accounting_branch_code || "",
       line: detail.line || detail.model || "",
       linked_at: dateOnly(detail.linked_at),
       unlinked_at: dateOnly(detail.unlinked_at),
@@ -327,7 +398,9 @@ export function TransportFleetPage() {
   function newVehicle() {
     setSelected(null);
     setForm({ ...emptyVehicle });
-    setDocumentDraft({ document_type: "soat", file_name: "", base64_data: "", mime_type: "", file_size: 0, issued_at: "", expires_at: "", observations: "" });
+    setDocumentDraft({ document_type: "soat", issued_at: "", expires_at: "", observations: "" });
+    setDocumentFile(null);
+    setDocumentPreview(null);
     setActiveTab(tabs[0]);
     setShowEditor(true);
   }
@@ -374,8 +447,8 @@ export function TransportFleetPage() {
         ? await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`, { method: "PUT", body: JSON.stringify(payload) })
         : await api<Vehicle>("/api/v1/transport/vehicles", { method: "POST", body: JSON.stringify(payload) });
       setSelected(saved);
-      setMessage("Ficha maestra vehicular guardada.");
       await load();
+      setMessage(`Ficha guardada. Centro de costo ${saved.cost_center} enlazado a la estructura contable.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible guardar el vehiculo.");
     } finally {
@@ -383,14 +456,37 @@ export function TransportFleetPage() {
     }
   }
 
+  async function synchronizeCenters() {
+    if (!syncBranch || syncingCenters) return;
+    setSyncingCenters(true);
+    try {
+      const result = await api<{ synchronized: number }>("/api/v1/transport/vehicles/accounting-centers/synchronize", { method: "POST", body: JSON.stringify({ branch_code: syncBranch }) });
+      await load();
+      setMessage(`${result.synchronized} centros vehiculares enlazados a la sucursal ${syncBranch}.`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "No fue posible sincronizar los centros."); }
+    finally { setSyncingCenters(false); }
+  }
+
   async function selectDocument(file?: File) {
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      setMessage("El archivo supera 10 MB.");
+    if (!file) {
+      setDocumentFile(null);
       return;
     }
-    const fileData = await readFile(file);
-    setDocumentDraft((current) => ({ ...current, ...fileData }));
+    if (file.size > MAX_DOCUMENT_UPLOAD_BYTES) {
+      setMessage("El archivo supera 10 MB.");
+      setDocumentFile(null);
+      setDocumentInputKey((key) => key + 1);
+      return;
+    }
+    const signature = await inspectFileSignature(file);
+    if (!signature) {
+      setMessage("Formato no permitido. Adjunta un PDF, PNG, JPEG o WEBP.");
+      setDocumentFile(null);
+      setDocumentInputKey((key) => key + 1);
+      return;
+    }
+    setDocumentFile(file);
+    setMessage("");
   }
 
   async function saveDocument() {
@@ -398,19 +494,41 @@ export function TransportFleetPage() {
       setMessage("Guarda primero la ficha del vehiculo.");
       return;
     }
-    if (!documentDraft.document_type || !documentDraft.file_name) {
+    if (!documentDraft.document_type || !documentFile) {
       setMessage("Selecciona tipo documental y archivo.");
       return;
     }
+    setDocumentSaving(true);
     try {
-      const saved = await api<VehicleDocument>(`/api/v1/transport/vehicles/${selected.id}/documents`, { method: "POST", body: JSON.stringify(documentDraft) });
+      const payload = new FormData();
+      payload.append("document_type", documentDraft.document_type);
+      if (documentDraft.issued_at) payload.append("issued_at", documentDraft.issued_at);
+      if (documentDraft.expires_at) payload.append("expires_at", documentDraft.expires_at);
+      if (documentDraft.observations) payload.append("observations", documentDraft.observations);
+      payload.append("file", documentFile);
+      const saved = await api<VehicleDocument>(`/api/v1/transport/vehicles/${selected.id}/documents`, { method: "POST", body: payload });
       const detail = await api<Vehicle>(`/api/v1/transport/vehicles/${selected.id}`);
       setSelected(detail);
       setVehicles((current) => current.map((vehicle) => vehicle.id === detail.id ? detail : vehicle));
-      setDocumentDraft({ document_type: "soat", file_name: "", base64_data: "", mime_type: "", file_size: 0, issued_at: "", expires_at: "", observations: "" });
+      setDocumentDraft({ document_type: "soat", issued_at: "", expires_at: "", observations: "" });
+      setDocumentFile(null);
+      setDocumentInputKey((key) => key + 1);
       setMessage(`Documento ${saved.file_name} cargado.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible adjuntar el documento.");
+    } finally {
+      setDocumentSaving(false);
+    }
+  }
+
+  async function openDocumentPreview(document: VehicleDocument) {
+    if (!selected?.id) return;
+    setDocumentPreview({ document, url: "", mime_type: document.mime_type || "", source: "", expires_in: null, loading: true });
+    try {
+      const view = await api<DocumentView>(`/api/v1/transport/vehicles/${selected.id}/documents/${document.id}/view`);
+      setDocumentPreview({ document, url: view.url, mime_type: view.mime_type || document.mime_type || "", source: view.source, expires_in: view.expires_in, loading: false });
+    } catch (error) {
+      setDocumentPreview({ document, url: "", mime_type: "", source: "", expires_in: null, loading: false, error: error instanceof Error ? error.message : "No fue posible abrir el documento." });
     }
   }
 
@@ -452,6 +570,43 @@ export function TransportFleetPage() {
   const activeTabIndex = editorTabs.indexOf(activeTab);
   const formCompletion = vehicleCompletion(form);
 
+  function lineItemsForBrand(brandValue: string) {
+    const all = vehicleCatalogs?.lines || [];
+    const brand = (vehicleCatalogs?.brands || []).find((item) => isActiveMasterItem(item) && (item.name.toLowerCase() === brandValue.trim().toLowerCase() || item.code.toLowerCase() === brandValue.trim().toLowerCase()));
+    if (!brand) return all;
+    const filtered = all.filter((item) => (item.parent_code || "").toLowerCase() === brand.code.toLowerCase());
+    return filtered.length ? filtered : all;
+  }
+
+  const typePairs: Array<[string, string]> = [["", "Seleccionar tipo"], ...catalogPairs(vehicleCatalogs?.types, form.type)];
+  const categoryPairs: Array<[string, string]> = [["", "Sin categoria"], ...catalogPairs(vehicleCatalogs?.categories, form.category)];
+  const brandPairs: Array<[string, string]> = [["", "Seleccionar marca"], ...catalogPairs(vehicleCatalogs?.brands, form.brand)];
+  const linePairs: Array<[string, string]> = [["", "Sin linea"], ...catalogPairs(lineItemsForBrand(form.brand), form.line)];
+  const colorPairs: Array<[string, string]> = [["", "Sin color"], ...catalogPairs(vehicleCatalogs?.colors, form.color)];
+  const fuelPairs: Array<[string, string]> = [["", "Sin combustible"], ...catalogPairs(vehicleCatalogs?.fuels, form.fuel)];
+  const bodyTypePairs: Array<[string, string]> = [["", "Sin carroceria"], ...catalogPairs(vehicleCatalogs?.bodyTypes, form.body_type)];
+  const unitPairs = (() => {
+    const pairs: Array<[string, string]> = [];
+    const seen = new Set<string>();
+    for (const item of vehicleCatalogs?.capacityUnits || []) {
+      if (!isActiveMasterItem(item)) continue;
+      if (seen.has(item.code)) continue;
+      seen.add(item.code);
+      pairs.push([item.code, item.name]);
+    }
+    const current = (form.capacity_unit || "").trim();
+    if (current && !seen.has(current)) pairs.push([current, `${current} (actual)`]);
+    return pairs;
+  })();
+  const currentYear = new Date().getFullYear();
+  const yearOptions = (() => {
+    const years: string[] = [];
+    for (let year = 1980; year <= currentYear + 1; year += 1) years.push(String(year));
+    if (form.year && !years.includes(String(form.year))) years.unshift(String(form.year));
+    return years;
+  })();
+  const sitePairs: Array<[string, string]> = [["", "Seleccionar sede base"], ...catalogPairs(vehicleCatalogs?.locations, form.base_site)];
+
   function clearFilters() {
     setQuery("");
     setStatusFilter("");
@@ -465,8 +620,44 @@ export function TransportFleetPage() {
     if (next) setActiveTab(next);
   }
 
+  function openOrgCreator() {
+    setOrgDraft({ society_code: orgTree?.societies.find((item) => item.active !== false)?.code || "", code: "", name: "" });
+    setOrgCreator("branch");
+  }
+
+  async function saveOrgUnit() {
+    if (!orgTree || !orgCreator) return;
+    const code = orgDraft.code.trim();
+    const name = orgDraft.name.trim();
+    if (!code || !name) {
+      setMessage("Codigo y nombre son obligatorios para crear la sucursal.");
+      return;
+    }
+    const societyCode = orgDraft.society_code || orgTree.societies.find((item) => item.active !== false)?.code || "";
+    if (!societyCode) {
+      setMessage("Selecciona la sociedad de la nueva sucursal.");
+      return;
+    }
+    setOrgSaving(true);
+    try {
+      const next = await api<OrgTree>("/api/v1/accounting/organization-tree", {
+        method: "POST",
+        body: JSON.stringify({ type: "branch", society_code: societyCode, code, name })
+      });
+      setOrgTree(next);
+      setField("base_site", next.branches.find((item) => item.code === code)?.code || code);
+      setOrgCreator("");
+      setOrgDraft({ society_code: "", code: "", name: "" });
+      setMessage(`Sucursal ${code} creada en la estructura contable.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible crear la sucursal en la estructura contable.");
+    } finally {
+      setOrgSaving(false);
+    }
+  }
+
   if (!access.ready) {
-    return <div className="rounded-md border border-line bg-white p-6 text-sm text-neutral-600">Validando permisos de Transporte...</div>;
+    return <div className="rounded-md border border-line bg-surface p-6 text-sm text-content-body">Validando permisos de Transporte...</div>;
   }
 
   if (!access.canRead) {
@@ -480,35 +671,36 @@ export function TransportFleetPage() {
 
   return (
     <div className="apex-workspace-shell space-y-4">
+      {access.canWrite && hasStoredRolePermission("accounting", "write") ? <div className="apex-section-card flex flex-wrap items-end gap-3 p-4"><Select label="Sucursal contable para centros de vehiculos existentes" value={syncBranch} onChange={setSyncBranch} {...selectProps([["", "Seleccionar sucursal"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} /><button type="button" className="h-10 rounded-md border border-line px-3 text-sm font-semibold disabled:opacity-50" disabled={!syncBranch || syncingCenters} onClick={() => void synchronizeCenters()}>{syncingCenters ? "Sincronizando..." : "Sincronizar centros de costo"}</button><p className="w-full text-xs text-content-body">Crea los centros faltantes de la empresa en la sucursal elegida y conserva las sedes operativas. Los centros previamente vinculados a otra sucursal requieren revision.</p></div> : null}
       <header className="apex-section-card flex flex-wrap items-start justify-between gap-4 p-4">
         <div>
           <p className="text-sm font-medium text-apex">M-14 · Maestro de flota</p>
           <h1 className="mt-1 text-3xl font-semibold">Vehiculos</h1>
-          <p className="mt-2 max-w-3xl text-sm text-neutral-600">Consulta el estado de cada placa, corrige documentos y mantén la flota lista para Planeacion.</p>
+          <p className="mt-2 max-w-3xl text-sm text-content-body">Consulta el estado de cada placa, corrige documentos y mantén la flota lista para Planeacion.</p>
         </div>
         {access.canWrite ? <button className="inline-flex h-11 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white hover:bg-apex/90" onClick={newVehicle} type="button"><Plus size={17} /> Crear vehiculo</button> : null}
       </header>
 
       {message ? <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">{message}</div> : null}
 
-      <section className="overflow-hidden rounded-md border border-line bg-white" id="flota-maestra">
+      <section className="overflow-hidden rounded-md border border-line bg-surface" id="flota-maestra">
         <div className="border-b border-line p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Consulta de flota</h2>
-              <p className="text-sm text-neutral-600">Compara placas y abre una ficha solo cuando necesites actuar.</p>
+              <p className="text-sm text-content-body">Compara placas y abre una ficha solo cuando necesites actuar.</p>
             </div>
-            <div className="flex flex-wrap justify-end gap-2 text-xs font-semibold text-neutral-600">
+            <div className="flex flex-wrap justify-end gap-2 text-xs font-semibold text-content-body">
               <span className="rounded-md border border-line px-3 py-1.5">{filtered.length} de {vehicles.length} vehiculo(s)</span>
               <span className="rounded-md bg-emerald-50 px-3 py-1.5 text-emerald-700">{ready} aptos</span>
-              <span className={`rounded-md px-3 py-1.5 ${metrics.blocked + metrics.warning ? "bg-amber-50 text-amber-800" : "bg-paper text-neutral-600"}`}>{metrics.blocked + metrics.warning} por revisar</span>
+              <span className={`rounded-md px-3 py-1.5 ${metrics.blocked + metrics.warning ? "bg-amber-50 text-amber-800" : "bg-paper text-content-body"}`}>{metrics.blocked + metrics.warning} por revisar</span>
               <span className="rounded-md bg-paper px-3 py-1.5">Score {metrics.avgScore}/100 · {scoreLabel(metrics.avgScore)}</span>
               {incomplete ? <span className="rounded-md bg-amber-50 px-3 py-1.5 text-amber-800">{incomplete} incompletas</span> : null}
             </div>
           </div>
           <div className="mt-4 grid gap-2 lg:grid-cols-[minmax(240px,1fr)_repeat(4,minmax(150px,auto))]">
             <label className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-content-subtle" size={16} />
               <input className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar placa, marca, sede o conductor" value={query} onChange={(event) => setQuery(event.target.value)} />
             </label>
             <FilterSelect value={statusFilter} onChange={setStatusFilter} options={[
@@ -525,7 +717,7 @@ export function TransportFleetPage() {
             <FilterSelect value={sortBy} onChange={setSortBy} options={[["attention", "Prioridad documental"], ["plate", "Placa A-Z"], ["score_asc", "Menor score"], ["score_desc", "Mayor score"]]} />
           </div>
           {activeFilters ? (
-            <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-neutral-700 hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button>
+            <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-content-body hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button>
           ) : null}
         </div>
 
@@ -533,7 +725,7 @@ export function TransportFleetPage() {
           {filtered.map((vehicle) => (
             <button className="rounded-md border border-line p-4 text-left hover:border-apex hover:bg-paper" key={vehicle.id} onClick={() => openVehicle(vehicle)} type="button">
               <div className="flex items-start justify-between gap-3">
-                <div><p className="text-xl font-semibold">{vehicle.plate}</p><p className="text-sm text-neutral-600">{vehicle.brand} {vehicle.line || vehicle.model || ""}</p></div>
+                <div><p className="text-xl font-semibold">{vehicle.plate}</p><p className="text-sm text-content-body">{vehicle.brand} {vehicle.line || vehicle.model || ""}</p></div>
                 <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(vehicle.master_status)}`}>{statusLabel(vehicle.master_status)}</span>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3"><Info label="Sede" value={vehicle.base_site || "-"} /><Info label="Conductor" value={vehicle.authorized_driver_name || "Sin asignar"} /><Info label="Propiedad" value={vehicle.ownership_type || "-"} /><Info label="Score" value={`${vehicle.master_score || 0}/100`} /></div>
@@ -544,44 +736,44 @@ export function TransportFleetPage() {
 
         <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1050px] border-collapse text-left text-sm">
-            <thead className="bg-paper text-xs uppercase tracking-wide text-neutral-500">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-content-muted">
               <tr><th className="px-4 py-3">Vehiculo</th><th className="px-4 py-3">Estado y completitud</th><th className="px-4 py-3">Sede y propiedad</th><th className="px-4 py-3">Conductor autorizado</th><th className="px-4 py-3">Vencimientos</th><th className="px-4 py-3 text-right">Accion</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {filtered.map((vehicle) => (
                 <tr className="hover:bg-paper/70" key={vehicle.id}>
-                  <td className="px-4 py-3"><p className="font-semibold">{vehicle.plate}</p><p className="text-xs text-neutral-500">{vehicle.brand || "-"} {vehicle.line || vehicle.model || ""} {vehicle.year ? `· ${vehicle.year}` : ""}</p></td>
+                  <td className="px-4 py-3"><p className="font-semibold">{vehicle.plate}</p><p className="text-xs text-content-muted">{vehicle.brand || "-"} {vehicle.line || vehicle.model || ""} {vehicle.year ? `· ${vehicle.year}` : ""}</p></td>
                   <td className="min-w-52 px-4 py-3"><span className={`inline-flex rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(vehicle.master_status)}`}>{statusLabel(vehicle.master_status)}</span><CompletionBar className="mt-2" compact percent={vehicleCompletion(vehicle).percent} /></td>
-                  <td className="px-4 py-3"><p className="font-medium">{vehicle.base_site || "Sin sede"}</p><p className="text-xs capitalize text-neutral-500">{vehicle.ownership_type || "Sin propiedad"}</p></td>
-                  <td className="px-4 py-3"><p className="font-medium">{vehicle.authorized_driver_name || "Sin asignar"}</p><p className="text-xs text-neutral-500">{vehicle.authorized_driver_code || vehicle.authorized_driver_document || "Disponible para asignacion"}</p></td>
-                  <td className="px-4 py-3"><p>SOAT: <strong>{vehicle.dashboard_metrics?.soat_days_remaining ?? "--"} dias</strong></p><p className="text-xs text-neutral-500">Tec-mec: {vehicle.dashboard_metrics?.technical_review_days_remaining ?? "--"} dias</p></td>
-                  <td className="px-4 py-3 text-right"><button className="h-9 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-white" onClick={() => openVehicle(vehicle)} type="button">Abrir ficha</button></td>
+                  <td className="px-4 py-3"><p className="font-medium">{vehicle.base_site || "Sin sede"}</p><p className="text-xs capitalize text-content-muted">{vehicle.ownership_type || "Sin propiedad"}</p></td>
+                  <td className="px-4 py-3"><p className="font-medium">{vehicle.authorized_driver_name || "Sin asignar"}</p><p className="text-xs text-content-muted">{vehicle.authorized_driver_code || vehicle.authorized_driver_document || "Disponible para asignacion"}</p></td>
+                  <td className="px-4 py-3"><p>SOAT: <strong>{vehicle.dashboard_metrics?.soat_days_remaining ?? "--"} dias</strong></p><p className="text-xs text-content-muted">Tec-mec: {vehicle.dashboard_metrics?.technical_review_days_remaining ?? "--"} dias</p></td>
+                  <td className="px-4 py-3 text-right"><button className="h-9 rounded-md border border-line px-3 text-sm font-semibold hover:border-apex hover:bg-surface" onClick={() => openVehicle(vehicle)} type="button">Abrir ficha</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {!filtered.length ? <div className="p-10 text-center"><Filter className="mx-auto text-neutral-300" size={28} /><p className="mt-3 text-sm font-semibold">No hay vehiculos con estos filtros</p><p className="mt-1 text-sm text-neutral-500">Limpia los filtros o crea una nueva ficha.</p></div> : null}
+        {!filtered.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay vehiculos con estos filtros</p><p className="mt-1 text-sm text-content-muted">Limpia los filtros o crea una nueva ficha.</p></div> : null}
       </section>
 
       {showEditor ? (
         <ModalFrame title={selected ? `Ficha vehicular · ${selected.plate}` : "Crear vehiculo"} onClose={() => setShowEditor(false)} maxWidth="md:max-w-6xl">
           <div className="space-y-4">
-            <div className="rounded-md border border-apex/20 bg-[#146C630D] p-4">
+            <div className="rounded-md border border-apex/20 bg-apex/5 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-apex shadow-sm">{tabIcon(activeTab, 20)}</span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface text-apex shadow-sm">{tabIcon(activeTab, 20)}</span>
                   <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-apex">{selected ? "Mantenimiento de ficha" : `Paso ${activeTabIndex + 1} de ${editorTabs.length}`}</p>
                   <h2 className="mt-1 text-lg font-semibold">{editorGuide(activeTab).title}</h2>
-                  <p className="mt-1 max-w-3xl text-sm text-neutral-600">{editorGuide(activeTab).detail}</p>
+                  <p className="mt-1 max-w-3xl text-sm text-content-body">{editorGuide(activeTab).detail}</p>
                   </div>
                 </div>
                 {selected ? <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(selected.master_status)}`}>{statusLabel(selected.master_status)}</span> : null}
               </div>
-              <div className="mt-4 rounded-md border border-white bg-white/80 p-3">
+              <div className="mt-4 rounded-md border border-white bg-surface/80 p-3">
                 <CompletionBar percent={formCompletion.percent} />
-                <p className="mt-2 text-xs text-neutral-600">
+                <p className="mt-2 text-xs text-content-body">
                   {formCompletion.missing.length
                     ? `Siguiente recomendado: ${formCompletion.missing.slice(0, 3).join(", ")}.`
                     : "La informacion principal del vehiculo esta completa."}
@@ -589,8 +781,8 @@ export function TransportFleetPage() {
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
                 {editorTabs.map((tab, index) => (
-                  <button className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-semibold ${activeTab === tab ? "border-apex bg-white text-apex" : "border-line bg-white/60 text-neutral-600 hover:bg-white"}`} key={tab} onClick={() => setActiveTab(tab)} type="button">
-                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${index < activeTabIndex ? "bg-emerald-100 text-emerald-700" : activeTab === tab ? "bg-apex text-white" : "bg-paper text-neutral-500"}`}>{index < activeTabIndex ? <CheckCircle2 size={15} /> : tabIcon(tab, 15)}</span>
+                  <button className={`flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-semibold ${activeTab === tab ? "border-apex bg-surface text-apex" : "border-line bg-surface/60 text-content-body hover:bg-surface"}`} key={tab} onClick={() => setActiveTab(tab)} type="button">
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${index < activeTabIndex ? "bg-emerald-100 text-emerald-700" : activeTab === tab ? "bg-apex text-white" : "bg-paper text-content-muted"}`}>{index < activeTabIndex ? <CheckCircle2 size={15} /> : tabIcon(tab, 15)}</span>
                     <span><span className="block text-[10px] font-medium uppercase tracking-wide opacity-60">Etapa {index + 1}</span>{tab}</span>
                   </button>
                 ))}
@@ -601,16 +793,24 @@ export function TransportFleetPage() {
             {activeTab === "Identificacion" ? (
               <FormGrid>
                 <Input label="Placa *" value={form.plate} onChange={(value) => setField("plate", value.toUpperCase().replace(/\s+/g, ""))} />
-                <Input label="Tipo de vehiculo *" value={form.type} onChange={(value) => setField("type", value)} />
-                <Input label="Categoria vehicular" value={form.category} onChange={(value) => setField("category", value)} />
-                <Input label="Marca *" value={form.brand} onChange={(value) => setField("brand", value)} />
-                <Input label="Linea / referencia" value={form.line} onChange={(value) => setField("line", value)} />
-                <Input label="Modelo / ano" type="number" value={form.year} onChange={(value) => setField("year", Number(value))} />
-                <Input label="Color" value={form.color} onChange={(value) => setField("color", value)} />
-                <Input label="Combustible" value={form.fuel} onChange={(value) => setField("fuel", value)} />
-                <Input label="Carroceria" value={form.body_type} onChange={(value) => setField("body_type", value)} />
+                <Select label="Tipo de vehiculo *" value={form.type} onChange={(value) => setField("type", value)} {...selectProps(typePairs)} />
+                <Select label="Categoria vehicular" value={form.category} onChange={(value) => setField("category", value)} {...selectProps(categoryPairs)} />
+                <Select
+                  label="Marca *"
+                  value={form.brand}
+                  onChange={(value) => setForm((current) => {
+                    const keepLine = lineItemsForBrand(value).some((item) => (item.name || item.code).toLowerCase() === current.line.trim().toLowerCase());
+                    return { ...current, brand: value, line: keepLine ? current.line : "" };
+                  })}
+                  {...selectProps(brandPairs)}
+                />
+                <Select label="Linea / referencia" value={form.line} onChange={(value) => setField("line", value)} {...selectProps(linePairs)} />
+                <Select label="Modelo / ano" value={String(form.year || "")} onChange={(value) => setField("year", Number(value))} options={yearOptions} />
+                <Select label="Color" value={form.color} onChange={(value) => setField("color", value)} {...selectProps(colorPairs)} />
+                <Select label="Combustible" value={form.fuel} onChange={(value) => setField("fuel", value)} {...selectProps(fuelPairs)} />
+                <Select label="Carroceria" value={form.body_type} onChange={(value) => setField("body_type", value)} {...selectProps(bodyTypePairs)} />
                 <Input label="Capacidad" type="number" value={form.capacity_value} onChange={(value) => setField("capacity_value", Number(value))} />
-                <Input label="Unidad" value={form.capacity_unit} onChange={(value) => setField("capacity_unit", value)} />
+                <Select label="Unidad" value={form.capacity_unit} onChange={(value) => setField("capacity_unit", value)} {...selectProps(unitPairs)} />
                 <Input label="Volumen disponible" type="number" value={form.volume_available} onChange={(value) => setField("volume_available", Number(value))} />
                 <Textarea label="Observaciones generales" value={form.notes} onChange={(value) => setField("notes", value)} />
               </FormGrid>
@@ -622,8 +822,42 @@ export function TransportFleetPage() {
                 <Input label="Propietario legal" value={form.legal_owner} onChange={(value) => setField("legal_owner", value)} />
                 <Input label="NIT / documento" value={form.owner_document} onChange={(value) => setField("owner_document", value)} />
                 <Input label="Empresa vinculada" value={form.linked_company} onChange={(value) => setField("linked_company", value)} />
-                <Input label="Centro de costo" value={form.cost_center} onChange={(value) => setField("cost_center", value)} />
-                <Input label="Sede o bodega base *" value={form.base_site} onChange={(value) => setField("base_site", value)} />
+                <Select
+                  label="Sucursal base *"
+                  value={form.base_site}
+                  onChange={(value) => setField("base_site", value)}
+                  {...selectProps(sitePairs)}
+                />
+                <Select label="Sucursal contable" value={form.accounting_branch_code} onChange={(value) => setField("accounting_branch_code", value)} {...selectProps([["", "Seleccionar sucursal contable"], ...(orgTree?.branches || []).filter(row => row.active !== false).map(row => [row.code, `${row.code} · ${row.name}`] as [string, string])])} />
+                <Input label="Centro de costo del vehiculo" value={form.cost_center || form.plate.toUpperCase()} onChange={() => undefined} disabled />
+                {orgTree ? (
+                  <div className="rounded-md border border-line bg-paper p-3 md:col-span-2 xl:col-span-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase text-content-muted">Estructura contable enlazada</p>
+                      <button className="h-8 rounded-md border border-line bg-surface px-2 text-xs" onClick={openOrgCreator} type="button">+ Nueva sucursal</button>
+                    </div>
+                    <p className="mt-2 text-xs text-content-body">
+                      Al guardar se crea automaticamente el centro de costo del vehiculo en la sucursal contable seleccionada. La sede operativa y la sucursal contable se registran por separado. El codigo del centro se conserva para mantener su historial.
+                    </p>
+                    {orgCreator ? (
+                      <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+                        <Select
+                          label="Sociedad"
+                          value={orgDraft.society_code}
+                          onChange={(value) => setOrgDraft((current) => ({ ...current, society_code: value }))}
+                          options={orgTree.societies.filter((item) => item.active !== false).map((item) => item.code)}
+                          optionLabels={Object.fromEntries(orgTree.societies.filter((item) => item.active !== false).map((item) => [item.code, `${item.code} - ${item.name}`]))}
+                        />
+                        <Input label="Codigo sucursal" value={orgDraft.code} onChange={(value) => setOrgDraft((current) => ({ ...current, code: value.toUpperCase().replace(/\s+/g, "") }))} />
+                        <Input label="Nombre sucursal" value={orgDraft.name} onChange={(value) => setOrgDraft((current) => ({ ...current, name: value }))} />
+                        <div className="flex gap-2">
+                          <button className="h-10 rounded-md bg-apex px-3 text-sm font-medium text-white disabled:opacity-60" disabled={orgSaving} onClick={saveOrgUnit} type="button">{orgSaving ? "Guardando..." : "Guardar"}</button>
+                          <button className="h-10 rounded-md border border-line px-3 text-sm" onClick={() => setOrgCreator("")} type="button">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 <Select
                   label="Conductor autorizado"
                   value={String(form.authorized_driver_id || 0)}
@@ -660,12 +894,15 @@ export function TransportFleetPage() {
                   <h3 className="mb-3 text-sm font-semibold">Cargar documento por placa</h3>
                   <div className="space-y-3">
                     <Select label="Tipo documental" value={documentDraft.document_type} onChange={(value) => setDocumentDraft((current) => ({ ...current, document_type: value }))} options={documentTypes.map(([value]) => value)} optionLabels={Object.fromEntries(documentTypes)} />
-                    <input className="block w-full text-sm" type="file" onChange={(event) => selectDocument(event.target.files?.[0])} />
-                    {documentDraft.file_name ? <p className="rounded-md bg-paper p-2 text-xs font-semibold">{documentDraft.file_name}</p> : null}
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold text-content-body" htmlFor="vehicle-document-file">Archivo (PDF, PNG, JPEG o WEBP · maximo 10 MB)</label>
+                      <input accept={DOCUMENT_ACCEPT} className="block w-full text-sm" id="vehicle-document-file" key={documentInputKey} type="file" onChange={(event) => selectDocument(event.target.files?.[0])} />
+                    </div>
+                    {documentFile ? <p className="rounded-md bg-paper p-2 text-xs font-semibold">{documentFile.name}{documentFile.size ? ` · ${formatFileSize(documentFile.size)}` : ""}</p> : null}
                     <Input label="Fecha emision" type="date" value={documentDraft.issued_at} onChange={(value) => setDocumentDraft((current) => ({ ...current, issued_at: value }))} />
                     <Input label="Fecha vencimiento" type="date" value={documentDraft.expires_at} onChange={(value) => setDocumentDraft((current) => ({ ...current, expires_at: value }))} />
                     <Textarea label="Observaciones" value={documentDraft.observations} onChange={(value) => setDocumentDraft((current) => ({ ...current, observations: value }))} />
-                    <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={saveDocument} type="button"><Paperclip size={16} /> Adjuntar</button>
+                    <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white disabled:opacity-60" disabled={documentSaving || !access.canWrite} onClick={saveDocument} type="button"><Paperclip size={16} /> {documentSaving ? "Cargando..." : "Adjuntar"}</button>
                   </div>
                 </div>
                 <div className="rounded-md border border-line p-3">
@@ -676,16 +913,56 @@ export function TransportFleetPage() {
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
                             <p className="font-semibold">{document.file_name}</p>
-                            <p className="text-xs text-neutral-500">{document.document_type} · v{document.version}</p>
+                            <p className="text-xs text-content-muted">{document.document_type} · v{document.version}</p>
                           </div>
-                          <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(document.document_status)}`}>{statusLabel(document.document_status)}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`rounded-md border px-2 py-1 text-xs font-semibold ${statusClass(document.document_status)}`}>{statusLabel(document.document_status)}</span>
+                            {document.has_attachment !== false ? (
+                              <button className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold hover:bg-paper" onClick={() => openDocumentPreview(document)} type="button"><Eye size={14} /> Ver</button>
+                            ) : null}
+                          </div>
                         </div>
-                        <p className="mt-2 text-xs text-neutral-500">Vence: {dateOnly(document.expires_at) || "Sin vencimiento"} · Ruta: {document.storage_path || "--"}</p>
+                        <p className="mt-2 text-xs text-content-muted">Vence: {dateOnly(document.expires_at) || "Sin vencimiento"}{document.mime_type ? ` · ${document.mime_type}` : ""}{document.file_size ? ` · ${formatFileSize(document.file_size)}` : ""}</p>
                       </div>
                     ))}
-                    {!selected?.documents?.length ? <p className="text-sm text-neutral-500">Sin adjuntos aun. Guarda la ficha y carga documentos por placa.</p> : null}
+                    {!selected?.documents?.length ? <p className="text-sm text-content-muted">Sin adjuntos aun. Guarda la ficha y carga documentos por placa.</p> : null}
                   </div>
                 </div>
+                {documentPreview ? (
+                  <div className="rounded-md border border-line p-3 lg:col-span-2">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-semibold">{documentPreview.document.file_name}</h3>
+                        <p className="text-xs text-content-muted">
+                          {documentPreview.loading
+                            ? "Preparando vista previa..."
+                            : documentPreview.source === "storage"
+                              ? `URL firmada vigente por ${Math.max(1, Math.round((documentPreview.expires_in || 0) / 60))} min`
+                              : documentPreview.source === "database"
+                                ? "Archivo almacenado en la base de datos"
+                                : documentPreview.source === "external"
+                                  ? "Archivo alojado en un enlace externo"
+                                  : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {documentPreview.url ? <a className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold hover:bg-paper" href={documentPreview.url} rel="noreferrer" target="_blank">Abrir en pestana</a> : null}
+                        <button className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2 text-xs font-semibold hover:bg-paper" onClick={() => setDocumentPreview(null)} type="button">Cerrar</button>
+                      </div>
+                    </div>
+                    {documentPreview.loading ? (
+                      <p className="rounded-md bg-paper p-3 text-sm text-content-body">Cargando vista previa...</p>
+                    ) : documentPreview.error ? (
+                      <p className="rounded-md bg-paper p-3 text-sm text-content-body">{documentPreview.error}</p>
+                    ) : documentPreview.mime_type.startsWith("image/") ? (
+                      <img alt={documentPreview.document.file_name} className="max-h-[60vh] w-full rounded-md border border-line object-contain" src={documentPreview.url} />
+                    ) : documentPreview.mime_type === "application/pdf" ? (
+                      <iframe className="h-[60vh] w-full rounded-md border border-line" src={documentPreview.url} title={documentPreview.document.file_name} />
+                    ) : (
+                      <p className="rounded-md bg-paper p-3 text-sm text-content-body">Este formato no tiene vista previa integrada. Usa &quot;Abrir en pestana&quot;.</p>
+                    )}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -707,10 +984,10 @@ export function TransportFleetPage() {
                   {(selected?.audit_logs || []).map((entry) => (
                     <div className="rounded-md bg-paper p-3 text-sm" key={String(entry.id)}>
                       <p className="font-semibold">{entry.action} {entry.field ? `· ${entry.field}` : ""}</p>
-                      <p className="text-xs text-neutral-500">{new Date(entry.created_at).toLocaleString()}</p>
+                      <p className="text-xs text-content-muted">{new Date(entry.created_at).toLocaleString()}</p>
                     </div>
                   ))}
-                  {!selected?.audit_logs?.length ? <p className="text-sm text-neutral-500">La auditoria aparecera al crear, editar o adjuntar documentos.</p> : null}
+                  {!selected?.audit_logs?.length ? <p className="text-sm text-content-muted">La auditoria aparecera al crear, editar o adjuntar documentos.</p> : null}
                 </div>
               </div>
             ) : null}
@@ -721,7 +998,7 @@ export function TransportFleetPage() {
               <div className="flex flex-wrap gap-2">
                 {activeTabIndex > 0 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold hover:bg-paper" onClick={() => moveEditor(-1)} type="button"><ChevronLeft size={16} /> Anterior</button> : null}
                 {activeTabIndex < editorTabs.length - 1 ? <button className="inline-flex h-10 items-center gap-2 rounded-md border border-apex px-3 text-sm font-semibold text-apex hover:bg-paper" onClick={() => moveEditor(1)} type="button">Siguiente <ChevronRight size={16} /></button> : null}
-                {access.canWrite ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : selected ? "Guardar cambios" : "Crear vehiculo"}</button> : <span className="inline-flex h-10 items-center rounded-md bg-paper px-3 text-sm font-semibold text-neutral-600">Consulta de solo lectura</span>}
+                {access.canWrite ? <button className="inline-flex h-10 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-60" onClick={saveVehicle} disabled={saving} type="button"><Save size={16} /> {saving ? "Guardando..." : selected ? "Guardar cambios" : "Crear vehiculo"}</button> : <span className="inline-flex h-10 items-center rounded-md bg-paper px-3 text-sm font-semibold text-content-body">Consulta de solo lectura</span>}
               </div>
             </div>
           </div>
@@ -751,21 +1028,20 @@ const transportWorkflows = [
     ]
   },
   {
-    title: "3. Liquidar el costo",
-    detail: "Cierra el costo real de cada transportador con tarifa congelada, ajustes soportados y aprobación trazable.",
-    actions: [
-      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true }
-    ]
-  },
-  {
-    title: "4. Preparar la operación",
+    title: "3. Preparar la operación",
     detail: "Mantén listos los datos que habilitan la planeación diaria.",
     actions: [
       { href: "/dashboard/transporte/flota", title: "Vehículos y documentos", detail: "Revisar capacidad, vigencias y disponibilidad de la flota.", icon: Truck },
       { href: "/dashboard/transporte/tarifas", title: "Costos y tarifas", detail: "Definir vigencias y reglas para calcular el costo del viaje.", icon: ReceiptText },
-      { href: "/dashboard/transporte/maestros", title: "Datos básicos", detail: "Gestionar transportadores, conductores, orígenes y destinos.", icon: Users },
       { href: "/dashboard/transporte/notificaciones", title: "Comunicaciones", detail: "Consultar los avisos registrados por la operación.", icon: Bell },
       { href: "/dashboard/transporte/configuracion", title: "Preferencias de transporte", detail: "Definir parámetros operativos y de comunicación.", icon: Settings }
+    ]
+  },
+  {
+    title: "4. Liquidar el costo",
+    detail: "Cierra el costo real de cada transportador con tarifa congelada, ajustes soportados y aprobación trazable.",
+    actions: [
+      { href: "/dashboard/transporte/liquidaciones", title: "Torre de liquidaciones", detail: "Preliquidar, ajustar, aprobar y contabilizar paquetes por transportador y periodo.", icon: Wallet, primary: true }
     ]
   }
 ] as const;
@@ -776,14 +1052,14 @@ export default function TransportHomePage() {
       <header className="apex-section-card p-4">
         <p className="text-sm font-medium text-apex">M-14 · Operación</p>
         <h1 className="text-3xl font-semibold">Transporte</h1>
-        <p className="mt-1 max-w-3xl text-sm text-neutral-600">Lleva los pedidos desde la preparación del viaje hasta la entrega y el control del costo.</p>
-        <p className="mt-3 text-sm font-semibold text-neutral-800">Empieza preparando los pedidos pendientes.</p>
+        <p className="mt-1 max-w-3xl text-sm text-content-body">Lleva los pedidos desde la preparación del viaje hasta la entrega y el control del costo.</p>
+        <p className="mt-3 text-sm font-semibold text-content-strong">Empieza preparando los pedidos pendientes.</p>
       </header>
       {transportWorkflows.map((workflow) => (
         <section aria-labelledby={`transport-${workflow.title.charAt(0)}`} className="space-y-2" key={workflow.title}>
           <div>
             <h2 className="text-lg font-semibold" id={`transport-${workflow.title.charAt(0)}`}>{workflow.title}</h2>
-            <p className="text-sm text-neutral-600">{workflow.detail}</p>
+            <p className="text-sm text-content-body">{workflow.detail}</p>
           </div>
           <div className="apex-dense-actions">
             {workflow.actions.map((action) => <ActionCard key={action.href} {...action} />)}
@@ -800,10 +1076,10 @@ function CompletionBar({ percent, compact = false, className = "" }: { percent: 
   return (
     <div className={className}>
       <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="inline-flex items-center gap-1.5 font-semibold text-neutral-700"><ClipboardList size={compact ? 13 : 15} /> Completitud de ficha</span>
-        <span className="font-semibold text-neutral-600">{percent}%{compact ? "" : ` · ${label}`}</span>
+        <span className="inline-flex items-center gap-1.5 font-semibold text-content-body"><ClipboardList size={compact ? 13 : 15} /> Completitud de ficha</span>
+        <span className="font-semibold text-content-body">{percent}%{compact ? "" : ` · ${label}`}</span>
       </div>
-      <div className={`${compact ? "mt-1 h-1.5" : "mt-2 h-2"} overflow-hidden rounded-full bg-neutral-200`} role="progressbar" aria-label="Completitud de la ficha vehicular" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+      <div className={`${compact ? "mt-1 h-1.5" : "mt-2 h-2"} overflow-hidden rounded-full bg-line`} role="progressbar" aria-label="Completitud de la ficha vehicular" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
         <div className={`h-full rounded-full transition-all ${tone}`} style={{ width: `${percent}%` }} />
       </div>
     </div>
@@ -823,7 +1099,7 @@ function tabIcon(tab: string, size = 16) {
 }
 
 function FilterSelect({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: [string, string][] }) {
-  return <select className="h-10 rounded-md border border-line bg-white px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>{options.map(([option, label]) => <option key={option || label} value={option}>{label}</option>)}</select>;
+  return <TransportSearchSelect className="h-10 rounded-md border border-line bg-surface px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>{options.map(([option, label]) => <option key={option || label} value={option}>{label}</option>)}</TransportSearchSelect>;
 }
 
 function editorGuide(tab: string) {
@@ -839,18 +1115,18 @@ function editorGuide(tab: string) {
 }
 
 function Info({ label, value }: { label: string; value: string | number }) {
-  return <div><p className="text-xs text-neutral-500">{label}</p><p className="font-semibold">{value}</p></div>;
+  return <div><p className="text-xs text-content-muted">{label}</p><p className="font-semibold">{value}</p></div>;
 }
 
 function FormGrid({ children }: { children: ReactNode }) {
   return <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{children}</div>;
 }
 
-function Input({ label, value, onChange, type = "text" }: { label: string; value: string | number; onChange: (value: string) => void; type?: string }) {
+function Input({ label, value, onChange, type = "text", disabled = false }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; disabled?: boolean }) {
   return (
     <label className="space-y-1 text-sm">
-      <span className="font-semibold text-neutral-700">{label}</span>
-      <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type={type} value={value ?? ""} onChange={(event) => onChange(event.target.value)} />
+      <span className="font-semibold text-content-body">{label}</span>
+      <input className="h-10 w-full rounded-md border border-line px-3 text-sm disabled:bg-surface-muted disabled:text-content-muted" type={type} value={value ?? ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} />
     </label>
   );
 }
@@ -858,7 +1134,7 @@ function Input({ label, value, onChange, type = "text" }: { label: string; value
 function Textarea({ label, value, onChange }: { label: string; value?: string; onChange: (value: string) => void }) {
   return (
     <label className="space-y-1 text-sm md:col-span-2 xl:col-span-3">
-      <span className="font-semibold text-neutral-700">{label}</span>
+      <span className="font-semibold text-content-body">{label}</span>
       <textarea className="min-h-[72px] w-full rounded-md border border-line p-3 text-sm" value={value || ""} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
@@ -867,10 +1143,10 @@ function Textarea({ label, value, onChange }: { label: string; value?: string; o
 function Select({ label, value, onChange, options, optionLabels = {} }: { label: string; value: string; onChange: (value: string) => void; options: string[]; optionLabels?: Record<string, string> }) {
   return (
     <label className="space-y-1 text-sm">
-      <span className="font-semibold text-neutral-700">{label}</span>
-      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
+      <span className="font-semibold text-content-body">{label}</span>
+      <TransportSearchSelect className="h-10 w-full rounded-md border border-line px-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => <option key={option} value={option}>{optionLabels[option] || option}</option>)}
-      </select>
+      </TransportSearchSelect>
     </label>
   );
 }

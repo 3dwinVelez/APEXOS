@@ -709,7 +709,7 @@ model CntCuedoc {
   account_code      String
   branch_code       String
   cost_center_code  String
-  party_id          Int
+  party_id          Int?
   party_tax_id      String?
   movement          String
   debit             Float     @default(0)
@@ -1106,6 +1106,7 @@ model TimeRoute {
   per_diem          Float     @default(0)
   notes             String?
   status            String    @default("active")
+  kind              String    @default("trabajo")
   created_at        DateTime  @default(now())
   preop_checklists  RoutePreoperationalChecklist[]
   start_authorizations RouteStartAuthorization[]
@@ -1430,6 +1431,7 @@ model Vehicle {
   updated_at            DateTime  @updatedAt
   documents             VehicleDocument[]
   audit_logs            VehicleMasterAuditLog[]
+  pyg_budgets           TransportPygBudget[]
 
   @@unique([tenant_id, plate])
   @@index([tenant_id, vin_chassis])
@@ -1540,7 +1542,7 @@ model TransportCarrier {
   @@index([tenant_id, tax_id])
 }
 
-model TransportOrigin {
+model Sede {
   id                Int                 @id @default(autoincrement())
   tenant_id         String
   code              String
@@ -1549,8 +1551,8 @@ model TransportOrigin {
   city              String
   department        String?
   country           String              @default("CO")
-  latitude          Float
-  longitude         Float
+  latitude          Float?
+  longitude         Float?
   timezone          String              @default("America/Bogota")
   operation_start   String?
   operation_end     String?
@@ -1561,10 +1563,11 @@ model TransportOrigin {
   updated_at        DateTime            @updatedAt
   needs             TransportNeed[]
   trips             TransportTrip[]
-  rate_cards        TransportRateCard[]
+  plans             TransportPlan[]
 
   @@unique([tenant_id, code])
   @@index([tenant_id, city, active])
+  @@map("sedes")
 }
 
 model TransportRateCard {
@@ -1576,10 +1579,9 @@ model TransportRateCard {
   status               String            @default("borrador")
   carrier_id           Int?
   carrier              TransportCarrier? @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
-  origin_id            Int?
-  origin               TransportOrigin?  @relation(fields: [origin_id], references: [id], onDelete: Restrict)
   destination_city     String?
   destination_department String?
+  destination_municipality String?
   service_level        String?
   vehicle_type         String?
   valid_from           DateTime
@@ -1603,7 +1605,6 @@ model TransportRateCard {
   @@unique([tenant_id, code, version])
   @@index([tenant_id, status, valid_from, valid_to], map: "TransportRateCard_tenant_status_valid_idx")
   @@index([tenant_id, carrier_id, active], map: "TransportRateCard_tenant_carrier_active_idx")
-  @@index([tenant_id, origin_id, destination_city], map: "TransportRateCard_tenant_origin_destination_idx")
 }
 
 model TransportDriver {
@@ -1669,6 +1670,27 @@ model TransportDeliveryPoint {
   @@index([tenant_id, city, active])
 }
 
+model TransportPlan {
+  id              Int         @id @default(autoincrement())
+  tenant_id       String
+  code            String
+  name            String
+  sede_id         Int
+  sede            Sede        @relation(fields: [sede_id], references: [id], onDelete: Restrict)
+  service_level   String      @default("normal")
+  due_date        DateTime?
+  status          String      @default("borrador")
+  notes           String?
+  metadata        Json        @default("{}")
+  created_by      Int?
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  needs           TransportNeed[]
+
+  @@unique([tenant_id, code])
+  @@index([tenant_id, status, due_date])
+}
+
 model TransportNeed {
   id                    Int                 @id @default(autoincrement())
   tenant_id             String
@@ -1678,11 +1700,13 @@ model TransportNeed {
   source_reference      String?
   sales_order_id        Int?
   origin_place_id       Int?
-  origin_id             Int?
-  origin                TransportOrigin?    @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  sede_id               Int?
+  sede                  Sede?               @relation(fields: [sede_id], references: [id], onDelete: Restrict)
   origin_name           String
   delivery_point_id     Int
   delivery_point        TransportDeliveryPoint @relation(fields: [delivery_point_id], references: [id], onDelete: Restrict)
+  plan_id               Int?
+  plan                  TransportPlan?      @relation(fields: [plan_id], references: [id], onDelete: SetNull)
   available_at          DateTime
   due_at                DateTime
   priority              String              @default("normal")
@@ -1712,7 +1736,8 @@ model TransportNeed {
   @@index([tenant_id, status, due_at])
   @@index([tenant_id, source_type, source_id])
   @@index([tenant_id, delivery_point_id, due_at])
-  @@index([tenant_id, origin_id, status])
+  @@index([tenant_id, sede_id, status])
+  @@index([tenant_id, plan_id])
 }
 
 model TransportNeedLine {
@@ -1740,8 +1765,8 @@ model TransportTrip {
   code               String
   status             String                 @default("borrador")
   origin_place_id    Int?
-  origin_id          Int?
-  origin             TransportOrigin?       @relation(fields: [origin_id], references: [id], onDelete: Restrict)
+  sede_id            Int?
+  sede               Sede?                  @relation(fields: [sede_id], references: [id], onDelete: Restrict)
   origin_name        String
   carrier_id         Int?
   carrier            TransportCarrier?      @relation(fields: [carrier_id], references: [id], onDelete: Restrict)
@@ -1779,7 +1804,7 @@ model TransportTrip {
   @@index([tenant_id, status, planned_departure])
   @@index([tenant_id, carrier_id, status])
   @@index([tenant_id, vehicle_id, status])
-  @@index([tenant_id, origin_id, status])
+  @@index([tenant_id, sede_id, status])
 }
 
 model TransportTripNeed {
@@ -2036,7 +2061,7 @@ model TransportSettlementPackage {
   code             String
   period_id        Int?
   period           TransportSettlementPeriod?    @relation(fields: [period_id], references: [id], onDelete: SetNull)
-  carrier_id       Int
+  carrier_id       Int?
   carrier_code     String?
   carrier_name     String?
   type_id          Int?
@@ -2079,6 +2104,7 @@ model TransportSettlementItem {
   origin_name       String?
   destination_name  String?
   destination_city  String?
+  destination_municipality String?
   vehicle_plate     String?
   vehicle_type      String?
   service_level     String?
@@ -2109,6 +2135,73 @@ model TransportSettlementItem {
   @@unique([tenant_id, package_id, guide_reference])
   @@index([tenant_id, guide_reference])
   @@index([tenant_id, package_id])
+}
+
+// === PYG POR VEHICULO (centro de costo = placa) ===
+// Catalogo de conceptos del estado de resultados por vehiculo. El servicio siembra
+// los conceptos por tenant de forma idempotente (mismos codigos que el Excel corporativo).
+model TransportPygConcept {
+  id            Int      @id @default(autoincrement())
+  tenant_id     String
+  code          String
+  name          String
+  section       String   @default("gastos_operativos")
+  kind          String   @default("expense")
+  display_order Int      @default(0)
+  active        Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("transport_pyg_concepts")
+  @@unique([tenant_id, code])
+  @@index([tenant_id, active, display_order])
+}
+
+// Presupuesto mensual por vehiculo y concepto PYG (period YYYY-MM).
+model TransportPygBudget {
+  id           Int      @id @default(autoincrement())
+  tenant_id    String
+  vehicle_id   Int
+  vehicle      Vehicle  @relation(fields: [vehicle_id], references: [id])
+  period       String
+  concept_code String
+  amount       Decimal  @db.Decimal(18, 2)
+  created_by   Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("transport_pyg_budgets")
+  @@unique([tenant_id, vehicle_id, period, concept_code])
+  @@index([tenant_id, period])
+  @@index([tenant_id, vehicle_id])
+}
+
+// Mapping de fuentes de gasto hacia conceptos PYG. source_type='petty_cash_concept'
+// usa el codigo del concepto de caja menor; los canales de nomina/PILA/prestaciones
+// se resuelven por conductor autorizado del vehiculo y no requieren fila de mapping.
+model TransportPygSourceMap {
+  id              Int      @id @default(autoincrement())
+  tenant_id       String
+  source_type     String
+  source_code     String
+  pyg_concept_code String
+  active          Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@map("transport_pyg_source_map")
+  @@unique([tenant_id, source_type, source_code])
+}
+
+// Configuracion del reporte por tenant (una fila): tarifa del impuesto de regimen simple.
+model TransportPygConfig {
+  id          Int      @id @default(autoincrement())
+  tenant_id   String   @unique
+  tax_percent Decimal  @default(2.25) @db.Decimal(7, 4)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("transport_pyg_config")
 }
 
 model TransportSettlementAdjustment {
@@ -2915,6 +3008,29 @@ model TreasuryPaymentApplication {
   @@unique([tenant_id, payment_id, source_type, source_id])
   @@index([tenant_id, source_type, source_id])
 }
+
+// === GASTOS MENORES / CAJAS MENORES ===
+// Maestro de conceptos de egreso de caja menor (Peajes, Combustible, ...).
+// account_code debe resolver contra Account con type = "expense" y allows_tx = true.
+// default_vat_code se valida contra Tenant.config.accounting.vat_masters (scope purchases);
+// NULL significa "sin IVA sugerido", no "IVA 0%": el IVA real se decide linea a linea.
+
+// Caja menor (ej. "Goliat"). account_code es un activo que inicia por "11"
+// (mismo criterio que treasury/service.js para bancos); advance_account_code es la
+// cuenta deudora del anticipo al custodio, un activo "13xx" (PUC 1330).
+// require_advance obliga a digitar gastos solo contra anticipo; block_unliquidated_advance
+// impide girar un segundo anticipo mientras exista uno en estado "open".
+
+// Anticipo girado al custodio. Contablemente: debito advance_account_code / credito account_code.
+// balance = amount - applied_total; pasa a "liquidated" cuando el sobrante vuelve a la caja.
+
+// Cabecera del comprobante de gasto menor. No existe estado borrador: al guardar queda
+// "posted" con su cnt_cabdoc generado en la misma transaccion. period tiene formato YYYY-MM.
+
+// Linea de gasto. account_code y vat_account_code son snapshot al momento de contabilizar,
+// igual que cnt_cuedoc.account_code. vat_code NULL = gasto sin IVA.
+// advance_applied es la parte de la linea imputada al anticipo (reduce advance.balance);
+// el resto se acredita directamente contra box.account_code.
 
 model PurchaseImport {
   id                Int      @id @default(autoincrement())
@@ -4011,3 +4127,17 @@ model ComercioPromotionSend {
   @@unique([tenant_id, promotion_id, customer_id])
   @@index([tenant_id, promotion_id, sent_at])
 }
+
+// Recepcion y asignacion de facturas electronicas (M-07 Contabilidad).
+// El XML es la fuente de verdad fiscal; el PDF es el soporte visual. La clave
+// dedupe_key (CUFE/CUDE o emisor+prefijo+numero) evita registrar dos veces la
+// misma factura aunque llegue en correos o ZIP distintos.
+
+
+
+
+
+
+
+
+

@@ -453,7 +453,7 @@ const adminPermissionCatalog = [
   { key: "compras", label: "Compras", group: "compras", module: "purchases", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download"] },
   { key: "ventas", label: "Ventas", group: "comercial", module: "sales", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import"] },
   { key: "logistica", label: "Logistica", group: "operacion", module: "transport", submodule: "logistics", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
-  { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "attach", "download", "configure"] },
+  { key: "transporte", label: "Transporte", group: "operacion", module: "transport", submodule: "vehicles", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "export", "import", "attach", "download", "configure", "manage_rates"] },
   { key: "ultima_milla", label: "Ultima milla", group: "operacion", module: "transport", submodule: "last_mile", actions: ["access", "view", "create", "edit", "approve", "execute", "reports"] },
   { key: "importaciones", label: "Importaciones", group: "operacion", module: "purchases", submodule: "imports", actions: ["access", "view", "create", "edit", "approve", "reject", "void", "export", "import", "attach", "download"] },
   { key: "servicios", label: "Servicios", group: "operacion", module: "services", submodule: "orders", actions: ["access", "view", "create", "edit", "delete", PHYSICAL_DELETE_PERMISSION, "approve", "reject", "void", "export", "import", "attach", "download", "execute", "reports"] },
@@ -727,6 +727,45 @@ async function ensureSupabaseCompanyRoleCatalog(companyId: string) {
   return created[0].id;
 }
 
+const COMPANY_MASTER_CATALOG_NAMES: Record<string, string> = {
+  vehicle_types: "Tipos de vehiculo",
+  vehicle_categories: "Categorias de vehiculo",
+  vehicle_brands: "Marcas de vehiculo",
+  vehicle_lines: "Lineas de vehiculo",
+  vehicle_colors: "Colores de vehiculo",
+  vehicle_fuels: "Combustibles de vehiculo",
+  vehicle_body_types: "Carrocerias de vehiculo",
+  units_of_measure: "Unidades de medida",
+  service_levels: "Niveles de servicio",
+  departments: "Departamentos",
+  cities: "Ciudades",
+  municipalities: "Municipios",
+  currencies: "Monedas"
+};
+
+async function ensureSupabaseCompanyMasterCatalog(companyId: string, catalogCode: string) {
+  const existing = await supabaseFetch<Array<{ id: string; company_id?: string | null }>>(
+    `/rest/v1/master_catalogs?select=id,company_id&code=eq.${encodeURIComponent(catalogCode)}&company_id=eq.${encodeURIComponent(companyId)}&limit=5`
+  ).catch(() => []);
+  const companyCatalog = existing.find((catalog) => catalog.company_id === companyId);
+  if (companyCatalog?.id) return companyCatalog.id;
+  const created = await supabaseFetch<Array<{ id: string }>>("/rest/v1/master_catalogs?select=id", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      company_id: companyId,
+      code: catalogCode,
+      name: COMPANY_MASTER_CATALOG_NAMES[catalogCode] || catalogCode,
+      scope: "company",
+      active: true,
+      sort_order: 200,
+      metadata: { source: "apexos_company_masters" }
+    })
+  });
+  if (!created[0]?.id) throw new Error(`No fue posible preparar el catalogo ${catalogCode} de la empresa.`);
+  return created[0].id;
+}
+
 async function loadSupabaseAdminRoles() {
   const membership = await currentSupabaseCompanyUser();
   if (!membership?.company_id) return storedAdminRoles();
@@ -853,19 +892,32 @@ async function loadSupabaseUserMasterData() {
   ).catch(() => []);
   const catalogIds = catalogs.map((catalog) => catalog.id).filter(Boolean);
   if (!catalogIds.length) return stored;
-  const items = await supabaseFetch<Array<{ catalog_id: string; company_id?: string | null; code: string; name: string; description?: string; active?: boolean; sort_order?: number }>>(
-    `/rest/v1/master_catalog_items?select=catalog_id,company_id,code,name,description,active,sort_order&catalog_id=in.(${catalogIds.map((id) => encodeURIComponent(id)).join(",")})&order=sort_order.asc,name.asc&limit=2000`
+  const items = await supabaseFetch<Array<{ catalog_id: string; company_id?: string | null; code: string; name: string; description?: string; active?: boolean; sort_order?: number; parent_code?: string | null }>>(
+    `/rest/v1/master_catalog_items?select=catalog_id,company_id,code,name,description,active,sort_order,parent_code&catalog_id=in.(${catalogIds.map((id) => encodeURIComponent(id)).join(",")})&order=sort_order.asc,name.asc&limit=2000`
   ).catch(() => []);
   if (!items.length) return stored;
   const next = { ...stored } as ReturnType<typeof defaultUserMasterData> & Record<string, unknown>;
+  const catalogsByCode = new Map<string, Array<(typeof catalogs)[number]>>();
   for (const catalog of catalogs) {
-    if (!(catalog.code in stored) || catalog.code === "roles") continue;
-    const catalogItems = items.filter((item) => item.catalog_id === catalog.id);
+    if (!catalogsByCode.has(catalog.code)) catalogsByCode.set(catalog.code, []);
+    catalogsByCode.get(catalog.code)!.push(catalog);
+  }
+  for (const [catalogCode, codeCatalogs] of catalogsByCode) {
+    if (!(catalogCode in stored) || catalogCode === "roles") continue;
+    const catalogIds = new Set(codeCatalogs.map((catalog) => catalog.id));
+    const catalogItems = items.filter((item) => catalogIds.has(item.catalog_id));
     if (!catalogItems.length) continue;
     const byCode = new Map<string, (typeof catalogItems)[number]>();
     catalogItems.filter((item) => item.company_id == null).forEach((item) => byCode.set(item.code, item));
     catalogItems.filter((item) => item.company_id === membership.company_id).forEach((item) => byCode.set(item.code, item));
-    next[catalog.code] = Array.from(byCode.values());
+    next[catalogCode] = Array.from(byCode.values()).map((item) => ({
+      code: item.code,
+      name: item.name,
+      description: item.description || "",
+      active: item.active !== false,
+      sort_order: Number(item.sort_order || 100),
+      ...(item.parent_code ? { parent_code: item.parent_code } : {})
+    }));
   }
   saveStoredUserMasterData(next as ReturnType<typeof defaultUserMasterData>);
   return next;
@@ -886,7 +938,164 @@ function defaultUserMasterData() {
     cost_centers: [["CC-OPER", "Operacion"], ["CC-TRAN", "Transporte"], ["CC-ADMIN", "Administracion"]].map(([code, name]) => ({ code, name })),
     work_shifts: [["DIURNO", "Diurno"], ["NOCTURNO", "Nocturno"], ["MIXTO", "Mixto"]].map(([code, name]) => ({ code, name })),
     activity_types: fallbackActivityTypes.map((item) => ({ code: item.code, name: item.name, active: true, sort_order: item.sort_order })),
-    banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name }))
+    banks: [["BANCOLOMBIA", "Bancolombia"], ["BOGOTA", "Banco de Bogota"], ["DAVIVIENDA", "Davivienda"]].map(([code, name]) => ({ code, name })),
+    units_of_measure: [["UND", "Unidad"], ["KG", "Kilogramo"], ["TON", "Tonelada"], ["M3", "Metro cubico"], ["LB", "Libra"], ["HORA", "Hora"]].map(([code, name]) => ({ code, name })),
+    vehicle_types: [["camioneta", "Camioneta"], ["furgon", "Furgon"], ["camion", "Camion"], ["motocicleta", "Motocicleta"], ["automovil", "Automovil"], ["buseta", "Buseta"], ["bus", "Bus"], ["camion_tracto", "Camion tracto"], ["volqueta", "Volqueta"]].map(([code, name]) => ({ code, name })),
+    vehicle_categories: [["motocicleta", "Motocicleta"], ["liviano", "Liviano"], ["utilitario", "Utilitario"], ["camion_liviano", "Camion liviano"], ["camion_mediano", "Camion mediano"], ["camion_pesado", "Camion pesado"], ["articulado", "Articulado / tractomula"]].map(([code, name]) => ({ code, name })),
+    vehicle_brands: [["toyota", "Toyota"], ["chevrolet", "Chevrolet"], ["renault", "Renault"], ["nissan", "Nissan"], ["mazda", "Mazda"], ["ford", "Ford"], ["volkswagen", "Volkswagen"], ["mercedes_benz", "Mercedes-Benz"], ["hyundai", "Hyundai"], ["kia", "Kia"], ["iveco", "Iveco"], ["hino", "Hino"]].map(([code, name]) => ({ code, name })),
+    vehicle_lines: [
+      ["hilux", "Hilux", "toyota"], ["fortuner", "Fortuner", "toyota"],
+      ["nhr", "NHR", "chevrolet"], ["npr", "NPR", "chevrolet"], ["dmax", "D-Max", "chevrolet"], ["spark_gt", "Spark GT", "chevrolet"],
+      ["kangoo", "Kangoo", "renault"], ["trafic", "Trafic", "renault"], ["logan", "Logan", "renault"],
+      ["frontier", "Frontier", "nissan"], ["urvan", "Urvan", "nissan"],
+      ["bt50", "BT-50", "mazda"],
+      ["ranger", "Ranger", "ford"], ["transit", "Transit", "ford"],
+      ["amarok", "Amarok", "volkswagen"], ["delivery", "Delivery", "volkswagen"],
+      ["sprinter", "Sprinter", "mercedes_benz"], ["atego", "Atego", "mercedes_benz"],
+      ["daily", "Daily", "iveco"],
+      ["dutro", "Dutro", "hino"]
+    ].map(([code, name, parent_code]) => ({ code, name, parent_code })),
+    vehicle_colors: [["blanco", "Blanco"], ["negro", "Negro"], ["gris", "Gris"], ["plata", "Plata"], ["rojo", "Rojo"], ["azul", "Azul"], ["verde", "Verde"], ["amarillo", "Amarillo"], ["naranja", "Naranja"], ["beige", "Beige"], ["cafe", "Cafe"], ["vinotinto", "Vinotinto"]].map(([code, name]) => ({ code, name })),
+    vehicle_fuels: [["gasolina", "Gasolina"], ["diesel", "Diesel"], ["gnv", "Gas natural (GNV)"], ["gnv_gasolina", "Gasolina + GNV"], ["electrico", "Electrico"], ["hibrido", "Hibrido"]].map(([code, name]) => ({ code, name })),
+    vehicle_body_types: [["estacas", "Estacas"], ["caja_seca", "Caja seca"], ["furgon", "Furgon"], ["plataforma", "Plataforma"], ["tanque", "Tanque"], ["volco", "Volco"], ["refrigerado", "Refrigerado"], ["porta_contenedores", "Porta contenedores"], ["cama_baja", "Cama baja"]].map(([code, name]) => ({ code, name })),
+    service_levels: [["normal", "Normal"], ["express", "Express"], ["programado", "Programado"], ["dedicado", "Dedicado"]].map(([code, name]) => ({ code, name })),
+    departments: [
+      ["amazonas", "Amazonas"], ["antioquia", "Antioquia"], ["arauca", "Arauca"], ["atlantico", "Atlantico"], ["bogota_dc", "Bogota D.C."],
+      ["bolivar", "Bolivar"], ["boyaca", "Boyaca"], ["caldas", "Caldas"], ["caqueta", "Caqueta"], ["casanare", "Casanare"],
+      ["cauca", "Cauca"], ["cesar", "Cesar"], ["choco", "Choco"], ["cordoba", "Cordoba"], ["cundinamarca", "Cundinamarca"],
+      ["guainia", "Guainia"], ["guaviare", "Guaviare"], ["huila", "Huila"], ["la_guajira", "La Guajira"], ["magdalena", "Magdalena"],
+      ["meta", "Meta"], ["narino", "Narino"], ["norte_de_santander", "Norte de Santander"], ["putumayo", "Putumayo"], ["quindio", "Quindio"],
+      ["risaralda", "Risaralda"], ["san_andres", "San Andres y Providencia"], ["santander", "Santander"], ["sucre", "Sucre"], ["tolima", "Tolima"],
+      ["valle_del_cauca", "Valle del Cauca"], ["vaupes", "Vaupes"], ["vichada", "Vichada"]
+    ].map(([code, name]) => ({ code, name })),
+    cities: [
+      ["bogota", "Bogota", "bogota_dc"], ["medellin", "Medellin", "antioquia"], ["cali", "Cali", "valle_del_cauca"],
+      ["barranquilla", "Barranquilla", "atlantico"], ["cartagena", "Cartagena", "bolivar"], ["bucaramanga", "Bucaramanga", "santander"],
+      ["pereira", "Pereira", "risaralda"], ["manizales", "Manizales", "caldas"], ["ibague", "Ibague", "tolima"],
+      ["villavicencio", "Villavicencio", "meta"], ["cucuta", "Cucuta", "norte_de_santander"], ["armenia", "Armenia", "quindio"],
+      ["monteria", "Monteria", "cordoba"], ["santa_marta", "Santa Marta", "magdalena"], ["neiva", "Neiva", "huila"],
+      ["popayan", "Popayan", "cauca"], ["pasto", "Pasto", "narino"], ["sincelejo", "Sincelejo", "sucre"],
+      ["tunja", "Tunja", "boyaca"], ["florencia", "Florencia", "caqueta"], ["yopal", "Yopal", "casanare"],
+      ["riohacha", "Riohacha", "la_guajira"], ["valledupar", "Valledupar", "cesar"], ["quibdo", "Quibdo", "choco"]
+    ].map(([code, name, parent_code]) => ({ code, name, parent_code })),
+    municipalities: [
+      ["bogota", "Bogota", "bogota"], ["soacha", "Soacha", "bogota"], ["chia", "Chia", "bogota"],
+      ["zipaquira", "Zipaquira", "bogota"], ["mosquera", "Mosquera", "bogota"], ["funza", "Funza", "bogota"],
+      ["madrid", "Madrid", "bogota"], ["facatativa", "Facatativa", "bogota"], ["fusagasuga", "Fusagasuga", "bogota"],
+      ["cajica", "Cajica", "bogota"], ["tabio", "Tabio", "bogota"], ["tenjo", "Tenjo", "bogota"],
+      ["medellin", "Medellin", "medellin"], ["envigado", "Envigado", "medellin"], ["itagui", "Itagui", "medellin"],
+      ["bello", "Bello", "medellin"], ["copacabana", "Copacabana", "medellin"], ["sabaneta", "Sabaneta", "medellin"],
+      ["la_estrella", "La Estrella", "medellin"], ["girardota", "Girardota", "medellin"], ["barbosa", "Barbosa", "medellin"],
+      ["rionegro", "Rionegro", "medellin"],
+      ["cali", "Cali", "cali"], ["palmira", "Palmira", "cali"], ["jamundi", "Jamundi", "cali"],
+      ["yumbo", "Yumbo", "cali"], ["buga", "Buga", "cali"], ["tulua", "Tulua", "cali"],
+      ["cartago", "Cartago", "cali"], ["florida", "Florida", "cali"], ["cerrito", "Cerrito", "cali"],
+      ["barranquilla", "Barranquilla", "barranquilla"], ["soledad", "Soledad", "barranquilla"],
+      ["puerto_colombia", "Puerto Colombia", "barranquilla"], ["malambo", "Malambo", "barranquilla"],
+      ["galapa", "Galapa", "barranquilla"], ["sabanalarga", "Sabanalarga", "barranquilla"],
+      ["cartagena", "Cartagena", "cartagena"], ["turbaco", "Turbaco", "cartagena"], ["turbana", "Turbana", "cartagena"],
+      ["clemencia", "Clemencia", "cartagena"], ["maria_la_baja", "Maria La Baja", "cartagena"],
+      ["bucaramanga", "Bucaramanga", "bucaramanga"], ["floridablanca", "Floridablanca", "bucaramanga"],
+      ["giron", "Giron", "bucaramanga"], ["piedecuesta", "Piedecuesta", "bucaramanga"], ["lebrija", "Lebrija", "bucaramanga"],
+      ["pereira", "Pereira", "pereira"], ["dosquebradas", "Dosquebradas", "pereira"], ["la_virginia", "La Virginia", "pereira"],
+      ["santa_rosa_de_cabal", "Santa Rosa de Cabal", "pereira"], ["marsella", "Marsella", "pereira"], ["apia", "Apia", "pereira"],
+      ["manizales", "Manizales", "manizales"], ["villamaria", "Villamaria", "manizales"], ["neira", "Neira", "manizales"],
+      ["chinchina", "Chinchina", "manizales"], ["palestina", "Palestina", "manizales"], ["la_dorada", "La Dorada", "manizales"],
+      ["ibague", "Ibague", "ibague"], ["cajamarca", "Cajamarca", "ibague"], ["espinal", "Espinal", "ibague"],
+      ["natagaima", "Natagaima", "ibague"], ["chaparral", "Chaparral", "ibague"], ["guamo", "Guamo", "ibague"],
+      ["villavicencio", "Villavicencio", "villavicencio"], ["acacias", "Acacias", "villavicencio"],
+      ["granada", "Granada", "villavicencio"], ["san_martin", "San Martin", "villavicencio"], ["restrepo", "Restrepo", "villavicencio"],
+      ["cucuta", "Cucuta", "cucuta"], ["los_patios", "Los Patios", "cucuta"], ["villa_del_rosario", "Villa del Rosario", "cucuta"],
+      ["el_zulia", "El Zulia", "cucuta"], ["pamplona", "Pamplona", "cucuta"], ["ocana", "Ocana", "cucuta"],
+      ["armenia", "Armenia", "armenia"], ["calarca", "Calarca", "armenia"], ["montenegro", "Montenegro", "armenia"],
+      ["quimbaya", "Quimbaya", "armenia"], ["la_tebaida", "La Tebaida", "armenia"], ["salento", "Salento", "armenia"],
+      ["filandia", "Filandia", "armenia"], ["cordoba", "Cordoba", "armenia"],
+      ["monteria", "Monteria", "monteria"], ["cerete", "Cerete", "monteria"], ["lorica", "Lorica", "monteria"],
+      ["san_pelayo", "San Pelayo", "monteria"], ["canalete", "Canalete", "monteria"],
+      ["santa_marta", "Santa Marta", "santa_marta"], ["cienaga", "Cienaga", "santa_marta"], ["fundacion", "Fundacion", "santa_marta"],
+      ["aracataca", "Aracataca", "santa_marta"], ["el_banco", "El Banco", "santa_marta"],
+      ["neiva", "Neiva", "neiva"], ["pitalito", "Pitalito", "neiva"], ["garzon", "Garzon", "neiva"],
+      ["la_plata", "La Plata", "neiva"], ["palermo", "Palermo", "neiva"], ["rivera", "Rivera", "neiva"],
+      ["popayan", "Popayan", "popayan"], ["timbio", "Timbio", "popayan"], ["piendamo", "Piendamo", "popayan"],
+      ["santander_de_quilichao", "Santander de Quilichao", "popayan"], ["el_bordo", "El Bordo", "popayan"],
+      ["pasto", "Pasto", "pasto"], ["ipiales", "Ipiales", "pasto"], ["tuquerres", "Tuquerres", "pasto"],
+      ["consaca", "Consaca", "pasto"], ["guaitarilla", "Guaitarilla", "pasto"],
+      ["sincelejo", "Sincelejo", "sincelejo"], ["corozal", "Corozal", "sincelejo"], ["sampues", "Sampues", "sincelejo"],
+      ["los_palmitos", "Los Palmitos", "sincelejo"], ["magangue", "Magangue", "sincelejo"], ["toluviejo", "Toluviejo", "sincelejo"],
+      ["tunja", "Tunja", "tunja"], ["duitama", "Duitama", "tunja"], ["sogamoso", "Sogamoso", "tunja"],
+      ["chiquinquira", "Chiquinquira", "tunja"], ["moniquira", "Moniquira", "tunja"], ["villa_de_leyva", "Villa de Leyva", "tunja"],
+      ["paipa", "Paipa", "tunja"],
+      ["florencia", "Florencia", "florencia"], ["morelia", "Morelia", "florencia"], ["puerto_rico", "Puerto Rico", "florencia"],
+      ["san_vicente_del_caguan", "San Vicente del Caguan", "florencia"], ["el_doncello", "El Doncello", "florencia"],
+      ["belen_de_los_andaquies", "Belen de los Andaquies", "florencia"],
+      ["yopal", "Yopal", "yopal"], ["aguazul", "Aguazul", "yopal"], ["villanueva", "Villanueva", "yopal"],
+      ["paz_de_ariporo", "Paz de Ariporo", "yopal"], ["tauramena", "Tauramena", "yopal"], ["monterrey", "Monterrey", "yopal"],
+      ["riohacha", "Riohacha", "riohacha"], ["maicao", "Maicao", "riohacha"], ["barrancas", "Barrancas", "riohacha"],
+      ["fonseca", "Fonseca", "riohacha"], ["san_juan_del_cesar", "San Juan del Cesar", "riohacha"],
+      ["distraccion", "Distraccion", "riohacha"], ["albania", "Albania", "riohacha"],
+      ["valledupar", "Valledupar", "valledupar"], ["aguachica", "Aguachica", "valledupar"], ["bosconia", "Bosconia", "valledupar"],
+      ["chiriguana", "Chiriguana", "valledupar"], ["la_paz", "La Paz", "valledupar"], ["pueblo_bello", "Pueblo Bello", "valledupar"],
+      ["quibdo", "Quibdo", "quibdo"], ["istmina", "Istmina", "quibdo"], ["condoto", "Condoto", "quibdo"], ["nuqui", "Nuqui", "quibdo"]
+    ].map(([code, name, parent_code]) => ({ code, name, parent_code })),
+    currencies: [["COP", "Peso colombiano (COP)"], ["USD", "Dolar estadounidense (USD)"], ["EUR", "Euro (EUR)"]].map(([code, name]) => ({ code, name }))
+  };
+}
+
+export type VehicleMasterItem = {
+  code: string;
+  name: string;
+  description?: string;
+  active?: boolean;
+  sort_order?: number;
+  parent_code?: string | null;
+};
+
+export type VehicleMasterCatalogs = {
+  types: VehicleMasterItem[];
+  categories: VehicleMasterItem[];
+  brands: VehicleMasterItem[];
+  lines: VehicleMasterItem[];
+  colors: VehicleMasterItem[];
+  fuels: VehicleMasterItem[];
+  bodyTypes: VehicleMasterItem[];
+  locations: VehicleMasterItem[];
+  costCenters: VehicleMasterItem[];
+  capacityUnits: VehicleMasterItem[];
+  departments: VehicleMasterItem[];
+  cities: VehicleMasterItem[];
+  municipalities: VehicleMasterItem[];
+  serviceLevels: VehicleMasterItem[];
+  currencies: VehicleMasterItem[];
+};
+
+export function isActiveMasterItem(item: VehicleMasterItem) {
+  return item.active !== false;
+}
+
+export async function loadVehicleMasterCatalogs(): Promise<VehicleMasterCatalogs> {
+  const defaults = defaultUserMasterData() as unknown as Record<string, VehicleMasterItem[]>;
+  const masters = await loadSupabaseUserMasterData().catch(() => defaults);
+  const source = (masters && typeof masters === "object" ? masters : defaults) as Record<string, unknown>;
+  const pick = (key: string): VehicleMasterItem[] => {
+    const value = Array.isArray(source[key]) ? (source[key] as VehicleMasterItem[]) : [];
+    return value.length ? value : defaults[key] || [];
+  };
+  return {
+    types: pick("vehicle_types"),
+    categories: pick("vehicle_categories"),
+    brands: pick("vehicle_brands"),
+    lines: pick("vehicle_lines"),
+    colors: pick("vehicle_colors"),
+    fuels: pick("vehicle_fuels"),
+    bodyTypes: pick("vehicle_body_types"),
+    locations: pick("locations"),
+    costCenters: pick("cost_centers"),
+    capacityUnits: pick("units_of_measure"),
+    departments: pick("departments"),
+    cities: pick("cities"),
+    municipalities: pick("municipalities"),
+    serviceLevels: pick("service_levels"),
+    currencies: pick("currencies")
   };
 }
 
@@ -3920,21 +4129,40 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
     const itemCode = adminCatalogItemMatch[2] ? decodeURIComponent(adminCatalogItemMatch[2]) : "";
     const body = JSON.parse(String(options.body || "{}"));
     const data = getStoredUserMasterData();
-    const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string; description?: string; active?: boolean; sort_order?: number }>) : [];
+    const current = Array.isArray((data as AnyRow)[catalogCode]) ? ((data as AnyRow)[catalogCode] as Array<{ code: string; name: string; description?: string; active?: boolean; sort_order?: number; parent_code?: string | null }>) : [];
     if (method === "DELETE") {
       const previous = current.find((entry) => entry.code === itemCode);
       const nextData = { ...data, [catalogCode]: current.filter((entry) => entry.code !== itemCode) };
       saveStoredUserMasterData(nextData);
       const membership = await currentSupabaseCompanyUser().catch(() => null);
       if (membership?.company_id) {
-        const catalogs = await supabaseFetch<Array<{ id: string }>>(
-          `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
-        ).catch(() => []);
-        const catalogId = catalogs[0]?.id;
-        if (catalogId) {
-          await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(itemCode)}`, {
-            method: "DELETE"
-          }).catch((error) => safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error));
+        try {
+          const catalogId = await ensureSupabaseCompanyMasterCatalog(membership.company_id, catalogCode);
+          const companyItems = await supabaseFetch<Array<{ id: string }>>(
+            `/rest/v1/master_catalog_items?select=id&catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(itemCode)}&limit=5`
+          );
+          if (companyItems[0]?.id) {
+            await supabaseFetch(`/rest/v1/master_catalog_items?id=eq.${encodeURIComponent(companyItems[0].id)}&company_id=eq.${encodeURIComponent(membership.company_id)}`, {
+              method: "DELETE"
+            });
+          } else if (previous) {
+            await supabaseFetch("/rest/v1/master_catalog_items?on_conflict=catalog_id,code", {
+              method: "POST",
+              headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+              body: JSON.stringify({
+                catalog_id: catalogId,
+                company_id: membership.company_id,
+                code: itemCode,
+                name: previous.name,
+                description: previous.description || null,
+                active: false,
+                sort_order: Number(previous.sort_order || 100),
+                parent_code: previous.parent_code || null
+              })
+            });
+          }
+        } catch (error) {
+          safeDevLog("No fue posible eliminar item de catalogo en Supabase.", error);
         }
       }
       if (catalogCode === "activity_types" && previous) {
@@ -3947,7 +4175,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
       name: String(body.name || "").trim(),
       description: String(body.description || "").trim(),
       active: body.active !== false,
-      sort_order: Number(body.sort_order || 100)
+      sort_order: Number(body.sort_order || 100),
+      parent_code: typeof body.parent_code === "string" && body.parent_code.trim() ? body.parent_code.trim() : null
     };
     if (!item.code || !item.name) throw new Error("Codigo y nombre del catalogo son obligatorios.");
     const targetCode = itemCode || item.code;
@@ -3960,11 +4189,8 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
 
     const membership = await currentSupabaseCompanyUser().catch(() => null);
     if (membership?.company_id) {
-      const catalogs = await supabaseFetch<Array<{ id: string }>>(
-        `/rest/v1/master_catalogs?select=id&or=(and(code.eq.${encodeURIComponent(catalogCode)},company_id.eq.${encodeURIComponent(membership.company_id)}),and(code.eq.${encodeURIComponent(catalogCode)},company_id.is.null))&limit=1`
-      ).catch(() => []);
-      const catalogId = catalogs[0]?.id;
-      if (catalogId) {
+      try {
+        const catalogId = await ensureSupabaseCompanyMasterCatalog(membership.company_id, catalogCode);
         if (targetCode !== item.code) {
           await supabaseFetch(`/rest/v1/master_catalog_items?catalog_id=eq.${encodeURIComponent(catalogId)}&company_id=eq.${encodeURIComponent(membership.company_id)}&code=eq.${encodeURIComponent(targetCode)}`, {
             method: "DELETE"
@@ -3980,9 +4206,12 @@ async function supabaseApiFallback<T>(path: string, options: RequestInit = {}): 
             name: item.name,
             description: item.description || null,
             active: item.active,
-            sort_order: item.sort_order
+            sort_order: item.sort_order,
+            parent_code: item.parent_code
           })
-        }).catch((error) => safeDevLog("No fue posible persistir item de catalogo en Supabase.", error));
+        });
+      } catch (error) {
+        safeDevLog("No fue posible persistir item de catalogo en Supabase.", error);
       }
     }
     if (catalogCode === "activity_types") {
@@ -4293,6 +4522,76 @@ export function listApexHeartReportSchedules() { return api<ApexHeartReportSched
 export function saveApexHeartReportSchedule(input: Omit<ApexHeartReportSchedule, "id" | "next_run_at" | "last_run_at">) { return api<ApexHeartReportSchedule>("/api/v1/apex-heart/report-schedules", { method: "POST", body: JSON.stringify(input) }); }
 export function deleteApexHeartReportSchedule(id: number) { return api(`/api/v1/apex-heart/report-schedules/${id}`, { method: "DELETE" }); }
 
+export type TransportPygConcept = { code: string; name: string; section: string; kind: string; display_order: number; dynamic?: boolean; has_accounts?: boolean; pending?: boolean; informational?: boolean };
+export type TransportPygCenterChild = { center_code: string; center_name: string; branch_code: string; branch_name: string; actual: number; budget: number | null; budget_coverage: "none" | "partial" | "full" };
+export type TransportPygAccountChild = { account_code: string; account_name: string; actual: number; budget: number | null; budget_coverage: "none" | "partial" | "full"; centers: TransportPygCenterChild[] };
+export type TransportPygRow = {
+  code: string; name: string; section: string; kind: string; dynamic?: boolean; budget: number | null; actual: number; pct: number | null; cump: number | null;
+  display_order?: number; pending?: boolean; pending_message?: string; informational?: boolean;
+  budget_coverage?: "none" | "partial" | "full"; children?: TransportPygAccountChild[];
+};
+export type TransportPygVehicle = {
+  vehicle_id: number; plate: string; vehicle_label: string | null; driver_id: number | null;
+  center_code?: string | null; center_name?: string | null; branch_code?: string | null; branch_name?: string | null;
+  income_actual: number; unmapped_expense: number; rows: TransportPygRow[];
+};
+export type TransportPygCenter = {
+  center_code: string; center_name: string; branch_code: string; branch_name: string;
+  plate: string | null; vehicle_label: string | null;
+  income_actual: number; unmapped_expense: number; rows: TransportPygRow[];
+};
+export type TransportPygReport = {
+  period: string; period_start: string; period_end: string; tax_percent: number;
+  source: "accounting" | "operational"; report_source?: "ledger" | "operational";
+  concepts: TransportPygConcept[];
+  vehicles: TransportPygVehicle[];
+  centers?: TransportPygCenter[];
+  corporate: { income_actual: number; unmapped_expense: number; rows: TransportPygRow[]; totals?: { totalIngresos?: { actual: number }; totalGastos?: { actual: number }; utilidadOp?: { actual: number }; antes?: { actual: number }; impuesto?: { actual: number }; neta?: { actual: number } } };
+  unassigned?: TransportPygVehicle | null;
+  warnings?: Array<{ code: string; message: string; detail?: unknown }>;
+  reconciliation?: { ledger_net: number; neta_actual: number; difference: number; informational_actual: number; note: string };
+  data_status: { vehicle_count: number; vehicles_with_income: number; unmapped_total: number; unassigned_centers?: number; centers_count?: number; unclassified_income?: number; unclassified_expense?: number };
+};
+export type TransportPygBudgets = { period: string; rows: Array<{ vehicle_id: number; concept_code: string; amount: number }> };
+export type TransportPygMapping = { rows: Array<{ source_type: string; source_code: string; pyg_concept_code: string; active: boolean }> };
+export type TransportPygConfig = { tax_percent: number };
+
+export function getTransportPygConcepts() { return api<TransportPygConcept[]>("/api/v1/transport-pyg/concepts"); }
+export function getTransportPygReport(period: string) { return api<TransportPygReport>(`/api/v1/transport-pyg/report?period=${encodeURIComponent(period)}`, { cache: "no-store" }); }
+export function getTransportPygBudgets(period: string) { return api<TransportPygBudgets>(`/api/v1/transport-pyg/budgets?period=${encodeURIComponent(period)}`); }
+export function saveTransportPygBudgets(period: string, rows: Array<{ vehicle_id: number; concept_code: string; amount: number }>) {
+  return api<TransportPygBudgets>("/api/v1/transport-pyg/budgets", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ period, rows }) });
+}
+export function getTransportPygMapping() { return api<TransportPygMapping>("/api/v1/transport-pyg/mapping"); }
+export function saveTransportPygMapping(rows: TransportPygMapping["rows"]) {
+  return api<TransportPygMapping>("/api/v1/transport-pyg/mapping", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }) });
+}
+export function getTransportPygConfig() { return api<TransportPygConfig>("/api/v1/transport-pyg/config"); }
+export function saveTransportPygConfig(taxPercent: number) {
+  return api<TransportPygConfig>("/api/v1/transport-pyg/config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tax_percent: taxPercent }) });
+}
+
+export type TransportPygAccountRange = { start: string; end: string };
+export type TransportPygAccountConcept = {
+  code: string; name: string; section: "ingresos" | "gastos_operativos" | "no_operativos" | "impuestos" | "resultados" | "informativa";
+  kind: "income" | "expense" | "subtotal_ingresos" | "subtotal_gastos_operativos" | "subtotal_utilidad_operacional" | "subtotal_antes_de_impuestos" | "subtotal_utilidad_neta" | "tax" | "informational";
+  order: number; ranges: TransportPygAccountRange[]; exclusions: TransportPygAccountRange[];
+};
+export type TransportPygAccountConfiguration = {
+  source: "accounting" | "operational";
+  has_config: boolean;
+  config: { source: "accounting" | "operational"; concepts: TransportPygAccountConcept[] } | null;
+  proposal: { source: "accounting"; label: string; concepts: TransportPygAccountConcept[] };
+  proposal_from: string;
+  proposal_label: string;
+};
+export function getTransportPygAccountConfiguration() {
+  return api<TransportPygAccountConfiguration>("/api/v1/transport-pyg/account-configuration", { cache: "no-store" });
+}
+export function saveTransportPygAccountConfiguration(input: { source: "accounting" | "operational"; concepts: TransportPygAccountConcept[] }) {
+  return api<{ ok: boolean; source: string; concepts: number }>("/api/v1/transport-pyg/account-configuration", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+}
+
 async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, retried = false): Promise<T> {
   assertActiveSession();
   await keepSessionAlive();
@@ -4389,6 +4688,7 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
     });
   }
   touchSession();
+  if (response.headers.get("content-type")?.includes("application/pdf")) return await response.blob() as T;
   const body = await response.json() as T;
   if (pathname === "/api/v1/hr/activity-types" && method === "GET") {
     const masterData = await loadSupabaseUserMasterData().catch(() => defaultUserMasterData());
