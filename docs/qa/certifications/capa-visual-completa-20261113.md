@@ -98,3 +98,17 @@ script (`scripts/certifications/visual-homologation-browser.cjs`):
 - `origin/develop` incorporó el cambio de talento humano (`6589af8e`, búsqueda por documento en
   liquidación). No comparte rutas con este inventario y no se modificó.
 - El candado de promoción exige fast-forward: `beff5132` desciende de `6589af8e`.
+
+## Despliegue a QA y smoke del build real (2026-11-13)
+
+- **Promoción:** `6589af8e..beff5132` fast-forward en `develop`; árbol desplegado
+  `3d697a24…`, idéntico al certificado; 143 archivos (109 A / 34 M / 0 D).
+- **Web QA:** deployment `4c8dbc1d` en `SUCCESS` sobre `beff5132`.
+- **API QA:** sin redespliegue; `/health` conserva `commit: 6589af8e1d32`; sin migraciones.
+- **Smoke:** `scripts/certifications/visual-homologation-qa-smoke.cjs` con **29 verificaciones y 5
+  capturas** en `docs/qa/evidence/capa-visual-completa-qa-20261113/`: el lobby V4 muestra su hero
+  cargado y sus 8 tarjetas curadas con glifo, sin tarjetas retiradas ni asistente flotante; el tema
+  oscuro remapea la superficie de la tarjeta (`255,255,255` → `23,35,45`); Nueva orden de venta
+  conserva 2 `combobox`, 2 `<select aria-hidden>` y 0 selects nativos visibles; 8 hubs accesibles sin
+  desbordamiento y 4 denegaciones por licencia canónicas; 0 errores nuevos de consola y de red.
+- **Sigue en manos de QA:** persistencia real de las escrituras.

@@ -174,9 +174,31 @@ si cambia el payload de las órdenes o si alguna pantalla desborda.
 - [x] Plan de despliegue con invariantes, puntos de parada y rollback.
 - [x] Autorización explícita del propietario (2026-11-13).
 - [x] Aprobación registrada y compuerta pre-QA en verde.
-- [ ] Fast-forward a `develop` y despliegue web a QA.
-- [ ] Smoke técnico de QA y certificación funcional (persistencia real).
+- [x] Fast-forward a `develop` y despliegue web a QA.
+- [ ] Certificación funcional (persistencia real) en manos de QA.
 
 ### 10.1 Resultado de la promoción
 
-Se completa al ejecutar la Fase 2; este runbook se actualiza en el mismo commit de cierre.
+Ejecutada el 2026-11-13.
+
+| Hecho | Medición |
+|---|---|
+| Compuertas re-medidas antes del push | `ALCANCE DE PROMOCION VALIDO: capa-visual-completa-20261113 (143 rutas)` y `AUTORIZACION PRE-QA VALIDA` |
+| Fast-forward | `6589af8e..beff5132` (`HEAD -> develop`), sin merge commit ni force |
+| Árbol desplegado | `3d697a24c210b9e31f151c45a7436f924c52ea14`, idéntico al certificado |
+| Inventario en el destino | 143 archivos (109 A / 34 M / 0 D) |
+| Web QA | deployment `4c8dbc1d` `SUCCESS` sobre `beff5132` (`BUILDING` 11:22 → `DEPLOYING` 11:23 → `SUCCESS` 11:23) |
+| API QA | sin redespliegue: `/health` conserva `commit: 6589af8e1d32` y el deployment del API sigue en `6589af8e` |
+| Migraciones | ninguna |
+
+### 10.2 Smoke técnico de QA
+
+`node scripts/certifications/visual-homologation-qa-smoke.cjs` contra el despliegue real, solo lectura (no envía formularios):
+
+- **29 verificaciones en verde y 5 capturas** en `docs/qa/evidence/capa-visual-completa-qa-20261113/`.
+- **Lobby V4:** hero cargado desde `banner-network.webp` (bucket `w=1920`), 8 tarjetas curadas del inquilino demo, 8 con glifo, 0 tarjetas retiradas y 0 burbujas del asistente.
+- **Tema oscuro:** la superficie de la tarjeta pasa de `rgb(255,255,255)` a `rgb(23,35,45)` al aplicar `html.dark`; el remapeo de tokens vive en el build desplegado.
+- **SearchSelect:** Nueva orden de venta con 2 `combobox`, 2 `<select aria-hidden>` y 0 selects nativos visibles; la lista abre, filtra y cierra con Escape.
+- **Hubs:** 8 hubs accesibles con `h1` y desbordamiento 0; 4 hubs denegados por licencia muestran la tarjeta canónica sin error boundary.
+- **Ruido:** 0 errores nuevos de consola y de red; se registran 4 entradas preexistentes (400 de Supabase en login y 404 de favicon).
+- **Pendiente de QA funcional:** persistencia real de las escrituras y agenda denegada por licencia del inquilino de QA.

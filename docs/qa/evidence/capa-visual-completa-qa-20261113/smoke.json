@@ -1,0 +1,448 @@
+{
+  "environment": "QA",
+  "status": "passed",
+  "web_base": "https://apexos-web-qa-production.up.railway.app",
+  "api_base": "https://apexos-api-qa-production.up.railway.app",
+  "started_at": "2026-11-13T16:25:36.725Z",
+  "checks": [
+    {
+      "name": "api-health-200",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "api-commit-intacto",
+      "status": "passed",
+      "detail": "6589af8e1d32"
+    },
+    {
+      "name": "web-login-200",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "login-real-y-lobby",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard",
+        "h1": "Creamos sistemas a tu medida.",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "lobby-v4-tarjetas-curadas",
+      "status": "passed",
+      "detail": {
+        "tiles": 8
+      }
+    },
+    {
+      "name": "lobby-v4-un-glifo-por-tarjeta",
+      "status": "passed",
+      "detail": {
+        "glyphs": 8,
+        "tiles": 8
+      }
+    },
+    {
+      "name": "lobby-v4-sin-retirados",
+      "status": "passed",
+      "detail": [
+        "/dashboard/inventario",
+        "/dashboard/compras",
+        "/dashboard/ventas",
+        "/dashboard/contabilidad",
+        "/dashboard/transporte",
+        "/dashboard/talento-humano",
+        "/dashboard/administracion",
+        "/dashboard/servicios"
+      ]
+    },
+    {
+      "name": "lobby-v4-hero-cargado",
+      "status": "passed",
+      "detail": {
+        "src": "https://apexos-web-qa-production.up.railway.app/_next/image?url=%2Fassets%2Flobby%2Fbanner-network.webp&w=1920&q=75"
+      }
+    },
+    {
+      "name": "lobby-v4-sin-asistente",
+      "status": "passed",
+      "detail": {
+        "mascots": 0
+      }
+    },
+    {
+      "name": "lobby-v4-tokens-oscuro",
+      "status": "passed",
+      "detail": {
+        "withoutDark": "rgb(255, 255, 255)",
+        "withDark": "rgb(23, 35, 45)",
+        "startedInDark": true
+      }
+    },
+    {
+      "name": "hub-inventario",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/inventario",
+        "h1": "Inventario",
+        "text": "Saltar al contenido principal\nPágina cargada: inventario\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nInventario\n\nM-01 · Operación\n\nInventario\n\nProductos, bodegas, existencias y movimientos en un flujo operativo único.\n\nNuevo p",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "hub-compras",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/compras",
+        "h1": "Compras",
+        "text": "Saltar al contenido principal\nPágina cargada: compras\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nCompras\n\nM-02 · Abastecimiento\n\nCompras\n\nÓrdenes, recepciones, proveedores, facturas e importaciones organizados por tarea.\n\nOrd",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "hub-ventas",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/ventas",
+        "h1": "Ventas",
+        "text": "Saltar al contenido principal\nPágina cargada: ventas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nVentas\n\nM-03 · Comercial\n\nVentas\n\nClientes, pedidos, facturación y reportes organizados por tarea.\n\nNueva orden\nRegistrar un pedi",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "hub-contabilidad",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/contabilidad",
+        "h1": "Contabilidad",
+        "text": "Saltar al contenido principal\nPágina cargada: contabilidad\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nContabilidad\n\nM-07 · Finanzas\n\nContabilidad\n\nRegistros, maestros, obligaciones e informes financieros organizados por tarea",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "hub-transporte",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/transporte",
+        "h1": "Transporte",
+        "text": "Saltar al contenido principal\nPágina cargada: transporte\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\n\nM-14 · Operación\n\nTransporte\n\nLleva los pedidos desde la preparación del viaje hasta la entrega y el control del ",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "hub-talento-humano",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/talento-humano",
+        "h1": "Talento Humano",
+        "text": "Saltar al contenido principal\nPágina cargada: talento humano\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\n\nM-17 · Talento Humano\n\nTalento Humano\n\nPlaneación, marcaciones, afiliaciones y liquidaciones organizadas ",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "hub-servicios",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/servicios",
+        "h1": "Servicios",
+        "text": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\n\nM-26 · Operación de campo\n\nServicios\n\nLa operacion de servicios no tiene pendientes criticos en este momento.\n\nCENT",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "hub-administracion",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "path": "/dashboard/administracion",
+        "h1": "Administración APEX",
+        "text": "Saltar al contenido principal\nPágina cargada: administracion\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nAdministración APEX\n\nConfiguración y gobierno\n\nAdministración APEX\n\nGestiona usuarios, roles y maestros propios de esta e",
+        "overflow": 0
+      }
+    },
+    {
+      "name": "denegado-gestion-comercial-sin-error",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gestion-comercial",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: gestion comercial\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nGestión Comercial\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Gestión Comercial. Si necesitas acceso, so",
+        "checking": false,
+        "errorBoundary": false
+      }
+    },
+    {
+      "name": "denegado-comercio-sin-error",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/comercio",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: comercio\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nComercio\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Comercio. Si necesitas acceso, solicita ajuste de rol a un a",
+        "checking": false,
+        "errorBoundary": false
+      }
+    },
+    {
+      "name": "denegado-reportes-sin-error",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/reportes",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: reportes\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nApex Heart\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Apex Heart. Si necesitas acceso, solicita ajuste de rol a ",
+        "checking": false,
+        "errorBoundary": false
+      }
+    },
+    {
+      "name": "denegado-gastos-menores-sin-error",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/gastos-menores",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: gastos menores\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nGastos Menores\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Gastos Menores. Si necesitas acceso, solicita aj",
+        "checking": false,
+        "errorBoundary": false
+      }
+    },
+    {
+      "name": "nueva-orden-primitiva",
+      "status": "passed",
+      "detail": {
+        "path": "/dashboard/ventas/ordenes/nueva",
+        "h1": "Nueva orden de venta",
+        "comboboxes": 2,
+        "hiddenSelects": 2,
+        "visibleNativeSelects": 0,
+        "overflow": 0,
+        "comboboxLabel": "Seleccionar cliente",
+        "listbox": {
+          "options": 1,
+          "status": ""
+        }
+      }
+    },
+    {
+      "name": "nueva-orden-sin-native-visible",
+      "status": "passed",
+      "detail": {
+        "visible": 0
+      }
+    },
+    {
+      "name": "listbox-abre",
+      "status": "passed",
+      "detail": {
+        "options": 1,
+        "status": ""
+      }
+    },
+    {
+      "name": "listbox-filtra",
+      "status": "passed",
+      "detail": {
+        "typed": "a"
+      }
+    },
+    {
+      "name": "escape-cierra",
+      "status": "passed",
+      "detail": {
+        "closed": true
+      }
+    },
+    {
+      "name": "consola-sin-errores",
+      "status": "passed",
+      "detail": []
+    },
+    {
+      "name": "red-sin-errores",
+      "status": "passed",
+      "detail": []
+    }
+  ],
+  "hubs": {
+    "allowed": {
+      "lobby": {
+        "path": "/dashboard",
+        "h1": "Creamos sistemas a tu medida.",
+        "overflow": 0
+      },
+      "inventario": {
+        "path": "/dashboard/inventario",
+        "h1": "Inventario",
+        "text": "Saltar al contenido principal\nPágina cargada: inventario\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nInventario\n\nM-01 · Operación\n\nInventario\n\nProductos, bodegas, existencias y movimientos en un flujo operativo único.\n\nNuevo p",
+        "overflow": 0,
+        "status": 200
+      },
+      "compras": {
+        "path": "/dashboard/compras",
+        "h1": "Compras",
+        "text": "Saltar al contenido principal\nPágina cargada: compras\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nCompras\n\nM-02 · Abastecimiento\n\nCompras\n\nÓrdenes, recepciones, proveedores, facturas e importaciones organizados por tarea.\n\nOrd",
+        "overflow": 0,
+        "status": 200
+      },
+      "ventas": {
+        "path": "/dashboard/ventas",
+        "h1": "Ventas",
+        "text": "Saltar al contenido principal\nPágina cargada: ventas\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nVentas\n\nM-03 · Comercial\n\nVentas\n\nClientes, pedidos, facturación y reportes organizados por tarea.\n\nNueva orden\nRegistrar un pedi",
+        "overflow": 0,
+        "status": 200
+      },
+      "contabilidad": {
+        "path": "/dashboard/contabilidad",
+        "h1": "Contabilidad",
+        "text": "Saltar al contenido principal\nPágina cargada: contabilidad\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nContabilidad\n\nM-07 · Finanzas\n\nContabilidad\n\nRegistros, maestros, obligaciones e informes financieros organizados por tarea",
+        "overflow": 0,
+        "status": 200
+      },
+      "transporte": {
+        "path": "/dashboard/transporte",
+        "h1": "Transporte",
+        "text": "Saltar al contenido principal\nPágina cargada: transporte\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTransporte\n\nM-14 · Operación\n\nTransporte\n\nLleva los pedidos desde la preparación del viaje hasta la entrega y el control del ",
+        "overflow": 0,
+        "status": 200
+      },
+      "talento-humano": {
+        "path": "/dashboard/talento-humano",
+        "h1": "Talento Humano",
+        "text": "Saltar al contenido principal\nPágina cargada: talento humano\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nTalento humano\n\nM-17 · Talento Humano\n\nTalento Humano\n\nPlaneación, marcaciones, afiliaciones y liquidaciones organizadas ",
+        "overflow": 0,
+        "status": 200
+      },
+      "servicios": {
+        "path": "/dashboard/servicios",
+        "h1": "Servicios",
+        "text": "Saltar al contenido principal\nPágina cargada: servicios\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nServicios\n\nM-26 · Operación de campo\n\nServicios\n\nLa operacion de servicios no tiene pendientes criticos en este momento.\n\nCENT",
+        "overflow": 0,
+        "status": 200
+      },
+      "administracion": {
+        "path": "/dashboard/administracion",
+        "h1": "Administración APEX",
+        "text": "Saltar al contenido principal\nPágina cargada: administracion\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nAdministración APEX\n\nConfiguración y gobierno\n\nAdministración APEX\n\nGestiona usuarios, roles y maestros propios de esta e",
+        "overflow": 0,
+        "status": 200
+      }
+    },
+    "denied": {
+      "gestion-comercial": {
+        "path": "/dashboard/gestion-comercial",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: gestion comercial\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nGestión Comercial\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Gestión Comercial. Si necesitas acceso, so",
+        "checking": false,
+        "errorBoundary": false,
+        "module_code": "M-27"
+      },
+      "comercio": {
+        "path": "/dashboard/comercio",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: comercio\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nComercio\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Comercio. Si necesitas acceso, solicita ajuste de rol a un a",
+        "checking": false,
+        "errorBoundary": false,
+        "module_code": "M-30"
+      },
+      "reportes": {
+        "path": "/dashboard/reportes",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: reportes\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nApex Heart\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Apex Heart. Si necesitas acceso, solicita ajuste de rol a ",
+        "checking": false,
+        "errorBoundary": false,
+        "module_code": "apex_heart"
+      },
+      "gastos-menores": {
+        "path": "/dashboard/gastos-menores",
+        "h1": "Acceso no autorizado",
+        "text": "Saltar al contenido principal\nPágina cargada: gastos menores\n\nAPEX OS\n\nBuscar módulos y funciones\nInicio\nOPERACIÓN\nCOMERCIAL\nFINANZAS\nPERSONAS Y GESTIÓN\nOTROS\nDE\n\ndemo@apex.local\n\nDemo APEX - APEX_ADMIN\n\nSesión activa\nMi cuenta\nEn línea\nES\nHerramientas\nCentro de comandos\nCtrl K\nGastos Menores\nAcceso no autorizado\n\nTu rol no tiene permisos para abrir Gastos Menores. Si necesitas acceso, solicita aj",
+        "checking": false,
+        "errorBoundary": false,
+        "module_code": "M-29"
+      }
+    }
+  },
+  "form": {
+    "path": "/dashboard/ventas/ordenes/nueva",
+    "h1": "Nueva orden de venta",
+    "comboboxes": 2,
+    "hiddenSelects": 2,
+    "visibleNativeSelects": 0,
+    "overflow": 0,
+    "comboboxLabel": "Seleccionar cliente",
+    "listbox": {
+      "options": 1,
+      "status": ""
+    }
+  },
+  "console_errors": [],
+  "http_errors": [],
+  "known_console_noise": [
+    {
+      "phase": "login",
+      "status": 404,
+      "url": "https://apexos-web-qa-production.up.railway.app/favicon.ico"
+    },
+    {
+      "phase": "login",
+      "text": "Failed to load resource: the server responded with a status of 404 ()",
+      "location": {
+        "url": "https://apexos-web-qa-production.up.railway.app/favicon.ico"
+      }
+    },
+    {
+      "phase": "login",
+      "status": 400,
+      "url": "https://jbirkghkekuifgfsgquq.supabase.co/auth/v1/token?grant_type=password"
+    },
+    {
+      "phase": "login",
+      "text": "Failed to load resource: the server responded with a status of 400 ()",
+      "location": {
+        "url": "https://jbirkghkekuifgfsgquq.supabase.co/auth/v1/token?grant_type=password"
+      }
+    }
+  ],
+  "screenshots": [
+    "qa-lobby.png",
+    "qa-inventario.png",
+    "qa-ventas.png",
+    "qa-servicios.png",
+    "qa-nueva-orden.png"
+  ],
+  "lobby_v4": {
+    "tiles": 8,
+    "glyphs": 8,
+    "hrefs": [
+      "/dashboard/inventario",
+      "/dashboard/compras",
+      "/dashboard/ventas",
+      "/dashboard/contabilidad",
+      "/dashboard/transporte",
+      "/dashboard/talento-humano",
+      "/dashboard/administracion",
+      "/dashboard/servicios"
+    ],
+    "heroSrc": "https://apexos-web-qa-production.up.railway.app/_next/image?url=%2Fassets%2Flobby%2Fbanner-network.webp&w=1920&q=75",
+    "heroLoaded": true,
+    "assistantMascots": 0,
+    "assistantText": false
+  },
+  "lobby_v4_dark": {
+    "withoutDark": "rgb(255, 255, 255)",
+    "withDark": "rgb(23, 35, 45)",
+    "startedInDark": true
+  },
+  "finished_at": "2026-11-13T16:26:33.001Z"
+}

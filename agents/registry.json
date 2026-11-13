@@ -270,9 +270,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.61.0",
+      "version": "2.62.0",
       "updated_at": "2026-11-13",
-      "sha256": "9cd8b35519ef0f3709037d6b53b203cd8d905dbb40fe67750a4f48f8188da32b",
+      "sha256": "5467881949ea068f5a3087474ec5925e1ec81d3286ff360ca7553763478a948a",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -326,7 +326,8 @@
         "fase-visual-metricas-dom-sesion",
         "saludo-evidencia-sesion-real-y-caja",
         "corte-portafolio-evidencia-por-consumidor",
-        "arnes-mide-pintura-y-fixtures-cors"
+        "arnes-mide-pintura-y-fixtures-cors",
+        "smoke-capa-visual-completa-en-el-despliegue"
       ]
     },
     {

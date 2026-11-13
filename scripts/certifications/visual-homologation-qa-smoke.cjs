@@ -15,11 +15,11 @@ const puppeteer = require("puppeteer-core");
 const root = path.resolve(__dirname, "../..");
 const webBase = String(process.env.QA_WEB_URL || "https://apexos-web-qa-production.up.railway.app").replace(/\/$/, "");
 const apiBase = String(process.env.QA_API_URL || "https://apexos-api-qa-production.up.railway.app").replace(/\/$/, "");
-const expectedApiCommit = String(process.env.QA_EXPECTED_API_COMMIT || "3595a9bb").toLowerCase();
+const expectedApiCommit = String(process.env.QA_EXPECTED_API_COMMIT || "6589af8e").toLowerCase();
 const email = process.env.QA_SMOKE_EMAIL || "demo@apex.local";
 const password = process.env.QA_SMOKE_PASSWORD || "test1234";
 const evidenceDir = path.resolve(
-  process.env.QA_SMOKE_EVIDENCE_DIR || path.join(root, "docs/qa/evidence/homologacion-visual-qa-20261113")
+  process.env.QA_SMOKE_EVIDENCE_DIR || path.join(root, "docs/qa/evidence/capa-visual-completa-qa-20261113")
 );
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -43,6 +43,14 @@ const DENIED_HUBS = [
   ["gastos-menores", "/dashboard/gastos-menores", "M-29"]
 ];
 const SHOT_HUBS = new Set(["inventario", "ventas", "servicios"]);
+// Curaduría del portafolio: estos slugs salieron de la oferta del lobby. Si
+// reaparecen como tarjeta, el despliegue no trae la capa visual completa.
+const RETIRED_SLUGS = [
+  "punto-de-venta", "costos", "presupuestos", "produccion", "recetas", "calidad",
+  "devoluciones", "comercio-exterior", "activos", "crm", "planeacion-demanda",
+  "facturacion", "facturacion-electronica", "configuracion-inicial", "suscripciones",
+  "tesoreria", "proyectos", "apex-control", "apex-ai", "cxc"
+];
 
 function browserPath() {
   for (const candidate of [
@@ -136,6 +144,55 @@ async function main() {
     check("login-real-y-lobby", lobby.path.startsWith("/dashboard") && lobby.h1.length > 0, lobby);
     await page.screenshot({ path: path.join(evidenceDir, "qa-lobby.png") });
     evidence.screenshots.push("qa-lobby.png");
+
+    // Lobby V4: hero con la constelación cargada, tarjetas curadas con su glifo,
+    // ninguna tarjeta retirada y sin el asistente flotante.
+    await page.waitForFunction(() => {
+      const img = document.querySelector(".apex-lobby-hero img");
+      return Boolean(img && img.complete && img.naturalWidth > 0);
+    }, { timeout: 30000 });
+    const v4 = await page.evaluate(() => {
+      const tiles = [...document.querySelectorAll(".apex-lobby-tile")];
+      const hero = document.querySelector(".apex-lobby-hero img");
+      return {
+        tiles: tiles.length,
+        glyphs: tiles.filter((tile) => tile.querySelector(".apex-lobby-tile-glyph")).length,
+        hrefs: tiles.map((tile) => tile.getAttribute("href") || ""),
+        heroSrc: hero ? `${hero.currentSrc || hero.getAttribute("src") || ""}` : "",
+        heroLoaded: Boolean(hero && hero.complete && hero.naturalWidth > 0),
+        assistantMascots: document.querySelectorAll(".apex-ai-mascot").length,
+        assistantText: /\bAPEX AI\b/i.test(document.body.innerText || "")
+      };
+    });
+    evidence.lobby_v4 = v4;
+    check("lobby-v4-tarjetas-curadas", v4.tiles > 0 && v4.tiles <= 12, { tiles: v4.tiles });
+    check("lobby-v4-un-glifo-por-tarjeta", v4.glyphs === v4.tiles, { glyphs: v4.glyphs, tiles: v4.tiles });
+    check("lobby-v4-sin-retirados", v4.hrefs.every((href) => !RETIRED_SLUGS.some((slug) => href.includes(`/${slug}`))), v4.hrefs);
+    check("lobby-v4-hero-cargado", v4.heroLoaded, { src: v4.heroSrc });
+    check("lobby-v4-sin-asistente", v4.assistantMascots === 0 && !v4.assistantText, { mascots: v4.assistantMascots });
+
+    // Tema oscuro: los tokens deben remapear la superficie de la tarjeta sin recargar.
+    // El tema del navegador puede venir oscuro; se miden ambos estados y se restaura.
+    const darkTheme = await page.evaluate(async () => {
+      const root = document.documentElement;
+      const tile = document.querySelector(".apex-lobby-tile");
+      const frame = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const hadDark = root.classList.contains("dark");
+      root.classList.remove("dark");
+      await frame();
+      const withoutDark = tile ? getComputedStyle(tile).backgroundColor : "";
+      root.classList.add("dark");
+      await frame();
+      const withDark = tile ? getComputedStyle(tile).backgroundColor : "";
+      if (!hadDark) root.classList.remove("dark");
+      return { withoutDark, withDark, startedInDark: hadDark };
+    });
+    evidence.lobby_v4_dark = darkTheme;
+    check(
+      "lobby-v4-tokens-oscuro",
+      Boolean(darkTheme.withoutDark) && darkTheme.withoutDark !== darkTheme.withDark,
+      darkTheme
+    );
 
     for (const [name, route] of ALLOWED_HUBS) {
       phase = name;
