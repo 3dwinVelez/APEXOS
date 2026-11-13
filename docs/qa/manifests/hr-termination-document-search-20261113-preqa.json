@@ -1,0 +1,94 @@
+{
+  "change_id": "hr-termination-document-search-20261113",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "8ba301c0db7bd272fac6ab21a78384a290ba2409",
+  "commit": "52d335162fbbd2053db01972fc8b92df4fbda9d0",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-document-search-local.js",
+    "evidence": [
+      "hr-termination-document-search-20261113-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-document-search-local.js",
+    "evidence": [
+      "hr-termination-document-search-20261113-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: despliega a qa",
+    "approved_at": "2026-11-13T15:38:50.327Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "52d335162fbbd2053db01972fc8b92df4fbda9d0",
+    "target": "8ba301c0db7bd272fac6ab21a78384a290ba2409",
+    "unit_tests": {
+      "passed": 14,
+      "failed": 0
+    },
+    "full_flow": {
+      "status": "passed",
+      "checks": [
+        "document matching prioritizes exact results and excludes inactive and foreign employees",
+        "browser searches, selects, previews the correct employee and clears selection after editing"
+      ],
+      "finished_at": "2026-11-13T15:36:09.088Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1794584067305",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-13T15:36:09.243Z"
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-termination-document-search-20261113",
+  "base_commits": {
+    "develop": "8ba301c0db7bd272fac6ab21a78384a290ba2409"
+  },
+  "target_head": "8ba301c0db7bd272fac6ab21a78384a290ba2409",
+  "certified_commit": "52d335162fbbd2053db01972fc8b92df4fbda9d0",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "52d335162fbbd2053db01972fc8b92df4fbda9d0",
+    "original_commits": [
+      "06511ec496e00f42152d8719908e07ba0da74886",
+      "e05501e8fba80ad2d0abc2611bde5514be465370"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-document-search-local.js"
+  ],
+  "change_intent": {
+    "summary": "Search active employees by document and select the correct employee for termination liquidation.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-document-search-local.js",
+    "docs/qa/manifests/hr-termination-document-search-20261113-scope.json",
+    "docs/qa/manifests/hr-termination-document-search-20261113-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-termination-document-search-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-document-search-20261113-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-document-search-20261113-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "document_search_and_tenant_isolation",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    },
+    {
+      "name": "selected_employee_preview",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    },
+    {
+      "name": "selection_invalidation",
+      "status": "passed",
+      "evidence": [
+        "hr-termination-document-search-20261113-preqa.json"
+      ]
+    }
+  ],
+  "traceability": "Reconstruct the document search change from desarrollo and certify against current develop."
+}
