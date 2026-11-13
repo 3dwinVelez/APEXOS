@@ -42,16 +42,24 @@ try {
   await waitHydration();
   await page.waitForFunction(() => {
     const text = document.body.innerText;
-    return text.includes("Mi operación") && text.includes("Perfil:");
-  }, { timeout: 10000 }).catch(async (error) => {
+    return text.includes("Bienvenido,") && text.includes("Priorizadas para tu perfil");
+  }, { timeout: 15000 }).catch(async (error) => {
     const visibleText = await page.evaluate(() => document.body.innerText.slice(0, 1200));
     throw new Error(`No apareció el dashboard contextual en ${page.url()}: ${visibleText}`, { cause: error });
   });
-  record("role_context_dashboard", await page.evaluate(() => document.body.innerText.includes("Mi operación") && document.body.innerText.includes("Perfil:")));
+  record("role_context_dashboard", await page.evaluate(() => document.body.innerText.includes("Bienvenido,") && document.body.innerText.includes("Priorizadas para tu perfil")));
 
-  await page.keyboard.down("Control"); await page.keyboard.press("k"); await page.keyboard.up("Control");
-  await page.waitForSelector('[role="dialog"] input', { timeout: 5000 });
-  record("command_palette_keyboard", await page.$('[role="dialog"]') !== null);
+  await page.waitForSelector('button[aria-label="Centro de comandos"], button[aria-label="Comandos"]', { timeout: 15000 });
+  // El atajo solo existe cuando el motor hidrato: afirmarlo con una sola pulsacion mide la
+  // ventana de hidratacion de Next, no la funcionalidad. Se insiste acotado y se mide la apertura.
+  let attempts = 0;
+  let paletteOpen = false;
+  while (!paletteOpen && attempts < 20) {
+    attempts += 1;
+    await page.keyboard.down("Control"); await page.keyboard.press("k"); await page.keyboard.up("Control");
+    paletteOpen = await page.waitForSelector('[role="dialog"] input', { timeout: 500 }).then(() => true).catch(() => false);
+  }
+  record("command_palette_keyboard", paletteOpen, { attempts });
   await page.type('[role="dialog"] input', "compra");
   await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"] [role="option"]')].some((item) => item.textContent?.includes("Nueva compra")), { timeout: 5000 });
   record("command_palette_search", await page.evaluate(() => document.body.innerText.includes("Nueva compra")));

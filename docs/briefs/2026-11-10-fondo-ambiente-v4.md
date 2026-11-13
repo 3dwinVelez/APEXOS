@@ -5,6 +5,15 @@
 - **Rama activa**: `desarrollo`
 - **Prompt crudo**: "como podemos mejorar el fondo lo veo como triste, hay forma de darle vida sin sacrificar el performance sin volver lento el sistema y evitar que nos quede muy imvasivo tambien" · "has la recomendacion y recuerda que este fonde debe ser applicable a todas las ventanas y que el fondo tenga un valor visual mas que tener solo un fondo oscuro y tener en cuenta tambien el tema blanco y oscuro"
 
+## 0. Naturaleza del commit — contenedor de capa visual exclusiva
+
+El commit `dbc78e36` se define, se certifica y se promueve como **contenedor de capa visual exclusiva**: un paquete de piel compartida que no altera ningún proceso funcional de la herramienta. Esta sección es la definición acotada del commit y manda sobre cualquier lectura posterior del diff.
+
+- **Inventario verificado** (`git show --stat dbc78e36`, 24 archivos): solo presentación web —`apps/web/app/layout.tsx`, `apps/web/app/globals.css`, `apps/web/components/shell/DashboardChrome.tsx`—, una prueba web nueva (`apps/web/test/ambient-background.test.mjs`), documentación y evidencia (`docs/briefs/**`, `docs/qa/evidence/lobby-v4-20261110/**`) y espejos de agentes (`.qoder/skills/**`, `agents/**`).
+- **Cero rutas funcionales**: ningún archivo en `apps/api/**`, `apps/api/prisma/**` ni `apps/control-tower/**`. Sin lógica de negocio, endpoints, contratos de API, esquema, migraciones, colas, trabajos, telemetría, autenticación, RBAC/ABAC ni aislamiento multi-tenant. `DashboardChrome.tsx` solo deja de pintar un `bg-paper` propio: no cambia marcación, validación ni ningún flujo.
+- **Verificación funcional de no-regresión**: la suite web completa quedó **678/678**, incluidas las pruebas funcionales existentes de módulos y shell; la API no se tocó, por lo que sus certificaciones no se invalidan ni se reclaman con este paquete.
+- **Regla de promoción**: cuando este paquete se promueva, los manifiestos de alcance deben declararlo como capa visual exclusiva (`change_intent.modules: web-shell, agentes-equipo`) con el inventario A/M/D exacto de la sección 2. Ninguna capacidad funcional se certifica, se reclama ni se ve afectada por este contenedor; si un diff futuro contra `develop`/`main` muestra una ruta funcional adentro, el paquete se rechaza y se reconstruye.
+
 ## 1. Objetivo
 
 Que el panel deje de leerse como un fondo plano —papel gris en claro y negro azulado en oscuro— sin una imagen por pantalla ni un costo medible:
