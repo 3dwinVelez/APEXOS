@@ -1,0 +1,102 @@
+aadbb688 test(web): contrato de la piel operativa de graficos, tablas y estados vacios
+Fija con tokens y sin mover caja la piel de los graficos, la jerarquia de los
+encabezados de tabla, el estado vacio compartido y su apagado en alto
+contraste. Acompana a la capa visual y no cambia codigo de producto.
+
+ 1 file changed, 54 insertions(+)
+97c939ae feat(api): handler serverless para desplegar el API en Vercel
+Extrae la construccion de Fastify a un adaptador que reutiliza la instancia
+entre invocaciones y la expone como handler de Vercel cuando VERCEL=1. El
+arranque local y Railway conservan `module.exports = build`.
+
+ 3 files changed, 70 insertions(+), 1 deletion(-)
+a0f15f10 feat(web): pagina de privacidad y tratamiento de datos
+Publica la politica de privacidad en una ruta propia, enlazable desde los
+formularios publicos de servicios.
+
+ 1 file changed, 254 insertions(+)
+201dcc83 feat(security): el accionista se sincroniza con lectura de contabilidad y transporte
+Cuando el rol de la web llega como Accionista (singular o plural, con o sin
+tilde), el API le concede un rol propio de solo lectura sobre contabilidad y
+transporte. Antes caia en "Supabase Member", que daba escritura en servicios,
+RRHH y transporte y ningun permiso contable.
+
+El rol se marca `managed` para que la siguiente sincronizacion retire permisos
+de mas aunque el catalogo de la empresa traiga otros modulos marcados.
+
+ 2 files changed, 117 insertions(+)
+ea786c92 fix(commercial,sales): selects con busqueda homologados y registro de rutas
+La agenda comercial y la nueva orden de venta dejan el select nativo suelto y
+usan la primitiva compartida, conservando el payload (customer_id, item_id).
+La agenda pierde el acceso duplicado al calendario que ya vive en su propia
+pantalla.
+
+El contrato del centro de comandos reconoce los alias de maestros y PYG, trata
+las vistas ampliadas como subrutas de su pantalla padre y no exige ofrecer los
+modulos retirados del portafolio.
+
+ 5 files changed, 97 insertions(+), 18 deletions(-)
+0562c5ab fix(services): el monitor consulta Supabase con la clave de servicio
+El respaldo del monitor y el detalle de orden enviaban la clave anonima en el
+encabezado apikey y la de servicio en Authorization. Supabase evalua el apikey
+primero, asi que filas protegidas por RLS podian quedar invisibles; ahora
+ambos encabezados usan la misma credencial de servicio que ya viaja en la
+funcion.
+
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+571d613e fix(inventory,purchases): normalizacion visual y correcciones de operacion
+Alinea las pantallas de inventario y compras al sistema visual compartido
+(layout, css propio del modulo, componentes inventory-ui/inventory-workflow/
+purchases-ui), permite stock_max nulo en el alta de productos, corrige el
+servicio de compras y suma la alerta de VMI. Las pantallas de ordenes de
+compra ganan su listado y el detalle deja de duplicar el alta.
+
+Pruebas: contratos de ajustes, kardex, traslados, devoluciones, compras
+controladas y numeros con cero inicial; normalizacion ERP y hoja de ruta.
+
+ 46 files changed, 1076 insertions(+), 765 deletions(-)
+240e73d6 feat(petty-cash): cajas menores con comprobantes, anticipos y reportes
+Suma el modulo M-29 completo: conceptos, cajas con custodio y limite,
+anticipos con legalizacion y reintegro, comprobantes de gasto con IVA por
+linea que se contabilizan en la transaccion del modulo, y reporteria con
+exportacion. Incluye la fundacion de tablas, el catalogo de modulos en
+Supabase y las pruebas contables de aperturas y reverso que dependian de
+este paquete.
+
+El modulo queda declarado bloqueado para certificacion NYVORA: la empresa
+modelo no tiene licenciado M-29 y habilitarlo es una decision del dueno.
+
+ 31 files changed, 13042 insertions(+), 11 deletions(-)
+fdd73d7c feat(accounting): PYG por vehículo, aperturas, reverso y plan de cuentas
+Suma el estado de resultados gerencial por centro de costo y vehículo, la
+importación de presupuestos PYG, la importación de saldos iniciales, el reverso
+de comprobantes y el catálogo PUC Colombia con su árbol de cuentas. Incluye la
+migración que deja `party_id` nullable en `cnt_cuedoc` y el plan de cuentas
+estándar en Supabase, sin el cual el arranque de empresas nuevas falla.
+
+Las pruebas de aperturas y reverso que dependen de cajas menores se certifican
+con el paquete M-29; aquí viaja el resto de la contabilidad.
+
+ 50 files changed, 35916 insertions(+), 393 deletions(-)
+34d0e23f feat(transport): sedes, planes, tarifario, PYG y liquidación por vehículo
+Reemplaza el maestro de orígenes por sedes georreferenciadas, agrega planes de
+despacho, geografía tarifaria, PYG por vehículo con su configuración de cuentas
+y la liquidación/consolidación por vehículo con importación y contabilización.
+Incluye 5 migraciones aditivas y el rename de TransportOrigin (0 filas en
+producción) con su vista de compatibilidad en el runbook.
+
+La linking de usuarios con empleados de Talento Humano no viaja: el módulo HR
+sigue bloqueado por auditoría.
+
+ 109 files changed, 15516 insertions(+), 1025 deletions(-)
+99313874 feat(web): la capa visual completa llega a main como paquete aislado
+Lobby V4 con iconos y banner de red, tokens y superficies del sistema, shell
+con esqueleto de espera y herramientas en ventana, SearchSelect compartida,
+curaduría del portafolio y retiro del asistente flotante. Sin migraciones ni
+cambios de API.
+
+M-29 (gastos menores) queda retirado del portafolio hasta que su paquete
+aporte las pantallas, y el chrome no monta todavía la ventana ampliada del
+PYG: ambas llegan con sus paquetes de origen.
+
+ 86 files changed, 1596 insertions(+), 307 deletions(-)

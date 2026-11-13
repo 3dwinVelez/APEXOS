@@ -1,0 +1,30 @@
+  duration_ms: 727.6883
+  type: 'test'
+  ...
+# Subtest: con el proxy declarado la cabecera si se honra
+ok 985 - con el proxy declarado la cabecera si se honra
+  ---
+  duration_ms: 14.1043
+  type: 'test'
+  ...
+# Subtest: el control numerico permite vacio temporal y normaliza a cero al salir
+ok 986 - el control numerico permite vacio temporal y normaliza a cero al salir
+  ---
+  duration_ms: 2.5479
+  type: 'test'
+  ...
+# Subtest: compras ventas IVA y retenciones reutilizan el control numerico
+ok 987 - compras ventas IVA y retenciones reutilizan el control numerico
+  ---
+  duration_ms: 13.5261
+  type: 'test'
+  ...
+1..987
+# tests 987
+# suites 0
+# pass 984
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 30877.1776

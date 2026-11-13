@@ -1,0 +1,35 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-07-comercial-ventas",
+  "commit": "ea786c92301db46bbe8ec3027e62bd27f2532e14",
+  "parent": "0562c5ab28e53d0d0645d60939e928fb1476e8e0",
+  "subject": "fix(commercial,sales): selects con búsqueda homologados y registro de rutas",
+  "modules": [
+    "gestion-comercial",
+    "ventas",
+    "centro-de-comandos"
+  ],
+  "shortstat": "5 files changed, 97 insertions(+), 18 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/search-select-contract.test.mjs"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

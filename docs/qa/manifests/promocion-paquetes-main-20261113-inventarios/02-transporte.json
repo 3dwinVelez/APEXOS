@@ -1,0 +1,454 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-02-transporte",
+  "commit": "34d0e23f8e285f27f85136757001b6a87f160466",
+  "parent": "993138740055562feb50f61d7b162dd87930c8b3",
+  "subject": "feat(transport): sedes, planes, tarifario, PYG y liquidación por vehículo",
+  "modules": [
+    "transporte",
+    "sedes",
+    "planes-despacho",
+    "tarifario",
+    "transport-pyg",
+    "liquidaciones"
+  ],
+  "shortstat": "109 files changed, 15516 insertions(+), 1025 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261007120000_transport_plans/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261009120000_transport_rate_geography/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261013120000_transport_pyg/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/account-config-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/account-config.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/account-engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/concept-catalog.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/open-map-simulator.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/route-intelligence.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/settlement-engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-filters.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-import-format.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-import.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-posting.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-report.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/settlement-service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/tms-schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/tms-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/vehicle-accounting.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/vehicle-document-storage.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/admin-role-capabilities.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/core-tenant-models.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-open-map-simulator.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-pyg-account-ranges.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-pyg-centers-matrix.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-pyg-report.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-rate-cost-step.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-rates-rbac.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-route-intelligence.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-accounting-month.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-code.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-criteria.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/transport-settlement-engine.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-filters.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-import.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-posting.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-rbac.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-report.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-vehicle-consolidation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/transport-tms-foundation.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-vehicle-documents.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/administracion/maestros-transporte/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/suscripciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/configuracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/cubicaje/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/liquidaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/maestros/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/notificaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/operacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/planeacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/pod/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/tarifas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/print/transport-settlement/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/PlanningRouteMap.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/RateCostDesigner.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/RateCostDesigner.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementBulkImport.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementDialog.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementDocumentsEditor.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/SettlementPreview.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementVehicleConsolidation.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportAdminCatalog.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportMastersPanel.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/TransportUI.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/VehicleProfilePicker.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/pyg-center-labels.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transport-pyg-account-config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transportRateSnapshot.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transportSettlementPrint.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/Plantilla_Liquidaciones_Transporte.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-print-theme.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-account-config.component.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-account-config.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-cost-interactions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-cost-step.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-wizard-interactions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-search-select.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-settlement-tariff-interactions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-settlement-tower.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-settlement-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-theme.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-tms-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-vehicle-documents.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-vehicle-master-catalogs.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261008120000_vehicle_master_catalogs.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261008130000_vehicle_documents_storage.sql"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

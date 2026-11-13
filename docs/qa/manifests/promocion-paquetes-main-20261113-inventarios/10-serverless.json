@@ -1,0 +1,26 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-10-serverless",
+  "commit": "97c939ae76145ffed02bbe5280b83dba31a9ca82",
+  "parent": "a0f15f101ce83d269cf4c2e555f21235b7a69901",
+  "subject": "feat(api): handler serverless para desplegar el API en Vercel",
+  "modules": [
+    "api",
+    "despliegue"
+  ],
+  "shortstat": "3 files changed, 70 insertions(+), 1 deletion(-)",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/core/serverlessHandler.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/serverless-handler.test.js"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

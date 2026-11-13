@@ -1,0 +1,17 @@
+Migraciones nuevas del candidato (7):
+3662039fbd0adf82493ab7621a193061442cc3d0c77ced8363a73fb115fdbfa4  36 lineas  apps/api/prisma/migrations/20261007120000_transport_plans
+8ae15a46831b9ef5f78e59879cbd7dbae9b31f7da1cf9764e6a9eaec2e62bb37  11 lineas  apps/api/prisma/migrations/20261009120000_transport_rate_geography
+ce6287425987b089337cd4e050f15ca84a374a23d526c5adfd82e87e447efe7b  326 lineas  apps/api/prisma/migrations/20261009180000_petty_cash_foundation
+c4c93a65f815471d93ef9c58d07e5175e839b02683695b3e496d1df1e28d30a4  84 lineas  apps/api/prisma/migrations/20261013120000_transport_pyg
+fc99488e5362e1b817d037bac1b22a8d57c00d5556da5a2a5f7fa95c9d4f65af  1 lineas  apps/api/prisma/migrations/20261014120000_accounting_opening_balances_nullable_party
+44a4e28d1cb3445602f84a619f9f279f439b5a7def142bfd82ca89f48e9d4af1  53 lineas  apps/api/prisma/migrations/20261016123000_sedes_replace_origins
+31b07cd287f1150b8868b66aa720421cf0ef20d93f1ce210824ff461166230a1  2 lineas  apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle
+
+Declaradas en main y NO aplicadas en produccion (brecha preexistente):
+20260919130000_align_kilometraje_unique_index_shape
+20260921000000_gps_inactivo_sin_senal_novelty_type
+20261001120000_transport_settlement_packages
+
+Objetos Supabase que el codigo promovido consume y produccion no tiene:
+apexos_accounting_private.standard_chart (migracion 20261020173515_standard_chart_piloto.sql)
+catalogo de modulos M-29 (_petty_cash_module_catalog.sql)

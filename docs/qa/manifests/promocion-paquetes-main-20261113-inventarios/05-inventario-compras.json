@@ -1,0 +1,198 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-05-inventario-compras",
+  "commit": "571d613ec535c2f699407428f610475eb6e63372",
+  "parent": "240e73d6fe80262e4880742494ca82f7babba787",
+  "subject": "fix(inventory,purchases): normalización visual y correcciones de operación",
+  "modules": [
+    "inventario",
+    "compras"
+  ],
+  "shortstat": "46 files changed, 1076 insertions(+), 765 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/inventory-adjustments-contract.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/inventory-kardex-purchase-order-report-ux.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/inventory-transfer-product-list-ux.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchase-return-ui-contract.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchases-inventory-controlled-improvements.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchases-vmi-alerts.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/zero-friendly-number-input.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/facturas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/importaciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/purchases.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/reportes/facturas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/ajustes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/bodegas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/clasificaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/familias/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/inventory.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/traslados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/wms/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/compras-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-panel.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/inventory-ui.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/inventory-workflow.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/purchases-ui.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/erp-visual-normalization.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/inventory-improvements-roadmap.test.mjs"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

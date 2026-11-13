@@ -1,0 +1,25 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-06-servicios-monitor",
+  "commit": "0562c5ab28e53d0d0645d60939e928fb1476e8e0",
+  "parent": "571d613ec535c2f699407428f610475eb6e63372",
+  "subject": "fix(services): el monitor consulta Supabase con la clave de servicio",
+  "modules": [
+    "servicios"
+  ],
+  "shortstat": "3 files changed, 3 insertions(+), 3 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/api/services/monitor-orders/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/v1/services/orders/[id]/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/service-monitor-live-refresh.test.mjs"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

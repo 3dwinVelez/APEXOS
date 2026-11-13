@@ -1,0 +1,1893 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "promocion-paquetes-main-20261113",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "worktree detachado sobre origin/main (sin rama publicada)",
+  "certified_commit": "aadbb68861a449e601adf34408add4e3dae8154d",
+  "base_commit": "4659292f4f23014ee4b0e990fb66e4a2ce6646c1",
+  "base_commits": {
+    "main": "4659292f4f23014ee4b0e990fb66e4a2ce6646c1"
+  },
+  "change_intent": {
+    "summary": "Promoción controlada de develop a main por paquetes aislados: capa visual completa, transporte (sedes, planes, tarifario, PYG y liquidaciones), contabilidad (PYG, aperturas, reverso y plan de cuentas), cajas menores, correcciones de inventario/compras/servicios/comercial, rol accionista, privacidad, handler serverless y el contrato visual de la piel operativa. Cada paquete es un commit independiente reconstruido sobre origin/main 4659292f, con inventario propio en promocion-paquetes-main-20261113-inventarios/. No viajan Talento Humano (auditoría 2026-10-30: no apto), los modelos Invoice*/ReceivedInvoice* (sin API ni pantallas), APEX Control Tower ni los assets demo de Comercio. Las migraciones son 7 Prisma nuevas, casi todas aditivas; la única no aditiva renombra TransportOrigin a sedes con 0 filas en producción y archiva los campos de origen en metadata antes de retirarlos.",
+    "modules": [
+      "api",
+      "capa-visual",
+      "catalogo-m29",
+      "centro-de-comandos",
+      "compras",
+      "contabilidad",
+      "design-tokens",
+      "despliegue",
+      "evidencia-visual",
+      "gastos-menores",
+      "gestion-comercial",
+      "inventario",
+      "liquidaciones",
+      "lobby-v4",
+      "petty-cash",
+      "plan-de-cuentas-puc",
+      "planes-despacho",
+      "portafolio-curado",
+      "privacidad",
+      "pruebas",
+      "pyg",
+      "reverso",
+      "roles",
+      "saldos-iniciales",
+      "search-select",
+      "sedes",
+      "seguridad",
+      "servicios",
+      "shell",
+      "tarifario",
+      "transport-pyg",
+      "transporte",
+      "ventas"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/web/components/system/AppShell.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/lib/modules.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/api/server.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/modules/transport/service.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/src/modules/petty-cash/routes.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/prisma/schema.prisma"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261007120000_transport_plans/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261009120000_transport_rate_geography/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261009180000_petty_cash_foundation/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261013120000_transport_pyg/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261014120000_accounting_opening_balances_nullable_party/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/core/serverlessHandler.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/middleware/rbac.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.provenance.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/puc-colombia-catalog.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/pyg-budget-import.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/pyg-budget.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/pyg-interactive.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/reversal.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/inventory/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/petty-cash/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/petty-cash/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/petty-cash/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/purchases/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/account-config-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/account-config.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/account-engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/concept-catalog.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport-pyg/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/open-map-simulator.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/route-intelligence.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/settlement-engine.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-filters.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-import-format.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-import.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-posting.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/settlement-report.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/settlement-service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/tms-schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/transport/tms-service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/vehicle-accounting.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/transport/vehicle-document-storage.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/security/supabaseAuth.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-chart-tree.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-opening-balances.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-pyg-budget-import.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-pyg-interactive.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-reversal.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/accounting-routes-contract.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/admin-role-capabilities.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/core-tenant-models.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/inventory-adjustments-contract.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/inventory-kardex-purchase-order-report-ux.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/inventory-transfer-product-list-ux.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/petty-cash-masters.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/petty-cash-reports.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/petty-cash-vouchers.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/puc-colombia-catalog.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchase-return-ui-contract.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/purchases-inventory-controlled-improvements.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/purchases-vmi-alerts.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/serverless-handler.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/supabase-company-context.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-open-map-simulator.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-pyg-account-ranges.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-pyg-centers-matrix.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-pyg-report.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-rate-cost-step.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-rates-rbac.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-route-intelligence.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-accounting-month.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-code.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-criteria.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/transport-settlement-engine.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-filters.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-import.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-posting.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-rbac.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-report.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-settlement-vehicle-consolidation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/transport-tms-foundation.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/transport-vehicle-documents.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/zero-friendly-number-input.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/services/monitor-orders/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/api/v1/services/orders/[id]/route.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/[module]/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/administracion/maestros-transporte/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/administracion/suscripciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/comercio/ComercioCharts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/comercio/compras/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/comercio/vender/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/facturas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/importaciones/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/proveedores/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/compras/purchases.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/reportes/facturas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/asientos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/plan-cuentas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/pyg/ampliado/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/cxc/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/cxc/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/anticipos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/cajas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/gastos/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/gastos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/gestion-comercial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/ajustes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/bodegas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/clasificaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/familias/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/inventory.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/inventario/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/[id]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/productos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/stock/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/traslados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/inventario/wms/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/servicios/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/configuracion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/cubicaje/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/liquidaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/maestros/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/notificaciones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/operacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/ordenes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/planeacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/pod/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/pyg/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/tarifas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/print/transport-settlement/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/privacidad/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/AccountingPyg.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/AccountingPygBudget.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/AccountingPygBudgetImport.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygAccountDrill.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygCentersMatrix.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygStatementTable.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygVehicleExpanded.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygVehicleReadings.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/compras-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/contabilidad-nav.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/gastos-menores-nav.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/gastos-menores/GastosLookup.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/inventory-panel.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/inventory-ui.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/inventory-workflow.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/purchases-ui.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/ContextBreadcrumbs.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/RouteAccessGuard.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/Sidebar.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/TechnicianWorkspaceHeader.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/UserSessionBadge.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CollaborationPresence.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/ExperiencePreferences.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/FieldProductivity.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/LocaleSwitcher.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/NotificationCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/OfflineFirstStatus.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/PlatformAlerts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/TraceabilityCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/WorldClassToolkit.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/PlanningRouteMap.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/RateCostDesigner.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/RateCostDesigner.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementBulkImport.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementDialog.module.css"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementDocumentsEditor.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/SettlementPreview.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/SettlementVehicleConsolidation.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportAdminCatalog.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportMastersPanel.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportSearchSelect.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/TransportUI.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/transport/VehicleProfilePicker.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "D",
+      "file": "apps/web/components/ui/SearchSelect.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/feedback.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/search-select.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/accounting-account-tree.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/lobbyAssets.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleAccess.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/modules.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/operationalWorkspace.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/pyg-center-labels.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/pyg-expanded.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/selectMatch.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transport-pyg-account-config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transportRateSnapshot.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/transportSettlementPrint.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/workspaceTools.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/next.config.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/banner-network.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/banner-truck.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-activos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-administracion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-apex-ai.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-apex-control.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-calidad.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-comercio-exterior.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-comercio.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-compras.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-configuracion-inicial.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-contabilidad.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-costos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-crm.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-cxc.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-devoluciones.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-facturacion-electronica.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-facturacion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-gastos-menores.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-gestion-comercial.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-inventario.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-planeacion-demanda.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-presupuestos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-produccion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-proyectos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-punto-de-venta.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-recetas.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-reportes.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-servicios.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-suscripciones.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-talento-humano.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-tesoreria.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-transporte.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-ventas.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/plantillas/Plantilla_Liquidaciones_Transporte.xlsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/accounting-pyg-budget-errors.component.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/accounting-pyg-interactive.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/accounting-reversal-budget-import.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/ambient-background.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-two-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/comercio-ux-consistency.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/commercial-visit-selection.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/contabilidad-opening-balances.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/erp-visual-normalization.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-entry-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-masters.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-module-registration.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-operations.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-reports.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/inventory-improvements-roadmap.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/lobby-greeting.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/login-phase-zero-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/module-portfolio.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/operational-home-redesign.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/phase-two-intelligent-experience.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/plan-cuentas-tree.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-chrome.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-link.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-route.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-view.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/search-select-contract.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/service-monitor-live-refresh.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-print-theme.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-account-config.component.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-account-config.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-centers-matrix.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-vehicle-page.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-cost-interactions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-cost-step.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-rate-wizard-interactions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-search-select.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-settlement-tariff-interactions.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-settlement-tower.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-settlement-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-theme.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/transport-tms-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-vehicle-documents.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-vehicle-master-catalogs.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/visual-operation.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-13-promocion-main-por-paquetes.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/promocion-paquetes-main-20261113.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/api-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/candidato-commits.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/migraciones-inventario.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/next-build.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/prisma-validate.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/scope-gate.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/web-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/web-typecheck.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/01-capa-visual.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/02-transporte.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/03-contabilidad.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/04-cajas-menores.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/05-inventario-compras.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/06-servicios-monitor.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/07-comercial-ventas.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/08-accionista.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/09-privacidad.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/10-serverless.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/11-contrato-visual.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "package-lock.json"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261008120000_vehicle_master_catalogs.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261008130000_vehicle_documents_storage.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261011100000_petty_cash_module_catalog.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261020173515_standard_chart_piloto.sql"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/package.json",
+    "apps/api/prisma/migrations/20261007120000_transport_plans/migration.sql",
+    "apps/api/prisma/migrations/20261009120000_transport_rate_geography/migration.sql",
+    "apps/api/prisma/migrations/20261009180000_petty_cash_foundation/migration.sql",
+    "apps/api/prisma/migrations/20261013120000_transport_pyg/migration.sql",
+    "apps/api/prisma/migrations/20261014120000_accounting_opening_balances_nullable_party/migration.sql",
+    "apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql",
+    "apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle/migration.sql",
+    "apps/api/prisma/schema.prisma",
+    "apps/api/server.js",
+    "apps/api/src/core/prisma.js",
+    "apps/api/src/core/serverlessHandler.js",
+    "apps/api/src/middleware/rbac.js",
+    "apps/api/src/modules/accounting/data/puc-colombia-20261015.json",
+    "apps/api/src/modules/accounting/data/puc-colombia-20261015.provenance.json",
+    "apps/api/src/modules/accounting/puc-colombia-catalog.js",
+    "apps/api/src/modules/accounting/pyg-budget-import.js",
+    "apps/api/src/modules/accounting/pyg-budget.js",
+    "apps/api/src/modules/accounting/pyg-interactive.js",
+    "apps/api/src/modules/accounting/reversal.js",
+    "apps/api/src/modules/accounting/routes.js",
+    "apps/api/src/modules/accounting/schema.js",
+    "apps/api/src/modules/accounting/service.js",
+    "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/inventory/schema.js",
+    "apps/api/src/modules/petty-cash/routes.js",
+    "apps/api/src/modules/petty-cash/schema.js",
+    "apps/api/src/modules/petty-cash/service.js",
+    "apps/api/src/modules/purchases/service.js",
+    "apps/api/src/modules/transport-pyg/account-config-service.js",
+    "apps/api/src/modules/transport-pyg/account-config.js",
+    "apps/api/src/modules/transport-pyg/account-engine.js",
+    "apps/api/src/modules/transport-pyg/concept-catalog.js",
+    "apps/api/src/modules/transport-pyg/engine.js",
+    "apps/api/src/modules/transport-pyg/routes.js",
+    "apps/api/src/modules/transport-pyg/schema.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/src/modules/transport/open-map-simulator.js",
+    "apps/api/src/modules/transport/route-intelligence.js",
+    "apps/api/src/modules/transport/routes.js",
+    "apps/api/src/modules/transport/schema.js",
+    "apps/api/src/modules/transport/service.js",
+    "apps/api/src/modules/transport/settlement-engine.js",
+    "apps/api/src/modules/transport/settlement-filters.js",
+    "apps/api/src/modules/transport/settlement-import-format.json",
+    "apps/api/src/modules/transport/settlement-import.js",
+    "apps/api/src/modules/transport/settlement-posting.js",
+    "apps/api/src/modules/transport/settlement-report.js",
+    "apps/api/src/modules/transport/settlement-service.js",
+    "apps/api/src/modules/transport/tms-schema.js",
+    "apps/api/src/modules/transport/tms-service.js",
+    "apps/api/src/modules/transport/vehicle-accounting.js",
+    "apps/api/src/modules/transport/vehicle-document-storage.js",
+    "apps/api/src/security/supabaseAuth.js",
+    "apps/api/test/accounting-chart-tree.test.js",
+    "apps/api/test/accounting-opening-balances.test.js",
+    "apps/api/test/accounting-pyg-budget-import.test.js",
+    "apps/api/test/accounting-pyg-interactive.test.js",
+    "apps/api/test/accounting-reversal.test.js",
+    "apps/api/test/accounting-routes-contract.test.js",
+    "apps/api/test/admin-role-capabilities.test.js",
+    "apps/api/test/core-tenant-models.test.js",
+    "apps/api/test/inventory-adjustments-contract.test.js",
+    "apps/api/test/inventory-kardex-purchase-order-report-ux.test.js",
+    "apps/api/test/inventory-transfer-product-list-ux.test.js",
+    "apps/api/test/petty-cash-masters.test.js",
+    "apps/api/test/petty-cash-reports.test.js",
+    "apps/api/test/petty-cash-vouchers.test.js",
+    "apps/api/test/puc-colombia-catalog.test.js",
+    "apps/api/test/purchase-return-ui-contract.test.js",
+    "apps/api/test/purchases-inventory-controlled-improvements.test.js",
+    "apps/api/test/purchases-vmi-alerts.test.js",
+    "apps/api/test/serverless-handler.test.js",
+    "apps/api/test/supabase-company-context.test.js",
+    "apps/api/test/transport-open-map-simulator.test.js",
+    "apps/api/test/transport-pyg-account-ranges.test.js",
+    "apps/api/test/transport-pyg-centers-matrix.test.js",
+    "apps/api/test/transport-pyg-report.test.js",
+    "apps/api/test/transport-rate-cost-step.test.js",
+    "apps/api/test/transport-rates-rbac.test.js",
+    "apps/api/test/transport-route-intelligence.test.js",
+    "apps/api/test/transport-settlement-accounting-month.test.js",
+    "apps/api/test/transport-settlement-code.test.js",
+    "apps/api/test/transport-settlement-criteria.test.js",
+    "apps/api/test/transport-settlement-engine.test.js",
+    "apps/api/test/transport-settlement-filters.test.js",
+    "apps/api/test/transport-settlement-import.test.js",
+    "apps/api/test/transport-settlement-posting.test.js",
+    "apps/api/test/transport-settlement-rbac.test.js",
+    "apps/api/test/transport-settlement-report.test.js",
+    "apps/api/test/transport-settlement-vehicle-consolidation.test.js",
+    "apps/api/test/transport-tms-foundation.test.js",
+    "apps/api/test/transport-vehicle-documents.test.js",
+    "apps/api/test/zero-friendly-number-input.test.js",
+    "apps/web/app/api/services/monitor-orders/route.ts",
+    "apps/web/app/api/v1/services/orders/[id]/route.ts",
+    "apps/web/app/dashboard/[module]/page.tsx",
+    "apps/web/app/dashboard/administracion/maestros-transporte/page.tsx",
+    "apps/web/app/dashboard/administracion/page.tsx",
+    "apps/web/app/dashboard/administracion/suscripciones/page.tsx",
+    "apps/web/app/dashboard/comercio/ComercioCharts.tsx",
+    "apps/web/app/dashboard/comercio/compras/page.tsx",
+    "apps/web/app/dashboard/comercio/vender/page.tsx",
+    "apps/web/app/dashboard/compras/facturas/page.tsx",
+    "apps/web/app/dashboard/compras/importaciones/page.tsx",
+    "apps/web/app/dashboard/compras/layout.tsx",
+    "apps/web/app/dashboard/compras/ordenes/nueva/page.tsx",
+    "apps/web/app/dashboard/compras/ordenes/page.tsx",
+    "apps/web/app/dashboard/compras/ordenes/recibir/page.tsx",
+    "apps/web/app/dashboard/compras/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/[id]/page.tsx",
+    "apps/web/app/dashboard/compras/proveedores/page.tsx",
+    "apps/web/app/dashboard/compras/purchases.css",
+    "apps/web/app/dashboard/compras/reportes/facturas/page.tsx",
+    "apps/web/app/dashboard/compras/reportes/ordenes/page.tsx",
+    "apps/web/app/dashboard/contabilidad/asientos/page.tsx",
+    "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx",
+    "apps/web/app/dashboard/contabilidad/page.tsx",
+    "apps/web/app/dashboard/contabilidad/plan-cuentas/page.tsx",
+    "apps/web/app/dashboard/contabilidad/pyg/ampliado/page.tsx",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/app/dashboard/cxc/layout.tsx",
+    "apps/web/app/dashboard/cxc/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/anticipos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/cajas/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/gastos/nuevo/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/gastos/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/page.tsx",
+    "apps/web/app/dashboard/gastos-menores/reportes/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/agenda/page.tsx",
+    "apps/web/app/dashboard/gestion-comercial/page.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/ajustes/page.tsx",
+    "apps/web/app/dashboard/inventario/bodegas/page.tsx",
+    "apps/web/app/dashboard/inventario/cargue-inicial/page.tsx",
+    "apps/web/app/dashboard/inventario/clasificaciones/page.tsx",
+    "apps/web/app/dashboard/inventario/familias/page.tsx",
+    "apps/web/app/dashboard/inventario/inventory.css",
+    "apps/web/app/dashboard/inventario/layout.tsx",
+    "apps/web/app/dashboard/inventario/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/[id]/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/productos/page.tsx",
+    "apps/web/app/dashboard/inventario/reportes/page.tsx",
+    "apps/web/app/dashboard/inventario/stock/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/nuevo/page.tsx",
+    "apps/web/app/dashboard/inventario/traslados/page.tsx",
+    "apps/web/app/dashboard/inventario/wms/page.tsx",
+    "apps/web/app/dashboard/page.tsx",
+    "apps/web/app/dashboard/servicios/page.tsx",
+    "apps/web/app/dashboard/transporte/configuracion/page.tsx",
+    "apps/web/app/dashboard/transporte/cubicaje/page.tsx",
+    "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/maestros/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/dashboard/transporte/notificaciones/page.tsx",
+    "apps/web/app/dashboard/transporte/operacion/page.tsx",
+    "apps/web/app/dashboard/transporte/ordenes/page.tsx",
+    "apps/web/app/dashboard/transporte/page.tsx",
+    "apps/web/app/dashboard/transporte/planeacion/page.tsx",
+    "apps/web/app/dashboard/transporte/pod/page.tsx",
+    "apps/web/app/dashboard/transporte/pyg/page.tsx",
+    "apps/web/app/dashboard/transporte/tarifas/page.tsx",
+    "apps/web/app/dashboard/ventas/ordenes/nueva/page.tsx",
+    "apps/web/app/globals.css",
+    "apps/web/app/layout.tsx",
+    "apps/web/app/print/transport-settlement/page.tsx",
+    "apps/web/app/privacidad/page.tsx",
+    "apps/web/components/accounting/AccountingPyg.tsx",
+    "apps/web/components/accounting/AccountingPygBudget.tsx",
+    "apps/web/components/accounting/AccountingPygBudgetImport.tsx",
+    "apps/web/components/accounting/PygAccountDrill.tsx",
+    "apps/web/components/accounting/PygCentersMatrix.tsx",
+    "apps/web/components/accounting/PygStatementTable.tsx",
+    "apps/web/components/accounting/PygVehicleExpanded.tsx",
+    "apps/web/components/accounting/PygVehicleReadings.tsx",
+    "apps/web/components/compras-nav.tsx",
+    "apps/web/components/contabilidad-nav.tsx",
+    "apps/web/components/gastos-menores-nav.tsx",
+    "apps/web/components/gastos-menores/GastosLookup.tsx",
+    "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx",
+    "apps/web/components/inventory-nav.tsx",
+    "apps/web/components/inventory-panel.tsx",
+    "apps/web/components/inventory-ui.tsx",
+    "apps/web/components/inventory-workflow.tsx",
+    "apps/web/components/purchases-ui.tsx",
+    "apps/web/components/shell/ContextBreadcrumbs.tsx",
+    "apps/web/components/shell/DashboardChrome.tsx",
+    "apps/web/components/shell/RouteAccessGuard.tsx",
+    "apps/web/components/shell/Sidebar.tsx",
+    "apps/web/components/shell/TechnicianWorkspaceHeader.tsx",
+    "apps/web/components/shell/UserSessionBadge.tsx",
+    "apps/web/components/system/CollaborationPresence.tsx",
+    "apps/web/components/system/CommandPalette.tsx",
+    "apps/web/components/system/ExperiencePreferences.tsx",
+    "apps/web/components/system/FieldProductivity.tsx",
+    "apps/web/components/system/LocaleSwitcher.tsx",
+    "apps/web/components/system/NotificationCenter.tsx",
+    "apps/web/components/system/OfflineFirstStatus.tsx",
+    "apps/web/components/system/PlatformAlerts.tsx",
+    "apps/web/components/system/TraceabilityCenter.tsx",
+    "apps/web/components/system/WorldClassToolkit.tsx",
+    "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+    "apps/web/components/transport/PlanningRouteMap.tsx",
+    "apps/web/components/transport/RateCostDesigner.module.css",
+    "apps/web/components/transport/RateCostDesigner.tsx",
+    "apps/web/components/transport/SettlementBulkImport.tsx",
+    "apps/web/components/transport/SettlementDialog.module.css",
+    "apps/web/components/transport/SettlementDocumentsEditor.tsx",
+    "apps/web/components/transport/SettlementPreview.tsx",
+    "apps/web/components/transport/SettlementVehicleConsolidation.tsx",
+    "apps/web/components/transport/TransportAdminCatalog.tsx",
+    "apps/web/components/transport/TransportMastersPanel.tsx",
+    "apps/web/components/transport/TransportSearchSelect.tsx",
+    "apps/web/components/transport/TransportUI.tsx",
+    "apps/web/components/transport/VehicleProfilePicker.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
+    "apps/web/components/ui/SearchSelect.tsx",
+    "apps/web/components/ui/data-table.tsx",
+    "apps/web/components/ui/feedback.tsx",
+    "apps/web/components/ui/search-select.tsx",
+    "apps/web/lib/accounting-account-tree.ts",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/lobbyAssets.ts",
+    "apps/web/lib/moduleAccess.ts",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/lib/modules.ts",
+    "apps/web/lib/operationalWorkspace.ts",
+    "apps/web/lib/pyg-center-labels.mjs",
+    "apps/web/lib/pyg-expanded.ts",
+    "apps/web/lib/selectMatch.ts",
+    "apps/web/lib/transport-pyg-account-config.ts",
+    "apps/web/lib/transportRateSnapshot.ts",
+    "apps/web/lib/transportSettlementPrint.ts",
+    "apps/web/lib/workspaceTools.ts",
+    "apps/web/next.config.ts",
+    "apps/web/package.json",
+    "apps/web/public/assets/lobby/banner-network.webp",
+    "apps/web/public/assets/lobby/banner-truck.webp",
+    "apps/web/public/assets/lobby/module-activos.webp",
+    "apps/web/public/assets/lobby/module-administracion.webp",
+    "apps/web/public/assets/lobby/module-apex-ai.webp",
+    "apps/web/public/assets/lobby/module-apex-control.webp",
+    "apps/web/public/assets/lobby/module-calidad.webp",
+    "apps/web/public/assets/lobby/module-comercio-exterior.webp",
+    "apps/web/public/assets/lobby/module-comercio.webp",
+    "apps/web/public/assets/lobby/module-compras.webp",
+    "apps/web/public/assets/lobby/module-configuracion-inicial.webp",
+    "apps/web/public/assets/lobby/module-contabilidad.webp",
+    "apps/web/public/assets/lobby/module-costos.webp",
+    "apps/web/public/assets/lobby/module-crm.webp",
+    "apps/web/public/assets/lobby/module-cxc.webp",
+    "apps/web/public/assets/lobby/module-devoluciones.webp",
+    "apps/web/public/assets/lobby/module-facturacion-electronica.webp",
+    "apps/web/public/assets/lobby/module-facturacion.webp",
+    "apps/web/public/assets/lobby/module-gastos-menores.webp",
+    "apps/web/public/assets/lobby/module-gestion-comercial.webp",
+    "apps/web/public/assets/lobby/module-inventario.webp",
+    "apps/web/public/assets/lobby/module-planeacion-demanda.webp",
+    "apps/web/public/assets/lobby/module-presupuestos.webp",
+    "apps/web/public/assets/lobby/module-produccion.webp",
+    "apps/web/public/assets/lobby/module-proyectos.webp",
+    "apps/web/public/assets/lobby/module-punto-de-venta.webp",
+    "apps/web/public/assets/lobby/module-recetas.webp",
+    "apps/web/public/assets/lobby/module-reportes.webp",
+    "apps/web/public/assets/lobby/module-servicios.webp",
+    "apps/web/public/assets/lobby/module-suscripciones.webp",
+    "apps/web/public/assets/lobby/module-talento-humano.webp",
+    "apps/web/public/assets/lobby/module-tesoreria.webp",
+    "apps/web/public/assets/lobby/module-transporte.webp",
+    "apps/web/public/assets/lobby/module-ventas.webp",
+    "apps/web/public/plantillas/Plantilla_Liquidaciones_Transporte.xlsx",
+    "apps/web/test/accounting-pyg-budget-errors.component.test.mjs",
+    "apps/web/test/accounting-pyg-interactive.test.mjs",
+    "apps/web/test/accounting-reversal-budget-import.test.mjs",
+    "apps/web/test/ambient-background.test.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs",
+    "apps/web/test/certify-ui-ux-phase-two-local.mjs",
+    "apps/web/test/comercio-ux-consistency.test.mjs",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/commercial-visit-selection.test.mjs",
+    "apps/web/test/contabilidad-opening-balances.test.mjs",
+    "apps/web/test/erp-visual-normalization.test.mjs",
+    "apps/web/test/gastos-menores-entry-ux.test.mjs",
+    "apps/web/test/gastos-menores-masters.test.mjs",
+    "apps/web/test/gastos-menores-module-registration.test.mjs",
+    "apps/web/test/gastos-menores-operations.test.mjs",
+    "apps/web/test/gastos-menores-reports.test.mjs",
+    "apps/web/test/inventory-improvements-roadmap.test.mjs",
+    "apps/web/test/lobby-greeting.test.mjs",
+    "apps/web/test/login-phase-zero-ux.test.mjs",
+    "apps/web/test/module-portfolio.test.mjs",
+    "apps/web/test/operational-home-redesign.test.mjs",
+    "apps/web/test/phase-two-intelligent-experience.test.mjs",
+    "apps/web/test/plan-cuentas-tree.test.mjs",
+    "apps/web/test/pyg-expanded-chrome.test.mjs",
+    "apps/web/test/pyg-expanded-link.test.mjs",
+    "apps/web/test/pyg-expanded-route.test.mjs",
+    "apps/web/test/pyg-expanded-view.test.mjs",
+    "apps/web/test/pyg-expanded.test.mjs",
+    "apps/web/test/search-select-contract.test.mjs",
+    "apps/web/test/service-monitor-live-refresh.test.mjs",
+    "apps/web/test/transport-print-theme.test.mjs",
+    "apps/web/test/transport-pyg-account-config.component.test.mjs",
+    "apps/web/test/transport-pyg-account-config.test.mjs",
+    "apps/web/test/transport-pyg-centers-matrix.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "apps/web/test/transport-rate-cost-interactions.test.mjs",
+    "apps/web/test/transport-rate-cost-step.test.mjs",
+    "apps/web/test/transport-rate-wizard-interactions.test.mjs",
+    "apps/web/test/transport-search-select.test.mjs",
+    "apps/web/test/transport-settlement-tariff-interactions.test.mjs",
+    "apps/web/test/transport-settlement-tower.test.mjs",
+    "apps/web/test/transport-settlement-ui.test.mjs",
+    "apps/web/test/transport-theme.test.mjs",
+    "apps/web/test/transport-tms-ui.test.mjs",
+    "apps/web/test/transport-vehicle-documents.test.mjs",
+    "apps/web/test/transport-vehicle-master-catalogs.test.mjs",
+    "apps/web/test/visual-operation.test.mjs",
+    "docs/briefs/2026-11-13-promocion-main-por-paquetes.md",
+    "docs/qa/certifications/promocion-paquetes-main-20261113.md",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/api-suite.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/candidato-commits.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/migraciones-inventario.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/next-build.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/prisma-validate.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/scope-gate.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/web-suite.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/web-typecheck.txt",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/01-capa-visual.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/02-transporte.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/03-contabilidad.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/04-cajas-menores.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/05-inventario-compras.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/06-servicios-monitor.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/07-comercial-ventas.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/08-accionista.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/09-privacidad.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/10-serverless.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/11-contrato-visual.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json",
+    "package-lock.json",
+    "supabase/migrations/20261008120000_vehicle_master_catalogs.sql",
+    "supabase/migrations/20261008130000_vehicle_documents_storage.sql",
+    "supabase/migrations/20261011100000_petty_cash_module_catalog.sql",
+    "supabase/migrations/20261020173515_standard_chart_piloto.sql"
+  ],
+  "allowed_deletions": [
+    "apps/web/components/ui/SearchSelect.tsx"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "Aislamiento multi-tenant y RBAC conservados: las suites de API y web del árbol candidato no agregan rojos de tenancy, permisos ni sesión",
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/api-suite.txt",
+        "../evidence/promocion-paquetes-main-20261113/web-suite.txt",
+        "../certifications/promocion-paquetes-main-20261113.md"
+      ]
+    },
+    {
+      "name": "Cada paquete es un commit aislado con inventario exacto padre..commit; ningún commit mezcla módulos fuera de su paquete",
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/candidato-commits.txt",
+        "promocion-paquetes-main-20261113-inventarios/",
+        "../certifications/promocion-paquetes-main-20261113.md"
+      ]
+    },
+    {
+      "name": "Datos de clientes intactos: solo migraciones aditivas o compatibles, y el rename TransportOrigin→sedes conserva filas, archiva los campos de origen en metadata y producción tiene 0 filas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/prisma-validate.txt",
+        "../evidence/promocion-paquetes-main-20261113/migraciones-inventario.txt",
+        "../certifications/promocion-paquetes-main-20261113.md"
+      ]
+    },
+    {
+      "name": "El bloqueador legal se respeta: Talento Humano (motor, migraciones y pruebas) y los modelos Invoice*/ReceivedInvoice* no viajan a main",
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt",
+        "../../briefs/2026-11-13-promocion-main-por-paquetes.md",
+        "../certifications/promocion-paquetes-main-20261113.md"
+      ]
+    },
+    {
+      "name": "El árbol completo compila en producción: typecheck de web en verde y next build con webpack exitoso",
+      "status": "passed",
+      "evidence": [
+        "../evidence/promocion-paquetes-main-20261113/web-typecheck.txt",
+        "../evidence/promocion-paquetes-main-20261113/next-build.txt",
+        "../certifications/promocion-paquetes-main-20261113.md"
+      ]
+    }
+  ],
+  "post_deploy_verification_required": [
+    "Confirmar que /health reporta el commit desplegado del candidato promocionado.",
+    "Comparar los conteos de las tablas de NYVORA (employees, users, sales_invoices, cnt_cuedoc, TransportCarrier) contra el snapshot previo.",
+    "Verificar que la tabla sedes conserva las filas de TransportOrigin y que TransportRateCard.metadata.legacy_origin_before_sedes contiene los orígenes archivados.",
+    "Recorrer los hubs que NYVORA usa (Servicios, Transporte, Contabilidad) sin errores nuevos en consola ni en red.",
+    "Revisar en producción el catálogo de módulos: Gastos Menores solo debe aparecer si el dueño habilita M-29."
+  ],
+  "notes": {
+    "generation": "Inventario exacto medido con `git diff --name-status origin/main..HEAD` sobre el candidato completo más las rutas de evidencia y manifiestos de esta promoción. Lo genera el mismo proceso que escribió este manifiesto.",
+    "why_reconstructed": "Fusionar develop hacia main arrastraría 466 commits: Talento Humano no apto, 9 modelos Invoice* sin API, 21 migraciones ajenas y los assets demo de Comercio. La política prohíbe un merge de ese tamaño, así que el candidato se reconstruyó sobre el tip de origin/main con 11 commits temáticos.",
+    "rename": "La compuerta desdobla el rename R050 SearchSelect.tsx→search-select.tsx en D+A; la eliminación del nombre anterior está declarada en allowed_deletions.",
+    "fuera_de_alcance": "Este manifiesto NO autoriza aplicar migraciones remotas, modificar Supabase, habilitar M-29 ni desplegar. La aplicación de las 10 migraciones Prisma (3 preexistentes + 7 del candidato), el plan de cuentas estándar y el despliegue requieren autorización independiente y ventana del dueño.",
+    "certificacion_pendiente": "La certificación funcional NYVORA en producción y la compuerta qa:approval:evidence están pendientes: exigen el candidato desplegado en el ambiente y aprobación explícita. No se fabrican. Gastos Menores no puede certificarse con NYVORA sin licenciar M-29.",
+    "evidencia_sanitizada": "La evidencia no contiene tokens, claves, cadenas de conexión ni rutas absolutas fuera del worktree de certificación."
+  }
+}
