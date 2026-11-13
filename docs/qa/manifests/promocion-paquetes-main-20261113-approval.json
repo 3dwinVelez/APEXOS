@@ -25,7 +25,8 @@
         "../evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json",
         "../../../apps/api/test/authorization-status-codes.test.js",
         "../../../apps/web/test/hr-route-write-fallback.test.mjs",
-        "../../../apps/api/test/hr-route-p2028-containment.test.js"
+        "../../../apps/api/test/hr-route-assignment-lock.test.js",
+        "../../../apps/api/test/hr-marking-concurrency.test.js"
       ],
       "basis": "Los rechazos que no deben relajarse siguen medidos en QA: peticion anonima a /api/v1/services/orders devuelve 401 y una credencial invalida devuelve 401. En el arbol, las pruebas de estado de autorizacion y el contrato de escritura de horarios (sin caida silenciosa al respaldo Supabase) pasan dentro de la suite completa de API y web, y el contrato de contencion P2028 de mallas se ejercita en la suite de API."
     },
