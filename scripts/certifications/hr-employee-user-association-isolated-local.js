@@ -35,7 +35,8 @@ if (!hasSedes) {
 }
 const hasRouteKind = docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'TimeRoute' AND column_name = 'kind')"]).toString().trim() === 't';
 if (!hasRouteKind) apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
-const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}`;
+const connectionOptions = certificate === 'hr-termination-document-search-local.js' ? '?connection_limit=1&connect_timeout=20&pool_timeout=45' : '';
+const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}${connectionOptions}`;
 const log = fs.openSync(path.join(output, 'certification.log'), 'w');
 const result = spawnSync(process.execPath, [path.join(__dirname, certificate), '--output=' + path.join(output, 'certification.json')], {
   cwd: root, env: { ...process.env, DATABASE_URL: localUrl, DIRECT_URL: localUrl, REDIS_DISABLED: 'true', DISABLE_REDIS: 'true', NODE_ENV: 'test', HR_ASSOCIATION_BROWSER: '1' },
