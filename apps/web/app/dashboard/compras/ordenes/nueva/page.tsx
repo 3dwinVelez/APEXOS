@@ -1,4 +1,6 @@
 "use client";
+import { usePathname } from "next/navigation";
+import { PurchaseSearchSelect } from "@/components/purchases-ui";
 
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -17,9 +19,7 @@ import {
   Pencil,
   Plus,
   Receipt,
-  Save,
   Search,
-  Send,
   ShoppingCart,
   Trash2,
   Truck,
@@ -30,6 +30,7 @@ import { api } from "@/lib/api";
 import { LATAM_CURRENCIES, currencyForCountry, money } from "@/lib/latam";
 import { ComprasNav } from "@/components/compras-nav";
 import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
+import { PurchaseDialog, PurchaseGuidedForm, PurchasePagination } from "@/components/purchases-ui";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { downloadPurchaseOrderPdf, type PurchaseOrderPdfData } from "@/lib/purchaseOrderPdf";
 import { showToast } from "@/components/system/ToastCenter";
@@ -63,7 +64,7 @@ type PurchaseOrder = {
   created_at: string;
   notes?: string | null;
   party: Supplier;
-  metadata: { priority?: string; warehouse_id?: number; tags?: string[]; payment_terms?: string; expected_at?: string; wms?: { inbound_order?: string } };
+  metadata: { priority?: string; warehouse_name?: string; warehouse_id?: number; tags?: string[]; payment_terms?: string; expected_at?: string; wms?: { inbound_order?: string } };
   received_percent: number;
   pending_quantity: number;
   lines: Array<{ id: number; item_id: number; item?:{code:string;legacy_code?:string|null}|null; description: string; qty: number; unit?: string; unit_cost: number; discount?: number; total: number; metadata?: { expected_at?: string; notes?: string }; received_quantity: number; pending_quantity: number }>;
@@ -109,6 +110,7 @@ function blankLines(expectedAt: string, count = 10) {
 }
 
 export default function NuevaOCPage() {
+  const pathname = usePathname();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
@@ -126,8 +128,12 @@ export default function NuevaOCPage() {
   const [skuSearchMessage, setSkuSearchMessage] = useState("");
   const [supplierSearchOpen,setSupplierSearchOpen]=useState(false);
   const [supplierSearch,setSupplierSearch]=useState("");
+  const [detailOpen,setDetailOpen]=useState(false);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderPage, setOrderPage] = useState(1);
   const [orderFilter, setOrderFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState<WorkspaceTab>("crear");
+  const [workflowVersion, setWorkflowVersion] = useState(0);
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>(pathname.endsWith("/nueva") ? "crear" : "ordenes");
   const [form, setForm] = useState({
     supplier_id: 0,
     warehouse_id: 0,
@@ -181,11 +187,11 @@ export default function NuevaOCPage() {
   const visibleOrders = useMemo(() => {
     return orders.filter((order) => {
       const byStatus = orderFilter === "all" || order.status === orderFilter;
-      const needle = query.trim().toLowerCase();
+      const needle = orderSearch.trim().toLowerCase();
       const byQuery = !needle || [order.number, order.party.name || "", order.status].some((value) => value.toLowerCase().includes(needle));
       return byStatus && byQuery;
     });
-  }, [orders, orderFilter, query]);
+  }, [orders, orderFilter, orderSearch]);
 
   const activeLines = lines.filter((line) => line.item_id && line.qty > 0);
   const canCreate = Boolean(form.supplier_id && form.warehouse_id && activeLines.length);
@@ -311,6 +317,7 @@ export default function NuevaOCPage() {
   }
 
   async function createOrder(approve = false, createAnother = false) {
+    if (saving) return;
     setSaving(true);
     setError("");
     setOk("");
@@ -342,12 +349,13 @@ export default function NuevaOCPage() {
         })
       });
       const finalPo = approve ? await api<PurchaseOrder>(`/api/v1/purchases/orders/${po.id}/approve`, { method: "POST", body: JSON.stringify({}) }) : po;
-      const successMessage = approve ? `${finalPo.number} aprobada y lista para WMS` : editingOrder ? `${po.number} actualizada en borrador` : `${po.number} creada en borrador`;
+      const successMessage = approve ? `${finalPo.number} aprobada y lista para recepción` : editingOrder ? `${po.number} actualizada en borrador` : `${po.number} creada en borrador`;
       setOk(successMessage);
       showToast({ tone: "success", title: approve ? `Orden aprobada — ${finalPo.number}` : `Borrador guardado — ${po.number}`, description: successMessage });
       setEditingOrder(null);
       setLines(blankLines(form.expected_at));
       if (createAnother) {
+        setWorkflowVersion(version => version + 1);
         setSelectedOrder(null);
         setForm((current) => ({ ...current, notes: "" }));
         setActiveTab("crear");
@@ -412,25 +420,11 @@ export default function NuevaOCPage() {
     }
   }
 
+  const currentOrder = visibleOrders.find(row=>row.id===selectedOrder?.id) || visibleOrders[0] || null;
+  const currentOrderPage = Math.min(orderPage, Math.max(1, Math.ceil(visibleOrders.length / 10)));
   return (
     <div className="space-y-4">
-      <header className="rounded-md border border-line bg-white">
-        <div className="border-b border-line p-4">
-          <p className="text-sm font-medium text-apex">Compras / Orden de compra</p>
-          <h1 className="mt-1 text-2xl font-semibold">Orden de compra</h1>
-          <p className="mt-1 text-sm text-neutral-600">Crea, consulta y aprueba órdenes de abastecimiento.</p>
-        </div>
-
-        <div className="flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
-          <SegmentedNav active={activeTab} onChange={setActiveTab} />
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            {editingOrder ? <ActionButton icon={Trash2} label="Cancelar edicion" disabled={saving} onClick={cancelEdit} variant="ghost" /> : null}
-            <ActionButton icon={Save} label={editingOrder ? "Guardar cambios" : "Guardar borrador"} disabled={saving || !canCreate} onClick={() => createOrder(false)} variant="secondary" />
-            {!editingOrder ? <ActionButton icon={Plus} label="Aprobar y nueva" disabled={saving || !canCreate} onClick={() => createOrder(true, true)} variant="secondary" /> : null}
-            <ActionButton icon={Send} label={editingOrder ? "Guardar y aprobar" : "Crear y aprobar"} disabled={saving || !canCreate} onClick={() => createOrder(true)} variant="primary" />
-          </div>
-        </div>
-      </header>
+      <header className="flex flex-col gap-4 rounded-xl border border-line bg-surface md:flex-row md:items-center md:justify-between"><div><p className="text-sm font-medium text-apex">Compras</p><h1 className="mt-1 text-2xl font-semibold">Órdenes de compra</h1><p className="mt-1 text-sm text-content-muted">Consulte sus compras y el avance de las entregas.</p></div><div className="flex flex-wrap gap-2"><button type="button" className="btn-secondary" onClick={()=>setActiveTab(activeTab==="trazabilidad"?"ordenes":"trazabilidad")}>{activeTab==="trazabilidad"?"Volver a las órdenes":"Ver trazabilidad"}</button><button type="button" className="btn-primary" onClick={() => { cancelEdit(); setWorkflowVersion(version=>version+1); setActiveTab("crear"); }}>Nueva orden</button></div></header>
 
       <ComprasNav />
 
@@ -444,9 +438,9 @@ export default function NuevaOCPage() {
             <p className="mt-1 text-sm text-amber-800">Necesitas al menos un proveedor activo, una bodega destino y un producto de inventario para mantener el flujo confiable.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-white px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/compras/proveedores">Crear proveedor</Link>
-            <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-white px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/inventario/bodegas">Crear bodega</Link>
-            <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-white px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/inventario/productos/nuevo">Crear producto</Link>
+            <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-surface px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/compras/proveedores">Crear proveedor</Link>
+            <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-surface px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/inventario/bodegas">Crear bodega</Link>
+            <Link className="inline-flex h-10 items-center rounded-md border border-amber-300 bg-surface px-3 text-sm text-amber-900 hover:bg-amber-100" href="/dashboard/inventario/productos/nuevo">Crear producto</Link>
           </div>
         </section>
       ) : null}
@@ -454,36 +448,36 @@ export default function NuevaOCPage() {
       <section>
         <div className="space-y-4">
           {activeTab === "crear" ? (
-            <>
+            <PurchaseDialog title={editingOrder ? `Editar ${editingOrder.number}` : "Nueva orden de compra"} busy={saving} childOpen={Boolean(skuSearchLineId) || supplierSearchOpen} onClose={() => {if(editingOrder)cancelEdit();setActiveTab("ordenes");}}><PurchaseGuidedForm key={`${editingOrder?.id || "new"}-${workflowVersion}`} busy={saving} error={error} onSubmit={()=>{if(canCreate)void createOrder(false)}} onCancel={()=>{if(editingOrder)cancelEdit();setActiveTab("ordenes");}} submitLabel={editingOrder ? "Guardar cambios" : "Guardar borrador"} extraAction={{label:editingOrder ? "Guardar y aprobar" : "Crear y aprobar",onClick:()=>{if(canCreate)void createOrder(true)}}} review={<div className="rounded-lg border border-line bg-paper p-4 text-sm"><p className="font-semibold">{suppliers.find(s=>s.id===form.supplier_id)?.name || "Seleccione proveedor"}</p><p>{warehouses.find(w=>w.id===form.warehouse_id)?.name} · {form.currency} · {activeLines.length} posiciones</p><p className="mt-2 font-semibold">Revise cantidades y costos antes de guardar o aprobar.</p><div className="mt-3 space-y-2">{activeLines.map(line=><div className="flex flex-wrap justify-between gap-2 border-b border-line pb-2" key={line.localId}><span>{line.sku} · {line.description}</span><span>{line.qty} {line.unit} × {money(line.unit_cost,form.currency)}{line.discount ? ` · descuento ${money(line.discount,form.currency)}` : ""} = {money(Math.max(0,line.qty*line.unit_cost-line.discount),form.currency)}</span></div>)}</div><p className="mt-3 font-semibold">Total: {money(activeLines.reduce((sum,line)=>sum+Math.max(0,line.qty*line.unit_cost-line.discount),0),form.currency)}</p>{!canCreate ? <p role="alert" className="mt-2 text-amber-700">Complete proveedor, bodega y al menos un SKU con cantidad válida.</p> : null}{!editingOrder ? <button type="button" disabled={saving || !canCreate} className="btn-secondary mt-3" onClick={()=>void createOrder(true,true)}>Aprobar y nueva</button> : null}</div>} steps={[{title:"Datos de la orden",description:"Seleccione proveedor, bodega, entrega y condiciones comerciales.",content:<>
               {editingOrder ? (
                 <div className="flex flex-col gap-2 rounded-md border border-apex/30 bg-[#146C6312] p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div><p className="text-sm font-semibold text-apex">Editando borrador {editingOrder.number}</p><p className="text-xs text-neutral-600">Al guardar se actualizara esta misma orden.</p></div>
-                  <button className="text-sm font-medium text-apex hover:underline" onClick={cancelEdit} type="button">Cancelar edicion</button>
+                  <div><p className="text-sm font-semibold text-apex">Editando borrador {editingOrder.number}</p><p className="text-xs text-content-body">Al guardar se actualizara esta misma orden.</p></div>
+
                 </div>
               ) : null}
-              <section className="rounded-md border border-line bg-white">
+              <section className="rounded-md border border-line bg-surface">
                 <PanelHeader icon={PackagePlus} title="Datos de la orden" detail="Proveedor, destino, entrega y condiciones." />
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-4">
                     <Field label="Proveedor">
-                      <input className="control" placeholder="Escribe NIT o Enter para buscar" value={form.supplier_id?(suppliers.find(s=>s.id===form.supplier_id)?.tax_id||""):supplierSearch} onChange={e=>{setSupplierSearch(e.target.value);const match=suppliers.find(s=>s.tax_id===e.target.value.trim());setForm(p=>({...p,supplier_id:match?.id||0}))}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();setSupplierSearchOpen(true)}}}/>
+                      <input required className="control" placeholder="Escribe NIT o Enter para buscar" value={form.supplier_id?(suppliers.find(s=>s.id===form.supplier_id)?.tax_id||""):supplierSearch} onChange={e=>{setSupplierSearch(e.target.value);const match=suppliers.find(s=>s.tax_id===e.target.value.trim());setForm(p=>({...p,supplier_id:match?.id||0}))}} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();setSupplierSearchOpen(true)}}}/>
                     </Field>
                     <Field label="Nombre del proveedor"><input className="control bg-paper" readOnly value={suppliers.find(s=>s.id===form.supplier_id)?.name||""}/></Field>
                     <Field label="Bodega destino">
-                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" disabled={!warehouses.length} value={form.warehouse_id} onChange={(e) => setForm((p) => ({ ...p, warehouse_id: Number(e.target.value) }))}>
-                        {warehouses.length ? <option value={0}>Seleccionar bodega</option> : <option value={0}>Crea una bodega primero</option>}
+                      <PurchaseSearchSelect className="h-10 w-full rounded-md border border-line px-3 text-sm" disabled={!warehouses.length} value={form.warehouse_id || ""} required onChange={(e) => setForm((p) => ({ ...p, warehouse_id: Number(e.target.value) }))}>
+                        {warehouses.length ? <option value="">Seleccionar bodega</option> : <option value="">Crea una bodega primero</option>}
                         {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.code} - {warehouse.name} / {warehouse.society_code}-{warehouse.branch_code}</option>)}
-                      </select>
+                      </PurchaseSearchSelect>
                     </Field>
                     <Field label="Entrega esperada">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={form.expected_at} onChange={(e) => setForm((p) => ({ ...p, expected_at: e.target.value }))} />
                     </Field>
                     <Field label="Prioridad">
-                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.priority} onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value }))}>
+                      <PurchaseSearchSelect className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.priority} onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value }))}>
                         <option value="normal">Normal</option>
                         <option value="alta">Alta</option>
                         <option value="urgente">Urgente</option>
-                      </select>
+                      </PurchaseSearchSelect>
                     </Field>
                   </div>
 
@@ -492,9 +486,9 @@ export default function NuevaOCPage() {
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" placeholder="Ej: entregar en muelle 2, validar lote y vencimiento" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
                     </Field>
                     <Field label="Moneda">
-                      <select className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>
+                      <PurchaseSearchSelect className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.currency} onChange={(e) => setForm((p) => ({ ...p, currency: e.target.value }))}>
                         {LATAM_CURRENCIES.map((currency) => <option key={currency} value={currency}>{currency}</option>)}
-                      </select>
+                      </PurchaseSearchSelect>
                     </Field>
                     <Field label="Pago">
                       <input className="h-10 w-full rounded-md border border-line px-3 text-sm" value={form.payment_terms} onChange={(e) => setForm((p) => ({ ...p, payment_terms: e.target.value }))} />
@@ -503,29 +497,29 @@ export default function NuevaOCPage() {
                 </div>
               </section>
 
-              <section className="rounded-md border border-line bg-white">
+</>},{title:"Productos y cantidades",description:"Agregue los SKU y revise las cantidades y costos unitarios.",content:<>              <section className="rounded-md border border-line bg-surface">
                 <PanelHeader icon={Boxes} title="Productos" detail="Escribe el SKU directamente en la tabla o selecciónalo desde el buscador." />
 
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
                     <div className="relative">
-                      <Search className="absolute left-3 top-2.5 text-neutral-400" size={16} />
+                      <Search className="absolute left-3 top-2.5 text-content-muted" size={16} />
                       <input aria-label="Buscar productos para la orden" className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" placeholder="Buscar SKU, producto, ABC o estado de inventario" value={query} onChange={(e) => setQuery(e.target.value)} />
                     </div>
-                    <span className="rounded-md border border-line bg-paper px-3 py-2 text-xs text-neutral-600">
+                    <span className="rounded-md border border-line bg-paper px-3 py-2 text-xs text-content-body">
                       {query ? `${filteredItems.length} resultados` : `${smartItems.length} sugeridos`}
                     </span>
                   </div>
 
                   <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                     {(query ? filteredItems : smartItems).map((item) => (
-                      <button className="rounded-md border border-line bg-paper p-3 text-left text-sm hover:border-apex hover:bg-white" key={item.id} onClick={() => addItem(item)} type="button">
+                      <button className="rounded-md border border-line bg-paper p-3 text-left text-sm hover:border-apex hover:bg-surface" key={item.id} onClick={() => addItem(item)} type="button">
                         <span className="flex items-center justify-between gap-2">
-                          <span className="font-semibold">{item.code}</span>{item.legacy_code ? <span className="block text-xs text-neutral-500">Anterior: {item.legacy_code}</span> : null}
+                          <span className="font-semibold">{item.code}</span>{item.legacy_code ? <span className="block text-xs text-content-muted">Anterior: {item.legacy_code}</span> : null}
                           <Plus size={15} className="text-apex" />
                         </span>
-                        <span className="mt-1 block truncate text-neutral-600">{item.name}</span>
-                        <span className="mt-2 block text-xs text-neutral-500">Stock {item.stock_current} / mínimo {item.stock_min} / sugerido {suggestedQty(item)}</span>
+                        <span className="mt-1 block truncate text-content-body">{item.name}</span>
+                        <span className="mt-2 block text-xs text-content-muted">Stock {item.stock_current} / mínimo {item.stock_min} / sugerido {suggestedQty(item)}</span>
                       </button>
                     ))}
                   </div>
@@ -534,7 +528,7 @@ export default function NuevaOCPage() {
                     <datalist id="purchase-order-skus">{items.map((item) => <option key={item.id} value={item.code}>{item.name}</option>)}</datalist>
                     <table className="w-full min-w-[760px] text-sm">
                       <thead className="bg-paper">
-                        <tr className="text-left text-neutral-600">
+                        <tr className="text-left text-content-body">
                           <th className="px-3 py-2">SKU</th>
                           <th className="px-3 py-2">Descripcion</th>
                           <th className="px-3 py-2">Cant.</th>
@@ -547,12 +541,12 @@ export default function NuevaOCPage() {
                         {lines.map((line) => (
                           <tr className="border-t border-line/70" key={line.localId}>
                             <td className="px-3 py-2"><input aria-label="SKU" className="h-9 w-44 rounded-md border border-line px-2 font-mono text-sm uppercase" list="purchase-order-skus" placeholder="Escribe o Enter para buscar" value={line.sku} onChange={(event) => updateSku(line.localId, event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleSkuEnter(line); } }} /></td>
-                            <td className="px-3 py-2">{line.description || <span className="text-neutral-400">Seleccione un SKU existente</span>}</td>
+                            <td className="px-3 py-2">{line.description || <span className="text-content-muted">Seleccione un SKU existente</span>}</td>
                             <td className="px-3 py-2"><NumberInput label={`Cantidad de ${line.sku || "línea vacía"}`} value={line.qty} onChange={(value) => updateLine(line.localId, { qty: value })} /></td>
                             <td className="px-3 py-2"><MoneyInput label={`Costo unitario de ${line.sku || "línea vacía"}`} value={line.unit_cost} onChange={(value) => updateLine(line.localId, { unit_cost: value })} /></td>
                             <td className="px-3 py-2 font-medium">{line.item_id ? money(Math.max(0, line.qty * line.unit_cost), form.currency) : "—"}</td>
                             <td className="px-3 py-2 text-right">
-                              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line text-neutral-500 hover:bg-paper" onClick={() => removeLine(line.localId)} type="button" aria-label="Quitar linea">
+                              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line text-content-muted hover:bg-paper" onClick={() => removeLine(line.localId)} type="button" aria-label="Quitar linea">
                                 <Trash2 size={14} />
                               </button>
                             </td>
@@ -563,27 +557,28 @@ export default function NuevaOCPage() {
                   </div>
                 </div>
               </section>
-            </>
+</>}]} /></PurchaseDialog>
           ) : null}
 
-          {activeTab === "ordenes" ? (
-            <section className="rounded-md border border-line bg-white">
+          {activeTab !== "trazabilidad" ? (
+            <section className="rounded-md border border-line bg-surface">
               <PanelHeader
                 icon={ClipboardCheck}
-                title="Ordenes recientes"
-                detail="Selecciona una OC y ejecuta acciones desde una sola barra operativa."
+                title="Seguimiento de órdenes"
+                detail="Elija una orden para revisar su proveedor, avance de recepción y productos pendientes."
                 actions={(
                   <div className="flex gap-2">
-                    <select className="h-9 rounded-md border border-line px-2 text-xs" value={orderFilter} onChange={(e) => setOrderFilter(e.target.value)}>
+                    <PurchaseSearchSelect className="h-9 rounded-md border border-line px-2 text-xs" value={orderFilter} onChange={(e) => setOrderFilter(e.target.value)}>
                       <option value="all">Todas</option>
                       {Object.keys(statusLabels).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
-                    </select>
-                    <span className="inline-flex h-9 items-center gap-1 rounded-md border border-line px-2 text-xs text-neutral-500"><Filter size={13} /> {visibleOrders.length}</span>
+                    </PurchaseSearchSelect>
+                    <span className="inline-flex h-9 items-center gap-1 rounded-md border border-line px-2 text-xs text-content-muted"><Filter size={13} /> {visibleOrders.length}</span>
                   </div>
                 )}
               />
 
-              <div className="grid gap-4 p-4 lg:grid-cols-[320px_1fr]">
+              <div className="px-4 pt-4"><label className="block text-sm font-medium">Buscar orden o proveedor<input className="control mt-1" placeholder="Número de orden o nombre del proveedor" value={orderSearch} onChange={e=>{setOrderSearch(e.target.value);setOrderPage(1)}} /></label></div>
+              <div className="grid items-start gap-4 p-4 lg:grid-cols-[300px_minmax(0,1fr)]">
                 {!visibleOrders.length ? (
                   <EmptyState
                     className="rounded-md border border-line lg:col-span-2"
@@ -593,25 +588,18 @@ export default function NuevaOCPage() {
                     title={orders.length ? "Sin resultados para este filtro" : "Aún no hay órdenes de compra"}
                   />
                 ) : null}
-                <div className={visibleOrders.length ? "space-y-2" : "hidden"}>
-                  {visibleOrders.slice(0, 12).map((order) => (
-                    <button className={`w-full rounded-md border p-3 text-left text-sm hover:border-apex ${selectedOrder?.id === order.id ? "border-apex bg-[#146C6312]" : "border-line"}`} key={order.id} onClick={() => setSelectedOrder(order)} onDoubleClick={() => order.status === "draft" && editOrder(order)} title={order.status === "draft" ? "Doble clic para editar este borrador" : "Seleccionar orden"} type="button">
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="font-semibold">{order.number}</span>
-                        <StatusPill status={order.status} />
-                      </span>
-                      <span className="mt-1 block truncate text-xs text-neutral-500">{order.party.name || "Proveedor"} / {money(order.total, order.currency || currencyForCountry(order.party.country))}</span>
-                    </button>
-                  ))}
+                <div aria-label="Lista de órdenes" className={visibleOrders.length ? "min-w-0 lg:col-span-2" : "hidden"}>
+                  <div className="hidden overflow-x-auto rounded-xl border border-line md:block"><table className="w-full min-w-[850px] text-sm"><thead className="bg-paper text-left text-xs text-content-muted"><tr><th className="p-3">Orden / estado</th><th className="p-3">Proveedor</th><th className="p-3">Destino de entrega</th><th className="p-3">Recepción</th><th className="p-3 text-right">Importe</th><th className="p-3 text-right">Consulta</th></tr></thead><tbody>{visibleOrders.slice((currentOrderPage-1)*10,currentOrderPage*10).map(order=><tr className="border-t border-line" key={order.id} onDoubleClick={() => order.status === "draft" && editOrder(order)}><td className="p-3"><p className="mb-2 font-semibold">{order.number}</p><StatusPill status={order.status}/></td><td className="max-w-64 p-3"><p className="font-medium">{order.party.name||"Proveedor"}</p><p className="mt-1 text-xs text-content-muted">{order.lines.length} posiciones de compra</p></td><td className="max-w-48 p-3 text-content-body">{warehouses.find(w=>w.id===order.metadata.warehouse_id)?.name || order.metadata.warehouse_name || "Sin bodega definida"}</td><td className="min-w-36 p-3"><p className="font-semibold">{order.received_percent||0}% recibido</p><progress className="my-1 h-1.5 w-full accent-apex" max={100} value={Math.max(0,Math.min(100,order.received_percent||0))} aria-label={`Recepción ${order.number}`} /><p className="text-xs text-content-muted">{order.lines.filter(l=>Number(l.pending_quantity??Math.max(0,l.qty-(l.received_quantity||0)))>0).length} posiciones pendientes</p></td><td className="whitespace-nowrap p-3 text-right font-semibold">{money(order.total,order.currency||currencyForCountry(order.party.country))}</td><td className="p-3 text-right"><button type="button" className="whitespace-nowrap rounded-lg border border-line px-3 py-2 font-medium text-apex" onClick={()=>{setSelectedOrder(order);setDetailOpen(true)}}>Ver detalle</button></td></tr>)}</tbody></table></div>
+                  <div className="grid gap-3 md:hidden">{visibleOrders.slice((currentOrderPage-1)*10,currentOrderPage*10).map(order=><article className="rounded-xl border border-line p-4" key={order.id}><div className="flex flex-wrap justify-between gap-2"><strong>{order.number}</strong><StatusPill status={order.status}/></div><p className="mt-2 font-semibold">{order.party.name||"Proveedor"}</p><p className="mt-1 text-sm text-content-muted">Destino: {warehouses.find(w=>w.id===order.metadata.warehouse_id)?.name||order.metadata.warehouse_name||"Sin bodega definida"}</p><div className="mt-3 flex flex-wrap justify-between gap-2 text-sm"><span>{order.received_percent||0}% recibido · {order.lines.length} posiciones</span><strong>{money(order.total,order.currency||currencyForCountry(order.party.country))}</strong></div><button type="button" className="mt-3 min-h-10 w-full rounded-lg border border-line text-sm font-semibold text-apex" onClick={()=>{setSelectedOrder(order);setDetailOpen(true)}}>Ver detalle</button></article>)}</div>
+                  <PurchasePagination page={currentOrderPage} total={visibleOrders.length} size={10} onChange={setOrderPage} label="Páginas de órdenes" />
                 </div>
-
-                {visibleOrders.length ? <SelectedOrderCard selectedOrder={selectedOrder} onApprove={approveOrder} onDuplicate={duplicateOrder} onEdit={editOrder} onDownload={downloadOrder} onClose={(order) => { setClosingOrder(order); setCloseReason(""); setError(""); }} /> : null}
+                {detailOpen&&currentOrder?<PurchaseDialog title="Detalle de la compra" busy={saving} childOpen={Boolean(closingOrder)} onClose={()=>setDetailOpen(false)}><SelectedOrderCard warehouseName={warehouses.find(row=>row.id===currentOrder.metadata.warehouse_id)?.name} selectedOrder={currentOrder} onApprove={approveOrder} onDuplicate={order=>{setDetailOpen(false);duplicateOrder(order)}} onEdit={order=>{setDetailOpen(false);editOrder(order)}} onDownload={downloadOrder} onClose={order=>{setClosingOrder(order);setCloseReason("");setError("")}} /></PurchaseDialog>:null}
               </div>
             </section>
           ) : null}
 
           {activeTab === "trazabilidad" ? (
-            <section className="rounded-md border border-line bg-white">
+            <section className="rounded-md border border-line bg-surface">
               <PanelHeader icon={Layers3} title="Trazabilidad end-to-end" detail="La OC funciona como documento central entre compras, WMS, inventario y finanzas." />
               <div className="grid gap-4 p-4 lg:grid-cols-2">
                 <div className="rounded-md border border-line p-4">
@@ -634,18 +622,18 @@ export default function NuevaOCPage() {
         </div>
 
       </section>
-      {skuSearchLineId ? <ModalFrame maxWidth="md:max-w-3xl" onClose={() => { setSkuSearchLineId(null); setSkuSearchMessage(""); }} title="Buscar SKU para la posición">
+      {skuSearchLineId ? <ModalFrame maxWidth="md:!max-w-3xl" onClose={() => { setSkuSearchLineId(null); setSkuSearchMessage(""); }} title="Buscar SKU para la posición">
         <div className="space-y-4">
           {skuSearchMessage ? <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{skuSearchMessage}</p> : null}
-          <label className="relative block"><Search className="absolute left-3 top-3 text-neutral-400" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar por código, nombre o clasificación ABC" value={skuSearch} onChange={(event) => setSkuSearch(event.target.value)} /></label>
+          <label className="relative block"><Search className="absolute left-3 top-3 text-content-muted" size={16} /><input autoFocus className="h-10 w-full rounded-md border border-line pl-10 pr-3 text-sm" placeholder="Buscar por código, nombre o clasificación ABC" value={skuSearch} onChange={(event) => setSkuSearch(event.target.value)} /></label>
           <div className="max-h-[55vh] divide-y divide-line overflow-y-auto rounded-md border border-line">
-            {skuSearchResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => assignItemToLine(skuSearchLineId, item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-neutral-500">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span><span className="mt-1 block text-xs text-neutral-500">Unidad {item.unit || "UND"} · ABC {item.abc_class || "C"}</span></span><span className="shrink-0 text-right"><strong>{money(Number(item.unit_cost || 0), form.currency)}</strong><span className="block text-xs text-neutral-500">Stock {item.stock_current}</span></span></button>)}
-            {!skuSearchResults.length ? <p className="p-6 text-center text-sm text-neutral-500">No hay SKU que coincidan con la búsqueda.</p> : null}
+            {skuSearchResults.map((item) => <button className="flex w-full items-center justify-between gap-4 p-3 text-left text-sm hover:bg-paper" key={item.id} onClick={() => assignItemToLine(skuSearchLineId, item)} type="button"><span><strong className="font-mono">{item.code}</strong>{item.legacy_code ? <span className="ml-2 font-mono text-content-muted">Anterior: {item.legacy_code}</span> : null}<span className="ml-2">{item.name}</span><span className="mt-1 block text-xs text-content-muted">Unidad {item.unit || "UND"} · ABC {item.abc_class || "C"}</span></span><span className="shrink-0 text-right"><strong>{money(Number(item.unit_cost || 0), form.currency)}</strong><span className="block text-xs text-content-muted">Stock {item.stock_current}</span></span></button>)}
+            {!skuSearchResults.length ? <p className="p-6 text-center text-sm text-content-muted">No hay SKU que coincidan con la búsqueda.</p> : null}
           </div>
         </div>
       </ModalFrame> : null}
-      {supplierSearchOpen?<ModalFrame maxWidth="md:max-w-3xl" onClose={()=>setSupplierSearchOpen(false)} title="Buscar proveedor"><input autoFocus className="control mb-3" placeholder="Buscar dinámicamente por NIT o nombre" value={supplierSearch} onChange={e=>setSupplierSearch(e.target.value)}/><div className="max-h-[55vh] divide-y overflow-auto rounded border border-line">{suppliers.filter(s=>!supplierSearch.trim()||[s.tax_id,s.name].some(v=>String(v||"").toLowerCase().includes(supplierSearch.toLowerCase()))).map(s=><button className="flex w-full justify-between p-3 text-left hover:bg-paper" key={s.id} onClick={()=>{setForm(p=>({...p,supplier_id:s.id,currency:currencyForCountry(s.country,p.currency)}));setSupplierSearch("");setSupplierSearchOpen(false)}}><span>{s.name}</span><span className="font-mono">{s.tax_id}</span></button>)}</div></ModalFrame>:null}
-      {closingOrder ? <ModalFrame maxWidth="md:max-w-xl" onClose={() => !saving && setClosingOrder(null)} title={`Cerrar orden ${closingOrder.number}`}>
+      {supplierSearchOpen?<ModalFrame maxWidth="md:!max-w-3xl" onClose={()=>setSupplierSearchOpen(false)} title="Buscar proveedor"><input autoFocus className="control mb-3" placeholder="Buscar dinámicamente por NIT o nombre" value={supplierSearch} onChange={e=>setSupplierSearch(e.target.value)}/><div className="max-h-[55vh] divide-y overflow-auto rounded border border-line">{suppliers.filter(s=>!supplierSearch.trim()||[s.tax_id,s.name].some(v=>String(v||"").toLowerCase().includes(supplierSearch.toLowerCase()))).map(s=><button className="flex w-full justify-between p-3 text-left hover:bg-paper" key={s.id} onClick={()=>{setForm(p=>({...p,supplier_id:s.id,currency:currencyForCountry(s.country,p.currency)}));setSupplierSearch("");setSupplierSearchOpen(false)}}><span>{s.name}</span><span className="font-mono">{s.tax_id}</span></button>)}</div></ModalFrame>:null}
+      {closingOrder ? <ModalFrame maxWidth="md:!max-w-xl" onClose={() => !saving && setClosingOrder(null)} title={`Cerrar orden ${closingOrder.number}`}>
         <div className="space-y-4">
           <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             Se cerraran {closingOrder.pending_quantity} unidades pendientes. Lo ya recibido conserva inventario, costo y contabilizacion; esta accion no genera movimientos nuevos.
@@ -663,27 +651,6 @@ export default function NuevaOCPage() {
   );
 }
 
-function SegmentedNav({ active, onChange }: { active: WorkspaceTab; onChange: (tab: WorkspaceTab) => void }) {
-  const tabs: Array<{ id: WorkspaceTab; label: string; icon: LucideIcon }> = [
-    { id: "crear", label: "Crear OC", icon: PackagePlus },
-    { id: "ordenes", label: "Ordenes", icon: ClipboardCheck },
-    { id: "trazabilidad", label: "Trazabilidad", icon: Layers3 }
-  ];
-  return (
-    <div className="grid gap-1 rounded-md bg-paper p-1 sm:inline-grid sm:grid-cols-3">
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        return (
-          <button className={`inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-sm ${active === tab.id ? "bg-white text-apex shadow-sm" : "text-neutral-600 hover:bg-white/70"}`} key={tab.id} onClick={() => onChange(tab.id)} type="button">
-            <Icon size={15} />
-            {tab.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon; title: string; detail: string; actions?: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
@@ -693,7 +660,7 @@ function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon;
         </span>
         <div>
           <h2 className="text-base font-semibold">{title}</h2>
-          {detail ? <p className="text-sm text-neutral-500">{detail}</p> : null}
+          {detail ? <p className="text-sm text-content-muted">{detail}</p> : null}
         </div>
       </div>
       {actions ? <div className="shrink-0">{actions}</div> : null}
@@ -701,22 +668,22 @@ function PanelHeader({ icon: Icon, title, detail, actions }: { icon: LucideIcon;
   );
 }
 
-function SelectedOrderCard({ selectedOrder, onApprove, onDuplicate, onEdit, onDownload, onClose }: { selectedOrder: PurchaseOrder | null; onApprove: (order: PurchaseOrder) => void; onDuplicate: (order: PurchaseOrder) => void; onEdit: (order: PurchaseOrder) => void; onDownload: (order: PurchaseOrder) => void; onClose: (order: PurchaseOrder) => void }) {
+function SelectedOrderCard({ warehouseName, selectedOrder, onApprove, onDuplicate, onEdit, onDownload, onClose }: { warehouseName?: string; selectedOrder: PurchaseOrder | null; onApprove: (order: PurchaseOrder) => void; onDuplicate: (order: PurchaseOrder) => void; onEdit: (order: PurchaseOrder) => void; onDownload: (order: PurchaseOrder) => void; onClose: (order: PurchaseOrder) => void }) {
   if (!selectedOrder) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center rounded-md border border-dashed border-line bg-paper text-sm text-neutral-500">
+      <div className="flex min-h-[320px] items-center justify-center rounded-md border border-dashed border-line bg-paper text-sm text-content-muted">
         Selecciona una OC para ver sus acciones y trazabilidad.
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border border-line">
+    <div aria-label="Detalle de la orden" className="rounded-xl border border-line bg-surface">
       <div className="flex flex-col gap-3 border-b border-line p-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-sm text-neutral-500">Orden seleccionada</p>
+          <p className="text-sm text-content-muted">Orden seleccionada</p>
           <h2 className="text-2xl font-semibold">{selectedOrder.number}</h2>
-          <p className="text-sm text-neutral-600">{selectedOrder.party.name} / {statusLabels[selectedOrder.status] || selectedOrder.status}</p>
+          <p className="mt-1 text-sm text-content-body">{selectedOrder.party.name}</p><div className="mt-2"><StatusPill status={selectedOrder.status} /></div>
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton icon={Download} label="Descargar PDF" variant="ghost" compact onClick={() => onDownload(selectedOrder)} />
@@ -728,19 +695,15 @@ function SelectedOrderCard({ selectedOrder, onApprove, onDuplicate, onEdit, onDo
       </div>
       <div className="grid gap-3 p-4 md:grid-cols-4">
         <HeaderMetric label="Recibido" value={`${selectedOrder.received_percent || 0}%`} />
-        <HeaderMetric label="Pendiente" value={String(selectedOrder.pending_quantity || 0)} />
+        <HeaderMetric label="Posiciones pendientes" value={String(selectedOrder.lines.filter(line=>Number(line.pending_quantity ?? Math.max(0,line.qty-(line.received_quantity||0)))>0).length)} />
         <HeaderMetric label="Total" value={money(selectedOrder.total, selectedOrder.currency || currencyForCountry(selectedOrder.party.country))} />
-        <HeaderMetric label="Inbound" value={selectedOrder.metadata.wms?.inbound_order || "pendiente"} />
+        <HeaderMetric label="Destino de entrega" value={warehouseName || selectedOrder.metadata.warehouse_name || "Sin bodega definida"} />
       </div>
+      <div className="px-4 pb-4"><label className="mb-2 flex justify-between text-xs text-content-muted">Avance de recepción<span>{selectedOrder.received_percent||0}% recibido</span></label><progress className="h-2 w-full overflow-hidden rounded-full accent-apex" aria-label="Avance de recepción de la orden" max={100} value={Math.max(0,Math.min(100,selectedOrder.received_percent||0))} /></div>
       <div className="border-t border-line p-4">
-        <h3 className="mb-3 text-sm font-semibold">Lineas de compra</h3>
-        <div className="space-y-2">
-          {selectedOrder.lines.slice(0, 6).map((line) => (
-            <div className="flex items-center justify-between gap-3 rounded-md border border-line bg-paper px-3 py-2 text-sm" key={line.id}>
-              <span className="min-w-0 truncate"><b className="font-mono">{line.item?.code||line.item_id}</b> · {line.description}</span>
-              <span className="shrink-0 font-medium">Pedida {line.qty} · Entregada {line.received_quantity||0}</span>
-            </div>
-          ))}
+        <div className="mb-4 rounded-lg border border-line bg-paper p-3 text-sm"><p className="font-semibold">{selectedOrder.status==="draft"?"Pendiente de aprobación":["confirmed","partial"].includes(selectedOrder.status)?"Hay mercancía por recibir":"Consulta del documento"}</p><p className="mt-1 text-content-muted">{selectedOrder.status==="draft"?"Revise los productos y sus costos antes de aprobar la compra.":["confirmed","partial"].includes(selectedOrder.status)?"Consulte las posiciones pendientes y registre la entrega desde Recepciones.":"Revise el detalle de los productos y los documentos asociados a esta compra."}</p></div><h3 className="mb-3 text-sm font-semibold">Productos de la orden · {selectedOrder.lines.length} posiciones</h3>
+        <div className="max-h-[420px] space-y-2 overflow-y-auto">
+          {selectedOrder.lines.map(line=><div className="rounded-lg border border-line p-3 text-sm" key={line.id}><p className="font-semibold">{line.description}</p><p className="mt-1 font-mono text-xs text-content-muted">SKU {line.item?.code||line.item_id} · {line.unit||"UND"}</p><dl className="mt-3 grid grid-cols-3 gap-2"><div><dt className="text-xs text-content-muted">Pedido</dt><dd className="font-semibold">{line.qty}</dd></div><div><dt className="text-xs text-content-muted">Recibido</dt><dd className="font-semibold">{line.received_quantity||0}</dd></div><div><dt className="text-xs text-content-muted">Pendiente</dt><dd className="font-semibold text-apex">{line.pending_quantity??Math.max(0,line.qty-(line.received_quantity||0))}</dd></div></dl></div>)}
         </div>
       </div>
     </div>
@@ -750,8 +713,8 @@ function SelectedOrderCard({ selectedOrder, onApprove, onDuplicate, onEdit, onDo
 function ActionButton({ icon: Icon, label, variant, compact, disabled, onClick }: { icon: LucideIcon; label: string; variant: "primary" | "secondary" | "ghost"; compact?: boolean; disabled?: boolean; onClick?: () => void }) {
   const styles = {
     primary: "bg-apex text-white hover:bg-apex/90 disabled:bg-apex/50",
-    secondary: "border border-line bg-white text-neutral-800 hover:bg-paper disabled:text-neutral-400",
-    ghost: "border border-line bg-white text-neutral-700 hover:bg-paper disabled:text-neutral-400"
+    secondary: "border border-line bg-surface text-neutral-800 hover:bg-paper disabled:text-content-muted",
+    ghost: "border border-line bg-surface text-neutral-700 hover:bg-paper disabled:text-content-muted"
   };
   return (
     <button className={`inline-flex h-10 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium disabled:cursor-not-allowed ${compact ? "h-9 text-xs" : ""} ${styles[variant]}`} disabled={disabled} onClick={onClick} type="button">
@@ -764,8 +727,8 @@ function ActionButton({ icon: Icon, label, variant, compact, disabled, onClick }
 function HeaderMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-line bg-paper px-3 py-2">
-      <p className="truncate text-lg font-semibold leading-none">{value}</p>
-      <p className="mt-1 text-xs text-neutral-500">{label}</p>
+      <p className="break-words text-base font-semibold leading-snug">{value}</p>
+      <p className="mt-1 text-xs text-content-muted">{label}</p>
     </div>
   );
 }
@@ -773,7 +736,7 @@ function HeaderMetric({ label, value }: { label: string; value: string }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="text-sm">
-      <span className="mb-1 block text-xs font-medium text-neutral-600">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-content-body">{label}</span>
       {children}
     </label>
   );
@@ -781,9 +744,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function NumberInput({ value, suffix, label, onChange }: { value: number; suffix?: string; label: string; onChange: (value: number) => void }) {
   return (
-    <div className="flex h-9 items-center rounded-md border border-line bg-white">
+    <div className="flex h-9 items-center rounded-md border border-line bg-surface">
       <ZeroFriendlyNumberInput aria-label={label} className="h-full w-20 rounded-md px-2 text-sm outline-none" min={0} step="0.01" value={value} onValueChange={onChange} />
-      {suffix ? <span className="pr-2 text-xs text-neutral-500">{suffix}</span> : null}
+      {suffix ? <span className="pr-2 text-xs text-content-muted">{suffix}</span> : null}
     </div>
   );
 }
@@ -794,20 +757,20 @@ function MoneyInput({ value, label, onChange }: { value: number; label: string; 
 
 function StatusPill({ status }: { status: string }) {
   const critical = ["cancelled", "partial"].includes(status);
-  return <span className={`rounded-full px-2 py-1 text-[11px] ${critical ? "bg-amber-50 text-amber-800" : "bg-neutral-100 text-neutral-700"}`}>{statusLabels[status] || status}</span>;
+  return <span data-purchase-status={status} className={`purchase-status ${critical ? "bg-amber-50 text-amber-800" : ""}`}>{statusLabels[status] || status}</span>;
 }
 
 function TimelineItem({ icon: Icon, title, detail, done }: { icon: LucideIcon; title: string; detail: string; done?: boolean }) {
   return (
     <div className="flex gap-3 border-b border-line py-3 last:border-b-0">
-      <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${done ? "bg-[#146C6312] text-apex" : "bg-neutral-100 text-neutral-500"}`}>
+      <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${done ? "bg-[#146C6312] text-apex" : "bg-neutral-100 text-content-muted"}`}>
         <Icon size={15} />
       </span>
       <span>
         <span className="block text-sm font-medium">{title}</span>
-        <span className="block text-xs text-neutral-500">{detail}</span>
+        <span className="block text-xs text-content-muted">{detail}</span>
       </span>
-      {done ? <CheckCircle2 className="ml-auto text-apex" size={16} /> : <ArrowRight className="ml-auto text-neutral-400" size={16} />}
+      {done ? <CheckCircle2 className="ml-auto text-apex" size={16} /> : <ArrowRight className="ml-auto text-content-muted" size={16} />}
     </div>
   );
 }
@@ -820,9 +783,9 @@ function TraceLink({ icon: Icon, label, value }: { icon: LucideIcon; label: stri
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-medium">{label}</span>
-        <span className="block truncate text-xs text-neutral-500">{value}</span>
+        <span className="block truncate text-xs text-content-muted">{value}</span>
       </span>
-      <ChevronRight className="ml-auto text-neutral-400" size={16} />
+      <ChevronRight className="ml-auto text-content-muted" size={16} />
     </div>
   );
 }

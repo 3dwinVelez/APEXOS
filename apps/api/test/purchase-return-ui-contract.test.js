@@ -29,11 +29,12 @@ test("la devolución usa cuentas de familia y documento contable inverso", () =>
   assert.match(accounting, /is_reversal: data\.is_reversal === true/);
 });
 
-test("la interfaz usa modal y exige doble clic para documentos", () => {
+test("la interfaz usa modal y permite abrir documentos con un clic", () => {
   assert.doesNotMatch(page, /window\.prompt/);
   assert.match(page, /Devolver mercancía - \$\{returnOrder\.number\}/);
   assert.match(page, /onDoubleClick=\{\(\) => setSelectedAccountingDocument\(row\)\}/);
-  assert.match(page, /Doble clic para ver documento y contabilización/);
+  assert.match(page, /onClick=\{\(\) => setSelectedAccountingDocument\(row\)\}/);
+  assert.match(page, /Ver documento y contabilización/);
   assert.match(page, /Confirmar devolución/);
   assert.match(page, /returnQuantities/);
   assert.match(page, /Disponible para devolver/);

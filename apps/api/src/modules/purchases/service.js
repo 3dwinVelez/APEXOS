@@ -440,7 +440,7 @@ async function receivePurchaseOrder(tenantId, userId, poId, data) {
     if (purchaseImport) await tx.purchaseImport.update({ where: { id: purchaseImport.id }, data: { status: "received", received_at: new Date() } });
 
     return { ...updated, accounting_document: accountingDocument };
-  }));
+  }, { maxWait: 5000, timeout: 30000 }));
 }
 
 async function getPurchaseOrderPrintData(tenantId, poId) {
@@ -954,6 +954,7 @@ async function checkVMIAlerts(tenantId) {
         include: { transaction: { include: { party: { select: { id: true, name: true } } } } }
       });
       const qtySuggested = item.stock_max ? Math.max(0, item.stock_max - item.stock_current) : item.stock_min * 2;
+      const lastSupplier = lastMovement?.transaction?.party || null;
       alerts.push({
         item_id: item.id,
         item_code: item.code,
@@ -961,8 +962,8 @@ async function checkVMIAlerts(tenantId) {
         stock_current: item.stock_current,
         stock_min: item.stock_min,
         qty_sugerida: qtySuggested,
-        supplier_id: lastMovement.transaction.party.id || null,
-        supplier_name: lastMovement.transaction.party.name || null,
+        supplier_id: lastSupplier?.id || null,
+        supplier_name: lastSupplier?.name || null,
         urgency: item.stock_current <= 0 ? "HIGH" : "MEDIUM"
       });
     }

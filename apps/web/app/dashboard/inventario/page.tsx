@@ -19,7 +19,7 @@ export default function InventarioHomePage() {
         <div>
           <p className="text-sm font-medium text-apex">M-01 · Operación</p>
           <h1 className="text-3xl font-semibold">Inventario</h1>
-          <p className="mt-1 text-sm text-neutral-600">Productos, bodegas, existencias y movimientos en un flujo operativo único.</p>
+          <p className="mt-1 text-sm text-content-body">Productos, bodegas, existencias y movimientos en un flujo operativo único.</p>
         </div>
       </header>
       <section aria-label="Herramientas activas de inventario" className="apex-dense-actions">

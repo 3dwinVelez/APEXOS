@@ -7,11 +7,21 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
+test("bodegas conserva el catálogo compartido de acceso y consulta clientes solo con Ventas habilitado", () => {
+  const warehouses = read("app/dashboard/inventario/bodegas/page.tsx");
+  assert.match(warehouses, /loadModuleAccess\(MODULES\)/);
+  assert.doesNotMatch(warehouses, /loadModuleAccess\(MODULES\.filter/);
+  assert.match(warehouses, /hasStoredRolePermission\("sales", "read"\)/);
+  assert.match(warehouses, /canReadCustomers \? api<Customer\[\]>\("\/api\/v1\/sales\/customers"\) : Promise\.resolve\(\[\] as Customer\[\]\)/);
+});
+
 test("inventario organiza navegación por dominios sin fila extensa ni WMS visible", () => {
   const nav = read("components/inventory-nav.tsx");
-  for (const label of ["Resumen", "Maestros", "Existencias", "Movimientos", "Productos", "Nuevo producto", "Stock", "Kardex", "Traslados", "Ajustes"]) {
+  for (const label of ["Resumen", "Maestros", "Existencias", "Movimientos", "Productos", "Stock", "Kardex", "Traslados", "Ajustes"]) {
     assert.match(nav, new RegExp(label));
   }
+  assert.doesNotMatch(nav, /label: "Nuevo producto"|inventario\/productos\/nuevo/);
+  assert.match(nav, /activeGroup.items.length > 1/);
   assert.match(nav, /role="tablist"/);
   assert.match(nav, /aria-current/);
   assert.match(nav, /sm:hidden/);

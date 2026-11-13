@@ -1,10 +1,12 @@
 "use client";
+import { PurchaseSearchSelect } from "@/components/purchases-ui";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Calculator, Plus, Save, Search, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { ComprasNav } from "@/components/compras-nav";
 import { ZeroFriendlyNumberInput } from "@/components/ui/ZeroFriendlyNumberInput";
+import InvoiceReport from "../reportes/facturas/page";
+import { PurchaseDialog } from "@/components/purchases-ui";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 
 type Supplier = { id: number; name: string; tax_id?: string | null; credit_days?: number };
@@ -90,6 +92,7 @@ export default function PurchaseInvoicesPage() {
   const [openInvoices, setOpenInvoices] = useState<PayableInvoice[]>([]);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+  const [editorOpen, setEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [simulation, setSimulation] = useState<PayableSimulation | null>(null);
@@ -329,7 +332,7 @@ export default function PurchaseInvoicesPage() {
   }
 
   async function simulateAccounting() {
-    if (!validateInvoiceForm()) return;
+    if (saving || !validateInvoiceForm()) return;
     setSimulating(true);
     setOk("");
     setSimulation(null);
@@ -368,37 +371,32 @@ export default function PurchaseInvoicesPage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-sm font-medium text-apex">Compras</p>
-        <h1 className="text-3xl font-semibold">Factura y nota credito de proveedor</h1>
-        <p className="mt-1 text-sm text-neutral-600">Registra documentos con o sin orden de compra y afecta CXP, contabilidad e inventario por bodega.</p>
-      </header>
-      <ComprasNav />
+      <InvoiceReport key={ok} onCreate={() => { setError(""); setEditorOpen(true); }} />
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
       {ok ? <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{ok}</p> : null}
 
-      <form className="space-y-4" onSubmit={save} ref={formRef}>
-        <nav aria-label="Secciones de factura" className="flex gap-1 rounded-md border border-line bg-white p-1">
-          <button className={`rounded px-4 py-2 text-sm font-medium ${activeSection === "factura" ? "bg-apex text-white" : "text-neutral-600 hover:bg-paper"}`} onClick={() => setActiveSection("factura")} type="button">Factura</button>
-          <button className={`rounded px-4 py-2 text-sm font-medium ${activeSection === "retenciones" ? "bg-apex text-white" : "text-neutral-600 hover:bg-paper"}`} onClick={() => setActiveSection("retenciones")} type="button">Retenciones ({retentions.length})</button>
+      {editorOpen ? <PurchaseDialog title="Factura o nota crédito de proveedor" busy={saving || simulating} childOpen={Boolean(chooser) || Boolean(simulation)} onClose={() => setEditorOpen(false)}><p className="mb-4 text-sm text-content-muted">Complete los datos del documento, revise sus posiciones y simule la contabilización antes de registrar.</p>{error ? <p role="alert" className="mb-3 text-rose-700">{error}</p> : null}{ok ? <p role="status" className="mb-3 text-apex">{ok}</p> : null}<form className="space-y-4" onSubmit={save} ref={formRef}>
+        <nav aria-label="Secciones de factura" className="flex gap-1 rounded-md border border-line bg-surface p-1">
+          <button className={`rounded px-4 py-2 text-sm font-medium ${activeSection === "factura" ? "bg-apex text-white" : "text-content-body hover:bg-paper"}`} onClick={() => setActiveSection("factura")} type="button">Factura</button>
+          <button className={`rounded px-4 py-2 text-sm font-medium ${activeSection === "retenciones" ? "bg-apex text-white" : "text-content-body hover:bg-paper"}`} onClick={() => setActiveSection("retenciones")} type="button">Retenciones ({retentions.length})</button>
         </nav>
-        {activeSection === "factura" ? <section className="rounded-md border border-line bg-white p-4">
+        {activeSection === "factura" ? <section className="rounded-md border border-line bg-surface p-4">
           <div className="grid gap-3 md:grid-cols-6">
             <label className="text-sm">Tipo documento
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.document_kind} onChange={(event) => setHeader((current) => ({ ...current, document_kind: event.target.value }))}>
+              <PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.document_kind} onChange={(event) => setHeader((current) => ({ ...current, document_kind: event.target.value }))}>
                 <option value="invoice">Factura compra - CP</option>
                 <option value="credit_note">Nota credito compra - NCP</option>
-              </select>
+              </PurchaseSearchSelect>
             </label>
             <label className="flex items-center gap-2 pt-6 text-sm">
               <input checked={header.with_purchase_order} onChange={(event) => { const withPo = event.target.checked; setHeader((current) => ({ ...current, with_purchase_order: withPo, purchase_order_id: "", purchase_order_reference: "", location_id: withPo ? "" : current.location_id || (locations[0]?.id ? String(locations[0].id) : "") })); setLines([]); }} type="checkbox" />
               Con referencia a pedido
             </label>
             <label className="text-sm">Proveedor
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.supplier_id} onChange={(event) => { const supplierId = event.target.value; setHeader((current) => ({ ...current, supplier_id: supplierId, purchase_order_id: "", purchase_order_reference: "" })); setLines([]); void loadSupplierRetentions(supplierId); }} required>
+              <PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.supplier_id} onChange={(event) => { const supplierId = event.target.value; setHeader((current) => ({ ...current, supplier_id: supplierId, purchase_order_id: "", purchase_order_reference: "" })); setLines([]); void loadSupplierRetentions(supplierId); }} required>
                 <option value="">Seleccionar</option>
                 {suppliers.map((item) => <option key={item.id} value={item.id}>{item.tax_id ? `${item.tax_id} - ` : ""}{item.name}</option>)}
-              </select>
+              </PurchaseSearchSelect>
             </label>
             {header.with_purchase_order ? (
               <label className="text-sm">Orden de compra
@@ -424,35 +422,35 @@ export default function PurchaseInvoicesPage() {
             </label>
             {!header.with_purchase_order ? (
               <label className="text-sm">Bodega / ubicacion
-                <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.location_id} onChange={(event) => setHeader((current) => ({ ...current, location_id: event.target.value }))} required>
+                <PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.location_id} onChange={(event) => setHeader((current) => ({ ...current, location_id: event.target.value }))} required>
                   <option value="">Seleccionar</option>
                   {locations.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
-                </select>
+                </PurchaseSearchSelect>
               </label>
             ) : null}
             <label className="text-sm">Sociedad
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.society_code} onChange={(event) => setHeader((current) => ({ ...current, society_code: event.target.value, branch_code: "", cost_center_code: "" }))} required>
+              <PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.society_code} onChange={(event) => setHeader((current) => ({ ...current, society_code: event.target.value, branch_code: "", cost_center_code: "" }))} required>
                 <option value="">Seleccionar</option>
                 {tree.societies.filter((item) => item.active !== false).map((item) => <option key={item.code} value={item.code}>{item.code} - {item.name}</option>)}
-              </select>
+              </PurchaseSearchSelect>
             </label>
             <label className="text-sm">Sucursal
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.branch_code} onChange={(event) => setHeader((current) => ({ ...current, branch_code: event.target.value, cost_center_code: "" }))} required>
+              <PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.branch_code} onChange={(event) => setHeader((current) => ({ ...current, branch_code: event.target.value, cost_center_code: "" }))} required>
                 <option value="">Seleccionar</option>
                 {branches.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.name}</option>)}
-              </select>
+              </PurchaseSearchSelect>
             </label>
             <label className="text-sm">Centro costo
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.cost_center_code} onChange={(event) => setHeader((current) => ({ ...current, cost_center_code: event.target.value }))} required>
+              <PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.cost_center_code} onChange={(event) => setHeader((current) => ({ ...current, cost_center_code: event.target.value }))} required>
                 <option value="">Seleccionar</option>
                 {costCenters.map((item) => <option key={item.code} value={item.code}>{item.code} - {item.name}</option>)}
-              </select>
+              </PurchaseSearchSelect>
             </label>
             <label className="text-sm">Cuenta asociada
-              <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.associated_account_code} onChange={(event) => setHeader((current) => ({ ...current, associated_account_code: event.target.value }))} required>
+              <PurchaseSearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.associated_account_code} onChange={(event) => setHeader((current) => ({ ...current, associated_account_code: event.target.value }))} required>
                 <option value="">Seleccionar</option>
                 {payableAccounts.map((item) => <option key={item.id} value={item.code}>{item.code} - {item.name}</option>)}
-              </select>
+              </PurchaseSearchSelect>
             </label>
             <label className="text-sm md:col-span-3">Texto de cabecera
               <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={header.header_text} onChange={(event) => setHeader((current) => ({ ...current, header_text: event.target.value }))} required />
@@ -460,26 +458,26 @@ export default function PurchaseInvoicesPage() {
           </div>
         </section> : null}
 
-        {activeSection === "retenciones" ? <section className="rounded-md border border-line bg-white p-4">
+        {activeSection === "retenciones" ? <section className="rounded-md border border-line bg-surface p-4">
           <h2 className="text-base font-semibold">Retenciones tributarias de cabecera</h2>
-          <p className="mb-3 text-sm text-neutral-500">Se heredan del proveedor. La base y el importe pueden ajustarse para este documento.</p>
+          <p className="mb-3 text-sm text-content-muted">Se heredan del proveedor. La base y el importe pueden ajustarse para este documento.</p>
           <div className="space-y-2">
             {retentions.map((row, index) => <div className="grid items-end gap-3 rounded-md bg-paper p-3 md:grid-cols-6" key={row.code}>
-              <div className="md:col-span-2"><p className="text-sm font-medium">{row.concept}</p><p className="text-xs text-neutral-500">{row.type.toUpperCase()} · {row.code} · cuenta {row.account_code}</p></div>
-              <label className="text-xs">Porcentaje<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" disabled value={`${row.percent}%`} /></label>
-              <label className="text-xs">Base minima<input className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" disabled value={money(row.minimum_base)} /></label>
-              <label className="text-xs">Base<ZeroFriendlyNumberInput className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" value={row.base} onValueChange={(value) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, base: value } : item))} /></label>
-              <label className="text-xs">Importe<ZeroFriendlyNumberInput className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2" min="0" step="0.01" value={row.amount} onValueChange={(value) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: value } : item))} /></label>
+              <div className="md:col-span-2"><p className="text-sm font-medium">{row.concept}</p><p className="text-xs text-content-muted">{row.type.toUpperCase()} · {row.code} · cuenta {row.account_code}</p></div>
+              <label className="text-xs">Porcentaje<input className="mt-1 h-9 w-full rounded-md border border-line bg-surface px-2" disabled value={`${row.percent}%`} /></label>
+              <label className="text-xs">Base minima<input className="mt-1 h-9 w-full rounded-md border border-line bg-surface px-2" disabled value={money(row.minimum_base)} /></label>
+              <label className="text-xs">Base<ZeroFriendlyNumberInput className="mt-1 h-9 w-full rounded-md border border-line bg-surface px-2" min="0" step="0.01" value={row.base} onValueChange={(value) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, base: value } : item))} /></label>
+              <label className="text-xs">Importe<ZeroFriendlyNumberInput className="mt-1 h-9 w-full rounded-md border border-line bg-surface px-2" min="0" step="0.01" value={row.amount} onValueChange={(value) => setRetentions((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: value } : item))} /></label>
             </div>)}
-            {!retentions.length ? <p className="text-sm text-neutral-500">El proveedor no tiene retenciones asignadas desde Contabilidad.</p> : null}
+            {!retentions.length ? <p className="text-sm text-content-muted">El proveedor no tiene retenciones asignadas desde Contabilidad.</p> : null}
           </div>
         </section> : null}
 
-        <section className="rounded-md border border-line bg-white">
+        <section className="rounded-md border border-line bg-surface">
           <div className="flex items-center justify-between gap-3 border-b border-line p-4">
             <div>
               <h2 className="text-base font-semibold">Detalle</h2>
-              <p className="text-sm text-neutral-500">{header.with_purchase_order ? "Las posiciones vienen de la orden seleccionada." : "Agrega productos manualmente."}</p>
+              <p className="text-sm text-content-muted">{header.with_purchase_order ? "Las posiciones vienen de la orden seleccionada." : "Agrega productos manualmente."}</p>
             </div>
             {!header.with_purchase_order ? (
               <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line px-3 text-sm" onClick={() => { setChooser("item"); setChooserSearch(""); }} type="button"><Plus size={16} /> Producto</button>
@@ -487,27 +485,27 @@ export default function PurchaseInvoicesPage() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] border-collapse text-sm">
-              <thead><tr className="border-b border-line text-left text-xs uppercase text-neutral-500"><th className="px-3 py-2">Producto</th><th className="px-3 py-2">OC</th><th className="px-3 py-2">Cantidad</th><th className="px-3 py-2">Costo unitario</th><th className="px-3 py-2">IVA</th><th className="px-3 py-2">Descripcion</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2 text-right">Accion</th></tr></thead>
+              <thead><tr className="border-b border-line text-left text-xs uppercase text-content-muted"><th className="px-3 py-2">Producto</th><th className="px-3 py-2">OC</th><th className="px-3 py-2">Cantidad</th><th className="px-3 py-2">Costo unitario</th><th className="px-3 py-2">IVA</th><th className="px-3 py-2">Descripcion</th><th className="px-3 py-2 text-right">Total</th><th className="px-3 py-2 text-right">Accion</th></tr></thead>
               <tbody>
                 {lines.map((line) => (
                   <tr className="border-b border-line/70 last:border-0" key={line.localId}>
-                    <td className="px-3 py-2 font-mono text-xs">{line.item_code} <span className="font-sans text-neutral-600">{line.item_name}</span></td>
+                    <td className="px-3 py-2 font-mono text-xs">{line.item_code} <span className="font-sans text-content-body">{line.item_name}</span></td>
                     <td className="px-3 py-2 font-mono text-xs">{line.purchase_order_number || "--"}</td>
                     <td className="px-3 py-2"><ZeroFriendlyNumberInput className="h-9 w-28 rounded-md border border-line px-2 text-sm" min="0.01" step="0.01" value={line.qty} onValueChange={(value) => updateLine(line.localId, { qty: value })} /></td>
                     <td className="px-3 py-2"><ZeroFriendlyNumberInput className="h-9 w-32 rounded-md border border-line px-2 text-sm" min="0" step="0.01" value={line.unit_cost} onValueChange={(value) => updateLine(line.localId, { unit_cost: value })} /></td>
-                    <td className="px-3 py-2"><select className="h-9 rounded-md border border-line px-2 text-sm" value={line.vat_code} onChange={(event) => updateLine(line.localId, { vat_code: event.target.value })}>{activeVats.map((item) => <option key={item.code} value={item.code}>{item.concept} {item.percent}%</option>)}</select></td>
+                    <td className="px-3 py-2"><PurchaseSearchSelect className="h-9 rounded-md border border-line px-2 text-sm" value={line.vat_code} onChange={(event) => updateLine(line.localId, { vat_code: event.target.value })}>{activeVats.map((item) => <option key={item.code} value={item.code}>{item.concept} {item.percent}%</option>)}</PurchaseSearchSelect></td>
                     <td className="px-3 py-2"><input className="h-9 w-full rounded-md border border-line px-2 text-sm" value={line.description} onChange={(event) => updateLine(line.localId, { description: event.target.value })} /></td>
                     <td className="px-3 py-2 text-right">{money(line.qty * line.unit_cost)}</td>
                     <td className="px-3 py-2 text-right"><button className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-rose-200 text-rose-700" onClick={() => removeLine(line.localId)} type="button"><Trash2 size={15} /></button></td>
                   </tr>
                 ))}
-                {!lines.length ? <tr><td className="px-3 py-5 text-neutral-500" colSpan={8}>No hay posiciones.</td></tr> : null}
+                {!lines.length ? <tr><td className="px-3 py-5 text-content-muted" colSpan={8}>No hay posiciones.</td></tr> : null}
               </tbody>
             </table>
           </div>
         </section>
 
-        <section className="flex flex-col gap-3 rounded-md border border-line bg-white p-4 md:flex-row md:items-center md:justify-between">
+        <section className="flex flex-col gap-3 rounded-md border border-line bg-surface p-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap gap-3 text-sm">
             <span>Subtotal: <strong>{money(totals.subtotal)}</strong></span>
             <span>IVA: <strong>{money(totals.tax)}</strong></span>
@@ -524,14 +522,14 @@ export default function PurchaseInvoicesPage() {
           </div>
         </section>
 
-      </form>
+      </form></PurchaseDialog> : null}
 
       {simulation ? (
         <ModalFrame title="Simulacion contable" onClose={() => setSimulation(null)} maxWidth="max-w-5xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-neutral-600">Clase {simulation.document_class} - {simulation.document_kind === "credit_note" ? "Nota credito proveedor" : "Factura proveedor"} - vence {simulation.due_date.slice(0, 10).split("-").reverse().join("/")}</p>
-              <p className="mt-1 text-sm text-neutral-500">Proveedor: {simulation.supplier.name} - Referencia: {simulation.supplier_reference}</p>
+              <p className="text-sm text-content-body">Clase {simulation.document_class} - {simulation.document_kind === "credit_note" ? "Nota credito proveedor" : "Factura proveedor"} - vence {simulation.due_date.slice(0, 10).split("-").reverse().join("/")}</p>
+              <p className="mt-1 text-sm text-content-muted">Proveedor: {simulation.supplier.name} - Referencia: {simulation.supplier_reference}</p>
             </div>
             <div className="flex flex-wrap gap-2 text-sm">
               <span className="rounded-md bg-paper px-3 py-2">Debitos: {money(simulation.totals.debit)}</span>
@@ -544,7 +542,7 @@ export default function PurchaseInvoicesPage() {
           <div className="mt-3 overflow-x-auto rounded-md border border-line">
             <table className="w-full min-w-[760px] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-line bg-paper text-left text-xs uppercase text-neutral-500">
+                <tr className="border-b border-line bg-paper text-left text-xs uppercase text-content-muted">
                   <th className="px-3 py-2">Cuenta</th>
                   <th className="px-3 py-2">Descripcion</th>
                   <th className="px-3 py-2 text-right">Debito</th>
@@ -572,7 +570,7 @@ export default function PurchaseInvoicesPage() {
           <div className="mt-3 max-h-[60vh] overflow-auto rounded-md border border-line">
             {openOrders.filter((order) => !chooserSearch || order.number.toLowerCase().includes(chooserSearch.toLowerCase())).map((order) => (
               <button className="flex w-full items-center justify-between gap-3 border-b border-line px-3 py-3 text-left text-sm last:border-0 hover:bg-paper" key={order.id} onClick={() => applyOrder(order)} type="button">
-                <span><span className="font-mono text-xs">{order.number}</span><span className="ml-3 text-neutral-500">{order.lines.length} posiciones</span></span>
+                <span><span className="font-mono text-xs">{order.number}</span><span className="ml-3 text-content-muted">{order.lines.length} posiciones</span></span>
                 <span>{order.status}</span>
               </button>
             ))}
@@ -610,7 +608,7 @@ export default function PurchaseInvoicesPage() {
                 <span>{money(invoice.balance)}</span>
               </button>
             ))}
-            {!openInvoices.length ? <p className="p-4 text-sm text-neutral-500">No hay facturas abiertas para este proveedor.</p> : null}
+            {!openInvoices.length ? <p className="p-4 text-sm text-content-muted">No hay facturas abiertas para este proveedor.</p> : null}
           </div>
         </ModalFrame>
       ) : null}
@@ -621,7 +619,7 @@ export default function PurchaseInvoicesPage() {
 function ChooserSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
     <label className="relative block">
-      <Search className="pointer-events-none absolute left-3 top-3 text-neutral-400" size={16} />
+      <Search className="pointer-events-none absolute left-3 top-3 text-content-muted" size={16} />
       <input autoFocus className="h-10 w-full rounded-md border border-line pl-9 pr-3 text-sm" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Buscar" />
     </label>
   );

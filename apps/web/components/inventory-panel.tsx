@@ -1,4 +1,5 @@
 "use client";
+import { InventorySearchSelect } from "@/components/inventory-ui";
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -79,7 +80,7 @@ export function InventoryPanel() {
   }
 
   return (
-    <section className="space-y-4 rounded-md border border-line bg-white p-5">
+    <section className="space-y-4 rounded-md border border-line bg-surface p-5">
       <h2 className="text-base font-semibold">Crear producto</h2>
       <form className="grid gap-3 md:grid-cols-4" onSubmit={onSubmit}>
         <label className="text-sm">
@@ -92,21 +93,21 @@ export function InventoryPanel() {
         </label>
         <label className="text-sm">
           Tipo
-          <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}>
+          <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.type} onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}>
             <option value="product">Producto</option>
             <option value="service">Servicio</option>
             <option value="component">Componente</option>
             <option value="raw_material">Materia prima</option>
-          </select>
+          </InventorySearchSelect>
         </label>
         <label className="text-sm">
           Unidad de medida
-          <select className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.unit} onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}>
+          <InventorySearchSelect className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" value={form.unit} onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}>
             <option value="UND">UND (unidad)</option>
             <option value="KG">KG (kilogramo)</option>
             <option value="LT">LT (litro)</option>
             <option value="MT">MT (metro)</option>
-          </select>
+          </InventorySearchSelect>
         </label>
         <label className="text-sm">
           Costo unitario (lo que te cuesta)
@@ -128,7 +129,7 @@ export function InventoryPanel() {
           {saving ? "Guardando..." : "Crear producto"}
         </button>
       </form>
-      <p className="text-xs text-neutral-500">
+      <p className="text-xs text-content-muted">
         Referencia rápida: `Costo` = compra, `Precio` = venta, `Stock mínimo` = dispara alerta, `Stock máximo` = nivel objetivo.
       </p>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -136,8 +137,8 @@ export function InventoryPanel() {
 
       <div className="pt-2">
         <h3 className="mb-2 text-sm font-semibold">Productos registrados</h3>
-        {loading ? <p className="text-sm text-neutral-600">Cargando...</p> : null}
-        {!loading && items.length === 0 ? <p className="text-sm text-neutral-600">Aún no hay productos.</p> : null}
+        {loading ? <p className="text-sm text-content-body">Cargando...</p> : null}
+        {!loading && items.length === 0 ? <p className="text-sm text-content-body">Aún no hay productos.</p> : null}
         {items.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-sm">

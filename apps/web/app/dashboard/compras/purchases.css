@@ -1,0 +1,16 @@
+.purchase-workspace { min-width:0; color:rgb(var(--text-strong)); }
+.purchase-workspace :where(section,form,header,label) { min-width:0; }
+.purchase-workspace :where(input,textarea) { background:rgb(var(--surface)); color:rgb(var(--text-strong)); max-width:100%; }
+.purchase-workspace :where(table) { font-variant-numeric:tabular-nums; }
+.purchase-workspace :where(input,button,textarea):focus-visible { outline:2px solid rgb(var(--color-apex)); outline-offset:2px; }
+.purchase-workspace > div > header { border:1px solid rgb(var(--color-line)); background:rgb(var(--surface)); padding:1rem; border-radius:.75rem; }
+.purchase-workspace :where(button,a) { overflow-wrap:anywhere; }
+@media(max-width:767px) { .purchase-workspace :where(h1) { font-size:1.5rem; } .purchase-workspace :where(header) { flex-wrap:wrap; } }
+
+.purchase-workspace .btn-secondary { background:rgb(var(--surface)); color:rgb(var(--text-strong)); }
+.purchase-workspace .control { background:rgb(var(--surface)); color:rgb(var(--text-strong)); border-color:rgb(var(--color-line)); }
+
+.purchase-status { display:inline-flex; align-items:center; gap:.35rem; border-radius:999px; padding:.25rem .55rem; font-size:.7rem; font-weight:600; background:rgb(var(--surface-muted)); color:rgb(var(--text-strong)); white-space:nowrap; }
+.purchase-status::before { content:""; width:.35rem; height:.35rem; border-radius:50%; background:currentColor; }
+.purchase-status[data-purchase-status="received"], .purchase-status[data-purchase-status="completed"], .purchase-status[data-purchase-status="confirmed"] { background:rgb(var(--color-apex) / .12); color:rgb(var(--color-apex)); }
+.purchase-status[data-purchase-status="partial"] { background:#fef3c7; color:#92400e; }
