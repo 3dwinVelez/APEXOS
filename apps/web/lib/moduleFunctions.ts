@@ -38,7 +38,6 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   // pero no se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
 
   // Contabilidad
-  { id: "fn-contab-facturas-recibidas", label: "Recibir facturas electrónicas", description: "Monitor de facturas por correo: extracción XML/PDF, revisión y asignación", href: "/dashboard/contabilidad/facturas-recibidas", module: "contabilidad", keywords: "factura electronica recibida recibir correo imap zip xml pdf cufe asignar responsable revision dian proveedor monitor" },
   { id: "fn-contab-saldos-iniciales", label: "Importar saldos iniciales", description: "Cargue de saldos contables de apertura", href: "/dashboard/contabilidad/importar-saldos-iniciales", module: "contabilidad", keywords: "saldo apertura inicial importar contabilidad" },
   { id: "fn-contab-pyg", label: "Ver PYG por vehiculo", description: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto", href: "/dashboard/contabilidad/pyg", module: "contabilidad", keywords: "pyg estado resultados utilidad gastos vehiculo placa centro costo presupuesto cumplimiento rentabilidad" },
   { id: "fn-contab-asientos", label: "Consultar asientos contables", description: "Revisa el registro contable y sus movimientos", href: "/dashboard/contabilidad/asientos", module: "contabilidad", keywords: "asiento contable libro diario comprobante registro movimiento" },
