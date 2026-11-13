@@ -1,0 +1,98 @@
+{
+  "ok": true,
+  "commit": "6589af8e1d32",
+  "screens": [
+    {
+      "name": "lobby",
+      "ok": true,
+      "path": "/dashboard",
+      "heading": "Creamos sistemas a tu medida.",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "inventario",
+      "ok": true,
+      "path": "/dashboard/inventario",
+      "heading": "Inventario",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "compras",
+      "ok": true,
+      "path": "/dashboard/compras",
+      "heading": "Compras",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "ventas",
+      "ok": true,
+      "path": "/dashboard/ventas",
+      "heading": "Ventas",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "contabilidad",
+      "ok": true,
+      "path": "/dashboard/contabilidad",
+      "heading": "Contabilidad",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "transporte",
+      "ok": true,
+      "path": "/dashboard/transporte",
+      "heading": "Transporte",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "talento-humano",
+      "ok": true,
+      "path": "/dashboard/talento-humano",
+      "heading": "Talento Humano",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "servicios",
+      "ok": true,
+      "path": "/dashboard/servicios",
+      "heading": "Servicios",
+      "rows": 18,
+      "new_errors": 0
+    },
+    {
+      "name": "transporte-flota",
+      "ok": true,
+      "path": "/dashboard/transporte/flota",
+      "heading": "Vehiculos",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "transporte-liquidaciones",
+      "ok": true,
+      "path": "/dashboard/transporte/liquidaciones",
+      "heading": "Torre de liquidaciones",
+      "rows": 0,
+      "new_errors": 0
+    },
+    {
+      "name": "contabilidad-pyg",
+      "ok": true,
+      "path": "/dashboard/contabilidad/pyg",
+      "heading": "PYG Contable · PUC",
+      "rows": 0,
+      "new_errors": 0
+    }
+  ],
+  "console_errors": 0,
+  "http_errors": 0,
+  "user_deactivated": true,
+  "output": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-main-packages\\wt\\docs\\qa\\evidence\\promocion-paquetes-main-20261113\\qa-nyvora-browser.json"
+}

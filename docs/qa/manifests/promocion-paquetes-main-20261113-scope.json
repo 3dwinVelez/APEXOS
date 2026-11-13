@@ -4,15 +4,16 @@
   "source_branch": "develop",
   "target_branch": "main",
   "promotion_branch": "worktree detachado sobre origin/main (sin rama publicada)",
-  "certified_commit": "aadbb68861a449e601adf34408add4e3dae8154d",
+  "certified_commit": "01e9b8f63a8576edcda2f1880a10bd739c0730aa",
   "base_commit": "4659292f4f23014ee4b0e990fb66e4a2ce6646c1",
   "base_commits": {
     "main": "4659292f4f23014ee4b0e990fb66e4a2ce6646c1"
   },
   "change_intent": {
-    "summary": "Promoción controlada de develop a main por paquetes aislados: capa visual completa, transporte (sedes, planes, tarifario, PYG y liquidaciones), contabilidad (PYG, aperturas, reverso y plan de cuentas), cajas menores, correcciones de inventario/compras/servicios/comercial, rol accionista, privacidad, handler serverless y el contrato visual de la piel operativa. Cada paquete es un commit independiente reconstruido sobre origin/main 4659292f, con inventario propio en promocion-paquetes-main-20261113-inventarios/. No viajan Talento Humano (auditoría 2026-10-30: no apto), los modelos Invoice*/ReceivedInvoice* (sin API ni pantallas), APEX Control Tower ni los assets demo de Comercio. Las migraciones son 7 Prisma nuevas, casi todas aditivas; la única no aditiva renombra TransportOrigin a sedes con 0 filas en producción y archiva los campos de origen en metadata antes de retirarlos.",
+    "summary": "Promocion controlada de develop a main por paquetes aislados: capa visual completa, transporte (sedes, planes, tarifario, PYG y liquidaciones), contabilidad (PYG, aperturas, reverso y plan de cuentas), cajas menores, correcciones de inventario, compras, servicios y comercial, rol accionista, privacidad, handler serverless, contrato visual de la piel operativa y Talento Humano (nomina, prestaciones, aportes, libranzas, liquidacion de trabajador y evidencia movil) incorporado por instruccion expresa del propietario como paquete 12 aislado, sin cerrar el veredicto NO APTO de la auditoria 2026-10-30. Cada paquete es un commit independiente reconstruido sobre origin/main 4659292f, con inventario propio en promocion-paquetes-main-20261113-inventarios/. No viajan los modelos Invoice*/ReceivedInvoice* (sin API ni pantallas), APEX Control Tower ni los assets demo de Comercio. De las 21 migraciones Prisma nuevas, 19 son aditivas o compatibles; la de sedes renombra TransportOrigin con 0 filas en produccion y archiva los campos de origen en metadata antes de retirarlos, y la de Talento Humano corrige value_type de horas extra y agrega la columna kind a TimeRoute.",
     "modules": [
       "api",
+      "aportes-sociales",
       "capa-visual",
       "catalogo-m29",
       "centro-de-comandos",
@@ -20,16 +21,21 @@
       "contabilidad",
       "design-tokens",
       "despliegue",
+      "evidencia-movil",
       "evidencia-visual",
       "gastos-menores",
       "gestion-comercial",
       "inventario",
+      "libranzas",
       "liquidaciones",
       "lobby-v4",
+      "marcaciones",
+      "nomina",
       "petty-cash",
       "plan-de-cuentas-puc",
       "planes-despacho",
       "portafolio-curado",
+      "prestaciones",
       "privacidad",
       "pruebas",
       "pyg",
@@ -41,6 +47,7 @@
       "seguridad",
       "servicios",
       "shell",
+      "talento-humano",
       "tarifario",
       "transport-pyg",
       "transporte",
@@ -65,6 +72,62 @@
     {
       "status": "M",
       "file": "apps/api/package.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918100000_hr_labor_deductions_parameters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918140000_hr_payroll_liquidation_documents/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918150000_hr_payroll_concepts_detail/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918160000_hr_employee_termination_liquidations/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918170000_hr_social_contributions/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918180000_hr_payroll_period_closures/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918190000_hr_social_contribution_exoneration_parameters/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918200000_hr_pension_solidarity_parameter/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918210000_hr_payroll_libranzas/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260918220000_hr_employee_contract_history/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919100000_hr_overtime_concept_value_type/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919120000_hr_monthly_ordinary_hours_param/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20260919130000_hr_social_benefit_payments/migration.sql"
     },
     {
       "status": "A",
@@ -97,6 +160,10 @@
     {
       "status": "M",
       "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/scripts/certifications/hr-landing-qa.js"
     },
     {
       "status": "M",
@@ -157,6 +224,54 @@
     {
       "status": "M",
       "file": "apps/api/src/modules/admin/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/employeeUserLink.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/laborEntityPartyMatcher.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/organization.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/payrollWorkdays.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/punchEvidence.d.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/punchEvidence.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routeEventSummaries.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/socialContributionSegments.js"
     },
     {
       "status": "M",
@@ -311,6 +426,62 @@
       "file": "apps/api/test/core-tenant-models.test.js"
     },
     {
+      "status": "A",
+      "file": "apps/api/test/hr-employee-organization.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-employee-user-link.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-concurrency.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-declared-employee.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-adjustment-lock.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-adjustment-permission.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-social-contributions-bulk.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-workdays.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-punch-mobile-evidence.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-route-assignment-lock.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-social-contribution-segments.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-user-association.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
       "status": "M",
       "file": "apps/api/test/inventory-adjustments-contract.test.js"
     },
@@ -321,6 +492,10 @@
     {
       "status": "M",
       "file": "apps/api/test/inventory-transfer-product-list-ux.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/labor-entity-party-matcher.test.js"
     },
     {
       "status": "A",
@@ -667,6 +842,58 @@
       "file": "apps/web/app/dashboard/servicios/page.tsx"
     },
     {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/entidades/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/libranzas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/nomina/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/provisiones/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
       "status": "M",
       "file": "apps/web/app/dashboard/transporte/configuracion/page.tsx"
     },
@@ -789,6 +1016,14 @@
     {
       "status": "A",
       "file": "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/EmployeeUserAssociation.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/HrTimelineEvidence.tsx"
     },
     {
       "status": "M",
@@ -932,14 +1167,6 @@
     },
     {
       "status": "M",
-      "file": "apps/web/components/ui/ModalFrame.tsx"
-    },
-    {
-      "status": "D",
-      "file": "apps/web/components/ui/SearchSelect.tsx"
-    },
-    {
-      "status": "M",
       "file": "apps/web/components/ui/data-table.tsx"
     },
     {
@@ -947,8 +1174,16 @@
       "file": "apps/web/components/ui/feedback.tsx"
     },
     {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
       "status": "A",
       "file": "apps/web/components/ui/search-select.tsx"
+    },
+    {
+      "status": "D",
+      "file": "apps/web/components/ui/SearchSelect.tsx"
     },
     {
       "status": "A",
@@ -957,6 +1192,10 @@
     {
       "status": "M",
       "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
     },
     {
       "status": "A",
@@ -977,6 +1216,14 @@
     {
       "status": "M",
       "file": "apps/web/lib/operationalWorkspace.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payrollEntities.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/payrollOrganization.ts"
     },
     {
       "status": "A",
@@ -1236,6 +1483,46 @@
     },
     {
       "status": "M",
+      "file": "apps/web/test/hr-contention-write-feedback.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-employee-biometric-reset.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-landing-information-architecture.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-monitor-identity-selfie.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-punch-mobile-evidence.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-report-punch-alerts.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-report-punch-selfie.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-fallback.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/ibc-nomina-ui.test.mjs"
+    },
+    {
+      "status": "M",
       "file": "apps/web/test/inventory-improvements-roadmap.test.mjs"
     },
     {
@@ -1253,6 +1540,10 @@
     {
       "status": "M",
       "file": "apps/web/test/operational-home-redesign.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/payroll-employee-entity-ui.test.mjs"
     },
     {
       "status": "M",
@@ -1364,6 +1655,50 @@
     },
     {
       "status": "A",
+      "file": "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-contention-message-browser-20261026.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/certifications/hr-contention-p2028-20261026.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-association-ui-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-user-link-20261103.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-ibc-novelties-20261016.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-landing-hub-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-payroll-markings-20261106.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-punch-mobile-evidence-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-report-activity-photos-20261104.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/certifications/hr-route-p2028-20261026.md"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/certifications/promocion-paquetes-main-20261113.md"
     },
     {
@@ -1372,7 +1707,15 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/approval-gate.txt"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/candidato-commits.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt"
     },
     {
       "status": "A",
@@ -1388,7 +1731,51 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/platform-regression-qa.txt"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/prisma-validate.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-contabilidad-pyg.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-lobby.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification-salida.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-servicios.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-talento-humano.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte-liquidaciones.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte.png"
     },
     {
       "status": "A",
@@ -1401,6 +1788,10 @@
     {
       "status": "A",
       "file": "docs/qa/evidence/promocion-paquetes-main-20261113/web-typecheck.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-approval.json"
     },
     {
       "status": "A",
@@ -1448,11 +1839,139 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/12-talento-humano.json"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json"
     },
     {
       "status": "M",
       "file": "package-lock.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-contention-message-browser-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-contention-p2028-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-association-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-link-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-ibc-novelties-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-landing-hub-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-existing-employee-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-mobile-identity-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-mobile-identity-regression-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-payroll-markings-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-report-punch-alerts-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-termination-document-search-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promocion-paquetes-main-qa-browser.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/promocion-paquetes-main-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918100000_hr_labor_deductions_parameters.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918140000_hr_payroll_liquidation_documents.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918150000_hr_payroll_concepts_detail.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918160000_hr_employee_termination_liquidations.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918170000_hr_social_contributions.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918180000_hr_payroll_period_closures.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918190000_hr_social_contribution_exoneration_parameters.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918200000_hr_pension_solidarity_parameter.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918210000_hr_payroll_libranzas.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260918220000_hr_employee_contract_history.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919100000_hr_overtime_concept_value_type.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919110000_time_route_kind_descanso.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919120000_hr_monthly_ordinary_hours_param.sql"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20260919130000_hr_social_benefit_payments.sql"
     },
     {
       "status": "A",
@@ -1473,6 +1992,20 @@
   ],
   "allowed_paths": [
     "apps/api/package.json",
+    "apps/api/prisma/migrations/20260918100000_hr_labor_deductions_parameters/migration.sql",
+    "apps/api/prisma/migrations/20260918140000_hr_payroll_liquidation_documents/migration.sql",
+    "apps/api/prisma/migrations/20260918150000_hr_payroll_concepts_detail/migration.sql",
+    "apps/api/prisma/migrations/20260918160000_hr_employee_termination_liquidations/migration.sql",
+    "apps/api/prisma/migrations/20260918170000_hr_social_contributions/migration.sql",
+    "apps/api/prisma/migrations/20260918180000_hr_payroll_period_closures/migration.sql",
+    "apps/api/prisma/migrations/20260918190000_hr_social_contribution_exoneration_parameters/migration.sql",
+    "apps/api/prisma/migrations/20260918200000_hr_pension_solidarity_parameter/migration.sql",
+    "apps/api/prisma/migrations/20260918210000_hr_payroll_libranzas/migration.sql",
+    "apps/api/prisma/migrations/20260918220000_hr_employee_contract_history/migration.sql",
+    "apps/api/prisma/migrations/20260919100000_hr_overtime_concept_value_type/migration.sql",
+    "apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql",
+    "apps/api/prisma/migrations/20260919120000_hr_monthly_ordinary_hours_param/migration.sql",
+    "apps/api/prisma/migrations/20260919130000_hr_social_benefit_payments/migration.sql",
     "apps/api/prisma/migrations/20261007120000_transport_plans/migration.sql",
     "apps/api/prisma/migrations/20261009120000_transport_rate_geography/migration.sql",
     "apps/api/prisma/migrations/20261009180000_petty_cash_foundation/migration.sql",
@@ -1481,6 +2014,7 @@
     "apps/api/prisma/migrations/20261016123000_sedes_replace_origins/migration.sql",
     "apps/api/prisma/migrations/20261019134505_transport_settlement_vehicle/migration.sql",
     "apps/api/prisma/schema.prisma",
+    "apps/api/scripts/certifications/hr-landing-qa.js",
     "apps/api/server.js",
     "apps/api/src/core/prisma.js",
     "apps/api/src/core/serverlessHandler.js",
@@ -1496,6 +2030,18 @@
     "apps/api/src/modules/accounting/schema.js",
     "apps/api/src/modules/accounting/service.js",
     "apps/api/src/modules/admin/service.js",
+    "apps/api/src/modules/hr/employeeUserLink.js",
+    "apps/api/src/modules/hr/laborEntityPartyMatcher.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/organization.js",
+    "apps/api/src/modules/hr/payrollWorkdays.js",
+    "apps/api/src/modules/hr/punchEvidence.d.ts",
+    "apps/api/src/modules/hr/punchEvidence.js",
+    "apps/api/src/modules/hr/routeEventSummaries.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/socialContributionSegments.js",
     "apps/api/src/modules/inventory/schema.js",
     "apps/api/src/modules/petty-cash/routes.js",
     "apps/api/src/modules/petty-cash/schema.js",
@@ -1534,9 +2080,24 @@
     "apps/api/test/accounting-routes-contract.test.js",
     "apps/api/test/admin-role-capabilities.test.js",
     "apps/api/test/core-tenant-models.test.js",
+    "apps/api/test/hr-employee-organization.test.js",
+    "apps/api/test/hr-employee-user-link.test.js",
+    "apps/api/test/hr-marking-concurrency.test.js",
+    "apps/api/test/hr-marking-declared-employee.test.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/hr-payroll-adjustment-lock.test.js",
+    "apps/api/test/hr-payroll-adjustment-permission.test.js",
+    "apps/api/test/hr-payroll-social-contributions-bulk.test.js",
+    "apps/api/test/hr-payroll-workdays.test.js",
+    "apps/api/test/hr-punch-mobile-evidence.test.js",
+    "apps/api/test/hr-route-assignment-lock.test.js",
+    "apps/api/test/hr-social-contribution-segments.test.js",
+    "apps/api/test/hr-user-association.test.js",
+    "apps/api/test/hr-workday-novelties-contract.test.js",
     "apps/api/test/inventory-adjustments-contract.test.js",
     "apps/api/test/inventory-kardex-purchase-order-report-ux.test.js",
     "apps/api/test/inventory-transfer-product-list-ux.test.js",
+    "apps/api/test/labor-entity-party-matcher.test.js",
     "apps/api/test/petty-cash-masters.test.js",
     "apps/api/test/petty-cash-reports.test.js",
     "apps/api/test/petty-cash-vouchers.test.js",
@@ -1623,6 +2184,19 @@
     "apps/web/app/dashboard/inventario/wms/page.tsx",
     "apps/web/app/dashboard/page.tsx",
     "apps/web/app/dashboard/servicios/page.tsx",
+    "apps/web/app/dashboard/talento-humano/aportes-sociales/page.tsx",
+    "apps/web/app/dashboard/talento-humano/configuracion-laboral/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/entidades/page.tsx",
+    "apps/web/app/dashboard/talento-humano/libranzas/page.tsx",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/nomina/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/provisiones/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
     "apps/web/app/dashboard/transporte/configuracion/page.tsx",
     "apps/web/app/dashboard/transporte/cubicaje/page.tsx",
     "apps/web/app/dashboard/transporte/liquidaciones/page.tsx",
@@ -1654,6 +2228,8 @@
     "apps/web/components/gastos-menores-nav.tsx",
     "apps/web/components/gastos-menores/GastosLookup.tsx",
     "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx",
+    "apps/web/components/hr/EmployeeUserAssociation.tsx",
+    "apps/web/components/hr/HrTimelineEvidence.tsx",
     "apps/web/components/inventory-nav.tsx",
     "apps/web/components/inventory-panel.tsx",
     "apps/web/components/inventory-ui.tsx",
@@ -1689,18 +2265,21 @@
     "apps/web/components/transport/TransportSearchSelect.tsx",
     "apps/web/components/transport/TransportUI.tsx",
     "apps/web/components/transport/VehicleProfilePicker.tsx",
-    "apps/web/components/ui/ModalFrame.tsx",
-    "apps/web/components/ui/SearchSelect.tsx",
     "apps/web/components/ui/data-table.tsx",
     "apps/web/components/ui/feedback.tsx",
+    "apps/web/components/ui/ModalFrame.tsx",
     "apps/web/components/ui/search-select.tsx",
+    "apps/web/components/ui/SearchSelect.tsx",
     "apps/web/lib/accounting-account-tree.ts",
     "apps/web/lib/api.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
     "apps/web/lib/lobbyAssets.ts",
     "apps/web/lib/moduleAccess.ts",
     "apps/web/lib/moduleFunctions.ts",
     "apps/web/lib/modules.ts",
     "apps/web/lib/operationalWorkspace.ts",
+    "apps/web/lib/payrollEntities.ts",
+    "apps/web/lib/payrollOrganization.ts",
     "apps/web/lib/pyg-center-labels.mjs",
     "apps/web/lib/pyg-expanded.ts",
     "apps/web/lib/selectMatch.ts",
@@ -1765,11 +2344,22 @@
     "apps/web/test/gastos-menores-module-registration.test.mjs",
     "apps/web/test/gastos-menores-operations.test.mjs",
     "apps/web/test/gastos-menores-reports.test.mjs",
+    "apps/web/test/hr-contention-write-feedback.test.mjs",
+    "apps/web/test/hr-employee-biometric-reset.test.mjs",
+    "apps/web/test/hr-landing-information-architecture.test.mjs",
+    "apps/web/test/hr-monitor-identity-selfie.test.mjs",
+    "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+    "apps/web/test/hr-report-punch-alerts.test.mjs",
+    "apps/web/test/hr-report-punch-selfie.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "apps/web/test/ibc-nomina-ui.test.mjs",
     "apps/web/test/inventory-improvements-roadmap.test.mjs",
     "apps/web/test/lobby-greeting.test.mjs",
     "apps/web/test/login-phase-zero-ux.test.mjs",
     "apps/web/test/module-portfolio.test.mjs",
     "apps/web/test/operational-home-redesign.test.mjs",
+    "apps/web/test/payroll-employee-entity-ui.test.mjs",
     "apps/web/test/phase-two-intelligent-experience.test.mjs",
     "apps/web/test/plan-cuentas-tree.test.mjs",
     "apps/web/test/pyg-expanded-chrome.test.mjs",
@@ -1797,16 +2387,41 @@
     "apps/web/test/transport-vehicle-master-catalogs.test.mjs",
     "apps/web/test/visual-operation.test.mjs",
     "docs/briefs/2026-11-13-promocion-main-por-paquetes.md",
+    "docs/project/IBC_NOMINA_COLOMBIA_CONOCIMIENTO.md",
+    "docs/qa/certifications/hr-contention-message-browser-20261026.md",
+    "docs/qa/certifications/hr-contention-p2028-20261026.md",
+    "docs/qa/certifications/hr-employee-user-association-ui-20261104.md",
+    "docs/qa/certifications/hr-employee-user-link-20261103.md",
+    "docs/qa/certifications/hr-ibc-novelties-20261016.md",
+    "docs/qa/certifications/hr-landing-hub-20261104.md",
+    "docs/qa/certifications/hr-payroll-markings-20261106.md",
+    "docs/qa/certifications/hr-punch-mobile-evidence-20261104.md",
+    "docs/qa/certifications/hr-report-activity-photos-20261104.md",
+    "docs/qa/certifications/hr-route-p2028-20261026.md",
     "docs/qa/certifications/promocion-paquetes-main-20261113.md",
     "docs/qa/evidence/promocion-paquetes-main-20261113/api-suite.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/approval-gate.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/candidato-commits.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/equivalencia-candidato-qa.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/migraciones-inventario.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/next-build.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/platform-regression-qa.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/prisma-validate.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-contabilidad-pyg.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-lobby.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser-salida.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-browser.json",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification-salida.txt",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-nyvora-certification.json",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-servicios.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-talento-humano.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte-liquidaciones.png",
+    "docs/qa/evidence/promocion-paquetes-main-20261113/qa-transporte.png",
     "docs/qa/evidence/promocion-paquetes-main-20261113/scope-gate.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/web-suite.txt",
     "docs/qa/evidence/promocion-paquetes-main-20261113/web-typecheck.txt",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-approval.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/01-capa-visual.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/02-transporte.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/03-contabilidad.json",
@@ -1818,8 +2433,40 @@
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/09-privacidad.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/10-serverless.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/11-contrato-visual.json",
+    "docs/qa/manifests/promocion-paquetes-main-20261113-inventarios/12-talento-humano.json",
     "docs/qa/manifests/promocion-paquetes-main-20261113-scope.json",
     "package-lock.json",
+    "package.json",
+    "scripts/certifications/hr-contention-message-browser-local.js",
+    "scripts/certifications/hr-contention-p2028-local.js",
+    "scripts/certifications/hr-employee-user-association-browser-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-employee-user-link-local.js",
+    "scripts/certifications/hr-ibc-novelties-browser-local.js",
+    "scripts/certifications/hr-landing-hub-local.js",
+    "scripts/certifications/hr-marking-existing-employee-local.js",
+    "scripts/certifications/hr-mobile-identity-local.js",
+    "scripts/certifications/hr-mobile-identity-regression-local.js",
+    "scripts/certifications/hr-payroll-markings-local.js",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "scripts/certifications/hr-report-punch-alerts-local.js",
+    "scripts/certifications/hr-termination-document-search-local.js",
+    "scripts/certifications/promocion-paquetes-main-qa-browser.js",
+    "scripts/certifications/promocion-paquetes-main-qa.js",
+    "supabase/migrations/20260918100000_hr_labor_deductions_parameters.sql",
+    "supabase/migrations/20260918140000_hr_payroll_liquidation_documents.sql",
+    "supabase/migrations/20260918150000_hr_payroll_concepts_detail.sql",
+    "supabase/migrations/20260918160000_hr_employee_termination_liquidations.sql",
+    "supabase/migrations/20260918170000_hr_social_contributions.sql",
+    "supabase/migrations/20260918180000_hr_payroll_period_closures.sql",
+    "supabase/migrations/20260918190000_hr_social_contribution_exoneration_parameters.sql",
+    "supabase/migrations/20260918200000_hr_pension_solidarity_parameter.sql",
+    "supabase/migrations/20260918210000_hr_payroll_libranzas.sql",
+    "supabase/migrations/20260918220000_hr_employee_contract_history.sql",
+    "supabase/migrations/20260919100000_hr_overtime_concept_value_type.sql",
+    "supabase/migrations/20260919110000_time_route_kind_descanso.sql",
+    "supabase/migrations/20260919120000_hr_monthly_ordinary_hours_param.sql",
+    "supabase/migrations/20260919130000_hr_social_benefit_payments.sql",
     "supabase/migrations/20261008120000_vehicle_master_catalogs.sql",
     "supabase/migrations/20261008130000_vehicle_documents_storage.sql",
     "supabase/migrations/20261011100000_petty_cash_module_catalog.sql",
@@ -1830,7 +2477,7 @@
   ],
   "protected_capabilities": [
     {
-      "name": "Aislamiento multi-tenant y RBAC conservados: las suites de API y web del árbol candidato no agregan rojos de tenancy, permisos ni sesión",
+      "name": "Aislamiento multi-tenant y RBAC conservados: las suites de API y web del arbol candidato no agregan rojos de tenancy, permisos ni sesion",
       "status": "passed",
       "evidence": [
         "../evidence/promocion-paquetes-main-20261113/api-suite.txt",
@@ -1839,7 +2486,7 @@
       ]
     },
     {
-      "name": "Cada paquete es un commit aislado con inventario exacto padre..commit; ningún commit mezcla módulos fuera de su paquete",
+      "name": "Cada paquete es un commit aislado con inventario exacto padre..commit; ningun commit mezcla modulos fuera de su paquete",
       "status": "passed",
       "evidence": [
         "../evidence/promocion-paquetes-main-20261113/candidato-commits.txt",
@@ -1848,7 +2495,7 @@
       ]
     },
     {
-      "name": "Datos de clientes intactos: solo migraciones aditivas o compatibles, y el rename TransportOrigin→sedes conserva filas, archiva los campos de origen en metadata y producción tiene 0 filas",
+      "name": "Datos de clientes intactos: migraciones aditivas o compatibles, rename TransportOrigin a sedes con 0 filas y respaldo en metadata, y Talento Humano sin borrados ni reescrituras destructivas",
       "status": "passed",
       "evidence": [
         "../evidence/promocion-paquetes-main-20261113/prisma-validate.txt",
@@ -1857,7 +2504,7 @@
       ]
     },
     {
-      "name": "El bloqueador legal se respeta: Talento Humano (motor, migraciones y pruebas) y los modelos Invoice*/ReceivedInvoice* no viajan a main",
+      "name": "El perimetro del propietario se respeta: Talento Humano viaja como paquete 12 aislado y el veredicto NO APTO de la auditoria 2026-10-30 se declara abierto en la certificacion",
       "status": "passed",
       "evidence": [
         "../evidence/promocion-paquetes-main-20261113/exclusiones-verificadas.txt",
@@ -1866,7 +2513,7 @@
       ]
     },
     {
-      "name": "El árbol completo compila en producción: typecheck de web en verde y next build con webpack exitoso",
+      "name": "El arbol completo compila en produccion: typecheck de web en verde y next build con webpack exitoso, con las cinco pantallas nuevas de Talento Humano en la tabla de rutas",
       "status": "passed",
       "evidence": [
         "../evidence/promocion-paquetes-main-20261113/web-typecheck.txt",
@@ -1878,16 +2525,17 @@
   "post_deploy_verification_required": [
     "Confirmar que /health reporta el commit desplegado del candidato promocionado.",
     "Comparar los conteos de las tablas de NYVORA (employees, users, sales_invoices, cnt_cuedoc, TransportCarrier) contra el snapshot previo.",
-    "Verificar que la tabla sedes conserva las filas de TransportOrigin y que TransportRateCard.metadata.legacy_origin_before_sedes contiene los orígenes archivados.",
-    "Recorrer los hubs que NYVORA usa (Servicios, Transporte, Contabilidad) sin errores nuevos en consola ni en red.",
-    "Revisar en producción el catálogo de módulos: Gastos Menores solo debe aparecer si el dueño habilita M-29."
+    "Verificar que la tabla sedes conserva las filas de TransportOrigin y que TransportRateCard.metadata.legacy_origin_before_sedes contiene los origenes archivados.",
+    "Confirmar que las ocho tablas th_* de Talento Humano existen y que TimeRoute tiene la columna kind con valor por defecto trabajo.",
+    "Recorrer los hubs que NYVORA usa (Servicios, Transporte, Contabilidad, Talento Humano) sin errores nuevos en consola ni en red; el veredicto NO APTO de nomina sigue abierto y no convierte esta verificacion en aprobacion de calculo.",
+    "Revisar en produccion el catalogo de modulos: Gastos Menores solo debe aparecer si el dueno habilita M-29."
   ],
   "notes": {
     "generation": "Inventario exacto medido con `git diff --name-status origin/main..HEAD` sobre el candidato completo más las rutas de evidencia y manifiestos de esta promoción. Lo genera el mismo proceso que escribió este manifiesto.",
-    "why_reconstructed": "Fusionar develop hacia main arrastraría 466 commits: Talento Humano no apto, 9 modelos Invoice* sin API, 21 migraciones ajenas y los assets demo de Comercio. La política prohíbe un merge de ese tamaño, así que el candidato se reconstruyó sobre el tip de origin/main con 11 commits temáticos.",
+    "why_reconstructed": "Fusionar develop hacia main arrastraria 466 commits: 9 modelos Invoice* sin API, 21 migraciones ajenas y los assets demo de Comercio, ademas de cambios sin paquete propio. La politica prohibe un merge de ese tamano, asi que el candidato se reconstruyo sobre el tip de origin/main con 12 commits tematicos; Talento Humano se reconstruyo como paquete 12 por instruccion del propietario.",
     "rename": "La compuerta desdobla el rename R050 SearchSelect.tsx→search-select.tsx en D+A; la eliminación del nombre anterior está declarada en allowed_deletions.",
-    "fuera_de_alcance": "Este manifiesto NO autoriza aplicar migraciones remotas, modificar Supabase, habilitar M-29 ni desplegar. La aplicación de las 10 migraciones Prisma (3 preexistentes + 7 del candidato), el plan de cuentas estándar y el despliegue requieren autorización independiente y ventana del dueño.",
-    "certificacion_pendiente": "La certificación funcional NYVORA en producción y la compuerta qa:approval:evidence están pendientes: exigen el candidato desplegado en el ambiente y aprobación explícita. No se fabrican. Gastos Menores no puede certificarse con NYVORA sin licenciar M-29.",
+    "fuera_de_alcance": "Este manifiesto NO autoriza aplicar migraciones remotas, modificar Supabase, habilitar M-29 ni desplegar. La aplicacion de las 24 migraciones Prisma (3 preexistentes + 21 del candidato), el plan de cuentas estandar y el despliegue requieren autorizacion independiente y ventana del dueno.",
+    "certificacion_pendiente": "La certificacion funcional NYVORA en produccion y la compuerta qa:approval:evidence estan pendientes: exigen el candidato desplegado en el ambiente y aprobacion explicita. No se fabrican. Gastos Menores no puede certificarse con NYVORA sin licenciar M-29. La auditoria 2026-10-30 de marcaciones y nomina sigue NO APTO: promover Talento Humano no la reabre ni la cierra.",
     "evidencia_sanitizada": "La evidencia no contiene tokens, claves, cadenas de conexión ni rutas absolutas fuera del worktree de certificación."
   }
 }

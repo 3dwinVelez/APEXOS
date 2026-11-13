@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.50.0",
+      "version": "2.51.0",
       "updated_at": "2026-11-13",
-      "sha256": "f0905ebd546c6aac9d613d6f3d725ef6f92442046df32b0c347b9ea800a697c9",
+      "sha256": "8ef575c909fc2a146ed927fbf2aa5b4a6157cd19699fbe7787f1af71a2cf6d2a",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -134,7 +134,8 @@
         "encargo-nota-visual-brecha-medida",
         "encargo-protagonismo-jerarquia-tipografica",
         "brief-corte-portafolio-listas-exactas",
-        "brief-brecha-despliegue-reconstruccion"
+        "brief-brecha-despliegue-reconstruccion",
+        "brief-evidencia-qa-paquete-documental"
       ]
     },
     {
@@ -270,9 +271,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.63.0",
+      "version": "2.64.0",
       "updated_at": "2026-11-13",
-      "sha256": "7eb7e584f92f66143d5112b278b7b287d8278ad12571d0e309e1ef45715cbd86",
+      "sha256": "bc1d64d0becbe294825aa687ca793e61f16d8e6710e43d8c95aea8cdac5dfd54",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -327,7 +328,8 @@
         "saludo-evidencia-sesion-real-y-caja",
         "corte-portafolio-evidencia-por-consumidor",
         "arnes-mide-pintura-y-fixtures-cors",
-        "smoke-capa-visual-completa-en-el-despliegue"
+        "smoke-capa-visual-completa-en-el-despliegue",
+        "compuerta-main-evidencia-qa-equivalencia"
       ]
     },
     {

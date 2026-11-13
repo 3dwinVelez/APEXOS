@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "environment": "QA",
+  "company": "NYVORA",
+  "commit": "6589af8e1d32",
+  "checks": 96,
+  "groups": 15,
+  "negatives": [
+    {
+      "name": "sin_token_401",
+      "status": 401,
+      "ok": true
+    },
+    {
+      "name": "credencial_invalida_401",
+      "status": 401,
+      "ok": true
+    }
+  ],
+  "failures": [],
+  "user_deactivated": true,
+  "output": "C:\\Users\\mq1\\AppData\\Local\\Temp\\apexos-main-packages\\wt\\docs\\qa\\evidence\\promocion-paquetes-main-20261113\\qa-nyvora-certification.json"
+}

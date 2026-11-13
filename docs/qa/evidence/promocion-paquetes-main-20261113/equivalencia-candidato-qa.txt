@@ -1,0 +1,30 @@
+# Equivalencia entre el candidato y el build desplegado en QA — 2026-11-13
+
+Despliegues vivos en el proyecto APEXOS QA (environment production):
+  apexos-api-qa  develop  6589af8e1d3213b8f14b17877c8c5af5f9352f21  SUCCESS 2026-11-13T15:44:09Z
+  apexos-web-qa  develop  beff513200abe22a29d05d25a586307d24487139  SUCCESS 2026-11-13T16:21:20Z
+
+## API: no hay commits de apps/api entre el despliegue de QA y el tip de develop
+```
+(sin salida: identico)
+```
+
+## Arbol del candidato contra el tip de develop, sin assets demo de Comercio
+```
+ apps/api/prisma/schema.prisma                      |  235 +++-
+ .../accounting-opening-balances-local.js           |  143 +++
+ ...opening-balances-template-isolated-api-local.js |  128 ++
+ .../accounting-opening-balances-template-local.js  |   73 ++
+ .../test/prisma-deferred-tenant-context.test.js    |   16 +
+ apps/web/next-env.d.ts                             |    4 +-
+ .../test/command-palette-module-functions.test.mjs |    5 +-
+ apps/web/test/hr-route-write-fallback.test.mjs     |   14 +-
+ apps/web/test/module-portfolio.test.mjs            |    2 +-
+ apps/web/tsconfig.json                             |   32 +-
+ 142 files changed, 1927 insertions(+), 42 deletions(-)
+```
+
+Las diferencias sin assets son: los 9 modelos Invoice*/ReceivedInvoice* que develop trae sin API/UI/migracion y que el candidato no promueve, 3 scripts de certificacion de develop, 1 prueba de prisma de develop, el formato de tsconfig/next-env (reescritura del build de Next en develop) y 3 pruebas web que el candidato ajusta de forma deliberada (documentado en la certificacion).
+
+Conteo de assets demo excluidos:
+132

@@ -4,6 +4,16 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-13
 
+### Compuerta de aprobación de QA cerrada con la empresa modelo (`promocion-paquetes-main-20261113-qa`)
+
+- **Pedido directo del dueño.** Autorizó incluir **Talento Humano** como paquete 12 aislado (`01e9b8f6`) y certificar en producción con la cuenta de la empresa modelo, cuyo valor no se transcribe aquí. La decisión no cierra la auditoría del 2026-10-30 (**NO APTO**, 13 hallazgos).
+- **Candidato final.** 12 commits reconstruidos sobre `origin/main 4659292f` y **480 rutas netas**; `qa:promotion:scope` → `ALCANCE DE PROMOCION VALIDO … (480 rutas)` y `qa:approval:evidence` → `APROBACION QA VALIDA`.
+- **Equivalencia QA-candidato medida.** Cero commits de `apps/api` entre el `6589af8e` desplegado en QA y el tip de `develop`; en `apps/web` solo assets demo, scripts de desarrollo y tres pruebas. Se documenta en `equivalencia-candidato-qa.txt` y el candidato no se redespliega para «hacer que QA lo represente».
+- **Certificación QA sin tocar la cuenta del dueño.** `promocion-paquetes-main-qa.js` fabrica rol y usuario efímeros por `run_id` (`@internal.apexos.local`), entra por login real y los desactiva al final: **96 lecturas en 15 grupos, 0 fallos**, con las denegaciones por licencia afirmadas como contrato (`403 MODULO_NO_HABILITADO` para `admin`). `promocion-paquetes-main-qa-browser.js` recorre **11 pantallas** con **6 capturas**, 0 errores de consola y 0 HTTP, y declara las dos pantallas excluidas con su causa medida.
+- **Manifiesto de aprobación cerrado.** Los cinco checks en `passed`, `certification` + `regression_certification` (regresión de plataforma sobre `6589af8e1d32`) + `model_company_certification`, rollback `controlled_revert` a `4659292f`, aprobación del dueño fechada y `certified_commit 01e9b8f6`.
+- **Higiene de credenciales.** El manifiesto de una ronda anterior contenía el literal de la cuenta; se sustituyó por su referencia de rol y el escaneo `grep -rIl` sobre `docs` y `scripts` queda sin coincidencias.
+- Agentes: `apexos-qa` 2.63.0 → 2.64.0 (control 76: la compuerta de `main` se cierra con evidencia de QA sobre el mismo código, equivalencia medida por archivo, cuenta efímera fabricada y retirada, y la negativa por licencia escrita como contrato), `apexos-brief` 2.50.0 → 2.51.0 (regla 64: la evidencia de QA entra al brief con la equivalencia marcada, el paquete documental separado del código y la salvedad legal intacta).
+
 ### Promoción a `main` preparada por paquetes aislados, sin ejecutar producción (`promocion-paquetes-main-20261113`)
 
 - **Pedido directo del dueño.** «Migrar todas las actualizaciones de manera controlada hacia `main`: capa visual, cambios en módulos y funciones… garantizar que los datos de los clientes productivos no se vean afectados… certificado con NYVORA… commit aislado por origen, sin mezclar todo `develop`». Se prepara y audita; **no** se ejecuta la promoción.

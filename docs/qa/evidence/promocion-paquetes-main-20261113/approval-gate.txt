@@ -1,0 +1,3 @@
+> node scripts/validate-change-approval-evidence.js docs/qa/manifests/promocion-paquetes-main-20261113-approval.json
+
+APROBACION QA VALIDA: promocion-paquetes-main-20261113

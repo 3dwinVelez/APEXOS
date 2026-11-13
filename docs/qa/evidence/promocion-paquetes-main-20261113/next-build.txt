@@ -1,25 +1,18 @@
 ▲ Next.js 16.3.5 (webpack)
-✓ Running next.config.ts took 63ms
+✓ Running next.config.ts took 318ms
 - Experiments (use with caution):
   · optimizePackageImports
 
   Creating an optimized production build ...
-✓ Compiled successfully in 95s
+✓ Compiled successfully in 87s
   Running TypeScript ...
-
-  We detected TypeScript in your project and reconfigured your tsconfig.json file for you. Strict-mode is set to false by default.
-  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
-
-  	- include was updated to add '.next-main-packages/types/**/*.ts'
-  	- include was updated to add '.next-main-packages/dev/types/**/*.ts'
-
-  Finished TypeScript in 64s ...
+  Finished TypeScript in 57s ...
   Collecting page data using 3 workers ...
-  Generating static pages using 3 workers (0/135) ...
-  Generating static pages using 3 workers (33/135) 
-  Generating static pages using 3 workers (67/135) 
-  Generating static pages using 3 workers (101/135) 
-✓ Generating static pages using 3 workers (135/135) in 17.5s
+  Generating static pages using 3 workers (0/140) ...
+  Generating static pages using 3 workers (35/140) 
+  Generating static pages using 3 workers (70/140) 
+  Generating static pages using 3 workers (105/140) 
+✓ Generating static pages using 3 workers (140/140) in 21.9s
   Finalizing page optimization ...
   Collecting build traces ...
 
@@ -126,14 +119,19 @@ Route (app)
 ├ ○ /dashboard/servicios/referencias
 ├ ○ /dashboard/servicios/reportes
 ├ ○ /dashboard/talento-humano
+├ ○ /dashboard/talento-humano/aportes-sociales
 ├ ○ /dashboard/talento-humano/configuracion-laboral
 ├ ○ /dashboard/talento-humano/empleados
 ├ ○ /dashboard/talento-humano/entidades
+├ ○ /dashboard/talento-humano/libranzas
+├ ○ /dashboard/talento-humano/liquidacion-trabajador
 ├ ○ /dashboard/talento-humano/mallas
 ├ ○ /dashboard/talento-humano/mapa
 ├ ○ /dashboard/talento-humano/marcacion
 ├ ○ /dashboard/talento-humano/nomina
 ├ ○ /dashboard/talento-humano/novedades
+├ ○ /dashboard/talento-humano/prestaciones-pagos
+├ ○ /dashboard/talento-humano/provisiones
 ├ ○ /dashboard/talento-humano/reportes
 ├ ○ /dashboard/talento-humano/rutas
 ├ ○ /dashboard/tesoreria
