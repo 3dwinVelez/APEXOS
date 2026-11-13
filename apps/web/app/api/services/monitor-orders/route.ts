@@ -178,7 +178,7 @@ async function supabaseResponse<T>(requestPath: string, init: RequestInit = {}) 
   const response = await fetch(`${config.url}${requestPath}`, {
     ...init,
     headers: {
-      apikey: config.anonKey,
+      apikey: config.serviceRoleKey,
       Authorization: `Bearer ${config.serviceRoleKey}`,
       "Content-Type": "application/json",
       ...init.headers
