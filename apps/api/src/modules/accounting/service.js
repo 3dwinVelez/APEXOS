@@ -1,4 +1,6 @@
 const prisma = require("../../core/prisma");
+const { PUC_COLOMBIA_CATALOG, TYPES_BY_CLASS, validatePucCatalog } = require("./puc-colombia-catalog");
+const { createHash } = require("node:crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const {
   OPERATIONAL_PARTY_ROLES,
@@ -10,43 +12,350 @@ const {
 
 const COMPLEX_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 20_000 };
 
+// Unico candado que serializa todo escritor de Tenant.config.accounting (numeracion,
+// presupuestos, saldos iniciales, anulaciones). Debe tomarse ANTES de leer la config:
+// leer fuera del candado y guardar config completa revierte escrituras concurrentes
+// de otros flujos (presupuestos o next_number obsoletos). Ver advisoryLockKey.
+const MANUAL_PROVENANCE = "manual_document";
+const OPENING_BALANCE_PROVENANCE = "opening_balances";
+
+function advisoryLockKey(tenantId, scope = "accounting-numbering") {
+  return `${tenantId}:${scope}`;
+}
+
+async function acquireAccountingLock(tx, tenantId, scope = "accounting-numbering") {
+  await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", advisoryLockKey(tenantId, scope));
+}
+
 function appError(statusCode, code, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
   error.code = code;
   return error;
 }
+function normalizeOpeningHeader(value) {
+  return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+}
 
-const PUC_CO = [
-  { code: "1105", name: "Caja", type: "asset" },
-  { code: "1110", name: "Bancos", type: "asset" },
-  { code: "1305", name: "Clientes", type: "asset" },
-  { code: "1330", name: "Anticipos y Avances", type: "asset" },
-  { code: "1435", name: "Inventarios", type: "asset" },
-  { code: "1524", name: "Equipo de Oficina", type: "asset" },
-  { code: "1540", name: "Flota y Equipo Transporte", type: "asset" },
-  { code: "2105", name: "Obligaciones Financieras", type: "liability" },
-  { code: "2205", name: "Proveedores", type: "liability" },
-  { code: "2335", name: "Costos y Gastos por Pagar", type: "liability" },
-  { code: "2365", name: "Retencion en la Fuente", type: "liability" },
-  { code: "2408", name: "IVA por Pagar", type: "liability" },
-  { code: "2610", name: "Obligaciones Laborales", type: "liability" },
-  { code: "3105", name: "Capital Social", type: "equity" },
-  { code: "3605", name: "Utilidad del Ejercicio", type: "equity" },
-  { code: "4135", name: "Ingresos por Ventas", type: "income" },
-  { code: "4175", name: "Ingresos por Servicios", type: "income" },
-  { code: "5105", name: "Costo de Ventas", type: "expense" },
-  { code: "5195", name: "Gastos de Inventario", type: "expense" },
-  { code: "5205", name: "Sueldos y Salarios", type: "expense" },
-  { code: "5210", name: "Horas Extras", type: "expense" },
-  { code: "5220", name: "Auxilio de Transporte", type: "expense" },
-  { code: "5260", name: "Aportes EPS", type: "expense" },
-  { code: "5270", name: "Aportes Pensiones", type: "expense" },
-  { code: "5290", name: "Aportes SENA ICBF CCF", type: "expense" },
-  { code: "5320", name: "Arrendamientos", type: "expense" },
-  { code: "5360", name: "Servicios Publicos", type: "expense" },
-  { code: "5395", name: "Otros Gastos", type: "expense" }
-];
+function openingDate(value, rowNumber) {
+  const date = value instanceof Date ? value : new Date(String(value || ""));
+  if (Number.isNaN(date.getTime())) throw appError(422, "INVALID_OPENING_BALANCE_DATE", `Fila ${rowNumber}: fecha de corte invalida`);
+  return date;
+}
+
+function openingCents(value, rowNumber) {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) throw appError(422, "INVALID_OPENING_BALANCE_AMOUNT", `Fila ${rowNumber}: saldo invalido`);
+    return Math.round(value * 100);
+  }
+  const raw = String(value ?? "").trim().replace(/\s/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
+  if (!/^-?\d+(?:\.\d{1,2})?$/.test(raw)) throw appError(422, "INVALID_OPENING_BALANCE_AMOUNT", `Fila ${rowNumber}: saldo invalido`);
+  const cents = Math.round(Number(raw) * 100);
+  if (!Number.isSafeInteger(cents)) throw appError(422, "INVALID_OPENING_BALANCE_AMOUNT", `Fila ${rowNumber}: saldo fuera de rango`);
+  return cents;
+}
+
+const OPENING_BALANCE_PARTY_INT_MAX = 2147483647;
+
+function openingBalanceLegacyPartyId(value) {
+  if (!/^\d+$/.test(value) || value.length > 10) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 && id <= OPENING_BALANCE_PARTY_INT_MAX ? id : null;
+}
+
+async function resolveOpeningBalanceParty(client, rawValue, rowNumber) {
+  const value = String(rawValue ?? "").trim();
+  if (!value) return null;
+  const taxMatch = await client.party.findFirst({ where: { tax_id: value, active: true } });
+  if (taxMatch) return taxMatch;
+  const legacyId = openingBalanceLegacyPartyId(value);
+  if (legacyId !== null) {
+    // Un NIT numérico inactivo no debe resolver silenciosamente a otro tercero cuyo id interno coincida.
+    const inactiveTaxMatch = await client.party.findFirst({ where: { tax_id: value, __includeInactive: true } });
+    if (!inactiveTaxMatch) {
+      const legacyMatch = await client.party.findFirst({ where: { id: legacyId, active: true } });
+      if (legacyMatch) return legacyMatch;
+    }
+  }
+  throw appError(404, "OPENING_BALANCE_PARTY_NOT_FOUND", `Fila ${rowNumber}: tercero no encontrado o inactivo`);
+}
+
+async function createOpeningBalancesTemplate() {
+  const ExcelJS = require("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("Saldos iniciales");
+  sheet.addRow(["Plantilla de saldos iniciales historicos"]);
+  sheet.addRow(["Una sola fecha de corte por archivo. Saldo positivo = debito; saldo negativo = credito."]);
+  sheet.addRow(["No cambie los encabezados. Tercero es opcional salvo cuentas que lo exijan."]);
+  sheet.addRow(["fecha_corte", "cuenta", "centro_costo", "sucursal", "saldo", "tercero"]);
+  sheet.getRow(4).font = { bold: true, color: { argb: "FFFFFFFF" } };
+  sheet.getRow(4).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF146C63" } };
+  sheet.getColumn(1).width = 18; sheet.getColumn(2).width = 16; sheet.getColumn(3).width = 18;
+  sheet.getColumn(4).width = 16; sheet.getColumn(5).width = 18; sheet.getColumn(6).width = 18;
+  sheet.getColumn(1).numFmt = "yyyy-mm-dd";
+  sheet.getColumn(2).numFmt = "@";
+  sheet.getColumn(3).numFmt = "@";
+  sheet.getColumn(4).numFmt = "@";
+  sheet.getColumn(5).numFmt = "#,##0.00";
+  sheet.getColumn(6).numFmt = "@";
+  return workbook.xlsx.writeBuffer();
+}
+
+async function parseOpeningBalancesWorkbook(buffer) {
+  const ExcelJS = require("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  try { await workbook.xlsx.load(buffer); } catch { throw appError(422, "INVALID_OPENING_BALANCES_FILE", "El archivo Excel no se puede leer"); }
+  const sheet = workbook.worksheets.find((row) => normalizeOpeningHeader(row.name) === "saldos_iniciales") || workbook.worksheets[0];
+  if (!sheet) throw appError(422, "INVALID_OPENING_BALANCES_FILE", "La plantilla no contiene hojas");
+  const headers = sheet.getRow(4).values.slice(1).map(normalizeOpeningHeader);
+  const required = ["fecha_corte", "cuenta", "centro_costo", "sucursal", "saldo"];
+  const missing = required.filter((header) => !headers.includes(header));
+  if (missing.length) throw appError(422, "INVALID_OPENING_BALANCES_TEMPLATE", `Faltan columnas: ${missing.join(", ")}`);
+  const rows = [];
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber <= 4) return;
+    const data = {};
+    headers.forEach((header, index) => { data[header] = row.getCell(index + 1).value; });
+    if (Object.values(data).some((value) => value !== null && value !== undefined && String(value).trim())) rows.push({ ...data, excel_row: rowNumber });
+  });
+  if (!rows.length) throw appError(400, "EMPTY_OPENING_BALANCES", "La plantilla no contiene saldos");
+  return rows;
+}
+
+function openingCodeKey(value) {
+  return normalizeCode(value).toLowerCase();
+}
+
+function matchOpeningBalanceCode(rows, rawCode, { label, rowNumber }) {
+  const code = normalizeCode(rawCode);
+  const exact = rows.filter((item) => normalizeCode(item.code) === code);
+  const matches = exact.length ? exact : rows.filter((item) => openingCodeKey(item.code) === openingCodeKey(code));
+  if (matches.length > 1) throw appError(422, "OPENING_BALANCE_AMBIGUOUS_CODE", `Fila ${rowNumber}: ${label} ${code} coincide con mas de un codigo almacenado`);
+  return matches[0] || null;
+}
+
+function resolveOpeningBalanceCenter(tree, branch, rawCode, rowNumber) {
+  const centers = tree.cost_centers.filter((item) => normalizeCode(item.branch_code) === normalizeCode(branch.code));
+  const center = matchOpeningBalanceCode(centers, rawCode, { label: "centro de costo", rowNumber });
+  if (!center || center.active === false || normalizeCode(center.society_code) !== normalizeCode(branch.society_code)) throw appError(422, "OPENING_BALANCE_COST_CENTER_NOT_FOUND", `Fila ${rowNumber}: centro de costo no pertenece a la sucursal`);
+  return center;
+}
+
+async function resolveOpeningBalanceAccount(client, rawCode, rowNumber) {
+  const code = normalizeCode(rawCode);
+  const exact = await client.account.findFirst({ where: { code, __includeInactive: true } });
+  if (exact) {
+    if (exact.active !== true || exact.allows_tx !== true) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${rowNumber}: cuenta ${code} inexistente, inactiva o no transaccional`);
+    return exact;
+  }
+  const variants = await client.account.findMany({
+    where: { code: { equals: code, mode: "insensitive" }, __includeInactive: true },
+    take: 2
+  });
+  if (variants.length > 1) throw appError(422, "OPENING_BALANCE_AMBIGUOUS_CODE", `Fila ${rowNumber}: cuenta ${code} coincide con mas de un codigo almacenado`);
+  const account = variants[0];
+  if (!account || account.active !== true || account.allows_tx !== true) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${rowNumber}: cuenta ${code} inexistente, inactiva o no transaccional`);
+  return account;
+}
+
+// Resuelve en memoria todas las cuentas de un archivo con una unica consulta insensible por lote,
+// preservando el precedente exacto > insensible y la ambiguedad. Devuelve la cuenta resuelta (aunque
+// inactiva o no transaccional) para que el llamador la rechace con el numero de fila correcto.
+// Reemplaza el N+1 de resolveOpeningBalanceAccount (findFirst/findMany por fila).
+// `entries` es una lista de { code, excel_row }; preserve el numero de fila en los errores.
+async function resolveOpeningBalanceAccountsBatched(client, entries) {
+  const result = new Map();
+  if (!entries.length) return result;
+  const codes = [...new Set(entries.map((entry) => entry.code))];
+  const accounts = await client.account.findMany({ where: { code: { in: codes, mode: "insensitive" }, __includeInactive: true } });
+  const byLower = new Map();
+  for (const account of accounts) {
+    const key = account.code.toLowerCase();
+    const bucket = byLower.get(key) || [];
+    bucket.push(account);
+    byLower.set(key, bucket);
+  }
+  for (const { code, excel_row } of entries) {
+    const bucket = byLower.get(code.toLowerCase()) || [];
+    const exact = bucket.filter((account) => account.code === code);
+    const variants = bucket.filter((account) => account.code !== code);
+    if (exact.length) {
+      result.set(code, exact[0]);
+    } else if (variants.length > 1) {
+      throw appError(422, "OPENING_BALANCE_AMBIGUOUS_CODE", `Fila ${excel_row}: cuenta ${code} coincide con mas de un codigo almacenado`);
+    } else {
+      result.set(code, variants[0] || null);
+    }
+  }
+  return result;
+}
+
+// Resuelve en memoria todos los terceros de un archivo con consultas por lote acotadas,
+// preservando el precedente NIT activo > id legacy, la no caida de un NIT numerico inactivo a otro
+// tercero por id, la opcionalidad y el alcance de tenant (inyectado por el middleware de prisma).
+async function resolveOpeningBalancePartiesBatched(client, rows) {
+  const values = [...new Set(rows.map((row) => String(row.tercero ?? "").trim()).filter(Boolean))];
+  const result = new Map();
+  if (!values.length) return result;
+
+  // 1) Terceros activos por tax_id exacto (equivalente al findFirst({ tax_id, active: true })).
+  const activeTax = await client.party.findMany({ where: { tax_id: { in: values }, active: true } });
+  for (const party of activeTax) {
+    if (party.tax_id && !result.has(party.tax_id)) result.set(party.tax_id, party);
+  }
+
+  // 2) Candidatos numericos legacy que aun no resolvieron por tax_id activo.
+  const unresolved = values.filter((value) => !result.has(value));
+  const legacyByValue = new Map();
+  const legacyValues = [];
+  for (const value of unresolved) {
+    const legacyId = openingBalanceLegacyPartyId(value);
+    if (legacyId !== null) { legacyByValue.set(value, legacyId); legacyValues.push(value); }
+  }
+
+  // 3) Bloqueo de fallback: si un NIT numerico existe inactivo por tax_id, no resuelve a otro id.
+  const blocked = new Set();
+  if (legacyValues.length) {
+    const inactiveTax = await client.party.findMany({ where: { tax_id: { in: legacyValues }, __includeInactive: true } });
+    for (const party of inactiveTax) {
+      if (party.tax_id && party.active !== true) blocked.add(party.tax_id);
+    }
+  }
+
+  // 4) Fallback a id interno legacy solo para candidatos numericos sin NIT (activo ni inactivo).
+  const fallbackValues = legacyValues.filter((value) => !blocked.has(value));
+  if (fallbackValues.length) {
+    const legacyIds = fallbackValues.map((value) => legacyByValue.get(value));
+    const legacyParties = await client.party.findMany({ where: { id: { in: legacyIds }, active: true } });
+    const byId = new Map(legacyParties.map((party) => [party.id, party]));
+    for (const value of fallbackValues) {
+      const match = byId.get(legacyByValue.get(value));
+      if (match) result.set(value, match);
+    }
+  }
+
+  return result;
+}
+
+function resolveOpeningBalancePartyBatched(partiesByValue, rawValue, rowNumber) {
+  const value = String(rawValue ?? "").trim();
+  if (!value) return null;
+  const party = partiesByValue.get(value);
+  if (!party) throw appError(404, "OPENING_BALANCE_PARTY_NOT_FOUND", `Fila ${rowNumber}: tercero no encontrado o inactivo`);
+  return party;
+}
+
+async function prepareOpeningBalanceRows(client, tenantId, rows) {
+  // Fase 0: validar fecha unica, montos y campos requeridos baratos ANTES de tocar la base de
+  // datos (getOrganizationTree / account / party). Un archivo con dos fechas de corte falla aqui
+  // con OPENING_BALANCE_SINGLE_DATE claro, sin gastar consultas ni agotar el timeout del cliente.
+  const dates = new Set();
+  let totalCents = 0;
+  for (const row of rows) {
+    const date = openingDate(row.fecha_corte, row.excel_row);
+    const cents = openingCents(row.saldo, row.excel_row);
+    if (!normalizeCode(row.cuenta) || !normalizeCode(row.sucursal) || !normalizeCode(row.centro_costo) || cents === 0) throw appError(422, "INVALID_OPENING_BALANCE_ROW", `Fila ${row.excel_row}: cuenta, sucursal, centro de costo y saldo distinto de cero son obligatorios`);
+    dates.add(date.toISOString().slice(0, 10));
+    totalCents += cents;
+  }
+  if (dates.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_DATE", "Todas las filas deben usar una sola fecha de corte");
+  if (totalCents !== 0) throw appError(422, "OPENING_BALANCE_UNBALANCED", `Los saldos no cuadran por ${Math.abs(totalCents / 100).toFixed(2)}`);
+
+  const tree = await getOrganizationTree(tenantId);
+
+  // Fase 1: resolver sucursal/centro (sobre el arbol en memoria, ya validado el saldo), acumulando
+  // sociedad y montos. La sociedad unica se valida aqui, antes de tocar cuentas/terceros en lote.
+  const parsed = [];
+  const societies = new Set();
+  for (const row of rows) {
+    const date = openingDate(row.fecha_corte, row.excel_row);
+    const accountCode = normalizeCode(row.cuenta);
+    const branchCode = normalizeCode(row.sucursal);
+    const costCenterCode = normalizeCode(row.centro_costo);
+    const cents = openingCents(row.saldo, row.excel_row);
+    const branch = matchOpeningBalanceCode(tree.branches, branchCode, { label: "sucursal", rowNumber: row.excel_row });
+    if (!branch || branch.active === false) throw appError(422, "OPENING_BALANCE_BRANCH_NOT_FOUND", `Fila ${row.excel_row}: sucursal ${branchCode} inexistente o inactiva`);
+    const center = resolveOpeningBalanceCenter(tree, branch, costCenterCode, row.excel_row);
+    societies.add(center.society_code);
+    parsed.push({ excel_row: row.excel_row, date, account_code: accountCode, branch_code: branch.code, cost_center_code: center.code, society_code: center.society_code, tercero: row.tercero, cents });
+  }
+  if (societies.size !== 1) throw appError(422, "OPENING_BALANCE_SINGLE_SOCIETY", "Todas las filas deben pertenecer a una sola sociedad");
+
+  // Fase 2: resolucion por lote de cuentas y terceros (una consulta insensible y consultas
+  // acotadas por `in`/`id`, en vez de findFirst por fila).
+  const accountEntries = parsed.map((row) => ({ code: row.account_code, excel_row: row.excel_row }));
+  const accountsByCode = await resolveOpeningBalanceAccountsBatched(client, accountEntries);
+  const partiesByValue = await resolveOpeningBalancePartiesBatched(client, parsed);
+
+  // Fase 3: ensamble final.
+  const prepared = [];
+  for (const row of parsed) {
+    const account = accountsByCode.get(row.account_code);
+    if (!account || account.active !== true || account.allows_tx !== true) throw appError(404, "OPENING_BALANCE_ACCOUNT_NOT_FOUND", `Fila ${row.excel_row}: cuenta ${row.account_code} inexistente, inactiva o no transaccional`);
+    const party = resolveOpeningBalancePartyBatched(partiesByValue, row.tercero, row.excel_row);
+    prepared.push({ excel_row: row.excel_row, date: row.date, account, account_code: account.code, branch_code: row.branch_code, cost_center_code: row.cost_center_code, society_code: row.society_code, party_id: party?.id || null, party_tax_id: party?.tax_id || null, cents: row.cents, movement: row.cents > 0 ? "debit" : "credit", amount: Math.abs(row.cents) / 100 });
+  }
+  const grouped = new Map();
+  for (const row of prepared) {
+    const key = `${row.account_code}|${row.branch_code}|${row.cost_center_code}|${row.party_id || ""}`;
+    const current = grouped.get(key) || { ...row, cents: 0 };
+    current.cents += row.cents; grouped.set(key, current);
+  }
+  const lines = [...grouped.values()].filter((row) => row.cents !== 0).map((row, index) => ({ ...row, line_no: index + 1, amount: Math.abs(row.cents) / 100, movement: row.cents > 0 ? "debit" : "credit", description: `Saldo inicial historico ${row.account_code}` }));
+  return { rows: prepared, lines, posting_date: prepared[0].date, society_code: prepared[0].society_code, total_debit: lines.filter((row) => row.cents > 0).reduce((sum, row) => sum + row.amount, 0), total_credit: lines.filter((row) => row.cents < 0).reduce((sum, row) => sum + row.amount, 0) };
+}
+
+async function validateOpeningBalancesWorkbook(tenantId, buffer) {
+  const rows = await parseOpeningBalancesWorkbook(buffer);
+  if (rows.length > 5000) throw appError(413, "OPENING_BALANCES_TOO_LARGE", "La plantilla admite maximo 5.000 filas");
+  const prepared = await prisma.runWithTenant(tenantId, () => prepareOpeningBalanceRows(prisma, tenantId, rows));
+  await assertPeriodOpen(tenantId, prepared.posting_date);
+  return { valid: true, file_hash: createHash("sha256").update(buffer).digest("hex"), posting_date: prepared.posting_date, society_code: prepared.society_code, lines: prepared.lines.map((row) => ({ excel_row: row.excel_row, account_code: row.account_code, branch_code: row.branch_code, cost_center_code: row.cost_center_code, party_id: row.party_id, party_tax_id: row.party_tax_id, movement: row.movement, amount: row.amount })), totals: { lines: prepared.lines.length, debit: prepared.total_debit, credit: prepared.total_credit } };
+}
+
+async function postOpeningBalancesWorkbook(tenantId, userId, buffer) {
+  const rows = await parseOpeningBalancesWorkbook(buffer);
+  if (rows.length > 5000) throw appError(413, "OPENING_BALANCES_TOO_LARGE", "La plantilla admite maximo 5.000 filas");
+  const reference = `SI-${createHash("sha256").update(buffer).digest("hex").slice(0, 24).toUpperCase()}`;
+  return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${tenantId}:${reference}`}))`;
+    const duplicate = await tx.cntCabdoc.findFirst({ where: { reference } });
+    if (duplicate) throw appError(409, "OPENING_BALANCES_ALREADY_POSTED", `La plantilla ya fue contabilizada como ${duplicate.full_number}`);
+    const prepared = await prepareOpeningBalanceRows(tx, tenantId, rows);
+    await assertPeriodOpen(tenantId, prepared.posting_date);
+    const documentType = "AJ";
+    await acquireAccountingLock(tx, tenantId);
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
+    const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
+    const masters = mergeNumbering(mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code"), accounting.accounting_numbering);
+    const numbering = masters.find((item) => normalizeAccountingDocumentType(item.document_type) === documentType && item.active !== false) || { document_type: documentType, prefix: documentType, next_number: 1, active: true };
+    const documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentType, numbering);
+    const prefix = normalizeCode(numbering.prefix || documentType);
+    const fullNumber = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
+    const cabdoc = await tx.cntCabdoc.create({ data: { document_type: documentType, document_number: documentNumber, full_number: fullNumber, posting_date: prepared.posting_date, reference, header_text: "Saldos iniciales historicos", society_code: prepared.society_code, total_debit: prepared.total_debit, total_credit: prepared.total_credit, created_by: userId || null } });
+    for (const line of prepared.lines) {
+      const ledger = await tx.ledgerEntry.create({ data: { account_id: line.account.id, date: prepared.posting_date, debit: line.cents > 0 ? line.amount : 0, credit: line.cents < 0 ? line.amount : 0, balance: 0, description: line.description, period: periodFromDate(prepared.posting_date) } });
+      await tx.cntCuedoc.create({ data: { cabdoc_id: cabdoc.id, line_no: line.line_no, account_id: line.account.id, account_code: line.account_code, branch_code: line.branch_code, cost_center_code: line.cost_center_code, party_id: line.party_id, party_tax_id: line.party_tax_id, movement: line.movement, debit: line.cents > 0 ? line.amount : 0, credit: line.cents < 0 ? line.amount : 0, description: line.description, ledger_entry_id: ledger.id } });
+    }
+    await tx.auditLog.create({
+      data: {
+        user_id: userId || null,
+        action: "POST",
+        module: "accounting",
+        entity: "CntCabdoc",
+        entity_id: String(cabdoc.id),
+        old_value: { provenance: "none" },
+        new_value: { provenance: OPENING_BALANCE_PROVENANCE, reference, file_hash: createHash("sha256").update(buffer).digest("hex"), full_number: fullNumber }
+      }
+    });
+    return { valid: true, reference, accounting_document: await tx.cntCabdoc.findUnique({ where: { id: cabdoc.id }, include: { lines: { orderBy: { line_no: "asc" } } } }), lines: prepared.lines.length, total_debit: prepared.total_debit, total_credit: prepared.total_credit };
+  }, COMPLEX_TRANSACTION_OPTIONS));
+}
+
+
+
+
 
 const TAX_ACCOUNT_PREFIXES = ["2365", "2367", "2368", "2408", "2410"];
 const RECEIVABLE_TYPES = ["invoice", "sale", "receivable"];
@@ -97,7 +406,16 @@ const DEFAULT_ACCOUNTING_DOCUMENT_TYPES = [
   { code: "NCP", description: "Nota credito compra" },
   { code: "EM", description: "Entrada de mercancia" },
   { code: "FV", description: "Factura venta" },
-  { code: "NCV", description: "Nota credito venta" }
+  { code: "LT", description: "Liquidacion de transporte - ingresos" },
+  { code: "NCV", description: "Nota credito venta" },
+  // Gastos Menores / Cajas Menores. Se agregan aditivo (sin tocar las entradas anteriores) porque
+  // cnt_cabdoc tiene @@unique([tenant_id, document_type, document_number]) con numeracion global
+  // por tipo: reutilizar "AP" (anticipo a proveedor, ya usado por treasury) mezclaria modulos y
+  // produciria P2002 determinista. No existe tabla de tipos: el maestro es esta lista, fusionada
+  // con Tenant.config.accounting.accounting_document_types por mergeByCode.
+  { code: "GM", description: "Gasto menor / caja menor" },
+  { code: "APC", description: "Anticipo de caja menor" },
+  { code: "LCM", description: "Liquidacion de anticipo de caja menor" }
 ].map((row) => ({ ...row, active: true, source: "Sistema" }));
 const DEFAULT_VAT_MASTERS = [
   { code: "COMPRAS-0", concept: "Compras", percent: 0, account_code: "2408", scope: "purchases" },
@@ -143,8 +461,10 @@ function periodFromDate(date) {
   return new Date(date).toISOString().substring(0, 7);
 }
 
-function accountNature(type) {
-  return ["asset", "expense"].includes(type) ? "debit" : "credit";
+function accountNature(type, code = "") {
+  if (["asset", "expense", "cost"].includes(type)) return "debit";
+  if (type === "order") return String(code).startsWith("8") ? "debit" : "credit";
+  return "credit";
 }
 
 function pucBreakdown(code) {
@@ -162,7 +482,7 @@ function accountDto(account) {
   const breakdown = pucBreakdown(account.code);
   return {
     ...account,
-    nature: accountNature(account.type),
+    nature: accountNature(account.type, account.code),
     puc: breakdown,
     requires_third_party: ["1305", "2205", "2365", "2408"].some((prefix) => account.code.startsWith(prefix)),
     requires_cost_center: ["4", "5", "6", "7"].includes(breakdown.class),
@@ -200,12 +520,11 @@ async function getAccountingConfig(tenantId) {
 }
 
 async function updateAccountingConfig(tenantId, accounting) {
-  const config = await getTenantConfig(tenantId);
-  const updated = await prisma.tenant.update({
-    where: { id: tenantId },
-    data: { config: { ...config, accounting: { ...(config.accounting || {}), ...accounting } } },
-    select: { config: true }
-  });
+  const rows = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    return tx.$queryRaw`UPDATE "Tenant" SET config = jsonb_set(COALESCE(config, '{}'::jsonb), '{accounting}', COALESCE(config->'accounting', '{}'::jsonb) || ${JSON.stringify(accounting)}::jsonb, true) WHERE id = ${String(tenantId)} RETURNING config`;
+  }, COMPLEX_TRANSACTION_OPTIONS));
+  const updated = rows[0];
   invalidateTenantCache(tenantId).catch(() => undefined);
   return updated;
 }
@@ -568,38 +887,47 @@ async function saveOrganizationUnit(tenantId, data) {
   const name = String(data.name || "").trim();
   if (!code || !name) throw appError(400, "REQUIRED_ORG_UNIT", "Codigo y nombre son obligatorios");
 
-  const accounting = await getAccountingConfig(tenantId);
-  const tree = normalizeOrganizationTree(accounting, tenantId);
-  const active = data.active !== false;
-
-  if (type === "society") {
-    const row = { code, name, tenant_id: tenantId, active };
-    const societies = [...tree.societies.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, societies } });
-    return getOrganizationTree(tenantId);
-  }
-
-  if (type === "branch") {
-    const societyCode = normalizeCode(data.society_code);
-    if (!tree.societies.some((item) => item.code === societyCode && item.active !== false)) {
-      throw appError(400, "SOCIETY_REQUIRED", "La sucursal debe estar enlazada a una sociedad activa");
+  const result = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config || {};
+    const accounting = config.accounting || {};
+    async function persist(tree) {
+      await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, organization_tree: tree } } } });
+      return tree;
     }
-    const row = { code, name, society_code: societyCode, active };
-    const branches = [...tree.branches.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, branches } });
-    return getOrganizationTree(tenantId);
-  }
+    const tree = normalizeOrganizationTree(accounting, tenantId);
+    const active = data.active !== false;
+    if (type === "cost_center" && tree.cost_centers.some(row => row.code === code && row.vehicle_id)) throw appError(409, "VEHICLE_COST_CENTER_MANAGED", "El centro vehicular se administra desde la ficha del vehiculo");
 
-  const societyCode = normalizeCode(data.society_code);
-  const branchCode = normalizeCode(data.branch_code);
-  const branch = tree.branches.find((item) => item.code === branchCode && item.active !== false);
-  if (!branch || branch.society_code !== societyCode) {
-    throw appError(400, "BRANCH_REQUIRED", "El centro de costo debe estar enlazado a una sucursal de la sociedad seleccionada");
-  }
-  const row = { code, name, society_code: societyCode, branch_code: branchCode, active };
-  const costCenters = [...tree.cost_centers.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
-  await updateAccountingConfig(tenantId, { organization_tree: { ...tree, cost_centers: costCenters } });
-  return getOrganizationTree(tenantId);
+    if (type === "society") {
+      const row = { code, name, tenant_id: tenantId, active };
+      const societies = [...tree.societies.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+      return persist({ ...tree, societies });
+    }
+
+    if (type === "branch") {
+      const societyCode = normalizeCode(data.society_code);
+      if (!tree.societies.some((item) => item.code === societyCode && item.active !== false)) {
+        throw appError(400, "SOCIETY_REQUIRED", "La sucursal debe estar enlazada a una sociedad activa");
+      }
+      const row = { code, name, society_code: societyCode, active };
+      const branches = [...tree.branches.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+      return persist({ ...tree, branches });
+    }
+
+    const societyCode = normalizeCode(data.society_code);
+    const branchCode = normalizeCode(data.branch_code);
+    const branch = tree.branches.find((item) => item.code === branchCode && item.active !== false);
+    if (!branch || branch.society_code !== societyCode) {
+      throw appError(400, "BRANCH_REQUIRED", "El centro de costo debe estar enlazado a una sucursal de la sociedad seleccionada");
+    }
+    const row = { code, name, society_code: societyCode, branch_code: branchCode, active };
+    const costCenters = [...tree.cost_centers.filter((item) => item.code !== code), row].sort((a, b) => a.code.localeCompare(b.code));
+    return persist({ ...tree, cost_centers: costCenters });
+  }, COMPLEX_TRANSACTION_OPTIONS));
+  await invalidateTenantCache(tenantId).catch(() => undefined);
+  return result;
 }
 
 async function countOrganizationAccountingReferences(tenantId, type, code) {
@@ -631,38 +959,47 @@ async function countOrganizationAccountingReferences(tenantId, type, code) {
 
 async function deleteOrganizationUnit(tenantId, type, codeInput) {
   const code = normalizeCode(codeInput);
-  const accounting = await getAccountingConfig(tenantId);
-  const tree = normalizeOrganizationTree(accounting, tenantId);
-  const references = await countOrganizationAccountingReferences(tenantId, type, code);
-  if (references > 0) {
-    throw appError(409, "ORG_UNIT_HAS_ACCOUNTING_RECORDS", "No se puede borrar porque tiene registros contables asociados");
-  }
-
-  if (type === "society") {
-    if (tree.branches.some((item) => item.society_code === code)) {
-      throw appError(409, "SOCIETY_HAS_BRANCHES", "No se puede borrar una sociedad con sucursales enlazadas");
+  const result = await prisma.runWithTenant(tenantId, () => prisma.$transaction(async tx => {
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config || {};
+    const accounting = config.accounting || {};
+    async function persist(tree) {
+      await tx.tenant.update({ where: { id: tenantId }, data: { config: { ...config, accounting: { ...accounting, organization_tree: tree } } } });
+      return tree;
     }
-    const societies = tree.societies.filter((item) => item.code !== code);
-    if (societies.length === tree.societies.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sociedad no encontrada");
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, societies } });
-    return getOrganizationTree(tenantId);
-  }
-
-  if (type === "branch") {
-    if (tree.cost_centers.some((item) => item.branch_code === code)) {
-      throw appError(409, "BRANCH_HAS_COST_CENTERS", "No se puede borrar una sucursal con centros de costo enlazados");
+    const tree = normalizeOrganizationTree(accounting, tenantId);
+    const references = await countOrganizationAccountingReferences(tenantId, type, code);
+    if (type === "cost_center" && tree.cost_centers.some(row => row.code === code && row.vehicle_id)) throw appError(409, "VEHICLE_COST_CENTER_MANAGED", "No se puede borrar un centro vinculado a un vehiculo");
+    if (references > 0) {
+      throw appError(409, "ORG_UNIT_HAS_ACCOUNTING_RECORDS", "No se puede borrar porque tiene registros contables asociados");
     }
-    const branches = tree.branches.filter((item) => item.code !== code);
-    if (branches.length === tree.branches.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sucursal no encontrada");
-    await updateAccountingConfig(tenantId, { organization_tree: { ...tree, branches } });
-    return getOrganizationTree(tenantId);
-  }
 
-  if (type !== "cost_center") throw appError(400, "INVALID_ORG_UNIT_TYPE", "Tipo de estructura invalido");
-  const costCenters = tree.cost_centers.filter((item) => item.code !== code);
-  if (costCenters.length === tree.cost_centers.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Centro de costo no encontrado");
-  await updateAccountingConfig(tenantId, { organization_tree: { ...tree, cost_centers: costCenters } });
-  return getOrganizationTree(tenantId);
+    if (type === "society") {
+      if (tree.branches.some((item) => item.society_code === code)) {
+        throw appError(409, "SOCIETY_HAS_BRANCHES", "No se puede borrar una sociedad con sucursales enlazadas");
+      }
+      const societies = tree.societies.filter((item) => item.code !== code);
+      if (societies.length === tree.societies.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sociedad no encontrada");
+      return persist({ ...tree, societies });
+    }
+
+    if (type === "branch") {
+      if (tree.cost_centers.some((item) => item.branch_code === code)) {
+        throw appError(409, "BRANCH_HAS_COST_CENTERS", "No se puede borrar una sucursal con centros de costo enlazados");
+      }
+      const branches = tree.branches.filter((item) => item.code !== code);
+      if (branches.length === tree.branches.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Sucursal no encontrada");
+      return persist({ ...tree, branches });
+    }
+
+    if (type !== "cost_center") throw appError(400, "INVALID_ORG_UNIT_TYPE", "Tipo de estructura invalido");
+    const costCenters = tree.cost_centers.filter((item) => item.code !== code);
+    if (costCenters.length === tree.cost_centers.length) throw appError(404, "ORG_UNIT_NOT_FOUND", "Centro de costo no encontrado");
+    return persist({ ...tree, cost_centers: costCenters });
+  }, COMPLEX_TRANSACTION_OPTIONS));
+  await invalidateTenantCache(tenantId).catch(() => undefined);
+  return result;
 }
 
 async function validateThirdPartyMasters(tenantId, data) {
@@ -689,18 +1026,211 @@ async function assertPeriodOpen(tenantId, date) {
 
 async function initChartOfAccounts(tenantId, country = "CO") {
   return prisma.runWithTenant(tenantId, async () => {
-    const plan = country === "CO" ? PUC_CO : PUC_CO;
-    const existing = await prisma.account.findMany({ select: { code: true } });
-    const existingCodes = new Set(existing.map((row) => row.code));
-    const missing = plan.filter((account) => !existingCodes.has(account.code));
-    if (missing.length) {
-      await prisma.account.createMany({
-        data: missing.map((account) => ({ code: account.code, name: account.name, type: account.type, allows_tx: true, active: true }))
-      });
+    // One versioned standard for both registration paths and explicit initialization.
+    // The database function serializes retries and preserves existing business fields.
+    try {
+      await prisma.$queryRaw`SELECT apexos_accounting_private.ensure_standard_chart(${tenantId}::text)`;
+    } catch (error) {
+      if (String(error.meta?.message || error.message || "").includes("STANDARD_CHART_CONFLICT")) {
+        throw appError(409, "STANDARD_CHART_CONFLICT", "El plan estándar tiene conflictos con tipos o padres existentes; no se aplicaron cambios.");
+      }
+      throw error;
     }
     const accounts = await prisma.account.findMany({ orderBy: { code: "asc" } });
     return accounts.map(accountDto);
   });
+}
+
+const CHART_TREE_LENGTHS = [1, 2, 4, 6];
+const ACCOUNT_TYPES = new Set(["asset", "liability", "equity", "income", "expense", "cost", "order"]);
+
+function defaultPucTreeCatalog() {
+  return validatePucCatalog(PUC_COLOMBIA_CATALOG);
+}
+
+function normalizeChartTreeEntry(entry) {
+  const code = normalizeCode(entry?.code);
+  const name = String(entry?.name || "").trim();
+  const type = normalizeCode(entry?.type).toLowerCase();
+  const parentCode = normalizeCode(entry?.parent_code || entry?.parentCode);
+  const level = Number(entry?.level || code.length);
+  return {
+    code,
+    name,
+    type,
+    parent_code: parentCode || null,
+    level,
+    allows_tx: entry?.allows_tx === true,
+    active: entry?.active !== false
+  };
+}
+
+function validateChartTreeCatalog(catalog) {
+  if (!Array.isArray(catalog) || !catalog.length) throw appError(400, "CHART_CATALOG_REQUIRED", "El catalogo PUC debe contener cuentas");
+  const entries = catalog.map(normalizeChartTreeEntry);
+  const byCode = new Map();
+  const invalid = [];
+  for (const entry of entries) {
+    if (!/^[1-9]\d*$/.test(entry.code) || !CHART_TREE_LENGTHS.includes(entry.code.length)) {
+      invalid.push({ code: entry.code, reason: "CODE_LENGTH_MUST_BE_1_2_4_OR_6" });
+      continue;
+    }
+    if (!entry.name || !ACCOUNT_TYPES.has(entry.type) || TYPES_BY_CLASS[entry.code.slice(0, 1)] !== entry.type) {
+      invalid.push({ code: entry.code, reason: "NAME_OR_ACCOUNT_TYPE_INVALID" });
+      continue;
+    }
+    if (entry.allows_tx) {
+      invalid.push({ code: entry.code, reason: "PUC_GROUPS_DO_NOT_ALLOW_TRANSACTIONS" });
+      continue;
+    }
+    const expectedParent = entry.code.length === 1 ? null : entry.code.slice(0, entry.code.length === 2 ? 1 : entry.code.length - 2);
+    if (entry.parent_code !== expectedParent) {
+      invalid.push({ code: entry.code, reason: "PARENT_CODE_MUST_MATCH_PUC_PREFIX", expected_parent_code: expectedParent });
+      continue;
+    }
+    if (entry.level !== CHART_TREE_LENGTHS.indexOf(entry.code.length) + 1) {
+      invalid.push({ code: entry.code, reason: "LEVEL_MUST_MATCH_1_2_4_6_HIERARCHY" });
+      continue;
+    }
+    if (byCode.has(entry.code)) {
+      invalid.push({ code: entry.code, reason: "DUPLICATE_CODE" });
+      continue;
+    }
+    byCode.set(entry.code, entry);
+  }
+  for (const entry of byCode.values()) {
+    if (entry.parent_code && !byCode.has(entry.parent_code)) invalid.push({ code: entry.code, reason: "PARENT_MISSING_FROM_CATALOG", parent_code: entry.parent_code });
+  }
+  const missingClasses = ["1", "2", "3", "4", "5", "6", "7", "8", "9"].filter((code) => !byCode.has(code));
+  if (missingClasses.length) invalid.push({ reason: "PUC_CLASSES_1_TO_9_REQUIRED", codes: missingClasses });
+  if (invalid.length) throw appError(422, "INVALID_CHART_CATALOG", "El catalogo PUC no cumple la jerarquia 1/2/4/6");
+  return [...byCode.values()].sort((a, b) => a.code.length - b.code.length || a.code.localeCompare(b.code));
+}
+
+function buildChartTreePlan(catalog, existingAccounts = []) {
+  const entries = validateChartTreeCatalog(catalog);
+  const existing = new Map(existingAccounts.map((account) => [String(account.code), account]));
+  const catalogCodes = new Set(entries.map((entry) => entry.code));
+  const creates = [];
+  const repairs = [];
+  const unchanged = [];
+  const conflicts = [];
+  const warnings = [];
+  const customLinks = [];
+  const customParentCreates = [];
+  const report = { total_catalog_entries: entries.length, existing_count: existingAccounts.length, creates, repairs, unchanged, conflicts, warnings, custom_links: customLinks, custom_parent_creates: customParentCreates, invalid: [], missing_parents: [], unmapped_existing: [] };
+  for (const entry of entries) {
+    const current = existing.get(entry.code);
+    const parent = entry.parent_code ? existing.get(entry.parent_code) || entries.find((candidate) => candidate.code === entry.parent_code) : null;
+    if (entry.parent_code && !parent) {
+      report.missing_parents.push({ code: entry.code, parent_code: entry.parent_code });
+      continue;
+    }
+    if (!current) {
+      creates.push({ ...entry, parent_code: entry.parent_code });
+      existing.set(entry.code, { ...entry, id: null });
+      continue;
+    }
+    const expectedParentId = entry.parent_code ? existing.get(entry.parent_code)?.id || null : null;
+    if (current.type !== entry.type) {
+      conflicts.push({ code: entry.code, reason: "EXISTING_ACCOUNT_TYPE_CONFLICT", existing_type: current.type, catalog_type: entry.type });
+      continue;
+    }
+    if (current.name !== entry.name || current.active !== entry.active) warnings.push({ code: entry.code, reason: "EXISTING_DISPLAY_FIELDS_PRESERVED", existing: { name: current.name, active: current.active }, catalog: { name: entry.name, active: entry.active } });
+    if (current.parent_id == null && entry.parent_code) repairs.push({ id: current.id, code: entry.code, parent_code: entry.parent_code, parent_id: expectedParentId, level: entry.level });
+    else if (current.parent_id != null && current.parent_id !== expectedParentId) conflicts.push({ code: entry.code, reason: "EXISTING_PARENT_CONFLICT", existing_parent_id: current.parent_id, expected_parent_id: expectedParentId });
+    else if (current.level !== entry.level) repairs.push({ id: current.id, code: entry.code, parent_code: entry.parent_code, parent_id: expectedParentId, level: entry.level });
+    else unchanged.push({ code: entry.code, id: current.id });
+  }
+  for (const current of existingAccounts) {
+    const code = String(current.code);
+    if (catalogCodes.has(code)) continue;
+    const customParentCode = /^\d{4}$/.test(code) ? code.slice(0, 2) : (/^\d{6}.+/.test(code) ? code.slice(0, 6) : (/^\d{6}$/.test(code) ? code.slice(0, 4) : null));
+    const customLevel = /^\d{4}$/.test(code) ? 3 : (/^\d{6}$/.test(code) ? 4 : (customParentCode ? 5 : null));
+    const hasCanonicalCustomParent = /^\d{6}.+/.test(code) && catalogCodes.has(customParentCode.slice(0, 4));
+    if (!customParentCode || (!catalogCodes.has(customParentCode) && !hasCanonicalCustomParent)) {
+      report.unmapped_existing.push({ id: current.id, code, name: current.name });
+      continue;
+    }
+    let expectedParent = existing.get(customParentCode) || entries.find((entry) => entry.code === customParentCode);
+    if (!expectedParent && /^\d{6}.+/.test(code)) {
+      const canonicalParent = entries.find((entry) => entry.code === customParentCode.slice(0, 4));
+      if (canonicalParent) {
+        expectedParent = { id: null, code: customParentCode, name: `${canonicalParent.name} personalizada ${customParentCode}`, type: canonicalParent.type, parent_code: canonicalParent.code, level: 4, active: true };
+        customParentCreates.push(expectedParent);
+        creates.push({ ...expectedParent, custom_parent: true });
+        existing.set(customParentCode, expectedParent);
+      }
+    }
+    const expectedParentId = existing.get(customParentCode)?.id || null;
+    customLinks.push({ id: current.id, code, parent_code: customParentCode, parent_id: expectedParentId, level: customLevel });
+    if (!expectedParent) {
+      report.unmapped_existing.push({ id: current.id, code, name: current.name, reason: "CUSTOM_PARENT_MISSING" });
+    } else if (current.type !== expectedParent.type) {
+      conflicts.push({ code, reason: "EXISTING_CUSTOM_TYPE_CONFLICT", existing_type: current.type, expected_type: expectedParent.type });
+    } else if (current.parent_id != null && current.parent_id !== expectedParentId) {
+      conflicts.push({ code, reason: "EXISTING_CUSTOM_PARENT_CONFLICT", existing_parent_id: current.parent_id, expected_parent_id: expectedParentId });
+    } else if (current.parent_id == null || current.level !== customLevel) {
+      repairs.push({ id: current.id, code, parent_code: customParentCode, parent_id: expectedParentId, level: customLevel, custom: true });
+    } else {
+      unchanged.push({ code, id: current.id, custom: true });
+    }
+  }
+  return report;
+}
+
+async function previewChartTree(tenantId, catalog) {
+  return prisma.runWithTenant(tenantId, async () => {
+    const existing = await prisma.account.findMany({ orderBy: { code: "asc" } });
+    return buildChartTreePlan(catalog, existing);
+  });
+}
+
+async function applyChartTree(tenantId, catalog) {
+  return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    const entries = validateChartTreeCatalog(catalog);
+    const existing = await tx.account.findMany({ orderBy: { code: "asc" } });
+    const plan = buildChartTreePlan(entries, existing);
+    if (plan.conflicts.length || plan.missing_parents.length) {
+      throw appError(409, "CHART_TREE_CONFLICT", "La carga PUC fue bloqueada por conflictos existentes; revise el preview antes de aplicar");
+    }
+    const idsByCode = new Map(existing.map((account) => [String(account.code), account.id]));
+    for (const level of CHART_TREE_LENGTHS) {
+      const batch = plan.creates.filter((entry) => entry.code.length === level);
+      if (!batch.length) continue;
+      const data = batch.map((entry) => {
+        const parentId = entry.parent_code ? idsByCode.get(entry.parent_code) || null : null;
+        if (entry.parent_code && !parentId) throw appError(409, "PARENT_CREATE_ID_UNAVAILABLE", `No se pudo resolver el padre PUC de ${entry.code}`);
+        return { tenant_id: tenantId, code: entry.code, name: entry.name, type: entry.type, parent_id: parentId, level: entry.level, allows_tx: entry.allows_tx, active: entry.active };
+      });
+      await tx.account.createMany({ data });
+      const created = await tx.account.findMany({ where: { tenant_id: tenantId, code: { in: batch.map((entry) => entry.code) } }, select: { id: true, code: true } });
+      for (const account of created) idsByCode.set(String(account.code), account.id);
+      if (created.length !== batch.length) throw appError(409, "PARENT_CREATE_ID_UNAVAILABLE", `No se pudieron recuperar todas las cuentas PUC del nivel ${level}`);
+    }
+    for (const repair of plan.repairs) {
+      const parentId = idsByCode.get(repair.parent_code) || repair.parent_id || null;
+      if (parentId) await tx.account.update({ where: { id: repair.id }, data: { parent_id: parentId, level: repair.level } });
+      else throw appError(409, "PARENT_CREATE_ID_UNAVAILABLE", `No se pudo resolver el padre PUC de ${repair.code}`);
+    }
+    return { ...plan, applied: { created: plan.creates.length, repaired: plan.repairs.length } };
+  }, { maxWait: 10_000, timeout: 60_000 }));
+}
+
+async function previewDefaultChartTree(tenantId) {
+  return previewChartTree(tenantId, defaultPucTreeCatalog());
+}
+
+async function applyDefaultChartTree(tenantId, expected = {}) {
+  const catalog = defaultPucTreeCatalog();
+  const preview = await previewChartTree(tenantId, catalog);
+  const expectedCreates = expected.expected_create_count === undefined ? null : Number(expected.expected_create_count);
+  const expectedLinks = expected.expected_link_count === undefined ? null : Number(expected.expected_link_count);
+  if ((expectedCreates !== null && expectedCreates !== preview.creates.length) || (expectedLinks !== null && expectedLinks !== preview.repairs.length)) {
+    throw appError(409, "CHART_TREE_PREVIEW_STALE", "La previsualizacion PUC cambio; vuelva a previsualizar antes de aplicar");
+  }
+  const applied = await applyChartTree(tenantId, catalog);
+  return { ...applied, created_count: applied.applied.created, linked_count: applied.applied.repaired };
 }
 
 async function listAccounts(tenantId, query = {}) {
@@ -708,6 +1238,7 @@ async function listAccounts(tenantId, query = {}) {
     const where = {};
     if (query.active !== undefined) where.active = String(query.active) !== "false";
     if (query.type) where.type = query.type;
+    if (query.allows_tx !== undefined) where.allows_tx = String(query.allows_tx) === "true";
     if (query.search) {
       where.OR = [
         { code: { contains: String(query.search), mode: "insensitive" } },
@@ -724,20 +1255,33 @@ async function listAccounts(tenantId, query = {}) {
   });
 }
 
+async function assertAuxiliaryParent(client, code, parentId) {
+  if (!/^\d{8}$/.test(code)) return null;
+  const parent = await client.account.findFirst({ where: { id: Number(parentId), code: code.slice(0, 6), active: true } });
+  if (!parent) throw appError(422, "AUXILIARY_PARENT_INVALID", `El auxiliar ${code} requiere como padre activo la subcuenta ${code.slice(0, 6)}`);
+  return parent;
+}
+
 async function createAccount(tenantId, data) {
   const code = String(data.code || "").trim();
   const name = String(data.name || "").trim();
   if (!code || !name) throw appError(400, "REQUIRED_ACCOUNT", "Codigo y nombre son obligatorios");
   return prisma.runWithTenant(tenantId, async () => {
+    const parentCode = normalizeCode(data.parent_code);
+    const parent = parentCode ? await prisma.account.findFirst({ where: { code: parentCode, active: true } }) : null;
+    const parentId = data.parent_id === undefined ? parent?.id || null : data.parent_id;
+    const auxiliaryParent = await assertAuxiliaryParent(prisma, code, parentId);
+    const accountType = data.type || auxiliaryParent?.type || "asset";
+    if (auxiliaryParent && accountType !== auxiliaryParent.type) throw appError(422, "AUXILIARY_TYPE_MISMATCH", `El auxiliar ${code} debe conservar la naturaleza de su padre ${auxiliaryParent.code}`);
     const existing = await prisma.account.findFirst({ where: { code } });
     if (existing) throw appError(409, "ACCOUNT_EXISTS", `La cuenta ${code} ya existe`);
     const account = await prisma.account.create({
       data: {
         code,
         name,
-        type: data.type || "asset",
-        parent_id: data.parent_id || null,
-        level: data.level || Math.max(1, Math.ceil(code.length / 2)),
+        type: accountType,
+        parent_id: parentId,
+        level: /^\d{8}$/.test(code) ? 5 : (data.level || Math.max(1, Math.ceil(code.length / 2))),
         allows_tx: data.allows_tx !== false,
         active: data.active !== false
       }
@@ -750,13 +1294,15 @@ async function updateAccount(tenantId, id, data) {
   return prisma.runWithTenant(tenantId, async () => {
     const account = await prisma.account.findFirst({ where: { id: Number(id) } });
     if (!account) throw appError(404, "ACCOUNT_NOT_FOUND", "Cuenta no encontrada");
+    const auxiliaryParent = await assertAuxiliaryParent(prisma, account.code, data.parent_id === undefined ? account.parent_id : data.parent_id);
+    if (auxiliaryParent && Object.prototype.hasOwnProperty.call(data, "type") && data.type !== auxiliaryParent.type) throw appError(422, "AUXILIARY_TYPE_MISMATCH", `El auxiliar ${account.code} debe conservar la naturaleza de su padre ${auxiliaryParent.code}`);
     const updated = await prisma.account.update({
       where: { id: account.id },
       data: {
         name: data.name === undefined ? account.name : String(data.name).trim(),
         type: data.type || account.type,
         parent_id: data.parent_id === undefined ? account.parent_id : data.parent_id,
-        level: data.level === undefined ? account.level : data.level,
+        level: /^\d{8}$/.test(account.code) ? 5 : (data.level === undefined ? account.level : data.level),
         allows_tx: data.allows_tx === undefined ? account.allows_tx : Boolean(data.allows_tx),
         active: data.active === undefined ? account.active : Boolean(data.active)
       }
@@ -843,7 +1389,8 @@ async function listAccountingDocuments(tenantId, query = {}) {
       orderBy: [{ posting_date: "desc" }, { id: "desc" }],
       take: Number(query.limit) || 100
     });
-    return enrichAccountingDocuments(rows);
+    const reversal = require("./reversal");
+    return reversal.enrichDocumentsWithReversal(prisma, tenantId, await enrichAccountingDocuments(rows));
   });
 }
 
@@ -854,7 +1401,8 @@ async function getAccountingDocument(tenantId, documentId) {
       include: { lines: { orderBy: { line_no: "asc" } } }
     });
     if (!row) throw appError(404, "ACCOUNTING_DOCUMENT_NOT_FOUND", "Documento contable no encontrado");
-    return (await enrichAccountingDocuments([row]))[0];
+    const reversal = require("./reversal");
+    return (await reversal.enrichDocumentsWithReversal(prisma, tenantId, await enrichAccountingDocuments([row])))[0];
   });
 }
 
@@ -931,6 +1479,7 @@ async function createAccountingDocument(tenantId, userId, data) {
   await assertPeriodOpen(tenantId, postingDate);
   const period = periodFromDate(postingDate);
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    await acquireAccountingLock(tx, tenantId);
     const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
     const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
     const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
@@ -1010,6 +1559,20 @@ async function createAccountingDocument(tenantId, userId, data) {
     await tx.tenant.update({
       where: { id: tenantId },
       data: { config: { ...config, accounting: { ...accounting, accounting_numbering: nextNumbering } } }
+    });
+    // Rastro de origen propio del servidor (sin esquema nuevo): solo este flujo, que es el
+    // unico llamador de createAccountingDocument, emite esta marca. La anulacion exige esta
+    // fila para tratar el asiento como manual; cabecera o referencia imitadas no bastan.
+    await tx.auditLog.create({
+      data: {
+        user_id: userId || null,
+        action: "CREATE",
+        module: "accounting",
+        entity: "CntCabdoc",
+        entity_id: String(cabdoc.id),
+        old_value: { provenance: "none" },
+        new_value: { provenance: MANUAL_PROVENANCE, document_type: documentType, full_number: fullNumber }
+      }
     });
 
     return tx.cntCabdoc.findFirst({
@@ -2133,6 +2696,12 @@ async function createInventoryAdjustmentDocumentTx(tx, tenantId, userId, data) {
 
 module.exports = {
   initChartOfAccounts,
+  previewChartTree,
+  applyChartTree,
+  previewDefaultChartTree,
+  applyDefaultChartTree,
+  validateChartTreeCatalog,
+  buildChartTreePlan,
   listAccounts,
   createAccount,
   updateAccount,
@@ -2166,6 +2735,14 @@ module.exports = {
   listAccountingDocuments,
   getAccountingDocument,
   createAccountingDocument,
+  advisoryLockKey,
+  acquireAccountingLock,
+  MANUAL_PROVENANCE,
+  OPENING_BALANCE_PROVENANCE,
+  createOpeningBalancesTemplate,
+  parseOpeningBalancesWorkbook,
+  validateOpeningBalancesWorkbook,
+  postOpeningBalancesWorkbook,
   createGoodsReceiptDocumentTx,
   createInitialInventoryDocumentTx,
   createInventoryAdjustmentDocumentTx,
@@ -2185,6 +2762,27 @@ module.exports = {
   assertPaymentWithinBalance,
   periodBounds,
   periodFromDate,
+  accountNature,
+  normalizeCode,
+  mergeByCode,
+  activeRows,
+  openingBalanceLegacyPartyId,
+  resolveOpeningBalanceParty,
+  resolveOpeningBalancePartiesBatched,
+  resolveOpeningBalancePartyBatched,
+  matchOpeningBalanceCode,
+  resolveOpeningBalanceAccount,
+  resolveOpeningBalanceAccountsBatched,
+  resolveOpeningBalanceCenter,
+  prepareOpeningBalanceRows,
+  // Numeracion contable: exportados aditivo para que los modulos que emiten documentos dentro de
+  // SU propia transaccion (petty-cash, igual que createGoodsReceiptDocumentTx de este archivo)
+  // reserven el numero con el candado advisory y el auto-sanado max(configurado, emitido+1)
+  // en vez de reimplementar la lectura de Tenant.config.
+  DEFAULT_ACCOUNTING_DOCUMENT_TYPES,
+  normalizeAccountingDocumentType,
+  mergeNumbering,
+  reserveAccountingDocumentNumber,
   isPayableAccount,
   isReceivableAccount,
   normalizeRetentionCodes,
@@ -2222,7 +2820,7 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   const postingDate = data.posting_date ? new Date(data.posting_date) : null;
   if (!postingDate || Number.isNaN(postingDate.getTime())) throw appError(400, "REQUIRED_POSTING_DATE", "La fecha de contabilizacion es obligatoria");
   const documentKind = data.document_kind === "credit_note" ? "credit_note" : "invoice";
-  const documentClass = documentKind === "credit_note" ? "NCV" : "FV";
+  const documentClass = options.transportSettlement === true ? "LT" : documentKind === "credit_note" ? "NCV" : "FV";
   const dueDateInput = data.due_date ? new Date(data.due_date) : null;
   const dueTerm = data.due_term ? normalizeCode(data.due_term).toUpperCase() : dueTermFromDates(postingDate, dueDateInput);
   const dueDate = dueDateInput && !Number.isNaN(dueDateInput.getTime()) ? dueDateInput : dueDateFromTerm(postingDate, dueTerm);
@@ -2234,8 +2832,14 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   if (!Array.isArray(data.ledger_lines) || data.ledger_lines.length < 1) throw appError(400, "MIN_CXC_LINES", "Se requiere al menos una contrapartida contable");
 
   await assertPeriodOpen(tenantId, postingDate);
-  const tree = await getOrganizationTree(tenantId);
+  let tree = await getOrganizationTree(tenantId);
   const period = periodFromDate(postingDate);
+  if (options.transportSettlement === true || options.freshAccounting === true) {
+    const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+    const config = tenant?.config?.accounting || {};
+    if (config.periods?.[period]?.status === "closed") throw appError(423, "PERIOD_CLOSED", "El periodo contable esta cerrado");
+    tree = normalizeOrganizationTree(config, tenantId);
+  }
 
   const customer = await tx.party.findFirst({ where: { id: Number(data.customer_id), active: true, AND: [partyRoleWhere("customer")] } });
   if (!customer) throw appError(404, "CUSTOMER_NOT_FOUND", "Cliente no encontrado o inactivo");
@@ -2271,7 +2875,8 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
   const debitBeforeAssociated = round(ledgerLines.reduce((sum, line) => sum + line.debit, 0));
   const creditBeforeAssociated = round(ledgerLines.reduce((sum, line) => sum + line.credit, 0));
   const difference = round(debitBeforeAssociated - creditBeforeAssociated);
-  if (Math.abs(difference) <= 0.01) throw appError(422, "EMPTY_CXC_BALANCE", "El documento no genera saldo para la cuenta asociada");
+  const emptyBalance = options.transportSettlement === true || options.freshAccounting === true ? Math.abs(difference) < 0.005 : Math.abs(difference) <= 0.01;
+  if (emptyBalance) throw appError(422, "EMPTY_CXC_BALANCE", "El documento no genera saldo para la cuenta asociada");
 
   // For receivables: customer owes us → debit in 1305 (inverted from CXP)
   if (difference > 0) {
@@ -2319,7 +2924,7 @@ async function prepareReceivableDocument(tx, tenantId, data, options = {}) {
     const documentTypes = mergeByCode(DEFAULT_ACCOUNTING_DOCUMENT_TYPES, accounting.accounting_document_types, "code").map((row) => ({ ...row, code: normalizeAccountingDocumentType(row.code) }));
     numbering = mergeNumbering(documentTypes, accounting.accounting_numbering).find((item) => item.document_type === documentClass && item.active !== false);
     if (!numbering) throw appError(400, "CXC_NUMBERING_NOT_FOUND", `La clase ${documentClass} no tiene numeracion activa. Configure en Contabilidad > Maestros > Numeracion`);
-    documentNumber = Number(numbering.next_number) || 1;
+    documentNumber = await reserveAccountingDocumentNumber(tx, tenantId, documentClass, numbering);
     const prefix = normalizeCode(numbering.prefix || documentClass);
     number = `${prefix}-${String(documentNumber).padStart(6, "0")}`;
     return { config, accounting, numbering, documentNumber, documentClass, documentKind, number, customerReference, postingDate, dueTerm, dueDate, headerText, societyCode, customer, associatedAccount, ledgerLines, subtotal, taxTotal, retentionTotal, total, totalDebit, totalCredit, period, firstBranch, firstCC };
@@ -2359,12 +2964,12 @@ async function simulateReceivableDocument(tenantId, data) {
   });
 }
 
-async function createReceivableDocumentTx(tx, tenantId, userId, data) {
+async function createReceivableDocumentTx(tx, tenantId, userId, data, options = {}) {
     await tx.$executeRawUnsafe(
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       `${tenantId}:accounting-numbering`
     );
-    const preview = await prepareReceivableDocument(tx, tenantId, data, { reserveNumber: true });
+    const preview = await prepareReceivableDocument(tx, tenantId, data, { reserveNumber: true, transportSettlement: options.transportSettlement === true, freshAccounting: options.freshAccounting === true });
     const cxc = await tx.cxcCabdoc.create({
       data: {
         document_kind: preview.documentKind,
@@ -2647,6 +3252,7 @@ async function registerPaymentReceivable(tenantId, userId, data) {
   await assertPeriodOpen(tenantId, date);
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
     // Build list of invoices to pay
+    await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `${tenantId}:accounting-numbering`);
     let invoices = [];
     if (cabdoc_ids.length > 0) {
       invoices = await tx.cxcCabdoc.findMany({

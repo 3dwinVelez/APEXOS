@@ -38,6 +38,8 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   // pero no se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
 
   // Contabilidad
+  { id: "fn-contab-saldos-iniciales", label: "Importar saldos iniciales", description: "Cargue de saldos contables de apertura", href: "/dashboard/contabilidad/importar-saldos-iniciales", module: "contabilidad", keywords: "saldo apertura inicial importar contabilidad" },
+  { id: "fn-contab-pyg", label: "Ver PYG por vehiculo", description: "Estado de resultados por placa: ingresos, gastos y utilidad contra presupuesto", href: "/dashboard/contabilidad/pyg", module: "contabilidad", keywords: "pyg estado resultados utilidad gastos vehiculo placa centro costo presupuesto cumplimiento rentabilidad" },
   { id: "fn-contab-asientos", label: "Consultar asientos contables", description: "Revisa el registro contable y sus movimientos", href: "/dashboard/contabilidad/asientos", module: "contabilidad", keywords: "asiento contable libro diario comprobante registro movimiento" },
   { id: "fn-contab-cxp", label: "Gestionar cuentas por pagar", description: "Obligaciones con proveedores y pagos", href: "/dashboard/contabilidad/cuentas-por-pagar", module: "contabilidad", keywords: "cuentas por pagar cxp proveedor obligacion pago cartera" },
   { id: "fn-contab-estructura", label: "Configurar estructura contable", description: "Centros de costo, periodos y cierre", href: "/dashboard/contabilidad/estructura", module: "contabilidad", keywords: "estructura centro de costo periodo cierre configuracion" },

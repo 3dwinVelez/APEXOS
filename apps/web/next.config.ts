@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   outputFileTracingRoot: path.join(__dirname, "../.."),
   poweredByHeader: false,
+  async redirects() {
+    return [{ source: "/dashboard/transporte/pyg", destination: "/dashboard/contabilidad/pyg", permanent: false }];
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"]
   },

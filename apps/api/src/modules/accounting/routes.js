@@ -1,6 +1,10 @@
 const tenancy = require("../../middleware/tenancy");
 const { requirePermission } = require("../../middleware/rbac");
 const service = require("./service");
+const pygInteractive = require("./pyg-interactive");
+const pygBudget = require("./pyg-budget");
+const pygBudgetImport = require("./pyg-budget-import");
+const reversal = require("./reversal");
 const schema = require("./schema");
 
 async function accountingRoutes(fastify) {
@@ -10,6 +14,34 @@ async function accountingRoutes(fastify) {
   fastify.post("/accounting/chart/init", {
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.initChartOfAccounts(request.user?.tenant_id, request.body.country || "CO"));
+
+  fastify.post("/accounting/chart/tree/preview", {
+    schema: schema.chartTreeSchema,
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => service.previewChartTree(request.user?.tenant_id, request.body.catalog));
+
+  fastify.post("/accounting/chart/tree/apply", {
+    schema: schema.chartTreeSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => service.applyChartTree(request.user?.tenant_id, request.body.catalog));
+
+  fastify.post("/accounting/chart/preview", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => {
+    const report = await service.previewDefaultChartTree(request.user?.tenant_id);
+    return {
+      ...report,
+      existing_count: report.existing_count,
+      catalog_count: report.total_catalog_entries,
+      create_count: report.creates.length,
+      link_count: report.repairs.length,
+      conflict_count: report.conflicts.length
+    };
+  });
+
+  fastify.post("/accounting/chart/apply", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => service.applyDefaultChartTree(request.user?.tenant_id, request.body || {}));
 
   fastify.get("/accounting/accounts", {
     preHandler: requirePermission("accounting", "read")
@@ -170,6 +202,20 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request, reply) => reply.code(201).send(await service.createAccountingDocument(request.user?.tenant_id, request.user?.id, request.body)));
 
+  fastify.get("/accounting/documents/:id/reversal-eligibility", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => reversal.getReversalEligibility(request.user?.tenant_id, request.params.id));
+
+  fastify.post("/accounting/documents/:id/reverse", {
+    schema: schema.documentReversalSchema,
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => reply.code(201).send(await reversal.reverseAccountingDocument(
+    request.user?.tenant_id,
+    request.user?.id,
+    request.params.id,
+    request.body
+  )));
+
   fastify.get("/accounting/payables/documents", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listPayableDocuments(request.user?.tenant_id, request.query));
@@ -221,6 +267,32 @@ async function accountingRoutes(fastify) {
     preHandler: requirePermission("accounting", "write")
   }, async (request, reply) => reply.code(201).send(await service.savePaymentTermMaster(request.user?.tenant_id, request.body)));
 
+  fastify.get("/accounting/opening-balances/template", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request, reply) => {
+    const buffer = await service.createOpeningBalancesTemplate();
+    return reply.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", 'attachment; filename="plantilla-saldos-iniciales.xlsx"').send(buffer);
+  });
+
+  fastify.post("/accounting/opening-balances/validate", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "OPENING_BALANCES_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_OPENING_BALANCES_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return service.validateOpeningBalancesWorkbook(request.user?.tenant_id, await file.toBuffer());
+  });
+
+  fastify.post("/accounting/opening-balances", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "OPENING_BALANCES_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_OPENING_BALANCES_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return reply.code(201).send(await service.postOpeningBalancesWorkbook(request.user?.tenant_id, request.user?.id, await file.toBuffer()));
+  });
+
   fastify.get("/accounting/third-parties", {
     preHandler: requirePermission("accounting", "read")
   }, async (request) => service.listThirdParties(request.user?.tenant_id, request.query));
@@ -234,6 +306,47 @@ async function accountingRoutes(fastify) {
     schema: schema.thirdPartySchema,
     preHandler: requirePermission("accounting", "write")
   }, async (request) => service.saveThirdParty(request.user?.tenant_id, request.body, request.params.id));
+
+  fastify.get("/accounting/reports/pyg-interactive", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request, reply) => {
+    reply.header("Cache-Control", "no-store");
+    return pygInteractive.getInteractivePyg(request.user?.tenant_id, request.query);
+  });
+
+  fastify.get("/accounting/reports/pyg-interactive/budgets", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request) => pygBudget.getPygBudgets(request.user?.tenant_id, request.query));
+
+  fastify.put("/accounting/reports/pyg-interactive/budgets", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request) => pygBudget.savePygBudgets(request.user?.tenant_id, request.user?.id, request.body));
+
+  fastify.get("/accounting/reports/pyg-interactive/budgets/template", {
+    preHandler: requirePermission("accounting", "read")
+  }, async (request, reply) => {
+    const buffer = await pygBudgetImport.createPygBudgetTemplate();
+    return reply.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+      .header("Content-Disposition", 'attachment; filename="plantilla-presupuesto-mensual.xlsx"').send(buffer);
+  });
+
+  fastify.post("/accounting/reports/pyg-interactive/budgets/validate", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "BUDGET_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx de presupuesto" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_BUDGET_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return pygBudgetImport.validatePygBudgetWorkbook(request.user?.tenant_id, await file.toBuffer());
+  });
+
+  fastify.post("/accounting/reports/pyg-interactive/budgets/import", {
+    preHandler: requirePermission("accounting", "write")
+  }, async (request, reply) => {
+    const file = await request.file();
+    if (!file) return reply.code(400).send({ code: "BUDGET_FILE_REQUIRED", message: "Seleccione la plantilla .xlsx de presupuesto" });
+    if (!String(file.filename || "").toLowerCase().endsWith(".xlsx")) return reply.code(415).send({ code: "INVALID_BUDGET_FORMAT", message: "Solo se admite la plantilla .xlsx" });
+    return reply.code(201).send(await pygBudgetImport.importPygBudgetWorkbook(request.user?.tenant_id, request.user?.id, await file.toBuffer()));
+  });
 
 }
 

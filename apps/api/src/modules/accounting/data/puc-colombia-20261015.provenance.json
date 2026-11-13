@@ -1,0 +1,83 @@
+{
+  "schema_version": "puc-colombia-catalog-provenance-v1",
+  "catalog_version": "20261015",
+  "retrieved_at_utc": "2026-10-15T00:17:54.5696912Z",
+  "source": "https://puc.com.co",
+  "source_pages": [
+    {
+      "class": 1,
+      "url": "https://puc.com.co/cuentas/clase/1",
+      "status": 200
+    },
+    {
+      "class": 2,
+      "url": "https://puc.com.co/cuentas/clase/2",
+      "status": 200
+    },
+    {
+      "class": 3,
+      "url": "https://puc.com.co/cuentas/clase/3",
+      "status": 200
+    },
+    {
+      "class": 4,
+      "url": "https://puc.com.co/cuentas/clase/4",
+      "status": 200
+    },
+    {
+      "class": 5,
+      "url": "https://puc.com.co/cuentas/clase/5",
+      "status": 200
+    },
+    {
+      "class": 6,
+      "url": "https://puc.com.co/cuentas/clase/6",
+      "status": 200
+    },
+    {
+      "class": 7,
+      "url": "https://puc.com.co/cuentas/clase/7",
+      "status": 200
+    },
+    {
+      "class": 8,
+      "url": "https://puc.com.co/cuentas/clase/8",
+      "status": 200
+    },
+    {
+      "class": 9,
+      "url": "https://puc.com.co/cuentas/clase/9",
+      "status": 200
+    }
+  ],
+  "legal_reference": "https://puc.com.co/cuentas/clase/1",
+  "scope": "Colombian PUC hierarchy classes 1-9 at code lengths 1,2,4,6; eight-digit auxiliaries excluded",
+  "record_count": 2502,
+  "counts_by_code_length": {
+    "1": 9,
+    "2": 52,
+    "4": 340,
+    "6": 2101
+  },
+  "records_by_class": {
+    "9": 51,
+    "6": 278,
+    "5": 457,
+    "7": 5,
+    "4": 504,
+    "3": 115,
+    "2": 320,
+    "1": 685,
+    "8": 87
+  },
+  "quality": {
+    "duplicate_code_count": 0,
+    "duplicate_name_conflict_count": 0,
+    "orphan_parent_count": 0,
+    "bad_length_count": 0,
+    "blank_name_count": 0,
+    "contains_8_digit_codes": false
+  },
+  "source_proposal_sha256": "a3fc61981fec3850da8acda8ce5471d2ab39e7fd050c57bbf7ecaa3e4b0a717c",
+  "catalog_sha256": "605d827042ba168d28b6f12636493766e5fba47e41813e3c2b445b6a8fa06b32"
+}
