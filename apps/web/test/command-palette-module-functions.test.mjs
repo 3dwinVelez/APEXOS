@@ -12,12 +12,16 @@ const dashboardRoot = path.join(root, "app/dashboard");
 
 // Rutas estaticas reales del dashboard. Se excluyen la raiz, la redireccion de
 // configuracion y el alias de mallas (reexport de rutas), que no son destinos propios.
-const ALIASES = new Set(["/dashboard/configuracion", "/dashboard/talento-humano/mallas"]);
+const ALIASES = new Set(["/dashboard/configuracion", "/dashboard/talento-humano/mallas", "/dashboard/transporte/maestros", "/dashboard/administracion/maestros-transporte", "/dashboard/transporte/pyg"]);
+// Vistas ampliadas: se abren desde su pantalla padre con la seleccion en la URL,
+// no son destinos propios del centro de comandos.
+const NESTED_VIEWS = new Set(["/dashboard/contabilidad/pyg/ampliado"]);
+const routePath = (href) => new URL(href, "http://apex.local").pathname;
 const staticRoutes = fs.readdirSync(dashboardRoot, { recursive: true })
   .map((entry) => String(entry).replace(/\\/g, "/"))
   .filter((entry) => entry.endsWith("/page.tsx") || entry === "page.tsx")
   .map((entry) => `/dashboard${entry === "page.tsx" ? "" : `/${entry.replace(/\/page\.tsx$/, "")}`}`)
-  .filter((route) => !route.includes("[") && route !== "/dashboard" && !ALIASES.has(route));
+  .filter((route) => !route.includes("[") && route !== "/dashboard" && !ALIASES.has(route) && !NESTED_VIEWS.has(route));
 
 const functionsSource = read("lib/moduleFunctions.ts");
 const modulesSource = read("lib/modules.ts");
@@ -37,20 +41,28 @@ const functionEntries = functionsSource.split("\n")
 const moduleSlugs = [...modulesSource.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
 const actionHrefs = [...actionsSource.matchAll(/href: "([^"]+)"/g)].map((match) => match[1]);
 
+// Un modulo retirado del portafolio conserva sus pantallas operativas, pero deja de ofrecerse:
+// sus rutas no se exigen en el centro de comandos porque alli tambien se filtran.
+const retiredSlugs = (() => {
+  const block = modulesSource.slice(modulesSource.indexOf("const RETIRED_MODULE_SLUGS"));
+  return [...block.slice(0, block.indexOf("]);")).matchAll(/"([\w-]+)"/g)].map((match) => match[1]);
+})();
+const belongsToRetired = (route) => retiredSlugs.some((slug) => route === `/dashboard/${slug}` || route.startsWith(`/dashboard/${slug}/`));
+
 test("el registro de funciones cubre todas las rutas del dashboard", () => {
   assert.ok(staticRoutes.length >= 80, `el inventario de rutas solo encontro ${staticRoutes.length} destinos`);
   const covered = new Set([
     ...moduleSlugs.map((slug) => `/dashboard/${slug}`),
     ...actionHrefs,
-    ...functionEntries.map((entry) => entry.href)
+    ...functionEntries.map((entry) => routePath(entry.href))
   ]);
-  const uncovered = staticRoutes.filter((route) => !covered.has(route));
+  const uncovered = staticRoutes.filter((route) => !covered.has(route) && !belongsToRetired(route));
   assert.deepEqual(uncovered, [], `rutas sin acceso desde el centro de comandos: ${uncovered.join(", ")}`);
 });
 
 test("cada funcion del registro apunta a una ruta estatica existente", () => {
   const routes = new Set(staticRoutes);
-  const invalid = functionEntries.filter((entry) => !routes.has(entry.href));
+  const invalid = functionEntries.filter((entry) => !routes.has(routePath(entry.href)));
   assert.deepEqual(invalid.map((entry) => `${entry.label} -> ${entry.href}`), []);
   const duplicated = functionEntries.map((entry) => entry.href).filter((href, index, all) => all.indexOf(href) !== index);
   assert.deepEqual(duplicated, []);
@@ -73,8 +85,18 @@ test("el buscador ofrece las funciones clave del modulo de talento humano", () =
 });
 
 test("los alias excluidos si son redirecciones y no destinos propios", () => {
+  assert.match(read("app/dashboard/transporte/pyg/page.tsx"), /redirect\("\/dashboard\/contabilidad\/pyg"\)/);
+  for (const alias of ["transporte/maestros", "administracion/maestros-transporte"]) {
+    assert.match(read(`app/dashboard/${alias}/page.tsx`), /redirect\("\/dashboard\/administracion"\)/);
+  }
   assert.match(read("app/dashboard/configuracion/page.tsx"), /redirect\("\/dashboard\/administracion"\)/);
   assert.match(read("app/dashboard/talento-humano/mallas/page.tsx"), /export \{ default \} from "\.\.\/rutas\/page"/);
+});
+
+test("PYG se ofrece por Contabilidad y el alias de Transporte redirige", () => {
+  const entries = functionEntries.filter((entry) => /\/pyg$/.test(routePath(entry.href)));
+  assert.deepEqual(entries.map((entry) => entry.href), ["/dashboard/contabilidad/pyg"]);
+  assert.match(read("app/dashboard/transporte/pyg/page.tsx"), /redirect\("\/dashboard\/contabilidad\/pyg"\)/);
 });
 
 test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => {
@@ -82,8 +104,8 @@ test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => 
   assert.match(paletteSource, /MODULES_BY_SLUG/);
   assert.match(paletteSource, /moduleHome\(/);
   assert.match(paletteSource, /const taken = new Set\(\[\.\.\.actions, \.\.\.functions\]\.map\(\(item\) => item\.href\)\)/);
-  assert.match(paletteSource, /MODULES\.filter\(\(module\) => enabled\(module\.slug\) && !taken\.has\(moduleHome\(module\.slug\)\)\)/);
-  assert.match(functionsSource, /cxc: "\/dashboard\/cxc\/documentos"/);
+  assert.match(paletteSource, /MODULES\.filter\(\(module\) => isPortfolioModule\(module\) && enabled\(module\.slug\) && !taken\.has\(moduleHome\(module\.slug\)\)\)/);
+  assert.doesNotMatch(functionsSource, /\/dashboard\/cxc/);
 });
 
 test("la busqueda ignora acentos y prioriza coincidencias de etiqueta", () => {

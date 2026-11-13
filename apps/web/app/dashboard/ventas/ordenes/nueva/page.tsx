@@ -8,7 +8,8 @@ import { api } from "@/lib/api";
 import { asCollection } from "@/lib/api-collections";
 import { Button } from "@/components/ui/button";
 import { showToast } from "@/components/system/ToastCenter";
-import { Select, Textarea } from "@/components/ui/form-controls";
+import { Textarea } from "@/components/ui/form-controls";
+import { SearchSelect } from "@/components/ui/search-select";
 import { FormGrid } from "@/components/ui/layout";
 
 type Customer = { id: number; name: string };
@@ -78,18 +79,18 @@ export default function NuevaOVPage() {
           <h2 className="font-semibold">Datos de la orden</h2>
         </div>
         <FormGrid className="p-4">
-          <Select error={touched.customer && !form.customer_id ? "Selecciona un cliente" : undefined} label="Cliente *" value={form.customer_id} onBlur={() => setTouched((value) => ({ ...value, customer: true }))} onChange={(event) => setForm((current) => ({ ...current, customer_id: Number(event.target.value) }))} required>
+          <SearchSelect error={touched.customer && !form.customer_id ? "Selecciona un cliente" : undefined} label="Cliente" onClose={() => setTouched((value) => ({ ...value, customer: true }))} onChange={(event) => setForm((current) => ({ ...current, customer_id: Number(event.target.value) }))} required value={form.customer_id}>
               <option value={0}>Seleccionar cliente</option>
               {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
-          </Select>
-          <Select error={touched.item && !form.item_id ? "Selecciona un producto o servicio" : undefined} label="Producto o servicio *" value={form.item_id} onBlur={() => setTouched((value) => ({ ...value, item: true }))} onChange={(event) => {
+          </SearchSelect>
+          <SearchSelect error={touched.item && !form.item_id ? "Selecciona un producto o servicio" : undefined} label="Producto o servicio" onClose={() => setTouched((value) => ({ ...value, item: true }))} onChange={(event) => {
               const itemId = Number(event.target.value);
               const found = items.find((item) => item.id === itemId);
               setForm((current) => ({ ...current, item_id: itemId, unit_price: found?.unit_price || 0 }));
-            }} required>
+            }} required value={form.item_id}>
               <option value={0}>Seleccionar producto</option>
               {items.map((item) => <option key={item.id} value={item.id}>{item.code} · {item.name}</option>)}
-          </Select>
+          </SearchSelect>
           <Field error={touched.qty && form.qty <= 0 ? "La cantidad debe ser mayor que cero" : undefined} label="Cantidad" required>
             <ZeroFriendlyNumberInput aria-invalid={touched.qty && form.qty <= 0} className="h-10 w-full rounded-md border border-line px-3 text-sm" min={0.01} onBlur={() => setTouched((value) => ({ ...value, qty: true }))} step="0.01" value={form.qty} onValueChange={(value) => setForm((current) => ({ ...current, qty: value }))} />
           </Field>
