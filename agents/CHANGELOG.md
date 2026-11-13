@@ -4,6 +4,17 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-13
 
+### Promoción ejecutada a QA y smoke del despliegue real (`homologacion-visual-20261112-deploy-run`)
+
+- **Autorización del dueño.** «Procede con la migración»: se registra `approval.status: approved` en el manifiesto pre-QA (merge a `develop` y despliegue QA permitidos; `main` y migraciones remotas siguen en `false`).
+- **Compuertas en verde.** `qa:promotion:scope` → 100 rutas exactas; `qa:preqa:evidence` → `AUTORIZACION PRE-QA VALIDA`.
+- **Fast-forward desde worktree detachado.** `origin/develop` pasó de `3595a9bb` a `8ba301c0` (`3595a9bb..8ba301c0`), árbol `4c870b26…` idéntico al certificado, 100 rutas (79 A / 21 M / 0 D), cero rutas de `apps/api/**`. Sin merge commit, sin force, sin tocar `main`.
+- **El API de QA no se redesplegó ni migró.** `/health` conserva `commit: 3595a9bbca23`; Railway solo construyó `apexos-web-qa` y el deployment `7c27a4f7` quedó `SUCCESS` sobre `8ba301c0`.
+- **Smoke remoto de solo lectura.** `scripts/certifications/visual-homologation-qa-smoke.cjs`: `/login` 200, login real, lobby e 8 hubs accesibles con `h1` y desbordamiento 0, Nueva orden de venta con 2 `combobox`, 2 `<select aria-hidden>` y 0 selects nativos visibles, apertura/filtro/cierre del listbox; 23 verificaciones y 5 capturas en `docs/qa/evidence/homologacion-visual-qa-20261113/`.
+- **Denegación por licencia documentada.** Gestión Comercial (`M-27`), Comercio (`M-30`), Reportes (`apex_heart`) y Gastos Menores (`M-29`) muestran la tarjeta canónica «Acceso no autorizado» en el inquilino de QA; no hay error boundary ni pantalla en blanco.
+- **Ruido preexistente clasificado.** El 400 de Supabase durante el login (la cuenta demo se autentica por API) y el 404 de favicon se guardan en `known_console_noise`; los hubs accesibles terminan con 0 errores nuevos de consola y de red.
+- Agentes: `apexos-qa` 2.59.0 → 2.60.0 (control 73: el smoke de QA corre contra el despliegue real sin escribir, mide la primitiva dentro del formulario, espera la denegación por licencia y clasifica el ruido preexistente con cero errores nuevos).
+
 ### Plan de despliegue controlado de la capa visual a QA (`homologacion-visual-20261112-deploy`)
 
 - **Pedido directo del dueño.** «Monta el plan de despliegue hacia QA "develop" garantizando que no surjan problemas de funcionalidades ajenas a la intervencion estetica que vamos a empujar». Se monta el plan; la promocion sigue sin ejecutarse.

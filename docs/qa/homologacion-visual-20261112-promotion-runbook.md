@@ -1,7 +1,7 @@
 # Plan de despliegue controlado a QA — capa visual homologada 2026-11-12
 
 Cambio: `homologacion-visual-20261112`
-Estado: **plan montado y verificado, promocion NO ejecutada**. Solo el propietario autoriza el paso a `develop` (QA).
+Estado: **promoción ejecutada el 2026-11-13 y smoke técnico de QA en verde; la certificación funcional de persistencia queda para el equipo de QA**.
 Flujo permitido: `desarrollo -> develop -> main`. Este plan cubre unicamente `desarrollo -> develop` y el despliegue
 del frontend a QA. Nunca autoriza `main`, despliegue de API, migraciones remotas ni cambios de infraestructura.
 
@@ -172,7 +172,46 @@ si cambia el payload de las ordenes o si alguna pantalla desborda.
 - [x] Candidato aislado y certificado sobre el build de produccion.
 - [x] Alcance exacto validado contra `origin/develop`.
 - [x] Plan de despliegue con invariantes, puntos de parada y rollback.
-- [ ] Autorizacion explicita del propietario.
-- [ ] Aprobacion registrada y compuerta pre-QA en verde.
-- [ ] Fast-forward a `develop` y despliegue web a QA.
-- [ ] Certificacion funcional de QA.
+- [x] Autorizacion explicita del propietario: «procede con la migracion» (2026-11-13).
+- [x] Aprobacion registrada y compuerta pre-QA en verde.
+- [x] Fast-forward a `develop` y despliegue web a QA.
+- [ ] Certificacion funcional de QA (persistencia real).
+
+### 10.1 Resultado de la promocion (2026-11-13)
+
+| Dato | Valor medido |
+|---|---|
+| Compuerta de alcance | `ALCANCE DE PROMOCION VALIDO: homologacion-visual-20261112 (100 rutas)` |
+| Compuerta pre-QA | `AUTORIZACION PRE-QA VALIDA: homologacion-visual-20261112` |
+| `origin/develop` antes → despues | `3595a9bb…` → `8ba301c0db7bd272fac6ab21a78384a290ba2409` |
+| Merge | fast-forward desde worktree detachado; sin merge commit, sin force |
+| Arbol desplegado | `4c870b267cd7f76ab17aabdf99107f082631fbf0` (identico al certificado) |
+| Diff neto | 100 rutas (79 A / 21 M / 0 D), 0 fuera de `apps/web`/`docs`, 0 API/Prisma |
+| Deployment web QA | `7c27a4f7-0767-4cb0-8d90-20787a1368bf` — `SUCCESS`, commit `8ba301c0`, 2026-11-13T14:27Z |
+| API QA | **sin redespliegue**: `/health` responde `commit: 3595a9bbca23` |
+| Migraciones | ninguna ejecutada |
+
+> La compuerta de alcance se ejecutó **antes del push** contra `origin/develop = 3595a9bb`. Después de la
+> promoción no se vuelve a correr contra el mismo destino: el destino ya ES el candidato y el validador
+> reporta que el baseline cambió. Su salida verde (`100 rutas`) quedó registrada en este runbook y en el
+> brief; la compuerta pre-QA sí sigue siendo re-ejecutable y permanece en verde.
+
+### 10.2 Smoke tecnico remoto (solo lectura)
+
+Script versionado: `scripts/certifications/visual-homologation-qa-smoke.cjs`.
+Evidencia: `docs/qa/evidence/homologacion-visual-qa-20261113/` (`smoke.json` + 5 capturas).
+
+| Verificacion | Resultado |
+|---|---|
+| Web QA `/login` | HTTP 200 |
+| Login real `demo@apex.local` | Sesion iniciada; lobby «Mi operación» |
+| API QA `/health` | 200, commit `3595a9bbca23` (intacto) |
+| Hubs accesibles (inventario, compras, ventas, contabilidad, transporte, talento humano, servicios, administracion) | 200, `h1` correcto, desbordamiento 0 |
+| Hubs denegados por licencia (`M-27`, `M-30`, `apex_heart`, `M-29`) | tarjeta canonica «Acceso no autorizado», sin error boundary |
+| Nueva orden de venta | 2 `combobox`, 2 `<select aria-hidden>`, 0 selects nativos visibles; listbox abre, filtra y cierra con Escape; formulario no enviado |
+| Consola y red | 0 errores nuevos; ruido preexistente clasificado en `known_console_noise` (400 de Supabase en el login por API y 404 de favicon) |
+| Total | **23/23 verificaciones, 5 capturas** |
+
+`gestion-comercial` y `gastos-menores` no pueden probarse en el inquilino demo de QA por licenciamiento
+(`M-27` y `M-29` ausentes); la agenda comercial y la persistencia de escrituras quedan en la fase funcional
+con un tenant que tenga esos modulos.

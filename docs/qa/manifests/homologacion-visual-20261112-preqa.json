@@ -6,14 +6,15 @@
   "target_branch": "develop",
   "qa_status": "pending",
   "approval": {
-    "status": "pending",
+    "status": "approved",
     "scope": "promotion_to_develop_for_qa",
-    "approved_by": "",
-    "approved_at": "",
+    "approved_by": "Edwin (propietario APEXOS)",
+    "approved_at": "2026-11-13T00:00:00-05:00",
+    "authorization": "procede con la migracion",
     "authorized_actions": {
       "push_desarrollo": true,
-      "merge_develop": false,
-      "deploy_qa": false,
+      "merge_develop": true,
+      "deploy_qa": true,
       "promote_main": false,
       "create_auxiliary_branch": true,
       "run_remote_migrations": false
