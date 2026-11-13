@@ -4,8 +4,9 @@ const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const certificate = process.argv.find(arg => arg.startsWith('--certificate='))?.slice(14) || 'hr-employee-user-link-local.js';
-if (!['hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js'].includes(certificate)) throw Error('Unsupported certification script');
+if (!['hr-employee-user-link-local.js', 'hr-punch-mobile-evidence-local.js', 'hr-landing-hub-local.js', 'hr-payroll-markings-local.js', 'hr-marking-existing-employee-local.js', 'hr-termination-document-search-local.js'].includes(certificate)) throw Error('Unsupported certification script');
 const outputDirectories = {
+  'hr-termination-document-search-local.js': 'hr-termination-document-search',
   'hr-marking-existing-employee-local.js': 'hr-marking-existing-employee',
   'hr-payroll-markings-local.js': 'hr-payroll-markings',
   'hr-punch-mobile-evidence-local.js': 'hr-punch-mobile-evidence',
@@ -34,7 +35,8 @@ if (!hasSedes) {
 }
 const hasRouteKind = docker(['exec', container, 'psql', '-U', 'apex', '-d', database, '-Atc', "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'TimeRoute' AND column_name = 'kind')"]).toString().trim() === 't';
 if (!hasRouteKind) apply(fs.readFileSync(path.join(root, 'apps/api/prisma/migrations/20260919110000_time_route_kind_descanso/migration.sql')));
-const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}`;
+const connectionOptions = certificate === 'hr-termination-document-search-local.js' ? '?connection_limit=1&connect_timeout=20&pool_timeout=45' : '';
+const localUrl = `postgresql://apex:${encodeURIComponent(password)}@127.0.0.1:55432/${database}${connectionOptions}`;
 const log = fs.openSync(path.join(output, 'certification.log'), 'w');
 const result = spawnSync(process.execPath, [path.join(__dirname, certificate), '--output=' + path.join(output, 'certification.json')], {
   cwd: root, env: { ...process.env, DATABASE_URL: localUrl, DIRECT_URL: localUrl, REDIS_DISABLED: 'true', DISABLE_REDIS: 'true', NODE_ENV: 'test', HR_ASSOCIATION_BROWSER: '1' },

@@ -904,6 +904,25 @@ async function listRouteEventSummaries(tenantId) {
 }
 
 async function listEmployees(tenantId, query = {}) {
+  if (query.document_search !== undefined) {
+    const document = String(query.document_search).slice(0, 80).toUpperCase().replace(/[^0-9A-Z]/g, "");
+    if (document.length < 2) return [];
+    const prefix = document + "%";
+    const partial = "%" + document + "%";
+    return prisma.$queryRaw`
+      SELECT id, code, contract_type,
+             jsonb_build_object('name', metadata->>'name', 'document', metadata->>'document',
+                                'document_type', metadata->>'document_type') AS metadata
+      FROM "Employee"
+      CROSS JOIN LATERAL (
+        SELECT regexp_replace(upper(COALESCE(metadata->>'document', '')), '[^0-9A-Z]', '', 'g') AS document_key
+      ) AS search
+      WHERE tenant_id = ${tenantId} AND active = true AND search.document_key LIKE ${partial}
+      ORDER BY (search.document_key = ${document}) DESC, (search.document_key LIKE ${prefix}) DESC,
+               search.document_key, id
+      LIMIT 10
+    `;
+  }
   return prisma.runWithTenant(tenantId, async () => prisma.employee.findMany({
     where: {
       ...(query.position ? { position: query.position } : {}),
