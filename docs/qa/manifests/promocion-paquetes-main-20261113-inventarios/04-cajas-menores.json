@@ -1,0 +1,139 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-04-cajas-menores",
+  "commit": "240e73d6fe80262e4880742494ca82f7babba787",
+  "parent": "fdd73d7c30a3e90652290899abb494946284894c",
+  "subject": "feat(petty-cash): cajas menores con comprobantes, anticipos y reportes",
+  "modules": [
+    "gastos-menores",
+    "petty-cash",
+    "catalogo-m29"
+  ],
+  "shortstat": "31 files changed, 13042 insertions(+), 11 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261009180000_petty_cash_foundation/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/prisma/schema.prisma"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/server.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/core/prisma.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/petty-cash/routes.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/petty-cash/schema.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/petty-cash/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-opening-balances.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-reversal.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/petty-cash-masters.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/petty-cash-reports.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/petty-cash-vouchers.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/anticipos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/cajas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/conceptos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/gastos/nuevo/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/gastos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/gastos-menores/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/gastos-menores-nav.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/gastos-menores/GastosLookup.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/gastos-menores/GastosMenoresWorkspace.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/modules.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-entry-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-masters.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-module-registration.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-operations.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/gastos-menores-reports.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/module-portfolio.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261011100000_petty_cash_module_catalog.sql"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

@@ -1,0 +1,17 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-09-privacidad",
+  "commit": "a0f15f101ce83d269cf4c2e555f21235b7a69901",
+  "parent": "201dcc83e6449fc921bf20f9dced3c3960e14204",
+  "subject": "feat(web): página de privacidad y tratamiento de datos",
+  "modules": [
+    "privacidad"
+  ],
+  "shortstat": "1 file changed, 254 insertions(+)",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/web/app/privacidad/page.tsx"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

@@ -1,0 +1,7 @@
+$ npm run qa:promotion:scope -- docs/qa/manifests/promocion-paquetes-main-20261113-scope.json HEAD origin/main
+> apex-os@2.0.0 qa:promotion:scope
+> node scripts/validate-promotion-scope.js docs/qa/manifests/promocion-paquetes-main-20261113-scope.json HEAD origin/main
+
+ALCANCE DE PROMOCION VALIDO: promocion-paquetes-main-20261113 (352 rutas)
+
+Compuerta corrida contra origin/main 4659292f; commit funcional certificado aadbb688.

@@ -1,0 +1,366 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-01-capa-visual",
+  "commit": "993138740055562feb50f61d7b162dd87930c8b3",
+  "parent": "4659292f4f23014ee4b0e990fb66e4a2ce6646c1",
+  "subject": "feat(web): la capa visual completa llega a main como paquete aislado",
+  "modules": [
+    "lobby-v4",
+    "design-tokens",
+    "shell",
+    "search-select",
+    "portafolio-curado",
+    "evidencia-visual"
+  ],
+  "shortstat": "86 files changed, 1596 insertions(+), 307 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/[module]/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/comercio/ComercioCharts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/comercio/compras/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/comercio/vender/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/cxc/layout.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/cxc/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/servicios/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/globals.css"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/layout.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/ContextBreadcrumbs.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/RouteAccessGuard.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/Sidebar.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/TechnicianWorkspaceHeader.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/UserSessionBadge.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CollaborationPresence.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/CommandPalette.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/ExperiencePreferences.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/FieldProductivity.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/LocaleSwitcher.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/NotificationCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/OfflineFirstStatus.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/PlatformAlerts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/TraceabilityCenter.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/WorldClassToolkit.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/transport/TransportSearchSelect.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/ModalFrame.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/data-table.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/ui/feedback.tsx"
+    },
+    {
+      "status": "D",
+      "file": "apps/web/components/ui/SearchSelect.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/ui/search-select.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/lobbyAssets.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleAccess.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/modules.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/operationalWorkspace.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/selectMatch.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/workspaceTools.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/banner-network.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/banner-truck.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-activos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-administracion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-apex-ai.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-apex-control.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-calidad.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-comercio-exterior.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-comercio.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-compras.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-configuracion-inicial.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-contabilidad.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-costos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-crm.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-cxc.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-devoluciones.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-facturacion-electronica.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-facturacion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-gastos-menores.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-gestion-comercial.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-inventario.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-planeacion-demanda.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-presupuestos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-produccion.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-proyectos.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-punto-de-venta.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-recetas.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-reportes.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-servicios.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-suscripciones.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-talento-humano.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-tesoreria.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-transporte.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/public/assets/lobby/module-ventas.webp"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/ambient-background.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-accessibility-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-collaboration-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-personalization-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-toolkit-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-three-totp-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/certify-ui-ux-phase-two-local.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/comercio-ux-consistency.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/commercial-visit-selection.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/lobby-greeting.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/login-phase-zero-ux.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/module-portfolio.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/operational-home-redesign.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/phase-two-intelligent-experience.test.mjs"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

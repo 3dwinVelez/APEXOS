@@ -1,0 +1,18 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-11-contrato-visual",
+  "commit": "aadbb68861a449e601adf34408add4e3dae8154d",
+  "parent": "97c939ae76145ffed02bbe5280b83dba31a9ca82",
+  "subject": "test(web): contrato de la piel operativa de gráficos, tablas y estados vacíos",
+  "modules": [
+    "capa-visual",
+    "pruebas"
+  ],
+  "shortstat": "1 file changed, 54 insertions(+)",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/web/test/visual-operation.test.mjs"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

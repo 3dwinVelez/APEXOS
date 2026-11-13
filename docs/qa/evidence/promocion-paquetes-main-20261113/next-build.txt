@@ -1,0 +1,176 @@
+▲ Next.js 16.3.5 (webpack)
+✓ Running next.config.ts took 63ms
+- Experiments (use with caution):
+  · optimizePackageImports
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 95s
+  Running TypeScript ...
+
+  We detected TypeScript in your project and reconfigured your tsconfig.json file for you. Strict-mode is set to false by default.
+  The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+  	- include was updated to add '.next-main-packages/types/**/*.ts'
+  	- include was updated to add '.next-main-packages/dev/types/**/*.ts'
+
+  Finished TypeScript in 64s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/135) ...
+  Generating static pages using 3 workers (33/135) 
+  Generating static pages using 3 workers (67/135) 
+  Generating static pages using 3 workers (101/135) 
+✓ Generating static pages using 3 workers (135/135) in 17.5s
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/admin/roles
+├ ƒ /api/admin/users
+├ ƒ /api/platform/companies
+├ ƒ /api/platform/company-modules
+├ ƒ /api/platform/company-sessions
+├ ƒ /api/public/service-requests
+├ ƒ /api/services/monitor-orders
+├ ƒ /api/v1/[...path]
+├ ƒ /api/v1/services/orders/[id]
+├ ○ /dashboard
+├ ƒ /dashboard/[module]
+├ ○ /dashboard/administracion
+├ ○ /dashboard/administracion/maestros-transporte
+├ ○ /dashboard/administracion/suscripciones
+├ ○ /dashboard/apex-ai
+├ ○ /dashboard/comercio
+├ ○ /dashboard/comercio/cartera
+├ ○ /dashboard/comercio/clientes
+├ ○ /dashboard/comercio/compras
+├ ○ /dashboard/comercio/configuracion
+├ ○ /dashboard/comercio/gastos
+├ ○ /dashboard/comercio/productos
+├ ○ /dashboard/comercio/promociones
+├ ○ /dashboard/comercio/reportes
+├ ○ /dashboard/comercio/vender
+├ ○ /dashboard/comercio/ventas
+├ ○ /dashboard/compras
+├ ○ /dashboard/compras/facturas
+├ ○ /dashboard/compras/importaciones
+├ ○ /dashboard/compras/ordenes
+├ ○ /dashboard/compras/ordenes/nueva
+├ ○ /dashboard/compras/ordenes/recibir
+├ ○ /dashboard/compras/proveedores
+├ ƒ /dashboard/compras/proveedores/[id]
+├ ○ /dashboard/compras/reportes/facturas
+├ ○ /dashboard/compras/reportes/ordenes
+├ ○ /dashboard/configuracion
+├ ○ /dashboard/contabilidad
+├ ○ /dashboard/contabilidad/asientos
+├ ○ /dashboard/contabilidad/cuentas-por-pagar
+├ ○ /dashboard/contabilidad/estructura
+├ ○ /dashboard/contabilidad/importar-saldos-iniciales
+├ ○ /dashboard/contabilidad/iva
+├ ○ /dashboard/contabilidad/plan-cuentas
+├ ○ /dashboard/contabilidad/pyg
+├ ƒ /dashboard/contabilidad/pyg/ampliado
+├ ○ /dashboard/contabilidad/reportes
+├ ○ /dashboard/contabilidad/retenciones
+├ ○ /dashboard/contabilidad/terceros
+├ ○ /dashboard/cxc
+├ ƒ /dashboard/cxc/clientes/[id]/estado-cuenta
+├ ○ /dashboard/cxc/documentos
+├ ○ /dashboard/cxc/reportes/cartera
+├ ○ /dashboard/cxc/retenciones
+├ ○ /dashboard/facturacion
+├ ○ /dashboard/facturacion/documentos
+├ ○ /dashboard/facturacion/emitir
+├ ○ /dashboard/gastos-menores
+├ ○ /dashboard/gastos-menores/anticipos
+├ ○ /dashboard/gastos-menores/cajas
+├ ○ /dashboard/gastos-menores/conceptos
+├ ○ /dashboard/gastos-menores/gastos
+├ ○ /dashboard/gastos-menores/gastos/nuevo
+├ ○ /dashboard/gastos-menores/reportes
+├ ○ /dashboard/gestion-comercial
+├ ○ /dashboard/gestion-comercial/agenda
+├ ƒ /dashboard/gestion-comercial/agenda/[id]/ejecucion
+├ ○ /dashboard/gestion-comercial/cotizaciones
+├ ○ /dashboard/gestion-comercial/maestros
+├ ○ /dashboard/gestion-comercial/mi-dia
+├ ○ /dashboard/gestion-comercial/pedidos
+├ ○ /dashboard/gestion-comercial/presupuestos
+├ ○ /dashboard/gestion-comercial/reportes
+├ ○ /dashboard/gestion-comercial/reportes/cotizado-vs-pedido
+├ ○ /dashboard/inventario
+├ ○ /dashboard/inventario/ajustes
+├ ○ /dashboard/inventario/ajustes/nuevo
+├ ○ /dashboard/inventario/bodegas
+├ ○ /dashboard/inventario/cargue-inicial
+├ ○ /dashboard/inventario/clasificaciones
+├ ○ /dashboard/inventario/familias
+├ ○ /dashboard/inventario/productos
+├ ƒ /dashboard/inventario/productos/[id]
+├ ○ /dashboard/inventario/productos/nuevo
+├ ○ /dashboard/inventario/reportes
+├ ○ /dashboard/inventario/reportes/costos
+├ ○ /dashboard/inventario/reportes/kardex
+├ ○ /dashboard/inventario/stock
+├ ○ /dashboard/inventario/traslados
+├ ○ /dashboard/inventario/traslados/nuevo
+├ ○ /dashboard/inventario/wms
+├ ○ /dashboard/proyectos
+├ ○ /dashboard/reportes
+├ ○ /dashboard/reportes/apex-heart
+├ ○ /dashboard/servicios
+├ ƒ /dashboard/servicios/[id]
+├ ○ /dashboard/servicios/nuevo
+├ ○ /dashboard/servicios/referencias
+├ ○ /dashboard/servicios/reportes
+├ ○ /dashboard/talento-humano
+├ ○ /dashboard/talento-humano/configuracion-laboral
+├ ○ /dashboard/talento-humano/empleados
+├ ○ /dashboard/talento-humano/entidades
+├ ○ /dashboard/talento-humano/mallas
+├ ○ /dashboard/talento-humano/mapa
+├ ○ /dashboard/talento-humano/marcacion
+├ ○ /dashboard/talento-humano/nomina
+├ ○ /dashboard/talento-humano/novedades
+├ ○ /dashboard/talento-humano/reportes
+├ ○ /dashboard/talento-humano/rutas
+├ ○ /dashboard/tesoreria
+├ ○ /dashboard/tesoreria/anticipos
+├ ○ /dashboard/transporte
+├ ○ /dashboard/transporte/configuracion
+├ ○ /dashboard/transporte/cubicaje
+├ ○ /dashboard/transporte/flota
+├ ○ /dashboard/transporte/liquidaciones
+├ ○ /dashboard/transporte/maestros
+├ ○ /dashboard/transporte/monitoreo
+├ ○ /dashboard/transporte/notificaciones
+├ ○ /dashboard/transporte/operacion
+├ ○ /dashboard/transporte/ordenes
+├ ○ /dashboard/transporte/planeacion
+├ ○ /dashboard/transporte/pod
+├ ○ /dashboard/transporte/pyg
+├ ○ /dashboard/transporte/tarifas
+├ ○ /dashboard/ventas
+├ ○ /dashboard/ventas/clientes
+├ ○ /dashboard/ventas/facturas
+├ ƒ /dashboard/ventas/facturas/[id]
+├ ○ /dashboard/ventas/facturas/nueva
+├ ○ /dashboard/ventas/ordenes
+├ ○ /dashboard/ventas/ordenes/nueva
+├ ○ /dashboard/ventas/precios
+├ ○ /dashboard/ventas/reportes
+├ ○ /login
+├ ○ /manifest.webmanifest
+├ ○ /onboarding
+├ ○ /print/transport-settlement
+├ ○ /privacidad
+├ ○ /register
+├ ○ /servicios/solicitar
+└ ƒ /tienda/[code]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

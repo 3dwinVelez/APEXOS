@@ -1,0 +1,217 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-03-contabilidad",
+  "commit": "fdd73d7c30a3e90652290899abb494946284894c",
+  "parent": "34d0e23f8e285f27f85136757001b6a87f160466",
+  "subject": "feat(accounting): PYG por vehículo, aperturas, reverso y plan de cuentas",
+  "modules": [
+    "contabilidad",
+    "pyg",
+    "saldos-iniciales",
+    "reverso",
+    "plan-de-cuentas-puc"
+  ],
+  "shortstat": "50 files changed, 35916 insertions(+), 393 deletions(-)",
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261014120000_accounting_opening_balances_nullable_party/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/data/puc-colombia-20261015.provenance.json"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/puc-colombia-catalog.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/pyg-budget-import.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/pyg-budget.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/pyg-interactive.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/accounting/reversal.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/accounting/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-chart-tree.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-pyg-budget-import.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/accounting-pyg-interactive.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/accounting-routes-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/puc-colombia-catalog.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/asientos/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/importar-saldos-iniciales/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/contabilidad/plan-cuentas/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/pyg/ampliado/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/transporte/pyg/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/AccountingPyg.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/AccountingPygBudget.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/AccountingPygBudgetImport.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygAccountDrill.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygCentersMatrix.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygStatementTable.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygVehicleExpanded.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/accounting/PygVehicleReadings.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/contabilidad-nav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/DashboardChrome.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/accounting-account-tree.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/lib/pyg-expanded.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/next.config.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/accounting-pyg-budget-errors.component.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/accounting-pyg-interactive.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/accounting-reversal-budget-import.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/contabilidad-opening-balances.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/plan-cuentas-tree.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-chrome.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-link.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-route.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded-view.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/pyg-expanded.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-centers-matrix.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/transport-pyg-vehicle-page.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "supabase/migrations/20261020173515_standard_chart_piloto.sql"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}

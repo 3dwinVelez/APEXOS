@@ -1,0 +1,22 @@
+{
+  "change_id": "promocion-paquetes-main-20261113-08-accionista",
+  "commit": "201dcc83e6449fc921bf20f9dced3c3960e14204",
+  "parent": "ea786c92301db46bbe8ec3027e62bd27f2532e14",
+  "subject": "feat(security): el accionista se sincroniza con lectura de contabilidad y transporte",
+  "modules": [
+    "seguridad",
+    "roles"
+  ],
+  "shortstat": "2 files changed, 117 insertions(+)",
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/security/supabaseAuth.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/supabase-company-context.test.js"
+    }
+  ],
+  "notes": "Inventario exacto del commit aislado (padre..commit). No es un manifiesto de compuerta: la compuerta de promocion se corre sobre el candidato completo con el manifiesto -scope.json."
+}
