@@ -7,13 +7,51 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 
-test("dashboard usa el enfoque operativo aprobado", () => {
+test("dashboard usa el enfoque operativo aprobado con lobby corporativo V4", () => {
   const source = read("app/dashboard/page.tsx");
-  assert.match(source, /Mi operación/);
+  assert.match(source, /Creamos sistemas/);
+  assert.match(source, /a tu medida\./);
+  assert.match(source, /Tu operación, más simple y/);
   assert.match(source, /Acciones frecuentes/);
   assert.match(source, /Mis módulos/);
-  assert.match(source, /Actividad reciente/);
+  assert.doesNotMatch(source, /Continúa donde estabas/);
 });
+
+test("el hero lleva la frase de marca y no botones de arranque", () => {
+  const source = read("app/dashboard/page.tsx");
+  assert.doesNotMatch(source, /Comenzar/);
+  assert.doesNotMatch(source, /Explorar módulos/);
+  assert.doesNotMatch(source, /apex-lobby-cta-/);
+  assert.doesNotMatch(source, /startHref/);
+});
+
+test("lobby V4 monta el banner de red y tarjetas de icono por módulo", () => {
+  const source = read("app/dashboard/page.tsx");
+  const assets = read("lib/lobbyAssets.ts");
+  const css = read("app/globals.css");
+  assert.match(source, /apex-lobby-hero/);
+  assert.match(source, /LOBBY_BANNER/);
+  assert.match(source, /loading="eager"/);
+  assert.match(source, /const Icon = module\.icon/);
+  assert.match(source, /apex-lobby-tile-glyph/);
+  assert.doesNotMatch(source, /lobbyModuleImage/);
+  assert.doesNotMatch(source, /apex-lobby-tile-media/);
+  assert.match(assets, /banner-network\.webp/);
+  assert.doesNotMatch(assets, /module-|banner-truck/);
+  assert.match(css, /--lobby-accent: 8 205 187/);
+  assert.match(css, /\.apex-lobby-tile-glyph \{/);
+  assert.doesNotMatch(css, /\.apex-lobby-tile-media/);
+});
+
+test("cada módulo del catálogo declara el icono que pinta su tarjeta", () => {
+  const catalog = read("lib/modules.ts");
+  const slugs = [...catalog.matchAll(/slug: "([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(slugs.length, 31);
+  assert.equal([...catalog.matchAll(/^\s{4}icon: [A-Z]\w+$/gm)].length, 31, "cada ficha declara un icono lucide");
+  const banner = path.join(root, "public", "/assets/lobby/banner-network.webp");
+  assert.ok(fs.existsSync(banner), "falta el banner del lobby");
+});
+
 
 test("dashboard ya no depende de KPIs ni graficas para la pantalla inicial", () => {
   const source = read("app/dashboard/page.tsx");
@@ -44,11 +82,11 @@ test("mis modulos se limita a permisos y suscripcion", () => {
   assert.match(source, /No tienes módulos habilitados/);
 });
 
-test("actividad reciente usa la traza real local y no datos inventados", () => {
+test("los módulos ocupan el ancho completo del lobby sin panel secundario", () => {
   const source = read("app/dashboard/page.tsx");
-  assert.match(source, /apex_navigation_trace_v1/);
-  assert.match(source, /localStorage\.getItem\(TRACE_KEY\)/);
-  assert.match(source, /enabledSlugs\.has\(traceModule\(item\.path\)\)/);
+  assert.match(source, /xl:grid-cols-4/);
+  assert.doesNotMatch(source, /apex_navigation_trace_v1/);
+  assert.doesNotMatch(source, /xl:grid-cols-\[1\.35fr_1fr\]/);
 });
 
 test("dashboard cubre estados de carga error y vacio", () => {
@@ -96,8 +134,9 @@ test("barra superior conserva lo esencial y agrupa herramientas secundarias", ()
   }
 });
 
-test("chrome no muestra el banner global de AI en ningun modulo", () => {
+test("chrome no muestra el banner global de AI ni el asistente flotante", () => {
   const source = read("components/shell/DashboardChrome.tsx");
   assert.doesNotMatch(source, /ApexAiHeader/);
-  assert.match(source, /<AiExperienceLayer/);
+  assert.doesNotMatch(source, /AiExperienceLayer/);
+  assert.doesNotMatch(source, /apex-ai-mascot/);
 });

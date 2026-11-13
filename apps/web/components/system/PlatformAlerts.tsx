@@ -46,7 +46,7 @@ export function PlatformAlerts() {
       push({
         level: "error",
         title: "Error de interfaz",
-        message: "La pantalla detecto un fallo y evito bloquear la operacion actual.",
+        message: "La pantalla detectó un fallo y evitó bloquear la operación actual.",
         technical: event.message || "Error no identificado",
         source: "frontend",
         sticky: true
@@ -56,8 +56,8 @@ export function PlatformAlerts() {
     function onRejection(event: PromiseRejectionEvent) {
       push({
         level: "error",
-        title: "Operacion interrumpida",
-        message: "Se detecto una promesa fallida. Revisa el detalle tecnico para diagnostico.",
+        title: "Operación interrumpida",
+        message: "Se detectó una promesa fallida. Revisa el detalle técnico para diagnóstico.",
         technical: errorMessage(event.reason, "Promesa rechazada sin detalle."),
         source: "frontend",
         sticky: true
@@ -90,7 +90,7 @@ export function PlatformAlerts() {
                 {alert.technical ? <p className="platform-alert-detail mt-2 break-words rounded border px-2 py-1.5 text-xs">{alert.technical}</p> : null}
                 {(alert.requestId || alert.source) ? <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide opacity-80">{[alert.source, alert.requestId ? `ID ${alert.requestId}` : ""].filter(Boolean).join(" / ")}</p> : null}
               </div>
-              <button aria-label="Cerrar notificacion" className="platform-alert-close rounded border p-1" onClick={() => setAlerts((current) => current.filter((item) => item.id !== alert.id))} title="Cerrar notificacion" type="button">
+              <button aria-label="Cerrar notificación" className="platform-alert-close rounded border p-1" onClick={() => setAlerts((current) => current.filter((item) => item.id !== alert.id))} title="Cerrar notificación" type="button">
                 <X size={15} />
               </button>
             </div>

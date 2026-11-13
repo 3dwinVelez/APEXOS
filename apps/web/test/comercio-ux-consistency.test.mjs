@@ -21,7 +21,7 @@ const button = read("../components/ui/button.tsx");
 const dataTable = read("../components/ui/data-table.tsx");
 const storefront = read("../components/comercio/storefront.tsx");
 const overlayHook = read("../components/ui/useOverlayA11y.ts");
-const combobox = read("../components/ui/SearchSelect.tsx");
+const combobox = read("../components/ui/search-select.tsx");
 const palette = read("../components/system/CommandPalette.tsx");
 const theme = read("../components/comercio/storefront-theme.ts");
 const graficos = read("../app/dashboard/comercio/ComercioCharts.tsx");
@@ -324,6 +324,6 @@ test("los selectores cortos que quedan conservan el estilo de campo del sistema"
   const conSelect = nombrePantalla.filter((nombre) => /<select\b/.test(fuentes[nombre]));
   for (const nombre of conSelect) {
     const trozos = fuentes[nombre].split(/<select\b/).slice(1);
-    assert.equal(trozos.every((trozo) => /apex-select|SearchSelect/.test(trozo.slice(0, 400))), true, `${nombre}: un <select> sin la clase apex-select se ve distinto del resto`);
+    assert.equal(trozos.every((trozo) => /apex-select|TransportSearchSelect/.test(trozo.slice(0, 400))), true, `${nombre}: un <select> sin la clase apex-select se ve distinto del resto`);
   }
 });

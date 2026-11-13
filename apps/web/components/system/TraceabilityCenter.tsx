@@ -1,6 +1,8 @@
 "use client";
 
+import { ModalFrame } from "@/components/ui/ModalFrame";
 import { useI18n } from "@/lib/i18n";
+import { useWorkspaceToolWindow } from "@/lib/workspaceTools";
 import { Clock3, Route } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,7 +14,7 @@ const key = "apex_navigation_trace_v1";
 export function TraceabilityCenter() {
   const pathname = usePathname();
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
+  const { open, close } = useWorkspaceToolWindow("traceability");
   const [items, setItems] = useState<Trace[]>([]);
 
   useEffect(() => {
@@ -23,11 +25,12 @@ export function TraceabilityCenter() {
     setItems(next);
   }, [pathname]);
 
-  return <div className="relative">
-    <button aria-expanded={open} aria-haspopup="dialog" className="inline-flex h-10 items-center gap-2 rounded-control border border-line bg-surface px-3 text-xs font-semibold text-content-muted hover:text-content-strong" onClick={() => setOpen((value) => !value)} type="button"><Route size={15} />{t("traceability")}</button>
-    {open ? <section aria-label="Trazabilidad de navegación" className="absolute right-0 top-12 z-50 w-[min(360px,calc(100vw-24px))] rounded-card border border-line bg-surface p-3 shadow-overlay">
-      <div className="mb-2 flex items-center gap-2"><Clock3 size={15} className="text-apex" /><h2 className="text-sm font-semibold">Recorrido reciente</h2></div>
-      <div className="space-y-1">{items.map((item) => <Link className="flex items-center justify-between gap-3 rounded-control px-2 py-2 text-xs hover:bg-surface-muted" href={item.path} key={item.path}><span className="truncate capitalize">{item.label}</span><time className="shrink-0 text-content-subtle">{new Date(item.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time></Link>)}</div>
-    </section> : null}
-  </div>;
+  if (!open) return null;
+
+  return <ModalFrame tone="brand" title={t("traceability")} description="Recorrido reciente entre los módulos de esta sesión." icon={<Route size={18} />} maxWidth="md:!max-w-lg" onClose={close}>
+    <section aria-label="Trazabilidad de navegación">
+      <h3 className="flex items-center gap-2 text-sm font-semibold text-content-strong"><Clock3 className="text-apex" size={15} />Recorrido reciente</h3>
+      <div className="mt-3 space-y-1">{items.map((item) => <Link className="flex items-center justify-between gap-3 rounded-control px-2 py-2 text-xs hover:bg-surface-muted" href={item.path} key={item.path}><span className="truncate capitalize">{item.label}</span><time className="shrink-0 text-content-subtle">{new Date(item.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time></Link>)}</div>
+    </section>
+  </ModalFrame>;
 }

@@ -25,9 +25,9 @@ export function DataTable({ loading, empty, emptyTitle = "Sin resultados", empty
 }
 
 export function Pagination({ page, totalPages, onPrevious, onNext }: { page: number; totalPages: number; onPrevious: () => void; onNext: () => void }) {
-  return <nav aria-label="Paginacion" className="mt-3 flex items-center justify-between gap-3 text-sm">
+  return <nav aria-label="Paginación" className="mt-3 flex items-center justify-between gap-3 text-sm">
     <button className="h-9 rounded-md border border-line px-3 disabled:opacity-50" disabled={page <= 1} onClick={onPrevious} type="button">Anterior</button>
-    <span className="text-content-muted">Pagina {page} de {Math.max(totalPages, 1)}</span>
+    <span className="text-content-muted">Página {page} de {Math.max(totalPages, 1)}</span>
     <button className="h-9 rounded-md border border-line px-3 disabled:opacity-50" disabled={page >= totalPages} onClick={onNext} type="button">Siguiente</button>
   </nav>;
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { isSupabaseSession, loadModuleAccess, ModuleAccessState } from "@/lib/moduleAccess";
-import { MODULES } from "@/lib/modules";
+import { MODULES, PORTFOLIO_MODULES } from "@/lib/modules";
+import { moduleHome } from "@/lib/moduleFunctions";
 import { groupModules } from "@/lib/operationalWorkspace";
 import { UserSessionBadge } from "@/components/shell/UserSessionBadge";
 import { ChevronLeft, ChevronRight, Home, LockKeyhole, Search, X } from "lucide-react";
@@ -38,8 +39,8 @@ export function Sidebar() {
   }
 
   const normalizedQuery = normalizeSearch(moduleQuery);
-  const items = MODULES.map((module) => ({
-    href: `/dashboard/${module.slug}`,
+  const items = PORTFOLIO_MODULES.map((module) => ({
+    href: moduleHome(module.slug),
     slug: module.slug,
     label: module.name,
     icon: module.icon,
@@ -52,7 +53,7 @@ export function Sidebar() {
       if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
       return (access.orderBySlug?.[a.slug] ?? 999) - (access.orderBySlug?.[b.slug] ?? 999);
     });
-  const groupedItems = groupModules(orderedItems.map((item) => MODULES.find((module) => module.slug === item.slug)!).filter(Boolean))
+  const groupedItems = groupModules(orderedItems.map((item) => PORTFOLIO_MODULES.find((module) => module.slug === item.slug)!).filter(Boolean))
     .map((group) => ({ ...group, items: group.items.map((module) => orderedItems.find((item) => item.slug === module.slug)!).filter(Boolean) }));
 
   function linkClass(active: boolean, enabled = true) {
@@ -97,7 +98,7 @@ export function Sidebar() {
   }
 
   return (
-    <aside className={`sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-2 transition-[width,padding] duration-150 md:flex md:flex-col ${collapsed ? "w-14 px-2" : "w-56 px-2"}`}>
+    <aside className={`apex-chrome-sidebar sticky top-0 hidden h-dvh shrink-0 border-r border-line bg-white py-2 transition-[width,padding] duration-150 md:flex md:flex-col ${collapsed ? "w-14 px-2" : "w-56 px-2"}`}>
       <div className="mb-2 flex shrink-0 items-center justify-between">
         <div className={collapsed ? "hidden" : "block"}>
           <p className="text-sm font-semibold tracking-normal">APEX OS</p>
@@ -123,7 +124,7 @@ export function Sidebar() {
               type="search"
               value={moduleQuery}
             />
-            {moduleQuery ? <button aria-label="Limpiar busqueda" className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
+            {moduleQuery ? <button aria-label="Limpiar búsqueda" className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 hover:bg-white hover:text-neutral-700" onClick={() => setModuleQuery("")} type="button"><X size={15} /></button> : null}
           </label>
         ) : null}
         {!technicianMode ? <SidebarTooltip collapsed={collapsed} label="Inicio"><Link aria-current={pathname === "/dashboard" ? "page" : undefined} aria-label={collapsed ? "Inicio" : undefined} className={linkClass(pathname === "/dashboard")} href="/dashboard" prefetch={false}>
@@ -134,7 +135,7 @@ export function Sidebar() {
           <summary className="flex cursor-pointer list-none items-center justify-between px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-600 transition-colors hover:text-neutral-900"><span>{group.label}</span><ChevronRight className="transition group-open/sidebar:rotate-90" size={13} /></summary>
           <div className="space-y-0.5">{group.items.map(renderItem)}</div>
         </details>)}
-        {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay modulos disponibles para esta busqueda.</p> : null}
+        {!collapsed && normalizedQuery && orderedItems.length === 0 ? <p className="px-3 py-4 text-sm text-neutral-500">No hay módulos disponibles para esta búsqueda.</p> : null}
       </nav>
       {!collapsed ? (
         <div className="mt-2 shrink-0">

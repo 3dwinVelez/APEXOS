@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Button } from "@/components/ui/button";
 import { SmartDataTable, type DataColumn } from "@/components/ui/data-table";
-import { SearchSelect } from "@/components/ui/SearchSelect";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 import { downloadExcelWorkbook } from "@/lib/reportExports";
 import { comercioGate, ComercioMessages, describeError, Field, matchesQuery, ModuleHeader, money, todayISO, useComercioAccess, useVentana } from "@/components/comercio/shared";
 
@@ -179,10 +179,10 @@ export default function ComercioComprasPage() {
             value={query}
           />
           <Field hint={products.length ? `${products.length} productos activos en el catálogo` : undefined} label="Producto">
-            <SearchSelect aria-label="Filtrar las compras por código o nombre del producto" className="control w-full" onChange={(event) => setProductId(event.target.value)} value={productId}>
+            <TransportSearchSelect aria-label="Filtrar las compras por código o nombre del producto" className="control w-full" onChange={(event) => setProductId(event.target.value)} value={productId}>
               <option value="">Todos los productos</option>
               {products.map((product) => <option key={product.id} value={String(product.id)}>{product.code} - {product.name}</option>)}
-            </SearchSelect>
+            </TransportSearchSelect>
           </Field>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2 text-xs text-content-muted">
@@ -245,12 +245,12 @@ export default function ComercioComprasPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <Field label="Producto">
-                  <SearchSelect aria-label="Buscar el producto comprado por código o nombre" className="control w-full" onChange={(event) => setForm({ ...form, product_id: event.target.value })} required value={form.product_id}>
+                  <TransportSearchSelect aria-label="Buscar el producto comprado por código o nombre" className="control w-full" onChange={(event) => setForm({ ...form, product_id: event.target.value })} required value={form.product_id}>
                     <option value="">Seleccione el producto comprado</option>
                     {products.map((product) => (
                       <option key={product.id} value={String(product.id)}>{product.code} - {product.name} (stock {product.stock}, costo {money(product.cost)})</option>
                     ))}
-                  </SearchSelect>
+                  </TransportSearchSelect>
                 </Field>
               </div>
               <Field label="Cantidad">

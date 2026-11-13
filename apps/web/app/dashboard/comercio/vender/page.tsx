@@ -6,7 +6,7 @@ import { SearchField } from "@/components/ui/SearchField";
 import { Skeleton } from "@/components/ui/feedback";
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
-import { SearchSelect } from "@/components/ui/SearchSelect";
+import { TransportSearchSelect } from "@/components/transport/TransportSearchSelect";
 import { Check, ComercioMessages, Field, ModuleHeader, comercioGate, describeError, matchesQuery, money, todayISO, useComercioAccess } from "@/components/comercio/shared";
 
 // Punto de venta del Comercio. El precio y el costo los fija el servidor desde el producto;
@@ -276,12 +276,12 @@ export default function ComercioVenderPage() {
               ) : (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <Field label="Cliente">
-                    <SearchSelect aria-label="Buscar el cliente por código o nombre" className="control w-full" onChange={(event) => setCustomerId(event.target.value)} required value={customerId}>
+                    <TransportSearchSelect aria-label="Buscar el cliente por código o nombre" className="control w-full" onChange={(event) => setCustomerId(event.target.value)} required value={customerId}>
                       <option value="">Seleccione un cliente</option>
                       {customers.map((customer) => (
                         <option key={customer.id} value={String(customer.id)}>{customer.code} - {customer.name}</option>
                       ))}
-                    </SearchSelect>
+                    </TransportSearchSelect>
                   </Field>
                   <Field label="Pago inicial">
                     <input className="control" min={0} onChange={(event) => setDownPayment(event.target.value)} step="0.01" type="number" value={downPayment} />

@@ -10,11 +10,17 @@ type ModalFrameProps = {
   onClose: () => void;
   maxWidth?: string;
   footer?: ReactNode;
+  tone?: "surface" | "brand";
+  icon?: ReactNode;
+  description?: string;
+  titleId?: string;
 };
 
-export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl", footer }: ModalFrameProps) {
+export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl", footer, tone = "surface", icon, description, titleId }: ModalFrameProps) {
   const [mounted, setMounted] = useState(false);
-  const titleId = useId();
+  const generatedTitleId = useId();
+  const headingId = titleId || generatedTitleId;
+  const brand = tone === "brand";
   const dialogRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
 
@@ -48,11 +54,17 @@ export function ModalFrame({ title, children, onClose, maxWidth = "md:max-w-2xl"
   if (!mounted) return null;
 
   return createPortal(
-    <div className="apex-backdrop-enter fixed inset-0 z-[100] flex items-end bg-neutral-950/55 p-0 md:items-center md:justify-center md:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section ref={dialogRef} aria-modal="true" aria-labelledby={titleId} className={`apex-dialog-enter max-h-[calc(100dvh-1rem)] w-full max-w-[100vw] overflow-x-hidden overflow-y-auto rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-[calc(100vw-3rem)] md:rounded-overlay ${maxWidth}`} role="dialog">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3">
-          <h2 id={titleId} className="min-w-0 truncate text-lg font-semibold text-content-strong">{title}</h2>
-          <button className="flex h-10 w-10 items-center justify-center rounded-md border border-line text-content-body hover:bg-surface-muted" onClick={onClose} type="button" aria-label="Cerrar">
+    <div className={`apex-backdrop-enter fixed inset-0 z-[100] flex items-end p-0 md:items-center md:justify-center md:p-6 ${brand ? "apex-window-backdrop" : "bg-neutral-950/55"}`} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section ref={dialogRef} aria-modal="true" aria-labelledby={headingId} className={`apex-dialog-enter max-h-[calc(100dvh-1rem)] w-full max-w-[100vw] overflow-x-hidden overflow-y-auto rounded-t-overlay border border-line bg-surface text-content-body shadow-overlay md:max-h-[calc(100dvh-3rem)] md:max-w-[calc(100vw-3rem)] md:rounded-overlay ${brand ? "apex-window" : ""} ${maxWidth}`} role="dialog">
+        <div className={`sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 ${brand ? "apex-window-header" : ""}`}>
+          <div className="flex min-w-0 items-center gap-3">
+            {icon ? <span aria-hidden="true" className="apex-window-icon">{icon}</span> : null}
+            <div className="min-w-0">
+              <h2 id={headingId} className="truncate text-lg font-semibold text-content-strong">{title}</h2>
+              {description ? <p className="mt-0.5 truncate text-xs text-content-muted">{description}</p> : null}
+            </div>
+          </div>
+          <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-line text-content-body hover:bg-surface-muted" onClick={onClose} type="button" aria-label="Cerrar">
             <X size={18} />
           </button>
         </div>

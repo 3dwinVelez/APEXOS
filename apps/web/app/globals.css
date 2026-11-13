@@ -36,6 +36,15 @@
   --radius-overlay: 1rem;
   --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px rgb(15 23 42 / 0.04);
   --shadow-overlay: 0 24px 70px rgb(15 23 42 / 0.2);
+  /* Fondo ambiente: luces corporativas detras del contenido (ver .apex-ambient). */
+  --ambient-glow-a: 8 205 187;
+  --ambient-glow-b: 0 108 112;
+  --ambient-glow-c: 13 148 136;
+  --ambient-alpha-a: 0.12;
+  --ambient-alpha-b: 0.09;
+  --ambient-alpha-c: 0.06;
+  --ambient-grain: 0.04;
+  --ambient-drift-alpha: 0.06;
 }
 
 html[data-font-scale="small"] { font-size: 15px; }
@@ -480,6 +489,11 @@ html.dark {
   --text-body: 202 211 216;
   --text-muted: 155 170 178;
   --text-subtle: 155 170 178;
+  --ambient-alpha-a: 0.13;
+  --ambient-alpha-b: 0.22;
+  --ambient-alpha-c: 0.13;
+  --ambient-grain: 0.06;
+  --ambient-drift-alpha: 0.12;
 }
 
 * {
@@ -526,6 +540,68 @@ textarea {
 
 body {
   overflow-x: hidden;
+  /* Aísla el apilado para que la capa ambiente (z-index negativo) quede sobre el
+     papel del body y debajo de todo el contenido, sin tapar ninguna superficie. */
+  isolation: isolate;
+}
+
+/* ===== Fondo ambiente del producto (todas las pantallas y ventanas) =====
+   Tres luces de la paleta corporativa, grano SVG inline y una deriva lenta
+   compuesta por transform. Sin JS, sin peticiones de red y sin pintar sobre las
+   tarjetas: en claro da profundidad al papel y en oscuro evita el negro plano.
+   La deriva solo corre en escritorio y nunca con movimiento reducido. */
+.apex-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(72rem 46rem at 8% -12%, rgb(var(--ambient-glow-a) / var(--ambient-alpha-a)), transparent 60%),
+    radial-gradient(64rem 44rem at 98% 6%, rgb(var(--ambient-glow-b) / var(--ambient-alpha-b)), transparent 62%),
+    radial-gradient(60rem 46rem at 48% 116%, rgb(var(--ambient-glow-c) / var(--ambient-alpha-c)), transparent 64%);
+}
+
+.apex-ambient-drift,
+.apex-ambient-grain {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+}
+
+.apex-ambient-drift {
+  inset: -20%;
+  background: radial-gradient(closest-side, rgb(var(--ambient-glow-a) / var(--ambient-drift-alpha)), transparent 70%);
+  transform: translate3d(0, 0, 0);
+}
+
+.apex-ambient-grain {
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  mix-blend-mode: overlay;
+  opacity: var(--ambient-grain);
+}
+
+@keyframes apex-ambient-drift {
+  from { transform: translate3d(-4%, -2%, 0) scale(1); }
+  to { transform: translate3d(5%, 3%, 0) scale(1.06); }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .apex-ambient-drift { animation: apex-ambient-drift 48s ease-in-out infinite alternate; }
+}
+
+html[data-reduced-motion="true"] .apex-ambient-drift {
+  animation: none;
+}
+
+html[data-contrast="high"] .apex-ambient {
+  display: none;
+}
+
+@media print {
+  .apex-ambient { display: none; }
 }
 
 html[data-role="tecnico"] .technician-hide {
@@ -615,7 +691,8 @@ textarea {
 
   .apex-page-enter,
   .apex-dialog-enter,
-  .apex-backdrop-enter {
+  .apex-backdrop-enter,
+  .apex-ambient-drift {
     animation: none !important;
   }
 
@@ -767,7 +844,10 @@ textarea {
 }
 
 .apex-app-gradient {
-  background: rgb(var(--color-paper));
+  /* El papel lo pinta el body y encima reposa .apex-ambient. El marco no pinta
+     fondo propio para que las luces del ambiente se vean en todas las pantallas;
+     las tarjetas y tablas siguen opacas sobre el. */
+  background: transparent;
 }
 
 .apex-context-hero {
@@ -863,6 +943,7 @@ a.hover\:bg-apex\/90:hover {
   border: 1px solid rgb(var(--color-line));
   background: rgb(var(--surface));
   border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgb(15 23 32 / 0.05), 0 12px 30px -22px rgb(15 23 32 / 0.2);
 }
 
 .apex-soft-gradient {
@@ -1029,9 +1110,153 @@ html.dark .text-white\/70 {
 }
 
 html.dark .apex-section-card,
-html.dark .apex-soft-gradient,
-html.dark .apex-app-gradient {
+html.dark .apex-soft-gradient {
   background: rgb(var(--surface)) !important;
+}
+
+/* ===== Oficio del marco (solo tema oscuro) =====
+   El ambiente sigue viviendo detrás del contenido y las superficies siguen
+   opacas, pero el costado, la barra superior y las tarjetas de sección dejan
+   de leerse como rectángulos planos: gradientes opacos de la misma familia
+   cromática, filo de marca en los bordes del marco y sombra de elevación
+   dibujada con box-shadow, sin cambios de caja ni de layout. El alto contraste
+   restaura superficies planas y quita las sombras. */
+html.dark aside.apex-chrome-sidebar {
+  background: linear-gradient(180deg, rgb(24 39 48) 0%, rgb(16 27 34) 55%, rgb(13 22 28) 100%) !important;
+  border-right-color: rgb(45 212 191 / 0.14) !important;
+}
+
+html.dark header.apex-chrome-topbar {
+  background: rgb(20 32 41 / 0.94) !important;
+  border-bottom-color: rgb(45 212 191 / 0.12) !important;
+}
+
+html.dark main > .apex-chrome-topbar {
+  background: transparent !important;
+  border-bottom: 1px solid rgb(45 212 191 / 0.1);
+}
+
+html.dark .apex-section-card {
+  border-color: rgb(45 212 191 / 0.14);
+  box-shadow: 0 0 0 1px rgb(45 212 191 / 0.05), 0 14px 34px -22px rgb(0 0 0 / 0.65);
+}
+
+html.dark[data-contrast="high"] aside.apex-chrome-sidebar,
+html.dark[data-contrast="high"] header.apex-chrome-topbar {
+  background: rgb(var(--surface)) !important;
+}
+
+html[data-contrast="high"] .apex-section-card {
+  box-shadow: none !important;
+}
+
+/* ===== Operación: gráficos, tablas y estados (capa visual) =====
+   Las tres superficies donde el usuario pasa la jornada reciben el mismo oficio
+   del marco: el lienzo de los gráficos, la tabla operativa y el estado vacío.
+   Solo presentación (color, tipografía de encabezado, filo y sombra): ningún
+   ancho, alto ni posición de caja cambia, así que la densidad no salta. */
+.apex-chart-card {
+  border-radius: var(--radius-card);
+}
+
+.apex-chart-card .recharts-cartesian-grid line {
+  stroke: rgb(var(--color-line) / 0.6);
+}
+
+.apex-chart-card .recharts-cartesian-axis-line,
+.apex-chart-card .recharts-cartesian-axis-tick-line {
+  stroke: rgb(var(--color-line));
+}
+
+.apex-chart-card .recharts-cartesian-axis-tick-value {
+  fill: rgb(var(--text-muted));
+  font-variant-numeric: tabular-nums;
+}
+
+.apex-chart-card .recharts-legend-item-text {
+  font-size: 0.75rem;
+}
+
+html.dark .apex-chart-card .recharts-cartesian-grid line {
+  stroke: rgb(45 212 191 / 0.1);
+}
+
+html.dark .apex-chart-card .recharts-cartesian-axis-tick-value {
+  fill: rgb(155 170 178);
+}
+
+html.dark .apex-chart-card .recharts-tooltip-cursor {
+  fill: rgb(45 212 191 / 0.07);
+}
+
+html[data-contrast="high"] .apex-chart-card .recharts-cartesian-grid line {
+  stroke: rgb(var(--color-line));
+}
+
+.apex-standard-table thead th {
+  color: rgb(var(--text-muted));
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.apex-standard-table tbody td {
+  font-variant-numeric: tabular-nums;
+}
+
+.apex-standard-table tbody td:first-child {
+  color: rgb(var(--text-strong));
+  font-weight: 500;
+}
+
+.apex-standard-table tbody tr:hover {
+  background: rgb(var(--color-apex) / 0.06);
+}
+
+html.dark .apex-standard-table thead th {
+  border-bottom: 1px solid rgb(45 212 191 / 0.16);
+}
+
+html.dark .apex-standard-table tbody tr:hover {
+  background: rgb(45 212 191 / 0.06);
+}
+
+html.dark .apex-standard-table-viewport {
+  border-color: rgb(45 212 191 / 0.14);
+  box-shadow: 0 0 0 1px rgb(45 212 191 / 0.04), 0 16px 36px -28px rgb(0 0 0 / 0.7);
+}
+
+html[data-contrast="high"] .apex-standard-table tbody tr:hover {
+  background: rgb(var(--surface-muted)) !important;
+}
+
+.apex-empty {
+  border: 1px dashed rgb(var(--color-line));
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgb(var(--surface-muted) / 0.5) 0%, transparent 72%);
+}
+
+.apex-empty-icon {
+  border: 1px solid rgb(var(--color-apex) / 0.3);
+  background: rgb(var(--color-apex) / 0.12);
+  box-shadow: 0 0 0 6px rgb(var(--color-apex) / 0.06);
+  color: rgb(var(--color-apex-ink));
+}
+
+html.dark .apex-empty {
+  border-color: rgb(45 212 191 / 0.18);
+  background: linear-gradient(180deg, rgb(45 212 191 / 0.05) 0%, transparent 72%);
+}
+
+html.dark .apex-empty-icon {
+  border-color: rgb(94 234 212 / 0.3);
+  color: rgb(153 246 228);
+  box-shadow: 0 0 0 6px rgb(45 212 191 / 0.07);
+}
+
+html[data-contrast="high"] .apex-empty {
+  background: none;
 }
 
 html.dark .apex-context-hero {
@@ -1072,6 +1297,54 @@ html.dark textarea::placeholder {
 html.dark option {
   background: rgb(var(--surface));
   color: rgb(var(--text-strong));
+}
+
+/* Los popups nativos de <select> deben seguir el tema activo: si algun ancestro filtra
+   color-scheme, la lista desplegable se pinta con el tema opuesto al de la pagina.
+   En Windows el popup nativo ademas sigue el tema del SO e ignora color-scheme, asi que
+   los selects criticos optan por appearance: base-select: el picker pasa al pipeline del
+   navegador (top layer) y se pinta con los tokens del tema. Los navegadores sin soporte
+   conservan el select nativo con la mitigacion de color-scheme de arriba. */
+select {
+  color-scheme: light;
+}
+
+html.dark select {
+  color-scheme: dark;
+}
+
+.apex-select {
+  appearance: base-select;
+  accent-color: rgb(var(--color-apex));
+}
+
+.apex-select::picker(select) {
+  background: rgb(var(--surface));
+  color: rgb(var(--text-strong));
+  border: 1px solid rgb(var(--color-line));
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+.apex-select option {
+  background: rgb(var(--surface));
+  color: rgb(var(--text-strong));
+}
+
+.apex-select option:hover,
+.apex-select option:focus-visible {
+  background: rgb(var(--surface-muted));
+}
+
+/* Las variantes dark: de Tailwind responden a prefers-color-scheme (darkMode: media) y no
+   al tema de la app (html.dark): con el SO en modo oscuro y la app en tema claro, el foco
+   de la celda del journal se pintaria oscuro. Se acopla al tema con la clase apex-cell. */
+.apex-cell:focus {
+  background-color: #ffffff;
+}
+
+html.dark .apex-cell:focus {
+  background-color: #0f172a;
 }
 
 /* Public service requests keep a stable, high-contrast palette regardless of the dashboard theme. */
@@ -1436,35 +1709,10 @@ html.dark .platform-alert-close:hover {
   width: 100%;
   border-radius: 0.375rem;
   border: 1px solid rgb(var(--color-line, 217 223 221));
-  background: white;
+  background: rgb(var(--surface));
+  color: rgb(var(--text-strong));
   padding: 0 0.75rem;
   font-size: 0.875rem;
-}
-
-/* Los <select> de Comercio llevan apex-select: el popup lo pinta el sistema operativo y no
-   sigue el tema de la app, asi que el listbox salia blanco sobre tema oscuro. base-select
-   permite estilizar el picker; donde no hay soporte el campo queda exactamente igual. */
-.apex-select {
-  appearance: base-select;
-  accent-color: rgb(var(--color-apex));
-}
-
-.apex-select::picker(select) {
-  background: rgb(var(--surface));
-  color: rgb(var(--text-strong));
-  border: 1px solid rgb(var(--color-line));
-  border-radius: 0.5rem;
-  padding: 0.25rem;
-}
-
-.apex-select option {
-  background: rgb(var(--surface));
-  color: rgb(var(--text-strong));
-}
-
-.apex-select option:hover,
-.apex-select option:focus-visible {
-  background: rgb(var(--surface-muted));
 }
 
 .btn-primary,
@@ -1481,12 +1729,34 @@ html.dark .platform-alert-close:hover {
 }
 
 .btn-primary { background: rgb(var(--color-apex, 20 108 99)); color: white; }
-.btn-secondary { border: 1px solid rgb(var(--color-line, 217 223 221)); background: white; }
+/* Los botones secundarios siguen la superficie del tema: un blanco fijo deja la etiqueta
+   casi invisible en modo oscuro, donde el texto heredado tambien es claro. */
+.btn-secondary { border: 1px solid rgb(var(--color-line, 217 223 221)); background: rgb(var(--surface, 255 255 255)); color: rgb(var(--text-strong, 23 33 43)); }
 
 /* Shared information architecture for every Transport application. */
 .transport-workspace {
   min-width: 0;
+  color: rgb(var(--text-strong));
 }
+
+/* Map imagery keeps its cartographic palette; interactive surfaces inherit the app theme. */
+.transport-map.leaflet-container { background: rgb(var(--surface-muted)); }
+.transport-map.leaflet-container .leaflet-popup-content-wrapper,
+.transport-map.leaflet-container .leaflet-popup-tip,
+.transport-map.leaflet-container .leaflet-tooltip,
+.transport-map.leaflet-container .leaflet-bar a,
+.transport-map.leaflet-container .leaflet-control-attribution {
+  background: rgb(var(--surface));
+  color: rgb(var(--text-body));
+  border-color: rgb(var(--color-line));
+}
+.transport-map.leaflet-container .leaflet-bar a:hover { background: rgb(var(--surface-muted)); }
+.transport-map.leaflet-container .leaflet-control-attribution a,
+.transport-map.leaflet-container a.leaflet-popup-close-button { color: rgb(var(--color-apex)); }
+.transport-map.leaflet-container .leaflet-tooltip-top::before { border-top-color: rgb(var(--surface)); }
+.transport-map.leaflet-container .leaflet-tooltip-bottom::before { border-bottom-color: rgb(var(--surface)); }
+.transport-map.leaflet-container .leaflet-tooltip-left::before { border-left-color: rgb(var(--surface)); }
+.transport-map.leaflet-container .leaflet-tooltip-right::before { border-right-color: rgb(var(--surface)); }
 
 .transport-workspace > * {
   min-width: 0;
@@ -1542,6 +1812,215 @@ html.dark .platform-alert-close:hover {
   }
 }
 
+/* ===== Design System V4 — Lobby corporativo (alcance: .apex-lobby) =====
+   Paleta corporativa aprobada: fondo #061D26, tarjeta #112B35, primario #006C70,
+   acento #08CDBB, texto #F2F8FA. El hero es oscuro en los dos temas (igual que
+   .apex-context-hero); las tarjetas de módulo heredan la superficie del tema. */
+.apex-lobby {
+  --lobby-deep: 6 29 38;
+  --lobby-card: 17 43 53;
+  --lobby-primary: 0 108 112;
+  --lobby-accent: 8 205 187;
+  --lobby-text: 242 248 250;
+}
+
+.apex-lobby-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid rgb(var(--lobby-card));
+  background: rgb(var(--lobby-deep));
+  color: rgb(var(--lobby-text));
+  isolation: isolate;
+}
+
+.apex-lobby-hero::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgb(var(--lobby-deep) / 0.95) 0%, rgb(var(--lobby-deep) / 0.62) 42%, transparent 66%),
+    linear-gradient(0deg, rgb(var(--lobby-deep) / 0.6) 0%, transparent 36%);
+  content: "";
+  pointer-events: none;
+}
+
+.apex-lobby-hero > img {
+  object-fit: cover;
+  object-position: center right;
+}
+
+.apex-lobby-eyebrow {
+  display: inline-flex;
+  max-width: 100%;
+  align-self: flex-start;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--lobby-accent) / 0.4);
+  background: linear-gradient(100deg, rgb(var(--lobby-deep) / 0.86) 0%, rgb(var(--lobby-accent) / 0.16) 100%);
+  padding: 0.35rem 0.95rem 0.35rem 0.35rem;
+  color: rgb(var(--lobby-text));
+  box-shadow: 0 12px 32px -20px rgb(0 0 0 / 0.85), inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+.apex-lobby-eyebrow-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  border: 1px solid rgb(var(--lobby-accent) / 0.4);
+  background: rgb(var(--lobby-accent) / 0.18);
+  color: rgb(var(--lobby-accent));
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.apex-lobby-eyebrow-copy {
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgb(var(--lobby-text) / 0.82);
+}
+
+.apex-lobby-eyebrow-name {
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: rgb(var(--lobby-text));
+}
+
+.apex-lobby-eyebrow-company {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgb(var(--lobby-accent));
+}
+
+.apex-lobby-accent { color: rgb(var(--lobby-accent)); }
+
+.apex-lobby-cta-primary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  background: rgb(var(--lobby-accent));
+  padding: 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgb(var(--lobby-deep));
+  transition: background-color 160ms ease;
+}
+
+.apex-lobby-cta-primary:hover { background: rgb(var(--lobby-accent) / 0.88); }
+
+.apex-lobby-cta-secondary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgb(var(--lobby-text) / 0.28);
+  background: rgb(var(--lobby-text) / 0.08);
+  padding: 0 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--lobby-text));
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.apex-lobby-cta-secondary:hover {
+  border-color: rgb(var(--lobby-accent) / 0.6);
+  background: rgb(var(--lobby-text) / 0.14);
+}
+
+.apex-lobby-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  overflow: hidden;
+  border-radius: var(--radius-control);
+  border: 1px solid rgb(var(--color-line));
+  background: rgb(var(--surface));
+  padding: 0.85rem 0.95rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.apex-lobby-tile::after {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 150% at 0% 0%, rgb(var(--lobby-primary) / 0.1), transparent 62%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.apex-lobby-tile:hover {
+  border-color: rgb(var(--lobby-primary) / 0.55);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.apex-lobby-tile:hover::after { opacity: 1; }
+
+.apex-lobby-tile-glyph {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8rem;
+  border: 1px solid rgb(var(--lobby-primary) / 0.26);
+  background: linear-gradient(145deg, rgb(var(--lobby-primary) / 0.18), rgb(var(--lobby-accent) / 0.08));
+  color: rgb(var(--lobby-primary));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.55);
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+html.dark .apex-lobby-tile-glyph {
+  border-color: rgb(var(--lobby-accent) / 0.3);
+  background: linear-gradient(145deg, rgb(var(--lobby-accent) / 0.22), rgb(var(--lobby-primary) / 0.18));
+  color: rgb(var(--lobby-accent));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+.apex-lobby-tile:hover .apex-lobby-tile-glyph {
+  border-color: rgb(var(--lobby-primary) / 0.5);
+  transform: scale(1.04);
+}
+
+html.dark .apex-lobby-tile:hover .apex-lobby-tile-glyph { border-color: rgb(var(--lobby-accent) / 0.55); }
+
+.apex-lobby-tile-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-lobby-tile:hover { transform: none; }
+  .apex-lobby-tile:hover .apex-lobby-tile-glyph { transform: none; }
+}
+
+@media (max-width: 640px) {
+  .apex-lobby-hero > img { object-position: 68% center; }
+  .apex-lobby-hero::before {
+    background:
+      linear-gradient(0deg, rgb(var(--lobby-deep) / 0.94) 8%, rgb(var(--lobby-deep) / 0.45) 55%, rgb(var(--lobby-deep) / 0.25));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .apex-public-shell *,
   .apex-public-shell *::before,
@@ -1554,5 +2033,133 @@ html.dark .platform-alert-close:hover {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ===== Design System V4 — Ventanas de herramientas (alcance: .apex-window) =====
+   Misma paleta corporativa del lobby: fondo #061D26, tarjeta #112B35, acento #08CDBB,
+   texto #F2F8FA. Las utilidades semanticas del design system (bg-surface, border-line,
+   text-content-*) se re-resuelven en la ventana, asi el contenido existente hereda la
+   tinta corporativa sin duplicar clases. El alcance es la ventana, no el :root. */
+.apex-window {
+  --window-card: 17 43 53;
+  --window-deep: 6 29 38;
+  --window-line: 41 71 84;
+  --window-accent: 8 205 187;
+  --window-muted: 11 39 49;
+  --surface: 17 43 53;
+  --surface-soft: 10 35 44;
+  --surface-muted: 11 39 49;
+  --color-line: 41 71 84;
+  --color-apex: 8 205 187;
+  --color-apex-ink: 94 234 212;
+  --color-ink: 242 248 250;
+  --text-strong: 242 248 250;
+  --text-body: 209 228 234;
+  --text-muted: 158 183 193;
+  --text-subtle: 136 165 176;
+  position: relative;
+  color-scheme: dark;
+  background:
+    radial-gradient(130% 100% at 100% 0%, rgb(var(--window-accent) / 0.14), transparent 58%),
+    linear-gradient(165deg, rgb(var(--window-card)) 0%, rgb(var(--window-deep)) 100%);
+  box-shadow: 0 30px 90px rgb(3 20 27 / 0.6);
+}
+
+.apex-window::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 4%, rgb(var(--window-accent) / 0.85) 50%, transparent 96%);
+  content: "";
+  pointer-events: none;
+}
+
+.apex-window-backdrop {
+  background: rgb(3 20 27 / 0.74);
+  backdrop-filter: blur(6px);
+}
+
+.apex-window-header {
+  background: rgb(var(--window-card) / 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.apex-window-icon {
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  border: 1px solid rgb(var(--window-accent) / 0.32);
+  background: rgb(var(--window-accent) / 0.12);
+  color: rgb(var(--window-accent));
+}
+
+.apex-window-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-control);
+  border: 1px solid rgb(var(--window-line));
+  background: rgb(var(--window-muted) / 0.6);
+  padding: 0.75rem 0.875rem;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.apex-window-option:hover {
+  border-color: rgb(var(--window-accent) / 0.55);
+  background: rgb(var(--window-accent) / 0.08);
+}
+
+.apex-window-option[aria-pressed="true"] {
+  border-color: rgb(var(--window-accent) / 0.8);
+  background: rgb(var(--window-accent) / 0.14);
+}
+
+.apex-window-card {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.875rem;
+  border-radius: var(--radius-control);
+  border: 1px solid rgb(var(--window-line));
+  background: rgb(var(--window-muted) / 0.55);
+  padding: 0.875rem;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.apex-window-card:hover {
+  border-color: rgb(var(--window-accent) / 0.6);
+  background: rgb(var(--window-accent) / 0.09);
+}
+
+.apex-window-cta {
+  background: rgb(var(--window-accent));
+  color: rgb(var(--window-deep));
+}
+
+.apex-window-cta:hover { background: rgb(var(--window-accent) / 0.88); }
+
+.apex-window-badge-ok {
+  background: rgb(var(--window-accent) / 0.12);
+  color: rgb(153 246 228);
+}
+
+.apex-window-badge-warning {
+  background: rgb(245 158 11 / 0.16);
+  color: rgb(253 224 71);
+}
+
+.apex-window-danger { color: rgb(252 165 165); }
+
+@media (prefers-reduced-motion: reduce) {
+  .apex-window-option,
+  .apex-window-card { transition: none; }
 }
 

@@ -22,6 +22,7 @@ const record = (name, passed, detail = {}) => { checks.push({ name, passed, deta
 
 try {
   await page.evaluateOnNewDocument(() => {
+    window.process = { env: { NEXT_PUBLIC_SUPABASE_URL: "https://local.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "local-anon-key" } };
     const originalFetch = window.fetch.bind(window);
     window.__apexTotpCertificationCalls = [];
     window.fetch = async (input, init) => {
@@ -46,9 +47,13 @@ try {
     localStorage.setItem("apexos_company_id", data.tenant?.company_id || data.tenant?.id || "");
   }, { loginEmail: email, data: auth });
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: "domcontentloaded" });
-  await page.waitForSelector('button[aria-label="Centro de productividad"]', { timeout: 30_000 });
+  await page.waitForSelector('button[aria-label="Herramientas"]', { timeout: 30_000 });
   await page.evaluate(() => localStorage.setItem("auth_provider", "supabase"));
-  await page.click('button[aria-label="Centro de productividad"]');
+  await page.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Herramientas"]')?.click());
+  await page.waitForSelector('button[aria-label="Abrir centro de productividad"]', { timeout: 5000 });
+  await page.evaluate(() => document.querySelector('button[aria-label="Abrir centro de productividad"]')?.click());
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Tu progreso en APEX OS")), { timeout: 5000 });
   await page.waitForFunction(() => document.body.innerText.includes("Activar 2FA"));
   await page.evaluate(() => [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Activar 2FA")?.click());
   await page.waitForSelector('input[autocomplete="one-time-code"]');

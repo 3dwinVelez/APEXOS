@@ -20,10 +20,10 @@ test("command palette ofrece atajo global, búsqueda y acciones rápidas", () =>
 
 test("dashboard adapta el inicio al trabajo operativo", () => {
   const source = read("app/dashboard/page.tsx");
-  assert.match(source, /Mi operación/);
+  assert.match(source, /Tu operación, más simple y/);
   assert.match(source, /Acciones frecuentes/);
   assert.match(source, /Mis módulos/);
-  assert.match(source, /Actividad reciente/);
+  assert.doesNotMatch(source, /Continúa donde estabas/);
   assert.match(source, /actionsForWorkspace\(enabledSlugs, roleName\)/);
   assert.doesNotMatch(source, /dashboardRoleProfile/);
 });
@@ -42,6 +42,7 @@ test("breadcrumbs y trazabilidad conectan el recorrido entre módulos", () => {
   const traceability = read("components/system/TraceabilityCenter.tsx");
   assert.match(breadcrumbs, /Ruta de navegación/);
   assert.match(breadcrumbs, /aria-current/);
+  assert.match(breadcrumbs, /const navigable = index === 0 \|\| current/);
   assert.match(traceability, /apex_navigation_trace_v1/);
   assert.match(traceability, /Recorrido reciente/);
   assert.match(traceability, /slice\(0, 8\)/);

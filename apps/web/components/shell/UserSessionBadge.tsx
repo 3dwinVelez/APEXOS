@@ -153,7 +153,7 @@ export function UserSessionBadge({ compact = false, mobile = false }: { compact?
     };
   }, []);
 
-  const label = useMemo(() => session.email || "Sesion no identificada", [session.email]);
+  const label = useMemo(() => session.email || "Sesión no identificada", [session.email]);
   const detail = [session.company, session.role || session.provider].filter(Boolean).join(" - ");
   const closeSettings = () => {
     setSettingsOpen(false);
@@ -191,7 +191,7 @@ export function UserSessionBadge({ compact = false, mobile = false }: { compact?
             </form>
           ) : null}
         </section>
-        <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-line bg-white text-sm font-semibold text-neutral-600 hover:border-red-300 hover:text-red-700" onClick={logout} type="button"><LogOut size={15} />Cerrar sesion</button>
+        <button className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-line bg-white text-sm font-semibold text-neutral-600 hover:border-red-300 hover:text-red-700" onClick={logout} type="button"><LogOut size={15} />Cerrar sesión</button>
       </div>
     </ModalFrame>
   ) : null;
@@ -213,7 +213,7 @@ export function UserSessionBadge({ compact = false, mobile = false }: { compact?
       </div>
       <div className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-emerald-700">
         <span className="h-2 w-2 rounded-full bg-emerald-500" />
-        Sesion activa
+        Sesión activa
       </div>
       <button className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-line bg-white text-xs font-semibold text-neutral-600 transition hover:border-apex hover:text-apex" onClick={() => setSettingsOpen(true)} type="button"><Settings size={14} />Mi cuenta</button>
       {preferences}

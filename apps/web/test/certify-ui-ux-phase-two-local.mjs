@@ -15,6 +15,21 @@ const browser = await puppeteer.launch({ executablePath, headless: true, args: [
 const page = await browser.newPage();
 const checks = [];
 const record = (name, passed, detail = {}) => { checks.push({ name, passed, detail }); assert.equal(passed, true, `${name}: ${JSON.stringify(detail)}`); };
+async function waitHydration(target = page) {
+  await target.waitForFunction(() => Boolean(document.documentElement.dataset.density), { timeout: 20000 });
+}
+async function openWorkspaceTools(target = page) {
+  await waitHydration(target);
+  await target.waitForSelector('button[aria-label="Herramientas"]', { timeout: 5000 });
+  await target.evaluate(() => document.querySelector('button[aria-label="Herramientas"]')?.click());
+  await target.waitForFunction(() => [...document.querySelectorAll('[role="dialog"]')].some((dialog) => dialog.textContent?.includes("Ventanas de trabajo del escritorio APEX")), { timeout: 5000 });
+}
+async function chooseLocale(trigger, option) {
+  await page.evaluate((name) => document.querySelector(`button[aria-label="${name}"]`)?.click(), trigger);
+  await page.waitForFunction(() => Boolean(document.querySelector('[role="dialog"] button[aria-pressed]')), { timeout: 5000 });
+  await page.evaluate((name) => document.querySelector(`[role="dialog"] button[aria-label="${name}"]`)?.click(), option);
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"] button[aria-pressed]'), { timeout: 5000 });
+}
 
 try {
   await page.setViewport({ width: 1440, height: 900 });
@@ -24,28 +39,45 @@ try {
   await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0" }), page.click('button[type="submit"]')]);
   record("authenticated_dashboard", page.url().includes("/dashboard"));
   await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle0" });
-  await page.waitForFunction(() => document.body.innerText.toLocaleLowerCase().includes("panel contextual"), { timeout: 10000 }).catch(async (error) => {
+  await waitHydration();
+  await page.waitForFunction(() => {
+    const text = document.body.innerText;
+    return text.includes("Bienvenido,") && text.includes("Priorizadas para tu perfil");
+  }, { timeout: 15000 }).catch(async (error) => {
     const visibleText = await page.evaluate(() => document.body.innerText.slice(0, 1200));
     throw new Error(`No apareció el dashboard contextual en ${page.url()}: ${visibleText}`, { cause: error });
   });
-  record("role_context_dashboard", await page.evaluate(() => document.body.innerText.toLocaleLowerCase().includes("panel contextual")));
+  record("role_context_dashboard", await page.evaluate(() => document.body.innerText.includes("Bienvenido,") && document.body.innerText.includes("Priorizadas para tu perfil")));
 
-  await page.keyboard.down("Control"); await page.keyboard.press("KeyK"); await page.keyboard.up("Control");
-  await page.waitForSelector('[role="dialog"] input', { timeout: 5000 });
-  record("command_palette_keyboard", await page.$('[role="dialog"]') !== null);
-  await page.type('[role="dialog"] input', "orden de compra");
-  record("command_palette_search", await page.evaluate(() => document.body.innerText.includes("Nueva orden de compra")));
+  await page.waitForSelector('button[aria-label="Centro de comandos"], button[aria-label="Comandos"]', { timeout: 15000 });
+  // El atajo solo existe cuando el motor hidrato: afirmarlo con una sola pulsacion mide la
+  // ventana de hidratacion de Next, no la funcionalidad. Se insiste acotado y se mide la apertura.
+  let attempts = 0;
+  let paletteOpen = false;
+  while (!paletteOpen && attempts < 20) {
+    attempts += 1;
+    await page.keyboard.down("Control"); await page.keyboard.press("k"); await page.keyboard.up("Control");
+    paletteOpen = await page.waitForSelector('[role="dialog"] input', { timeout: 500 }).then(() => true).catch(() => false);
+  }
+  record("command_palette_keyboard", paletteOpen, { attempts });
+  await page.type('[role="dialog"] input', "compra");
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="dialog"] [role="option"]')].some((item) => item.textContent?.includes("Nueva compra")), { timeout: 5000 });
+  record("command_palette_search", await page.evaluate(() => document.body.innerText.includes("Nueva compra")));
   await page.keyboard.press("Escape");
 
   await page.goto(`${baseUrl}/dashboard/inventario/productos`, { waitUntil: "networkidle0" });
   record("advanced_breadcrumbs", await page.$('nav[aria-label="Ruta de navegación"]') !== null);
-  record("traceability_control", await page.evaluate(() => document.body.innerText.includes("Trazabilidad")));
+  await openWorkspaceTools();
+  await page.evaluate(() => document.querySelector('button[aria-label="Abrir trazabilidad"]')?.click());
+  await page.waitForSelector('section[aria-label="Trazabilidad de navegación"]', { timeout: 5000 });
+  record("traceability_control", await page.evaluate(() => document.body.innerText.includes("Recorrido reciente")));
+  await page.keyboard.press("Escape");
 
-  await page.select('select[aria-label="Idioma"]', "en");
+  await chooseLocale("Idioma", "English");
   record("locale_en", await page.evaluate(() => document.documentElement.lang === "en" && document.body.innerText.includes("Command center")));
-  await page.select('select[aria-label="Language"]', "pt").catch(async () => page.select('select[aria-label="Idioma"]', "pt"));
+  await chooseLocale("Language", "Português");
   record("locale_pt", await page.evaluate(() => document.documentElement.lang === "pt" && document.body.innerText.includes("Central de comandos")));
-  await page.select('select[aria-label="Idioma"]', "es");
+  await chooseLocale("Idioma", "Español");
   record("locale_es", await page.evaluate(() => document.documentElement.lang === "es"));
 
   await page.setOfflineMode(true);

@@ -25,6 +25,7 @@ import {
   ShoppingCart,
   Truck,
   Users,
+  Wallet,
   Wrench
 } from "lucide-react";
 
@@ -81,7 +82,7 @@ export const MODULES: ApexModule[] = [
     slug: "ventas",
     name: "Ventas",
     area: "Comercial",
-    status: "En construcción",
+    status: "Base funcional",
     summary: "Cotizaciones, órdenes de venta, seguimiento comercial y conversión a factura.",
     capabilities: ["Cotizaciones", "Órdenes de venta", "Embudo comercial", "Conversión a factura"],
     nextActions: ["Crear cotización", "Registrar pedido", "Revisar oportunidades"],
@@ -92,7 +93,7 @@ export const MODULES: ApexModule[] = [
     slug: "facturacion",
     name: "Facturación",
     area: "Finanzas",
-    status: "En construcción",
+    status: "Base funcional",
     summary: "Facturas, notas crédito, numeración, impuestos y documentos comerciales.",
     capabilities: ["Factura de venta", "Notas crédito", "Numeración", "Impuestos"],
     nextActions: ["Emitir factura", "Ver consecutivos", "Revisar documentos"],
@@ -136,7 +137,7 @@ export const MODULES: ApexModule[] = [
     slug: "tesoreria",
     name: "Tesorería",
     area: "Finanzas",
-    status: "En construcción",
+    status: "Base funcional",
     summary: "Flujo de caja, bancos, pagos programados y proyección de liquidez.",
     capabilities: ["Bancos", "Flujo de caja", "Pagos", "Proyección 90 días"],
     nextActions: ["Ver flujo proyectado", "Programar pago", "Conciliar banco"],
@@ -202,7 +203,7 @@ export const MODULES: ApexModule[] = [
     slug: "transporte",
     name: "Transporte",
     area: "Logística",
-    status: "En construcción",
+    status: "Listo para operar",
     summary: "Rutas, vehículos, entregas, fletes y seguimiento logístico.",
     capabilities: ["Rutas", "Vehículos", "Fletes", "Entregas"],
     nextActions: ["Planear ruta", "Asignar vehículo", "Confirmar entrega"],
@@ -235,7 +236,7 @@ export const MODULES: ApexModule[] = [
     slug: "talento-humano",
     name: "Talento humano",
     area: "Personas",
-    status: "En construcción",
+    status: "Listo para operar",
     summary: "Empleados, contratos, nómina Colombia, ausencias, desempeño y OKR.",
     capabilities: ["Empleados", "Contratos", "Nómina Colombia", "OKR"],
     nextActions: ["Crear empleado", "Procesar nómina", "Revisar objetivos"],
@@ -363,6 +364,17 @@ export const MODULES: ApexModule[] = [
     icon: ContactRound
   },
   {
+    id: "M-29",
+    slug: "gastos-menores",
+    name: "Gastos Menores",
+    area: "Finanzas",
+    status: "Base funcional",
+    summary: "Cajas menores con conceptos de egreso, anticipos al custodio y comprobantes de gasto contabilizados al momento.",
+    capabilities: ["Conceptos de egreso", "Cajas y custodios", "Anticipos y liquidación", "Comprobante contable GM"],
+    nextActions: ["Configurar conceptos", "Crear caja menor", "Registrar gasto"],
+    icon: Wallet
+  },
+  {
     id: "M-30",
     slug: "comercio",
     name: "Comercio",
@@ -378,3 +390,44 @@ export const MODULES: ApexModule[] = [
 export const MODULES_BY_SLUG = Object.fromEntries(MODULES.map((module) => [module.slug, module]));
 export const MODULES_BY_ID = Object.fromEntries(MODULES.map((module) => [module.id, module]));
 export const ALL_MODULE_IDS = MODULES.map((module) => module.id);
+
+// Portafolio publicado: los retirados conservan ficha y assets, pero dejan de ofrecerse en
+// lobby, barra y buscador; sin pantalla propia, su ficha genérica responde 404. Los retirados
+// con rutas ya publicadas (Facturación, Contabilidad, Tesorería, Proyectos, APEX Control, APEX
+// AI Core y las subrutas de Cartera y CxC) las mantienen: salen de la oferta, no del código.
+const RETIRED_MODULE_SLUGS = new Set([
+  "punto-de-venta",
+  "costos",
+  "presupuestos",
+  "produccion",
+  "recetas",
+  "calidad",
+  "devoluciones",
+  "comercio-exterior",
+  "activos",
+  "crm",
+  "planeacion-demanda",
+  "facturacion",
+  "facturacion-electronica",
+  "configuracion-inicial",
+  "suscripciones",
+  "tesoreria",
+  "proyectos",
+  "apex-control",
+  "apex-ai",
+  "cxc",
+  // M-29 viaja en su propio paquete: hasta que sus pantallas existan en main, la ficha
+  // se conserva y el módulo no se ofrece en lobby, barra ni buscador.
+  "gastos-menores"
+]);
+
+export function isPortfolioModule(module: ApexModule) {
+  return !RETIRED_MODULE_SLUGS.has(module.slug);
+}
+
+export function isRetiredModuleSlug(slug: string) {
+  return RETIRED_MODULE_SLUGS.has(slug);
+}
+
+export const PORTFOLIO_MODULES = MODULES.filter(isPortfolioModule);
+export const RETIRED_MODULES = MODULES.filter((module) => RETIRED_MODULE_SLUGS.has(module.slug));

@@ -14,6 +14,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-apex-heart", label: "Ver Apex Heart", description: "Pulso ejecutivo: productividad, margen y alertas", href: "/dashboard/reportes/apex-heart", module: "reportes", keywords: "reportes indicadores kpi pulso margen gerencial control tablero" },
 
   // Compras
+  { id: "fn-compras-ordenes", label: "Consultar órdenes de compra", description: "Seguimiento de compras y entregas", href: "/dashboard/compras/ordenes", module: "compras", keywords: "orden compra compras proveedor entrega seguimiento" },
   { id: "fn-compras-facturas", label: "Ver facturas de compra", description: "Documentos de proveedor y su registro contable", href: "/dashboard/compras/facturas", module: "compras", keywords: "factura proveedor simulacion contable cuenta por pagar documento" },
   { id: "fn-compras-importaciones", label: "Gestionar importaciones", description: "Compras del exterior y nacionalizacion", href: "/dashboard/compras/importaciones", module: "compras", keywords: "importacion aduana nacionalizacion exterior comercio" },
   { id: "fn-compras-proveedores", label: "Gestionar proveedores", description: "Crea y consulta proveedores", href: "/dashboard/compras/proveedores", module: "compras", keywords: "proveedor tercero abastecimiento registrar crear" },
@@ -33,6 +34,9 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-comercio-configuracion", label: "Configurar la vitrina del comercio", description: "Datos del negocio, redes, WhatsApp y campana de descuentos", href: "/dashboard/comercio/configuracion", module: "comercio", keywords: "configuracion vitrina publica codigo whatsapp instagram facebook campana descuento moneda comercio" },
   { id: "fn-comercio-promociones", label: "Gestionar promociones del comercio", description: "Campanas de descuento por categoria o producto y envio por WhatsApp", href: "/dashboard/comercio/promociones", module: "comercio", keywords: "promocion campana descuento mercadeo audiencia categoria producto whatsapp cliente comercio" },
 
+  // Tesoreria, Facturacion y Cartera y CxC salieron de la oferta: sus rutas siguen publicadas,
+  // pero no se anuncian en el centro de comandos hasta que el modulo vuelva al portafolio.
+
   // Contabilidad
   { id: "fn-contab-asientos", label: "Consultar asientos contables", description: "Revisa el registro contable y sus movimientos", href: "/dashboard/contabilidad/asientos", module: "contabilidad", keywords: "asiento contable libro diario comprobante registro movimiento" },
   { id: "fn-contab-cxp", label: "Gestionar cuentas por pagar", description: "Obligaciones con proveedores y pagos", href: "/dashboard/contabilidad/cuentas-por-pagar", module: "contabilidad", keywords: "cuentas por pagar cxp proveedor obligacion pago cartera" },
@@ -43,13 +47,7 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-contab-retenciones", label: "Gestionar retenciones contables", description: "Retenciones practicadas y registradas", href: "/dashboard/contabilidad/retenciones", module: "contabilidad", keywords: "retencion retefuente reteiva impuesto" },
   { id: "fn-contab-terceros", label: "Gestionar terceros contables", description: "Clientes, proveedores y su informacion fiscal", href: "/dashboard/contabilidad/terceros", module: "contabilidad", keywords: "tercero cliente proveedor nit informacion fiscal" },
 
-  // Cartera y CxC
-  { id: "fn-cxc-documentos", label: "Consultar cuentas por cobrar", description: "Documentos de cartera, vencimientos y estado de cuenta", href: "/dashboard/cxc/documentos", module: "cxc", keywords: "cartera cxc cuentas por cobrar documentos vencidos cobro cliente" },
-  { id: "fn-cxc-cartera", label: "Ver reporte de cartera", description: "Aging y comportamiento de la cartera", href: "/dashboard/cxc/reportes/cartera", module: "cxc", keywords: "reporte cartera aging vencido cobranza indicador" },
-  { id: "fn-cxc-retenciones", label: "Gestionar retenciones de cartera", description: "Retenciones aplicadas por clientes", href: "/dashboard/cxc/retenciones", module: "cxc", keywords: "retencion cartera cliente retefuente" },
-
-  // Facturacion
-  { id: "fn-fact-documentos", label: "Consultar documentos de facturacion", description: "Facturas emitidas y sus consecutivos", href: "/dashboard/facturacion/documentos", module: "facturacion", keywords: "factura emitida documento consecutivo historial dian" },
+  // Gastos Menores: sus funciones viajan con el paquete M-29, cuando existan sus pantallas.
 
   // Gestion comercial
   { id: "fn-gc-agenda", label: "Ver calendario comercial", description: "Agenda de visitas y citas con clientes", href: "/dashboard/gestion-comercial/agenda", module: "gestion-comercial", keywords: "agenda calendario visita cita cliente comercial" },
@@ -91,14 +89,11 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-hr-novedades", label: "Gestionar novedades de jornada", description: "Incapacidades, permisos, faltas y horas extra", href: "/dashboard/talento-humano/novedades", module: "talento-humano", keywords: "novedad jornada incapacidad permiso falta retraso hora extra" },
   { id: "fn-hr-reportes", label: "Ver reportes de tiempo", description: "Horas, asistencia y horas extra", href: "/dashboard/talento-humano/reportes", module: "talento-humano", keywords: "reporte tiempo hora asistencia hora extra jornada" },
 
-  // Tesoreria
-  { id: "fn-teso-anticipos", label: "Gestionar anticipos", description: "Anticipos a proveedores y su aplicacion", href: "/dashboard/tesoreria/anticipos", module: "tesoreria", keywords: "anticipo proveedor pago anticipado tesoreria" },
-
   // Transporte
   { id: "fn-transp-config", label: "Configurar transporte", description: "Preferencias y parametros de la operacion", href: "/dashboard/transporte/configuracion", module: "transporte", keywords: "configuracion transporte preferencia parametro operacion" },
   { id: "fn-transp-cubicaje", label: "Calcular cubicaje", description: "Peso y volumen de la carga", href: "/dashboard/transporte/cubicaje", module: "transporte", keywords: "cubicaje volumen peso bulto carga" },
   { id: "fn-transp-flota", label: "Gestionar flota y vehiculos", description: "Vehiculos y sus documentos", href: "/dashboard/transporte/flota", module: "transporte", keywords: "flota vehiculo documento soat tecnomecanica mantenimiento" },
-  { id: "fn-transp-maestros", label: "Gestionar maestros de transporte", description: "Transportadoras, conductores y tipos de vehiculo", href: "/dashboard/transporte/maestros", module: "transporte", keywords: "maestro transportadora conductor vehiculo dato basico" },
+  { id: "fn-transp-maestros", label: "Administrar destinos y tiendas", description: "Maestro central de destinos de transporte", href: "/dashboard/administracion?catalog=transport_destinations", module: "administracion", keywords: "maestro destino tienda transporte" },
   { id: "fn-transp-monitoreo", label: "Seguir vehiculos", description: "Monitoreo en vivo de la operacion", href: "/dashboard/transporte/monitoreo", module: "transporte", keywords: "monitoreo seguir vehiculo gps rastreo en ruta vivo" },
   { id: "fn-transp-notificaciones", label: "Ver notificaciones de transporte", description: "Alertas y comunicaciones de la operacion", href: "/dashboard/transporte/notificaciones", module: "transporte", keywords: "notificacion alerta comunicacion transporte" },
   { id: "fn-transp-ordenes", label: "Preparar pedidos para transporte", description: "Ordenes y pedidos listos para despacho", href: "/dashboard/transporte/ordenes", module: "transporte", keywords: "orden pedido preparar despacho envio viaje" },
@@ -115,11 +110,6 @@ export const MODULE_FUNCTIONS: ModuleFunction[] = [
   { id: "fn-ventas-reportes", label: "Ver reportes de ventas", description: "Indicadores de venta y margen", href: "/dashboard/ventas/reportes", module: "ventas", keywords: "reporte venta indicador margen" }
 ];
 
-const MODULE_HOME_OVERRIDES: Record<string, string> = {
-  // Cartera no tiene landing propio: su superficie real son los documentos de cartera.
-  cxc: "/dashboard/cxc/documentos"
-};
-
 export function moduleHome(slug: string) {
-  return MODULE_HOME_OVERRIDES[slug] || `/dashboard/${slug}`;
+  return `/dashboard/${slug}`;
 }

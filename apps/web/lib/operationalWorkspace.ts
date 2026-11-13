@@ -1,5 +1,5 @@
 import { ApexModule } from "@/lib/modules";
-import { ClipboardCheck, FilePlus2, PackagePlus, ReceiptText, ScanLine, ShoppingCart, Truck, UserPlus, Wrench } from "lucide-react";
+import { ClipboardCheck, PackagePlus, ReceiptText, ScanLine, ShoppingCart, Truck, UserPlus, Wrench } from "lucide-react";
 
 export type OperationalAction = { id: string; label: string; description: string; href: string; module: string; icon: typeof PackagePlus; roles?: string[]; keywords: string };
 
@@ -9,7 +9,6 @@ export const OPERATIONAL_ACTIONS: OperationalAction[] = [
   { id: "receive-purchase", label: "Recibir mercancía", description: "Registra la recepción de una compra", href: "/dashboard/compras/ordenes/recibir", module: "compras", icon: ScanLine, roles: ["compras", "bodega", "almacen"], keywords: "recepcion mercancía entrada proveedor" },
   { id: "new-product", label: "Crear producto", description: "Agrega un artículo o servicio", href: "/dashboard/inventario/productos/nuevo", module: "inventario", icon: PackagePlus, roles: ["inventario", "bodega", "almacen"], keywords: "sku item articulo servicio" },
   { id: "stock-adjustment", label: "Ajustar inventario", description: "Registra una corrección de existencias", href: "/dashboard/inventario/ajustes/nuevo", module: "inventario", icon: ClipboardCheck, roles: ["inventario", "bodega", "almacen"], keywords: "stock ajuste conteo existencia" },
-  { id: "new-invoice", label: "Emitir factura", description: "Genera un documento de venta", href: "/dashboard/facturacion/emitir", module: "facturacion", icon: FilePlus2, roles: ["facturacion", "ventas", "caja"], keywords: "factura documento venta" },
   { id: "new-service", label: "Nuevo servicio", description: "Programa una orden de servicio", href: "/dashboard/servicios/nuevo", module: "servicios", icon: Wrench, roles: ["servicio", "tecnico", "operaciones"], keywords: "orden trabajo visita servicio" },
   { id: "transport-operation", label: "Gestionar despacho", description: "Abre la operación de transporte", href: "/dashboard/transporte/operacion", module: "transporte", icon: Truck, roles: ["transporte", "logistica", "despacho"], keywords: "ruta despacho entrega vehiculo" },
   { id: "new-customer", label: "Gestionar clientes", description: "Consulta o registra clientes", href: "/dashboard/ventas/clientes", module: "ventas", icon: UserPlus, roles: ["ventas", "comercial", "asesor"], keywords: "cliente tercero contacto" }

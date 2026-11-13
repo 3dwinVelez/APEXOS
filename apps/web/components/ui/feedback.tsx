@@ -36,9 +36,9 @@ export function EmptyState({ icon, title, description, detail, primaryAction, se
   className?: string;
 }) {
   const copy = description || detail;
-  return <div className={twMerge("grid min-h-48 place-items-center border-y border-line px-5 py-10 text-center", className)}>
+  return <div className={twMerge("apex-empty grid min-h-48 place-items-center border-y border-line px-5 py-10 text-center", className)}>
     <div className="max-w-md">
-      {icon ? <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-apex/10 text-apex">{icon}</div> : null}
+      {icon ? <div className="apex-empty-icon mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-apex/10">{icon}</div> : null}
       <p className="font-semibold text-content-strong">{title}</p>
       {copy ? <p className="mt-1 text-sm leading-6 text-content-muted">{copy}</p> : null}
       {primaryAction || secondaryAction || action ? <div className="mt-5 flex flex-wrap items-center justify-center gap-3">{primaryAction || action}{secondaryAction}</div> : null}

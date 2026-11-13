@@ -19,6 +19,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script src="/scripts/theme-init.js" strategy="beforeInteractive" />
       </head>
       <body>
+        <div aria-hidden="true" className="apex-ambient">
+          <span className="apex-ambient-drift" />
+          <span className="apex-ambient-grain" />
+        </div>
         <I18nProvider>
           <NavigationAccessibility />
           <SessionLifecycle />
