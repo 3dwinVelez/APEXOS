@@ -1,0 +1,20 @@
+# Baseline beff5132 (origin/develop) - reproduccion de los 4 fallos
+# Fecha: 2026-11-13T22:11:28-05:00
+# Sin REDIS_URL ni .env en el worktree, igual que el candidato
+
+== apps/api/test/accounting-routes-contract.test.js
+not ok 1 - apps\\api\\test\\accounting-routes-contract.test.js
+# pass 0
+# fail 1
+== apps/api/test/authorization-status-codes.test.js
+not ok 1 - apps\\api\\test\\authorization-status-codes.test.js
+# pass 0
+# fail 1
+== apps/api/test/offline-bootstrap.test.js
+not ok 1 - apps\\api\\test\\offline-bootstrap.test.js
+# pass 0
+# fail 1
+== apps/api/test/transport-tms-foundation.test.js
+not ok 1 - apps\\api\\test\\transport-tms-foundation.test.js
+# pass 0
+# fail 1

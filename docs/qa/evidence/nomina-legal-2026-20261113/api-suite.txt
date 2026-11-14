@@ -1,0 +1,13 @@
+# Suite API completa - apps/api/test/*.test.js
+# Fecha: 2026-11-13T22:10:56-05:00
+# Commit: 57b9d55814316f4efbc48e678c0ebf8449bf6ce9
+# Los 4 fallos se reproducen en el baseline beff5132 (ver baseline-failures.txt)
+
+not ok 145 - all accounting UI routes are registered under /api/v1
+not ok 16 - apps\\api\\test\\authorization-status-codes.test.js
+not ok 75 - apps\\api\\test\\offline-bootstrap.test.js
+not ok 1083 - las rutas TMS se registran y exigen autenticacion
+# tests 1111
+# pass 1105
+# fail 4
+# skipped 2
