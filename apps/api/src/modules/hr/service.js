@@ -9,6 +9,7 @@ const hrPolicy = require("./policy");
 const { resolveTenantEmployeeOrganization, organizationTreeFromConfig } = require("./organization");
 const { resolveExplicitParty, partyCommonFields, partyMatchesSearch, compactTaxId, normalizeTaxId } = require("./laborEntityPartyMatcher");
 const { calculateSocialContributionSegments, commercialDaysBetween: commercialDayCount } = require("./socialContributionSegments");
+const { loadPayrollWorkdays } = require("./payrollWorkdays");
 
 const DEFAULT_PARAMS = {
   ordinary_hours_day: 8,
