@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "environment": "LOCAL",
+  "started_at": "2026-11-14T03:04:45.738Z",
+  "checks": [
+    "R-01: la marcacion 19:00-22:00 se clasifica nocturna y la jornada se persiste",
+    "R-02/R-03/R-07: recargos 2026-H2, divisor 210 y auxilio fuera de la base de prestaciones",
+    "R-04: tope de 25 SMMLV y piso de 1 SMMLV en la nomina",
+    "R-10A: el tope de trabajo suplementario queda alertado y trazado",
+    "R-07: sin marcaciones la validacion bloquea y la justificacion trazable lo degrada",
+    "R-06: la libranza se descuenta una sola vez al relicitar",
+    "R-09/R-08: una sola via oficial de liquidacion con documentos auditables",
+    "R-05: el cierre provisiona prestaciones reales y conserva la secuencia",
+    "R-04: aportes aplican tope y piso y rechazan el salario como respaldo",
+    "R-10: el reporte lee las jornadas que liquida la nomina",
+    "RBAC y aislamiento: sin token 401, sin permiso 403 y otro tenant no ve la nomina"
+  ],
+  "tenant_id": "980c5245-7941-4769-b040-a470b891dd9d",
+  "period_key": "mes:2026-09-01:2026-09-30",
+  "finished_at": "2026-11-14T03:04:53.335Z"
+}
