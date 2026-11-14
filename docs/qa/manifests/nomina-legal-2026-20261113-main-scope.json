@@ -133,6 +133,10 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/approval-gate.txt"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/nomina-legal-2026-20261113/baseline-failures.txt"
     },
     {
@@ -141,7 +145,19 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/equivalencia-candidato-main.txt"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/nomina-legal-2026-20261113/hr-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/main-hr-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/main-typecheck-web.txt"
     },
     {
       "status": "A",
@@ -153,7 +169,19 @@
     },
     {
       "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/scope-gate.txt"
+    },
+    {
+      "status": "A",
       "file": "docs/qa/evidence/nomina-legal-2026-20261113/typecheck-web.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-main-scope.json"
     },
     {
       "status": "A",
@@ -170,26 +198,6 @@
     {
       "status": "A",
       "file": "scripts/certifications/hr-nomina-legal-2026-qa.js"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/evidence/nomina-legal-2026-20261113/equivalencia-candidato-main.txt"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/evidence/nomina-legal-2026-20261113/main-hr-suite.txt"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/evidence/nomina-legal-2026-20261113/main-typecheck-web.txt"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/nomina-legal-2026-20261113-main-scope.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/nomina-legal-2026-20261113-approval.json"
     }
   ],
   "allowed_paths": [
@@ -256,7 +264,7 @@
     }
   ],
   "notes": {
-    "generation": "Inventario exacto del diff origin/main c8e5e67c..candidato: 43 rutas (37 A, 6 M, 0 D), cero eliminaciones. El candidato es el cherry-pick limpio de 0dadb09f 9df206b6 49394010 57b9d558 0205413f 87166a20 1590f18e 36111a6a sobre origin/main.",
+    "generation": "Inventario exacto del diff origin/main c8e5e67c..candidato: 45 rutas (37 A, 6 M, 0 D), cero eliminaciones. El candidato es el cherry-pick limpio de 0dadb09f 9df206b6 49394010 57b9d558 0205413f 87166a20 1590f18e 36111a6a sobre origin/main.",
     "equivalence": "Los 38 archivos de producto del paquete son byte a byte identicos entre el develop medido en QA (36111a6a, API desplegada 1590f18ebdd4) y el candidato reconstruido; la comparacion esta en ../evidence/nomina-legal-2026-20261113/equivalencia-candidato-main.txt. El contenido propio de main fuera del paquete no se toca.",
     "remote_migrations": "La migracion 20261113120000 esta aplicada solo en QA (2026-11-13). Produccion no se toca en esta promocion: aplicarla exige autorizacion expresa e independiente coordinada con el despliegue, y hasta entonces el codigo queda en modo degradado declarado (topes suplementarios en cero y semilla anterior del auxilio).",
     "baseline_failures": "Los 4 fallos de la suite API completa son preexistentes y se reproducen identicos en el baseline; no son regresiones de este cambio.",

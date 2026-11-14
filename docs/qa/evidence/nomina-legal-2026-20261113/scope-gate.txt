@@ -1,0 +1,4 @@
+# Compuerta de alcance sobre main
+# Fecha: 2026-11-13T22:28:22-05:00
+# Candidato: 9c9ebf903652acd6487dcb4902bb1e45cbd60e16  Destino: c8e5e67c52b106086a058b2f6ac6bebf0ebf6697
+ALCANCE DE PROMOCION VALIDO: nomina-legal-2026-20261113 (45 rutas)
