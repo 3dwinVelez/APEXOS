@@ -1,0 +1,107 @@
+{
+  "change_id": "nomina-legal-2026-20261113",
+  "environment": "QA",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "worktree detachado sobre origin/main (sin rama publicada)",
+  "commit": "613b5cbb8af3a7f4da6f64b3b91f84c58d8c613b",
+  "candidate_commit_note": "La corrida funcional se midio contra la API de QA desplegada desde develop 1590f18ebdd4 (que incluye los ocho commits del paquete). El candidato a main es la reconstruccion por cherry-pick de esos mismos ocho commits sobre origin/main c8e5e67c: 613b5cbb es el commit de contenido y el tip solo agrega los manifiestos y la evidencia. Los 38 archivos de producto son identicos byte a byte entre el develop medido y la reconstruccion, segun ../evidence/nomina-legal-2026-20261113/equivalencia-candidato-main.txt.",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+        "../evidence/nomina-legal-2026-20261113/equivalencia-candidato-main.txt",
+        "../certifications/nomina-legal-2026-20261113.md"
+      ],
+      "basis": "Con un rol y un usuario efimeros del tenant NYVORA en QA, autenticados contra la API desplegada, se midieron 20 verificaciones del flujo de nomina legal 2026: commit desplegado, 401 sin token, configuracion de nomina, 16 jornadas entre junio y noviembre con sus minutos liquidados, vista previa de septiembre con 22 documentos, lineas con source_summary, auxilio con exclude_from_social_benefits_base=true, topes suplementarios 2 h/dia y 12 h/semana en modo alerta, cinco listados de nomina, y la semilla y los parametros corregidos en la base de QA. Resultado 18 passed, 2 skipped, 0 failed; las dos omisiones son por datos del cliente (NYVORA no tiene libranzas ni horas extra en el periodo) y el mismo codigo se ejercito con esos casos en la certificacion local E2E 11/11."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+        "../evidence/nomina-legal-2026-20261113/certification-local.json",
+        "../../../apps/api/test/hr-workdays-projection.test.js"
+      ],
+      "basis": "Los rechazos que no deben relajarse siguen medidos: sin token GET /hr/workdays responde 401 en QA, y en la certificacion local se verifican 401 sin token, 403 sin permiso y que otro tenant no ve la nomina. La prueba de contrato del reporte de extras viaja con el cambio en apps/api/test/hr-workdays-projection.test.js."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/hr-nomina-legal-2026-qa.js",
+        "../../../scripts/certifications/hr-nomina-legal-2026-local.js",
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json"
+      ],
+      "basis": "Los dos certificadores viajan con el cambio. El de QA aborta si el host del API no es el servicio QA de Railway o si DATABASE_URL no corresponde al proyecto Supabase de QA, crea el usuario efimero con un rol propio de la corrida y lo desactiva al terminar (certification_user_deactivated=true); no escribe documentos de nomina ni registra credenciales. El local siembra el escenario controlado y ejercita escrituras y aislamiento multi-tenant."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/main-hr-suite.txt",
+        "../evidence/nomina-legal-2026-20261113/main-typecheck-web.txt",
+        "../evidence/nomina-legal-2026-20261113/api-suite.txt",
+        "../evidence/nomina-legal-2026-20261113/baseline-failures.txt",
+        "../evidence/nomina-legal-2026-20261113/typecheck-web.txt"
+      ],
+      "basis": "Suites sobre el arbol reconstruido en main: la suite HR completa pasa 236 de 236 pruebas y el typecheck de web termina exit 0. En el arbol de develop medido, la suite API completa da 1111 pruebas con 1105 pass y 4 fallos preexistentes que se reproducen identicos en el baseline beff5132 (dependen de REDIS_URL y del .env ausente en el arnes); no hay fallos nuevos atribuibles al paquete."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+        "../evidence/nomina-legal-2026-20261113/main-hr-suite.txt",
+        "../../audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md"
+      ],
+      "basis": "La regresion transversal se midio contra el ambiente QA con NYVORA: sesion, 401 anonimo, configuracion, jornadas, vista previa de liquidacion y los cinco listados de Talento Humano responden sin error. En el arbol, la suite HR de 236 pruebas cubre nomina, prestaciones, aportes, libranzas y marcaciones, y la reauditoria 08 deja registrado que las capacidades protegidas de main (multi-tenant, RBAC, datos de clientes y perimetro del propietario) conservan su evidencia."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-nomina-legal-2026-qa.js",
+    "evidence": [
+      "../evidence/nomina-legal-2026-20261113/qa-certification.json"
+    ],
+    "measured_on": "API de QA desplegada desde develop 1590f18ebdd4 con el Supabase de QA (proyecto jbirkghkekuifgfsgquq) y la migracion 20261113120000 aplicada",
+    "controls": 20,
+    "passed": 18,
+    "skipped": 2,
+    "failed": 0,
+    "equivalence_note": "La corrida de ambiente se hizo contra el build desplegado en QA porque ese es el ambiente vivo; el arbol que se promueve es la reconstruccion del mismo paquete sobre origin/main. La equivalencia de codigo de producto esta medida archivo por archivo en equivalencia-candidato-main.txt, y el contenido propio de main fuera del paquete no se toca."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-nomina-legal-2026-local.js",
+    "evidence": [
+      "../evidence/nomina-legal-2026-20261113/certification-local.json",
+      "../evidence/nomina-legal-2026-20261113/main-hr-suite.txt",
+      "../evidence/nomina-legal-2026-20261113/api-suite.txt"
+    ],
+    "basis": "La certificacion local E2E ejercita el flujo completo marcacion, jornada, liquidacion y cierre contra una base controlada: 11 controles en verde que cubren R-01 a R-10A, incluidos libranza, extras, provisiones, topes y piso de IBC y aislamiento entre tenants. Se contrasta con la suite HR sobre el arbol de main (236/236) y con la suite API completa del candidato."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-nomina-legal-2026-qa.js",
+    "evidence": [
+      "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+      "../certifications/nomina-legal-2026-20261113.md"
+    ],
+    "basis": "NYVORA es la empresa modelo del ambiente QA. Su nomina real (196 empleados con marcaciones de junio a noviembre) se liquido en vista previa sin persistir documentos: 22 documentos en septiembre, lineas con source_summary, auxilio excluido de la base de prestaciones y topes de trabajo suplementario trazados. Las dos verificaciones omitidas son por ausencia de libranzas y horas extra en el periodo de NYVORA, no por defecto del codigo, y quedan cubiertas por la certificacion local con datos controlados."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "c8e5e67c52b106086a058b2f6ac6bebf0ebf6697",
+    "trigger": "cualquier 401 en el flujo de sesion de una cuenta valida, cualquier peticion anonima que deje de responder 401, cualquier lectura cruzada entre empresas, cualquier error 500 sostenido en liquidacion, cierre de periodo, prestaciones, aportes, libranzas o reporte de extras, cualquier alteracion de documentos historicos de nomina atribuible a las migraciones, o un despliegue de main que deje el servicio sin responder /health.",
+    "mechanism": "revert controlado de los commits del paquete sobre main, de atras hacia adelante (del commit de QA a la base de tarifas), nunca con force push ni reescritura de historia. Las tres migraciones son aditivas y forward-only: crean tablas y parametros nuevos sin tocar documentos historicos. Produccion no esta migrada; si se revierte el codigo antes de aplicar la migracion, el esquema y el codigo vuelven a coincidir sin restaurar datos.",
+    "rollback_requires_authorization": "el revert es una escritura en main y exige autorizacion expresa e independiente, igual que este push."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promocion_a_main_del_paquete_nomina_legal_2026_fase_1_completo, includos los tres archivos de migracion y el reporte de extras",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-13T22:30:00-05:00",
+    "authorization_basis": "Instruccion textual del propietario: 'procede con lo que hace falta y termina la auditoria en main', con la eleccion expresa de 'Cerrar Fase 1 y promover a main' y la autorizacion 'QA + develop + main' para desplegar el candidato en QA, publicarlo en develop y promoverlo a main con su manifiesto de aprobacion y sus compuertas en verde. De esa autorizacion salen: promover el paquete de la Fase 1 a main y verificar el despliegue. NO estan otorgadas por este manifiesto: force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni aplicar la migracion 20261113120000 en produccion, que exige autorizacion independiente; tampoco cierra las Fases 2 a 4 de la auditoria."
+  }
+}

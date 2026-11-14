@@ -1,0 +1,7 @@
+# Typecheck web sobre el arbol reconstruido en main
+# Fecha: 2026-11-13T22:28:00-05:00
+# Commit: 613b5cbb8af3a7f4da6f64b3b91f84c58d8c613b
+# Comando: npx tsc -p tsconfig.typecheck.json --noEmit (apps/web)
+
+tsc sin diagnosticos
+exit=0

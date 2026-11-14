@@ -1,0 +1,54 @@
+# Equivalencia del paquete HR: develop medido en QA vs reconstruccion sobre main
+# Fecha: 2026-11-13T22:26:46-05:00
+# Origen medido en QA: 36111a6ae1a18c59de0fc72c135bc890c011c1d7 (develop, API desplegada 1590f18ebdd4)
+# Candidato reconstruido: 613b5cbb (cherry-pick de 0dadb09f 9df206b6 49394010 57b9d558 0205413f 87166a20 1590f18e 36111a6a sobre origin/main c8e5e67c)
+# Baseline: origin/main c8e5e67c
+
+== Diff main..reconstruccion (rutas del paquete)
+A	apps/api/prisma/migrations/20261030120000_hr_labor_rates_vigencia_2026/migration.sql
+A	apps/api/prisma/migrations/20261030130000_hr_ibc_caps_floors_2026/migration.sql
+A	apps/api/prisma/migrations/20261113120000_hr_nomina_legal_2026/migration.sql
+M	apps/api/src/modules/hr/routes.js
+M	apps/api/src/modules/hr/service.js
+M	apps/api/src/modules/hr/timeLogic.js
+A	apps/api/test/hr-ibc-caps-floors.test.js
+A	apps/api/test/hr-labor-rates-vigencia.test.js
+A	apps/api/test/hr-nomina-legal-2026.test.js
+A	apps/api/test/hr-payroll-close-provisions.test.js
+M	apps/api/test/hr-payroll-social-contributions-bulk.test.js
+M	apps/api/test/hr-workday-novelties-contract.test.js
+A	apps/api/test/hr-workdays-projection.test.js
+M	apps/web/app/dashboard/talento-humano/reportes/page.tsx
+A	docs/audits/2026-10-30-marcaciones-nomina/00-alcance.md
+A	docs/audits/2026-10-30-marcaciones-nomina/01-inventario.md
+A	docs/audits/2026-10-30-marcaciones-nomina/02-matriz-normativa.md
+A	docs/audits/2026-10-30-marcaciones-nomina/03-matriz-funcional-marcaciones.md
+A	docs/audits/2026-10-30-marcaciones-nomina/04-matriz-funcional-nomina.md
+A	docs/audits/2026-10-30-marcaciones-nomina/05-plan-remediacion.md
+A	docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md
+A	docs/audits/2026-10-30-marcaciones-nomina/07-ejecucion-remediacion.md
+A	docs/audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md
+A	docs/audits/2026-10-30-marcaciones-nomina/hallazgos-marcaciones.md
+A	docs/audits/2026-10-30-marcaciones-nomina/hallazgos-nomina.md
+A	docs/briefs/2026-11-13-nomina-legal-2026.md
+A	docs/qa/certifications/nomina-legal-2026-20261113.md
+A	docs/qa/evidence/nomina-legal-2026-20261113/api-suite.txt
+A	docs/qa/evidence/nomina-legal-2026-20261113/baseline-failures.txt
+A	docs/qa/evidence/nomina-legal-2026-20261113/certification-local.json
+A	docs/qa/evidence/nomina-legal-2026-20261113/hr-suite.txt
+A	docs/qa/evidence/nomina-legal-2026-20261113/migration-local.txt
+A	docs/qa/evidence/nomina-legal-2026-20261113/qa-certification.json
+A	docs/qa/evidence/nomina-legal-2026-20261113/typecheck-web.txt
+A	docs/qa/manifests/nomina-legal-2026-20261113-preqa.json
+A	docs/qa/manifests/nomina-legal-2026-20261113-scope.json
+A	scripts/certifications/hr-nomina-legal-2026-local.js
+A	scripts/certifications/hr-nomina-legal-2026-qa.js
+
+== Diff develop..reconstruccion limitado a las rutas del paquete
+sin diferencias: los 38 archivos del paquete son identicos byte a byte
+
+== Contenido de main fuera del paquete
+sin cambios: el diff origin/main..613b5cbb se limita al inventario de arriba
+
+== Suites sobre el arbol reconstruido
+hr suite (apps/api/test/hr-*.test.js): 236 pass, 0 fail

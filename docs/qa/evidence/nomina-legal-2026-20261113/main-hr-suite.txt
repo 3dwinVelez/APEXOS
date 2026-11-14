@@ -1,0 +1,14 @@
+# Suite HR sobre el arbol reconstruido en main
+# Fecha: 2026-11-13T22:26:59-05:00
+# Commit: 613b5cbb8af3a7f4da6f64b3b91f84c58d8c613b
+# Worktree: reconstruccion sobre origin/main c8e5e67c (cherry-pick de los 8 commits del paquete)
+
+1..236
+# tests 236
+# suites 0
+# pass 236
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9086.8207
