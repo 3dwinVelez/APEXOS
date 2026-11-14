@@ -2,11 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Fecha | 2026-10-30 (R-01 a R-05) / 2026-11-13 (R-06 a R-10A) |
+| Fecha | 2026-10-30 (R-01 a R-05) / 2026-11-13 (R-06 a R-10A) / 2026-11-13 (certificación E2E) |
 | Rama de trabajo | `desarrollo` |
-| Commit base | `e25e177f` (primera tanda) / `13371f7d` (segunda tanda) |
+| Commit base | `e25e177f` (primera tanda) / `13371f7d` (segunda tanda) / `49394010` (candidato certificado) |
 | Paquete | R-01 a R-10A |
-| Estado | Implementado y probado en `desarrollo`; **sin promoción, sin migración aplicada en nube** |
+| Estado | Implementado, probado y certificado E2E en local; **sin migración aplicada en nube** |
 | Alcance | Cálculo, datos de vigencia y reporte operativo de extras; no se modificaron endpoints de escritura salvo el alias legacy |
 
 ## 1. Brecha entre producción (`main`) y la rama auditada
@@ -100,6 +100,13 @@ Conclusión: R-01 (marcaciones) existe hoy en producción; R-02/R-03 (nómina) s
 - `payrollSupportIssues` emite la advertencia `TOPES_TRABAJO_SUPLEMENTARIO`; la traza completa viaja en `source_summary.topes_trabajo_suplementario`.
 - El control queda en modo alerta: la ley fija el tope, no la sanción interna; el bloqueo requiere decisión jurídica documentada.
 
+### R-06 y R-10 — Correcciones surgidas de la certificación E2E
+
+La certificación local recorrió el flujo completo y encontró dos defectos que la prueba unitaria no cubría:
+
+- **La línea de libranza no persistía su metadata.** `payrollLine` armaba una lista fija de campos y descartaba `metadata`; la línea perdía `libranza_id`, `applyPayrollLibranzaMovements` no insertaba el movimiento del periodo y el saldo nunca se derivaba de los movimientos. R-06 estaba escrito pero no se ejecutaba. La línea ahora conserva la metadata que la identifica.
+- **`/hr/workdays` y la nómina leían fuentes distintas.** El endpoint devolvía solo jornadas procesadas con `POST /hr/workdays/process`, mientras la liquidación proyecta las marcaciones. Un periodo liquidado podía mostrar cero horas extra en el reporte. El rango ahora usa el mismo cargador que la nómina y conserva las jornadas procesadas que no tienen marcaciones; se agregó `apps/api/test/hr-workdays-projection.test.js`.
+
 ## 3. Evidencia ejecutada
 
 ### Pruebas automatizadas
@@ -130,7 +137,7 @@ Resultado: **4/4 OK**.
 
 Resultado: **9/9 OK**.
 
-Regresión del módulo: `node --test apps/api/test/hr-*.test.js` → **210/210 OK** (175/175 al cierre de la primera tanda).
+Regresión del módulo: `node --test apps/api/test/hr-*.test.js` → **236/236 OK** (210/210 al cierre de la segunda tanda; +2 de proyección de jornadas y +24 de casos contractuales acumulados).
 Alias de nómina: `node --test apps/api/test/payroll-module-alias.test.js` → **1/1 OK**.
 
 Segunda tanda (R-06 a R-10A), `apps/api/test/hr-nomina-legal-2026.test.js` (9 casos):
@@ -145,13 +152,19 @@ Segunda tanda (R-06 a R-10A), `apps/api/test/hr-nomina-legal-2026.test.js` (9 ca
 8. R-10: el reporte lee `/hr/workdays` por rango y expone la diferencia con nómina.
 9. La migración `20261113120000` corrige el auxilio y siembra `MAX_HE_DIARIO`/`MAX_HE_SEMANAL` con guardas `WHERE NOT EXISTS`.
 
-Resultado: **9/9 OK**. Regresión HR completa (9 archivos): **59/59 OK**.
+Resultado: **9/9 OK**. Regresión HR completa (11 archivos): **236/236 OK**.
+
+Certificación E2E: `scripts/certifications/hr-nomina-legal-2026-local.js` → **11/11 OK** contra PostgreSQL local y API HTTP real (marcación → jornada → liquidación → aportes → cierre, RBAC y aislamiento). Evidencia en `docs/qa/evidence/nomina-legal-2026-20261113/certification-local.json`.
+
+`apps/api/test/hr-workdays-projection.test.js` (2 casos de R-10): la jornada se proyecta desde la marcación aunque no se haya ejecutado el procesamiento manual, y una marcación reemplaza las horas cacheadas sin perder las jornadas procesadas sin marcaciones.
 
 Control de contrato actualizado en `apps/api/test/hr-workday-novelties-contract.test.js`: la deducción paramétrica se verifica en la ruta oficial (`deductionLines` desde `deductionMasters`) y el auxilio se exige con `include_in_social_benefits_base: false` y `exclude_from_social_benefits_base: true`.
 
 ### Migración
 
 Ambas migraciones (`20261030120000` y `20261030130000`) se validaron sobre la cadena real `20260917120000 → 20260918190000 → 20261030120000 → 20261030130000` en un clúster Postgres 16 desechable (puerto 55433). La de IBC se aplicó **dos veces**: la segunda ejecución insertó 0 filas.
+
+`20261113120000_hr_nomina_legal_2026` se aplicó en la base local (72 migraciones): corrigió el auxilio (`UPDATE 1`) y sembró los topes de trabajo suplementario (`INSERT 248 + 248`, siete tenants). La certificación E2E corre sobre esa base ya migrada, de modo que la semilla corregida y los parámetros de topes están en uso durante la prueba.
 
 Corte de vigencia de tarifas:
 
@@ -181,20 +194,20 @@ Advertencia: el cambio de divisor en H1 reduce el valor de extras y recargos de 
 
 ## 5. Pendiente y bloqueos
 
-- [ ] Reproducción con datos QA (Fase 0 no se ejecutó; la evidencia es unitaria e independiente, no E2E).
-- [ ] Aplicar la migración en la base local/QA y verificar tenants con configuración propia.
+- [x] Reproducción del flujo completo contra PostgreSQL local y API HTTP real (certificación E2E).
+- [x] Aplicar las migraciones en la base local y verificar la semilla corregida.
 - [x] R-04 IBC con topes/pisos en ambas ramas.
 - [x] R-05 cierre con provisiones.
-- [x] R-06 libranza idempotente.
+- [x] R-06 libranza idempotente (incluye el movimiento y el saldo tras la certificación E2E).
 - [x] R-07 auxilio fuera de la base de prestaciones.
 - [x] R-08 indemnización sin `SMLV_CO`.
 - [x] R-09 retirar el motor legacy.
 - [x] R-10 conciliación reporte/nómina y R-10A topes de extras (modo alerta).
 - [ ] Firma jurídica/contable de la matriz normativa, incluida la decisión bloqueo vs alerta del tope de extras.
-- [ ] Certificación E2E y manifiestos de promoción.
+- [ ] QA funcional desplegada, manifiesto de aprobación y `qa:approval:evidence`.
 - [ ] Aplicar `20261113120000_hr_nomina_legal_2026` en nube y confirmar la semilla del auxilio en tenants existentes.
 
-La suite completa de API (`node --test apps/api/test/*.test.js`) se intentó como control adicional, pero se detuvo tras varios minutos sin salida: algún archivo del conjunto queda colgado en este entorno. El control de regresión válido es la suite HR (210/210), que cubre todos los archivos `hr-*`.
+La suite completa de API corre en este entorno: **1105 pruebas pasan, 4 fallan y 2 se omiten**. Los cuatro fallos (`accounting-routes-contract`, `authorization-status-codes`, `offline-bootstrap`, `transport-tms-foundation`) se reproducen idénticos en el baseline `beff5132` y dependen de `REDIS_URL`/`.env`, no de HR. El control específico del módulo es la suite HR (**236/236**) y la certificación E2E (**11/11**, evidencia en `docs/qa/evidence/nomina-legal-2026-20261113/certification-local.json`).
 
 ## 6. Viabilidad de habilitar la intervención en `main`
 
@@ -205,4 +218,4 @@ La intervención **no se puede portar como parche puntual a `main`**:
 - La segunda tanda vuelve a quedar sujeta a `desarrollo → develop → main`, con manifiesto de alcance exacto, `qa:preqa:evidence`, `qa:approval:evidence` y QA funcional desplegado. No se puede declarar producción corregida hasta esa certificación.
 - `main...desarrollo` sigue divergente; un port directo del commit de la segunda tanda no es una promoción válida aunque las rutas coincidan.
 
-Estado actual: R-01 a R-10A implementados y probados en `desarrollo`. La migración `20261113120000_hr_nomina_legal_2026` **no está aplicada en nube**. El veredicto de auditoría (NO APTO) se mantiene hasta la re-auditoría, la firma jurídica/contable y la certificación E2E. La suite HTTP completa no es ejecutable en este entorno (los tests de integración esperan Postgres en `localhost:55432` y el runner queda colgado); el control válido es la suite HR y los tests adyacentes.
+Estado actual: R-01 a R-10A implementados, probados y certificados E2E en local sobre el commit `49394010`. La migración `20261113120000_hr_nomina_legal_2026` **no está aplicada en nube**. La Fase 1 ya tiene reauditoría (`08-reauditoria-fase-1.md`) con veredicto "Fase 1 apta, Fase 2+ pendiente"; el módulo no se declara apto para producción hasta la firma jurídica/contable, la QA funcional desplegada y la aplicación de las migraciones en la nube.
