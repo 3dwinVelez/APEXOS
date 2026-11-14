@@ -1,0 +1,265 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "nomina-legal-2026-20261113",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "worktree detachado sobre origin/main (sin rama publicada)",
+  "certified_commit": "613b5cbb8af3a7f4da6f64b3b91f84c58d8c613b",
+  "base_commit": "c8e5e67c52b106086a058b2f6ac6bebf0ebf6697",
+  "base_commits": {
+    "main": "c8e5e67c52b106086a058b2f6ac6bebf0ebf6697"
+  },
+  "change_intent": {
+    "summary": "Cierre de la Fase 1 de la auditoria de marcaciones y nomina 2026 en produccion: tarifas 2026, topes y pisos de IBC, libranza idempotente con su movimiento, auxilio de transporte fuera de la base de prestaciones, indemnizacion con el SMMLV del periodo, una sola via oficial de liquidacion, topes de trabajo suplementario en modo alerta y un reporte de extras que lee la misma jornada que liquida la nomina. El paquete se reconstruyo por cherry-pick de los ocho commits certificados en develop sobre origin/main, sin traer la rama develop completa ni sus capacidades ajenas a Talento Humano.",
+    "modules": [
+      "talento-humano-nomina",
+      "talento-humano-marcaciones",
+      "documentation",
+      "certification-harness"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261030120000_hr_labor_rates_vigencia_2026/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261030130000_hr_ibc_caps_floors_2026/migration.sql"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/prisma/migrations/20261113120000_hr_nomina_legal_2026/migration.sql"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/timeLogic.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-ibc-caps-floors.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-labor-rates-vigencia.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-nomina-legal-2026.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-payroll-close-provisions.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-payroll-social-contributions-bulk.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-workdays-projection.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/00-alcance.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/01-inventario.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/02-matriz-normativa.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/03-matriz-funcional-marcaciones.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/04-matriz-funcional-nomina.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/05-plan-remediacion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/06-veredicto.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/07-ejecucion-remediacion.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-marcaciones.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-10-30-marcaciones-nomina/hallazgos-nomina.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-13-nomina-legal-2026.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/nomina-legal-2026-20261113.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/api-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/baseline-failures.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/certification-local.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/hr-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/migration-local.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/qa-certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/typecheck-web.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-nomina-legal-2026-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-nomina-legal-2026-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/equivalencia-candidato-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/main-hr-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/nomina-legal-2026-20261113/main-typecheck-web.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-main-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/nomina-legal-2026-20261113-approval.json"
+    }
+  ],
+  "allowed_paths": [
+    "apps/api/prisma/migrations/20261030120000_hr_labor_rates_vigencia_2026/migration.sql",
+    "apps/api/prisma/migrations/20261030130000_hr_ibc_caps_floors_2026/migration.sql",
+    "apps/api/prisma/migrations/20261113120000_hr_nomina_legal_2026/migration.sql",
+    "apps/api/src/modules/hr/",
+    "apps/api/test/",
+    "apps/web/app/dashboard/talento-humano/reportes/",
+    "docs/audits/2026-10-30-marcaciones-nomina/",
+    "docs/briefs/2026-11-13-nomina-legal-2026.md",
+    "docs/qa/certifications/nomina-legal-2026-20261113.md",
+    "docs/qa/evidence/nomina-legal-2026-20261113/",
+    "docs/qa/manifests/nomina-legal-2026-20261113-main-scope.json",
+    "docs/qa/manifests/nomina-legal-2026-20261113-approval.json",
+    "docs/qa/manifests/nomina-legal-2026-20261113-preqa.json",
+    "docs/qa/manifests/nomina-legal-2026-20261113-scope.json",
+    "scripts/certifications/hr-nomina-legal-2026-local.js",
+    "scripts/certifications/hr-nomina-legal-2026-qa.js"
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "Liquidacion oficial de nomina: libranza idempotente con su movimiento, auxilio fuera de la base de prestaciones e indemnizacion con el SMMLV del periodo",
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/certification-local.json",
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+        "../../audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md"
+      ]
+    },
+    {
+      "name": "Cierre de periodo con provisiones reales, aportes sociales con tope y piso de IBC y una sola via oficial de liquidacion",
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/certification-local.json",
+        "../evidence/nomina-legal-2026-20261113/main-hr-suite.txt"
+      ]
+    },
+    {
+      "name": "Reporte de extras conciliado con la jornada que liquida la nomina y topes de trabajo suplementario trazados en modo alerta",
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+        "../evidence/nomina-legal-2026-20261113/certification-local.json"
+      ]
+    },
+    {
+      "name": "RBAC de nomina y aislamiento multi-tenant en liquidacion, reporte y consultas nuevas",
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/qa-certification.json",
+        "../evidence/nomina-legal-2026-20261113/certification-local.json"
+      ]
+    },
+    {
+      "name": "Regresion de plataforma sin fallos nuevos frente al baseline de main",
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/main-hr-suite.txt",
+        "../evidence/nomina-legal-2026-20261113/main-typecheck-web.txt",
+        "../evidence/nomina-legal-2026-20261113/baseline-failures.txt"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto del diff origin/main c8e5e67c..candidato: 43 rutas (37 A, 6 M, 0 D), cero eliminaciones. El candidato es el cherry-pick limpio de 0dadb09f 9df206b6 49394010 57b9d558 0205413f 87166a20 1590f18e 36111a6a sobre origin/main.",
+    "equivalence": "Los 38 archivos de producto del paquete son byte a byte identicos entre el develop medido en QA (36111a6a, API desplegada 1590f18ebdd4) y el candidato reconstruido; la comparacion esta en ../evidence/nomina-legal-2026-20261113/equivalencia-candidato-main.txt. El contenido propio de main fuera del paquete no se toca.",
+    "remote_migrations": "La migracion 20261113120000 esta aplicada solo en QA (2026-11-13). Produccion no se toca en esta promocion: aplicarla exige autorizacion expresa e independiente coordinada con el despliegue, y hasta entonces el codigo queda en modo degradado declarado (topes suplementarios en cero y semilla anterior del auxilio).",
+    "baseline_failures": "Los 4 fallos de la suite API completa son preexistentes y se reproducen identicos en el baseline; no son regresiones de este cambio.",
+    "out_of_scope_debt": "El bloqueo por encima del tope de trabajo suplementario sigue en modo alerta hasta la firma juridica documentada; los periodos enero-julio no se reprocesan."
+  }
+}
