@@ -12,6 +12,21 @@ const {
 
 const COMPLEX_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 20_000 };
 
+// Unico candado que serializa todo escritor de Tenant.config.accounting (numeracion,
+// presupuestos, saldos iniciales, anulaciones). Debe tomarse ANTES de leer la config:
+// leer fuera del candado y guardar config completa revierte escrituras concurrentes
+// de otros flujos (presupuestos o next_number obsoletos). Ver advisoryLockKey.
+const MANUAL_PROVENANCE = "manual_document";
+const OPENING_BALANCE_PROVENANCE = "opening_balances";
+
+function advisoryLockKey(tenantId, scope = "accounting-numbering") {
+  return `${tenantId}:${scope}`;
+}
+
+async function acquireAccountingLock(tx, tenantId, scope = "accounting-numbering") {
+  await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", advisoryLockKey(tenantId, scope));
+}
+
 function appError(statusCode, code, message) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -309,6 +324,7 @@ async function postOpeningBalancesWorkbook(tenantId, userId, buffer) {
     const prepared = await prepareOpeningBalanceRows(tx, tenantId, rows);
     await assertPeriodOpen(tenantId, prepared.posting_date);
     const documentType = "AJ";
+    await acquireAccountingLock(tx, tenantId);
     const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
     const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
     const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
@@ -322,6 +338,17 @@ async function postOpeningBalancesWorkbook(tenantId, userId, buffer) {
       const ledger = await tx.ledgerEntry.create({ data: { account_id: line.account.id, date: prepared.posting_date, debit: line.cents > 0 ? line.amount : 0, credit: line.cents < 0 ? line.amount : 0, balance: 0, description: line.description, period: periodFromDate(prepared.posting_date) } });
       await tx.cntCuedoc.create({ data: { cabdoc_id: cabdoc.id, line_no: line.line_no, account_id: line.account.id, account_code: line.account_code, branch_code: line.branch_code, cost_center_code: line.cost_center_code, party_id: line.party_id, party_tax_id: line.party_tax_id, movement: line.movement, debit: line.cents > 0 ? line.amount : 0, credit: line.cents < 0 ? line.amount : 0, description: line.description, ledger_entry_id: ledger.id } });
     }
+    await tx.auditLog.create({
+      data: {
+        user_id: userId || null,
+        action: "POST",
+        module: "accounting",
+        entity: "CntCabdoc",
+        entity_id: String(cabdoc.id),
+        old_value: { provenance: "none" },
+        new_value: { provenance: OPENING_BALANCE_PROVENANCE, reference, file_hash: createHash("sha256").update(buffer).digest("hex"), full_number: fullNumber }
+      }
+    });
     return { valid: true, reference, accounting_document: await tx.cntCabdoc.findUnique({ where: { id: cabdoc.id }, include: { lines: { orderBy: { line_no: "asc" } } } }), lines: prepared.lines.length, total_debit: prepared.total_debit, total_credit: prepared.total_credit };
   }, COMPLEX_TRANSACTION_OPTIONS));
 }
@@ -1362,7 +1389,8 @@ async function listAccountingDocuments(tenantId, query = {}) {
       orderBy: [{ posting_date: "desc" }, { id: "desc" }],
       take: Number(query.limit) || 100
     });
-    return enrichAccountingDocuments(rows);
+    const reversal = require("./reversal");
+    return reversal.enrichDocumentsWithReversal(prisma, tenantId, await enrichAccountingDocuments(rows));
   });
 }
 
@@ -1373,7 +1401,8 @@ async function getAccountingDocument(tenantId, documentId) {
       include: { lines: { orderBy: { line_no: "asc" } } }
     });
     if (!row) throw appError(404, "ACCOUNTING_DOCUMENT_NOT_FOUND", "Documento contable no encontrado");
-    return (await enrichAccountingDocuments([row]))[0];
+    const reversal = require("./reversal");
+    return (await reversal.enrichDocumentsWithReversal(prisma, tenantId, await enrichAccountingDocuments([row])))[0];
   });
 }
 
@@ -1450,6 +1479,7 @@ async function createAccountingDocument(tenantId, userId, data) {
   await assertPeriodOpen(tenantId, postingDate);
   const period = periodFromDate(postingDate);
   return prisma.runWithTenant(tenantId, () => prisma.$transaction(async (tx) => {
+    await acquireAccountingLock(tx, tenantId);
     const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
     const config = tenant?.config && typeof tenant.config === "object" ? tenant.config : {};
     const accounting = config.accounting && typeof config.accounting === "object" ? config.accounting : {};
@@ -1529,6 +1559,20 @@ async function createAccountingDocument(tenantId, userId, data) {
     await tx.tenant.update({
       where: { id: tenantId },
       data: { config: { ...config, accounting: { ...accounting, accounting_numbering: nextNumbering } } }
+    });
+    // Rastro de origen propio del servidor (sin esquema nuevo): solo este flujo, que es el
+    // unico llamador de createAccountingDocument, emite esta marca. La anulacion exige esta
+    // fila para tratar el asiento como manual; cabecera o referencia imitadas no bastan.
+    await tx.auditLog.create({
+      data: {
+        user_id: userId || null,
+        action: "CREATE",
+        module: "accounting",
+        entity: "CntCabdoc",
+        entity_id: String(cabdoc.id),
+        old_value: { provenance: "none" },
+        new_value: { provenance: MANUAL_PROVENANCE, document_type: documentType, full_number: fullNumber }
+      }
     });
 
     return tx.cntCabdoc.findFirst({
@@ -2691,6 +2735,10 @@ module.exports = {
   listAccountingDocuments,
   getAccountingDocument,
   createAccountingDocument,
+  advisoryLockKey,
+  acquireAccountingLock,
+  MANUAL_PROVENANCE,
+  OPENING_BALANCE_PROVENANCE,
   createOpeningBalancesTemplate,
   parseOpeningBalancesWorkbook,
   validateOpeningBalancesWorkbook,
@@ -2715,6 +2763,9 @@ module.exports = {
   periodBounds,
   periodFromDate,
   accountNature,
+  normalizeCode,
+  mergeByCode,
+  activeRows,
   openingBalanceLegacyPartyId,
   resolveOpeningBalanceParty,
   resolveOpeningBalancePartiesBatched,

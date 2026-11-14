@@ -1,3 +1,4 @@
+const { punchPhotoItems } = require("./punchEvidence");
 // Identidad del empleado en las marcaciones de la app movil.
 //
 // Un telefono Android no le dice a ninguna app DE QUIEN es la huella: solo que
@@ -236,7 +237,8 @@ function publicPunchMetadata(metadata = {}) {
 function identityEvidenceOf(punch) {
   const photo = punch?.metadata?.identity_photo;
   if (!photo || typeof photo !== "object") return null;
-  const content = String(photo.base64_data || photo.base64 || "");
+  const normalized = punchPhotoItems({ metadata: { identity_photo: photo } })[0];
+  const content = normalized?.base64_data || "";
   if (!content) return null;
   const type = String(photo.type || "image/jpeg");
   return {

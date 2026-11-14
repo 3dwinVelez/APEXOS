@@ -235,6 +235,8 @@ function buildReport({ period, concepts, vehicles, budgets, incomeRows, pettyRow
     period_start: start,
     period_end: end,
     tax_percent: Number(taxPercent || 0),
+    source: "operational",
+    report_source: "operational",
     concepts: reportConcepts.map((concept) => ({ code: concept.code, name: concept.name, section: concept.section, kind: concept.kind, display_order: concept.order, dynamic: Boolean(concept.dynamic) })),
     vehicles: vehicleReports,
     corporate: {

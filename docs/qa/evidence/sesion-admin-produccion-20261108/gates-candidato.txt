@@ -1,119 +1,95 @@
-Gates del candidato de sesion a main — 2026-11-08
-==================================================
-
-Candidato: codex/qa-sesion-main-20261108, commit funcional 3fa6a5f0 sobre origin/main 1b76376c.
-Todo lo de abajo se midio sobre este arbol o contra el ambiente desplegado; nada se transcribio
-del cierre de develop.
-
-
-1) Puerta de arbol: npm run certify:sesion-admin:local
-
-   11 cheques / 0 fallos -> certificacion-local.json (commit registrado: 3fa6a5f08199)
-
-   Levanta el Fastify real del arbol en loopback contra un borde Supabase simulado que solo
-   reconoce el token del escenario. En la misma corrida mide el caso del incidente (403
-   EMPRESA_NO_VINCULADA), su espejo (401 TOKEN_INVALIDO para credencial que no resuelve identidad),
-   el 401 anonimo, las dos suites del contrato (5/5 y 6/6) y seis contratos de fuente.
-
-   Que habria pasado con el codigo desplegado hoy: el mismo servidor devolvia 401 y el cliente
-   respondia con clearSession + /login. Ese es el comportamiento que el cheque 1 prueba que ya no
-   existe.
+Puertas medidas sobre el candidato de la promocion a develop
+Cambio: sesion-admin-produccion-20261108 (paquete 401 -> 403 de la sesion de Administracion)
+Fecha: 2026-11-08
+Rama auxiliar: codex/qa-sesion-develop-20261108
+Baseline del destino: 530334f2 (origin/develop)
+Contenido del candidato: 15 rutas (7 M + 8 A) en un solo commit funcional + 2 manifiestos
 
 
-2) Puerta de ambiente: node scripts/certifications/sesion-administracion-qa.js
+1) Certificacion end-to-end versionada, corrida SOBRE el arbol del candidato
 
-   9 controles / 0 fallos -> sesion-qa-certification.json, sesion-qa-certification-salida.txt
+   npm run certify:sesion-admin:local
+     -> 11 cheques, 0 fallos, exit 0
+     OK  sesion Supabase valida sin empresa responde 403 y conserva la sesion
+          :: 403 EMPRESA_NO_VINCULADA en 154 ms (servidor real escuchando en 127.0.0.1,
+             socket efimero, borde Supabase simulado en localhost)
+     OK  token que no resuelve identidad sigue respondiendo 401 TOKEN_INVALIDO
+     OK  peticion anonima sigue siendo 401
+     OK  apps/web: contrato de alcance y clearSession solo bajo 401 :: # tests 5 # fail 0
+     OK  apps/api: authorization-status-codes :: # tests 6 # pass 6 # fail 0
+          (AUTH_STATUS_INTEGRATION=1, dentro de la misma corrida)
+     OK  6 contratos de fuente (server 403/500, tenancy 403, rbac 403 x4, supabaseAuth 403,
+          lib/api.ts SESSION_SCOPE_CODES)
 
-   Corrida contra el deploy de develop (commit desplegado 6edf85c7d622, verificado en el control
-   01). El sintoma se reproduce con una cuenta Supabase real de QA con cero company_users y el
-   resultado medido es 403 EMPRESA_NO_VINCULADA, no 401. Con la misma cuenta vinculada a la empresa
-   modelo NYVORA la ruta autorizada responde sin expulsion (auth/me 200; el 403 que aparece es
-   MODULO_NO_HABILITADO, licencia de modulo, no sesion). Limpieza verificada: 0 vinculos remanentes
-   y 0 cuentas fixture.
-
-
-3) Regresion transversal en el ambiente: platform-regression-qa.js
-
-   ok: true, commit 6edf85c7d622, cheques session / services_orders / services_references /
-   hr_employees / inventory_items / accounting_accounts en verde y el pedido sin autorizacion
-   bloqueado -> platform-regression-qa.txt
-
-
-4) Suites sobre el arbol de main, contrastadas con la linea base
-
-   API  candidato : 500 pruebas / 495 pases / 2 fallos / 3 saltadas
-   API  base      : 494 / 490 / 2 / 2      (1b76376c sin parchar)
-   web  candidato : 443 / 442 / 1 fallo
-   web  base      : 438 / 437 / 1 fallo    (1b76376c sin parchar)
-
-   Los nombres que fallan son IDENTICOS en las dos corridas (diff vacio):
-     - inventario ofrece lista de productos filtrable y exportable
-     - compras ventas IVA y retenciones reutilizan el control numerico
-     - Transporte organiza el trabajo por etapas sin navegación redundante
-
-   Regresiones atribuibles al candidato: 0. Pruebas nuevas aportadas: +6 API (5 pasan, 1 se salta
-   sin AUTH_STATUS_INTEGRATION) y +5 web. Los 3 rojos son deuda del destino.
+   Como lee el commit el script: `certificacion-local.json` registra `530334f2`, que es la punta
+   desde la que ARRANCO la corrida, con el arbol del candidato aplicado y sin commitear. No es el
+   sha del commit que publica la evidencia: la evidencia no puede contener su propio sha, y
+   reescribir el JSON despues para que lo mostrara estaria afirmando una medicion que no ocurrio.
+   Lo que se certifica es el arbol, y ese arbol es el que viaja en el commit funcional certificado.
 
 
-5) Tabla de estados medida (las cuatro reclasificaciones, no declaradas)
+2) Suite API completa sobre el arbol del candidato
+
+   node --env-file=.env --test --test-force-exit apps/api/test/*.test.js   (desde la raiz)
+     # tests 1056 / # pass 1053 / # fail 0 / # skipped 3   -> exit 0
+
+   Sin rojos. Las 3 saltadas son preexistentes del destino.
+
+
+3) Suite web completa, contrastada con el destino limpio
+
+   arbol del candidato : # tests 754 / # pass 750 / # fail 4
+   baseline 530334f2   : # tests 749 / # pass 745 / # fail 4   (origin/develop sin parchar)
+
+   Los 4 nombres que fallan son IDENTICOS en las dos corridas:
+     - el registro de funciones cubre todas las rutas del dashboard
+     - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK
+     - el respaldo preventivo tambien consulta el guard cuando no hay API configurada
+     - react y react-dom/server salen de la misma instalacion de node_modules
+
+   Regresiones atribuibles al candidato: 0 (diff de nombres vacio).
+   Pruebas y pases nuevos aportados por el candidato: +5 / +5 (session-scope-403.test.mjs).
+   Los 4 rojos son del destino y se reportan como deuda propia de develop, no de este paquete.
+
+
+4) Contrato de estado del paquete (las cuatro reclasificaciones medidas, no declaradas)
 
    ruta                    antes              despues
    supabaseAuth            401 Error simple   403 EMPRESA_NO_AUTORIZADA / EMPRESA_NO_VINCULADA
    middleware/tenancy      401 EMPRESA_REQ.   403 EMPRESA_REQUERIDA
    middleware/rbac (x4)    401 NO_AUTENTICADO 403 ROL_NO_DEFINIDO
-   server.js (catch)       401 TOKEN_INVALIDO 403 con el codigo del error si lo trae, 401 si no
+   server.js (catch Supab) 401 TOKEN_INVALIDO 403 con el codigo del error, 401 solo si no trae
+                                                statusCode 403
    server.js (lee tenant)  401 TOKEN_INVALIDO 500 EMPRESA_NO_RESUELTA
 
-   El 401 de credencial que no resuelve identidad y el 401 anonimo se midieron en la misma corrida,
-   en el arbol y en el ambiente: la autenticacion no se relajo.
+   El 401 de credencial que no resuelve identidad y el 401 anonimo se midieron en la misma
+   corrida: la autenticacion no se relajo.
 
 
-6) Lo que este candidato NO trae
+5) Lo que este candidato NO trae
 
-   - No trae agentes ni CHANGELOG: el contexto del equipo vive en desarrollo y no es codigo de
-     producto del ambiente liberado.
-   - No trae migraciones: el paquete es codigo de autorizacion y de cliente, no esquema.
-   - No trae la salida C (respaldo de plataforma en supabaseAuth): autorizada por el dueno y sin
-     implementar; pide revision de apexos-seguridad porque cambia autorizacion.
-   - No mide produccion dentro de este manifiesto: la lectura de /health y de la ruta de
-     Administracion contra el ambiente liberado es posterior al deploy y esta exigida como
-     verificacion post-despliegue.
-   - No certifica la sesion real del dueno: ninguna prueba de este cierre usa su clave.
+   - No trae agentes ni CHANGELOG: el contexto del equipo vive en desarrollo (commit 12424e29) y
+     no es codigo de producto del ambiente QA.
+   - No trae migraciones: el paquete es codigo de autorizacion y cliente, no esquema.
+   - No mide produccion: la verificacion contra el ambiente liberado es posterior al deploy y se
+     hace con el gate de despliegue, no con este manifiesto.
+   - No incluye la salida C (respaldo de plataforma en supabaseAuth): autorizada por el dueno y
+     sin implementar, pide revision de apexos-seguridad.
 
 
-7) Salidas de las puertas de gobernanza
+6) Puertas de gobernanza de la promocion, corridas sobre este arbol
 
-   Corridas contra el candidato final cd58c876 (3fa6a5f0 + manifiestos/evidencia), destino
-   origin/main = 1b76376c0c37, que es el baseline declarado en el manifiesto.
+   npm run qa:promotion:scope -- docs/qa/manifests/sesion-develop-20261108-scope.json HEAD origin/develop
+     -> ALCANCE DE PROMOCION VALIDO: sesion-admin-produccion-20261108 (17 rutas)
 
-   npm run qa:promotion:scope -- docs/qa/manifests/sesion-main-20261108-scope.json HEAD origin/main
-     ALCANCE DE PROMOCION VALIDO: sesion-admin-produccion-20261108 (23 rutas)
+   npm run qa:preqa:evidence -- docs/qa/manifests/sesion-develop-20261108-preqa.json
+     -> AUTORIZACION PRE-QA VALIDA: sesion-admin-produccion-20261108
 
-   npm run qa:approval:evidence -- docs/qa/manifests/sesion-main-20261108-approval.json
-     APROBACION QA VALIDA: sesion-admin-produccion-20261108
+   node scripts/git-governance-guard.js ci-promotion <candidato> <origin/develop> develop \
+        codex/qa-sesion-develop-20261108
+     -> PROMOCION CI ALCANZADA: sesion-admin-produccion-20261108
 
-   Las 23 rutas son 16 A y 7 M, cero eliminaciones, y coinciden con el inventario exacto del
-   manifiesto (scope_schema_version 2). El guard ademas verifica que el destino no se movio del
-   baseline aprobado y que el commit funcional certificado 3fa6a5f0 esta contenido en el
-   candidato, asi que el arbol que se promove es el arbol que se certifico.
-
-8) Post-despliegue en produccion (medido despues del push, 2026-11-08)
-
-   Push ejecutado: 1b76376c..b8a24c5c sobre origin/main, con APEXOS_PROMOTION_AUTH de
-   develop-to-main y las dos puertas de la seccion 7 corridas sobre el candidato final.
-
-   GET https://apexos-api-prod-production.up.railway.app/health
-     {"status":"OK","version":"2.0","modules":18,"commit":"b8a24c5c38c0","service_certification":"products-v2"}
-     Antes del push el mismo endpoint devolvia commit 1b76376c0c37. El deploy productivo trae el
-     arbol certificado.
-
-   GET /api/v1/admin/roles SIN autorizacion          -> 401 {"code":"TOKEN_INVALIDO"}
-   GET /api/v1/admin/roles con bearer firmado mal     -> 401 {"code":"TOKEN_INVALIDO"}
-     La autenticacion del ambiente liberado no se relajo: lo que no resuelve credencial sigue
-     siendo 401, igual que antes del cambio.
-
-   Queda por medir en produccion, y solo lo puede medir el dueno con su propia sesion (no hay
-   cuenta de prueba autorizada en produccion y no se cree una): abrir Administracion con la
-   cuenta maestra. Se espera 403 con codigo de causa (EMPRESA_NO_VINCULADA) y la sesion viva;
-   NO una expulsion a /login. Mientras el vinculo de empresa no exista, la pantalla sigue sin
-   datos: eso es la salida C, autorizada para desarrollo y aun sin implementar.
+   Las tres medidas antes del push. La tercera es la que va a correr el PR en GitHub: reproduce
+   el modo `codex/qa-*` de .github/workflows/ci.yml:33-43 y exige que todo el producto este
+   dentro del commit certificado, que despues del certificado solo haya gobernanza, y que las
+   rutas funcionales certificadas viajen byte a byte identicas hasta el tip.

@@ -130,14 +130,15 @@ la regla de alcance del manifiesto; se reporta como deuda con decision pendiente
 
 ## Estado del flujo de promocion
 
-La certificacion local **esta completa**. La promocion a `develop` continua **BLOQUEADA**: falta la
-autorizacion expresa `desarrollo -> develop` con responsable y fecha. La puerta versionada se ejecuto
-contra este manifiesto y su salida literal esta registrada en `hr-contention-p2028-20261026-preqa.json`;
-el manifiesto **no** lleva una aprobacion inventada.
+La certificacion local **esta completa** (52/52) y el responsable autorizo la promocion el
+2026-10-26. En `desarrollo` el manifiesto pre-QA se quedo **sin firmar a proposito**: esa version
+documenta el bloqueo mientras faltaba la autorizacion. La firma y la evidencia recertificada viven en
+el candidato de `develop` (ver "Recertificacion sobre el candidato de `develop`" mas abajo), que es la
+rama que se promueve.
 
-Este cambio vive solo en `desarrollo`. Las escrituras de mallas del incidente original ya fueron
-promovidas y estan en produccion; las tres escrituras aqui certificadas (marcacion, kilometraje y
-ajustes de nomina) siguen expuestas en produccion hasta que el responsable autorice la promocion.
+Las escrituras de mallas del incidente original ya estaban en produccion; las tres escrituras aqui
+certificadas (marcacion, kilometraje y ajustes de nomina) quedaran protegidas cuando esta candidata
+llegue a `main`.
 
 ## Salida literal de las puertas versionadas
 
@@ -155,9 +156,10 @@ La misma puerta vuelta a ejecutar con el tip final de `desarrollo` como candidat
 (`... HEAD origin/develop`) devuelve **las mismas 12 rutas**: el set no cambia con los commits de
 documentacion, y ninguna de las 18 rutas de este change aparece como fuera de alcance.
 
-El manifiesto pre-QA **no** lleva una aprobacion inventada: sus 5 bloques de `checks`, su
-certificacion (52/52) y su regresion (API 810 / Web 580) pasan todas las verificaciones de
-existencias; lo unico que falta es la firma del responsable.
+El manifiesto pre-QA de `desarrollo` **no** llevaba una aprobacion inventada: sus 5 bloques de
+`checks`, su certificacion (52/52) y su regresion (API 810 / Web 580 en la base local) pasaban todas
+las verificaciones de existencias y lo unico que faltaba era la firma del responsable, que se puso en
+el candidato.
 
 El bloqueo de alcance no es un defecto del fix: es la deriva de ramas ya registrada en el cambio
 de mallas. Son 12 rutas fuera de alcance y **5 de ellas son eliminaciones** (4 del modulo
@@ -175,3 +177,46 @@ cuya versión en `develop` es posterior.
 
 El comando de alcance hay que volver a ejecutarlo contra el candidato final elegido: el arbol de la
 fusion cambia con cada commit adicional de `desarrollo`.
+
+## Recertificacion sobre el candidato de `develop`
+
+El responsable autorizo la promocion el 2026-10-26 ("procede con mi autorizacion llevar las
+correciones hasta el ambiente main pasando por todos los protocolos"), y el bloqueo de alcance se
+resolvio como estaba previsto: **no** se promote la rama completa, sino el cherry-pick puntual de los
+cuatro commits de `desarrollo` sobre el tip vigente de `develop` (`89e87b79`), en una rama auxiliar
+que se elimina al terminar.
+
+| Pieza del candidato | SHA en `desarrollo` | SHA en la candidata |
+| --- | --- | --- |
+| Fix funcional (12 rutas de codigo y pruebas) | `dae326af` | `73275113` |
+| Arnés con limpieza del empleado espejo + evidencia | `6dca9438` | `d92be0fa` |
+| Certificación, manifiestos y medición de la candidata | `930955ea` / `a442855e` | `3ce6ca4b` / `0aa9fc25` |
+
+El cherry-pick no produjo conflictos porque las 12 rutas funcionales son idénticas entre la base de
+`desarrollo` y el tip de `develop`; la divergencia entre las dos ramas vive en Contabilidad y en la
+evidencia del cambio previo, y nada de eso se toca.
+
+Todo el bloque de evidencia se volvio a producir **sobre el propio checkout del candidato**, contra
+una base PostgreSQL aislada nueva (`apexos_cert_cont2`, 186 tablas, clon de la base local):
+
+| Verificacion en la candidata | Resultado |
+| --- | --- |
+| Arnés de contención E2E (corrida `20261026181509`) | **52/52**, `api_commit 0aa9fc25`, limpieza sin errores y `mirror_employee_removed: true` |
+| Regresión de plataforma (`release-local-regression.cjs`) | API **875/875**, Web **589/589**, cero fallidas, cero omitidas |
+| Alcance medido `git diff --name-status origin/develop..HEAD` | **18 rutas exactas**, cero eliminaciones, accounting intacto, `faltan: []` y `sobran: []` |
+
+La suite de Talento Humano sube de 43 a 43 pruebas identicas; los 65+9 casos extra de la regresión
+pertenecen a Contabilidad, que solo existe en `develop`.
+
+## Puertas ejecutadas contra el candidato (salida literal)
+
+```text
+$ npm run qa:preqa:evidence -- docs/qa/manifests/hr-contention-p2028-20261026-preqa.json
+AUTORIZACION PRE-QA VALIDA: hr-contention-p2028-20261026
+
+$ npm run qa:promotion:scope -- docs/qa/manifests/hr-contention-p2028-20261026-scope.json HEAD origin/develop
+ALCANCE DE PROMOCION VALIDO: hr-contention-p2028-20261026 (18 rutas)
+```
+
+La autorizacion pre-QA queda firmada en el manifiesto con responsable, fecha y la cita textual del
+lead; `promote_main` sigue en `false` porque `main` exige su propio manifiesto de aprobacion QA.

@@ -1,5 +1,6 @@
 "use client";
 
+import AccountingPygBudgetImport from "@/components/accounting/AccountingPygBudgetImport";
 import { api } from "@/lib/api";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { formatRegionalMoney } from "@/lib/regionalFormat";
@@ -191,6 +192,9 @@ export default function AccountingPygBudget({ defaultPeriod, onSaved }: { defaul
             <div className="flex items-center gap-3 border-t border-line bg-surface-muted/50 px-4 py-3">
               <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white disabled:opacity-50" disabled={saving || loading} onClick={() => void save()} type="button"><Save size={16} /> {saving ? "Guardando…" : "Guardar presupuesto"}</button>
               <span className="text-xs text-content-muted">Al guardar, la matriz interactiva del mismo periodo se actualiza de inmediato.</span>
+            </div>
+            <div className="border-t border-line p-4">
+              <AccountingPygBudgetImport onImported={() => { setReloadToken((current) => current + 1); onSaved(); }} />
             </div>
           </>
         )}

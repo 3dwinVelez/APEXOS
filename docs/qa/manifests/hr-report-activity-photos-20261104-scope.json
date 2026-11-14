@@ -1,0 +1,105 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-report-activity-photos-20261104",
+  "base_commits": {
+    "develop": "df4e70e8c56e42607573c79be51e6af44a0e5d2f"
+  },
+  "target_head": "df4e70e8c56e42607573c79be51e6af44a0e5d2f",
+  "certified_commit": "f4033f50ad73a7df28186f60fbf0a264799e6700",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "f4033f50ad73a7df28186f60fbf0a264799e6700",
+    "original_commits": [
+      "26e1aac2",
+      "5400bee7",
+      "1403e617"
+    ],
+    "reconstruction": "Only report photo hunks from desarrollo reconstructed on current QA target; preserves all existing selfies and device verification."
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/components/hr/HrTimelineEvidence.tsx",
+    "docs/qa/certifications/hr-report-activity-photos-20261104.md",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js"
+  ],
+  "change_intent": {
+    "summary": "Render and enlarge activity photos in the Reports journey trace; preserve punch selfies and supports.",
+    "modules": [
+      "hr",
+      "web-talento-humano"
+    ]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/components/hr/HrTimelineEvidence.tsx",
+    "docs/qa/certifications/hr-report-activity-photos-20261104.md",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "docs/qa/manifests/hr-report-activity-photos-20261104-scope.json",
+    "docs/qa/manifests/hr-report-activity-photos-20261104-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/HrTimelineEvidence.tsx"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-report-activity-photos-20261104.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-report-activity-photos-20261104-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-report-activity-photos-20261104-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "report_activity_photo_and_enlargement",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "punch_selfie_and_support_preserved",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "routes_monitor_regression",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "tenant_isolation_and_rbac",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    }
+  ],
+  "traceability": "desarrollo implementation, punctual reconstruction over current develop; no unrelated changes, backend, migrations, deletions or infrastructure."
+}

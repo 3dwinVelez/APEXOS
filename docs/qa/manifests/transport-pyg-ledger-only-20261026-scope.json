@@ -1,0 +1,167 @@
+{
+  "promotion_branch": "codex/qa-pyg-ledger-only-20261026",
+  "change_id": "transport-pyg-ledger-only-20261026",
+  "allowed_paths": [
+    "apps/api/src/modules/transport-pyg/account-config-service.js",
+    "apps/api/src/modules/transport-pyg/account-config.js",
+    "apps/api/src/modules/transport-pyg/schema.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/test/transport-pyg-account-ranges.test.js",
+    "apps/api/test/transport-pyg-report.test.js",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/accounting/AccountingPyg.tsx",
+    "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/test/accounting-pyg-interactive.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-ledger-only-20261026.md",
+    "scripts/certifications/transport-pyg-ledger-only-browser-local.js",
+    "docs/qa/manifests/transport-pyg-ledger-only-20261026-preqa.json",
+    "docs/qa/manifests/transport-pyg-ledger-only-20261026-scope.json"
+  ],
+  "allowed_deletions": [],
+  "candidate_source": {
+    "branch": "desarrollo",
+    "original_commit": "95e8169e",
+    "commit": "3d7acb17904c1d0de84fad7b17f11eba8f48563a"
+  },
+  "certified_commit": "3d7acb17904c1d0de84fad7b17f11eba8f48563a",
+  "expected_changes": [
+    {
+      "file": "apps/api/src/modules/transport-pyg/account-config-service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/account-config.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/schema.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/src/modules/transport-pyg/service.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/transport-pyg-account-ranges.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/api/test/transport-pyg-report.test.js",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/accounting/AccountingPyg.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/lib/api.ts",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/accounting-pyg-interactive.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+      "status": "M"
+    },
+    {
+      "file": "docs/qa/certifications/transport-pyg-ledger-only-20261026.md",
+      "status": "A"
+    },
+    {
+      "file": "scripts/certifications/transport-pyg-ledger-only-browser-local.js",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/transport-pyg-ledger-only-20261026-preqa.json",
+      "status": "A"
+    },
+    {
+      "file": "docs/qa/manifests/transport-pyg-ledger-only-20261026-scope.json",
+      "status": "A"
+    }
+  ],
+  "protected_capabilities": [
+    {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "name": "lectura_libro_mes_exacto_y_reconciliacion"
+    },
+    {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "name": "permisos_aislamiento_y_configuracion_sin_mutaciones_en_lectura"
+    },
+    {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "name": "periodo_compartido_respuestas_tardias_y_actualizacion_sin_cache"
+    },
+    {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-ledger-only-20261026.md"
+      ],
+      "name": "presupuesto_puc_drill_y_persistencia_de_rangos"
+    }
+  ],
+  "target_branch": "develop",
+  "base_commits": {
+    "develop": "813ddfd8468a1a4c9321d122d21d96080eb4c0a7"
+  },
+  "base_commit": "813ddfd8468a1a4c9321d122d21d96080eb4c0a7",
+  "source_branch": "desarrollo",
+  "scope_schema_version": 2,
+  "certified_functional_paths": [
+    "apps/api/src/modules/transport-pyg/account-config-service.js",
+    "apps/api/src/modules/transport-pyg/account-config.js",
+    "apps/api/src/modules/transport-pyg/schema.js",
+    "apps/api/src/modules/transport-pyg/service.js",
+    "apps/api/test/transport-pyg-account-ranges.test.js",
+    "apps/api/test/transport-pyg-report.test.js",
+    "apps/web/app/dashboard/contabilidad/pyg/page.tsx",
+    "apps/web/components/accounting/AccountingPyg.tsx",
+    "apps/web/components/transport-pyg/TransportPygAccountConfig.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/test/accounting-pyg-interactive.test.mjs",
+    "apps/web/test/transport-pyg-vehicle-page.test.mjs",
+    "docs/qa/certifications/transport-pyg-ledger-only-20261026.md",
+    "scripts/certifications/transport-pyg-ledger-only-browser-local.js"
+  ],
+  "approval": {
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "status": "approved",
+    "approved_by": "manue",
+    "approved_at": "2026-10-26",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "Autorizar rama y publicación puntual en QA; Autorizar integración local y recertificación"
+  },
+  "change_intent": {
+    "modules": [
+      "transport-pyg",
+      "accounting",
+      "qa-evidence"
+    ],
+    "summary": "PYG por vehículo siempre desde asientos publicados del mes consultado, período compartido y actualización sin caché; preserva la base actual de QA."
+  },
+  "target_head": "813ddfd8468a1a4c9321d122d21d96080eb4c0a7"
+}

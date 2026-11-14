@@ -1,0 +1,502 @@
+{
+  "change_id": "hr-landing-hub-20261110",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "d4edd81528278636619fe2529035edbd7d0845a3",
+  "commit": "9b2257c6ebc54aaa8ac31213fe62f1e16bf66a66",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-landing-hub-20261110-preqa.json",
+        "../certifications/hr-landing-hub-20261104.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-landing-hub-local.js",
+    "evidence": [
+      "hr-landing-hub-20261110-preqa.json",
+      "../certifications/hr-landing-hub-20261104.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-landing-hub-local.js",
+    "evidence": [
+      "hr-landing-hub-20261110-preqa.json",
+      "../certifications/hr-landing-hub-20261104.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario solicita revisar y desplegar la interfaz de Qoder en QA",
+    "approved_at": "2026-11-11T00:46:22.595Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "9b2257c6ebc54aaa8ac31213fe62f1e16bf66a66",
+    "target": "d4edd81528278636619fe2529035edbd7d0845a3",
+    "unit_tests": {
+      "passed": 19,
+      "failed": 0
+    },
+    "full_flow": {
+      "environment": "LOCAL",
+      "source_branch": "desarrollo",
+      "target_branch": "develop",
+      "commit": "d4edd81528278636619fe2529035edbd7d0845a3",
+      "started_at": "2026-11-11T00:39:47.213Z",
+      "checks": [
+        "hub renders the module header and one card per module access",
+        "browser state carries no service worker cache that could mask the fresh bundle",
+        "every hub card opens its own destination screen",
+        "hub stays reachable from each destination and keeps the same fifteen accesses",
+        "no uncaught page error and no failed Talento Humano request during the whole navigation"
+      ],
+      "status": "passed",
+      "hub_ssr_html": {
+        "has_section": true,
+        "hrefs_found": 15,
+        "has_guard_skeleton": false,
+        "bytes": 40828
+      },
+      "hub_cards": [
+        {
+          "href": "/dashboard/talento-humano/rutas",
+          "title": "Asignar horarios",
+          "detail": "Crear mallas, comparar jornadas y asignar personal operativo o administrativo.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/mallas",
+          "title": "Monitor de mallas",
+          "detail": "Seguir en vivo las marcaciones, actividades y evidencias de una malla.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/marcacion",
+          "title": "Marcaciones",
+          "detail": "Registrar entradas, salidas y ubicación GPS del equipo.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/novedades",
+          "title": "Novedades de jornada",
+          "detail": "Revisar alertas, incapacidades, permisos, faltas y justificaciones.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/mapa",
+          "title": "Mapa operativo",
+          "detail": "Supervisar rutas, última ubicación y cumplimiento de la jornada.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/empleados",
+          "title": "Maestro de empleados",
+          "detail": "Mantener datos laborales y su asociación con usuarios APEX.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/entidades",
+          "title": "Entidades y afiliaciones",
+          "detail": "Administrar EPS, pensión, ARL, caja, ICBF y sus vigencias.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/configuracion-laboral",
+          "title": "Configuración laboral",
+          "detail": "Parametrizar recargos, horas extra, límites y jornada nocturna.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/nomina",
+          "title": "Nómina",
+          "detail": "Liquidar periodos quincenales o mensuales y sus comprobantes.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/provisiones",
+          "title": "Provisiones",
+          "detail": "Provisionar prima, cesantías, intereses y vacaciones desde nómina.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/aportes-sociales",
+          "title": "Aportes sociales",
+          "detail": "Liquidar salud, pensión, ARL, caja, ICBF y SENA.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/prestaciones-pagos",
+          "title": "Pago de prestaciones",
+          "detail": "Pagar prima, cesantías, intereses y vacaciones provisionados.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/libranzas",
+          "title": "Libranzas",
+          "detail": "Gestionar conceptos, cuotas, saldos y deducciones recurrentes.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/liquidacion-trabajador",
+          "title": "Liquidación de trabajador",
+          "detail": "Calcular retiro, prestaciones adeudadas e indemnización.",
+          "icon": true
+        },
+        {
+          "href": "/dashboard/talento-humano/reportes",
+          "title": "Reportes de tiempo",
+          "detail": "Consultar horas laboradas, extras y trazabilidad del equipo.",
+          "icon": true
+        }
+      ],
+      "service_workers_cleared": {
+        "registrations": 1,
+        "caches": 1
+      },
+      "opened_screens": [
+        {
+          "href": "/dashboard/talento-humano/rutas",
+          "heading": "Asignar horarios"
+        },
+        {
+          "href": "/dashboard/talento-humano/mallas",
+          "heading": "Monitor de mallas horarias"
+        },
+        {
+          "href": "/dashboard/talento-humano/marcacion",
+          "heading": "Mi jornada"
+        },
+        {
+          "href": "/dashboard/talento-humano/novedades",
+          "heading": "Novedades de jornada"
+        },
+        {
+          "href": "/dashboard/talento-humano/mapa",
+          "heading": "Mapa en vivo de rutas y marcaciones"
+        },
+        {
+          "href": "/dashboard/talento-humano/empleados",
+          "heading": "Maestro de empleados"
+        },
+        {
+          "href": "/dashboard/talento-humano/entidades",
+          "heading": "Entidades y afiliaciones"
+        },
+        {
+          "href": "/dashboard/talento-humano/configuracion-laboral",
+          "heading": "Configuración laboral"
+        },
+        {
+          "href": "/dashboard/talento-humano/nomina",
+          "heading": "Liquidacion de nomina"
+        },
+        {
+          "href": "/dashboard/talento-humano/provisiones",
+          "heading": "Provisionar prestaciones sociales"
+        },
+        {
+          "href": "/dashboard/talento-humano/aportes-sociales",
+          "heading": "Aportes sociales"
+        },
+        {
+          "href": "/dashboard/talento-humano/prestaciones-pagos",
+          "heading": "Pago de prestaciones sociales"
+        },
+        {
+          "href": "/dashboard/talento-humano/libranzas",
+          "heading": "Libranzas y deducciones recurrentes"
+        },
+        {
+          "href": "/dashboard/talento-humano/liquidacion-trabajador",
+          "heading": "Liquidacion de trabajador"
+        },
+        {
+          "href": "/dashboard/talento-humano/reportes",
+          "heading": "Horas laboradas y trazabilidad"
+        }
+      ],
+      "destination_return_links": {
+        "/dashboard/talento-humano/rutas": true,
+        "/dashboard/talento-humano/mallas": true,
+        "/dashboard/talento-humano/marcacion": true,
+        "/dashboard/talento-humano/novedades": true,
+        "/dashboard/talento-humano/mapa": true,
+        "/dashboard/talento-humano/empleados": true,
+        "/dashboard/talento-humano/entidades": true,
+        "/dashboard/talento-humano/configuracion-laboral": true,
+        "/dashboard/talento-humano/nomina": true,
+        "/dashboard/talento-humano/provisiones": true,
+        "/dashboard/talento-humano/aportes-sociales": true,
+        "/dashboard/talento-humano/prestaciones-pagos": true,
+        "/dashboard/talento-humano/libranzas": true,
+        "/dashboard/talento-humano/liquidacion-trabajador": true,
+        "/dashboard/talento-humano/reportes": true
+      },
+      "return_link_clicked": {
+        "matches": 3,
+        "text": "Talento humano",
+        "in_main": true
+      },
+      "api_requests_seen": {
+        "200 /api/v1/auth/me": 272,
+        "200 /api/v1/hr/employees": 7,
+        "200 /api/v1/hr/routes": 59,
+        "200 /api/v1/admin/user-master-data": 11,
+        "403 /api/v1/transport/vehicles": 5,
+        "200 /api/v1/hr/routes/event-summaries": 19,
+        "200 /api/v1/hr/self": 2,
+        "200 /api/v1/hr/self/routes": 2,
+        "200 /api/v1/hr/self/attendance": 2,
+        "200 /api/v1/hr/self/activity-types": 2,
+        "200 /api/v1/hr/self/work-session": 2,
+        "200 /api/v1/hr/self/preop/active": 2,
+        "200 /api/v1/talento-humano/novedades": 6,
+        "200 /api/v1/hr/operations-map": 2,
+        "200 /api/v1/talento-humano/empleados": 20,
+        "200 /api/v1/talento-humano/entidades": 18,
+        "200 /api/v1/talento-humano/empleados/organization-options": 6,
+        "200 /api/v1/talento-humano/entidades/terceros": 2,
+        "200 /api/v1/talento-humano/configuracion-laboral/nomina": 6,
+        "200 /api/v1/talento-humano/configuracion-laboral": 6,
+        "200 /api/v1/accounting/accounts": 12,
+        "200 /api/v1/talento-humano/nomina/liquidaciones": 18,
+        "200 /api/v1/talento-humano/nomina/ajustes": 6,
+        "200 /api/v1/talento-humano/nomina/cierres": 6,
+        "200 /api/v1/talento-humano/aportes-sociales/documentos": 6,
+        "200 /api/v1/talento-humano/prestaciones/pagos/documentos": 6,
+        "200 /api/v1/talento-humano/libranzas/conceptos": 6,
+        "200 /api/v1/talento-humano/libranzas/empleados": 6,
+        "200 /api/v1/talento-humano/liquidacion-trabajador/saldos": 6,
+        "200 /api/v1/talento-humano/liquidacion-trabajador/documentos": 6,
+        "200 /api/v1/hr/attendance": 2,
+        "200 /api/v1/hr/work-activities": 2
+      },
+      "expected_foreign_module_gating": [
+        "403 /api/v1/transport/vehicles MODULO_NO_HABILITADO",
+        "403 /api/v1/transport/vehicles MODULO_NO_HABILITADO",
+        "403 /api/v1/transport/vehicles MODULO_NO_HABILITADO",
+        "403 /api/v1/transport/vehicles MODULO_NO_HABILITADO",
+        "403 /api/v1/transport/vehicles MODULO_NO_HABILITADO"
+      ],
+      "expected_empty_states": [],
+      "failed_api_requests": [],
+      "page_console": [
+        "error: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:3321/favicon.ico",
+        "error: Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://127.0.0.1:40272/api/v1/transport/vehicles",
+        "error: Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://127.0.0.1:40272/api/v1/transport/vehicles",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3990.png",
+        "error: Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://127.0.0.1:40272/api/v1/transport/vehicles",
+        "error: Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://127.0.0.1:40272/api/v1/transport/vehicles",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2407/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2408/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2409/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2410/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2411/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2412/3990.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3986.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3987.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3988.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3989.png",
+        "error: Failed to load resource: net::ERR_FAILED @ https://tile.openstreetmap.org/13/2413/3990.png",
+        "error: Failed to load resource: the server responded with a status of 403 (Forbidden) @ http://127.0.0.1:40272/api/v1/transport/vehicles"
+      ],
+      "navigation_trail": [
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/rutas",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/mallas",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/marcacion",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/novedades",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/mapa",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/empleados",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/entidades",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/configuracion-laboral",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/nomina",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/provisiones",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/aportes-sociales",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/prestaciones-pagos",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/libranzas",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/liquidacion-trabajador",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano",
+        "/dashboard/talento-humano/reportes",
+        "/dashboard/talento-humano/rutas",
+        "/dashboard/talento-humano/rutas",
+        "/dashboard/talento-humano/mallas",
+        "/dashboard/talento-humano/mallas",
+        "/dashboard/talento-humano/marcacion",
+        "/dashboard/talento-humano/marcacion",
+        "/dashboard/talento-humano/novedades",
+        "/dashboard/talento-humano/novedades",
+        "/dashboard/talento-humano/mapa",
+        "/dashboard/talento-humano/mapa",
+        "/dashboard/talento-humano/empleados",
+        "/dashboard/talento-humano/empleados",
+        "/dashboard/talento-humano/entidades",
+        "/dashboard/talento-humano/entidades",
+        "/dashboard/talento-humano/configuracion-laboral",
+        "/dashboard/talento-humano/configuracion-laboral",
+        "/dashboard/talento-humano/nomina",
+        "/dashboard/talento-humano/nomina",
+        "/dashboard/talento-humano/provisiones",
+        "/dashboard/talento-humano/provisiones",
+        "/dashboard/talento-humano/aportes-sociales",
+        "/dashboard/talento-humano/aportes-sociales",
+        "/dashboard/talento-humano/prestaciones-pagos",
+        "/dashboard/talento-humano/prestaciones-pagos",
+        "/dashboard/talento-humano/libranzas",
+        "/dashboard/talento-humano/libranzas",
+        "/dashboard/talento-humano/liquidacion-trabajador",
+        "/dashboard/talento-humano/liquidacion-trabajador",
+        "/dashboard/talento-humano/reportes",
+        "/dashboard/talento-humano/reportes",
+        "/dashboard/talento-humano/rutas",
+        "/dashboard/talento-humano/rutas",
+        "/dashboard/talento-humano"
+      ],
+      "hr_api_requests_seen": {
+        "total": 233,
+        "failed": 0
+      },
+      "tenant_id": "6e00383b-2a78-4d4d-b799-c987b8e285a2",
+      "finished_at": "2026-11-11T00:46:05.951Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1794357568814",
+      "source_database_modified": false,
+      "fixture_schema_hunks": [
+        "20261016123000_sedes_replace_origins: sections 1-2 only",
+        "20260919110000_time_route_kind_descanso"
+      ],
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-11T00:46:06.026Z"
+    }
+  }
+}

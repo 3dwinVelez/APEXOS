@@ -1,0 +1,171 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-punch-mobile-evidence-20261104",
+  "base_commits": {
+    "develop": "8e4f98c2e7862f74b1bdee51b281093e8fc839a3"
+  },
+  "target_head": "8e4f98c2e7862f74b1bdee51b281093e8fc839a3",
+  "certified_commit": "4b479bdfd6195eeeab81f03f8a7013cd99f16129",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "4b479bdfd6195eeeab81f03f8a7013cd99f16129",
+    "original_commit": "303fdbb9016bafbc638bc86fb21470c035ffa4c8",
+    "reconstruction": "Reviewed photo hunks reconstructed over current develop baseline; preserves PR #76 and #77. The certified commit is the fully integrated candidate, including the current target."
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/test/hr-report-punch-selfie.test.mjs",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/develop-preqa-evidence.json",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/develop-scope-manifest.json",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/local-certification.json",
+    "docs/qa/evidence/hr-mobile-identity-shared-device-20261104/regression-certification.json",
+    "scripts/certifications/hr-mobile-identity-local.js"
+  ],
+  "change_intent": {
+    "summary": "Unificar lectura y contadores de fotos moviles de TimePunch en trazabilidad, conservar ActivityEvidence y soportes, impedir fallback a tablas antiguas. Preservar firma, registro, unicidad de telefono y restablecimiento biometrico existentes en QA.",
+    "modules": [
+      "hr",
+      "web-talento-humano"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/punchEvidence.d.ts",
+    "apps/api/src/modules/hr/punchEvidence.js",
+    "apps/api/src/modules/hr/routeEventSummaries.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-punch-mobile-evidence.test.js",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-punch-mobile-evidence.test.mjs",
+    "docs/qa/certifications/hr-punch-mobile-evidence-20261104.md",
+    "scripts/certifications/hr-employee-user-association-browser-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "docs/qa/manifests/hr-punch-mobile-evidence-20261104-scope.json",
+    "docs/qa/manifests/hr-punch-mobile-evidence-20261104-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/punchEvidence.d.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/punchEvidence.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routeEventSummaries.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-punch-mobile-evidence.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-punch-mobile-evidence.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-punch-mobile-evidence-20261104.md"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-association-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-punch-mobile-evidence-20261104-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-punch-mobile-evidence-20261104-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "mobile_photo_display_and_lightbox",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "source_consistency_and_no_legacy_fallback",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "extra_supports_and_activities",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "tenant_isolation_and_rbac",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "biometric_enrollment_signatures_reset_and_unique_device",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    },
+    {
+      "name": "selfie_reports_preserved",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-punch-mobile-evidence-20261104.md",
+        "hr-punch-mobile-evidence-20261104-preqa.json"
+      ]
+    }
+  ],
+  "traceability": "Original implementation 303fdbb9 on desarrollo; punctual reconstruction 1be8465b, test isolation 663bb072, integration of latest QA baseline in certified commit. No unrelated employee association UI or landing changes, deletions, migrations or infrastructure changes in this promotion."
+}

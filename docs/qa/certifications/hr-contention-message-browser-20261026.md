@@ -157,7 +157,65 @@ logs de arranque de los dos servicios van a un directorio temporal, no a la evid
   de nomina, que es el unico de los tres flujos cuya pantalla no exige horario asignado ni GPS. Los
   otros dos siguen probados por HTTP (52/52) y por pruebas unitarias del mensaje amable.
 - Ningun ambiente de QA remoto (Railway/Vercel) ni la base en la nube: todo lo anterior es local.
-- La promocion de estos tres commits a `develop` o `main`. Para `desarrollo -> develop` sigue vigente el
+- La promocion de estos cuatro commits a `develop` o `main`. Para `desarrollo -> develop` sigue vigente el
   bloqueo de alcance ya documentado: `desarrollo` va por detras de `develop` en Contabilidad y el diff
   neto arrastra eliminaciones ajenas, asi que habria que reconstruir los commits sobre el tip de
   `develop` y recertificar contra el SHA nuevo.
+
+## Promocion a develop: candidata reconstruida y recertificada (2026-10-26)
+
+La reconstruccion se hizo y la puerta se paso. Medido con `git diff --name-status origin/develop..9d8faa05`
+(tip de `desarrollo`), la fusion de la rama trae **58 rutas con 24 eliminaciones**: los certificadores y
+manifiestos de `transport-pyg-account-ranges-20261024` y `accounting-reversal-budget-import-20261024`, que
+existen en `develop` (merge PR #70) y aun no en `desarrollo`. Promover la rama borraria trabajo certificado
+ajeno, asi que se aplico el protocolo de siempre: rama auxiliar con base `8015ebf2` y cherry-pick puntual de
+`767bd8eb`, `9dcef87c`, `efaac010`, `9d8faa05`.
+
+Candidata `45626652` sobre el tip vigente de `develop`. Su diff neto contra `8015ebf2` es de **11 rutas y cero
+eliminaciones** (luego 14 con la evidencia regenerada y los dos manifiestos de esta ronda). Los tres commits
+funcionales entraron limpios; el de documentacion conflicto solo en
+`docs/qa/evidence/hr-contention-p2028-20261026/{local-certification.json,local-fixture.json}`, y se resolvio
+regenerandolos con una corrida nueva sobre la candidata en vez de elegir un lado a mano.
+
+Toda la evidencia se volvio a producir sobre `45626652`, que es lo unico que hace trazable esta promocion:
+
+| Control | Resultado sobre la candidata | Clavado en |
+| --- | --- | --- |
+| `certify:hr-contention-message-browser:local` | **22/22** (`status passed`, `cleanup.errors: []`) | `certified_commit = 45626652` |
+| `certify:hr-contention-p2028:local` | **52/52** (`status passed`, `mirror_employee_removed: true`) | `api_commit = 45626652` |
+| `node --test` de las dos pruebas nuevas | **7/7** (permiso IBC 3 + propagacion de tenant 4) | arbol de la candidata |
+| `release-local-regression.cjs` | API **916/916**, Web **607/607**, cero fallidas, cero omitidas | `head = 45626652` |
+
+Condicion del entorno que quedo registrada porque cambia donde se corre, no que se certifica: Turbopack
+rechaza un `node_modules` enlazado que apunta fuera de la raiz del proyecto
+(`Symlink [project]/apps/web/node_modules is invalid`), asi que la corrida con `next build` se hizo en el
+arbol principal con la candidata checkouteada, no en el worktree auxiliar. Y el arnes de navegador **no
+construye**: exige `apps/web/.next/BUILD_ID` y aborta con `PREREQUISITO` si falta.
+
+## Por que main NO recibe esta ronda (medido, no supuesto)
+
+Contra `origin/main` (`3ebe71f7`): no existen `createPayrollAdjustment` ni las rutas
+`/api/v1/talento-humano/nomina/ajustes` y `/api/v1/hr/payroll/adjustments` (la ronda anterior certifico esa
+ausencia con `payroll_adjustment_write_absent_in_main`). El candado de permiso y el certificador de navegador
+no tienen objeto alli, y versionar la evidencia de una pantalla que no existe seria certificar un fantasma.
+
+Lo unico con efecto posible en main es la linea del nucleo que esta prueba toca, y ahi la medicion dio un
+resultado que merece decision propia. Sondeando el `prisma.js` **del arbol de main** (misma prueba de
+middleware, sin la asercion de fuente):
+
+| Forma del callback dentro de `runWithTenant` | `tenant_id` que ve el middleware de Prisma |
+| --- | --- |
+| sincrono `() => prisma.employee.create(...)` | `undefined` en main / `"7001"` en desarrollo y develop |
+| asincrono `async () => prisma.employee.create(...)` | `"7001"` en ambos |
+| asincrono despues de un `await` | `"7001"` en ambos |
+
+Es decir, con `tenantStorage.run(store, fn)` (la forma de `main`) un callback que devuelve la promesa sin
+awaitar **no llega con el contexto ALS** al middleware que inyecta el filtro de tenant. En main hay
+**392** sitios de `runWithTenant`, de los cuales **105** usan la forma sincrona, y entre ellos hay lecturas
+(`auditLog.findMany`, `party.findFirst`, `workflow.findFirst`). La correccion es la misma linea que ya vive
+en `desarrollo` y `develop`.
+
+Decision de alcance: **no se mezcla** un cambio del nucleo de multi-tenancy dentro de esta promocion de
+Talento Humano. Va como su propia candidata a main, con su manifiesto de aprobacion y su certificacion
+(prueba ALS 4/4, arnes de contencion variante main 42/42 y regresion de plataforma completa sobre el arbol de
+main). Mientras no exista esa candidata, `main` sigue con la linea vieja y este documento lo declara abierto.

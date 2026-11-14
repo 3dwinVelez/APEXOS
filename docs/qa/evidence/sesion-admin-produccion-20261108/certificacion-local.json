@@ -2,25 +2,25 @@
   "certificacion": "sesion-administracion-produccion-20261108",
   "flujo_certificado": "Abrir Administracion con una sesion Supabase valida sin contexto de empresa",
   "ambiente": "local",
-  "ejecutado_en": "2026-11-09T03:20:27.865Z",
-  "commit": "8086570c3c6253f47df881182ab72e04eca2ff41",
+  "ejecutado_en": "2026-11-09T03:31:30.187Z",
+  "commit": "530334f25e55bfe9b0c0c634e60965b1f5936287",
   "cheques": 11,
   "fallos": 0,
   "mediciones": {
     "sesion_sin_empresa": {
       "estado": 403,
       "code": "EMPRESA_NO_VINCULADA",
-      "duracion_ms": 62
+      "duracion_ms": 154
     },
     "credencial_invalida": {
       "estado": 401,
       "code": "TOKEN_INVALIDO",
-      "duracion_ms": 10
+      "duracion_ms": 11
     },
     "anonimo": {
       "estado": 401,
       "code": "TOKEN_INVALIDO",
-      "duracion_ms": 10
+      "duracion_ms": 16
     },
     "contratos_de_codigo": {
       "server.js responde 403 cuando el error trae statusCode 403": true,
@@ -35,7 +35,7 @@
     {
       "chequeo": "sesion Supabase valida sin empresa responde 403 y conserva la sesion",
       "resultado": "OK",
-      "detalle": "403 EMPRESA_NO_VINCULADA en 62 ms"
+      "detalle": "403 EMPRESA_NO_VINCULADA en 154 ms"
     },
     {
       "chequeo": "token que no resuelve identidad sigue respondiendo 401 TOKEN_INVALIDO",

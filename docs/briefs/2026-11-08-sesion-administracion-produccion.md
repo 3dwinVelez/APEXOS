@@ -62,12 +62,6 @@ Inventario: **20 M, 5 A, 0 D**. M = 6 de codigo y pruebas (`server.js`, `middlew
 | Pruebas API afectadas | 32/32 |
 | Suite web completa | 666/666 (661 preexistentes + 5 nuevas) |
 | Certificacion end-to-end versionada | `npm run certify:sesion-admin:local` 11 cheques / 0 fallos |
-| Certificacion de ambiente QA desplegado | `sesion-administracion-qa.js` 9 controles / 0 fallos sobre `6edf85c7d622` |
-| Celda de navegador del sintoma | `403 EMPRESA_NO_VINCULADA`, URL sin cambio, token vivo, reintento identico |
-| Promocion a `main` | candidato `3fa6a5f0` + documentales, inventario 23 rutas (16 A / 7 M / 0 D), `allowed_deletions: []` |
-| Puertas de promocion sobre el tip final | `ALCANCE DE PROMOCION VALIDO (23 rutas)` y `APROBACION QA VALIDA` |
-| Produccion despues del deploy | `/health commit=b8a24c5c38c0`; anonimo y token forjado siguen `401 TOKEN_INVALIDO` |
-| Regresiones atribuibles al candidato | 0 (API 500/495 vs base 494/490 con los mismos nombres; web 443/442 vs 438/437 con el mismo nombre) |
 
 ## Criterios de aceptacion observables
 
@@ -94,57 +88,17 @@ del arnes quedaron escritos: `app.close()` no detiene el cron del arranque y hab
 con `process.exit` explicito (la corrida pasaba 11/11 y seguia colgada), y el script necesita el
 `.env` de la raíz porque `require(server)` abre Prisma.
 
-## Ronda 3: ejecucion de la promocion y verificacion post-despliegue
-
-Con la autorizacion expresa del dueno («Si: a develop y luego a main»), el paquete se reconstruyo
-sobre el tip vigente de `main` (`1b76376c0c37`) en el worktree auxiliar `codex/qa-sesion-main-20261108`
-y se publico en cuatro commits puntuales, sin merge de rama completa:
-
-| Commit | Contenido |
-|---|---|
-| `3fa6a5f0` | producto: `supabaseAuth.js`, `server.js`, `tenancy.js`, `rbac.js`, `apps/web/lib/api.ts`, las dos suites del contrato y su prueba de fuente (11 rutas) |
-| `cd58c876` | manifiestos de alcance y aprobacion `sesion-main-20261108-*` con su evidencia (12 rutas) |
-| `b8a24c5c` | salidas de las dos puertas de promocion estampadas en `gates-candidato.txt` |
-| `85fc46ec` | registro post-despliegue en produccion (solo documentacion; producto byte a byte identico) |
-
-Inventario medido contra el destino: **23 rutas, 16 `A` / 7 `M` / 0 `D`**, `allowed_deletions: []`.
-Las dos puertas se revalidaron sobre cada tip nuevo y quedaron en verde en el final:
-`ALCANCE DE PROMOCION VALIDO: sesion-admin-produccion-20261108 (23 rutas)` y
-`APROBACION QA VALIDA: sesion-admin-produccion-20261108`. El primer rechazo no fue de alcance sino
-de forma: las rutas de evidencia de los manifiestos se resuelven contra el directorio del propio
-manifiesto (`../evidence/…`, `../../../scripts/…`) y estaban un nivel fuera.
-
-Lo que quedo verificado en produccion despues del deploy: `/health commit=b8a24c5c38c0`, y la
-autenticacion **no** se relajo — peticion anonima y token firmado con clave ajena devuelven ambos
-`401 TOKEN_INVALIDO`.
-
-Limitaciones escritas, no resueltas:
-
-- El estado de los checks de CI sobre `main` no se pudo leer desde esta estacion (`gh` no esta
-  disponible en este shell). Se reporta como limitacion de la medida, no como verde.
-- La sonda de cadena sobre el bundle JS desplegado dio 0 coincidencias **en produccion y tambien en
-  QA**, que se sabe buena: los chunks de `/login` no contienen el chunk del dashboard. Metodo no
-  concluyente; no se presento como rojo ni como prueba.
-- Queda una medicion que ningun agente puede hacer: abrir Administracion con la sesion del dueno en
-  produccion. Se espera `403` con codigo de causa (`EMPRESA_NO_VINCULADA`) y la sesion viva, **no**
-  una expulsion a `/login`. Crear una cuenta de prueba en produccion no esta autorizado.
-
 ## Deudas que este brief publica
 
-1. **Cerrada en codigo, abierta en la medida del dueno:** la promocion `desarrollo -> develop -> main`
-   se ejecuto y produccion corre `b8a24c5c38c0`. Esto NO cierra el incidente: falta la verificacion
-   post-despliegue con la sesion del dueno (punto anterior) y la cuenta maestra sigue sin vinculo de
-   empresa, o sea que ya no es expulsada pero aun no configura Administracion.
+1. **Autorizada y en curso:** el dueno autorizo promover el paquete `desarrollo -> develop -> main`
+   ("Si: a develop y luego a main"). Hasta que el deploy no cambie, `main` sigue en `1b76376c` y
+   hoy expulsa; la verificacion post-despliegue es obligatoria y no se declara resuelto antes de
+   medirla.
 2. **Autorizada y sin implementar:** la salida C (respaldo de plataforma en `supabaseAuth`) queda
    autorizada para `desarrollo`. No se aplico en esta intervencion: cambia autorizacion y exige
    revision de `apexos-seguridad`. Las salidas A y B siguen sin autorizacion porque escriben datos
    productivos.
-3. **Cerrada en QA, no en la cuenta del dueno:** ya existe una certificacion de navegador end-to-end
-   con un Supabase real y recien creado (`sesion-qa-navegador.txt`, control 05 de
-   `sesion-administracion-qa.js`), pero con una cuenta efimera del arnes, no con la sesion del
-   dueno: reproducir su caso exacto exige la clave de su cuenta y ninguna prueba de este cierre la
-   usa. La cuenta efimera necesita la forma que pasa el guard de ruta de cliente
-   (`platform_admins` activo + `profiles` + cero `company_users`); con una cuenta normal el navegador
-   nunca llega a `/api/v1/admin/*` y la celda seria un verde falso.
+3. Sin certificacion funcional end-to-end con la sesion real del usuario: reproducir el sintoma
+   exige la clave de la cuenta y ninguna prueba de este cierre la usa.
 4. `apps/api/server.js` y `apps/api/test/**` no tienen agente dueno en el ruteo (`el preflight los
    enruta a equipo-apexos`); es la misma carencia ya registrada en otras intervenciones.

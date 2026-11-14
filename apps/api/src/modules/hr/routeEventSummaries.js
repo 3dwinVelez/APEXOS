@@ -1,3 +1,4 @@
+const { punchEvidenceCount } = require("./punchEvidence");
 function normalizeKey(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -52,8 +53,7 @@ function buildRouteEventSummaries({ routeContexts = [], punchGroups = [], activi
   for (const row of punchEvidenceRows) {
     const routeId = Number(row.route_id);
     if (!routeId) continue;
-    const items = Array.isArray(row.extra_evidence) ? row.extra_evidence : [row.extra_evidence];
-    const visible = items.filter((item) => item && (item.base64_data || item.base64 || item.file_url || item.file_name || item.storage_path)).length;
+    const visible = punchEvidenceCount(row);
     punchEvidenceByRoute.set(routeId, (punchEvidenceByRoute.get(routeId) || 0) + visible);
   }
 
@@ -73,7 +73,7 @@ function buildRouteEventSummaries({ routeContexts = [], punchGroups = [], activi
       route_id: routeId,
       punch_count: punchCount,
       activity_count: activityCount,
-      evidence_count: (evidenceByRoute.get(Number(routeId)) || 0) + (punchEvidenceByRoute.get(Number(routeId)) || 0) + fallbackActivities.reduce((sum, row) => sum + Number(row._count?.evidence || 0), 0),
+      evidence_count: (evidenceByRoute.get(Number(routeId)) || 0) + (punchEvidenceByRoute.get(Number(routeId)) || 0) + fallbackPunches.reduce((sum, row) => sum + punchEvidenceCount(row), 0) + fallbackActivities.reduce((sum, row) => sum + Number(row._count?.evidence || 0), 0),
       closed_count: Number(closedByRoute.get(Number(routeId))?._count?._all || 0) + fallbackPunches.filter((row) => row.type === "salida").length,
       event_count: punchCount + activityCount,
       last_event_at: timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : null

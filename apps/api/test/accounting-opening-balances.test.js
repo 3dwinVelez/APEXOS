@@ -16,7 +16,10 @@ const {
   matchOpeningBalanceCode,
   resolveOpeningBalanceAccount,
   resolveOpeningBalanceAccountsBatched,
-  resolveOpeningBalanceCenter
+  resolveOpeningBalanceCenter,
+  parseOpeningBalancesWorkbook,
+  prepareOpeningBalanceRows,
+  postOpeningBalancesWorkbook
 } = require("../src/modules/accounting/service");
 
 const service = fs.readFileSync(path.resolve(__dirname, "../src/modules/accounting/service.js"), "utf8");
@@ -472,5 +475,145 @@ test("resolucion por lote de terceros respeta minuto de consultas acotadas (una 
   await resolveOpeningBalancePartiesBatched(client, batchPartyRows(["NIT-1", "NIT-2", "NIT-3"]));
   assert.equal(client.calls.length, 1);
   assert.deepEqual(client.calls[0].where.tax_id.in, ["NIT-1", "NIT-2", "NIT-3"]);
+});
+
+function openingBalanceTxClient({ config, accounts, parties }) {
+  const auditLogs = [];
+  const numberingLocks = [];
+  const docs = new Map();
+  let nextDocId = 1;
+  const tx = {
+    async $executeRaw() { return 0; },
+    numberingLocks,
+    async $executeRawUnsafe(sql, ...params) { numberingLocks.push([sql, ...params]); return 0; },
+    tenant: {
+      async findUnique({ where }) { return { id: where.id, config }; }
+    },
+    party: {
+      async findMany({ where }) {
+        return parties.filter((party) => {
+          if (where.tax_id?.in) return where.tax_id.in.includes(party.tax_id) && (where.active !== true || party.active === true);
+          if (where.id?.in) return where.id.in.includes(party.id) && party.active === true;
+          return false;
+        });
+      }
+    },
+    account: {
+      async findMany({ where }) {
+        const filter = where.code;
+        if (filter && typeof filter === "object" && Array.isArray(filter.in)) {
+          const codes = filter.in.map((code) => String(code));
+          const insensitive = filter.mode === "insensitive";
+          return accounts.filter((account) => codes.some((code) => insensitive
+            ? account.code.toLowerCase() === code.toLowerCase()
+            : account.code === code));
+        }
+        const equals = String(filter && typeof filter === "object" ? filter.equals : filter ?? "");
+        const insensitive = filter && typeof filter === "object" && filter.mode === "insensitive";
+        return accounts.filter((account) => insensitive
+          ? account.code.toLowerCase() === equals.toLowerCase()
+          : account.code === equals);
+      }
+    },
+    cntCabdoc: {
+      async findFirst({ where }) { return [...docs.values()].find((doc) => doc.reference === where.reference) || null; },
+      async aggregate() { return { _max: { document_number: 0 } }; },
+      async create({ data }) { const doc = { id: nextDocId++, lines: [], ...data }; docs.set(doc.id, doc); return doc; },
+      async findUnique({ where }) { const doc = docs.get(where.id); return doc ? { ...doc, lines: [...doc.lines] } : null; }
+    },
+    cntCuedoc: {
+      async create({ data }) { docs.get(data.cabdoc_id).lines.push(data); return data; }
+    },
+    ledgerEntry: {
+      async create({ data }) { return { id: docs.size + 1, ...data }; }
+    },
+    auditLog: {
+      async create({ data }) { auditLogs.push(data); return data; }
+    }
+  };
+  return { tx, auditLogs };
+}
+
+function tenantConfigWithNumbering() {
+  return {
+    accounting: {
+      organization_tree: {
+        societies: [{ code: "SOC-01", active: true }],
+        branches: [{ code: "SUC-01", society_code: "SOC-01", active: true }],
+        cost_centers: [{ code: "CC-01", branch_code: "SUC-01", society_code: "SOC-01", active: true }]
+      },
+      accounting_numbering: [{ document_type: "AJ", prefix: "SI", next_number: 1, active: true }]
+    }
+  };
+}
+
+async function withStubbedPrisma(overrides, fn) {
+  const prisma = require("../src/core/prisma");
+  const originals = new Map();
+  for (const [key, value] of Object.entries(overrides)) {
+    originals.set(key, prisma[key]);
+    prisma[key] = value;
+  }
+  try {
+    return await fn(prisma);
+  } finally {
+    for (const [key, value] of originals) {
+      if (value === undefined) delete prisma[key];
+      else prisma[key] = value;
+    }
+  }
+}
+
+test("contabilizar saldos iniciales resuelve config.accounting del tenant sin ReferenceError", async () => {
+  const buffer = await createOpeningBalancesTemplate();
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.getWorksheet("Saldos iniciales");
+  sheet.addRow(["2026-01-31", "110505", "CC-01", "SUC-01", 100, "NIT-1"]);
+  sheet.addRow(["2026-01-31", "220505", "CC-01", "SUC-01", -100, "NIT-1"]);
+  const edited = await workbook.xlsx.writeBuffer();
+
+  const config = tenantConfigWithNumbering();
+  const accounts = [
+    { id: 1, code: "110505", name: "Caja", active: true, allows_tx: true },
+    { id: 2, code: "220505", name: "Proveedores", active: true, allows_tx: true }
+  ];
+  const parties = [{ id: 9, tax_id: "NIT-1", active: true }];
+  const { tx, auditLogs } = openingBalanceTxClient({ config, accounts, parties });
+  const uniqueFixtureTenantId = `tenant-opening-balances-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  let readConfigCalls = 0;
+  let preparedRows;
+  let result;
+  try {
+    ({ preparedRows, result } = await withStubbedPrisma({
+      tenant: { findUnique: async () => { readConfigCalls += 1; return { id: uniqueFixtureTenantId, config }; } },
+      $transaction: (fn) => fn(tx)
+    }, async () => {
+      // Post primero: cachea el tenant; un prepare previo haria que el post no leyera config.
+      const posted = await postOpeningBalancesWorkbook(uniqueFixtureTenantId, 7, edited);
+      const prepared = await prepareOpeningBalanceRows(tx, uniqueFixtureTenantId, await parseOpeningBalancesWorkbook(edited));
+      return { preparedRows: prepared, result: posted };
+    }));
+  } finally {
+    const { invalidateTenantCache } = require("../src/core/tenantCache");
+    await invalidateTenantCache(uniqueFixtureTenantId);
+  }
+
+  assert.equal(preparedRows.lines.length, 2);
+  assert.ok(readConfigCalls >= 1);
+  assert.equal(tx.numberingLocks.length, 2);
+  for (const [, lockKey] of tx.numberingLocks) {
+    assert.equal(lockKey, `${uniqueFixtureTenantId}:accounting-numbering`);
+  }
+  assert.equal(result.valid, true);
+  assert.equal(result.lines, 2);
+  assert.equal(result.total_debit, 100);
+  assert.equal(result.total_credit, 100);
+  assert.match(result.reference, /^SI-[0-9A-F]{24}$/);
+  assert.equal(result.accounting_document.lines.length, 2);
+  assert.equal(result.accounting_document.full_number, "SI-000001");
+  assert.equal(auditLogs.length, 1);
+  assert.equal(auditLogs[0].entity, "CntCabdoc");
 });
 

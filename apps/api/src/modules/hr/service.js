@@ -1,3 +1,5 @@
+const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
+const { findUserForEmployee } = require("./employeeUserLink");
 const prisma = require("../../core/prisma");
 const { Prisma } = require("@prisma/client");
 const { randomUUID } = require("crypto");
@@ -6,10 +8,10 @@ const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath
 const { buildRouteEventSummaries } = require("./routeEventSummaries");
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 const hrPolicy = require("./policy");
+const { loadPayrollWorkdays } = require("./payrollWorkdays");
 const { resolveTenantEmployeeOrganization, organizationTreeFromConfig } = require("./organization");
 const { resolveExplicitParty, partyCommonFields, partyMatchesSearch, compactTaxId, normalizeTaxId } = require("./laborEntityPartyMatcher");
 const { calculateSocialContributionSegments, commercialDaysBetween: commercialDayCount } = require("./socialContributionSegments");
-const { loadPayrollWorkdays } = require("./payrollWorkdays");
 
 const DEFAULT_PARAMS = {
   ordinary_hours_day: 8,
@@ -176,6 +178,13 @@ function monitorEvidencePayload(evidence = {}) {
   };
 }
 
+function monitorPunchEvidence(punch, summary = false) {
+  const items = punchPhotoItems({ ...punch, metadata: { ...punch.metadata, identity_photo: undefined } }).map(photo => summary
+    ? monitorEvidenceSummary(photo, { id: punch.id, source: "punch" })
+    : { ...monitorEvidencePayload(photo), id: punch.id, source: "punch" });
+  return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
+}
+
 async function getMonitorEvidence(tenantId, source, id) {
   const evidenceId = optionalNumericId(id);
   if (!evidenceId || !["activity", "punch", "identity"].includes(String(source))) {
@@ -192,13 +201,13 @@ async function getMonitorEvidence(tenantId, source, id) {
       evidence = mobileIdentity.identityEvidenceOf(punch);
     } else {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
-      evidence = punch?.extra_evidence || punch?.metadata?.extra_evidence || null;
+      evidence = punch ? monitorPunchEvidence(punch) : null;
     }
     const payload = monitorEvidencePayload(evidence || {});
     if (!payload.base64_data && !payload.file_url) {
       throw validationError("La evidencia solicitada no existe o no contiene un archivo disponible.", 404, "EVIDENCIA_MONITOR_NO_ENCONTRADA");
     }
-    return { ...payload, id: evidenceId, source };
+    return { ...payload, ...(evidence?.items ? { items: evidence.items } : {}), id: evidenceId, source };
   });
 }
 
@@ -222,8 +231,7 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
     const punchEvidence = {};
     const identityEvidence = {};
     for (const punch of punches) {
-      const source = punch.extra_evidence || punch.metadata?.extra_evidence || {};
-      punchEvidence[String(punch.id)] = { ...monitorEvidencePayload(source), id: punch.id, source: "punch" };
+      punchEvidence[String(punch.id)] = { ...monitorPunchEvidence(punch), id: punch.id, source: "punch" };
       const selfie = mobileIdentity.identityEvidenceOf(punch);
       if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidencePayload(selfie), id: punch.id, source: "identity" };
     }
@@ -595,7 +603,7 @@ const DEFAULT_ACTIVITY_TYPES = [
   "Apoyo operativo"
 ];
 
-const safeUserSelect = { id: true, name: true, email: true };
+const safeUserSelect = { id: true, name: true, email: true, active: true };
 
 function getPreoperationalTemplate() {
   return { sections: Array.from(new Set(PREOP_TEMPLATE.map((item) => item.section))), items: PREOP_TEMPLATE };
@@ -871,11 +879,11 @@ async function listRouteEventSummaries(tenantId) {
       }),
       prisma.timePunch.findMany({
         where: { route_id: { in: routeIds } },
-        select: { route_id: true, extra_evidence: true }
+        select: { route_id: true, extra_evidence: true, metadata: true }
       }),
       prisma.timePunch.findMany({
         where: { route_id: null, OR: dateWindows.map((date) => ({ date })) },
-        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true },
+        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true, extra_evidence: true },
         orderBy: { punched_at: "desc" },
         take: 2000
       }),
@@ -896,6 +904,25 @@ async function listRouteEventSummaries(tenantId) {
 }
 
 async function listEmployees(tenantId, query = {}) {
+  if (query.document_search !== undefined) {
+    const document = String(query.document_search).slice(0, 80).toUpperCase().replace(/[^0-9A-Z]/g, "");
+    if (document.length < 2) return [];
+    const prefix = document + "%";
+    const partial = "%" + document + "%";
+    return prisma.$queryRaw`
+      SELECT id, code, contract_type,
+             jsonb_build_object('name', metadata->>'name', 'document', metadata->>'document',
+                                'document_type', metadata->>'document_type') AS metadata
+      FROM "Employee"
+      CROSS JOIN LATERAL (
+        SELECT regexp_replace(upper(COALESCE(metadata->>'document', '')), '[^0-9A-Z]', '', 'g') AS document_key
+      ) AS search
+      WHERE tenant_id = ${tenantId} AND active = true AND search.document_key LIKE ${partial}
+      ORDER BY (search.document_key = ${document}) DESC, (search.document_key LIKE ${prefix}) DESC,
+               search.document_key, id
+      LIMIT 10
+    `;
+  }
   return prisma.runWithTenant(tenantId, async () => prisma.employee.findMany({
     where: {
       ...(query.position ? { position: query.position } : {}),
@@ -1228,8 +1255,10 @@ async function createEmployee(tenantId, input) {
   const organization = await resolveTenantEmployeeOrganization(tenantId, input);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     await assertEmployeeDocumentAvailable(tx, tenantId, input);
+    const linkedUserId = await findUserForEmployee(tx, tenantId, input);
     const employee = await tx.employee.create({
       data: {
+        user_id: linkedUserId,
         code: String(input.code || "").trim() || employeeCodeFromDocument(input),
         user_type: input.user_type || input.position || "operario",
         position: input.position || input.user_type || "operario",
@@ -1286,7 +1315,7 @@ async function createEmployee(tenantId, input) {
     await syncEmployeeSalaryHistory(tx, tenantId, employee.id, input);
     await ensureEmployeeContractFoundation(tx, tenantId, employee, {});
     return employee;
-  }));
+  }, { isolationLevel: "Serializable" }));
 }
 
 async function updateEmployee(tenantId, id, input = {}) {
@@ -1336,9 +1365,19 @@ async function updateEmployee(tenantId, id, input = {}) {
       }
     };
     return prisma.$transaction(async (tx) => {
+      const latest = await tx.employee.findFirst({ where: { tenant_id: tenantId, id: employeeId } });
+      if (!latest) throw validationError("Empleado no encontrado.", 404, "EMPLEADO_NO_ENCONTRADO");
+      if (latest.user_id && input.user_id !== undefined && Number(input.user_id) !== latest.user_id) {
+        const error = new Error("El empleado ya tiene un usuario asociado. No se permite reemplazar el vinculo.");
+        error.statusCode = 409;
+        error.code = "EMPLEADO_USUARIO_CONFLICTO";
+        throw error;
+      }
+      const linkedUserId = latest.user_id || await findUserForEmployee(tx, tenantId, { ...nextMetadata, ...(input.user_id !== undefined ? { user_id: input.user_id } : {}) }, employeeId);
       const employee = await tx.employee.update({
       where: { id: employeeId },
       data: {
+        user_id: linkedUserId,
         ...(input.code !== undefined ? { code: input.code || current.code } : {}),
         ...(input.position !== undefined ? { position: input.position || current.position } : {}),
         ...(input.department !== undefined || input.area !== undefined ? { department: input.department || input.area || current.department } : {}),
@@ -1355,7 +1394,7 @@ async function updateEmployee(tenantId, id, input = {}) {
       await syncEmployeeSalaryHistory(tx, tenantId, employee.id, input);
       await ensureEmployeeContractFoundation(tx, tenantId, employee, {});
       return employee;
-    });
+    }, { isolationLevel: "Serializable" });
   });
 }
 
@@ -1960,80 +1999,19 @@ async function findEmployee(input) {
   });
 }
 
-async function resolveEmployeeForPunch(tenantId, input) {
-  const employee = await findEmployee(input);
-  if (employee) return employee;
-  const name = input.user_name?.trim();
-  if (!name) {
-    const err = new Error("Usuario requerido para registrar marcacion");
-    err.statusCode = 400;
-    throw err;
-  }
-  return prisma.employee.create({
-    data: {
-      tenant_id: tenantId,
-      code: name,
-      user_type: input.user_type || "operario",
-      position: input.position || "operario",
-      department: "Operacion",
-      salary_base: 0,
-      salary_type: "monthly",
-      hire_date: new Date(),
-      contract_type: "indefinite",
-      metadata: { name, document: "", company: "APEX", labor_status: "activo", user_type: input.user_type || "operario", classification: input.user_type || "operario", legacy: { autocreated_from: "marcacion" } }
-    }
-  });
+function employeeAssociationRequired() {
+  return validationError("El usuario conectado no tiene una ficha laboral asociada. Vincula la ficha existente en Talento Humano antes de marcar.", 404, "EMPLEADO_NO_ASOCIADO");
 }
 
 async function getCurrentEmployee(tenantId, user) {
+  if (!user?.id) throw employeeAssociationRequired();
   return prisma.runWithTenant(tenantId, async () => {
     const employee = await prisma.employee.findFirst({
-      where: {
-        OR: [
-          { user_id: user?.id },
-          { user: { email: user?.email || "" } },
-          { user: { name: user?.name || "" } }
-        ]
-      },
+      where: { tenant_id: tenantId, user_id: user.id, active: true },
       include: { user: { select: { id: true, name: true, email: true } } }
     });
-    if (employee) return employee;
-    if (!user?.id) {
-      const err = new Error("El usuario conectado no tiene empleado asociado.");
-      err.statusCode = 404;
-      err.code = "EMPLEADO_NO_ASOCIADO";
-      throw err;
-    }
-    const roleName = String(user.role?.name || "").toLowerCase();
-    const inferredType = roleName.includes("conductor") || roleName.includes("driver")
-      ? "conductor"
-      : roleName.includes("transport")
-        ? "transportador"
-        : "operario";
-    return prisma.employee.create({
-      data: {
-        tenant_id: tenantId,
-        user_id: user.id,
-        code: user.name || user.email || `usuario-${user.id}`,
-        user_type: inferredType,
-        position: inferredType,
-        department: "Operacion",
-        salary_base: 0,
-        salary_type: "monthly",
-        hire_date: new Date(),
-        contract_type: "indefinite",
-        metadata: {
-          name: user.name || user.email || `Usuario ${user.id}`,
-          document: "",
-          company: "APEX",
-          labor_status: "activo",
-          user_type: inferredType,
-          classification: inferredType,
-          legacy: { autocreated_from: "hr_current_employee" }
-        }
-      },
-      include: { user: { select: { id: true, name: true, email: true } } }
-    });
+    if (!employee) throw employeeAssociationRequired();
+    return employee;
   });
 }
 
@@ -2698,7 +2676,9 @@ async function createPunch(tenantId, input, user, options = {}) {
   const attemptPunch = async (tx) => {
     const punchedAt = input.punched_at ? new Date(input.punched_at) : new Date();
     const currentEmployee = user?.id ? await tx.employee.findFirst({
-      where: { tenant_id: tenantId, OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
+      where: ownScope
+        ? { tenant_id: tenantId, user_id: user.id, active: true }
+        : { tenant_id: tenantId, OR: [{ user_id: user.id }, { user: { email: user.email || "" } }] },
       include: { user: { select: { name: true, email: true } } }
     }) : null;
     // El ambito self-service queda anclado al usuario autenticado: es lo que impide marcar
@@ -2722,7 +2702,8 @@ async function createPunch(tenantId, input, user, options = {}) {
     if (declaredEmployeeId != null && !declaredEmployee) {
       throw validationError(`El empleado ${input.employee_id} no existe o no pertenece a tu organizacion.`, 404, "EMPLEADO_NO_ENCONTRADO");
     }
-    const employee = declaredEmployee || currentEmployee || await resolveEmployeeForPunch(tenantId, input);
+    const employee = declaredEmployee || currentEmployee || (!ownScope ? await findEmployee(input) : null);
+    if (!employee) throw employeeAssociationRequired();
     const type = normalizePunchType(input.type || input.tipo_marca);
     const inputRouteId = operationalRouteNumericId(input);
     const route = inputRouteId ? await tx.timeRoute.findFirst({ where: { tenant_id: tenantId, id: inputRouteId } }) : null;
@@ -3472,9 +3453,9 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
+          extra_evidence: monitorPunchEvidence(punch, true),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
-          metadata: mobileIdentity.publicPunchMetadata(punch.metadata || {})
+          metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         });
       }
       const assignedCount = assigned.length;
@@ -3514,9 +3495,9 @@ async function getOperationsMap(tenantId, query = {}) {
           extra_minutes: punch.extra_minutes,
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorEvidenceSummary(punch.extra_evidence || {}, { id: punch.id, source: "punch" }),
+          extra_evidence: monitorPunchEvidence(punch, true),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
-          metadata: mobileIdentity.publicPunchMetadata(punch.metadata || {})
+          metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         })),
         activity_points: routeActivities.map((activity) => ({
           id: activity.id,
@@ -5375,11 +5356,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     return Number(concept.factor || (1 + Number(concept.percent || 0) / 100) || 1);
   };
   const employeeIds = employees.map((employee) => employee.id);
-  const [workdays, adjustments, libranzasByEmployee, salarySnapshots, calendarDays, scheduleRoutes] = await Promise.all([
-    employeeIds.length ? prisma.processedWorkday.findMany({
-      where: { employee_id: { in: employeeIds }, date: { gte: start, lt: endExclusive } },
-      orderBy: { date: "asc" }
-    }) : [],
+  const [adjustments, libranzasByEmployee, salarySnapshots, calendarDays, scheduleRoutes] = await Promise.all([
     employeeIds.length ? prisma.$queryRaw`
       SELECT *
       FROM th_nomina_ajustes
@@ -5397,6 +5374,10 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     activeCalendarDaysByDate(tenantId, start, end, input.country || "CO"),
     employeeIds.length ? prisma.timeRoute.findMany({ where: { date: { gte: start, lt: endExclusive } }, select: { date: true, employees: true, kind: true } }).catch(() => []) : []
   ]);
+  const liveWorkdays = await loadPayrollWorkdays({ db: prisma, tenantId, employees, start, endExclusive, parameters: { ...DEFAULT_PARAMS, ...payrollConfig.parameters }, calendarDays });
+  // Approved day corrections replace the raw day, rather than paying its hours twice.
+  const correctedDays = new Set(adjustments.filter(row => isWorkdayCorrection(row) && !isExternalWorkday(row)).map(row => `${row.employee_id}:${String(row.metadata?.work_date || "").slice(0, 10)}`));
+  const workdays = liveWorkdays.filter(day => !correctedDays.has(`${day.employee_id}:${new Date(day.date).toISOString().slice(0, 10)}`));
   // Descanso explicito desde la malla (TimeRoute con kind='descanso'). Un dia se paga solo si
   // tiene marcacion, descanso explicito o licencia remunerada; cualquier otro dia no se paga.
   const employeeAliasKeys = new Map();
@@ -5451,10 +5432,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const monthEndExclusive = startOfDay(`${nextYear}-${String(nextMonth).padStart(2, "0")}-01`);
     transportMonthPeriodDays = daysInclusive(monthStart, new Date(monthEndExclusive.getTime() - 86400000));
     const [monthWorkdays, monthAdjustments] = await Promise.all([
-      prisma.processedWorkday.findMany({
-        where: { employee_id: { in: employeeIds }, date: { gte: monthStart, lt: monthEndExclusive } },
-        select: { employee_id: true, date: true }
-      }).catch(() => []),
+      loadPayrollWorkdays({ db: prisma, tenantId, employees, start: monthStart, endExclusive: monthEndExclusive, parameters: { ...DEFAULT_PARAMS, ...payrollConfig.parameters }, calendarDays: await activeCalendarDaysByDate(tenantId, monthStart, new Date(monthEndExclusive.getTime() - 86400000), input.country || "CO") }),
       prisma.$queryRaw`
         SELECT employee_id, period_key, adjustment_type, concept_code, minutes, metadata
         FROM th_nomina_ajustes

@@ -341,6 +341,18 @@ const payableApplicationSchema = {
   }
 };
 
+const documentReversalSchema = {
+  body: {
+    type: "object",
+    required: ["reason", "reversal_date"],
+    additionalProperties: false,
+    properties: {
+      reason: { type: "string", minLength: 3, maxLength: 500 },
+      reversal_date: { type: "string", minLength: 1 }
+    }
+  }
+};
+
 module.exports = {
   journalEntrySchema,
   accountSchema,
@@ -359,5 +371,6 @@ module.exports = {
   retentionMasterSchema,
   supplierRetentionsSchema,
   payableDocumentSchema,
-  payableApplicationSchema
+  payableApplicationSchema,
+  documentReversalSchema
 };

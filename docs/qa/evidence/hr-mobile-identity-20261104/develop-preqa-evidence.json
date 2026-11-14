@@ -1,0 +1,62 @@
+{
+  "change_id": "hr-mobile-identity-20261104",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "commit": "a94e33db95b52aef6eff2c17bb58141bec61d454",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "local-certification.json",
+        "regression-certification.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "regression-certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-mobile-identity-local.js",
+    "evidence": [
+      "local-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../../scripts/certifications/hr-mobile-identity-regression-local.js",
+    "evidence": [
+      "regression-certification.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "John Patino (propietario de la solicitud) - autorizacion expresa en sesion: 'Autorizo los 4 pasos' (commit en desarrollo, rama codex/qa-hr-mobile-identity-20261104 desde develop solo con este cambio, recertificacion en esa rama, push y PR a develop), tras pedir 'necesito que esto se solucione ya' sobre la marcacion con huella de otra persona. No autoriza main.",
+    "approved_at": "2026-11-05T02:04:49-05:00",
+    "main_release": "pending_qa_certification"
+  }
+}

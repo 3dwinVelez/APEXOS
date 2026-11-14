@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
+import HrTimelineEvidence, { type HrTimelinePhoto } from "@/components/hr/HrTimelineEvidence";
 import { Badge } from "@/components/ui/feedback";
 import { downloadXlsxWorkbook } from "@/lib/reportExports";
 import { hasStoredRolePermission } from "@/lib/rolePermissions";
@@ -12,13 +13,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
-type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; file_url?: string }; metadata?: PunchIdentityMetadata };
+type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; base64?: string; file_url?: string }; metadata?: PunchIdentityMetadata };
 // Selfie y verificacion de la marcacion de la app (hr/mobile-identity.js). La
 // API anterior al despliegue guardaba la selfie en `base64`; la actual, en
 // `base64_data`. Se leen ambas.
 type PunchIdentityMetadata = { identity_verification?: { status?: string }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean } };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
-type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: Array<{ base64_data?: string; file_name?: string }>; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
+type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: HrTimelinePhoto[]; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
 type PunchAlert = { type: string; label: string; tone: PunctualityTone };
 // Jornada procesada por el motor de marcaciones: fuente que liquida la nomina.
@@ -43,7 +44,7 @@ type ReportRow = {
   overtimeDetail: string;
   punchAlerts: PunchAlert[];
   activities: WorkActivity[];
-  events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number; selfie?: string; identityVerified?: boolean }>;
+  events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number; evidence?: HrTimelinePhoto[]; selfie?: string; identityVerified?: boolean }>;
 };
 
 function punctualityIconFor(tone: PunctualityTone) {
@@ -139,9 +140,16 @@ function punchSelfie(punch: Punch) {
 }
 
 function punchEvidenceCount(punch: Punch) {
-  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url ? 1 : 0;
+  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64 ? 1 : 0;
   const selfie = punchSelfie(punch) || punch.metadata?.identity_photo?.has_base64_data ? 1 : 0;
   return extra + selfie;
+}
+
+function punchTimelineEvidence(punch: Punch): HrTimelinePhoto[] {
+  const photos: HrTimelinePhoto[] = [];
+  if (punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64) photos.push({ ...punch.extra_evidence, id: punch.id, source: "punch" });
+  if (!punchSelfie(punch) && punch.metadata?.identity_photo?.has_base64_data) photos.push({ id: punch.id, source: "identity" });
+  return photos;
 }
 
 function employeeName(employee?: Employee, fallback = "") {
@@ -512,8 +520,8 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
-        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, userName: activity.user_name || employeeName(employee, userName), gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0 }))
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), evidence: punchTimelineEvidence(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
+        ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, userName: activity.user_name || employeeName(employee, userName), gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0, evidence: (activity.evidence || []).map(photo => ({ ...photo, source: "activity" as const })) }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       const punchAlerts = reportPunchAlerts(entry, exit, route);
       return {
@@ -1029,6 +1037,7 @@ export default function HrReportsPage() {
                                 <Image alt={`Selfie de ${event.userName}`} className="h-full w-full object-cover" height={64} src={event.selfie} unoptimized width={64} />
                               </a>
                             ) : null}
+                            <HrTimelineEvidence evidence={event.evidence} />
                             {event.evidenceCount ? <Badge tone="success">{event.evidenceCount} evidencia(s)</Badge> : <p className="inline-flex items-center gap-2 rounded-md bg-surface-muted px-3 py-2 text-xs font-semibold text-content-subtle"><ImageOff size={14} /> Sin evidencia fotografica</p>}
                           </div>
                         </article>

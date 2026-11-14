@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { BookOpenCheck, FilePlus2, Hash, ListPlus, Plus, Save, Search, Settings2, Trash2 } from "lucide-react";
+import { Ban, BookOpenCheck, FilePlus2, Hash, ListPlus, Plus, RotateCcw, Save, Search, Settings2, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { hasStoredRolePermission } from "@/lib/rolePermissions";
 import { ContabilidadNav } from "@/components/contabilidad-nav";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 
@@ -25,6 +26,14 @@ type DocumentLine = {
   description: string;
   amount: string;
 };
+type ReversalEligibility = {
+  eligible: boolean;
+  origin: string;
+  origin_label: string;
+  reason_code: string | null;
+  reason_message: string | null;
+  status_code?: number;
+};
 type AccountingDocument = {
   id: number;
   full_number: string;
@@ -39,7 +48,20 @@ type AccountingDocument = {
   society_code: string;
   total_debit: number;
   total_credit: number;
+  status?: string;
+  is_reversal?: boolean;
+  is_cancelled?: boolean;
+  reversal_status?: "posted" | "reversal" | "cancelled";
+  reversal_document?: { id: number; full_number: string; posting_date: string } | null;
+  reverses_document_id?: number | null;
+  reversal_eligibility?: ReversalEligibility | null;
   lines: Array<{ id: number; line_no: number; account_code: string; branch_code: string; cost_center_code: string; party_tax_id?: string | null; debit: number; credit: number; description: string }>;
+};
+type ReversalEligibilityResponse = {
+  document: { id: number; full_number: string; document_type: string; posting_date: string; header_text: string; reference: string | null; society_code: string; status: string; is_reversal: boolean; is_cancelled: boolean };
+  eligibility: ReversalEligibility;
+  reversal_status: string;
+  reversal_document: { id: number; full_number: string; posting_date: string } | null;
 };
 
 const EMPTY_TREE: OrganizationTree = { societies: [], branches: [], cost_centers: [] };
@@ -78,6 +100,8 @@ export default function AsientosContablesPage() {
   const [chooser, setChooser] = useState<{ type: "account" | "party"; lineIndex: number } | null>(null);
   const [chooserSearch, setChooserSearch] = useState("");
   const [selectedDocument, setSelectedDocument] = useState<AccountingDocument | null>(null);
+  const [reversalDocument, setReversalDocument] = useState<AccountingDocument | null>(null);
+  const canWrite = hasStoredRolePermission("accounting", "write");
 
   async function load() {
     setLoading(true);
@@ -253,6 +277,22 @@ export default function AsientosContablesPage() {
     }
   }
 
+  async function openDocumentById(id: number) {
+    setError("");
+    try {
+      const doc = await api<AccountingDocument>(`/api/v1/accounting/documents/${id}`, { cache: "no-store" });
+      setSelectedDocument(doc);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo abrir el documento contable");
+    }
+  }
+
+  async function handleReversed(result: { reversal_number: string }) {
+    setReversalDocument(null);
+    setOk(`Comprobante anulado. Se emitio la anulacion ${result.reversal_number} con debitos y creditos invertidos.`);
+    await load();
+  }
+
   return (
     <div className="space-y-5">
       <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -296,17 +336,19 @@ export default function AsientosContablesPage() {
               <th className="px-4 py-3">Usuario</th>
               <th className="px-4 py-3 text-right">Debitos</th>
               <th className="px-4 py-3 text-right">Creditos</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3 text-right">Accion</th>
             </tr>
           </thead>
           <tbody>
-            {loading ? <tr><td className="px-4 py-5 text-neutral-500" colSpan={9}>Cargando...</td></tr> : null}
-            {!loading && documents.length === 0 ? <tr><td className="px-4 py-5 text-neutral-500" colSpan={9}>No hay comprobantes registrados.</td></tr> : null}
+            {loading ? <tr><td className="px-4 py-5 text-neutral-500" colSpan={11}>Cargando...</td></tr> : null}
+            {!loading && documents.length === 0 ? <tr><td className="px-4 py-5 text-neutral-500" colSpan={11}>No hay comprobantes registrados.</td></tr> : null}
             {documents.map((doc) => (
               <tr className="border-b border-line/70 last:border-0" key={doc.id}>
                 <td className="px-4 py-3 font-mono text-xs">
                   <button className="font-mono text-xs text-apex underline-offset-2 hover:underline" onClick={() => setSelectedDocument(doc)} type="button" title="Ver registro contable">{doc.full_number}</button>
                 </td>
-                <td className="px-4 py-3">{new Date(doc.posting_date).toLocaleDateString("es-CO")}</td>
+                <td className="px-4 py-3">{new Date(doc.posting_date).toLocaleDateString("es-CO", { timeZone: "UTC" })}</td>
                 <td className="px-4 py-3">{doc.society_code}</td>
                 <td className="px-4 py-3">{doc.reference || "--"}</td>
                 <td className="px-4 py-3">{doc.header_text}</td>
@@ -314,6 +356,39 @@ export default function AsientosContablesPage() {
                 <td className="px-4 py-3">{doc.created_by_name || doc.created_by_user?.email || "--"}</td>
                 <td className="px-4 py-3 text-right">{money(doc.total_debit)}</td>
                 <td className="px-4 py-3 text-right">{money(doc.total_credit)}</td>
+                <td className="px-4 py-3">
+                  {doc.reversal_status === "cancelled" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs text-rose-700">
+                      Anulado{doc.reversal_document ? ` por ${doc.reversal_document.full_number}` : ""}
+                    </span>
+                  ) : doc.reversal_status === "reversal" || doc.is_reversal ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
+                      Reversión{doc.reverses_document_id ? ` del asiento #${doc.reverses_document_id}` : ""}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Contabilizado</span>
+                  )}
+                  {doc.reversal_status === "cancelled" && doc.reversal_document ? (
+                    <button className="ml-2 font-mono text-xs text-apex underline-offset-2 hover:underline" onClick={() => void openDocumentById(doc.reversal_document!.id)} type="button" title="Ver asiento de anulacion">{doc.reversal_document.full_number}</button>
+                  ) : null}
+                  {doc.reversal_status === "posted" && doc.reversal_eligibility ? (
+                    <span className="mt-1 block text-[11px] text-neutral-500">
+                      Origen: {doc.reversal_eligibility.origin_label}
+                      {doc.reversal_eligibility.eligible ? "" : " · no se anula desde contabilidad"}
+                    </span>
+                  ) : null}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {doc.reversal_status !== "posted" ? (
+                    <span className="text-xs text-neutral-400">--</span>
+                  ) : canWrite ? (
+                    <button className="inline-flex h-8 items-center gap-1.5 rounded-md border border-rose-200 px-2.5 text-xs text-rose-700 hover:bg-rose-50 disabled:opacity-40" disabled={saving} onClick={() => setReversalDocument(doc)} type="button" title="Anular asiento">
+                      <RotateCcw size={14} /> Anular
+                    </button>
+                  ) : (
+                    <span className="text-xs text-neutral-400">Solo lectura</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -465,6 +540,10 @@ export default function AsientosContablesPage() {
         <AccountingDocumentModal document={selectedDocument} onClose={() => setSelectedDocument(null)} />
       ) : null}
 
+      {reversalDocument ? (
+        <ReversalModal document={reversalDocument} onClose={() => setReversalDocument(null)} onReversed={handleReversed} />
+      ) : null}
+
       {mastersOpen ? (
         <ModalFrame title="Maestros de comprobantes" onClose={() => setMastersOpen(false)} maxWidth="max-w-5xl">
           <div className="grid gap-4 md:grid-cols-2">
@@ -590,13 +669,23 @@ function AccountingDocumentModal({ document, onClose }: { document: AccountingDo
     <ModalFrame title={`Registro contable ${document.full_number}`} onClose={onClose} maxWidth="max-w-5xl">
       <div className="space-y-4">
         <section className="grid gap-3 rounded-md border border-line bg-paper p-3 text-sm md:grid-cols-4">
-          <p><span className="block text-xs text-neutral-500">Fecha contabilizacion</span>{new Date(document.posting_date).toLocaleDateString("es-CO")}</p>
+          <p><span className="block text-xs text-neutral-500">Fecha contabilizacion</span>{new Date(document.posting_date).toLocaleDateString("es-CO", { timeZone: "UTC" })}</p>
           <p><span className="block text-xs text-neutral-500">Clase / numero</span>{document.document_type} / {document.full_number}</p>
           <p><span className="block text-xs text-neutral-500">Creado</span>{dateTime(document.created_at)}</p>
           <p><span className="block text-xs text-neutral-500">Usuario</span>{document.created_by_name || document.created_by_user?.email || "--"}</p>
           <p><span className="block text-xs text-neutral-500">Sociedad</span>{document.society_code}</p>
           <p><span className="block text-xs text-neutral-500">Referencia</span>{document.reference || "--"}</p>
-          <p className="md:col-span-3"><span className="block text-xs text-neutral-500">Texto</span>{document.header_text}</p>
+          <p className="md:col-span-2"><span className="block text-xs text-neutral-500">Texto</span>{document.header_text}</p>
+          <p>
+            <span className="block text-xs text-neutral-500">Estado</span>
+            {document.reversal_status === "cancelled" ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs text-rose-700">Anulado{document.reversal_document ? ` por ${document.reversal_document.full_number}` : ""}</span>
+            ) : document.reversal_status === "reversal" || document.is_reversal ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Reversión{document.reverses_document_id ? ` del asiento #${document.reverses_document_id}` : ""}</span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Contabilizado</span>
+            )}
+          </p>
         </section>
         <div className="overflow-x-auto rounded-md border border-line">
           <table className="w-full min-w-[820px] border-collapse text-sm">
@@ -635,6 +724,103 @@ function AccountingDocumentModal({ document, onClose }: { document: AccountingDo
             </tfoot>
           </table>
         </div>
+      </div>
+    </ModalFrame>
+  );
+}
+
+function ReversalModal({ document, onClose, onReversed }: { document: AccountingDocument; onClose: () => void; onReversed: (result: { reversal_number: string }) => void }) {
+  const [eligibility, setEligibility] = useState<ReversalEligibilityResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reason, setReason] = useState("");
+  const [reversalDate, setReversalDate] = useState(today());
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    setEligibility(null);
+    api<ReversalEligibilityResponse>(`/api/v1/accounting/documents/${document.id}/reversal-eligibility`, { cache: "no-store", signal: controller.signal })
+      .then(setEligibility)
+      .catch((value) => { if (value?.name !== "AbortError") setError(value instanceof Error ? value.message : "No se pudo consultar la elegibilidad del asiento"); })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [document.id]);
+
+  async function confirmReversal() {
+    if (!eligibility?.eligibility.eligible) return;
+    if (reason.trim().length < 3) {
+      setError("El motivo de anulacion debe tener al menos 3 caracteres.");
+      return;
+    }
+    if (!window.confirm(`Anular ${document.full_number} con fecha ${reversalDate}? Se creara un asiento espejo con debitos y creditos invertidos (cuentas, terceros, sucursal y centro de costo originales) y el comprobante original quedara anulado. Los reportes seguiran mostrando la suma neta original + anulacion.`)) return;
+    setSaving(true);
+    setError("");
+    try {
+      const result = await api<{ reversal_number: string }>(`/api/v1/accounting/documents/${document.id}/reverse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason.trim(), reversal_date: reversalDate })
+      });
+      onReversed(result);
+    } catch (value) {
+      setError(value instanceof Error ? value.message : "No se pudo anular el documento");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <ModalFrame title={`Anular ${document.full_number}`} onClose={onClose} maxWidth="max-w-2xl">
+      <div className="space-y-4">
+        {loading ? (
+          <p className="py-6 text-center text-sm text-neutral-500">Consultando elegibilidad del asiento...</p>
+        ) : error && !eligibility ? (
+          <div className="space-y-3">
+            <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>
+            <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={onClose} type="button">Cerrar</button>
+          </div>
+        ) : eligibility?.eligibility.eligible ? (
+          <>
+            <section className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              <p className="font-semibold">Elegible para anulacion: {eligibility.eligibility.origin_label}</p>
+              <p className="mt-1 text-xs">Se emitira un asiento espejo con debitos y creditos invertidos, conservando cuentas, terceros, sucursal y centro de costo de cada linea original. El asiento original no se borra: queda marcado como anulado y los reportes suman original + anulacion.</p>
+            </section>
+            <label className="block text-sm">
+              Fecha de anulacion
+              <input className="mt-1 h-10 w-full rounded-md border border-line px-3 text-sm" type="date" value={reversalDate} onChange={(event) => setReversalDate(event.target.value)} required />
+              <span className="mt-1 block text-xs text-neutral-500">Debe pertenecer a un periodo contable abierto.</span>
+            </label>
+            <label className="block text-sm">
+              Motivo de anulacion
+              <textarea className="mt-1 h-24 w-full rounded-md border border-line px-3 py-2 text-sm" maxLength={500} onChange={(event) => setReason(event.target.value)} placeholder="Motivo obligatorio de la anulacion" required value={reason} />
+            </label>
+            {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+            <div className="flex justify-end gap-2 border-t border-line pt-4">
+              <button className="h-10 rounded-md border border-line px-4 text-sm" disabled={saving} onClick={onClose} type="button">Cancelar</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md bg-rose-600 px-4 text-sm font-medium text-white disabled:opacity-60" disabled={saving} onClick={() => void confirmReversal()} type="button">
+                <Ban size={16} /> {saving ? "Anulando..." : "Confirmar anulacion"}
+              </button>
+            </div>
+          </>
+        ) : eligibility ? (
+          <div className="space-y-3">
+            <section className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              <p className="font-semibold">No se puede anular desde contabilidad</p>
+              <p className="mt-1">Origen: {eligibility.eligibility.origin_label}.</p>
+              <p className="mt-2">{eligibility.eligibility.reason_message}</p>
+            </section>
+            {eligibility.eligibility.origin === "unverified" ? (
+              <p className="rounded-md border border-line bg-paper p-3 text-xs text-neutral-600">Este asiento no tiene la marca de origen que graba el sistema al crear un comprobante manual ni la firma de los saldos iniciales historicos. Para evitar anular asientos de otros procesos, no se ofrece la anulacion desde contabilidad; verifique su origen antes de cualquier correccion.</p>
+            ) : null}
+            <p className="text-xs text-neutral-500">Solo los asientos contables manuales y los saldos iniciales historicos se anulan desde este boton. Los asientos generados por otros modulos se anulan desde su modulo de origen para conservar la trazabilidad del negocio (por ejemplo, un pago de tesoreria se anula anulando el pago).</p>
+            <div className="flex justify-end border-t border-line pt-4">
+              <button className="h-10 rounded-md border border-line px-4 text-sm" onClick={onClose} type="button">Entendido</button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </ModalFrame>
   );

@@ -1,0 +1,83 @@
+{
+  "validation_summary": {
+    "certified_application_commit": "05538fb02befb0c8879890b4dc5139d1739c0662",
+    "completed_at_utc": "2026-11-09T13:59:40Z",
+    "artifact_sha256": "d14ecdd86d6568b2214b79d45c0049806aa7913b914d713a802101177458e9e1",
+    "typescript": "passed",
+    "production_build": "passed",
+    "lint": "passed: 0 errors, 22 warnings preexistentes en archivos no tocados",
+    "integral_checks_passed": 16,
+    "web_tests_passed": 2,
+    "browser_coverage_completed": true,
+    "evidence_policy": "La captura y el JSON del navegador viajan versionados en el candidato; no hay rutas locales ni credenciales."
+  },
+  "checks": {
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ]
+    },
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/modal-empresa-flotante-20261109.md",
+        "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/modal-empresa-flotante-20261109.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/modal-empresa-flotante-20261109.md",
+        "../../../apps/web/test/admin-company-modal-frame.test.mjs"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/modal-empresa-flotante-20261109/gates-candidato.txt"
+      ]
+    }
+  },
+  "certification": {
+    "script": "../../../apps/web/test/certify-company-modal-floating-local.mjs",
+    "evidence": [
+      "../evidence/modal-empresa-flotante-20261109/modal-empresa-flotante-local.json",
+      "../evidence/modal-empresa-flotante-20261109/company-modal-light.png",
+      "../evidence/modal-empresa-flotante-20261109/company-modal-dark.png",
+      "../certifications/modal-empresa-flotante-20261109.md"
+    ],
+    "status": "passed"
+  },
+  "environment": "LOCAL",
+  "promotion_branch": "codex/qa-modal-empresa-flotante-20261109",
+  "source_branch": "desarrollo",
+  "commit": "21a78214b43f8b08415ab809d0bedd9932cb9d58",
+  "qa_status": "pending",
+  "change_id": "modal-empresa-flotante-20261109",
+  "approval": {
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "Edwin (propietario)",
+    "scope": "promotion_to_develop_for_qa",
+    "status": "approved",
+    "approved_at": "2026-11-09",
+    "instruction": "Autorizacion expresa: «lleva todos los cambios desde desarrollo, develop y por ultimo a main. tienes mi autorizacion para esta intervencion»."
+  },
+  "target_branch": "develop",
+  "regression_certification": {
+    "script": "../../../apps/web/test/admin-company-modal-frame.test.mjs",
+    "evidence": [
+      "../certifications/modal-empresa-flotante-20261109.md"
+    ],
+    "status": "passed"
+  },
+  "target_head": "6edf85c7d6222c5019336538e3dee78c0e404354"
+}

@@ -1,0 +1,88 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-marking-existing-employee-20261110",
+  "base_commits": {
+    "develop": "c72955d22f9749d628b6b67ab175deeaa1ad445c"
+  },
+  "target_head": "c72955d22f9749d628b6b67ab175deeaa1ad445c",
+  "certified_commit": "1c388b7f1426012863a438df33de327f7f217832",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "1c388b7f1426012863a438df33de327f7f217832",
+    "original_commit": "0051d2c6c4a8ffb4959f45d7b65886bc96c446b7"
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-declared-employee.test.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-marking-existing-employee-local.js"
+  ],
+  "change_intent": {
+    "summary": "Remove automatic employee creation from profile and marking; reuse linked employee.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-marking-declared-employee.test.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-marking-existing-employee-local.js",
+    "docs/qa/manifests/hr-marking-existing-employee-20261110-scope.json",
+    "docs/qa/manifests/hr-marking-existing-employee-20261110-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-marking-declared-employee.test.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-existing-employee-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marking-existing-employee-20261110-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marking-existing-employee-20261110-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "no_automatic_employee_creation",
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    },
+    {
+      "name": "linked_employee_marking",
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    },
+    {
+      "name": "administrative_marking_regression",
+      "status": "passed",
+      "evidence": [
+        "hr-marking-existing-employee-20261110-preqa.json"
+      ]
+    }
+  ],
+  "traceability": "Punctual reconstruction from desarrollo on current develop."
+}

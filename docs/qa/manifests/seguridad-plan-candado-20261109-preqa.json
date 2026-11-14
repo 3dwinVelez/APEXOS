@@ -1,0 +1,124 @@
+{
+  "change_id": "plan-candado-seguridad-20261109",
+  "commit": "cb0f6062c8c98f8651001affd09462b705a727e2",
+  "certified_commit": "cb0f6062c8c98f8651001affd09462b705a727e2",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "target_head": "4142136033459013ed2c96149041f5862ed2b55c",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno del producto)",
+    "approved_at": "2026-11-09",
+    "quality_gate_overridden": false,
+    "instruction_literal": "Promueve el bloque de seguridad a develop",
+    "authorizations": [
+      "Promover el bloque de seguridad de desarrollo a develop con su certificacion local y su evidencia.",
+      "Push acotado a origin/desarrollo al cerrar la intervencion."
+    ],
+    "authorization_flags": {
+      "scoped_promotion_to_develop_only": true,
+      "promotion_to_main_authorized_separately": false,
+      "migrations_applied": false,
+      "force_push": false,
+      "production_data_writes": false,
+      "revocation_enforcement_enabled": false
+    },
+    "nota": "La autorizacion de promover no sustituye la verificacion post-despliegue: mientras /health de QA no muestre cb0f6062, la promocion no se declara verificada. No cubre main, migraciones, infraestructura de Railway/Supabase/Vercel ni secretos."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-promocion-20261109/certify-auth-session.txt",
+        "../evidence/plan-candado-promocion-20261109/public-form-local.json",
+        "../../../scripts/certifications/auth-session-readiness.js"
+      ],
+      "medida": "certify:auth-session sobre el API del candidato (commit cb0f6062): login, consulta autenticada y sesion pasan; cinco manipulaciones del JWT responden 401. El formulario publico anonimo se mide en vivo: 6/6, catalogo fijado por allowlist y rechazo de referencia ajena."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-promocion-20261109/public-form-local.json",
+        "../../../apps/api/test/public-service-allowlist.test.js",
+        "../evidence/plan-candado-promocion-20261109/api-suite.txt"
+      ],
+      "medida": "Los rechazos del formulario conservan codigo propio (400 REFERENCIA_INVALIDA, 400 FST_ERR_VALIDATION) sin filtrar trazas ni rutas internas; una empresa publica no configurada responde 503 EMPRESA_PUBLICA_NO_CONFIGURADA (probado en public-service-allowlist.test.js). La suite completa no deja ningun 500 nuevo."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/auth-session-readiness.js",
+        "../../../scripts/security/candado-gates.js",
+        "../../../scripts/security/ci-audit-gate.js",
+        "../../../package.json"
+      ],
+      "medida": "Las tres puertas estan versionadas e invocables por nombre en package.json (certify:auth-session, security:candado, security:ci-audit). Ninguna imprime tokens, cadenas de conexion ni credenciales: la evidencia guardada se reviso por secretos."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-promocion-20261109/api-suite.txt",
+        "../evidence/plan-candado-promocion-20261109/api-suite-baseline-develop.txt",
+        "../evidence/plan-candado-promocion-20261109/web-suite.txt"
+      ],
+      "medida": "Suite API: 1102/1099/0F (baseline develop 1056/1053/0F). Suite web: 769/765/4F con las mismas 4 fallas sobre origin/develop limpio. Regresiones atribuibles al candidato: 0. Pruebas nuevas aportadas: 46 en API y 13 en web."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/plan-candado-promocion-20261109/security-candado.txt",
+        "../evidence/plan-candado-promocion-20261109/security-ci-audit.txt",
+        "../evidence/plan-candado-promocion-20261109/prisma-validate.txt",
+        "../evidence/plan-candado-promocion-20261109/web-typecheck.txt",
+        "../evidence/plan-candado-promocion-20261109/web-lint.txt"
+      ],
+      "medida": "Gate candado en modo reporte (exit 0) con 0 modelos con tenant fuera de allowlist; CI audit con 0 advisories critical/high fuera de la allowlist vigente; esquema Prisma valido; typecheck y lint sin errores. Deriva declarada y no atribuible al candidato: global_models_not_in_schema 0->3 por el esquema de develop, y la base local sin RLS (101 tablas). Limite declarado, no verde: no hay medicion del ambiente QA liberado porque el commit todavia no esta desplegado."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/auth-session-readiness.js",
+    "evidence": [
+      "../evidence/plan-candado-promocion-20261109/certify-auth-session.txt",
+      "../evidence/plan-candado-promocion-20261109/public-form-local.json"
+    ],
+    "resultado": "CERTIFICACION OK: ok=true, commit cb0f6062, cinco rechazos JWT en 401, revocacion medida (enforced=false por modo observar). El formulario publico se certifica aparte con la sonda anonima 6/6."
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/security/candado-gates.js",
+    "evidence": [
+      "../evidence/plan-candado-promocion-20261109/security-candado.txt",
+      "../evidence/plan-candado-promocion-20261109/api-suite.txt",
+      "../evidence/plan-candado-promocion-20261109/api-suite-baseline-develop.txt"
+    ],
+    "resultado": "El gate versionado re-mide la postura completa contra el baseline guardado y la suite API completa del candidato no deja fallos (1102/1099/0). La unica regresion que reporta (global_models_not_in_schema 0->3) es una diferencia de esquema del destino, documentada en el manifiesto de alcance."
+  },
+  "suites": {
+    "api_completa_candidato": "1102 pruebas, 1099 pasan, 0 fallan, 3 saltadas",
+    "api_completa_baseline_develop": "1056 pruebas, 1053 pasan, 0 fallan, 3 saltadas",
+    "web_candidato": "769 pruebas, 765 pasan, 4 fallan (las 4 reproducidas identicas en origin/develop limpio)",
+    "certificacion_sesion": "5 rechazos JWT en 401, login y sesion passed, revocacion measured=true enforced=false",
+    "formulario_publico": "6/6 sondas anonimas en vivo",
+    "regresiones_atribuibles": 0
+  },
+  "known_target_failures": [
+    "el registro de funciones cubre todas las rutas del dashboard",
+    "apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK",
+    "el respaldo preventivo tambien consulta el guard cuando no hay API configurada",
+    "react y react-dom/server salen de la misma instalacion de node_modules"
+  ],
+  "pending_certifications": [
+    "Verificacion post-despliegue en QA: /health con el commit promovido y sonda del formulario publico contra la allowlist desplegada.",
+    "Encender la revocacion obligatoria de sesion en una ronda medida y autorizada aparte (hoy enforced=false).",
+    "Deriva RLS de QA (1 tabla sin RLS, FORCE ausente) y los tres globales fuera del esquema de develop: handoff a apexos-db-nube y apexos-backend, fuera de este candidato."
+  ],
+  "certified_source_tree": {
+    "branch": "desarrollo",
+    "tip": "31cfa3ba8a9416fd20e83490da8181bfea9dfa55",
+    "nota": "El candidato reconstruye 10 commits de desarrollo sobre 41421360 y deja fuera el arbol de agentes y el resto del backlog. Las pruebas adaptadas a develop cambian solo dobles de Prisma y contratos de tenant, no el codigo de seguridad."
+  }
+}

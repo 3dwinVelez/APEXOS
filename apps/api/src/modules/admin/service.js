@@ -1,3 +1,4 @@
+const { findEmployeeForUser } = require("../hr/employeeUserLink");
 const bcrypt = require("bcrypt");
 const { syncSupabaseCredentials } = require("../../security/supabaseAdminCredentials");
 const prisma = require("../../core/prisma");
@@ -1106,16 +1107,16 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
   const rawPassword = input.password || input.pas || "";
   assertPasswordPolicy(rawPassword);
   const password = await bcrypt.hash(rawPassword, 12);
-  return prisma.runWithTenant(tenantId, async () => {
-    const existing = await prisma.user.findFirst({ where: { tenant_id: tenantId, email } });
+  return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    const existing = await tx.user.findFirst({ where: { tenant_id: tenantId, email } });
     if (existing) {
       const err = new Error("Ya existe un usuario con este correo en la empresa.");
       err.statusCode = 409;
       throw err;
     }
     const role = input.role_id
-      ? await prisma.role.findFirst({ where: { id: Number(input.role_id), tenant_id: tenantId } })
-      : await prisma.role.findFirst({ where: { name: "Empleado", tenant_id: tenantId } });
+      ? await tx.role.findFirst({ where: { id: Number(input.role_id), tenant_id: tenantId } })
+      : await tx.role.findFirst({ where: { name: "Empleado", tenant_id: tenantId } });
     if (!role) throw badRequest("Debe seleccionar un rol valido para el usuario.");
     if (role?.metadata?.active === false) {
       throw badRequest("El rol seleccionado esta inactivo");
@@ -1191,7 +1192,19 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
       user_audit_trail: [{ at: new Date().toISOString(), action: "created", module: "administracion" }],
       legacy: { migrated_from: "APEX", module: "personal" }
     };
-    const user = await prisma.user.create({
+    const matchingEmployee = await findEmployeeForUser(tx, tenantId, { document: metadata.document, document_type: metadata.document_type, email });
+    if (matchingEmployee) {
+      // Access belongs to the user; keep payroll, contracts and personal labor data.
+      await tx.employee.update({ where: { id: matchingEmployee.id }, data: { metadata: {
+        ...matchingEmployee.metadata,
+        access: metadata.access,
+        operational: { ...(matchingEmployee.metadata?.operational || {}), ...metadata.operational },
+        profile_kind: metadata.profile_kind,
+        user_kind: metadata.user_kind,
+        user_audit_trail: [...(matchingEmployee.metadata?.user_audit_trail || []), ...metadata.user_audit_trail]
+      } } });
+    }
+    const user = await tx.user.create({
       data: {
         tenant_id: tenantId,
         name: fullName,
@@ -1199,7 +1212,7 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
         password,
         role_id: role?.id || null,
         active,
-        employee: {
+        employee: matchingEmployee ? { connect: { id: matchingEmployee.id } } : {
           create: {
             tenant_id: tenantId,
             code: input.code || input.id_interno || `EMP-${Date.now()}`,
@@ -1218,7 +1231,7 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
       },
       include: { role: true, employee: true }
     });
-    await prisma.auditLog.create({
+    await tx.auditLog.create({
       data: {
         tenant_id: tenantId,
         user_id: actorId,
@@ -1231,7 +1244,7 @@ async function createUser(tenantId, input, actorId = null, actorRoleName = "") {
       }
     });
     return userDto(user);
-  });
+  }, { isolationLevel: "Serializable" }));
 }
 
 async function updateUser(tenantId, id, input, actorId = null, actorRoleName = "") {

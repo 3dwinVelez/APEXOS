@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, Calculator, Download, FileText, Play, Trash2 } from "lucide-react";
+import { ArrowLeft, Calculator, Download, FileText, Play, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../../../../lib/api";
 import { API_BASE_URL } from "../../../../lib/apiBaseUrl";
 
-type Employee = { id: number; code?: string; name?: string; salary_base?: number; contract_type?: string; metadata?: { name?: string } };
+type Employee = { id: number; code?: string; name?: string; contract_type?: string; metadata?: { name?: string; document?: string; document_type?: string } };
 type Line = { code: string; name: string; quantity: number; rate: number; amount: number; source?: string; accrued_amount?: number; paid_amount?: number; balance_amount?: number };
 type TerminationDocument = {
   id?: number;
@@ -37,7 +37,11 @@ function employeeLabel(employee: Employee) {
 }
 
 export default function EmployeeTerminationLiquidationPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeQuery, setEmployeeQuery] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [employeeSearch, setEmployeeSearch] = useState<{ query: string; rows: Employee[]; error?: string }>();
+  const documentQuery = employeeQuery.toUpperCase().replace(/[^0-9A-Z]/g, "");
+  const searchResult = employeeSearch?.query === employeeQuery ? employeeSearch : undefined;
   const [documents, setDocuments] = useState<TerminationDocument[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
   const [preview, setPreview] = useState<TerminationDocument | null>(null);
@@ -47,12 +51,10 @@ export default function EmployeeTerminationLiquidationPage() {
   const [form, setForm] = useState({ employee_id: "", termination_date: today, termination_reason: "retiro_voluntario", contract_type: "indefinite", pending_salary_days: "0", remaining_days: "", recalculate: false, mark_inactive: false });
 
   async function load() {
-    const [employeeRows, documentRows, balanceRows] = await Promise.all([
-      api<Employee[]>("/api/v1/talento-humano/empleados?active=true", { cache: "no-store" }),
+    const [documentRows, balanceRows] = await Promise.all([
       api<TerminationDocument[]>("/api/v1/talento-humano/liquidacion-trabajador/documentos?limit=200", { cache: "no-store" }).catch(() => []),
       api<Balance[]>("/api/v1/talento-humano/liquidacion-trabajador/saldos?limit=500", { cache: "no-store" }).catch(() => [])
     ]);
-    setEmployees(employeeRows);
     setDocuments(documentRows);
     setBalances(balanceRows);
   }
@@ -61,7 +63,26 @@ export default function EmployeeTerminationLiquidationPage() {
     load().catch((err) => setMessage(err instanceof Error ? err.message : "No se pudo cargar liquidacion"));
   }, []);
 
-  const selectedEmployee = useMemo(() => employees.find((row) => String(row.id) === String(form.employee_id)), [employees, form.employee_id]);
+  useEffect(() => {
+    if (selectedEmployee || documentQuery.length < 2) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const rows = await api<Employee[]>(`/api/v1/talento-humano/empleados?document_search=${encodeURIComponent(documentQuery)}`, { cache: "no-store" });
+        if (!cancelled) setEmployeeSearch({ query: employeeQuery, rows });
+      } catch {
+        if (!cancelled) setEmployeeSearch({ query: employeeQuery, rows: [], error: "No se pudo buscar. Vuelve a escribir el documento." });
+      }
+    }, 250);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [documentQuery, employeeQuery, selectedEmployee]);
+
+  function selectEmployee(employee: Employee) {
+    setSelectedEmployee(employee);
+    setEmployeeQuery(employee.metadata?.document || "");
+    setForm((current) => ({ ...current, employee_id: String(employee.id), contract_type: employee.contract_type || "indefinite" }));
+  }
+
   const employeeBalances = balances.filter((row) => String(row.employee_id) === String(form.employee_id));
 
   function payload() {
@@ -148,15 +169,44 @@ export default function EmployeeTerminationLiquidationPage() {
 
       <section className="rounded-md border border-line bg-white p-4">
         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <label className="text-sm">Empleado
-            <select className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.employee_id} onChange={(event) => {
-              const employee = employees.find((row) => String(row.id) === event.target.value);
-              setForm((current) => ({ ...current, employee_id: event.target.value, contract_type: employee?.contract_type || current.contract_type }));
-            }}>
-              <option value="">Selecciona</option>
-              {employees.map((employee) => <option key={employee.id} value={employee.id}>{employeeLabel(employee)}</option>)}
-            </select>
-          </label>
+          <div className="relative text-sm">
+            <label htmlFor="termination-employee-document">Empleado</label>
+            <div className="relative mt-1">
+              <Search aria-hidden="true" className="absolute left-3 top-3 text-neutral-500" size={16} />
+              <input id="termination-employee-document" type="search" autoComplete="off" maxLength={80}
+                className="h-10 w-full rounded-md border border-line pl-9 pr-3"
+                placeholder="Número de documento" value={employeeQuery} disabled={busy}
+                onChange={(event) => {
+                  setEmployeeQuery(event.target.value);
+                  setSelectedEmployee(null);
+                  setEmployeeSearch(undefined);
+                  setForm((current) => ({ ...current, employee_id: "", contract_type: "indefinite" }));
+                  if (preview) { setPreview(null); setSelected(null); }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !selectedEmployee && searchResult?.rows.length === 1) {
+                    event.preventDefault();
+                    selectEmployee(searchResult.rows[0]);
+                  }
+                }} />
+            </div>
+            {selectedEmployee ? <p className="mt-1 text-xs text-neutral-600">{employeeLabel(selectedEmployee)}</p> : documentQuery.length >= 2 ? (
+              <div className="absolute z-20 mt-1 w-full min-w-52 rounded-md border border-line bg-white shadow-sm">
+                {searchResult?.rows.length ? (
+                  <ul aria-label="Empleados encontrados" className="max-h-64 overflow-y-auto">
+                    {searchResult.rows.map((employee) => (
+                      <li key={employee.id}>
+                        <button type="button" className="w-full px-3 py-2 text-left hover:bg-paper focus-visible:bg-paper" onClick={() => selectEmployee(employee)}>
+                          <span className="block font-medium">{employeeLabel(employee)}</span>
+                          <span className="text-xs text-neutral-600">{employee.metadata?.document_type} {employee.metadata?.document}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p role="status" className="px-3 py-2">{searchResult ? searchResult.error || "No se encontraron empleados activos." : "Buscando…"}</p>}
+              </div>
+            ) : null}
+          </div>
           <label className="text-sm">Fecha retiro<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={form.termination_date} onChange={(event) => setForm((current) => ({ ...current, termination_date: event.target.value }))} /></label>
           <label className="text-sm">Causal
             <select className="mt-1 h-10 w-full rounded-md border border-line px-3" value={form.termination_reason} onChange={(event) => setForm((current) => ({ ...current, termination_reason: event.target.value }))}>

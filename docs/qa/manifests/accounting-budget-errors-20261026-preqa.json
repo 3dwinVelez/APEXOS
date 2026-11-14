@@ -1,0 +1,80 @@
+{
+  "regression_certification": {
+    "evidence": [
+      "../certifications/accounting-budget-errors-20261026.md"
+    ],
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-reversal-budget-import-browser-local.js"
+  },
+  "environment": "LOCAL",
+  "validation_summary": {
+    "browser_coverage_completed": true,
+    "evidence_policy": "Raw browser JSON, logs, workbooks and screenshots remain local; reviewed certification is versioned.",
+    "completed_at_utc": "2026-10-27T02:14:36.879Z",
+    "api_tests_passed": 64,
+    "integral_checks_passed": 91,
+    "web_tests_passed": 15,
+    "lint": "passed: zero errors and warnings",
+    "production_build": "passed",
+    "certified_application_commit": "c7f1c17baa78b8a509c0b8c51644ae88ac75528c",
+    "typescript": "passed",
+    "web_source_hash_matches_build": true,
+    "artifact_sha256": "f59a070b6d13b44d2c72eed8f4dd0ddc99ec9c1aab6d9fb6ba8b4168483c5331"
+  },
+  "source_branch": "desarrollo",
+  "approval": {
+    "approved_at": "2026-10-26",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "manue",
+    "instruction": "Autorizar publicación puntual en QA",
+    "status": "approved",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "change_id": "accounting-budget-errors-20261026",
+  "qa_status": "pending",
+  "checks": {
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ]
+    },
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/accounting-budget-errors-20261026.md"
+      ]
+    }
+  },
+  "certification": {
+    "evidence": [
+      "../certifications/accounting-budget-errors-20261026.md"
+    ],
+    "status": "passed",
+    "script": "../../../scripts/certifications/accounting-reversal-budget-import-browser-local.js"
+  },
+  "target_head": "46fc1524dc1b16a9ec4a0c1f37333c7868d4d2d6",
+  "promotion_branch": "codex/qa-budget-errors-20261026",
+  "commit": "c7f1c17baa78b8a509c0b8c51644ae88ac75528c",
+  "target_branch": "develop"
+}

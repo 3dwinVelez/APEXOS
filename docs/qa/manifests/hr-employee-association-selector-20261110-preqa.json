@@ -1,0 +1,111 @@
+{
+  "change_id": "hr-employee-association-selector-20261110",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "b9600b8ada6367442d45a5f38c5544345778e4a7",
+  "commit": "f339f61877b6f21a42cb1ef3f4785b97362e261c",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "hr-employee-association-selector-20261110-preqa.json",
+        "../certifications/hr-employee-user-association-ui-20261104.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-employee-user-link-local.js",
+    "evidence": [
+      "hr-employee-association-selector-20261110-preqa.json",
+      "../certifications/hr-employee-user-association-ui-20261104.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-employee-user-link-local.js",
+    "evidence": [
+      "hr-employee-association-selector-20261110-preqa.json",
+      "../certifications/hr-employee-user-association-ui-20261104.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: certifica y promueve a QA",
+    "approved_at": "2026-11-11T00:15:53.080Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "f339f61877b6f21a42cb1ef3f4785b97362e261c",
+    "target": "b9600b8ada6367442d45a5f38c5544345778e4a7",
+    "unit_tests": {
+      "passed": 10,
+      "failed": 0
+    },
+    "full_flow": {
+      "environment": "LOCAL",
+      "source_branch": "desarrollo",
+      "commit": "b9600b8ada6367442d45a5f38c5544345778e4a7",
+      "started_at": "2026-11-11T00:14:12.401Z",
+      "checks": [
+        "employee without user remains unlinked",
+        "user creation reuses employee and preserves payroll and history",
+        "occupied employee rejects a second user atomically",
+        "same identity in another tenant does not link across tenants",
+        "employee creation links a preexisting user without a labor record",
+        "editing an unlinked employee links an existing user",
+        "contradictory documents fail without creating a user",
+        "browser document finds existing user and opens original labor record without duplicate",
+        "browser creates and persists employee with selected user and no email field",
+        "authenticated HTTP flow persists links, exposes them on read and enforces RBAC"
+      ],
+      "status": "passed",
+      "scope": "real local HTTP, authentication, authorization, service and PostgreSQL persistence",
+      "finished_at": "2026-11-11T00:15:21.996Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1794356030946",
+      "source_database_modified": false,
+      "fixture_schema_hunk": "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-11T00:15:22.092Z"
+    }
+  }
+}

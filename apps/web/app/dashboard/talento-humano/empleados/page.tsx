@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
+import EmployeeUserAssociation from "@/components/hr/EmployeeUserAssociation";
 import { activeOrganizationRows, branchesForSociety, costCentersForBranch, EMPTY_PAYROLL_ORGANIZATION, organizationAssignmentChanged, organizationSelection, type PayrollOrganizationTree } from "@/lib/payrollOrganization";
 import { ArrowLeft, Eye, Link2, Pencil, Plus, RefreshCw, Save, Search, UserRoundCheck, UserRoundX, X } from "lucide-react";
 import Link from "next/link";
@@ -162,6 +163,7 @@ export default function EmployeesMasterPage() {
   const [mode, setMode] = useState<"view" | "edit" | "create">("view");
   const [saving, setSaving] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [userId, setUserId] = useState("");
   const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
   const [salaryHistory, setSalaryHistory] = useState<SalaryHistory[]>([]);
   const [contractHistory, setContractHistory] = useState<EmployeeContract[]>([]);
@@ -296,6 +298,7 @@ export default function EmployeesMasterPage() {
   const availableEntities = useMemo(() => entities.filter((entity) => entity.active && entity.entity_type === affiliationForm.entity_type), [affiliationForm.entity_type, entities]);
 
   function openCreateEmployee() {
+    setUserId("");
     setSelected(null);
     setMode("create");
     setModalMessage("");
@@ -309,6 +312,7 @@ export default function EmployeesMasterPage() {
   }
 
   function openEmployee(employee: Employee, nextMode: "view" | "edit") {
+    setUserId("");
     const first = employee.metadata?.first_name || "";
     const middle = employee.metadata?.middle_name || "";
     const last = employee.metadata?.last_name || "";
@@ -408,6 +412,7 @@ export default function EmployeesMasterPage() {
     setModalMessage("");
     try {
       const payload = {
+        ...(userId ? { user_id: Number(userId) } : {}),
         first_name: form.first_name,
         middle_name: form.middle_name,
         last_name: form.last_name,
@@ -682,10 +687,12 @@ export default function EmployeesMasterPage() {
                     </div>
                   </section>
                 ) : null}
-                {mode !== "create" ? <div className="rounded-md border border-line bg-paper p-3">
-                  <p className="text-sm font-semibold">Usuario APEX</p>
-                  <p className="mt-1 text-sm text-neutral-600">{selected?.user?.name || "Sin usuario"} {selected?.user?.email ? `- ${selected.user.email}` : ""}</p>
-                </div> : null}
+                <EmployeeUserAssociation key={`${selected?.id || "new"}-${mode}`} document={form.document} documentType={form.document_type} employeeId={selected?.id} user={selected?.user} value={userId} readOnly={mode === "view"} onChange={setUserId} onOpenEmployee={async (id) => {
+                  try {
+                    const existing = await api<Employee>(`/api/v1/talento-humano/empleados/${id}`, { cache: "no-store" });
+                    openEmployee(existing, "edit");
+                  } catch { setModalMessage("No se pudo abrir la ficha existente. No se han guardado cambios."); }
+                }} />
               </div>
 
               <section className="mt-5 rounded-md border border-line bg-white p-3">

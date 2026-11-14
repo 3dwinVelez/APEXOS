@@ -7,8 +7,8 @@
   "database_url_host": "postgresql://***@localhost:55432/apexos",
   "api_url": "http://127.0.0.1:3218",
   "web_url": "http://127.0.0.1:3219",
-  "generated_at": "2026-10-26T19:34:50.003Z",
-  "certified_commit": "efaac0100a7cbe35c81971659b6b6d393987fc98",
+  "generated_at": "2026-10-26T19:58:30.920Z",
+  "certified_commit": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
   "operating_date": "2026-10-26",
   "scope": {
     "defect": "La contencion P2028 ya devolvia 503 reintentable por HTTP, pero nunca se abrio un navegador para confirmar que el operario ve un aviso accionable y no una caida del backend.",
@@ -28,7 +28,7 @@
       "name": "api_health_ok",
       "ok": true,
       "detail": {
-        "commit": "efaac0100a7cbe35c81971659b6b6d393987fc98",
+        "commit": "45626652eb6bacb86365a84e6e2d3421a84ecac0",
         "modules": 18
       }
     },
@@ -36,7 +36,7 @@
       "name": "web_served_from_production_build",
       "ok": true,
       "detail": {
-        "build_id": "FfFtcLfC0iHKF7L8l6MEi",
+        "build_id": "57JzL2evSJsv-EMEV6f5q",
         "web_url": "http://127.0.0.1:3219"
       }
     },
@@ -58,14 +58,14 @@
       "name": "browser_novelties_form_ready",
       "ok": true,
       "detail": {
-        "employee_id": 608
+        "employee_id": 620
       }
     },
     {
       "name": "browser_employee_selected",
       "ok": true,
       "detail": {
-        "selected": "608"
+        "selected": "620"
       }
     },
     {
@@ -98,7 +98,7 @@
       "name": "contention_gives_up_within_budget",
       "ok": true,
       "detail": {
-        "latency_ms": 15337,
+        "latency_ms": 15300,
         "deadline_ms": 15000
       }
     },
@@ -128,7 +128,7 @@
       "name": "browser_keeps_form_selection",
       "ok": true,
       "detail": {
-        "selected": "608"
+        "selected": "620"
       }
     },
     {
@@ -142,9 +142,9 @@
       "detail": {
         "status": 200,
         "body": {
-          "id": 7,
+          "id": 10,
           "tenant_id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
-          "employee_id": 608,
+          "employee_id": 620,
           "period_key": "quincena:2026-10-01:2026-10-15",
           "adjustment_type": "manual",
           "concept_code": "AJUSTE_MANUAL",
@@ -159,8 +159,8 @@
             "date_end": null,
             "date_start": null
           },
-          "created_by": 711,
-          "created_at": "2026-10-26T19:35:22.833Z"
+          "created_by": 714,
+          "created_at": "2026-10-26T19:59:01.110Z"
         }
       }
     },
@@ -175,7 +175,7 @@
       "name": "adjustment_persisted_exactly_once",
       "ok": true,
       "detail": {
-        "employee_id": 608
+        "employee_id": 620
       }
     },
     {
@@ -208,12 +208,12 @@
       "status": 503,
       "code": "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL",
       "request_id": "req-i",
-      "latency_ms": 15337,
+      "latency_ms": 15300,
       "server_message": "Otra correccion de nomina se esta guardando para esta persona en este momento. Intente de nuevo en unos segundos."
     },
     "reintento": {
       "status": 200,
-      "id": 7
+      "id": 10
     }
   },
   "network": [
@@ -244,16 +244,6 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/talento-humano/nomina/cierres?period_key=quincena%3A2026-10-01%3A2026-10-15",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/talento-humano/nomina/liquidaciones?period_key=quincena%3A2026-10-01%3A2026-10-15",
-      "status": 200
-    },
-    {
-      "method": "GET",
       "path": "/api/v1/talento-humano/nomina/ajustes?period_key=quincena%3A2026-10-01%3A2026-10-15",
       "status": 200
     },
@@ -264,12 +254,22 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/talento-humano/empleados?active=true",
+      "path": "/api/v1/talento-humano/nomina/liquidaciones?period_key=quincena%3A2026-10-01%3A2026-10-15",
       "status": 200
     },
     {
       "method": "GET",
       "path": "/api/v1/talento-humano/nomina/liquidaciones?period_key=quincena%3A2026-10-01%3A2026-10-15",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/empleados?active=true",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/talento-humano/nomina/cierres?period_key=quincena%3A2026-10-01%3A2026-10-15",
       "status": 200
     },
     {
@@ -314,17 +314,17 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/talento-humano/empleados?active=true",
+      "status": 200
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/talento-humano/nomina/ajustes?period_key=quincena%3A2026-10-01%3A2026-10-15",
       "status": 200
     },
     {
       "method": "GET",
       "path": "/api/v1/talento-humano/nomina/cierres?period_key=quincena%3A2026-10-01%3A2026-10-15",
-      "status": 200
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/talento-humano/empleados?active=true",
       "status": 200
     }
   ],
@@ -337,22 +337,22 @@
       "name": "Puebla Operaciones"
     },
     "role": {
-      "id": 405,
-      "name": "QA Aviso Concurrencia 20261026193449"
+      "id": 408,
+      "name": "QA Aviso Concurrencia 20261026195830"
     },
     "admin_user": {
-      "id": 711,
-      "email": "qa.brs28.admin.20261026193449@apex.test"
+      "id": 714,
+      "email": "qa.brs28.admin.20261026195830@apex.test"
     },
     "employee": {
-      "id": 608,
-      "code": "QA-BRS-NOM26193449"
+      "id": 620,
+      "code": "QA-BRS-NOM26195830"
     }
   },
   "cleanup": {
     "employees_purged": [
       {
-        "employee_id": 608,
+        "employee_id": 620,
         "removed": true
       }
     ],
@@ -361,5 +361,5 @@
     "role_deactivated": true,
     "errors": []
   },
-  "finished_at": "2026-10-26T19:35:23.694Z"
+  "finished_at": "2026-10-26T19:59:02.004Z"
 }

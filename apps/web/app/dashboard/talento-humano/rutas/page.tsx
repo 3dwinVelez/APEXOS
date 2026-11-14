@@ -20,7 +20,7 @@ type TimeRoute = { id: number | string; code?: string; display_id?: number | str
 type MasterOption = { code: string; name: string; active?: boolean; sort_order?: number };
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; status?: string; latitude?: number | null; longitude?: number | null; age_seconds?: number | null; last_punch_type?: string; last_punch_time?: string; last_activity_type?: string; last_activity_time?: string };
-type MonitorEvidence = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean };
+type MonitorEvidence = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean; items?: MonitorEvidence[] };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence; identity_evidence?: MonitorEvidence; metadata?: { identity_verification?: { status?: string } } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
@@ -598,7 +598,8 @@ export default function RoutesPlanningPage() {
         const source = summary.source || (event.kind === "marca" ? "punch" : "activity");
         return api<MonitorEvidence>(`/api/v1/hr/monitor-evidence/${source}/${encodeURIComponent(String(summary.id))}`, { cache: "no-store" });
       }));
-      const evidence = loaded.filter((item) => item.base64_data || item.file_url);
+      const files = loaded.flatMap((item) => item.items?.length ? item.items : [item]);
+      const evidence = files.filter((item, index) => (item.base64_data || item.file_url) && files.findIndex(other => (other.base64_data || other.file_url) === (item.base64_data || item.file_url)) === index);
       if (!evidence.length) throw new Error("La evidencia no contiene un archivo visible.");
       setLoadedEvidence((current) => ({ ...current, [event.id]: evidence }));
     } catch (error) {
@@ -615,7 +616,8 @@ export default function RoutesPlanningPage() {
       const merged: Record<string, MonitorEvidence[]> = {};
       const punchIds = new Set([...Object.keys(batch.punch_evidence || {}), ...Object.keys(batch.identity_evidence || {})]);
       for (const id of punchIds) {
-        const items = [batch.punch_evidence?.[id], batch.identity_evidence?.[id]].filter((item): item is MonitorEvidence => Boolean(item?.base64_data || item?.file_url));
+        const files = [batch.punch_evidence?.[id], batch.identity_evidence?.[id]].flatMap(item => item?.items?.length ? item.items : [item]).filter((item): item is MonitorEvidence => Boolean(item?.base64_data || item?.file_url));
+        const items = files.filter((item, index) => files.findIndex(other => (other.base64_data || other.file_url) === (item.base64_data || item.file_url)) === index);
         if (items.length) merged[`punch-${id}`] = items;
       }
       for (const [id, items] of Object.entries(batch.activity_evidence || {})) merged[`activity-${id}`] = items;

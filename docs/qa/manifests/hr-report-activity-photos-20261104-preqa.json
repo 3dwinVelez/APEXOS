@@ -1,0 +1,105 @@
+{
+  "change_id": "hr-report-activity-photos-20261104",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "df4e70e8c56e42607573c79be51e6af44a0e5d2f",
+  "commit": "f4033f50ad73a7df28186f60fbf0a264799e6700",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-report-activity-photos-20261104.md",
+        "hr-report-activity-photos-20261104-preqa.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "evidence": [
+      "../certifications/hr-report-activity-photos-20261104.md",
+      "hr-report-activity-photos-20261104-preqa.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "evidence": [
+      "../certifications/hr-report-activity-photos-20261104.md",
+      "hr-report-activity-photos-20261104-preqa.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Propietario: despliega a qa; autorizacion previa de esta misma rama auxiliar y fusion por PR, correccion de la pantalla solicitada",
+    "approved_at": "2026-11-05T03:47:54.716Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "f4033f50ad73a7df28186f60fbf0a264799e6700",
+    "target": "df4e70e8c56e42607573c79be51e6af44a0e5d2f",
+    "unit_tests": {
+      "passed": 10,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "photos": {
+      "environment": "LOCAL",
+      "started_at": "2026-11-05T03:44:42.166Z",
+      "checks": [
+        "summary exposes photo availability and counters without image bytes",
+        "single and batch use TimePunch identity photos, retain extra support and ActivityEvidence",
+        "chronological team trace displays all mobile photos and opens lightbox",
+        "Reports journey trace renders the activity photograph and opens its enlargement"
+      ],
+      "status": "passed",
+      "photo_source": "TimePunch.metadata.identity_photo, with legacy support",
+      "finished_at": "2026-11-05T03:46:41.433Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "database": "apexos_cert_hr_assoc_1793850258454",
+      "source_database_modified": false,
+      "fixture_schema_hunk": "20261016123000_sedes_replace_origins: sections 1-2 only",
+      "exit_code": 0,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-05T03:46:41.545Z"
+    },
+    "environment": "Actual local PostgreSQL, HTTP API and Chrome; generated synthetic photos; no remote writes."
+  }
+}

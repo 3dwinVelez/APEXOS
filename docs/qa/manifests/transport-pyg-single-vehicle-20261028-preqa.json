@@ -1,0 +1,79 @@
+{
+  "validation_summary": {
+    "certified_application_commit": "e95cd636a48c596e45b43a6c93d2e0b52d2d72cc",
+    "completed_at_utc": "2026-10-29T00:13:35.758Z",
+    "artifact_sha256": "db2593e2325405afa11d6192470ad0012635e215950068978ea6a6103ec12774",
+    "typescript": "passed",
+    "production_build": "passed",
+    "lint": "passed: zero errors and warnings",
+    "integral_checks_passed": 66,
+    "compiled_page_hash_matches": true,
+    "browser_coverage_completed": true,
+    "web_tests_passed": 35,
+    "evidence_policy": "Raw browser JSON, logs and screenshots remain local; reviewed certification is versioned."
+  },
+  "checks": {
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ]
+    },
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/transport-pyg-single-vehicle-20261028.md"
+      ]
+    }
+  },
+  "certification": {
+    "script": "../../../scripts/certifications/transport-pyg-ledger-only-browser-local.js",
+    "evidence": [
+      "../certifications/transport-pyg-single-vehicle-20261028.md"
+    ],
+    "status": "passed"
+  },
+  "environment": "LOCAL",
+  "promotion_branch": "codex/qa-single-vehicle-20261028",
+  "source_branch": "desarrollo",
+  "commit": "e95cd636a48c596e45b43a6c93d2e0b52d2d72cc",
+  "qa_status": "pending",
+  "change_id": "transport-pyg-single-vehicle-20261028",
+  "approval": {
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "manue",
+    "scope": "promotion_to_develop_for_qa",
+    "status": "approved",
+    "approved_at": "2026-10-28",
+    "instruction": "Autorizar publicación puntual en QA"
+  },
+  "target_branch": "develop",
+  "regression_certification": {
+    "script": "../../../scripts/certifications/transport-pyg-ledger-only-browser-local.js",
+    "evidence": [
+      "../certifications/transport-pyg-single-vehicle-20261028.md"
+    ],
+    "status": "passed"
+  },
+  "target_head": "4e5804cd6face1ac1db134fb53315b1a05d185fd"
+}

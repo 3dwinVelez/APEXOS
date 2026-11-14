@@ -1,12 +1,20 @@
 // PYG por vehiculo (centro de costo = placa) - capa de servicio.
-// Fuentes reales del reporte:
-//   Ingresos: lineas de liquidacion (TransportSettlementItem) de paquetes aprobados+ con placa.
-//   Gastos:   caja menor (lineas con cost_center = placa clasificadas por mapping PYG),
-//             nomina bruta / PILA / provision de prestaciones del conductor autorizado.
+// Fuente del reporte en Contabilidad: siempre el libro contable (LedgerEntry)
+// via getAccountingReport, sin importar la fuente guardada. getOperationalReport
+// conserva el calculo legacy (liquidacion + caja menor + nomina) solo para las
+// pruebas de la unidad; no existe ruta HTTP operativa.
 // Todo corre dentro de prisma.runWithTenant; el SQL crudo siempre filtra tenant_id explicito.
 const basePrisma = require("../../core/prisma");
 const { CONCEPT_CATALOG, DEFAULT_SOURCE_MAP } = require("./concept-catalog");
 const { buildReport, periodBounds } = require("./engine");
+const { buildAccountingReport } = require("./account-engine");
+const { validateAccountConfig, cloneProposal } = require("./account-config");
+
+// pyg-interactive arrastra tenantCache -> Redis al requerirse; se carga solo al
+// entrar por la ruta contable para no romper los flujos operativos/legacy.
+function accountingSource() {
+  return require("../accounting/pyg-interactive");
+}
 
 const MODULE = "accounting";
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -49,9 +57,11 @@ async function audit(tx, user, action, entity, entityId, newValue) {
 // Siembra idempotente del catalogo de conceptos y del mapping por defecto del tenant.
 async function ensureCatalog(db, tenantId) {
   for (const concept of CONCEPT_CATALOG) {
+    // update vacio: un GET no puede sobrescribir nombre, orden ni defaults que
+    // el tenant haya podido ajustar; solo siembra lo que falta.
     await db.transportPygConcept.upsert({
       where: { tenant_id_code: { tenant_id: tenantId, code: concept.code } },
-      update: { name: concept.name, section: concept.section, kind: concept.kind, display_order: concept.order },
+      update: {},
       create: { tenant_id: tenantId, code: concept.code, name: concept.name, section: concept.section, kind: concept.kind, display_order: concept.order }
     });
   }
@@ -98,7 +108,11 @@ async function listConcepts(tenantId) {
   });
 }
 
-async function getReport(tenantId, query = {}) {
+// Reporte operativo historico (liquidacion + caja menor + nomina). Ya no es la
+// fuente del GET de PYG en Contabilidad: getReport siempre lee el libro contable
+// (getAccountingReport). Se conserva como helper interno exportado solo para que
+// las pruebas legacy de la unidad sigan ejercitando la logica sin perder cobertura.
+async function getOperationalReport(tenantId, query = {}) {
   const period = assertPeriod(query.period);
   return read(tenantId, async (db, tenant) => {
     await ensureCatalog(db, tenant);
@@ -186,6 +200,117 @@ async function getReport(tenantId, query = {}) {
       taxPercent: config ? Number(config.tax_percent) : 2.25
     });
   });
+}
+
+// Fuente contable: LedgerEntry una sola vez via getInteractivePyg (archivo
+// protegido, sin modificarlo). Solo se extraen las hojas terminales de centro
+// de costo con cuenta PUC real; los padres nunca se suman. El presupuesto
+// viene del almacen accounting.pyg_budgets a traves del mismo reporte.
+// currentPuc.name llega como "codigo · nombre" (accountLabel de pyg-interactive);
+// se quita solo ese prefijo exacto para no borrar numeros propios del nombre.
+function cleanAccountName(rawName, accountCode) {
+  const name = String(rawName || "");
+  const code = String(accountCode || "");
+  const prefix = `${code} \u00b7 `;
+  if (code && name.startsWith(prefix)) return name.slice(prefix.length);
+  return name || code;
+}
+
+function extractInteractiveLeaves(nodes) {
+  const leaves = [];
+  function walk(node, puc, branch) {
+    let currentPuc = puc;
+    let currentBranch = branch;
+    if (node.dimension === "puc") currentPuc = node;
+    else if (node.dimension === "branch") currentBranch = node;
+    else if (node.dimension === "cost_center" && node.is_leaf) {
+      if (currentPuc && currentPuc.account_id !== null && currentPuc.account_id !== undefined) {
+        const rawCode = String(node.code || "");
+        const separator = rawCode.indexOf("|");
+        const center = separator >= 0 ? rawCode.slice(separator + 1) : rawCode;
+        const accountCode = String(currentPuc.code || "");
+        leaves.push({
+          account_id: currentPuc.account_id,
+          account_code: accountCode,
+          account_name: cleanAccountName(currentPuc.name, accountCode),
+          branch: currentBranch ? String(currentBranch.code || "") : "",
+          branch_name: currentBranch ? String(currentBranch.name || currentBranch.code || "") : "",
+          center,
+          center_name: String(node.name || center || "Sin centro de costo"),
+          actual_cents: Number(node.amount_cents || 0),
+          // budget_cents del arbol es 0 aunque no haya presupuesto: la
+          // presencia real la marca budget_rows.
+          budget_cents: node.budget_rows > 0 ? Number(node.budget_cents || 0) : null,
+          budget_months: node.budget_rows > 0 && Array.isArray(node.budget_months_found) ? node.budget_months_found : []
+        });
+      }
+    }
+    for (const child of node.children || []) walk(child, currentPuc, currentBranch);
+  }
+  for (const root of nodes || []) walk(root, null, null);
+  return leaves;
+}
+
+// Sin configuracion guardada de conceptos no hay fallback que avisar: se usa la
+// propuesta del Excel en memoria (sin persistirla). Si la config guardada existe
+// pero es invalida, se cae a la propuesta con aviso para no romper el reporte.
+function resolveAccountingConcepts(vehiclePyg, warnings) {
+  const stored = vehiclePyg && Array.isArray(vehiclePyg.concepts) ? vehiclePyg.concepts : [];
+  if (!stored.length) return cloneProposal().concepts;
+  const result = validateAccountConfig({ source: "accounting", concepts: stored });
+  if (result.ok) return result.normalized.concepts;
+  warnings.push({
+    code: "VEHICLE_PYG_CONFIG_FALLBACK",
+    message: "La configuracion guardada de conceptos PYG es invalida; se muestra la propuesta del Excel. Guarde la configuracion para corregirla."
+  });
+  return cloneProposal().concepts;
+}
+
+// El GET del reporte PYG en Contabilidad siempre lee lo contabilizado en el
+// libro (LedgerEntry) para el mes calendario pedido, sin importar la fuente
+// guardada ni la preseleccion de fuente. No siembra catalogo ni escribe config:
+// la resolucion de conceptos parte del tenant config y, si falta, usa la
+// propuesta del Excel en memoria (sin persistirla).
+async function getReport(tenantId, query = {}) {
+  const period = assertPeriod(query.period);
+  return read(tenantId, async (db, tenant) => {
+    const tenantRow = await db.tenant.findUnique({ where: { id: tenant }, select: { config: true } });
+    const vehiclePyg = tenantRow?.config?.accounting?.vehicle_pyg || null;
+    return getAccountingReport(db, tenant, period, vehiclePyg);
+  });
+}
+
+async function getAccountingReport(db, tenantId, period, vehiclePyg) {
+  const { getInteractivePyg, parseOrganizationTree } = accountingSource();
+  const tenantRow = await db.tenant.findUnique({ where: { id: tenantId }, select: { config: true } });
+  const tree = parseOrganizationTree(tenantRow?.config);
+  const pygConfig = await db.transportPygConfig.findFirst({ where: { tenant_id: tenantId } });
+  const vehicles = await db.vehicle.findMany({
+    where: { active: true, deleted_at: null },
+    select: { id: true, plate: true, brand: true, line: true, authorized_driver_id: true },
+    orderBy: { plate: "asc" }
+  });
+  const interactive = await getInteractivePyg(tenantId, {
+    period,
+    mode: "month",
+    dimensions: "puc,branch,cost_center"
+  });
+  const fallbackWarnings = [];
+  const concepts = resolveAccountingConcepts(vehiclePyg, fallbackWarnings);
+  // getInteractivePyg ya entrega solo hojas de resultado (clases 4-7 mas
+  // cuentas income/expense); no se re-filtra por Account.type ni por plan.
+  const leaves = extractInteractiveLeaves(interactive.nodes);
+  const report = buildAccountingReport({
+    period,
+    concepts,
+    vehicles,
+    tree,
+    leaves,
+    interactive,
+    taxPercent: pygConfig ? Number(pygConfig.tax_percent) : 2.25
+  });
+  if (fallbackWarnings.length) report.warnings.unshift(...fallbackWarnings);
+  return report;
 }
 
 async function getBudgets(tenantId, query = {}) {
@@ -287,4 +412,4 @@ async function saveConfig(tenantId, user, input = {}) {
   });
 }
 
-module.exports = { listSourceConcepts, listConcepts, getReport, getBudgets, saveBudgets, getMapping, saveMapping, getConfig, saveConfig, ensureCatalog };
+module.exports = { listSourceConcepts, listConcepts, getReport, getOperationalReport, getBudgets, saveBudgets, getMapping, saveMapping, getConfig, saveConfig, ensureCatalog };
