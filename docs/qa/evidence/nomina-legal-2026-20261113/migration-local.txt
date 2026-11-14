@@ -1,0 +1,19 @@
+# Migraciones HR aplicadas en la base local (127.0.0.1:55432)
+# Fecha: 2026-11-13
+
+migration_name | applied
+20261030120000_hr_labor_rates_vigencia_2026 | t
+20261030130000_hr_ibc_caps_floors_2026 | t
+20261113120000_hr_nomina_legal_2026 | t
+(3 rows)
+
+== Estado de la semilla corregida
+code | incluye_prestaciones | excluido
+AUX_TRANSPORTE | false | true
+(1 row)
+
+== Parametros de topes por tenant
+code | tenants
+MAX_HE_DIARIO | 323
+MAX_HE_SEMANAL | 323
+(2 rows)

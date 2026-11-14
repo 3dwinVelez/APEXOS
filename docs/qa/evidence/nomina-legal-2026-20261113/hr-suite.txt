@@ -1,0 +1,13 @@
+# Suite HR - apps/api/test/hr-*.test.js
+# Fecha: 2026-11-13T22:10:47-05:00
+# Commit: 57b9d55814316f4efbc48e678c0ebf8449bf6ce9
+
+1..236
+# tests 236
+# suites 0
+# pass 236
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6093.0721
