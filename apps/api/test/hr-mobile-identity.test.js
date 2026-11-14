@@ -46,11 +46,12 @@ function enrollmentInput(key, overrides = {}) {
   };
 }
 
-function mobilePunch(key, { bytes = JPEG, type = "image/jpeg", dataUrl = true, signWith, signedType, deviceId = DEVICE, punchType = "entrada" } = {}) {
+function mobilePunch(key, { bytes = JPEG, type = "image/jpeg", dataUrl = true, signWith, signedType, deviceId = DEVICE, punchType = "entrada", selfie = true } = {}) {
   const punchedAt = "2026-11-04T13:02:00.000Z";
   const idempotencyKey = "b3c1f2a4-9e7d-4c6b-8a10-123456789abc";
   const base64 = bytes.toString("base64");
-  const message = identity.punchMessage({ userId: user.id, type: signedType || punchType, punchedAt, idempotencyKey, deviceId, photoSha256: sha(bytes) });
+  const photoSha256 = selfie ? sha(bytes) : identity.NO_PHOTO_SHA256;
+  const message = identity.punchMessage({ userId: user.id, type: signedType || punchType, punchedAt, idempotencyKey, deviceId, photoSha256 });
   return {
     user_name: "Tecnico",
     type: punchType,
@@ -59,8 +60,17 @@ function mobilePunch(key, { bytes = JPEG, type = "image/jpeg", dataUrl = true, s
     metadata: {
       source: identity.MOBILE_SOURCE,
       identity: { device_id: deviceId, signature: (signWith || key).sign(message) },
-      identity_photo: { name: "selfie.jpg", type, size: bytes.length, base64: dataUrl ? `data:${type};base64,${base64}` : base64 }
+      ...(selfie ? { identity_photo: { name: "selfie.jpg", type, size: bytes.length, base64: dataUrl ? `data:${type};base64,${base64}` : base64 } } : {})
     }
+  };
+}
+
+function webPunch({ punchType = "entrada", bytes = JPEG, type = "image/jpeg", selfie = true } = {}) {
+  return {
+    user_name: "Tecnico",
+    type: punchType,
+    metadata: { source: "web" },
+    ...(selfie ? { identity_photo: { name: "selfie.jpg", type, size: bytes.length, base64: `data:${type};base64,${bytes.toString("base64")}` } } : {})
   };
 }
 
@@ -140,9 +150,27 @@ test("acepta selfie PNG", () => {
   assert.equal(result.identity_photo.type, "image/png");
 });
 
-test("las marcaciones de la web siguen igual y quedan como no verificadas", () => {
-  const result = identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: { type: "entrada", metadata: { source: "web" } }, now: NOW });
-  assert.deepEqual(result, { identity_verification: { status: "not_verified", channel: "web" } });
+test("la web guarda la selfie pero no la da por verificada", () => {
+  const result = identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch(), now: NOW });
+  assert.equal(result.identity_verification.status, "photo_only");
+  assert.equal(result.identity_verification.channel, "web");
+  // El navegador no firma nada: la foto muestra quien marco, no lo prueba.
+  assert.equal(result.identity_verification.signature, undefined);
+  assert.equal(result.identity_photo.sha256, sha(JPEG));
+  assert.ok(result.identity_photo.base64_data.startsWith("data:image/jpeg;base64,"));
+});
+
+test("la web no puede marcar entrada ni salida sin selfie", () => {
+  for (const punchType of ["entrada", "salida"]) {
+    rejects(() => identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, selfie: false }), now: NOW }), "SELFIE_REQUERIDA");
+  }
+});
+
+test("el almuerzo de la web sigue marcandose sin foto", () => {
+  for (const punchType of ["inicio_almuerzo", "fin_almuerzo"]) {
+    const result = identity.verifyPunchIdentity({ employee: { metadata: {} }, user, input: webPunch({ punchType, selfie: false }), now: NOW });
+    assert.deepEqual(result, { identity_verification: { status: "not_verified", channel: "web" } });
+  }
 });
 
 test("la app sin telefono registrado no puede marcar", () => {
@@ -179,11 +207,47 @@ test("cambiar el tipo de marcacion despues de firmar la invalida", () => {
   rejects(() => identity.verifyPunchIdentity({ employee: enrolledEmployee(key), user, input: mobilePunch(key, { signedType: "salida" }), now: NOW }), "FIRMA_BIOMETRICA_INVALIDA");
 });
 
-test("sin selfie la app no puede marcar", () => {
+test("sin selfie la app no puede marcar entrada ni salida", () => {
   const key = deviceKey();
-  const input = mobilePunch(key);
-  delete input.metadata.identity_photo;
+  for (const punchType of ["entrada", "salida"]) {
+    const input = mobilePunch(key, { punchType });
+    delete input.metadata.identity_photo;
+    rejects(() => identity.verifyPunchIdentity({ employee: enrolledEmployee(key), user, input, now: NOW }), "SELFIE_REQUERIDA");
+  }
+});
+
+test("el almuerzo se marca sin selfie pero firmado", () => {
+  const key = deviceKey();
+  for (const punchType of ["inicio_almuerzo", "fin_almuerzo"]) {
+    const result = identity.verifyPunchIdentity({ employee: enrolledEmployee(key), user, input: mobilePunch(key, { punchType, selfie: false }), now: NOW });
+    assert.equal(result.identity_verification.status, "verified");
+    assert.equal(result.identity_photo, undefined);
+  }
+});
+
+test("quitarle la selfie a una entrada firmada con foto no la cuela como almuerzo", () => {
+  const key = deviceKey();
+  // Firmada como inicio_almuerzo sin foto, pero enviada como entrada: la
+  // firma cubre el tipo, asi que no pasa.
+  const input = mobilePunch(key, { punchType: "inicio_almuerzo", selfie: false });
+  input.type = "entrada";
   rejects(() => identity.verifyPunchIdentity({ employee: enrolledEmployee(key), user, input, now: NOW }), "SELFIE_REQUERIDA");
+});
+
+test("una app vieja todavia marca el almuerzo con foto, pero la foto no se guarda", () => {
+  // Quien no ha actualizado firmo con el hash de su selfie. Se le deja marcar
+  // (si no, se queda sin almorzar) pero el almuerzo deja de acumular caras.
+  const key = deviceKey();
+  const result = identity.verifyPunchIdentity({ employee: enrolledEmployee(key), user, input: mobilePunch(key, { punchType: "inicio_almuerzo" }), now: NOW });
+  assert.equal(result.identity_verification.status, "verified");
+  assert.equal(result.identity_photo, undefined);
+});
+
+test("en el almuerzo la firma sigue atada al telefono registrado", () => {
+  const key = deviceKey();
+  for (const selfie of [true, false]) {
+    rejects(() => identity.verifyPunchIdentity({ employee: enrolledEmployee(key), user, input: mobilePunch(key, { punchType: "inicio_almuerzo", selfie, signWith: deviceKey() }), now: NOW }), "FIRMA_BIOMETRICA_INVALIDA");
+  }
 });
 
 test("una selfie que no es imagen se rechaza", () => {

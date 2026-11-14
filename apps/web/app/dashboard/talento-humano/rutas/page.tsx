@@ -21,7 +21,7 @@ type MasterOption = { code: string; name: string; active?: boolean; sort_order?:
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; status?: string; latitude?: number | null; longitude?: number | null; age_seconds?: number | null; last_punch_type?: string; last_punch_time?: string; last_activity_type?: string; last_activity_time?: string };
 type MonitorEvidence = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean; items?: MonitorEvidence[] };
-type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence; identity_evidence?: MonitorEvidence; metadata?: { identity_verification?: { status?: string } } };
+type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence; identity_evidence?: MonitorEvidence; metadata?: { identity_verification?: { status?: string } } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
 type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[]; truncation?: ScheduleTruncationSignal };
@@ -88,6 +88,16 @@ type TimelineEvent = {
 
 function hasEvidenceFile(item?: MonitorEvidence | null): item is MonitorEvidence {
   return Boolean(item && (item.base64_data || item.file_url || item.has_base64_data));
+}
+
+// Lo que se lee bajo la marcacion en la trazabilidad. La llegada tarde se
+// sustenta igual que la extension, pero se nombra distinto: no son minutos
+// extra y leerlos como tales desajustaba la cuenta del recargo.
+function punchObservation(event: PunchPoint) {
+  const sustento = (fallback: string) => `${event.extra_reason || fallback}${event.extra_detail ? ` · ${event.extra_detail}` : ""}`;
+  if (event.late_minutes) return `${event.late_minutes} minuto(s) de retardo · ${sustento("sin motivo")}`;
+  if (event.extra_minutes) return `${event.extra_minutes} minuto(s) extra · ${sustento("extension")}`;
+  return "";
 }
 
 const punchSequence = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
@@ -897,7 +907,7 @@ export default function RoutesPlanningPage() {
   const selectedTimeline = useMemo(() => {
     if (!selectedRoute) return [];
     return [
-      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, type: event.type, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: [event.extra_evidence, event.identity_evidence].filter(hasEvidenceFile), identityVerified: event.metadata?.identity_verification?.status === "verified" })),
+      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, type: event.type, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: punchObservation(event), evidence: [event.extra_evidence, event.identity_evidence].filter(hasEvidenceFile), identityVerified: event.metadata?.identity_verification?.status === "verified" })),
       ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, type: event.type, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
