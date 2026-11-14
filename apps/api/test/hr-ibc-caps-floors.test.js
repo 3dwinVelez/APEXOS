@@ -83,7 +83,12 @@ async function previewContributions({ salaryBase, documents, periodType = "mes",
 function buildLiquidationFake({ salaryBase, periodDays }) {
   const days = Array.from({ length: periodDays }, (_, index) => ({
     employee_id: 1,
-    date: new Date(Date.UTC(2026, 8, index + 1))
+    date: new Date(Date.UTC(2026, 8, index + 1)),
+    ordinary_day_minutes: 480,
+    ordinary_night_minutes: 0,
+    overtime_day_minutes: 0,
+    overtime_night_minutes: 0,
+    inconsistent: false
   }));
   const deductionRows = [
     { code: "DED_SALUD", name: "Deduccion salud empleado", value: 4, unit: "percent", metadata: { category: "deduction", legal_group: "seguridad_social" } },
@@ -117,6 +122,8 @@ function buildLiquidationFake({ salaryBase, periodDays }) {
       }]
     },
     processedWorkday: { findMany: async () => days },
+    timePunch: { findMany: async () => [] },
+    workSchedule: { findMany: async () => [] },
     timeRoute: { findMany: async () => [] },
     $queryRaw: queryRaw,
     $executeRaw: async () => 1
@@ -203,7 +210,8 @@ test("aportes rechaza el salario como fallback cuando no hay nomina liquidada", 
 test("nomina deduce salud y pension sobre el piso de IBC", async () => {
   const row = await previewLiquidation({ salaryBase: 1400000, periodDays: 30 });
   assert.equal(row.source_summary.ibc, SMMLV);
-  assert.equal(row.source_summary.ibc_sin_topes, 1400000);
+  const auxilio = row.lines.find((line) => line.code === "AUX_TRANSPORTE");
+  assert.equal(row.source_summary.ibc_sin_topes, row.gross - auxilio.amount, "la base sin tope excluye el auxilio y conserva el recargo dominical");
   assert.equal(row.source_summary.ibc_reglas.aplicado, true);
   const salud = row.lines.find((line) => line.code === "DED_SALUD");
   const pension = row.lines.find((line) => line.code === "DED_PENSION");
@@ -215,7 +223,7 @@ test("nomina deduce sobre el tope de IBC y calcula la solidaridad con la misma b
   const raw = SMMLV * 30;
   const row = await previewLiquidation({ salaryBase: raw, periodDays: 30 });
   assert.equal(row.source_summary.ibc, MONTHLY_TOP);
-  assert.equal(row.source_summary.ibc_sin_topes, raw);
+  assert.equal(row.source_summary.ibc_sin_topes, row.gross, "sin auxilio por superar 2 SMMLV la base sin tope es el devengo total");
   const salud = row.lines.find((line) => line.code === "DED_SALUD");
   assert.equal(Math.abs(salud.amount), MONTHLY_TOP * 0.04);
   const solidaridad = row.lines.find((line) => line.code === "DED_FONDO_SOLIDARIDAD_PENSIONAL");

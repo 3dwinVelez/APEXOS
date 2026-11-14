@@ -82,6 +82,8 @@ function buildLaborFake({ salaryBase = 2000000, days = [], overtimeMinutesPerDay
       }]
     },
     processedWorkday: { findMany: async () => workdays },
+    timePunch: { findMany: async () => [] },
+    workSchedule: { findMany: async () => [] },
     timeRoute: { findMany: async () => [] },
     $queryRaw: queryRaw,
     $executeRaw: async () => 1,

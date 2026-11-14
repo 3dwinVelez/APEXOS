@@ -50,7 +50,12 @@ function buildClosureFake({ salaryBase = 2000000 } = {}) {
   const periodKey = "mes:2026-09-01:2026-09-30";
   const days = Array.from({ length: 30 }, (_, index) => ({
     employee_id: 1,
-    date: new Date(Date.UTC(2026, 8, index + 1))
+    date: new Date(Date.UTC(2026, 8, index + 1)),
+    ordinary_day_minutes: 480,
+    ordinary_night_minutes: 0,
+    overtime_day_minutes: 0,
+    overtime_night_minutes: 0,
+    inconsistent: false
   }));
   const deductionRows = [
     { code: "DED_SALUD", name: "Deduccion salud empleado", value: 4, unit: "percent", metadata: { category: "deduction", legal_group: "seguridad_social" } },
@@ -139,6 +144,8 @@ function buildClosureFake({ salaryBase = 2000000 } = {}) {
       }]
     },
     processedWorkday: { findMany: async () => days },
+    timePunch: { findMany: async () => [] },
+    workSchedule: { findMany: async () => [] },
     timeRoute: { findMany: async () => [] },
     $queryRaw: queryRaw,
     $executeRaw: async (strings, ...values) => {

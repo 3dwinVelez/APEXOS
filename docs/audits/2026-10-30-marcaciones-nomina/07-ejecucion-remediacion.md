@@ -6,7 +6,7 @@
 | Rama de trabajo | `desarrollo` |
 | Commit base | `e25e177f` (primera tanda) / `13371f7d` (segunda tanda) |
 | Paquete | R-01 a R-10A |
-| Estado | Implementado y probado en `desarrollo`; migración aplicada **solo en QA**, sin promoción y sin migración en producción |
+| Estado | Implementado y probado en `desarrollo`; **sin promoción, sin migración aplicada en nube** |
 | Alcance | Cálculo, datos de vigencia y reporte operativo de extras; no se modificaron endpoints de escritura salvo el alias legacy |
 
 ## 1. Brecha entre producción (`main`) y la rama auditada
@@ -182,7 +182,7 @@ Advertencia: el cambio de divisor en H1 reduce el valor de extras y recargos de 
 ## 5. Pendiente y bloqueos
 
 - [ ] Reproducción con datos QA (Fase 0 no se ejecutó; la evidencia es unitaria e independiente, no E2E).
-- [x] Aplicar la migración en QA y verificar tenants con configuración propia: `20261113120000` aplicada en QA el 2026-11-13 con autorización del dueño; auxilio corregido y `MAX_HE_*` sembrado en 24 tenants, segunda ejecución con 0 inserciones (ver `docs/qa/evidence/nomina-legal-2026-20261113/`).
+- [ ] Aplicar la migración en la base local/QA y verificar tenants con configuración propia.
 - [x] R-04 IBC con topes/pisos en ambas ramas.
 - [x] R-05 cierre con provisiones.
 - [x] R-06 libranza idempotente.
@@ -192,7 +192,7 @@ Advertencia: el cambio de divisor en H1 reduce el valor de extras y recargos de 
 - [x] R-10 conciliación reporte/nómina y R-10A topes de extras (modo alerta).
 - [ ] Firma jurídica/contable de la matriz normativa, incluida la decisión bloqueo vs alerta del tope de extras.
 - [ ] Certificación E2E y manifiestos de promoción.
-- [ ] Aplicar `20261113120000_hr_nomina_legal_2026` en **producción** y confirmar la semilla del auxilio en tenants existentes (QA ya aplicada; producción pendiente y debe coordinarse con el despliegue del código nuevo).
+- [ ] Aplicar `20261113120000_hr_nomina_legal_2026` en nube y confirmar la semilla del auxilio en tenants existentes.
 
 La suite completa de API (`node --test apps/api/test/*.test.js`) se intentó como control adicional, pero se detuvo tras varios minutos sin salida: algún archivo del conjunto queda colgado en este entorno. El control de regresión válido es la suite HR (210/210), que cubre todos los archivos `hr-*`.
 
@@ -205,4 +205,4 @@ La intervención **no se puede portar como parche puntual a `main`**:
 - La segunda tanda vuelve a quedar sujeta a `desarrollo → develop → main`, con manifiesto de alcance exacto, `qa:preqa:evidence`, `qa:approval:evidence` y QA funcional desplegado. No se puede declarar producción corregida hasta esa certificación.
 - `main...desarrollo` sigue divergente; un port directo del commit de la segunda tanda no es una promoción válida aunque las rutas coincidan.
 
-Estado actual: R-01 a R-10A implementados y probados en `desarrollo`. La migración `20261113120000_hr_nomina_legal_2026` está aplicada en **QA** (2026-11-13) y **no** en producción; antes de aplicarla allí debe desplegarse el código nuevo, porque la semilla corregida cambia la base de prestaciones que usa el motor actual. El veredicto de auditoría (NO APTO) se mantiene hasta la re-auditoría, la firma jurídica/contable y la certificación E2E. La suite HTTP completa no es ejecutable en este entorno (los tests de integración esperan Postgres en `localhost:55432` y el runner queda colgado); el control válido es la suite HR y los tests adyacentes.
+Estado actual: R-01 a R-10A implementados y probados en `desarrollo`. La migración `20261113120000_hr_nomina_legal_2026` **no está aplicada en nube**. El veredicto de auditoría (NO APTO) se mantiene hasta la re-auditoría, la firma jurídica/contable y la certificación E2E. La suite HTTP completa no es ejecutable en este entorno (los tests de integración esperan Postgres en `localhost:55432` y el runner queda colgado); el control válido es la suite HR y los tests adyacentes.
