@@ -1,0 +1,94 @@
+{
+  "change_id": "nomina-legal-2026-20261113",
+  "commit": "493940103ca5728fab2d975a99bb6ea0c169e2cf",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-13",
+    "blocking_reasons": [],
+    "authorized_actions": {
+      "push_desarrollo": true,
+      "merge_develop": true,
+      "deploy_qa": true,
+      "promote_main": true,
+      "create_auxiliary_branch": false,
+      "run_remote_migrations": false
+    }
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/certification-local.json",
+        "../../audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../../audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md",
+        "../evidence/nomina-legal-2026-20261113/baseline-failures.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../../../scripts/certifications/hr-nomina-legal-2026-local.js",
+        "../../audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/hr-suite.txt",
+        "../evidence/nomina-legal-2026-20261113/certification-local.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/nomina-legal-2026-20261113/api-suite.txt",
+        "../evidence/nomina-legal-2026-20261113/typecheck-web.txt",
+        "../evidence/nomina-legal-2026-20261113/baseline-failures.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "completed_at": "2026-11-14T03:04:53.335Z",
+    "head": "493940103ca5728fab2d975a99bb6ea0c169e2cf",
+    "checks_total": 11,
+    "checks_passed": 11,
+    "script": "../../../scripts/certifications/hr-nomina-legal-2026-local.js",
+    "evidence": [
+      "../evidence/nomina-legal-2026-20261113/certification-local.json",
+      "../../audits/2026-10-30-marcaciones-nomina/08-reauditoria-fase-1.md",
+      "../evidence/nomina-legal-2026-20261113/hr-suite.txt"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "completed_at": "2026-11-14T03:04:53.335Z",
+    "api_tests": 1111,
+    "api_failures": 4,
+    "hr_suite_tests": 236,
+    "hr_suite_failures": 0,
+    "script": "../../../scripts/certifications/hr-nomina-legal-2026-local.js",
+    "evidence": [
+      "../evidence/nomina-legal-2026-20261113/api-suite.txt",
+      "../evidence/nomina-legal-2026-20261113/hr-suite.txt",
+      "../evidence/nomina-legal-2026-20261113/baseline-failures.txt",
+      "../evidence/nomina-legal-2026-20261113/typecheck-web.txt"
+    ]
+  },
+  "notes": {
+    "baseline_failures": "Los 4 fallos de la suite API (1105 pass de 1111, 2 skipped) son preexistentes y se reproducen identicos en beff5132; dependen de REDIS_URL y del .env ausente en el arnes aislado. No hay regresiones nuevas.",
+    "qa_migration": "La migracion 20261113120000 ya esta aplicada en QA desde el 2026-11-13 con autorizacion del dueno; produccion sigue pendiente y requiere autorizacion independiente.",
+    "next_step": "Al promover, desplegar el candidato en QA y ejecutar la certificacion funcional end-to-end antes de escribir el manifiesto de aprobacion a main."
+  }
+}
