@@ -30,10 +30,29 @@ const punchSchema = {
       route_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       kilometraje_dia: { anyOf: [{ type: "number" }, { type: "string" }] },
       day_mileage_km: { anyOf: [{ type: "number" }, { type: "string" }] },
+      kilometraje_inicial: { anyOf: [{ type: "number" }, { type: "string" }] },
+      start_mileage_km: { anyOf: [{ type: "number" }, { type: "string" }] },
       idempotency_key: { type: "string", minLength: 8, maxLength: 120 },
       extra_reason: { type: "string" },
       extra_detail: { type: "string" },
       extra_evidence: {
+        anyOf: [
+          { type: "null" },
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              base64: { type: "string" },
+              name: { type: "string" },
+              type: { type: "string" },
+              size: { type: "integer" }
+            }
+          }
+        ]
+      },
+      // Selfie de validacion. Desde la app llega firmada dentro de metadata;
+      // desde la web no hay chip que firme y viaja aqui, sin firma.
+      identity_photo: {
         anyOf: [
           { type: "null" },
           { type: "string" },

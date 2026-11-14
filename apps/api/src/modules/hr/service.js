@@ -2767,29 +2767,52 @@ async function createPunch(tenantId, input, user, options = {}) {
     const dayMileage = type === "salida" && routeVehicle
       ? hrPolicy.validateMileage(input.kilometraje_dia ?? input.day_mileage_km ?? input.metadata?.kilometraje_dia, { precision: mileagePrecision })
       : null;
+    // El kilometraje inicial se valida, pero no se exige: la app movil todavia
+    // no lo pide y un ajuste manual del supervisor tampoco lo trae. Obligarlo
+    // aqui dejaria a un tecnico sin poder abrir su jornada. Quien si lo exige
+    // es la pantalla de marcacion web, que es donde se captura.
+    const rawStartMileage = input.kilometraje_inicial ?? input.start_mileage_km ?? input.metadata?.kilometraje_inicial;
+    const startMileage = type === "entrada" && routeVehicle && rawStartMileage !== "" && rawStartMileage != null
+      ? hrPolicy.validateMileage(rawStartMileage, { precision: mileagePrecision })
+      : null;
     const mileageThreshold = Number(input.metadata?.kilometraje_umbral_inusual ?? input.metadata?.unusual_mileage_threshold_km ?? 450);
     const mileageUnusual = dayMileage != null && Number.isFinite(mileageThreshold) && dayMileage > mileageThreshold;
+    // Minuto del dia en que se marco, en hora de operacion: el servidor puede
+    // estar en UTC y la jornada se planea en Bogota.
+    const punchMinuteOfDay = () => {
+      const colParts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(punchedAt);
+      return Number(colParts.find((p) => p.type === "hour")?.value || punchedAt.getHours()) * 60
+        + Number(colParts.find((p) => p.type === "minute")?.value || punchedAt.getMinutes());
+    };
+    const scheduleMinuteOfDay = (value) => Number(String(value).slice(0, 2)) * 60 + Number(String(value).slice(3, 5));
+    const tolerance = Number(route?.tolerance_minutes || 0);
     const extraMinutes = type === "salida" && route?.end_time
-      ? (() => {
-          const colParts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(punchedAt);
-          const currentMinutes = Number(colParts.find((p) => p.type === "hour")?.value || punchedAt.getHours()) * 60
-            + Number(colParts.find((p) => p.type === "minute")?.value || punchedAt.getMinutes());
-          return Math.max(0, currentMinutes - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0));
-      })()
+      ? Math.max(0, punchMinuteOfDay() - scheduleMinuteOfDay(route.end_time) - tolerance)
       : 0;
+    // Llegar tarde no es hora extra: se cuenta aparte para que no entre en los
+    // reportes de recargo, pero se sustenta igual que la extension.
+    const lateMinutes = type === "entrada" && route?.start_time
+      ? Math.max(0, punchMinuteOfDay() - scheduleMinuteOfDay(route.start_time) - tolerance)
+      : 0;
+    const justifiedMinutes = extraMinutes || lateMinutes;
+    const justificationSlug = lateMinutes > 0 ? "llegada-tarde" : "extension";
     const extraEvidence = normalizeExtraEvidence(input.extra_evidence);
-    if (extraMinutes > 0 && (!String(input.extra_reason || "").trim() || !String(input.extra_detail || "").trim())) {
-      const err = new Error("Justifica por que estas marcando fuera de tu horario habitual.");
+    if (justifiedMinutes > 0 && (!String(input.extra_reason || "").trim() || !String(input.extra_detail || "").trim())) {
+      const err = new Error(lateMinutes > 0
+        ? "Justifica por que estas llegando despues de tu hora de entrada."
+        : "Justifica por que estas marcando fuera de tu horario habitual.");
       err.statusCode = 422;
-      err.code = "JUSTIFICACION_HORA_EXTRA_REQUERIDA";
-      err.details = { extra_minutes: extraMinutes };
+      err.code = lateMinutes > 0 ? "JUSTIFICACION_LLEGADA_TARDE_REQUERIDA" : "JUSTIFICACION_HORA_EXTRA_REQUERIDA";
+      err.details = { extra_minutes: extraMinutes, late_minutes: lateMinutes };
       throw err;
     }
-    if (extraMinutes > 0 && !extraEvidence) {
-      const err = new Error("Adjunta evidencia fotografica para sustentar la extension de horario.");
+    if (justifiedMinutes > 0 && !extraEvidence) {
+      const err = new Error(lateMinutes > 0
+        ? "Adjunta evidencia fotografica para sustentar la llegada tarde."
+        : "Adjunta evidencia fotografica para sustentar la extension de horario.");
       err.statusCode = 422;
-      err.code = "EVIDENCIA_HORA_EXTRA_REQUERIDA";
-      err.details = { extra_minutes: extraMinutes };
+      err.code = lateMinutes > 0 ? "EVIDENCIA_LLEGADA_TARDE_REQUERIDA" : "EVIDENCIA_HORA_EXTRA_REQUERIDA";
+      err.details = { extra_minutes: extraMinutes, late_minutes: lateMinutes };
       throw err;
     }
     if (extraEvidence) {
@@ -2818,16 +2841,16 @@ async function createPunch(tenantId, input, user, options = {}) {
         extra_reason: input.extra_reason,
         extra_detail: input.extra_detail,
         extra_evidence: extraEvidence ? {
-          name: normalizeFileName(extraEvidence.name || `extension-${employee.id}.jpg`),
+          name: normalizeFileName(extraEvidence.name || `${justificationSlug}-${employee.id}.jpg`),
           type: extraEvidence.type || "image/jpeg",
           size: extraEvidence.size || null,
           base64_data: extraEvidence.base64,
           storage_path: secureStoragePath({
             tenantId,
             module: "hr",
-            entity: "overtime-extensions",
+            entity: lateMinutes > 0 ? "late-arrivals" : "overtime-extensions",
             entityId: employee.id,
-            fileName: extraEvidence.name || `extension-${employee.id}.jpg`
+            fileName: extraEvidence.name || `${justificationSlug}-${employee.id}.jpg`
           })
         } : {},
         metadata: {
@@ -2837,6 +2860,17 @@ async function createPunch(tenantId, input, user, options = {}) {
           employee_name: employeeDisplayName(employee) || resolvedUserName,
           user_email: employee.user?.email || user?.email || "",
           identity_aliases: identityAliases,
+          // Fuera de extra_minutes a proposito: la llegada tarde no se paga
+          // como recargo y sumarla ahi inflaria la nomina.
+          ...(lateMinutes > 0 ? { late_minutes: lateMinutes } : {}),
+          ...(startMileage != null ? {
+            kilometraje_inicial: startMileage,
+            start_mileage: {
+              value: startMileage,
+              unit: "km",
+              vehicle_plate: routeVehicle
+            }
+          } : {}),
           ...(dayMileage != null ? {
             kilometraje_dia: dayMileage,
             mileage: {
@@ -3451,6 +3485,7 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: punch.vehicle_plate,
           route_id: punch.route_id,
           extra_minutes: punch.extra_minutes,
+          late_minutes: Number(punch.metadata?.late_minutes || 0),
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
           extra_evidence: monitorPunchEvidence(punch, true),
@@ -3493,6 +3528,7 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: punch.vehicle_plate,
           route_id: punch.route_id,
           extra_minutes: punch.extra_minutes,
+          late_minutes: Number(punch.metadata?.late_minutes || 0),
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
           extra_evidence: monitorPunchEvidence(punch, true),

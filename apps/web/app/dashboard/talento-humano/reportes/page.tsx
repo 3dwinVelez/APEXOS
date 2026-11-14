@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
-type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; base64?: string; file_url?: string }; metadata?: PunchIdentityMetadata };
+type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; base64?: string; file_url?: string }; metadata?: PunchIdentityMetadata };
 // Selfie y verificacion de la marcacion de la app (hr/mobile-identity.js). La
 // API anterior al despliegue guardaba la selfie en `base64`; la actual, en
 // `base64_data`. Se leen ambas.
@@ -42,6 +42,10 @@ type ReportRow = {
   liquidatedOvertimeMinutes: number | null;
   overtimeReason: string;
   overtimeDetail: string;
+  /// Minutos de retardo. Van aparte de los extra: llegar tarde no se paga.
+  latenessMinutes: number;
+  /// Que se esta justificando, para titular el recuadro con la verdad.
+  justificationKind: "tarde" | "extension" | "";
   punchAlerts: PunchAlert[];
   activities: WorkActivity[];
   events: Array<{ kind: string; title: string; at: string; userName: string; gps?: string; accuracy?: number; detail?: string; alert?: PunctualityAlert | null; evidenceCount?: number; evidence?: HrTimelinePhoto[]; selfie?: string; identityVerified?: boolean }>;
@@ -495,6 +499,10 @@ export default function HrReportsPage() {
       const lunchStart = sorted.find((item) => item.type === "inicio_almuerzo");
       const lunchEnd = sorted.find((item) => item.type === "fin_almuerzo");
       const exit = sorted.find((item) => item.type === "salida");
+      // La marcacion que trae el sustento. Se busca por el motivo y no por los
+      // minutos: la llegada tarde se justifica igual pero no suma hora extra,
+      // asi que atarlo a extra_minutes escondia justo esas justificaciones.
+      const justified = sorted.find((item) => item.extra_reason || item.extra_detail);
       const gross = entry && exit ? Math.max(0, new Date(exit.punched_at).getTime() - new Date(entry.punched_at).getTime()) / 60000 : 0;
       const lunch = lunchStart && lunchEnd ? Math.max(0, new Date(lunchEnd.punched_at).getTime() - new Date(lunchStart.punched_at).getTime()) / 60000 : 0;
       const userAliases = new Set([
@@ -520,7 +528,7 @@ export default function HrReportsPage() {
         return activityAliases.some((alias) => userAliases.has(alias)) || Boolean(activity.route_id && String(activity.route_id) === String(sorted[0]?.route_id));
       });
       const events = [
-        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), evidence: punchTimelineEvidence(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
+        ...sorted.map((punch) => ({ kind: "Marcacion", title: punch.type, at: punch.punched_at, userName: punch.user_name || employeeName(employee, userName), gps: gps(punch), accuracy: punch.accuracy_meters, detail: punch.late_minutes ? `${punch.late_minutes} min de retardo` : punch.extra_minutes ? `${punch.extra_minutes} min extra` : "", alert: punctualityAlert({ type: punch.type, time: punch.time, punched_at: punch.punched_at, startTime: route?.start_time, endTime: route?.end_time, toleranceMinutes: route?.tolerance_minutes }), evidenceCount: punchEvidenceCount(punch), evidence: punchTimelineEvidence(punch), selfie: punchSelfie(punch), identityVerified: punch.metadata?.identity_verification?.status === "verified" })),
         ...routeActivities.map((activity) => ({ kind: "Actividad", title: activity.activity_type_name || "Actividad operativa", at: activity.occurred_at, userName: activity.user_name || employeeName(employee, userName), gps: gps(activity), accuracy: activity.accuracy_meters, detail: activity.observation || "", alert: null, evidenceCount: activity.evidence?.length || 0, evidence: (activity.evidence || []).map(photo => ({ ...photo, source: "activity" as const })) }))
       ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
       const punchAlerts = reportPunchAlerts(entry, exit, route);
@@ -542,8 +550,10 @@ export default function HrReportsPage() {
         liquidatedOvertimeMinutes: employee?.id != null
           ? liquidatedByEmployeeDay.get(`${employee.id}|${dateKey(sorted[0]?.date)}`) ?? null
           : null,
-        overtimeReason: sorted.find((punch) => punch.extra_reason)?.extra_reason || "",
-        overtimeDetail: sorted.find((punch) => punch.extra_detail)?.extra_detail || "",
+        overtimeReason: justified?.extra_reason || "",
+        overtimeDetail: justified?.extra_detail || "",
+        latenessMinutes: sorted.reduce((sum, punch) => sum + Number(punch.late_minutes || 0), 0),
+        justificationKind: !justified ? "" : justified.type === "entrada" ? "tarde" : "extension",
         punchAlerts,
         activities: routeActivities,
         events
@@ -1002,7 +1012,17 @@ export default function HrReportsPage() {
                 ) : null}
               </section>
               <section className="flex min-h-0 flex-col p-4 lg:overflow-hidden">
-              {selected.overtimeMinutes ? <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Justificacion de extension</p><p className="mt-1">Motivo: {selected.overtimeReason || "--"}</p><p className="mt-1">{selected.overtimeDetail || "Sin detalle registrado."}</p></div> : null}
+              {selected.justificationKind ? (
+                <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                  <p className="font-semibold">
+                    {selected.justificationKind === "tarde" ? "Justificacion de llegada tarde" : "Justificacion de extension"}
+                    {selected.justificationKind === "tarde" && selected.latenessMinutes ? ` · ${selected.latenessMinutes} min de retardo` : ""}
+                    {selected.justificationKind === "extension" && selected.overtimeMinutes ? ` · ${selected.overtimeMinutes} min extra` : ""}
+                  </p>
+                  <p className="mt-1">Motivo: {selected.overtimeReason || "--"}</p>
+                  <p className="mt-1">{selected.overtimeDetail || "Sin detalle registrado."}</p>
+                </div>
+              ) : null}
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">

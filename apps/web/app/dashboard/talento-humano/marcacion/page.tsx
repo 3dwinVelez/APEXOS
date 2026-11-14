@@ -42,7 +42,7 @@ import { createPortal } from "react-dom";
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type AttendancePunch = Attendance["punches"][number];
-type TimeRoute = { id: number | string; date?: string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
+type TimeRoute = { id: number | string; date?: string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; tolerance_minutes?: number | null; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
@@ -78,6 +78,24 @@ const overtimeReasons = [
   ["clima_seguridad", "Clima, seguridad o condicion externa"]
 ];
 
+// Motivos de llegada tarde. Son distintos a los de extension: una entrada
+// tardia no se explica por "cierre de servicio critico", y mezclarlos dejaba
+// al empleado escogiendo el motivo menos malo en vez del real.
+const latenessReasons = [
+  ["congestion_vial", "Congestion vial o cierre de via"],
+  ["transporte_publico", "Falla del transporte publico"],
+  ["falla_vehiculo", "Falla mecanica del vehiculo"],
+  ["cita_medica", "Cita medica o incapacidad"],
+  ["calamidad_domestica", "Calamidad domestica"],
+  ["clima_seguridad", "Clima, seguridad o condicion externa"],
+  ["autorizacion_supervisor", "Ingreso tardio autorizado por supervisor"],
+  ["otro", "Otro motivo (detallar en el sustento)"]
+];
+
+// Marcaciones que exigen selfie. El almuerzo no la pide: es un corte interno
+// de la jornada, no una validacion de quien entro o quien salio.
+const selfieRequiredPunches = new Set(["entrada", "salida"]);
+
 const punchOrder = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchLabels: Record<string, { title: string; desc: string; color: string }> = {
   entrada: { title: "Inicio jornada", desc: "Registra tu entrada al trabajo", color: "bg-blue-600" },
@@ -88,7 +106,9 @@ const punchLabels: Record<string, { title: string; desc: string; color: string }
 const pendingSyncKey = "apexos_hr_mobile_pending_sync";
 const hrSnapshotKey = "apexos_hr_mobile_snapshot";
 const pendingSyncLimit = 50;
-const evidencePayloadKeys = ["photo", "extra_evidence"] as const;
+// Claves de primer nivel del payload que llevan foto. Salen del localStorage a
+// IndexedDB mientras la marcacion espera en la cola: en base64 llenan la cuota.
+const evidencePayloadKeys = ["photo", "extra_evidence", "identity_photo"] as const;
 let pendingSyncInFlight = false;
 
 const messageToneStyles: Record<MessageTone, { className: string; role: "alert" | "status" }> = {
@@ -397,7 +417,9 @@ export default function MobilePunchPage() {
   const [extraReason, setExtraReason] = useState("");
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
+  const [identitySelfie, setIdentitySelfie] = useState<CapturedFile | null>(null);
   const [dayMileage, setDayMileage] = useState("");
+  const [startMileage, setStartMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsUpdatedAt, setGpsUpdatedAt] = useState(0);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -577,12 +599,38 @@ export default function MobilePunchPage() {
   const sessionActive = Boolean(session?.active || (doneTypes.has("entrada") && !doneTypes.has("salida")));
   const sessionClosed = doneTypes.has("salida");
   const vehiclePlate = route?.vehicle_plate || "";
-  const isClosingLate = (() => {
-    if (nextType !== "salida" || !route?.end_time) return false;
-    const [hour, minute] = route.end_time.split(":").map(Number);
+  // La tolerancia tiene que ser la misma que aplica el servidor al calcular los
+  // minutos extra. Cuando la pantalla no la restaba, entre la hora de cierre y
+  // el fin de la tolerancia el formulario se exigia aqui y el servidor no lo
+  // pedia: el empleado llenaba motivo y foto para nada.
+  const toleranceMinutes = Math.max(0, Number(route?.tolerance_minutes ?? 15));
+  const minutesNow = (() => {
     const now = new Date();
-    return now.getHours() * 60 + now.getMinutes() > hour * 60 + minute;
+    return now.getHours() * 60 + now.getMinutes();
   })();
+  const scheduleMinutes = (value?: string | null) => {
+    const match = String(value || "").match(/^(\d{1,2}):(\d{2})/);
+    return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+  };
+  const isArrivingLate = (() => {
+    if (nextType !== "entrada") return false;
+    const expected = scheduleMinutes(route?.start_time);
+    return expected != null && minutesNow > expected + toleranceMinutes;
+  })();
+  const isClosingLate = (() => {
+    if (nextType !== "salida") return false;
+    const expected = scheduleMinutes(route?.end_time);
+    return expected != null && minutesNow > expected + toleranceMinutes;
+  })();
+  // Lo que hay que justificar es lo que cae fuera de la tolerancia, que es el
+  // mismo numero que el servidor guarda en la marcacion.
+  const justifiedMinutes = (() => {
+    const expected = scheduleMinutes(isArrivingLate ? route?.start_time : route?.end_time);
+    if (expected == null) return 0;
+    return Math.max(0, minutesNow - expected - toleranceMinutes);
+  })();
+  const needsJustification = isArrivingLate || isClosingLate;
+  const needsSelfie = Boolean(nextType && selfieRequiredPunches.has(nextType));
   const pendingQueued = pendingSync.filter((item) => !isBlockedItem(item));
   const pendingBlocked = pendingSync.filter(isBlockedItem);
   const pendingWeightKb = Math.max(1, Math.round(offlineQueueWeight(pendingQueued) / 1024));
@@ -704,9 +752,24 @@ export default function MobilePunchPage() {
         notify(decision.userMessage, "error");
         return;
       }
+      if (selfieRequiredPunches.has(type) && !identitySelfie) {
+        notify("Toma la selfie de validacion antes de marcar.", "error");
+        return;
+      }
+      if (type === "entrada" && isArrivingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
+        notify("Llegada fuera de tolerancia: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.", "error");
+        return;
+      }
       if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
         notify("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.", "error");
         return;
+      }
+      if (type === "entrada" && vehiclePlate) {
+        const normalizedStart = startMileage.trim().replace(",", ".");
+        if (!/^\d+(\.\d{1,1})?$/.test(normalizedStart)) {
+          notify("Registra el kilometraje inicial con maximo un decimal antes de abrir la jornada.", "error");
+          return;
+        }
       }
       if (type === "salida" && vehiclePlate) {
         const normalizedMileage = dayMileage.trim().replace(",", ".");
@@ -746,6 +809,18 @@ export default function MobilePunchPage() {
           ...routeSyncMetadata(route)
         }
       };
+      // Sin previewUrl: es un blob: del navegador, no sobrevive a la cola ni
+      // significa nada en el servidor.
+      if (identitySelfie?.base64) {
+        payload.identity_photo = { base64: identitySelfie.base64, name: identitySelfie.name, type: identitySelfie.type, size: identitySelfie.size };
+      }
+      if (type === "entrada") {
+        const arrivalDetail = extraDetail.trim();
+        if (extraReason) payload.extra_reason = extraReason;
+        if (arrivalDetail) payload.extra_detail = arrivalDetail;
+        if (extraEvidence?.base64) payload.extra_evidence = extraEvidence;
+        if (vehiclePlate) payload.kilometraje_inicial = startMileage.trim().replace(",", ".");
+      }
       if (type === "salida") {
         const closingDetail = extraDetail.trim();
         if (extraReason) payload.extra_reason = extraReason;
@@ -756,6 +831,8 @@ export default function MobilePunchPage() {
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
+      setIdentitySelfie(null);
+      if (type === "entrada") setStartMileage("");
       if (type === "salida") setDayMileage("");
       const queued = await enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       setPendingSync(readPendingSync());
@@ -1045,21 +1122,48 @@ export default function MobilePunchPage() {
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Marcando en horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario seleccionado para este usuario/equipo"}
             </div>
-            {nextType === "salida" && isClosingLate ? (
+            {needsSelfie ? (
+              <div className="mt-3">
+                <PhotoCapture
+                  facing="user"
+                  label={nextType === "entrada" ? "Selfie de validacion de entrada" : "Selfie de validacion de cierre"}
+                  onChange={setIdentitySelfie}
+                  required
+                  value={identitySelfie}
+                />
+                <p className="mt-2 text-xs text-neutral-500">Debe verse tu rostro. El almuerzo y el retorno no piden foto.</p>
+              </div>
+            ) : null}
+            {needsJustification ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                 <div>
-                  <p className="text-sm font-semibold text-amber-950">Extension de horario detectada</p>
-                  <p className="mt-1 text-xs text-amber-900">Para cerrar jornada fuera del horario planeado debes seleccionar motivo, sustentar y adjuntar foto.</p>
+                  <p className="text-sm font-semibold text-amber-950">{isArrivingLate ? "Llegada tarde detectada" : "Extension de horario detectada"}</p>
+                  <p className="mt-1 text-xs text-amber-900">
+                    {isArrivingLate
+                      ? `Vas ${justifiedMinutes} min por fuera de la tolerancia de ${toleranceMinutes} min. Para registrar la entrada debes seleccionar motivo, sustentar y adjuntar foto.`
+                      : `Vas ${justifiedMinutes} min por fuera de la tolerancia de ${toleranceMinutes} min. Para cerrar jornada fuera del horario planeado debes seleccionar motivo, sustentar y adjuntar foto.`}
+                  </p>
                 </div>
                 <select className="h-12 w-full rounded-md border border-amber-200 bg-white px-3 text-base" value={extraReason} onChange={(event) => setExtraReason(event.target.value)}>
-                  <option value="">Motivo de extension *</option>
-                  {overtimeReasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  <option value="">{isArrivingLate ? "Motivo de la llegada tarde *" : "Motivo de extension *"}</option>
+                  {(isArrivingLate ? latenessReasons : overtimeReasons).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
-                <textarea className="min-h-24 w-full rounded-md border border-amber-200 bg-white px-3 py-3 text-base" placeholder="Sustento obligatorio: quien autorizo, punto, cliente o novedad" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
-                <PhotoCapture label="Foto obligatoria de soporte de extension" required value={extraEvidence} onChange={setExtraEvidence} />
+                <textarea className="min-h-24 w-full rounded-md border border-amber-200 bg-white px-3 py-3 text-base" placeholder={isArrivingLate ? "Sustento obligatorio: que paso, a quien avisaste y desde donde vienes" : "Sustento obligatorio: quien autorizo, punto, cliente o novedad"} value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
+                <PhotoCapture label={isArrivingLate ? "Foto obligatoria de soporte de la llegada tarde" : "Foto obligatoria de soporte de extension"} required value={extraEvidence} onChange={setExtraEvidence} />
               </div>
             ) : nextType === "salida" ? (
               <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion opcional de cierre" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
+            ) : null}
+            {nextType === "entrada" && vehiclePlate ? (
+              <label className="mt-3 block rounded-md border border-line bg-white p-3">
+                <span className="text-sm font-semibold text-neutral-900">Kilometraje inicial del dia</span>
+                <span className="mt-1 block text-xs text-neutral-500">Obligatorio para abrir una jornada con vehiculo. Es la lectura del odometro al recibir el vehiculo.</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <input className="h-12 min-w-0 flex-1 rounded-md border border-line px-3 text-base" inputMode="decimal" placeholder="Ej: 128430.5" value={startMileage} onChange={(event) => setStartMileage(event.target.value)} />
+                  <span className="rounded-md bg-paper px-3 py-3 text-sm font-semibold text-neutral-700">km</span>
+                </div>
+                {startMileage.trim() ? <span className="mt-2 block text-xs font-semibold text-apex">Kilometraje inicial: {startMileage.trim().replace(",", ".")} km</span> : null}
+              </label>
             ) : null}
             {nextType === "salida" && vehiclePlate ? (
               <label className="mt-3 block rounded-md border border-line bg-white p-3">
