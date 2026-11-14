@@ -1,0 +1,178 @@
+{
+  "certification": "hr-nomina-legal-2026-qa",
+  "environment": "QA",
+  "expected_commit": "1590f18ebdd42875bb87cdd7cef30aef30b65da3",
+  "certified_at": "2026-11-14T03:22:05.815Z",
+  "credentials_recorded": false,
+  "checks": [
+    {
+      "name": "commit_desplegado",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "commit": "1590f18ebdd4"
+      }
+    },
+    {
+      "name": "jornadas_exigen_autenticacion",
+      "status": "passed",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "login_usuario_certificacion",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "configuracion_nomina_legible",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "reporte_jornadas_por_rango",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "rows": 16
+      }
+    },
+    {
+      "name": "jornadas_exportan_minutos_liquidados",
+      "status": "passed",
+      "detail": {
+        "rows": 16,
+        "con_minutos": 16
+      }
+    },
+    {
+      "name": "mes_con_jornadas",
+      "status": "passed",
+      "detail": {
+        "mes": "2026-09",
+        "distribucion": {
+          "2026-09": 12,
+          "2026-08": 4
+        }
+      }
+    },
+    {
+      "name": "vista_previa_liquida_el_mes",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "mes": "2026-09",
+        "documentos": 22
+      }
+    },
+    {
+      "name": "documento_con_lineas_y_resumen",
+      "status": "passed",
+      "detail": {
+        "lineas": 2,
+        "periodo": "mes:2026-09-01:2026-09-30"
+      }
+    },
+    {
+      "name": "auxilio_fuera_de_la_base_de_prestaciones",
+      "status": "passed",
+      "detail": {
+        "excluido": true,
+        "base_prestaciones": 0.9
+      }
+    },
+    {
+      "name": "libranza_con_metadata_de_movimiento",
+      "status": "skipped",
+      "detail": {
+        "motivo": "el mes certificado no tiene libranzas"
+      }
+    },
+    {
+      "name": "topes_de_trabajo_suplementario_trazados",
+      "status": "passed",
+      "detail": {
+        "tope_diario_horas": 2,
+        "tope_semanal_horas": 12,
+        "excedido": false,
+        "modo": "alerta"
+      }
+    },
+    {
+      "name": "extras_en_la_liquidacion",
+      "status": "skipped",
+      "detail": {
+        "concepto": null,
+        "cantidad": null
+      }
+    },
+    {
+      "name": "liquidaciones_listables",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "cierres_de_periodo_listables",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "saldos_de_prestaciones_listables",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "aportes_sociales_listables",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "libranzas_de_empleado_listables",
+      "status": "passed",
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "semilla_auxilio_corregida_en_bd",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "include_in_social_benefits_base": false,
+        "exclude_from_social_benefits_base": true
+      }
+    },
+    {
+      "name": "topes_suplementarios_sembrados_en_bd",
+      "status": "passed",
+      "detail": {
+        "status": 200,
+        "filas": 48,
+        "diario": 2,
+        "semanal": 12
+      }
+    }
+  ],
+  "tenant": "NYVORA",
+  "certification_user_deactivated": true,
+  "summary": {
+    "total": 20,
+    "passed": 18,
+    "skipped": 2,
+    "failed": 0
+  },
+  "status": "passed"
+}
