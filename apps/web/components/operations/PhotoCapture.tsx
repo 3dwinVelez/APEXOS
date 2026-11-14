@@ -24,6 +24,8 @@ type Props = {
   label: string;
   required?: boolean;
   capture?: boolean;
+  /** `user` abre la camara frontal: es lo que hace que una selfie sea selfie. */
+  facing?: "user" | "environment";
   locked?: boolean;
   loading?: boolean;
   progress?: number;
@@ -107,7 +109,7 @@ async function readFile(file: File) {
   });
 }
 
-export function PhotoCapture({ label, required, capture = true, locked = false, loading = false, progress, status = "idle", value, onChange }: Props) {
+export function PhotoCapture({ label, required, capture = true, facing = "environment", locked = false, loading = false, progress, status = "idle", value, onChange }: Props) {
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState("");
   const [localPreview, setLocalPreview] = useState("");
@@ -172,7 +174,7 @@ export function PhotoCapture({ label, required, capture = true, locked = false, 
         <>
       <input
         accept="image/jpeg,image/png,image/webp"
-        capture={capture ? "environment" : undefined}
+        capture={capture ? facing : undefined}
         className="hidden"
         ref={cameraRef}
         type="file"
@@ -208,8 +210,8 @@ export function PhotoCapture({ label, required, capture = true, locked = false, 
       ) : (
         <button className="flex min-h-36 w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line bg-paper px-3 py-5 text-center text-base font-semibold text-neutral-700 hover:border-apex hover:text-apex disabled:opacity-50" disabled={loading} onClick={() => cameraRef.current?.click()} type="button">
           {loading ? <Loader2 className="animate-spin" size={28} /> : <Camera size={28} />}
-          {loading ? "Procesando..." : "Tomar foto"}
-          <span className="text-xs font-medium text-neutral-500">Abre la camara del dispositivo</span>
+          {loading ? "Procesando..." : facing === "user" ? "Tomar selfie" : "Tomar foto"}
+          <span className="text-xs font-medium text-neutral-500">{facing === "user" ? "Abre la camara frontal" : "Abre la camara del dispositivo"}</span>
         </button>
       )}
       {error ? <p className="mt-2 text-xs font-semibold text-red-700">{error}</p> : null}

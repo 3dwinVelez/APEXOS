@@ -15,6 +15,10 @@ test("la puntualidad de marcacion replica las alertas criticas del monitor de ru
   assert.deepEqual(punctualityAlert({ type: "salida", time: "14:30", ...window }), { label: "Cierre a tiempo", tone: "success" });
   assert.deepEqual(punctualityAlert({ type: "salida", time: "14:25", ...window }), { label: "Cierre anticipado 5 min", tone: "info" });
   assert.deepEqual(punctualityAlert({ type: "salida", time: "14:00", ...window }), { label: "Salida temprana 30 min", tone: "warning" });
+  // Cerrar pasada la hora es extension, no cierre a tiempo.
+  assert.deepEqual(punctualityAlert({ type: "salida", time: "14:38", ...window }), { label: "Cierre dentro de tolerancia (+8 min)", tone: "info" });
+  assert.deepEqual(punctualityAlert({ type: "salida", time: "18:46", ...window }), { label: "Cierre extendido 256 min", tone: "warning" });
+  assert.equal(isCriticalPunctuality(punctualityAlert({ type: "salida", time: "18:46", ...window })), true);
   assert.equal(punctualityAlert({ type: "inicio_almuerzo", time: "10:00", ...window }), null);
   assert.equal(punctualityAlert({ type: "entrada", time: null, punched_at: null, ...window }), null);
   assert.equal(punctualityAlert({ type: "entrada", time: "06:54", startTime: null, endTime: "14:30" }), null);
