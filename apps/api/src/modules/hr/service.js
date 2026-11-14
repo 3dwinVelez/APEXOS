@@ -3705,16 +3705,46 @@ async function listWorkdays(tenantId, query = {}) {
   const toRaw = query.fecha_fin || query.date_end || query.to;
   const from = fromRaw ? startOfDay(fromRaw) : null;
   const to = toRaw ? startOfDay(toRaw) : null;
-  return prisma.runWithTenant(tenantId, async () => prisma.processedWorkday.findMany({
-    where: day
-      ? { tenant_id: tenantId, date: { gte: day, lt: endOfDay(day) } }
-      : from && to
-        ? { tenant_id: tenantId, date: { gte: from, lt: endOfDay(to) } }
-        : { tenant_id: tenantId },
-    include: { employee: { include: { user: { select: safeUserSelect } } }, schedule: true },
-    orderBy: { date: "desc" },
-    take: from && to ? 5000 : 100
-  }));
+  return prisma.runWithTenant(tenantId, async () => {
+    const stored = await prisma.processedWorkday.findMany({
+      where: day
+        ? { tenant_id: tenantId, date: { gte: day, lt: endOfDay(day) } }
+        : from && to
+          ? { tenant_id: tenantId, date: { gte: from, lt: endOfDay(to) } }
+          : { tenant_id: tenantId },
+      include: { employee: { include: { user: { select: safeUserSelect } } }, schedule: true },
+      orderBy: { date: "desc" },
+      take: from && to ? 5000 : 100
+    });
+    const start = day || from;
+    const end = day || to;
+    if (!start || !end || start > end) return stored;
+    // El reporte de extras debe leer la misma proyeccion de marcaciones que liquida la
+    // nomina: la jornada no depende de que alguien ejecute POST /hr/workdays/process.
+    const endExclusive = endOfDay(end);
+    const [employees, payrollConfig, calendarDays, schedules] = await Promise.all([
+      prisma.employee.findMany({ where: { tenant_id: tenantId }, include: { user: { select: safeUserSelect } } }),
+      getPayrollConfig(tenantId),
+      activeCalendarDaysByDate(tenantId, start, end),
+      prisma.workSchedule.findMany({ where: { tenant_id: tenantId, active: true } })
+    ]);
+    const projected = await loadPayrollWorkdays({ db: prisma, tenantId, employees, start, endExclusive, parameters: { ...DEFAULT_PARAMS, ...payrollConfig.parameters }, calendarDays });
+    const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
+    const scheduleById = new Map(schedules.map((schedule) => [schedule.id, schedule]));
+    const keyOf = (row) => `${row.employee_id}:${new Date(row.date).toISOString().slice(0, 10)}`;
+    const merged = new Map(stored.map((row) => [keyOf(row), row]));
+    for (const row of projected) {
+      const key = keyOf(row);
+      const previous = merged.get(key);
+      merged.set(key, {
+        ...(previous || {}),
+        ...row,
+        employee: employeeById.get(row.employee_id) || previous?.employee || null,
+        schedule: row.schedule_id ? scheduleById.get(row.schedule_id) || previous?.schedule || null : previous?.schedule || null
+      });
+    }
+    return [...merged.values()].sort((left, right) => new Date(right.date) - new Date(left.date)).slice(0, 5000);
+  });
 }
 
 const LABOR_ENTITY_TYPES = new Set(["EPS", "PENSION", "FONDO_CESANTIAS", "ARL", "CAJA_COMPENSACION", "ICBF", "SENA"]);
@@ -4946,7 +4976,10 @@ function payrollLine(code, name, quantity, rate, amount, source = "system", conc
     include_in_vacation_base: metadata.include_in_vacation_base === true,
     exclude_from_social_benefits_base: metadata.exclude_from_social_benefits_base === true,
     debit_account_code: metadata.debit_account_code || "",
-    credit_account_code: metadata.credit_account_code || ""
+    credit_account_code: metadata.credit_account_code || "",
+    // La metadata se persiste con la linea porque identifica la libranza aplicada
+    // (libranza_id, montos y saldo) y alimenta movimientos, desprendibles y conciliacion.
+    metadata: { ...metadata }
   };
 }
 
