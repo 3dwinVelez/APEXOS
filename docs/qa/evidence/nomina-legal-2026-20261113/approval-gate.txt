@@ -1,0 +1,3 @@
+# Compuerta de aprobacion QA (develop -> main)
+# Fecha: 2026-11-13T22:28:23-05:00
+APROBACION QA VALIDA: nomina-legal-2026-20261113
