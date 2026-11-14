@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.24.0
-updated_at: 2026-11-12
+version: 2.25.0
+updated_at: 2026-11-13
 contract: 2
 ---
 
@@ -137,6 +137,12 @@ Antes de actuar, leer en este orden:
     - **Pedir una credencial que la topología no usa también es un mal manejo de permisos.** Un proveedor sin identificador en el ambiente se publica `applies:false` / `not_applicable` y no genera `CLOUD_SIN_TOKEN`. Antes de este cambio la barra del panel pedía `VERCEL_TOKEN` y `SUPABASE_ACCESS_TOKEN` en un ambiente Docker local que no tiene nube: empujar al dueño a crear y pegar tokens innecesarios es exactamente la superficie que la regla 18 protege.
     - **Lo que el puesto no puede construir se declara, no se simula.** Sin `SUPABASE_ACCESS_TOKEN` la tarjeta queda `unknown` con su acción y su variable nombrada; `latencyMs` sigue siendo `null` porque no hubo llamada (regla 20). Ningún estado `ok` se inventa para limpiar la pantalla.
     Por qué: conectar un punto de medición con la credencial que ya existe es legítimo; lo que no lo es es multiplicar copias de ese secreto, exponerlo en una superficie exportable, o convertir cada proveedor que no existe en un pendiente que empuja a generar permisos de más.
+
+39. **Retirar un motor no abre una puerta: el alias conserva permiso, tenant y actor, y la corrección de semilla no escribe datos personales.** La remediación de nómina R-06 a R-10A (2026-11-13) fija tres controles:
+    - **El endpoint legacy no queda huérfano de autorización.** `POST /hr/payroll/process` mantiene `payroll:write` y ahora recibe `request.user` completo; el servicio toma el `tenant_id` del token, no del cuerpo, y corre dentro de `runWithTenant`. Delegar en `runPayrollLiquidation` no cambia la superficie: la misma ruta, el mismo permiso, más documentos auditables.
+    - **El bloqueo por falta de soporte no filtra datos.** `SIN_MARCACIONES` responde 422 con código y, si aplica, el nombre del empleado ya visible para quien tiene `payroll:write`; no incluye marcaciones, salarios de otros empleados ni identificadores de otros tenants. La justificación se guarda como texto en `source_summary`, sin datos personales adicionales.
+    - **La migración `20261113120000` solo corrige catálogo y siembra parámetros.** Son `UPDATE` acotados por `tenant_id`/`code` y `INSERT ... WHERE NOT EXISTS`; no toca documentos, no borra filas y no incorpora credenciales. La aplicación en nube sigue siendo autorización independiente y se declara pendiente.
+    Por qué: un cambio de cálculo que reemplaza la ruta de liquidación es exactamente donde se cuela un endpoint sin permiso o una migración que reescribe datos de clientes; R-09 se implementó como delegación, no como nueva superficie.
 
 ## Checklist de intervención
 

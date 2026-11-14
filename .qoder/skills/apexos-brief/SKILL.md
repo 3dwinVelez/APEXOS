@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.52.0
+version: 2.53.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -159,6 +159,14 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **Los conteos post-ventana distinguen migración, producto y operación.** `TimePunch` creció por marcaciones reales; las 3 sedes nuevas las creó el bootstrap del API después del DDL; todo lo demás quedó idéntico. Cada delta lleva su causa o no se declara.
     - **El hallazgo que sobrevive se escribe aunque la promoción esté verde.** Dos lecturas de PYG responden en ~35 s por sembrar el catálogo en cada petición: es un defecto de rendimiento del módulo nuevo, no un rojo de la ventana, y el brief lo deja con su número y su dueño. Lo mismo vale para el veredicto NO APTO de Talento Humano y la falta de licencia M-29: promocionar no cierra ninguno de los dos.
     Por qué: un brief que solo dice «se promovió y quedó verde» borra el backup, el objeto aplicado y el defecto que la ventana destapó; el siguiente lector no puede reproducir la operación ni priorizar la deuda.
+
+66. **Un encargo de «alinear el cálculo con la normativa» se escribe como remediación por hallazgos, con la base legal fechada y lo que sigue sin certificar nombrado.** El 2026-11-13 el dueño pidió ejecutar todos los cambios para que Talento Humano calcule según la norma 2026 vigente. El brief:
+    - **Cada hallazgo entra con su código y su norma.** R-06 a R-10A se listan con el hallazgo auditado (NOM-005, NOM-006/007, NOM-009, NOM-008, MAR-010, MAR-005), la regla que aplica y el archivo que cambia; el brief no agrupa «correcciones de nómina» como un bloque opaco.
+    - **La base legal se fecha y se cita.** SMMLV $1.750.905, auxilio $249.095, jornada 44/42 h, divisor 220/210, nocturno desde 19:00 y dominical 90 % desde 01-jul-2026, con el documento de matriz normativa como fuente.
+    - **El criterio de aceptación es un caso con cifras.** «Salario de $2.000.000 con 30 días soportados paga auxilio y la base de prestaciones lo excluye», no «cumple la ley»; se incluyen el 422 `SIN_MARCACIONES` y la reliquidación sin doble descuento.
+    - **La decisión legal pendiente se escribe como decisión, no como tarea técnica.** El tope de 2 h/día y 12 h/semana se entrega en modo alerta y el bloqueo queda en la sección de autorizaciones, con firma jurídica/contable.
+    - **Implementación no es aptitud.** El brief declara que el veredicto NO APTO se mantiene hasta re-auditoría, firma y certificación E2E, y que la migración no se aplicó en nube.
+    Por qué: un pedido normativo se lee como «ya quedó legal» si el brief solo muestra tests verdes; la trazabilidad hallazgo→norma→archivo→caso y la salvedad legal son lo que permite a auditoría y contabilidad firmar o rechazar con el mismo documento.
 
 ## Checklist de intervención
 

@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.65.2
+version: 2.66.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -241,6 +241,13 @@ Antes de actuar, leer en este orden:
     - **El presupuesto de latencia se fija por encima de la medición y se publica.** `transport-pyg/concepts` y `mapping` siembran el catálogo concepto a concepto en cada petición y tardaron 35–37 s; con un corte de 20 s se perdían dos lecturas válidas. Se corre con 90 s, se registra el más lento (`slowest`) y se reporta como hallazgo de rendimiento del módulo nuevo, no como rojo de disponibilidad.
     - **Los conteos se cierran contra la línea base y cada delta se atribuye.** 96 lecturas en 15 grupos, 0 fallos, ambos negativos (401 sin token y credencial inválida) en verde; las filas nuevas de `sedes` se atribuyeron al bootstrap del API por `metadata.source`, y `TimePunch` creció por marcaciones reales. El `/health` del despliegue citó `c8e5e67c52b1` y los dos servicios de Railway quedaron `SUCCESS`.
     Por qué: una certificación de producción falla por dos extremos —usar el endpoint de login equivocado y declarar una cuenta inválida, o relajar el presupuesto hasta que un cuelgue parezca lento—; medir con la ruta real, publicar el más lento y atribuir cada fila nueva convierte la ventana en evidencia reproducible.
+
+78. **El cálculo de nómina se certifica contra la norma y contra el dato, no solo contra el total.** Al cerrar R-06 a R-10A (2026-11-13):
+    - **Un total que cuadra puede estar compuesto mal.** La prueba de auxilio de transporte esperaba una base igual al salario y recibió 2.304.761,90: el fake declaraba 480 minutos ordinarios también los domingos, y el motor pagaba legalmente el recargo dominical. El recargo es salario y sí integra la base (CST art. 127); la aserción correcta era «base = devengos constitutivos» y «base = bruto − auxilio». Antes de tocar el motor se inspeccionan las líneas que componen el total.
+    - **La prueba de contrato se actualiza en el mismo commit que el cambio de motor.** Al retirar el legacy, dos aserciones de `hr-workday-novelties-contract.test.js` apuntaban a `deducciones_parametrizadas` y a `include_in_social_benefits_base: true`; se reescribieron contra la ruta oficial (`deductionLines` desde `deductionMasters`) y contra el valor legal (`false` + `exclude_from_social_benefits_base: true`). Un rojo heredado no se silencia ni se deja para después.
+    - **La diferencia reporte/nómina se certifica visible.** El caso de R-10 verifica que la pantalla consulta `/hr/workdays` por rango y publica `liquidatedOvertimeMinutes` y la nota de diferencia; no se acepta «la diferencia ahora es cero» como prueba.
+    - **Los topes se certifican en modo alerta.** 3 h extra en un día producen `excedido: true`, un día excedido y la advertencia `TOPES_TRABAJO_SUPLEMENTARIO`; el bloqueo no se implementa sin firma jurídica y así se declara.
+    Prueba de cierre: `node --test apps/api/test/hr-*.test.js` **210/210**, `hr-nomina-legal-2026.test.js` **9/9**, reportes web **10/10**, `tsc --noEmit` y ESLint sin errores. Por qué: la auditoría del 2026-10-30 seguía NO APTO porque el motor de producción no era el auditado; certificar el motor nuevo exige probar la composición legal del cálculo, no solo que un número salga.
 
 ## Checklist de intervención
 

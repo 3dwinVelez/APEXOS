@@ -274,7 +274,8 @@ async function hrRoutes(fastify) {
   fastify.post("/talento-humano/prestaciones/pagos/documentos", { schema: schemas.socialBenefitPaymentSchema, preHandler: requirePermission("payroll", "write") }, (request) => service.runSocialBenefitPayments(request.user?.tenant_id, request.body || {}, request.user));
   fastify.delete("/talento-humano/prestaciones/pagos/documentos/:id", { preHandler: requirePermission("payroll", "write") }, (request) => service.deleteSocialBenefitPaymentDocument(request.user?.tenant_id, request.params.id));
 
-  fastify.post("/hr/payroll/process", { preHandler: requirePermission("payroll", "write") }, (request) => service.processPayrollRange(request.user?.tenant_id, request.body || {}));
+  // Ruta heredada: delega en el motor oficial de liquidacion (R-09, sin factor plano 1.25).
+  fastify.post("/hr/payroll/process", { preHandler: requirePermission("payroll", "write") }, (request) => service.processPayrollRange(request.user?.tenant_id, request.body || {}, request.user));
   fastify.get("/hr/payroll", { preHandler: requirePermission("payroll", "read") }, (request) => service.listPayroll(request.user?.tenant_id, request.query));
 }
 

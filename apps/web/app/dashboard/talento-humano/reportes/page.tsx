@@ -21,6 +21,8 @@ type Attendance = { user_name: string; next_type: string | null; punches: Punch[
 type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: Array<{ base64_data?: string; file_name?: string }>; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
 type PunchAlert = { type: string; label: string; tone: PunctualityTone };
+// Jornada procesada por el motor de marcaciones: fuente que liquida la nomina.
+type ProcessedWorkday = { employee_id: number; date: string; overtime_day_minutes: number; overtime_night_minutes: number; overtime_sunday_holiday_day_minutes: number; overtime_sunday_holiday_night_minutes: number };
 type ReportRow = {
   key: string;
   employeeId: string;
@@ -36,6 +38,7 @@ type ReportRow = {
   exit?: Punch;
   workedMinutes: number;
   overtimeMinutes: number;
+  liquidatedOvertimeMinutes: number | null;
   overtimeReason: string;
   overtimeDetail: string;
   punchAlerts: PunchAlert[];
@@ -194,6 +197,7 @@ export default function HrReportsPage() {
   useEffect(() => { setMounted(true); }, []);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [punches, setPunches] = useState<Punch[]>([]);
+  const [workdays, setWorkdays] = useState<ProcessedWorkday[]>([]);
   const [activities, setActivities] = useState<WorkActivity[]>([]);
   const [routes, setRoutes] = useState<TimeRoute[]>([]);
   const [from, setFrom] = useState(today());
@@ -426,16 +430,19 @@ export default function HrReportsPage() {
     setLoading(true);
     setMessage("");
     try {
-      const [employeeRows, punchRows, activityRows, routeRows] = await Promise.all([
+      const [employeeRows, punchRows, activityRows, routeRows, workdayRows] = await Promise.all([
         api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => [] as Employee[]),
         api<Attendance[]>(`/api/v1/hr/attendance?fecha_inicio=${encodeURIComponent(appliedRange.from)}&fecha_fin=${encodeURIComponent(appliedRange.to)}`).catch(() => [] as Attendance[]),
         api<WorkActivity[]>(`/api/v1/hr/work-activities?fecha_inicio=${encodeURIComponent(appliedRange.from)}&fecha_fin=${encodeURIComponent(appliedRange.to)}&limit=5000`).catch(() => [] as WorkActivity[]),
-        api<TimeRoute[]>(`/api/v1/hr/routes?fecha_inicio=${encodeURIComponent(appliedRange.from)}&fecha_fin=${encodeURIComponent(appliedRange.to)}`).catch(() => [] as TimeRoute[])
+        api<TimeRoute[]>(`/api/v1/hr/routes?fecha_inicio=${encodeURIComponent(appliedRange.from)}&fecha_fin=${encodeURIComponent(appliedRange.to)}`).catch(() => [] as TimeRoute[]),
+        // Jornadas procesadas por el motor: las horas extra que efectivamente liquida la nomina.
+        api<ProcessedWorkday[]>(`/api/v1/hr/workdays?fecha_inicio=${encodeURIComponent(appliedRange.from)}&fecha_fin=${encodeURIComponent(appliedRange.to)}`).catch(() => [] as ProcessedWorkday[])
       ]);
       setEmployees(employeeRows);
       setPunches(punchRows.flatMap((att) => att.punches || []));
       setActivities(activityRows);
       setRoutes(routeRows);
+      setWorkdays(workdayRows);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible cargar los reportes de Talento Humano.");
     } finally {
@@ -463,6 +470,13 @@ export default function HrReportsPage() {
       const date = typeof punch.date === "string" ? punch.date.slice(0, 10) : new Date().toISOString().slice(0, 10);
       const key = `${punch.user_name || "sin-empleado"}|${date}`;
       groups.set(key, [...(groups.get(key) || []), punch]);
+    }
+    const liquidatedByEmployeeDay = new Map<string, number>();
+    for (const day of workdays) {
+      const key = `${day.employee_id}|${dateKey(day.date)}`;
+      const minutes = Number(day.overtime_day_minutes || 0) + Number(day.overtime_night_minutes || 0)
+        + Number(day.overtime_sunday_holiday_day_minutes || 0) + Number(day.overtime_sunday_holiday_night_minutes || 0);
+      liquidatedByEmployeeDay.set(key, minutes);
     }
     return Array.from(groups.entries()).map(([key, group]) => {
       const sorted = group.sort((a, b) => new Date(a.punched_at).getTime() - new Date(b.punched_at).getTime());
@@ -517,6 +531,9 @@ export default function HrReportsPage() {
         exit,
         workedMinutes: Math.max(0, Math.round(gross - lunch)),
         overtimeMinutes: sorted.reduce((sum, punch) => sum + Number(punch.extra_minutes || 0), 0),
+        liquidatedOvertimeMinutes: employee?.id != null
+          ? liquidatedByEmployeeDay.get(`${employee.id}|${dateKey(sorted[0]?.date)}`) ?? null
+          : null,
         overtimeReason: sorted.find((punch) => punch.extra_reason)?.extra_reason || "",
         overtimeDetail: sorted.find((punch) => punch.extra_detail)?.extra_detail || "",
         punchAlerts,
@@ -524,7 +541,7 @@ export default function HrReportsPage() {
         events
       } satisfies ReportRow;
     });
-  }, [activities, employees, punches, routes]);
+  }, [activities, employees, punches, routes, workdays]);
 
   const filtered = useMemo(() => rows.filter((row) => {
     const term = normalized(query);
@@ -599,6 +616,7 @@ export default function HrReportsPage() {
             { key: "almuerzo_fin", label: "Fin almuerzo", width: 100 }, { key: "cierre", label: "Cierre", width: 85 },
             { key: "alerta_entrada", label: "Alerta entrada", width: 150 }, { key: "alerta_cierre", label: "Alerta cierre", width: 150 },
             { key: "horas_laboradas", label: "Horas laboradas", width: 110, numberFormat: "0.00" }, { key: "horas_extra", label: "Horas extra", width: 95, numberFormat: "0.00" },
+            { key: "horas_extra_liquidacion", label: "Extra liquidada", width: 110, numberFormat: "0.00" }, { key: "diferencia_extra", label: "Diferencia extra", width: 110, numberFormat: "0.00" },
             { key: "estado", label: "Estado jornada", width: 115 }, { key: "motivo_extra", label: "Motivo extra", width: 180 },
             { key: "justificacion_extra", label: "Justificacion extra", width: 240 }, { key: "actividades", label: "Actividades", width: 90 }, { key: "eventos", label: "Eventos", width: 85 }
           ],
@@ -607,6 +625,8 @@ export default function HrReportsPage() {
             entrada: hour(row.entry?.punched_at), almuerzo_inicio: hour(row.lunchStart?.punched_at), almuerzo_fin: hour(row.lunchEnd?.punched_at), cierre: hour(row.exit?.punched_at),
             alerta_entrada: row.punchAlerts.find((alert) => alert.type === "entrada")?.label || "", alerta_cierre: row.punchAlerts.find((alert) => alert.type === "salida")?.label || "",
             horas_laboradas: Number((row.workedMinutes / 60).toFixed(2)), horas_extra: Number((row.overtimeMinutes / 60).toFixed(2)), estado: row.entry && row.exit ? "Completa" : "Incompleta",
+            horas_extra_liquidacion: row.liquidatedOvertimeMinutes == null ? "" : Number((row.liquidatedOvertimeMinutes / 60).toFixed(2)),
+            diferencia_extra: row.liquidatedOvertimeMinutes == null ? "" : Number(((row.overtimeMinutes - row.liquidatedOvertimeMinutes) / 60).toFixed(2)),
             motivo_extra: row.overtimeReason, justificacion_extra: row.overtimeDetail, actividades: row.activities.length, eventos: row.events.length
           }))
         },
@@ -903,7 +923,15 @@ export default function HrReportsPage() {
                   <td className="px-4 py-3">{hour(row.exit?.punched_at)}</td>
                   <td className="px-4 py-3 align-top"><PunchAlertStack alerts={row.punchAlerts} rowKey={row.key} /></td>
                   <td className="px-4 py-3 font-semibold">{minutesLabel(row.workedMinutes)}</td>
-                  <td className={`px-4 py-3 font-semibold ${row.overtimeMinutes ? "text-amber-700" : ""}`}>{minutesLabel(row.overtimeMinutes)}</td>
+                  <td className={`px-4 py-3 font-semibold ${row.overtimeMinutes ? "text-amber-700" : ""}`}>
+                    {minutesLabel(row.overtimeMinutes)}
+                    {row.liquidatedOvertimeMinutes != null ? (
+                      <p className={`text-xs font-normal ${row.liquidatedOvertimeMinutes === row.overtimeMinutes ? "text-neutral-500" : "text-amber-800"}`}>
+                        Liquidada: {minutesLabel(row.liquidatedOvertimeMinutes)}
+                        {row.liquidatedOvertimeMinutes === row.overtimeMinutes ? "" : ` · diferencia ${minutesLabel(Math.abs(row.overtimeMinutes - row.liquidatedOvertimeMinutes))}`}
+                      </p>
+                    ) : null}
+                  </td>
                   <td className="max-w-[220px] truncate px-4 py-3">{row.overtimeReason || "--"}</td>
                   <td className="px-4 py-3">{row.events.length} evento(s)</td>
                   <td className="px-4 py-3"><button className="inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 font-semibold hover:bg-white" onClick={() => setSelected(row)} type="button"><Eye size={15} /> Ver</button></td>
@@ -954,10 +982,16 @@ export default function HrReportsPage() {
                 <div className="mt-3 space-y-2">
                   <Metric label="Horas laboradas" value={minutesLabel(selected.workedMinutes)} />
                   <Metric label="Horas extra" value={minutesLabel(selected.overtimeMinutes)} />
+                  {selected.liquidatedOvertimeMinutes != null ? <Metric label="Extra liquidada (nomina)" value={minutesLabel(selected.liquidatedOvertimeMinutes)} /> : null}
                   <Metric label="Entrada" value={hour(selected.entry?.punched_at)} />
                   <Metric label="Cierre" value={hour(selected.exit?.punched_at)} />
                 </div>
                 <p className="mt-3 rounded-md bg-surface-muted p-3 text-xs text-content-muted">Vista consolidada del reporte. Las marcaciones y actividades conservan la misma lectura visual del monitor operativo.</p>
+                {selected.liquidatedOvertimeMinutes != null && selected.liquidatedOvertimeMinutes !== selected.overtimeMinutes ? (
+                  <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-950">
+                    Diferencia con nomina: el reporte de marcaciones suma {minutesLabel(selected.overtimeMinutes)} y la jornada procesada liquida {minutesLabel(selected.liquidatedOvertimeMinutes)}. Revisa las marcas administrativas o el ajuste antes de liquidar.
+                  </p>
+                ) : null}
               </section>
               <section className="flex min-h-0 flex-col p-4 lg:overflow-hidden">
               {selected.overtimeMinutes ? <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Justificacion de extension</p><p className="mt-1">Motivo: {selected.overtimeReason || "--"}</p><p className="mt-1">{selected.overtimeDetail || "Sin detalle registrado."}</p></div> : null}

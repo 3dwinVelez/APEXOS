@@ -2,7 +2,7 @@
 name: apexos-db-nube
 description: Experto en base de datos en la nube del Equipo APEXOS: PostgreSQL, Prisma (apps/api/prisma/schema.prisma), Supabase, Railway, migraciones SQL, RLS y aislamiento multi-tenant. Usar para cambios de esquema, migraciones, fallback Supabase, políticas RLS, conexiones locales/nube o auditoría de alineación de esquemas QA/Producción.
 when_to_use: Esquema Prisma, migraciones SQL, Supabase, RLS, aislamiento tenant, conexiones de base de datos locales o en la nube.
-version: 2.2.0
+version: 2.3.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -55,6 +55,13 @@ Antes de actuar, leer en este orden:
     - **El delta de tablas operativas se explica, no se «corrige».** `TimePunch` subió de 2136 a 2154 por marcaciones reales en vivo; `User`, `Employee`, `employees`, `cnt_cuedoc` y las tablas de transporte quedaron idénticas. Un delta que no se puede explicar no se acepta como ruido.
     - **Los objetos Supabase se aplican con su efecto medido.** `apexos_accounting_private.standard_chart` pasó a existir con 2508 cuentas; M-29 quedó catalogado con 3 empresas y 0 habilitadas. «Se aplicó el SQL» no es evidencia; el conteo de la tabla y la fila del catálogo sí.
     Por qué: en una ventana real el DDL es solo una de las fuentes de cambio; sin atribuir cada fila nueva, la comparación contra el snapshot acusa al producto o absuelve a la migración sin prueba.
+
+14. **Una corrección de semilla legal es forward-only, condicionada y verificable por tenant.** La migración `20261113120000_hr_nomina_legal_2026` (2026-11-13) fija el patrón:
+    - **No se edita la semilla histórica.** La corrección de `AUX_TRANSPORTE` (`include_in_social_benefits_base` y `include_in_vacation_base` a `false`, `exclude_from_social_benefits_base` a `true`) se hace con `jsonb_set` sobre `th_nomina_conceptos`, no reescribiendo una migración ya promovida.
+    - **La siembra respeta la configuración del tenant.** `MAX_HE_DIARIO` (2) y `MAX_HE_SEMANAL` (12) entran con `WHERE NOT EXISTS` por tenant y vigencia; una fila propia del tenant nunca se pisa.
+    - **El efecto se comprueba por fila, no por «se aplicó el SQL».** Tras aplicar se lee el `metadata` del concepto y las filas de parámetros del tenant; la segunda ejecución no debe insertar ni actualizar nada.
+    - **La nube sigue siendo acto autorizado aparte.** La migración se versiona en `desarrollo`; aplicar en QA/producción exige autorización independiente y se declara como pendiente en el handoff.
+    Por qué: una semilla legal equivocada infló prima, cesantías e intereses en cada liquidación; corregirla con un `UPDATE` global o pisando parámetros del tenant habría arreglado un tenant y roto otro.
 
 ## Checklist de intervención
 

@@ -4,6 +4,19 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-13
 
+### Remediación legal 2026 de Talento Humano ejecutada (R-06 a R-10A) (`nomina-legal-2026-20261113`)
+
+- **Pedido directo del dueño.** «Procede con todos los cambios para arreglar el módulo y que los cálculos queden correctamente alineados a la normativa legal 2026 vigente a la fecha». Se ejecuta en `desarrollo`; no se promueve ni se aplica la migración en nube.
+- **R-06 libranza idempotente.** `available_balance` se deriva de los movimientos aplicados excluyendo el periodo en curso; `recalculate` reversa antes de reconstruir y la columna espejo deja de gobernar el descuento.
+- **R-07 auxilio fuera de la base.** Semilla y fallback con `include_in_social_benefits_base: false`, `include_in_vacation_base: false`, `exclude_from_social_benefits_base: true`; la base usa días soportados y `SIN_MARCACIONES` bloquea con 422 salvo justificación trazable.
+- **R-08 indemnización con SMMLV del periodo.** Se elimina `process.env.SMLV_CO`; el umbral de 10 SMMLV y la traza `smmlv_referencia_indemnizacion` salen de `th_parametros_laborales` con respaldo legal 2026.
+- **R-09 un solo motor.** `POST /hr/payroll/process` delega en `runPayrollLiquidation`; se retira el cálculo plano (`hourly * 1.25`, `deductions = 0`).
+- **R-10 reporte conciliado.** `/hr/workdays` acepta rango; el reporte de Talento Humano muestra horas extras liquidadas, diferencia visible y columnas nuevas en el Excel.
+- **R-10A topes trazados.** `MAX_HE_DIARIO`/`MAX_HE_SEMANAL` por tenant, `TOPES_TRABAJO_SUPLEMENTARIO` en alerta con días y semanas excedidos; el bloqueo queda pendiente de firma jurídica.
+- **Migración `20261113120000_hr_nomina_legal_2026`.** Corrige el `metadata` de `AUX_TRANSPORTE` con `jsonb_set` y siembra los topes con `WHERE NOT EXISTS`; **no aplicada en nube**.
+- **Evidencia.** `node --test apps/api/test/hr-*.test.js` **210/210**; `hr-nomina-legal-2026.test.js` **9/9**; reportes web **10/10**; `tsc --noEmit` y ESLint sin errores. El veredicto de auditoría sigue **NO APTO** hasta re-auditoría, firma jurídica/contable y certificación E2E.
+- Agentes: `apexos-backend` 2.12.0 → 2.13.0 (regla 29: la nómina se corrige en el motor oficial y el legacy se retira), `apexos-db-nube` 2.2.0 → 2.3.0 (regla 14: semilla legal forward-only, condicionada y verificable por tenant), `apexos-frontend` 2.28.0 → 2.29.0 (regla 43: el reporte lee la fuente que liquida y publica la diferencia), `apexos-qa` 2.65.2 → 2.66.0 (control 78: el cálculo se certifica contra la norma y el dato, no solo contra el total), `apexos-seguridad` 2.24.0 → 2.25.0 (regla 39: retirar un motor no abre una puerta), `equipo-apexos` 2.37.0 → 2.38.0 (control 51: motor + migración + reporte con el veredicto legal abierto), `apexos-brief` 2.52.0 → 2.53.0 (regla 66: la remediación normativa se escribe hallazgo→norma→archivo→caso, con la decisión legal pendiente y la salvedad de aptitud).
+
 ### Ventana de producción ejecutada y smoke NYVORA de solo lectura (`promocion-paquetes-main-prod-20261113`)
 
 - **Autorización del dueño.** Confirmó la ventana, el resguardo de los datos productivos y el uso de la cuenta real de NYVORA en producción; su valor no se transcribe. `main` quedó en `c8e5e67c52b106086a058b2f6ac6bebf0ebf6697` con las dos compuertas en verde.
