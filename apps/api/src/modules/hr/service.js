@@ -3701,11 +3701,19 @@ async function processDay(tenantId, input = {}) {
 
 async function listWorkdays(tenantId, query = {}) {
   const day = query.date ? startOfDay(query.date) : null;
+  const fromRaw = query.fecha_inicio || query.date_start || query.from;
+  const toRaw = query.fecha_fin || query.date_end || query.to;
+  const from = fromRaw ? startOfDay(fromRaw) : null;
+  const to = toRaw ? startOfDay(toRaw) : null;
   return prisma.runWithTenant(tenantId, async () => prisma.processedWorkday.findMany({
-    where: day ? { date: { gte: day, lt: endOfDay(day) } } : {},
+    where: day
+      ? { tenant_id: tenantId, date: { gte: day, lt: endOfDay(day) } }
+      : from && to
+        ? { tenant_id: tenantId, date: { gte: from, lt: endOfDay(to) } }
+        : { tenant_id: tenantId },
     include: { employee: { include: { user: { select: safeUserSelect } } }, schedule: true },
     orderBy: { date: "desc" },
-    take: 100
+    take: from && to ? 5000 : 100
   }));
 }
 
@@ -4603,10 +4611,19 @@ async function updateEmployeeLibranza(tenantId, id, input = {}) {
   });
 }
 
-async function activeEmployeeLibranzas(tenantId, employeeIds = [], { start, end, periodType }) {
+async function activeEmployeeLibranzas(tenantId, employeeIds = [], { start, end, periodType, periodKey = "" }) {
   if (!employeeIds.length) return new Map();
+  // El saldo disponible se deriva de los movimientos aplicados y excluye el periodo que se
+  // esta liquidando: reliquidar el mismo periodo no debe descontar dos veces la cuota.
   const rows = await prisma.$queryRaw`
-    SELECT l.*, c.code AS concept_code, c.name AS concept_name, c.debit_account_code, c.credit_account_code, c.entity_id
+    SELECT l.*,
+           c.code AS concept_code, c.name AS concept_name, c.debit_account_code, c.credit_account_code, c.entity_id,
+           CASE WHEN l.mode = 'perpetua' THEN NULL ELSE GREATEST(
+             COALESCE(l.original_amount, 0) - COALESCE((
+               SELECT SUM(m.amount) FROM th_libranza_movimientos m
+               WHERE m.tenant_id = l.tenant_id AND m.employee_libranza_id = l.id
+                 AND m.status = 'aplicado' AND m.period_key <> ${periodKey}
+             ), 0), 0) END AS available_balance
     FROM th_libranza_empleados l
     INNER JOIN th_libranza_conceptos c ON c.id = l.concept_id AND c.tenant_id = l.tenant_id
     WHERE l.tenant_id = ${tenantId}
@@ -4616,7 +4633,11 @@ async function activeEmployeeLibranzas(tenantId, employeeIds = [], { start, end,
       AND l.frequency = ${periodType}
       AND l.start_date <= ${end}::date
       AND (l.end_date IS NULL OR l.end_date >= ${start}::date)
-      AND (l.mode = 'perpetua' OR COALESCE(l.balance_amount, l.original_amount, 0) > 0)
+      AND (l.mode = 'perpetua' OR COALESCE(l.original_amount, 0) - COALESCE((
+        SELECT SUM(m.amount) FROM th_libranza_movimientos m
+        WHERE m.tenant_id = l.tenant_id AND m.employee_libranza_id = l.id
+          AND m.status = 'aplicado' AND m.period_key <> ${periodKey}
+      ), 0) > 0)
   `.catch(() => []);
   const byEmployee = new Map();
   for (const row of rows) {
@@ -4628,7 +4649,7 @@ async function activeEmployeeLibranzas(tenantId, employeeIds = [], { start, end,
 }
 
 function payrollLineFromLibranza(row) {
-  const balance = row.mode === "perpetua" ? null : Number(row.balance_amount ?? row.original_amount ?? 0);
+  const balance = row.mode === "perpetua" ? null : Number(row.available_balance ?? row.original_amount ?? 0);
   const amount = row.mode === "perpetua" ? Number(row.installment_amount || 0) : Math.min(Number(row.installment_amount || 0), Math.max(balance || 0, 0));
   if (!amount) return null;
   return payrollLine(
@@ -4665,7 +4686,16 @@ async function applyPayrollLibranzaMovements(tx, tenantId, document) {
     const current = currentRows[0];
     if (!current || current.status !== "activa") continue;
     const amount = Math.abs(Number(line.amount || 0));
-    const before = current.mode === "perpetua" ? null : Number(current.balance_amount ?? current.original_amount ?? 0);
+    // El saldo anterior se deriva de los movimientos aplicados de otros periodos, no de la
+    // columna espejo balance_amount: reliquidar este periodo no debe descontar la cuota dos veces.
+    const appliedRows = current.mode === "perpetua" ? [] : await tx.$queryRaw`
+      SELECT COALESCE(SUM(amount), 0) AS applied
+      FROM th_libranza_movimientos
+      WHERE tenant_id = ${tenantId} AND employee_libranza_id = ${libranzaId}
+        AND status = 'aplicado' AND period_key <> ${document.period_key}
+    `;
+    const priorApplied = Number(appliedRows[0]?.applied || 0);
+    const before = current.mode === "perpetua" ? null : money(Math.max(Number(current.original_amount || 0) - priorApplied, 0));
     const applied = current.mode === "perpetua" ? amount : Math.min(amount, Math.max(before || 0, 0));
     const after = current.mode === "perpetua" ? null : money(Math.max((before || 0) - applied, 0));
     await tx.$executeRaw`
@@ -4680,7 +4710,7 @@ async function applyPayrollLibranzaMovements(tx, tenantId, document) {
         SET deducted_amount = COALESCE((SELECT SUM(amount) FROM th_libranza_movimientos WHERE tenant_id = ${tenantId} AND employee_libranza_id = ${libranzaId} AND status = 'aplicado'), 0),
             installments_paid = COALESCE((SELECT COUNT(*) FROM th_libranza_movimientos WHERE tenant_id = ${tenantId} AND employee_libranza_id = ${libranzaId} AND status = 'aplicado'), 0),
             balance_amount = ${after},
-            status = CASE WHEN ${after} <= 0 THEN 'finalizada' ELSE status END,
+            status = CASE WHEN ${after} <= 0 THEN 'finalizada' WHEN ${current.status === "finalizada"} THEN 'activa' ELSE status END,
             updated_at = now()
         WHERE tenant_id = ${tenantId} AND id = ${libranzaId}
       `;
@@ -4856,102 +4886,10 @@ async function activeLaborDeductions(tenantId, effectiveDate) {
   return Array.from(byCode.values());
 }
 
-async function processPayrollRange(tenantId, input = {}) {
-  const { start, end, key } = periodFromRange(input);
-  const endExclusive = endOfDay(end);
-  return prisma.runWithTenant(tenantId, async () => {
-    const deductionMasters = await activeLaborDeductions(tenantId, start);
-    const laborParameterRows = await activeLaborParameterValues(tenantId, start, ["HORAS_MENSUALES_ORDINARIAS"]);
-    const monthlyOrdinaryHours = Number(laborParameterRows.HORAS_MENSUALES_ORDINARIAS?.value || 0) || monthlyOrdinaryHoursForDate(start);
-    const employees = await prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } });
-    const workdays = await prisma.processedWorkday.findMany({
-      where: { employee_id: { in: employees.map((employee) => employee.id) }, date: { gte: start, lt: endExclusive } },
-      select: {
-        employee_id: true,
-        overtime_day_minutes: true,
-        overtime_night_minutes: true,
-        overtime_sunday_holiday_day_minutes: true,
-        overtime_sunday_holiday_night_minutes: true
-      }
-    });
-    const workdaysByEmployee = new Map();
-    for (const day of workdays) {
-      const list = workdaysByEmployee.get(day.employee_id) || [];
-      list.push(day);
-      workdaysByEmployee.set(day.employee_id, list);
-    }
-
-    const existing = await prisma.payroll.findMany({
-      where: { period: key, employee_id: { in: employees.map((employee) => employee.id) } },
-      select: { employee_id: true }
-    });
-    const existingIds = new Set(existing.map((row) => row.employee_id));
-
-    const rows = employees.map((employee) => {
-      const days = workdaysByEmployee.get(employee.id) || [];
-      const daysWorked = days.length;
-      const overtimeMinutes = days.reduce((sum, day) => sum +
-        day.overtime_day_minutes +
-        day.overtime_night_minutes +
-        day.overtime_sunday_holiday_day_minutes +
-        day.overtime_sunday_holiday_night_minutes, 0);
-      const salaryBase = Number(employee.salary_base || 0);
-      const base = Math.round(((salaryBase / 30) * daysWorked) * 100) / 100;
-      const hourly = salaryBase ? salaryBase / monthlyOrdinaryHours : 0;
-      const overtime = Math.round((overtimeMinutes / 60) * hourly * 1.25 * 100) / 100;
-      const gross = Math.round((base + overtime) * 100) / 100;
-      const deductionDetails = deductionMasters
-        .filter((row) => String(row.code || "").startsWith("DED_"))
-        .map((row) => {
-          const percent = Number(row.value || 0);
-          return { code: row.code, name: row.name, percent, amount: Math.round(gross * (percent / 100) * 100) / 100 };
-        });
-      const deductions = Math.round(deductionDetails.reduce((sum, row) => sum + row.amount, 0) * 100) / 100;
-      const detail = {
-        empleado: employee.metadata?.name || employee.user?.name || employee.code,
-        fecha_inicio: start.toISOString().slice(0, 10),
-        fecha_fin: end.toISOString().slice(0, 10),
-        salario_proporcional: base,
-        horas_extra: overtime,
-        deducciones_parametrizadas: deductionDetails,
-        alertas: daysWorked === 0 ? ["sin_jornadas"] : []
-      };
-      return {
-        tenant_id: tenantId,
-        employee_id: employee.id,
-        period: key,
-        days_worked: daysWorked,
-        overtime_hrs: Math.round((overtimeMinutes / 60) * 100) / 100,
-        absences: 0,
-        gross,
-        deductions,
-        net: gross - deductions,
-        employer_cost: gross,
-        detail
-      };
-    });
-
-    const toCreate = rows.filter((row) => !existingIds.has(row.employee_id));
-    const toUpdate = rows.filter((row) => existingIds.has(row.employee_id));
-
-    if (toCreate.length) await prisma.payroll.createMany({ data: toCreate });
-    for (const row of toUpdate) {
-      await prisma.payroll.updateMany({
-        where: { employee_id: row.employee_id, period: key },
-        data: {
-          days_worked: row.days_worked,
-          overtime_hrs: row.overtime_hrs,
-          gross: row.gross,
-          deductions: row.deductions,
-          net: row.net,
-          employer_cost: row.employer_cost,
-          detail: row.detail
-        }
-      });
-    }
-
-    return { ok: true, fecha_inicio: start.toISOString().slice(0, 10), fecha_fin: end.toISOString().slice(0, 10), liquidaciones: rows.length };
-  });
+// R-09: el motor plano historico (factor 1.25 fijo, solo espejo prisma.payroll) se retiro.
+// Toda liquidacion pasa por el motor oficial con recargos por vigencia y documentos auditables.
+async function processPayrollRange(tenantId, input = {}, user = {}) {
+  return runPayrollLiquidation(tenantId, input, user);
 }
 
 function money(value) {
@@ -5026,7 +4964,9 @@ function payrollConceptFallback(code) {
     return { name: socialBenefits[code], concept_type: "devengo", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "prestaciones_sociales", exclude_from_social_benefits_base: true } };
   }
   if (code === "AUX_TRANSPORTE") {
-    return { name: "Auxilio de transporte", concept_type: "devengo", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "auxilio", include_in_social_benefits_base: true, include_in_vacation_base: false } };
+    // El auxilio de transporte no es salario (CST art. 128) y no integra la base de
+    // prestaciones sociales ni la de vacaciones.
+    return { name: "Auxilio de transporte", concept_type: "devengo", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "auxilio", include_in_social_benefits_base: false, include_in_vacation_base: false, exclude_from_social_benefits_base: true } };
   }
   return {};
 }
@@ -5081,7 +5021,40 @@ function payrollReceiptLines(lines = []) {
   });
 }
 
+// Topes de trabajo suplementario: Ley 2466/2025 art. 13 (maximo 2 h diarias y 12 h
+// semanales). El parametro permite ajustarlos por tenant. La decision juridica de bloquear
+// o solo alertar sigue abierta; por ahora se registra la traza y se alerta, sin ocultar horas.
+function supplementaryWorkLimitTrace(days, dailyLimitMinutes, weeklyLimitMinutes) {
+  const perDay = [];
+  for (const day of days) {
+    const minutes = Number(day.overtime_day_minutes || 0) + Number(day.overtime_night_minutes || 0)
+      + Number(day.overtime_sunday_holiday_day_minutes || 0) + Number(day.overtime_sunday_holiday_night_minutes || 0);
+    if (minutes > 0) perDay.push({ date: new Date(day.date).toISOString().slice(0, 10), minutes });
+  }
+  const perWeek = new Map();
+  for (const entry of perDay) {
+    const dow = (new Date(`${entry.date}T00:00:00Z`).getUTCDay() + 6) % 7;
+    const weekStart = new Date(new Date(`${entry.date}T00:00:00Z`).getTime() - dow * 86400000).toISOString().slice(0, 10);
+    perWeek.set(weekStart, (perWeek.get(weekStart) || 0) + entry.minutes);
+  }
+  const daysExceeded = dailyLimitMinutes > 0 ? perDay.filter((entry) => entry.minutes > dailyLimitMinutes) : [];
+  const weeksExceeded = weeklyLimitMinutes > 0
+    ? [...perWeek.entries()].filter(([, minutes]) => minutes > weeklyLimitMinutes).map(([week_start, minutes]) => ({ week_start, minutes }))
+    : [];
+  return {
+    tope_diario_horas: dailyLimitMinutes > 0 ? money(dailyLimitMinutes / 60) : null,
+    tope_semanal_horas: weeklyLimitMinutes > 0 ? money(weeklyLimitMinutes / 60) : null,
+    dias_excedidos: daysExceeded.map((entry) => ({ date: entry.date, horas: money(entry.minutes / 60) })),
+    semanas_excedidas: weeksExceeded.map((entry) => ({ week_start: entry.week_start, horas: money(entry.minutes / 60) })),
+    excedido: daysExceeded.length > 0 || weeksExceeded.length > 0,
+    modo: "alerta"
+  };
+}
+
 function socialBenefitBaseFromLines(lines, fallbackMonthlyBase, liquidationDays, { includeVacationBase = false } = {}) {
+  // Sin dias soportados no hay causacion: no se puede pagar prestaciones sobre un periodo
+  // sin marcaciones solo porque existe un salario configurado.
+  if (!(Number(liquidationDays) > 0)) return 0;
   const positiveBase = lines
     .filter((line) => {
       if (!line || Number(line.amount || 0) <= 0) return false;
@@ -5091,7 +5064,7 @@ function socialBenefitBaseFromLines(lines, fallbackMonthlyBase, liquidationDays,
       return line.salary_constitutive !== false || line.include_in_social_benefits_base;
     })
     .reduce((sum, line) => sum + Number(line.amount || 0), 0);
-  if (positiveBase > 0 && liquidationDays > 0) return money((positiveBase / liquidationDays) * 30);
+  if (positiveBase > 0) return money((positiveBase / liquidationDays) * 30);
   return money(fallbackMonthlyBase || 0);
 }
 
@@ -5175,11 +5148,14 @@ function benefitLine(code, amount, quantity, source = "retiro") {
   return payrollLine(code, concept.name || code, quantity, quantity ? amount / quantity : amount, amount, source, concept);
 }
 
-function indemnizationDaysForTermination({ contractType, salaryBase, serviceDays, remainingDays }) {
+function indemnizationDaysForTermination({ contractType, salaryBase, serviceDays, remainingDays, smmlv }) {
   const type = normalizeContractType(contractType);
   if (type === "fixed" || type === "obra_labor") return Math.max(Number(remainingDays || 0), type === "obra_labor" ? 15 : 0);
   if (!(serviceDays > 0)) return 0;
-  const highSalary = Number(salaryBase || 0) >= 10 * Number(process.env.SMLV_CO || 0) && Number(process.env.SMLV_CO || 0) > 0;
+  // CST art. 64: el tramo de 20/15 dias aplica desde 10 SMMLV. La referencia es el SMMLV
+  // vigente del periodo (parametro laboral), con respaldo legal 2026 si no esta configurado.
+  const referenceSmmlv = Number(smmlv || 0) > 0 ? Number(smmlv) : LEGAL_PARAMETER_FALLBACKS_CO_2026.SMMLV;
+  const highSalary = Number(salaryBase || 0) >= 10 * referenceSmmlv;
   const firstYearDays = highSalary ? 20 : 30;
   const extraYearDays = highSalary ? 15 : 20;
   if (serviceDays <= 360) return firstYearDays;
@@ -5252,9 +5228,12 @@ async function buildEmployeeTerminationLiquidation(tenantId, input = {}) {
       : employee.end_date ? Math.max(daysInclusive(new Date(terminationDate.getTime() + 86400000), employee.end_date), 0) : 0;
     const terminationReason = String(input.termination_reason || "retiro_voluntario").trim();
     const balances = await benefitBalancesForEmployee(tenantId, employeeId);
+    const smmlvRows = await activeLaborParameterValues(tenantId, terminationDate, ["SMMLV"]);
+    const smmlv = Number(smmlvRows.SMMLV?.value || 0) || LEGAL_PARAMETER_FALLBACKS_CO_2026.SMMLV;
+    const smmlvSource = Number(smmlvRows.SMMLV?.value || 0) > 0 ? "parametro_vigente" : "respaldo_legal_2026";
     const benefitLines = buildTerminationBenefitLines({ salaryBase: benefitSalaryBase, startDate, terminationDate, paidBalances: balances });
     const indemnizationDays = terminationReason === "sin_justa_causa"
-      ? indemnizationDaysForTermination({ contractType, salaryBase, serviceDays, remainingDays })
+      ? indemnizationDaysForTermination({ contractType, salaryBase, serviceDays, remainingDays, smmlv })
       : 0;
     const indemnizationAmount = money((salaryBase / 30) * indemnizationDays);
     const indemnizationLine = indemnizationAmount
@@ -5288,6 +5267,7 @@ async function buildEmployeeTerminationLiquidation(tenantId, input = {}) {
         base_prestaciones_retiro: benefitSalaryBase,
         historial_salarial_retiro: salaryInfo.segments,
         saldos_previos_prestaciones: balances,
+        smmlv_referencia_indemnizacion: { valor: smmlv, fuente: smmlvSource },
         regla_indemnizacion: terminationReason === "sin_justa_causa" ? "CST art. 64" : "No aplica indemnizacion por causal seleccionada"
       }
     };
@@ -5298,11 +5278,13 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || input.tipo_periodo || "quincena";
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
+  // Justificacion explicita y trazable para liquidar un empleado sin marcaciones en el periodo.
+  const sinMarcacionesJustificacion = String(input.justificacion_sin_marcaciones || input.sin_marcaciones_justificacion || "").trim();
   const endExclusive = endOfDay(end);
   const employeeFilter = input.employee_id ? { id: numericId(input.employee_id) } : {};
   const [deductionMasters, legalParameterRows, surchargeMasters, payrollConcepts, employees, payrollConfig, socialContributionParameters] = await Promise.all([
     activeLaborDeductions(tenantId, start),
-    activeLaborParameterValues(tenantId, start, ["SMMLV", "AUX_TRANSPORTE", "AUX_TRANSPORTE_TOPE_SMMLV", "HORAS_MENSUALES_ORDINARIAS", "EXONERACION_APORTES_TOPE_SMMLV", "EXONERACION_EMPRESA_ELEGIBLE", "IBC_TOPE_SMMLV", "IBC_CAPS_FLOORS", "REDONDEO_PILA"]),
+    activeLaborParameterValues(tenantId, start, ["SMMLV", "AUX_TRANSPORTE", "AUX_TRANSPORTE_TOPE_SMMLV", "HORAS_MENSUALES_ORDINARIAS", "EXONERACION_APORTES_TOPE_SMMLV", "EXONERACION_EMPRESA_ELEGIBLE", "IBC_TOPE_SMMLV", "IBC_CAPS_FLOORS", "REDONDEO_PILA", "MAX_HE_DIARIO", "MAX_HE_SEMANAL"]),
     activeSurchargeConcepts(tenantId, start),
     activePayrollConcepts(tenantId, start, input.country || "CO"),
     prisma.employee.findMany({ where: { active: true, ...employeeFilter }, include: { user: { select: safeUserSelect } } }),
@@ -5354,7 +5336,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
         ))
       ORDER BY created_at ASC
     `.then((rows) => rows.filter((row) => employeeIds.includes(Number(row.employee_id)))).catch(() => []) : [],
-    activeEmployeeLibranzas(tenantId, employeeIds, { start, end, periodType }),
+    activeEmployeeLibranzas(tenantId, employeeIds, { start, end, periodType, periodKey }),
     salarySnapshotsForEmployees(tenantId, employeeIds, start, end),
     activeCalendarDaysByDate(tenantId, start, end, input.country || "CO"),
     employeeIds.length ? prisma.timeRoute.findMany({ where: { date: { gte: start, lt: endExclusive } }, select: { date: true, employees: true, kind: true } }).catch(() => []) : []
@@ -5502,6 +5484,12 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
         return sum + restDay.nightMinutes + Number(day.ordinary_sunday_holiday_night_minutes || 0);
       }, 0)
     };
+    // Topes de trabajo suplementario vigentes, leidos de parametros laborales.
+    const supplementaryLimits = supplementaryWorkLimitTrace(
+      days,
+      Number(legalParameterRows.MAX_HE_DIARIO?.value || 0) * 60,
+      Number(legalParameterRows.MAX_HE_SEMANAL?.value || 0) * 60
+    );
     // Mes comercial de 30 dias (quincena = 15): el salario base se liquida siempre sobre esa base,
     // sin importar que el mes calendario tenga 28, 29, 30 o 31 dias.
     //  - Un dia se paga solo si tiene marcacion, descanso explicito en la malla (kind='descanso')
@@ -5534,7 +5522,13 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       .filter((adjustment) => segmentedAdjustmentType(adjustment) !== "VAC_COMPENSADAS")
       .reduce((sum, adjustment) => sum + Number(adjustment.metadata?.days_periodized ?? adjustment.metadata?.days ?? 0), 0);
     const availableCommercialDays = Math.max(0, commercialBaseDays - excludedNoveltyDays);
-    const paidBaseDays = Math.min(availableCommercialDays, Math.max(0, commercialBaseDays - computableAbsenceDays));
+    // Soporte del periodo: marcaciones, correcciones, descanso de malla, licencia, jornadas
+    // externas y novedades segmentadas (vacaciones/incapacidades/licencias con dias).
+    const supportDays = money(coveredDates.size + externalWorkedDays + excludedNoveltyDays);
+    // Una justificacion explicita reemplaza las ausencias sin soporte; el periodo queda
+    // trazado en source_summary para que la liquidacion sin marcaciones sea auditable.
+    const absencesCoveredByJustification = computableAbsenceDays > 0 && Boolean(sinMarcacionesJustificacion);
+    const paidBaseDays = Math.min(availableCommercialDays, Math.max(0, commercialBaseDays - (absencesCoveredByJustification ? 0 : computableAbsenceDays)));
     const contributionWorkedDays = Math.min(availableCommercialDays, Math.max(paidBaseDays, days.length + correctionDates.size + externalWorkedDays));
     const base = money((salaryBase / 30) * paidBaseDays);
     // El salario base solo se muestra cuando hay dias pagados por marcacion/descanso. Las jornadas
@@ -5615,7 +5609,9 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       if (line) lines.push(line);
     }
     const vacationAdjustmentDays = money(employeeAdjustments.filter(isVacationAdjustment).reduce((sum, adjustment) => sum + adjustmentDays(adjustment), 0));
-    const liquidationDays = daysWorked || periodDays;
+    // Dias soportados para causar prestaciones: los dias pagados del mes comercial
+    // (marcacion, descanso, licencia). Un periodo sin soporte no causa prestaciones ni auxilio.
+    const liquidationDays = paidBaseDays;
     const socialBenefitDays = Math.max(liquidationDays - vacationAdjustmentDays, 0);
     const qualifiesForTransportAllowance = Boolean(transportAllowanceMonthly > 0 && smmlv > 0 && salaryBase <= smmlv * transportAllowanceThresholdSmmlv);
     let transportAllowanceDays = qualifiesForTransportAllowance ? socialBenefitDays : 0;
@@ -5634,7 +5630,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       const concept = payrollConcepts.AUX_TRANSPORTE || payrollConceptFallback("AUX_TRANSPORTE");
       lines.push(payrollLine("AUX_TRANSPORTE", concept.name || "Auxilio de transporte", transportAllowanceDays, transportAllowanceMonthly / 30, transportAllowanceAmount, "parametros", concept));
     }
-    const socialBenefitsBase = socialBenefitBaseFromLines(lines, salaryBase, socialBenefitDays || liquidationDays);
+    const socialBenefitsBase = socialBenefitBaseFromLines(lines, salaryBase, socialBenefitDays);
     const vacationBase = socialBenefitBaseFromLines(lines, salaryBase, liquidationDays, { includeVacationBase: true });
     const salaryBaseForDeductions = money(lines.filter((line) => line.amount > 0 && line.affects_ibc !== false).reduce((sum, line) => sum + line.amount, 0));
     const workedCotizableRemuneration = money(lines.filter((line) => line.amount > 0 && line.affects_ibc !== false && !["VACACIONES", "VACACIONES_DISFRUTADAS", "LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "VACACIONES_COMPENSADAS", "SLN"].includes(String(line.code || ""))).reduce((sum, line) => sum + line.amount, 0));
@@ -5734,9 +5730,38 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       net: money(gross - deductions),
       employer_cost: gross,
       lines: allLines,
-      source_summary: { days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: ibcSalud.base, ibc_sin_topes: salaryBaseForDeductions, ibc_subsistemas: { salud: ibcSalud.base, pension: ibcPension.base, arl: ibcArl.base }, ibc_reglas: { source: ibcRules.source, tope_smmlv: ibcRules.topMultiplier, tope: ibcRules.capsFloors.salud?.cap ?? null, piso: ibcRules.capsFloors.salud?.floor ?? null, aplicado: ibcSalud.applied || ibcPension.applied || ibcArl.applied }, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
+      source_summary: { days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, dias_soporte: supportDays, dias_pagados: paidBaseDays, justificacion_sin_marcaciones: sinMarcacionesJustificacion || null, overtime_hrs: money(Object.values(overtimeMap).reduce((sum, minutes) => sum + minutes, 0) / 60), topes_trabajo_suplementario: supplementaryLimits, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: ibcSalud.base, ibc_sin_topes: salaryBaseForDeductions, ibc_subsistemas: { salud: ibcSalud.base, pension: ibcPension.base, arl: ibcArl.base }, ibc_reglas: { source: ibcRules.source, tope_smmlv: ibcRules.topMultiplier, tope: ibcRules.capsFloors.salud?.cap ?? null, piso: ibcRules.capsFloors.salud?.floor ?? null, aplicado: ibcSalud.applied || ibcPension.applied || ibcArl.applied }, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
     };
   });
+}
+
+// Reglas de soporte comunes a la validacion previa y a la ejecucion de la liquidacion.
+// Sin dias soportados (marcacion, correccion, descanso de malla o licencia) y sin
+// justificacion explicita, la nomina del empleado no se liquida.
+function payrollSupportIssues(rows = []) {
+  const issues = [];
+  for (const row of rows) {
+    const support = Number(row.source_summary?.dias_soporte || 0);
+    const justification = String(row.source_summary?.justificacion_sin_marcaciones || "").trim();
+    if (!support && !justification) {
+      issues.push({ severity: "error", code: "SIN_MARCACIONES", employee_id: row.employee_id, employee_name: row.employee_name, message: "Empleado sin marcaciones ni soporte en el periodo. Registra marcaciones, descanso o licencia, o adjunta una justificacion explicita." });
+    } else if (!support && justification) {
+      issues.push({ severity: "warning", code: "SIN_MARCACIONES_JUSTIFICADA", employee_id: row.employee_id, employee_name: row.employee_name, message: `Empleado sin marcaciones liquidado con justificacion: ${justification}` });
+    } else if (!row.source_summary?.workdays) {
+      issues.push({ severity: "warning", code: "SIN_MARCACIONES_PROCESADAS", employee_id: row.employee_id, employee_name: row.employee_name, message: "Empleado sin marcaciones procesadas; los dias se cubren con descanso, licencia o justificacion." });
+    }
+    if (!row.gross) issues.push({ severity: "warning", code: "SIN_DEVENGOS", employee_id: row.employee_id, employee_name: row.employee_name, message: "Empleado sin devengos calculados." });
+    if (!row.source_summary?.ibc) issues.push({ severity: "warning", code: "SIN_IBC", employee_id: row.employee_id, employee_name: row.employee_name, message: "Empleado sin base IBC para deducciones." });
+    const limits = row.source_summary?.topes_trabajo_suplementario;
+    if (limits?.excedido) {
+      const detail = [
+        ...(limits.dias_excedidos || []).map((entry) => `${entry.date}: ${entry.horas} h`),
+        ...(limits.semanas_excedidas || []).map((entry) => `semana ${entry.week_start}: ${entry.horas} h`)
+      ].join("; ");
+      issues.push({ severity: "warning", code: "TOPES_TRABAJO_SUPLEMENTARIO", employee_id: row.employee_id, employee_name: row.employee_name, message: `Horas extra por encima del tope (${limits.tope_diario_horas || "-"} h/dia, ${limits.tope_semanal_horas || "-"} h/semana): ${detail}` });
+    }
+  }
+  return issues;
 }
 
 async function validatePayrollPeriod(tenantId, input = {}) {
@@ -5749,11 +5774,7 @@ async function validatePayrollPeriod(tenantId, input = {}) {
     const issues = [];
     if (!rows.length) issues.push({ severity: "error", code: "SIN_EMPLEADOS", message: "No hay empleados activos para liquidar." });
     if (existing.length) issues.push({ severity: "warning", code: "DOCUMENTOS_EXISTENTES", message: `Ya existen ${existing.length} documentos para este periodo.` });
-    for (const row of rows) {
-      if (!row.gross) issues.push({ severity: "warning", code: "SIN_DEVENGOS", employee_id: row.employee_id, employee_name: row.employee_name, message: "Empleado sin devengos calculados." });
-      if (!row.source_summary?.workdays) issues.push({ severity: "warning", code: "SIN_MARCACIONES", employee_id: row.employee_id, employee_name: row.employee_name, message: "Empleado sin marcaciones procesadas en el periodo." });
-      if (!row.source_summary?.ibc) issues.push({ severity: "warning", code: "SIN_IBC", employee_id: row.employee_id, employee_name: row.employee_name, message: "Empleado sin base IBC para deducciones." });
-    }
+    issues.push(...payrollSupportIssues(rows));
     return { period_key: periodKey, ok: !issues.some((issue) => issue.severity === "error"), issues, employees: rows.length };
   });
 }
@@ -5771,10 +5792,16 @@ async function runPayrollLiquidation(tenantId, input = {}, user = {}) {
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
   await assertPayrollPeriodOpen(tenantId, periodKey);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
-    const rows = await buildPayrollLiquidationRows(tenantId, input);
-    if (input.recalculate === true || input.recalculate === "true") {
-      await reversePayrollLibranzaMovements(tx, tenantId, rows[0]?.period_key || input.period_key || "");
-      await tx.$executeRaw`DELETE FROM th_nomina_documentos WHERE tenant_id = ${tenantId} AND period_key = ${rows[0]?.period_key || input.period_key || ""}`;
+    const recalculate = input.recalculate === true || input.recalculate === "true";
+    if (recalculate) {
+      await reversePayrollLibranzaMovements(tx, tenantId, periodKey);
+      await tx.$executeRaw`DELETE FROM th_nomina_documentos WHERE tenant_id = ${tenantId} AND period_key = ${periodKey}`;
+    }
+    const rows = await buildPayrollLiquidationRows(tenantId, { ...input, period_key: periodKey });
+    const blocking = payrollSupportIssues(rows).find((issue) => issue.severity === "error");
+    if (blocking) {
+      const who = blocking.employee_name ? ` (${blocking.employee_name})` : "";
+      throw validationError(`${blocking.message}${who}`, 422, blocking.code);
     }
     const documents = [];
     for (const row of rows) {

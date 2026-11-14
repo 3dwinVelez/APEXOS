@@ -289,7 +289,7 @@ test("payroll process consumes parameterized labor deductions", () => {
   const source = read("apps/api/src/modules/hr/service.js");
   assert.match(source, /activeLaborDeductions/);
   assert.match(source, /metadata->>'category'/);
-  assert.match(source, /deducciones_parametrizadas/);
+  assert.match(source, /const deductionLines = deductionMasters/);
   assert.doesNotMatch(source, /const deductions = 0;/);
 });
 
@@ -334,7 +334,8 @@ test("payroll liquidation creates employee documents, adjustments and pdf vouche
   assert.match(source, /AUX_TRANSPORTE:\s*249095/);
   assert.match(source, /qualifiesForTransportAllowance/);
   assert.match(source, /payrollLine\("AUX_TRANSPORTE"/);
-  assert.match(source, /include_in_social_benefits_base: true/);
+  assert.match(source, /include_in_social_benefits_base: false/);
+  assert.match(source, /exclude_from_social_benefits_base: true/);
   assert.match(source, /include_in_vacation_base: false/);
   assert.match(source, /indemnizationDaysForTermination/);
   assert.match(source, /buildEmployeeTerminationLiquidation/);
