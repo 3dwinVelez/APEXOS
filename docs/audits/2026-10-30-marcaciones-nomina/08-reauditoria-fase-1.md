@@ -122,6 +122,11 @@ La compuerta que este documento dejó abierta se cumplió el mismo día:
 - **Aprobación y alcance.** La compuerta de aprobación validó el manifiesto del paquete y la de
   alcance enumeró 45 rutas exactas sobre `origin/main` `c8e5e67c`.
 - **Producción.** `main` quedó en `c53a314f` y el API productivo sirve `c53a314f4fd8` en `/health`.
+- **Linaje de los SHAs.** La compuerta de alcance se corrió sobre el candidato `9c9ebf90` y después
+  ese commit se enmendó a `ae2f8e96` para corregir el SHA del baseline en el manifiesto y adjuntar
+  las salidas de las compuertas. El inventario de producto es el mismo en los tres: el `git diff`
+  entre `9c9ebf90`, `ae2f8e96` y `c53a314f` no reporta archivos fuera de `docs/qa/evidence/` y
+  `docs/qa/manifests/`.
 - **Reintegro.** `desarrollo` recibió el mismo paquete y su suite de dominio queda en 212/212.
 
 Lo que sigue abierto no cambia de estado: Fases 2 a 4, firma jurídica/contable, decisión de
