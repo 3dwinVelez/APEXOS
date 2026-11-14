@@ -2,7 +2,7 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.25.0
+version: 2.26.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -143,6 +143,11 @@ Antes de actuar, leer en este orden:
     - **El bloqueo por falta de soporte no filtra datos.** `SIN_MARCACIONES` responde 422 con código y, si aplica, el nombre del empleado ya visible para quien tiene `payroll:write`; no incluye marcaciones, salarios de otros empleados ni identificadores de otros tenants. La justificación se guarda como texto en `source_summary`, sin datos personales adicionales.
     - **La migración `20261113120000` solo corrige catálogo y siembra parámetros.** Son `UPDATE` acotados por `tenant_id`/`code` y `INSERT ... WHERE NOT EXISTS`; no toca documentos, no borra filas y no incorpora credenciales. La aplicación en nube sigue siendo autorización independiente y se declara pendiente.
     Por qué: un cambio de cálculo que reemplaza la ruta de liquidación es exactamente donde se cuela un endpoint sin permiso o una migración que reescribe datos de clientes; R-09 se implementó como delegación, no como nueva superficie.
+40. **La certificación en un ambiente vivo usa una identidad efímera de mínimo privilegio y no deja rastro.** El certificador de QA de nómina (`scripts/certifications/hr-nomina-legal-2026-qa.js`) crea un rol propio de la corrida con `hr:read` y `payroll:read`, un usuario del tenant NYVORA con contraseña aleatoria hasheada, se autentica contra la API desplegada y lo desactiva en `finally` (`certification_user_deactivated: true`). Tres controles:
+    - **Puerta de ambiente.** Aborta si el host no es el servicio QA de Railway (`-prod-production` incluido en la denegación) o si `DATABASE_URL` no corresponde al proyecto Supabase de QA; una credencial de producción no puede medir QA por error de configuración.
+    - **Sin credenciales en evidencia.** La evidencia guarda códigos, conteos y nombres de verificación; nunca correo, contraseña, token ni service role. La cuenta real del cliente no se usa para automatizar y su credencial no se transcribe.
+    - **La escritura se limita a la identidad efímera.** El certificador es de solo lectura sobre nómina: no liquida, no cierra y no crea documentos; lo único que escribe es el usuario de la corrida, que se desactiva al terminar.
+    Prueba de cierre: corrida QA 2026-11-13 con `certification_user_deactivated: true` y `qa-certification.json` sin secretos. Por qué: una certificación que deja una cuenta activa o una contraseña en el repositorio se convierte en una puerta permanente abierta por una prueba.
 
 ## Checklist de intervención
 

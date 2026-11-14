@@ -2,7 +2,7 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.13.0
+version: 2.14.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -94,6 +94,7 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
     - **Una sola vía de liquidación.** `POST /hr/payroll/process` delega en `runPayrollLiquidation` y conserva `payroll:write`; no se reintroduce el cálculo plano (`hourly * 1.25`, `deductions = 0`).
     - **Los topes de trabajo suplementario se trazan antes de decidir sanción.** `MAX_HE_DIARIO`/`MAX_HE_SEMANAL` se leen por tenant y `supplementaryWorkLimitTrace` publica días y semanas excedidos en modo alerta; el bloqueo exige decisión jurídica documentada y no se implementa por iniciativa propia.
     Prueba de cierre: `node --test apps/api/test/hr-*.test.js` (210/210 el 2026-11-13) más `hr-nomina-legal-2026.test.js` (9/9). Por qué: el veredicto de auditoría seguía NO APTO porque producción ejecutaba el motor anterior; corregir el cálculo sin retirar el legacy habría dejado dos respuestas distintas para la misma nómina.
+30. **La proyección de jornadas es una sola y viaja con su módulo.** `/hr/workdays` y la liquidación leen `loadPayrollWorkdays` (`apps/api/src/modules/hr/payrollWorkdays.js`), que proyecta las marcaciones en memoria y no persiste `ProcessedWorkday`; la vista previa y el reporte comparten esa fuente. Cuando la corrección de lectura se aplica a una rama distinta de aquella donde nació el módulo auxiliar, el archivo auxiliar viaja en el mismo cambio: el cherry-pick de la proyección llegó a `desarrollo` sin `payrollWorkdays.js` y `/hr/workdays` fallaba con `ReferenceError` en las dos pruebas de `hr-workdays-projection.test.js`. Prueba de cierre: `node --test apps/api/test/hr-*.test.js` (212/212 en `desarrollo` y 236/236 en `main` el 2026-11-13). Por qué: un archivo nuevo que aplica sin conflicto no prueba que la rama receptora tenga sus dependencias.
 
 ## Checklist de intervención
 

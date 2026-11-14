@@ -1,0 +1,24 @@
+# Suite completa del API en desarrollo tras el reintegro del paquete
+# Fecha: 2026-11-13T22:56-05:00
+# Commit medido: 0a1f4a3e (desarrollo, arbol de producto del paquete de nomina legal 2026)
+# Entorno: worktree aislado sobre 0a1f4a3e, sin .env (sin DATABASE_URL), node_modules por junction
+# Comando: node --test test/*.test.js   (cwd apps/api)
+
+# tests 1087
+# pass 1082
+# fail 3
+# skipped 2
+
+# Comparacion con el baseline medido el mismo dia sobre b388117a (docs/qa/evidence/nomina-legal-2026-20261113/baseline-failures.txt):
+#   baseline: 1085 tests, 1080 pass, 3 fail, 2 skipped
+#   actual:   1087 tests, 1082 pass, 3 fail, 2 skipped
+#   delta:    +2 pruebas, +2 pasadas, mismos 3 fallos preexistentes, mismos 2 omitidos
+#   las dos pruebas nuevas son hr-workdays-projection.test.js, que ejercita la proyeccion
+#   compartida entre /hr/workdays y la liquidacion.
+
+# Fallos preexistentes, identicos al baseline (no introducidos por el paquete):
+not ok 80 - all accounting UI routes are registered under /api/v1
+not ok 18 - test\authorization-status-codes.test.js
+not ok 1059 - las rutas TMS se registran y exigen autenticacion
+
+# duration_ms 33182.2136

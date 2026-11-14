@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.54.0
+version: 2.55.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -174,6 +174,7 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **El efecto se cuenta por objeto y antes/después.** Auxilio de transporte: `include_in_social_benefits_base` 1→0 y `exclude_from_social_benefits_base` 0→1; topes: 48 parámetros nuevos en 24 tenants; la segunda corrida inserta 0 filas.
     - **La deuda ajena no se arrastra.** Si el ledger del ambiente tiene migraciones pendientes de otros módulos y filas que solo viven en la base, la migración propia se aplica por sentencias y no con `migrate deploy`; el brief nombra las pendientes que quedaron intactas.
     Por qué: «aplicada en QA» sin checksum, conteos ni segunda corrida es indistinguible de «creí que se aplicó», y un `migrate deploy` de paso habría movido deuda de otros módulos dentro de un encargo de nómina.
+68. **Un paquete certificado se escribe con un inventario por destino, no con una lista única.** El cierre de la Fase 1 llegó a tres árboles con baselines distintos: `develop` (`beff5132`, 35 rutas), `main` (`c8e5e67c`, 45 rutas reconstruidas por cherry-pick) y `desarrollo` (reintegro con dos commits que no aportaron cambios netos y un módulo que faltaba). El brief declara, para cada destino, el baseline exacto, el diff medido y la razón de cada diferencia —por ejemplo, `payrollWorkdays.js` ya existía en `main` y faltaba en `desarrollo`—. Regla: el inventario del brief se contrasta contra `git diff --name-status <baseline>..<candidato>` de ese destino; una tabla copiada de otra rama es un inventario falso. Por qué: el mismo paquete no produce el mismo diff sobre baselines distintos, y la diferencia que no se escribe se descubre con una suite roja o, peor, en producción.
 
 ## Checklist de intervención
 

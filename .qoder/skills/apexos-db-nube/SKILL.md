@@ -2,7 +2,7 @@
 name: apexos-db-nube
 description: Experto en base de datos en la nube del Equipo APEXOS: PostgreSQL, Prisma (apps/api/prisma/schema.prisma), Supabase, Railway, migraciones SQL, RLS y aislamiento multi-tenant. Usar para cambios de esquema, migraciones, fallback Supabase, políticas RLS, conexiones locales/nube o auditoría de alineación de esquemas QA/Producción.
 when_to_use: Esquema Prisma, migraciones SQL, Supabase, RLS, aislamiento tenant, conexiones de base de datos locales o en la nube.
-version: 2.3.0
+version: 2.4.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -62,6 +62,11 @@ Antes de actuar, leer en este orden:
     - **El efecto se comprueba por fila, no por «se aplicó el SQL».** Tras aplicar se lee el `metadata` del concepto y las filas de parámetros del tenant; la segunda ejecución no debe insertar ni actualizar nada.
     - **La nube sigue siendo acto autorizado aparte.** La migración se versiona en `desarrollo`; aplicar en QA/producción exige autorización independiente y se declara como pendiente en el handoff.
     Por qué: una semilla legal equivocada infló prima, cesantías e intereses en cada liquidación; corregirla con un `UPDATE` global o pisando parámetros del tenant habría arreglado un tenant y roto otro.
+15. **Una migración aplicada solo en QA viaja a `main` con el modo degradado declarado, y no se reintenta en producción de paso.** El paquete de la Fase 1 (2026-11-13) lleva tres migraciones: `20261030120000_hr_labor_rates_vigencia_2026`, `20261030130000_hr_ibc_caps_floors_2026` y `20261113120000_hr_nomina_legal_2026`. Reglas:
+    - **Solo se promueve lo aditivo.** Las tres crean tablas, parámetros y correcciones de catálogo; ninguna borra filas ni reescribe documentos. Un paquete con una migración destructiva no se aprueba con esta vía.
+    - **El estado degradado se escribe en la aprobación.** Sin `20261113120000` en producción, los topes de trabajo suplementario llegan en cero (no alertan) y el catálogo conserva la semilla anterior; el manifiesto de aprobación lo declara y el certificador de QA lo mide en la base de QA, no en producción.
+    - **La migración de producción es acto aparte.** Se aplica solo con autorización independiente coordinada con el despliegue del código nuevo; la promoción del código no la autoriza. Si se revierte el código antes de migrar, esquema y código vuelven a coincidir sin restaurar datos.
+    Prueba de cierre: `migration-local.txt` (tres migraciones `applied = t` en la base local) y `qa-migration-apply.md` (QA con checksum `85114b7f…`, segunda corrida 0 filas). Por qué: promover código y migración como un solo acto convierte una ventana de QA en un cambio de base productiva no autorizado.
 
 ## Checklist de intervención
 

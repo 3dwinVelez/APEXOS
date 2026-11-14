@@ -4,6 +4,16 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-13
 
+### Fase 1 de nómina legal cerrada en main y reintegrada a desarrollo (`nomina-legal-2026-main`)
+
+- **Autorización del dueño.** «Procede con lo que hace falta y termina la auditoría en main», con la elección «Cerrar Fase 1 y promover a main» y la autorización «QA + develop + main».
+- **Certificación en QA.** Con un rol y usuario efímeros de NYVORA (desactivados al terminar), 20 verificaciones sobre la API desplegada desde `develop` `1590f18e`: 18 pasadas, 2 omitidas (sin libranzas ni horas extra en el periodo de NYVORA) y 0 fallos. Las omisiones quedan cubiertas por la certificación local E2E 11/11.
+- **Promoción a main.** Reconstrucción por cherry-pick de los ocho commits del paquete sobre `origin/main` `c8e5e67c`; las siete adiciones de documento y el módulo de proyección ya existían. Compuerta de alcance en verde con **45 rutas** (37 A, 6 M, 0 D) y compuerta de aprobación en verde. `main` queda en `c53a314f`; producción sirve `c53a314f4fd8`.
+- **Reintegro a desarrollo.** Los ocho commits volvieron a `desarrollo`; `0dadb09f` y `9df206b6` no aportaron cambios netos porque `c450f292` ya los tenía. `49394010` aplicó limpio pero dejó una llamada a `loadPayrollWorkdays` sin `payrollWorkdays.js`; la suite del dominio lo detectó (2/212) y el módulo se agregó en un commit propio: **212/212** frente a un baseline de 1080/1085 con 3 fallos preexistentes.
+- **Migración.** `20261113120000_hr_nomina_legal_2026` sigue aplicada solo en QA; producción queda en modo degradado declarado y la migración productiva exige autorización independiente.
+- **Veredicto.** Fase 1 (R-01 a R-10A) apta; Fases 2 a 4 siguen abiertas y el bloqueo por tope de trabajo suplementario espera firma jurídica.
+- Agentes: `apexos-backend` 2.13.0 → 2.14.0 (regla 30: la proyección de jornadas es una sola y viaja con su módulo), `apexos-seguridad` 2.25.0 → 2.26.0 (regla 40: certificación en ambiente vivo con identidad efímera de mínimo privilegio), `apexos-qa` 2.66.0 → 2.67.0 (control 79: dos capas de certificación, omisión declarada y equivalencia del árbol reconstruido), `apexos-db-nube` 2.3.0 → 2.4.0 (regla 15: migración aplicada solo en QA viaja a main con el modo degradado declarado), `apexos-frontend` 2.29.0 → 2.30.0 (regla 44: la pantalla reconstruida se verifica por identidad y typecheck del destino), `apexos-brief` 2.54.0 → 2.55.0 (regla 68: inventario por destino, no una lista única), `apexos-git-guardian` 2.16.0 → 2.17.0 (regla 33: cherry-pick lado por lado y suite del árbol receptor), `equipo-apexos` 2.38.0 → 2.39.0 (control 52: el cierre termina en main certificado y desarrollo reintegrado).
+
 ### Migración legal 2026 aplicada en QA (`nomina-legal-2026-qa-apply`)
 
 - **Autorización del dueño.** Pidió aplicar la migración en la nube y eligió «Solo QA»; producción queda fuera de alcance. `20261113120000_hr_nomina_legal_2026` se aplicó el 2026-11-13 por sentencias dentro de una transacción y con la fila del ledger (checksum `85114b7f…`), no con `migrate deploy`, porque el ledger de QA tenía 4 migraciones ajenas pendientes y una fila base que solo existe en la base.

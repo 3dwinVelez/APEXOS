@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.66.0
+version: 2.67.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -248,6 +248,11 @@ Antes de actuar, leer en este orden:
     - **La diferencia reporte/nómina se certifica visible.** El caso de R-10 verifica que la pantalla consulta `/hr/workdays` por rango y publica `liquidatedOvertimeMinutes` y la nota de diferencia; no se acepta «la diferencia ahora es cero» como prueba.
     - **Los topes se certifican en modo alerta.** 3 h extra en un día producen `excedido: true`, un día excedido y la advertencia `TOPES_TRABAJO_SUPLEMENTARIO`; el bloqueo no se implementa sin firma jurídica y así se declara.
     Prueba de cierre: `node --test apps/api/test/hr-*.test.js` **210/210**, `hr-nomina-legal-2026.test.js` **9/9**, reportes web **10/10**, `tsc --noEmit` y ESLint sin errores. Por qué: la auditoría del 2026-10-30 seguía NO APTO porque el motor de producción no era el auditado; certificar el motor nuevo exige probar la composición legal del cálculo, no solo que un número salga.
+79. **Una certificación en dos capas no se lee como aprobación total, y el árbol reconstruido se mide igual al desplegado.** Al cerrar la Fase 1 (2026-11-13) la corrida de QA contra NYVORA dio 18 pasadas, 2 omitidas y 0 fallos: las omisiones fueron por datos del cliente (sin libranzas ni horas extra en el periodo), no por defecto del código. Tres reglas:
+    - **La omisión se declara con su motivo y con la capa que la cubre.** La certificación escribe por qué no se ejecutó y qué corrida sí ejercitó el caso (E2E local 11/11 con datos controlados); una omisión sin cobertura alterna bloquea la aprobación.
+    - **La equivalencia se mide archivo por archivo.** Cuando el candidato a `main` se reconstruye por cherry-pick sobre otro baseline, se compara el código de producto con el build medido en QA y el resultado queda en evidencia (`equivalencia-candidato-main.txt`: 38 archivos idénticos byte a byte).
+    - **La suite se reejecuta en el árbol que se promueve.** HR 236/236 sobre la reconstrucción de `main`, 212/212 en `desarrollo` y `tsc --noEmit` exit 0; los cuatro fallos de la suite API completa se reproducen en el baseline y se contrastan, no se cuentan como regresión.
+    Prueba de cierre: `node scripts/certifications/hr-nomina-legal-2026-qa.js` contra QA (18/2/0) y `npm run qa:approval:evidence -- docs/qa/manifests/nomina-legal-2026-20261113-approval.json`. Por qué: el paquete llegó a QA por `develop`, a `main` por reconstrucción y a `desarrollo` por reintegro; sin la equivalencia y la reejecución, la aprobación describiría un árbol que nadie desplegó.
 
 ## Checklist de intervención
 

@@ -110,3 +110,22 @@ El veredicto original se mantiene como historia: aplicaba al commit `e25e177f`. 
 documento, el estado es **"Fase 1 apta, Fase 2+ pendiente"**, y la promoción a `main` solo
 procede con la aprobación QA del paquete y la declaración explícita de la migración pendiente en
 la nube.
+
+## 7. Cierre de la promoción (2026-11-13)
+
+La compuerta que este documento dejó abierta se cumplió el mismo día:
+
+- **QA funcional.** La API desplegada desde `develop` `1590f18ebdd4` se midió con una identidad
+  efímera de NYVORA: 18 verificaciones pasadas, 2 omitidas por datos del cliente (sin libranzas
+  ni horas extra en el periodo) y 0 fallos. Evidencia en
+  `docs/qa/evidence/nomina-legal-2026-20261113/qa-certification.json`.
+- **Aprobación y alcance.** La compuerta de aprobación validó el manifiesto del paquete y la de
+  alcance enumeró 45 rutas exactas sobre `origin/main` `c8e5e67c`.
+- **Producción.** `main` quedó en `c53a314f` y el API productivo sirve `c53a314f4fd8` en `/health`.
+- **Reintegro.** `desarrollo` recibió el mismo paquete y su suite de dominio queda en 212/212.
+
+Lo que sigue abierto no cambia de estado: Fases 2 a 4, firma jurídica/contable, decisión de
+bloqueo frente a alerta y la migración `20261113120000` en la base productiva, que exige
+autorización independiente coordinada con el despliegue. Mientras no se aplique, el código
+productivo opera en modo degradado declarado: los topes de trabajo suplementario llegan en cero y
+el catálogo conserva la semilla anterior.
