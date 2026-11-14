@@ -1,0 +1,83 @@
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "postgres", schema "public" at "aws-1-sa-east-1.pooler.supabase.com:5432"
+
+68 migrations found in prisma/migrations
+
+Applying migration `20260918100000_hr_labor_deductions_parameters`
+Applying migration `20260918140000_hr_payroll_liquidation_documents`
+Applying migration `20260918150000_hr_payroll_concepts_detail`
+Applying migration `20260918160000_hr_employee_termination_liquidations`
+Applying migration `20260918170000_hr_social_contributions`
+Applying migration `20260918180000_hr_payroll_period_closures`
+Applying migration `20260918190000_hr_social_contribution_exoneration_parameters`
+Applying migration `20260918200000_hr_pension_solidarity_parameter`
+Applying migration `20260918210000_hr_payroll_libranzas`
+Applying migration `20260918220000_hr_employee_contract_history`
+Applying migration `20260919100000_hr_overtime_concept_value_type`
+Applying migration `20260919110000_time_route_kind_descanso`
+Applying migration `20260919120000_hr_monthly_ordinary_hours_param`
+Applying migration `20260919130000_align_kilometraje_unique_index_shape`
+Applying migration `20260919130000_hr_social_benefit_payments`
+Applying migration `20260921000000_gps_inactivo_sin_senal_novelty_type`
+Applying migration `20261001120000_transport_settlement_packages`
+Applying migration `20261007120000_transport_plans`
+Applying migration `20261009120000_transport_rate_geography`
+Applying migration `20261009180000_petty_cash_foundation`
+Applying migration `20261013120000_transport_pyg`
+Applying migration `20261014120000_accounting_opening_balances_nullable_party`
+Applying migration `20261016123000_sedes_replace_origins`
+Applying migration `20261019134505_transport_settlement_vehicle`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260918100000_hr_labor_deductions_parameters/
+    └─ migration.sql
+  └─ 20260918140000_hr_payroll_liquidation_documents/
+    └─ migration.sql
+  └─ 20260918150000_hr_payroll_concepts_detail/
+    └─ migration.sql
+  └─ 20260918160000_hr_employee_termination_liquidations/
+    └─ migration.sql
+  └─ 20260918170000_hr_social_contributions/
+    └─ migration.sql
+  └─ 20260918180000_hr_payroll_period_closures/
+    └─ migration.sql
+  └─ 20260918190000_hr_social_contribution_exoneration_parameters/
+    └─ migration.sql
+  └─ 20260918200000_hr_pension_solidarity_parameter/
+    └─ migration.sql
+  └─ 20260918210000_hr_payroll_libranzas/
+    └─ migration.sql
+  └─ 20260918220000_hr_employee_contract_history/
+    └─ migration.sql
+  └─ 20260919100000_hr_overtime_concept_value_type/
+    └─ migration.sql
+  └─ 20260919110000_time_route_kind_descanso/
+    └─ migration.sql
+  └─ 20260919120000_hr_monthly_ordinary_hours_param/
+    └─ migration.sql
+  └─ 20260919130000_align_kilometraje_unique_index_shape/
+    └─ migration.sql
+  └─ 20260919130000_hr_social_benefit_payments/
+    └─ migration.sql
+  └─ 20260921000000_gps_inactivo_sin_senal_novelty_type/
+    └─ migration.sql
+  └─ 20261001120000_transport_settlement_packages/
+    └─ migration.sql
+  └─ 20261007120000_transport_plans/
+    └─ migration.sql
+  └─ 20261009120000_transport_rate_geography/
+    └─ migration.sql
+  └─ 20261009180000_petty_cash_foundation/
+    └─ migration.sql
+  └─ 20261013120000_transport_pyg/
+    └─ migration.sql
+  └─ 20261014120000_accounting_opening_balances_nullable_party/
+    └─ migration.sql
+  └─ 20261016123000_sedes_replace_origins/
+    └─ migration.sql
+  └─ 20261019134505_transport_settlement_vehicle/
+    └─ migration.sql
+      
+All migrations have been successfully applied.

@@ -1,0 +1,3 @@
+# Respaldo previo a la ventana de migraciones de produccion (2026-11-13)
+9236ef32227471a865fdaedab413c3a30bbe74c414dc7e2a0108bf3a65f170c3  219310375 bytes  .local/backups/prod-20261113-pre-promocion.dump
+82ee1ec41d729fefe6bfef796c41f9d9b08411a67fdce40b99af22d2a864fc4e  222432252 bytes  .local/backups/prod-20261113-pre-migrate.dump

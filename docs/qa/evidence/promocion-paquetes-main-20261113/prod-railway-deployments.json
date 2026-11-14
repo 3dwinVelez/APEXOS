@@ -1,0 +1,44 @@
+{
+  "project": {
+    "id": "0afe38cc-6080-49d2-aa24-2d5625250ac2",
+    "name": "APEXOS PROD"
+  },
+  "environment": {
+    "id": "7f4388a3-b254-4d64-ba49-434b16e41469",
+    "name": "production"
+  },
+  "services": [
+    {
+      "name": "apexos-api-prod",
+      "id": "7096734e-9a49-4542-be26-b4285b429f17",
+      "serviceInstanceId": "63a1a3b9-4c1b-419f-b298-882f7f48c6b7",
+      "deployment": {
+        "id": "40c9d4c4-ac9e-478c-90d1-95e0c85942a6",
+        "status": "SUCCESS",
+        "createdAt": "2026-11-13T23:57:02.422Z",
+        "branch": "main",
+        "commit": "c8e5e67c52b106086a058b2f6ac6bebf0ebf6697",
+        "commitMessage": "docs(qa): la salida de la compuerta de alcance queda con las 480 rutas del candidato final"
+      },
+      "instances": [
+        "RUNNING"
+      ]
+    },
+    {
+      "name": "apexos-web-prod",
+      "id": "07ddbe4e-1139-4def-b412-7f4a2461733a",
+      "serviceInstanceId": "f2f0a076-db2c-4697-ad5f-be17a534016b",
+      "deployment": {
+        "id": "5a848863-b128-4d72-a890-d0ca98c49e22",
+        "status": "SUCCESS",
+        "createdAt": "2026-11-13T23:57:02.422Z",
+        "branch": "main",
+        "commit": "c8e5e67c52b106086a058b2f6ac6bebf0ebf6697",
+        "commitMessage": "docs(qa): la salida de la compuerta de alcance queda con las 480 rutas del candidato final"
+      },
+      "instances": [
+        "RUNNING"
+      ]
+    }
+  ]
+}

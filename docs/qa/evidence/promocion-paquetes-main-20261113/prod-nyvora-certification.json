@@ -1,0 +1,1627 @@
+{
+  "ok": true,
+  "change_id": "promocion-paquetes-main-20261113",
+  "environment": "PRODUCTION",
+  "company": "NYVORA",
+  "api_url": "https://apexos-api-prod-production.up.railway.app",
+  "read_only": true,
+  "write_methods_executed": [
+    "POST {SUPABASE_URL}/auth/v1/token (login GoTrue)",
+    "POST /api/v1/auth/login (solo negativo de credencial invalida)"
+  ],
+  "generated_at": "2026-11-14T00:29:13.686Z",
+  "run_id": "20261114002913",
+  "expected_commit": "c8e5e67c",
+  "commit": "c8e5e67c52b1",
+  "checks": [
+    {
+      "group": "salud",
+      "endpoint": "/health",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 724,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "status",
+          "version",
+          "modules",
+          "commit",
+          "service_certification"
+        ]
+      }
+    },
+    {
+      "group": "sesion",
+      "endpoint": "/api/v1/auth/me",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 9332,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "tenant",
+          "user"
+        ]
+      }
+    },
+    {
+      "group": "administracion",
+      "endpoint": "/api/v1/admin/roles",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 5181,
+      "shape": {
+        "type": "array",
+        "count": 82
+      }
+    },
+    {
+      "group": "administracion",
+      "endpoint": "/api/v1/admin/users",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3781,
+      "shape": {
+        "type": "array",
+        "count": 100
+      }
+    },
+    {
+      "group": "administracion",
+      "endpoint": "/api/v1/admin/user-master-data",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 4418,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "user_statuses",
+          "user_types",
+          "contract_types",
+          "engagement_types",
+          "session_statuses",
+          "document_statuses",
+          "user_document_types",
+          "areas",
+          "positions"
+        ]
+      }
+    },
+    {
+      "group": "inventario",
+      "endpoint": "/api/v1/inventory/items",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3627,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "group": "inventario",
+      "endpoint": "/api/v1/inventory/families",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2901,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "group": "inventario",
+      "endpoint": "/api/v1/inventory/warehouses",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3140,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "group": "inventario",
+      "endpoint": "/api/v1/inventory/locations",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3818,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "group": "inventario",
+      "endpoint": "/api/v1/inventory/costs",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 9017,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages",
+          "totals"
+        ]
+      }
+    },
+    {
+      "group": "compras",
+      "endpoint": "/api/v1/purchases/suppliers",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 4740,
+      "shape": {
+        "type": "array",
+        "count": 2
+      }
+    },
+    {
+      "group": "compras",
+      "endpoint": "/api/v1/purchases/orders",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 5510,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "group": "compras",
+      "endpoint": "/api/v1/purchases/vmi-alerts",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2899,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "ventas",
+      "endpoint": "/api/v1/sales/customers",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2590,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "ventas",
+      "endpoint": "/api/v1/sales/orders",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2496,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "ventas",
+      "endpoint": "/api/v1/sales/invoices",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3114,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "total",
+          "page",
+          "pages"
+        ]
+      }
+    },
+    {
+      "group": "facturacion",
+      "endpoint": "/api/v1/invoicing/invoices",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2471,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "cartera",
+      "endpoint": "/api/v1/accounts-receivable/documents",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2472,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "cartera",
+      "endpoint": "/api/v1/accounts-receivable/reports/aging",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 6942,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "group": "cartera",
+      "endpoint": "/api/v1/accounts-receivable/retentions",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3024,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/accounts",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3241,
+      "shape": {
+        "type": "array",
+        "count": 500
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/periods",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 1929,
+      "shape": {
+        "type": "object",
+        "keys": []
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/organization-tree",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 1893,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "societies",
+          "branches",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/document-masters",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 1992,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "document_types",
+          "numbering"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/vat-masters",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 1889,
+      "shape": {
+        "type": "array",
+        "count": 6
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/payable-accounts",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2591,
+      "shape": {
+        "type": "array",
+        "count": 5
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/documents",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 7599,
+      "shape": {
+        "type": "array",
+        "count": 1
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 4192,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/reports/balance-sheet",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 7925,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "assets",
+          "liabilities",
+          "equity",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/reports/trial-balance",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3545,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "rows",
+          "totals",
+          "balanced"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/reports/taxes?period=2026-11",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2860,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "taxes",
+          "totals",
+          "dian_ready_fields"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/reports/receivables",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2673,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "kind",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/reports/payables",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2851,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "kind",
+          "documents",
+          "buckets",
+          "total"
+        ]
+      }
+    },
+    {
+      "group": "contabilidad",
+      "endpoint": "/api/v1/accounting/income-statement?period=2026-11",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2868,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "income",
+          "cogs",
+          "gross_profit",
+          "gross_margin_pct",
+          "operating_expenses",
+          "operating_profit",
+          "net_margin_pct"
+        ]
+      }
+    },
+    {
+      "group": "proyectos",
+      "endpoint": "/api/v1/projects",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2715,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "proyectos",
+      "endpoint": "/api/v1/projects/operational-center",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2631,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "projects",
+          "portfolio",
+          "next_actions"
+        ]
+      }
+    },
+    {
+      "group": "servicios",
+      "endpoint": "/api/v1/services/orders?limit=20",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 5219,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "data",
+          "kpis"
+        ]
+      }
+    },
+    {
+      "group": "servicios",
+      "endpoint": "/api/v1/services/technicians",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3347,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "group": "servicios",
+      "endpoint": "/api/v1/services/service-types",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 5954,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "group": "servicios",
+      "endpoint": "/api/v1/services/service-stores",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2250,
+      "shape": {
+        "type": "array",
+        "count": 2
+      }
+    },
+    {
+      "group": "servicios",
+      "endpoint": "/api/v1/services/satisfaction-questions",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 1956,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "group": "servicios",
+      "endpoint": "/api/v1/services/references",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2877,
+      "shape": {
+        "type": "array",
+        "count": 21
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/employees",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3417,
+      "shape": {
+        "type": "array",
+        "count": 370
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/schedules",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2724,
+      "shape": {
+        "type": "array",
+        "count": 26
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/routes",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3578,
+      "shape": {
+        "type": "array",
+        "count": 47
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/routes/event-summaries",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 4393,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "routes",
+          "truncation"
+        ]
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/routes/preop/template",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2242,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "sections",
+          "items"
+        ]
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/routes/preop/metrics",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2585,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "checklists_today",
+          "checklists_pending",
+          "routes_blocked",
+          "critical_vehicle_findings",
+          "drivers_without_route",
+          "average_completion_minutes",
+          "compliance_rate",
+          "approved_with_findings",
+          "findings_by_type",
+          "findings_by_plate"
+        ]
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/gps/active",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2722,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/activity-types",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 7042,
+      "shape": {
+        "type": "array",
+        "count": 19
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/attendance?date=2026-11-12",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2895,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/workdays?date=2026-11-12",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2591,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/payroll/config",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 1932,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "parameters",
+          "overtime_rates",
+          "concepts"
+        ]
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/payroll",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3426,
+      "shape": {
+        "type": "array",
+        "count": 100
+      }
+    },
+    {
+      "group": "talento-humano",
+      "endpoint": "/api/v1/hr/operations-map?date=2026-11-12&minutes=30&footprint_days=30",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3654,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "date",
+          "generated_at",
+          "active_window_minutes",
+          "footprint_window_days",
+          "people",
+          "routes",
+          "truncation",
+          "totals"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/sedes",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2664,
+      "shape": {
+        "type": "array",
+        "count": 3
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/plans",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2549,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/rate-cards",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2559,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/carriers",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2568,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/drivers",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2560,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/delivery-points",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 6758,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/vehicles",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3943,
+      "shape": {
+        "type": "array",
+        "count": 25
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/vehicles/metrics/dashboard",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3023,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "total",
+          "active",
+          "blocked",
+          "pending_validation",
+          "expiring",
+          "reliable_records",
+          "average_score",
+          "by_site",
+          "by_ownership",
+          "vehicles"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/vehicle-accounting-structure",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 1932,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "societies",
+          "branches",
+          "cost_centers"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/route-places",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2027,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "places",
+          "google_configured"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/config",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2591,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "timezone",
+          "default_currency",
+          "distance_unit",
+          "weight_unit",
+          "road_factor",
+          "gps_interval_seconds",
+          "gps_retention_days",
+          "mobile_config",
+          "notification_config",
+          "metadata"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/control-tower",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2559,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "total",
+          "normal",
+          "at_risk",
+          "in_execution",
+          "pending_delivery",
+          "exceptions",
+          "trips"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/monitoring/fleet",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2660,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "refresh_seconds",
+          "summary",
+          "units",
+          "alerts"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/monitoring/live",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2561,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "refresh_seconds",
+          "summary",
+          "units",
+          "alerts"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/pod/stats",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2665,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "total",
+          "complete",
+          "partial",
+          "rejected",
+          "complete_pct",
+          "partial_pct",
+          "first_attempt_pct"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/packing/workbench",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2685,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "needs",
+          "vehicles",
+          "trips",
+          "profiles",
+          "standard_profiles"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/planning/workbench",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 3265,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "pending_needs",
+          "planned_needs",
+          "plans",
+          "consolidation_groups"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/route-intelligence/status",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 5739,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "provider",
+          "configured",
+          "env_var",
+          "waypoints_limit",
+          "security_notes",
+          "probe"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-packages",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2945,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-periods",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2578,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-types",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2701,
+      "shape": {
+        "type": "array",
+        "count": 4
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-destinations",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2605,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-customers",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2560,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-import/catalogs",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2867,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "vehicles",
+          "customers",
+          "destinations",
+          "rates",
+          "limits"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-accounting-options",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2660,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "income_accounts",
+          "receivable_accounts"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-rate-options",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2560,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-vehicle-consolidation",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2664,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "total_packages",
+          "matched_packages",
+          "has_more",
+          "totals",
+          "vehicles"
+        ]
+      }
+    },
+    {
+      "group": "transporte",
+      "endpoint": "/api/v1/transport/settlement-control-tower",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2663,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "generated_at",
+          "total_packages",
+          "kpis",
+          "aging",
+          "packages"
+        ]
+      }
+    },
+    {
+      "group": "transporte-pyg",
+      "endpoint": "/api/v1/transport-pyg/concepts",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 37489,
+      "shape": {
+        "type": "array",
+        "count": 23
+      }
+    },
+    {
+      "group": "transporte-pyg",
+      "endpoint": "/api/v1/transport-pyg/config",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 7147,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "tax_percent"
+        ]
+      }
+    },
+    {
+      "group": "transporte-pyg",
+      "endpoint": "/api/v1/transport-pyg/account-configuration",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2989,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "source",
+          "has_config",
+          "config",
+          "proposal",
+          "proposal_from",
+          "proposal_label"
+        ]
+      }
+    },
+    {
+      "group": "transporte-pyg",
+      "endpoint": "/api/v1/transport-pyg/budgets?period=2026-11",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2587,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "period",
+          "rows"
+        ]
+      }
+    },
+    {
+      "group": "transporte-pyg",
+      "endpoint": "/api/v1/transport-pyg/mapping",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 37302,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "rows"
+        ]
+      }
+    },
+    {
+      "group": "transporte-pyg",
+      "endpoint": "/api/v1/transport-pyg/source-concepts",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 7111,
+      "shape": {
+        "type": "array",
+        "count": 7
+      }
+    },
+    {
+      "group": "cajas-menores",
+      "endpoint": "/api/v1/petty-cash/boxes",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2881,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "cajas-menores",
+      "endpoint": "/api/v1/petty-cash/concepts",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2721,
+      "shape": {
+        "type": "array",
+        "count": 7
+      }
+    },
+    {
+      "group": "cajas-menores",
+      "endpoint": "/api/v1/petty-cash/vouchers",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2592,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "cajas-menores",
+      "endpoint": "/api/v1/petty-cash/advances",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2588,
+      "shape": {
+        "type": "array",
+        "count": 0
+      }
+    },
+    {
+      "group": "cajas-menores",
+      "endpoint": "/api/v1/petty-cash/reports/summary",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2593,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "group_by",
+          "filters",
+          "date_range",
+          "rows",
+          "totals",
+          "truncated"
+        ]
+      }
+    },
+    {
+      "group": "cajas-menores",
+      "endpoint": "/api/v1/petty-cash/reports/boxes-ranking",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2601,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "filters",
+          "date_range",
+          "single_month",
+          "rows",
+          "totals",
+          "truncated"
+        ]
+      }
+    },
+    {
+      "group": "cajas-menores",
+      "endpoint": "/api/v1/petty-cash/reports/detail",
+      "status": 200,
+      "ok": true,
+      "code": null,
+      "module": null,
+      "latency_ms": 2582,
+      "shape": {
+        "type": "object",
+        "keys": [
+          "filters",
+          "date_range",
+          "rows",
+          "totals",
+          "pagination",
+          "truncated"
+        ]
+      }
+    }
+  ],
+  "failures": [],
+  "negatives": [
+    {
+      "name": "sin_token_401",
+      "status": 401,
+      "ok": true
+    },
+    {
+      "name": "credencial_invalida_401",
+      "status": 401,
+      "ok": true
+    }
+  ],
+  "modules": 19,
+  "login": {
+    "ok": true,
+    "provider": "supabase",
+    "user_id": "9e19641b-414d-40c8-957e-4f5b5a8be302",
+    "tenant_id": null,
+    "email_masked": "n***@apexos.local"
+  },
+  "slowest": {
+    "endpoint": "/api/v1/transport-pyg/concepts",
+    "latency_ms": 37489
+  },
+  "groups": [
+    {
+      "group": "salud",
+      "checks": 1,
+      "failures": 0
+    },
+    {
+      "group": "sesion",
+      "checks": 1,
+      "failures": 0
+    },
+    {
+      "group": "administracion",
+      "checks": 3,
+      "failures": 0
+    },
+    {
+      "group": "inventario",
+      "checks": 5,
+      "failures": 0
+    },
+    {
+      "group": "compras",
+      "checks": 3,
+      "failures": 0
+    },
+    {
+      "group": "ventas",
+      "checks": 3,
+      "failures": 0
+    },
+    {
+      "group": "facturacion",
+      "checks": 1,
+      "failures": 0
+    },
+    {
+      "group": "cartera",
+      "checks": 3,
+      "failures": 0
+    },
+    {
+      "group": "contabilidad",
+      "checks": 14,
+      "failures": 0
+    },
+    {
+      "group": "proyectos",
+      "checks": 2,
+      "failures": 0
+    },
+    {
+      "group": "servicios",
+      "checks": 6,
+      "failures": 0
+    },
+    {
+      "group": "talento-humano",
+      "checks": 13,
+      "failures": 0
+    },
+    {
+      "group": "transporte",
+      "checks": 28,
+      "failures": 0
+    },
+    {
+      "group": "transporte-pyg",
+      "checks": 6,
+      "failures": 0
+    },
+    {
+      "group": "cajas-menores",
+      "checks": 7,
+      "failures": 0
+    }
+  ]
+}

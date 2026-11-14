@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.51.0",
+      "version": "2.52.0",
       "updated_at": "2026-11-13",
-      "sha256": "8ef575c909fc2a146ed927fbf2aa5b4a6157cd19699fbe7787f1af71a2cf6d2a",
+      "sha256": "9ed423a158e92738b21974737d6be4f1bb77820673ceb0c3ea51564d8695fcad",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -135,15 +135,16 @@
         "encargo-protagonismo-jerarquia-tipografica",
         "brief-corte-portafolio-listas-exactas",
         "brief-brecha-despliegue-reconstruccion",
-        "brief-evidencia-qa-paquete-documental"
+        "brief-evidencia-qa-paquete-documental",
+        "brief-ventana-ejecutada-y-deltas-atribuidos"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.1.0",
-      "updated_at": "2026-11-08",
-      "sha256": "3a2c601acf0a2744f8b702814e06d381b41206722d7d6f20c5bde5cc2abc0db4",
+      "version": "2.2.0",
+      "updated_at": "2026-11-13",
+      "sha256": "b6b88283bd9b659216aaf9dd0608d45dc2065fe1af3465c152e42b49f052ee81",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -159,7 +160,8 @@
         "migracion-forward-only",
         "indices-tenant",
         "dinero-decimal",
-        "ddl-quirurgico-ledger-en-lf"
+        "ddl-quirurgico-ledger-en-lf",
+        "rename-vista-compatibilidad-y-filas-posteriores"
       ]
     },
     {
@@ -271,9 +273,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.64.0",
+      "version": "2.65.2",
       "updated_at": "2026-11-13",
-      "sha256": "bc1d64d0becbe294825aa687ca793e61f16d8e6710e43d8c95aea8cdac5dfd54",
+      "sha256": "dc275c5b05bd7975b4dd9879654daf003ee870cd660d0c3753150f203612aa15",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -329,7 +331,8 @@
         "corte-portafolio-evidencia-por-consumidor",
         "arnes-mide-pintura-y-fixtures-cors",
         "smoke-capa-visual-completa-en-el-despliegue",
-        "compuerta-main-evidencia-qa-equivalencia"
+        "compuerta-main-evidencia-qa-equivalencia",
+        "smoke-produccion-supabase-auth-y-latencia"
       ]
     },
     {

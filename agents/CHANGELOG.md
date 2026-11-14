@@ -4,6 +4,17 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-13
 
+### Ventana de producción ejecutada y smoke NYVORA de solo lectura (`promocion-paquetes-main-prod-20261113`)
+
+- **Autorización del dueño.** Confirmó la ventana, el resguardo de los datos productivos y el uso de la cuenta real de NYVORA en producción; su valor no se transcribe. `main` quedó en `c8e5e67c52b106086a058b2f6ac6bebf0ebf6697` con las dos compuertas en verde.
+- **Respaldo antes de la primera sentencia DDL.** Dos dumps con SHA-256 y tamaño (`9236ef32…`, `82ee1ec4…`) y el `migrate deploy` de la ventana: **68 migraciones en el ledger, 0 fallidas**, 24 aplicadas, incluida la de Talento Humano con sus 14 migraciones.
+- **Riesgo DDL verificado.** El rename `TransportOrigin` → `sedes` se aplicó con 0 filas y su vista de compatibilidad se creó de inmediato con las 18 columnas; las únicas otras operaciones no aditivas (`UPDATE` de `th_conceptos_recargo` y columna `kind` de `TimeRoute`) conservan datos.
+- **Objetos Supabase.** `standard_chart` con 2.508 cuentas y M-29 catalogado con 3 empresas y **0 habilitadas**.
+- **Datos.** `User` 186, `Employee` 391, `employees` 101, `cnt_cuedoc` 3, `TimeRoute` 298 y transporte sin cambios; `TimePunch` 2.136 → 2.154 por marcaciones reales. Las 3 sedes nuevas se atribuyeron al bootstrap del API (`metadata.source = admin_user_master_data`), no a la migración.
+- **Smoke de producción con la ruta de autenticación real.** La cuenta autentica por Supabase Auth (GoTrue), no por `/auth/login` local: el primer intento devolvió 401 con el usuario activo y el hash intacto, y el token de GoTrue sí pasa por `fastify.authenticate`. Con ese Bearer: **96 lecturas en 15 grupos, 96 × 200, 0 fallos**, 401 sin token y credencial inválida en verde; el más lento `transport-pyg/concepts` con 37,5 s (mapping, 35 s).
+- **Hallazgos que la promoción no cierra.** El veredicto **NO APTO** de Talento Humano (13 hallazgos, sin reauditoría), la falta de licencia M-29 en NYVORA (el API no la aplica a las lecturas; el gate es de permisos) y el rendimiento de `transport-pyg/concepts` y `mapping` por sembrar el catálogo en cada petición.
+- Agentes: `apexos-qa` 2.64.0 → 2.65.2 (control 77: el smoke de producción entra por Supabase Auth como la web, la credencial solo vive en el ambiente, la negativa por licencia no se inventa y un endpoint lento y correcto se publica con su número), `apexos-db-nube` 2.1.0 → 2.2.0 (regla 13: el rename conserva vista de compatibilidad y las filas posteriores al despliegue se atribuyen por `metadata` y timestamp, no por la ventana), `apexos-brief` 2.51.0 → 2.52.0 (regla 65: la ventana ejecutada se escribe con hashes del respaldo, objetos aplicados, deltas atribuidos y el hallazgo que sobrevive).
+
 ### Compuerta de aprobación de QA cerrada con la empresa modelo (`promocion-paquetes-main-20261113-qa`)
 
 - **Pedido directo del dueño.** Autorizó incluir **Talento Humano** como paquete 12 aislado (`01e9b8f6`) y certificar en producción con la cuenta de la empresa modelo, cuyo valor no se transcribe aquí. La decisión no cierra la auditoría del 2026-10-30 (**NO APTO**, 13 hallazgos).

@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.51.0
+version: 2.52.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -152,6 +152,13 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **El paquete documental viaja aparte del código.** El candidato conserva su árbol certificado; la hoja de certificación, los dos manifiestos, los dos arneses de QA y el directorio de evidencia se publican en `desarrollo`, y el brief dice dónde queda cada uno para que el siguiente lector reproduzca la corrida.
     - **La credencial de la empresa modelo no se escribe.** El brief se refiere a la cuenta por su correo de rol y a la instrucción del dueño por su contenido, nunca al valor; si una ronda anterior dejó un literal en un manifiesto, la corrección se declara como hallazgo de higiene y se verifica con un escaneo que no deja coincidencias.
     Por qué: una promoción grande se audita leyendo el brief; si la evidencia de QA no está nombrada con su directorio y la salvedad legal se diluye, el cierre parecería una aprobación que nadie dio.
+
+65. **La ventana ejecutada se escribe en el brief con los hashes del respaldo, los objetos aplicados y el hallazgo que sobrevive.** El 2026-11-13/14, al ejecutar la promoción en producción:
+    - **El respaldo se identifica por hash y tamaño, no por «se hizo backup».** Dos dumps previos (`pre-promocion` y `pre-migrate`) con su SHA-256 y bytes, y el `migrate deploy` con 68 migraciones y 0 fallidas, quedan versionados en el directorio de evidencia; sin el hash, el respaldo es una promesa.
+    - **Los objetos Supabase se nombran con su efecto contado.** El plan de cuentas estándar existe con 2508 cuentas y M-29 queda catalogado con 3 empresas y 0 habilitadas; la compatibilidad del rename se acredita con la vista `TransportOrigin` y sus columnas.
+    - **Los conteos post-ventana distinguen migración, producto y operación.** `TimePunch` creció por marcaciones reales; las 3 sedes nuevas las creó el bootstrap del API después del DDL; todo lo demás quedó idéntico. Cada delta lleva su causa o no se declara.
+    - **El hallazgo que sobrevive se escribe aunque la promoción esté verde.** Dos lecturas de PYG responden en ~35 s por sembrar el catálogo en cada petición: es un defecto de rendimiento del módulo nuevo, no un rojo de la ventana, y el brief lo deja con su número y su dueño. Lo mismo vale para el veredicto NO APTO de Talento Humano y la falta de licencia M-29: promocionar no cierra ninguno de los dos.
+    Por qué: un brief que solo dice «se promovió y quedó verde» borra el backup, el objeto aplicado y el defecto que la ventana destapó; el siguiente lector no puede reproducir la operación ni priorizar la deuda.
 
 ## Checklist de intervención
 

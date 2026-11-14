@@ -191,23 +191,44 @@ excluye del navegador; su lectura `/api/v1/projects` sí está verde en la certi
 
 ## 7. Lo que este documento NO certifica
 
-- **Certificación funcional NYVORA en producción**: pendiente. Debe hacerse con `NYVORA_REAL_READONLY`
-  (GET + navegador), sin crear usuarios ni datos de prueba, sobre el ambiente desplegado con el commit
-  exacto. La cuenta modelo no tiene licencia de Gastos Menores (M-29).
-- **Aprobación funcional de QA**: la corrida de QA está hecha y su evidencia es la de §6; la
+- **Aprobación funcional de terceros**: la corrida de QA está hecha y su evidencia es la de §6; la
   aprobación registrada en `../manifests/promocion-paquetes-main-20261113-approval.json` se apoya en
   la autorización expresa del propietario del 2026-11-13 y en esas mediciones, no en una sesión de
   terceros.
-- **Aplicación de migraciones y despliegue**: 24 migraciones Prisma, el plan de cuentas estándar y la
-  decisión sobre M-29. Requieren ventana y autorización independientes del dueño.
 - **Exactitud del cálculo de nómina**: expresamente fuera de este certificado. El paquete 12 viaja por
   decisión del propietario, pero la auditoría del 2026-10-30 sigue **NO APTO** con sus 13 hallazgos
   abiertos y no hay reauditoría. Certificar que la pantalla carga no es certificar que el pago es
   correcto.
-- **Regresión de datos en producción**: snapshot/PITR previo, conteo base de tablas de NYVORA y
-  comparación posterior; se ejecuta en la ventana, no antes.
+- **Rendimiento de PYG**: `transport-pyg/concepts` y `transport-pyg/mapping` responden entre 35 y 37 s en
+  producción porque siembran el catálogo concepto a concepto en cada petición. Es un defecto del
+  módulo nuevo, medido y declarado; no bloquea la promoción ya desplegada y queda como deuda de
+  rendimiento con dueño.
 
-Veredicto: **APTO en local y en QA con NYVORA** (96 lecturas, 11 pantallas y la regresión transversal
-en verde sobre `6589af8e1d32`). La publicación en `main` queda condicionada a la ventana autorizada:
-resolver la migración colgada, aplicar las 24 migraciones con el backup ya verificado, desplegar y
-repetir el smoke NYVORA de solo lectura en producción.
+## 8. Ventana ejecutada en producción (2026-11-13 → 14)
+
+- **Respaldo**: `prod-20261113-pre-promocion.dump` (219.310.375 B, sha256 `9236ef32…`) y
+  `prod-20261113-pre-migrate.dump` (222.432.252 B, sha256 `82ee1ec4…`); evidencia en
+  `../evidence/promocion-paquetes-main-20261113/prod-backups.txt`.
+- **Migraciones**: 68 en el ledger, **0 fallidas y 0 pendientes**; 24 aplicadas en la ventana
+  (`prod-migrate-deploy.txt`). La vista de compatibilidad `TransportOrigin` se creó de inmediato sobre
+  `sedes` con sus 18 columnas.
+- **Objetos Supabase**: `apexos_accounting_private.standard_chart` con 2.508 cuentas; catálogo M-29
+  activo con 3 empresas y **0 habilitadas**.
+- **Conteos**: `User` 186, `Employee` 391, `employees` 101, `cnt_cuedoc` 3, `TimeRoute` 298 y las
+  tablas de transporte sin cambios; `TimePunch` 2.136 → 2.154 por marcaciones reales. Las 3 filas de
+  `sedes` las creó el bootstrap del API (`metadata.source = admin_user_master_data`) después del DDL.
+  Detalle en `prod-data-counts-comparison.md`.
+- **Despliegue**: `apexos-api-prod` y `apexos-web-prod` en `SUCCESS` sobre
+  `c8e5e67c52b106086a058b2f6ac6bebf0ebf6697`; `/health` responde `c8e5e67c52b1`, 19 módulos.
+- **Smoke NYVORA de solo lectura**: la cuenta real de la empresa modelo autentica por Supabase Auth
+  (GoTrue) y el API valida ese token; **96 lecturas en 15 grupos, 96 × 200, 0 fallos**, ambos
+  negativos (401 sin token y credencial inválida) en verde. El más lento fue
+  `transport-pyg/concepts` con 37,5 s (mapping, 35 s). Evidencia:
+  `prod-nyvora-certification.json` y `prod-nyvora-certification-salida.txt`.
+- **Rollback preparado**: `git revert` del commit promovido y redeploy del deployment anterior de
+  Railway; las migraciones aditivas no se revierten y el rename conserva la vista de compatibilidad.
+
+Veredicto: **APTO**. El candidato pasó local, QA y la ventana real de producción con la empresa
+modelo; la promoción a `main` quedó desplegada y verificada el 2026-11-13. Permanecen abiertos, sin
+que la promoción los cierre: el veredicto **NO APTO** de Talento Humano por exactitud de nómina, la
+falta de licencia M-29 en NYVORA y el rendimiento de las dos lecturas de PYG.

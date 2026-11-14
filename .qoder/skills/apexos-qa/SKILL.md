@@ -2,7 +2,7 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.64.0
+version: 2.65.2
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -233,6 +233,14 @@ Antes de actuar, leer en este orden:
     - **El navegador recorre las pantallas con sesión real y declara lo que no abre.** `networkidle2` más `waitForSelector("h1")` antes de medir; una pantalla que redirige por licencia o queda en esqueleto por falta de datos se excluye con la causa medida, no se maquilla estirando el timeout.
     - **El manifiesto se estampa con dos commits.** El commit certificado del candidato y, en una nota, el commit desplegado que se midió; el `previous_main_commit` y el rollback `controlled_revert` se escriben antes de la ventana, y la aprobación cita la instrucción del dueño sin credenciales.
     Por qué: la compuerta de `main` se degrada en los dos mismos puntos —dar por equivalente un ambiente que no se midió y confundir una denegación de licencia con un rojo de permisos—; escribir la equivalencia, la cuenta efímera y la negativa esperada como contrato es lo que convierte «lo probamos en QA» en una aprobación auditable.
+
+77. **El smoke de producción entra por la ruta de autenticación que usa la web, y un endpoint lento y correcto se declara en vez de convertirse en rojo.** El 2026-11-13/14, al certificar `main c8e5e67c` con la cuenta real de NYVORA en producción:
+    - **La cuenta modelo vive en Supabase Auth, no en el login local.** `POST /api/v1/auth/login` respondió 401 aunque el usuario estaba activo y su hash intacto: la contraseña de la cuenta modelo que sirve en la web es la de GoTrue, no la del `User` espejo. El smoke pide el token a `{SUPABASE_URL}/auth/v1/token?grant_type=password` con la anon key y lo usa como Bearer; el API valida tokens Supabase en `fastify.authenticate` (primero JWT propio, luego `authenticateSupabaseToken`). Es la misma ruta de la web antes de caer al login local; probar solo el endpoint local habría declarado una cuenta rota que el dueño estaba usando.
+    - **La credencial entra por variable de ambiente y no se escribe.** Ni en argumentos, ni en el JSON, ni en la salida; el correo se enmascara (`n***@apexos.local`) y la corrida solo ejecuta POST de login más GET de lectura.
+    - **La denegación por licencia no se inventa.** NYVORA no tiene M-29 en su portafolio, pero el API no aplica esa licencia a las lecturas de cajas menores (el gate es de permisos); las siete rutas respondieron 200 y ese es el contrato medido. La limitación vive en `active_modules` y la curaduría del lobby, y se declara como hallazgo de licenciamiento, no como fallo de la corrida.
+    - **El presupuesto de latencia se fija por encima de la medición y se publica.** `transport-pyg/concepts` y `mapping` siembran el catálogo concepto a concepto en cada petición y tardaron 35–37 s; con un corte de 20 s se perdían dos lecturas válidas. Se corre con 90 s, se registra el más lento (`slowest`) y se reporta como hallazgo de rendimiento del módulo nuevo, no como rojo de disponibilidad.
+    - **Los conteos se cierran contra la línea base y cada delta se atribuye.** 96 lecturas en 15 grupos, 0 fallos, ambos negativos (401 sin token y credencial inválida) en verde; las filas nuevas de `sedes` se atribuyeron al bootstrap del API por `metadata.source`, y `TimePunch` creció por marcaciones reales. El `/health` del despliegue citó `c8e5e67c52b1` y los dos servicios de Railway quedaron `SUCCESS`.
+    Por qué: una certificación de producción falla por dos extremos —usar el endpoint de login equivocado y declarar una cuenta inválida, o relajar el presupuesto hasta que un cuelgue parezca lento—; medir con la ruta real, publicar el más lento y atribuir cada fila nueva convierte la ventana en evidencia reproducible.
 
 ## Checklist de intervención
 

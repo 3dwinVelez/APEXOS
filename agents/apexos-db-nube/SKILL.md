@@ -2,8 +2,8 @@
 name: apexos-db-nube
 description: Experto en base de datos en la nube del Equipo APEXOS: PostgreSQL, Prisma (apps/api/prisma/schema.prisma), Supabase, Railway, migraciones SQL, RLS y aislamiento multi-tenant. Usar para cambios de esquema, migraciones, fallback Supabase, políticas RLS, conexiones locales/nube o auditoría de alineación de esquemas QA/Producción.
 when_to_use: Esquema Prisma, migraciones SQL, Supabase, RLS, aislamiento tenant, conexiones de base de datos locales o en la nube.
-version: 2.1.0
-updated_at: 2026-11-08
+version: 2.2.0
+updated_at: 2026-11-13
 contract: 2
 ---
 
@@ -48,6 +48,13 @@ Antes de actuar, leer en este orden:
     - **Todo script que escribe en la nube declara el project ref esperado y aborta sin conectar** si `DATABASE_URL`/`SUPABASE_URL` no lo contienen (`jzbwzmkidfthknsohhnr` producción, `jbirkghkekuifgfsgquq` QA), y nunca imprime la clave. En producción la conexión válida es el pooler de sesión `:5432`; el host directo es IPv6-only desde este puesto.
     - **La alineación residual se reporta con su número exacto y su dueño.** Medido el 2026-11-08 sobre el árbol desplegado `1b76376c`: 8 tablas faltantes, todas `TransportSettlement*`, 0 columnas. Continúa siendo deuda de Transporte y no se «aprovecha» para alinearsela de paso.
     Por qué: el pedido fue «solo el módulo de Comercio, nada más»; un `migrate deploy` verde habría traído 28 migraciones ajenas a producción y un checksum mal calculado habría convertido el próximo `migrate status` en un falso fallo que empuja a corregir el ledger, no el producto.
+
+13. **Una migración que renombra una tabla conserva el nombre viejo como vista, y las filas que aparecen después del despliegue se atribuyen por su `metadata`, no por la ventana.** El 2026-11-13 se aplicaron 24 migraciones en producción (68 en el ledger, 0 fallidas):
+    - **El rename se mide antes de aplicarlo.** `TransportOrigin` tenía 0 filas, así que `ALTER TABLE ... RENAME TO sedes` no movió datos; la vista `TransportOrigin` se creó inmediatamente después para que el código viejo respondiera durante el despliegue de Railway. La vista se verifica por columnas, no solo por existir: `id, tenant_id, code, name, address, …, metadata, active, created_at, updated_at`.
+    - **Lo que crece después de la ventana no es de la migración.** Al medir los conteos post-despliegue aparecieron 3 filas en `sedes` con `metadata.source = admin_user_master_data` y `created_at` posterior a la migración: las creó el bootstrap del API al entrar al administrador. Se atribuyen por columna y timestamp, y se declaran; contarlas como efecto del DDL habría ocultado que el producto escribe por su cuenta.
+    - **El delta de tablas operativas se explica, no se «corrige».** `TimePunch` subió de 2136 a 2154 por marcaciones reales en vivo; `User`, `Employee`, `employees`, `cnt_cuedoc` y las tablas de transporte quedaron idénticas. Un delta que no se puede explicar no se acepta como ruido.
+    - **Los objetos Supabase se aplican con su efecto medido.** `apexos_accounting_private.standard_chart` pasó a existir con 2508 cuentas; M-29 quedó catalogado con 3 empresas y 0 habilitadas. «Se aplicó el SQL» no es evidencia; el conteo de la tabla y la fila del catálogo sí.
+    Por qué: en una ventana real el DDL es solo una de las fuentes de cambio; sin atribuir cada fila nueva, la comparación contra el snapshot acusa al producto o absuelve a la migración sin prueba.
 
 ## Checklist de intervención
 

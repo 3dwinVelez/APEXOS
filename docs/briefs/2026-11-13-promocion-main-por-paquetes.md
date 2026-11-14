@@ -139,10 +139,13 @@ detienen.
 
 ## 10. Autorizaciones pendientes (solo el dueño)
 
-1. Alcance: confirmar P0–P4 y exclusión de Talento Humano.
-2. Ventana de producción y autorización para aplicar migraciones y desplegar.
+1. ~~Alcance: confirmar P0–P4 y exclusión de Talento Humano.~~ Resuelto: el dueño confirmó P0–P4 y
+   pidió incluir Talento Humano (§11).
+2. ~~Ventana de producción y autorización para aplicar migraciones y desplegar.~~ Otorgada y
+   ejecutada (§12).
 3. Gastos Menores: si se quiere en `main`, habilitar M-29 en NYVORA o aceptar certificarlo en QA
-   únicamente, declarándolo.
+   únicamente, declarándolo. Sigue pendiente: se promovió el código, M-29 quedó catalogado y **0/3
+   empresas habilitadas** en NYVORA.
 
 ## 11. Actualización 2026-11-13 — decisión del propietario sobre Talento Humano
 
@@ -159,3 +162,34 @@ el árbol compila no certifica que el cálculo de nómina sea correcto.
 Los bloqueadores §5.2 (M-29 no licenciado en NYVORA), §5.3 (plan de cuentas estándar ausente) y §5.4
 (3 migraciones preexistentes sin aplicar en producción) siguen vigentes y condicionan la ventana de
 producción. Las autorizaciones §10.2 y §10.3 siguen pendientes.
+
+## 12. Ventana ejecutada 2026-11-13 → 14 — `main c8e5e67c` desplegado
+
+El propietario autorizó la ventana y el mapeo de la cuenta modelo en producción. La operación se
+ejecutó completa y quedó verificada:
+
+1. **Respaldo previo**: `prod-20261113-pre-promocion.dump` (219.310.375 B, sha256 `9236ef32…`) y
+   `prod-20261113-pre-migrate.dump` (222.432.252 B, sha256 `82ee1ec4…`), tomados antes de la primera
+   sentencia DDL.
+2. **Migraciones**: 68 en el ledger, **0 fallidas, 0 pendientes**; 24 aplicadas en la ventana —14 de
+   Talento Humano, 8 de `develop`/`main` de transporte, cajas menores, PYG, aperturas y sedes, y las 2
+   preexistentes que producción no tenía—. Las únicas no aditivas conservan datos: el rename
+   `TransportOrigin` → `sedes` (0 filas) con su vista de compatibilidad, el `UPDATE` de
+   `th_conceptos_recargo` y la columna `kind` de `TimeRoute`.
+3. **Objetos Supabase**: `apexos_accounting_private.standard_chart` con 2.508 cuentas; catálogo M-29
+   activo con 3 empresas y 0 habilitadas.
+4. **Datos**: `User` 186, `Employee` 391, `employees` 101, `cnt_cuedoc` 3, `TimeRoute` 298, transporte
+   sin cambios; `TimePunch` 2.136 → 2.154 por marcaciones reales. Las 3 sedes nuevas las creó el
+   bootstrap del API (`metadata.source = admin_user_master_data`) después del DDL, no la migración.
+5. **Despliegue**: API y web en `SUCCESS` sobre
+   `c8e5e67c52b106086a058b2f6ac6bebf0ebf6697`; `/health` responde `c8e5e67c52b1` con 19 módulos.
+6. **Smoke NYVORA de solo lectura**: la cuenta real autentica por Supabase Auth (GoTrue) y el API
+   valida ese token como Bearer; **96 lecturas en 15 grupos, 96 × 200, 0 fallos**, 401 sin token y
+   credencial inválida en verde. El endpoint más lento fue `transport-pyg/concepts` con 37,5 s (mapping, 35 s).
+7. **Rollback listo**: `git revert` del commit promovido y redeploy del deployment anterior; las
+   migraciones aditivas no se revierten y el rename conserva la vista.
+
+Quedan abiertos, sin que la promoción los cierre: el veredicto **NO APTO** de Talento Humano por
+exactitud de nómina (§5.1), la falta de licencia M-29 en NYVORA (§5.2) y el rendimiento de
+`transport-pyg/concepts` y `transport-pyg/mapping` (~35–37 s por la siembra del catálogo en cada
+petición). Evidencia completa en `docs/qa/evidence/promocion-paquetes-main-20261113/prod-*`.

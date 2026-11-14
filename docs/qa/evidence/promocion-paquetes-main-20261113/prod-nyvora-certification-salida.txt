@@ -1,0 +1,130 @@
+[prod-smoke] salud /health -> 200 (724 ms)
+[prod-smoke] sesion /api/v1/auth/me -> 200 (9332 ms)
+[prod-smoke] administracion /api/v1/admin/roles -> 200 (5181 ms)
+[prod-smoke] administracion /api/v1/admin/users -> 200 (3781 ms)
+[prod-smoke] administracion /api/v1/admin/user-master-data -> 200 (4418 ms)
+[prod-smoke] inventario /api/v1/inventory/items -> 200 (3627 ms)
+[prod-smoke] inventario /api/v1/inventory/families -> 200 (2901 ms)
+[prod-smoke] inventario /api/v1/inventory/warehouses -> 200 (3140 ms)
+[prod-smoke] inventario /api/v1/inventory/locations -> 200 (3818 ms)
+[prod-smoke] inventario /api/v1/inventory/costs -> 200 (9017 ms)
+[prod-smoke] compras /api/v1/purchases/suppliers -> 200 (4740 ms)
+[prod-smoke] compras /api/v1/purchases/orders -> 200 (5510 ms)
+[prod-smoke] compras /api/v1/purchases/vmi-alerts -> 200 (2899 ms)
+[prod-smoke] ventas /api/v1/sales/customers -> 200 (2590 ms)
+[prod-smoke] ventas /api/v1/sales/orders -> 200 (2496 ms)
+[prod-smoke] ventas /api/v1/sales/invoices -> 200 (3114 ms)
+[prod-smoke] facturacion /api/v1/invoicing/invoices -> 200 (2471 ms)
+[prod-smoke] cartera /api/v1/accounts-receivable/documents -> 200 (2472 ms)
+[prod-smoke] cartera /api/v1/accounts-receivable/reports/aging -> 200 (6942 ms)
+[prod-smoke] cartera /api/v1/accounts-receivable/retentions -> 200 (3024 ms)
+[prod-smoke] contabilidad /api/v1/accounting/accounts -> 200 (3241 ms)
+[prod-smoke] contabilidad /api/v1/accounting/periods -> 200 (1929 ms)
+[prod-smoke] contabilidad /api/v1/accounting/organization-tree -> 200 (1893 ms)
+[prod-smoke] contabilidad /api/v1/accounting/document-masters -> 200 (1992 ms)
+[prod-smoke] contabilidad /api/v1/accounting/vat-masters -> 200 (1889 ms)
+[prod-smoke] contabilidad /api/v1/accounting/payable-accounts -> 200 (2591 ms)
+[prod-smoke] contabilidad /api/v1/accounting/documents -> 200 (7599 ms)
+[prod-smoke] contabilidad /api/v1/accounting/balance-sheet -> 200 (4192 ms)
+[prod-smoke] contabilidad /api/v1/accounting/reports/balance-sheet -> 200 (7925 ms)
+[prod-smoke] contabilidad /api/v1/accounting/reports/trial-balance -> 200 (3545 ms)
+[prod-smoke] contabilidad /api/v1/accounting/reports/taxes?period=2026-11 -> 200 (2860 ms)
+[prod-smoke] contabilidad /api/v1/accounting/reports/receivables -> 200 (2673 ms)
+[prod-smoke] contabilidad /api/v1/accounting/reports/payables -> 200 (2851 ms)
+[prod-smoke] contabilidad /api/v1/accounting/income-statement?period=2026-11 -> 200 (2868 ms)
+[prod-smoke] proyectos /api/v1/projects -> 200 (2715 ms)
+[prod-smoke] proyectos /api/v1/projects/operational-center -> 200 (2631 ms)
+[prod-smoke] servicios /api/v1/services/orders?limit=20 -> 200 (5219 ms)
+[prod-smoke] servicios /api/v1/services/technicians -> 200 (3347 ms)
+[prod-smoke] servicios /api/v1/services/service-types -> 200 (5954 ms)
+[prod-smoke] servicios /api/v1/services/service-stores -> 200 (2250 ms)
+[prod-smoke] servicios /api/v1/services/satisfaction-questions -> 200 (1956 ms)
+[prod-smoke] servicios /api/v1/services/references -> 200 (2877 ms)
+[prod-smoke] talento-humano /api/v1/hr/employees -> 200 (3417 ms)
+[prod-smoke] talento-humano /api/v1/hr/schedules -> 200 (2724 ms)
+[prod-smoke] talento-humano /api/v1/hr/routes -> 200 (3578 ms)
+[prod-smoke] talento-humano /api/v1/hr/routes/event-summaries -> 200 (4393 ms)
+[prod-smoke] talento-humano /api/v1/hr/routes/preop/template -> 200 (2242 ms)
+[prod-smoke] talento-humano /api/v1/hr/routes/preop/metrics -> 200 (2585 ms)
+[prod-smoke] talento-humano /api/v1/hr/gps/active -> 200 (2722 ms)
+[prod-smoke] talento-humano /api/v1/hr/activity-types -> 200 (7042 ms)
+[prod-smoke] talento-humano /api/v1/hr/attendance?date=2026-11-12 -> 200 (2895 ms)
+[prod-smoke] talento-humano /api/v1/hr/workdays?date=2026-11-12 -> 200 (2591 ms)
+[prod-smoke] talento-humano /api/v1/hr/payroll/config -> 200 (1932 ms)
+[prod-smoke] talento-humano /api/v1/hr/payroll -> 200 (3426 ms)
+[prod-smoke] talento-humano /api/v1/hr/operations-map?date=2026-11-12&minutes=30&footprint_days=30 -> 200 (3654 ms)
+[prod-smoke] transporte /api/v1/transport/sedes -> 200 (2664 ms)
+[prod-smoke] transporte /api/v1/transport/plans -> 200 (2549 ms)
+[prod-smoke] transporte /api/v1/transport/rate-cards -> 200 (2559 ms)
+[prod-smoke] transporte /api/v1/transport/carriers -> 200 (2568 ms)
+[prod-smoke] transporte /api/v1/transport/drivers -> 200 (2560 ms)
+[prod-smoke] transporte /api/v1/transport/delivery-points -> 200 (6758 ms)
+[prod-smoke] transporte /api/v1/transport/vehicles -> 200 (3943 ms)
+[prod-smoke] transporte /api/v1/transport/vehicles/metrics/dashboard -> 200 (3023 ms)
+[prod-smoke] transporte /api/v1/transport/vehicle-accounting-structure -> 200 (1932 ms)
+[prod-smoke] transporte /api/v1/transport/route-places -> 200 (2027 ms)
+[prod-smoke] transporte /api/v1/transport/config -> 200 (2591 ms)
+[prod-smoke] transporte /api/v1/transport/control-tower -> 200 (2559 ms)
+[prod-smoke] transporte /api/v1/transport/monitoring/fleet -> 200 (2660 ms)
+[prod-smoke] transporte /api/v1/transport/monitoring/live -> 200 (2561 ms)
+[prod-smoke] transporte /api/v1/transport/pod/stats -> 200 (2665 ms)
+[prod-smoke] transporte /api/v1/transport/packing/workbench -> 200 (2685 ms)
+[prod-smoke] transporte /api/v1/transport/planning/workbench -> 200 (3265 ms)
+[prod-smoke] transporte /api/v1/transport/route-intelligence/status -> 200 (5739 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-packages -> 200 (2945 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-periods -> 200 (2578 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-types -> 200 (2701 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-destinations -> 200 (2605 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-customers -> 200 (2560 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-import/catalogs -> 200 (2867 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-accounting-options -> 200 (2660 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-rate-options -> 200 (2560 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-vehicle-consolidation -> 200 (2664 ms)
+[prod-smoke] transporte /api/v1/transport/settlement-control-tower -> 200 (2663 ms)
+[prod-smoke] transporte-pyg /api/v1/transport-pyg/concepts -> 200 (37489 ms)
+[prod-smoke] transporte-pyg /api/v1/transport-pyg/config -> 200 (7147 ms)
+[prod-smoke] transporte-pyg /api/v1/transport-pyg/account-configuration -> 200 (2989 ms)
+[prod-smoke] transporte-pyg /api/v1/transport-pyg/budgets?period=2026-11 -> 200 (2587 ms)
+[prod-smoke] transporte-pyg /api/v1/transport-pyg/mapping -> 200 (37302 ms)
+[prod-smoke] transporte-pyg /api/v1/transport-pyg/source-concepts -> 200 (7111 ms)
+[prod-smoke] cajas-menores /api/v1/petty-cash/boxes -> 200 (2881 ms)
+[prod-smoke] cajas-menores /api/v1/petty-cash/concepts -> 200 (2721 ms)
+[prod-smoke] cajas-menores /api/v1/petty-cash/vouchers -> 200 (2592 ms)
+[prod-smoke] cajas-menores /api/v1/petty-cash/advances -> 200 (2588 ms)
+[prod-smoke] cajas-menores /api/v1/petty-cash/reports/summary -> 200 (2593 ms)
+[prod-smoke] cajas-menores /api/v1/petty-cash/reports/boxes-ranking -> 200 (2601 ms)
+[prod-smoke] cajas-menores /api/v1/petty-cash/reports/detail -> 200 (2582 ms)
+{
+  "ok": true,
+  "environment": "PRODUCTION",
+  "company": "NYVORA",
+  "commit": "c8e5e67c52b1",
+  "modules": 19,
+  "login": {
+    "ok": true,
+    "provider": "supabase",
+    "user_id": "9e19641b-414d-40c8-957e-4f5b5a8be302",
+    "tenant_id": null,
+    "email_masked": "n***@apexos.local"
+  },
+  "checks": 96,
+  "groups": 15,
+  "slowest": {
+    "endpoint": "/api/v1/transport-pyg/concepts",
+    "latency_ms": 37489
+  },
+  "negatives": [
+    {
+      "name": "sin_token_401",
+      "status": 401,
+      "ok": true
+    },
+    {
+      "name": "credencial_invalida_401",
+      "status": 401,
+      "ok": true
+    }
+  ],
+  "failures": [],
+  "output": "C:\\Users\\mq1\\Documents\\Proyectos\\APEXOS\\docs\\qa\\evidence\\promocion-paquetes-main-20261113\\prod-nyvora-certification.json"
+}
