@@ -16,7 +16,7 @@ const { calculateSocialContributionSegments, commercialDaysBetween: commercialDa
 const DEFAULT_PARAMS = {
   ordinary_hours_day: 8,
   lunch_minutes: 60,
-  night_start: "21:00",
+  night_start: "19:00",
   night_end: "06:00"
 };
 
@@ -42,8 +42,8 @@ const DEFAULT_PAYROLL_CONFIG = {
     { code: "HEN", name: "Hora extra nocturna", percent: 75, multiplier: 1.75, active: true },
     { code: "DOM_FEST_2026_H1", name: "Dominical/festivo hasta junio 2026", percent: 80, multiplier: 1.8, active: true },
     { code: "DOM_FEST_2026_H2", name: "Dominical/festivo desde julio 2026", percent: 90, multiplier: 1.9, active: true },
-    { code: "HEDD", name: "Hora extra diurna dominical/festiva", percent: 105, multiplier: 2.05, active: true },
-    { code: "HEND", name: "Hora extra nocturna dominical/festiva", percent: 155, multiplier: 2.55, active: true }
+    { code: "HEDD", name: "Hora extra diurna dominical/festiva", percent: 115, multiplier: 2.15, active: true },
+    { code: "HEND", name: "Hora extra nocturna dominical/festiva", percent: 165, multiplier: 2.65, active: true }
   ],
   concepts: [
     { code: "SALARIO_BASICO", name: "Salario basico", type: "earning", basis: "salary", account_code: "", active: true },
@@ -3667,18 +3667,26 @@ async function listOwnAttendance(tenantId, user, query = {}) {
 async function processDay(tenantId, input = {}) {
   const day = startOfDay(input.date || new Date());
   return prisma.runWithTenant(tenantId, async () => {
-    const [employees, schedules, punches] = await Promise.all([
+    const [employees, schedules, punches, nightParameters] = await Promise.all([
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } }),
       prisma.workSchedule.findMany({ where: { active: true } }),
-      prisma.timePunch.findMany({ where: { date: { gte: day, lt: endOfDay(day) } }, orderBy: { punched_at: "asc" } })
+      prisma.timePunch.findMany({ where: { date: { gte: day, lt: endOfDay(day) } }, orderBy: { punched_at: "asc" } }),
+      activeLaborParameterValues(tenantId, day, ["JORNADA_NOCTURNA_INICIO", "JORNADA_NOCTURNA_FIN"])
     ]);
     const defaultSchedule = schedules[0];
+    // La franja nocturna sale del parametro laboral vigente (Ley 2466/2025: 19:00-06:00).
+    // El parametro es la fuente; DEFAULT_PARAMS solo cubre tenants sin fila vigente.
+    const workdayParams = {
+      ...DEFAULT_PARAMS,
+      night_start: clockTimeFromParameter(nightParameters.JORNADA_NOCTURNA_INICIO?.value, DEFAULT_PARAMS.night_start),
+      night_end: clockTimeFromParameter(nightParameters.JORNADA_NOCTURNA_FIN?.value, DEFAULT_PARAMS.night_end)
+    };
     const holidays = new Set((input.holidays || []).map(String));
     const processed = [];
     for (const employee of employees) {
       const aliases = new Set([employee.code, employee.metadata?.name, employee.user?.name, employee.user?.email].filter(Boolean));
       const employeePunches = punches.filter((punch) => aliases.has(punch.user_name) || punch.employee_id === employee.id);
-      const workday = processWorkday({ employee, schedule: defaultSchedule, punches: employeePunches, params: DEFAULT_PARAMS, holidays, date: day });
+      const workday = processWorkday({ employee, schedule: defaultSchedule, punches: employeePunches, params: workdayParams, holidays, date: day });
       if (!workday) continue;
       const row = await prisma.processedWorkday.upsert({
         where: { tenant_id_employee_id_date: { tenant_id: tenantId, employee_id: employee.id, date: day } },
@@ -4854,7 +4862,7 @@ async function processPayrollRange(tenantId, input = {}) {
   return prisma.runWithTenant(tenantId, async () => {
     const deductionMasters = await activeLaborDeductions(tenantId, start);
     const laborParameterRows = await activeLaborParameterValues(tenantId, start, ["HORAS_MENSUALES_ORDINARIAS"]);
-    const monthlyOrdinaryHours = Number(laborParameterRows.HORAS_MENSUALES_ORDINARIAS?.value || LEGAL_PARAMETER_FALLBACKS_CO_2026.HORAS_MENSUALES_ORDINARIAS) || 210;
+    const monthlyOrdinaryHours = Number(laborParameterRows.HORAS_MENSUALES_ORDINARIAS?.value || 0) || monthlyOrdinaryHoursForDate(start);
     const employees = await prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } });
     const workdays = await prisma.processedWorkday.findMany({
       where: { employee_id: { in: employees.map((employee) => employee.id) }, date: { gte: start, lt: endExclusive } },
@@ -5037,6 +5045,34 @@ const LEGAL_PARAMETER_FALLBACKS_CO_2026 = {
   // vigencia en th_parametros_laborales; 240 era el valor historico de la jornada de 48 horas.
   HORAS_MENSUALES_ORDINARIAS: 210
 };
+
+// Corte de la reduccion gradual de jornada (Ley 2101/2021): 44 h hasta el 14-jul-2026 y
+// 42 h desde el 15-jul-2026. El divisor mensual se deriva de la jornada semanal vigente.
+const JORNADA_42H_VALID_FROM = "2026-07-15";
+
+function monthlyOrdinaryHoursForDate(value) {
+  const date = value instanceof Date ? value : startOfDay(value);
+  const cutover = new Date(`${JORNADA_42H_VALID_FROM}T00:00:00${OPERATING_OFFSET}`);
+  return date >= cutover ? 210 : 220;
+}
+
+// Los parametros laborales pueden guardarse como hora numerica (19) o como "19:00".
+function clockTimeFromParameter(value, fallback) {
+  if (value == null || value === "") return fallback;
+  const raw = String(value).trim();
+  const hhmm = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (hhmm) {
+    const hours = Number(hhmm[1]);
+    const minutes = Number(hhmm[2]);
+    if (hours >= 0 && hours <= 24 && minutes >= 0 && minutes <= 59) {
+      return `${String(hours).padStart(2, "0")}:${hhmm[2]}`;
+    }
+    return fallback;
+  }
+  const hours = Number(raw);
+  if (Number.isFinite(hours) && hours >= 0 && hours <= 24) return `${String(Math.trunc(hours)).padStart(2, "0")}:00`;
+  return fallback;
+}
 
 function payrollReceiptLines(lines = []) {
   return (Array.isArray(lines) ? lines : []).filter((line) => {
@@ -5283,7 +5319,8 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
   const transportAllowanceMonthly = Number(legalParameterRows.AUX_TRANSPORTE?.value || LEGAL_PARAMETER_FALLBACKS_CO_2026.AUX_TRANSPORTE);
   const transportAllowanceThresholdSmmlv = Number(legalParameterRows.AUX_TRANSPORTE_TOPE_SMMLV?.value || LEGAL_PARAMETER_FALLBACKS_CO_2026.AUX_TRANSPORTE_TOPE_SMMLV);
   // Divisor mensual de horas ordinarias (jornada 42h => 210; configurable y con vigencia).
-  const monthlyOrdinaryHours = Number(legalParameterRows.HORAS_MENSUALES_ORDINARIAS?.value || LEGAL_PARAMETER_FALLBACKS_CO_2026.HORAS_MENSUALES_ORDINARIAS) || 210;
+  // Sin parametro vigente se usa el divisor que corresponde a la fecha de inicio del periodo.
+  const monthlyOrdinaryHours = Number(legalParameterRows.HORAS_MENSUALES_ORDINARIAS?.value || 0) || monthlyOrdinaryHoursForDate(start);
   const pensionSolidarityParameter = deductionMasters.find((row) => row.code === "DED_FONDO_SOLIDARIDAD_PENSIONAL");
   // Multiplicador por hora de un concepto de recargo/hora extra, segun su value_type
   // configurable en Configuracion laboral -> Conceptos de recargo:
@@ -5601,14 +5638,25 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const vacationBase = socialBenefitBaseFromLines(lines, salaryBase, liquidationDays, { includeVacationBase: true });
     const salaryBaseForDeductions = money(lines.filter((line) => line.amount > 0 && line.affects_ibc !== false).reduce((sum, line) => sum + line.amount, 0));
     const workedCotizableRemuneration = money(lines.filter((line) => line.amount > 0 && line.affects_ibc !== false && !["VACACIONES", "VACACIONES_DISFRUTADAS", "LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "VACACIONES_COMPENSADAS", "SLN"].includes(String(line.code || ""))).reduce((sum, line) => sum + line.amount, 0));
-    let payrollSegmentResult = null;
+    const socialSecurity = employee.metadata?.social_security || {};
     const payrollSegmentAdjustments = employeeAdjustments.filter((adjustment) => segmentedAdjustmentType(adjustment));
+    const periodizedPayrollSegmentAdjustments = payrollSegmentAdjustments.map((adjustment) => periodizeSegmentAdjustment(adjustment, start, end)).filter(Boolean);
+    // La deduccion de salud y pension se calcula sobre el IBC dentro de tope y piso, aunque
+    // no existan novedades segmentadas. Antes solo la rama segmentada aplicaba la norma.
+    const ibcRules = configuredSegmentRules(
+      legalParameterRows,
+      smmlv,
+      socialSecurity,
+      { ...floorDaysForSegments(periodizedPayrollSegmentAdjustments, contributionWorkedDays, socialSecurity), capDays: periodType === "quincena" ? 15 : 30 }
+    );
+    const ibcSalud = clampIbcBase(salaryBaseForDeductions, ibcRules, "salud");
+    const ibcPension = clampIbcBase(salaryBaseForDeductions, ibcRules, "pension");
+    const ibcArl = clampIbcBase(salaryBaseForDeductions, ibcRules, "arl");
+    let payrollSegmentResult = null;
     if (payrollSegmentAdjustments.length) {
       if (!(legalParameterRows.SMMLV && Number(legalParameterRows.SMMLV.value) > 0)) throw validationError("SMMLV vigente requerida para calcular pisos IBC.", 409, "SMMLV_VIGENTE_REQUERIDA");
-      const periodizedPayrollSegmentAdjustments = payrollSegmentAdjustments.map((adjustment) => periodizeSegmentAdjustment(adjustment, start, end)).filter(Boolean);
-      const socialSecurity = employee.metadata?.social_security || {};
       const payrollContributionParameters = socialContributionParameters.map((row) => ({ ...row }));
-      const segmentRules = configuredSegmentRules(legalParameterRows, smmlv, socialSecurity, floorDaysForSegments(periodizedPayrollSegmentAdjustments, contributionWorkedDays, socialSecurity));
+      const segmentRules = ibcRules;
       const noveltyLrPolicy = periodizedPayrollSegmentAdjustments.find((row) => row.metadata?.lr_arl_policy)?.metadata?.lr_arl_policy;
       const advancesRetentions = {};
       for (const adjustment of employeeAdjustments) {
@@ -5643,18 +5691,27 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
     const deductionLines = deductionMasters.filter((row) => String(row.code || "").startsWith("DED_") && row.code !== "DED_FONDO_SOLIDARIDAD_PENSIONAL").map((row) => {
       const percent = Number(row.value || 0);
       const subsystem = row.code === "DED_SALUD" ? "salud" : row.code === "DED_PENSION" ? "pension" : null;
-      const basis = row.metadata?.basis === "gross" ? gross : payrollSegmentResult && subsystem ? payrollSegmentResult.totals.basesAfter[subsystem] : salaryBaseForDeductions;
+      const basis = row.metadata?.basis === "gross"
+        ? gross
+        : payrollSegmentResult && subsystem
+          ? payrollSegmentResult.totals.basesAfter[subsystem]
+          : subsystem === "salud"
+            ? ibcSalud.base
+            : subsystem === "pension"
+              ? ibcPension.base
+              : salaryBaseForDeductions;
       const segmentedAmount = payrollSegmentResult && subsystem ? Math.max(0, Number(payrollSegmentResult.totals.employeeAmounts[subsystem] || 0) - Number(payrollSegmentResult.totals.retentionsApplied[subsystem] || 0)) : null;
       return payrollLine(row.code, row.name, percent, basis, segmentedAmount == null ? basis * (percent / 100) : segmentedAmount, "parametros", payrollConcepts[row.code] || { concept_type: "deduccion", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "seguridad_social", segment_audit: payrollSegmentResult ? payrollSegmentResult.segments : null } });
     });
-    const pensionSolidarityPercent = pensionSolidarityRate(salaryBaseForDeductions, smmlv, pensionSolidarityParameter);
+    const solidarityBase = payrollSegmentResult ? Number(payrollSegmentResult.totals.basesAfter.pension || 0) : ibcPension.base;
+    const pensionSolidarityPercent = pensionSolidarityRate(solidarityBase, smmlv, pensionSolidarityParameter);
     if (pensionSolidarityPercent > 0) {
       deductionLines.push(payrollLine(
         "DED_FONDO_SOLIDARIDAD_PENSIONAL",
         pensionSolidarityParameter?.name || "Fondo de solidaridad pensional",
         pensionSolidarityPercent,
-        salaryBaseForDeductions,
-        salaryBaseForDeductions * (pensionSolidarityPercent / 100),
+        solidarityBase,
+        solidarityBase * (pensionSolidarityPercent / 100),
         "parametros",
         payrollConcepts.DED_FONDO_SOLIDARIDAD_PENSIONAL || { concept_type: "deduccion", salary_constitutive: false, affects_ibc: false, metadata: { legal_group: "seguridad_social", smmlv, threshold_basis: "ibc" } }
       ));
@@ -5677,7 +5734,7 @@ async function buildPayrollLiquidationRows(tenantId, input = {}) {
       net: money(gross - deductions),
       employer_cost: gross,
       lines: allLines,
-      source_summary: { time_punch_workdays: days.filter(day => day.source === "time_punch").length, days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: salaryBaseForDeductions, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
+      source_summary: { days_worked: daysWorked, contribution_worked_days: contributionWorkedDays, workdays: daysWorked, adjustments: employeeAdjustments.length, ordinary_hours: money((ordinaryMinutes + correctedOrdinaryMinutes) / 60), period_key: periodKey, ibc: ibcSalud.base, ibc_sin_topes: salaryBaseForDeductions, ibc_subsistemas: { salud: ibcSalud.base, pension: ibcPension.base, arl: ibcArl.base }, ibc_reglas: { source: ibcRules.source, tope_smmlv: ibcRules.topMultiplier, tope: ibcRules.capsFloors.salud?.cap ?? null, piso: ibcRules.capsFloors.salud?.floor ?? null, aplicado: ibcSalud.applied || ibcPension.applied || ibcArl.applied }, worked_cotizable_remuneration: workedCotizableRemuneration, ibc_segments: payrollSegmentResult?.segments || [], ibc_segment_totals: payrollSegmentResult?.totals || null, salario_base_periodo: salaryBase, historial_salarial: salaryInfo.segments, calendario_laboral: calendarRestDays, devengos_salariales: legalSalaryEarnings, devengos_no_salariales: nonSalaryEarnings, auxilio_transporte: { aplica: qualifiesForTransportAllowance, valor_mensual: transportAllowanceMonthly, tope_smmlv: transportAllowanceThresholdSmmlv, dias: transportAllowanceDays, valor_periodo: transportAllowanceAmount }, base_prestaciones_sociales: socialBenefitsBase, base_vacaciones: vacationBase, dias_prestaciones_sociales: socialBenefitDays, dias_vacaciones_excluidos: vacationAdjustmentDays, fondo_solidaridad_pensional: { smmlv, percent: pensionSolidarityPercent } }
     };
   });
 }
@@ -7056,8 +7113,13 @@ function floorDaysForSegments(adjustments = [], workedDays = 0, socialSecurity =
 }
 
 function configuredSegmentRules(parameterRows, smmlv, socialSecurity = {}, floorDays = {}) {
-  const topMultiplier = Number(parameterRows.IBC_TOPE_SMMLV?.value || socialSecurity.ibc_cap_smmlv || 25);
-  const cap = smmlv > 0 && topMultiplier > 0 ? smmlv * topMultiplier : null;
+  const configuredTop = parameterRows.IBC_TOPE_SMMLV?.value;
+  const topMultiplier = configuredTop != null && configuredTop !== ""
+    ? Number(configuredTop)
+    : Number(socialSecurity.ibc_cap_smmlv ?? 25);
+  // El tope de 25 SMMLV es mensual: una quincena solo puede cotizar por su parte proporcional.
+  const capDays = Math.min(30, Math.max(0, Number(floorDays.capDays ?? 30)));
+  const cap = smmlv > 0 && topMultiplier > 0 ? money((smmlv * topMultiplier * capDays) / 30) : null;
   const configuredCaps = parameterRows.IBC_CAPS_FLOORS?.metadata || socialSecurity.ibc_caps_floors || {};
   const capsFloors = { ...configuredCaps };
   if (cap != null) {
@@ -7077,6 +7139,18 @@ function configuredSegmentRules(parameterRows, smmlv, socialSecurity = {}, floor
   return { capsFloors, roundingPila, source: parameterRows.IBC_TOPE_SMMLV ? "th_parametros_laborales" : "norma_default_documentada", topMultiplier };
 }
 
+// Aplica el tope y el piso de IBC de un subsistema sobre una base agregada. La misma regla
+// se usa en el motor de nomina y en aportes, para que no existan dos verdades sobre el IBC.
+function clampIbcBase(amount, rules, subsystem) {
+  const raw = money(Math.max(Number(amount || 0), 0));
+  const cfg = rules?.capsFloors?.[subsystem] || {};
+  let adjusted = raw;
+  if (adjusted > 0 && cfg.floor != null && adjusted < Number(cfg.floor)) adjusted = Number(cfg.floor);
+  if (adjusted > 0 && cfg.min != null && adjusted < Number(cfg.min)) adjusted = Number(cfg.min);
+  if (cfg.cap != null && adjusted > Number(cfg.cap)) adjusted = Number(cfg.cap);
+  return { base: money(adjusted), raw, applied: money(adjusted) !== raw };
+}
+
 function pilaRoundAmount(value, rounding = {}) {
   const rule = rounding?.default || rounding;
   const mode = rule?.mode || "ceil";
@@ -7086,10 +7160,12 @@ function pilaRoundAmount(value, rounding = {}) {
   return operation(Number(value || 0) / step) * step;
 }
 
-async function buildSocialContributionRows(tenantId, input = {}) {
+async function buildSocialContributionRows(tenantId, input = {}, options = {}) {
   const { start, end } = periodFromRange(input);
   const periodType = input.period_type || "mes";
   const periodKey = input.period_key || periodKeyFromRange({ start, end, type: periodType });
+  const capDays = periodType === "quincena" ? 15 : 30;
+  const allowMissingPayroll = options.allowMissingPayroll === true;
   const employeeFilter = input.employee_id ? { id: numericId(input.employee_id) } : {};
   const [parameters, exonerationParameterRows, employees, payrollDocs, adjustments] = await Promise.all([
     activeSocialContributionParameters(tenantId, start),
@@ -7148,29 +7224,51 @@ async function buildSocialContributionRows(tenantId, input = {}) {
 
   const employeeRows = [];
   const lines = [];
+  const missingPayroll = [];
   for (const employee of employees) {
     const docs = docsByEmployee.get(employee.id) || [];
     const employeeAdjustments = adjustmentsByEmployee.get(employee.id) || [];
+    const employeeName = employee.metadata?.name || employee.user?.name || employee.code || `Empleado ${employee.id}`;
     const workedReportedIbc = docs.reduce((sum, doc) => sum + Number(doc.source_summary?.worked_cotizable_remuneration || 0), 0);
     const segmentWorkedIbc = docs.reduce((sum, doc) => sum + (Array.isArray(doc.source_summary?.ibc_segments) ? doc.source_summary.ibc_segments.filter((segment) => segment.type === "TRABAJO").reduce((inner, segment) => inner + Number(segment.amount || 0), 0) : 0), 0);
-    // La nómina ordinaria conserva su fuente salarial histórica; para una
-    // novedad segmentada la validación inmediatamente antes del motor exige
-    // un IBC reportado de nómina y jamás usa este fallback salarial.
+    // La nomina liquidada es la unica fuente del IBC. Sin documento valido no se usa el
+    // salario del empleado como fallback: se bloquea el calculo (o se omite solo cuando el
+    // cierre ya sabe que va a liquidar la nomina antes de pedir aportes).
+    const hasValidPayrollSnapshot = docs.length > 0 && docs.every((doc) => {
+      const summary = doc.source_summary;
+      if (!summary || typeof summary !== "object") return false;
+      return [summary.worked_cotizable_remuneration, summary.ibc].some((value) => value !== undefined && value !== null && value !== "" && Number.isFinite(Number(value)));
+    });
+    if (!hasValidPayrollSnapshot) {
+      if (allowMissingPayroll) {
+        missingPayroll.push({ employee_id: employee.id, employee_name: employeeName, employee_code: employee.code || null });
+        continue;
+      }
+      throw validationError(
+        `No existe IBC reportado de nomina para ${employeeName}; liquide la nomina del periodo antes de calcular aportes. No se usa el salario del empleado como fallback.`,
+        409,
+        "IBC_REPORTADO_REQUERIDO",
+        { employee_id: employee.id, employee_name: employeeName }
+      );
+    }
     const reportedBaseIbc = money(workedReportedIbc || segmentWorkedIbc || docs.reduce((sum, doc) => sum + Number(doc.source_summary?.ibc || 0), 0));
-    const baseIbc = money(reportedBaseIbc || Number(employee.salary_base || 0));
+    const baseIbc = reportedBaseIbc;
+    const periodDaysWorked = docs.reduce((sum, doc) => sum + Number(doc.source_summary?.contribution_worked_days ?? doc.source_summary?.days_worked ?? 0), 0);
     const dailySalary = Number(employee.salary_base || 0) / 30;
     const noveltySummary = employeeAdjustments.map((adjustment) => pilaNoveltyFromAdjustment(adjustment, dailySalary)).filter(Boolean);
     const ibcDelta = money(noveltySummary.reduce((sum, novelty) => sum + Number(novelty.ibc_delta || 0), 0));
     const socialSecurity = employee.metadata?.social_security || {};
     const segmentAdjustments = employeeAdjustments.filter((adjustment) => segmentedAdjustmentType(adjustment));
     const periodizedSegmentAdjustments = segmentAdjustments.map((adjustment) => periodizeSegmentAdjustment(adjustment, start, end)).filter(Boolean);
+    const contributionRules = configuredSegmentRules(
+      exonerationParameterRows,
+      Number(exonerationConfig.smmlv || 0),
+      socialSecurity,
+      { ...floorDaysForSegments(periodizedSegmentAdjustments, periodDaysWorked, socialSecurity), capDays }
+    );
     let segmentResult = null;
     if (periodizedSegmentAdjustments.length) {
       if (!(Number(exonerationConfig.smmlv) > 0)) throw validationError("SMMLV vigente requerida para calcular pisos IBC.", 409, "SMMLV_VIGENTE_REQUERIDA");
-      const hasValidPayrollSnapshot = docs.length > 0 && docs.every((doc) => doc.source_summary && typeof doc.source_summary === "object" && !Number.isNaN(Number(doc.source_summary.worked_cotizable_remuneration || 0)) && !Number.isNaN(Number(doc.source_summary.ibc || 0)));
-      const missingReportedBase = !hasValidPayrollSnapshot;
-      if (missingReportedBase) throw validationError("No existe IBC reportado de nómina para calcular segmentos de novedades; no se usa el salario del empleado como fallback.", 409, "IBC_REPORTADO_REQUERIDO");
-      const periodDaysWorked = docs.reduce((sum, doc) => sum + Number(doc.source_summary?.contribution_worked_days ?? doc.source_summary?.days_worked ?? 0), 0);
       const salaryEarningsAvailable = docs.length > 0 && docs.every((doc) => doc.source_summary?.devengos_salariales !== undefined && doc.source_summary?.devengos_salariales !== null && Number.isFinite(Number(doc.source_summary.devengos_salariales)) && Number(doc.source_summary.devengos_salariales) >= 0);
       const salaryEarnings = docs.reduce((sum, doc) => {
         const value = doc.source_summary?.devengos_salariales;
@@ -7183,7 +7281,7 @@ async function buildSocialContributionRows(tenantId, input = {}) {
       const eligibleByThreshold = salaryEarningsAvailable && threshold > 0 && salaryEarnings < threshold;
       const eligible = companyEligibility && explicitEligibility && workerSupportPresent && eligibleByThreshold;
       const rates = segmentRates(parameters, socialSecurity);
-      const segmentRules = configuredSegmentRules(exonerationParameterRows, Number(exonerationConfig.smmlv || 0), socialSecurity, floorDaysForSegments(periodizedSegmentAdjustments, periodDaysWorked, socialSecurity));
+      const segmentRules = contributionRules;
       const noveltyLrPolicy = periodizedSegmentAdjustments.find((row) => row.metadata?.lr_arl_policy)?.metadata?.lr_arl_policy;
       segmentResult = calculateSocialContributionSegments({
         periodStart: start.toISOString().slice(0, 10),
@@ -7221,10 +7319,18 @@ async function buildSocialContributionRows(tenantId, input = {}) {
       });
       segmentResult.audit = { explicitEligibility, workerSupportPresent, companyEligibility, salaryEarningsAvailable, eligibleByThreshold, eligible, salaryEarnings, threshold, pensionSlnEmployerRate: rates.pension.employer };
     }
-    const ibc = segmentResult ? money(segmentResult.totals.basesAfter.salud) : money(Math.max(baseIbc + ibcDelta, 0));
-    const employeeName = employee.metadata?.name || employee.user?.name || employee.code || `Empleado ${employee.id}`;
+    const rawIbc = money(Math.max(baseIbc + ibcDelta, 0));
+    const ibcBases = segmentResult
+      ? { ...segmentResult.totals.basesAfter }
+      : {
+          salud: clampIbcBase(rawIbc, contributionRules, "salud").base,
+          pension: clampIbcBase(rawIbc, contributionRules, "pension").base,
+          arl: clampIbcBase(rawIbc, contributionRules, "arl").base,
+          parafiscales: rawIbc
+        };
+    const ibc = money(ibcBases.salud);
     const employeeAffiliations = affiliationsByEmployee.get(employee.id) || [];
-    const employeePilaRules = configuredSegmentRules(exonerationParameterRows, Number(exonerationConfig.smmlv || 0), socialSecurity).roundingPila;
+    const employeePilaRules = contributionRules.roundingPila;
     const arlRiskClass = Math.min(Math.max(Number(socialSecurity.arl_risk_class || 1), 1), 5);
     const appliesByThreshold = segmentResult?.audit?.eligibleByThreshold ?? (exonerationConfig.threshold_amount > 0 && ibc < exonerationConfig.threshold_amount);
     const explicitEligibility = segmentResult?.audit?.explicitEligibility ?? socialSecurity.exoneration_eligible === true;
@@ -7256,7 +7362,7 @@ async function buildSocialContributionRows(tenantId, input = {}) {
       if (parameter.code === "APORTE_SALUD" && exoneratedHealthEmployer) continue;
       const affiliation = affiliationForType(employeeAffiliations, parameter.entity_type);
       const subsystem = parameterSubsystem(parameter);
-      const subsystemBase = segmentResult ? Number(segmentResult.totals.basesAfter[subsystem] || 0) : ibc;
+      const subsystemBase = segmentResult ? Number(segmentResult.totals.basesAfter[subsystem] || 0) : Number(ibcBases[subsystem] ?? rawIbc);
       const segmentedEmployeeAmount = segmentResult && parameter.payer === "employee" ? Number(segmentResult.totals.employeeAmounts[subsystem] || 0) : null;
       const segmentedEmployerAmount = segmentResult && parameter.payer === "employer" && ["salud", "pension", "arl"].includes(subsystem)
         ? Number(segmentResult.totals.employerAmounts[subsystem] || 0)
@@ -7287,7 +7393,7 @@ async function buildSocialContributionRows(tenantId, input = {}) {
         employee_amount: employeeAmount,
         employer_amount: employerAmount,
         total_amount: amount,
-        metadata: { missing_affiliation: !affiliation, source: docs.length ? "nomina" : "salario_empleado", arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, ibc_base: baseIbc, ibc_delta: ibcDelta, exoneration: exonerationSummary, conceptual_amount: amount, pila_amount: pilaAmount, segment_audit: segmentResult ? { ...segmentResult.audit, period: segmentResult.period, warnings: segmentResult.warnings, segments: segmentResult.segments } : null }
+        metadata: { missing_affiliation: !affiliation, source: "nomina", arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, ibc_base: rawIbc, ibc_delta: ibcDelta, ibc_subsistemas: ibcBases, ibc_reglas: { source: contributionRules.source, tope_smmlv: contributionRules.topMultiplier, aplicado: !segmentResult && money(rawIbc) !== money(ibcBases.salud) }, exoneration: exonerationSummary, conceptual_amount: amount, pila_amount: pilaAmount, segment_audit: segmentResult ? { ...segmentResult.audit, period: segmentResult.period, warnings: segmentResult.warnings, segments: segmentResult.segments } : null }
       });
     }
     const employeeContributionLines = lines.filter((line) => line.employee_id === employee.id);
@@ -7300,10 +7406,11 @@ async function buildSocialContributionRows(tenantId, input = {}) {
       employeePilaTotals[subsystem] = payable;
       for (const line of subsystemLines) line.metadata.pila_total_subsystem = payable;
     }
-    const pensionSolidarityPercent = pensionSolidarityRate(ibc, exonerationConfig.smmlv, pensionSolidarityParameter);
+    const solidarityBase = money(ibcBases.pension ?? ibc);
+    const pensionSolidarityPercent = pensionSolidarityRate(solidarityBase, exonerationConfig.smmlv, pensionSolidarityParameter);
     if (pensionSolidarityPercent > 0) {
       const affiliation = affiliationForType(employeeAffiliations, "PENSION");
-      const amount = money(ibc * (pensionSolidarityPercent / 100));
+      const amount = money(solidarityBase * (pensionSolidarityPercent / 100));
       employeeTotal += amount;
       employeePilaTotals.DED_FONDO_SOLIDARIDAD_PENSIONAL = pilaRoundAmount(amount, employeePilaRules);
       lines.push({
@@ -7315,16 +7422,16 @@ async function buildSocialContributionRows(tenantId, input = {}) {
         entity_name: affiliation?.entity_legal_name || "Sin entidad asociada",
         concept_code: "DED_FONDO_SOLIDARIDAD_PENSIONAL",
         concept_name: pensionSolidarityParameter?.name || "Fondo de solidaridad pensional",
-        ibc,
+        ibc: solidarityBase,
         employee_percent: pensionSolidarityPercent,
         employer_percent: 0,
         employee_amount: amount,
         employer_amount: 0,
         total_amount: amount,
-        metadata: { missing_affiliation: !affiliation, source: docs.length ? "nomina" : "salario_empleado", novedades_pila: noveltySummary, ibc_base: baseIbc, ibc_delta: ibcDelta, smmlv: exonerationConfig.smmlv, salary_multiples: exonerationConfig.smmlv ? money(ibc / exonerationConfig.smmlv) : 0 }
+        metadata: { missing_affiliation: !affiliation, source: "nomina", novedades_pila: noveltySummary, ibc_base: rawIbc, ibc_delta: ibcDelta, smmlv: exonerationConfig.smmlv, salary_multiples: exonerationConfig.smmlv ? money(solidarityBase / exonerationConfig.smmlv) : 0 }
       });
     }
-    employeeRows.push({ employee_id: employee.id, employee_name: employeeName, employee_code: employee.code, ibc, ibc_by_subsystem: segmentResult?.totals?.basesAfter || { salud: ibc, pension: ibc, arl: ibc, parafiscales: ibc }, employee_amount: money(employeeTotal), employer_amount: money(employerTotal), total_amount: money(employeeTotal + employerTotal), pila_totals: employeePilaTotals, documents: docs.length, arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, exoneration: exonerationSummary, segment_result: segmentResult });
+    employeeRows.push({ employee_id: employee.id, employee_name: employeeName, employee_code: employee.code, ibc, ibc_by_subsystem: ibcBases, employee_amount: money(employeeTotal), employer_amount: money(employerTotal), total_amount: money(employeeTotal + employerTotal), pila_totals: employeePilaTotals, documents: docs.length, arl_risk_class: arlRiskClass, novedades_pila: noveltySummary, exoneration: exonerationSummary, segment_result: segmentResult });
   }
   const totalIbc = money(employeeRows.reduce((sum, row) => sum + row.ibc, 0));
   const totalEmployee = money(lines.reduce((sum, row) => sum + row.employee_amount, 0));
@@ -7342,12 +7449,12 @@ async function buildSocialContributionRows(tenantId, input = {}) {
     total_payable_pila: totalPayablePila,
     employees: employeeRows,
     lines,
-    source_summary: { employees: employeeRows.length, lines: lines.length, missing_affiliations: lines.filter((line) => line.metadata.missing_affiliation).length, novedades_pila: employeeRows.reduce((sum, row) => sum + row.novedades_pila.length, 0), pila_totals: employeeRows.map((row) => ({ employee_id: row.employee_id, ...row.pila_totals })), total_payable_pila: totalPayablePila, exoneration: exonerationConfig }
+    source_summary: { employees: employeeRows.length, lines: lines.length, missing_affiliations: lines.filter((line) => line.metadata.missing_affiliation).length, missing_payroll: missingPayroll, missing_payroll_count: missingPayroll.length, novedades_pila: employeeRows.reduce((sum, row) => sum + row.novedades_pila.length, 0), pila_totals: employeeRows.map((row) => ({ employee_id: row.employee_id, ...row.pila_totals })), total_payable_pila: totalPayablePila, exoneration: exonerationConfig }
   };
 }
 
-async function previewSocialContributions(tenantId, input = {}) {
-  return prisma.runWithTenant(tenantId, async () => ({ mode: "preview", document: await buildSocialContributionRows(tenantId, input) }));
+async function previewSocialContributions(tenantId, input = {}, options = {}) {
+  return prisma.runWithTenant(tenantId, async () => ({ mode: "preview", document: await buildSocialContributionRows(tenantId, input, options) }));
 }
 
 // Los despliegues remotos hablan con la base por pooler (~30ms por query): un INSERT por
@@ -7428,10 +7535,6 @@ async function deleteSocialContributionDocument(tenantId, id) {
     if (!rows[0]) throw validationError("Documento de aportes no encontrado.", 404, "DOCUMENTO_APORTES_NO_ENCONTRADO");
     return { ok: true, deleted: rows[0] };
   });
-}
-
-function provisionTotalFromPayrollDocuments(documents = []) {
-  return money(documents.reduce((sum, doc) => sum + Number(doc.total_provisions || 0), 0));
 }
 
 function socialBenefitProvisionLinesFromPayrollDocument(document) {
@@ -7715,12 +7818,26 @@ async function listPayrollPeriodClosures(tenantId, query = {}) {
   `.catch(() => []));
 }
 
-async function validatePayrollPeriodClosure(tenantId, input = {}) {
+async function validatePayrollPeriodClosure(tenantId, input = {}, options = {}) {
   const payrollValidation = await validatePayrollPeriod(tenantId, input);
-  const socialPreview = await previewSocialContributions(tenantId, input);
+  // Al cerrar, la nomina se liquida justo despues de esta validacion: alli la falta de
+  // documentos es un paso pendiente, no un error. En la validacion publica si bloquea.
+  const pendingLiquidation = options.pendingLiquidation === true;
+  const socialPreview = await previewSocialContributions(tenantId, input, { allowMissingPayroll: pendingLiquidation });
   const issues = [...(payrollValidation.issues || [])];
   const missingAffiliations = Number(socialPreview.document?.source_summary?.missing_affiliations || 0);
   if (missingAffiliations) issues.push({ severity: "warning", code: "AFILIACIONES_APORTES_FALTANTES", message: `${missingAffiliations} linea(s) de aportes no tienen entidad afiliada activa.` });
+  for (const row of socialPreview.document?.source_summary?.missing_payroll || []) {
+    issues.push({
+      severity: pendingLiquidation ? "warning" : "error",
+      code: "NOMINA_SIN_LIQUIDAR",
+      employee_id: row.employee_id,
+      employee_name: row.employee_name,
+      message: pendingLiquidation
+        ? `${row.employee_name} aun no tiene nomina liquidada; el cierre la liquidara antes de calcular aportes.`
+        : `${row.employee_name} no tiene nomina liquidada en el periodo; liquide la nomina antes de calcular aportes.`
+    });
+  }
   return {
     ok: !issues.some((issue) => issue.severity === "error"),
     period_key: payrollValidation.period_key || socialPreview.document?.period_key || null,
@@ -7744,9 +7861,14 @@ async function closePayrollPeriod(tenantId, input = {}, user = {}) {
     await reopenPayrollPeriod(tenantId, { period_key: periodKey }, user);
   }
   await assertPayrollPeriodOpen(tenantId, periodKey);
-  const validation = await validatePayrollPeriodClosure(tenantId, { ...input, period_key: periodKey, period_type: periodType });
+  const validation = await validatePayrollPeriodClosure(tenantId, { ...input, period_key: periodKey, period_type: periodType }, { pendingLiquidation: true });
   if (!validation.ok && input.force !== true) throw validationError("La validacion del cierre encontro errores bloqueantes.", 409, "CIERRE_PERIODO_INVALIDO", validation);
   const payrollResult = await runPayrollLiquidation(tenantId, { ...input, period_key: periodKey, period_type: periodType, recalculate: true }, user);
+  // Las provisiones son parte del cierre: se calculan sobre la nomina recien liquidada y
+  // alimentan th_prestaciones_saldos. Sin nomina no hay nada que provisionar.
+  const provisionsResult = payrollResult.documents > 0
+    ? await runSocialBenefitProvisions(tenantId, { ...input, period_key: periodKey, period_type: periodType }, user)
+    : { ok: true, total_provisions: 0, provisioned_lines: 0, skipped: "SIN_NOMINA" };
   const socialResult = await runSocialContributions(tenantId, { ...input, period_key: periodKey, period_type: periodType, recalculate: true }, user);
   const [payrollDocuments, socialDocuments] = await Promise.all([
     listPayrollDocuments(tenantId, { period_key: periodKey, limit: 1000 }),
@@ -7754,7 +7876,7 @@ async function closePayrollPeriod(tenantId, input = {}, user = {}) {
   ]);
   const totalPayrollGross = money(payrollDocuments.reduce((sum, doc) => sum + Number(doc.gross || 0), 0));
   const totalPayrollNet = money(payrollDocuments.reduce((sum, doc) => sum + Number(doc.net || 0), 0));
-  const totalProvisions = provisionTotalFromPayrollDocuments(payrollDocuments);
+  const totalProvisions = money(provisionsResult.total_provisions || 0);
   const socialDocument = socialDocuments[0] || socialResult.document || null;
   return prisma.runWithTenant(tenantId, async () => {
     const rows = await prisma.$queryRaw`
@@ -7765,7 +7887,7 @@ async function closePayrollPeriod(tenantId, input = {}, user = {}) {
       VALUES (
         ${tenantId}, ${periodKey}, ${periodType}, ${start}::date, ${end}::date, 'cerrado', ${payrollDocuments.length}, ${socialDocument?.id || null},
         ${totalPayrollGross}, ${totalPayrollNet}, ${Number(socialDocument?.total_payable || 0)}, ${totalProvisions}, ${JSON.stringify(validation)}::jsonb,
-        ${JSON.stringify({ payroll: payrollResult, social_contributions: socialResult, steps: ["validacion", "nomina", "provisiones", "aportes_sociales", "cierre"] })}::jsonb,
+        ${JSON.stringify({ payroll: payrollResult, social_benefit_provisions: { ok: provisionsResult.ok, provisioned_lines: provisionsResult.provisioned_lines || 0, total_provisions: totalProvisions, skipped: provisionsResult.skipped || null }, social_contributions: socialResult, steps: ["validacion", "nomina", "provisiones", "aportes_sociales", "cierre"] })}::jsonb,
         ${user?.id || null}, now()
       )
       ON CONFLICT (tenant_id, period_key)
@@ -7831,6 +7953,7 @@ async function listPayroll(tenantId, query = {}) {
 module.exports = {
   __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
   __setContentionLockWaitMsForTests: setContentionLockWaitMsForTests,
+  __monthlyOrdinaryHoursForDate: monthlyOrdinaryHoursForDate,
   listSchedules,
   createSchedule,
   updateSchedule,

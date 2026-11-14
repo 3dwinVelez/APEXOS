@@ -78,8 +78,13 @@ const employeesFixture = [1, 2, 3].map((index) => ({
   user: null
 }));
 
+const payrollDocumentsFixture = employeesFixture.map((employee) => ({
+  employee_id: employee.id,
+  source_summary: { ibc: 2000000, worked_cotizable_remuneration: 2000000, days_worked: 30, contribution_worked_days: 30, devengos_salariales: 2000000 }
+}));
+
 test("aportes sociales inserta las lineas por lotes y dentro del contexto de tenant", async () => {
-  const fakePrisma = buildFakePrisma({ employees: employeesFixture });
+  const fakePrisma = buildFakePrisma({ employees: employeesFixture, payrollDocuments: payrollDocumentsFixture });
   const loaded = loadHrService(fakePrisma);
   try {
     const result = await loaded.service.runSocialContributions("tenant-qa", {
@@ -196,7 +201,13 @@ test("aportes sociales segmenta en varios lotes cuando las lineas exceden el chu
   for (let index = 1; index <= 1100; index += 1) {
     many.push({ ...employeesFixture[0], id: index, code: `EMP-${index}` });
   }
-  const fakePrisma = buildFakePrisma({ employees: many });
+  const fakePrisma = buildFakePrisma({
+    employees: many,
+    payrollDocuments: many.map((employee) => ({
+      employee_id: employee.id,
+      source_summary: { ibc: 2000000, worked_cotizable_remuneration: 2000000, days_worked: 30, contribution_worked_days: 30, devengos_salariales: 2000000 }
+    }))
+  });
   const loaded = loadHrService(fakePrisma);
   try {
     const result = await loaded.service.runSocialContributions("tenant-qa", {
