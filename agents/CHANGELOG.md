@@ -4,16 +4,23 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-13
 
+### Migración legal 2026 aplicada en QA (`nomina-legal-2026-qa-apply`)
+
+- **Autorización del dueño.** Pidió aplicar la migración en la nube y eligió «Solo QA»; producción queda fuera de alcance. `20261113120000_hr_nomina_legal_2026` se aplicó el 2026-11-13 por sentencias dentro de una transacción y con la fila del ledger (checksum `85114b7f…`), no con `migrate deploy`, porque el ledger de QA tenía 4 migraciones ajenas pendientes y una fila base que solo existe en la base.
+- **Efecto medido.** Auxilio de transporte: `include_in_social_benefits_base` 1→0, `include_in_vacation_base` 1→0, `exclude_from_social_benefits_base` 0→1. Topes: 48 parámetros `MAX_HE_DIARIO`/`MAX_HE_SEMANAL` en 24 tenants; segunda corrida insertó 0 filas. Evidencia en `docs/qa/evidence/nomina-legal-2026-20261113/qa-migration-apply.md`.
+- **Producción pendiente.** No se toca; exige ventana independiente coordinada con el despliegue del código nuevo, porque la semilla corregida cambia la base de prestaciones que usa el motor actual.
+- Agentes: `apexos-brief` 2.53.0 → 2.54.0 (regla 67: la aplicación quirúrgica en un ambiente intermedio se escribe con checksum, antes/después por objeto, segunda corrida y la deuda ajena declarada).
+
 ### Remediación legal 2026 de Talento Humano ejecutada (R-06 a R-10A) (`nomina-legal-2026-20261113`)
 
-- **Pedido directo del dueño.** «Procede con todos los cambios para arreglar el módulo y que los cálculos queden correctamente alineados a la normativa legal 2026 vigente a la fecha». Se ejecuta en `desarrollo`; no se promueve ni se aplica la migración en nube.
+- **Pedido directo del dueño.** «Procede con todos los cambios para arreglar el módulo y que los cálculos queden correctamente alineados a la normativa legal 2026 vigente a la fecha». Se ejecuta en `desarrollo` y no se promueve. La migración se aplica **solo en QA** el 2026-11-13 con autorización del dueño; producción queda pendiente.
 - **R-06 libranza idempotente.** `available_balance` se deriva de los movimientos aplicados excluyendo el periodo en curso; `recalculate` reversa antes de reconstruir y la columna espejo deja de gobernar el descuento.
 - **R-07 auxilio fuera de la base.** Semilla y fallback con `include_in_social_benefits_base: false`, `include_in_vacation_base: false`, `exclude_from_social_benefits_base: true`; la base usa días soportados y `SIN_MARCACIONES` bloquea con 422 salvo justificación trazable.
 - **R-08 indemnización con SMMLV del periodo.** Se elimina `process.env.SMLV_CO`; el umbral de 10 SMMLV y la traza `smmlv_referencia_indemnizacion` salen de `th_parametros_laborales` con respaldo legal 2026.
 - **R-09 un solo motor.** `POST /hr/payroll/process` delega en `runPayrollLiquidation`; se retira el cálculo plano (`hourly * 1.25`, `deductions = 0`).
 - **R-10 reporte conciliado.** `/hr/workdays` acepta rango; el reporte de Talento Humano muestra horas extras liquidadas, diferencia visible y columnas nuevas en el Excel.
 - **R-10A topes trazados.** `MAX_HE_DIARIO`/`MAX_HE_SEMANAL` por tenant, `TOPES_TRABAJO_SUPLEMENTARIO` en alerta con días y semanas excedidos; el bloqueo queda pendiente de firma jurídica.
-- **Migración `20261113120000_hr_nomina_legal_2026`.** Corrige el `metadata` de `AUX_TRANSPORTE` con `jsonb_set` y siembra los topes con `WHERE NOT EXISTS`; **no aplicada en nube**.
+- **Migración `20261113120000_hr_nomina_legal_2026`.** Corrige el `metadata` de `AUX_TRANSPORTE` con `jsonb_set` y siembra los topes con `WHERE NOT EXISTS`; **aplicada solo en QA** (2026-11-13, quirúrgica, checksum `85114b7f`, 48 parámetros en 24 tenants, segunda corrida 0 filas). Producción pendiente y condicionada al despliegue del código nuevo.
 - **Evidencia.** `node --test apps/api/test/hr-*.test.js` **210/210**; `hr-nomina-legal-2026.test.js` **9/9**; reportes web **10/10**; `tsc --noEmit` y ESLint sin errores. El veredicto de auditoría sigue **NO APTO** hasta re-auditoría, firma jurídica/contable y certificación E2E.
 - Agentes: `apexos-backend` 2.12.0 → 2.13.0 (regla 29: la nómina se corrige en el motor oficial y el legacy se retira), `apexos-db-nube` 2.2.0 → 2.3.0 (regla 14: semilla legal forward-only, condicionada y verificable por tenant), `apexos-frontend` 2.28.0 → 2.29.0 (regla 43: el reporte lee la fuente que liquida y publica la diferencia), `apexos-qa` 2.65.2 → 2.66.0 (control 78: el cálculo se certifica contra la norma y el dato, no solo contra el total), `apexos-seguridad` 2.24.0 → 2.25.0 (regla 39: retirar un motor no abre una puerta), `equipo-apexos` 2.37.0 → 2.38.0 (control 51: motor + migración + reporte con el veredicto legal abierto), `apexos-brief` 2.52.0 → 2.53.0 (regla 66: la remediación normativa se escribe hallazgo→norma→archivo→caso, con la decisión legal pendiente y la salvedad de aptitud).
 

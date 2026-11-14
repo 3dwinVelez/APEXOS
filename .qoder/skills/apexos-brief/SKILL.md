@@ -2,7 +2,7 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.53.0
+version: 2.54.0
 updated_at: 2026-11-13
 contract: 2
 ---
@@ -165,8 +165,15 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **La base legal se fecha y se cita.** SMMLV $1.750.905, auxilio $249.095, jornada 44/42 h, divisor 220/210, nocturno desde 19:00 y dominical 90 % desde 01-jul-2026, con el documento de matriz normativa como fuente.
     - **El criterio de aceptación es un caso con cifras.** «Salario de $2.000.000 con 30 días soportados paga auxilio y la base de prestaciones lo excluye», no «cumple la ley»; se incluyen el 422 `SIN_MARCACIONES` y la reliquidación sin doble descuento.
     - **La decisión legal pendiente se escribe como decisión, no como tarea técnica.** El tope de 2 h/día y 12 h/semana se entrega en modo alerta y el bloqueo queda en la sección de autorizaciones, con firma jurídica/contable.
-    - **Implementación no es aptitud.** El brief declara que el veredicto NO APTO se mantiene hasta re-auditoría, firma y certificación E2E, y que la migración no se aplicó en nube.
+    - **Implementación no es aptitud.** El brief declara que el veredicto NO APTO se mantiene hasta re-auditoría, firma y certificación E2E, y en qué ambientes está aplicada la migración: QA sí, producción pendiente de ventana.
     Por qué: un pedido normativo se lee como «ya quedó legal» si el brief solo muestra tests verdes; la trazabilidad hallazgo→norma→archivo→caso y la salvedad legal son lo que permite a auditoría y contabilidad firmar o rechazar con el mismo documento.
+
+67. **Una aplicación quirúrgica en un ambiente intermedio se escribe con el checksum del ledger, el antes/después por objeto y la segunda corrida.** El 2026-11-13 el dueño autorizó aplicar la migración de nómina «solo en QA». El brief y su evidencia:
+    - **El ambiente se declara desde el pedido.** La autorización cubrió QA y nada más; producción quedó fuera del alcance con su motivo (coordinación con el despliegue del código nuevo) y el brief no la presenta como hecha.
+    - **La aplicación se identifica por su checksum.** El SHA-256 del `migration.sql` normalizado a LF, registrado en `_prisma_migrations` con `id`, `applied_steps_count` y `finished_at`, queda en `docs/qa/evidence/<cambio>/`; «se aplicó» sin checksum no es reproducible.
+    - **El efecto se cuenta por objeto y antes/después.** Auxilio de transporte: `include_in_social_benefits_base` 1→0 y `exclude_from_social_benefits_base` 0→1; topes: 48 parámetros nuevos en 24 tenants; la segunda corrida inserta 0 filas.
+    - **La deuda ajena no se arrastra.** Si el ledger del ambiente tiene migraciones pendientes de otros módulos y filas que solo viven en la base, la migración propia se aplica por sentencias y no con `migrate deploy`; el brief nombra las pendientes que quedaron intactas.
+    Por qué: «aplicada en QA» sin checksum, conteos ni segunda corrida es indistinguible de «creí que se aplicó», y un `migrate deploy` de paso habría movido deuda de otros módulos dentro de un encargo de nómina.
 
 ## Checklist de intervención
 
