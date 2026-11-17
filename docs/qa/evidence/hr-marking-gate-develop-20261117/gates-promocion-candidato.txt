@@ -1,0 +1,38 @@
+Puertas de promocion del candidato, corridas sobre el arbol de develop reconstruido (2026-11-17).
+Las cinco con codigo de salida 0.
+
+1) node scripts/git-governance-guard.js ci-promotion <candidato> 36111a6ae1a18c59de0fc72c135bc890c011c1d7 develop codex/qa-hr-marking-gate-20261117
+   PROMOCION CI ALCANZADA: hr-marking-gate-20261117   (exit 0)
+
+2) npm run qa:promotion:scope -- docs/qa/manifests/hr-marking-gate-20261117-scope.json <candidato> origin/develop
+   ALCANCE DE PROMOCION VALIDO: hr-marking-gate-20261117 (51 rutas)   (exit 0; el conteo de rutas es del momento de la corrida y sube una unidad al versionarse este propio archivo de evidencia)
+
+3) npm run qa:preqa:evidence -- docs/qa/manifests/hr-marking-gate-20261117-preqa.json
+   AUTORIZACION PRE-QA VALIDA: hr-marking-gate-20261117   (exit 0)
+
+4) node scripts/certifications/scoped-qa-governance-local.js
+   status=passed, certificacion=scoped-qa-governance-local, fixture=real-git, checks=20/20 en verde, exit 0
+   De esos checks, 15 son rojos provocados que el guard debe bloquear; se listan con su motivo:
+   - guard_main_target_rejected: GOBIERNO GIT BLOQUEADO: PR hacia main solo desde develop. Origen: desarrollo.
+   - guard_unapproved_promotion_rejected: GOBIERNO GIT BLOQUEADO: Promocion desarrollo-to-develop requiere APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DESARROLLO_A_DEVELOP.
+   - guard_auxiliary_branch_rejected: GOBIERNO GIT BLOQUEADO: Push/CI sobre rama no permanente no autorizado: codex/qa-unapproved.
+   - scope_missing_cert_ancestor_rejected: ALCANCE DE PROMOCION INVALIDO: ni el candidato ni el destino contienen el commit funcional certificado
+   - scope_changed_baseline_rejected: ALCANCE DE PROMOCION INVALIDO: el destino develop cambio desde el baseline aprobado
+   - scope_extra_diff_rejected: ALCANCE DE PROMOCION INVALIDO: rutas fuera de alcance: A:attestation.md, A:changed-baseline.json, A:extra.txt, A:git-governance-guard.js, A:missing-cert.json, A:scope.json, A:validate-preqa-promotion-evidence.js, A:validate-promotion-scope.js
+   - preqa_missing_approval_rejected: - regression_certification.evidence debe contener archivos
+   - strict_wrong_actual_head_branch_rejected: GOBIERNO GIT BLOQUEADO: promotion_branch no coincide con la rama auxiliar autorizada
+   - strict_missing_origin_target_rejected: GOBIERNO GIT BLOQUEADO: no existe origin/develop; no se puede verificar el target actual
+   - strict_altered_functional_path_rejected: GOBIERNO GIT BLOQUEADO: las rutas funcionales certificadas cambiaron despues del commit certificado
+   - strict_absolute_evidence_path_rejected: GOBIERNO GIT BLOQUEADO: scope.protected_capabilities[0].evidence contiene una ruta no portable
+   - strict_repository_traversal_evidence_path_rejected: GOBIERNO GIT BLOQUEADO: scope.protected_capabilities[0].evidence escapa el repositorio: ../../../../outside-evidence.json
+   - strict_untracked_evidence_rejected: GOBIERNO GIT BLOQUEADO: scope.protected_capabilities[0].evidence no esta versionada en el candidato: docs/qa/certifications/untracked.json
+   - strict_extra_noncertified_product_inventory_rejected: GOBIERNO GIT BLOQUEADO: scope validator rechazo: ALCANCE DE PROMOCION INVALIDO: diff distinto al inventario exacto; faltan [A:apps/product/rogue.js], sobran []
+   - strict_certified_commit_already_in_target_rejected: GOBIERNO GIT BLOQUEADO: certified_commit ya esta contenido en el target
+
+5) node --test scripts/test/git-governance-guard.test.js
+   # tests 3
+   # pass 3
+   # fail 0
+   # skipped 0
+
+El paso 4 es la autoverificacion del contrato: un verde que no pueda fallar no protege nada, asi que la corrida exige que los escenarios ilegales (manifiesto duplicado, inventario distinto al diff, certified_commit ya en el target, rutas de producto fuera del commit certificado, evidencia con ruta absoluta o que escapa el repositorio) terminen en rojo con el motivo exacto.

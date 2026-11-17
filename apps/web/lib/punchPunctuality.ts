@@ -46,8 +46,17 @@ export function punctualityAlert(punch: PunctualityPunch): PunctualityAlert | nu
   if (punch.type === "salida") {
     const expected = minutesFromTime(punch.endTime);
     if (minutes == null || expected == null) return null;
+    // Positivo cuando cierra antes de la hora; negativo cuando se extiende.
     const diff = expected - minutes;
-    if (diff <= 0) return { label: "Cierre a tiempo", tone: "success" };
+    if (diff === 0) return { label: "Cierre a tiempo", tone: "success" };
+    if (diff < 0) {
+      // Cerrar despues de la hora no es cerrar a tiempo: es la extension que
+      // el empleado tuvo que justificar. Leerla como "a tiempo" borraba del
+      // monitor justo las jornadas que hay que revisar.
+      const late = -diff;
+      if (late <= tolerance) return { label: `Cierre dentro de tolerancia (+${late} min)`, tone: "info" };
+      return { label: `Cierre extendido ${late} min`, tone: "warning" };
+    }
     if (diff <= tolerance) return { label: `Cierre anticipado ${diff} min`, tone: "info" };
     return { label: `Salida temprana ${diff} min`, tone: "warning" };
   }

@@ -34,7 +34,7 @@ import {
 } from "@/lib/hrOfflineEvidence";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarX, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -42,7 +42,7 @@ import { createPortal } from "react-dom";
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
 type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
 type AttendancePunch = Attendance["punches"][number];
-type TimeRoute = { id: number | string; date?: string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
+type TimeRoute = { id: number | string; date?: string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; tolerance_minutes?: number | null; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
 type PreopChecklist = { id: number; route_id?: number; plate: string; checklist_status: string; risk_level: string };
 type PreopTemplate = { sections: string[]; items: PreopItem[] };
@@ -78,6 +78,24 @@ const overtimeReasons = [
   ["clima_seguridad", "Clima, seguridad o condicion externa"]
 ];
 
+// Motivos de llegada tarde. Son distintos a los de extension: una entrada
+// tardia no se explica por "cierre de servicio critico", y mezclarlos dejaba
+// al empleado escogiendo el motivo menos malo en vez del real.
+const latenessReasons = [
+  ["congestion_vial", "Congestion vial o cierre de via"],
+  ["transporte_publico", "Falla del transporte publico"],
+  ["falla_vehiculo", "Falla mecanica del vehiculo"],
+  ["cita_medica", "Cita medica o incapacidad"],
+  ["calamidad_domestica", "Calamidad domestica"],
+  ["clima_seguridad", "Clima, seguridad o condicion externa"],
+  ["autorizacion_supervisor", "Ingreso tardio autorizado por supervisor"],
+  ["otro", "Otro motivo (detallar en el sustento)"]
+];
+
+// Marcaciones que exigen selfie. El almuerzo no la pide: es un corte interno
+// de la jornada, no una validacion de quien entro o quien salio.
+const selfieRequiredPunches = new Set(["entrada", "salida"]);
+
 const punchOrder = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
 const punchLabels: Record<string, { title: string; desc: string; color: string }> = {
   entrada: { title: "Inicio jornada", desc: "Registra tu entrada al trabajo", color: "bg-blue-600" },
@@ -88,7 +106,9 @@ const punchLabels: Record<string, { title: string; desc: string; color: string }
 const pendingSyncKey = "apexos_hr_mobile_pending_sync";
 const hrSnapshotKey = "apexos_hr_mobile_snapshot";
 const pendingSyncLimit = 50;
-const evidencePayloadKeys = ["photo", "extra_evidence"] as const;
+// Claves de primer nivel del payload que llevan foto. Salen del localStorage a
+// IndexedDB mientras la marcacion espera en la cola: en base64 llenan la cuota.
+const evidencePayloadKeys = ["photo", "extra_evidence", "identity_photo"] as const;
 let pendingSyncInFlight = false;
 
 const messageToneStyles: Record<MessageTone, { className: string; role: "alert" | "status" }> = {
@@ -397,7 +417,9 @@ export default function MobilePunchPage() {
   const [extraReason, setExtraReason] = useState("");
   const [extraDetail, setExtraDetail] = useState("");
   const [extraEvidence, setExtraEvidence] = useState<CapturedFile | null>(null);
+  const [identitySelfie, setIdentitySelfie] = useState<CapturedFile | null>(null);
   const [dayMileage, setDayMileage] = useState("");
+  const [startMileage, setStartMileage] = useState("");
   const [gps, setGps] = useState<GpsFix | null>(null);
   const [gpsUpdatedAt, setGpsUpdatedAt] = useState(0);
   const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -426,6 +448,12 @@ export default function MobilePunchPage() {
   const [gpsCause, setGpsCause] = useState<GpsFailureCause | null>(null);
   const [scheduleSource, setScheduleSource] = useState<ScheduleSource>("live");
   const [scheduleNotice, setScheduleNotice] = useState("");
+  // Estado de pantalla, no de error: "no_ficha" = el usuario no tiene empleado vinculado,
+  // "no_horario" = tiene ficha pero hoy no le corresponde ningun horario. Los dos se resuelven
+  // antes de montar la ventana de marcado para que el operario no vea cuatro tarjetas de
+  // "Fallo tecnico detectado" por unos 404 que son informacion, ni tenga que adivinar porque
+  // los botones no hacen nada.
+  const [blocked, setBlocked] = useState<null | "no_ficha" | "no_horario">(null);
 
   function notify(text: string, tone: MessageTone = "success") {
     setMessage(text);
@@ -433,8 +461,31 @@ export default function MobilePunchPage() {
   }
 
   const load = useCallback(async () => {
-    const [meResult, routesResult, attendanceResult, typesResult, sessionResult] = await Promise.all([
-      settle<Employee | null>(api<Employee>("/api/v1/hr/self"), null),
+    // La ficha abre o cierra la pantalla: si el usuario no tiene un empleado vinculado, el API
+    // responde 404 en las cinco lecturas y cada 404 levantaba su tarjeta de "Fallo tecnico
+    // detectado". Se lee primero, con la alerta global silenciada y el estado HTTP a la vista,
+    // para no lanzar las consultas que dependen de ella. Un fallo de red (status 0) no es una
+    // ficha ausente: ahi manda el respaldo local y el aviso de horario degradado de siempre.
+    const meResult = await api<Employee>("/api/v1/hr/self", { silentFailureAlert: true })
+      .then((value) => ({ ok: true as const, status: 200, value }))
+      .catch((error) => ({
+        ok: false as const,
+        status: Number((error as { status?: number })?.status || 0),
+        value: null as Employee | null
+      }));
+    const cached = readHrSnapshot();
+    if (!meResult.ok && meResult.status === 404 && !(cached?.self && cached.taken_day === todayBogota())) {
+      setEmployee(null);
+      setRoutes([]);
+      setAttendance([]);
+      setActivityTypes([]);
+      setSession(null);
+      setScheduleSource("live");
+      setScheduleNotice("");
+      setBlocked("no_ficha");
+      return;
+    }
+    const [routesResult, attendanceResult, typesResult, sessionResult] = await Promise.all([
       settle<TimeRoute[]>(api<TimeRoute[]>("/api/v1/hr/self/routes"), []),
       settle<Attendance[]>(api<Attendance[]>("/api/v1/hr/self/attendance"), []),
       settle<ActivityType[]>(api<ActivityType[]>("/api/v1/hr/self/activity-types"), []),
@@ -443,8 +494,8 @@ export default function MobilePunchPage() {
     const today = todayBogota();
     const dayRoutes = routesResult.value.filter((item) => !item.date || String(item.date).slice(0, 10) === today);
     const snapshot = buildHrOfflineSnapshot({
-      previous: readHrSnapshot(),
-      self: meResult,
+      previous: cached,
+      self: requestOutcome(meResult.ok, meResult.value),
       routes: { ok: routesResult.ok, value: dayRoutes },
       activityTypes: typesResult,
       takenAt: new Date().toISOString(),
@@ -473,6 +524,10 @@ export default function MobilePunchPage() {
     setActivityTypes(typesData);
     setSession(sessionResult.value);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
+    // Con ficha y conexion, un dia sin horarios es un estado que la pantalla debe decir en voz
+    // alta, no un listado vacio con botones que no llevan a ningun lado. En modo respaldo
+    // (snapshot) no se bloquea: el operario sigue marcando con lo que tiene en el dispositivo.
+    setBlocked(resolved.source === "live" && !resolved.routes.length ? "no_horario" : null);
     const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/self/preop/active").catch(() => null);
     if (active?.checklist) {
       setPreop(active.checklist);
@@ -577,12 +632,38 @@ export default function MobilePunchPage() {
   const sessionActive = Boolean(session?.active || (doneTypes.has("entrada") && !doneTypes.has("salida")));
   const sessionClosed = doneTypes.has("salida");
   const vehiclePlate = route?.vehicle_plate || "";
-  const isClosingLate = (() => {
-    if (nextType !== "salida" || !route?.end_time) return false;
-    const [hour, minute] = route.end_time.split(":").map(Number);
+  // La tolerancia tiene que ser la misma que aplica el servidor al calcular los
+  // minutos extra. Cuando la pantalla no la restaba, entre la hora de cierre y
+  // el fin de la tolerancia el formulario se exigia aqui y el servidor no lo
+  // pedia: el empleado llenaba motivo y foto para nada.
+  const toleranceMinutes = Math.max(0, Number(route?.tolerance_minutes ?? 15));
+  const minutesNow = (() => {
     const now = new Date();
-    return now.getHours() * 60 + now.getMinutes() > hour * 60 + minute;
+    return now.getHours() * 60 + now.getMinutes();
   })();
+  const scheduleMinutes = (value?: string | null) => {
+    const match = String(value || "").match(/^(\d{1,2}):(\d{2})/);
+    return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+  };
+  const isArrivingLate = (() => {
+    if (nextType !== "entrada") return false;
+    const expected = scheduleMinutes(route?.start_time);
+    return expected != null && minutesNow > expected + toleranceMinutes;
+  })();
+  const isClosingLate = (() => {
+    if (nextType !== "salida") return false;
+    const expected = scheduleMinutes(route?.end_time);
+    return expected != null && minutesNow > expected + toleranceMinutes;
+  })();
+  // Lo que hay que justificar es lo que cae fuera de la tolerancia, que es el
+  // mismo numero que el servidor guarda en la marcacion.
+  const justifiedMinutes = (() => {
+    const expected = scheduleMinutes(isArrivingLate ? route?.start_time : route?.end_time);
+    if (expected == null) return 0;
+    return Math.max(0, minutesNow - expected - toleranceMinutes);
+  })();
+  const needsJustification = isArrivingLate || isClosingLate;
+  const needsSelfie = Boolean(nextType && selfieRequiredPunches.has(nextType));
   const pendingQueued = pendingSync.filter((item) => !isBlockedItem(item));
   const pendingBlocked = pendingSync.filter(isBlockedItem);
   const pendingWeightKb = Math.max(1, Math.round(offlineQueueWeight(pendingQueued) / 1024));
@@ -704,9 +785,24 @@ export default function MobilePunchPage() {
         notify(decision.userMessage, "error");
         return;
       }
+      if (selfieRequiredPunches.has(type) && !identitySelfie) {
+        notify("Toma la selfie de validacion antes de marcar.", "error");
+        return;
+      }
+      if (type === "entrada" && isArrivingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
+        notify("Llegada fuera de tolerancia: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.", "error");
+        return;
+      }
       if (type === "salida" && isClosingLate && (!extraReason || !extraDetail.trim() || !extraEvidence)) {
         notify("Cierre fuera de horario: selecciona motivo, escribe el sustento y adjunta evidencia fotografica.", "error");
         return;
+      }
+      if (type === "entrada" && vehiclePlate) {
+        const normalizedStart = startMileage.trim().replace(",", ".");
+        if (!/^\d+(\.\d{1,1})?$/.test(normalizedStart)) {
+          notify("Registra el kilometraje inicial con maximo un decimal antes de abrir la jornada.", "error");
+          return;
+        }
       }
       if (type === "salida" && vehiclePlate) {
         const normalizedMileage = dayMileage.trim().replace(",", ".");
@@ -746,6 +842,18 @@ export default function MobilePunchPage() {
           ...routeSyncMetadata(route)
         }
       };
+      // Sin previewUrl: es un blob: del navegador, no sobrevive a la cola ni
+      // significa nada en el servidor.
+      if (identitySelfie?.base64) {
+        payload.identity_photo = { base64: identitySelfie.base64, name: identitySelfie.name, type: identitySelfie.type, size: identitySelfie.size };
+      }
+      if (type === "entrada") {
+        const arrivalDetail = extraDetail.trim();
+        if (extraReason) payload.extra_reason = extraReason;
+        if (arrivalDetail) payload.extra_detail = arrivalDetail;
+        if (extraEvidence?.base64) payload.extra_evidence = extraEvidence;
+        if (vehiclePlate) payload.kilometraje_inicial = startMileage.trim().replace(",", ".");
+      }
       if (type === "salida") {
         const closingDetail = extraDetail.trim();
         if (extraReason) payload.extra_reason = extraReason;
@@ -756,6 +864,8 @@ export default function MobilePunchPage() {
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
+      setIdentitySelfie(null);
+      if (type === "entrada") setStartMileage("");
       if (type === "salida") setDayMileage("");
       const queued = await enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
       setPendingSync(readPendingSync());
@@ -993,16 +1103,34 @@ export default function MobilePunchPage() {
         </div>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1 shadow-sm">
+      {blocked ? null : <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1 shadow-sm">
         <button className={`h-12 rounded-md text-base font-semibold ${view === "marcar" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("marcar")} type="button">
           Marcar
         </button>
         <button className={`h-12 rounded-md text-base font-semibold ${view === "historial" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("historial")} type="button">
           Historial
         </button>
-      </section>
+      </section>}
 
-      {view === "marcar" ? (
+      {blocked ? (
+        <section className="rounded-md border border-line bg-white p-8 text-center shadow-sm" role="status">
+          <CalendarX className="mx-auto text-neutral-400" size={48} aria-hidden="true" />
+          <h2 className="mt-5 text-2xl font-semibold">Sin horario asignado</h2>
+          <p className="mt-3 text-sm font-medium text-neutral-700">
+            {blocked === "no_ficha"
+              ? "Tu usuario no tiene una ficha laboral asociada, así que no hay jornada que registrar desde aquí. Pide a Talento Humano que vincule tu ficha a este usuario."
+              : "Hoy no tienes ningún horario asignado. La ventana de marcación se abre el día en que Talento Humano publique tu horario."}
+          </p>
+          <p className="mt-3 text-xs font-medium text-neutral-500">
+            No es una falla de la aplicación: tus marcaciones anteriores y las pendientes de sincronizar siguen donde estaban.
+          </p>
+          <button className="mt-5 inline-flex h-12 items-center gap-2 rounded-md border border-line px-4 text-sm font-semibold text-neutral-700 hover:bg-neutral-50" onClick={() => load()} type="button">
+            <RefreshCw size={16} /> Volver a revisar
+          </button>
+        </section>
+      ) : null}
+
+      {!blocked && view === "marcar" ? (
         <>
           <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
             <div className="flex items-start justify-between gap-3">
@@ -1045,21 +1173,48 @@ export default function MobilePunchPage() {
             <div className="mt-4 rounded-md bg-paper p-3 text-sm text-neutral-700">
               <Truck className="mr-2 inline text-apex" size={15} /> {route ? `Marcando en horario ${route.id} - ${route.start_time || "--"} - ${route.end_time || "--"}` : "Sin horario seleccionado para este usuario/equipo"}
             </div>
-            {nextType === "salida" && isClosingLate ? (
+            {needsSelfie ? (
+              <div className="mt-3">
+                <PhotoCapture
+                  facing="user"
+                  label={nextType === "entrada" ? "Selfie de validacion de entrada" : "Selfie de validacion de cierre"}
+                  onChange={setIdentitySelfie}
+                  required
+                  value={identitySelfie}
+                />
+                <p className="mt-2 text-xs text-neutral-500">Debe verse tu rostro. El almuerzo y el retorno no piden foto.</p>
+              </div>
+            ) : null}
+            {needsJustification ? (
               <div className="mt-3 space-y-3 rounded-md border border-amber-200 bg-amber-50 p-3">
                 <div>
-                  <p className="text-sm font-semibold text-amber-950">Extension de horario detectada</p>
-                  <p className="mt-1 text-xs text-amber-900">Para cerrar jornada fuera del horario planeado debes seleccionar motivo, sustentar y adjuntar foto.</p>
+                  <p className="text-sm font-semibold text-amber-950">{isArrivingLate ? "Llegada tarde detectada" : "Extension de horario detectada"}</p>
+                  <p className="mt-1 text-xs text-amber-900">
+                    {isArrivingLate
+                      ? `Vas ${justifiedMinutes} min por fuera de la tolerancia de ${toleranceMinutes} min. Para registrar la entrada debes seleccionar motivo, sustentar y adjuntar foto.`
+                      : `Vas ${justifiedMinutes} min por fuera de la tolerancia de ${toleranceMinutes} min. Para cerrar jornada fuera del horario planeado debes seleccionar motivo, sustentar y adjuntar foto.`}
+                  </p>
                 </div>
                 <select className="h-12 w-full rounded-md border border-amber-200 bg-white px-3 text-base" value={extraReason} onChange={(event) => setExtraReason(event.target.value)}>
-                  <option value="">Motivo de extension *</option>
-                  {overtimeReasons.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  <option value="">{isArrivingLate ? "Motivo de la llegada tarde *" : "Motivo de extension *"}</option>
+                  {(isArrivingLate ? latenessReasons : overtimeReasons).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
-                <textarea className="min-h-24 w-full rounded-md border border-amber-200 bg-white px-3 py-3 text-base" placeholder="Sustento obligatorio: quien autorizo, punto, cliente o novedad" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
-                <PhotoCapture label="Foto obligatoria de soporte de extension" required value={extraEvidence} onChange={setExtraEvidence} />
+                <textarea className="min-h-24 w-full rounded-md border border-amber-200 bg-white px-3 py-3 text-base" placeholder={isArrivingLate ? "Sustento obligatorio: que paso, a quien avisaste y desde donde vienes" : "Sustento obligatorio: quien autorizo, punto, cliente o novedad"} value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
+                <PhotoCapture label={isArrivingLate ? "Foto obligatoria de soporte de la llegada tarde" : "Foto obligatoria de soporte de extension"} required value={extraEvidence} onChange={setExtraEvidence} />
               </div>
             ) : nextType === "salida" ? (
               <textarea className="mt-3 min-h-24 w-full rounded-md border border-line px-3 py-3 text-base" placeholder="Observacion opcional de cierre" value={extraDetail} onChange={(event) => setExtraDetail(event.target.value)} />
+            ) : null}
+            {nextType === "entrada" && vehiclePlate ? (
+              <label className="mt-3 block rounded-md border border-line bg-white p-3">
+                <span className="text-sm font-semibold text-neutral-900">Kilometraje inicial del dia</span>
+                <span className="mt-1 block text-xs text-neutral-500">Obligatorio para abrir una jornada con vehiculo. Es la lectura del odometro al recibir el vehiculo.</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <input className="h-12 min-w-0 flex-1 rounded-md border border-line px-3 text-base" inputMode="decimal" placeholder="Ej: 128430.5" value={startMileage} onChange={(event) => setStartMileage(event.target.value)} />
+                  <span className="rounded-md bg-paper px-3 py-3 text-sm font-semibold text-neutral-700">km</span>
+                </div>
+                {startMileage.trim() ? <span className="mt-2 block text-xs font-semibold text-apex">Kilometraje inicial: {startMileage.trim().replace(",", ".")} km</span> : null}
+              </label>
             ) : null}
             {nextType === "salida" && vehiclePlate ? (
               <label className="mt-3 block rounded-md border border-line bg-white p-3">
@@ -1119,7 +1274,7 @@ export default function MobilePunchPage() {
         </>
       ) : null}
 
-      {view === "historial" ? <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+      {!blocked && view === "historial" ? <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <h2 className="mb-3 text-base font-semibold">Historial de hoy</h2>
         <div className="space-y-2">
           {currentAttendance.punches.map((punch) => (

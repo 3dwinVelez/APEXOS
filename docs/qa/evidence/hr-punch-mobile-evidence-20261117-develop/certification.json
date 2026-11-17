@@ -1,0 +1,13 @@
+{
+  "environment": "LOCAL",
+  "started_at": "2026-11-17T18:43:45.485Z",
+  "checks": [
+    "summary exposes photo availability and counters without image bytes",
+    "single carries the bytes and the batch is an index that counts the same evidence without them",
+    "chronological team trace displays all mobile photos and opens lightbox",
+    "Reports journey trace renders the activity photograph and opens its enlargement"
+  ],
+  "status": "passed",
+  "photo_source": "TimePunch.metadata.identity_photo, with legacy support",
+  "finished_at": "2026-11-17T18:45:32.418Z"
+}

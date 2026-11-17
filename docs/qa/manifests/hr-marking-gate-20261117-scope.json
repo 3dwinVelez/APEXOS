@@ -1,0 +1,391 @@
+{
+  "change_id": "hr-marking-gate-20261117",
+  "scope_schema_version": 2,
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-marking-gate-20261117",
+  "base_commit": "36111a6ae1a18c59de0fc72c135bc890c011c1d7",
+  "base_commits": {
+    "develop": "36111a6ae1a18c59de0fc72c135bc890c011c1d7"
+  },
+  "target_head": "36111a6ae1a18c59de0fc72c135bc890c011c1d7",
+  "certified_commit": "8da50ea6d041d19d3f45593d95acc8ee4bdaf238",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "8da50ea6d041d19d3f45593d95acc8ee4bdaf238"
+  },
+  "change_intent": {
+    "summary": "La marcacion no deja entrar a la ventana sin horario asignado y el monitor de operaciones deja de arrastrar el base64 de las selfies al abrir un horario: lectura de evidencia por evento visible con la carga del horario bajo el presupuesto de dos segundos.",
+    "modules": [
+      "talento-humano-marcacion",
+      "talento-humano-monitor",
+      "talento-humano-rutas",
+      "qa-evidencia"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/monitorEvidenceRows.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/api/test/hr-list-truncation.test.js",
+    "apps/api/test/hr-mobile-identity.test.js",
+    "apps/api/test/hr-monitor-evidence-columns.test.js",
+    "apps/api/test/hr-monitor-evidence-demand.test.js",
+    "apps/api/test/hr-operations-map-contract.test.js",
+    "apps/api/test/hr-punch-mobile-evidence.test.js",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/operations/PhotoCapture.tsx",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/lib/punchPunctuality.ts",
+    "apps/web/test/hr-marking-lateness-selfie.test.mjs",
+    "apps/web/test/hr-marking-unassigned-gate.test.mjs",
+    "apps/web/test/hr-monitor-identity-selfie.test.mjs",
+    "apps/web/test/hr-offline-marking.test.mjs",
+    "apps/web/test/hr-report-punch-alerts.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md",
+    "docs/qa/certifications/hr-marking-gate-develop-20261117.md",
+    "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe-candidato-develop.json",
+    "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe.err",
+    "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe.json",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/api-suite-base-develop.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/gates-promocion-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/regresion-evidencia-movil-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/typecheck-build-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/web-suite-base-develop.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/01-sin-ficha.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/02-sin-horario.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/03-con-horario.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/04-sin-conexion-con-respaldo.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/05-sin-conexion-sin-respaldo.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/certification.json",
+    "docs/qa/evidence/hr-punch-mobile-evidence-20261117-develop/certification.json",
+    "docs/qa/manifests/hr-marking-gate-20261117-preqa.json",
+    "docs/qa/manifests/hr-marking-gate-20261117-scope.json",
+    "scripts/certifications/hr-marking-unassigned-gate-local.js",
+    "scripts/certifications/hr-monitor-ui-modernization-qa.js",
+    "scripts/certifications/hr-monitor-ux-fixes-qa.js",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "scripts/hr-borrar-marcaciones-dia.js",
+    "scripts/performance/selfie-payload-probe.js"
+  ],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/monitorEvidenceRows.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-monitor-evidence-columns.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-marking-lateness-selfie.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-marking-unassigned-gate.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-marking-gate-develop-20261117.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe-candidato-develop.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe.err"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/api-suite-base-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/gates-promocion-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/regresion-evidencia-movil-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/typecheck-build-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/web-suite-base-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-unassigned-gate-20261117/01-sin-ficha.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-unassigned-gate-20261117/02-sin-horario.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-unassigned-gate-20261117/03-con-horario.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-unassigned-gate-20261117/04-sin-conexion-con-respaldo.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-unassigned-gate-20261117/05-sin-conexion-sin-respaldo.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-marking-unassigned-gate-20261117/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-punch-mobile-evidence-20261117-develop/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marking-gate-20261117-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-marking-gate-20261117-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-marking-unassigned-gate-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/hr-borrar-marcaciones-dia.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/performance/selfie-payload-probe.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-deferred-marking-offline.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-list-truncation.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-mobile-identity.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-monitor-evidence-demand.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-operations-map-contract.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-punch-mobile-evidence.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/marcacion/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/operations/PhotoCapture.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/punchPunctuality.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-monitor-identity-selfie.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-offline-marking.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-report-punch-alerts.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-fallback.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-monitor-ui-modernization-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-monitor-ux-fixes-qa.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js"
+    }
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/monitorEvidenceRows.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-deferred-marking-offline.test.js",
+    "apps/api/test/hr-list-truncation.test.js",
+    "apps/api/test/hr-monitor-evidence-columns.test.js",
+    "apps/api/test/hr-monitor-evidence-demand.test.js",
+    "apps/api/test/hr-operations-map-contract.test.js",
+    "apps/api/test/hr-punch-mobile-evidence.test.js",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/talento-humano/marcacion/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-marking-unassigned-gate.test.mjs",
+    "apps/web/test/hr-monitor-identity-selfie.test.mjs",
+    "apps/web/test/hr-offline-marking.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md",
+    "docs/qa/certifications/hr-marking-gate-develop-20261117.md",
+    "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe-candidato-develop.json",
+    "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe.err",
+    "docs/qa/evidence/hr-carga-horarios-20261117/selfie-payload-probe.json",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/api-suite-base-develop.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/gates-promocion-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/regresion-evidencia-movil-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/typecheck-build-candidato.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/web-suite-base-develop.txt",
+    "docs/qa/evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/01-sin-ficha.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/02-sin-horario.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/03-con-horario.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/04-sin-conexion-con-respaldo.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/05-sin-conexion-sin-respaldo.png",
+    "docs/qa/evidence/hr-marking-unassigned-gate-20261117/certification.json",
+    "docs/qa/evidence/hr-punch-mobile-evidence-20261117-develop/certification.json",
+    "scripts/certifications/hr-marking-unassigned-gate-local.js",
+    "scripts/certifications/hr-monitor-ui-modernization-qa.js",
+    "scripts/certifications/hr-monitor-ux-fixes-qa.js",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "scripts/performance/selfie-payload-probe.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "marcacion_bloqueada_sin_horario_asignado_sin_ruido_de_404",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-unassigned-gate-20261117/certification.json",
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+      ]
+    },
+    {
+      "name": "carga_del_horario_bajo_el_presupuesto_de_dos_segundos",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-carga-horarios-20261117/selfie-payload-probe-candidato-develop.json"
+      ]
+    },
+    {
+      "name": "evidencia_movil_por_evento_y_journey_del_reporte",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-punch-mobile-evidence-20261117-develop/certification.json",
+        "../evidence/hr-marking-gate-develop-20261117/regresion-evidencia-movil-candidato.txt"
+      ]
+    },
+    {
+      "name": "lecturas_hr_con_isolamiento_de_tenant_y_rbac",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt"
+      ]
+    },
+    {
+      "name": "identidad_movil_selfie_de_llegada_tarde_y_respaldo_de_rutas",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/typecheck-build-candidato.txt"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_at": "2026-11-17",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "procede con el commit y push de las correciones prueba y certifica cada una de ellas y alienea los 3 ambientes con esta intervencion main, develop y desarrollo en sus ramas en la nube, tienes mi autorizacion completa para esta intervencion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "Edwin (dueno de APEXOS)"
+  }
+}

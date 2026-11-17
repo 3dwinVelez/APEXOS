@@ -1,0 +1,16 @@
+Suite completa de cliente sobre el arbol base origin/develop 36111a6ae1a18c59de0fc72c135bc890c011c1d7 SIN el corte, para atribuir cada falla.
+Reproducir: cd apps/web && node --experimental-strip-types --test 'test/*.test.mjs'
+
+# tests 801
+# suites 0
+# pass 798
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27488.9225
+
+fallas: 3
+not ok 99 - el registro de funciones cubre todas las rutas del dashboard   -> apps/web/test/command-palette-module-functions.test.mjs:49
+not ok 313 - apiInternal consulta el guard antes de intentar el respaldo en respuestas no OK   -> apps/web/test/hr-route-write-fallback.test.mjs:31
+not ok 315 - el respaldo preventivo tambien consulta el guard cuando no hay API configurada   -> apps/web/test/hr-route-write-fallback.test.mjs:49

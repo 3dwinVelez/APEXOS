@@ -6,6 +6,8 @@ const { randomUUID } = require("crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
 const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 const { buildRouteEventSummaries } = require("./routeEventSummaries");
+const monitorEvidenceRows = require("./monitorEvidenceRows");
+const { SELF_PUNCH_SELECT } = monitorEvidenceRows;
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 const hrPolicy = require("./policy");
 const { loadPayrollWorkdays } = require("./payrollWorkdays");
@@ -185,6 +187,16 @@ function monitorPunchEvidence(punch, summary = false) {
   return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
 }
 
+// Aviso del mapa del dia: esta marcacion guarda un soporte, pero sus bytes no viajan en el
+// listado. La pantalla que lo muestra lo pide por `getMonitorEvidence(source = punch)`, que
+// es el unico camino que todavia lleva el archivo. El aviso sale de que la columna no este
+// vacia (ver monitorEvidenceRows.EVIDENCE_PRESENT_MIN_BYTES), no de abrir su contenido.
+function monitorPunchEvidenceFlag(punch) {
+  return punch?.has_extra_evidence
+    ? { id: punch.id, source: "punch", available: true, has_base64_data: true }
+    : {};
+}
+
 async function getMonitorEvidence(tenantId, source, id) {
   const evidenceId = optionalNumericId(id);
   if (!evidenceId || !["activity", "punch", "identity"].includes(String(source))) {
@@ -217,28 +229,35 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
     throw validationError("Identificador de ruta invalido para las evidencias del monitor.", 400, "EVIDENCIA_MONITOR_RUTA_INVALIDA");
   }
   return prisma.runWithTenant(tenantId, async () => {
-    const [punches, activities] = await Promise.all([
-      prisma.timePunch.findMany({
-        where: { route_id: routeNumericId, tenant_id: tenantId },
-        orderBy: { punched_at: "asc" }
-      }),
+    // El lote es un INDICE: dice que evidencia existe en la ruta y cuanto pesa, y nunca
+    // arrastra los bytes. Antes leia cada selfie en base64 de todas las marcaciones de la
+    // ruta y era el primer consumidor de la base de produccion (ver monitorEvidenceRows.js).
+    // Quien necesite un archivo lo pide por `getMonitorEvidence`, que sigue devolviendo el
+    // payload completo de una sola evidencia.
+    const [punches, activities, evidenceRows] = await Promise.all([
+      monitorEvidenceRows.readRoutePunchEvidence(prisma, tenantId, routeNumericId),
       prisma.workActivity.findMany({
         where: { route_id: routeNumericId, tenant_id: tenantId },
-        include: { evidence: true },
+        select: { id: true },
         orderBy: { occurred_at: "asc" }
-      })
+      }),
+      monitorEvidenceRows.readRouteActivityEvidence(prisma, tenantId, routeNumericId)
     ]);
     const punchEvidence = {};
     const identityEvidence = {};
     for (const punch of punches) {
-      punchEvidence[String(punch.id)] = { ...monitorPunchEvidence(punch), id: punch.id, source: "punch" };
+      punchEvidence[String(punch.id)] = { ...monitorPunchEvidence(punch, true), id: punch.id, source: "punch" };
       const selfie = mobileIdentity.identityEvidenceOf(punch);
-      if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidencePayload(selfie), id: punch.id, source: "identity" };
+      if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidenceSummary(selfie, { id: punch.id, source: "identity" }), id: punch.id, source: "identity" };
     }
     const activityEvidence = {};
-    for (const activity of activities) {
-      activityEvidence[String(activity.id)] = (activity.evidence || []).map((evidence) => ({ ...monitorEvidencePayload(evidence), id: evidence.id, source: "activity" }));
+    for (const activity of activities) activityEvidence[String(activity.id)] = [];
+    for (const evidence of evidenceRows) {
+      const key = String(evidence.activity_id);
+      if (!activityEvidence[key]) activityEvidence[key] = [];
+      activityEvidence[key].push({ ...monitorEvidenceSummary(evidence, { id: evidence.id, source: "activity" }), id: evidence.id, source: "activity" });
     }
+    const visible = (item) => Boolean(item?.has_base64_data || item?.file_url || item?.storage_path);
     return {
       route_id: routeNumericId,
       generated_at: new Date().toISOString(),
@@ -247,9 +266,9 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
       activity_evidence: activityEvidence,
       counts: {
         punches: punches.length,
-        punch_evidence: Object.values(punchEvidence).filter((payload) => payload.base64_data || payload.file_url).length,
+        punch_evidence: Object.values(punchEvidence).filter(visible).length,
         activities: activities.length,
-        activity_evidence: Object.values(activityEvidence).reduce((sum, items) => sum + items.filter((item) => item.base64_data || item.file_url).length, 0)
+        activity_evidence: Object.values(activityEvidence).reduce((sum, items) => sum + items.filter(visible).length, 0)
       }
     };
   });
@@ -877,16 +896,10 @@ async function listRouteEventSummaries(tenantId) {
         where: { activity: { route_id: { in: routeIds } } },
         select: { activity: { select: { route_id: true } } }
       }),
-      prisma.timePunch.findMany({
-        where: { route_id: { in: routeIds } },
-        select: { route_id: true, extra_evidence: true, metadata: true }
-      }),
-      prisma.timePunch.findMany({
-        where: { route_id: null, OR: dateWindows.map((date) => ({ date })) },
-        select: { employee_id: true, user_name: true, type: true, punched_at: true, date: true, metadata: true, extra_evidence: true },
-        orderBy: { punched_at: "desc" },
-        take: 2000
-      }),
+      // Solo se necesita el conteo de evidencias por ruta; leer el base64 de la selfie
+      // costaba ~63 MB por llamada a traves del pooler (ver monitorEvidenceRows.js).
+      monitorEvidenceRows.readRouteEvidence(prisma, tenantId, routeIds),
+      monitorEvidenceRows.readUnlinkedEvidence(prisma, tenantId, dateWindows),
       prisma.workActivity.findMany({
         where: { route_id: null, OR: dateWindows.map((occurred_at) => ({ occurred_at })) },
         select: { employee_id: true, user_name: true, occurred_at: true, metadata: true, _count: { select: { evidence: true } } },
@@ -2395,6 +2408,7 @@ async function latestPunchesForEmployee(employee, userName, date = new Date(), r
       ...operationalIdentityRouteWhere(employee, userName, routeId, extraAliases),
       date: { gte: startOfDay(date), lt: endOfDay(date) }
     },
+    select: SELF_PUNCH_SELECT,
     orderBy: { punched_at: "asc" }
   });
 }
@@ -2753,6 +2767,7 @@ async function createPunch(tenantId, input, user, options = {}) {
         ...operationalIdentityRouteWhere(employee, resolvedUserName, route?.id || inputRouteId, identityAliases),
         date: { gte: startOfDay(punchedAt), lt: endOfDay(punchedAt) }
       },
+      select: SELF_PUNCH_SELECT,
       orderBy: { punched_at: "asc" }
     });
     const expectedType = nextPunchType(punchesToday);
@@ -2767,29 +2782,52 @@ async function createPunch(tenantId, input, user, options = {}) {
     const dayMileage = type === "salida" && routeVehicle
       ? hrPolicy.validateMileage(input.kilometraje_dia ?? input.day_mileage_km ?? input.metadata?.kilometraje_dia, { precision: mileagePrecision })
       : null;
+    // El kilometraje inicial se valida, pero no se exige: la app movil todavia
+    // no lo pide y un ajuste manual del supervisor tampoco lo trae. Obligarlo
+    // aqui dejaria a un tecnico sin poder abrir su jornada. Quien si lo exige
+    // es la pantalla de marcacion web, que es donde se captura.
+    const rawStartMileage = input.kilometraje_inicial ?? input.start_mileage_km ?? input.metadata?.kilometraje_inicial;
+    const startMileage = type === "entrada" && routeVehicle && rawStartMileage !== "" && rawStartMileage != null
+      ? hrPolicy.validateMileage(rawStartMileage, { precision: mileagePrecision })
+      : null;
     const mileageThreshold = Number(input.metadata?.kilometraje_umbral_inusual ?? input.metadata?.unusual_mileage_threshold_km ?? 450);
     const mileageUnusual = dayMileage != null && Number.isFinite(mileageThreshold) && dayMileage > mileageThreshold;
+    // Minuto del dia en que se marco, en hora de operacion: el servidor puede
+    // estar en UTC y la jornada se planea en Bogota.
+    const punchMinuteOfDay = () => {
+      const colParts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(punchedAt);
+      return Number(colParts.find((p) => p.type === "hour")?.value || punchedAt.getHours()) * 60
+        + Number(colParts.find((p) => p.type === "minute")?.value || punchedAt.getMinutes());
+    };
+    const scheduleMinuteOfDay = (value) => Number(String(value).slice(0, 2)) * 60 + Number(String(value).slice(3, 5));
+    const tolerance = Number(route?.tolerance_minutes || 0);
     const extraMinutes = type === "salida" && route?.end_time
-      ? (() => {
-          const colParts = new Intl.DateTimeFormat("en-CA", { timeZone: OPERATING_TIMEZONE, hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(punchedAt);
-          const currentMinutes = Number(colParts.find((p) => p.type === "hour")?.value || punchedAt.getHours()) * 60
-            + Number(colParts.find((p) => p.type === "minute")?.value || punchedAt.getMinutes());
-          return Math.max(0, currentMinutes - (Number(route.end_time.slice(0, 2)) * 60 + Number(route.end_time.slice(3, 5))) - Number(route.tolerance_minutes || 0));
-      })()
+      ? Math.max(0, punchMinuteOfDay() - scheduleMinuteOfDay(route.end_time) - tolerance)
       : 0;
+    // Llegar tarde no es hora extra: se cuenta aparte para que no entre en los
+    // reportes de recargo, pero se sustenta igual que la extension.
+    const lateMinutes = type === "entrada" && route?.start_time
+      ? Math.max(0, punchMinuteOfDay() - scheduleMinuteOfDay(route.start_time) - tolerance)
+      : 0;
+    const justifiedMinutes = extraMinutes || lateMinutes;
+    const justificationSlug = lateMinutes > 0 ? "llegada-tarde" : "extension";
     const extraEvidence = normalizeExtraEvidence(input.extra_evidence);
-    if (extraMinutes > 0 && (!String(input.extra_reason || "").trim() || !String(input.extra_detail || "").trim())) {
-      const err = new Error("Justifica por que estas marcando fuera de tu horario habitual.");
+    if (justifiedMinutes > 0 && (!String(input.extra_reason || "").trim() || !String(input.extra_detail || "").trim())) {
+      const err = new Error(lateMinutes > 0
+        ? "Justifica por que estas llegando despues de tu hora de entrada."
+        : "Justifica por que estas marcando fuera de tu horario habitual.");
       err.statusCode = 422;
-      err.code = "JUSTIFICACION_HORA_EXTRA_REQUERIDA";
-      err.details = { extra_minutes: extraMinutes };
+      err.code = lateMinutes > 0 ? "JUSTIFICACION_LLEGADA_TARDE_REQUERIDA" : "JUSTIFICACION_HORA_EXTRA_REQUERIDA";
+      err.details = { extra_minutes: extraMinutes, late_minutes: lateMinutes };
       throw err;
     }
-    if (extraMinutes > 0 && !extraEvidence) {
-      const err = new Error("Adjunta evidencia fotografica para sustentar la extension de horario.");
+    if (justifiedMinutes > 0 && !extraEvidence) {
+      const err = new Error(lateMinutes > 0
+        ? "Adjunta evidencia fotografica para sustentar la llegada tarde."
+        : "Adjunta evidencia fotografica para sustentar la extension de horario.");
       err.statusCode = 422;
-      err.code = "EVIDENCIA_HORA_EXTRA_REQUERIDA";
-      err.details = { extra_minutes: extraMinutes };
+      err.code = lateMinutes > 0 ? "EVIDENCIA_LLEGADA_TARDE_REQUERIDA" : "EVIDENCIA_HORA_EXTRA_REQUERIDA";
+      err.details = { extra_minutes: extraMinutes, late_minutes: lateMinutes };
       throw err;
     }
     if (extraEvidence) {
@@ -2818,16 +2856,16 @@ async function createPunch(tenantId, input, user, options = {}) {
         extra_reason: input.extra_reason,
         extra_detail: input.extra_detail,
         extra_evidence: extraEvidence ? {
-          name: normalizeFileName(extraEvidence.name || `extension-${employee.id}.jpg`),
+          name: normalizeFileName(extraEvidence.name || `${justificationSlug}-${employee.id}.jpg`),
           type: extraEvidence.type || "image/jpeg",
           size: extraEvidence.size || null,
           base64_data: extraEvidence.base64,
           storage_path: secureStoragePath({
             tenantId,
             module: "hr",
-            entity: "overtime-extensions",
+            entity: lateMinutes > 0 ? "late-arrivals" : "overtime-extensions",
             entityId: employee.id,
-            fileName: extraEvidence.name || `extension-${employee.id}.jpg`
+            fileName: extraEvidence.name || `${justificationSlug}-${employee.id}.jpg`
           })
         } : {},
         metadata: {
@@ -2837,6 +2875,17 @@ async function createPunch(tenantId, input, user, options = {}) {
           employee_name: employeeDisplayName(employee) || resolvedUserName,
           user_email: employee.user?.email || user?.email || "",
           identity_aliases: identityAliases,
+          // Fuera de extra_minutes a proposito: la llegada tarde no se paga
+          // como recargo y sumarla ahi inflaria la nomina.
+          ...(lateMinutes > 0 ? { late_minutes: lateMinutes } : {}),
+          ...(startMileage != null ? {
+            kilometraje_inicial: startMileage,
+            start_mileage: {
+              value: startMileage,
+              unit: "km",
+              vehicle_plate: routeVehicle
+            }
+          } : {}),
           ...(dayMileage != null ? {
             kilometraje_dia: dayMileage,
             mileage: {
@@ -3297,11 +3346,7 @@ async function getOperationsMap(tenantId, query = {}) {
         orderBy: { captured_at: "desc" },
         take: pingLimit
       }),
-      prisma.timePunch.findMany({
-        where: { date: { gte: day, lt: endOfDay(day) } },
-        orderBy: { punched_at: "desc" },
-        take: punchLimit
-      }),
+      monitorEvidenceRows.readDayEvidencePunches(prisma, tenantId, day, endOfDay(day), punchLimit),
       prisma.workActivity.findMany({
         where: { occurred_at: { gte: day, lt: endOfDay(day) } },
         include: { activity_type: true, evidence: { select: monitorEvidenceSelect } },
@@ -3451,9 +3496,10 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: punch.vehicle_plate,
           route_id: punch.route_id,
           extra_minutes: punch.extra_minutes,
+          late_minutes: Number(punch.metadata?.late_minutes || 0),
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorPunchEvidence(punch, true),
+          extra_evidence: monitorPunchEvidenceFlag(punch),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
           metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         });
@@ -3493,9 +3539,10 @@ async function getOperationsMap(tenantId, query = {}) {
           vehicle_plate: punch.vehicle_plate,
           route_id: punch.route_id,
           extra_minutes: punch.extra_minutes,
+          late_minutes: Number(punch.metadata?.late_minutes || 0),
           extra_reason: punch.extra_reason,
           extra_detail: punch.extra_detail,
-          extra_evidence: monitorPunchEvidence(punch, true),
+          extra_evidence: monitorPunchEvidenceFlag(punch),
           identity_evidence: monitorEvidenceSummary(mobileIdentity.identityEvidenceOf(punch) || {}, { id: punch.id, source: "identity" }),
           metadata: punchMonitorMetadata(mobileIdentity.publicPunchMetadata(punch.metadata || {}))
         })),
@@ -3624,6 +3671,10 @@ async function listOwnAttendance(tenantId, user, query = {}) {
   const end = query.fecha_fin ? endOfDay(query.fecha_fin) : endOfDay(day);
   const aliases = aliasesForEmployee(employee);
   return prisma.runWithTenant(tenantId, async () => {
+    // La pantalla de marcacion arma su linea de tiempo con id, tipo, hora, placa y ruta; la
+    // selfie que guarda `extra_evidence` no la consume nadie por esta via (se pide por id en
+    // /hr/monitor-evidence). Sin el `select`, cada apertura del horario arrastraba 106 KB de
+    // media y 2,8 MB en el peor caso por marcacion del dia a traves del pooler.
     const punches = await prisma.timePunch.findMany({
       where: {
         date: { gte: start, lt: end },
@@ -3632,6 +3683,7 @@ async function listOwnAttendance(tenantId, user, query = {}) {
           ...(aliases.length ? [{ user_name: { in: aliases } }] : [])
         ]
       },
+      select: SELF_PUNCH_SELECT,
       orderBy: [{ punched_at: "asc" }]
     });
     if (query.flat === "1" || query.legacy === "1") {

@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Badge, Skeleton } from "@/components/ui/feedback";
-import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleSameDayShiftIssue, scheduleTruncationNotices, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
+import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMonitorHasEvidenceFile, scheduleSameDayShiftIssue, scheduleTruncationNotices, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { punctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
@@ -21,7 +21,7 @@ type MasterOption = { code: string; name: string; active?: boolean; sort_order?:
 type UserMasterData = { locations?: MasterOption[] };
 type OperatorPoint = { key: string; user_name: string; name: string; route_id: number | string; online?: boolean; status?: string; latitude?: number | null; longitude?: number | null; age_seconds?: number | null; last_punch_type?: string; last_punch_time?: string; last_activity_type?: string; last_activity_time?: string };
 type MonitorEvidence = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean; items?: MonitorEvidence[] };
-type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence; identity_evidence?: MonitorEvidence; metadata?: { identity_verification?: { status?: string } } };
+type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence; identity_evidence?: MonitorEvidence; metadata?: { identity_verification?: { status?: string } } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
 type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
 type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[]; truncation?: ScheduleTruncationSignal };
@@ -29,7 +29,6 @@ type MonitorMark = { id: number | string; type: string; time?: string };
 type MonitorMarksByUser = { user_name: string; marks: MonitorMark[] };
 type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[] };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; truncation?: ScheduleTruncationSignal; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
-type MonitorEvidenceBatch = { route_id: number | string; generated_at: string; punch_evidence: Record<string, MonitorEvidence>; identity_evidence?: Record<string, MonitorEvidence>; activity_evidence: Record<string, MonitorEvidence[]>; counts: { punches: number; punch_evidence: number; activities: number; activity_evidence: number } };
 type RouteDeletionBlocker = { code: string; message: string; detail?: Record<string, unknown> };
 type RouteDeletionImpact = {
   route_id: number | string;
@@ -87,7 +86,17 @@ type TimelineEvent = {
 };
 
 function hasEvidenceFile(item?: MonitorEvidence | null): item is MonitorEvidence {
-  return Boolean(item && (item.base64_data || item.file_url || item.has_base64_data));
+  return scheduleMonitorHasEvidenceFile(item);
+}
+
+// Lo que se lee bajo la marcacion en la trazabilidad. La llegada tarde se
+// sustenta igual que la extension, pero se nombra distinto: no son minutos
+// extra y leerlos como tales desajustaba la cuenta del recargo.
+function punchObservation(event: PunchPoint) {
+  const sustento = (fallback: string) => `${event.extra_reason || fallback}${event.extra_detail ? ` · ${event.extra_detail}` : ""}`;
+  if (event.late_minutes) return `${event.late_minutes} minuto(s) de retardo · ${sustento("sin motivo")}`;
+  if (event.extra_minutes) return `${event.extra_minutes} minuto(s) extra · ${sustento("extension")}`;
+  return "";
 }
 
 const punchSequence = ["entrada", "inicio_almuerzo", "fin_almuerzo", "salida"];
@@ -439,7 +448,6 @@ export default function RoutesPlanningPage() {
   const [loadedEvidence, setLoadedEvidence] = useState<Record<string, MonitorEvidence[]>>({});
   const [loadingEvidence, setLoadingEvidence] = useState<Record<string, boolean>>({});
   const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
-  const [loadingBatch, setLoadingBatch] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [monitorPerson, setMonitorPerson] = useState("");
   const [monitorKind, setMonitorKind] = useState<"all" | "marca" | "actividad">("all");
@@ -452,7 +460,6 @@ export default function RoutesPlanningPage() {
   const [deleteTraceAck, setDeleteTraceAck] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const batchLoadedRef = useRef(false);
   const pathname = usePathname();
   const monitorBodyRef = useRef<HTMLDivElement | null>(null);
   const peopleScrollRef = useRef<HTMLDivElement | null>(null);
@@ -571,7 +578,6 @@ export default function RoutesPlanningPage() {
     setLoadingEvidence({});
     setEvidenceErrors({});
     setLightboxIndex(null);
-    batchLoadedRef.current = false;
     setSelectedRouteId(String(route.id));
     setMonitorDate(targetDate);
     loadMonitor(targetDate);
@@ -608,26 +614,6 @@ export default function RoutesPlanningPage() {
       setLoadingEvidence((current) => ({ ...current, [event.id]: false }));
     }
   }, [loadingEvidence]);
-
-  const loadRouteEvidenceBatch = useCallback(async (routeId: number | string) => {
-    setLoadingBatch(true);
-    try {
-      const batch = await api<MonitorEvidenceBatch>(`/api/v1/hr/monitor-evidence/route/${encodeURIComponent(String(routeId))}`, { cache: "no-store" });
-      const merged: Record<string, MonitorEvidence[]> = {};
-      const punchIds = new Set([...Object.keys(batch.punch_evidence || {}), ...Object.keys(batch.identity_evidence || {})]);
-      for (const id of punchIds) {
-        const files = [batch.punch_evidence?.[id], batch.identity_evidence?.[id]].flatMap(item => item?.items?.length ? item.items : [item]).filter((item): item is MonitorEvidence => Boolean(item?.base64_data || item?.file_url));
-        const items = files.filter((item, index) => files.findIndex(other => (other.base64_data || other.file_url) === (item.base64_data || item.file_url)) === index);
-        if (items.length) merged[`punch-${id}`] = items;
-      }
-      for (const [id, items] of Object.entries(batch.activity_evidence || {})) merged[`activity-${id}`] = items;
-      setLoadedEvidence((current) => ({ ...current, ...merged }));
-    } catch {
-      // La carga individual por evento sigue disponible como respaldo.
-    } finally {
-      setLoadingBatch(false);
-    }
-  }, []);
 
   async function openCreateModal(route?: RouteMonitor) {
     loadReferenceData();
@@ -897,7 +883,7 @@ export default function RoutesPlanningPage() {
   const selectedTimeline = useMemo(() => {
     if (!selectedRoute) return [];
     return [
-      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, type: event.type, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.extra_minutes ? `${event.extra_minutes} minuto(s) extra · ${event.extra_reason || "extension"}${event.extra_detail ? ` · ${event.extra_detail}` : ""}` : "", evidence: [event.extra_evidence, event.identity_evidence].filter(hasEvidenceFile), identityVerified: event.metadata?.identity_verification?.status === "verified" })),
+      ...(selectedRoute.punch_points || []).map((event) => ({ kind: "marca" as const, id: `punch-${event.id}`, user_name: event.user_name, type: event.type, title: punchNames[event.type] || event.type, at: event.punched_at, time: event.time || event.punched_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: punchObservation(event), evidence: [event.extra_evidence, event.identity_evidence].filter(hasEvidenceFile), identityVerified: event.metadata?.identity_verification?.status === "verified" })),
       ...(selectedRoute.activity_points || []).map((event) => ({ kind: "actividad" as const, id: `activity-${event.id}`, user_name: event.user_name, type: event.type, title: event.type, at: event.occurred_at, time: event.time || event.occurred_at, latitude: event.latitude, longitude: event.longitude, accuracy_meters: event.accuracy_meters, observation: event.observation || "", evidence: event.evidence || [] }))
     ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }, [selectedRoute]);
@@ -959,20 +945,14 @@ export default function RoutesPlanningPage() {
   }
 
   useEffect(() => {
-    if (!selectedRoute || batchLoadedRef.current) return;
-    batchLoadedRef.current = true;
-    void loadRouteEvidenceBatch(selectedRoute.id);
-  }, [loadRouteEvidenceBatch, selectedRoute]);
-
-  useEffect(() => {
-    if (loadingBatch || !selectedRoute) return;
+    if (!selectedRoute) return;
     for (const event of visibleTimeline) {
       const summary = event.evidence?.[0];
       if (summary?.available && summary.id != null && !loadedEvidence[event.id] && !loadingEvidence[event.id] && !evidenceErrors[event.id]) {
         void loadTimelineEvidence(event);
       }
     }
-  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingBatch, loadingEvidence, selectedRoute, visibleTimeline]);
+  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingEvidence, selectedRoute, visibleTimeline]);
 
   const lightboxItems = useMemo(() => visibleTimeline.flatMap((event) => {
     const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
@@ -1370,7 +1350,6 @@ export default function RoutesPlanningPage() {
                     <X size={12} />
                   </button>
                 ) : null}
-                {loadingBatch ? <Badge className="gap-1.5" tone="neutral"><RefreshCw className="animate-spin" size={12} /> Cargando evidencias</Badge> : null}
                 {monitorDate !== scheduleMonitorDate(selectedRoute.date) ? <Badge className="gap-1.5" tone="warning"><CalendarDays size={12} /> El horario es del {scheduleMonitorDate(selectedRoute.date)}</Badge> : null}
               </div>
             </header>

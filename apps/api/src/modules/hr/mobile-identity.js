@@ -30,6 +30,14 @@ const ENROLL_CLOCK_SKEW_MS = 10 * 60 * 1000;
 const MAX_IDENTITY_PHOTO_BYTES = 300 * 1024;
 const IDENTITY_PHOTO_TYPES = new Set(["image/jpeg", "image/png"]);
 const HISTORY_LIMIT = 20;
+// La selfie valida quien abre y quien cierra la jornada. El almuerzo y el
+// retorno son cortes internos del mismo turno: ya hay una entrada verificada
+// detras, y pedir cuatro fotos solo llenaba el monitor de caras repetidas.
+const SELFIE_REQUIRED_TYPES = new Set(["entrada", "salida"]);
+// Hash que firma la app cuando la marcacion no lleva selfie. Es el sha256 del
+// vacio: la firma sigue cubriendo tipo, hora e idempotencia, asi que una
+// marcacion de almuerzo tampoco se puede reusar ni reordenar.
+const NO_PHOTO_SHA256 = crypto.createHash("sha256").update(Buffer.alloc(0)).digest("hex");
 
 function fail(statusCode, code, message, details) {
   const error = new Error(message);
@@ -155,16 +163,68 @@ function photoBytes(photo) {
   return Buffer.from(payload, "base64");
 }
 
+// Valida la selfie y la deja como la guarda la marcacion. Devuelve tambien el
+// sha256, que es lo que la firma de la app cubre.
+function normalizeSelfie(photo, { maxBytes = MAX_IDENTITY_PHOTO_BYTES } = {}) {
+  const type = String(photo.type || "").toLowerCase();
+  if (!IDENTITY_PHOTO_TYPES.has(type)) throw fail(400, "SELFIE_INVALIDA", "La foto de la marcacion debe ser JPEG o PNG.");
+  const bytes = photoBytes(photo);
+  assertSafeFile({ base64_data: photo.base64 || photo.base64_data, mime_type: type, file_size: bytes.length, file_name: photo.name }, { maxBytes });
+  const base64 = String(photo.base64 || photo.base64_data);
+  const sha256 = crypto.createHash("sha256").update(bytes).digest("hex");
+  return {
+    sha256,
+    stored: {
+      name: String(photo.name || "selfie.jpg").slice(0, 120),
+      type,
+      size: bytes.length,
+      sha256,
+      // Siempre como data URL: es lo que pintan las pantallas de la web.
+      base64_data: base64.startsWith("data:") ? base64 : `data:${type};base64,${base64}`
+    }
+  };
+}
+
+function selfieRequiredFor(type) {
+  return SELFIE_REQUIRED_TYPES.has(String(type || ""));
+}
+
+// Selfie de una marcacion hecha desde la web. No viene firmada: el navegador
+// no tiene chip que firme. Sirve para que el supervisor vea quien marco, no
+// para probarlo, y por eso la marcacion no queda como "verified".
+function webIdentity({ input, type, now }) {
+  const photo = input.identity_photo && typeof input.identity_photo === "object" ? input.identity_photo : null;
+  if (!photo?.base64 && !photo?.base64_data) {
+    if (selfieRequiredFor(type)) {
+      throw fail(400, "SELFIE_REQUERIDA", "Toma la selfie de validacion para registrar esta marcacion.");
+    }
+    return { identity_verification: { status: "not_verified", channel: "web" } };
+  }
+  // Desde la web la foto pasa por la camara del navegador y pesa mas que la
+  // que optimiza la app; el tope es el de cualquier evidencia de marcacion.
+  const { stored } = normalizeSelfie(photo, { maxBytes: 2 * 1024 * 1024 });
+  return {
+    identity_verification: {
+      status: "photo_only",
+      channel: "web",
+      captured_at: now.toISOString()
+    },
+    identity_photo: stored
+  };
+}
+
 // Verifica la identidad de una marcacion propia.
 //
 // Devuelve la metadata a agregar a la marcacion. Lanza si la marcacion viene
-// de la app y no trae lo necesario: registro, telefono correcto, selfie y
-// firma valida. Las marcaciones de la web no traen nada de esto y quedan
-// marcadas como no verificadas, para que el supervisor sepa distinguirlas.
+// de la app y no trae lo necesario: registro, telefono correcto, firma valida
+// y, en entrada y salida, la selfie. Las de la web no pueden firmarse, asi que
+// guardan la selfie pero quedan como `photo_only`: el supervisor ve la cara,
+// no una prueba, y la diferencia tiene que seguir siendo visible.
 function verifyPunchIdentity({ employee, user, input = {}, now = new Date() }) {
   const metadata = input.metadata || {};
+  const type = String(input.type || "");
   if (metadata.source !== MOBILE_SOURCE) {
-    return { identity_verification: { status: "not_verified", channel: "web" } };
+    return webIdentity({ input, type, now });
   }
   const record = enrollmentOf(employee);
   if (!record) {
@@ -178,26 +238,37 @@ function verifyPunchIdentity({ employee, user, input = {}, now = new Date() }) {
     throw fail(403, "DISPOSITIVO_NO_REGISTRADO", "Este telefono no es el registrado para tu usuario. Marca desde tu telefono o pide a tu supervisor que restablezca el registro.");
   }
   const photo = metadata.identity_photo && typeof metadata.identity_photo === "object" ? metadata.identity_photo : null;
-  if (!photo?.base64) {
-    throw fail(400, "SELFIE_REQUERIDA", "La marcacion desde la app requiere la foto de tu rostro.");
+  const requiresSelfie = selfieRequiredFor(type);
+  if (requiresSelfie && !photo?.base64) {
+    throw fail(400, "SELFIE_REQUERIDA", "La marcacion de entrada y de cierre requiere la foto de tu rostro.");
   }
-  const type = String(photo.type || "").toLowerCase();
-  if (!IDENTITY_PHOTO_TYPES.has(type)) throw fail(400, "SELFIE_INVALIDA", "La foto de la marcacion debe ser JPEG o PNG.");
-  const bytes = photoBytes(photo);
-  assertSafeFile({ base64_data: photo.base64, mime_type: type, file_size: bytes.length, file_name: photo.name }, { maxBytes: MAX_IDENTITY_PHOTO_BYTES });
-  const sha256 = crypto.createHash("sha256").update(bytes).digest("hex");
-  const message = punchMessage({
-    userId: user?.id,
-    type: String(input.type || ""),
-    punchedAt: String(input.punched_at || ""),
-    idempotencyKey: String(input.idempotency_key || ""),
-    deviceId: record.device_id,
-    photoSha256: sha256
-  });
-  if (!verifySignature(record.public_key, message, identity.signature)) {
+  // El almuerzo y el retorno no llevan selfie, pero siguen firmados: la app
+  // nueva firma el sha256 del vacio, asi que una entrada no puede colarse sin
+  // foto quitandosela al payload (la firma cubre el tipo).
+  //
+  // Una app anterior a esta regla si manda selfie en el almuerzo y la firmo
+  // con el hash de esa foto. Se acepta esa firma para no dejar sin marcar a
+  // quien no ha actualizado, pero la foto no se guarda: el punto es que el
+  // almuerzo deje de acumular caras.
+  const selfie = photo?.base64 ? normalizeSelfie(photo) : null;
+  const expectedHashes = requiresSelfie
+    ? [selfie.sha256]
+    : [NO_PHOTO_SHA256, ...(selfie ? [selfie.sha256] : [])];
+  const signed = expectedHashes.some((photoSha256) => verifySignature(
+    record.public_key,
+    punchMessage({
+      userId: user?.id,
+      type,
+      punchedAt: String(input.punched_at || ""),
+      idempotencyKey: String(input.idempotency_key || ""),
+      deviceId: record.device_id,
+      photoSha256
+    }),
+    identity.signature
+  ));
+  if (!signed) {
     throw fail(403, "FIRMA_BIOMETRICA_INVALIDA", "No fue posible comprobar la huella de esta marcacion.");
   }
-  const base64 = String(photo.base64);
   return {
     identity_verification: {
       status: "verified",
@@ -208,14 +279,7 @@ function verifyPunchIdentity({ employee, user, input = {}, now = new Date() }) {
       verified_at: now.toISOString(),
       signature: String(identity.signature)
     },
-    identity_photo: {
-      name: String(photo.name || "selfie.jpg").slice(0, 120),
-      type,
-      size: bytes.length,
-      sha256,
-      // Siempre como data URL: es lo que pintan las pantallas de la web.
-      base64_data: base64.startsWith("data:") ? base64 : `data:${type};base64,${base64}`
-    }
+    ...(selfie && requiresSelfie ? { identity_photo: selfie.stored } : {})
   };
 }
 
@@ -254,6 +318,9 @@ module.exports = {
   MOBILE_SOURCE,
   KEY_ALGORITHM,
   MAX_IDENTITY_PHOTO_BYTES,
+  NO_PHOTO_SHA256,
+  SELFIE_REQUIRED_TYPES,
+  selfieRequiredFor,
   enrollmentMessage,
   punchMessage,
   enrollmentOf,
