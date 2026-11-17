@@ -28,6 +28,25 @@ const MARKING_EMAIL = `qa.monitor.employee.${RUN_ID}@nyvora.test`;
 const ADMIN_EMAIL = `qa.monitor.admin.${RUN_ID}@nyvora.test`;
 const TODAY = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 const PHOTO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n8sAAAAASUVORK5CYII=";
+// La regla de identidad vigente exige selfie en entrada y salida tambien por web
+// (apps/api/src/modules/hr/mobile-identity.js: SELFIE_REQUIRED_TYPES). El fixture
+// la manda porque el producto la pide; el rechazo sin foto se comprueba aparte.
+const SELFIE = { base64: PHOTO, name: `identity-${RUN_ID}.png`, type: "image/png", size: 68 };
+
+// La jornada del fixture cubre el minuto en que corre la certificacion. Antes era
+// 00:01-00:02 y eso hoy es una llegada tarde: el servidor exige justificacion y
+// evidencia (service.js: lateMinutes) y el punch de entrada quedaba rechazado.
+const minuteOfDayBogota = (date) => {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Bogota", hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).formatToParts(date);
+  return Number(parts.find((part) => part.type === "hour")?.value || 0) * 60 + Number(parts.find((part) => part.type === "minute")?.value || 0);
+};
+const toHhmm = (minute) => `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+const NOW_MINUTE = minuteOfDayBogota(new Date());
+// La jornada arranca en el minuto de la corrida y dura una hora, con quince de
+// tolerancia: lateMinutes = punch - start - tolerance, asi que el minuto que toma
+// crear usuarios y rol sigue contando como entrada a tiempo.
+const ROUTE_START = toHhmm(NOW_MINUTE);
+const ROUTE_END = toHhmm(Math.min(23 * 60 + 58, NOW_MINUTE + 55));
 
 function normalize(value) {
   return String(value || "").trim().toLowerCase();
@@ -105,7 +124,7 @@ async function main() {
     route = await prisma.runWithTenant(tenant.id, () => prisma.timeRoute.create({
       data: {
         tenant_id: tenant.id, date: new Date(`${TODAY}T05:00:00.000Z`), vehicle_plate: "", employees: [MARKING_EMAIL],
-        start_time: "00:01", end_time: "00:02", tolerance_minutes: 0, per_diem: 0,
+        start_time: ROUTE_START, end_time: ROUTE_END, tolerance_minutes: 15, per_diem: 0,
         notes: "Control de marcacion: punch_only\nCertificacion carga de evidencia bajo demanda", status: "active"
       }
     }));
@@ -113,7 +132,9 @@ async function main() {
 
     const employeeLogin = await request("/api/v1/auth/login", { method: "POST", body: { email: MARKING_EMAIL, password: PASSWORD } });
     const employeeToken = employeeLogin.token;
-    await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type: "entrada", route_id: route.id, punched_at: new Date().toISOString() } });
+    const selfieless = await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", expected: 400, body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type: "entrada", route_id: route.id, punched_at: new Date().toISOString() } });
+    check(result, "entrada_sin_selfie_rechazada", selfieless.code === "SELFIE_REQUERIDA", { code: selfieless.code });
+    await request("/api/v1/hr/self/time-punches", { token: employeeToken, method: "POST", body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type: "entrada", route_id: route.id, punched_at: new Date().toISOString(), identity_photo: SELFIE } });
     const types = await request("/api/v1/hr/self/activity-types", { token: employeeToken });
     const activity = await request("/api/v1/hr/self/work-activities", {
       token: employeeToken,
@@ -126,7 +147,7 @@ async function main() {
     const exit = await request("/api/v1/hr/self/time-punches", {
       token: employeeToken,
       method: "POST",
-      body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type: "salida", route_id: route.id, punched_at: new Date().toISOString(), extra_reason: "certificacion_qa", extra_detail: "Prueba controlada de evidencia de salida", extra_evidence: { base64: PHOTO, name: `punch-${RUN_ID}.png`, type: "image/png", size: 68 } }
+      body: { employee_id: employeeUser.employee_id, user_name: MARKING_EMAIL, type: "salida", route_id: route.id, punched_at: new Date().toISOString(), extra_reason: "certificacion_qa", extra_detail: "Prueba controlada de evidencia de salida", extra_evidence: { base64: PHOTO, name: `punch-${RUN_ID}.png`, type: "image/png", size: 68 }, identity_photo: SELFIE }
     });
 
     const monitorLogin = await request("/api/v1/auth/login", { method: "POST", body: { email: ADMIN_EMAIL, password: PASSWORD } });
