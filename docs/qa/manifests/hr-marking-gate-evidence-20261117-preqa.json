@@ -85,5 +85,14 @@
     "qa_gate_run": "12/12 controles contra el build desplegado 58c8554fd181 en el ambiente QA de NYVORA (sin horario = 200 con lista vacia, la misma ruta con horario devuelve jornada, apertura del mapa 790 ms bajo el presupuesto de 2000 ms, 39.556 bytes del mapa contra 829.534 bytes de evidencia almacenada, cero base64 en el cuerpo)",
     "qa_monitor_run": "10/10 controles de evidencia por demanda (rechazo de entrada sin selfie, resumenes sin payload, carga por id, rechazo entre tenants y control de evidencia ausente)",
     "local_suite_of_the_corte": "api 1143 pruebas con 2 fallas preexistentes ajenas (Contabilidad y Transporte), web 813 con 1 falla preexistente (centro de comandos), gate de navegador 14/14 y regresion movil 4/4: ver docs/qa/certifications/hr-marking-gate-develop-20261117.md"
+  },
+  "promotion_gates": {
+    "measured_at": "2026-11-17",
+    "candidate": "punta de codex/qa-hr-gate-evidence-develop-20261117 al momento de la corrida; el bloque viaja en el commit que la registra",
+    "qa_promotion_scope": "ALCANCE DE PROMOCION VALIDO: hr-marking-gate-evidence-20261117 (9 rutas)",
+    "qa_preqa_evidence": "AUTORIZACION PRE-QA VALIDA: hr-marking-gate-evidence-20261117",
+    "ci_promotion_guard": "PROMOCION CI ALCANZADA: hr-marking-gate-evidence-20261117",
+    "scoped_qa_governance_local": "passed sobre repositorio Git efimero, incluida la matriz de rechazos (inventario exacto, certified_commit ya contenido en el target)",
+    "git_governance_guard_test": "3 pruebas, 3 pasan, 0 fallan"
   }
 }
