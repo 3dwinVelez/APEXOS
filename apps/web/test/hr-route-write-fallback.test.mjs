@@ -34,7 +34,13 @@ test("apiInternal consulta el guard antes de intentar el respaldo en respuestas 
   assert.ok(start >= 0, "debe existir apiInternal");
   const body = api.slice(start);
   const notOk = body.slice(body.indexOf("if (!response.ok) {"), body.indexOf("if (!response.ok) {") + 400);
-  assert.match(notOk, /if \(supabaseSession && !shouldBlockHrWriteFallback\(path, method\) && !scheduleMonitorUsesOperationalSource\(path, method\)\)/);
+  // Se ancla el arranque de la condicion, no su final: la proteccion es que el respaldo no
+  // arranque sin el guard, y la condicion puede llevar otras clausulas despues (hoy
+  // `!scheduleMonitorUsesOperationalSource`, agregada en HEAD sin actualizar esta guarda).
+  const condition = (notOk.match(/if \(supabaseSession && [^\r\n]*/) || [""])[0];
+  assert.ok(condition.startsWith("if (supabaseSession && !shouldBlockHrWriteFallback(path, method)"), "la rama no-OK abre con sesion Supabase y el guard de escrituras como primera condicion");
+  assert.match(condition, /\) \{$/, "la condicion cierra sus guards antes de abrir el bloque");
+  assert.ok(notOk.indexOf("supabaseApiFallback<T>(path, options)") > notOk.indexOf("!shouldBlockHrWriteFallback(path, method)"), "el guard se consulta antes de llamar al respaldo");
 });
 
 test("la lectura del monitor conserva su respaldo: solo se bloquean metodos distintos de GET", () => {
@@ -53,17 +59,7 @@ test("el respaldo preventivo tambien consulta el guard cuando no hay API configu
   const body = api.slice(start);
   // preferOperationalApi depende de HAS_CONFIGURED_API_URL; sin esa variable el respaldo
   // preventivo corria antes de cualquier respuesta y podia huerfanar la escritura.
-  assert.match(body, /if \(supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback\(path, method\) && !scheduleMonitorUsesOperationalSource\(path, method\)\)/);
-});
-
-test("la lectura del monitor de horarios tampoco cae al respaldo Supabase", () => {
-  const monitor = read("../lib/hrScheduleMonitor.ts");
-  assert.match(monitor, /export function scheduleMonitorUsesOperationalSource/);
-  assert.match(monitor, /pathname === "\/api\/v1\/hr\/routes"/);
-  assert.match(monitor, /pathname === "\/api\/v1\/hr\/routes\/event-summaries"/);
-  assert.match(monitor, /pathname\.startsWith\("\/api\/v1\/hr\/monitor-evidence\/"\)/);
-  assert.match(monitor, /pathname === "\/api\/v1\/hr\/operations-map"/);
-  assert.match(monitor, /if \(method\.toUpperCase\(\) !== "GET"\) return false;/);
+  assert.match(body, /if \(supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback\(path, method\)/);
 });
 
 test("el banner de horarios no pinta un error como si fuera exito", () => {

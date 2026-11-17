@@ -1,0 +1,11 @@
+Typecheck del cliente sobre el candidato:
+  cd apps/web && npx tsc -p tsconfig.typecheck.json --noEmit   -> exito, 0 errores
+
+Build de produccion del cliente sobre el candidato:
+  cd apps/web && npx next build --webpack   -> Compiled successfully in 2.6min, exito
+
+  Limitacion del ambiente aislado: la variante por defecto (turbopack) aborta con
+  "Symlink [project]/apps/web/node_modules is invalid, it points out of the filesystem root"
+  porque el node_modules de este worktree temporal esta enlazado fuera de la raiz del proyecto.
+  No es un defecto del codigo: el mismo arbol compila con el empaquetador alternativo, y un
+  checkout normal con npm install no tiene ese enlace.

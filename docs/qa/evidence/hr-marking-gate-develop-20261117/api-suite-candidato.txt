@@ -1,0 +1,15 @@
+Suite completa del API sobre el candidato (apps/api).
+Reproducir: cd apps/api && DISABLE_REDIS=true REDIS_DISABLED=true node --test 'test/*.test.js'
+
+# tests 1143
+# suites 0
+# pass 1138
+# fail 2
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 54524.9809
+
+fallas: 2
+not ok 145 - all accounting UI routes are registered under /api/v1   -> apps/api/test/accounting-routes-contract.test.js:71
+not ok 1115 - las rutas TMS se registran y exigen autenticacion   -> apps/api/test/transport-tms-foundation.test.js:130

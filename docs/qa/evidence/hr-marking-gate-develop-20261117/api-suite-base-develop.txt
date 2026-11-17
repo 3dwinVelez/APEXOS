@@ -1,0 +1,16 @@
+Suite completa del API sobre el arbol base origin/develop 36111a6ae1a18c59de0fc72c135bc890c011c1d7 SIN el corte, para atribuir cada falla.
+Reproducir: git worktree add <base> origin/develop && cd apps/api && DISABLE_REDIS=true REDIS_DISABLED=true node --test 'test/*.test.js'
+
+# tests 1130
+# suites 0
+# pass 1124
+# fail 3
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 55349.8874
+
+fallas: 3
+not ok 145 - all accounting UI routes are registered under /api/v1   -> apps/api/test/accounting-routes-contract.test.js:71
+not ok 802 - el calculo local de decision tiene sobrecosto despreciable   -> apps/api/test/security-authorization-revocation.test.js:25
+not ok 1102 - las rutas TMS se registran y exigen autenticacion   -> apps/api/test/transport-tms-foundation.test.js:130
