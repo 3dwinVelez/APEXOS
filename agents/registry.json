@@ -143,9 +143,9 @@
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.4.0",
-      "updated_at": "2026-11-13",
-      "sha256": "4ec7d0ccb37751d50cd064529511c8cd5e650aa5d951aef60ed9d54c756fe042",
+      "version": "2.6.0",
+      "updated_at": "2026-11-17",
+      "sha256": "daa19cdb96ce99f7a27f86af8fedc1ee96b236936fc50fbb5c7e35dbde0965bc",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -162,7 +162,8 @@
         "indices-tenant",
         "dinero-decimal",
         "ddl-quirurgico-ledger-en-lf",
-        "rename-vista-compatibilidad-y-filas-posteriores"
+        "rename-vista-compatibilidad-y-filas-posteriores",
+        "sincronizacion-multi-ambiente"
       ]
     },
     {

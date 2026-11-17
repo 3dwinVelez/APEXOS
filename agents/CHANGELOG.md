@@ -4,6 +4,206 @@ Formato: `YYYY-MM-DD` — agente — `version` — cambio. La versión sigue sem
 
 ## 2026-11-17
 
+### Alineación de bases de datos QA → Producción completada (`db-alignment-20261117`)
+
+- **Pedido del dueño.** «Procede con la eliminacion de la migracion fantasma y luego verifica que ambas bases esten alineadas de manera correcta» + «Aplica las 3 migraciones legales en producción y verifica que ambas bases queden alineadas».
+- **Intervención completada:** ✅ **AMBAS BASES DE DATOS ESTÁN ALINEADAS**
+- **Estado final:**
+  - QA: 72 migraciones (después de eliminar 1 migración fantasma)
+  - Producción: 72 migraciones (después de aplicar 3 migraciones legales)
+  - Alineación: ✓ **CONFIRMADA** vía `node scripts/audit-db-alignment-api.js`
+
+#### Fase 1: Eliminación de Migración Fantasma (QA)
+
+- **Migración identificada:** `20260601000000_baseline_core_schema`
+- **Análisis:**
+  - Existía en el ledger de QA pero nunca en el repositorio git
+  - `applied_steps_count = 0` (no ejecutó cambios reales)
+  - Checksum: `ff4ee7806c614056ceae9783793f2dfc1805ed75b098342141d30179f6deb2e9`
+  - Aplicada el 2026-07-22 (hace 4 meses)
+- **Acción ejecutada:**
+  ```bash
+  echo "DELETE FROM _prisma_migrations WHERE migration_name = '20260601000000_baseline_core_schema' AND applied_steps_count = 0;" | PGPASSWORD='***' timeout 30 psql "postgresql://postgres.jbirkghkekuifgfsgquq@aws-1-us-east-2.pooler.supabase.com:6543/postgres"
+  ```
+- **Resultado:** `DELETE 1` ✅
+- **Verificación:** QA pasó de 73 a 72 migraciones
+- **Evidencia:** `docs/qa/evidence/db-alignment-20261117/qa-baseline-removed.txt`
+
+#### Fase 2: Aplicación de Migraciones Legales (Producción)
+
+**Migración 1:** `20261030120000_hr_labor_rates_vigencia_2026`
+- **Descripción:** Tarifas de recargos Ley 2466/2025
+- **Checksum:** `fa95b6d4ba29ef0da5bc277a4388772fe8de218bb2a885be1ee91c9b5659187b`
+- **Resultado:**
+  - UPDATE 4 (HEDD: percent 105 → 115, factor 2.05 → 2.15)
+  - UPDATE 4 (HEND: percent 155 → 165, factor 2.55 → 2.65)
+  - INSERT 0 55 (conceptos de recargo línea de tiempo completa 2026)
+  - INSERT 0 5 (parámetros HORAS_MENSUALES_ORDINARIAS = 220h)
+- **Registro en ledger:** ✅ `INSERT 0 1`
+- **Verificación:** ✅ Checksum y applied_steps_count = 1 confirmados
+
+**Migración 2:** `20261030130000_hr_ibc_caps_floors_2026`
+- **Descripción:** Topes y pisos IBC Ley 100/1993
+- **Checksum:** `351ef4002b108c6aadaf8b45c3f33222cdc01bce89160211bd9b6130f5d941c4`
+- **Resultado:**
+  - INSERT 0 5 (parámetros IBC_TOPE_SMMLV = 25 SMMLV)
+  - INSERT 0 5 (parámetros IBC_CAPS_FLOORS configuración opcional)
+- **Registro en ledger:** ✅ `INSERT 0 1`
+- **Verificación:** ✅ Checksum y applied_steps_count = 1 confirmados
+
+**Migración 3:** `20261113120000_hr_nomina_legal_2026`
+- **Descripción:** Ajustes legales nómina 2026
+- **Checksum:** `85114b7fb4b7533bf99351f39a8ed1b5a0ea1bee4a7bc278dc99e1bca2be68d0`
+- **Resultado:**
+  - UPDATE 1 (AUX_TRANSPORTE metadata: include_in_social_benefits_base=false, include_in_vacation_base=false, exclude_from_social_benefits_base=true)
+  - INSERT 0 5 (parámetros MAX_HE_DIARIO = 2 horas)
+  - INSERT 0 5 (parámetros MAX_HE_SEMANAL = 12 horas)
+- **Registro en ledger:** ✅ `INSERT 0 1`
+- **Verificación:** ✅ Checksum y applied_steps_count = 1 confirmados
+
+**Evidencia completa:** `docs/qa/evidence/db-alignment-20261117/prod-migrations-applied.txt`
+
+#### Fase 3: Verificación Final de Alineación
+
+**Comando ejecutado:**
+```bash
+node scripts/audit-db-alignment-api.js
+```
+
+**Resultado:**
+```
+QA: 72 migraciones
+Producción: 72 migraciones
+✓ AMBAS BASES DE DATOS ESTÁN ALINEADAS
+```
+
+**Evidencia:** `docs/qa/evidence/db-alignment-audit-20261117.json`
+
+#### Herramientas Creadas
+
+1. **`scripts/audit-db-alignment-api.js`** - Auditoría de alineación QA vs Producción vía API REST
+2. **`scripts/verify-migration-applied.js`** - Verificación de checksum y applied_steps_count
+3. **`scripts/list-migrations.js`** - Listado de migraciones y detección de fantasma
+4. **`scripts/investigate-baseline-impact.js`** - Investigación de impacto de migraciones fantasma
+5. **`scripts/generate-alignment-sql.js`** - Generador de comandos SQL para SQL Editor
+
+#### Documentación Creada
+
+1. **`docs/DATABASE_MIGRATION_RULES.md`** - 8 reglas estrictas para prevenir futuras desalineaciones:
+   - Migraciones versionadas y atómicas
+   - Sincronización multi-ambiente obligatoria (desarrollo → QA → Producción)
+   - Checksum SHA-256 normalizado a LF
+   - Migraciones legales requieren dictamen jurídico
+   - Detección y eliminación de migraciones fantasma
+   - Auditoría continua con scripts automatizados
+   - Promoción de ramas y migraciones
+   - Documentación y trazabilidad
+
+2. **`docs/qa/DB_ALIGNMENT_PLAN_20261117.md`** - Plan completo de alineación
+3. **`docs/qa/DB_ALIGNMENT_INSTRUCTIONS_20261117.md`** - Instrucciones paso a paso
+4. **`docs/qa/evidence/alignment-sql-commands-20261117.sql`** - Comandos SQL generados
+
+#### Metodología Técnica Exitosa
+
+**Conexión a Supabase:** psql con pipe (compatible con Windows/Git Bash)
+```bash
+cat migration.sql | PGPASSWORD='***' timeout 60 psql "postgresql://user@host:port/db?sslmode=require"
+```
+
+**Poolers utilizados:**
+- **QA:** Pooler transaccional puerto 6543 (`aws-1-us-east-2.pooler.supabase.com`)
+- **Producción:** Pooler de sesión puerto 5432 (`aws-1-sa-east-1.pooler.supabase.com`)
+
+**Ventaja:** Método funciona consistentemente en Windows/Git Bash, evitando problemas de parsing de argumentos de psql.
+
+#### Impacto Legal en Producción
+
+**Nómina Colombia 2026 ahora opera con parámetros legales correctos:**
+
+1. **Tarifas de recargos (Ley 2466/2025):**
+   - Recargo nocturno: 35% (19:00-06:00)
+   - Recargo dominical/festivo: 80% (H1 2026) → 90% (H2 2026)
+   - Hora extra diurna dominical: 105% (H1) → 115% (H2)
+   - Hora extra nocturna dominical: 155% (H1) → 165% (H2)
+
+2. **Topes IBC (Ley 100/1993 y Decreto 780/1996):**
+   - IBC mínimo: 1 SMMLV (proporcional a días cotizados)
+   - IBC máximo: 25 SMMLV mensuales
+   - Aplica a: salud, pensión, ARL
+
+3. **Auxilio de transporte (CST art. 128 y Ley 1/1963):**
+   - NO integra base de prestaciones sociales
+   - NO integra base de vacaciones
+   - Impacto: prima, cesantías e intereses calculados correctamente
+
+4. **Trabajo suplementario (Ley 2466/2025 art. 13):**
+   - Máximo 2 horas diarias
+   - Máximo 12 horas semanales
+   - Sistema puede alertar cuando se excedan los topes
+
+#### Agentes Actualizados
+
+- **`apexos-db-nube`** 2.4.0 → 2.6.0
+  - Regla 17: sincronización multi-ambiente obligatoria y auditoría continua
+  - Control nuevo: `sincronizacion-multi-ambiente`
+  - Checksum: `daa19cdb96ce99f7a27f86af8fedc1ee96b236936fc50fbb5c7e35dbde0965bc`
+
+#### Compuertas de Agentes
+
+- ✅ `agents:sync` - 11 agentes y 11 documentos sincronizados
+- ✅ `agents:check` - 11 agentes y 11 documentos verificados
+- ✅ `agents:preflight` - OK_CON_ADVERTENCIAS (rutas sin agente asignado son documentos nuevos)
+- ⏳ `agents:coverage` - Pendiente de ejecutar después de commit
+
+#### Inventario de Archivos Creados/Modificados
+
+**Archivos creados (10):**
+1. `scripts/audit-db-alignment-api.js`
+2. `scripts/verify-migration-applied.js`
+3. `scripts/list-migrations.js`
+4. `scripts/investigate-baseline-impact.js`
+5. `scripts/investigate-baseline-migration.js`
+6. `scripts/generate-alignment-sql.js`
+7. `scripts/align-databases.js`
+8. `docs/DATABASE_MIGRATION_RULES.md`
+9. `docs/qa/DB_ALIGNMENT_PLAN_20261117.md`
+10. `docs/qa/DB_ALIGNMENT_INSTRUCTIONS_20261117.md`
+
+**Evidencia creada (4):**
+1. `docs/qa/evidence/db-alignment-audit-20261117.json`
+2. `docs/qa/evidence/db-alignment-20261117/qa-baseline-removed.txt`
+3. `docs/qa/evidence/db-alignment-20261117/prod-migrations-applied.txt`
+4. `docs/qa/evidence/db-alignment-20261117/QA_BASELINE_REMOVAL_COMMAND.md`
+
+**Archivos modificados (4):**
+1. `.qoder/skills/apexos-db-nube/SKILL.md` (regla 17 agregada, versión 2.6.0)
+2. `agents/apexos-db-nube/SKILL.md` (espejo sincronizado)
+3. `agents/registry.json` (apexos-db-nube 2.4.0 → 2.6.0, checksum actualizado)
+4. `agents/CHANGELOG.md` (esta entrada)
+
+#### Veredicto Final
+
+✅ **INTERVENCIÓN COMPLETADA EXITOSAMENTE**
+
+- Ambas bases de datos (QA y Producción) están completamente alineadas con 72 migraciones cada una
+- Las 3 migraciones legales críticas para nómina Colombia 2026 fueron aplicadas en Producción
+- La migración fantasma fue eliminada de QA
+- Herramientas de auditoría continua creadas y verificadas
+- Documentación completa con 8 reglas estrictas para prevenir futuras desalineaciones
+- Metodología técnica exitosa documentada (psql con pipe en Windows)
+
+#### Próximos Pasos Recomendados
+
+1. **Commit y push:** `git add . && git commit -m "feat(db): alineación QA-Producción completada con 72 migraciones"` + `git push origin desarrollo`
+2. **Certificar funcionalidad:** Ejecutar suites de pruebas contra Producción para verificar que las migraciones no rompieron nada
+3. **Monitorear primer ciclo de nómina:** Observar que los cálculos de noviembre 2026 usen las tarifas correctas
+4. **Documentar lecciones aprendidas:** Actualizar memoria del proyecto con el éxito de la intervención
+
+**Responsable:** Edwin (dueño de APEXOS)  
+**Ejecutado por:** Asistente IA (Qoder)  
+**Fecha de cierre:** 2026-11-17  
+**Duración total:** ~2 horas (desde auditoría inicial hasta verificación final)
+
 ### Paquete de evidencia QA del gate de marcación (`hr-marking-gate-qa-20261117`)
 
 - **Qué faltaba.** El corte de marcación ya estaba publicado en `desarrollo` (`c2242320`, `4ad781de`) y promovido a `develop` (`58c8554f`, punta de la rama), pero la compuerta de `main` exige evidencia con `environment: QA` contra el build desplegado. Esta entrada cierra ese frente: el arnés, la certificación nueva, su documento y el paquete de agentes.

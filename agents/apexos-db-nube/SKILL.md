@@ -2,8 +2,8 @@
 name: apexos-db-nube
 description: Experto en base de datos en la nube del Equipo APEXOS: PostgreSQL, Prisma (apps/api/prisma/schema.prisma), Supabase, Railway, migraciones SQL, RLS y aislamiento multi-tenant. Usar para cambios de esquema, migraciones, fallback Supabase, políticas RLS, conexiones locales/nube o auditoría de alineación de esquemas QA/Producción.
 when_to_use: Esquema Prisma, migraciones SQL, Supabase, RLS, aislamiento tenant, conexiones de base de datos locales o en la nube.
-version: 2.5.0
-updated_at: 2026-11-15
+version: 2.6.0
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -73,6 +73,17 @@ Antes de actuar, leer en este orden:
     - **Defaults por rol creador, no por dueño del schema.** Los privilegios por defecto corresponden al rol que crea el objeto; ser dueño de `public` u otro schema no identifica ese rol. Un `REVOKE` per-schema no cancela un grant global de defaults. Revisar ambas fuentes y no asumir autoridad para cambiar grants/defaults de un rol ajeno.
     - **Revocar un solo privilegio.** Retirar únicamente `TRUNCATE` de las ACL autorizadas, conservando CRUD, `MAINTAIN`, privilegios de `service_role`, memberships, RLS y vistas. Comparar antes/después y probar recuperación exacta de ACL (grantor y grant option incluidos) y segunda corrida sin cambios, sin ejecutar `TRUNCATE` real.
     Resultado medido 2026-11-15: certificación aislada PostgreSQL 17 en verde; QA y PROD terminaron con cero TRUNCATE efectivo para `anon`/`authenticated`, preservando ocho defaults ajenos por ambiente y todo privilegio no objetivo. QA recibió los dos índices `scope_unique` ausentes con filas intactas y segunda corrida idéntica; PROD ya coincidía y quedó sin cambios. La recuperación remota no fue necesaria: el respaldo cifrado reabrió autenticado y la restauración exacta se probó solo en la base local aislada. Esto no acredita paridad general, integridad de filas, latencia ni envíos.
+
+17. **Sincronización multi-ambiente obligatoria y auditoría continua.** Toda migración debe existir en los 3 ambientes (desarrollo local, QA, Producción) antes de cerrar la intervención. Reglas:
+    - **Orden de aplicación:** desarrollo → QA → Producción. Nunca saltar ambientes.
+    - **Auditoría pre-promoción:** `node scripts/audit-db-alignment-api.js` debe mostrar "✓ AMBAS BASES DE DATOS ESTÁN ALINEADAS" antes de promover a `develop` o `main`.
+    - **Verificación post-aplicación:** `node scripts/verify-migration-applied.js --env qa|prod --migration {nombre}` valida checksum y `applied_steps_count`.
+    - **Detección de migraciones fantasma:** `node scripts/list-migrations.js --env qa|prod --detect-phantom` identifica registros en el ledger sin archivo SQL en el repositorio.
+    - **Migraciones fantasma con `applied_steps_count = 0`:** son anomalías del ledger sin efecto real. Se eliminan con `DELETE FROM _prisma_migrations WHERE migration_name = '{nombre}' AND applied_steps_count = 0;` y se documentan en `agents/CHANGELOG.md`.
+    - **Migraciones fantasma con `applied_steps_count > 0`:** requieren análisis de impacto antes de eliminar. No se borran sin verificar que no crearon tablas/columnas en uso.
+    - **Checklist de sincronización:** antes de cerrar toda intervención que toque `apps/api/prisma/migrations/**`, ejecutar auditoría, verificar migraciones en los 3 ambientes y documentar en CHANGELOG.
+    - **Reglas estrictas documentadas en:** `docs/DATABASE_MIGRATION_RULES.md` (creado 2026-11-17 tras alineación QA→Producción).
+    Por qué: el 2026-11-17 se detectó desalineación de 4 migraciones entre QA (73) y Producción (69); una era fantasma (`20260601000000_baseline_core_schema` con `applied_steps_count = 0`) y tres eran legales faltantes en Producción. La ausencia de auditoría continua permitió que la desalineación creciera durante meses sin detectarse.
 
 ## Checklist de intervención
 

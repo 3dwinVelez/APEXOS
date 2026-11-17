@@ -1,0 +1,156 @@
+# Evidencia de Eliminación de Migración Fantasma - QA
+
+**Fecha:** 2026-11-17  
+**Ambiente:** QA (Supabase jbirkghkekuifgfsgquq)  
+**Migración eliminada:** `20260601000000_baseline_core_schema`
+
+## Verificación Pre-Eliminación
+
+```sql
+SELECT migration_name, applied_steps_count 
+FROM _prisma_migrations 
+WHERE migration_name = '20260601000000_baseline_core_schema';
+```
+
+**Resultado:**
+```
+ migration_name            | applied_steps_count 
+-------------------------------------+---------------------
+ 20260601000000_baseline_core_schema |                   0
+(1 row)
+```
+
+**Análisis:**
+- La migración existía en el ledger de QA
+- `applied_steps_count = 0` confirma que no ejecutó cambios reales
+- El archivo SQL nunca existió en el repositorio git
+- Conclusión: migración fantasma, segura de eliminar
+
+## Ejecución de Eliminación
+
+```sql
+DELETE FROM _prisma_migrations 
+WHERE migration_name = '20260601000000_baseline_core_schema' 
+  AND applied_steps_count = 0;
+```
+
+**Resultado:**
+```
+DELETE 1
+```
+
+**Confirmación:** La eliminación fue exitosa (1 fila afectada).
+
+## Verificación Post-Eliminación
+
+```sql
+SELECT count(*) as remaining 
+FROM _prisma_migrations 
+WHERE migration_name = '20260601000000_baseline_core_schema';
+
+SELECT count(*) as total_migrations 
+FROM _prisma_migrations;
+```
+
+**Resultado:**
+```
+ remaining 
+-----------
+         0
+(1 row)
+
+ total_migrations 
+------------------
+               72
+(1 row)
+```
+
+**Confirmación:**
+- `remaining = 0`: la migración fantasma ya no existe en el ledger
+- `total_migrations = 72`: QA ahora tiene 72 migraciones (down from 73)
+
+## Auditoría de Alineación Post-Eliminación
+
+**Comando ejecutado:**
+```bash
+node scripts/audit-db-alignment-api.js
+```
+
+**Resultado:**
+```
+=== Auditoría de Alineación de Bases de Datos (API REST) ===
+
+✓ QA: proyecto jbirkghkekuifgfsgquq
+✓ Producción: proyecto jzbwzmkidfthknsohhnr
+
+=== Consultando QA (develop) ===
+URL: https://jbirkghkekuifgfsgquq.supabase.co
+✓ Migraciones encontradas: 72
+
+=== Consultando Producción (main) ===
+URL: https://jzbwzmkidfthknsohhnr.supabase.co
+✓ Migraciones encontradas: 69
+
+=== COMPARACIÓN ===
+
+QA: 72 migraciones
+Producción: 69 migraciones
+
+⚠ DESALINEACIÓN DETECTADA
+
+Migraciones en QA pero FALTANTES en producción (3):
+  - 20261113120000_hr_nomina_legal_2026
+  - 20261030120000_hr_labor_rates_vigencia_2026
+  - 20261030130000_hr_ibc_caps_floors_2026
+```
+
+**Análisis:**
+- QA: 72 migraciones (después de eliminar la fantasma)
+- Producción: 69 migraciones
+- Diferencia: 3 migraciones legales faltantes en Producción
+- Las 3 migraciones son críticas para nómina Colombia 2026
+
+## Estado Final
+
+✅ **Migración fantasma eliminada exitosamente de QA**
+- Ledger de QA: 72 migraciones
+- Ledger de Producción: 69 migraciones
+- Próximas acciones: aplicar 3 migraciones legales en Producción
+
+## Próximos Pasos
+
+1. **Aplicar migraciones legales en Producción** (requiere autorización explícita):
+   - `20261030120000_hr_labor_rates_vigencia_2026` (tarifas Ley 2466/2025)
+   - `20261030130000_hr_ibc_caps_floors_2026` (topes IBC Ley 100/1993)
+   - `20261113120000_hr_nomina_legal_2026` (ajustes legales nómina 2026)
+
+2. **Verificar alineación final**:
+   ```bash
+   node scripts/audit-db-alignment-api.js
+   ```
+   Debe mostrar: "✓ AMBAS BASES DE DATOS ESTÁN ALINEADAS" con 72 migraciones en ambos ambientes.
+
+3. **Certificar funcionalidad**:
+   - Ejecutar suites de pruebas contra Producción
+   - Verificar cálculos de nómina con tarifas 2026
+
+## Metodología
+
+**Herramienta utilizada:** psql con pipe (compatible con Windows/Git Bash)
+```bash
+echo "SQL_COMMAND" | PGPASSWORD='***' timeout 30 psql "connection_string"
+```
+
+**Connection string:** Pooler transaccional de Supabase (puerto 6543)
+- Host: `aws-1-us-east-2.pooler.supabase.com`
+- Puerto: `6543` (transaccional, más estable que sesión)
+- SSL: `require`
+
+**Ventaja:** Evita los problemas de parsing de argumentos de psql en Windows.
+
+---
+
+**Responsable:** Edwin (dueño de APEXOS)  
+**Ejecutado por:** Asistente IA (Qoder)  
+**Fecha de ejecución:** 2026-11-17  
+**Verificado por:** Script de auditoría automatizada

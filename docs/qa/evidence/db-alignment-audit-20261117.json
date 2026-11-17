@@ -1,0 +1,886 @@
+{
+  "timestamp": "2026-11-17T22:17:52.570Z",
+  "qa": {
+    "environment": "QA (develop)",
+    "migrations": [
+      "20260602_accounting_inventory_purchases_payroll",
+      "20260605_qa_performance_indexes",
+      "20260720090000_read_performance_indexes",
+      "20260721190000_purchase_tax_retention_reversals",
+      "20260721220000_inventory_society_valuation_transit",
+      "20260724000000_performance_indexes_fase2",
+      "20260724000001_add_storage_path",
+      "20260727013000_fix_service_photo_pending_index",
+      "20260727040000_authoritative_evidence_uploads",
+      "20260727042000_authorization_versions",
+      "20260731110000_service_order_administrative_corrections",
+      "20260811203000_service_order_items",
+      "20260814003500_sales_invoicing_cxc",
+      "20260730030000_customer_sales_invoicing_cxc",
+      "20260806150000_canonical_party_roles",
+      "20260807040000_treasury_banks_payments",
+      "20260807090000_treasury_advances_purchase_imports",
+      "20260821193000_item_legacy_code",
+      "20260821223000_inventory_adjustments",
+      "20260829113000_commercial_daily_budgets",
+      "20260814140000_commercial_management_base",
+      "20260814150000_commercial_visit_scheduling",
+      "20260814170000_commercial_advisor_masters",
+      "20260814190000_commercial_customer_details",
+      "20260828143000_commercial_visit_masters",
+      "20260828170000_commercial_customer_commitments",
+      "20260828203000_commercial_visit_timeline_catalog_bridge",
+      "20260829100000_commercial_quotations",
+      "20260831120000_commercial_prospect_visits",
+      "20260902090000_hr_time_punch_idempotency",
+      "20260907023000_apex_heart_foundation",
+      "20260904120000_transport_tms_foundation",
+      "20260904160000_transport_tms_planning",
+      "20260904180000_transport_tms_live_tracking",
+      "20260904190000_transport_tms_configuration",
+      "20260904200000_transport_tms_notifications",
+      "20260909170000_apex_heart_report_schedules",
+      "20260917120000_hr_workday_novelties_foundation",
+      "20260919130000_align_kilometraje_unique_index_shape",
+      "20260921000000_gps_inactivo_sin_senal_novelty_type",
+      "20261001120000_transport_settlement_packages",
+      "20261007120000_transport_plans",
+      "20261009120000_transport_rate_geography",
+      "20261009180000_petty_cash_foundation",
+      "20260918100000_hr_labor_deductions_parameters",
+      "20260918140000_hr_payroll_liquidation_documents",
+      "20260918150000_hr_payroll_concepts_detail",
+      "20260918160000_hr_employee_termination_liquidations",
+      "20260918170000_hr_social_contributions",
+      "20260918180000_hr_payroll_period_closures",
+      "20260918190000_hr_social_contribution_exoneration_parameters",
+      "20260918200000_hr_pension_solidarity_parameter",
+      "20260918210000_hr_payroll_libranzas",
+      "20260918220000_hr_employee_contract_history",
+      "20260919100000_hr_overtime_concept_value_type",
+      "20260919110000_time_route_kind_descanso",
+      "20260919120000_hr_monthly_ordinary_hours_param",
+      "20260919130000_hr_social_benefit_payments",
+      "20261013120000_transport_pyg",
+      "20261014120000_accounting_opening_balances_nullable_party",
+      "20261016123000_sedes_replace_origins",
+      "20261019134505_transport_settlement_vehicle",
+      "20261026120000_comercio_foundation",
+      "20261026140000_comercio_payment_allocations",
+      "20261027120000_comercio_public_catalog",
+      "20261027150000_comercio_social_links",
+      "20261028120000_comercio_discounts",
+      "20261028190000_comercio_promotions",
+      "20261113120000_hr_nomina_legal_2026",
+      "20261030120000_hr_labor_rates_vigencia_2026",
+      "20261030130000_hr_ibc_caps_floors_2026",
+      "20260814150000_commercial_visit_scheduling"
+    ],
+    "count": 72,
+    "data": [
+      {
+        "migration_name": "20260602_accounting_inventory_purchases_payroll",
+        "finished_at": "2026-07-22T20:34:34.087211+00:00",
+        "checksum": "e672e875a0f0333d082ff4187ca9760b5582ebf25cc1b44cbea51ff59632c727"
+      },
+      {
+        "migration_name": "20260605_qa_performance_indexes",
+        "finished_at": "2026-07-22T20:34:34.240881+00:00",
+        "checksum": "4e7b6e1d3790ca24fa69f89929905de5351eb56f90605a814957e9bc91584af3"
+      },
+      {
+        "migration_name": "20260720090000_read_performance_indexes",
+        "finished_at": "2026-07-22T20:34:34.428268+00:00",
+        "checksum": "4399281277abdcf39a6462452fb51ffa3d3b0250db2b024492a4f184c49292b8"
+      },
+      {
+        "migration_name": "20260721190000_purchase_tax_retention_reversals",
+        "finished_at": "2026-07-22T20:34:34.583673+00:00",
+        "checksum": "6584e2b305d686c9e75c01b4c368004f87c7f2913e8ef5ae16aaec8603cda4a3"
+      },
+      {
+        "migration_name": "20260721220000_inventory_society_valuation_transit",
+        "finished_at": "2026-07-22T20:34:34.814923+00:00",
+        "checksum": "398cb8d584ea572562b560739f6a1341268cbffe88c6e25b7ef47d877c2a66df"
+      },
+      {
+        "migration_name": "20260724000000_performance_indexes_fase2",
+        "finished_at": "2026-07-30T03:28:22.742461+00:00",
+        "checksum": "5da13702a79211d8fbdefcccbb15f1896cbd3efa129ed8780a7985f7dcf96a60"
+      },
+      {
+        "migration_name": "20260724000001_add_storage_path",
+        "finished_at": "2026-07-30T03:28:22.924764+00:00",
+        "checksum": "ecfc0c73e6889213d78291fd1dc8164ac7de15787af11eac58af0d7265d23725"
+      },
+      {
+        "migration_name": "20260727013000_fix_service_photo_pending_index",
+        "finished_at": "2026-07-30T03:28:23.104295+00:00",
+        "checksum": "d85cdeda8ecae68d35cc8f7bfc000d7aa35a296667f5ce55fb6f83d5f5a786b3"
+      },
+      {
+        "migration_name": "20260727040000_authoritative_evidence_uploads",
+        "finished_at": "2026-07-30T03:28:23.301813+00:00",
+        "checksum": "ffd294f455778e101c9b171f261ace8c54a54754d42e53e0fb74862605585645"
+      },
+      {
+        "migration_name": "20260727042000_authorization_versions",
+        "finished_at": "2026-07-30T03:28:23.49359+00:00",
+        "checksum": "81f93e1630a0de67b7f0f2c99d1da03e8724be25cd1acdd1ca1d410009c20764"
+      },
+      {
+        "migration_name": "20260731110000_service_order_administrative_corrections",
+        "finished_at": "2026-08-03T15:49:13.536917+00:00",
+        "checksum": "f149798259784f06df9f12b8b5d682c464d2e40469f38bfe6473a424d00c5197"
+      },
+      {
+        "migration_name": "20260811203000_service_order_items",
+        "finished_at": "2026-08-12T19:39:57.818938+00:00",
+        "checksum": "ed396ab5ce74abde13d4aa0b1664dc9dc876035e76f743f2d68fb636444614fa"
+      },
+      {
+        "migration_name": "20260814003500_sales_invoicing_cxc",
+        "finished_at": "2026-08-14T01:01:43.716618+00:00",
+        "checksum": "478407f1e03cb14d31c72762024b9fe3f43f1040c11a9ecf1c825a5fd35d6d12"
+      },
+      {
+        "migration_name": "20260730030000_customer_sales_invoicing_cxc",
+        "finished_at": "2026-08-19T22:47:35.337926+00:00",
+        "checksum": "77d640110bc82f340f64e527afca671dcab92dceea9bfa1aaf7f1426537f610c"
+      },
+      {
+        "migration_name": "20260806150000_canonical_party_roles",
+        "finished_at": "2026-08-19T22:47:35.492989+00:00",
+        "checksum": "dfbd9d54bd82f9bf455ae13721bfdb99b0c768171e61f02f87547d6ee9159754"
+      },
+      {
+        "migration_name": "20260807040000_treasury_banks_payments",
+        "finished_at": "2026-08-19T22:47:35.718756+00:00",
+        "checksum": "6e366e2244978ab8605c18a5ec65b931cf68c754f8ef82b32a3b0d32f3e565d2"
+      },
+      {
+        "migration_name": "20260807090000_treasury_advances_purchase_imports",
+        "finished_at": "2026-08-19T22:47:35.890877+00:00",
+        "checksum": "2f77bef9dc4d7c5d5065c9ed6da11ff1c408984ad3966e4416fc4889418d39b1"
+      },
+      {
+        "migration_name": "20260821193000_item_legacy_code",
+        "finished_at": "2026-08-21T21:33:52.179959+00:00",
+        "checksum": "f35587aa4e216163d655663033fa5498392e31e89fe386c7fbeff7476f1961dd"
+      },
+      {
+        "migration_name": "20260821223000_inventory_adjustments",
+        "finished_at": "2026-08-26T15:30:38.620905+00:00",
+        "checksum": "b098243dd2df932c44fde319b6ecd6dfbf5650a277450d5758bad288bb8b8b5b"
+      },
+      {
+        "migration_name": "20260829113000_commercial_daily_budgets",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "b3935fd0d6283cdcb8d71a67bf9ab3440ceb0b33cdf83afa68d7afae3ae83bd0"
+      },
+      {
+        "migration_name": "20260814140000_commercial_management_base",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "b2b759cb4d26fa50be34f35a92c244c9bf07cf28b66c87c30d8d9371ebb5ba36"
+      },
+      {
+        "migration_name": "20260814150000_commercial_visit_scheduling",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "a59e8d5435bbb737ec16cdf47ceff044a8a5062925f6c31958adc4a0cf51d262"
+      },
+      {
+        "migration_name": "20260814170000_commercial_advisor_masters",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "48781c5ce1c863fa2ff5ab7d18638d6bd2f51c453f22f6f275c987ec1d1da471"
+      },
+      {
+        "migration_name": "20260814190000_commercial_customer_details",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "d870ba3f563241666a2a6ec48dc0e6899f416c323ecfeff42d2752be56f2788a"
+      },
+      {
+        "migration_name": "20260828143000_commercial_visit_masters",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "34db7b903d9444c9b0c92c26f86c2ed1ef8e11bba9bd19a32c1b3100f9201d45"
+      },
+      {
+        "migration_name": "20260828170000_commercial_customer_commitments",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "f6322de2f1911e767f0026ab95008e377230a48312ef245e27024f459325773e"
+      },
+      {
+        "migration_name": "20260828203000_commercial_visit_timeline_catalog_bridge",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "89b5b7b416dc3475d4da635ca162aaaff3c41be20ea005445f26bcc6641925dd"
+      },
+      {
+        "migration_name": "20260829100000_commercial_quotations",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "1d4cd6cd21fee1c87663edbc7a6b6cbdfe309af4bfccf223d55d98b043a5b78b"
+      },
+      {
+        "migration_name": "20260831120000_commercial_prospect_visits",
+        "finished_at": "2026-09-03T19:56:05.831582+00:00",
+        "checksum": "cda132f524a20e33ee613c0455a013072ab11c6ec27df43000ddb41c981d10c6"
+      },
+      {
+        "migration_name": "20260902090000_hr_time_punch_idempotency",
+        "finished_at": "2026-09-03T19:57:23.110513+00:00",
+        "checksum": "ced55338b9c23ca9c1405145aa690a114993c9b452928c8c77b230e841b26be1"
+      },
+      {
+        "migration_name": "20260907023000_apex_heart_foundation",
+        "finished_at": "2026-09-07T03:11:36.806373+00:00",
+        "checksum": "ed3633f36239107841505f0e03400cc5e84a1d4a5dd4a258b0e9e7e801c733ca"
+      },
+      {
+        "migration_name": "20260904120000_transport_tms_foundation",
+        "finished_at": "2026-09-08T03:00:53.372762+00:00",
+        "checksum": "043e3f5ddaefd51ec8685fc68216145367b97b612c5a76bd8b860fc6623e6d88"
+      },
+      {
+        "migration_name": "20260904160000_transport_tms_planning",
+        "finished_at": "2026-09-08T03:00:53.540451+00:00",
+        "checksum": "fd962627239e3cc0e5b18b723d3a5a4a026279782711b3413d8cae29564b8deb"
+      },
+      {
+        "migration_name": "20260904180000_transport_tms_live_tracking",
+        "finished_at": "2026-09-08T03:00:53.689892+00:00",
+        "checksum": "f273ea7bca87294db9aebbef96eea54878e1babd7e717bf109f4883b73df0784"
+      },
+      {
+        "migration_name": "20260904190000_transport_tms_configuration",
+        "finished_at": "2026-09-08T03:00:53.838484+00:00",
+        "checksum": "46c6dfa964c62c02d89daa972150160646f8093b9a69d02b6eef310fc3c950a8"
+      },
+      {
+        "migration_name": "20260904200000_transport_tms_notifications",
+        "finished_at": "2026-09-08T03:00:53.984921+00:00",
+        "checksum": "068b4cff0b2e56fe30807b2e365276125796a2ac6061e834a8d9a079e4324ece"
+      },
+      {
+        "migration_name": "20260909170000_apex_heart_report_schedules",
+        "finished_at": "2026-09-09T19:03:57.837589+00:00",
+        "checksum": "413bcecffa56c8fa31ab702ddcdd2847ed04997b15d1d55a827653fe26a7cd97"
+      },
+      {
+        "migration_name": "20260917120000_hr_workday_novelties_foundation",
+        "finished_at": "2026-09-17T02:22:03.677578+00:00",
+        "checksum": "c1067addb74085c8460bfde08c09b76c7f7282659bf69cee68b9cccffdf6f574"
+      },
+      {
+        "migration_name": "20260919130000_align_kilometraje_unique_index_shape",
+        "finished_at": "2026-09-19T18:29:58.867091+00:00",
+        "checksum": "a5ebe97d03849e9caa80c8dba71bb24543f19d37a4d96f386e953a61960c7836"
+      },
+      {
+        "migration_name": "20260921000000_gps_inactivo_sin_senal_novelty_type",
+        "finished_at": "2026-09-21T13:57:12.739842+00:00",
+        "checksum": "772ebe5b946c9fbba764c3c8ca78367e40621ba60e0e139d304604539cffafd2"
+      },
+      {
+        "migration_name": "20261001120000_transport_settlement_packages",
+        "finished_at": "2026-10-01T15:46:56.041953+00:00",
+        "checksum": "1805c54d7c33039da9604de75d00fb750e8f36363b04f6e97efbf45fa52d030e"
+      },
+      {
+        "migration_name": "20261007120000_transport_plans",
+        "finished_at": "2026-10-08T22:55:53.441039+00:00",
+        "checksum": "4fa6cf2af2f94586dabacd3ef8f970ad551a6225e2114e32a594688f6c79c08b"
+      },
+      {
+        "migration_name": "20261009120000_transport_rate_geography",
+        "finished_at": "2026-10-11T15:17:51.899496+00:00",
+        "checksum": "c14c42a32dd69e6db118654bcfed3bb7fe8668bf2da708faecb431ee1297ed48"
+      },
+      {
+        "migration_name": "20261009180000_petty_cash_foundation",
+        "finished_at": "2026-10-11T15:17:52.241947+00:00",
+        "checksum": "3b57e2c4269f47a8e09cb528488b44a1029862a1b0c9f2543b3c3d91c338c3a3"
+      },
+      {
+        "migration_name": "20260918100000_hr_labor_deductions_parameters",
+        "finished_at": "2026-10-11T16:32:11.574399+00:00",
+        "checksum": "f23cf4bea36808586a9e4550bca3add0a240754a11271295f3a2aef68c0a27fb"
+      },
+      {
+        "migration_name": "20260918140000_hr_payroll_liquidation_documents",
+        "finished_at": "2026-10-11T16:32:11.793746+00:00",
+        "checksum": "79dbf21093dab8db2a09cc5dbdab4f82be967e231f70d7d7402bab132880a456"
+      },
+      {
+        "migration_name": "20260918150000_hr_payroll_concepts_detail",
+        "finished_at": "2026-10-11T16:32:11.927764+00:00",
+        "checksum": "fef61f80053ae84fdd5243368144fd821b59d7073a1b8d8938271909bea8b7d2"
+      },
+      {
+        "migration_name": "20260918160000_hr_employee_termination_liquidations",
+        "finished_at": "2026-10-11T16:32:12.076787+00:00",
+        "checksum": "2370689c663555f8e25da8893b1194af5c17d32f9184e55b9f88d46a16a9908e"
+      },
+      {
+        "migration_name": "20260918170000_hr_social_contributions",
+        "finished_at": "2026-10-11T16:32:12.228499+00:00",
+        "checksum": "caa002d605756c75c05a3144bed942939425b598a485a49e1a993819eb40b970"
+      },
+      {
+        "migration_name": "20260918180000_hr_payroll_period_closures",
+        "finished_at": "2026-10-11T16:32:12.359782+00:00",
+        "checksum": "b1322052f0dc44d50c526481203351928eb59fe68a8c8f0a9ce12447e0dd5318"
+      },
+      {
+        "migration_name": "20260918190000_hr_social_contribution_exoneration_parameters",
+        "finished_at": "2026-10-11T16:32:12.48463+00:00",
+        "checksum": "f12bf31ab5cfb11ddbf50fa54f7a21c1c28b9ee52b6030efaa3cf50dcf0833d2"
+      },
+      {
+        "migration_name": "20260918200000_hr_pension_solidarity_parameter",
+        "finished_at": "2026-10-11T16:32:12.606528+00:00",
+        "checksum": "5b09a0262c09d4b47086ec257246187b2afcb577a7b97360840f0ce624b64cb5"
+      },
+      {
+        "migration_name": "20260918210000_hr_payroll_libranzas",
+        "finished_at": "2026-10-11T16:32:12.741487+00:00",
+        "checksum": "bd683c18af6646211a5dd2d9f1ae60d2bc78eae3885d8478cbbefc19cd049f45"
+      },
+      {
+        "migration_name": "20260918220000_hr_employee_contract_history",
+        "finished_at": "2026-10-11T16:32:12.865747+00:00",
+        "checksum": "4917af743a580e98920bfcc2d35c8bb9f9f98f8c94d2673489d045fa15cb8fa8"
+      },
+      {
+        "migration_name": "20260919100000_hr_overtime_concept_value_type",
+        "finished_at": "2026-10-11T16:32:12.995366+00:00",
+        "checksum": "fdb443608210a79a46a38b445691b8ba40cfbc9f980997bf3c380b86d6ff6777"
+      },
+      {
+        "migration_name": "20260919110000_time_route_kind_descanso",
+        "finished_at": "2026-10-11T16:32:13.114619+00:00",
+        "checksum": "fd82dc2d55d37bb79cab6ddbed40391e31b68c8a5c17fcdc538a0852121ca385"
+      },
+      {
+        "migration_name": "20260919120000_hr_monthly_ordinary_hours_param",
+        "finished_at": "2026-10-11T16:32:13.237051+00:00",
+        "checksum": "e29ce246901227bc2dd38a7c53e2ea360f6f9f64836fdd6c9a49dbb0bd0900c5"
+      },
+      {
+        "migration_name": "20260919130000_hr_social_benefit_payments",
+        "finished_at": "2026-10-11T16:32:13.363571+00:00",
+        "checksum": "4faa852d5db2342fa586b693d262e00af3d72407dab220806834d704b9f237fd"
+      },
+      {
+        "migration_name": "20261013120000_transport_pyg",
+        "finished_at": "2026-10-13T15:04:31.630051+00:00",
+        "checksum": "7d76ac25e41fefda2e1acd02f53bbe01da07bd6ac71516c723688798e1772967"
+      },
+      {
+        "migration_name": "20261014120000_accounting_opening_balances_nullable_party",
+        "finished_at": "2026-10-14T18:14:13.120603+00:00",
+        "checksum": "2ae9f3e6abea59bb48e5b8ebc40a31dc72f1c4d5c037bb5d81d2ee81bd34fd99"
+      },
+      {
+        "migration_name": "20261016123000_sedes_replace_origins",
+        "finished_at": "2026-10-20T15:44:43.596671+00:00",
+        "checksum": "908c89fe4af014f9a4fad5a603cdd68b298d80372b5eaf28d4a22354678b82aa"
+      },
+      {
+        "migration_name": "20261019134505_transport_settlement_vehicle",
+        "finished_at": "2026-10-20T15:44:43.596671+00:00",
+        "checksum": "1dab8674ef7edca9d8248358137d85609a65a871086988dbef758963fa06c659"
+      },
+      {
+        "migration_name": "20261026120000_comercio_foundation",
+        "finished_at": "2026-11-07T21:11:37.599774+00:00",
+        "checksum": "cd0cecefbdd59ae31519d0e4c66392c72e8cceb36bd31f774eaa2570e6aec68e"
+      },
+      {
+        "migration_name": "20261026140000_comercio_payment_allocations",
+        "finished_at": "2026-11-07T21:11:37.696082+00:00",
+        "checksum": "11299ce0a5fdca0a2e00778a0b12ecb392264f1bd14df4aad708893819084712"
+      },
+      {
+        "migration_name": "20261027120000_comercio_public_catalog",
+        "finished_at": "2026-11-07T21:11:37.794213+00:00",
+        "checksum": "401e6ed424be8d65a7e4bf3b6b3878470674eb70f737d9afdf52ee485359b1cc"
+      },
+      {
+        "migration_name": "20261027150000_comercio_social_links",
+        "finished_at": "2026-11-07T21:11:37.890891+00:00",
+        "checksum": "036007dc663694d6d682ade0f923965e0a3c8fa02add982191ac746c1ac8b33e"
+      },
+      {
+        "migration_name": "20261028120000_comercio_discounts",
+        "finished_at": "2026-11-07T21:11:37.987421+00:00",
+        "checksum": "6d706685479060f629af7615f6f2ccf61dea1ca2383974951b8aa3f11c48a456"
+      },
+      {
+        "migration_name": "20261028190000_comercio_promotions",
+        "finished_at": "2026-11-07T21:11:38.142398+00:00",
+        "checksum": "9e6f20c32f55470c061dc96b793c14f03fd73c9e300f2541a75aeea735753f1b"
+      },
+      {
+        "migration_name": "20261113120000_hr_nomina_legal_2026",
+        "finished_at": "2026-11-14T02:33:03.251718+00:00",
+        "checksum": "85114b7fb4b7533bf99351f39a8ed1b5a0ea1bee4a7bc278dc99e1bca2be68d0"
+      },
+      {
+        "migration_name": "20261030120000_hr_labor_rates_vigencia_2026",
+        "finished_at": "2026-11-14T03:18:09.718322+00:00",
+        "checksum": "fa95b6d4ba29ef0da5bc277a4388772fe8de218bb2a885be1ee91c9b5659187b"
+      },
+      {
+        "migration_name": "20261030130000_hr_ibc_caps_floors_2026",
+        "finished_at": "2026-11-14T03:18:09.817648+00:00",
+        "checksum": "351ef4002b108c6aadaf8b45c3f33222cdc01bce89160211bd9b6130f5d941c4"
+      },
+      {
+        "migration_name": "20260814150000_commercial_visit_scheduling",
+        "finished_at": null,
+        "checksum": "a59e8d5435bbb737ec16cdf47ceff044a8a5062925f6c31958adc4a0cf51d262"
+      }
+    ]
+  },
+  "production": {
+    "environment": "Producción (main)",
+    "migrations": [
+      "20260811203000_service_order_items",
+      "20260724000001_add_storage_path",
+      "20260602_accounting_inventory_purchases_payroll",
+      "20260605_qa_performance_indexes",
+      "20260720090000_read_performance_indexes",
+      "20260721190000_purchase_tax_retention_reversals",
+      "20260721220000_inventory_society_valuation_transit",
+      "20260724000000_performance_indexes_fase2",
+      "20260727013000_fix_service_photo_pending_index",
+      "20260727040000_authoritative_evidence_uploads",
+      "20260727042000_authorization_versions",
+      "20260730030000_customer_sales_invoicing_cxc",
+      "20260731110000_service_order_administrative_corrections",
+      "20260806150000_canonical_party_roles",
+      "20260807040000_treasury_banks_payments",
+      "20260807090000_treasury_advances_purchase_imports",
+      "20260814003500_sales_invoicing_cxc",
+      "20260814140000_commercial_management_base",
+      "20260814150000_commercial_visit_scheduling",
+      "20260814170000_commercial_advisor_masters",
+      "20260814190000_commercial_customer_details",
+      "20260821193000_item_legacy_code",
+      "20260821223000_inventory_adjustments",
+      "20260828143000_commercial_visit_masters",
+      "20260828170000_commercial_customer_commitments",
+      "20260828203000_commercial_visit_timeline_catalog_bridge",
+      "20260829100000_commercial_quotations",
+      "20260829113000_commercial_daily_budgets",
+      "20260831120000_commercial_prospect_visits",
+      "20260902090000_hr_time_punch_idempotency",
+      "20260904120000_transport_tms_foundation",
+      "20260904160000_transport_tms_planning",
+      "20260904180000_transport_tms_live_tracking",
+      "20260904190000_transport_tms_configuration",
+      "20260904200000_transport_tms_notifications",
+      "20260907023000_apex_heart_foundation",
+      "20260909170000_apex_heart_report_schedules",
+      "20260917120000_hr_workday_novelties_foundation",
+      "20261026120000_comercio_foundation",
+      "20261026140000_comercio_payment_allocations",
+      "20261027120000_comercio_public_catalog",
+      "20261027150000_comercio_social_links",
+      "20261028120000_comercio_discounts",
+      "20261028190000_comercio_promotions",
+      "20260918100000_hr_labor_deductions_parameters",
+      "20260918140000_hr_payroll_liquidation_documents",
+      "20260918150000_hr_payroll_concepts_detail",
+      "20260918160000_hr_employee_termination_liquidations",
+      "20260918170000_hr_social_contributions",
+      "20260918180000_hr_payroll_period_closures",
+      "20260918190000_hr_social_contribution_exoneration_parameters",
+      "20260918200000_hr_pension_solidarity_parameter",
+      "20260918210000_hr_payroll_libranzas",
+      "20260918220000_hr_employee_contract_history",
+      "20260919100000_hr_overtime_concept_value_type",
+      "20260919110000_time_route_kind_descanso",
+      "20260919120000_hr_monthly_ordinary_hours_param",
+      "20260919130000_align_kilometraje_unique_index_shape",
+      "20260919130000_hr_social_benefit_payments",
+      "20260921000000_gps_inactivo_sin_senal_novelty_type",
+      "20261001120000_transport_settlement_packages",
+      "20261007120000_transport_plans",
+      "20261009120000_transport_rate_geography",
+      "20261009180000_petty_cash_foundation",
+      "20261013120000_transport_pyg",
+      "20261014120000_accounting_opening_balances_nullable_party",
+      "20261016123000_sedes_replace_origins",
+      "20261019134505_transport_settlement_vehicle",
+      "20261030120000_hr_labor_rates_vigencia_2026",
+      "20261030130000_hr_ibc_caps_floors_2026",
+      "20261113120000_hr_nomina_legal_2026",
+      "20260814003500_sales_invoicing_cxc"
+    ],
+    "count": 72,
+    "data": [
+      {
+        "migration_name": "20260811203000_service_order_items",
+        "finished_at": "2026-08-13T22:47:55.56257+00:00",
+        "checksum": "ed396ab5ce74abde13d4aa0b1664dc9dc876035e76f743f2d68fb636444614fa"
+      },
+      {
+        "migration_name": "20260724000001_add_storage_path",
+        "finished_at": "2026-08-13T23:00:12.901752+00:00",
+        "checksum": "ecfc0c73e6889213d78291fd1dc8164ac7de15787af11eac58af0d7265d23725"
+      },
+      {
+        "migration_name": "20260602_accounting_inventory_purchases_payroll",
+        "finished_at": "2026-09-18T19:08:17.391851+00:00",
+        "checksum": "1192678b5af8c6d417253ea0bf99d1087cd2ee8c47fd4c429620ea0a8894b888"
+      },
+      {
+        "migration_name": "20260605_qa_performance_indexes",
+        "finished_at": "2026-09-18T19:08:18.374251+00:00",
+        "checksum": "1d3fe09a8e14169612a29ab7718490f5829bebdcfab7bfaee005787ad2a23035"
+      },
+      {
+        "migration_name": "20260720090000_read_performance_indexes",
+        "finished_at": "2026-09-18T19:08:19.448503+00:00",
+        "checksum": "cd45f56fc186fd5dbd4032a25d3169dd21c2af6f9e06151196a63f87c7b88617"
+      },
+      {
+        "migration_name": "20260721190000_purchase_tax_retention_reversals",
+        "finished_at": "2026-09-18T19:08:20.438712+00:00",
+        "checksum": "1dfa6d055085a4830dacaae39d34fee3e3df21c2eaf92a537a1edd4754006c86"
+      },
+      {
+        "migration_name": "20260721220000_inventory_society_valuation_transit",
+        "finished_at": "2026-09-18T19:08:21.454317+00:00",
+        "checksum": "727bf5b1e175effb560397f59da40586a1bdef7a30f708483b6392f2984fd603"
+      },
+      {
+        "migration_name": "20260724000000_performance_indexes_fase2",
+        "finished_at": "2026-09-18T19:08:22.624282+00:00",
+        "checksum": "14f616f51270ef60e675bf8c99eafc9cd01392dbebce20f8a448aaff6ee012c5"
+      },
+      {
+        "migration_name": "20260727013000_fix_service_photo_pending_index",
+        "finished_at": "2026-09-18T19:08:23.607472+00:00",
+        "checksum": "0b5ac6b4df92af06637e6251722af3bfc3ef333ab3efc505184f451c60cad57e"
+      },
+      {
+        "migration_name": "20260727040000_authoritative_evidence_uploads",
+        "finished_at": "2026-09-18T19:08:24.584941+00:00",
+        "checksum": "ffd294f455778e101c9b171f261ace8c54a54754d42e53e0fb74862605585645"
+      },
+      {
+        "migration_name": "20260727042000_authorization_versions",
+        "finished_at": "2026-09-18T19:08:25.946883+00:00",
+        "checksum": "3eca6b91d7e8ae02ab3e8f3dec172092afd78757f1c55a688359a605b8e4f6f7"
+      },
+      {
+        "migration_name": "20260730030000_customer_sales_invoicing_cxc",
+        "finished_at": "2026-09-18T19:08:26.970473+00:00",
+        "checksum": "734267b481189a3d3bb16e1d1738365fd3d0cfd40f27ac34e0cc922065d06c56"
+      },
+      {
+        "migration_name": "20260731110000_service_order_administrative_corrections",
+        "finished_at": "2026-09-18T19:08:28.083051+00:00",
+        "checksum": "7196b5584b3073e8f64ea0b5708aeff648f6240ff0a6caf40089dee6cea15c8d"
+      },
+      {
+        "migration_name": "20260806150000_canonical_party_roles",
+        "finished_at": "2026-09-18T19:08:29.060067+00:00",
+        "checksum": "d8a5148f158ae7f7bb0f7affbe7cf4f20a1c5c8b2bd4605c062457d20b76cb45"
+      },
+      {
+        "migration_name": "20260807040000_treasury_banks_payments",
+        "finished_at": "2026-09-18T19:08:30.052417+00:00",
+        "checksum": "2166d8e2ffc49634e0ea9681755543771e4403dfb56e1ac482d4717f9f58f686"
+      },
+      {
+        "migration_name": "20260807090000_treasury_advances_purchase_imports",
+        "finished_at": "2026-09-18T19:08:31.049442+00:00",
+        "checksum": "de7b617fe7bd9ff09a18b9b2e7faac515ef1ab61dc5292080acc232d97f64dfb"
+      },
+      {
+        "migration_name": "20260814003500_sales_invoicing_cxc",
+        "finished_at": "2026-09-18T19:10:18.469149+00:00",
+        "checksum": "7e7284da00b59406f1d1a0a5514da4bd918a3b942c84f8be9e3747e835d3da10"
+      },
+      {
+        "migration_name": "20260814140000_commercial_management_base",
+        "finished_at": "2026-09-18T19:10:33.057593+00:00",
+        "checksum": "7350b91ac6be63423c7c93f45711f0ef48e001db6e803c9b0c503076323ee42a"
+      },
+      {
+        "migration_name": "20260814150000_commercial_visit_scheduling",
+        "finished_at": "2026-09-18T19:10:34.042166+00:00",
+        "checksum": "000b37e1f2750b60325ad20ff8f41c8e4a09cb1e8ebb0871fc5c8464298b1e6c"
+      },
+      {
+        "migration_name": "20260814170000_commercial_advisor_masters",
+        "finished_at": "2026-09-18T19:10:35.038676+00:00",
+        "checksum": "09a8968fb4d76f8e4b1eddd3547a2d90c0fc388164086ea4b550b5057b90a2b7"
+      },
+      {
+        "migration_name": "20260814190000_commercial_customer_details",
+        "finished_at": "2026-09-18T19:10:36.022306+00:00",
+        "checksum": "0f78a8a774fcdc70f5af1112daf58edc85c2418aeefec665ad35f988d45a00c9"
+      },
+      {
+        "migration_name": "20260821193000_item_legacy_code",
+        "finished_at": "2026-09-18T19:10:37.002801+00:00",
+        "checksum": "e885952707d26a3cdc24b101bd56606aa6cdea4cd47abaa253e7aac1945d9fa1"
+      },
+      {
+        "migration_name": "20260821223000_inventory_adjustments",
+        "finished_at": "2026-09-18T19:10:37.997223+00:00",
+        "checksum": "82cf7daa63cf6fb8e0ff08d8a10bf1d3114ca93853950a4ea2c5f7533c0eeed9"
+      },
+      {
+        "migration_name": "20260828143000_commercial_visit_masters",
+        "finished_at": "2026-09-18T19:10:38.995338+00:00",
+        "checksum": "4e56df05fafe988084a29d508a05279fe37b575cb2d928f1f1328a9a73b1bce3"
+      },
+      {
+        "migration_name": "20260828170000_commercial_customer_commitments",
+        "finished_at": "2026-09-18T19:10:39.980821+00:00",
+        "checksum": "25693cca9a12d5ff7507d374b4e289859e460572bf57f505535c19eb22dcfb33"
+      },
+      {
+        "migration_name": "20260828203000_commercial_visit_timeline_catalog_bridge",
+        "finished_at": "2026-09-18T19:10:40.976349+00:00",
+        "checksum": "84c3765179ad62bb9e5b020495ff425421dced03f0be07a4d8807c2be5d89fc1"
+      },
+      {
+        "migration_name": "20260829100000_commercial_quotations",
+        "finished_at": "2026-09-18T19:10:41.969809+00:00",
+        "checksum": "54f4a91abf25ba3aeee130e4f8afe51843f73f837606b8ca26b6631f7cf1f437"
+      },
+      {
+        "migration_name": "20260829113000_commercial_daily_budgets",
+        "finished_at": "2026-09-18T19:10:42.955239+00:00",
+        "checksum": "1b7eaf18fa5eba8a54d0f929ef3ee630c44a130d23297bdc3a5d5a067e15c2a9"
+      },
+      {
+        "migration_name": "20260831120000_commercial_prospect_visits",
+        "finished_at": "2026-09-18T19:10:43.933874+00:00",
+        "checksum": "2ec04bf9d6a985a8b8230a0a109f00c074f0143292614dbe7ab4b03d647ce37c"
+      },
+      {
+        "migration_name": "20260902090000_hr_time_punch_idempotency",
+        "finished_at": "2026-09-18T19:10:44.921327+00:00",
+        "checksum": "919cb996ebd514fda58d32da10a504a4f512e6f82ee637c79e964fd8cde4e1fb"
+      },
+      {
+        "migration_name": "20260904120000_transport_tms_foundation",
+        "finished_at": "2026-09-18T19:10:45.986865+00:00",
+        "checksum": "fc2ac0c4ababa35dadb08cb89c1268098cbad12c1d3de375bf68111ffeadbc7c"
+      },
+      {
+        "migration_name": "20260904160000_transport_tms_planning",
+        "finished_at": "2026-09-18T19:10:46.986242+00:00",
+        "checksum": "734edc6757b7ec77f3b5892b27c6ac96f8af469f66e51fdf1bb176fd9f0ad84e"
+      },
+      {
+        "migration_name": "20260904180000_transport_tms_live_tracking",
+        "finished_at": "2026-09-18T19:10:47.974579+00:00",
+        "checksum": "e4a0cc9f1c52aa640208b3969f642ed6fca97cfd47dfd30aec8edc2c3f9bcf2a"
+      },
+      {
+        "migration_name": "20260904190000_transport_tms_configuration",
+        "finished_at": "2026-09-18T19:10:48.959988+00:00",
+        "checksum": "6f261f05fbe29671c0e6dbed9183d32ae9241d1b8220f61779b7476c6271f8ea"
+      },
+      {
+        "migration_name": "20260904200000_transport_tms_notifications",
+        "finished_at": "2026-09-18T19:10:49.946222+00:00",
+        "checksum": "21d677ba759c381c5cc2879fbf83d737286bf65598b9e5e86e01d202dbc8e140"
+      },
+      {
+        "migration_name": "20260907023000_apex_heart_foundation",
+        "finished_at": "2026-09-18T19:10:50.94751+00:00",
+        "checksum": "5bad03043701d1337b89365da23722ae34aee50addf2b8247b5af8212f6be3c4"
+      },
+      {
+        "migration_name": "20260909170000_apex_heart_report_schedules",
+        "finished_at": "2026-09-18T19:10:51.929479+00:00",
+        "checksum": "8e9c393cf5fbe528c5c815723b013800da83902b2ab28a550a9d7f7be1abcb89"
+      },
+      {
+        "migration_name": "20260917120000_hr_workday_novelties_foundation",
+        "finished_at": "2026-09-18T19:10:53.069522+00:00",
+        "checksum": "97aa1ecd4c6ef703aef58745b2919de360b676f94acfb436003277bbcf26d66a"
+      },
+      {
+        "migration_name": "20261026120000_comercio_foundation",
+        "finished_at": "2026-11-09T00:18:31.80631+00:00",
+        "checksum": "cd0cecefbdd59ae31519d0e4c66392c72e8cceb36bd31f774eaa2570e6aec68e"
+      },
+      {
+        "migration_name": "20261026140000_comercio_payment_allocations",
+        "finished_at": "2026-11-09T00:18:35.213177+00:00",
+        "checksum": "11299ce0a5fdca0a2e00778a0b12ecb392264f1bd14df4aad708893819084712"
+      },
+      {
+        "migration_name": "20261027120000_comercio_public_catalog",
+        "finished_at": "2026-11-09T00:18:38.217748+00:00",
+        "checksum": "401e6ed424be8d65a7e4bf3b6b3878470674eb70f737d9afdf52ee485359b1cc"
+      },
+      {
+        "migration_name": "20261027150000_comercio_social_links",
+        "finished_at": "2026-11-09T00:18:41.31123+00:00",
+        "checksum": "036007dc663694d6d682ade0f923965e0a3c8fa02add982191ac746c1ac8b33e"
+      },
+      {
+        "migration_name": "20261028120000_comercio_discounts",
+        "finished_at": "2026-11-09T00:18:44.38933+00:00",
+        "checksum": "6d706685479060f629af7615f6f2ccf61dea1ca2383974951b8aa3f11c48a456"
+      },
+      {
+        "migration_name": "20261028190000_comercio_promotions",
+        "finished_at": "2026-11-09T00:18:47.565779+00:00",
+        "checksum": "9e6f20c32f55470c061dc96b793c14f03fd73c9e300f2541a75aeea735753f1b"
+      },
+      {
+        "migration_name": "20260918100000_hr_labor_deductions_parameters",
+        "finished_at": "2026-11-13T23:54:39.159853+00:00",
+        "checksum": "70edf7f84cd28a270be94eed9c3550bda346eb37a935db34855cf310fa1a71a6"
+      },
+      {
+        "migration_name": "20260918140000_hr_payroll_liquidation_documents",
+        "finished_at": "2026-11-13T23:54:40.32848+00:00",
+        "checksum": "8eae06c79f184bac4618e318f1c4ceb9cb9fb80ba4d4a5125937aff07d08e385"
+      },
+      {
+        "migration_name": "20260918150000_hr_payroll_concepts_detail",
+        "finished_at": "2026-11-13T23:54:41.435616+00:00",
+        "checksum": "2fb27e61b49522c2b1e24f831c20f443b71d389ec4b1fc37e5f6453f131ce2ef"
+      },
+      {
+        "migration_name": "20260918160000_hr_employee_termination_liquidations",
+        "finished_at": "2026-11-13T23:54:42.581576+00:00",
+        "checksum": "02377f8319e10a63ed145c3d687b4bd70239d1518df8097c757c7f978c7af7e3"
+      },
+      {
+        "migration_name": "20260918170000_hr_social_contributions",
+        "finished_at": "2026-11-13T23:54:43.633084+00:00",
+        "checksum": "c65b3afed6ca1dfd4a682cf5f1b667533f47f9f2c9c5b3ad6ea700be42c446a9"
+      },
+      {
+        "migration_name": "20260918180000_hr_payroll_period_closures",
+        "finished_at": "2026-11-13T23:54:44.806145+00:00",
+        "checksum": "b715e6b397071937031830ca43c9cedba436cdfbe3069771d8657a383c12d294"
+      },
+      {
+        "migration_name": "20260918190000_hr_social_contribution_exoneration_parameters",
+        "finished_at": "2026-11-13T23:54:45.878168+00:00",
+        "checksum": "b9ae05d8673c7362972829ac4099b6f4951b0d8aa371b03ac2afc714e5673b00"
+      },
+      {
+        "migration_name": "20260918200000_hr_pension_solidarity_parameter",
+        "finished_at": "2026-11-13T23:54:47.005963+00:00",
+        "checksum": "befda96dac66c179454791dd9491313c2104abdb74830d3c0e9f66bb436ba6e3"
+      },
+      {
+        "migration_name": "20260918210000_hr_payroll_libranzas",
+        "finished_at": "2026-11-13T23:54:48.059194+00:00",
+        "checksum": "bd23863fac18099f19bc347d572962d810cd2f686a24a21eb8115c270c4184c2"
+      },
+      {
+        "migration_name": "20260918220000_hr_employee_contract_history",
+        "finished_at": "2026-11-13T23:54:49.17104+00:00",
+        "checksum": "cd365c18aed34250593f236dd9783e5e3df7af48fe0bdaddd7650d581717d1d6"
+      },
+      {
+        "migration_name": "20260919100000_hr_overtime_concept_value_type",
+        "finished_at": "2026-11-13T23:54:50.247814+00:00",
+        "checksum": "6815256fed973058e8b8666ba2c8cd6d0e9117b41d7d9d2cd5d4b9affb171ecd"
+      },
+      {
+        "migration_name": "20260919110000_time_route_kind_descanso",
+        "finished_at": "2026-11-13T23:54:51.382224+00:00",
+        "checksum": "c1c4949e17f21aad4f69b4a3e2bd6a89f760b90ccc7f10bfdbf79196cae43c70"
+      },
+      {
+        "migration_name": "20260919120000_hr_monthly_ordinary_hours_param",
+        "finished_at": "2026-11-13T23:54:52.575765+00:00",
+        "checksum": "48070f1d88115e3948aeb8ccb295f9dc88a7da3e4dbfce557953ee8dd15e7262"
+      },
+      {
+        "migration_name": "20260919130000_align_kilometraje_unique_index_shape",
+        "finished_at": "2026-11-13T23:54:53.779826+00:00",
+        "checksum": "763118208d7a24fff971a1946513955a9b6d11b3b984f61284822ce2470d6093"
+      },
+      {
+        "migration_name": "20260919130000_hr_social_benefit_payments",
+        "finished_at": "2026-11-13T23:54:55.008951+00:00",
+        "checksum": "d22c062986694fe2126768f496816a2e121bf3ef22fbfed297665465ac2caa93"
+      },
+      {
+        "migration_name": "20260921000000_gps_inactivo_sin_senal_novelty_type",
+        "finished_at": "2026-11-13T23:54:56.236826+00:00",
+        "checksum": "7a29c9a7eee36ad781b9598fe5baa806fbd9c709d41932f7eb6b17094b44a768"
+      },
+      {
+        "migration_name": "20261001120000_transport_settlement_packages",
+        "finished_at": "2026-11-13T23:54:57.406387+00:00",
+        "checksum": "28d08c39a4ad3785bcdc702b798041605f1bfa71d1ea461d38b784be721891f3"
+      },
+      {
+        "migration_name": "20261007120000_transport_plans",
+        "finished_at": "2026-11-13T23:54:58.633742+00:00",
+        "checksum": "3662039fbd0adf82493ab7621a193061442cc3d0c77ced8363a73fb115fdbfa4"
+      },
+      {
+        "migration_name": "20261009120000_transport_rate_geography",
+        "finished_at": "2026-11-13T23:54:59.761362+00:00",
+        "checksum": "8ae15a46831b9ef5f78e59879cbd7dbae9b31f7da1cf9764e6a9eaec2e62bb37"
+      },
+      {
+        "migration_name": "20261009180000_petty_cash_foundation",
+        "finished_at": "2026-11-13T23:55:00.930872+00:00",
+        "checksum": "ce6287425987b089337cd4e050f15ca84a374a23d526c5adfd82e87e447efe7b"
+      },
+      {
+        "migration_name": "20261013120000_transport_pyg",
+        "finished_at": "2026-11-13T23:55:02.21594+00:00",
+        "checksum": "c4c93a65f815471d93ef9c58d07e5175e839b02683695b3e496d1df1e28d30a4"
+      },
+      {
+        "migration_name": "20261014120000_accounting_opening_balances_nullable_party",
+        "finished_at": "2026-11-13T23:55:03.332276+00:00",
+        "checksum": "fc99488e5362e1b817d037bac1b22a8d57c00d5556da5a2a5f7fa95c9d4f65af"
+      },
+      {
+        "migration_name": "20261016123000_sedes_replace_origins",
+        "finished_at": "2026-11-13T23:55:04.685026+00:00",
+        "checksum": "44a4e28d1cb3445602f84a619f9f279f439b5a7def142bfd82ca89f48e9d4af1"
+      },
+      {
+        "migration_name": "20261019134505_transport_settlement_vehicle",
+        "finished_at": "2026-11-13T23:55:05.744125+00:00",
+        "checksum": "31b07cd287f1150b8868b66aa720421cf0ef20d93f1ce210824ff461166230a1"
+      },
+      {
+        "migration_name": "20261030120000_hr_labor_rates_vigencia_2026",
+        "finished_at": "2026-11-17T22:16:25.515012+00:00",
+        "checksum": "fa95b6d4ba29ef0da5bc277a4388772fe8de218bb2a885be1ee91c9b5659187b"
+      },
+      {
+        "migration_name": "20261030130000_hr_ibc_caps_floors_2026",
+        "finished_at": "2026-11-17T22:17:02.458623+00:00",
+        "checksum": "351ef4002b108c6aadaf8b45c3f33222cdc01bce89160211bd9b6130f5d941c4"
+      },
+      {
+        "migration_name": "20261113120000_hr_nomina_legal_2026",
+        "finished_at": "2026-11-17T22:17:40.180551+00:00",
+        "checksum": "85114b7fb4b7533bf99351f39a8ed1b5a0ea1bee4a7bc278dc99e1bca2be68d0"
+      },
+      {
+        "migration_name": "20260814003500_sales_invoicing_cxc",
+        "finished_at": null,
+        "checksum": "7e7284da00b59406f1d1a0a5514da4bd918a3b942c84f8be9e3747e835d3da10"
+      }
+    ]
+  },
+  "comparison": {
+    "aligned": true
+  }
+}
