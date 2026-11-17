@@ -1,0 +1,16 @@
+Suite completa de cliente sobre el candidato (apps/web, archivos *.test.mjs) en worktree aislado con node_modules enlazado (junction).
+Reproducir: cd apps/web && node --experimental-strip-types --test 'test/*.test.mjs'
+
+# tests 813
+# suites 0
+# pass 812
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19828.4417
+
+fallas: 1
+not ok 680 - react y react-dom/server salen de la misma instalacion de node_modules   -> apps/web/test/transport-pyg-account-config.component.test.mjs:93
+
+Veredicto: el corte agrega 11 pruebas del cliente (802 -> 813), 0 fallas nuevas. La unica falla es el mismo artefacto del arnes (junction), no producto.

@@ -1,0 +1,16 @@
+Suite completa de cliente sobre el arbol base origin/main c53a314f SIN el corte, con node_modules enlazado (junction).
+Reproducir: cd apps/web && node --experimental-strip-types --test 'test/*.test.mjs'
+
+# tests 802
+# suites 0
+# pass 801
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20112.8814
+
+fallas: 1
+not ok 669 - react y react-dom/server salen de la misma instalacion de node_modules   -> apps/web/test/transport-pyg-account-config.component.test.mjs:93
+
+Veredicto: la unica falla es un artefacto del arnes (junction de node_modules al puesto); el mismo test pasa 3/3 en el checkout principal sin junction. No es producto.

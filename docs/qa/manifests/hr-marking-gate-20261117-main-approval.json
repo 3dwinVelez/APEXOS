@@ -1,0 +1,90 @@
+{
+  "change_id": "hr-marking-gate-20261117-main",
+  "commit": "edbd4a9f",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (propietario)",
+    "approved_at": "2026-11-17T15:30:00-05:00",
+    "scope": "promotion_to_main",
+    "authorization": "Autorizacion expresa del propietario para alinear las tres ramas (desarrollo, develop, main) con el corte de HR del 2026-11-17"
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json"
+      ],
+      "notes": "12 checks del gate de marcacion sin horario y monitor sin selfies, todos pasados en ambiente QA con empresa NYVORA"
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marking-gate-main-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-main-20261117/web-suite-candidato.txt"
+      ],
+      "notes": "API 1141 pruebas (1136 pass, 2 fail preexistentes de deuda ERP, 3 skip); web 813 pruebas (812 pass, 1 fail artefacto del arnes de junction, 0 skip). El corte agrega 24 pruebas nuevas, 0 fallas nuevas."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json"
+      ],
+      "notes": "Certificacion QA del monitor sin arrastrar selfies, ambiente QA, empresa NYVORA, status passed"
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marking-gate-main-20261117/api-suite-base-main.txt",
+        "../evidence/hr-marking-gate-main-20261117/web-suite-base-main.txt",
+        "../evidence/hr-marking-gate-main-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-main-20261117/web-suite-candidato.txt"
+      ],
+      "notes": "Comparacion base vs candidato: las 2 fallas del API y la 1 falla del web son preexistentes (mismas en el arbol base c53a314f). El corte introduce 0 regresiones."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/typecheck-build-candidato.txt"
+      ],
+      "notes": "Certificacion de navegador y build de produccion sobre el arbol de develop (blob-identico al candidato de main para las 56 rutas del corte). Typecheck 0 errores, build Compiled successfully."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-gate-qa.js",
+    "evidence": [
+      "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json"
+    ],
+    "notes": "Certificacion QA del gate de marcacion sin horario, ejecutada contra el build desplegado en QA (commit edbd4a9f), 12 checks pasados"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-evidence-demand-qa.js",
+    "evidence": [
+      "../evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json"
+    ],
+    "notes": "Certificacion QA del monitor sin arrastrar selfies, ejecutada contra el build desplegado en QA, status passed"
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-marking-gate-qa.js",
+    "evidence": [
+      "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json"
+    ],
+    "notes": "Certificacion del modelo de empresa Nyvora en ambiente QA, 12 checks pasados"
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "c53a314f4fd813661fcf48bd346eecb505a349b5",
+    "trigger": "Revert del corte de HR del 2026-11-17 (commits d73d5a72, 5e45dac8, edbd4a9f) si se detecta regresion en produccion",
+    "notes": "El rollback es un revert controlado de los 3 commits del corte; no hay migraciones de base de datos involucradas"
+  }
+}

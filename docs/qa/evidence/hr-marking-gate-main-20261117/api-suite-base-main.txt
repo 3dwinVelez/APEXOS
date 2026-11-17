@@ -1,0 +1,17 @@
+Suite completa del API sobre el arbol base origin/main c53a314f SIN el corte, para atribuir cada falla.
+Reproducir: git worktree add <base> origin/main && cd apps/api && DISABLE_REDIS=true REDIS_DISABLED=true node --test 'test/*.test.js'
+
+# tests 1128
+# suites 0
+# pass 1123
+# fail 2
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 58102.3311
+
+fallas: 2
+not ok 145 - all accounting UI routes are registered under /api/v1   -> apps/api/test/accounting-routes-contract.test.js:71
+not ok 1100 - las rutas TMS se registran y exigen autenticacion   -> apps/api/test/transport-tms-foundation.test.js:130
+
+Veredicto: 2 fallas preexistentes de deuda ERP (Contabilidad y Transporte), ajenas al corte de HR.

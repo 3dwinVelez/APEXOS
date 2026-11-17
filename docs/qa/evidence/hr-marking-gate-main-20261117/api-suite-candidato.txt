@@ -1,0 +1,17 @@
+Suite completa del API sobre el candidato (apps/api) en worktree aislado con node_modules enlazado (junction) al puesto.
+Reproducir: cd apps/api && DISABLE_REDIS=true REDIS_DISABLED=true node --test 'test/*.test.js'
+
+# tests 1141
+# suites 0
+# pass 1136
+# fail 2
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 61553.5205
+
+fallas: 2
+not ok 145 - all accounting UI routes are registered under /api/v1   -> apps/api/test/accounting-routes-contract.test.js:71
+not ok 1113 - las rutas TMS se registran y exigen autenticacion   -> apps/api/test/transport-tms-foundation.test.js:130
+
+Veredicto: el corte agrega 13 pruebas del API (1128 -> 1141), 0 fallas nuevas. Las 2 fallas son las mismas preexistentes del arbol base.
