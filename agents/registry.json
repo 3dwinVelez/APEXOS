@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.56.0",
+      "version": "2.57.0",
       "updated_at": "2026-11-17",
-      "sha256": "0f53bf3742f82cb29910d3e11d646105029f1175093f5ee19c784cadf2096e46",
+      "sha256": "0e02d9f1a88675c7fd42bf386e944d583750c20e29eb422f7139e56af8ec9f97",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -136,7 +136,8 @@
         "brief-corte-portafolio-listas-exactas",
         "brief-brecha-despliegue-reconstruccion",
         "brief-evidencia-qa-paquete-documental",
-        "brief-ventana-ejecutada-y-deltas-atribuidos"
+        "brief-ventana-ejecutada-y-deltas-atribuidos",
+        "brief-marca-casillas-con-commit-medido"
       ]
     },
     {
@@ -209,9 +210,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.17.0",
-      "updated_at": "2026-11-13",
-      "sha256": "598c1309336127c7fdc035e2757aad5ed8bbd37adecf07ddefd94cb04101c79d",
+      "version": "2.18.0",
+      "updated_at": "2026-11-17",
+      "sha256": "ac709a4054bd60dbd7b18beef3a463d7cb268db77bfef8ba6be2bb6e92c832fd",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -235,7 +236,8 @@
         "evidencia-retirada-declarada",
         "candidato-reconstruido-se-audita-por-archivo",
         "promocion-a-main-sin-pr",
-        "evidencia-de-manifiesto-resuelta-contra-su-directorio"
+        "evidencia-de-manifiesto-resuelta-contra-su-directorio",
+        "paquete-transportado-se-compara-por-archivo"
       ]
     },
     {
@@ -273,9 +275,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.68.0",
+      "version": "2.69.0",
       "updated_at": "2026-11-17",
-      "sha256": "b29e73a49df6df656bde9504dff7195fc11f0d6498b71e2c744a2169cb559398",
+      "sha256": "4f5c90363c7fd1b7006ec633258fa013021579bb72c40b777fca94789268b5e6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -332,7 +334,8 @@
         "arnes-mide-pintura-y-fixtures-cors",
         "smoke-capa-visual-completa-en-el-despliegue",
         "compuerta-main-evidencia-qa-equivalencia",
-        "smoke-produccion-supabase-auth-y-latencia"
+        "smoke-produccion-supabase-auth-y-latencia",
+        "certificacion-ambiente-anclada-al-commit"
       ]
     },
     {
@@ -378,9 +381,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.40.0",
+      "version": "2.41.0",
       "updated_at": "2026-11-17",
-      "sha256": "7ae81eb5031afc7111342a15c6197aa7c37848dcea5170de6f2db17ece48b72a",
+      "sha256": "166eed37f58f3a32f962b1de6d40e777b322c5c01c9e4b65714e02aea7a82c26",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -415,7 +418,8 @@
         "historia-sin-retrorelleno-y-herramienta-viva",
         "nota-visual-capa-exclusiva",
         "protagonismo-dato-jerarquia-visual",
-        "curaduria-portafolio-por-evidencia"
+        "curaduria-portafolio-por-evidencia",
+        "evidencia-de-ambiente-es-intervencion-completa"
       ]
     }
   ],
