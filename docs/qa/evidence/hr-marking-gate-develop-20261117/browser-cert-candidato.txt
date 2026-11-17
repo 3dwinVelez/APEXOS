@@ -1,0 +1,15 @@
+PASS sin_ficha_muestra_el_panel_grande {"panel":true}
+PASS sin_ficha_sin_tarjeta_de_fallo_tecnico {"alerts":[]}
+PASS sin_ficha_no_monta_la_ventana_de_marcado {"tabs":[]}
+PASS sin_ficha_detiene_las_lecturas_dependientes {"selfCalls":["/api/v1/hr/self"]}
+PASS sin_horario_muestra_el_panel_grande {"panel":true}
+PASS sin_horario_no_monta_las_pestanas {"tabs":[]}
+PASS sin_horario_sin_tarjeta_de_fallo_tecnico
+PASS con_horario_no_muestra_el_panel {"panel":false}
+PASS con_horario_conserva_ventana_y_historial {"tabs":["Marcar","Historial"]}
+PASS el_escenario_previo_deja_respaldo_del_dia {"snapshot_chars":450}
+PASS caida_con_respaldo_no_anuncia_sin_horario {"panel":false,"statuses":["Sin conexion: estas marcando sobre el horario del dia guardado en este dispositivo."]}
+PASS caida_con_respaldo_avisa_de_conexion_y_sigue_marcando {"tabs":["Marcar","Historial"],"statuses":["Sin conexion: estas marcando sobre el horario del dia guardado en este dispositivo."]}
+PASS caida_sin_respaldo_no_anuncia_sin_horario {"panel":false}
+PASS caida_sin_respaldo_avisa_de_conexion_sin_respaldo {"tabs":["Marcar","Historial"],"alerts":["Sin conexion y sin horario guardado en este dispositivo. Conectate al menos una vez para poder marcar."]}
+VEREDICTO 14/14 · evidencia en (candidato)/docs/qa/evidence/hr-marking-unassigned-gate-20261117

@@ -1,0 +1,10 @@
+Regresion de negocio real del candidato: tenant, roles, RBAC, ficha, ruta, las cuatro marcaciones con foto movil, actividad con evidencia, aislamiento entre tenants y el journey del reporte.
+Reproducir (base local del puesto, solo loopback):
+  DATABASE_URL=<postgresql local 127.0.0.1> node scripts/certifications/hr-punch-mobile-evidence-local.js --output=docs/qa/evidence/hr-punch-mobile-evidence-20261117-develop/certification.json
+
+resultado: status=passed
+checks:
+PASS summary exposes photo availability and counters without image bytes
+PASS single carries the bytes and the batch is an index that counts the same evidence without them
+PASS chronological team trace displays all mobile photos and opens lightbox
+PASS Reports journey trace renders the activity photograph and opens its enlargement

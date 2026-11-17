@@ -178,7 +178,12 @@ test("A: el snapshot se reescribe solo con rutas frescas y conserva el resto del
 test("A: la pantalla persiste el snapshot y entra en modo degradado en el arranque en frio", () => {
   const load = sliceFrom(markingSource, "const load = useCallback(async () => {", "useEffect(() => {\n    load();");
 
-  assert.match(load, /settle<Employee \| null>\(api<Employee>\("\/api\/v1\/hr\/self"\), null\)/);
+  // Desde el gate de "sin horario asignado" la ficha se lee sola y con la alerta global
+  // silenciada (su 404 es un estado de negocio, no una caida). Lo que este contrato sigue
+  // exigiendo es que la ficha participe del snapshot: sin ella el arranque en frio no tiene
+  // identidad y el modo degradado no puede reconstruir el horario.
+  assert.match(load, /api<Employee>\("\/api\/v1\/hr\/self", \{ silentFailureAlert: true \}\)/);
+  assert.match(load, /self: requestOutcome\(meResult\.ok, meResult\.value\)/);
   assert.match(load, /buildHrOfflineSnapshot\(/);
   assert.match(load, /writeHrSnapshot\(snapshot\)/);
   assert.match(load, /resolveDegradedSchedule<TimeRoute>\(/);

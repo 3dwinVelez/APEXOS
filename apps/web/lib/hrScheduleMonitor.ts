@@ -48,6 +48,13 @@ export function scheduleMonitorPunchEvidence(row: {
   return items.length ? { ...items[0], ...(items.length > 1 ? { items } : {}) } : {};
 }
 
+// Un resumen del monitor anuncia el archivo sin llevarlo (los bytes se piden por id). La
+// pantalla solo pregunta por las evidencias que prometen contenido o URL. Compartida entre
+// el mapa del dia y el monitor de rutas para que las dos decidan igual.
+export function scheduleMonitorHasEvidenceFile(item?: ScheduleMonitorEvidence | null): item is ScheduleMonitorEvidence {
+  return Boolean(item && (item.base64_data || item.file_url || item.has_base64_data));
+}
+
 export function scheduleMonitorPunchEvidenceSummary(row: Parameters<typeof scheduleMonitorPunchEvidence>[0] & { id?: string | number }) {
   const evidence = scheduleMonitorPunchEvidence(row);
   if (!evidence.base64_data && !evidence.file_url) return {};

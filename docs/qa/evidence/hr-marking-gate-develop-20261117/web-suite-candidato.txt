@@ -1,0 +1,14 @@
+Suite completa de cliente sobre el candidato (apps/web, archivos *.test.mjs; los scripts certify-*.mjs se corren con su propio npm run y no como prueba unitaria).
+Reproducir: cd apps/web && node --experimental-strip-types --test 'test/*.test.mjs'
+
+# tests 813
+# suites 0
+# pass 812
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32186.4819
+
+fallas: 1
+not ok 99 - el registro de funciones cubre todas las rutas del dashboard   -> apps/web/test/command-palette-module-functions.test.mjs:49

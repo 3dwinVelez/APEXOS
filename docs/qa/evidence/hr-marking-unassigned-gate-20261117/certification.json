@@ -1,0 +1,307 @@
+{
+  "format": "apexos-hr-marking-unassigned-gate-v1",
+  "started_at": "2026-11-17T18:26:16.941Z",
+  "port": 3319,
+  "scenarios": {
+    "sin_ficha": {
+      "dom": {
+        "tabs": [],
+        "statuses": [
+          "Sin horario asignadoTu usuario no tiene una ficha laboral asociada, así que no hay jornada que registrar desde aquí. Pide a Talento Humano que vincule tu ficha a este usuario.No es una falla de la aplicación: tus marcaci"
+        ],
+        "alerts": [],
+        "sinHorarioPanel": true
+      },
+      "requests": [
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/hr/self",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/routes",
+        "/api/v1/hr/self/attendance",
+        "/api/v1/hr/self/activity-types",
+        "/api/v1/hr/self/work-session",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/preop/active",
+        "/api/v1/admin/platform-logs/client"
+      ]
+    },
+    "con_ficha_sin_horario": {
+      "dom": {
+        "tabs": [],
+        "statuses": [
+          "Sin horario asignadoHoy no tienes ningún horario asignado. La ventana de marcación se abre el día en que Talento Humano publique tu horario.No es una falla de la aplicación: tus marcaciones anteriores y las pendientes de"
+        ],
+        "alerts": [],
+        "sinHorarioPanel": true
+      },
+      "requests": [
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/hr/self",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/routes",
+        "/api/v1/hr/self/attendance",
+        "/api/v1/hr/self/activity-types",
+        "/api/v1/hr/self/work-session",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/preop/active",
+        "/api/v1/admin/platform-logs/client"
+      ]
+    },
+    "con_ficha_con_horario": {
+      "dom": {
+        "tabs": [
+          "Marcar",
+          "Historial"
+        ],
+        "statuses": [],
+        "alerts": [],
+        "sinHorarioPanel": false
+      },
+      "requests": [
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/hr/self",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/routes",
+        "/api/v1/hr/self/attendance",
+        "/api/v1/hr/self/activity-types",
+        "/api/v1/hr/self/work-session",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/preop/active",
+        "/api/v1/admin/platform-logs/client"
+      ]
+    },
+    "sin_conexion_con_respaldo": {
+      "dom": {
+        "tabs": [
+          "Marcar",
+          "Historial"
+        ],
+        "statuses": [
+          "Sin conexion: estas marcando sobre el horario del dia guardado en este dispositivo."
+        ],
+        "alerts": [
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/attendance | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/activity-types | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/work-session | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/preop/active | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/work-session?route_id=900117 | Detalle: Failed to fetch"
+        ],
+        "sinHorarioPanel": false
+      },
+      "requests": [
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/hr/self",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/routes",
+        "/api/v1/hr/self/attendance",
+        "/api/v1/hr/self/activity-types",
+        "/api/v1/hr/self/work-session",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/preop/active",
+        "/api/v1/admin/platform-logs/client"
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ]
+    },
+    "sin_conexion_sin_respaldo": {
+      "dom": {
+        "tabs": [
+          "Marcar",
+          "Historial"
+        ],
+        "statuses": [],
+        "alerts": [
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/routes | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/attendance | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/activity-types | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/work-session | Detalle: Failed to fetch",
+          "Fallo tecnico detectadoNo fue posible completar la solicitud solicitada por el modulo actual.Ruta: /api/v1/hr/self/preop/active | Detalle: Failed to fetch",
+          "Sin conexion y sin horario guardado en este dispositivo. Conectate al menos una vez para poder marcar."
+        ],
+        "sinHorarioPanel": false
+      },
+      "requests": [
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/auth/me",
+        "/api/v1/hr/self",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/routes",
+        "/api/v1/hr/self/attendance",
+        "/api/v1/hr/self/activity-types",
+        "/api/v1/hr/self/work-session",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/admin/platform-logs/client",
+        "/api/v1/hr/self/preop/active",
+        "/api/v1/admin/platform-logs/client"
+      ]
+    }
+  },
+  "checks": [
+    {
+      "name": "sin_ficha_muestra_el_panel_grande",
+      "ok": true,
+      "payload": {
+        "panel": true
+      }
+    },
+    {
+      "name": "sin_ficha_sin_tarjeta_de_fallo_tecnico",
+      "ok": true,
+      "payload": {
+        "alerts": []
+      }
+    },
+    {
+      "name": "sin_ficha_no_monta_la_ventana_de_marcado",
+      "ok": true,
+      "payload": {
+        "tabs": []
+      }
+    },
+    {
+      "name": "sin_ficha_detiene_las_lecturas_dependientes",
+      "ok": true,
+      "payload": {
+        "selfCalls": [
+          "/api/v1/hr/self"
+        ]
+      }
+    },
+    {
+      "name": "sin_horario_muestra_el_panel_grande",
+      "ok": true,
+      "payload": {
+        "panel": true
+      }
+    },
+    {
+      "name": "sin_horario_no_monta_las_pestanas",
+      "ok": true,
+      "payload": {
+        "tabs": []
+      }
+    },
+    {
+      "name": "sin_horario_sin_tarjeta_de_fallo_tecnico",
+      "ok": true
+    },
+    {
+      "name": "con_horario_no_muestra_el_panel",
+      "ok": true,
+      "payload": {
+        "panel": false
+      }
+    },
+    {
+      "name": "con_horario_conserva_ventana_y_historial",
+      "ok": true,
+      "payload": {
+        "tabs": [
+          "Marcar",
+          "Historial"
+        ]
+      }
+    },
+    {
+      "name": "el_escenario_previo_deja_respaldo_del_dia",
+      "ok": true,
+      "payload": {
+        "snapshot_chars": 450
+      }
+    },
+    {
+      "name": "caida_con_respaldo_no_anuncia_sin_horario",
+      "ok": true,
+      "payload": {
+        "panel": false,
+        "statuses": [
+          "Sin conexion: estas marcando sobre el horario del dia guardado en este dispositivo."
+        ]
+      }
+    },
+    {
+      "name": "caida_con_respaldo_avisa_de_conexion_y_sigue_marcando",
+      "ok": true,
+      "payload": {
+        "tabs": [
+          "Marcar",
+          "Historial"
+        ],
+        "statuses": [
+          "Sin conexion: estas marcando sobre el horario del dia guardado en este dispositivo."
+        ]
+      }
+    },
+    {
+      "name": "caida_sin_respaldo_no_anuncia_sin_horario",
+      "ok": true,
+      "payload": {
+        "panel": false
+      }
+    },
+    {
+      "name": "caida_sin_respaldo_avisa_de_conexion_sin_respaldo",
+      "ok": true,
+      "payload": {
+        "tabs": [
+          "Marcar",
+          "Historial"
+        ],
+        "alerts": [
+          "Sin conexion y sin horario guardado en este dispositivo. Conectate al menos una vez para poder marcar."
+        ]
+      }
+    }
+  ],
+  "verdict": {
+    "passed": 14,
+    "failed": 0
+  },
+  "finished_at": "2026-11-17T18:27:32.691Z"
+}

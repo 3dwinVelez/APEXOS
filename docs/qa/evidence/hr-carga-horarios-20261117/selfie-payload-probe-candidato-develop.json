@@ -1,0 +1,107 @@
+{
+  "format": "apexos-selfie-payload-probe-v1",
+  "started_at": "2026-11-17T18:27:53.993Z",
+  "target": {
+    "container": "infra-postgres-1",
+    "database": "apexos_selfie_probe",
+    "rows": 3000,
+    "limit": 300,
+    "reproduce": "node scripts/performance/selfie-payload-probe.js --rows 3000 --limit 300",
+    "note": "base de sonda local con datos sinteticos; ni QA ni produccion"
+  },
+  "production_reference": {
+    "measured_at": "2026-11-17",
+    "source": "pg_stat_statements",
+    "statement": "SELECT public.TimePunch (lectura diaria del mapa de operaciones)",
+    "calls": 4271,
+    "mean_ms": 3917.91,
+    "max_ms": 61365.4,
+    "rows_per_call": 615,
+    "blocks_read_from_disk": 0,
+    "share_of_measured_database_time_percent": 78.8
+  },
+  "seeded_distribution": {
+    "mean_extra_evidence_bytes": 104856,
+    "max_extra_evidence_bytes": 2792205
+  },
+  "seeded_sizes": {
+    "total": "318 MB",
+    "evidence_mean": 105835,
+    "evidence_max": 2835161,
+    "metadata_mean": 335,
+    "target_evidence_mean": 104856,
+    "seed_is_faithful": true
+  },
+  "before": {
+    "label": "lectura cruda: todas las columnas con la selfie dentro",
+    "repetitions": 3,
+    "rows_returned": 300,
+    "payload_bytes": 32101114,
+    "payload_mb": 30.61,
+    "elapsed_ms": 747.2,
+    "elapsed_samples_ms": [
+      747.2,
+      486.1,
+      910
+    ]
+  },
+  "after": {
+    "label": "lectura del producto: metadata cruda + aviso de evidencia sin abrirla",
+    "repetitions": 3,
+    "rows_returned": 300,
+    "payload_bytes": 255318,
+    "payload_mb": 0.24,
+    "elapsed_ms": 12.9,
+    "elapsed_samples_ms": [
+      12.9,
+      12.6,
+      14.1
+    ],
+    "sql_preview": "\n    SELECT \"TimePunch\".\"id\" AS \"id\", \"TimePunch\".\"tenant_id\" AS \"tenant_id\", \"TimePunch\".\"employee_id\" AS \"employee_id\", \"TimePunch\".\"user_name\" AS \"user_name\", \"TimePunch\".\"type\" AS \"type\", \"TimePunch\".\"punched_at\" AS \"punched_at\", \"TimePunch\".\"date\" AS \"date\", \"TimePunch\".\"time\" AS \"time\", \"TimePunch\".\"latitude\" AS \"latitude\", \"TimePunch\".\"longitude\" AS \"longitude\", \"TimePunch\".\"accuracy_meters\" AS \"accuracy_meters\", \"TimePunch\".\"vehicle_plate\" AS \"vehicle_plate\", \"TimePunch\".\"route_id\" AS \"r"
+  },
+  "self_read": {
+    "before": {
+      "label": "marcaciones del dia de un empleado: con extra_evidence (codigo anterior)",
+      "repetitions": 3,
+      "rows_returned": 75,
+      "payload_bytes": 10775394,
+      "payload_mb": 10.28,
+      "elapsed_ms": 317.9,
+      "elapsed_samples_ms": [
+        182.1,
+        317.9,
+        330.5
+      ]
+    },
+    "after": {
+      "label": "marcaciones del dia de un empleado: select del servicio (extra_evidence fuera)",
+      "repetitions": 3,
+      "rows_returned": 75,
+      "payload_bytes": 44947,
+      "payload_mb": 0.04,
+      "elapsed_ms": 7.2,
+      "elapsed_samples_ms": [
+        5.3,
+        7.2,
+        7.3
+      ]
+    },
+    "verdict": {
+      "payload_bytes_avoided": 10730447,
+      "payload_reduction_x": 239.7,
+      "local_ms_saved": 310.7,
+      "nota": "El seed concentra 3000 filas en un solo dia, asi que la lectura de un empleado trae 75 marcaciones cuando una jornada real marca 4. Lo que traslada de esta medida son los bytes por fila; la ultima linea los proyecta a la jornada real.",
+      "bytes_por_marcacion_antes": 143672,
+      "bytes_por_marcacion_despues": 599,
+      "jornada_real_4_marcaciones_antes_kb": 561,
+      "jornada_real_4_marcaciones_despues_kb": 2
+    }
+  },
+  "verdict": {
+    "payload_bytes_avoided": 31845796,
+    "payload_reduction_x": 125.7,
+    "local_ms_saved": 734.3,
+    "interpretation": "El tiempo local corre por loopback sobre una base recien vacuumed, asi que mide el piso del ahorro: los bytes del TOAST que dejan de cruzar el pooler (produccion midio 3.917,91 ms de media con blocks_read_from_disk = 0, o sea transferir y no buscar) y la descompresion por fila que ya no se paga (medido el 2026-11-17 sobre esta misma copia: abrir el jsonb de 615 filas cuesta ~0,6 ms por fila, preguntar solo por su tamano almacenado 9,4 ms en total)."
+  },
+  "finished_at": "2026-11-17T18:28:18.428Z"
+}

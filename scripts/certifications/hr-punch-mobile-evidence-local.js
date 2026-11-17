@@ -37,9 +37,9 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
   assert.equal(detail.punch_points.length,4);assert.ok(detail.punch_points.every(row=>row.identity_evidence.has_base64_data));assert.ok(!JSON.stringify(detail).includes(';base64,'));
   const summaries=await call('/hr/routes/event-summaries',token);assert.equal(summaries.status,200);assert.equal(summaries.body.routes.find(row=>row.route_id===route.id).evidence_count,6);
  });
- await check('single and batch use TimePunch identity photos, retain extra support and ActivityEvidence',async()=>{
+ await check('single carries the bytes and the batch is an index that counts the same evidence without them',async()=>{
   for(const punch of punches){const single=await call('/hr/monitor-evidence/identity/'+punch.id,token);assert.equal(single.status,200);assert.equal(single.body.base64_data,photo);}
-  const batch=await call('/hr/monitor-evidence/route/'+route.id,token);assert.equal(batch.status,200);assert.equal(Object.keys(batch.body.identity_evidence).length,4);assert.equal(batch.body.counts.punch_evidence,1);assert.equal(batch.body.punch_evidence[punches[3].id].base64_data,support);assert.equal(batch.body.activity_evidence[activity.id][0].base64_data,support);
+  const batch=await call('/hr/monitor-evidence/route/'+route.id,token);assert.equal(batch.status,200);assert.equal(Object.keys(batch.body.identity_evidence).length,4);assert.equal(batch.body.counts.punch_evidence,1);assert.equal(batch.body.punch_evidence[punches[3].id].has_base64_data,true);assert.equal(batch.body.identity_evidence[punches[0].id].has_base64_data,true);assert.equal(batch.body.activity_evidence[activity.id][0].has_base64_data,true);assert.ok(!JSON.stringify(batch.body).includes(';base64,'),'el lote del monitor arrastra bytes de evidencia');
   for(const [access,expected]of [[null,401],[otherToken,404],[deniedToken,403]])assert.equal((await call('/hr/monitor-evidence/punch/'+punches[0].id,access)).status,expected);
  });
  await require('./hr-employee-user-association-browser-local')({origin,token,pagePath:'/dashboard/talento-humano/rutas',artifactName:'hr-punch-mobile-evidence',exercise:async(page,folder)=>{

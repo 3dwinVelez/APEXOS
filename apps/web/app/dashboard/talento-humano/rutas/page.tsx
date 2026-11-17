@@ -3,7 +3,7 @@
 import { api } from "@/lib/api";
 import { ModalFrame } from "@/components/ui/ModalFrame";
 import { Badge, Skeleton } from "@/components/ui/feedback";
-import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleSameDayShiftIssue, scheduleTruncationNotices, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
+import { localCalendarDate, scheduleGpsRequired, scheduleMonitorDate, scheduleMonitorHasEvidenceFile, scheduleSameDayShiftIssue, scheduleTruncationNotices, scheduleTrackingMode } from "@/lib/hrScheduleMonitor";
 import type { ScheduleTruncationSignal } from "@/lib/hrScheduleMonitor";
 import { subscribeHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { punctualityAlert, type PunctualityTone } from "@/lib/punchPunctuality";
@@ -29,7 +29,6 @@ type MonitorMark = { id: number | string; type: string; time?: string };
 type MonitorMarksByUser = { user_name: string; marks: MonitorMark[] };
 type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[] };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; truncation?: ScheduleTruncationSignal; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
-type MonitorEvidenceBatch = { route_id: number | string; generated_at: string; punch_evidence: Record<string, MonitorEvidence>; identity_evidence?: Record<string, MonitorEvidence>; activity_evidence: Record<string, MonitorEvidence[]>; counts: { punches: number; punch_evidence: number; activities: number; activity_evidence: number } };
 type RouteDeletionBlocker = { code: string; message: string; detail?: Record<string, unknown> };
 type RouteDeletionImpact = {
   route_id: number | string;
@@ -87,7 +86,7 @@ type TimelineEvent = {
 };
 
 function hasEvidenceFile(item?: MonitorEvidence | null): item is MonitorEvidence {
-  return Boolean(item && (item.base64_data || item.file_url || item.has_base64_data));
+  return scheduleMonitorHasEvidenceFile(item);
 }
 
 // Lo que se lee bajo la marcacion en la trazabilidad. La llegada tarde se
@@ -449,7 +448,6 @@ export default function RoutesPlanningPage() {
   const [loadedEvidence, setLoadedEvidence] = useState<Record<string, MonitorEvidence[]>>({});
   const [loadingEvidence, setLoadingEvidence] = useState<Record<string, boolean>>({});
   const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
-  const [loadingBatch, setLoadingBatch] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [monitorPerson, setMonitorPerson] = useState("");
   const [monitorKind, setMonitorKind] = useState<"all" | "marca" | "actividad">("all");
@@ -462,7 +460,6 @@ export default function RoutesPlanningPage() {
   const [deleteTraceAck, setDeleteTraceAck] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const batchLoadedRef = useRef(false);
   const pathname = usePathname();
   const monitorBodyRef = useRef<HTMLDivElement | null>(null);
   const peopleScrollRef = useRef<HTMLDivElement | null>(null);
@@ -581,7 +578,6 @@ export default function RoutesPlanningPage() {
     setLoadingEvidence({});
     setEvidenceErrors({});
     setLightboxIndex(null);
-    batchLoadedRef.current = false;
     setSelectedRouteId(String(route.id));
     setMonitorDate(targetDate);
     loadMonitor(targetDate);
@@ -618,26 +614,6 @@ export default function RoutesPlanningPage() {
       setLoadingEvidence((current) => ({ ...current, [event.id]: false }));
     }
   }, [loadingEvidence]);
-
-  const loadRouteEvidenceBatch = useCallback(async (routeId: number | string) => {
-    setLoadingBatch(true);
-    try {
-      const batch = await api<MonitorEvidenceBatch>(`/api/v1/hr/monitor-evidence/route/${encodeURIComponent(String(routeId))}`, { cache: "no-store" });
-      const merged: Record<string, MonitorEvidence[]> = {};
-      const punchIds = new Set([...Object.keys(batch.punch_evidence || {}), ...Object.keys(batch.identity_evidence || {})]);
-      for (const id of punchIds) {
-        const files = [batch.punch_evidence?.[id], batch.identity_evidence?.[id]].flatMap(item => item?.items?.length ? item.items : [item]).filter((item): item is MonitorEvidence => Boolean(item?.base64_data || item?.file_url));
-        const items = files.filter((item, index) => files.findIndex(other => (other.base64_data || other.file_url) === (item.base64_data || item.file_url)) === index);
-        if (items.length) merged[`punch-${id}`] = items;
-      }
-      for (const [id, items] of Object.entries(batch.activity_evidence || {})) merged[`activity-${id}`] = items;
-      setLoadedEvidence((current) => ({ ...current, ...merged }));
-    } catch {
-      // La carga individual por evento sigue disponible como respaldo.
-    } finally {
-      setLoadingBatch(false);
-    }
-  }, []);
 
   async function openCreateModal(route?: RouteMonitor) {
     loadReferenceData();
@@ -969,20 +945,14 @@ export default function RoutesPlanningPage() {
   }
 
   useEffect(() => {
-    if (!selectedRoute || batchLoadedRef.current) return;
-    batchLoadedRef.current = true;
-    void loadRouteEvidenceBatch(selectedRoute.id);
-  }, [loadRouteEvidenceBatch, selectedRoute]);
-
-  useEffect(() => {
-    if (loadingBatch || !selectedRoute) return;
+    if (!selectedRoute) return;
     for (const event of visibleTimeline) {
       const summary = event.evidence?.[0];
       if (summary?.available && summary.id != null && !loadedEvidence[event.id] && !loadingEvidence[event.id] && !evidenceErrors[event.id]) {
         void loadTimelineEvidence(event);
       }
     }
-  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingBatch, loadingEvidence, selectedRoute, visibleTimeline]);
+  }, [evidenceErrors, loadTimelineEvidence, loadedEvidence, loadingEvidence, selectedRoute, visibleTimeline]);
 
   const lightboxItems = useMemo(() => visibleTimeline.flatMap((event) => {
     const items = (loadedEvidence[event.id]?.length ? loadedEvidence[event.id] : event.evidence || []) as MonitorEvidence[];
@@ -1380,7 +1350,6 @@ export default function RoutesPlanningPage() {
                     <X size={12} />
                   </button>
                 ) : null}
-                {loadingBatch ? <Badge className="gap-1.5" tone="neutral"><RefreshCw className="animate-spin" size={12} /> Cargando evidencias</Badge> : null}
                 {monitorDate !== scheduleMonitorDate(selectedRoute.date) ? <Badge className="gap-1.5" tone="warning"><CalendarDays size={12} /> El horario es del {scheduleMonitorDate(selectedRoute.date)}</Badge> : null}
               </div>
             </header>
