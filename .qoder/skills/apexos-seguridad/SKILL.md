@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.26.0
-updated_at: 2026-11-13
+version: 2.28.0
+updated_at: 2026-11-16
 contract: 2
 ---
 
@@ -141,13 +141,22 @@ Antes de actuar, leer en este orden:
 39. **Retirar un motor no abre una puerta: el alias conserva permiso, tenant y actor, y la corrección de semilla no escribe datos personales.** La remediación de nómina R-06 a R-10A (2026-11-13) fija tres controles:
     - **El endpoint legacy no queda huérfano de autorización.** `POST /hr/payroll/process` mantiene `payroll:write` y ahora recibe `request.user` completo; el servicio toma el `tenant_id` del token, no del cuerpo, y corre dentro de `runWithTenant`. Delegar en `runPayrollLiquidation` no cambia la superficie: la misma ruta, el mismo permiso, más documentos auditables.
     - **El bloqueo por falta de soporte no filtra datos.** `SIN_MARCACIONES` responde 422 con código y, si aplica, el nombre del empleado ya visible para quien tiene `payroll:write`; no incluye marcaciones, salarios de otros empleados ni identificadores de otros tenants. La justificación se guarda como texto en `source_summary`, sin datos personales adicionales.
-    - **La migración `20261113120000` solo corrige catálogo y siembra parámetros.** Son `UPDATE` acotados por `tenant_id`/`code` y `INSERT ... WHERE NOT EXISTS`; no toca documentos, no borra filas y no incorpora credenciales. La aplicación en nube sigue siendo autorización independiente y se declara pendiente.
+    - **La migración `20261113120000` modifica catálogo y siembra parámetros.** El `UPDATE` de `AUX_TRANSPORTE` filtra por `code`/`country`, sin `tenant_id` ni vigencia: exige revisión previa de alcance, configuración por empresa y dictamen jurídico/contable, no se considera acotado por tenant. Los parámetros usan `INSERT ... WHERE NOT EXISTS`; no toca documentos, no borra filas y no incorpora credenciales. Se conserva el SQL histórico; la aplicación en nube sigue siendo autorización independiente y se declara pendiente.
     Por qué: un cambio de cálculo que reemplaza la ruta de liquidación es exactamente donde se cuela un endpoint sin permiso o una migración que reescribe datos de clientes; R-09 se implementó como delegación, no como nueva superficie.
 40. **La certificación en un ambiente vivo usa una identidad efímera de mínimo privilegio y no deja rastro.** El certificador de QA de nómina (`scripts/certifications/hr-nomina-legal-2026-qa.js`) crea un rol propio de la corrida con `hr:read` y `payroll:read`, un usuario del tenant NYVORA con contraseña aleatoria hasheada, se autentica contra la API desplegada y lo desactiva en `finally` (`certification_user_deactivated: true`). Tres controles:
     - **Puerta de ambiente.** Aborta si el host no es el servicio QA de Railway (`-prod-production` incluido en la denegación) o si `DATABASE_URL` no corresponde al proyecto Supabase de QA; una credencial de producción no puede medir QA por error de configuración.
     - **Sin credenciales en evidencia.** La evidencia guarda códigos, conteos y nombres de verificación; nunca correo, contraseña, token ni service role. La cuenta real del cliente no se usa para automatizar y su credencial no se transcribe.
     - **La escritura se limita a la identidad efímera.** El certificador es de solo lectura sobre nómina: no liquida, no cierra y no crea documentos; lo único que escribe es el usuario de la corrida, que se desactiva al terminar.
     Prueba de cierre: corrida QA 2026-11-13 con `certification_user_deactivated: true` y `qa-certification.json` sin secretos. Por qué: una certificación que deja una cuenta activa o una contraseña en el repositorio se convierte en una puerta permanente abierta por una prueba.
+
+41. **El exceso de privilegio se corrige con destino validado, recuperación probada y alcance exacto.**
+    - **Catálogo no equivale a exploit.** Un grant de `TRUNCATE` a roles de aplicación es excesivo y `TRUNCATE` no está sujeto a RLS; su presencia en catálogo no demuestra un exploit por REST/RPC ni autoriza ejecutar un truncado real para probarlo.
+    - **Validar antes de conectar.** Parsear la conexión y comparar exactamente host, usuario, base y puerto con el destino autorizado; una subcadena de project ref no basta. Exigir TLS estricto `verify-full`, sin desactivar la verificación de certificado ni de hostname.
+    - **Respaldo privado no equivale a recuperación.** El cifrado DPAPI protege el respaldo, pero se exige restauración real en una base local aislada y comparación exacta de datos y ACL antes de considerar probada la recuperación; sin secretos en evidencia.
+    - **Abortar ante deriva.** Antes de mutar, contrastar fuentes de privilegio esperadas (`expected_source`) y grantor; cualquier deriva aborta. Revocar solo `TRUNCATE`, preservando exactamente CRUD, `MAINTAIN`, privilegios de `service_role`, memberships, RLS y vistas. No asumir autoridad sobre grants/defaults de roles ajenos; probar recuperación de ACL y segunda corrida sin cambios, sin `TRUNCATE` real.
+    Resultado medido 2026-11-15: la revocación acotada se aplicó primero en QA y después en PROD; ambos destinos terminaron con cero TRUNCATE efectivo para `anon`/`authenticated`, sin alterar CRUD, `MAINTAIN`, `service_role`, memberships, vistas, políticas o RLS y preservando ocho defaults ajenos por ambiente. El respaldo AES-256-GCM protegido con DPAPI reabrió autenticado; la recuperación exacta se ejercitó en PostgreSQL 17 aislado, no contra nube. No se ejecutó TRUNCATE real ni se acredita exploit, paridad, integridad general, latencia o entrega de mensajes.
+
+42. **Reducir lecturas no relaja el aislamiento ni reactiva defaults.** La proyección PYG se calcula dentro del contexto tenant y no usa caché global; filas inactivas y mappings vacíos anulan el default. Los maestros diferidos del editor conservan `hr:read`/`transport:read`. Una certificación PostgreSQL usa base propia, copia solo de esquema, fija DATABASE_URL y DIRECT_URL al mismo destino y retira únicamente esa base después de cerrar conexiones; nunca toma el demo como fixture descartable. Por qué: acelerar una pantalla no autoriza mezclar empresas ni alterar sus decisiones administrativas.
 
 ## Checklist de intervención
 

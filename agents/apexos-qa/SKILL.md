@@ -2,8 +2,8 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.67.0
-updated_at: 2026-11-13
+version: 2.70.2
+updated_at: 2026-11-16
 contract: 2
 ---
 
@@ -253,6 +253,17 @@ Antes de actuar, leer en este orden:
     - **La equivalencia se mide archivo por archivo.** Cuando el candidato a `main` se reconstruye por cherry-pick sobre otro baseline, se compara el código de producto con el build medido en QA y el resultado queda en evidencia (`equivalencia-candidato-main.txt`: 38 archivos idénticos byte a byte).
     - **La suite se reejecuta en el árbol que se promueve.** HR 236/236 sobre la reconstrucción de `main`, 212/212 en `desarrollo` y `tsc --noEmit` exit 0; los cuatro fallos de la suite API completa se reproducen en el baseline y se contrastan, no se cuentan como regresión.
     Prueba de cierre: `node scripts/certifications/hr-nomina-legal-2026-qa.js` contra QA (18/2/0) y `npm run qa:approval:evidence -- docs/qa/manifests/nomina-legal-2026-20261113-approval.json`. Por qué: el paquete llegó a QA por `develop`, a `main` por reconstrucción y a `desarrollo` por reintegro; sin la equivalencia y la reejecución, la aprobación describiría un árbol que nadie desplegó.
+
+80. **Un diagnóstico remoto certifica su cobertura, no la reparación del incidente.** La evidencia de bases y colas exige cuatro separaciones:
+    - Catálogo físico versus DMMF/conteo de tablas: declarar familias cubiertas, permisos y omisiones; comparar definiciones completas por huella, RLS/ACL y ledgers. Una familia no observada impide afirmar paridad total.
+    - Conexión TLS cliente versus tramo interno pooler → base: verificar cadena/hostname con CA oficial; `pg_stat_ssl` del backend no sustituye la verificación del cliente. Credenciales solo en proceso, consultas READ ONLY acotadas y definiciones sensibles fuera de la evidencia.
+    - Muestra versus acumulado: publicar ventana, `stats_reset`, límites, build activo y unidad del proveedor. Seis respuestas de salud no certifican p95; un deployment SKIPPED no reemplaza el artefacto SUCCESS activo.
+    - Evento de arranque versus estado/efecto actual: filtros de logs mínimos asociados a la instancia permiten probar la rama de inicio, no el backlog ni la entrega. Sin jobs y receipts medidos, no afirmar cola vacía ni envíos completos; una omisión queda explícita y nunca verde.
+    Por qué: contar 234 tablas por ambiente y obtener HTTP 200 habría ocultado diferencias de definición y un productor noop capaz de registrar `encolada` sin crear un job.
+
+81. **Una revocación de privilegio se certifica por diferencia exacta y recuperación real.** Retirar TRUNCATE exige comparar todos los privilegios restantes, incluidos MAINTAIN y service_role, los defaults ajenos, vistas, roles, membresías y RLS; el total final de TRUNCATE efectivo en tablas debe ser cero para cada rol objetivo. La segunda corrida conserva el catálogo y la recuperación restaura solo los grants originales en una base aislada. Descifrar un respaldo o listar un dump no prueba restauración; nunca se vacía una tabla para demostrar el rechazo. El verificador de presencia bloquea cero modelos, incluye enums y valida el destino antes de inicializar el cliente. Cierre medido 2026-11-15: certificación TRUNCATE local 20/20 y pruebas unitarias 14/14; QA y PROD con cero privilegio objetivo, ocho defaults ajenos preservados por ambiente y resguardo cifrado autenticado. Índices HR: certificación local 11/11 y pruebas 8/8; QA creó exactamente dos índices con filas intactas, PROD fue no-op exacto y ambas segundas corridas conservaron el catálogo. La restauración se probó en PostgreSQL 17 aislado; `restore_into_database_tested:false` permanece correcto para los respaldos remotos.
+
+82. **La reducción de cargas se prueba en dos capas que no se sustituyen.** El navegador con API interceptada mide orden de carga y GET duplicados, pero queda `simulated_only`; la lectura sin DML se verifica además con Fastify y Prisma reales sobre una base desechable con copia solo de esquema, empresas sintéticas y cierre/retirada comprobados. Un DTO `{rows}` se lee por su contrato, no como arreglo. La matriz principal se acompaña de recuperación tras fallo inicial de organización y operación de sincronización contable sin abrir la ficha; una lectura necesaria para una acción visible no es carga evitable. Se abre además Presupuesto antes de que termine el primer GET: un 503 recuperable permite un único reintento de la petición heredada, un fallo persistente no produce bucle y un 403 no se reintenta automáticamente. El arnés comprueba ese orden con la respuesta inicial todavía pendiente y conserva los rojos anteriores. Respuesta y primer render se comparan sobre el mismo reloj del navegador; un tiempo negativo se investiga y nunca se recorta a cero. Se preserva el intento rojo y se repite tras atribuirlo al arnés; ninguna capa local certifica QA/PROD ni autoriza la promoción. Por qué: pruebas unitarias, un HTTP 200 o una pantalla simulada no prueban persistencia ni el build desplegado.
 
 ## Checklist de intervención
 

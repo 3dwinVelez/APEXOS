@@ -2,8 +2,8 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.55.0
-updated_at: 2026-11-13
+version: 2.58.0
+updated_at: 2026-11-16
 contract: 2
 ---
 
@@ -175,6 +175,12 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **La deuda ajena no se arrastra.** Si el ledger del ambiente tiene migraciones pendientes de otros módulos y filas que solo viven en la base, la migración propia se aplica por sentencias y no con `migrate deploy`; el brief nombra las pendientes que quedaron intactas.
     Por qué: «aplicada en QA» sin checksum, conteos ni segunda corrida es indistinguible de «creí que se aplicó», y un `migrate deploy` de paso habría movido deuda de otros módulos dentro de un encargo de nómina.
 68. **Un paquete certificado se escribe con un inventario por destino, no con una lista única.** El cierre de la Fase 1 llegó a tres árboles con baselines distintos: `develop` (`beff5132`, 35 rutas), `main` (`c8e5e67c`, 45 rutas reconstruidas por cherry-pick) y `desarrollo` (reintegro con dos commits que no aportaron cambios netos y un módulo que faltaba). El brief declara, para cada destino, el baseline exacto, el diff medido y la razón de cada diferencia —por ejemplo, `payrollWorkdays.js` ya existía en `main` y faltaba en `desarrollo`—. Regla: el inventario del brief se contrasta contra `git diff --name-status <baseline>..<candidato>` de ese destino; una tabla copiada de otra rama es un inventario falso. Por qué: el mismo paquete no produce el mismo diff sobre baselines distintos, y la diferencia que no se escribe se descubre con una suite roja o, peor, en producción.
+
+69. **Un plan de base de datos separa paridad estructural, integridad y latencia.** La comparación exige catálogos vivos de ambos ambientes, con tipos, restricciones, índices, vistas, funciones, disparadores, políticas y permisos; la presencia de nombres en Prisma no basta. Cada cifra declara hora, instrumento y si es instantánea, acumulado o estimación. El inventario del plan documental no autoriza sus futuras migraciones, cambios de infraestructura ni envíos; cada fase los acota por separado. Las diferencias de datos de clientes no se corrigen clonando producción a QA y una medición incompleta nunca se declara como paridad certificada.
+
+70. **Una autorización correctiva posterior amplía el inventario, no borra la historia del diagnóstico.** Registrar el pedido exacto, objetos y destinos autorizados, respaldo recuperable y ensayo QA previo; mantener fuera los despliegues, infraestructura, envíos y borrados no pedidos. La ausencia de una migración en el ledger exige verificar sus efectos actuales e idempotencia completa antes de ejecutarla; una premisa jurídica discutible impide copiar la semilla para conseguir paridad. La evidencia declara lo aplicado y lo pendiente por separado. Al cerrar, el inventario incluye también intentos fallidos preservados y nombra las corridas autoritativas; un respaldo remoto cuya restauración solo se probó en una base local conserva esa limitación explícita.
+
+71. **Una mejora visible separa implementación local, medición y despliegue.** El brief conserva las autorizaciones y correcciones históricas, añade el pedido de rendimiento y enumera sus rutas exactas; distingue conteos de delegados, navegador simulado y PostgreSQL real aislado. Identifica por ambiente el build observado y la distancia con el código local antes de proponer publicación. No convierte el objetivo de intervenir ambos ambientes en una certificación de que ya ocurrió. Por qué: una copia local atrasada puede pasar pruebas y aun así reemplazar funcionalidad más nueva del destino.
 
 ## Checklist de intervención
 

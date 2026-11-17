@@ -2,8 +2,8 @@
 name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
-version: 2.17.0
-updated_at: 2026-11-13
+version: 2.18.0
+updated_at: 2026-11-16
 contract: 2
 ---
 
@@ -89,6 +89,8 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
     - **Un cherry-pick sin conflicto no prueba que la rama tenga sus dependencias.** `49394010` aplicó limpio en `desarrollo` y dejó una llamada a `loadPayrollWorkdays` sin el módulo `payrollWorkdays.js`; la suite del dominio en el árbol receptor lo detectó (2/212) y el archivo auxiliar se agregó en un commit propio.
     - **El gate de alcance se recalcula por destino.** El manifiesto de `main` fija `base_commits.main` y una lista exacta de 45 rutas; el de `develop` conserva su baseline. La compuerta `qa:promotion:scope` falla si la lista se copia de otra rama.
     Prueba de cierre: `qa:promotion:scope` verde con 45 rutas en `main` y 212/212 en `desarrollo`. Por qué: promover con `--theirs` global o confiar en que «aplicó sin conflicto» son las dos formas habituales de perder una corrección ya presente o de publicar una referencia rota.
+
+34. **Un árbol local atrasado no se publica sobre el remoto para destrabar rendimiento.** Con trabajo sin commit y commits remotos pendientes se conserva todo, se compara por función y blob y se prepara solo el delta autorizado. PYG puede tener `getReport` operativo local y contable remoto: el hunk operativo se traslada a `getOperationalReport`, no por coincidencia de nombre. No se integran ramas ni se crean candidatos/worktrees sin autorización, y una certificación del árbol local no acredita el receptor. Por qué: sobrescribir una pantalla o servicio antiguo puede revertir contabilidad ya liberada.
 
 ## Checklist de intervención
 

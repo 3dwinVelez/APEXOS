@@ -120,6 +120,96 @@
       "advisory": "*",
       "reason": "Runtime o dependencia transitiva de produccion. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
       "expires": "2026-12-15"
+    },
+    {
+      "package": "@next/eslint-plugin-next",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "@typescript-eslint/typescript-estree",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "anymatch",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "chokidar",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "eslint-config-next",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "eslint-import-resolver-typescript",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "fast-glob",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "fdir",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "micromatch",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "nodemon",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "picomatch",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "readdirp",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Ciero planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "sucrase",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "tailwindcss",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
+    },
+    {
+      "package": "tinyglobby",
+      "advisory": "*",
+      "reason": "Tooling de desarrollo; no llega al runtime de la API ni del web. Cierre planificado en Fase 5 del plan candado con bump verificado por next build/start.",
+      "expires": "2026-12-15"
     }
   ]
 }

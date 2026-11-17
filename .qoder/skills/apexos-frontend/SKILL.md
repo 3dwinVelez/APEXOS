@@ -2,8 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.30.0
-updated_at: 2026-11-13
+version: 2.31.2
+updated_at: 2026-11-16
 contract: 2
 ---
 
@@ -124,6 +124,8 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     - **La consulta nueva respeta el rango.** Sin `fecha_inicio`/`fecha_fin` el backend limita la lectura; el reporte siempre envía el rango aplicado.
     Por qué: el reporte sumaba `TimePunch.extra_minutes` mientras la nómina liquidaba `ProcessedWorkday`; dos fuentes distintas para el mismo hecho hacían imposible saber si la diferencia era del empleado o del sistema.
 44. **La pantalla de un paquete reconstruido se verifica por identidad del archivo y por typecheck del árbol destino.** El reporte de extras viajó en el mismo paquete de la Fase 1 a `develop`, a `main` y a `desarrollo`; el archivo `apps/web/app/dashboard/talento-humano/reportes/page.tsx` quedó idéntico byte a byte en los tres árboles (evidencia `equivalencia-candidato-main.txt`). Cuando la promoción se reconstruye sobre otro baseline no basta certificar la pantalla en el árbol de origen: se compara el archivo con el certificado y se ejecuta `tsc -p tsconfig.typecheck.json --noEmit` en el árbol que se va a desplegar (exit 0 en `main` el 2026-11-13). Por qué: una pantalla que compila en la rama de origen puede romper el build de `main` si el destino trae otros tipos o componentes, y el error solo aparecería en el despliegue.
+
+45. **El primer dato útil no espera maestros del editor.** La flota publica vehículos sin esperar empleados; empleados y catálogos se difieren al editor, bajo los permisos existentes. La estructura requerida por una acción contable visible puede cargar en paralelo sin bloquear vehículos; comparte la promesa en vuelo por instancia con el editor y no repite el GET tras cargar exitosamente. El presupuesto PYG recibe la organización que su padre ya leyó y no repite ese GET por montaje. Si hereda una petición pendiente que falla con `retryable: true`, el efecto activo permite un único GET nuevo; si abre tras el fallo inicial, el GET fresco ya es la recuperación y no se reintenta automáticamente (503 persistente: máximo dos GET; 403 heredado: uno). Se conservan la guarda de actividad y la limpieza por identidad de promesa. La certificación mide antes/después con HR demorado y fallido, reapertura y ambos temas; compartir datos no significa compartirlos entre empresas. Por qué: una barrera entre lecturas independientes hace parecer lenta una lista que ya respondió.
 
 ## Checklist de intervención
 
