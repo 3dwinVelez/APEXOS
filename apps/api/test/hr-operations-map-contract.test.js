@@ -12,6 +12,14 @@ test("operations-map no transporta evidencia fotografica completa en cada refres
   assert.match(serviceSource, /evidence: \{ select: monitorEvidenceSelect \}/);
   assert.match(serviceSource, /const available = Boolean\(base64 \|\| fileUrl \|\| fileName \|\| evidence\.storage_path \|\| evidenceId\)/);
   assert.doesNotMatch(JSON.stringify(serviceSource.match(/const monitorEvidenceSelect = \{[\s\S]*?\n\};/)?.[0] || ""), /base64_data/);
+  // El mapa se repite cada 5 s desde el monitor, asi que la lectura de marcaciones del dia
+  // no puede traer los bytes NI abrir el jsonb tostado para recortarlos: solo declara que la
+  // evidencia existe y la pantalla la pide por id al abrirla (monitorEvidenceRows).
+  const mapSource = serviceSource.match(/async function getOperationsMap[\s\S]*?(?=\r?\nasync function )/)?.[0] || "";
+  assert.match(mapSource, /monitorEvidenceRows\.readDayEvidencePunches/);
+  assert.doesNotMatch(mapSource, /prisma\.timePunch\.findMany/);
+  assert.match(mapSource, /monitorPunchEvidenceFlag\(punch\)/, "el mapa vuelve a construir el resumen desde los bytes");
+  assert.equal((mapSource.match(/monitorPunchEvidence\(punch/g) || []).length, 0);
 });
 
 test("la evidencia completa se consulta bajo demanda con permiso HR y aislamiento de tenant", () => {

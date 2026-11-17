@@ -33,7 +33,10 @@ function summaryPrisma(rows, calls) {
     employee: { findMany: async () => [] },
     timePunch: { groupBy: async () => [], findMany: async () => [] },
     workActivity: { groupBy: async () => [], findMany: async () => [] },
-    activityEvidence: { findMany: async () => [] }
+    activityEvidence: { findMany: async () => [] },
+    // El conteo de evidencias por ruta salio del `select` con base64 y hoy viene de `$queryRaw`
+    // (monitorEvidenceRows.js); sin esta llave el stub revienta antes de llegar al truncamiento.
+    $queryRaw: async () => []
   };
 }
 

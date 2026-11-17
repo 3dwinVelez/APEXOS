@@ -3,7 +3,7 @@ name: apexos-performance
 description: Experto en rendimiento e infraestructura del Equipo APEXOS: latencia, presupuestos, Server-Timing, anti-patrones, benchmarks, Docker y despliegues. Usar para medir el impacto de un cambio, ejecutar guards de rendimiento, auditar latencias por ambiente o revisar estándares de ejecución de Servicios y la torre apex-control.
 when_to_use: Guards de rendimiento, latencia, presupuestos, anti-patrones, benchmarks, infraestructura Docker/Railway, rendimiento por ambiente de la torre.
 version: 2.17.0
-updated_at: 2026-11-16
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -91,7 +91,7 @@ Si el cambio toca la UI, leer además `docs/project/filosofia-producto-ui.md`.
     - **La certificación de la nube es hermética por construcción.** El ferrocarril falso escucha en `127.0.0.1`, retrasa 20 ms para que la latencia sea medida y no cero, y la corrida redirige `RAILWAY_CONFIG_DIR` a un almacén propio y limpia `RAILWAY_TOKEN` antes de crear la torre, restaurando el entorno al cerrar. Sin ese aislamiento el verde dependería de con quién estuviera autenticado el operador: medir al usuario en vez de medir el código.
     Por qué: conectar la nube era un problema de cableado y de presupuesto, no de tintes; y un panel que pide credenciales de servicios que no existen inflige trabajo al dueño sin acortar ninguna latencia.
 
-26. **Cero objetivos o métricas inválidas bloquean el presupuesto.** El CLI rechaza JSON ilegible, `results` inválido, cero filas elegibles, configuración no positiva o no finita, p95 ausente/no numérico, conteos no enteros y muestras menores que la concurrencia evaluada. No descarta una fila elegible porque sus métricas estén mal. El certificador local demuestra exit 1 con una fila válida junto a la rota y exit 0 en cada frontera; esos fixtures no certifican latencia, frescura ni build remoto. Por qué: un filtro vacío o `null` comparado como cero produce un verde sin medición.
+26. **El presupuesto de una apertura se certifica comparando bytes y tiempo en la misma corrida, con el peor caso y su proyección por fila.** `scripts/performance/selfie-payload-probe.js` corre el par antes/después sobre el mismo seed (`--rows 2200 --limit 615`, publica `seed_is_faithful`) y reporta MB y ms de cada lectura. Dos límites que la medición impuso el 2026-11-17: (a) el tiempo absoluto local es piso, no techo —varió entre 1.900 y 3.254 ms en dos corridas del mismo seed por loopback sobre una base recién `VACUUM`ed, mientras la razón de bytes se mantuvo en 140-141×—, así que la razón manda y la cifra vigente del ambiente es el `production_reference` de `pg_stat_statements`; (b) el presupuesto de 2 s del dueño sobre la pared del usuario solo se cierra contra un ambiente desplegado, y mientras eso no ocurra el veredicto dice «la lectura queda dentro de presupuesto» con sus números, nunca «la pantalla abre en 2 s». Por qué: sin el par antes/después versionado, una optimización de payload se anuncia con el cronómetro del usuario y nadie puede reproducirla.
 
 ## Checklist de intervención
 

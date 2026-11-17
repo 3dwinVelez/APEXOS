@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-16",
+  "generated_at": "2026-11-17",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -56,8 +56,8 @@
       "name": "apexos-backend",
       "role": "experto-backend",
       "version": "2.15.0",
-      "updated_at": "2026-11-16",
-      "sha256": "413171b28052276d36b6fe428031758f88642e1a01150d167c4e1be86efbfc97",
+      "updated_at": "2026-11-17",
+      "sha256": "16bcd9893a247c6cb617077d08ea825fc112dc1a2663c899f2f29ec6624ebc3b",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -90,9 +90,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.58.0",
-      "updated_at": "2026-11-16",
-      "sha256": "7eca34c9ba1499c62882ccee856f3c61a258a3dfd257ee920f49689cb64f6040",
+      "version": "2.57.0",
+      "updated_at": "2026-11-17",
+      "sha256": "0e02d9f1a88675c7fd42bf386e944d583750c20e29eb422f7139e56af8ec9f97",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -136,15 +136,16 @@
         "brief-corte-portafolio-listas-exactas",
         "brief-brecha-despliegue-reconstruccion",
         "brief-evidencia-qa-paquete-documental",
-        "brief-ventana-ejecutada-y-deltas-atribuidos"
+        "brief-ventana-ejecutada-y-deltas-atribuidos",
+        "brief-marca-casillas-con-commit-medido"
       ]
     },
     {
       "name": "apexos-db-nube",
       "role": "experto-base-datos-nube",
-      "version": "2.5.0",
-      "updated_at": "2026-11-15",
-      "sha256": "4a9d052ea9a413d41ff0908aec7338ad896d960ee8aef2b067c8a8eb4be4a052",
+      "version": "2.4.0",
+      "updated_at": "2026-11-13",
+      "sha256": "4ec7d0ccb37751d50cd064529511c8cd5e650aa5d951aef60ed9d54c756fe042",
       "source": ".qoder/skills/apexos-db-nube/SKILL.md",
       "mirror": "agents/apexos-db-nube/SKILL.md",
       "controls": [
@@ -167,9 +168,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.31.2",
-      "updated_at": "2026-11-16",
-      "sha256": "9847e1a07b8a9cf6c19efb5348eb19c52afb6b536666bfbb35147a5453bddfa0",
+      "version": "2.31.0",
+      "updated_at": "2026-11-17",
+      "sha256": "2f8426492b30bf505b35f4d3146194cf4120729147a2df3e190362a317c06709",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -210,8 +211,8 @@
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
       "version": "2.18.0",
-      "updated_at": "2026-11-16",
-      "sha256": "873de44985fd7fe3e76dde2b8895926b1655a757c65567229a5e4b324112633e",
+      "updated_at": "2026-11-17",
+      "sha256": "ac709a4054bd60dbd7b18beef3a463d7cb268db77bfef8ba6be2bb6e92c832fd",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -235,15 +236,16 @@
         "evidencia-retirada-declarada",
         "candidato-reconstruido-se-audita-por-archivo",
         "promocion-a-main-sin-pr",
-        "evidencia-de-manifiesto-resuelta-contra-su-directorio"
+        "evidencia-de-manifiesto-resuelta-contra-su-directorio",
+        "paquete-transportado-se-compara-por-archivo"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
       "version": "2.17.0",
-      "updated_at": "2026-11-16",
-      "sha256": "1cb5077e2dd5550fd5434cc986a5edd92ee72a469f81cc5ad76a54381cc3244f",
+      "updated_at": "2026-11-17",
+      "sha256": "a9f683ea6943d431925ad02212b9367f7150bfcbed03046d44cd36033476c069",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -273,9 +275,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.70.2",
-      "updated_at": "2026-11-16",
-      "sha256": "198a16486433e1bf7496ec2c0b4e7cdaadfca68f2f48187666ce2357591e49f3",
+      "version": "2.69.0",
+      "updated_at": "2026-11-17",
+      "sha256": "4f5c90363c7fd1b7006ec633258fa013021579bb72c40b777fca94789268b5e6",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -332,15 +334,16 @@
         "arnes-mide-pintura-y-fixtures-cors",
         "smoke-capa-visual-completa-en-el-despliegue",
         "compuerta-main-evidencia-qa-equivalencia",
-        "smoke-produccion-supabase-auth-y-latencia"
+        "smoke-produccion-supabase-auth-y-latencia",
+        "certificacion-ambiente-anclada-al-commit"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.28.0",
-      "updated_at": "2026-11-16",
-      "sha256": "8229708deac828f8a44f8561e81b85834c361d97ffffc7c213ebb15ea45b6f8d",
+      "version": "2.27.0",
+      "updated_at": "2026-11-17",
+      "sha256": "2400ee6d9520f40c928e4d5bf02f58cf69a5902a4e1f0e6b24590d78692fb242",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -378,9 +381,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.42.0",
-      "updated_at": "2026-11-16",
-      "sha256": "07aae8d731e8a2a7ce4b593421498d16d7e4e665d67fcc0db0cedc78eb08b44b",
+      "version": "2.41.0",
+      "updated_at": "2026-11-17",
+      "sha256": "166eed37f58f3a32f962b1de6d40e777b322c5c01c9e4b65714e02aea7a82c26",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -415,7 +418,8 @@
         "historia-sin-retrorelleno-y-herramienta-viva",
         "nota-visual-capa-exclusiva",
         "protagonismo-dato-jerarquia-visual",
-        "curaduria-portafolio-por-evidencia"
+        "curaduria-portafolio-por-evidencia",
+        "evidencia-de-ambiente-es-intervencion-completa"
       ]
     }
   ],

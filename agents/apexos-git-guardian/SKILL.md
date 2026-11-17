@@ -3,7 +3,7 @@ name: apexos-git-guardian
 description: Experto en git y gobernanza del Equipo APEXOS: resguarda el código, controla ramas, promociones, alcance versionado y trazabilidad. Usar para commits, cambios de rama, promociones, manifiestos de alcance, conflictos, recuperaciones, trabajo con worktrees o cualquier operación git sensible.
 when_to_use: Commits, ramas, promociones, alcance de cambios, recuperaciones, worktrees, cualquier operación git.
 version: 2.18.0
-updated_at: 2026-11-16
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -90,7 +90,7 @@ Si la intervención toca agentes o gobernanza, leer además `.qoder/skills/equip
     - **El gate de alcance se recalcula por destino.** El manifiesto de `main` fija `base_commits.main` y una lista exacta de 45 rutas; el de `develop` conserva su baseline. La compuerta `qa:promotion:scope` falla si la lista se copia de otra rama.
     Prueba de cierre: `qa:promotion:scope` verde con 45 rutas en `main` y 212/212 en `desarrollo`. Por qué: promover con `--theirs` global o confiar en que «aplicó sin conflicto» son las dos formas habituales de perder una corrección ya presente o de publicar una referencia rota.
 
-34. **Un árbol local atrasado no se publica sobre el remoto para destrabar rendimiento.** Con trabajo sin commit y commits remotos pendientes se conserva todo, se compara por función y blob y se prepara solo el delta autorizado. PYG puede tener `getReport` operativo local y contable remoto: el hunk operativo se traslada a `getOperationalReport`, no por coincidencia de nombre. No se integran ramas ni se crean candidatos/worktrees sin autorización, y una certificación del árbol local no acredita el receptor. Por qué: sobrescribir una pantalla o servicio antiguo puede revertir contabilidad ya liberada.
+34. **Antes de transportar un paquete entre árboles, se compara el archivo en los dos destinos; un `package.json` de `develop` no se copia sobre `desarrollo`.** El 2026-11-17, para llevar el paquete de evidencia de QA del corte de marcación desde el worktree donde se corrió (base `75071f3f`, línea de `develop`) hasta el tip publicado de `desarrollo` (`4ad781de`): (a) **identidad blob por ruta contra los tres tips** antes de decidir qué viaja —`apps/api/src/modules/hr/service.js` = `4c79f877`, `mobile-identity.js` = `c590fceb` y `marcacion/page.tsx` = `f629b26f` en `origin/desarrollo`, `origin/develop` y la base del worktree, así que el producto no viajaba y solo viajaba el arnés—; (b) **el archivo compartible se diff-ea, no se copia**: `package.json` de `desarrollo` tiene 151 líneas y el de la base del worktree 131, con **0 líneas exclusivas** del lado del worktree, porque los scripts de `agents:*`, `control:*` y las certificaciones de Comercio residen solo en `desarrollo`; una copia completa habría borrado 20 scripts publicados; (c) **lo que solo cambia de fin de línea no viaja**: `apps/web/next-env.d.ts` y `apps/web/tsconfig.json` aparecían modificados únicamente por el aviso CRLF y se restauraron antes de armar el inventario; (d) el commit se arma con la lista exacta de las 7 rutas del paquete, nunca con `git add -A`, y el push sale `HEAD:desarrollo` desde un clon cuya rama se llama `desarrollo` y cuyo `origin` es el remoto real. Por qué: el paquete nació en un árbol de otra rama, y en ese cruce lo que se pierde no es el archivo nuevo sino veinte líneas que solo existían en el destino.
 
 ## Checklist de intervención
 

@@ -195,8 +195,18 @@ async function main() {
     const punchPayloads = Object.values(batch.punch_evidence || {});
     const activityPayloads = Object.values(batch.activity_evidence || {}).flat();
     check(result, "batch_counts_consistent", batch.counts && batch.counts.punches >= 4 && batch.counts.punch_evidence >= 2 && batch.counts.activities >= 1 && batch.counts.activity_evidence >= 1, batch.counts || {});
-    check(result, "batch_punch_evidence_renders", punchPayloads.filter((item) => item.base64_data === PHOTO).length >= 2, { with_base64: punchPayloads.filter((item) => item.base64_data === PHOTO).length, total: punchPayloads.length });
-    check(result, "batch_activity_evidence_renders", activityPayloads.some((item) => item.base64_data === PHOTO), { with_base64: activityPayloads.filter((item) => item.base64_data === PHOTO).length, total: activityPayloads.length });
+    // El lote es un indice: dice que la evidencia existe y deja los bytes en la base. El
+    // archivo se resuelve por el endpoint de una sola evidencia, que es el viaje que hace
+    // el navegador al abrir el evento. Medido el 2026-11-17, el lote sin proyectar era el
+    // 78,8 % del tiempo de base de produccion.
+    const indexed = [...punchPayloads, ...activityPayloads].filter((item) => item?.has_base64_data && item?.id != null);
+    check(result, "batch_indexes_evidence_without_bytes", indexed.length >= 3 && !JSON.stringify(batch).includes(";base64,"), {
+      indexed: indexed.length, punches: punchPayloads.length, activities: activityPayloads.length
+    });
+    const resolved = await Promise.all(indexed.slice(0, 4).map((item) => request(`/api/v1/hr/monitor-evidence/${item.source || "punch"}/${item.id}`, { token: adminToken })));
+    check(result, "batch_index_resolves_to_the_same_photos", resolved.filter((item) => item.base64_data === PHOTO).length >= 2, {
+      requested: resolved.length, with_base64: resolved.filter((item) => item.base64_data === PHOTO).length
+    });
 
     const denied = await request(`/api/v1/hr/monitor-evidence/route/${route.id}`, { token: markingToken, expected: 403 });
     check(result, "marking_only_role_denied_batch", denied.code === "PERMISO_DENEGADO", { code: denied.code });
