@@ -1,0 +1,134 @@
+{
+  "change_id": "hr-marking-gate-20261117",
+  "environment": "QA",
+  "company": "NYVORA",
+  "generated_at": "2026-11-17T19:29:51.817Z",
+  "api_url": "https://apexos-api-qa-production.up.railway.app",
+  "api_commit": "58c8554fd181",
+  "presupuesto_ms": 2000,
+  "date": "2026-11-17",
+  "checks": [
+    {
+      "name": "build_de_qa_responde",
+      "ok": true,
+      "detail": {
+        "status": "OK",
+        "commit": "58c8554fd181"
+      }
+    },
+    {
+      "name": "build_desplegado_es_el_candidato",
+      "ok": true,
+      "detail": {
+        "desplegado": "58c8554fd181",
+        "esperado": "58c8554fd181"
+      }
+    },
+    {
+      "name": "sin_horario_es_200_con_lista_vacia",
+      "ok": true,
+      "detail": {
+        "status": []
+      }
+    },
+    {
+      "name": "la_ficha_del_empleado_se_lee_ok",
+      "ok": true,
+      "detail": {
+        "claves": [
+          "id",
+          "tenant_id",
+          "user_id",
+          "party_id",
+          "code",
+          "user_type"
+        ]
+      }
+    },
+    {
+      "name": "con_horario_el_mismo_endpoint_devuelve_la_jornada",
+      "ok": true,
+      "detail": {
+        "rutas": 1,
+        "route_id": 398
+      }
+    },
+    {
+      "name": "mapa_no_lleva_ninguna_foto_en_el_cuerpo",
+      "ok": true,
+      "detail": {
+        "valor_base64_detectado": false,
+        "incluye_data_image": false
+      }
+    },
+    {
+      "name": "mapa_bajo_el_presupuesto_de_dos_segundos",
+      "ok": true,
+      "detail": {
+        "ms": 790,
+        "presupuesto_ms": 2000
+      }
+    },
+    {
+      "name": "mapa_pesa_menos_que_la_evidencia_del_dia",
+      "ok": true,
+      "detail": {
+        "mapa_bytes": 39556,
+        "evidencia_bytes": 829534
+      }
+    },
+    {
+      "name": "la_evidencia_llega_como_resumen_disponible",
+      "ok": true,
+      "detail": {
+        "summary": {
+          "id": 1722,
+          "source": "punch",
+          "available": true,
+          "has_base64_data": true
+        }
+      }
+    },
+    {
+      "name": "la_foto_aparece_solo_al_pedirla",
+      "ok": true,
+      "detail": {
+        "source": "punch",
+        "bytes": 410346
+      }
+    },
+    {
+      "name": "el_marcador_no_lee_el_monitor",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "el_mapa_exige_sesion",
+      "ok": true,
+      "detail": {
+        "code": "TOKEN_INVALIDO"
+      }
+    }
+  ],
+  "fixture": {
+    "free_user_id": 715,
+    "fixed_user_id": 716,
+    "monitor_user_id": 717,
+    "route_id": 398,
+    "ventana": "14:29-15:24"
+  },
+  "medicion": {
+    "operaciones_ms": 790,
+    "operaciones_bytes": 39556,
+    "fotos_del_fixture_bytes": 615256,
+    "bytes_evidencia_almacenados_hoy": {
+      "punch": 829420,
+      "activity": 114,
+      "total": 829534
+    },
+    "rutas_en_el_mapa": 8
+  },
+  "status": "passed"
+}
