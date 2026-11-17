@@ -1,0 +1,89 @@
+{
+  "change_id": "hr-marking-gate-evidence-20261117",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-gate-evidence-develop-20261117",
+  "commit": "f3856f99d01ea8cde7255377a5e70403405e9509",
+  "target_head": "58c8554fd181a804cfcc2380de8df991ed086816",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-qa-20261117.md",
+        "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json",
+        "../evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-qa-20261117.md",
+        "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json",
+        "../evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-qa-20261117.md",
+        "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json",
+        "../evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/regresion-evidencia-movil-candidato.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/typecheck-build-candidato.txt",
+        "../evidence/hr-marking-unassigned-gate-20261117/certification.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-gate-qa.js",
+    "evidence": [
+      "../certifications/hr-marking-gate-qa-20261117.md",
+      "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-evidence-demand-qa.js",
+    "evidence": [
+      "../certifications/hr-marking-gate-qa-20261117.md",
+      "../evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_at": "2026-11-17",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "procede con el commit y push de las correciones prueba y certifica cada una de ellas y alienea los 3 ambientes con esta intervencion main, develop y desarrollo en sus ramas en la nube, tienes mi autorizacion completa para esta intervencion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "Edwin (dueno de APEXOS)"
+  },
+  "validation_summary": {
+    "certified_application_commit": "f3856f99d01ea8cde7255377a5e70403405e9509",
+    "product_candidate_commit": "58c8554fd181a804cfcc2380de8df991ed086816",
+    "evidence_policy": "Las corridas se reproducen con los comandos anotados en docs/qa/certifications/hr-marking-gate-qa-20261117.md; la evidencia versionada es resumida y sanitizada, sin rutas locales absolutas, secretos ni datos de clientes.",
+    "scope_of_this_transport": "Documentacion y herramientas de certificacion. Ninguna ruta bajo apps/** cambia: el producto del corte ya esta en develop y blob-identico a desarrollo en las 30 rutas del corte.",
+    "qa_gate_run": "12/12 controles contra el build desplegado 58c8554fd181 en el ambiente QA de NYVORA (sin horario = 200 con lista vacia, la misma ruta con horario devuelve jornada, apertura del mapa 790 ms bajo el presupuesto de 2000 ms, 39.556 bytes del mapa contra 829.534 bytes de evidencia almacenada, cero base64 en el cuerpo)",
+    "qa_monitor_run": "10/10 controles de evidencia por demanda (rechazo de entrada sin selfie, resumenes sin payload, carga por id, rechazo entre tenants y control de evidencia ausente)",
+    "local_suite_of_the_corte": "api 1143 pruebas con 2 fallas preexistentes ajenas (Contabilidad y Transporte), web 813 con 1 falla preexistente (centro de comandos), gate de navegador 14/14 y regresion movil 4/4: ver docs/qa/certifications/hr-marking-gate-develop-20261117.md"
+  }
+}

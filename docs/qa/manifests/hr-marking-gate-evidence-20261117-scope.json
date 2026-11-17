@@ -1,0 +1,100 @@
+{
+  "change_id": "hr-marking-gate-evidence-20261117",
+  "scope_schema_version": 2,
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-gate-evidence-develop-20261117",
+  "base_commit": "58c8554fd181a804cfcc2380de8df991ed086816",
+  "base_commits": {
+    "develop": "58c8554fd181a804cfcc2380de8df991ed086816"
+  },
+  "target_head": "58c8554fd181a804cfcc2380de8df991ed086816",
+  "certified_commit": "f3856f99d01ea8cde7255377a5e70403405e9509",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "f3856f99d01ea8cde7255377a5e70403405e9509"
+  },
+  "change_intent": {
+    "summary": "El paquete de evidencia de la corrida en el ambiente QA del gate de marcacion y del monitor sin selfies viaja a develop: el certificador anclado al build desplegado (12 controles), el arnes del monitor reparado contra el contrato vigente (10 controles), su documentacion y la bitacora de la intervencion. Ningun archivo de producto cambia: el corte ya opera en develop desde 58c8554f.",
+    "modules": [
+      "talento-humano-marcacion",
+      "talento-humano-monitor",
+      "qa-evidencia"
+    ]
+  },
+  "allowed_paths": [
+    "docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md",
+    "docs/qa/certifications/hr-marking-gate-qa-20261117.md",
+    "docs/qa/evidence/hr-marking-gate-main-20261117/qa-gate-certification.json",
+    "docs/qa/evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json",
+    "docs/qa/manifests/hr-marking-gate-evidence-20261117-preqa.json",
+    "docs/qa/manifests/hr-marking-gate-evidence-20261117-scope.json",
+    "package.json",
+    "scripts/certifications/hr-marking-gate-qa.js",
+    "scripts/certifications/hr-monitor-evidence-demand-qa.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    { "status": "M", "file": "docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md" },
+    { "status": "A", "file": "docs/qa/certifications/hr-marking-gate-qa-20261117.md" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-gate-main-20261117/qa-gate-certification.json" },
+    { "status": "A", "file": "docs/qa/evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json" },
+    { "status": "A", "file": "docs/qa/manifests/hr-marking-gate-evidence-20261117-preqa.json" },
+    { "status": "A", "file": "docs/qa/manifests/hr-marking-gate-evidence-20261117-scope.json" },
+    { "status": "M", "file": "package.json" },
+    { "status": "A", "file": "scripts/certifications/hr-marking-gate-qa.js" },
+    { "status": "M", "file": "scripts/certifications/hr-monitor-evidence-demand-qa.js" }
+  ],
+  "certified_functional_paths": [
+    "docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md",
+    "docs/qa/certifications/hr-marking-gate-qa-20261117.md",
+    "docs/qa/evidence/hr-marking-gate-main-20261117/qa-gate-certification.json",
+    "docs/qa/evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json",
+    "package.json",
+    "scripts/certifications/hr-marking-gate-qa.js",
+    "scripts/certifications/hr-monitor-evidence-demand-qa.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "gate-de-marcacion-en-el-build-desplegado-de-qa",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-qa-20261117.md",
+        "../evidence/hr-marking-gate-main-20261117/qa-gate-certification.json"
+      ]
+    },
+    {
+      "name": "evidencia-del-monitor-carga-por-evento-en-qa",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-qa-20261117.md",
+        "../evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json"
+      ]
+    },
+    {
+      "name": "regresion-hr-del-corte-en-desarrollo-local",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-unassigned-gate-20261117/certification.json"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_at": "2026-11-17",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "procede con el commit y push de las correciones prueba y certifica cada una de ellas y alienea los 3 ambientes con esta intervencion main, develop y desarrollo en sus ramas en la nube, tienes mi autorizacion completa para esta intervencion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "notes": [
+    "Paquete de documentacion y herramientas de certificacion: ninguna ruta bajo apps/** entra en este alcance.",
+    "package.json solo agrega la linea certify:hr-marking-gate:qa; el diff medido es +1/-0 y conserva los 105 scripts previos de develop.",
+    "La corrida que se certifica aqui es de ambiente QA contra el build desplegado del corte (api_commit 58c8554fd181); la evidencia versionada esta sanitizada: sin rutas locales absolutas, sin secretos y con usuarios de fixture desactivados por el propio script."
+  ]
+}
