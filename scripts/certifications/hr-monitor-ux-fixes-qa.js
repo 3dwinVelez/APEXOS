@@ -258,13 +258,19 @@ async function main() {
       route_id: oldRoute.id, marks: oldMarks.length, date: OLD_DAY
     });
 
-    // Defecto 1: el lightbox ampliado requiere multiples evidencias base64 renderizables.
+    // Defecto 1: el lightbox ampliado requiere multiples evidencias renderizables. El lote
+    // entrega el indice y el archivo se resuelve por evidencia individual, que es el viaje
+    // que hace el navegador al abrir el evento.
     const batch = await request(`/api/v1/hr/monitor-evidence/route/${route.id}`, { token: adminToken });
     const punchPayloads = Object.values(batch.punch_evidence || {});
     const activityPayloads = Object.values(batch.activity_evidence || {}).flat();
-    const photos = punchPayloads.filter((item) => [PHOTO, PHOTO_2].includes(item.base64_data));
-    check(result, "lightbox_multiple_evidence_renders", photos.length >= 2, { with_base64: photos.length, total: punchPayloads.length });
-    check(result, "lightbox_activity_evidence_renders", activityPayloads.some((item) => item.base64_data === PHOTO), { with_base64: activityPayloads.filter((item) => item.base64_data === PHOTO).length, total: activityPayloads.length });
+    const indexed = [...punchPayloads, ...activityPayloads].filter((item) => item?.has_base64_data && item?.id != null);
+    const resolved = await Promise.all(indexed.map((item) => request(`/api/v1/hr/monitor-evidence/${item.source || "punch"}/${item.id}`, { token: adminToken })));
+    const photos = resolved.filter((item) => [PHOTO, PHOTO_2].includes(item.base64_data));
+    check(result, "lightbox_multiple_evidence_renders", photos.length >= 2, { with_base64: photos.length, total: resolved.length });
+    check(result, "lightbox_activity_evidence_renders", indexed.some((item) => item.source === "activity") && activityPayloads.every((item) => !item.base64_data), {
+      activity_indexed: indexed.filter((item) => item.source === "activity").length, total_activities: activityPayloads.length
+    });
     check(result, "evidence_summaries_available", Boolean(entradaPoint?.extra_evidence?.available && salidaPoint?.extra_evidence?.available && activityPoint?.evidence?.[0]?.available), {
       entrada: entradaPoint?.extra_evidence || null,
       salida: salidaPoint?.extra_evidence || null,

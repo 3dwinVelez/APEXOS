@@ -34,7 +34,7 @@ import {
 } from "@/lib/hrOfflineEvidence";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
 import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarX, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -448,6 +448,12 @@ export default function MobilePunchPage() {
   const [gpsCause, setGpsCause] = useState<GpsFailureCause | null>(null);
   const [scheduleSource, setScheduleSource] = useState<ScheduleSource>("live");
   const [scheduleNotice, setScheduleNotice] = useState("");
+  // Estado de pantalla, no de error: "no_ficha" = el usuario no tiene empleado vinculado,
+  // "no_horario" = tiene ficha pero hoy no le corresponde ningun horario. Los dos se resuelven
+  // antes de montar la ventana de marcado para que el operario no vea cuatro tarjetas de
+  // "Fallo tecnico detectado" por unos 404 que son informacion, ni tenga que adivinar porque
+  // los botones no hacen nada.
+  const [blocked, setBlocked] = useState<null | "no_ficha" | "no_horario">(null);
 
   function notify(text: string, tone: MessageTone = "success") {
     setMessage(text);
@@ -455,8 +461,31 @@ export default function MobilePunchPage() {
   }
 
   const load = useCallback(async () => {
-    const [meResult, routesResult, attendanceResult, typesResult, sessionResult] = await Promise.all([
-      settle<Employee | null>(api<Employee>("/api/v1/hr/self"), null),
+    // La ficha abre o cierra la pantalla: si el usuario no tiene un empleado vinculado, el API
+    // responde 404 en las cinco lecturas y cada 404 levantaba su tarjeta de "Fallo tecnico
+    // detectado". Se lee primero, con la alerta global silenciada y el estado HTTP a la vista,
+    // para no lanzar las consultas que dependen de ella. Un fallo de red (status 0) no es una
+    // ficha ausente: ahi manda el respaldo local y el aviso de horario degradado de siempre.
+    const meResult = await api<Employee>("/api/v1/hr/self", { silentFailureAlert: true })
+      .then((value) => ({ ok: true as const, status: 200, value }))
+      .catch((error) => ({
+        ok: false as const,
+        status: Number((error as { status?: number })?.status || 0),
+        value: null as Employee | null
+      }));
+    const cached = readHrSnapshot();
+    if (!meResult.ok && meResult.status === 404 && !(cached?.self && cached.taken_day === todayBogota())) {
+      setEmployee(null);
+      setRoutes([]);
+      setAttendance([]);
+      setActivityTypes([]);
+      setSession(null);
+      setScheduleSource("live");
+      setScheduleNotice("");
+      setBlocked("no_ficha");
+      return;
+    }
+    const [routesResult, attendanceResult, typesResult, sessionResult] = await Promise.all([
       settle<TimeRoute[]>(api<TimeRoute[]>("/api/v1/hr/self/routes"), []),
       settle<Attendance[]>(api<Attendance[]>("/api/v1/hr/self/attendance"), []),
       settle<ActivityType[]>(api<ActivityType[]>("/api/v1/hr/self/activity-types"), []),
@@ -465,8 +494,8 @@ export default function MobilePunchPage() {
     const today = todayBogota();
     const dayRoutes = routesResult.value.filter((item) => !item.date || String(item.date).slice(0, 10) === today);
     const snapshot = buildHrOfflineSnapshot({
-      previous: readHrSnapshot(),
-      self: meResult,
+      previous: cached,
+      self: requestOutcome(meResult.ok, meResult.value),
       routes: { ok: routesResult.ok, value: dayRoutes },
       activityTypes: typesResult,
       takenAt: new Date().toISOString(),
@@ -495,6 +524,10 @@ export default function MobilePunchPage() {
     setActivityTypes(typesData);
     setSession(sessionResult.value);
     if (typesData[0]) setActivityTypeId((current) => current || String(typesData[0].id));
+    // Con ficha y conexion, un dia sin horarios es un estado que la pantalla debe decir en voz
+    // alta, no un listado vacio con botones que no llevan a ningun lado. En modo respaldo
+    // (snapshot) no se bloquea: el operario sigue marcando con lo que tiene en el dispositivo.
+    setBlocked(resolved.source === "live" && !resolved.routes.length ? "no_horario" : null);
     const active = await api<{ checklist: PreopChecklist | null; template: PreopTemplate }>("/api/v1/hr/self/preop/active").catch(() => null);
     if (active?.checklist) {
       setPreop(active.checklist);
@@ -1070,16 +1103,34 @@ export default function MobilePunchPage() {
         </div>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1 shadow-sm">
+      {blocked ? null : <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1 shadow-sm">
         <button className={`h-12 rounded-md text-base font-semibold ${view === "marcar" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("marcar")} type="button">
           Marcar
         </button>
         <button className={`h-12 rounded-md text-base font-semibold ${view === "historial" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("historial")} type="button">
           Historial
         </button>
-      </section>
+      </section>}
 
-      {view === "marcar" ? (
+      {blocked ? (
+        <section className="rounded-md border border-line bg-white p-8 text-center shadow-sm" role="status">
+          <CalendarX className="mx-auto text-neutral-400" size={48} aria-hidden="true" />
+          <h2 className="mt-5 text-2xl font-semibold">Sin horario asignado</h2>
+          <p className="mt-3 text-sm font-medium text-neutral-700">
+            {blocked === "no_ficha"
+              ? "Tu usuario no tiene una ficha laboral asociada, así que no hay jornada que registrar desde aquí. Pide a Talento Humano que vincule tu ficha a este usuario."
+              : "Hoy no tienes ningún horario asignado. La ventana de marcación se abre el día en que Talento Humano publique tu horario."}
+          </p>
+          <p className="mt-3 text-xs font-medium text-neutral-500">
+            No es una falla de la aplicación: tus marcaciones anteriores y las pendientes de sincronizar siguen donde estaban.
+          </p>
+          <button className="mt-5 inline-flex h-12 items-center gap-2 rounded-md border border-line px-4 text-sm font-semibold text-neutral-700 hover:bg-neutral-50" onClick={() => load()} type="button">
+            <RefreshCw size={16} /> Volver a revisar
+          </button>
+        </section>
+      ) : null}
+
+      {!blocked && view === "marcar" ? (
         <>
           <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
             <div className="flex items-start justify-between gap-3">
@@ -1223,7 +1274,7 @@ export default function MobilePunchPage() {
         </>
       ) : null}
 
-      {view === "historial" ? <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
+      {!blocked && view === "historial" ? <section className="rounded-md border border-line bg-white p-3 shadow-sm sm:p-4">
         <h2 className="mb-3 text-base font-semibold">Historial de hoy</h2>
         <div className="space-y-2">
           {currentAttendance.punches.map((punch) => (
