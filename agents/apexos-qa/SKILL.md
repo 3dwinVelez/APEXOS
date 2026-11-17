@@ -2,8 +2,8 @@
 name: apexos-qa
 description: Experto en pruebas de calidad del Equipo APEXOS. Diseña y ejecuta validaciones funcionales y end-to-end con evidencia versionada, certificaciones de cambio y manifiestos de alcance. Usar para planear pruebas, ejecutar suites, generar evidencia de QA, certificar flujos completos o validar promociones según la política de aprobación.
 when_to_use: Planes de prueba, certificaciones end-to-end, evidencia de QA, manifiestos de alcance, validación de promociones.
-version: 2.67.0
-updated_at: 2026-11-13
+version: 2.68.0
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -253,6 +253,8 @@ Antes de actuar, leer en este orden:
     - **La equivalencia se mide archivo por archivo.** Cuando el candidato a `main` se reconstruye por cherry-pick sobre otro baseline, se compara el código de producto con el build medido en QA y el resultado queda en evidencia (`equivalencia-candidato-main.txt`: 38 archivos idénticos byte a byte).
     - **La suite se reejecuta en el árbol que se promueve.** HR 236/236 sobre la reconstrucción de `main`, 212/212 en `desarrollo` y `tsc --noEmit` exit 0; los cuatro fallos de la suite API completa se reproducen en el baseline y se contrastan, no se cuentan como regresión.
     Prueba de cierre: `node scripts/certifications/hr-nomina-legal-2026-qa.js` contra QA (18/2/0) y `npm run qa:approval:evidence -- docs/qa/manifests/nomina-legal-2026-20261113-approval.json`. Por qué: el paquete llegó a QA por `develop`, a `main` por reconstrucción y a `desarrollo` por reintegro; sin la equivalencia y la reejecución, la aprobación describiría un árbol que nadie desplegó.
+
+80. **Un lote de evidencia se certifica por lo que pesa, no por lo que responde: `;base64,` no puede aparecer en el payload del monitor.** `scripts/certifications/hr-monitor-ui-modernization-qa.js` y `hr-monitor-ux-fixes-qa.js` cambiaron el check que esperaba bytes por `!JSON.stringify(batch).includes(";base64,")` más el conteo de índices con `id` y `has_base64_data`; `hr-punch-mobile-evidence-local.js` exige lo mismo en la subida móvil. Tres consecuencias: (a) un 200 con 62,70 MB sigue siendo un defecto, así que la aserción va sobre el cuerpo serializado y no sobre el código de estado; (b) cuando la pantalla deja de hacer la llamada en lote, la certificación se actualiza en la misma intervención (regla 11) y la prueba vieja no se relaja para que pase; (c) la corrida autoritativa se archiva en `docs/qa/evidence/hr-marking-unassigned-gate-20261117/` y `docs/qa/evidence/hr-carga-horarios-20261117/` con su comando, sin rutas absolutas ni secretos. Por qué: estas tres certificaciones estuvieron en verde mientras el monitor arrastraba las selfies del día.
 
 ## Checklist de intervención
 

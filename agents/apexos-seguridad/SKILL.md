@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.26.0
-updated_at: 2026-11-13
+version: 2.27.0
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -148,6 +148,8 @@ Antes de actuar, leer en este orden:
     - **Sin credenciales en evidencia.** La evidencia guarda códigos, conteos y nombres de verificación; nunca correo, contraseña, token ni service role. La cuenta real del cliente no se usa para automatizar y su credencial no se transcribe.
     - **La escritura se limita a la identidad efímera.** El certificador es de solo lectura sobre nómina: no liquida, no cierra y no crea documentos; lo único que escribe es el usuario de la corrida, que se desactiva al terminar.
     Prueba de cierre: corrida QA 2026-11-13 con `certification_user_deactivated: true` y `qa-certification.json` sin secretos. Por qué: una certificación que deja una cuenta activa o una contraseña en el repositorio se convierte en una puerta permanente abierta por una prueba.
+
+41. **Una lectura cruda no hereda el filtro del ORM: declara su `tenant_id` en el `WHERE` y saca los datos personales del payload de lista.** `apps/api/src/modules/hr/monitorEvidenceRows.js` reemplazó selecciones de Prisma por `$queryRaw`; en estas tablas no hay RLS (medido el 2026-10-26: una lectura síncrona devolvió 168 filas de 29 tenants y el middleware de aplicación es el único filtro), de modo que una sentencia que omita el predicate ensancha el acceso sin que ningún test funcional lo note. El corte fija tres cosas: las sentencias interpolan parámetros de Prisma (`${}`, nunca concatenación) y filtran por tenant explícito; la proyección `has_extra_evidence` anuncia presencia sin mover el binario; y `extra_evidence` —selfies, datos personales— sale de las listas y solo se sirve en la petición del evento que el usuario abre, con su puerta de permiso. Prueba: `apps/api/test/hr-monitor-evidence-columns.test.js` y `hr-operations-map-contract.test.js`. Por qué: cambiar ORM por SQL crudo para ganar latencia es la vía más rápida a una fuga si el aislamiento no se mueve con la consulta.
 
 ## Checklist de intervención
 

@@ -2,8 +2,8 @@
 name: apexos-backend
 description: Experto de backend del Equipo APEXOS: Fastify, Node.js 22, BullMQ, Prisma, servicios, autenticación JWT, RBAC/ABAC y aislamiento multi-tenant. Usar para endpoints nuevos o modificados, lógica de módulos (Servicios, Talento Humano, etc.), correcciones administrativas, hooks de auditoría, colas de trabajo o sincronización con Supabase.
 when_to_use: Cambios en apps/api, endpoints, lógica de servicios, auditoría, colas BullMQ, sincronización Supabase, RBAC, jobs y contextos de tenant.
-version: 2.14.0
-updated_at: 2026-11-13
+version: 2.15.0
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -95,6 +95,8 @@ Si el cambio toca HR, leer además `docs/audits/2026-10-30-marcaciones-nomina/07
     - **Los topes de trabajo suplementario se trazan antes de decidir sanción.** `MAX_HE_DIARIO`/`MAX_HE_SEMANAL` se leen por tenant y `supplementaryWorkLimitTrace` publica días y semanas excedidos en modo alerta; el bloqueo exige decisión jurídica documentada y no se implementa por iniciativa propia.
     Prueba de cierre: `node --test apps/api/test/hr-*.test.js` (210/210 el 2026-11-13) más `hr-nomina-legal-2026.test.js` (9/9). Por qué: el veredicto de auditoría seguía NO APTO porque producción ejecutaba el motor anterior; corregir el cálculo sin retirar el legacy habría dejado dos respuestas distintas para la misma nómina.
 30. **La proyección de jornadas es una sola y viaja con su módulo.** `/hr/workdays` y la liquidación leen `loadPayrollWorkdays` (`apps/api/src/modules/hr/payrollWorkdays.js`), que proyecta las marcaciones en memoria y no persiste `ProcessedWorkday`; la vista previa y el reporte comparten esa fuente. Cuando la corrección de lectura se aplica a una rama distinta de aquella donde nació el módulo auxiliar, el archivo auxiliar viaja en el mismo cambio: el cherry-pick de la proyección llegó a `desarrollo` sin `payrollWorkdays.js` y `/hr/workdays` fallaba con `ReferenceError` en las dos pruebas de `hr-workdays-projection.test.js`. Prueba de cierre: `node --test apps/api/test/hr-*.test.js` (212/212 en `desarrollo` y 236/236 en `main` el 2026-11-13). Por qué: un archivo nuevo que aplica sin conflicto no prueba que la rama receptora tenga sus dependencias.
+
+31. **Una lectura de monitor no selecciona el jsonb de evidencia para saber si existe: proyecta un booleano y deja el detalle para la petición del evento visible.** `apps/api/src/modules/hr/monitorEvidenceRows.js` es la única fuente de las lecturas crudas del monitor y de la marcación propia. La presencia se anuncia con `coalesce(pg_column_size("TimePunch"."extra_evidence") > 16, false) AS has_extra_evidence`, que no detoastea, y `SELF_PUNCH_SELECT` saca `extra_evidence` y `metadata` del arreglo que recibe el cliente; el binario viaja solo cuando el usuario abre la evidencia. Medido el 2026-11-17 con `scripts/performance/selfie-payload-probe.js` sobre un seed fiel de 2.200 marcaciones (234 MB, `extra_evidence` media 106.166 B y máxima 2.835.161 B): el mapa del día pasó de 62,70 MB a 0,44 MB (141,4×) y la línea de tiempo propia de 8,24 MB a 0,03 MB (262,2×; 157.072 B → 599 B por marcación). En producción la misma lectura figuraba en `pg_stat_statements` con 4.271 llamadas, media 3.917,91 ms, máximo 61.365,4 ms y `blocks_read_from_disk = 0`: costaba transferir, no buscar. Cierre con `node --test apps/api/test/hr-monitor-evidence-columns.test.js`, que fija la proyección; ningún `select` de Prisma del monitor vuelve a traer `extra_evidence`. Por qué: una jornada real de cuatro marcaciones pesaba 614 KB por apertura y el dueño vio pantallas de 12 a 20 s.
 
 ## Checklist de intervención
 

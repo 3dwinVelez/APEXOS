@@ -2,8 +2,8 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.55.0
-updated_at: 2026-11-13
+version: 2.56.0
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -175,6 +175,8 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **La deuda ajena no se arrastra.** Si el ledger del ambiente tiene migraciones pendientes de otros módulos y filas que solo viven en la base, la migración propia se aplica por sentencias y no con `migrate deploy`; el brief nombra las pendientes que quedaron intactas.
     Por qué: «aplicada en QA» sin checksum, conteos ni segunda corrida es indistinguible de «creí que se aplicó», y un `migrate deploy` de paso habría movido deuda de otros módulos dentro de un encargo de nómina.
 68. **Un paquete certificado se escribe con un inventario por destino, no con una lista única.** El cierre de la Fase 1 llegó a tres árboles con baselines distintos: `develop` (`beff5132`, 35 rutas), `main` (`c8e5e67c`, 45 rutas reconstruidas por cherry-pick) y `desarrollo` (reintegro con dos commits que no aportaron cambios netos y un módulo que faltaba). El brief declara, para cada destino, el baseline exacto, el diff medido y la razón de cada diferencia —por ejemplo, `payrollWorkdays.js` ya existía en `main` y faltaba en `desarrollo`—. Regla: el inventario del brief se contrasta contra `git diff --name-status <baseline>..<candidato>` de ese destino; una tabla copiada de otra rama es un inventario falso. Por qué: el mismo paquete no produce el mismo diff sobre baselines distintos, y la diferencia que no se escribe se descubre con una suite roja o, peor, en producción.
+
+69. **El brief de un corte de latencia publica el par antes/después con su proyección por fila, la lista de lo que NO afirma y el árbol donde se certificó.** Fijado el 2026-11-17 en `docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md`: la tabla antes/después lleva MB y ms de cada lectura y, además del total, `157.072 B → 599 B por marcación` (614 KB a 2 KB en una jornada de cuatro), porque el seed concentra 2.200 filas en un día y trae 55 marcaciones donde la realidad trae 4; publicar solo el total convierte un benchmark en promesa. El brief separa el piso del techo (1.900-3.254 ms en dos corridas del mismo seed), cita la cifra de producción como la vigente y declara pendiente la pared del ambiente desplegado. Cuando el conteo del árbol de trabajo no coincide con el del candidato aislado (257/257 y 830/831 contra 249/249 y 821/820/1), el brief se reescribe con los del candidato y dice por qué cambiaron. Por qué: la evidencia archivada tiene que corresponder al código publicado, y un número de rendimiento sin su cota se lee como cumplimiento.
 
 ## Checklist de intervención
 

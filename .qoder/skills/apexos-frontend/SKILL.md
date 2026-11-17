@@ -2,8 +2,8 @@
 name: apexos-frontend
 description: Experto de frontend del Equipo APEXOS: Next.js App Router, Tailwind, homologación visual y rendimiento percibido. Usar para pantallas nuevas o modificadas, formularios, listados, componentes compartidos, tema claro/oscuro, flujos móviles táctiles o validación de estilos/assetos del frontend.
 when_to_use: Cambios de UI en apps/web, pantallas nuevas, componentes, formularios, tema claro/oscuro, validación de estilos, homologación de pantallas.
-version: 2.30.0
-updated_at: 2026-11-13
+version: 2.31.0
+updated_at: 2026-11-17
 contract: 2
 ---
 
@@ -124,6 +124,8 @@ Si el catálogo no cubre el patrón, se detiene y propone la ampliación del cat
     - **La consulta nueva respeta el rango.** Sin `fecha_inicio`/`fecha_fin` el backend limita la lectura; el reporte siempre envía el rango aplicado.
     Por qué: el reporte sumaba `TimePunch.extra_minutes` mientras la nómina liquidaba `ProcessedWorkday`; dos fuentes distintas para el mismo hecho hacían imposible saber si la diferencia era del empleado o del sistema.
 44. **La pantalla de un paquete reconstruido se verifica por identidad del archivo y por typecheck del árbol destino.** El reporte de extras viajó en el mismo paquete de la Fase 1 a `develop`, a `main` y a `desarrollo`; el archivo `apps/web/app/dashboard/talento-humano/reportes/page.tsx` quedó idéntico byte a byte en los tres árboles (evidencia `equivalencia-candidato-main.txt`). Cuando la promoción se reconstruye sobre otro baseline no basta certificar la pantalla en el árbol de origen: se compara el archivo con el certificado y se ejecuta `tsc -p tsconfig.typecheck.json --noEmit` en el árbol que se va a desplegar (exit 0 en `main` el 2026-11-13). Por qué: una pantalla que compila en la rama de origen puede romper el build de `main` si el destino trae otros tipos o componentes, y el error solo aparecería en el despliegue.
+
+45. **El estado que decide la pantalla se resuelve antes de pintar y se retira completo: sin ficha o sin horario el usuario ve un aviso grande, no una ventana llena de errores.** `apps/web/app/dashboard/talento-humano/marcacion/page.tsx` fija primero `blocked: null | "no_ficha" | "no_horario"` con la misma resolución que trae las rutas (`resolved.source === "live" && !resolved.routes.length`) y con ese estado monta o desmonta las cuatro secciones; el 404 de `/hr/self/preop/active` deja de mostrarse como fallo técnico porque significa que no hay plantilla activa. Dos controles que este corte pagó con su propio defecto: (a) todo estado nuevo tiene que leerse en algún render —`bootstrapDone` se añadió sin ningún lector mientras `setBlocked` ya decidía, así que sobraba—; (b) al retirarlo se cortan también los setters y el grep se hace por el identificador completo (`setBootstrapDone`), porque buscar en minúsculas deja los llamados vivos y el typecheck revienta en `Cannot find name`. Cierre: `node --experimental-strip-types --test apps/web/test/hr-marking-unassigned-gate.test.mjs` y `node scripts/certifications/hr-marking-unassigned-gate-local.js` (14/14 el 2026-11-17, ambos temas). Por qué: para el cliente un panel con advertencias que individualmente tienen sentido es la herramienta fallando.
 
 ## Checklist de intervención
 
