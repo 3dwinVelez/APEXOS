@@ -137,20 +137,33 @@ Qué NO afirma esta tabla: el tiempo absoluto local es piso, no techo —corroe 
 ## 11. Autorizaciones requeridas
 
 - [x] Ninguna para implementar y certificar en local.
-- [ ] Promoción `desarrollo -> develop` (exige `qa:promotion:scope` + `qa:preqa:evidence` con manifiesto v2).
-- [ ] Despliegue en Railway QA y corrida `certify:hr-monitor-evidence:qa` contra el ambiente.
+- [x] Promoción `desarrollo -> develop`: autorizada por el dueño el 2026-11-17, ejecutada por rama auxiliar `codex/qa-hr-marking-gate-20261117` con manifiesto v2 (`75071f3f`) y puerta `qa:preqa:evidence`; el merge `58c8554f` es la punta de `develop`.
+- [x] Despliegue en Railway QA y corrida contra el ambiente: el build desplegado es `58c8554fd181` y sobre él corrieron `certify:hr-monitor-evidence:qa` (10 controles) y `certify:hr-marking-gate:qa` (12 controles), ambos `passed`. Evidencia y procedimiento en `docs/qa/certifications/hr-marking-gate-qa-20261117.md`.
+- [ ] Promoción `develop -> main`, con manifiestos `docs/qa/manifests/hr-marking-gate-20261117-main-scope.json` y `docs/qa/manifests/hr-marking-gate-20261117-main-approval.json` sobre un worktree desmontable de `origin/main`. La autorización del dueño del 2026-11-17 cubre la promoción; el despliegue en producción después del push es un acto aparte.
 - [ ] Ejecución de `scripts/performance/timepunch-evidence-size-probe.js` contra producción (necesita el CA fijado) y, si se decide, la aplicación de las migraciones pendientes en la nube.
 
 ## 12. Documentación, agentes y publicación (obligatoria)
 
 - **Preflight de agentes**: `npm run agents:preflight -- --paths "apps/api/src/modules/hr/...,apps/web/app/dashboard/talento-humano/...,apps/web/lib/hrScheduleMonitor.ts,scripts/performance/selfie-payload-probe.js,scripts/certifications/hr-marking-unassigned-gate-local.js"` → **Veredicto: OK**, 8 rutas ruteadas.
 - **Agentes consultados**: `equipo-apexos`, `apexos-backend`, `apexos-seguridad`, `apexos-frontend`, `apexos-performance`, `apexos-qa`.
-- **Documentación a actualizar**: este brief, `docs/qa/evidence/hr-carga-horarios-20261117/`, `docs/qa/evidence/hr-marking-unassigned-gate-20261117/`.
+- **Documentación a actualizar**: este brief, `docs/qa/evidence/hr-carga-horarios-20261117/`, `docs/qa/evidence/hr-marking-unassigned-gate-20261117/`, `docs/qa/evidence/hr-marking-gate-main-20261117/` y `docs/qa/certifications/hr-marking-gate-qa-20261117.md`.
 - **Agentes a actualizar**: `apexos-backend` 2.15.1 → (control: la lectura diaria del monitor anuncia la evidencia sin abrir el `jsonb` tostado y la cota del aviso queda fijada por prueba), `apexos-frontend` 2.31.5 → (control: un 404 de negocio no se presenta como fallo técnico; el estado "sin horario" desmonta la superficie, no la oculta con CSS), `apexos-performance` 2.17.1 → (control: la medición `pg_stat_statements` y el instrumento sembrado con el reparto de producción), `apexos-qa` 2.72.0 → (control: la certificación de navegador con lecturas sustituidas se declara como prueba de pantalla, no como flujo autenticado), `apexos-seguridad` 2.28.0 → (control: `$queryRaw` conserva el filtro explícito de tenant cuando el listado deja de traer el archivo), `equipo-apexos` 2.42.0 → (control: el cierre en un índice de trabajo con alcance ajeno en curso).
 - **Registro**: `agents/registry.json` (versión, `updated_at`, `sha256`) y sección nueva en `agents/CHANGELOG.md`.
-- **Bloqueo de cierre conocido**: el índice de trabajo (`git status`) contiene una intervención ajena en curso (transporte/PYG, `screen-loading-*`, `apps/web/app/layout.tsx`) con `.qoder/skills/**` y `agents/**` ya marcados. Tocar los agentes o commitear ahora mezclaría el alcance del compañero. La publicación espera a que ese commit aterrice; mientras tanto no se ejecuta `agents:coverage` ni `git push origin desarrollo`.
+- **Cierre del bloqueo conocido**: el alcance ajeno que estaba en el índice de trabajo aterrizó en `origin/desarrollo`, y el corte con su documentación y sus agentes ya está publicado (`c2242320`, `4ad781de`). La corrida en QA quedó trabada por otra causa, y esa causa era del arnés: `certify:hr-monitor-evidence:qa` pedía una entrada sin selfie y una jornada 00:01-00:02, dos cosas que el contrato promovido rechaza. Se reparó el arnés sin borrar ningún control y se agregó un control negativo (`entrada_sin_selfie_rechazada`) para que la exigencia de foto no vuelva a caerse en silencio. Detalle en `docs/qa/certifications/hr-marking-gate-qa-20261117.md`.
 - **Secuencia de cierre**: `npm run agents:sync` → `npm run agents:check` → `npm run agents:preflight` → `npm run agents:coverage` → pruebas de la sección 5 → commit → push.
 - [x] Preflight sin `INTEGRAR_REMOTO` ni `CONFLICTO`
-- [ ] Cobertura de contexto en verde (`agents:coverage`) — bloqueada por el alcance ajeno en el índice
+- [x] Cobertura de contexto en verde (`agents:coverage`)
 - [x] Sin secretos, credenciales ni artefactos locales en el diff
-- [ ] Documentación y agentes actualizados en el mismo commit
+- [x] Documentación y agentes actualizados en el mismo commit
+
+## 13. Paquete de evidencia en QA (cierre de la intervención)
+
+| Archivo | Acción |
+|---|---|
+| `scripts/certifications/hr-marking-gate-qa.js` | A — certificación nueva del gate contra el build desplegado en QA (12 controles, presupuesto de latencia y ausencia de fotos en el mapa) |
+| `scripts/certifications/hr-monitor-evidence-demand-qa.js` | M — arnés reparado contra el contrato de selfie y de sustento de la llegada tarde, con control negativo |
+| `package.json` | M — script `certify:hr-marking-gate:qa` |
+| `docs/qa/evidence/hr-marking-gate-main-20261117/qa-gate-certification.json` | A — corrida del gate, `passed`, `api_commit 58c8554fd181` |
+| `docs/qa/evidence/hr-marking-gate-main-20261117/qa-monitor-evidence.json` | A — regresión del monitor, `passed`, mismo commit |
+| `docs/qa/certifications/hr-marking-gate-qa-20261117.md` | A — qué se probó, cómo se reproduce, qué repara del arnés y qué no cubre |
+| `docs/briefs/2026-11-17-marcacion-sin-horario-y-mapa-sin-selfies.md` | M — autorizaciones y cierre del bloqueo de publicación |
