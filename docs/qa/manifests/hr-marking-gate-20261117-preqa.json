@@ -1,0 +1,99 @@
+{
+  "change_id": "hr-marking-gate-20261117",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-marking-gate-20261117",
+  "commit": "8da50ea6d041d19d3f45593d95acc8ee4bdaf238",
+  "target_head": "36111a6ae1a18c59de0fc72c135bc890c011c1d7",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-marking-gate-develop-20261117.md",
+        "../evidence/hr-marking-gate-develop-20261117/api-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/web-suite-candidato.txt",
+        "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-marking-unassigned-gate-local.js",
+    "evidence": [
+      "../certifications/hr-marking-gate-develop-20261117.md",
+      "../evidence/hr-marking-unassigned-gate-20261117/certification.json",
+      "../evidence/hr-marking-gate-develop-20261117/browser-cert-candidato.txt"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "evidence": [
+      "../certifications/hr-marking-gate-develop-20261117.md",
+      "../evidence/hr-punch-mobile-evidence-20261117-develop/certification.json",
+      "../evidence/hr-marking-gate-develop-20261117/regresion-evidencia-movil-candidato.txt"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "approved_at": "2026-11-17",
+    "scope": "promotion_to_develop_for_qa",
+    "instruction": "procede con el commit y push de las correciones prueba y certifica cada una de ellas y alienea los 3 ambientes con esta intervencion main, develop y desarrollo en sus ramas en la nube, tienes mi autorizacion completa para esta intervencion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "approved_by": "Edwin (dueno de APEXOS)"
+  },
+  "validation_summary": {
+    "certified_application_commit": "8da50ea6d041d19d3f45593d95acc8ee4bdaf238",
+    "completed_at_utc": "2026-11-17T18:58:08.944Z",
+    "evidence_policy": "Las corridas se reproducen con el comando anotado en docs/qa/certifications/hr-marking-gate-develop-20261117.md; la evidencia versionada es resumida y sanitizada, sin rutas locales absolutas, secretos ni datos de clientes.",
+    "api_focused_tests_passed": 66,
+    "web_focused_tests_passed": 60,
+    "api_suite": "1143 pruebas, 1138 pasan, 2 fallan (Contabilidad y Transporte, preexistentes en develop), 3 saltadas",
+    "web_suite": "813 pruebas, 812 pasan, 1 falla (centro de comandos, preexistente en develop)",
+    "browser_gate": "14/14 con Next dev y Chromium reales",
+    "business_regression": "hr-punch-mobile-evidence-local.js status=passed, 4/4 checks",
+    "payload_probe": "125,7x menos bytes y 734,3 ms ahorrados por apertura de horario",
+    "typescript": "passed: 0 errores",
+    "production_build": "passed con npx next build --webpack (Turbopack aborta por el node_modules enlazado del ambiente aislado)"
+  }
+}
