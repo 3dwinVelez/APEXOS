@@ -7,6 +7,7 @@ const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCac
 const { MAX_EVIDENCE_BYTES, assertSafeFile, normalizeFileName, secureStoragePath } = require("../../security/policy");
 const { buildRouteEventSummaries } = require("./routeEventSummaries");
 const monitorEvidenceRows = require("./monitorEvidenceRows");
+const evidenceStorage = require("./evidenceStorage");
 const { SELF_PUNCH_SELECT } = monitorEvidenceRows;
 const { normalizePunchType, processWorkday } = require("./timeLogic");
 const hrPolicy = require("./policy");
@@ -131,9 +132,11 @@ function jsonSafeBigInt(value) {
 function normalizeExtraEvidence(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const base64 = String(value.base64 || value.base64_data || "").trim();
-  if (!base64) return null;
+  const storagePath = String(value.storage_path || "").trim();
+  if (!base64 && !storagePath) return null;
   return {
     base64,
+    storage_path: storagePath,
     name: value.name || value.file_name || "",
     type: value.type || value.mime_type || "image/jpeg",
     size: value.size || value.file_size || null
@@ -192,9 +195,37 @@ function monitorPunchEvidence(punch, summary = false) {
 // es el unico camino que todavia lleva el archivo. El aviso sale de que la columna no este
 // vacia (ver monitorEvidenceRows.EVIDENCE_PRESENT_MIN_BYTES), no de abrir su contenido.
 function monitorPunchEvidenceFlag(punch) {
-  return punch?.has_extra_evidence
-    ? { id: punch.id, source: "punch", available: true, has_base64_data: true }
-    : {};
+  if (punch?.has_extra_evidence) {
+    return { id: punch.id, source: "punch", available: true, has_base64_data: true };
+  }
+  // Fila rescatada y purgada hasta quedar vacia: el tamano de la columna ya no la delata,
+  // pero la bandera de rescate promete el objeto en Storage y la pantalla puede pedirlo por id.
+  if (punch?.metadata && evidenceStorage.hasRescuedRef(punch.metadata, "extra")) {
+    return { id: punch.id, source: "punch", available: true, has_base64_data: true };
+  }
+  return {};
+}
+
+// En listados que aun devuelven la fila cruda (reportes via /hr/attendance), la bandera de
+// rescate queda enterrada en `metadata` y la pantalla no tiene de donde inferir que el
+// archivo sigue existiendo. Esto reescribe SOLO la proyeccion en memoria: anuncia
+// `storage_path` en la selfie y en el extra cuando la bandera o la columna ya lo prometen,
+// para que la pantalla pida el contenido por id a `getMonitorEvidence`. No toca lo que esta
+// en la base ni borra bytes de filas que aun los llevan.
+function announceRescuedPunchEvidence(punch) {
+  if (!punch || typeof punch !== "object") return punch;
+  const metadata = punch.metadata && typeof punch.metadata === "object" ? punch.metadata : null;
+  const photo = metadata?.identity_photo;
+  if (photo && typeof photo === "object" && !photo.base64_data && !photo.base64 && !photo.storage_path) {
+    const rescued = evidenceStorage.pathForEvidence(photo, metadata, "identity");
+    if (rescued) photo.storage_path = rescued;
+  }
+  const extra = punch.extra_evidence && typeof punch.extra_evidence === "object" ? punch.extra_evidence : null;
+  if (extra && !extra.base64_data && !extra.base64 && !extra.file_url && !extra.storage_path && metadata) {
+    const rescued = evidenceStorage.pathForEvidence(extra, metadata, "extra");
+    if (rescued) extra.storage_path = rescued;
+  }
+  return punch;
 }
 
 async function getMonitorEvidence(tenantId, source, id) {
@@ -204,18 +235,40 @@ async function getMonitorEvidence(tenantId, source, id) {
   }
   return prisma.runWithTenant(tenantId, async () => {
     let evidence;
+    let refEvidence = null;
+    let refMeta = null;
     if (source === "activity") {
       evidence = await prisma.activityEvidence.findFirst({
         where: { id: evidenceId, tenant_id: tenantId, activity: { tenant_id: tenantId } }
       });
+      refEvidence = evidence;
+      refMeta = evidence?.metadata;
     } else if (source === "identity") {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
       evidence = mobileIdentity.identityEvidenceOf(punch);
+      refEvidence = punch?.metadata?.identity_photo || null;
+      refMeta = punch?.metadata || null;
     } else {
       const punch = await prisma.timePunch.findFirst({ where: { id: evidenceId, tenant_id: tenantId } });
       evidence = punch ? monitorPunchEvidence(punch) : null;
+      refEvidence = punch?.extra_evidence || null;
+      refMeta = punch?.metadata || null;
     }
     const payload = monitorEvidencePayload(evidence || {});
+    if (!payload.base64_data && !payload.file_url && evidenceStorage.readEnabled()) {
+      // Fila rescatada y purgada: los bytes ya no viven en la base, sino en Storage.
+      const kind = source === "identity" ? "identity" : source === "activity" ? "activity" : "extra";
+      const objectPath = evidenceStorage.pathForEvidence(refEvidence, refMeta, kind);
+      if (objectPath) {
+        const dataUrl = await evidenceStorage.downloadDataUrl(objectPath);
+        if (dataUrl) {
+          payload.base64_data = dataUrl;
+          if (!payload.mime_type) payload.mime_type = dataUrl.slice(5, dataUrl.indexOf(";base64"));
+          payload.available = true;
+          payload.has_base64_data = true;
+        }
+      }
+    }
     if (!payload.base64_data && !payload.file_url) {
       throw validationError("La evidencia solicitada no existe o no contiene un archivo disponible.", 404, "EVIDENCIA_MONITOR_NO_ENCONTRADA");
     }
@@ -246,7 +299,15 @@ async function getMonitorEvidenceBatch(tenantId, routeId) {
     const punchEvidence = {};
     const identityEvidence = {};
     for (const punch of punches) {
-      punchEvidence[String(punch.id)] = { ...monitorPunchEvidence(punch, true), id: punch.id, source: "punch" };
+      const entry = { ...monitorPunchEvidence(punch, true), id: punch.id, source: "punch" };
+      // En el extra rescatado la ruta no vive en `extra_evidence` sino en la bandera de
+      // rescate del metadata (la purga borro los bytes). Sin esta referencia la pantalla
+      // daria la evidencia por inexistente y no volveria a pedirla por id.
+      if (!entry.has_base64_data && !entry.file_url && !entry.storage_path) {
+        const rescued = evidenceStorage.pathForEvidence(punch.extra_evidence, punch.metadata, "extra");
+        if (rescued) entry.storage_path = rescued;
+      }
+      punchEvidence[String(punch.id)] = entry;
       const selfie = mobileIdentity.identityEvidenceOf(punch);
       if (selfie) identityEvidence[String(punch.id)] = { ...monitorEvidenceSummary(selfie, { id: punch.id, source: "identity" }), id: punch.id, source: "identity" };
     }
@@ -2151,16 +2212,24 @@ async function submitPreoperationalChecklist(tenantId, user, id, input) {
       for (const evidence of answer.evidence || []) {
         assertSafeFile(evidence, { maxBytes: MAX_EVIDENCE_BYTES });
         const fileName = normalizeFileName(evidence.file_name || `${answer.item_key}.jpg`);
+        const declaredPath = evidence.storage_path || secureStoragePath({ tenantId, module: "hr", entity: "preoperational", entityId: checklist.id, fileName });
+        let inlineBase64 = evidence.base64_data || "";
+        let storagePath = declaredPath;
+        if (evidenceStorage.writeEnabled() && inlineBase64) {
+          const up = await evidenceStorage.uploadInline({ tenantId, entity: "preoperational", entityId: checklist.id, fileName, base64Raw: inlineBase64, declaredPath });
+          inlineBase64 = "";
+          storagePath = up.storage_path;
+        }
         evidenceRows.push({
           checklist_id: checklist.id,
           item_key: answer.item_key,
           evidence_type: evidence.evidence_type || "photo",
           file_name: fileName,
           file_url: evidence.file_url || "",
-          base64_data: evidence.base64_data || "",
+          base64_data: inlineBase64,
           mime_type: evidence.mime_type || "",
           file_size: evidence.file_size || null,
-          storage_path: evidence.storage_path || secureStoragePath({ tenantId, module: "hr", entity: "preoperational", entityId: checklist.id, fileName }),
+          storage_path: storagePath,
           uploaded_by: user?.id || null
         });
       }
@@ -2598,15 +2667,23 @@ async function createWorkActivity(tenantId, user, input) {
     }
     const fileName = normalizeFileName(input.photo.name || `actividad-${activity.id}.jpg`);
     const uploaderKey = String(user?.id || session.employee_id || "operador").replace(/[^a-zA-Z0-9_-]/g, "");
+    const declaredEvidencePath = secureStoragePath({ tenantId, module: "hr", entity: `work-sessions/${session.id}/users/${uploaderKey}/activities`, entityId: activity.id, fileName });
+    let evidenceBase64 = input.photo.base64;
+    let evidenceStoragePath = declaredEvidencePath;
+    if (evidenceStorage.writeEnabled()) {
+      const up = await evidenceStorage.uploadInline({ tenantId, entity: "activities", fileName, base64Raw: input.photo.base64, declaredPath: declaredEvidencePath });
+      evidenceBase64 = "";
+      evidenceStoragePath = up.storage_path;
+    }
     await prisma.activityEvidence.create({
       data: {
         activity_id: activity.id,
         evidence_type: "photo",
         file_name: fileName,
-        base64_data: input.photo.base64,
+        base64_data: evidenceBase64,
         mime_type: input.photo.type,
         file_size: input.photo.size,
-        storage_path: secureStoragePath({ tenantId, module: "hr", entity: `work-sessions/${session.id}/users/${uploaderKey}/activities`, entityId: activity.id, fileName }),
+        storage_path: evidenceStoragePath,
         uploaded_by: user?.id || null,
         metadata: { storage_hint: "company_id/module/work_session_id/user_id/activity_id/file" }
       }
@@ -2860,7 +2937,7 @@ async function createPunch(tenantId, input, user, options = {}) {
           type: extraEvidence.type || "image/jpeg",
           size: extraEvidence.size || null,
           base64_data: extraEvidence.base64,
-          storage_path: secureStoragePath({
+          storage_path: extraEvidence.storage_path || secureStoragePath({
             tenantId,
             module: "hr",
             entity: lateMinutes > 0 ? "late-arrivals" : "overtime-extensions",
@@ -3070,6 +3147,14 @@ async function createPunch(tenantId, input, user, options = {}) {
       route_authorized: preop ? ["aprobado", "aprobado_con_novedad"].includes(preop.checklist_status) : true
     };
   };
+
+  // Con el almacen activado, la selfie y la evidencia extra se suben ANTES de abrir la
+  // transaccion (la subida no prolonga el lock y el reintento por reutiliza el mismo
+  // objeto por content-address). Si la subida falla, la marcacion se rechaza con 503 y
+  // no queda ningun base64 en la base.
+  if (evidenceStorage.writeEnabled()) {
+    input = await evidenceStorage.preparePunchEvidence({ tenantId, input });
+  }
 
   // Reintenta solo fallos transitorios de adquisicion/serializacion de transaccion.
   let lastError = null;
@@ -3659,7 +3744,7 @@ async function listAttendance(tenantId, query = {}) {
       route_id: rows[0]?.route_id || null,
       last_type: rows[rows.length - 1].type || "sin_marcar",
       next_type: nextPunchType(rows),
-      punches: rows
+      punches: rows.map(announceRescuedPunchEvidence)
     }));
   });
 }
@@ -3711,7 +3796,7 @@ async function listOwnAttendance(tenantId, user, query = {}) {
       route_id: rows[0]?.route_id || null,
       last_type: rows[rows.length - 1].type || "sin_marcar",
       next_type: nextPunchType(rows),
-      punches: rows
+      punches: rows.map(announceRescuedPunchEvidence)
     }));
   });
 }

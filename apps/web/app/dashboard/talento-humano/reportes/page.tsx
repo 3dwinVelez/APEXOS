@@ -13,11 +13,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; code: string; user_type?: string; position: string; department: string; metadata: { name: string; document: string; user_type?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
-type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; base64?: string; file_url?: string }; metadata?: PunchIdentityMetadata };
+type Punch = { id: number; user_name: string; type: string; time: string; punched_at: string; date: string; latitude?: number; longitude?: number; accuracy_meters?: number; vehicle_plate: string; route_id?: number; extra_minutes: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: { base64_data?: string; base64?: string; file_url?: string; storage_path?: string }; metadata?: PunchIdentityMetadata };
 // Selfie y verificacion de la marcacion de la app (hr/mobile-identity.js). La
 // API anterior al despliegue guardaba la selfie en `base64`; la actual, en
-// `base64_data`. Se leen ambas.
-type PunchIdentityMetadata = { identity_verification?: { status?: string }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean } };
+// `base64_data`. Se leen ambas. `storage_path`/`has_base64_data` anuncian el
+// archivo ya rescatado al almacen: los bytes se piden por id al monitor.
+type PunchIdentityMetadata = { identity_verification?: { status?: string }; identity_photo?: { base64_data?: string; base64?: string; type?: string; has_base64_data?: boolean; storage_path?: string } };
 type Attendance = { user_name: string; next_type: string | null; punches: Punch[] };
 type WorkActivity = { id: number; employee_id?: number | string; user_id?: string; activity_type_name: string; observation: string; occurred_at: string; latitude: number; longitude: number; accuracy_meters?: number; user_name: string; route_id?: number | string; vehicle_plate?: string; evidence?: HrTimelinePhoto[]; metadata?: { supplied_user_name?: string; employee_code?: string; employee_name?: string; identity_aliases?: string[] } };
 type TimeRoute = { id: number; date: string; vehicle_plate: string; employees: string[]; start_time: string; end_time: string; status: string; tolerance_minutes?: number };
@@ -144,15 +145,15 @@ function punchSelfie(punch: Punch) {
 }
 
 function punchEvidenceCount(punch: Punch) {
-  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64 ? 1 : 0;
-  const selfie = punchSelfie(punch) || punch.metadata?.identity_photo?.has_base64_data ? 1 : 0;
+  const extra = punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64 || punch.extra_evidence?.storage_path ? 1 : 0;
+  const selfie = punchSelfie(punch) || punch.metadata?.identity_photo?.has_base64_data || punch.metadata?.identity_photo?.storage_path ? 1 : 0;
   return extra + selfie;
 }
 
 function punchTimelineEvidence(punch: Punch): HrTimelinePhoto[] {
   const photos: HrTimelinePhoto[] = [];
-  if (punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64) photos.push({ ...punch.extra_evidence, id: punch.id, source: "punch" });
-  if (!punchSelfie(punch) && punch.metadata?.identity_photo?.has_base64_data) photos.push({ id: punch.id, source: "identity" });
+  if (punch.extra_evidence?.base64_data || punch.extra_evidence?.file_url || punch.extra_evidence?.base64 || punch.extra_evidence?.storage_path) photos.push({ ...punch.extra_evidence, id: punch.id, source: "punch" });
+  if (!punchSelfie(punch) && (punch.metadata?.identity_photo?.has_base64_data || punch.metadata?.identity_photo?.storage_path)) photos.push({ id: punch.id, source: "identity", storage_path: punch.metadata?.identity_photo?.storage_path });
   return photos;
 }
 
