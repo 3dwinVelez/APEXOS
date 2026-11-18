@@ -2,8 +2,8 @@
 name: apexos-db-nube
 description: Experto en base de datos en la nube del Equipo APEXOS: PostgreSQL, Prisma (apps/api/prisma/schema.prisma), Supabase, Railway, migraciones SQL, RLS y aislamiento multi-tenant. Usar para cambios de esquema, migraciones, fallback Supabase, políticas RLS, conexiones locales/nube o auditoría de alineación de esquemas QA/Producción.
 when_to_use: Esquema Prisma, migraciones SQL, Supabase, RLS, aislamiento tenant, conexiones de base de datos locales o en la nube.
-version: 2.6.0
-updated_at: 2026-11-17
+version: 2.7.0
+updated_at: 2026-11-18
 contract: 2
 ---
 
@@ -84,6 +84,8 @@ Antes de actuar, leer en este orden:
     - **Checklist de sincronización:** antes de cerrar toda intervención que toque `apps/api/prisma/migrations/**`, ejecutar auditoría, verificar migraciones en los 3 ambientes y documentar en CHANGELOG.
     - **Reglas estrictas documentadas en:** `docs/DATABASE_MIGRATION_RULES.md` (creado 2026-11-17 tras alineación QA→Producción).
     Por qué: el 2026-11-17 se detectó desalineación de 4 migraciones entre QA (73) y Producción (69); una era fantasma (`20260601000000_baseline_core_schema` con `applied_steps_count = 0`) y tres eran legales faltantes en Producción. La ausencia de auditoría continua permitió que la desalineación creciera durante meses sin detectarse.
+
+18. **Mover un jsonb tostado a Storage es forward-only, verificado por SHA-256 y con la purga en guion aparte.** El rescate del 2026-11-18 (`scripts/hr-rescue-inline-base64-to-storage.js`, QA 66 filas marcadas sobre 312 procesadas; producción 124 sobre 432, errores 0) fija el procedimiento: (a) se sube al bucket privado (`operational-evidence`), se compara el SHA-256 local contra el objeto releído y recién entonces se escribe una bandera por componente en `metadata` — `hr_evidence_rescue_extra`, `hr_evidence_rescue_identity`, con la bandera única `hr_evidence_rescue` de las corridas previas como legado que se respeta, discriminado por contener o no `identity` en la ruta—; (b) el recorrido **no** puede paginar la columna tostada: páginas de 100 filas con `base64_data` de hasta 2,5 MB revientan el statement timeout de 5 s (57014 mató dos corridas de producción antes de dar con esto); el patrón que cierra es índice ligero sin la columna + lectura de bytes fila por fila solo para las candidatas sin bandera; (c) la purga (C.2) es otro guion, toca solo filas marcadas y espera el despliegue del lector de la app —borrar antes deja al cliente en vivo sin su historial y no hay `VACUUM FULL` que lo recupere—; (d) todo guion de nube declara el project ref esperado, aborta sin conectar y no imprime la llave; (e) la evidencia de cada corrida va a `docs/qa/evidence/**` incluyendo los intentos abortados, porque el registro de por qué la primera forma falló es la norma para el siguiente. Por qué: aquí el costo del cliente era basura legítima —duplicado binario en la base—, y la corrección de un costo nunca puede costar datos.
 
 ## Checklist de intervención
 

@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.27.0
-updated_at: 2026-11-17
+version: 2.28.0
+updated_at: 2026-11-18
 contract: 2
 ---
 
@@ -150,6 +150,8 @@ Antes de actuar, leer en este orden:
     Prueba de cierre: corrida QA 2026-11-13 con `certification_user_deactivated: true` y `qa-certification.json` sin secretos. Por qué: una certificación que deja una cuenta activa o una contraseña en el repositorio se convierte en una puerta permanente abierta por una prueba.
 
 41. **Una lectura cruda no hereda el filtro del ORM: declara su `tenant_id` en el `WHERE` y saca los datos personales del payload de lista.** `apps/api/src/modules/hr/monitorEvidenceRows.js` reemplazó selecciones de Prisma por `$queryRaw`; en estas tablas no hay RLS (medido el 2026-10-26: una lectura síncrona devolvió 168 filas de 29 tenants y el middleware de aplicación es el único filtro), de modo que una sentencia que omita el predicate ensancha el acceso sin que ningún test funcional lo note. El corte fija tres cosas: las sentencias interpolan parámetros de Prisma (`${}`, nunca concatenación) y filtran por tenant explícito; la proyección `has_extra_evidence` anuncia presencia sin mover el binario; y `extra_evidence` —selfies, datos personales— sale de las listas y solo se sirve en la petición del evento que el usuario abre, con su puerta de permiso. Prueba: `apps/api/test/hr-monitor-evidence-columns.test.js` y `hr-operations-map-contract.test.js`. Por qué: cambiar ORM por SQL crudo para ganar latencia es la vía más rápida a una fuga si el aislamiento no se mueve con la consulta.
+
+42. **Un almacén privado de evidencia se protege por precedencia de ruta, prefijo propio y saneado de clave: la llave de servicio jamás sale del servidor.** El contrato de `apps/api/src/modules/hr/evidenceStorage.js` (2026-11-18) fija cuatro fronteras: (a) la referencia que se resuelve contra Supabase Storage sale **siempre** de la fila ya validada por `tenant_id` —un objeto foráneo nunca es direccionable desde otra tenant porque el 404 de la fila corta antes de tocar la red, y el gate lo afirma stubbeando `fetch` y contando cero peticiones para el tenant ajeno—; (b) un `storage_path` declarado por un cliente viejo solo se acepta con prefijo `company/`, y se sanea a `[A-Za-z0-9._-]` por segmento: Supabase rechaza claves no-ASCII (medido en QA: `peña.jpg` → «Invalid key»), y el mismo saneado cierra la inyección de `../` en la ruta del objeto; (c) el bucket `operational-evidence` es privado, sin URL firmada ni acceso público, y la subida va con `x-upsert` sobre ruta content-addressed por SHA-256 cuando no hay `entityId` —dos reintentos de la misma marcación apuntan al mismo objeto, sin duplicar datos personales—; (d) ni el script de rescate ni la capa de lectura imprimen la service role, y las banderas de rescate que se escriben en `metadata` guardan `sha256` y ruta, nunca contenido. La lectura además no amplía superficie: un 404 del almacén se traduce a `EVIDENCIA_MONITOR_NO_ENCONTRADA`, y un fallo de red a 503 con código propio, sin reenviar el cuerpo de la nube. Prueba: `apps/api/test/hr-evidence-storage-gate.test.js`. Por qué: mover binarios de la base al almacén sin estas fronteras convierte un arreglo de costo en una superficie de fuga entre tenants.
 
 ## Checklist de intervención
 
