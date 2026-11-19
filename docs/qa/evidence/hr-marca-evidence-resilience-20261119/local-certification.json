@@ -1,0 +1,695 @@
+{
+  "change_id": "hr-marca-evidence-resilience-20261119",
+  "certification": "hr-marking-evidence-resilience-local",
+  "environment": "LOCAL",
+  "database_url_host": "postgresql://***@localhost:55432/apexos",
+  "generated_at": "2026-11-19T22:19:36.543Z",
+  "api_commit": "unknown",
+  "api_url": "http://127.0.0.1:3219",
+  "operating_timezone": "America/Bogota",
+  "scope": {
+    "capability": "<cadena de 438 caracteres suprimida>",
+    "proven_by_live_execution": [
+      "<cadena de 174 caracteres suprimida>",
+      "Un HEIC real (marca mayor heic) degrada la evidencia con su codigo y NO cuesta la marcacion",
+      "Doble prefijo data:, saltos de linea, alfabeto url-safe y padding ausente se normalizan y la marcacion se guarda",
+      "<cadena de 160 caracteres suprimida>",
+      "La fila degradada de la web no arrastra bytes (has_base64_data false, sin base64_data)",
+      "Todo 4xx del flujo trae code legible y ningun 5xx aparece",
+      "<cadena de 163 caracteres suprimida>",
+      "La correccion genera la novedad AJUSTE_MANUAL_MARCACION del mismo dia con el motivo y escalera:<salto>",
+      "El canal propio ignora correccion_administrativa: sigue obligado por la escalera (409)"
+    ],
+    "proven_by_versioned_unit_suite": [
+      "apps/api/test/hr-mobile-identity.test.js (camino feliz de la app: verified y hash firmado)",
+      "apps/api/test/hr-evidence-resilience.test.js (matriz de clases y normalizaciones)",
+      "apps/api/test/hr-marking-declared-employee.test.js (destino declarado y escalera)",
+      "apps/web/test/hr-marking-correction.test.mjs (contrato del boton de correccion del supervisor)"
+    ]
+  },
+  "checks": [
+    {
+      "name": "fixture_oversize_real_por_encima_del_tope",
+      "ok": true,
+      "detail": {
+        "oversize_bytes": 2435281,
+        "tope": 2097152
+      }
+    },
+    {
+      "name": "health_ok",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "commit": "unknown"
+      }
+    },
+    {
+      "name": "fixture_tenant_con_hr",
+      "ok": true,
+      "detail": {
+        "tenant": {
+          "id": "5ef4cb7d-8bca-41c4-a4b0-9e37d64c4abd",
+          "name": "Puebla Operaciones"
+        }
+      }
+    },
+    {
+      "name": "fixture_ficha_del_operario",
+      "ok": true,
+      "detail": {
+        "operario_id": 1072,
+        "ficha": 725
+      }
+    },
+    {
+      "name": "criterio2_png_etiquetado_jpeg_se_guarda_disponible",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "evidence_status": "available",
+        "tipo": "image/png",
+        "hash_coincide_con_lo_recibido": true,
+        "hora": "08:00"
+      }
+    },
+    {
+      "name": "criterio2_marca_almacena_data_url_canonico_del_tipo_olido",
+      "ok": true,
+      "detail": {
+        "prefijo": "data:image/png;base64,",
+        "has_base64_data": true
+      }
+    },
+    {
+      "name": "criterio3_heic_degrada_y_no_cuesta_la_jornada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "identidad": "photo_only",
+        "evidence_status": "degraded",
+        "evidence_failure_code": "EVIDENCIA_NO_DECODIFICABLE"
+      }
+    },
+    {
+      "name": "criterio3_fila_degradada_de_la_web_no_arrastra_bytes",
+      "ok": true,
+      "detail": {
+        "fila_guardada": true,
+        "has_base64_data": false,
+        "storage_path": null,
+        "sha256_conservado": true
+      }
+    },
+    {
+      "name": "criterio3_avif_se_guarda_sin_costar_la_jornada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "evidence_status": "available",
+        "tipo": "image/avif",
+        "evidence_failure_code": null,
+        "hash_coincide": true
+      }
+    },
+    {
+      "name": "criterio4_doble_prefijo_y_saltos_se_normaliza_y_la_marca_vive",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "normalizacion_aplicada": [
+          "double_prefix",
+          "whitespace",
+          "padding"
+        ],
+        "hash_coincide": true,
+        "persistido_canonico": true
+      }
+    },
+    {
+      "name": "criterio4_alfabeto_url_safe_se_normaliza_y_la_marca_vive",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "normalizacion_aplicada": [
+          "urlsafe",
+          "padding"
+        ],
+        "hash_coincide": true,
+        "persistido_canonico": true
+      }
+    },
+    {
+      "name": "criterio4_padding_ausente_se_normaliza_y_la_marca_vive",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "normalizacion_aplicada": [
+          "padding"
+        ],
+        "hash_coincide": true,
+        "persistido_canonico": true
+      }
+    },
+    {
+      "name": "criterio4_alfabeto_invalido_se_rechaza_con_el_motivo",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VALIDACION",
+        "evidence_failure_code": "EVIDENCIA_ALFABETO_INVALIDO",
+        "field": "identity_photo",
+        "error": "El contenido del archivo no pudo decodificarse."
+      }
+    },
+    {
+      "name": "criterio4_alfabeto_invalido_no_escribe_marca",
+      "ok": true,
+      "detail": {
+        "dia": "2026-11-11"
+      }
+    },
+    {
+      "name": "criterio5_payload_sobre_el_tope_se_rechaza_nombrando_el_tope",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VALIDACION",
+        "evidence_failure_code": "EVIDENCIA_SUPERA_LIMITE",
+        "byte_length": 2435281,
+        "max_bytes": 2097152,
+        "bytes_reales": 2435281
+      }
+    },
+    {
+      "name": "criterio5_pdf_como_selfie_se_rechaza_por_clase",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VALIDACION",
+        "evidence_failure_code": "EVIDENCIA_CLASE_RECHAZADA",
+        "mime_olido": "application/pdf",
+        "mime_declarado": "application/pdf"
+      }
+    },
+    {
+      "name": "criterio5_pdf_rechazada_la_jornada_puede_marcarse",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "dia": "2026-11-09"
+      }
+    },
+    {
+      "name": "criterio5_mp4_como_selfie_se_rechaza_por_clase",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "VALIDACION",
+        "evidence_failure_code": "EVIDENCIA_CLASE_RECHAZADA",
+        "mime_olido": "video/mp4",
+        "mime_declarado": "video/mp4"
+      }
+    },
+    {
+      "name": "criterio5_mp4_rechazada_la_jornada_puede_marcarse",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "dia": "2026-11-08"
+      }
+    },
+    {
+      "name": "criterio10_jornada_abierta_por_el_operario",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null
+      }
+    },
+    {
+      "name": "criterio10_el_hueco_no_se_rellena_en_silencio",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA",
+        "error": "La siguiente marcacion permitida es inicio_almuerzo."
+      }
+    },
+    {
+      "name": "criterio10_sin_motivo_legible_se_rechaza_422",
+      "ok": true,
+      "detail": {
+        "status": 422,
+        "code": "MOTIVO_CORRECCION_REQUERIDO",
+        "field": "motivo_correccion"
+      }
+    },
+    {
+      "name": "criterio10_la_correccion_fuera_de_escalera_se_guarda_sellada",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "salto": "esperada:inicio_almuerzo",
+        "autor": 1071,
+        "supervisor_esperado": 1071,
+        "motivo_coincide": true,
+        "motivo_caracteres": 129
+      }
+    },
+    {
+      "name": "criterio10_jornada_cerrada_tambien_admite_el_hueco",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "salto": "jornada_completa"
+      }
+    },
+    {
+      "name": "criterio10_genera_la_novedad_del_mismo_dia_con_su_autor",
+      "ok": true,
+      "detail": {
+        "novedad_existe": true,
+        "source": "correccion_administrativa",
+        "detail": "escalera:jornada_completa",
+        "corrected_by": 1071,
+        "supervisor_esperado": 1071
+      }
+    },
+    {
+      "name": "criterio10b_el_reporte_del_supervisor_muestra_la_correccion",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "filas_corregidas": 2,
+        "saltos": [
+          "jornada_completa",
+          "esperada:inicio_almuerzo"
+        ]
+      }
+    },
+    {
+      "name": "criterio10_el_canal_propio_no_se_autoriza_solo",
+      "ok": true,
+      "detail": {
+        "apertura": 200,
+        "status": 409,
+        "code": "MARCACION_FUERA_DE_SECUENCIA",
+        "cierre_registrado": false
+      }
+    },
+    {
+      "name": "criterio10_motivo_de_mas_de_300_se_rechaza_en_el_esquema",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "code": "FST_ERR_VALIDATION"
+      }
+    },
+    {
+      "name": "criterio10_el_motivo_de_300_se_guarda_integro",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "code": null,
+        "longitud_motivo": 300,
+        "salto": "esperada:inicio_almuerzo"
+      }
+    },
+    {
+      "name": "criterio9_todo_rechazo_trae_codigo_clasificable",
+      "ok": true,
+      "detail": {
+        "rechazos": 8,
+        "codigos": [
+          "VALIDACION",
+          "MARCACION_FUERA_DE_SECUENCIA",
+          "MOTIVO_CORRECCION_REQUERIDO",
+          "FST_ERR_VALIDATION"
+        ],
+        "ilegibles": []
+      }
+    },
+    {
+      "name": "suite_hr-mobile-identity.test.js_en_verde",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 38,
+        "fail": 0
+      }
+    },
+    {
+      "name": "suite_hr-evidence-resilience.test.js_en_verde",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 18,
+        "fail": 0
+      }
+    },
+    {
+      "name": "suite_hr-marking-declared-employee.test.js_en_verde",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 7,
+        "fail": 0
+      }
+    },
+    {
+      "name": "suite_hr-marking-correction.test.mjs_en_verde",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "pass": 10,
+        "fail": 0
+      }
+    },
+    {
+      "name": "criterio11_triage_de_bloqueados_selftest_pasado",
+      "ok": true,
+      "detail": {
+        "exit": 0,
+        "salida": "ok   dia calendario ISO (no el texto legible del Date): 2026-11-18 | SELFTEST PASADO"
+      }
+    },
+    {
+      "name": "no_5xx_during_certification",
+      "ok": true,
+      "detail": {
+        "requests": 25,
+        "errores": []
+      }
+    }
+  ],
+  "status": "passed",
+  "fixtures": {
+    "jpeg_bytes": 282,
+    "png_bytes": 152,
+    "heic_bytes": 624,
+    "avif_bytes": 285,
+    "avif_disponible": true,
+    "pdf_bytes": 409,
+    "mp4_bytes": 412,
+    "oversize_bytes": 2435281,
+    "oversize_supera_tope": true,
+    "tope_evidencia_web_bytes": 2097152
+  },
+  "stale_leftovers_purged": {
+    "employees": 0,
+    "users": 0,
+    "roles": 0,
+    "errors": []
+  },
+  "rechazos_certificados": [
+    {
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION"
+    },
+    {
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION"
+    },
+    {
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION"
+    },
+    {
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION"
+    },
+    {
+      "path": "/api/v1/hr/time-punches",
+      "status": 409,
+      "code": "MARCACION_FUERA_DE_SECUENCIA"
+    },
+    {
+      "path": "/api/v1/hr/time-punches",
+      "status": 422,
+      "code": "MOTIVO_CORRECCION_REQUERIDO"
+    },
+    {
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 409,
+      "code": "MARCACION_FUERA_DE_SECUENCIA"
+    },
+    {
+      "path": "/api/v1/hr/time-punches",
+      "status": 400,
+      "code": "FST_ERR_VALIDATION"
+    }
+  ],
+  "versioned_suites": {
+    "apps/api/test/hr-mobile-identity.test.js": {
+      "exit": 0,
+      "pass": 38,
+      "fail": 0
+    },
+    "apps/api/test/hr-evidence-resilience.test.js": {
+      "exit": 0,
+      "pass": 18,
+      "fail": 0
+    },
+    "apps/api/test/hr-marking-declared-employee.test.js": {
+      "exit": 0,
+      "pass": 7,
+      "fail": 0
+    },
+    "apps/web/test/hr-marking-correction.test.mjs": {
+      "exit": 0,
+      "pass": 10,
+      "fail": 0
+    }
+  },
+  "http_log": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 251
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 487
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 402
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 99
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 52
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 62
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 47
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 68
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 49
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION",
+      "transport_error": null,
+      "latency_ms": 24
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION",
+      "transport_error": null,
+      "latency_ms": 138
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION",
+      "transport_error": null,
+      "latency_ms": 24
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 106
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 400,
+      "code": "VALIDACION",
+      "transport_error": null,
+      "latency_ms": 22
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 57
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 55
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 409,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "transport_error": null,
+      "latency_ms": 50
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 422,
+      "code": "MOTIVO_CORRECCION_REQUERIDO",
+      "transport_error": null,
+      "latency_ms": 51
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 69
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 55
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/hr/attendance?fecha_inicio=2026-11-07&fecha_fin=2026-11-07&date=2026-11-07",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 34
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 59
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/self/time-punches",
+      "status": 409,
+      "code": "MARCACION_FUERA_DE_SECUENCIA",
+      "transport_error": null,
+      "latency_ms": 50
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 400,
+      "code": "FST_ERR_VALIDATION",
+      "transport_error": null,
+      "latency_ms": 12
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/hr/time-punches",
+      "status": 200,
+      "code": null,
+      "transport_error": null,
+      "latency_ms": 71
+    }
+  ],
+  "verdict": {
+    "passed": 36,
+    "total": 36
+  },
+  "cleanup": {
+    "empleados_eliminados": 2,
+    "marcaciones_eliminadas": 13,
+    "sesiones_eliminadas": 10,
+    "jornadas_eliminadas": 0,
+    "novedades_eliminadas": 2,
+    "usuarios_desactivados": 2,
+    "roles_desactivados": 2,
+    "errores": []
+  },
+  "finished_at": "2026-11-19T22:19:54.391Z"
+}

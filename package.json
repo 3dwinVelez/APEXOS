@@ -90,6 +90,8 @@
     "certify:hr-auth-latency:qa": "node scripts/certifications/hr-auth-latency-differential.js --env=qa --limit=3",
     "certify:hr-auth-latency:production": "node scripts/certifications/hr-auth-latency-differential.js --env=production --limit=3",
     "certify:hr-marking-gate:qa": "node scripts/certifications/hr-marking-gate-qa.js",
+    "certify:hr-marking-evidence-resilience:local": "node scripts/certifications/hr-marking-evidence-resilience-local.js --output=docs/qa/evidence/hr-marca-evidence-resilience-20261119/local-certification.json",
+    "certify:hr-marking-queue-browser:local": "node scripts/certifications/hr-marking-queue-browser-local.js --output=docs/qa/evidence/hr-marca-evidence-resilience-20261119/browser-certification.json",
     "certify:hr-schedule-write-integrity:local": "node scripts/certifications/hr-schedule-write-integrity-local.js --output=docs/qa/evidence/hr-schedule-write-integrity-20260920/local-simulation-certification.json",
     "certify:hr-route-p2028:local": "node scripts/certifications/hr-route-p2028-local.js --output=docs/qa/evidence/hr-route-p2028-20261026/local-certification.json",
     "certify:hr-contention-p2028:local": "node scripts/certifications/hr-contention-p2028-local.js --output=docs/qa/evidence/hr-contention-p2028-20261026/local-certification.json --fixture-output=docs/qa/evidence/hr-contention-p2028-20261026/local-fixture.json",
