@@ -52,3 +52,11 @@ Ejecución completada el 18 de noviembre de 2026 a las 19:56 (Bogotá): certific
 Se verificaron contrato del maestro y conceptos de malla, permisos y separación de empresas, búsqueda y detalle modal en navegador, exclusión de la quincena en navegador y creación real de nómina conservando otro empleado activo, recontratación sin habilitar periodos antiguos, movimientos de libranza y recálculo sin duplicación, borrado y restitución de saldos, división de pendientes entre dos quincenas y bloqueo de nóminas superpuestas posteriores al retiro.
 
 Las capturas `full-preview.png`, `saved-detail.png` y `payroll-excludes-terminated.png` documentan la interfaz real. Los JSON y capturas generados permanecen locales y no forman parte del commit.
+
+## Candidato integrado para QA
+
+La ampliación pasó once recorridos completos sobre el target actual de QA `d329b884ae91af1f7473526a70f88db5c7a26d46`, terminados el 18 de noviembre de 2026 a las 20:44 (Bogotá). Certificación funcional e aislamiento: `passed`, sin HTTP 5xx inesperados. La captura adicional `integrated-benefit-vouchers.png` comprueba que los cuatro pagos aparecen incluidos en el retiro y no ofrecen anulación independiente.
+
+Pasaron 67 pruebas de API e interfaz, incluidas las regresiones vigentes de jornada nocturna, divisor horario, topes de horas extras, soporte de nómina sin marcaciones, libranzas, indemnización con SMMLV vigente, cierres e IBC. Se conservaron esos controles al reconstruir los cambios puntuales encima de `develop`; no se sustituyó el módulo por una copia antigua de `desarrollo`. Las pruebas dinámicas se ejecutaron con Redis deshabilitado y `--test-force-exit --test-timeout=60000`, para cerrar handles de infraestructura únicamente una vez concluidos los casos.
+
+Los casos adicionales verifican los cuatro pagos habituales y su recálculo, regeneración de provisiones sin borrar lo pagado, conceptos personalizados salariales/no salariales, cierre de saldos al retiro, bloqueo de reaperturas/pagos duplicados y restauración de una provisión pendiente al revertir la liquidación.
