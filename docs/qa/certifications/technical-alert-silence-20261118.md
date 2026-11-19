@@ -15,6 +15,7 @@
 | Certificador | `scripts/certifications/technical-alert-silence-browser-local.js` |
 | Duración de la corrida | 202 s |
 | Veredicto | **68 de 68 controles en verde** |
+| La misma suite sobre `desarrollo` | Corrida previa, `BUILD_ID` `3SEjWup4mZZxmkknqhAzd`, también 68/68, archivada en `docs/qa/evidence/technical-alert-silence-20261118/certification.json` de esa rama. Es la misma medición sobre el árbol original; no se sobrescribe: las dos corridas quedan en el repositorio |
 
 ## 2. Cómo se fabrica la tormenta (y por qué la ausencia significa algo)
 
