@@ -68,9 +68,10 @@ test("cada funcion declara modulo habilitable, etiqueta y palabras clave", () =>
 
 test("el buscador ofrece las funciones clave del modulo de talento humano", () => {
   const byLabel = new Map(functionEntries.map((entry) => [entry.label, entry]));
-  assert.equal(byLabel.get("Crear mallas")?.href, "/dashboard/talento-humano/rutas");
-  assert.equal(byLabel.get("Ver monitor de mallas")?.href, "/dashboard/talento-humano/mapa");
-  assert.match(byLabel.get("Ver monitor de mallas")?.keywords || "", /marcacion/);
+  assert.equal(byLabel.get("Horarios y mallas")?.href, "/dashboard/talento-humano/rutas");
+  assert.equal(byLabel.get("Ver mapa operativo")?.href, "/dashboard/talento-humano/mapa");
+  assert.match(byLabel.get("Horarios y mallas")?.keywords || "", /marcacion/);
+  assert.equal(byLabel.get("Gestionar bancos de empleados")?.href, "/dashboard/talento-humano/bancos");
 });
 
 test("los alias excluidos si son redirecciones y no destinos propios", () => {
@@ -87,6 +88,9 @@ test("PYG pertenece exclusivamente al buscador de Contabilidad", () => {
   assert.equal(entries.length, 1);
   assert.equal(entries[0].module, "contabilidad");
   assert.equal(entries[0].href, "/dashboard/contabilidad/pyg");
+  const expanded = functionEntries.find(entry => entry.href === "/dashboard/contabilidad/pyg/ampliado");
+  assert.equal(expanded?.module, "contabilidad");
+  assert.equal(expanded?.label, "Ver PYG ampliado");
 });
 
 test("la paleta une acciones, funciones y modulos sin duplicar destinos", () => {

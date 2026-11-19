@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (relative) => fs.readFileSync(path.resolve(here, relative), "utf8");
@@ -20,6 +21,27 @@ function hrWriteFallbackGuard() {
   return api.slice(start, api.indexOf("\n}", start) + 2);
 }
 
+test("ambos caminos de fallback bloquean escrituras y lecturas del monitor operativo", () => {
+  const api = read("../lib/api.ts");
+  const operational = read("../lib/hrScheduleMonitor.ts");
+  const start = operational.indexOf("export function scheduleMonitorUsesOperationalSource");
+  const fragment = operational.slice(start, operational.indexOf("\n}", start) + 2).replace("export ", "");
+  const compile = (source, name) => new Function(ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText + `\nreturn ${name};`)();
+  const writeGuard = compile(hrWriteFallbackGuard(), "shouldBlockHrWriteFallback");
+  const readGuard = compile(fragment, "scheduleMonitorUsesOperationalSource");
+  const conditions = api.slice(api.indexOf("async function apiInternal")).match(/if \(supabaseSession && [^\n]+/g).filter(line => line.includes("!shouldBlockHrWriteFallback"));
+  assert.equal(conditions.length, 2, "se prueban fallback preventivo y fallback por respuesta de error");
+  for (const line of conditions) {
+    const expression = line.slice(4, line.lastIndexOf(")"));
+    const allowed = new Function("supabaseSession", "preferOperationalApi", "path", "method", "shouldBlockHrWriteFallback", "scheduleMonitorUsesOperationalSource", `return Boolean(${expression});`);
+    for (const [path, method] of [["/api/v1/hr/routes", "POST"], ["/api/v1/hr/routes/12", "PATCH"], ["/api/v1/hr/self/time-punches", "POST"], ["/api/v1/hr/routes?date=2026-11-19", "GET"], ["/api/v1/hr/operations-map", "GET"], ["/api/v1/hr/monitor-evidence/route/12", "GET"]]) {
+      assert.equal(allowed(true, false, path, method, writeGuard, readGuard), false, `${method} ${path}`);
+    }
+    assert.equal(allowed(true, false, "/api/v1/admin/user-master-data", "GET", writeGuard, readGuard), true);
+    assert.equal(allowed(false, false, "/api/v1/admin/user-master-data", "GET", writeGuard, readGuard), false);
+  }
+});
+
 test("las escrituras de horarios nunca caen al respaldo Supabase", () => {
   const guard = hrWriteFallbackGuard();
   assert.match(guard, /"\/api\/v1\/hr\/routes"/);
@@ -34,13 +56,13 @@ test("apiInternal consulta el guard antes de intentar el respaldo en respuestas 
   assert.ok(start >= 0, "debe existir apiInternal");
   const body = api.slice(start);
   const notOk = body.slice(body.indexOf("if (!response.ok) {"), body.indexOf("if (!response.ok) {") + 400);
-  assert.match(notOk, /if \(supabaseSession && !shouldBlockHrWriteFallback\(path, method\)\)/);
+  assert.match(notOk, /if \(supabaseSession && !shouldBlockHrWriteFallback\(path, method\) && !scheduleMonitorUsesOperationalSource\(path, method\)\)/);
 });
 
-test("la lectura del monitor conserva su respaldo: solo se bloquean metodos distintos de GET", () => {
+test("el guard de escritura permite GET, pero el monitor conserva su origen operativo unico", () => {
   const api = read("../lib/api.ts");
   // shouldPreferOperationalApi sigue enviando /api/v1/hr/* a Fastify primero, y el guard
-  // exige method !== "GET", de modo que GET /api/v1/hr/routes y /event-summaries no cambian.
+  // exige method !== "GET"; el guard independiente de origen operativo bloquea el fallback del monitor.
   const prefer = api.slice(api.indexOf("function shouldPreferOperationalApi"), api.indexOf("function shouldPreferOperationalApi") + 400);
   assert.match(prefer, /path\.startsWith\("\/api\/v1\/hr"\)/);
   assert.match(hrWriteFallbackGuard(), /return method !== "GET" &&/);
@@ -53,7 +75,7 @@ test("el respaldo preventivo tambien consulta el guard cuando no hay API configu
   const body = api.slice(start);
   // preferOperationalApi depende de HAS_CONFIGURED_API_URL; sin esa variable el respaldo
   // preventivo corria antes de cualquier respuesta y podia huerfanar la escritura.
-  assert.match(body, /if \(supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback\(path, method\)\)/);
+  assert.match(body, /if \(supabaseSession && !preferOperationalApi && !shouldBlockHrWriteFallback\(path, method\) && !scheduleMonitorUsesOperationalSource\(path, method\)\)/);
 });
 
 test("el banner de horarios no pinta un error como si fuera exito", () => {
