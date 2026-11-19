@@ -7,16 +7,37 @@ import { publishHrMonitorRefresh } from "@/lib/hrMonitorRefresh";
 import { isMarkingOnlyAccess } from "@/lib/accessProfile";
 import {
   buildHrOfflineSnapshot,
+  buildHrNoveltyMarker,
+  attachHrNoveltyMarker,
+  DEGRADED_MARKING_BLOCKED_REASON,
+  DEGRADED_MARKING_NOTICE,
+  IDEMPOTENCY_ALREADY_REGISTERED_NOTICE,
+  IDEMPOTENCY_UNRECOVERABLE_NOTICE,
+  NOVELTY_EXPIRED_MARKING_MESSAGE,
+  NOVELTY_PENDING_PHOTO_MESSAGE,
+  PHOTO_LOST_ESCALATION_NOTICE,
+  QUEUE_IDLE_POLL_MS,
+  SELF_HEAL_RELEASE_NOTICE,
   classifySyncFailure,
   decideOfflineMarking,
+  decideQueueTransition,
   degradeUntilPersisted,
   degradedScheduleNotice,
+  detachEvidence,
+  evidenceCodeOf,
   evidenceRefMarker,
   evidenceRefOf,
+  evidenceRetryAttemptsOf,
   gpsFailureCause,
   gpsUnavailableMetadata,
   inlineEvidenceBytes,
+  isEvidenceBlockedSelfHealCandidate,
+  isExpiredDeferredMarking,
+  markEvidenceRetryAttempt,
   payloadByteLength,
+  queueNextPollMs,
+  readHrNoveltyMarker,
+  reconcileIdempotencyConflict,
   requestOutcome,
   resolveDegradedSchedule,
   syncFailureReason,
@@ -28,19 +49,21 @@ import {
 import {
   deleteHrOfflineEvidence,
   getHrOfflineEvidence,
+  listPendingReviewEvidence,
   newHrOfflineEvidenceRef,
   pruneHrOfflineEvidence,
-  putHrOfflineEvidence
+  putHrOfflineEvidence,
+  putPendingReviewEvidence
 } from "@/lib/hrOfflineEvidence";
 import { SignatureCapture } from "@/components/operations/SignatureCapture";
-import { PhotoCapture, type CapturedFile } from "@/components/operations/PhotoCapture";
+import { PhotoCapture, PHOTO_UNUSABLE_COPY, type CapturedFile, type PhotoUnusableOutcome } from "@/components/operations/PhotoCapture";
 import { AlertTriangle, ArrowLeft, CalendarX, CheckCircle2, ExternalLink, MapPin, Navigation, Plus, RefreshCw, Truck, WifiOff, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 type Employee = { id: number | string; user_id?: string; code: string; document_number?: string; user_type?: string; position?: string; metadata: { name: string; user_type?: string; code?: string; identity_aliases?: string[] }; user: { name: string; email?: string } };
-type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string }> };
+type Attendance = { user_name: string; route_id?: number | string | null; next_type: string | null; punches: Array<{ id: number; type: string; time: string; vehicle_plate: string; idempotency_key?: string }> };
 type AttendancePunch = Attendance["punches"][number];
 type TimeRoute = { id: number | string; date?: string; code?: string; display_id?: string; source_route_id?: number | string; vehicle_plate: string; employees: string[]; employee_ids?: string[]; employee_names?: string[]; start_time: string; end_time: string; tolerance_minutes?: number | null; gps_required?: boolean; tracking_mode?: string; metadata?: Record<string, unknown> };
 type PreopItem = { section: string; item_key: string; label: string; severity: string; blocks_route: boolean; evidence_required: boolean };
@@ -57,11 +80,23 @@ type PendingSyncItem = {
   created_at: string;
   attempts: number;
   label: string;
-  status?: "queued" | "blocked";
+  // `queued` espera o reintenta. `blocked` era el unico estado terminal y por eso
+  // un problema de foto se comia la jornada: hoy hay dos terminales distintos.
+  //   blocked    -> no se puede resolver en el dispositivo (foto perdida, o cola
+  //                degradada por cuota). Visible, con motivo y con accion.
+  //   closed     -> la regla de negocio rechazo la marcacion. Se CIERRA para que
+  //                no siga "por enviar" ni bloquee lo que viene detras, y se
+  //                escala al supervisor con la novedad correspondiente.
+  status?: "queued" | "blocked" | "closed";
   blocked_reason?: string;
   blocked_code?: string;
   evidence_refs?: string[];
   evidence_dropped?: boolean;
+  // La foto ya salio del payload y vive en IndexedDB esperando revision.
+  evidence_degraded?: boolean;
+  // Novedad declarada al supervisor (evita re-escalarla en cada reintento).
+  escalated_novelty?: string;
+  metadata?: Record<string, unknown>;
 };
 type MessageTone = "success" | "error" | "pending";
 
@@ -105,21 +140,58 @@ const punchLabels: Record<string, { title: string; desc: string; color: string }
 };
 const pendingSyncKey = "apexos_hr_mobile_pending_sync";
 const hrSnapshotKey = "apexos_hr_mobile_snapshot";
+const selfHealNoticeKey = "apexos_hr_mobile_self_heal_notice";
 const pendingSyncLimit = 50;
 // Claves de primer nivel del payload que llevan foto. Salen del localStorage a
 // IndexedDB mientras la marcacion espera en la cola: en base64 llenan la cuota.
+// La lista vive en la libreria de politica para que la cola y el externalizado
+// no puedan divergir.
 const evidencePayloadKeys = ["photo", "extra_evidence", "identity_photo"] as const;
+// Un item ya no se envia cuando esta bloqueado (no hay forma de resolverlo en el
+// dispositivo) o cerrado (la regla de negocio lo rechazo y ya esta escalado).
+// Los dos siguen VISIBLES en la cola; lo que pierden es el puesto al frente.
+function isSendableItem(item: PendingSyncItem) {
+  return item.status !== "blocked" && item.status !== "closed";
+}
+
+function isBlockedItem(item: PendingSyncItem) {
+  return item.status === "blocked";
+}
+
+function isClosedItem(item: PendingSyncItem) {
+  return item.status === "closed";
+}
+
+// Cualquier terminal visible deja de contar como "por enviar". Antes `isBlockedItem`
+// era el unico filtro y un cierre seguia apareciendo como pendiente.
+function isPendingItem(item: PendingSyncItem) {
+  return !isBlockedItem(item) && !isClosedItem(item);
+}
+
+// La marca `evidence_degraded` solo se pone cuando el payload PERDIO la foto, no
+// cuando la foto sigue adjunta esperando su reintento.
+function itemHasDetachablePhoto(item: PendingSyncItem) {
+  if (item.evidence_degraded) return false;
+  const payload = (item.payload || {}) as Record<string, unknown>;
+  return evidencePayloadKeys.some((key) => payload[key] !== undefined);
+}
+
 let pendingSyncInFlight = false;
+// El planificador necesita saber si el ultimo tick TERMINO en fallo para decidir el
+// respaldo. `flushPendingSync` devuelve solo "hubo cambios", que mezcla exitos y
+// fallos, asi que la propia cola declara cuando algo volvio a `queued` con intento
+// nuevo. Se lee y se limpia en cada tick.
+let queueSawFailure = false;
+
+function markQueueFailureObserved() {
+  queueSawFailure = true;
+}
 
 const messageToneStyles: Record<MessageTone, { className: string; role: "alert" | "status" }> = {
   error: { className: "border-rose-200 bg-rose-50 text-rose-900", role: "alert" },
   pending: { className: "border-amber-200 bg-amber-50 text-amber-950", role: "status" },
   success: { className: "border-emerald-200 bg-emerald-50 text-emerald-900", role: "status" }
 };
-
-function isBlockedItem(item: PendingSyncItem) {
-  return item.status === "blocked";
-}
 
 function readPendingSync() {
   if (typeof window === "undefined") return [] as PendingSyncItem[];
@@ -274,6 +346,120 @@ function permanentSyncFailure(error: unknown) {
   return status >= 400 && status < 500 && ![408, 429].includes(status);
 }
 
+// Cierra un item sin borrarlo. La diferencia con `blocked` no es cosmetica: un
+// item cerrado sale del conteo de "por enviar" y deja de bloquear la cola, pero
+// su motivo y su hora siguen visibles hasta que el operario lo descarta. Nunca
+// se descarta solo: eso seria perder evidencia de la jornada.
+function closePendingSyncItem(items: PendingSyncItem[], id: string, reason: string, code: string): PendingSyncItem[] {
+  return items.map((item) => (item.id === id ? { ...item, status: "closed" as const, blocked_reason: reason, blocked_code: code } : item));
+}
+
+function readSelfHealNotices(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(selfHealNoticeKey) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((entry) => typeof entry === "string" && entry) as string[] : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSelfHealNotices(notices: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    if (notices.length) localStorage.setItem(selfHealNoticeKey, JSON.stringify(notices.slice(0, 3)));
+    else localStorage.removeItem(selfHealNoticeKey);
+  } catch {
+    // El aviso de recuperacion es informativo: si no cabe, la cola ya lo dice.
+  }
+}
+
+// Self-heal acotado. Los items que ESTA version ya bloqueo por foto llevan la
+// marca en metadata y no vuelven a liberarse. Los que bloqueo la version anterior
+// (el incidente de produccion: 400 VALIDACION por un HEIC etiquetado como JPEG)
+// no tienen marca, asi que se liberan UNA vez y se reintentan sin la foto. Sin
+// esto, los operarios afectados seguirian pegados despues del despliegue.
+export function releaseEvidenceBlockedItems(items: PendingSyncItem[]): { items: PendingSyncItem[]; released: number } {
+  let released = 0;
+  const next = items.map((item) => {
+    if (!isEvidenceBlockedSelfHealCandidate(item)) return item;
+    released += 1;
+    // La version anterior encol el item CON la foto dentro del payload. Liberarlo sin
+    // desprenderla reenvia exactamente el archivo que el servidor rechazo, y como el item
+    // ya queda marcado como degradado la politica de ese segundo 400 es cerrarlo: la hora
+    // se perderia otra vez, que es justo el incidente que esta ruta viene a cerrar. Se
+    // desprende aqui y viaja con su novedad, igual que la rama `retry_without_photo`.
+    const detached = detachEvidence(item.payload as Record<string, unknown>, DEGRADED_MARKING_BLOCKED_REASON);
+    return {
+      ...item,
+      status: "queued" as const,
+      payload: withEscalationMarker(detached.payload, {
+        kind: "degraded_evidence",
+        failureCode: String(item.blocked_code || ""),
+        photoRefs: evidenceRefsOf(item)
+      }),
+      attempts: evidenceRetryAttemptsOf(item),
+      blocked_reason: "",
+      blocked_code: "",
+      evidence_degraded: true,
+      metadata: { ...(item.metadata || {}), ...markEvidenceRetryAttempt(item, new Date().toISOString()) }
+    };
+  });
+  return { items: released ? next : items, released };
+}
+
+// Se llama una sola vez por carga de pantalla (el efecto de arranque). Persiste
+// el resultado antes de reintentar para que un cierre del navegador no vuelva a
+// gastar el unico reintento automatico.
+function selfHealEvidenceQueue(onUpdate: SyncUpdate) {
+  const queue = readPendingSync();
+  if (!queue.some((item) => isEvidenceBlockedSelfHealCandidate(item))) return false;
+  const healed = releaseEvidenceBlockedItems(queue);
+  if (!healed.released) return false;
+  const written = writePendingSync(healed.items);
+  const notices = [...readSelfHealNotices(), SELF_HEAL_RELEASE_NOTICE];
+  writeSelfHealNotices(notices);
+  onUpdate(written.items, notices[notices.length - 1], "pending");
+  return true;
+}
+
+// Escalada al supervisor. No existe un endpoint de novedades self-service en el
+// API (`apps/api/src/modules/hr/routes.js` solo expone `/hr/novelties` en lectura
+// con permiso `hr.read`), asi que la novedad se DECLARA dentro del `metadata` de
+// la propia marcacion, que viaja intacto hasta la fila y lo leen el monitor y el
+// reporte. Cuando el backend publique el endpoint, cambia solo el transporte: el
+// contrato del dato (`buildHrNoveltyMarker`) queda igual.
+function withEscalationMarker(payload: Record<string, unknown>, input: {
+  kind: "degraded_evidence" | "expired_marking";
+  failureCode: string;
+  photoRefs: string[];
+}): Record<string, unknown> {
+  const punchedAt = String(payload.punched_at || new Date().toISOString());
+  return attachHrNoveltyMarker(payload, buildHrNoveltyMarker({
+    kind: input.kind,
+    message: input.kind === "degraded_evidence" ? NOVELTY_PENDING_PHOTO_MESSAGE : NOVELTY_EXPIRED_MARKING_MESSAGE,
+    punchType: String(payload.type || ""),
+    punchedAt,
+    idempotencyKey: String(payload.idempotency_key || ""),
+    failureCode: input.failureCode,
+    photoRefs: input.photoRefs
+  }));
+}
+
+// Novedad de una marcacion CERRADA por regla de negocio. No hay POST posible: el
+// propio servidor la rechazo, y reenviarla con otro `idempotency_key` seria
+// inventarse una hora. La novedad se guarda en la propia fila cerrada
+// (`escalated_novelty`) para que la cola la muestre y el supervisor la vea al
+// revisar el equipo; cuando el backend publique el endpoint, esto es lo unico
+// que cambia de transporte.
+function recordClosedMarkingNovelty(item: PendingSyncItem, payload: Record<string, unknown>) {
+  const marker = readHrNoveltyMarker(payload);
+  if (!marker) return "";
+  const queue = readPendingSync().map((entry) => (entry.id === item.id ? { ...entry, escalated_novelty: marker.kind } : entry));
+  writePendingSync(queue);
+  return marker.kind;
+}
+
 async function settle<T>(promise: Promise<T>, fallback: T): Promise<RequestOutcome<T>> {
   try {
     return requestOutcome(true, await promise);
@@ -283,6 +469,54 @@ async function settle<T>(promise: Promise<T>, fallback: T): Promise<RequestOutco
 }
 
 type SyncUpdate = (items: PendingSyncItem[], message?: string, tone?: MessageTone) => void;
+
+function newPunchIdempotencyKey() {
+  return globalThis.crypto?.randomUUID?.() || `hr-punch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+// Se reescribe la clave en los dos sitios donde viaja: el campo de primer nivel que
+// lee el servidor y `metadata.idempotency_key` que la pantalla usa para emparejar la
+// marcacion optimista. Dejar uno de los dos viejo volveria a producir el conflicto.
+function withIdempotencyKey(payload: Record<string, unknown>, key: string): Record<string, unknown> {
+  const metadata = payload.metadata && typeof payload.metadata === "object" ? (payload.metadata as Record<string, unknown>) : {};
+  return { ...payload, idempotency_key: key, metadata: { ...metadata, idempotency_key: key } };
+}
+
+export type IdempotencyResolution = "already_registered" | "retry_with_new_key" | "escalate";
+
+// Reconciliacion de la clave en conflicto contra la unica lectura propia que existe
+// hoy (`GET /api/v1/hr/self/attendance`, que devuelve `idempotency_key` en cada
+// punch del dia). La decision pura vive en `reconcileIdempotencyConflict`; aqui solo
+// esta el transporte y el recorte por horario/clave.
+async function reconcileAgainstServer(item: PendingSyncItem): Promise<{ outcome: IdempotencyResolution }> {
+  const payload = (item.payload || {}) as Record<string, unknown>;
+  const punchedAt = String(payload.punched_at || item.created_at || "");
+  const punchType = String(payload.type || "");
+  const key = String(payload.idempotency_key || "");
+  let rows: Attendance["punches"] = [];
+  try {
+    const day = punchedAt.slice(0, 10);
+    const attendance = await api<Attendance[]>(`/api/v1/hr/self/attendance?date=${day}`, { silentFailureAlert: true });
+    const routeKey = String(payload.route_id ?? "");
+    // El empleado puede tener varias filas (una por horario o sin horario). Se
+    // agrupan las punches de SU jornada: si hay una sola fila se usa tal cual, y si
+    // hay varias se toma la del horario marcado, con la primera como respaldo.
+    const groups = Array.isArray(attendance) ? attendance : [];
+    const scoped = routeKey ? groups.filter((group) => String(group?.route_id ?? "") === routeKey) : [];
+    const chosen = scoped.length ? scoped : groups.slice(0, 1);
+    rows = chosen.flatMap((group) => (Array.isArray(group?.punches) ? group.punches : []));
+  } catch {
+    // Sin lectura no hay con qué reconciliar: mejor cerrar visible que reintentar a
+    // ciegas y volver al bucle que dejo al operario bloqueado todo el dia.
+    return { outcome: "escalate" };
+  }
+  const decision = reconcileIdempotencyConflict({ punchType, idempotencyKey: key, punches: rows });
+  if (decision.outcome === "already_registered") return { outcome: "already_registered" };
+  if (decision.outcome === "not_registered") return { outcome: "retry_with_new_key" };
+  // Ya existe el mismo tipo de marcacion con otra clave: reenviar duplicaria la
+  // hora. Es el unico caso que necesita administrador.
+  return { outcome: "escalate" };
+}
 
 async function flushPendingSync(onUpdate?: SyncUpdate) {
   if (typeof window === "undefined" || pendingSyncInFlight) return false;
@@ -297,15 +531,18 @@ async function flushPendingSync(onUpdate?: SyncUpdate) {
   let changed = false;
   try {
     for (;;) {
-      const index = queue.findIndex((item) => !isBlockedItem(item));
+      const index = queue.findIndex((item) => isSendableItem(item));
       if (index < 0) break;
       const item = queue[index];
       let outbound: unknown;
       try {
         outbound = await rehydrateEvidence(item.payload);
       } catch (error) {
+        // La evidencia ya no esta en el dispositivo: no hay foto que desprenderse,
+        // asi que la marcacion se cierra con motivo visible y se escala. Nunca se
+        // descarta en silencio.
         const failure = classifySyncFailure(error);
-        queue = writePendingSync(blockPendingSync(queue, item.id, syncFailureReason(failure))).items;
+        queue = writePendingSync(blockPendingSync(queue, item.id, syncFailureReason(failure), failure.code)).items;
         changed = true;
         onUpdate?.(queue, `${item.label} quedo bloqueado: ${syncFailureReason(failure)}`, "error");
         continue;
@@ -316,12 +553,129 @@ async function flushPendingSync(onUpdate?: SyncUpdate) {
         changed = true;
         void cleanupEvidence(item);
         publishHrMonitorRefresh({ source: "mobile-sync" });
-        onUpdate?.(queue, queue.filter((entry) => !isBlockedItem(entry)).length
-          ? `${item.label} sincronizado. Quedan ${queue.filter((entry) => !isBlockedItem(entry)).length} registro(s) por confirmar.`
+        onUpdate?.(queue, queue.filter((entry) => isPendingItem(entry)).length
+          ? `${item.label} sincronizado. Quedan ${queue.filter((entry) => isPendingItem(entry)).length} registro(s) por confirmar.`
           : `${item.label} sincronizado. El monitor ya puede actualizarse.`, "success");
       } catch (error) {
+        const transition = decideQueueTransition({ error, hasPhotoAttached: itemHasDetachablePhoto(item) });
+        const failure = classifySyncFailure(error);
+
+        if (transition.action === "retry_without_photo") {
+          // Clase evidencia: LA MARCACION SOBREVIVE. Se reintenta YA, en este mismo
+          // ciclo, con la foto desprendida del payload y con la MISMA
+          // `idempotency_key` que traia el item: por eso el servidor almacena UNA
+          // sola fila, no dos. La foto NO se borra de IndexedDB ni se le quita la
+          // referencia al item: sigue aqui hasta que el supervisor pueda
+          // recibirla, y por eso `cleanupEvidence` no se llama en esta rama.
+          const detached = detachEvidence(outbound as Record<string, unknown>, DEGRADED_MARKING_BLOCKED_REASON);
+          const marked = withEscalationMarker(detached.payload, {
+            kind: "degraded_evidence",
+            // El codigo que declara el desprendimiento tiene que ser el de evidencia que devolvio el
+            // servidor en details, no el paraguas VALIDACION: con el paraguas el API no reconoce
+            // la excepcion y la hora se vuelve a perder.
+            failureCode: evidenceCodeOf(error) || failure.code,
+            photoRefs: evidenceRefsOf(item)
+          });
+          try {
+            await api(item.path, { method: "POST", body: JSON.stringify(marked) });
+            // Un solo punch almacenado: la fila queda degradada y el item sale de la
+            // cola. La foto sobrevive en IndexedDB y su conteo se muestra aparte.
+            queue = writePendingSync(queue.filter((entry) => entry.id !== item.id)).items;
+            changed = true;
+            publishHrMonitorRefresh({ source: "mobile-sync" });
+            onUpdate?.(queue, DEGRADED_MARKING_NOTICE, "success");
+            continue;
+          } catch (retryError) {
+            // Sin foto tampoco entro: ya no es un problema de formato. Vale la
+            // politica del nuevo fallo (transitorio vuelve a la cola, regla de
+            // negocio se cierra) y la foto queda guardada igual en el equipo.
+            const retryTransition = decideQueueTransition({ error: retryError, hasPhotoAttached: false });
+            const retryFailure = classifySyncFailure(retryError);
+            if (retryTransition.action === "close") {
+              queue = writePendingSync(closePendingSyncItem(queue, item.id, syncFailureReason(retryFailure), retryFailure.code)).items;
+              changed = true;
+              onUpdate?.(queue, `${item.label}: ${retryTransition.notice}`, "error");
+              continue;
+            }
+            const degraded = { ...item, attempts: item.attempts + 1, status: "queued" as const, evidence_degraded: true, blocked_reason: "", blocked_code: "" };
+            queue = writePendingSync(queue.map((entry) => (entry.id === item.id ? degraded : entry))).items;
+            changed = true;
+            markQueueFailureObserved();
+            onUpdate?.(queue, `${item.label}: ${DEGRADED_MARKING_NOTICE}`, "pending");
+            break;
+          }
+        }
+
+        if (transition.action === "reconcile") {
+          // IDEMPOTENCY_KEY_CONFLICT: la clave ya existe en el servidor. Antes esto
+          // se cerraba (o reintentaba para siempre, que es como dejo a un operario
+          // sin jornada todo un dia). Ahora se consulta la asistencia propia y se
+          // decide con el dato real: o la hora ya esta, o no esta y se puede
+          // reintentar con clave nueva.
+          const resolution = await reconcileAgainstServer(item);
+          if (resolution.outcome === "already_registered") {
+            queue = writePendingSync(queue.filter((entry) => entry.id !== item.id)).items;
+            changed = true;
+            void cleanupEvidence(item);
+            publishHrMonitorRefresh({ source: "mobile-sync" });
+            onUpdate?.(queue, `${item.label}: ${IDEMPOTENCY_ALREADY_REGISTERED_NOTICE}`, "success");
+            continue;
+          }
+          if (resolution.outcome === "retry_with_new_key") {
+            const freshKey = newPunchIdempotencyKey();
+            // La reescritura se hace sobre el payload ENCOLADO, no sobre `outbound`:
+            // la foto ya vive en IndexedDB bajo una referencia y rehidratarla otra vez
+            // costaria otro decode de varios megas por un caso raro.
+            const rewritten = withIdempotencyKey(item.payload as Record<string, unknown>, freshKey);
+            try {
+              await api(item.path, { method: "POST", body: JSON.stringify(await rehydrateEvidence(rewritten)) });
+              queue = writePendingSync(queue.filter((entry) => entry.id !== item.id)).items;
+              changed = true;
+              void cleanupEvidence(item);
+              publishHrMonitorRefresh({ source: "mobile-sync" });
+              onUpdate?.(queue, `${item.label} sincronizado.`, "success");
+              continue;
+            } catch (retryError) {
+              // Se vuelve a evaluar la politica con el fallo nuevo; si sigue siendo
+              // conflicto, `reconciliations` corta el bucle y la fila se cierra.
+              const retryTransition = decideQueueTransition({ error: retryError, hasPhotoAttached: itemHasDetachablePhoto(item) });
+              const retryFailure = classifySyncFailure(retryError);
+              queue = writePendingSync(retryTransition.action === "close"
+                ? closePendingSyncItem(queue, item.id, syncFailureReason(retryFailure), retryFailure.code)
+                : blockPendingSync(queue.map((entry) => (entry.id === item.id ? { ...entry, payload: rewritten } : entry)), item.id, IDEMPOTENCY_UNRECOVERABLE_NOTICE, retryFailure.code)).items;
+              changed = true;
+              onUpdate?.(queue, `${item.label}: ${IDEMPOTENCY_UNRECOVERABLE_NOTICE}`, "error");
+              continue;
+            }
+          }
+          queue = writePendingSync(blockPendingSync(queue, item.id, IDEMPOTENCY_UNRECOVERABLE_NOTICE, "IDEMPOTENCY_KEY_CONFLICT")).items;
+          changed = true;
+          onUpdate?.(queue, `${item.label}: ${IDEMPOTENCY_UNRECOVERABLE_NOTICE}`, "error");
+          continue;
+        }
+
+        if (transition.action === "close") {
+          // Clase marcacion: la regla de negocio rechazo el punch. Se CIERRA para
+          // que deje de aparecer como "por enviar" y para que no bloquee lo que
+          // viene detras, con el motivo a la vista y la accion concreta.
+          const expired = isExpiredDeferredMarking(error);
+          const closed = withEscalationMarker(outbound as Record<string, unknown>, {
+            kind: "expired_marking",
+            failureCode: failure.code,
+            photoRefs: evidenceRefsOf(item)
+          });
+          void recordClosedMarkingNovelty(item, closed);
+          // La foto NO se borra: un cierre necesita evidencia para que el
+          // administrador pueda corregir la hora contra lo realmente tomado.
+          queue = writePendingSync(closePendingSyncItem(queue, item.id, transition.notice, failure.code || (expired ? "MARCACION_DIFERIDA_EXPIRADA" : ""))).items;
+          changed = true;
+          onUpdate?.(queue, `${item.label}: ${transition.notice}`, transition.tone);
+          continue;
+        }
+
         if (permanentSyncFailure(error)) {
-          const failure = classifySyncFailure(error);
+          // 4xx que la politica no reconoce como ninguna de las dos clases (sesion,
+          // alcance): se conserva el comportamiento histórico de bloqueo visible.
           queue = writePendingSync(blockPendingSync(queue, item.id, syncFailureReason(failure), failure.code)).items;
           changed = true;
           onUpdate?.(queue, `${item.label} no fue aceptado: ${syncFailureReason(failure)}`, "error");
@@ -329,6 +683,7 @@ async function flushPendingSync(onUpdate?: SyncUpdate) {
         }
         const next = { ...item, attempts: item.attempts + 1 };
         queue = writePendingSync(queue.map((entry) => (entry.id === item.id ? next : entry))).items;
+        markQueueFailureObserved();
         onUpdate?.(queue, `${item.label} pendiente de confirmar. Se reintentara automaticamente.`, "pending");
         break;
       }
@@ -454,10 +809,35 @@ export default function MobilePunchPage() {
   // "Fallo tecnico detectado" por unos 404 que son informacion, ni tenga que adivinar porque
   // los botones no hacen nada.
   const [blocked, setBlocked] = useState<null | "no_ficha" | "no_horario">(null);
+  // La foto que el telefono NO pudo entregar no es un callejon: la marcacion sigue
+  // siendo posible y la hora se registra. `degradedPhoto` guarda el motivo tecnico
+  // (para el supervisor) y activa el envio degradado; la operario solo ve una frase
+  // en espanol plano que no nombra formatos.
+  const [degradedPhoto, setDegradedPhoto] = useState<{ reason: string; detail: string } | null>(null);
+  // Fotos rechazadas que siguen vivas en IndexedDB esperando revision. Se leen al
+  // montar para que el conteo sobreviva a recargar la pantalla.
+  const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   function notify(text: string, tone: MessageTone = "success") {
     setMessage(text);
     setMessageTone(tone);
+  }
+
+  // La camara avisa con un resultado estructurado, nunca con una pantalla en blanco.
+  async function onSelfieUnusable(outcome: PhotoUnusableOutcome) {
+    const ref = newHrOfflineEvidenceRef("hr-selfie-pendiente");
+    const stored = await putPendingReviewEvidence({
+      ref,
+      base64: "",
+      size: 0,
+      type: outcome.reason,
+      name: `selfie-${new Date().toISOString()}`,
+      reason: outcome.message,
+      punch_type: String(currentAttendance.next_type || "entrada"),
+      punched_at: new Date().toISOString()
+    });
+    setPendingReviewCount((current) => current + (stored ? 1 : 0));
+    setDegradedPhoto({ reason: outcome.reason, detail: outcome.message });
   }
 
   const load = useCallback(async () => {
@@ -540,6 +920,18 @@ export default function MobilePunchPage() {
     load();
   }, [load]);
 
+  // El conteo de fotos pendientes de revision sobrevive a recargar la pantalla:
+  // viven en su propio almacen, fuera de la cola que si se sincroniza.
+  useEffect(() => {
+    let mounted = true;
+    void listPendingReviewEvidence().then((rows) => {
+      if (mounted) setPendingReviewCount(rows.length);
+    }).catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     const initialQueue = readPendingSync();
     setPendingSync(initialQueue);
@@ -547,40 +939,97 @@ export default function MobilePunchPage() {
     // Los blobs cuya marcacion ya no esta en la cola son huerfanos de sesiones interrumpidas.
     void pruneHrOfflineEvidence(initialQueue.flatMap(evidenceRefsOf));
     let mounted = true;
-    const sync = () => {
+    // Self-heal acotado: lo que la version anterior bloqueo por un problema de foto
+    // se libera UNA vez y se reintenta sin la foto. Sin esto, los operarios
+    // afectados seguirian pegados despues del despliegue. Va despues de `mounted`
+    // porque su callback de actualizacion es asincrono respecto a este efecto.
+    selfHealEvidenceQueue((items, syncMessage, tone) => {
+      if (!mounted) return;
+      setPendingSync(items);
+      if (syncMessage) notify(syncMessage, tone || "pending");
+    });
+    // El reintento ya NO es un `setInterval` fijo de 12 s. Medido en produccion: la
+    // distancia p50 entre fallos consecutivos del mismo usuario+route era 9,2 s, o
+    // sea exactamente ese intervalo menos lo que tarda el intento, con cada petición
+    // pudiendo quemar 20 s de timeout y ~7 lecturas paralelas por tick. Ahora hay UN
+    // tick a la vez (`tickRunning`, porque `flushPendingSync` tiene su propio
+    // single-flight y un segundo arranque solo devolvía false) y el siguiente
+    // reintento llega tras respaldo exponencial con jitter SOLO si el anterior
+    // fallo. Con la cola limpia se vuelve al ritmo lento de siempre.
+    let timer = 0;
+    let tickRunning = false;
+    let consecutiveFailures = 0;
+    const schedule = (delay: number) => {
+      if (!mounted) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(runTick, Math.max(1000, delay));
+    };
+    const runTick = () => {
+      if (!mounted) return;
       if (typeof navigator !== "undefined" && navigator.onLine === false) {
-        if (mounted) setPendingSync(readPendingSync());
+        setPendingSync(readPendingSync());
+        // Sin senal no hay nada que intentar: se espera el evento `online`.
+        schedule(QUEUE_IDLE_POLL_MS);
         return;
       }
+      if (tickRunning) {
+        // Solaparse seria exactamente la tormenta que se midio.
+        schedule(2000);
+        return;
+      }
+      tickRunning = true;
       flushPendingSync((items, syncMessage, tone) => {
         if (!mounted) return;
         setPendingSync(items);
         if (syncMessage) notify(syncMessage, tone || "pending");
+        if (queueSawFailure) consecutiveFailures += 1;
       }).then((changed) => {
         if (changed && mounted) load().catch(() => undefined);
-      }).catch(() => undefined);
+      }).catch(() => {
+        consecutiveFailures += 1;
+      }).finally(() => {
+        tickRunning = false;
+        queueSawFailure = false;
+        if (!mounted) return;
+        const remaining = readPendingSync().filter(isSendableItem).length;
+        if (!remaining) {
+          consecutiveFailures = 0;
+          schedule(QUEUE_IDLE_POLL_MS);
+          return;
+        }
+        schedule(consecutiveFailures > 0
+          ? queueNextPollMs("failure", consecutiveFailures)
+          : QUEUE_IDLE_POLL_MS);
+      });
     };
     const goOnline = () => {
       if (!mounted) return;
       setOnline(true);
       // Al recuperar senal el horario vuelve a ser la fuente de verdad: se recarga y se vacia la cola.
       load().catch(() => undefined);
-      sync();
+      // La senal recuperada es la unica señal que SI merece intento inmediato.
+      consecutiveFailures = 0;
+      schedule(0);
     };
     const goOffline = () => {
       if (mounted) setOnline(false);
     };
-    sync();
-    const timer = window.setInterval(sync, 12000);
+    // `focus` sigue reintentando al instante: el operario que vuelve a la app
+    // quiere ver su cola resuelta, no esperar el respaldo.
+    const onFocus = () => {
+      consecutiveFailures = 0;
+      schedule(0);
+    };
+    runTick();
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
-    window.addEventListener("focus", sync);
+    window.addEventListener("focus", onFocus);
     return () => {
       mounted = false;
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
-      window.removeEventListener("focus", sync);
+      window.removeEventListener("focus", onFocus);
     };
   }, [load]);
 
@@ -664,8 +1113,11 @@ export default function MobilePunchPage() {
   })();
   const needsJustification = isArrivingLate || isClosingLate;
   const needsSelfie = Boolean(nextType && selfieRequiredPunches.has(nextType));
-  const pendingQueued = pendingSync.filter((item) => !isBlockedItem(item));
+  // "Por enviar" son SOLO las que aun esperan. Un cierre ya no cuenta aqui: ese era
+  // el item que se quedaba bloqueando la cola para siempre.
+  const pendingQueued = pendingSync.filter(isPendingItem);
   const pendingBlocked = pendingSync.filter(isBlockedItem);
+  const pendingClosed = pendingSync.filter(isClosedItem);
   const pendingWeightKb = Math.max(1, Math.round(offlineQueueWeight(pendingQueued) / 1024));
 
   useEffect(() => {
@@ -785,7 +1237,10 @@ export default function MobilePunchPage() {
         notify(decision.userMessage, "error");
         return;
       }
-      if (selfieRequiredPunches.has(type) && !identitySelfie) {
+      // La selfie sigue siendo obligatoria, SALVO cuando el telefono demostro que no
+      // puede entregarla: ahi bloquear al operario es perderle la jornada por culpa de
+      // un formato. Se marca igual y la foto va a revision del supervisor.
+      if (selfieRequiredPunches.has(type) && !identitySelfie && !degradedPhoto) {
         notify("Toma la selfie de validacion antes de marcar.", "error");
         return;
       }
@@ -861,10 +1316,24 @@ export default function MobilePunchPage() {
         if (extraEvidence?.base64) payload.extra_evidence = extraEvidence;
         if (vehiclePlate) payload.kilometraje_dia = dayMileage.trim().replace(",", ".");
       }
+      // Marcacion degradada declarada: la hora viaja sin foto y con la novedad del
+      // supervisor pegada al metadata, que es el unico transporte que existe hoy.
+      if (degradedPhoto && selfieRequiredPunches.has(type)) {
+        payload.metadata = attachHrNoveltyMarker(payload, buildHrNoveltyMarker({
+          kind: "degraded_evidence",
+          message: NOVELTY_PENDING_PHOTO_MESSAGE,
+          punchType: type,
+          punchedAt: markedAt.toISOString(),
+          idempotencyKey,
+          failureCode: `FOTO_${String(degradedPhoto.reason || "").toUpperCase()}`,
+          photoRefs: []
+        })).metadata;
+      }
       setExtraReason("");
       setExtraDetail("");
       setExtraEvidence(null);
       setIdentitySelfie(null);
+      setDegradedPhoto(null);
       if (type === "entrada") setStartMileage("");
       if (type === "salida") setDayMileage("");
       const queued = await enqueuePendingSync("/api/v1/hr/self/time-punches", payload, punchLabels[type].title);
@@ -1102,6 +1571,27 @@ export default function MobilePunchPage() {
           </ul>
         </div>
       ) : null}
+      {pendingClosed.length ? (
+        <div className="rounded-md border border-slate-300 bg-slate-50 p-4 text-sm font-semibold text-slate-900" role="status">
+          <p className="flex items-center gap-2"><CalendarX size={16} /> {pendingClosed.length} marcacion(es) cerradas: no se van a enviar y no cuentan como pendientes. Tu hora la debe registrar un administrador.</p>
+          <ul className="mt-2 space-y-2">
+            {pendingClosed.map((item) => (
+              <li className="rounded-md border border-slate-300 bg-white p-2" key={item.id}>
+                <p className="text-sm font-semibold">{item.label} · {new Date(item.created_at).toLocaleString("es-CO")}</p>
+                <p className="mt-1 text-xs font-medium text-slate-700">{item.blocked_reason || "El servidor rechazo esta marcacion."}</p>
+                <button className="mt-2 h-10 rounded-md border border-slate-300 px-3 text-xs font-semibold text-slate-800 hover:bg-slate-100" onClick={() => setPendingSync(discardPendingSync(item.id))} type="button">
+                  Ya la reporte, quitar de la lista
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {pendingReviewCount ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-950" role="status">
+          {pendingReviewCount} foto(s) quedaron guardadas en este equipo esperando revision de tu supervisor. Tu hora ya fue registrada.
+        </div>
+      ) : null}
 
       {blocked ? null : <section className="grid grid-cols-2 gap-2 rounded-md border border-line bg-white p-1 shadow-sm">
         <button className={`h-12 rounded-md text-base font-semibold ${view === "marcar" ? "bg-apex text-white" : "text-neutral-700"}`} onClick={() => setView("marcar")} type="button">
@@ -1179,9 +1669,15 @@ export default function MobilePunchPage() {
                   facing="user"
                   label={nextType === "entrada" ? "Selfie de validacion de entrada" : "Selfie de validacion de cierre"}
                   onChange={setIdentitySelfie}
+                  onUnusable={onSelfieUnusable}
                   required
                   value={identitySelfie}
                 />
+                {degradedPhoto ? (
+                  <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs font-semibold text-amber-950" role="status">
+                    {PHOTO_UNUSABLE_COPY} Puedes pulsar el boton de marcar: tu hora si se registra.
+                  </p>
+                ) : null}
                 <p className="mt-2 text-xs text-neutral-500">Debe verse tu rostro. El almuerzo y el retorno no piden foto.</p>
               </div>
             ) : null}
