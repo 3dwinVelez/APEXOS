@@ -1,6 +1,10 @@
 "use client";
 
-import { errorMessage, platformAlertEventName, type PlatformAlertPayload } from "@/lib/platformAlerts";
+import {
+  platformDiagnosticEventName,
+  technicalDiagnosticsEnabled,
+  type PlatformAlertPayload
+} from "@/lib/platformAlerts";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -20,58 +24,39 @@ const icons = {
   error: XCircle
 };
 
+// El modo diagnostico lo enciende soporte sobre el navegador de un usuario concreto. Sin esa
+// llave este componente no escucha nada: un problema tecnico nunca es una ventana para el cliente.
+const DIAGNOSTIC_BUDGET_MS = 60_000;
+const DIAGNOSTIC_BUDGET_CARDS = 5;
+
 export function PlatformAlerts() {
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
   useEffect(() => {
-    function push(detail: PlatformAlertPayload) {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      setAlerts((current) => {
-        const duplicate = current.some((item) =>
-          item.title === detail.title &&
-          item.message === detail.message &&
-          item.technical === detail.technical
-        );
-        return duplicate ? current : [...current.slice(-4), { id, level: detail.level || "error", ...detail }];
-      });
-      if (!detail.sticky) window.setTimeout(() => setAlerts((current) => current.filter((item) => item.id !== id)), 7000);
-    }
+    if (!technicalDiagnosticsEnabled()) return;
 
-    function onAlert(event: Event) {
+    let windowStartedAt = 0;
+    let shownInWindow = 0;
+
+    function onDiagnostic(event: Event) {
       const detail = (event as CustomEvent<PlatformAlertPayload>).detail;
-      if (detail?.title && detail?.message) push(detail);
+      if (!detail?.title) return;
+      const now = Date.now();
+      if (now - windowStartedAt > DIAGNOSTIC_BUDGET_MS) {
+        windowStartedAt = now;
+        shownInWindow = 0;
+      }
+      // Un fallo que se repite cada pocos segundos no puede volver a saturar la pantalla,
+      // ni siquiera a soporte: el detalle completo ya esta en platform-logs.
+      if (shownInWindow >= DIAGNOSTIC_BUDGET_CARDS) return;
+      shownInWindow += 1;
+      const id = `${now}-${Math.random().toString(36).slice(2, 8)}`;
+      setAlerts((current) => [...current.slice(-4), { id, level: detail.level || "error", ...detail }]);
+      window.setTimeout(() => setAlerts((current) => current.filter((item) => item.id !== id)), 9000);
     }
 
-    function onError(event: ErrorEvent) {
-      push({
-        level: "error",
-        title: "Error de interfaz",
-        message: "La pantalla detectó un fallo y evitó bloquear la operación actual.",
-        technical: event.message || "Error no identificado",
-        source: "frontend",
-        sticky: true
-      });
-    }
-
-    function onRejection(event: PromiseRejectionEvent) {
-      push({
-        level: "error",
-        title: "Operación interrumpida",
-        message: "Se detectó una promesa fallida. Revisa el detalle técnico para diagnóstico.",
-        technical: errorMessage(event.reason, "Promesa rechazada sin detalle."),
-        source: "frontend",
-        sticky: true
-      });
-    }
-
-    window.addEventListener(platformAlertEventName(), onAlert as EventListener);
-    window.addEventListener("error", onError);
-    window.addEventListener("unhandledrejection", onRejection);
-    return () => {
-      window.removeEventListener(platformAlertEventName(), onAlert as EventListener);
-      window.removeEventListener("error", onError);
-      window.removeEventListener("unhandledrejection", onRejection);
-    };
+    window.addEventListener(platformDiagnosticEventName(), onDiagnostic as EventListener);
+    return () => window.removeEventListener(platformDiagnosticEventName(), onDiagnostic as EventListener);
   }, []);
 
   if (!alerts.length) return null;

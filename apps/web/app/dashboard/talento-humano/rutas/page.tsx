@@ -45,6 +45,10 @@ const DELETE_REASON_MIN = 12;
 
 const punchNames: Record<string, string> = { entrada: "Entrada", inicio_almuerzo: "Almuerzo", fin_almuerzo: "Retorno", salida: "Cierre" };
 const ROUTES_LIST_LIMIT = 500;
+// La pantalla ya se refresca cuando llega un evento de marcacion (hrMonitorRefresh). El temporizador
+// es solo el respaldo del que no tiene el evento; a 5s multiplicaba las lecturas pesadas de malla y
+// empujaba la transaccion contra el statement_timeout del servidor.
+const ROUTES_BACKSTOP_POLL_MS = 30_000;
 const ROUTE_BUSY_ERROR_CODE = "ROUTE_ASSIGNMENT_BUSY";
 const weekdayOptions = [
   { value: 1, label: "Lun" },
@@ -545,7 +549,7 @@ export default function RoutesPlanningPage() {
       loadEventSummaries();
       if (selectedRouteId) loadMonitor(monitorDate);
     };
-    const timer = window.setInterval(refreshVisible, 5000);
+    const timer = window.setInterval(refreshVisible, ROUTES_BACKSTOP_POLL_MS);
     document.addEventListener("visibilitychange", refreshVisible);
     return () => {
       window.clearInterval(timer);
