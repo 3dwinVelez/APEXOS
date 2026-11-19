@@ -1096,14 +1096,19 @@ export default function RoutesPlanningPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-content-muted hover:text-apex" href="/dashboard/talento-humano"><ArrowLeft size={16} /> Talento Humano</Link>
-          <p className="text-sm font-medium text-apex">{onMallasPath ? "Monitor operativo" : "Administracion de jornadas"}</p>
-          <h1 className="mt-1 text-2xl font-semibold md:text-3xl">{onMallasPath ? "Monitor de mallas horarias" : "Asignar horarios"}</h1>
+          <p className="text-sm font-medium text-apex">Talento Humano</p>
+          <h1 className="mt-1 text-2xl font-semibold md:text-3xl">Horarios y mallas</h1>
           <p className="mt-2 max-w-3xl text-sm text-content-muted">{onMallasPath ? "Abre una malla para seguir en vivo sus marcaciones, actividades, GPS y evidencias fotograficas en una vista compacta." : "Consulta, compara y asigna jornadas administrativas u operativas sin mezclar la planeacion con el seguimiento en campo."}</p>
         </div>
-        <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white md:h-10 md:w-auto" onClick={() => openCreateModal()} type="button">
+        {!onMallasPath ? <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-apex px-4 text-sm font-semibold text-white md:h-10 md:w-auto" onClick={() => openCreateModal()} type="button">
           <Plus size={16} /> Nuevo horario
-        </button>
+        </button> : null}
       </header>
+
+      <nav aria-label="Vistas de horarios y mallas" className="flex gap-2 rounded-md border border-line bg-surface p-2">
+        <Link href="/dashboard/talento-humano/rutas" aria-current={!onMallasPath ? "page" : undefined} className={`flex-1 rounded-md px-4 py-2 text-center text-sm font-semibold ${!onMallasPath ? "bg-apex text-white" : "text-content-body hover:bg-paper"}`}>Programación</Link>
+        <Link href="/dashboard/talento-humano/mallas" aria-current={onMallasPath ? "page" : undefined} className={`flex-1 rounded-md px-4 py-2 text-center text-sm font-semibold ${onMallasPath ? "bg-apex text-white" : "text-content-body hover:bg-paper"}`}>Seguimiento</Link>
+      </nav>
 
       {message ? <div className={`rounded-md border p-4 text-sm font-medium ${messageTone === "error" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`} role={messageTone === "error" ? "alert" : "status"}>{message}</div> : null}
 
@@ -1111,7 +1116,7 @@ export default function RoutesPlanningPage() {
         <div className="border-b border-line p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-lg font-semibold">{onMallasPath ? "Mallas horarias" : "Consulta de horarios"}</h2></div>
+              <div className="flex items-center gap-2"><CalendarDays size={18} className="text-apex" /><h2 className="text-lg font-semibold">{onMallasPath ? "Seguimiento de jornadas" : "Programación de jornadas"}</h2></div>
               <p className="mt-1 text-sm text-content-muted">{onMallasPath ? "Abre una malla para ver su equipo, marcaciones y evidencias del dia." : "Compara fecha, jornada, personas y estado antes de abrir o editar un horario."}</p>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1173,10 +1178,10 @@ export default function RoutesPlanningPage() {
                   <span className="rounded-md bg-paper px-2 py-1">{scheduleGpsRequired(route) ? "GPS" : "Sin GPS"}</span>
                   <span className="rounded-md bg-paper px-2 py-1">{counterText(route.evidence_count, "evidencia(s)")}</span>
                 </div>
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <div className={`mt-4 grid gap-2 ${onMallasPath ? "" : "sm:grid-cols-3"}`}>
                   <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button"><Navigation size={15} /> Abrir</button>
-                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button"><Edit3 size={15} /> Editar</button>
-                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => openCreateModal(route)} type="button"><Copy size={15} /> Clonar</button>
+                  {!onMallasPath ? <><button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button"><Edit3 size={15} /> Editar</button>
+                  <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => openCreateModal(route)} type="button"><Copy size={15} /> Clonar</button></> : null}
                 </div>
               </article>
             );
@@ -1191,19 +1196,19 @@ export default function RoutesPlanningPage() {
                 const events = routeEventCount(route);
                 const operational = Boolean(route.vehicle_plate || route.placa);
                 const displayState = routeDisplayState(route);
-                return <tr className="hover:bg-paper/70" key={String(route.id)}>
+                return <tr className="hover:bg-paper/70" key={String(route.id)} data-route-id={String(route.id)}>
                   <td className="px-4 py-3"><p className="font-semibold text-apex">{route.display_id || route.code || route.id}</p><p className="mt-1 text-xs text-content-muted">Horario</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-content-muted">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia · {scheduleGpsRequired(route) ? "GPS" : "sin GPS"}</p></td>
                   <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-content-muted">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-content-muted">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
                   <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span><p className="mt-1 text-xs capitalize text-content-muted">{displayState.status} · {counterText(events, "evento(s)")}</p></td>
-                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button">Abrir</button><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
+                  <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button">Abrir</button>{!onMallasPath ? <><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></> : null}</div></td>
                 </tr>;
               })}
             </tbody>
           </table>
         </div>
-        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">Limpia los filtros o crea una nueva asignacion.</p></div> : null}
+        {!filteredRoutes.length ? <div className="p-10 text-center"><Filter className="mx-auto text-content-subtle" size={28} /><p className="mt-3 text-sm font-semibold">No hay horarios con estos filtros</p><p className="mt-1 text-sm text-content-muted">{onMallasPath ? "Revisa los filtros o crea una jornada en Programación." : "Limpia los filtros o crea una nueva asignacion."}</p></div> : null}
       </section>
 
       {modal ? (
@@ -1384,8 +1389,8 @@ export default function RoutesPlanningPage() {
                     <button aria-label="Dia siguiente" className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted hover:bg-surface-muted hover:text-content-strong" onClick={() => changeMonitorDate(1)} type="button"><ChevronRight size={16} /></button>
                   </div>
                   <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={15} /> Actualizar</button>
-                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={15} /> Editar</button>
-                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-red-300 bg-paper px-3 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void openDeleteModal(selectedRoute)} type="button"><Trash2 size={15} /> Eliminar</button>
+                  {!onMallasPath ? <><button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={15} /> Editar</button>
+                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-red-300 bg-paper px-3 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void openDeleteModal(selectedRoute)} type="button"><Trash2 size={15} /> Eliminar</button></> : null}
                   <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" href="/dashboard/talento-humano/mapa"><Navigation size={15} /> Mapa</Link>
                   <button aria-label="Cerrar monitor" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-line bg-paper hover:bg-surface-muted" onClick={() => setSelectedRouteId("")} type="button"><X size={17} /></button>
                 </div>
@@ -1742,7 +1747,7 @@ export default function RoutesPlanningPage() {
         </ModalFrame>
       ) : null}
 
-      {mounted ? createPortal(
+      {mounted && !onMallasPath ? createPortal(
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 p-3 backdrop-blur md:hidden">
           <button className="h-14 w-full rounded-md bg-apex text-base font-semibold text-white" onClick={() => openCreateModal()} type="button">Nuevo horario</button>
         </div>,
