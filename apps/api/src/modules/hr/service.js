@@ -438,11 +438,26 @@ function operationalRouteNumericId(input = {}) {
     || optionalNumericId(input.metadata?.legacy_route_id);
 }
 
-function routeEventMetadata(input = {}, routeId = null) {
+// Ramas de `metadata` que sostienen el sustento visual de una marcacion.
+const EVIDENCE_METADATA_KEYS = ["identity_photo", "extra_evidence", "photo"];
+
+// El metadata que manda el cliente se hereda a todas las filas del mismo evento: la
+// marcacion, su ping de GPS, la actividad y la sesion. La selfie viaja en esa copia y
+// produccion lo pago dos veces: medido el 2026-11-18 sobre el tenant del horario 336,
+// `TimePunch` guarda 29,7 MB de `identity_photo` en 46 filas (su duena legitima: el
+// monitor y el reporte la piden por el id de la marcacion) y `GpsPing` guarda 28,5 MB
+// en 44 filas copiadas del mismo envio, sin un solo lector. `WorkActivity` mide 64 KB
+// con cero binario, porque su sustento vive en `ActivityEvidence`.
+//
+// La regla queda en el unico constructor que escriben los cinco sitios: la marcacion es
+// duena del binario y lo declara con `owner: true`; lo demas es presencia.
+function routeEventMetadata(input = {}, routeId = null, { owner = false } = {}) {
   const metadata = input.metadata || {};
   const displayRouteId = metadata.display_route_id || metadata.route_code || input.route_id || routeId || "";
+  const carried = owner ? metadata : Object.fromEntries(Object.entries(metadata)
+    .filter(([key]) => !EVIDENCE_METADATA_KEYS.includes(key)));
   return {
-    ...metadata,
+    ...carried,
     display_route_id: displayRouteId ? String(displayRouteId) : "",
     route_code: metadata.route_code ? String(metadata.route_code) : (displayRouteId ? String(displayRouteId) : ""),
     source_route_id: metadata.source_route_id ? String(metadata.source_route_id) : "",
@@ -2946,7 +2961,8 @@ async function createPunch(tenantId, input, user, options = {}) {
           })
         } : {},
         metadata: {
-          ...routeEventMetadata(input, route?.id || inputRouteId),
+          // Unica fila duena del sustento: ver `routeEventMetadata`.
+          ...routeEventMetadata(input, route?.id || inputRouteId, { owner: true }),
           supplied_user_name: input.user_name || "",
           employee_code: employee.code || "",
           employee_name: employeeDisplayName(employee) || resolvedUserName,
@@ -3426,11 +3442,7 @@ async function getOperationsMap(tenantId, query = {}) {
         take: 200
       }),
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } }, take: 500 }),
-      prisma.gpsPing.findMany({
-        where: { captured_at: { gte: day, lt: endOfDay(day) } },
-        orderBy: { captured_at: "desc" },
-        take: pingLimit
-      }),
+      monitorEvidenceRows.readDayGpsPings(prisma, tenantId, day, endOfDay(day), pingLimit),
       monitorEvidenceRows.readDayEvidencePunches(prisma, tenantId, day, endOfDay(day), punchLimit),
       prisma.workActivity.findMany({
         where: { occurred_at: { gte: day, lt: endOfDay(day) } },
@@ -3442,11 +3454,7 @@ async function getOperationsMap(tenantId, query = {}) {
 
     // Solo obtener huella extendida si es modo historico; en vivo los pings de hoy son suficientes
     const lastFootprints = footprintDays > 0 && !isLiveWindow && query.footprint_days !== "0"
-      ? await prisma.gpsPing.findMany({
-          where: { captured_at: { gte: new Date(day.getTime() - footprintDays * 86400000), lt: endOfDay(day) } },
-          orderBy: { captured_at: "desc" },
-          take: 1000
-        })
+      ? await monitorEvidenceRows.readDayGpsPings(prisma, tenantId, new Date(day.getTime() - footprintDays * 86400000), endOfDay(day), 1000)
       : pings;
 
     const employeeByAlias = new Map();

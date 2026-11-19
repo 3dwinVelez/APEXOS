@@ -1,0 +1,47 @@
+{
+ "notas": "Medicion SOLO LECTURA en produccion del 2026-11-19 sobre el dia 2026-11-18 del tenant del cliente (id omitido) y 300 filas por lectura. cruda = SELECT con metadata en claro (comportamiento anterior); proyectada = monitorEvidenceRows con la guarda pg_column_size. evidencias_desde_metadata = punchPhotoItems().length sobre el mismo conjunto de ids.",
+ "target": "production",
+ "ran_at": "2026-11-19T03:01:37.124Z",
+ "dia": "2026-11-18",
+ "umbral_bytes": 8192,
+ "timepunch": {
+  "cruda": {
+   "ms": 7743,
+   "filas": 53,
+   "bytes_metadata": 22752445,
+   "bytes_max_metadata": 2699983,
+   "filas_con_binario_largo": 27,
+   "evidencias_desde_metadata": 27
+  },
+  "proyectada": {
+   "ms": 941,
+   "filas": 53,
+   "bytes_metadata": 50735,
+   "bytes_max_metadata": 1723,
+   "filas_con_binario_largo": 0,
+   "evidencias_desde_metadata": 27
+  },
+  "ids_iguales": true,
+  "anuncios_disponibles": 9
+ },
+ "gps": {
+  "cruda": {
+   "ms": 9790,
+   "filas": 239,
+   "bytes_metadata": 21629022,
+   "bytes_max_metadata": 2699662,
+   "filas_con_binario_largo": 25,
+   "evidencias_desde_metadata": 25
+  },
+  "proyectada": {
+   "ms": 1055,
+   "filas": 239,
+   "bytes_metadata": 103640,
+   "bytes_max_metadata": 1146,
+   "filas_con_binario_largo": 0,
+   "evidencias_desde_metadata": 25
+  },
+  "ids_iguales": true,
+  "claves_metadata": "activity_id,activity_type,activity_type_code,activity_type_name,biometric_method,biometric_verified,current_user_only,display_route_id,employee_code,employee_name,gps_quality,gps_required,gps_skipped,idempotency_key,identity_aliases,identity_photo,identity_verification,legacy_route_id,offline,route_code,source,source_route_id,supplied_user_name,tracking_mode,type,user_email"
+ }
+}

@@ -1,0 +1,955 @@
+{
+  "target": "production",
+  "ran_at": "2026-11-19T01:52:22.577Z",
+  "route": {
+    "id": 336,
+    "tenant_id": "67a5dcb8-100b-4a44-b5db-d024f2e57450",
+    "date": "2026-11-18T05:00:00.000Z",
+    "kind": "trabajo",
+    "status": "active",
+    "n_empleados": 1
+  },
+  "ranking": {
+    "total": 295,
+    "posicion": 12,
+    "posteriores": 11,
+    "misma_fecha": 11,
+    "dentro_top100": true
+  },
+  "eventos": {
+    "punches": 4,
+    "actividades": 1,
+    "salidas": 1,
+    "evidencias_actividad": 1
+  },
+  "punches": [
+    {
+      "id": 2301,
+      "type": "entrada",
+      "at": "Wed Nov 18 2026 05:57:15 GMT-0500 (hora estándar de Colombia)",
+      "sz_extra": 5,
+      "sz_meta": 165050,
+      "extra_b64": false,
+      "meta_b64": true
+    },
+    {
+      "id": 2317,
+      "type": "inicio_almuerzo",
+      "at": "Wed Nov 18 2026 13:34:14 GMT-0500 (hora estándar de Colombia)",
+      "sz_extra": 5,
+      "sz_meta": 632,
+      "extra_b64": false,
+      "meta_b64": false
+    },
+    {
+      "id": 2318,
+      "type": "fin_almuerzo",
+      "at": "Wed Nov 18 2026 13:50:38 GMT-0500 (hora estándar de Colombia)",
+      "sz_extra": 5,
+      "sz_meta": 632,
+      "extra_b64": false,
+      "meta_b64": false
+    },
+    {
+      "id": 2341,
+      "type": "salida",
+      "at": "Wed Nov 18 2026 18:52:10 GMT-0500 (hora estándar de Colombia)",
+      "sz_extra": 788273,
+      "sz_meta": 8620,
+      "extra_b64": true,
+      "meta_b64": true
+    }
+  ],
+  "peso_tenant": {
+    "total_extra": "241 MB",
+    "bytes_extra": 252421067,
+    "total_meta": "29 MB",
+    "bytes_meta": 30642559,
+    "con_base64": 305,
+    "filas_tenant": 1799
+  },
+  "activity_evidence": {
+    "total_b64": "72 MB",
+    "bytes_b64": 75974995,
+    "filas": 136
+  },
+  "tabla": {
+    "total": "300 MB",
+    "plano": "2320 kB",
+    "filas": 2349
+  },
+  "indices": [
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE UNIQUE INDEX \"ActivityEvidence_pkey\" ON public.\"ActivityEvidence\" USING btree (id)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"ActivityEvidence_tenant_activity_idx\" ON public.\"ActivityEvidence\" USING btree (tenant_id, activity_id)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE UNIQUE INDEX \"TimePunch_pkey\" ON public.\"TimePunch\" USING btree (id)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"TimePunch_tenant_id_date_idx\" ON public.\"TimePunch\" USING btree (tenant_id, date)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"TimePunch_tenant_id_date_punched_at_idx\" ON public.\"TimePunch\" USING btree (tenant_id, date, punched_at)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"TimePunch_tenant_id_employee_id_date_idx\" ON public.\"TimePunch\" USING btree (tenant_id, employee_id, date)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE UNIQUE INDEX \"TimePunch_tenant_id_idempotency_key_key\" ON public.\"TimePunch\" USING btree (tenant_id, idempotency_key)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"TimePunch_tenant_id_user_name_date_idx\" ON public.\"TimePunch\" USING btree (tenant_id, user_name, date)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE UNIQUE INDEX \"TimeRoute_pkey\" ON public.\"TimeRoute\" USING btree (id)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"TimeRoute_tenant_id_date_idx\" ON public.\"TimeRoute\" USING btree (tenant_id, date)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"TimeRoute_tenant_id_status_idx\" ON public.\"TimeRoute\" USING btree (tenant_id, status)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE UNIQUE INDEX \"WorkActivity_pkey\" ON public.\"WorkActivity\" USING btree (id)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"WorkActivity_tenant_employee_idx\" ON public.\"WorkActivity\" USING btree (tenant_id, employee_id, occurred_at)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"WorkActivity_tenant_id_occurred_at_idx\" ON public.\"WorkActivity\" USING btree (tenant_id, occurred_at)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"WorkActivity_tenant_route_idx\" ON public.\"WorkActivity\" USING btree (tenant_id, route_id, occurred_at)"
+    },
+    {
+      "tablename": "<anonimizado>",
+      "indexname": "<anonimizado>",
+      "indexdef": "CREATE INDEX \"WorkActivity_tenant_session_idx\" ON public.\"WorkActivity\" USING btree (tenant_id, session_id, occurred_at)"
+    }
+  ],
+  "top100_contiene_336": true,
+  "ids_top100": [
+    347,
+    346,
+    345,
+    344,
+    343,
+    342,
+    341,
+    340,
+    339,
+    338,
+    337,
+    336,
+    335,
+    334,
+    333,
+    332,
+    331,
+    330,
+    329,
+    328,
+    327,
+    326,
+    325,
+    324,
+    323,
+    322,
+    321,
+    320,
+    319,
+    318,
+    317,
+    316,
+    315,
+    314,
+    313,
+    312,
+    311,
+    310,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309,
+    293,
+    294,
+    295,
+    296,
+    297,
+    298,
+    299,
+    300,
+    301,
+    302,
+    303,
+    282,
+    283,
+    284,
+    285,
+    286,
+    287,
+    288,
+    289,
+    290,
+    291,
+    292,
+    271,
+    272,
+    273,
+    274,
+    275,
+    276,
+    277,
+    278,
+    279,
+    280,
+    281,
+    259,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265,
+    266,
+    267,
+    268,
+    269,
+    270,
+    248,
+    249,
+    250,
+    251,
+    252,
+    253,
+    254,
+    255,
+    256,
+    257,
+    258,
+    237
+  ],
+  "costos": {
+    "punches": {
+      "ms": 309,
+      "rows": [
+        {
+          "route_id": 273,
+          "count": 8,
+          "max": "2026-11-12T02:19:10.330Z"
+        },
+        {
+          "route_id": 272,
+          "count": 8,
+          "max": "2026-11-12T01:10:48.520Z"
+        },
+        {
+          "route_id": 314,
+          "count": 4,
+          "max": "2026-11-14T16:15:45.899Z"
+        },
+        {
+          "route_id": 278,
+          "count": 6,
+          "max": "2026-11-11T21:53:54.531Z"
+        },
+        {
+          "route_id": 299,
+          "count": 8,
+          "max": "2026-11-13T22:47:50.258Z"
+        },
+        {
+          "route_id": 309,
+          "count": 8,
+          "max": "2026-11-15T01:23:47.923Z"
+        },
+        {
+          "route_id": 292,
+          "count": 4,
+          "max": "2026-11-12T20:05:15.628Z"
+        },
+        {
+          "route_id": 271,
+          "count": 7,
+          "max": "2026-11-12T01:10:41.141Z"
+        },
+        {
+          "route_id": 263,
+          "count": 8,
+          "max": "2026-11-10T21:13:37.414Z"
+        },
+        {
+          "route_id": 282,
+          "count": 5,
+          "max": "2026-11-12T22:31:48.874Z"
+        },
+        {
+          "route_id": 311,
+          "count": 8,
+          "max": "2026-11-14T21:30:29.794Z"
+        },
+        {
+          "route_id": 269,
+          "count": 4,
+          "max": "2026-11-10T20:10:07.223Z"
+        },
+        {
+          "route_id": 261,
+          "count": 4,
+          "max": "2026-11-10T23:27:01.289Z"
+        },
+        {
+          "route_id": 280,
+          "count": 1,
+          "max": "2026-11-11T20:04:33.339Z"
+        },
+        {
+          "route_id": 257,
+          "count": 3,
+          "max": "2026-11-09T20:06:01.996Z"
+        },
+        {
+          "route_id": 328,
+          "count": 3,
+          "max": "2026-11-19T01:41:06.892Z"
+        },
+        {
+          "route_id": 291,
+          "count": 2,
+          "max": "2026-11-12T20:08:29.114Z"
+        },
+        {
+          "route_id": 298,
+          "count": 8,
+          "max": "2026-11-14T02:23:29.448Z"
+        },
+        {
+          "route_id": 331,
+          "count": 4,
+          "max": "2026-11-18T22:52:35.761Z"
+        },
+        {
+          "route_id": 251,
+          "count": 8,
+          "max": "2026-11-10T00:00:50.016Z"
+        },
+        {
+          "route_id": 266,
+          "count": 8,
+          "max": "2026-11-11T00:45:41.913Z"
+        },
+        {
+          "route_id": 315,
+          "count": 7,
+          "max": "2026-11-17T23:46:19.607Z"
+        },
+        {
+          "route_id": 307,
+          "count": 8,
+          "max": "2026-11-14T20:10:17.841Z"
+        },
+        {
+          "route_id": 283,
+          "count": 8,
+          "max": "2026-11-13T00:22:22.653Z"
+        },
+        {
+          "route_id": 305,
+          "count": 4,
+          "max": "2026-11-14T14:27:48.834Z"
+        },
+        {
+          "route_id": 297,
+          "count": 8,
+          "max": "2026-11-13T20:51:24.837Z"
+        },
+        {
+          "route_id": 321,
+          "count": 7,
+          "max": "2026-11-17T23:40:41.305Z"
+        },
+        {
+          "route_id": 303,
+          "count": 4,
+          "max": "2026-11-13T17:03:04.924Z"
+        },
+        {
+          "route_id": 252,
+          "count": 8,
+          "max": "2026-11-09T23:38:27.612Z"
+        },
+        {
+          "route_id": 285,
+          "count": 8,
+          "max": "2026-11-13T00:39:40.443Z"
+        },
+        {
+          "route_id": 327,
+          "count": 2,
+          "max": "2026-11-18T23:31:20.949Z"
+        },
+        {
+          "route_id": 253,
+          "count": 8,
+          "max": "2026-11-09T14:29:22.223Z"
+        },
+        {
+          "route_id": 335,
+          "count": 2,
+          "max": "2026-11-18T18:58:26.907Z"
+        },
+        {
+          "route_id": 301,
+          "count": 8,
+          "max": "2026-11-14T00:04:36.288Z"
+        },
+        {
+          "route_id": 254,
+          "count": 8,
+          "max": "2026-11-09T22:35:55.201Z"
+        },
+        {
+          "route_id": 250,
+          "count": 8,
+          "max": "2026-11-09T21:15:01.110Z"
+        },
+        {
+          "route_id": 319,
+          "count": 8,
+          "max": "2026-11-18T01:03:44.398Z"
+        },
+        {
+          "route_id": 294,
+          "count": 8,
+          "max": "2026-11-14T01:35:07.741Z"
+        },
+        {
+          "route_id": 267,
+          "count": 6,
+          "max": "2026-11-10T21:19:19.345Z"
+        },
+        {
+          "route_id": 304,
+          "count": 6,
+          "max": "2026-11-14T22:15:11.895Z"
+        },
+        {
+          "route_id": 258,
+          "count": 4,
+          "max": "2026-11-09T21:22:07.833Z"
+        },
+        {
+          "route_id": 322,
+          "count": 5,
+          "max": "2026-11-17T20:51:25.205Z"
+        },
+        {
+          "route_id": 330,
+          "count": 8,
+          "max": "2026-11-19T01:01:28.439Z"
+        },
+        {
+          "route_id": 276,
+          "count": 8,
+          "max": "2026-11-11T22:31:23.143Z"
+        },
+        {
+          "route_id": 237,
+          "count": 4,
+          "max": "2026-11-07T17:21:44.154Z"
+        },
+        {
+          "route_id": 262,
+          "count": 4,
+          "max": "2026-11-11T01:16:32.469Z"
+        },
+        {
+          "route_id": 323,
+          "count": 8,
+          "max": "2026-11-17T22:34:41.988Z"
+        },
+        {
+          "route_id": 320,
+          "count": 3,
+          "max": "2026-11-17T13:26:57.804Z"
+        },
+        {
+          "route_id": 289,
+          "count": 8,
+          "max": "2026-11-13T00:09:21.670Z"
+        },
+        {
+          "route_id": 268,
+          "count": 8,
+          "max": "2026-11-11T00:46:29.531Z"
+        },
+        {
+          "route_id": 329,
+          "count": 7,
+          "max": "2026-11-18T23:07:08.984Z"
+        },
+        {
+          "route_id": 306,
+          "count": 8,
+          "max": "2026-11-14T22:12:34.578Z"
+        },
+        {
+          "route_id": 286,
+          "count": 8,
+          "max": "2026-11-13T01:47:48.208Z"
+        },
+        {
+          "route_id": 279,
+          "count": 4,
+          "max": "2026-11-11T21:51:37.357Z"
+        },
+        {
+          "route_id": 281,
+          "count": 4,
+          "max": "2026-11-11T19:09:14.684Z"
+        },
+        {
+          "route_id": 259,
+          "count": 7,
+          "max": "2026-11-11T01:00:24.972Z"
+        },
+        {
+          "route_id": 288,
+          "count": 4,
+          "max": "2026-11-12T21:53:53.099Z"
+        },
+        {
+          "route_id": 324,
+          "count": 2,
+          "max": "2026-11-17T19:05:15.393Z"
+        },
+        {
+          "route_id": 310,
+          "count": 8,
+          "max": "2026-11-14T23:41:57.537Z"
+        },
+        {
+          "route_id": 249,
+          "count": 5,
+          "max": "2026-11-10T02:10:28.135Z"
+        },
+        {
+          "route_id": 255,
+          "count": 9,
+          "max": "2026-11-09T20:31:18.623Z"
+        },
+        {
+          "route_id": 296,
+          "count": 8,
+          "max": "2026-11-13T20:39:48.999Z"
+        },
+        {
+          "route_id": 333,
+          "count": 3,
+          "max": "2026-11-18T23:43:09.234Z"
+        },
+        {
+          "route_id": 325,
+          "count": 4,
+          "max": "2026-11-17T19:08:33.175Z"
+        },
+        {
+          "route_id": 295,
+          "count": 8,
+          "max": "2026-11-13T21:01:38.017Z"
+        },
+        {
+          "route_id": 274,
+          "count": 8,
+          "max": "2026-11-11T23:45:02.030Z"
+        },
+        {
+          "route_id": 334,
+          "count": 8,
+          "max": "2026-11-19T01:24:56.726Z"
+        },
+        {
+          "route_id": 287,
+          "count": 8,
+          "max": "2026-11-12T21:31:11.282Z"
+        },
+        {
+          "route_id": 312,
+          "count": 4,
+          "max": "2026-11-14T21:49:24.035Z"
+        },
+        {
+          "route_id": 277,
+          "count": 4,
+          "max": "2026-11-12T03:16:07.208Z"
+        },
+        {
+          "route_id": 290,
+          "count": 8,
+          "max": "2026-11-13T00:00:35.848Z"
+        },
+        {
+          "route_id": 300,
+          "count": 8,
+          "max": "2026-11-13T22:19:53.912Z"
+        },
+        {
+          "route_id": 317,
+          "count": 4,
+          "max": "2026-11-18T02:37:02.704Z"
+        },
+        {
+          "route_id": 284,
+          "count": 8,
+          "max": "2026-11-13T03:39:27.081Z"
+        },
+        {
+          "route_id": 265,
+          "count": 8,
+          "max": "2026-11-10T20:47:37.265Z"
+        },
+        {
+          "route_id": 326,
+          "count": 2,
+          "max": "2026-11-18T20:05:03.199Z"
+        },
+        {
+          "route_id": 336,
+          "count": 4,
+          "max": "2026-11-18T23:52:10.731Z"
+        },
+        {
+          "route_id": 318,
+          "count": 8,
+          "max": "2026-11-18T00:35:38.105Z"
+        },
+        {
+          "route_id": 275,
+          "count": 8,
+          "max": "2026-11-12T01:07:22.837Z"
+        },
+        {
+          "route_id": 260,
+          "count": 8,
+          "max": "2026-11-10T23:24:21.876Z"
+        },
+        {
+          "route_id": 308,
+          "count": 8,
+          "max": "2026-11-15T01:48:01.036Z"
+        },
+        {
+          "route_id": 313,
+          "count": 4,
+          "max": "2026-11-14T21:50:49.831Z"
+        },
+        {
+          "route_id": 248,
+          "count": 6,
+          "max": "2026-11-09T22:17:07.814Z"
+        },
+        {
+          "route_id": 293,
+          "count": 7,
+          "max": "2026-11-13T22:42:24.781Z"
+        },
+        {
+          "route_id": 316,
+          "count": 8,
+          "max": "2026-11-18T00:14:18.973Z"
+        },
+        {
+          "route_id": 256,
+          "count": 8,
+          "max": "2026-11-09T22:13:43.815Z"
+        },
+        {
+          "route_id": 332,
+          "count": 6,
+          "max": "2026-11-18T19:53:15.282Z"
+        },
+        {
+          "route_id": 264,
+          "count": 8,
+          "max": "2026-11-11T01:19:03.132Z"
+        },
+        {
+          "route_id": 270,
+          "count": 4,
+          "max": "2026-11-10T19:02:05.723Z"
+        }
+      ]
+    },
+    "actividades": {
+      "ms": 357,
+      "rows": [
+        {
+          "route_id": 267,
+          "count": 4,
+          "max": "2026-11-10T21:18:43.544Z"
+        },
+        {
+          "route_id": 336,
+          "count": 1,
+          "max": "2026-11-18T18:56:45.222Z"
+        },
+        {
+          "route_id": 278,
+          "count": 9,
+          "max": "2026-11-11T16:38:28.531Z"
+        },
+        {
+          "route_id": 322,
+          "count": 2,
+          "max": "2026-11-17T20:50:37.024Z"
+        }
+      ]
+    },
+    "evidencia": {
+      "ms": 295,
+      "rows": [
+        {
+          "route_id": 267,
+          "count": 4
+        },
+        {
+          "route_id": 336,
+          "count": 1
+        },
+        {
+          "route_id": 278,
+          "count": 9
+        },
+        {
+          "route_id": 322,
+          "count": 2
+        }
+      ]
+    },
+    "empleados": {
+      "ms": 422,
+      "rows": [
+        {
+          "count": 21
+        }
+      ]
+    }
+  },
+  "plan": [
+    "HashAggregate  (cost=329.32..331.93 rows=261 width=20) (actual time=1.012..1.029 rows=89 loops=1)",
+    "  Group Key: route_id",
+    "  Batches: 1  Memory Usage: 37kB",
+    "  Buffers: shared hit=290",
+    "  ->  Seq Scan on \"TimePunch\"  (cost=0.25..325.40 rows=523 width=12) (actual time=0.066..0.888 rows=551 loops=1)",
+    "        Filter: (route_id = ANY ('{347,346,345,344,343,342,341,340,339,338,337,336,335,334,333,332,331,330,329,328,327,326,325,324,323,322,321,320,319,318,317,316,315,314,313,312,311,310,304,305,306,307,308,309,293,294,295,296,297,298,299,300,301,302,303,282,283,284,285,286,287,288,289,290,291,292,271,272,273,274,275,276,277,278,279,280,281,259,260,261,262,263,264,265,266,267,268,269,270,248,249,250,251,252,253,254,255,256,257,258,237}'::integer[]))",
+    "        Rows Removed by Filter: 1798",
+    "        Buffers: shared hit=290",
+    "Planning Time: 0.291 ms",
+    "Execution Time: 1.079 ms"
+  ],
+  "privilegios": [
+    {
+      "tabla": "ActivityEvidence",
+      "sr_select": true,
+      "anon_select": false,
+      "rls_activa": true
+    },
+    {
+      "tabla": "Employee",
+      "sr_select": false,
+      "anon_select": false,
+      "rls_activa": true
+    },
+    {
+      "tabla": "Tenant",
+      "sr_select": false,
+      "anon_select": false,
+      "rls_activa": true
+    },
+    {
+      "tabla": "TimePunch",
+      "sr_select": true,
+      "anon_select": false,
+      "rls_activa": true
+    },
+    {
+      "tabla": "TimeRoute",
+      "sr_select": false,
+      "anon_select": false,
+      "rls_activa": true
+    },
+    {
+      "tabla": "WorkActivity",
+      "sr_select": false,
+      "anon_select": false,
+      "rls_activa": true
+    },
+    {
+      "tabla": "WorkSchedule",
+      "sr_select": false,
+      "anon_select": false,
+      "rls_activa": true
+    }
+  ],
+  "corte_top100": {
+    "fecha_corte_top100": "2026-11-09",
+    "rutas_en_el_dia_corte": 11,
+    "rutas_del_mismo_dia_excluidas": 0,
+    "rutas_dia_corte_o_posteriores": 100
+  },
+  "eventos_recientes": [
+    {
+      "id": 337,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 338,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 346,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 344,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 342,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 345,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 343,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 347,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 339,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 340,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 341,
+      "dia": "2026-11-19",
+      "status": "active",
+      "punches": 0,
+      "actividades": 0,
+      "bytes_evidencia": 0
+    },
+    {
+      "id": 335,
+      "dia": "2026-11-18",
+      "status": "active",
+      "punches": 2,
+      "actividades": 0,
+      "bytes_evidencia": 3022276
+    },
+    {
+      "id": 327,
+      "dia": "2026-11-18",
+      "status": "active",
+      "punches": 2,
+      "actividades": 0,
+      "bytes_evidencia": 302204
+    },
+    {
+      "id": 328,
+      "dia": "2026-11-18",
+      "status": "active",
+      "punches": 3,
+      "actividades": 0,
+      "bytes_evidencia": 5873528
+    }
+  ],
+  "contaminacion": 0,
+  "rango_fechas": {
+    "minima": "2026-10-06 05:00:00",
+    "maxima": "2026-11-19 05:00:00",
+    "count": 295
+  }
+}

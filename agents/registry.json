@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.16.0",
+      "version": "2.17.0",
       "updated_at": "2026-11-18",
-      "sha256": "71ff29d244381517371f2aba2af76e12967285b5ee558374f964923213bdea4d",
+      "sha256": "2747dfd030c351b67a5959161cd8c7ae19f77b4eda1510d0e86378a71ab30f4c",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -91,9 +91,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.58.0",
+      "version": "2.59.0",
       "updated_at": "2026-11-18",
-      "sha256": "9a2854917ad0d37b28d965bf8d6319986aa7a6dce7b367e93173793a014b13b4",
+      "sha256": "ea712dc984ee83f2022c24b06a9a8bb2e052b60960e2e8c29a534f829cf99bbc",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -209,15 +209,16 @@
         "saludo-hero-capsula-con-identidad",
         "portafolio-publicado-catalogo",
         "capa-visual-rebasada-y-recertificada",
-        "evidencia-perezosa-por-referencia"
+        "evidencia-perezosa-por-referencia",
+        "fallo-tecnico-no-es-ventana-estado-de-dato"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.19.2",
+      "version": "2.20.0",
       "updated_at": "2026-11-18",
-      "sha256": "7bb079071626c89bf3ed80b44ba816a21e7540fd19ab1439edfcd95b1bc720d3",
+      "sha256": "7a76f0671f7774c50fcb036fb0426297617d0e760370739ce7bcf0913f7666af",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -281,9 +282,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.70.0",
+      "version": "2.71.0",
       "updated_at": "2026-11-18",
-      "sha256": "046b5e879a2644bf759736facfec456625e588c645cdb70b5d70b862334b07c1",
+      "sha256": "6d8dde9f8c265a749d81b6fd3fab802a69c59020193079630e9aec51728ab483",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -342,15 +343,16 @@
         "compuerta-main-evidencia-qa-equivalencia",
         "smoke-produccion-supabase-auth-y-latencia",
         "certificacion-ambiente-anclada-al-commit",
-        "purga-se-certifica-con-lector-stubbeado"
+        "purga-se-certifica-con-lector-stubbeado",
+        "ausencia-se-certifica-con-tormenta-fabricada"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.28.0",
+      "version": "2.29.0",
       "updated_at": "2026-11-18",
-      "sha256": "90961cad21f5c8cbbd9726af3c815f6898bb36f3a2462a41183ac43558487e7a",
+      "sha256": "a42292b0d0529937a45e5a564c138ea9c1f0717b1a9c57c4de6e8034f293638d",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -389,9 +391,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.42.1",
+      "version": "2.43.0",
       "updated_at": "2026-11-18",
-      "sha256": "22d9fc9a472c94faeeb0821f2a5264a7a25b8d2609d4d4524ecfa855f4b0ff6f",
+      "sha256": "20ee123cc494c932a343414f86366d565abe2e61f4cffb2a06b6d65e52ecc118",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [

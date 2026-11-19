@@ -30,7 +30,7 @@ test("PUNCH_COLUMNS cubre todo campo escalar de TimePunch en el schema", () => {
   assert.deepEqual([...PUNCH_COLUMNS].sort(), timePunchScalarFields().sort());
 });
 
-test("la lectura diaria del monitor no abre la evidencia: declara que existe y deja metadata cruda", async () => {
+test("la lectura diaria del monitor no abre la evidencia y solo abre la metadata que trae binario", async () => {
   const captured = [];
   const db = { $queryRaw: async (query) => { captured.push(query); return []; } };
   const day = new Date("2026-11-04T05:00:00Z");
@@ -44,16 +44,25 @@ test("la lectura diaria del monitor no abre la evidencia: declara que existe y d
     assert.ok(sql.includes(`"TimePunch"."${column}" AS "${column}"`), `la lectura perdio la columna ${column}`);
   }
   assert.equal(/"TimePunch"\."metadata" AS "metadata"/.test(sql), false, "metadata viaja dos veces en la misma fila");
-  // Medido el 2026-11-17 sobre una copia con el reparto de produccion: cualquier expresion
-  // que abra el jsonb tostado cuesta ~0,6 ms por fila (362 ms sobre 615 filas solo para
-  // contar), y reescribirlo llega a 1.047 ms. `pg_column_size` no detoasta: 9,4 ms.
-  assert.doesNotMatch(sql, /md5\(|jsonb_set|jsonb_array_elements|jsonb_agg|jsonb_typeof|->>|->/, "la lectura vuelve a abrir el jsonb de la evidencia");
+  // El contrato del 2026-11-17 sobrevive intacto para `extra_evidence`: es ~106 KB en TODAS las
+  // filas y cualquier expresion que la abra cuesta ~0,6 ms por fila (362 ms sobre 615 solo para
+  // contar), mientras `pg_column_size` lee el puntero TOAST y sale gratis (9,4 ms).
+  const extraEvidenceRefs = sql.match(/"TimePunch"\."extra_evidence"/g) || [];
+  assert.equal(extraEvidenceRefs.length, 1, "extra_evidence volvio a leerse mas alla del aviso de tamano");
   assert.match(sql, /pg_column_size\("TimePunch"\."extra_evidence"\)/, "la lectura perdio el aviso de evidencia barata");
-  assert.match(sql, /AS "has_extra_evidence"/);
-  assert.match(sql, /"TimePunch"\."metadata"::text AS "metadata"/, "metadata dejo de viajar cruda");
+  assert.doesNotMatch(sql, /jsonb_(?:typeof|array_elements|agg|set)\([^)]*"TimePunch"\."extra_evidence"/, "la lectura volvio a abrir la evidencia tostada");
+  // Y el contrato nuevo del 2026-11-18: `metadata` si se abre, pero solo en la fila que
+  // `pg_column_size` anuncia gorda. Medido en produccion, la selfie dentro de `metadata` da
+  // 414 KB de media y 2,6 MB el peor caso sobre 46 filas: la guarda deja las ~570 filas flacas
+  // sin detoastear y saca el binario de las 45 que lo cargan (20,3 MB del dia).
+  assert.match(sql, /pg_column_size\("TimePunch"\."metadata"\) > \d+/, "metadata dejo de estar protegida por el tamano de la fila");
+  assert.match(sql, /jsonb_set\("TimePunch"\."metadata", '\{identity_photo\}'/, "metadata vuelve a traer la selfie en claro");
+  assert.match(sql, /jsonb_set\("TimePunch"\."metadata" -> 'identity_photo', '\{base64_data\}'/, "la selfie no se encoge por cabecera + huella");
+  assert.match(sql, /AS "has_extra_evidence"/, "la lectura perdio el indice de evidencia del dia");
   assert.match(sql, /"tenant_id" = \?/, "la lectura cruda no filtra por tenant");
   assert.match(sql, /ORDER BY "TimePunch"\."punched_at" DESC/);
-  // El umbral se binda primero: va en el SELECT, antes que el WHERE.
+  // El umbral se binda primero: va en el SELECT, antes que el WHERE. La cota de la guarda de
+  // metadata va escrita en el SQL (constante versionada), no como parametro.
   assert.deepEqual(values, [EVIDENCE_PRESENT_MIN_BYTES, "nyvora", day, end, 300]);
 });
 

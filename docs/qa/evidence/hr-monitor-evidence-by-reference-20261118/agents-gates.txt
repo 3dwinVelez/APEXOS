@@ -1,0 +1,50 @@
+# Gates de agentes — cierre del paquete 1 (2026-11-19T03:23:11Z)
+
+$ npm run agents:check
+
+> apex-os@2.0.0 agents:check
+> node scripts/agents/sync-agents.js check
+
+[agents] OK: 11 agentes y 11 documentos verificados
+
+$ npm run test:agents
+  duration_ms: 0.7095
+  type: 'test'
+  ...
+1..46
+# tests 46
+# suites 0
+# pass 46
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2921.6737
+
+$ npm run agents:preflight -- --paths "<inventario exacto>"
+  apexos-qa: apps/api/src/modules/hr/monitorEvidenceRows.js, apps/api/src/modules/hr/service.js, apps/api/test/hr-gps-metadata-projection.test.js, apps/api/test/hr-monitor-evidence-columns.test.js, docs/qa/evidence/hr-monitor-evidence-by-reference-20261118
+
+Lecturas obligatorias antes de editar
+  - .qoder/skills/equipo-apexos/SKILL.md
+  - .qoder/skills/apexos-brief/SKILL.md
+  - .qoder/skills/apexos-git-guardian/SKILL.md
+  - .qoder/skills/apexos-backend/SKILL.md
+  - .qoder/skills/apexos-seguridad/SKILL.md
+  - .qoder/skills/apexos-qa/SKILL.md
+
+Advertencias
+  - Rutas sin agente asignado: docs/audits/2026-11-18-monitor-marcaciones-336 (usa equipo-apexos).
+
+Veredicto: OK_CON_ADVERTENCIAS
+
+$ npm run agents:coverage -- --paths "<inventario exacto>"
+
+> apex-os@2.0.0 agents:coverage
+> node scripts/agents/coverage.js --paths apps/api/src/modules/hr/monitorEvidenceRows.js,apps/api/src/modules/hr/service.js,apps/api/test/hr-gps-metadata-projection.test.js,apps/api/test/hr-monitor-evidence-columns.test.js,docs/audits/2026-11-18-monitor-marcaciones-336,docs/briefs/2026-11-18-monitor-marcaciones-evidencia-por-referencia.md,docs/qa/evidence/hr-monitor-evidence-by-reference-20261118,.qoder/skills/apexos-backend/SKILL.md,.qoder/skills/apexos-seguridad/SKILL.md,.qoder/skills/apexos-qa/SKILL.md,.qoder/skills/equipo-apexos/SKILL.md,.qoder/skills/apexos-brief/SKILL.md,.qoder/skills/apexos-git-guardian/SKILL.md,agents/registry.json,agents/CHANGELOG.md
+
+[agents:coverage] rama: desarrollo | rutas: 15 | fetch: si
+  AGENTE          VERSION   FRESCURA      CHANGELOG  RESULTADO
+  apexos-brief    2.59.0    local-ahead   si         OK
+  apexos-backend  2.17.0    local-ahead   si         OK
+
+[agents:coverage] OK: contexto del equipo actualizado para todas las rutas.
