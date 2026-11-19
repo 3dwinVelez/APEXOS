@@ -61,7 +61,7 @@ test("surcharge value_type drives pay: percentage-only for recargos, full factor
 test("salary base follows the 30-day commercial month paying only covered days", () => {
   const service = read("apps/api/src/modules/hr/service.js");
   const schema = read("apps/api/src/modules/hr/schema.js");
-  assert.match(service, /const commercialBaseDays = periodType === "mes" \? 30 : 15;/);
+  assert.match(service, /const commercialBaseDays = options\.termination \? Math\.min\(periodDays, periodType === "mes" \? 30 : 15\) : periodType === "mes" \? 30 : 15;/);
   // Descanso explicito desde la malla (kind='descanso').
   assert.match(service, /prisma\.timeRoute\.findMany/);
   assert.match(service, /normalizeRouteKind\(route\.kind\) !== "descanso"/);

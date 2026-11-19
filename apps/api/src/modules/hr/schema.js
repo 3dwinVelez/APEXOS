@@ -715,6 +715,11 @@ const employeeTerminationLiquidationSchema = {
       employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
       termination_date: { type: "string" },
       termination_reason: { type: "string" },
+      pending_start: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
+      libranza_authorizations: { type: "array", maxItems: 100, items: { type: "object", required: ["id", "support"], properties: {
+        id: { type: "integer", minimum: 1 }, support: { type: "string", maxLength: 500 },
+        benefits_percent: { type: "number", minimum: 0, maximum: 100 }, legal_support: { type: "string", maxLength: 500 }
+      } } },
       contract_type: { type: "string" },
       salary_base: { anyOf: [{ type: "number" }, { type: "string" }] },
       pending_salary_days: { anyOf: [{ type: "number" }, { type: "string" }] },

@@ -1,0 +1,100 @@
+{
+  "change_id": "hr-final-benefits-20261118",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "target_head": "d329b884ae91af1f7473526a70f88db5c7a26d46",
+  "commit": "3ea3db87372dc57ff42ece09e1239421c3aad906",
+  "qa_status": "pending",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-complete-local.js",
+    "evidence": [
+      "../certifications/hr-termination-complete-20261118.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-termination-complete-local.js",
+    "evidence": [
+      "../certifications/hr-termination-complete-20261118.md"
+    ]
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Usuario: despliega a qa y tambien integra los pagos de prestaciones y conceptos manuales",
+    "approved_at": "2026-11-19T01:47:36.724Z",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    }
+  },
+  "execution": {
+    "candidate": "3ea3db87372dc57ff42ece09e1239421c3aad906",
+    "target": "d329b884ae91af1f7473526a70f88db5c7a26d46",
+    "unit_and_regression_tests": {
+      "passed": 67,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "full_flow": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "started_at": "2026-11-19T01:43:28.963Z",
+      "checks": [
+        "real API derives master contract, imports malla concepts and leaves preview read only",
+        "RBAC, cross tenant reads and unauthorized writes cannot create termination",
+        "browser finds employee, derives contract, previews full modal, saves and reopens all concepts",
+        "saved termination excludes employee from fortnight preview and real payroll creation despite active employee",
+        "rehire restores only the new contract period while settled historical periods stay excluded",
+        "loans post once, recalculation preserves totals and deletion restores balances and payroll eligibility",
+        "pending calculation splits second fortnight without paying the first twice",
+        "existing payroll after cutoff blocks an overlapping backdated final liquidation",
+        "all four standard benefit payment functions preserve payments when provisions regenerate",
+        "manual concepts retain salary classification and alter only eligible final benefit bases",
+        "final settlement consumes provisions, posts four linked vouchers and prevents duplicate payments or reopening history"
+      ],
+      "finished_at": "2026-11-19T01:44:40.408Z"
+    },
+    "isolation": {
+      "status": "passed",
+      "environment": "LOCAL",
+      "source_database_modified": false,
+      "unexpected_5xx": [],
+      "checked_at": "2026-11-19T01:44:40.498Z"
+    }
+  }
+}
