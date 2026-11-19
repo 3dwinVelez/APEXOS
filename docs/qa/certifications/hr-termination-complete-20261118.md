@@ -11,6 +11,16 @@ Implementación en `desarrollo`. Esta certificación no autoriza despliegue ni p
 - Se intenta cancelar el saldo finito de cada libranza autorizada, en orden de fecha e identificador, hasta la capacidad disponible compartida. Las deducciones perpetuas no se convierten en una deuda finita.
 - Crear, recalcular y borrar conservan o revierten los movimientos de libranza. La referencia `retiro:<id>` evita confundirlos con los movimientos de una nómina.
 
+## Integración de prestaciones y conceptos manuales
+
+La ampliación solicitada integra cuatro comprobantes de pago de prestaciones en el documento final. Usa los mismos saldos, documentos y líneas del módulo de pagos; las cesantías definitivas se reconocen al trabajador y los comprobantes se identifican como incluidos en el neto del retiro. No constituyen una segunda orden de pago. No pueden anularse por separado: se recalcula o revierte la liquidación final completa.
+
+La prima se causa por semestre, las cesantías e intereses por año y las vacaciones conservan su acumulación con una base diferenciada. Los pagos anteriores se imputan a sus periodos. El cálculo considera los devengos históricos y pendientes, distingue salario básico de valores variables y excluye de la base de vacaciones las horas extras y el trabajo dominical/festivo. El detalle muestra el intervalo y la base de cada concepto. Al liquidar se consumen o concilian las provisiones anteriores y se registra únicamente el faltante; el snapshot previo permite revertirlo. Regenerar una provisión conserva lo pagado y no reabre el historial de un empleado liquidado.
+
+Bonificaciones y conceptos manuales: registrar en Ajustes de nómina con empleado y periodo, antes de calcular el retiro. Los personalizados requieren una definición vigente en el maestro con clasificación salarial; un código desconocido bloquea el retiro en vez de asumir que es salarial. Los salariales entran en las bases aplicables y los no salariales no las aumentan salvo parametrización específica. Si el retiro ya está guardado, debe recalcularse para incorporar cambios. El salario básico no se suma de nuevo al componente variable.
+
+Fuentes adicionales: [CST, artículos 127–128, 192, 253 y 306](https://jurinfo.jep.gov.co/normograma/compilacion/docs/codigo_sustantivo_trabajo.htm) y [Decreto 1072 de 2015, pago proporcional de intereses al retiro](https://www.cancilleria.gov.co/sites/default/files/Normograma/docs/decreto_1072_2015.htm). El cálculo conserva los parámetros y datos registrados en el maestro; su exactitud requiere historia salarial y pagos anteriores completos.
+
 ## Criterio jurídico y política implementada
 
 Consulta de fuentes oficiales: 18 de noviembre de 2026.

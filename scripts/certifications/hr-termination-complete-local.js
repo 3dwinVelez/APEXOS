@@ -107,6 +107,7 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       await button('Crear documento');
       const r=await response;assert.equal(r.status(),200,await r.text());saved=(await r.json()).document;
       await page.waitForSelector('dialog[open]');
+      assert.match(await page.$eval('dialog',el=>el.textContent),/Pagos de prestaciones integrados/);
       await page.click('[aria-label="Cerrar detalle de liquidación"]');
       await button('Ver');
       await page.waitForSelector('dialog[open]');
@@ -130,6 +131,11 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       assert.ok(!payrollText.includes('QA Edwar own'),payrollText);
       assert.ok(payrollText.includes('QA Empleado vigente'),payrollText);
       await page.screenshot({path:path.join(folder,'payroll-excludes-terminated.png')});
+      await page.goto(new URL('/dashboard/talento-humano/prestaciones-pagos',page.url()).href,{waitUntil:'domcontentloaded'});
+      await page.waitForFunction(()=>document.body.textContent.includes('Incluido en liquidación #'));
+      const integrated=await page.$$eval('tbody tr',rows=>rows.filter(row=>row.textContent.includes('Incluido en liquidación #')).map(row=>({text:row.textContent,buttons:row.querySelectorAll('button').length})));
+      assert.equal(integrated.length,4);assert.ok(integrated.every(row=>row.buttons===0&&row.text.includes('No pagar nuevamente.')));
+      await page.screenshot({path:path.join(folder,'integrated-benefit-vouchers.png')});
     }});
     assert.equal(Number(saved.gross),expected.gross);
     assert.equal(Number(saved.net),expected.net);
@@ -180,6 +186,59 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
     assert.equal((await call('/talento-humano/nomina/liquidaciones',token,'POST',period)).status,200);
     const response=await call(base+'/preview',token,'POST',input);
     assert.equal(response.status,409,JSON.stringify(response.body));
+  });
+  let priorPayments=[];
+  const benefitRoute='/talento-humano/prestaciones/pagos';
+  const provisionRoute='/talento-humano/provisiones/prestaciones-sociales/documentos';
+  await check('all four standard benefit payment functions preserve payments when provisions regenerate',async()=>{
+    const provision=await call(provisionRoute,token,'POST',period);assert.equal(provision.status,200,JSON.stringify(provision.body));
+    for(const payment_type of ['prima','cesantias','intereses_cesantias','vacaciones']) {
+      const payload={...period,payment_type,employee_id:own.employee.id,payment_date:'2026-11-15'};
+      const payment=await call(benefitRoute+'/documentos',token,'POST',payload);assert.equal(payment.status,200,JSON.stringify(payment.body));
+      const revision=await call(benefitRoute+'/documentos',token,'POST',{...payload,recalculate:true});assert.equal(revision.status,200,JSON.stringify(revision.body));
+      priorPayments.push(revision.body.document_id);
+    }
+    const before=await db.$queryRaw`SELECT id,paid_amount,balance_amount FROM th_prestaciones_saldos WHERE tenant_id=${own.tenant.id} AND employee_id=${own.employee.id} AND source_document_type='provision' ORDER BY id`;
+    assert.ok(before.every(row=>Number(row.paid_amount)>0&&Number(row.balance_amount)===0));
+    assert.equal((await call(provisionRoute,token,'POST',period)).status,200);
+    const after=await db.$queryRaw`SELECT id,paid_amount,balance_amount FROM th_prestaciones_saldos WHERE tenant_id=${own.tenant.id} AND employee_id=${own.employee.id} AND source_document_type='provision' ORDER BY id`;
+    assert.deepEqual(after,before);
+  });
+  let finalDoc, unpaidBalanceId;
+  await check('manual concepts retain salary classification and alter only eligible final benefit bases',async()=>{
+    for(const [code,salary] of [['QA_BONO_SALARIAL',true],['QA_BONO_NO_SALARIAL',false]]) {
+      await db.$executeRaw`INSERT INTO th_nomina_conceptos (tenant_id,code,name,salary_constitutive,affects_ibc,valid_from) VALUES (${own.tenant.id},${code},${code},${salary},${salary},'2026-01-01')`;
+      const adjustment=await call('/talento-humano/nomina/ajustes',token,'POST',{employee_id:own.employee.id,period_key:'quincena:2026-11-16:2026-11-30',adjustment_type:'manual',concept_code:code,description:code,amount:50000,work_date:'2026-11-18'});
+      assert.equal(adjustment.status,200,JSON.stringify(adjustment.body));
+    }
+    const balances=await db.$queryRaw`INSERT INTO th_prestaciones_saldos (tenant_id,employee_id,concept_code,period_key,date_start,date_end,accrued_amount,paid_amount,balance_amount,source_document_type)
+      VALUES (${own.tenant.id},${own.employee.id},'CESANTIAS','qa-unpaid','2026-11-16','2026-11-19',10000,0,10000,'provision') RETURNING id`;
+    unpaidBalanceId=balances[0].id;
+    const preview=await trial({termination_date:'2026-11-20'});
+    assert.equal(preview.lines.find(x=>x.code==='QA_BONO_SALARIAL').salary_constitutive,true);
+    assert.equal(preview.lines.find(x=>x.code==='QA_BONO_NO_SALARIAL').salary_constitutive,false);
+    assert.ok(preview.lines.filter(x=>x.source==='retiro').every(x=>x.paid_amount>0));
+    assert.ok(preview.source_summary.periodos_prestaciones.find(x=>x.code==='CESANTIAS').base>3000000);
+    const saved=await call(base+'/documentos',token,'POST',{...input,termination_date:'2026-11-20'});assert.equal(saved.status,200,JSON.stringify(saved.body));finalDoc=saved.body.document;
+    assert.equal(finalDoc.source_summary.pagos_prestaciones.length,4);
+    assert.equal(Number(finalDoc.net),preview.net);
+  });
+  await check('final settlement consumes provisions, posts four linked vouchers and prevents duplicate payments or reopening history',async()=>{
+    const balances=await db.$queryRaw`SELECT * FROM th_prestaciones_saldos WHERE tenant_id=${own.tenant.id} AND employee_id=${own.employee.id}`;
+    assert.ok(balances.every(x=>Number(x.balance_amount)===0));
+    for(const payment_type of ['prima','cesantias','intereses_cesantias','vacaciones']) {
+      const preview=await call(benefitRoute+'/preview',token,'POST',{...period,fecha_fin:'2026-11-20',payment_date:'2026-11-20',employee_id:own.employee.id,payment_type});
+      assert.equal(preview.status,200,JSON.stringify(preview.body));assert.equal(preview.body.lines.length,0);
+    }
+    assert.equal((await call(provisionRoute,token,'POST',period)).status,200);
+    assert.ok((await db.$queryRaw`SELECT balance_amount FROM th_prestaciones_saldos WHERE tenant_id=${own.tenant.id} AND employee_id=${own.employee.id}`).every(x=>Number(x.balance_amount)===0));
+    for(const id of [...priorPayments,...finalDoc.source_summary.pagos_prestaciones.map(x=>x.document_id)])assert.equal((await call(benefitRoute+'/documentos/'+id,token,'DELETE')).status,409);
+    const revised=await call(base+'/documentos',token,'POST',{...input,termination_date:'2026-11-20',recalculate:true});assert.equal(revised.status,200,JSON.stringify(revised.body));assert.equal(Number(revised.body.document.net),Number(finalDoc.net));
+    const vouchers=await db.$queryRaw`SELECT total_amount FROM th_prestaciones_pagos_documentos WHERE tenant_id=${own.tenant.id} AND source_summary->>'termination_document_id'=${String(finalDoc.id)} AND status<>'anulado'`;
+    assert.equal(vouchers.length,4);
+    assert.equal((await call(base+'/documentos/'+finalDoc.id,token,'DELETE')).status,200);
+    assert.equal(Number((await db.$queryRaw`SELECT balance_amount FROM th_prestaciones_saldos WHERE tenant_id=${own.tenant.id} AND id=${unpaidBalanceId}`)[0].balance_amount),10000);
+    for(const id of priorPayments)assert.equal((await call(benefitRoute+'/documentos/'+id,token,'DELETE')).status,200);
   });
   result.status='passed';
 } catch(error) {result.status='failed';result.error=error.message;console.error(error.stack);process.exitCode=1;} finally {result.finished_at=new Date().toISOString();if(output)fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result));if(app)await app.close();await db.$disconnect();}})();

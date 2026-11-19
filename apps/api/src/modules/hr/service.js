@@ -1,3 +1,5 @@
+const { calculateTerminationBenefits } = require("./terminationBenefits");
+const { settleTerminationBenefits, reverseTerminationBenefits } = require("./terminationBenefitPayments");
 const { terminationDeductions } = require("./terminationDeductions");
 const { findUserForEmployee } = require("./employeeUserLink");
 const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
@@ -4922,6 +4924,9 @@ function payrollLine(code, name, quantity, rate, amount, source = "system", conc
 }
 
 function payrollConceptFallback(code) {
+  if (code === "BONIFICACION_NO_SALARIAL") return { name: "Bonificacion no salarial", concept_type: "devengo", salary_constitutive: false, affects_ibc: false, metadata: { exclude_from_social_benefits_base: true } };
+  if (code === "BONIFICACION_SALARIAL" || code === "COMISION") return { name: code === "COMISION" ? "Comision" : "Bonificacion salarial", concept_type: "devengo", salary_constitutive: true, affects_ibc: true };
+
   if (code === "JORNADA_ORDINARIA") {
     return { name: "Jornada ordinaria", concept_type: "devengo", salary_constitutive: true, affects_ibc: true, metadata: { legal_group: "salario" } };
   }
@@ -5087,17 +5092,19 @@ function buildTerminationBenefitLines({ salaryBase, startDate, terminationDate, 
 }
 
 async function benefitBalancesForEmployee(tenantId, employeeId, db = prisma, terminationDate, contractStart) {
-  return db.$queryRaw`
-    SELECT concept_code, SUM(accrued_amount) AS accrued_amount, SUM(paid_amount) AS paid_amount, SUM(balance_amount) AS balance_amount
-    FROM th_prestaciones_saldos
-    WHERE tenant_id = ${tenantId}
-      AND employee_id = ${employeeId}
-      AND date_end >= ${contractStart}::date
-      AND NOT (source_document_type = 'retiro' AND source_document_id IN (
+  const rows = await db.$queryRaw`
+    SELECT b.*,
+      CASE WHEN b.metadata->'termination_settlement'->>'document_id' IN (
+        SELECT id::text FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND termination_date = ${terminationDate}::date
+      ) THEN (b.metadata->'termination_settlement'->'before'->>'paid_amount')::numeric ELSE b.paid_amount END AS effective_paid
+    FROM th_prestaciones_saldos b
+    WHERE b.tenant_id = ${tenantId} AND b.employee_id = ${employeeId} AND b.date_end >= ${contractStart}::date AND b.date_start <= ${terminationDate}::date
+      AND NOT (b.source_document_type = 'retiro' AND b.source_document_id IN (
         SELECT id FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND termination_date = ${terminationDate}::date
       ))
-    GROUP BY concept_code
+    ORDER BY b.date_start, b.id
   `;
+  return rows.map(row => ({ ...row, date_start: new Date(row.date_start).toISOString().slice(0, 10), date_end: new Date(row.date_end > terminationDate ? terminationDate : row.date_end).toISOString().slice(0, 10), paid_amount: Number(row.effective_paid) }));
 }
 
 async function updateBenefitBalancesFromPayroll(tx, tenantId, document) {
@@ -5161,8 +5168,11 @@ async function buildEmployeeTerminationLiquidation(tenantId, input = {}, db = pr
     const contractEnd = contract?.valid_to || employee.end_date;
     const remainingDays = contractEnd ? Math.max(daysInclusive(new Date(terminationDate.getTime() + 86400000), startOfDay(new Date(contractEnd).toISOString().slice(0, 10))), 0) : 0;
     const terminationReason = String(input.termination_reason || "retiro_voluntario").trim();
+    const futurePayments = await db.$queryRaw`SELECT d.id FROM th_prestaciones_pagos_documentos d JOIN th_prestaciones_pagos_lineas l ON l.document_id = d.id AND l.tenant_id = d.tenant_id
+      WHERE d.tenant_id = ${tenantId} AND l.employee_id = ${employeeId} AND d.status <> 'anulado' AND d.payment_date > ${terminationDate}::date LIMIT 1`;
+    if (futurePayments.length) throw validationError("Hay pagos de prestaciones posteriores al corte. Revisalos antes de liquidar.", 409, "PRESTACION_POSTERIOR_RETIRO");
     const balances = await benefitBalancesForEmployee(tenantId, employeeId, db, terminationDate, startDate);
-    const benefitLines = buildTerminationBenefitLines({ salaryBase: benefitSalaryBase, startDate, terminationDate, paidBalances: balances });
+
     const indemnizationDays = terminationReason === "sin_justa_causa"
       ? indemnizationDaysForTermination({ contractType, salaryBase, serviceDays, remainingDays })
       : 0;
@@ -5188,6 +5198,28 @@ async function buildEmployeeTerminationLiquidation(tenantId, input = {}, db = pr
       pendingPeriods.push({ start: cursor.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10), period_key: periodKey });
       cursor = startOfDay(new Date(end.getTime() + 86400000));
     }
+    const historicalDocuments = await db.$queryRaw`SELECT lines, date_start, date_end FROM th_nomina_documentos
+      WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} AND date_start >= ${startDate}::date AND date_end <= ${terminationDate}::date ORDER BY date_start, id`;
+    const historicalLines = historicalDocuments.flatMap(doc => (doc.lines || []).map(line => ({ ...line, metadata: { ...line.metadata, date_start: new Date(doc.date_start).toISOString().slice(0, 10), date_end: new Date(doc.date_end).toISOString().slice(0, 10) } })));
+    const vacationPaymentCodes = new Set(["VACACIONES", "VACACIONES_DISFRUTADAS", "VACACIONES_COMPENSADAS"]);
+    const vacationPayments = [...historicalLines, ...pendingLines].filter(line => vacationPaymentCodes.has(line.code) && line.amount > 0 && line.source !== "prestaciones");
+    const paymentBalances = [...balances, ...vacationPayments.map(line => ({ concept_code: "VACACIONES", date_start: startDate.toISOString().slice(0, 10), date_end: terminationDate.toISOString().slice(0, 10), paid_amount: line.amount }))];
+    const benefitWindows = calculateTerminationBenefits({
+      start: startDate.toISOString().slice(0, 10), end: terminationDate.toISOString().slice(0, 10),
+      balances: paymentBalances, lines: [...historicalLines, ...pendingLines],
+      salaryFor: (from, to, code) => {
+        const average = weightedSalaryForPeriod(employee, salarySnapshots.get(employee.id) || [], startOfDay(from), startOfDay(to)).monthly_salary;
+        if (code === "PRIMA_SERVICIOS") return average;
+        const last = weightedSalaryForPeriod(employee, salarySnapshots.get(employee.id) || [], startOfDay(to), startOfDay(to)).monthly_salary;
+        const recent = startOfDay(to); recent.setUTCMonth(recent.getUTCMonth() - 3);
+        const changed = (salarySnapshots.get(employee.id) || []).some(row => new Date(row.valid_to || to) >= recent && new Date(row.valid_from) <= startOfDay(to) && Number(row.monthly_salary) !== Number(last));
+        return changed ? average : last;
+      }
+    });
+    const benefitLines = benefitWindows.map(window => ({
+      ...benefitLine(window.code, window.amount, window.days), accrued_amount: window.accrued_amount, paid_amount: window.paid_amount, balance_amount: window.amount,
+      metadata: { date_start: window.start, date_end: window.end, base: window.base, averaging_start: window.averaging_start, commercial_days: window.days, payment_target: "trabajador" }
+    }));
     const lines = [...pendingLines, ...benefitLines, ...indemnizationLine];
     const gross = money(lines.filter(line => line.amount > 0).reduce((sum, line) => sum + line.amount, 0));
     const beforeLoans = money(lines.reduce((sum, line) => sum + line.amount, 0));
@@ -5241,6 +5273,8 @@ async function buildEmployeeTerminationLiquidation(tenantId, input = {}, db = pr
         base_prestaciones_retiro: benefitSalaryBase,
         historial_salarial_retiro: salaryInfo.segments,
         saldos_previos_prestaciones: balances,
+        periodos_prestaciones: benefitWindows,
+        pago_prestaciones: "Integrado al neto de retiro; cesantias definitivas al trabajador; comprobantes enlazados, no pagos adicionales.",
         regla_indemnizacion: terminationReason === "sin_justa_causa" ? "CST art. 64" : "No aplica indemnizacion por causal seleccionada"
       }
     };
@@ -5541,6 +5575,9 @@ async function buildPayrollLiquidationRows(tenantId, input = {}, options = {}) {
       const calendarConceptCode = adjustment.concept_code === "JORNADA_ORDINARIA" && ["festivo", "dominical", "no_laboral"].includes(adjustmentCalendarType)
         ? "DOM_FEST_DIURNO"
         : adjustment.concept_code;
+      if (options.termination && !payrollConcepts[calendarConceptCode] && !["JORNADA_ORDINARIA", "HED", "HEN", "HEDD", "HEND", "RECARGO_NOCTURNO", "DOM_FEST_DIURNO", "DOM_FEST_NOCTURNO", "BONIFICACION_SALARIAL", "BONIFICACION_NO_SALARIAL", "COMISION", "VACACIONES", "VACACIONES_DISFRUTADAS", "VACACIONES_COMPENSADAS", "LICENCIA_REMUNERADA", "LICENCIA_NO_REMUNERADA", "SLN"].includes(calendarConceptCode)) {
+        throw validationError(`Configura el concepto manual ${calendarConceptCode} y su clasificacion salarial antes de liquidar.`, 409, "CONCEPTO_MANUAL_NO_CONFIGURADO");
+      }
       const concept = payrollConcepts[calendarConceptCode] || payrollConceptFallback(calendarConceptCode);
       const payrollMinutes = adjustmentPayrollMinutes(adjustment);
       const segmentedType = segmentedAdjustmentType(adjustment);
@@ -6782,7 +6819,7 @@ async function runEmployeeTerminationLiquidation(tenantId, input = {}, user = {}
     if (previous.length && !input.recalculate) throw validationError("Ya existe una liquidacion. Usa recalcular para sustituirla.", 409, "LIQUIDACION_EXISTENTE");
     if (previous.length) {
       await reversePayrollLibranzaMovements(tx, tenantId, `retiro:${previous[0].id}`);
-      await tx.$executeRaw`DELETE FROM th_prestaciones_saldos WHERE tenant_id = ${tenantId} AND source_document_type = 'retiro' AND source_document_id = ${previous[0].id}`;
+      await reverseTerminationBenefits(tx, tenantId, previous[0].id);
     }
     await tx.$queryRaw`SELECT id FROM th_libranza_empleados WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId} ORDER BY id FOR UPDATE`;
     const document = await buildEmployeeTerminationLiquidation(tenantId, input, tx);
@@ -6800,19 +6837,9 @@ async function runEmployeeTerminationLiquidation(tenantId, input = {}, user = {}
       RETURNING *
     `;
     await applyPayrollLibranzaMovements(tx, tenantId, { ...rows[0], id: null, period_key: `retiro:${rows[0].id}` });
-    for (const line of document.lines.filter((row) => TERMINATION_BENEFIT_CODES.has(String(row.code || "").toUpperCase()))) {
-      await tx.$executeRaw`
-        INSERT INTO th_prestaciones_saldos (
-          tenant_id, employee_id, concept_code, period_key, date_start, date_end, accrued_amount, paid_amount, balance_amount, source_document_type, source_document_id, metadata
-        )
-        VALUES (
-          ${tenantId}, ${document.employee_id}, ${line.code}, ${`retiro:${document.termination_date.toISOString().slice(0, 10)}`},
-          ${document.source_summary.fecha_ingreso}::date, ${document.termination_date}::date, ${Number(line.accrued_amount || line.amount || 0)}, ${Number(line.accrued_amount || line.amount || 0)}, 0, 'retiro', ${rows[0].id}, ${JSON.stringify({ paid_in_termination: true })}::jsonb
-        )
-        ON CONFLICT (tenant_id, employee_id, concept_code, period_key)
-        DO UPDATE SET accrued_amount = EXCLUDED.accrued_amount, paid_amount = EXCLUDED.paid_amount, balance_amount = 0, source_document_id = EXCLUDED.source_document_id, updated_at = now()
-      `;
-    }
+    const benefitPayments = await settleTerminationBenefits(tx, tenantId, { ...document, id: rows[0].id }, user?.id);
+    rows[0].source_summary = { ...rows[0].source_summary, pagos_prestaciones: benefitPayments };
+    await tx.$executeRaw`UPDATE th_liquidaciones_trabajador SET source_summary = ${JSON.stringify(rows[0].source_summary)}::jsonb WHERE tenant_id = ${tenantId} AND id = ${rows[0].id}`;
     if (input.mark_inactive === true || input.mark_inactive === "true") {
       const employee = await tx.employee.findFirst({ where: { tenant_id: tenantId, id: document.employee_id } });
       if (employee) {
@@ -6864,7 +6891,7 @@ async function deleteEmployeeTerminationLiquidation(tenantId, id) {
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
     await reversePayrollLibranzaMovements(tx, tenantId, `retiro:${documentId}`);
-    await tx.$executeRaw`DELETE FROM th_prestaciones_saldos WHERE tenant_id = ${tenantId} AND source_document_type = 'retiro' AND source_document_id = ${documentId}`;
+    await reverseTerminationBenefits(tx, tenantId, documentId);
     const rows = await tx.$queryRaw`DELETE FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId} AND id = ${documentId} RETURNING *`;
     if (!rows[0]) throw validationError("Liquidacion no encontrada.", 404, "LIQUIDACION_TRABAJADOR_NO_ENCONTRADA");
     return { ok: true, deleted: rows[0] };
@@ -7474,7 +7501,12 @@ async function previewSocialBenefitProvisions(tenantId, input = {}) {
   // quincenas, sin depender de que exista un documento con el period_key exacto del mes).
   const fromKey = start.toISOString().slice(0, 10);
   const toKey = end.toISOString().slice(0, 10);
-  const payrollDocuments = await listPayrollDocuments(tenantId, { date_from: fromKey, date_to: toKey, limit: 2000 });
+  const candidateDocuments = await listPayrollDocuments(tenantId, { date_from: fromKey, date_to: toKey, limit: 2000 });
+  const settlements = await prisma.$queryRaw`SELECT employee_id, termination_date, source_summary->>'fecha_ingreso' AS contract_start
+    FROM th_liquidaciones_trabajador WHERE tenant_id = ${tenantId}`;
+  const payrollDocuments = candidateDocuments.filter(doc => !settlements.some(row => Number(row.employee_id) === Number(doc.employee_id)
+    && new Date(doc.date_start).toISOString().slice(0, 10) <= new Date(row.termination_date).toISOString().slice(0, 10)
+    && new Date(doc.date_end).toISOString().slice(0, 10) >= String(row.contract_start || "0001-01-01").slice(0, 10)));
   if (!payrollDocuments.length) throw validationError("No existen documentos de nomina para provisionar este periodo.", 409, "PROVISION_SIN_NOMINA");
   // Agrega por empleado+concepto para que, si el mes abarca varias quincenas, se sumen (y no se
   // sobrescriban al guardar el saldo, cuya clave unica incluye el period_key).
@@ -7518,14 +7550,18 @@ async function previewSocialBenefitProvisions(tenantId, input = {}) {
 }
 
 async function runSocialBenefitProvisions(tenantId, input = {}, user = {}) {
-  const document = await previewSocialBenefitProvisions(tenantId, input);
-  await assertPayrollPeriodOpen(tenantId, document.period_key);
+
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
+    const document = await previewSocialBenefitProvisions(tenantId, input);
+    await assertPayrollPeriodOpen(tenantId, document.period_key);
     await tx.$executeRaw`
       DELETE FROM th_prestaciones_saldos
       WHERE tenant_id = ${tenantId}
         AND period_key = ${document.period_key}
-        AND source_document_type = 'provision'
+        AND source_document_type = 'provision' AND paid_amount = 0
+        AND metadata->'termination_settlement' IS NULL
+        AND NOT EXISTS (SELECT 1 FROM th_prestaciones_pagos_lineas p WHERE p.tenant_id = ${tenantId} AND p.benefit_balance_id = th_prestaciones_saldos.id)
     `;
     for (let index = 0; index < document.lines.length; index += PAYROLL_LINE_INSERT_CHUNK) {
       const chunk = document.lines.slice(index, index + PAYROLL_LINE_INSERT_CHUNK);
@@ -7539,7 +7575,8 @@ async function runSocialBenefitProvisions(tenantId, input = {}, user = {}) {
           ${JSON.stringify({ source: "provision_prestaciones_sociales", provisioned_by: user?.id || null, quantity: line.quantity, employee_name: line.employee_name })}::jsonb
         )`))}
         ON CONFLICT (tenant_id, employee_id, concept_code, period_key)
-        DO UPDATE SET accrued_amount = EXCLUDED.accrued_amount, paid_amount = 0, balance_amount = EXCLUDED.balance_amount, source_document_type = 'provision', source_document_id = EXCLUDED.source_document_id, metadata = EXCLUDED.metadata, updated_at = now()
+        DO UPDATE SET accrued_amount = EXCLUDED.accrued_amount, balance_amount = GREATEST(EXCLUDED.accrued_amount - th_prestaciones_saldos.paid_amount, 0), source_document_type = 'provision', source_document_id = EXCLUDED.source_document_id, metadata = th_prestaciones_saldos.metadata || EXCLUDED.metadata, updated_at = now()
+        WHERE th_prestaciones_saldos.metadata->'termination_settlement' IS NULL
       `;
     }
     return { ok: true, ...document, provisioned_lines: document.lines.length };
@@ -7573,9 +7610,9 @@ function socialBenefitPaymentInput(input = {}) {
   };
 }
 
-async function previewSocialBenefitPayments(tenantId, input = {}) {
+async function previewSocialBenefitPayments(tenantId, input = {}, db = prisma) {
   const data = socialBenefitPaymentInput(input);
-  const rows = await prisma.$queryRaw`
+  const rows = await db.$queryRaw`
     SELECT b.id AS benefit_balance_id, b.employee_id, b.concept_code, b.period_key AS source_period_key,
            b.accrued_amount, b.paid_amount, b.balance_amount, b.metadata,
            e.code AS employee_code, e.metadata->>'document' AS employee_document, e.metadata->>'name' AS employee_name,
@@ -7628,25 +7665,30 @@ async function previewSocialBenefitPayments(tenantId, input = {}) {
 }
 
 async function runSocialBenefitPayments(tenantId, input = {}, user = {}) {
-  const preview = await previewSocialBenefitPayments(tenantId, input);
-  if (!preview.lines.length) throw validationError("No hay saldos de prestaciones para pagar en el periodo.", 409, "PAGO_PRESTACION_SIN_SALDOS");
+  const data = socialBenefitPaymentInput(input);
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
     if (input.recalculate) {
       const previous = await tx.$queryRaw`
         SELECT id FROM th_prestaciones_pagos_documentos
-        WHERE tenant_id = ${tenantId} AND payment_type = ${preview.payment_type} AND period_key = ${preview.period_key} AND status <> 'anulado'
+        WHERE tenant_id = ${tenantId} AND payment_type = ${data.paymentType} AND (period_key = ${data.periodKey} OR source_summary->>'base_period_key' = ${data.periodKey}) AND status <> 'anulado'
       `;
       for (const row of previous) await reverseSocialBenefitPaymentDocument(tx, tenantId, row.id);
     }
     const existing = await tx.$queryRaw`
       SELECT id FROM th_prestaciones_pagos_documentos
-      WHERE tenant_id = ${tenantId} AND payment_type = ${preview.payment_type} AND period_key = ${preview.period_key} AND status <> 'anulado'
+      WHERE tenant_id = ${tenantId} AND payment_type = ${data.paymentType} AND (period_key = ${data.periodKey} OR source_summary->>'base_period_key' = ${data.periodKey}) AND status <> 'anulado'
       LIMIT 1
     `;
     if (existing[0]) throw validationError("Ya existe un documento de pago de prestaciones para ese tipo y periodo. Anulalo o marca recalcular.", 409, "PAGO_PRESTACION_DUPLICADO");
+    const preview = await previewSocialBenefitPayments(tenantId, input, tx);
+    if (!preview.lines.length) throw validationError("No hay saldos de prestaciones para pagar en el periodo.", 409, "PAGO_PRESTACION_SIN_SALDOS");
+    const revisions = await tx.$queryRaw`SELECT id FROM th_prestaciones_pagos_documentos WHERE tenant_id = ${tenantId} AND payment_type = ${data.paymentType}
+      AND (period_key = ${data.periodKey} OR source_summary->>'base_period_key' = ${data.periodKey}) LIMIT 1`;
+    const paymentKey = revisions.length ? `${data.periodKey}:revision:${randomUUID()}` : data.periodKey;
     const docs = await tx.$queryRaw`
       INSERT INTO th_prestaciones_pagos_documentos (tenant_id, payment_type, period_key, date_start, date_end, payment_date, status, total_amount, source_summary, created_by)
-      VALUES (${tenantId}, ${preview.payment_type}, ${preview.period_key}, ${preview.date_start}::date, ${preview.date_end}::date, ${preview.payment_date}::date, 'draft', ${preview.total_amount}, ${JSON.stringify({ period_type: preview.period_type, line_count: preview.lines.length })}::jsonb, ${user?.id || null})
+      VALUES (${tenantId}, ${data.paymentType}, ${paymentKey}, ${preview.date_start}::date, ${preview.date_end}::date, ${preview.payment_date}::date, 'draft', ${preview.total_amount}, ${JSON.stringify({ base_period_key: data.periodKey, period_type: preview.period_type, line_count: preview.lines.length })}::jsonb, ${user?.id || null})
       RETURNING *
     `;
     const doc = docs[0];
@@ -7671,6 +7713,13 @@ async function runSocialBenefitPayments(tenantId, input = {}, user = {}) {
 }
 
 async function reverseSocialBenefitPaymentDocument(tx, tenantId, documentId) {
+  const protectedRows = await tx.$queryRaw`SELECT p.id FROM th_prestaciones_pagos_documentos p
+    WHERE p.tenant_id = ${tenantId} AND p.id = ${documentId} AND (
+      p.source_summary->>'termination_document_id' IS NOT NULL OR EXISTS (
+        SELECT 1 FROM th_prestaciones_pagos_lineas l JOIN th_liquidaciones_trabajador d ON d.tenant_id = l.tenant_id AND d.employee_id = l.employee_id
+        WHERE l.tenant_id = ${tenantId} AND l.document_id = p.id AND d.termination_date >= p.date_end
+      ))`;
+  if (protectedRows.length) throw validationError("El pago esta integrado en una liquidacion final. Revierte primero la liquidacion de retiro.", 409, "PAGO_INTEGRADO_RETIRO");
   const lines = await tx.$queryRaw`
     SELECT * FROM th_prestaciones_pagos_lineas
     WHERE tenant_id = ${tenantId} AND document_id = ${documentId}
@@ -7695,6 +7744,7 @@ async function deleteSocialBenefitPaymentDocument(tenantId, id) {
   const documentId = numericId(id);
   if (!documentId) throw validationError("Documento de pago de prestaciones invalido.", 400, "PAGO_PRESTACION_INVALIDO");
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${tenantId}), 7418)`;
     const doc = await tx.$queryRaw`SELECT * FROM th_prestaciones_pagos_documentos WHERE tenant_id = ${tenantId} AND id = ${documentId} LIMIT 1`;
     if (!doc[0]) throw validationError("Documento de pago de prestaciones no encontrado.", 404, "PAGO_PRESTACION_NO_ENCONTRADO");
     if (doc[0].status === "anulado") return { ok: true, deleted: doc[0] };
