@@ -1,0 +1,47 @@
+{
+  "env": "qa",
+  "ref": "jbirkghkekuifgfsgquq",
+  "mode": "dry",
+  "started_at": "2026-11-18T19:57:41.712Z",
+  "items": [
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 44,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 53,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 66,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 75,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 106,
+      "action": "dry: subira",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/100/1787603048508-maxresdefault.jpg",
+      "bytes": 174412,
+      "mime": "image/jpeg"
+    }
+  ],
+  "counts": {
+    "timepunch_rows": 938,
+    "activity_rows": 154,
+    "processed": 5
+  },
+  "finished_at": "2026-11-18T19:58:08.325Z"
+}

@@ -21,6 +21,7 @@ const { punchPhotoItems } = require("./punchEvidence");
 // probarlas sin infraestructura. hr/service.js las conecta con Prisma.
 const crypto = require("node:crypto");
 const { assertSafeFile } = require("../../security/policy");
+const evidenceStorage = require("./evidenceStorage");
 
 const MOBILE_SOURCE = "apexos-movil";
 const KEY_ALGORITHM = "EC_P256_SHA256";
@@ -285,12 +286,16 @@ function verifyPunchIdentity({ employee, user, input = {}, now = new Date() }) {
 
 // Quita de la marcacion lo que no debe viajar en listados: el contenido de la
 // selfie (se pide aparte) y la firma cruda que manda la app.
+// `has_base64_data` anuncia que hay archivo QUE PEDIR por id, no que los bytes
+// viajen aqui: tambien es cierto cuando la selfie vive en Storage (recateada o
+// subida por el almacen nuevo) y la fila ya no lleva base64.
 function publicPunchMetadata(metadata = {}) {
   if (!metadata || typeof metadata !== "object") return metadata;
   const { identity: _identity, identity_photo: photo, ...rest } = metadata;
   if (!photo || typeof photo !== "object") return rest;
   const { base64_data: base64, base64: raw, ...photoRest } = photo;
-  return { ...rest, identity_photo: { ...photoRest, has_base64_data: Boolean(base64 || raw) } };
+  const available = Boolean(base64 || raw || photoRest.storage_path) || evidenceStorage.hasRescuedRef(metadata, "identity");
+  return { ...rest, identity_photo: { ...photoRest, has_base64_data: available } };
 }
 
 // Selfie de una marcacion en el formato de evidencias del monitor.
@@ -298,13 +303,28 @@ function publicPunchMetadata(metadata = {}) {
 // Lee tambien `base64`: las marcaciones de la app hechas ANTES de desplegar
 // esta verificacion guardaron la selfie tal como la mando la app (sin
 // normalizar a `base64_data`), y deben verse igual en el monitor.
+//
+// Cuando la fila ya no lleva bytes (purgada tras el rescate, o escrita por el
+// almacen nuevo) anuncia la ruta del objeto: el resumen del monitor la pinta
+// como disponible y `getMonitorEvidence` sirve los contenido por id desde
+// Storage. Sin ruta verificable el comportamiento es el viejo: null.
 function identityEvidenceOf(punch) {
   const photo = punch?.metadata?.identity_photo;
   if (!photo || typeof photo !== "object") return null;
   const normalized = punchPhotoItems({ metadata: { identity_photo: photo } })[0];
   const content = normalized?.base64_data || "";
-  if (!content) return null;
   const type = String(photo.type || "image/jpeg");
+  if (!content) {
+    const objectPath = evidenceStorage.pathForEvidence(photo, punch?.metadata, "identity");
+    if (!objectPath) return null;
+    return {
+      evidence_type: "identity_selfie",
+      file_name: photo.name || `selfie-${punch.id}.jpg`,
+      mime_type: type,
+      file_size: photo.size || null,
+      storage_path: objectPath
+    };
+  }
   return {
     evidence_type: "identity_selfie",
     file_name: photo.name || `selfie-${punch.id}.jpg`,

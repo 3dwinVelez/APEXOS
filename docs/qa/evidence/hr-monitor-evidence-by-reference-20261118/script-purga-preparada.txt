@@ -1,0 +1,47 @@
+'use strict';
+// SOLO LECTURA: cuanto binario esta HOYA purgable (rescatado con bandera) y cuanto sigue
+// necesitando rescate, por tabla y por columna, en todo el ambiente.
+const fs = require('node:fs'), path = require('node:path');
+const { PrismaClient } = require('C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/@prisma/client');
+const ROOT = 'C:/Users/mq1/Documents/Proyectos/APEXOS';
+const TARGET = process.argv[2] || 'production';
+const EXPECTED = { production: 'jzbwzmkidfthknsohhnr', qa: 'jbirkghkekuifgfsgquq' }[TARGET];
+function parseEnv(f) { const o = {}; for (const l of fs.readFileSync(f, 'utf8').split(/\r?\n/)) { const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(l); if (m) o[m[1]] = m[2].replace(/^["']|["']$/g, ''); } return o; }
+const conf = parseEnv(path.join(ROOT, 'config', `${TARGET}.env`));
+if (!String(conf.SUPABASE_URL || '').includes(EXPECTED)) throw new Error('project ref inesperado');
+const prisma = new PrismaClient({ datasources: { db: { url: conf.DATABASE_URL } }, log: ['error'] });
+const nb = (v) => (typeof v === 'bigint' ? Number(v) : v);
+const mb = (v) => Math.round(nb(v) / 104857.6) / 10;
+(async () => {
+  const rows = await prisma.$queryRawUnsafe(`
+    SELECT count(*) FILTER (WHERE extra_evidence::text LIKE '%;base64,%')::bigint filas_extra,
+           COALESCE(sum(octet_length(extra_evidence::text)) FILTER (WHERE extra_evidence::text LIKE '%;base64,%'),0)::bigint bytes_extra,
+           count(*) FILTER (WHERE extra_evidence::text LIKE '%;base64,%' AND (metadata->'hr_evidence_rescue_extra') IS NOT NULL)::bigint filas_extra_rescatadas,
+           COALESCE(sum(octet_length(extra_evidence::text)) FILTER (WHERE extra_evidence::text LIKE '%;base64,%' AND (metadata->'hr_evidence_rescue_extra') IS NOT NULL),0)::bigint bytes_extra_rescatadas,
+           count(*) FILTER (WHERE metadata::text LIKE '%;base64,%')::bigint filas_selfie,
+           COALESCE(sum(octet_length(metadata::text)) FILTER (WHERE metadata::text LIKE '%;base64,%'),0)::bigint bytes_selfie,
+           count(*) FILTER (WHERE metadata::text LIKE '%;base64,%' AND (metadata->'hr_evidence_rescue_identity') IS NOT NULL)::bigint filas_selfie_rescatadas,
+           COALESCE(sum(octet_length(metadata::text)) FILTER (WHERE metadata::text LIKE '%;base64,%' AND (metadata->'hr_evidence_rescue_identity') IS NOT NULL),0)::bigint bytes_selfie_rescatadas
+    FROM "TimePunch"`);
+  const gps = await prisma.$queryRawUnsafe(`
+    SELECT count(*) FILTER (WHERE metadata::text LIKE '%;base64,%')::bigint filas,
+           COALESCE(sum(octet_length(metadata::text)) FILTER (WHERE metadata::text LIKE '%;base64,%'),0)::bigint bytes
+    FROM "GpsPing"`);
+  const ae = await prisma.$queryRawUnsafe(`
+    SELECT count(*) FILTER (WHERE coalesce(base64_data,'') <> '')::bigint filas,
+           COALESCE(sum(octet_length(coalesce(base64_data,''))) FILTER (WHERE coalesce(base64_data,'') <> ''),0)::bigint bytes,
+           count(*) FILTER (WHERE coalesce(base64_data,'') <> '' AND (metadata->'hr_evidence_rescue') IS NOT NULL)::bigint filas_rescatadas,
+           COALESCE(sum(octet_length(coalesce(base64_data,''))) FILTER (WHERE coalesce(base64_data,'') <> '' AND (metadata->'hr_evidence_rescue') IS NOT NULL),0)::bigint bytes_rescatados
+    FROM "ActivityEvidence"`);
+  const r = rows[0], g = gps[0], a = ae[0];
+  console.log(JSON.stringify({
+    ambiente: TARGET, alcance: 'todas las empresas del ambiente',
+    timepunch: {
+      extra_evidence: { filas: nb(r.filas_extra), MB: mb(r.bytes_extra), filas_rescatadas: nb(r.filas_extra_rescatadas), MB_purgable_hoy: mb(r.bytes_extra_rescatadas), MB_pendiente_rescate: mb(r.bytes_extra - r.bytes_extra_rescatadas) },
+      metadata_selfie: { filas: nb(r.filas_selfie), MB: mb(r.bytes_selfie), filas_rescatadas: nb(r.filas_selfie_rescatadas), MB_purgable_hoy: mb(r.bytes_selfie_rescatadas), MB_pendiente_rescate: mb(r.bytes_selfie - r.bytes_selfie_rescatadas) }
+    },
+    gpsping_metadata_selfie: { filas: nb(g.filas), MB: mb(g.bytes), nota: 'sin bandera de rescate: la copia no existe en Storage' },
+    activity_evidence: { filas: nb(a.filas), MB: mb(a.bytes), filas_rescatadas: nb(a.filas_rescatadas), MB_purgable_hoy: mb(a.bytes_rescatados), MB_pendiente_rescate: mb(a.bytes - a.bytes_rescatados) }
+  }, null, 1));
+  await prisma.$disconnect();
+})().catch(async (e) => { console.error('FALLO:', String(e).slice(0, 300)); try { await prisma.$disconnect(); } catch {} process.exit(1); });

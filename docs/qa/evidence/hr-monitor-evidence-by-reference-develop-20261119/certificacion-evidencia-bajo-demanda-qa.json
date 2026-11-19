@@ -1,0 +1,98 @@
+{
+  "change_id": "hr-monitor-evidence-demand-20260824",
+  "environment": "QA",
+  "company": "NYVORA",
+  "generated_at": "2026-11-19T05:26:19.015Z",
+  "api_commit": "unknown",
+  "checks": [
+    {
+      "name": "entrada_sin_selfie_rechazada",
+      "ok": true,
+      "detail": {
+        "code": "SELFIE_REQUERIDA"
+      }
+    },
+    {
+      "name": "activity_summary_available",
+      "ok": true,
+      "detail": {
+        "id": 157,
+        "source": "activity",
+        "evidence_type": "photo",
+        "file_name": "activity-20261119052614.png",
+        "mime_type": "image/png",
+        "file_size": 68,
+        "storage_path": "company/1d162ffd-bd27-4855-8141-b015388265fc/hr/work-sessions/479/users/740/activities/169/1795066008126-activity-20261119052614.png",
+        "has_base64_data": false,
+        "available": true
+      }
+    },
+    {
+      "name": "activity_summary_excludes_payload",
+      "ok": true,
+      "detail": {
+        "has_base64_data": false
+      }
+    },
+    {
+      "name": "punch_summary_available",
+      "ok": true,
+      "detail": {
+        "id": 1734,
+        "source": "punch",
+        "available": true,
+        "has_base64_data": true
+      }
+    },
+    {
+      "name": "punch_summary_excludes_payload",
+      "ok": true,
+      "detail": {
+        "has_base64_data": true
+      }
+    },
+    {
+      "name": "activity_loaded_on_demand",
+      "ok": true,
+      "detail": {
+        "id": 157,
+        "source": "activity"
+      }
+    },
+    {
+      "name": "punch_loaded_on_demand",
+      "ok": true,
+      "detail": {
+        "id": 1734,
+        "source": "punch"
+      }
+    },
+    {
+      "name": "marking_only_role_denied",
+      "ok": true,
+      "detail": {
+        "code": "PERMISO_DENEGADO"
+      }
+    },
+    {
+      "name": "missing_evidence_controlled",
+      "ok": true,
+      "detail": {
+        "code": "EVIDENCIA_MONITOR_NO_ENCONTRADA"
+      }
+    },
+    {
+      "name": "cross_tenant_evidence_denied",
+      "ok": true,
+      "detail": {
+        "other_tenant_id": "1afcb48f-39eb-4b59-af90-05e67d54593a"
+      }
+    }
+  ],
+  "fixture": {
+    "employee_user_id": 740,
+    "monitor_user_id": 741,
+    "route_id": 401
+  },
+  "status": "passed"
+}
