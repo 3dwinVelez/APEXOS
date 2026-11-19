@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.19.0",
+      "version": "2.20.0",
       "updated_at": "2026-11-19",
-      "sha256": "acd9bb008448242d45b0cfae6bb5a6e48a46c548834f94b90807576c330efdb4",
+      "sha256": "2fb056bafc93c6a2b02180690f4b156d5809355ce27fa1b58bf81a41129bc4f7",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -86,15 +86,16 @@
         "fallo-dependencia-conserva-codigo",
         "401-es-credencial-403-es-alcance",
         "evidencia-storage-antes-de-transaccion",
-        "rango-timepunch-solo-por-lector-proyectado"
+        "rango-timepunch-solo-por-lector-proyectado",
+        "ingesta-publica-con-buzon-honesto"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.62.0",
+      "version": "2.63.0",
       "updated_at": "2026-11-19",
-      "sha256": "f5bed8d66cb0e0465d974dd9f98b126c2f5e546b287ab41e0464c65f3f2809a9",
+      "sha256": "f22befb2a997672908456a7d14216b6119e6403508ed8c00935ba89ef7e56c6f",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -142,7 +143,8 @@
         "brief-marca-casillas-con-commit-medido",
         "brief-post-checkpoint-narra-incidente-y-aplazamientos",
         "exclusion-vence-y-autorizacion-se-cita",
-        "brief-cierra-con-ambiente-verificado"
+        "brief-cierra-con-ambiente-verificado",
+        "brief-de-acote-separa-rama-de-nube"
       ]
     },
     {
@@ -175,9 +177,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.34.0",
+      "version": "2.35.0",
       "updated_at": "2026-11-19",
-      "sha256": "9b99242dadfd9870f199360772d3f03791b34f63d05c56426525cb95d5836747",
+      "sha256": "226b7a7e99aad9a68459cd88284d2b57225472ce37ce74005ff06d7beb747dd3",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -214,7 +216,8 @@
         "capa-visual-rebasada-y-recertificada",
         "evidencia-perezosa-por-referencia",
         "fallo-tecnico-no-es-ventana-estado-de-dato",
-        "contador-sin-lectura-no-es-cero"
+        "contador-sin-lectura-no-es-cero",
+        "validacion-en-linea-no-ventanilla-nativa"
       ]
     },
     {
@@ -291,9 +294,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.78.1",
+      "version": "2.79.0",
       "updated_at": "2026-11-19",
-      "sha256": "3521acfcbdd1481e3863ebca67912d094bccec4199becbc3c9c09d43931259e9",
+      "sha256": "8b89ef2833b4b10d677910c6da5cf2ac62781dd4d47489e7b6af6e2f325a7783",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -356,15 +359,16 @@
         "ausencia-se-certifica-con-tormenta-fabricada",
         "puerta-de-presupuesto-se-demuestra-roja",
         "columna-antes-en-el-ambiente-desplegado",
-        "pierna-main-por-identidad-de-blob"
+        "pierna-main-por-identidad-de-blob",
+        "control-positivo-de-ventanillas-nativas"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.31.0",
+      "version": "2.32.0",
       "updated_at": "2026-11-19",
-      "sha256": "2af2c2e32bd1c1d9e38c6d69762e7402dbc3950480e5a097b51a0683d6b83aa8",
+      "sha256": "527096f91c0361dc62f76bd09c1e1c429d0ced2ba73410022c3282bd5a3e334b",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -398,15 +402,16 @@
         "promocion-de-bloque-reconstruida",
         "anillo-persistido-sin-dato-de-empresa",
         "almacen-privado-rutas-saneadas",
-        "sonda-de-produccion-sin-contenido"
+        "sonda-de-produccion-sin-contenido",
+        "boca-anonima-sin-tenant-en-el-cuerpo"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.48.0",
+      "version": "2.49.0",
       "updated_at": "2026-11-19",
-      "sha256": "9d5a366a173a5e121f43f374951490a0731de37041112f6badedeb035abdbfd2",
+      "sha256": "6479c476ba54a07708053c6cf3633d887c121bca762937c8ba432c3bbb66de9f",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -446,7 +451,8 @@
         "arbol-barrido-se-reconstruye-y-se-publica",
         "garantia-de-experiencia-traducida-a-numero",
         "inventario-de-manifiesto-contra-el-tip",
-        "cierre-con-ambiente-servido"
+        "cierre-con-ambiente-servido",
+        "autorizacion-abierta-no-alcanza-la-nube"
       ]
     }
   ],

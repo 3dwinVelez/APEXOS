@@ -21,7 +21,9 @@
 //  F. sesion vencida (401): el aviso honesto esta en el login, no en una ventana.
 //  G. control positivo: con apexos_diagnostics=1 el detalle tecnico si se muestra, con presupuesto maximo.
 //  H. tema oscuro: la misma ausencia de ventanas.
-//  I. contrato de codigo: el canal de alertas de usuario sigue retirado.
+//  J. validacion de formulario en Empleados: el motivo vive en el campo y ninguna ventanilla nativa
+//     del navegador (alert/confirm) se levanto en toda la corrida. El registrador tiene control propio.
+//  I. contrato de codigo: el canal de alertas de usuario sigue retirado y la pantalla no usa alert().
 //
 // Sale con codigo distinto de cero ante cualquier comprobacion fallida o parcial.
 
@@ -33,11 +35,15 @@ const { spawn, execFileSync } = require("node:child_process");
 const ROOT = path.resolve(__dirname, "..", "..");
 const WEB = path.join(ROOT, "apps", "web");
 const PORT = Number(process.env.CERT_BROWSER_PORT || 3323);
-const ARTIFACT = "technical-alert-silence-20261118";
+// La evidencia es aditiva: una corrida nueva no puede sobrescribir la que ya citan los manifiestos de
+// una promoción cerrada. Por defecto el artefacto histórico; CERT_ARTIFACT abre una carpeta nueva.
+const ARTIFACT = process.env.CERT_ARTIFACT || "technical-alert-silence-20261118";
 const OUT = path.join(ROOT, "docs", "qa", "evidence", ARTIFACT);
 const keepOpen = process.argv.slice(2).includes("--keep-open");
 const BASE = `http://127.0.0.1:${PORT}`;
 const NAV_TIMEOUT = 90_000;
+const EMPLEADOS_ROUTE = "/dashboard/talento-humano/empleados";
+const EMPLEADOS_SOURCE = path.join(WEB, "app", "dashboard", "talento-humano", "empleados", "page.tsx");
 
 // El contexto que el guard de rutas exige para montar la pantalla. Sin active_modules el guard pinta
 // "Acceso no autorizado" y la certificacion mediria el guard, no la capa de alertas.
@@ -195,7 +201,8 @@ async function main() {
       }
       // El endpoint de telemetria responde siempre 200: si el registro de fallos fallara, la
       // certificacion mediria el arnes y no la promesa ("el fallo se registra, no se muestra").
-      if (pathname.startsWith("/api/v1/admin/platform-logs")) {
+      // Cubre las dos bocas: la autenticada (admin) y la publica para visitantes sin sesion.
+      if (pathname.startsWith("/api/v1/admin/platform-logs") || pathname.startsWith("/api/v1/public/telemetry")) {
         seen.telemetry.push(pathname);
         return void respond(request, { status: 200, body: "{}" });
       }
@@ -219,6 +226,16 @@ async function main() {
     const pageErrors = [];
     page.on("pageerror", (error) => pageErrors.push(String((error && error.message) || error)));
 
+    // Ventanilla nativa del navegador (alert/confirm/prompt). Sin oyente, Chrome headless la descarta
+    // en silencio y "cero ventanas" lo daria igual un arnes roto: por eso el control positivo de abajo.
+    // El prefijo ARNES: marca la ventanilla provocada a proposito por el propio arnes.
+    const dialogs = [];
+    page.on("dialog", async (dialog) => {
+      dialogs.push({ type: dialog.type(), message: String(dialog.message() || "").slice(0, 300), at: new Date().toISOString() });
+      await dialog.dismiss().catch(() => undefined);
+    });
+    const realDialogs = () => dialogs.filter((entry) => !/^ARNES:/.test(entry.message));
+
     async function prepare({ theme = "light", withDiagnostics = false } = {}) {
       await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
       await page.evaluate((flags) => {
@@ -239,6 +256,10 @@ async function main() {
     async function readSurface() {
       return page.evaluate(() => {
         const overlayCards = [...document.querySelectorAll(".platform-alert")];
+        const inlineAlerts = [...document.querySelectorAll('[role="alert"]')]
+          .filter((node) => !node.closest(".platform-alert"))
+          .map((node) => (node.textContent || "").trim().slice(0, 240))
+          .filter(Boolean);
         const visibleTechnical = [...document.querySelectorAll("body *")].some((node) => {
           const own = Array.from(node.childNodes).filter((child) => child.nodeType === 3).map((child) => child.textContent).join(" ");
           return /Fallo t[eé]cnico detectado|Ruta: \/api\/v1|ERROR_INTERNO|"error":/.test(own);
@@ -247,10 +268,26 @@ async function main() {
           url: location.pathname,
           overlayCards: overlayCards.length,
           overlayText: overlayCards.map((node) => (node.textContent || "").trim().slice(0, 200)),
+          inlineAlerts,
+          invalidFields: document.querySelectorAll('[aria-invalid="true"]').length,
           bodyText: (document.body.innerText || "").slice(0, 6000),
           visibleTechnical
         };
       });
+    }
+
+    // Pulsar por texto, no por selector fragil: el arnes tiene que seguir encontrando el boton aunque
+    // cambie la clase. Devuelve false si el boton no estaba, y el chequeo que lo llama lo reporta.
+    async function clickByText(needle) {
+      return page.evaluate((text) => {
+        const hit = [...document.querySelectorAll("button")].find((node) => {
+          const label = (node.innerText || node.textContent || "").trim();
+          return label.includes(text) && !node.disabled && node.getClientRects().length > 0;
+        });
+        if (!hit) return false;
+        hit.click();
+        return true;
+      }, needle);
     }
 
     async function visit(definition, settleMs = 7000) {
@@ -365,6 +402,55 @@ async function main() {
     check("el_detalle_tecnico_vive_en_el_canal_de_soporte", peak.text.join(" ").includes("Ruta: /api/v1"), { peak_text: peak.text });
     await page.screenshot({ path: path.join(OUT, "08-modo-diagnostico.png") }).catch(() => undefined);
 
+    // J. validacion de formulario. Antes, vaciar el alta de un empleado y pulsar "Crear empleado"
+    //    encadenaba hasta cuatro ventanillas nativas del navegador: la misma interrupcion que se retiro
+    //    para el fallo tecnico, pero en el camino feliz. El motivo tiene que estar en el propio campo.
+    //    Se corre con la tormenta de 500 puesta: quien valida con la API caida tampoco ve ventanas.
+    const controlAntes = dialogs.length;
+    await page.evaluate(() => window.alert("ARNES: control de ventanillas nativas"));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    check("el_arnes_detecta_una_ventanilla_nativa",
+      dialogs.length === controlAntes + 1 && /^ARNES:/.test(dialogs[dialogs.length - 1].message),
+      { registradas: dialogs.length });
+
+    scenario = "tormenta_500";
+    await prepare({ theme: "light" });
+    await page.goto(`${BASE}${EMPLEADOS_ROUTE}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
+    await new Promise((resolve) => setTimeout(resolve, 7000));
+    const ventanasRealesAntesDelFormulario = realDialogs().length;
+    const trazasAntesDelFormulario = dialogs.length;
+    const opened = await clickByText("Nuevo empleado");
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const submitted = await clickByText("Crear empleado");
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const formSurface = await readSurface();
+    const formReasons = formSurface.inlineAlerts.join(" | ");
+    RESUL.scenarios.validacion_empleados = {
+      opened,
+      submitted,
+      inline_alerts: formSurface.inlineAlerts,
+      invalid_fields: formSurface.invalidFields,
+      overlay_cards: formSurface.overlayCards,
+      dialogs: dialogs.slice(trazasAntesDelFormulario)
+    };
+    check("validacion_empleados_flujo_completo", opened && submitted && /Numero documento/.test(formSurface.bodyText), {
+      opened, submitted, snippet: formSurface.bodyText.slice(0, 300)
+    });
+    check("validacion_empleados_motivo_en_el_campo",
+      /documento es obligatorio/i.test(formReasons) && /nombres y apellidos/i.test(formReasons),
+      { inline: formSurface.inlineAlerts });
+    check("validacion_empleados_campo_marcado_como_invalido", formSurface.invalidFields >= 2, { invalidFields: formSurface.invalidFields });
+    check("validacion_empleados_sin_ventanilla_nativa", realDialogs().length === ventanasAntesDelFormulario, {
+      dialogs: dialogs.slice(ventanasAntesDelFormulario)
+    });
+    check("validacion_empleados_sin_tarjeta_flotante", formSurface.overlayCards === 0 && !formSurface.visibleTechnical, {
+      overlayCards: formSurface.overlayCards
+    });
+    await page.screenshot({ path: path.join(OUT, "09-validacion-empleados.png") }).catch(() => undefined);
+
+    // K. toda la carrera, del primer click al ultimo, sin una sola ventanilla del navegador.
+    check("cero_ventanillas_nativas_en_toda_la_corrida", realDialogs().length === 0, { dialogs: realDialogs().slice(0, 5) });
+
     // I. contrato de codigo: el canal de ventana de usuario no puede volver por descuido.
     const apiSource = fs.readFileSync(path.join(WEB, "lib", "api.ts"), "utf8");
     const alertsModule = fs.readFileSync(path.join(WEB, "lib", "platformAlerts.ts"), "utf8");
@@ -372,12 +458,15 @@ async function main() {
     check("api_no_dispara_la_alerta_de_usuario", !/emitAppAlert|notifyPlatform\(/.test(apiSource));
     check("el_canal_apex_alert_esta_retirado", !/apex:alert/.test(alertsModule) && !/"apex:alert"/.test(alertShell));
     check("la_ventana_queda_detras_del_modo_diagnostico", /technicalDiagnosticsEnabled\(\)/.test(alertShell));
+    check("la_pantalla_de_empleados_no_usa_ventanillas_de_alerta",
+      !/(\bwindow\.|\bglobalThis\.)?alert\s*\(/.test(fs.readFileSync(EMPLEADOS_SOURCE, "utf8")));
 
     RESUL.runtime = {
       page_errors: pageErrors.slice(0, 12),
       console_errors: consoleErrors.slice(0, 20),
       failed_requests: [...new Set(seen.failed)].slice(0, 40),
       aborted_requests: [...new Set(seen.aborted)].slice(0, 40),
+      native_dialogs: realDialogs().slice(0, 10),
       telemetry_posts: seen.telemetry.length
     };
     writeEvidence();

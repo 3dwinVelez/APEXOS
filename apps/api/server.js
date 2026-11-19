@@ -273,6 +273,8 @@ async function build() {
   registerRoutes("onboarding", require("./src/modules/onboarding/routes"), { prefix: "/api/v1" });
   registerRoutes("brain", require("./src/modules/brain/routes"), { prefix: "/api/v1" });
   registerRoutes("admin", require("./src/modules/admin/routes"), { prefix: "/api/v1" });
+  // Reporte de fallo tecnico desde el navegador sin sesion valida: scope aparte, sin auth, con buzon propio.
+  registerRoutes("admin-public", require("./src/modules/admin/public-routes"), { prefix: "/api/v1" });
   registerRoutes("inventory", require("./src/modules/inventory/routes"), { prefix: "/api/v1" });
   registerRoutes("accounting", require("./src/modules/accounting/routes"), { prefix: "/api/v1" });
   registerRoutes("purchases", require("./src/modules/purchases/routes"), { prefix: "/api/v1" });
