@@ -1,0 +1,103 @@
+{
+  "change_id": "technical-alert-silence-main-20261119",
+  "commit": "d2465c0680788fdbd8be2553b9dac4b0b1b55be6",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-19T00:00:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "realiza la intervencion y garantiza que se implemente en main de manera correcta / termina la tarea y la intervencion",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "La pierna main es transporte de contenido ya certificado en QA sobre el build desplegado; el codigo es blob-identico al commit certificado en develop."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope, qa:approval:evidence y la certificacion E2E ejecutada contra el build desplegado."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+      ],
+      "notes": "Certificacion de navegador contra el build desplegado en QA (5ff1440ffb): 163/163 controles, con tormenta inyectada (500, 429, red cortada) y camino feliz sin inyeccion, sobre rutas, mapa, servicios, monitoreo y lobby, con Administrador de empresa, Empleado de NYVORA y Analista contable de otra empresa real."
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+        "../evidencia/technical-alert-silence-20261118/06-sesion-vencida.png"
+      ],
+      "notes": "El antes midio 141/163 sobre el build que QA servia sin el arreglo: 20 rojos de ventana (18 con tormenta inyectada y 2 sin ninguna inyeccion, el camino feliz y el RBAC del empleado limitado) mas 2 de artefacto (apex:alert en 1 chunk, apex:diagnostic ausente). El despues cierra 163/163 con los mismos 163 controles. Sesion vencida y el 401 de la telemetria sin sesion siguen medidos, no maquillados."
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidencia/technical-alert-silence-20261118/main-20261119/suite-web-main.txt",
+        "../evidencia/technical-alert-silence-20261118/soporte.txt"
+      ],
+      "notes": "Suite web del arbol de main, archivo por archivo: 112 archivos, 829 pruebas, 828 pasan, 1 fallan. Sustrato: node_modules por junction con lockfile blob-identico al de main."
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidencia/technical-alert-silence-20261118/main-20261119/equivalencia-blob-main-develop.txt",
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json"
+      ],
+      "notes": "Equivalencia medida por blob entre el candidato de main y el commit certificado en develop (36eb0ccb, medido 68/68 en local y 163/163 en QA): las 12 rutas de codigo y contratos son byte a byte identicas, igual que las 3 de documentacion y las 19 de evidencia. Unico distinto: package.json, que conserva la version propia de main y recibe solo las 2 lineas nuevas de scripts; el diff exacto, linea por linea, esta en el propio informe."
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidencia/technical-alert-silence-20261118/main-20261119/suite-web-main.txt",
+        "../evidencia/technical-alert-silence-20261118/suite-web.txt",
+        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+      ],
+      "notes": "El corte no toca API, Prisma ni migraciones: la plataforma de datos queda intacta. La suite web del arbol de main se re-corre aqui, archivo por archivo (829 pruebas), y el rojo unico es el guardarrail de instalacion propia de transport-pyg-account-config.component.test.mjs, reproducido sobre el baseline intacto de main sin este diff y verde 3/3 en la corrida certificada de develop. El rojo que develop si tenia (command-palette-module-functions, 9/10) esta verde en main (10/10): los dos unicos rojos de cada pata pertenecen al sustrato y al destino, no a este corte."
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-qa.js",
+    "evidence": [
+      "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+      "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+    ],
+    "controls": 163,
+    "passed": 163,
+    "failed": 0,
+    "substrate": "build desplegado en QA desde 5ff1440ffb; sonda de tokens sobre los chunks publicados (apex:alert en 0 chunks, apex:diagnostic presente)"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-local.js",
+    "evidence": [
+      "../evidencia/technical-alert-silence-20261118/certification.json",
+      "../evidencia/technical-alert-silence-20261118/soporte.txt"
+    ],
+    "basis": "El certificador local barre los cuatro escenarios sobre cinco pantallas y dos temas contra next start (68/68); su codigo y el del arbol de main son blob-identicos, asi que la regresion del sustrato local describe el mismo binario."
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-qa.js",
+    "evidence": [
+      "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json"
+    ],
+    "notes": "Corrida con la empresa modelo real NYVORA en QA: roles Administrador de empresa y Empleado, mas una identidad de otra empresa real para el control de aislamiento. Usuarios efimeros creados por Prisma y desactivados al terminar. Telemetria medida: {\"intentos_navegador\":70,\"codigos_en_navegador\":{\"200\":70,\"204\":4},\"registradas\":74}, sonda sin token: {\"intentos_navegador\":70,\"status_sonda\":401}."
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "956f2d23915885a30476fcb8e1dc2d6e13f13b1e",
+    "trigger": "Si en Produccion vuelve a aparecer una tarjeta de fallo tecnico (.platform-alert en el DOM) en rutas, mapa, servicios, monitoreo o lobby, si el bundle publicado vuelve a traer apex:alert, o si el cierre de sesion por inactividad deja de explicar el motivo en el login.",
+    "notes": "Revert controlado del merge sobre main (git revert del commit de fusion, sin reescribir historia compartida) y redeploy de apexos-web-prod. No hay migraciones de esquema ni cambios de API en este corte: el rollback no deja datos huerfanos y no reinicia el servicio de datos."
+  }
+}

@@ -1,0 +1,367 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "technical-alert-silence-main-20261119",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "promotion_branch": "codex/qa-technical-alert-silence-main-20261119",
+  "certified_commit": "3ca8d541f7af1192cb1a3517c395b69364355ae1",
+  "base_commit": "956f2d23915885a30476fcb8e1dc2d6e13f13b1e",
+  "base_commits": {
+    "main": "956f2d23915885a30476fcb8e1dc2d6e13f13b1e"
+  },
+  "target_head": "956f2d23915885a30476fcb8e1dc2d6e13f13b1e",
+  "candidate_source": {
+    "branch": "codex/qa-technical-alert-silence-main-20261119",
+    "commit": "3ca8d541f7af1192cb1a3517c395b69364355ae1",
+    "replay_sobre_main": "Replay puntual de las 36 rutas del commit certificado en develop (36eb0ccbf4) sobre el tip de main 956f2d2391: el inventario del replay y el del certificado son el mismo conjunto de 36 rutas (diferencia simetrica vacia) y 12 de ellas, las de codigo, quedan blob-identicas. package.json no se tomo del origen: se reconstruyo sobre la version propia de main y solo recibe las 2 lineas nuevas de scripts de certificacion (0 lineas eliminadas).",
+    "origen_certificado_en_develop": [
+      "36eb0ccb",
+      "b628dae0",
+      "5ff1440f"
+    ],
+    "origen_certificado_en_desarrollo": [
+      "0b1ba6f8"
+    ]
+  },
+  "change_intent": {
+    "summary": "El fallo tecnico de la API deja de ser ventana emergente para el cliente: la capa de alertas se enmudece, la pantalla queda en estado de dato honesto y el fallo se registra en platform-logs. La pierna main transporta el mismo codigo blob-identico que QA certifico 163/163, sin tocar API, Prisma ni migraciones.",
+    "modules": [
+      "web-shell",
+      "talento-humano-rutas",
+      "talento-humano-mapa",
+      "transporte-monitoreo",
+      "autenticacion-sesion",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "allowed_paths": [
+    ".gitignore",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/error.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/system/PlatformAlerts.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/platformAlerts.ts",
+    "apps/web/lib/sessionSecurity.ts",
+    "apps/web/lib/supabaseClient.ts",
+    "apps/web/test/technical-alert-silence.test.mjs",
+    "docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md",
+    "docs/project/filosofia-producto-ui.md",
+    "docs/qa/certifications/technical-alert-silence-20261118.md",
+    "docs/qa/certifications/technical-alert-silence-main-20261119.md",
+    "docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/equivalencia-candidato.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/main-20261119/equivalencia-blob-main-develop.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/main-20261119/suite-web-main.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-despues/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/soporte.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt",
+    "docs/qa/manifests/technical-alert-silence-main-20261119-approval.json",
+    "docs/qa/manifests/technical-alert-silence-main-20261119-scope.json",
+    "package.json",
+    "scripts/certifications/technical-alert-silence-browser-local.js",
+    "scripts/certifications/technical-alert-silence-browser-qa.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": ".gitignore"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/error.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/login/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/PlatformAlerts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/platformAlerts.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/sessionSecurity.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/supabaseClient.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/technical-alert-silence.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/filosofia-producto-ui.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/technical-alert-silence-20261118.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/technical-alert-silence-main-20261119.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/equivalencia-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/main-20261119/equivalencia-blob-main-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/main-20261119/suite-web-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/qa-despues/qa-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/soporte.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/technical-alert-silence-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/technical-alert-silence-browser-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-approval.json"
+    }
+  ],
+  "certified_functional_paths": [
+    ".gitignore",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/error.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/system/PlatformAlerts.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/platformAlerts.ts",
+    "apps/web/lib/sessionSecurity.ts",
+    "apps/web/lib/supabaseClient.ts",
+    "apps/web/test/technical-alert-silence.test.mjs",
+    "docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md",
+    "docs/project/filosofia-producto-ui.md",
+    "docs/qa/certifications/technical-alert-silence-20261118.md",
+    "docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/equivalencia-candidato.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/soporte.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt",
+    "package.json",
+    "scripts/certifications/technical-alert-silence-browser-local.js",
+    "scripts/certifications/technical-alert-silence-browser-qa.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "cero ventanas tecnicas en el build desplegado, con tormenta inyectada y con camino feliz, sobre las cinco pantallas y tres identidades",
+      "status": "passed",
+      "evidence": [
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+      ]
+    },
+    {
+      "name": "el bundle publicado en QA ya no dispara apex:alert y si trae apex:diagnostic (el control de artefacto que en el antes estaba rojo)",
+      "status": "passed",
+      "evidence": [
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+      ]
+    },
+    {
+      "name": "el fallo sigue registrandose: telemetria del cliente hacia /api/v1/admin/platform-logs/client con sesion y 401 medido sin ella",
+      "status": "passed",
+      "evidence": [
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+      ]
+    },
+    {
+      "name": "cierre de sesion por inactividad con aviso legible en el login, sin ventana tecnica",
+      "status": "passed",
+      "evidence": [
+        "../evidencia/technical-alert-silence-20261118/07-login-aviso-sesion.png",
+        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json"
+      ]
+    },
+    {
+      "name": "autenticacion, RBAC y aislamiento de tenant del destino sin regresion: suite web del arbol de main archivo por archivo",
+      "status": "passed",
+      "evidence": [
+        "../evidencia/technical-alert-silence-20261118/main-20261119/suite-web-main.txt",
+        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+      ]
+    },
+    {
+      "name": "equivalencia por blob entre la pata de main y el commit certificado en QA: el codigo que se despliega es el que se midio",
+      "status": "passed",
+      "evidence": [
+        "../evidencia/technical-alert-silence-20261118/main-20261119/equivalencia-blob-main-develop.txt",
+        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+      ]
+    }
+  ],
+  "notes": {
+    "inventario": "Inventario exacto del candidato en main: 43 rutas (31 A, 12 M, 0 D, cero eliminaciones) = las 41 ya commiteadas (replay funcional + herencia de evidencia + evidencia y nota de la pierna main) mas los 2 manifiestos que viajan en el commit siguiente.",
+    "reconstruccion": "No es un merge de develop: main..develop trae frentes ajenos. El candidato es el replay puntual del commit funcional certificado en develop (36eb0ccbf4) sobre 956f2d2391, con package.json conservando la version propia de main (solo las 2 lineas nuevas de scripts de certificacion) y la evidencia heredada blob-identica al arbol medido.",
+    "sustrato": "Las suites de la pierna main corrieron con node_modules montado por junction desde la worktree certificada de develop: los package-lock.json de main y del candidato son blob-identicos (6a62f9317f3b952f1f9099c81acbe24214ca3e00), asi que el arbol de dependencias es el mismo y la medicion es del codigo de main.",
+    "certificacion": "Local (next start, BUILD_ID bz-upXyRkgIgsiVFNja2N): 68/68. QA despues del despliegue de 5ff1440ffb: 163/163. QA antes (control positivo, build 5fcc2ed1 sin el arreglo): 141/163. Suite web del arbol de main: 112 archivos, 829 pruebas, 828 pasan, 1 fallan.",
+    "qa_ventana": "Corrida QA del despues: 2026-11-19T14:27:37.156Z a 2026-11-19T14:39:55.367Z, run_id 20261119142737, frontend https://apexos-web-qa-production.up.railway.app, API https://apexos-api-qa-production.up.railway.app, commit desplegado del API 9c82fca1a392."
+  },
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-19T00:00:00-05:00",
+    "scope": "promotion_to_main",
+    "instruction": "realiza la intervencion y garantiza que se implemente en main de manera correcta / termina la tarea y la intervencion",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "La pierna main es transporte de contenido ya certificado en QA sobre el build desplegado; el codigo es blob-identico al commit certificado en develop."
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas.",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: se exigen y se corren manifiesto v2, qa:promotion:scope, qa:approval:evidence y la certificacion E2E ejecutada contra el build desplegado."
+  }
+}
