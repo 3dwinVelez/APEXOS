@@ -1,0 +1,453 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-monitor-evidence-by-reference-20261119-main",
+  "base_commit": "45069dd980c1f9241cb210d3d0c787cdda5f08ea",
+  "certified_commit": "8a71ff0c0f038e328890ca38e658b043d11a4f51",
+  "candidate_source": {
+    "commit": "8a71ff0c0f038e328890ca38e658b043d11a4f51",
+    "branch": "codex/qa-hr-monitor-budget-main-20261119",
+    "replay_sobre_main": "git cherry-pick -x edffcb1e sobre 45069dd9, sin conflictos",
+    "origen_certificado_en_develop": [
+      "edffcb1e",
+      "c1d16fc4",
+      "9c82fca1"
+    ],
+    "origen_certificado_en_desarrollo": [
+      "2f8907af",
+      "c826bba8",
+      "b6f3d35d"
+    ]
+  },
+  "target_branch": "main",
+  "source_branch": "develop",
+  "change_intent": {
+    "summary": "El monitor de marcaciones deja de arrastrar binarios: los listados anuncian la evidencia por referencia y los bytes se piden al abrir el horario",
+    "modules": [
+      "talento-humano-monitor",
+      "talento-humano-marcacion",
+      "qa-evidencia"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/evidenceStorage.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/monitorEvidenceRows.js",
+    "apps/api/src/modules/hr/punchEvidence.d.ts",
+    "apps/api/src/modules/hr/punchEvidence.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-evidence-storage-gate.test.js",
+    "apps/api/test/hr-gps-metadata-projection.test.js",
+    "apps/api/test/hr-labor-rates-vigencia.test.js",
+    "apps/api/test/hr-monitor-evidence-columns.test.js",
+    "apps/api/test/hr-reports-range.test.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/hr/HrTimelineEvidence.tsx",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-monitor-refresh.test.mjs",
+    "apps/web/test/hr-monitor-stale-read.test.mjs",
+    "apps/web/test/hr-report-punch-selfie.test.mjs",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-db2-production.json",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-db3-production.json",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-production.json",
+    "docs/briefs/2026-11-18-monitor-marcaciones-evidencia-por-referencia.md",
+    "docs/project/modulos/talento-humano.md",
+    "docs/qa/certifications/hr-monitor-evidence-by-reference-20261119.md",
+    "docs/qa/certifications/hr-monitor-evidence-by-reference-main-20261119.md",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-prod-execute-1795035196851.json",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-dry-1795031888337.json",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-dry-1795031939165.json",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-execute-1795032907250.json",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/agents-gates.txt",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/rango-production-2026-11-18.json",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/selftest-gate.txt",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/suites-y-medicion.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/activity-evidence-rescue-check.script.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/agents-gates.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/api-suite.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-antes-despues-dia.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-evidencia-actividad.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-purga-preparada.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/projection-sql.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/script-antes-despues.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/script-purga-preparada.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/arnes-pooler-atribucion.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-candidato-local-pool3.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/ambiente-producto-antes.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/api-suite-candidato-main.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/equivalencia-blob-main-develop.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/hr-suites-targetadas-main.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/selftest-budget-gate-main.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/web-suite-candidato-main.txt",
+    "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-approval.json",
+    "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-scope.json",
+    "package.json",
+    "scripts/certifications/hr-monitor-byte-budget.js",
+    "scripts/hr-rescue-inline-base64-to-storage.js",
+    "scripts/performance/timepunch-range-read-probe.js"
+  ],
+  "allowed_deletions": [],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/evidenceStorage.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/mobile-identity.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/monitorEvidenceRows.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/punchEvidence.d.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/punchEvidence.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-evidence-storage-gate.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-gps-metadata-projection.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-labor-rates-vigencia.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-monitor-evidence-columns.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-reports-range.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/reportes/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/hr/HrTimelineEvidence.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/hrScheduleMonitor.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-monitor-refresh.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-monitor-stale-read.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-report-punch-selfie.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-db2-production.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-db3-production.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-production.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-18-monitor-marcaciones-evidencia-por-referencia.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/modulos/talento-humano.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-monitor-evidence-by-reference-20261119.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-monitor-evidence-by-reference-main-20261119.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-prod-execute-1795035196851.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-dry-1795031888337.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-dry-1795031939165.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-execute-1795032907250.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261118/agents-gates.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261118/rango-production-2026-11-18.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261118/selftest-gate.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-byte-budget-20261118/suites-y-medicion.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/activity-evidence-rescue-check.script.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/agents-gates.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/api-suite.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-antes-despues-dia.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-evidencia-actividad.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-purga-preparada.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/projection-sql.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/script-antes-despues.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/script-purga-preparada.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/arnes-pooler-atribucion.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-candidato-local-pool3.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/ambiente-producto-antes.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/api-suite-candidato-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/equivalencia-blob-main-develop.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/hr-suites-targetadas-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/selftest-budget-gate-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/web-suite-candidato-main.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-monitor-evidence-by-reference-20261119-main-scope.json"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-monitor-byte-budget.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/hr-rescue-inline-base64-to-storage.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/performance/timepunch-range-read-probe.js"
+    }
+  ],
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/evidenceStorage.js",
+    "apps/api/src/modules/hr/mobile-identity.js",
+    "apps/api/src/modules/hr/monitorEvidenceRows.js",
+    "apps/api/src/modules/hr/punchEvidence.d.ts",
+    "apps/api/src/modules/hr/punchEvidence.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-evidence-storage-gate.test.js",
+    "apps/api/test/hr-gps-metadata-projection.test.js",
+    "apps/api/test/hr-labor-rates-vigencia.test.js",
+    "apps/api/test/hr-monitor-evidence-columns.test.js",
+    "apps/api/test/hr-reports-range.test.js",
+    "apps/web/app/dashboard/talento-humano/reportes/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/hr/HrTimelineEvidence.tsx",
+    "apps/web/lib/hrScheduleMonitor.ts",
+    "apps/web/test/hr-monitor-refresh.test.mjs",
+    "apps/web/test/hr-monitor-stale-read.test.mjs",
+    "apps/web/test/hr-report-punch-selfie.test.mjs",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-db2-production.json",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-db3-production.json",
+    "docs/audits/2026-11-18-monitor-marcaciones-336/evidencia/medicion-production.json",
+    "docs/briefs/2026-11-18-monitor-marcaciones-evidencia-por-referencia.md",
+    "docs/project/modulos/talento-humano.md",
+    "docs/qa/certifications/hr-monitor-evidence-by-reference-20261119.md",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-prod-execute-1795035196851.json",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-dry-1795031888337.json",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-dry-1795031939165.json",
+    "docs/qa/evidence/hr-evidence-rescue-20261118/rescue-qa-execute-1795032907250.json",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/agents-gates.txt",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/rango-production-2026-11-18.json",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/selftest-gate.txt",
+    "docs/qa/evidence/hr-monitor-byte-budget-20261118/suites-y-medicion.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/activity-evidence-rescue-check.script.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/agents-gates.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/api-suite.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-antes-despues-dia.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-evidencia-actividad.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/produccion-purga-preparada.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/projection-sql.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/script-antes-despues.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/script-purga-preparada.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/arnes-pooler-atribucion.txt",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-candidato-local-pool3.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json",
+    "docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt",
+    "package.json",
+    "scripts/certifications/hr-monitor-byte-budget.js",
+    "scripts/hr-rescue-inline-base64-to-storage.js",
+    "scripts/performance/timepunch-range-read-probe.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "carga_del_monitor_sin_retraso",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json",
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/selftest-budget-gate-main.txt"
+      ]
+    },
+    {
+      "name": "evidencia_por_referencia_al_abrir_el_horario",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json",
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/ambiente-producto-antes.txt"
+      ]
+    },
+    {
+      "name": "rbac_monitor_contra_rol_solo_marcar",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/hr-suites-targetadas-main.txt"
+      ]
+    },
+    {
+      "name": "aislamiento_multi_tenant_de_la_evidencia",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/hr-suites-targetadas-main.txt"
+      ]
+    },
+    {
+      "name": "contadores_sin_lectura_no_se_pintan_como_cero",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt"
+      ]
+    },
+    {
+      "name": "reporte_de_asistencia_y_cierre_de_jornada",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/api-suite-candidato-main.txt"
+      ]
+    },
+    {
+      "name": "liquidacion_prestaciones_y_libranza_del_destino",
+      "status": "passed",
+      "evidence": [
+        "../../../docs/qa/evidence/hr-monitor-evidence-by-reference-main-20261119/api-suite-candidato-main.txt"
+      ]
+    }
+  ],
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (propietario)",
+    "approved_at": "2026-11-19T00:00:00-05:00",
+    "authorization": "Autorizacion expresa del propietario: «procede con mi autorizacion y no pares hasta garantizar que el ambiente main este completamente desplegado con la correccion»",
+    "authorization_flags": {
+      "direct_push_to_main": true,
+      "reason": "El corte esta blob-identico en develop para 20 de las 22 rutas de producto y la region del monitor es identica hunk a hunk; la pierna a main es transporte de contenido ya certificado en QA"
+    },
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue, no salta compuertas: siguen exigindo manifiesto v2, qa:promotion:scope, qa:approval:evidence y la certificacion E2E ejecutada."
+  }
+}

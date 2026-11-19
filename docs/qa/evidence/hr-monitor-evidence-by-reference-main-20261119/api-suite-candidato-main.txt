@@ -1,0 +1,19 @@
+# Suite completa del API en el candidato de main 8a71ff0c (base main 45069dd9)
+# comando: cd apps/api && DISABLE_REDIS=true node --test "test/*.test.js"   |   ejecutado 2026-11-19
+# tests 1158
+# suites 0
+# pass 1153
+# fail 2
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 23341.1344
+
+# rojos:
+not ok 145 - all accounting UI routes are registered under /api/v1
+not ok 1130 - las rutas TMS se registran y exigen autenticacion
+
+# Atribucion: los dos rojos son exactamente los dos de deuda ERP que ya estaban en la baseline de main
+#   (docs/qa/evidence/hr-marking-gate-main-20261117/api-suite-base-main.txt: 1128 pruebas, 2 fail: accounting-routes-contract y transport-tms-foundation).
+#   El candidato sube de 1128 a 1158 pruebas (+30 del corte) y mantiene 2 fail, 0 fallas nuevas.
+#   Adicional: el rojo de contrato de concurrencia que si existe en develop (6 pg_advisory_xact_lock en service.js) NO aparece en main: 0 bloqueantes, 4 acquireBoundedScopeLocks, prueba verde.

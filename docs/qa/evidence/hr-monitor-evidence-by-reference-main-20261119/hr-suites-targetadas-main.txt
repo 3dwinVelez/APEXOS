@@ -1,0 +1,13 @@
+# Suites objetivo de Talento Humano en el candidato de main 8a71ff0c  (2026-11-19)
+# comando API : cd apps/api && DISABLE_REDIS=true node --test "test/hr-*.test.js"   -> tests 266 · pass 266 · fail 0 · skipped 0
+# comando Web : cd apps/web  && node --test "test/hr-*.test.js" "test/hr-*.test.mjs" -> tests 143 · pass 143 · fail 0 · skipped 0
+
+# Foco en las capacidades protegidas del manifiesto (seis archivos de contrato):
+# tests 41
+# pass 41
+# fail 0
+# skipped 0
+
+# RBAC y aislamiento multi-tenant de la evidencia: cubiertos por hr-monitor-evidence-demand.test.js (403/404 por tenant y por rol) y
+# hr-operations-map-contract.test.js (el listado anuncia referencias y no binarios), ambos en la corrida verde de arriba.
+# Contadores sin lectura: punch_count null en vez de cero, cubierto por hr-monitor-evidence-columns.test.js.

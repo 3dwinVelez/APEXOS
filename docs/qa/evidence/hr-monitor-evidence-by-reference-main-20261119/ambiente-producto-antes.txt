@@ -1,0 +1,34 @@
+# Estado del ambiente productivo antes de la promocion (medido 2026-11-19, solo lectura)
+
+# /health desplegado
+https://apexos-api-prod-production.up.railway.app/health
+  {"status":"OK","version":"2.0","modules":19,"commit":"45069dd980c1","service_certification":"products-v2"}
+  -> Produccion corre todavia el baseline main 45069dd9, sin el corte del monitor.
+
+https://apexos-api-qa-production.up.railway.app/health
+  {"status":"OK","version":"2.0","modules":19,"commit":"9c82fca1a392","service_certification":"products-v2"}
+  -> QA ya corre el tip de develop 9c82fca1 con el corte; es el build contra el que se certifico la evidencia.
+
+# Vinculo de despliegue (railway service list, proyecto APEXOS PROD / ambiente production)
+  apexos-api-prod  status Online  repo 3dwinVelez/APEXOS  url https://apexos-api-prod-production.up.railway.app
+  -> El servicio esta conectado al repositorio: el push a main es el disparador del despliegue, igual que
+     el merge a develop disparo el despliegue de QA verificado arriba.
+
+# Variables necesarias para el lector de evidencia por referencia (solo nombres, nunca valores)
+  PROD  SUPABASE_URL ................ PRESENTE
+  PROD  SUPABASE_SERVICE_ROLE_KEY ... PRESENTE
+  PROD  HR_EVIDENCE_STORAGE_ENABLED . AUSENTE
+  QA    SUPABASE_URL ................ PRESENTE
+  QA    SUPABASE_SERVICE_ROLE_KEY ... PRESENTE
+  QA    HR_EVIDENCE_STORAGE_ENABLED . AUSENTE
+
+# Que implica, leido en apps/api/src/modules/hr/evidenceStorage.js
+  - readEnabled() se activa con SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (lineas 32-34). Ambas existen en
+    los dos ambientes: al desplegar main, la evidencia de las filas ya rescatadas se sirve desde Storage
+    sin tocar ninguna variable. La correccion de lectura queda operativa con el push.
+  - writeEnabled() si exige HR_EVIDENCE_STORAGE_ENABLED=true (lineas 28-30). Sin ella el ambiente sigue
+    escribiendo la selfie inline, exactamente como escribe hoy. Es decir: desplegar no cambia la escritura
+    y no rompe nada; pero mientras la bandera no exista, las marcaciones nuevas siguen sumando base64 en la
+    base y la purga C.2 no puede declararse cerrada para el futuro.
+  - Cambiar variables en Railway es modificacion de infraestructura y pide autorizacion explicita
+    independiente (AGENTS.md). No se ejecuta desde esta intervencion; se reporta con el comando exacto.

@@ -1,0 +1,16 @@
+# Suite completa del Web en el candidato de main 8a71ff0c
+# comando: cd apps/web && node --test "test/*.test.js" "test/*.test.mjs"   |   ejecutado 2026-11-19
+# tests 820
+# suites 0
+# pass 820
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16758.481
+
+# rojos: ninguno
+# Baseline main documentada en hr-marking-gate-main-20261117/web-suite-base-main.txt: 801 pass + 1 fail (artefacto del arnes de junction en transport-pyg-account-config).
+# Candidato: 820 pruebas, 820 pass, 0 fail. +19 pruebas del corte, 0 regresiones.
+
+# typecheck web: npm run typecheck -> exit 0 (tsc -p tsconfig.typecheck.json --noEmit, sin errores)

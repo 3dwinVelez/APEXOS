@@ -1,0 +1,14 @@
+# Hunks replayed vs hunks certificados (comparacion de contenido +/-, no de numero de linea)
+  service.js  main-lega    : 4e0577d297c4e2b0  185 lineas
+  service.js  certificado  : 4e0577d297c4e2b0  185 lineas
+  package.json main-lega    : 4cabe201a6b85194
+  package.json certificado  : 4cabe201a6b85194
+
+# Prueba de simetria: el arbol del candidato replayed no arrastra hunks ajenos
+  git diff --check sin conflictos: 0 lineas
+  Cherry-pick limpio: 0 conflictos declarados por git cherry-pick -x edffcb1e
+
+# Deriva residual frente a develop = otros frentes que main nunca tuvo:
+  service.js  66 lineas propias de main / 230 de develop (liquidacion, prestaciones, employee-user-link)
+  package.json 3/5 (scripts de comercio y transport-four-stage ausentes en main)
+  Ninguna de esas lineas pertenece al monitor: la region leida por /hr/operations-map y /hr/monitor-evidence es identica (hash de hunks arriba).

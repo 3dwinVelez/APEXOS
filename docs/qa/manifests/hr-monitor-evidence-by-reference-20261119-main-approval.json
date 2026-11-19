@@ -1,0 +1,95 @@
+{
+  "change_id": "hr-monitor-evidence-by-reference-20261119-main",
+  "commit": "8a71ff0c0f038e328890ca38e658b043d11a4f51",
+  "source_branch": "develop",
+  "target_branch": "main",
+  "environment": "QA",
+  "qa_status": "approved",
+  "approval": {
+    "status": "approved",
+    "approved_by": "Edwin (propietario)",
+    "approved_at": "2026-11-19T00:00:00-05:00",
+    "scope": "promotion_to_main",
+    "authorization": "Autorizacion expresa del propietario: «procede con mi autorizacion y no pares hasta garantizar que el ambiente main este complemtanete desplegado con la correcion»",
+    "limits": "La autorizacion cubre el mecanismo de promocion y el despliegue; no salta compuertas. Se exigen y se corrieron: manifiesto v2, qa:promotion:scope, qa:approval:evidence y la certificacion E2E ejecutada contra el build de QA."
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/hr-suites-targetadas-main.txt"
+      ],
+      "notes": "Certificacion de evidencia bajo demanda 10/10 contra el build desplegado en QA (9c82fca1) con empresa NYVORA, mas 266/266 pruebas de API y 143/143 de Web del dominio Talento Humano sobre el candidato de main"
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/api-suite-candidato-main.txt",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/web-suite-candidato-main.txt"
+      ],
+      "notes": "API 1158 pruebas (1153 pass, 2 fail, 3 skip); Web 820 pruebas (820 pass, 0 fail). Typecheck web exit 0. Los dos rojos del API son la deuda ERP preexistente del destino, no del corte"
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/selftest-budget-gate-main.txt"
+      ],
+      "notes": "Gate de presupuesto de bytes y latencia: verde contra el build desplegado en QA (1044 ms / 794 ms / 524 ms) y selftest aprobado en el arbol de main, con tres rojos provocados para demostrar que la puerta puede fallar"
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-marking-gate-main-20261117/api-suite-base-main.txt",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/api-suite-candidato-main.txt",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/web-suite-candidato-main.txt",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/equivalencia-blob-main-develop.txt"
+      ],
+      "notes": "Baseline de main: 1128 pruebas con 2 fail (accounting-routes-contract y transport-tms-foundation). Candidato: 1158 con los mismos 2 fail y 0 nuevos. Web 0 fail. La region del monitor es identica hunk a hunk al commit certificado en QA (hash 4e0577d297c4e2b0, 185 lineas en ambos lados)"
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/web-suite-candidato-main.txt",
+        "../evidence/hr-monitor-evidence-by-reference-main-20261119/ambiente-producto-antes.txt"
+      ],
+      "notes": "En el arbol de develop el mismo corte dejo dos rojos, ambos del destino (contrato de concurrencia de liquidacion y rutas PYG en la paleta de comandos). En main ninguno de los dos existe: contrato de concurrencia verde con 0 bloqueantes y paleta verde con 0 fallas. Typecheck 0 errores. El lector se activa con SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY, ambas presentes en PROD, segun evidenceStorage.js:32-34"
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-evidence-demand-qa.js",
+    "evidence": [
+      "../evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json"
+    ],
+    "notes": "Certificacion E2E del contrato de evidencia por referencia, ejecutada contra el build de QA 9c82fca1: el listado anuncia {id, source, has_base64_data, available} y los bytes salen de /hr/monitor-evidence/:source/:id. El script es blob-identico en main (726ee951), asi que la evidencia es reproducible desde el arbol que se despliega"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-byte-budget.js",
+    "evidence": [
+      "../evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json",
+      "../evidence/hr-monitor-evidence-by-reference-main-20261119/selftest-budget-gate-main.txt"
+    ],
+    "notes": "Puerta transversal de presupuesto: 4 MiB por listado, p95 3000 ms y 8192 caracteres inline. Verde contra el build desplegado en QA y auto-probada en el arbol de main. La medicion de latencia se exige en ambiente desplegado, no en un puesto local que comparte el pooler de sesion"
+  },
+  "model_company_certification": {
+    "status": "passed",
+    "company": "NYVORA",
+    "environment": "QA",
+    "script": "../../../scripts/certifications/hr-monitor-evidence-demand-qa.js",
+    "evidence": [
+      "../evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json"
+    ],
+    "notes": "Certificacion con el modelo de empresa real NYVORA en ambiente QA: 10 checks pasados, incluidos RBAC del endpoint de evidencia y aislamiento de tenant en la referencia"
+  },
+  "rollback_plan": {
+    "status": "ready",
+    "strategy": "controlled_revert",
+    "previous_main_commit": "45069dd980c1f9241cb210d3d0c787cdda5f08ea",
+    "trigger": "Si el monitor de produccion vuelve a anunciar listados con binarios inline, si la evidencia deja de resolverse por /hr/monitor-evidence, o si el gate de presupuesto contra el build desplegado queda rojo",
+    "notes": "Revert controlado del commit 8a71ff0c sobre main (git revert, sin reescribir historia compartida) y redeploy de apexos-api-prod. No hay migraciones de esquema en este corte: el rescate ya copió la evidencia a Storage y la purga C.2 sigue aplazada, asi que el revert no deja datos huerfanos"
+  }
+}
