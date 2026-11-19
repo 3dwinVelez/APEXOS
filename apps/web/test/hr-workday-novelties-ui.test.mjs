@@ -278,7 +278,9 @@ test("employee termination liquidation page supports severance balances and inde
   assert.match(source, /Liquidacion de trabajador/);
   assert.match(source, /sin_justa_causa/);
   assert.match(source, /obra_labor/);
-  assert.match(source, /Dias faltantes contrato/);
+  assert.match(source, /Tipo contrato vigente/);
+  assert.match(source, /<dialog ref=\{detailDialog\}/);
+  assert.match(source, /libranza_authorizations: authorizations/);
   assert.match(source, /Saldos de prestaciones/);
   assert.match(source, /Indemnizacion/);
   assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/preview/);
