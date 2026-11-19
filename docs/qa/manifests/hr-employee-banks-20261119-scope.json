@@ -1,0 +1,159 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-employee-banks-20261119",
+  "base_commits": {
+    "develop": "5ff1440ffbb6921a5e1095a72ad4ba31d9896c3f"
+  },
+  "target_head": "5ff1440ffbb6921a5e1095a72ad4ba31d9896c3f",
+  "certified_commit": "05a2b59e8d3bcb82adbfbf35fd9085ff7d7b4757",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "05a2b59e8d3bcb82adbfbf35fd9085ff7d7b4757",
+    "original_commits": [
+      "d679cd709"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/banks.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-banks.test.js",
+    "apps/web/app/dashboard/talento-humano/bancos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "scripts/certifications/hr-employee-banks-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "docs/qa/certifications/hr-employee-banks-20261119.md"
+  ],
+  "change_intent": {
+    "summary": "Maestro de bancos por empresa y selector de banco/cuenta de texto en la ficha del empleado; no genera pagos ni altera nominas historicas.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/banks.js",
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/test/hr-banks.test.js",
+    "apps/web/app/dashboard/talento-humano/bancos/page.tsx",
+    "apps/web/app/dashboard/talento-humano/empleados/page.tsx",
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "scripts/certifications/hr-employee-banks-local.js",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "docs/qa/certifications/hr-employee-banks-20261119.md",
+    "docs/qa/manifests/hr-employee-banks-20261119-scope.json",
+    "docs/qa/manifests/hr-employee-banks-20261119-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/banks.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-banks.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/app/dashboard/talento-humano/bancos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/empleados/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-employee-banks-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-employee-banks-20261119.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-employee-banks-20261119-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-employee-banks-20261119-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "bank_master_create_edit_deactivate_and_durable_persistence",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-employee-banks-20261119.md",
+        "hr-employee-banks-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "employee_create_edit_view_reload_and_account_leading_zeros",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-employee-banks-20261119.md",
+        "hr-employee-banks-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "HR_RBAC_and_tenant_isolation",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-employee-banks-20261119.md",
+        "hr-employee-banks-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "existing_salary_organization_and_employee_user_link",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-employee-banks-20261119.md",
+        "hr-employee-banks-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "existing_payroll_legal_controls",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-employee-banks-20261119.md",
+        "hr-employee-banks-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "authenticated_navigation_and_platform_reload",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-employee-banks-20261119.md",
+        "hr-employee-banks-20261119-preqa.json"
+      ]
+    }
+  ],
+  "traceability": "Punctual cherry-pick from desarrollo on current remote develop. Preserve current monitor/evidence, technical-alert behavior and payroll legal controls. Excludes separate unpromoted fortnight-range fix and unrelated workspace changes."
+}
