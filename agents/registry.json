@@ -289,9 +289,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.74.0",
+      "version": "2.75.0",
       "updated_at": "2026-11-19",
-      "sha256": "c327724e0b1005d2620c906bf3ce91ab7b580d2bbcfb070932cd34c132470dce",
+      "sha256": "1ac8ab14c47a2b3a8f2119d725015c479e01a416d3c4c21925fe73f9dce2eb78",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -401,9 +401,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.45.0",
+      "version": "2.46.0",
       "updated_at": "2026-11-19",
-      "sha256": "60d50644a637c3b1cf8a99c6a4c56b30b3a05fda3a67d93d14b00f611cd916e3",
+      "sha256": "9ab459071f1bd088d043498c9794714652dcd53a0185aea5b909f80b53490081",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [

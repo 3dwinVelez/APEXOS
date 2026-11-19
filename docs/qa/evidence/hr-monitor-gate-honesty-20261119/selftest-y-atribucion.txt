@@ -1,0 +1,50 @@
+PRUEBA DE HONESTIDAD DE LA COMPUERTA DE PRESUPUESTO (2026-11-19)
+Ruta: `scripts/certifications/hr-monitor-byte-budget.js` (`certify:hr-monitor-budget:selftest`).
+
+1. El defecto
+   `argsFrom()` solo entendia `--flag valor`. Invocado con `--env-file=config/production.env` —la
+   forma que escribe cualquier persona— el argumento se descartaba en silencio y el script caia al
+   predeterminado `config/qa.env`. Resultado medido el 2026-11-18: una corrida ordenada contra
+   Produccion midio QA y publico su evidencia con cifras de QA. La puerta media bien; el destino
+   era otro, y nada en la salida lo advertia.
+
+2. El control nuevo (tres piezas, todas con capacidad de fallar)
+   a) `--flag=valor` y `--flag valor` aterrizan en el mismo objeto.
+   b) El selftest gana el caso `parseo-ambas-formas`, que verifica ademas que `--selftest` solo
+      siga siendo booleano y que `--date` con forma de fecha no se pierda.
+   c) La evidencia se autoatribuye: el JSON publica `env_file` (relativo, sin secretos) y la
+      consola cierra con la linea `Destino declarado: ...`.
+   d) Un `--api-url` explicito que contradiga al archivo de ambiente aborta la corrida.
+
+3. Salida de la corrida del selftest (5/5, puede fallar en las dos direcciones)
+   OK   gordo-rojo -> Listado con binario inline: 46556774 bytes superan el presupuesto de 4194304 |
+                     p95 de 7740 ms supera el presupuesto de 3000 ms |
+                     1 binario(s) inline en el listado (peor 2097175 caracteres)
+   OK   anunciado-verde
+   OK   lento-rojo -> Listado anunciado pero lento: p95 de 5200 ms supera el presupuesto de 3000 ms
+   OK   volumen-rojo -> Listado gordo sin data URL: 12582912 bytes superan el presupuesto de 4194304
+   OK   parseo-ambas-formas
+   SELFTEST APROBADO
+
+4. Rojo provocado de la guarda de destino (prueba de que la puerta puede caerse)
+   $ node scripts/certifications/hr-monitor-byte-budget.js --env-file=config/production.env \
+       --api-url=https://otro-ambiente.example --date=2026-11-18 --samples=1
+   MEDICION DE PRESUPUESTO DEL MONITOR FALLIDA: El origen medido (https://otro-ambiente.example)
+   no coincide con el del ambiente production (https://apexos-api-prod-production.up.railway.app).
+
+5. Corrida real con la forma nueva, contra el build desplegado 956f2d239158
+   Destino declarado: production desde config/production.env ·
+   apexos-api-prod-production.up.railway.app · dia 2026-11-18 · 1 muestra(s)
+   Mapa del dia          p95 6.136 ms · 0 KB · 0 binarios inline
+   Contadores de eventos p95 5.564 ms · 7 KB · 0 binarios inline
+   Reporte de asistencia p95 3.535 ms · 0 KB · 0 binarios inline
+   GATE DE PRESUPUESTO EN ROJO (production) — el rojo es de latencia, no de bytes.
+
+6. Atribucion del rojo (para que la evidencia no se lea como defecto del corte)
+   La fase `auth` del Server-Timing del propio servidor cuesta 2.198-3.475 ms... por peticion,
+   incluso en `/api/v1/auth/me`, que no toca Talento Humano. La causa esta nombrada en el codigo:
+   `apps/api/server.js:116-160` → `apps/api/src/security/authorizationState.js:87-93` encadena tres
+   lecturas sin cache (`user` con `role.permissions`, `tenant`, `authorizationSession`) en cada
+   peticion autenticada, y el tiempo por vuelta de red hacia la base de Produccion las multiplica.
+   El mismo codigo en QA cierra en 584-1.292 ms. Los binarios del monitor ya no existen: 0 inline y
+   payloads de 0-7 KB contra los 44,4 MB del dia del incidente.

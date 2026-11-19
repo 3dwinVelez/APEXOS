@@ -33,11 +33,19 @@ const ENDPOINTS = [
   { key: "attendance_day", label: "Reporte de asistencia (un dia)", path: (date) => `/api/v1/hr/attendance?fecha_inicio=${date}&fecha_fin=${date}` }
 ];
 
+// Las dos formas tienen que aterrizar en el mismo objeto. Con `--flag=valor` ignorado en silencio,
+// una corrida ordenada contra produccion leia `config/qa.env` y publicaba su evidencia como si
+// hubiera medido el otro ambiente: la puerta media bien pero sobre un destino equivocado.
 function argsFrom(argv) {
   const result = {};
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (!value.startsWith("--")) continue;
+    const separator = value.indexOf("=", 2);
+    if (separator !== -1) {
+      result[value.slice(2, separator)] = value.slice(separator + 1);
+      continue;
+    }
     result[value.slice(2)] = argv[index + 1] && !argv[index + 1].startsWith("--") ? argv[++index] : true;
   }
   return result;
@@ -143,11 +151,20 @@ function selftest() {
   const leanFailures = evaluate([lean]);
   const slowFailures = evaluate([slow]);
   const heavyFailures = evaluate([heavyNoMarker]);
+  // La interfaz de argumentos tambien se autoverifica: si `--flag=valor` vuelve a caerse al
+  // suelo, la corrida de produccion volveria a medir QA sin avisar.
+  const parsed = argsFrom(["--env-file=config/production.env", "--samples=5", "--date", "2026-11-18", "--selftest"]);
+  const parseFailures = [];
+  if (parsed["env-file"] !== "config/production.env") parseFailures.push(`--env-file= se perdio (leo ${JSON.stringify(parsed["env-file"])})`);
+  if (parsed.samples !== "5") parseFailures.push(`--samples= se perdio (leo ${JSON.stringify(parsed.samples)})`);
+  if (parsed.date !== "2026-11-18") parseFailures.push(`--date sin valor no booleano se perdio (leo ${JSON.stringify(parsed.date)})`);
+  if (parsed.selftest !== true) parseFailures.push(`--selftest booleano se perdio (leo ${JSON.stringify(parsed.selftest)})`);
   const cases = [
     { id: "gordo-rojo", ok: fatFailures.some((line) => /superan el presupuesto/.test(line)) && fatFailures.some((line) => /binario\(s\) inline/.test(line)), failures: fatFailures },
     { id: "anunciado-verde", ok: leanFailures.length === 0, failures: leanFailures },
     { id: "lento-rojo", ok: slowFailures.some((line) => /p95/.test(line)), failures: slowFailures },
-    { id: "volumen-rojo", ok: heavyFailures.some((line) => /superan el presupuesto/.test(line)), failures: heavyFailures }
+    { id: "volumen-rojo", ok: heavyFailures.some((line) => /superan el presupuesto/.test(line)), failures: heavyFailures },
+    { id: "parseo-ambas-formas", ok: parseFailures.length === 0, failures: parseFailures }
   ];
   return cases;
 }
@@ -192,6 +209,12 @@ async function main() {
   const credentials = resolveCredentials(args);
   const apiUrl = String(args["api-url"] || process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
   if (!apiUrl) throw new Error("Falta --api-url o NEXT_PUBLIC_API_URL en el ambiente declarado.");
+  // Un origen explicito no puede contradecir al archivo de ambiente: medir un ambiente y declarar
+  // el otro es la forma exacta en que esta puerta dejo de servir como evidencia.
+  const declared = String(process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+  if (declared && apiUrl !== declared) {
+    throw new Error(`El origen medido (${apiUrl}) no coincide con el del ambiente ${environment} (${declared}).`);
+  }
   const date = String(args.date || todayBogota());
   const samplesPerEndpoint = Math.min(5, Math.max(1, Number(args.samples || 3)));
 
@@ -200,6 +223,9 @@ async function main() {
   const report = {
     change_id: "hr-monitor-byte-budget",
     environment,
+    // La evidencia se autoatribuye: sin el archivo resuelto, una corrida puede decir "production"
+    // mientras el host cuenta otra historia.
+    env_file: path.relative(process.cwd(), envFile).replace(/\\/g, "/"),
     api_url: apiUrl.replace(/^https?:\/\/([^/]+).*$/, "$1"),
     date,
     generated_at: new Date().toISOString(),
@@ -221,6 +247,7 @@ async function main() {
   for (const item of measured) {
     console.log(`${item.label}: ${Math.round(item.bytes / 1024)} KB · p50 ${item.p50_ms} ms · p95 ${item.p95_ms} ms · binarios inline ${item.inline_payloads.length}`);
   }
+  console.log(`Destino declarado: ${environment} desde ${report.env_file} · ${report.api_url} · día ${date} · ${samplesPerEndpoint} muestra(s)`);
   if (failures.length) {
     console.error(`GATE DE PRESUPUESTO EN ROJO (${environment}):`);
     for (const line of failures) console.error(` - ${line}`);
