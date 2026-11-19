@@ -3,6 +3,7 @@ const { requirePermission, requireAnyPermission, requirePhysicalDeleteGrant, has
 const schemas = require("./schema");
 const service = require("./service");
 const prisma = require("../../core/prisma");
+const banks = require("./banks").bankService(prisma);
 const { listUserCandidates } = require("./employeeUserLink");
 
 function requestContext(request) {
@@ -80,6 +81,10 @@ async function hrRoutes(fastify) {
   fastify.patch("/hr/schedules/:id", { schema: schemas.scheduleSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateSchedule(request.user?.tenant_id, request.params.id, request.body));
 
   fastify.get("/hr/employees", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployees(request.user?.tenant_id, request.query));
+  fastify.get("/talento-humano/bancos", { preHandler: requirePermission("hr", "read") }, request => banks.list(request.user.tenant_id));
+  const bankSchema = { body: { type: "object", required: ["code", "name"], additionalProperties: false, properties: { code: { type: "string", pattern: "^[0-9]{3}$" }, name: { type: "string", minLength: 1, maxLength: 120 }, swift: { type: "string", maxLength: 11 }, active: { type: "boolean" } } } };
+  fastify.post("/talento-humano/bancos", { schema: bankSchema, preHandler: requirePermission("hr", "write") }, request => banks.save(request.user.tenant_id, request.body));
+  fastify.patch("/talento-humano/bancos/:code", { schema: bankSchema, preHandler: requirePermission("hr", "write") }, request => banks.save(request.user.tenant_id, request.body, request.params.code));
   fastify.post("/hr/employees", { schema: schemas.employeeSchema, preHandler: requirePermission("hr", "write") }, (request) => service.createEmployee(request.user?.tenant_id, request.body));
   fastify.patch("/hr/employees/:id", { schema: schemas.employeePatchSchema, preHandler: requirePermission("hr", "write") }, (request) => service.updateEmployee(request.user?.tenant_id, request.params.id, request.body));
   fastify.get("/hr/employees/:id/salaries", { preHandler: requirePermission("hr", "read") }, (request) => service.listEmployeeSalaryHistory(request.user?.tenant_id, request.params.id, request.query));

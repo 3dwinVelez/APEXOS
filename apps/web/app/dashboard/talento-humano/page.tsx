@@ -8,6 +8,7 @@ const actions = [
   { href: "/dashboard/talento-humano/novedades", title: "Novedades de jornada", detail: "Revisar alertas, incapacidades, permisos, faltas y justificaciones.", icon: Clock3 },
   { href: "/dashboard/talento-humano/mapa", title: "Mapa operativo", detail: "Supervisar rutas, última ubicación y cumplimiento de la jornada.", icon: MapPinned },
   { href: "/dashboard/talento-humano/empleados", title: "Maestro de empleados", detail: "Mantener datos laborales y su asociación con usuarios APEX.", icon: UserRoundCheck },
+  { href: "/dashboard/talento-humano/bancos", title: "Maestro de bancos", detail: "Administrar bancos, codigos nacionales ACH y SWIFT para las cuentas de empleados.", icon: Landmark },
   { href: "/dashboard/talento-humano/entidades", title: "Entidades y afiliaciones", detail: "Administrar EPS, pensión, ARL, caja, ICBF y sus vigencias.", icon: Building2 },
   { href: "/dashboard/talento-humano/configuracion-laboral", title: "Configuración laboral", detail: "Parametrizar recargos, horas extra, límites y jornada nocturna.", icon: Percent },
   { href: "/dashboard/talento-humano/nomina", title: "Nómina", detail: "Liquidar periodos quincenales o mensuales y sus comprobantes.", icon: WalletCards },

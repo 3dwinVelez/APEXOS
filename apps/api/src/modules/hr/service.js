@@ -4,6 +4,7 @@ const { terminationDeductions } = require("./terminationDeductions");
 const { findUserForEmployee } = require("./employeeUserLink");
 const { punchPhotoItems, punchMonitorMetadata } = require("./punchEvidence");
 const prisma = require("../../core/prisma");
+const banks = require("./banks").bankService(prisma);
 const { Prisma } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const { getTenantConfig, invalidateTenantCache } = require("../../core/tenantCache");
@@ -1254,6 +1255,7 @@ async function createEmployee(tenantId, input) {
   return prisma.runWithTenant(tenantId, async () => prisma.$transaction(async (tx) => {
     await assertEmployeeDocumentAvailable(tx, tenantId, input);
     const linkedUserId = await findUserForEmployee(tx, tenantId, input);
+    const banking = await banks.employeeMetadata(tx, tenantId, input);
     const employee = await tx.employee.create({
       data: {
         user_id: linkedUserId,
@@ -1267,6 +1269,7 @@ async function createEmployee(tenantId, input) {
         end_date: input.end_date ? new Date(input.end_date) : null,
         contract_type: normalizeContractType(input.contract_type),
         metadata: {
+          ...banking,
           name: fullName || "",
           document: input.document || "",
           document_type: input.document_type || "",
@@ -1372,6 +1375,7 @@ async function updateEmployee(tenantId, id, input = {}) {
         throw error;
       }
       const linkedUserId = latest.user_id || await findUserForEmployee(tx, tenantId, { ...nextMetadata, ...(input.user_id !== undefined ? { user_id: input.user_id } : {}) }, employeeId);
+      Object.assign(nextMetadata, await banks.employeeMetadata(tx, tenantId, input, latest.metadata || {}));
       const employee = await tx.employee.update({
       where: { id: employeeId },
       data: {
