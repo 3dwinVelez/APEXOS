@@ -235,6 +235,14 @@
       "file": "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt"
     },
     {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-approval.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-scope.json"
+    },
+    {
       "status": "M",
       "file": "package.json"
     },
@@ -245,14 +253,6 @@
     {
       "status": "A",
       "file": "scripts/certifications/technical-alert-silence-browser-qa.js"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-scope.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/technical-alert-silence-main-20261119-approval.json"
     }
   ],
   "certified_functional_paths": [
@@ -298,54 +298,54 @@
       "name": "cero ventanas tecnicas en el build desplegado, con tormenta inyectada y con camino feliz, sobre las cinco pantallas y tres identidades",
       "status": "passed",
       "evidence": [
-        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
-        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+        "../../../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../../../docs/qa/certifications/technical-alert-silence-main-20261119.md"
       ]
     },
     {
       "name": "el bundle publicado en QA ya no dispara apex:alert y si trae apex:diagnostic (el control de artefacto que en el antes estaba rojo)",
       "status": "passed",
       "evidence": [
-        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
-        "../docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
-        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+        "../../../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../../../docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+        "../../../docs/qa/certifications/technical-alert-silence-main-20261119.md"
       ]
     },
     {
       "name": "el fallo sigue registrandose: telemetria del cliente hacia /api/v1/admin/platform-logs/client con sesion y 401 medido sin ella",
       "status": "passed",
       "evidence": [
-        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
-        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+        "../../../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json",
+        "../../../docs/qa/certifications/technical-alert-silence-main-20261119.md"
       ]
     },
     {
       "name": "cierre de sesion por inactividad con aviso legible en el login, sin ventana tecnica",
       "status": "passed",
       "evidence": [
-        "../evidencia/technical-alert-silence-20261118/07-login-aviso-sesion.png",
-        "../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json"
+        "../evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png",
+        "../../../docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json"
       ]
     },
     {
       "name": "autenticacion, RBAC y aislamiento de tenant del destino sin regresion: suite web del arbol de main archivo por archivo",
       "status": "passed",
       "evidence": [
-        "../evidencia/technical-alert-silence-20261118/main-20261119/suite-web-main.txt",
-        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+        "../evidence/technical-alert-silence-20261118/main-20261119/suite-web-main.txt",
+        "../../../docs/qa/certifications/technical-alert-silence-main-20261119.md"
       ]
     },
     {
       "name": "equivalencia por blob entre la pata de main y el commit certificado en QA: el codigo que se despliega es el que se midio",
       "status": "passed",
       "evidence": [
-        "../evidencia/technical-alert-silence-20261118/main-20261119/equivalencia-blob-main-develop.txt",
-        "../docs/qa/certifications/technical-alert-silence-main-20261119.md"
+        "../evidence/technical-alert-silence-20261118/main-20261119/equivalencia-blob-main-develop.txt",
+        "../../../docs/qa/certifications/technical-alert-silence-main-20261119.md"
       ]
     }
   ],
   "notes": {
-    "inventario": "Inventario exacto del candidato en main: 43 rutas (31 A, 12 M, 0 D, cero eliminaciones) = las 41 ya commiteadas (replay funcional + herencia de evidencia + evidencia y nota de la pierna main) mas los 2 manifiestos que viajan en el commit siguiente.",
+    "inventario": "Inventario exacto del candidato en main: 43 rutas (31 A, 12 M, 0 D, cero eliminaciones) = replay funcional (36) + evidencia y nota de la pierna main (5) + estos 2 manifiestos, verificado contra git diff 956f2d2391..HEAD. Ninguna ruta del destino queda fuera y ninguna ajena entra.",
     "reconstruccion": "No es un merge de develop: main..develop trae frentes ajenos. El candidato es el replay puntual del commit funcional certificado en develop (36eb0ccbf4) sobre 956f2d2391, con package.json conservando la version propia de main (solo las 2 lineas nuevas de scripts de certificacion) y la evidencia heredada blob-identica al arbol medido.",
     "sustrato": "Las suites de la pierna main corrieron con node_modules montado por junction desde la worktree certificada de develop: los package-lock.json de main y del candidato son blob-identicos (6a62f9317f3b952f1f9099c81acbe24214ca3e00), asi que el arbol de dependencias es el mismo y la medicion es del codigo de main.",
     "certificacion": "Local (next start, BUILD_ID bz-upXyRkgIgsiVFNja2N): 68/68. QA despues del despliegue de 5ff1440ffb: 163/163. QA antes (control positivo, build 5fcc2ed1 sin el arreglo): 141/163. Suite web del arbol de main: 112 archivos, 829 pruebas, 828 pasan, 1 fallan.",
