@@ -78,6 +78,26 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
     assert.equal((await call(base+'/documentos',deniedToken,'POST',input)).status,403);
     assert.equal((await call(base+'/preview',foreignToken,'POST',input)).status,404);
   });
+  await check('integrated manual API binds employee and cutoff, preserves classification and deduplicates retries',async()=>{
+    const endpoint=base+'/ajustes',query='?employee_id='+own.employee.id+'&termination_date=2026-11-10';
+    const context=await call(endpoint+query,token);assert.equal(context.status,200,JSON.stringify(context.body));assert.equal(context.body.pending_start,'2026-11-01');
+    assert.ok(context.body.concepts.some(row=>row.code==='BONIFICACION_SALARIAL'&&row.salary_constitutive));
+    const manual={employee_id:own.employee.id,termination_date:'2026-11-10',work_date:'2026-11-09',concept_code:'BONIFICACION_SALARIAL',amount:25000,description:'QA API integrado',request_id:randomUUID()};
+    assert.equal((await call(endpoint,null,'POST',manual)).status,401);
+    assert.equal((await call(endpoint,deniedToken,'POST',manual)).status,403);
+    assert.equal((await call(endpoint,foreignToken,'POST',manual)).status,404);
+    for(const extra of [{amount:-1},{amount:1.001},{work_date:'2026-11-11'},{concept_code:'SALARIO_BASICO'},{concept_code:'QA_NO_CONFIGURADO'}])assert.equal((await call(endpoint,token,'POST',{...manual,...extra})).status,422);
+    const copies=await Promise.all([call(endpoint,token,'POST',manual),call(endpoint,token,'POST',manual)]);
+    for(const copy of copies)assert.equal(copy.status,200,JSON.stringify(copy.body));
+    const id=copies[0].body.adjustment.id;assert.equal(copies[1].body.adjustment.id,id);
+    assert.equal((await call(endpoint,token,'POST',{...manual,amount:26000})).status,409);
+    const list=await call(endpoint+query,token);assert.equal(list.body.adjustments.filter(row=>row.id===id).length,1);
+    assert.ok((await trial()).net>expected.net);
+    assert.equal((await call(endpoint+'/'+id+query,foreignToken,'DELETE')).status,404);
+    assert.equal((await call(endpoint+'/'+id+query,token,'DELETE')).status,200);
+    assert.equal((await trial()).net,expected.net);
+    assert.equal((await call(endpoint,token,'POST',manual)).status,409);
+  });
   await check('browser finds employee, derives contract, previews full modal, saves and reopens all concepts',async()=>{
     await require('./hr-employee-user-association-browser-local')({origin,token,pagePath:'/dashboard/talento-humano/liquidacion-trabajador',artifactName:'hr-termination-complete',exercise:async(page,folder)=>{
       await page.waitForSelector('#termination-employee-document');
@@ -93,6 +113,22 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       await setField('Fecha retiro','2026-11-10');
       await page.waitForFunction(()=>document.querySelector('[aria-label="Tipo contrato vigente"]')?.value==='fixed');
       assert.equal(await page.$eval('[aria-label="Tipo contrato vigente"]',el=>el.disabled),true);
+      await page.waitForSelector('select[aria-label="Concepto manual"] option[value="BONIFICACION_NO_SALARIAL"]');
+      await page.select('[aria-label="Concepto manual"]','BONIFICACION_NO_SALARIAL');
+      await page.waitForFunction(()=>document.querySelector('[data-testid="termination-manual-classification"]')?.textContent==='No salarial');
+      await page.type('[aria-label="Valor del concepto"]','50000');
+      await page.type('[aria-label="Descripción del concepto"]','QA bono dentro del retiro');
+      const addedResponse=page.waitForResponse(r=>r.url().endsWith(base+'/ajustes')&&r.request().method()==='POST');
+      await page.evaluate(()=>{const button=[...document.querySelectorAll('button')].find(el=>el.textContent.trim()==='Registrar concepto');button.click();button.click();});
+      const added=await addedResponse;assert.equal(added.status(),200,await added.text());const manualId=(await added.json()).adjustment.id;
+      await page.waitForSelector('[data-adjustment-id="'+manualId+'"]');
+      const registered=await call(base+'/ajustes?employee_id='+own.employee.id+'&termination_date=2026-11-10',token);
+      assert.equal(registered.body.adjustments.filter(row=>row.description==='QA bono dentro del retiro').length,1);
+      const direct=await trial();assert.equal(direct.lines.find(line=>line.name==='QA bono dentro del retiro').salary_constitutive,false);assert.equal(direct.net,expected.net+50000);
+      await page.screenshot({path:path.join(folder,'integrated-manual-bonus.png')});
+      await page.click('[aria-label="Anular concepto '+manualId+'"]');
+      await page.waitForFunction(id=>!document.querySelector('[data-adjustment-id="'+id+'"]'),{},manualId);
+      assert.equal((await trial()).net,expected.net);
       const auth=await page.$$('fieldset input[placeholder="Referencia del documento firmado"]');
       assert.equal(auth.length,3);
       for(const id of loans.slice(0,2))await page.type(`[data-libranza-id="${id}"] input[placeholder="Referencia del documento firmado"]`,'Autorizacion final QA');
@@ -122,8 +158,8 @@ async function check(name, fn) { await fn(); result.checks.push(name); console.l
       await button('Consultar periodo');
       const trialResponse=page.waitForResponse(r=>r.url().endsWith('/talento-humano/nomina/preview')&&r.request().method()==='POST');
       await button('Liquidacion de prueba');
-      const trial=await trialResponse;assert.equal(trial.status(),200);
-      const documents=(await trial.json()).documents;
+      const payrollTrial=await trialResponse;assert.equal(payrollTrial.status(),200);
+      const documents=(await payrollTrial.json()).documents;
       assert.ok(!documents.some(row=>row.employee_id===own.employee.id));
       assert.ok(documents.some(row=>row.employee_id===coworker.id));
       await page.waitForFunction(()=>document.body.innerText.includes('Vista de prueba sin guardar'));

@@ -1,0 +1,161 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-termination-inline-manual-20261118",
+  "base_commits": {
+    "develop": "8702159361d84c2ba3f101a75786697a14696c81"
+  },
+  "target_head": "8702159361d84c2ba3f101a75786697a14696c81",
+  "certified_commit": "d5d673a9cc10d93b6af99da54304a75fc8c7dd4e",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "d5d673a9cc10d93b6af99da54304a75fc8c7dd4e",
+    "original_commits": [
+      "a3ba89b1a20422bc903509d8915ad5ba9f68f80f"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationManualAdjustments.js",
+    "apps/api/test/hr-termination-manual-adjustments.test.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/components/hr/TerminationManualAdjustments.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-termination-complete-20261118.md",
+    "scripts/certifications/hr-termination-complete-local.js"
+  ],
+  "change_intent": {
+    "summary": "Capture manual earnings directly inside final employee liquidation with master classification, cutoff validation, cancellation and idempotent retries.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/routes.js",
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationManualAdjustments.js",
+    "apps/api/test/hr-termination-manual-adjustments.test.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/components/hr/TerminationManualAdjustments.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-termination-complete-20261118.md",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "docs/qa/manifests/hr-termination-inline-manual-20261118-scope.json",
+    "docs/qa/manifests/hr-termination-inline-manual-20261118-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/routes.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationManualAdjustments.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-termination-manual-adjustments.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/components/hr/TerminationManualAdjustments.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "docs/qa/certifications/hr-termination-complete-20261118.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-termination-complete-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-inline-manual-20261118-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-termination-inline-manual-20261118-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "inline_manual_capture_date_amount_and_idempotent_retries",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "document_search_and_master_contract",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "final_modal_and_manual_salary_classification",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "four_benefit_payment_functions_and_reversals",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "no_double_payroll_for_settled_period_and_rehire",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "loan_limits_and_idempotent_recalculation",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "tenant_isolation_and_payroll_RBAC",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "current_develop_payroll_legal_controls_and_IBC",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    }
+  ],
+  "traceability": "Punctual reconstruction of reviewed desarrollo commits on current develop. Preserve current SMMLV indemnization, payroll support, overtime limits, IBC and close controls."
+}
