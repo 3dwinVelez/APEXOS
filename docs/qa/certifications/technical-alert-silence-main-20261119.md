@@ -29,11 +29,11 @@ El único distinto es `package.json`, y es correcto que lo sea: el replay conser
 | Commit del API | `9c82fca1a392`, sin cambio: un corte solo-web no mueve `/health.commit`, por eso el control del artefacto es la sonda de tokens y no el health |
 | Identidades | `NYVORA / Administrador de empresa`, `NYVORA / Empleado` y, para el control de aislamiento, `Diana vargas / Analista contable` (empresa real distinta, no un fixture). Usuarios efímeros creados por Prisma y **desactivados** al terminar |
 | Escenarios | 12: camino feliz + tormenta 500 + 429 + corte de red, por cada una de las tres identidades, sobre rutas, mapa, servicios, monitoreo y lobby |
-| Tarjetas técnicas en DOM | **0** en las 12 combinaciones, con vocabulario técnico buscado en el texto pintado |
-| Registro del fallo | 70 intentos desde el navegador, **74 registrados con 2xx** (70×200, 4×204) |
-| Deuda medida, no maquillada | sonda sin token → `401`: el fallo de un usuario deslogueado sigue sin dejar registro |
+| Tarjetas técnicas en DOM | **0** en los 60 recorridos, con vocabulario técnico buscado en el texto pintado. 21 controles `guard_honesto_sin_ventana`/`rbac_sin_ventana` verifican además que la pantalla negada por rol muestra estado de dato honesto y no una ventana |
+| Registro del fallo | `el_navegador_intento_registrar_los_fallos` (70 intentos) y `los_fallos_quedan_registrados_en_qa` (**74 registrados con 2xx**: 70×200, 4×204) |
+| Deuda medida, no maquillada | `telemetria_sin_token.status_sonda` → `401`: el fallo de un usuario deslogueado sigue sin dejar registro |
 
-El antes, sobre el build que QA servía sin el arreglo (`develop 5fcc2ed1`), fue **141/163 con 22 fallos**, 20 de ellos la ventana tal como la reportó el dueño y dos de ellos en el camino feliz sin ninguna inyección (`qa-antes/certification.json`). Los 20 rojos de ventana y los 2 de artefacto son exactamente los que esta corrida volteó: el arnés quedó probado como capaz de fallar antes de creerse su propio verde.
+El antes, sobre el build que QA servía sin el arreglo (`develop 5fcc2ed1`), fue **141/163 con 22 fallos**: 20 de ventana (18 con tormenta inyectada y 2 en RBAC/camino feliz del empleado limitado, que veía la ventana sin ninguna inyección) más 2 de artefacto (`apex:alert` presente en un chunk y `apex:diagnostic` ausente). Ese es exactamente el conjunto que esta corrida volteó, con el mismo certificador y los mismos 163 controles: el arnés quedó probado como capaz de fallar antes de creerse su propio verde (`qa-antes/certification.json`).
 
 ## 3. Suites y soporte sobre el árbol de main
 
