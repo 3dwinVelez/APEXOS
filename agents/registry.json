@@ -92,9 +92,9 @@
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.60.0",
+      "version": "2.61.0",
       "updated_at": "2026-11-19",
-      "sha256": "3ded72d54370ab9047f6e901c1342370556683eae2656d5a58cd7731abcf31a1",
+      "sha256": "f331876b610c8092806a8df77ae43b2af3eb77fa3f59f816253eb2f059cfd925",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -141,7 +141,8 @@
         "brief-ventana-ejecutada-y-deltas-atribuidos",
         "brief-marca-casillas-con-commit-medido",
         "brief-post-checkpoint-narra-incidente-y-aplazamientos",
-        "exclusion-vence-y-autorizacion-se-cita"
+        "exclusion-vence-y-autorizacion-se-cita",
+        "brief-cierra-con-ambiente-verificado"
       ]
     },
     {
@@ -219,9 +220,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.22.0",
+      "version": "2.23.0",
       "updated_at": "2026-11-19",
-      "sha256": "286633dd7f4ec01859dcab7400193cc1de28e85ac3cf33775880ae82a6602765",
+      "sha256": "64ec8422648351f749208f3b23f194a96d7ac1cdf8f2038b540948d5c37907ef",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -249,7 +250,8 @@
         "paquete-transportado-se-compara-por-archivo",
         "checkpoint-anti-barrido",
         "commit-citado-sale-de-un-comando",
-        "un-commit-funcional-por-candidato"
+        "un-commit-funcional-por-candidato",
+        "merge-publicado-tras-dos-verificaciones"
       ]
     },
     {
@@ -289,9 +291,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.75.0",
+      "version": "2.76.0",
       "updated_at": "2026-11-19",
-      "sha256": "1ac8ab14c47a2b3a8f2119d725015c479e01a416d3c4c21925fe73f9dce2eb78",
+      "sha256": "80f0270f1179c67bbb4184472f37284a489124822b28ddebce155ed5486398df",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -353,7 +355,8 @@
         "purga-se-certifica-con-lector-stubbeado",
         "ausencia-se-certifica-con-tormenta-fabricada",
         "puerta-de-presupuesto-se-demuestra-roja",
-        "columna-antes-en-el-ambiente-desplegado"
+        "columna-antes-en-el-ambiente-desplegado",
+        "pierna-main-por-identidad-de-blob"
       ]
     },
     {
@@ -401,9 +404,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.46.0",
+      "version": "2.47.0",
       "updated_at": "2026-11-19",
-      "sha256": "9ab459071f1bd088d043498c9794714652dcd53a0185aea5b909f80b53490081",
+      "sha256": "070995fdda0989c96223b997f7d3727882f8ad4eaa71f92ffe3c2f92c7443018",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -442,7 +445,8 @@
         "evidencia-de-ambiente-es-intervencion-completa",
         "arbol-barrido-se-reconstruye-y-se-publica",
         "garantia-de-experiencia-traducida-a-numero",
-        "inventario-de-manifiesto-contra-el-tip"
+        "inventario-de-manifiesto-contra-el-tip",
+        "cierre-con-ambiente-servido"
       ]
     }
   ],

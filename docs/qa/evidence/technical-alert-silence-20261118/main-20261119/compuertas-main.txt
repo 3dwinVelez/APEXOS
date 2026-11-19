@@ -1,0 +1,27 @@
+# Compuertas de la pierna develop -> main del enmudecimiento (2026-11-19)
+# Corridas sobre el candidato codex/qa-technical-alert-silence-main-20261119 (tip 31d646ac) y re-corridas contra el merge publicado.
+
+## 1. qa:promotion:scope sobre el candidato (origen de la pierna)
+$ npm run qa:promotion:scope -- docs/qa/manifests/technical-alert-silence-main-20261119-scope.json 31d646ac 956f2d23
+ALCANCE DE PROMOCION VALIDO: technical-alert-silence-main-20261119 (43 rutas)
+
+## 2. qa:approval:evidence sobre el candidato
+$ npm run qa:approval:evidence -- docs/qa/manifests/technical-alert-silence-main-20261119-approval.json
+APROBACION QA VALIDA: technical-alert-silence-main-20261119
+
+## 3. git-governance-guard promote develop-to-main (arbol limpio + APEXOS_PROMOTION_AUTH)
+$ APEXOS_PROMOTION_AUTH=AUTORIZO_PROMOVER_DEVELOP_A_MAIN node scripts/git-governance-guard.js promote develop-to-main
+salida=0 (0 = sin bloqueo; el guard no imprime nada cuando aprueba)
+
+## 4. qa:promotion:scope re-corrida contra el merge publicado
+$ npm run qa:promotion:scope -- .../scope.json f207140d 956f2d23
+ALCANCE DE PROMOCION VALIDO: technical-alert-silence-main-20261119 (43 rutas)
+
+## 5. Igualdad exacta entre inventario del manifiesto y diff neto del merge
+manifiesto=43 diff_neto=43 solo_en_manifiesto=0 solo_en_diff=0
+## 6. Arbol del merge vs arbol del candidato
+identico (git diff --quiet 31d646ac f207140d -> 0)
+
+## 7. Publicacion
+git push origin HEAD:refs/heads/codex/qa-technical-alert-silence-main-20261119  -> * [new branch]
+git push origin f207140d:main                                                   ->    956f2d23..f207140d  f207140d -> main

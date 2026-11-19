@@ -93,7 +93,9 @@ Medición del **antes** sobre lo que QA ya servía (`develop 5fcc2ed16eae`, sin 
 
 La columna del **después** se corre con el certificador idéntico sobre el candidato desplegado en QA y debe cerrar 163/163: los 20 fallos de ventana y los 2 de bundle son exactamente lo que este cambio tiene que voltear.
 
+**Cumplida el 2026-11-19 sobre `develop 5ff1440f` desplegado: 163 de 163, `EXIT=0`**, con el mismo arnés y los mismos 163 controles. La columna, su ventana de corrida y la sonda del bundle publicado están versionadas en `docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json` y narradas en `docs/qa/certifications/technical-alert-silence-main-20261119.md`, que es la nota de la pierna `develop → main`. Esta sección no se reescribe: conserva la medición del antes tal como se tomó.
+
 ## 8. Qué se conserva como evidencia
 
-`docs/qa/evidence/technical-alert-silence-20261118/`: `certification.json` + 13 capturas de la corrida local, `qa-antes/certification.json` y su captura final, `suite-web.txt`, `soporte.txt` y `equivalencia-candidato.txt`. Los `*.log` brutos (`next start`, corridas) quedan fuera del repositorio por la regla de artefactos generados.
+`docs/qa/evidence/technical-alert-silence-20261118/`: `certification.json` + 13 capturas de la corrida local, `qa-antes/certification.json` y su captura final, `qa-despues/certification.json` y su captura final, `suite-web.txt`, `soporte.txt` y `equivalencia-candidato.txt`. La pierna `develop → main` agrega `main-20261119/`: `suite-web-main.txt`, `equivalencia-blob-main-develop.txt`, `compuertas-main.txt` (las tres compuertas y la igualdad exacta inventario↔diff) y `despliegue-producto-main.txt` (sonda del artefacto servido en Producción y `/health.commit`). Los `*.log` brutos (`next start`, corridas) quedan fuera del repositorio por la regla de artefactos generados.
 

@@ -107,9 +107,14 @@ Que ningún fallo de la API, de la base de datos o de la red vuelva a aparecer c
 ## 10. Autorizaciones requeridas
 
 - [x] Fases 0 y 1 en `desarrollo` (concedidas por el dueño en la misma intervención).
-- [ ] Fase 3 en backend/API/BD — requiere decisión explícita del dueño.
-- [ ] Despliegue a QA/Railway para validación funcional — requiere autorización independiente.
-- [ ] Promoción a `develop` y `main` — no solicitada.
+- [x] **Promoción a `develop`** — autorizada por el dueño («realiza la intervencion y garantiza que se implemente en main de manera correcta» y «termina la tarea y la intervencion»). Landing puntual, no un merge de rama: merge `5ff1440f` sobre `develop 9c82fca1` con el candidato `codex/qa-technical-alert-silence-promote-20261119`, inventario exacto de 38 rutas y árbol byte a byte idéntico al candidato.
+- [x] **Despliegue a QA y columna del después** — `develop 5ff1440f` desplegado en `apexos-web-qa` y el mismo certificador E2E ejecutado contra el build servido: **163 de 163** (`docs/qa/evidence/technical-alert-silence-20261118/qa-despues/certification.json`), contra el **141/163** del antes. Bundle publicado: `apex:alert` en 0 chunks, `apex:diagnostic` presente.
+- [x] **Promoción a `main` y despliegue en Producción** — replay puntual de las 36 rutas certificadas sobre `main 956f2d23` (rama `codex/qa-technical-alert-silence-main-20261119`, código blob-idéntico 12/12), compuertas `qa:promotion:scope` (43 rutas) y `qa:approval:evidence` en verde, merge `f207140d` publicado en `main` y Producción verificada por artefacto: 10 chunks, `apex:alert` en 0, `/health.commit f207140d21d0` (`docs/qa/evidence/technical-alert-silence-20261118/main-20261119/despliegue-producto-main.txt`). Rollback: revert controlado de `f207140d` con `previous_main_commit = 956f2d23`.
+- [ ] **Fase 3 en backend/API/BD** — sigue esperando decisión explícita del dueño. El enmudecimiento deja de gritar las causas pero no las cura: `P2024`/`P2028`/`57014`, el `statement_timeout` de 5 s contra lecturas pesadas, la evidencia en base64 dentro de jsonb y los handlers `app/api/**` que filtran el detalle de Supabase. Tampoco se tocó la telemetría sin sesión (`401` medido) ni los ocho `window.alert` de validación de formularios de Talento Humano.
+
+## 10.1 Cierre de la pierna main (2026-11-19)
+
+Documentación y evidencia de la promoción, versionadas en las tres ramas: `docs/qa/certifications/technical-alert-silence-main-20261119.md` (promesa, columna del después, atribución del único rojo del sustrato y rollback), `docs/qa/manifests/technical-alert-silence-main-20261119-{scope,approval}.json`, `docs/qa/evidence/technical-alert-silence-20261118/{qa-despues,main-20261119}/`. Controles nuevos registrados en `apexos-qa` 2.76.0 (regla 88), `apexos-git-guardian` 2.23.0 (regla 39), `equipo-apexos` 2.47.0 (regla 60) y `apexos-brief` 2.61.0 (regla 74).
 
 ## 11. Documentación, agentes y publicación (obligatoria)
 

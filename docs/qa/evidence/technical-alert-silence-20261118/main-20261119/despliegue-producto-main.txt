@@ -1,0 +1,29 @@
+# Despliegue en Produccion del merge f207140d y su verificacion por artefacto (2026-11-19)
+
+- Proyecto Railway PROD 0afe38cc-6080-49d2-aa24-2d5625250ac2 · entorno production 7f4388a3-b254-4d64-ba49-434b16e41469
+- Servicios: apexos-web-prod 07ddbe4e-1139-4def-b412-7f4a2461733a · apexos-api-prod 7096734e-9a49-4542-be26-b4285b429f17
+- Ambos dispararon build al empujar main (14:58:39Z). El web cerró SUCCESS tras 5 sondeos de 25 s (deployment 16f98eb0-44e1-4b4f-9bd4-b3611c0f6629).
+
+## Estado de los servicios despues del push
+- apexos-api-prod: SUCCESS · latest SUCCESS 2026-11-19T14:58:39.824Z · https://apexos-api-prod-production.up.railway.app
+- apexos-web-prod: SUCCESS · latest SUCCESS 2026-11-19T14:58:39.824Z · https://apexos-web-prod-production.up.railway.app
+
+## Sonda del artefacto servido (node .tmp/probe-main-bundle.cjs)
+$ node .tmp/probe-main-bundle.cjs https://apexos-web-prod-production.up.railway.app https://apexos-api-prod-production.up.railway.app
+{
+  "frontend": "https://apexos-web-prod-production.up.railway.app",
+  "login_status": 200,
+  "chunks_leidos": 10,
+  "bytes_leidos": 629263,
+  "apex_alert_chunks": [],
+  "apex_diagnostic_chunks": [
+    "/_next/static/chunks/0n6wdjzti-4m2.js"
+  ],
+  "api_health_status": 200,
+  "api_commit": "f207140d21d0"
+}
+
+## Lectura
+- apex:alert en 0 chunks y apex:diagnostic presente: el bundle publicado en Produccion es el del enmudecimiento. La sonda es el control que discrimina en un corte solo-web; el /health del API lo confirma por separado.
+- api_commit f207140d21d0: Produccion corre exactamente el merge promocionado, no un artefacto anterior.
+- No se corrio la certificacion E2E contra Produccion: exige aprovisionar usuarios efimeros sobre la base real del cliente, y la regla de QA prohibe certificar con datos de produccion. La promesa se certifico 163/163 contra el build de QA que sirve los mismos bytes (codigo blob-identico) y aqui se verifico el artefacto publicado.
