@@ -6,7 +6,7 @@
   "qa_status": "pending",
   "promotion_branch": "codex/qa-technical-alert-silence-20261118",
   "commit": "c4b7f41b",
-  "target_head": "5fcc2ed1",
+  "target_head": "9c82fca1a392db087085314e1c1c04b7caf7dab0",
   "checks": {
     "functional": {
       "status": "passed",
@@ -57,7 +57,7 @@
     "controls": 68,
     "passed": 68,
     "failed": 0,
-    "build_id": "jlUjFSh09mNnfsi-6VJw3",
+    "build_id": "bz-upXyRkgIgsiVFNja2N",
     "substrate": "next start (produccion)"
   },
   "regression_certification": {
@@ -71,9 +71,9 @@
   },
   "validation_summary": {
     "certified_application_commit": "c4b7f41b",
-    "baseline_preserved": "5fcc2ed1",
+    "baseline_preserved": "9c82fca1a392db087085314e1c1c04b7caf7dab0",
     "production_build": "passed",
-    "build_id": "jlUjFSh09mNnfsi-6VJw3",
+    "build_id": "bz-upXyRkgIgsiVFNja2N",
     "browser_certification": "68/68",
     "evidence_policy": "La evidencia cruda del navegador viaja revisada en docs/qa/evidence/technical-alert-silence-20261118; los logs de next start quedan fuera del repositorio."
   },

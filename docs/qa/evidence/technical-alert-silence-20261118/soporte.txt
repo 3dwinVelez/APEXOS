@@ -1,55 +1,172 @@
-# Soporte tecnico medido sobre el candidato (2026-11-18)
-# Candidato: reconstruccion puntual de 0b1ba6f8 (desarrollo) sobre origin/develop 5fcc2ed1
-# Rutas: apps/web (lint y typecheck del workspace), compuertas de gobernanza desde la raiz
+# Soporte tecnico medido sobre el candidato (2026-11-19)
+- Candidato: reconstruccion puntual de 0b1ba6f8 (desarrollo) sobre origin/develop 9c82fca1, con ese develop fusionado en la rama auxiliar (merge sin rebase ni reset)
+- Tip medido: 132e17116e9201dae1e260f951328671dc5f1f27
+# Rutas: apps/web (contratos, lint y typecheck del workspace), compuertas de gobernanza desde la raiz
+
+== contratos del cambio (technical-alert-silence + hr-monitor-refresh) ==
+ok 1 - la marcacion movil emite refresh inmediato para monitores abiertos
+ok 2 - el monitor de horarios escucha refresh local y el respaldo baja de 30 segundos
+ok 3 - la carga de horarios reintenta respuestas vacias transitorias y conserva el ultimo estado valido
+ok 4 - el listado de horarios carga al montar sin esperar catalogos secundarios
+ok 5 - el monitor solicita estado operativo fresco y conserva evidencia resumida
+ok 6 - el punto unico de fallo tecnico emite diagnostico, no ventana de usuario
+ok 7 - el canal apex:alert esta retirado del cliente
+ok 8 - la tarjeta tecnica vive detras del modo diagnostico y con presupuesto
+ok 9 - el mensaje que ve el operario no lleva ruta ni codigo de estado
+ok 10 - un corte de red se dice en espanol de operario, no en ingles de navegador
+ok 11 - la pantalla de error global no pinta el detalle crudo
+ok 12 - el aviso de sesion reemplaza a la ventana de 401
+ok 13 - el fallback de base de datos no filtra su codigo al operario
+ok 14 - los temporizadores de a pie no vuelven a multiplicar la tormenta
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# todo 0
+# duration_ms 391.7557
+CONTRATOS_EXIT=0
 
 == lint (apps/web eslint) ==
-<candidato>/apps\web\app\print\transport-settlement\page.tsx
+> @apex-os/web@2.0.0 lint
+> eslint .
+
+
+<candidato>\apps\web\app\dashboard\reportes\apex-heart\page.tsx
+  25:37  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\talento-humano\mapa\page.tsx
+  431:6  warning  React Hook useEffect has a missing dependency: 'visibleBounds'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\talento-humano\nomina\page.tsx
+  179:10  warning  'selectedDocument' is assigned a value but never used                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  289:6   warning  React Hook useCallback has a missing dependency: 'preview.length'. Either include it or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSelectedDocument' needs the current value of 'preview.length'  react-hooks/exhaustive-deps
+  604:18  warning  'openPdf' is defined but never used                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+
+<candidato>\apps\web\app\dashboard\talento-humano\novedades\page.tsx
+  55:37  warning  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\talento-humano\provisiones\page.tsx
+  125:9  warning  The 'rows' logical expression could make the dependencies of useMemo Hook (at line 130) change on every render. To fix this, wrap the initialization of 'rows' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  125:9  warning  The 'rows' logical expression could make the dependencies of useMemo Hook (at line 151) change on every render. To fix this, wrap the initialization of 'rows' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+<candidato>\apps\web\app\dashboard\talento-humano\reportes\page.tsx
+   72:7   warning  'BENEFIT_LABELS' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  239:10  warning  'benefitEmployee' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  246:10  warning  'payrollEmployee' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  252:10  warning  'auxiliaryEmployee' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+<candidato>\apps\web\app\dashboard\transporte\page.tsx
+  958:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+<candidato>\apps\web\app\print\transport-settlement\page.tsx
   98:834  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
 
-<candidato>/apps\web\components\accounting\AccountingPygBudget.tsx
+<candidato>\apps\web\components\accounting\AccountingPygBudget.tsx
   322:15  warning  Elements with the ARIA role "combobox" must have the following attributes defined: aria-controls,aria-expanded  jsx-a11y/role-has-required-aria-props
 
-<candidato>/apps\web\components\shell\TechnicianWorkspaceHeader.tsx
+<candidato>\apps\web\components\shell\TechnicianWorkspaceHeader.tsx
   10:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
 
-<candidato>/apps\web\components\shell\UserSessionBadge.tsx
+<candidato>\apps\web\components\shell\UserSessionBadge.tsx
   68:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
 
-<candidato>/apps\web\components\transport\PlanningRouteMap.tsx
+<candidato>\apps\web\components\transport\PlanningRouteMap.tsx
   474:6  warning  React Hook useEffect has a missing dependency: 'selected'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
-<candidato>/apps\web\lib\api.ts
+<candidato>\apps\web\lib\api.ts
    362:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
   4675:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
 
-<candidato>/apps\web\lib\sessionSecurity.ts
+<candidato>\apps\web\lib\sessionSecurity.ts
    65:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
   117:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
 
 ✖ 22 problems (0 errors, 22 warnings)
 
+LINT_EXIT=0
 
 == typecheck (tsc -p tsconfig.typecheck.json) ==
-
 > @apex-os/web@2.0.0 typecheck
 > tsc -p tsconfig.typecheck.json --noEmit
 
 TYPECHECK_EXIT=0
 
 == autovalidaciones de las compuertas ==
+TAP version 13
+# Subtest: solo acepta rutas exactas o prefijos declarados
+ok 1 - solo acepta rutas exactas o prefijos declarados
+  ---
+  duration_ms: 1.5675
+  type: 'test'
+  ...
+# Subtest: rechaza cambios laterales y eliminaciones implicitas
+ok 2 - rechaza cambios laterales y eliminaciones implicitas
+  ---
+  duration_ms: 3.0914
+  type: 'test'
+  ...
+# Subtest: el esquema v2 exige el inventario exacto incluso dentro de un prefijo permitido
+ok 3 - el esquema v2 exige el inventario exacto incluso dentro de un prefijo permitido
+  ---
+  duration_ms: 2.683
+  type: 'test'
+  ...
+# Subtest: el esquema v2 rechaza una intencion o un inventario incompletos
+ok 4 - el esquema v2 rechaza una intencion o un inventario incompletos
+  ---
+  duration_ms: 3.0078
+  type: 'test'
+  ...
+1..4
 # tests 4
+# suites 0
 # pass 4
 # fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 163.9889
+GATE_SCOPE_EXIT=0
+TAP version 13
+# Subtest: aprueba evidencia local completa para desarrollo a develop
+ok 1 - aprueba evidencia local completa para desarrollo a develop
+  ---
+  duration_ms: 150.9519
+  type: 'test'
+  ...
+# Subtest: bloquea un manifiesto que intenta usar la compuerta pre-QA hacia main
+ok 2 - bloquea un manifiesto que intenta usar la compuerta pre-QA hacia main
+  ---
+  duration_ms: 96.89
+  type: 'test'
+  ...
+# Subtest: bloquea evidencia incompleta o no ejecutada
+ok 3 - bloquea evidencia incompleta o no ejecutada
+  ---
+  duration_ms: 107.3116
+  type: 'test'
+  ...
+1..3
 # tests 3
+# suites 0
 # pass 3
 # fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 571.6062
+GATE_PREQA_EXIT=0
 
 == build de produccion ==
-✓ Compiled successfully in 98s
-  Finished TypeScript in 88s ...
-  Generating static pages using 3 workers (0/140) ...
-  Generating static pages using 3 workers (35/140) 
-  Generating static pages using 3 workers (70/140) 
-  Generating static pages using 3 workers (105/140) 
-✓ Generating static pages using 3 workers (140/140) in 11.8s
-BUILD_ID=jlUjFSh09mNnfsi-6VJw3
+✓ Compiled successfully in 2.1min
+Finished TypeScript in 2.7min ...
+✓ Generating static pages using 3 workers (140/140) in 23.1s
+BUILD_ID=bz-upXyRkgIgsiVFNja2N
+BUILD_EXIT=0
+
+== certificacion local en el arbol fusionado ==
+certificador: scripts/certifications/technical-alert-silence-browser-local.js
+veredicto: 68/68 (fallidos 0)
+sustrato: next start (produccion), BUILD_ID bz-upXyRkgIgsiVFNja2N
+ventana: 2026-11-19T13:51:05.689Z · 2026-11-19T13:54:34.591Z
+telemetria: 74 posts a /api/v1/admin/platform-logs/client, errores de pagina 0

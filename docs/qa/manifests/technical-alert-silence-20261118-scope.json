@@ -5,11 +5,11 @@
   "target_branch": "develop",
   "promotion_branch": "codex/qa-technical-alert-silence-20261118",
   "certified_commit": "c4b7f41b",
-  "base_commit": "5fcc2ed1",
+  "base_commit": "9c82fca1a392db087085314e1c1c04b7caf7dab0",
   "base_commits": {
-    "develop": "5fcc2ed1"
+    "develop": "9c82fca1a392db087085314e1c1c04b7caf7dab0"
   },
-  "target_head": "5fcc2ed1",
+  "target_head": "9c82fca1a392db087085314e1c1c04b7caf7dab0",
   "candidate_source": {
     "branch": "desarrollo",
     "original_commit": "0b1ba6f8",
@@ -35,10 +35,6 @@
     {
       "status": "M",
       "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
     },
     {
       "status": "M",
@@ -71,10 +67,6 @@
     {
       "status": "M",
       "file": "apps/web/lib/supabaseClient.ts"
-    },
-    {
-      "status": "M",
-      "file": "apps/web/test/hr-monitor-refresh.test.mjs"
     },
     {
       "status": "A",
@@ -169,6 +161,14 @@
       "file": "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt"
     },
     {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-20261118-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-20261118-scope.json"
+    },
+    {
       "status": "M",
       "file": "package.json"
     },
@@ -179,20 +179,11 @@
     {
       "status": "A",
       "file": "scripts/certifications/technical-alert-silence-browser-qa.js"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/technical-alert-silence-20261118-scope.json"
-    },
-    {
-      "status": "A",
-      "file": "docs/qa/manifests/technical-alert-silence-20261118-preqa.json"
     }
   ],
   "allowed_paths": [
     ".gitignore",
     "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
-    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
     "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
     "apps/web/app/error.tsx",
     "apps/web/app/login/page.tsx",
@@ -201,7 +192,6 @@
     "apps/web/lib/platformAlerts.ts",
     "apps/web/lib/sessionSecurity.ts",
     "apps/web/lib/supabaseClient.ts",
-    "apps/web/test/hr-monitor-refresh.test.mjs",
     "apps/web/test/technical-alert-silence.test.mjs",
     "docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md",
     "docs/project/filosofia-producto-ui.md",
@@ -225,16 +215,15 @@
     "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png",
     "docs/qa/evidence/technical-alert-silence-20261118/soporte.txt",
     "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt",
+    "docs/qa/manifests/technical-alert-silence-20261118-preqa.json",
+    "docs/qa/manifests/technical-alert-silence-20261118-scope.json",
     "package.json",
     "scripts/certifications/technical-alert-silence-browser-local.js",
-    "scripts/certifications/technical-alert-silence-browser-qa.js",
-    "docs/qa/manifests/technical-alert-silence-20261118-scope.json",
-    "docs/qa/manifests/technical-alert-silence-20261118-preqa.json"
+    "scripts/certifications/technical-alert-silence-browser-qa.js"
   ],
   "allowed_deletions": [],
   "certified_functional_paths": [
     "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
-    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
     "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
     "apps/web/app/error.tsx",
     "apps/web/app/login/page.tsx",
@@ -243,7 +232,6 @@
     "apps/web/lib/platformAlerts.ts",
     "apps/web/lib/sessionSecurity.ts",
     "apps/web/lib/supabaseClient.ts",
-    "apps/web/test/hr-monitor-refresh.test.mjs",
     "apps/web/test/technical-alert-silence.test.mjs",
     "scripts/certifications/technical-alert-silence-browser-local.js",
     "scripts/certifications/technical-alert-silence-browser-qa.js"
@@ -307,11 +295,11 @@
     }
   ],
   "notes": {
-    "generation": "Inventario exacto del diff origin/develop 5fcc2ed1..tip del candidato (rama codex/qa-technical-alert-silence-20261118): 40 rutas (26 A, 14 M, 0 D), cero eliminaciones. certified_commit es el de aplicacion, c4b7f41b; el tip agrega estos manifiestos y la nota de certificacion, y la compuerta valida el inventario contra ese tip, no contra un hash fijo.",
-    "reconstruction": "El candidato no es la rama desarrollo: es el commit 0b1ba6f8 reconstruido sobre el tip vigente de develop. Las rutas de gobernanza del contexto vivo (agents/registry.json, agents/*/SKILL.md y .qoder/skills/**) quedan deliberadamente fuera porque esa capa no existe en develop ni en main; su version actual vive solo en desarrollo, que es la fuente de version del equipo.",
-    "equivalence": "De las 31 rutas de contenido del paquete original, 29 son byte a byte identicas al commit certificado en desarrollo; las dos distintas son package.json y .gitignore, donde los mismos hunks se re-aplicaron sobre la version propia de develop. El resto del inventario es evidencia y documentacion generada sobre el propio candidato (certificador de QA, nota de certificacion, suites y las dos mediciones de QA). Detalle en ../evidence/technical-alert-silence-20261118/equivalencia-candidato.txt.",
+    "generation": "Inventario exacto del diff origin/develop 9c82fca1a3..tip de la rama del candidato (132e17116e al generarlo): 38 rutas (26 A, 12 M, 0 D), cero eliminaciones. La compuerta compara contra el tip real, no contra un hash fijo: los manifiestos y la nota de certificacion viajan dentro del candidato y por eso estan en su propio inventario.",
+    "reconstruction": "El candidato no es la rama desarrollo: es el commit 0b1ba6f8 reconstruido sobre el tip vigente de develop. Cuando develop avanzo a 9c82fca1 (PR #95 del monitor por referencia), la rama auxiliar absorbio ese avance por merge 132e1711: nada de rebase, nada de reset, nada de usar un arbol viejo como baseline. Las rutas de gobernanza del contexto vivo (agents/registry.json, agents/*/SKILL.md y .qoder/skills/**) quedan deliberadamente fuera porque esa capa no existe en develop ni en main; su version actual vive solo en desarrollo, que es la fuente de version del equipo.",
+    "equivalence": "equivalencia-candidato.txt clasifica las 36 rutas del paquete original por naturaleza: producto 14 de 17 byte a byte identicas (distintas: package.json y .gitignore por hunks re-aplicados sobre la version propia de develop, y apps/web/app/dashboard/talento-humano/rutas/page.tsx porque develop ya llevaba este mismo enmudecimiento desde el PR #95 y el blob del candidato es la union con el trabajo del monitor); evidencia 0 de 14 porque la corrida se re-midio sobre el arbol fusionado; contexto vivo 5 rutas declaradas ausentes a proposito. El resto del inventario es evidencia y documentacion generada sobre el propio candidato.",
     "qa_baseline": "La primera columna del antes/despues se tomo contra el build que QA ya servia (develop 5fcc2ed16eae, sin el arreglo): el certificador detecto las tarjetas tecnicas en pantalla, incluido el camino feliz sin ninguna inyeccion. Esa corrida falla a proposito y es el control positivo del arnes: sin ella, el verde posterior no diria nada.",
-    "substrate": "La certificacion corre sobre el build de produccion (next build, BUILD_ID jlUjFSh09mNnfsi-6VJw3) servido por next start, no sobre next dev.",
+    "substrate": "La certificacion corre sobre el build de produccion (next build, BUILD_ID bz-upXyRkgIgsiVFNja2N) servido por next start, no sobre next dev.",
     "certification": "Certificador local: 68/68 controles en verde sobre el arbol del candidato."
   },
   "approval": {

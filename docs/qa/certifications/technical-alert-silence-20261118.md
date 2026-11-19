@@ -2,20 +2,21 @@
 
 - **Empresa / alcance**: toda la superficie web de APEXOS; el registro del fallo sigue en `platform_logs`.
 - **Promesa certificada**: con la API caída, estrellada o sin señal, el cliente **no ve ninguna ventana emergente técnica**; la pantalla queda viva en estado de dato y el fallo se registra. El detalle técnico solo aparece si el usuario activa el modo diagnóstico.
-- **Candidato certificado**: reconstrucción puntual del commit `0b1ba6f8` de `desarrollo` sobre `origin/develop` `5fcc2ed1` (31 rutas de inventario).
-- **Ventana de la corrida**: 2026-11-18 23:02–23:05 (hora local), `started_at` 2026-11-19T04:02:14Z en la evidencia.
+- **Candidato certificado**: reconstrucción puntual del commit `0b1ba6f8` de `desarrollo` sobre `origin/develop`, y a ese develop se llegó por **merge** (`132e1711` sobre `9c82fca1`), nunca por rebase ni reset. El inventario exacto que valida la compuerta es el del tip de la rama auxiliar `codex/qa-technical-alert-silence-20261118`, no un hash fijo.
+- **Por qué se re-midió**: `develop` avanzó de `5fcc2ed1` a `9c82fca1` (PR #95 del monitor por referencia) después de la primera certificación. El baseline declarado en el manifiesto deja de cuadrar y la promesa vuelve a medirse sobre el árbol que realmente se promociona. Las dos mediciones quedan en el historial de la rama.
+- **Ventana de la corrida certificada**: 2026-11-19 08:51–08:54 (hora local), `started_at` `2026-11-19T13:51:05Z` y `finished_at` `2026-11-19T13:54:34Z` en la evidencia. La medición sobre el baseline anterior (`5fcc2ed1`) se corrió el 2026-11-18 23:02–23:05.
 
 ## 1. Sustrato de la corrida
 
 | Dato | Valor medido |
 |---|---|
 | Frontend servido por | `next start` (producción), **no** `next dev` |
-| `BUILD_ID` | `jlUjFSh09mNnfsi-6VJw3` (`next build` con `NEXT_PUBLIC_API_URL=http://127.0.0.1:3000`) |
-| Compilación / tipos | Turbopack compila en 98 s; TypeScript del proyecto termina sin errores en 88 s |
+| `BUILD_ID` | `bz-upXyRkgIgsiVFNja2N` (`next build` con `NEXT_PUBLIC_API_URL=http://127.0.0.1:3000`) |
+| Compilación / tipos | Turbopack compila en 2,1 min; TypeScript del proyecto termina en 2,7 min |
 | Certificador | `scripts/certifications/technical-alert-silence-browser-local.js` |
-| Duración de la corrida | 202 s |
-| Veredicto | **68 de 68 controles en verde** |
-| La misma suite sobre `desarrollo` | Corrida previa, `BUILD_ID` `3SEjWup4mZZxmkknqhAzd`, también 68/68, archivada en `docs/qa/evidence/technical-alert-silence-20261118/certification.json` de esa rama. Es la misma medición sobre el árbol original; no se sobrescribe: las dos corridas quedan en el repositorio |
+| Duración de la corrida | 209 s (`13:51:05Z`–`13:54:34Z`) |
+| Veredicto | **68 de 68 controles en verde** sobre el árbol fusionado |
+| Las corridas anteriores | Sobre `desarrollo` (árbol original): `BUILD_ID` `3SEjWup4mZZxmkknqhAzd`, también 68/68, archivada en el `certification.json` de esa rama. La primera medición del candidato usó el baseline `5fcc2ed1` con `BUILD_ID` `jlUjFSh09mNnfsi-6VJw3`, igualmente 68/68, y queda en el historial de la rama auxiliar. El `certification.json` de esta nota es la re-medición sobre `9c82fca1`: es la que describe el árbol que se promociona |
 
 ## 2. Cómo se fabrica la tormenta (y por qué la ausencia significa algo)
 
@@ -54,19 +55,23 @@ Cinco pantallas (`rutas`, `mapa`, `servicios`, `monitoreo`, lobby `home`) sobre 
 | Control | Resultado |
 |---|---|
 | Contratos del cambio (`technical-alert-silence.test.mjs` 9 + `hr-monitor-refresh.test.mjs` 5) | 14 de 14 en verde |
-| Suite web completa, archivo por archivo (111 archivos, `node --test apps/web/test/*.test.mjs`) | 822 pruebas: **821 pasan, 1 falla** (`suite-web.txt`) |
-| Fallo único | `command-palette-module-functions.test.mjs`: `/dashboard/contabilidad/pyg/ampliado` no tiene entrada en el centro de comandos. **Preexistente en develop**: la misma prueba, con el mismo mensaje, falla en el baseline `5fcc2ed1` (verificado en un árbol limpio de origin/develop). Ninguna ruta del inventario toca el centro de comandos ni PYG. |
+| Suite web completa, archivo por archivo (112 archivos, `node --test test/*.test.mjs` con cwd `apps/web`) | 829 pruebas: **828 pasan, 1 falla** (`suite-web.txt`) |
+| Fallo único | `command-palette-module-functions.test.mjs`: `/dashboard/contabilidad/pyg/ampliado` no tiene entrada en el centro de comandos. **Preexistente en develop**: la misma prueba, con el mismo mensaje, falla sobre un árbol limpio de `origin/develop` (worktree temporal del baseline, sin `node_modules`). Ninguna ruta del inventario toca el centro de comandos ni PYG. |
+| Trampa de sustrato descartada | Corrida desde la raíz del monorepo produjo 4 falsos `ENOENT` en `ibc-nomina-ui.test.mjs`: esa prueba resuelve `app/dashboard/...` relativo al `cwd`. No es fallo del producto ni de este cambio; la medición oficial se hace desde `apps/web` y queda anotada en `suite-web.txt` |
 | Lint de `apps/web` | 22 avisos (img/ARIA/`window.location`), **0 errores** |
 | Typecheck de `apps/web` (`tsc -p tsconfig.typecheck.json --noEmit`) | `TYPECHECK_EXIT=0` |
 | Autovalidación de la compuerta de alcance (`test:promotion-scope`) | 4 de 4 |
 | Autovalidación de la compuerta pre-QA (`test:preqa-evidence`) | 3 de 3 |
-| Build de producción | 140 páginas estáticas generadas en 11.8 s |
+| Build de producción | 140 páginas estáticas generadas en 23,1 s |
 
 Todo lo anterior está en `soporte.txt` y `suite-web.txt`, sanitizados (sin rutas absolutas de la máquina).
 
 ## 5. Equivalencia y reconstrucción
 
-- `equivalencia-candidato.txt`: 29 de 31 rutas son byte a byte idénticas al commit certificado en `desarrollo`. Las dos distintas son `package.json` y `.gitignore`, donde los mismos hunks se re-aplicaron sobre la versión propia de develop.
+- `equivalencia-candidato.txt` clasifica las 36 rutas del paquete original por naturaleza y deja de mezclarlas:
+  - **producto (código y documentación): 14 de 17 byte a byte idénticas.** Las tres distintas son `package.json` y `.gitignore` (los mismos hunks re-aplicados sobre la versión propia de develop) y `apps/web/app/dashboard/talento-humano/rutas/page.tsx`, que en develop ya llevaba este mismo enmudecimiento —entró por el PR #95 del monitor— más el trabajo por referencia. El blob del candidato es la unión: conserva `ROUTES_BACKSTOP_POLL_MS = 30_000` y el estado de dato, y agrega `monitor_answered`, `monitorStaleNotice` y los conteos anulables. Ningún hunk de este cambio se perdió.
+  - **evidencia: 0 de 14 idénticas, y así debe ser.** La corrida se re-midió sobre el árbol fusionado (`BUILD_ID` `bz-upXyRkgIgsiVFNja2N`); copiar la evidencia de origen sería fingir que se midió el árbol que no se promociona.
+  - **contexto vivo (`agents/**`, `.qoder/skills/**`): 5 rutas y las 5 ausentes**, declaradas a propósito.
 - La capa de contexto vivo (`agents/registry.json`, `agents/*/SKILL.md`, `.qoder/skills/**`) **no viaja** al candidato: esa estructura no existe en develop ni en main y su fuente de versión es `desarrollo`. Traerla sería un cambio generacional de gobernanza, no parte de este objetivo.
 
 ## 6. Deuda medida y explícitamente fuera de este alcance

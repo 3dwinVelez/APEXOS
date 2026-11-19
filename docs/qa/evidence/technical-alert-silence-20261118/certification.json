@@ -1,6 +1,6 @@
 {
   "format": "apexos-technical-alert-silence-v1",
-  "started_at": "2026-11-19T04:02:14.437Z",
+  "started_at": "2026-11-19T13:51:05.689Z",
   "base": "http://127.0.0.1:3323",
   "artifact": "technical-alert-silence-20261118",
   "scenarios": {
@@ -827,12 +827,12 @@
     }
   ],
   "frontend_served_by": "next start (produccion)",
-  "build_id": "jlUjFSh09mNnfsi-6VJw3",
+  "build_id": "bz-upXyRkgIgsiVFNja2N",
   "runtime": {
     "page_errors": [],
     "console_errors": [
+      "WebSocket connection to 'ws://127.0.0.1:3000/collaboration/live' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
       "Failed to load resource: the server responded with a status of 404 (Not Found)",
-      "WebSocket connection to 'ws://127.0.0.1:3000/collaboration/live' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
       "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
       "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
       "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
@@ -841,7 +841,7 @@
       "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
       "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
       "WebSocket connection to 'ws://127.0.0.1:3000/collaboration/live' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED",
-      "Failed to load resource: net::ERR_FAILED",
+      "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
       "Failed to load resource: net::ERR_FAILED",
       "Failed to load resource: net::ERR_FAILED",
       "Failed to load resource: net::ERR_FAILED",
@@ -868,9 +868,9 @@
     ],
     "aborted_requests": [
       "/api/v1/hr/employees",
+      "/api/v1/hr/routes",
       "/api/v1/transport/vehicles",
       "/api/v1/admin/user-master-data",
-      "/api/v1/hr/routes",
       "/api/v1/hr/routes/event-summaries",
       "/api/v1/hr/operations-map",
       "/api/v1/services/references",
@@ -887,5 +887,5 @@
     "failed": 0,
     "total": 68
   },
-  "finished_at": "2026-11-19T04:05:36.802Z"
+  "finished_at": "2026-11-19T13:54:34.591Z"
 }
