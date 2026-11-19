@@ -219,9 +219,9 @@
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.21.0",
+      "version": "2.22.0",
       "updated_at": "2026-11-19",
-      "sha256": "12bad8ebda2e90dcbbacd47ab254062cffcf3a6f71a43a798a868bb66ca01baa",
+      "sha256": "286633dd7f4ec01859dcab7400193cc1de28e85ac3cf33775880ae82a6602765",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -248,15 +248,16 @@
         "evidencia-de-manifiesto-resuelta-contra-su-directorio",
         "paquete-transportado-se-compara-por-archivo",
         "checkpoint-anti-barrido",
-        "commit-citado-sale-de-un-comando"
+        "commit-citado-sale-de-un-comando",
+        "un-commit-funcional-por-candidato"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.18.0",
+      "version": "2.19.0",
       "updated_at": "2026-11-19",
-      "sha256": "42cbc6a26a439293622d312e536965b5f4e8611d6f589ad94c59c2afeb8b0e87",
+      "sha256": "2680884814c572f6d469a6d10de2f42673e979785ebc4d0fa6f4caee343209be",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -281,7 +282,8 @@
         "torre-presupuesto-por-ambiente",
         "torre-rejilla-y-punto-inspeccionable",
         "torre-historia-medida-por-monitor",
-        "sonda-transporte-con-lector-del-producto"
+        "sonda-transporte-con-lector-del-producto",
+        "latencia-se-mide-en-ambiente-desplegado"
       ]
     },
     {
