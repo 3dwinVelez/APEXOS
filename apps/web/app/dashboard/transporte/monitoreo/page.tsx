@@ -53,13 +53,27 @@ export default function TransportMonitoringPage() {
     }
   }, []);
   useEffect(() => {
-    void load();
-    const timer = window.setInterval(() => void load(), 15000);
-    return () => window.clearInterval(timer);
+    const refresh = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    void refresh();
+    const timer = window.setInterval(refresh, 15000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, [load]);
   if (!data)
     return (
-      <p className="text-sm text-content-muted">Cargando monitoreo TMS...</p>
+      <div className="space-y-3">
+        <p className="text-sm text-content-muted">Cargando monitoreo TMS...</p>
+        {error ? (
+          <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800" role="status">
+            {error} El panel reintentara solo en unos segundos.
+          </p>
+        ) : null}
+      </div>
     );
   const unit = data.units.find((row) => row.trip_id === selected);
   return (
@@ -75,9 +89,9 @@ export default function TransportMonitoringPage() {
         </p>
       </header>
       {error ? (
-        <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-800">
-          {error}
-        </div>
+        <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800" role="status">
+          {error} El mapa conserva la ultima lectura de {new Date(data.generated_at).toLocaleTimeString("es-CO")}.
+        </p>
       ) : null}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-7">
         {Object.entries(data.summary).map(([label, value]) => (

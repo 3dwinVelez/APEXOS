@@ -5,14 +5,6 @@ const LAST_ACTIVITY_KEY = "apex_last_activity";
 const SESSION_TIMEOUT_MINUTES = Number(process.env.NEXT_PUBLIC_SESSION_TIMEOUT_MINUTES || 45);
 const HAS_CONFIGURED_API_URL = true;
 const PASSWORD_CHANGE_REQUIRED_KEY = "apex_password_change_required";
-const APP_ALERT_EVENT = "apex:alert";
-
-type AppAlert = {
-  title: string;
-  message: string;
-  technical?: string;
-  level?: "info" | "warning" | "error";
-};
 const SESSION_REFRESH_WINDOW_MS = 5 * 60 * 1000;
 let refreshPromise: Promise<void> | null = null;
 
@@ -84,11 +76,6 @@ export function touchSession() {
 export function setPasswordChangeRequired(required: boolean) {
   if (typeof window === "undefined") return;
   localStorage.setItem(PASSWORD_CHANGE_REQUIRED_KEY, required ? "1" : "0");
-}
-
-export function emitAppAlert(alert: AppAlert) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(APP_ALERT_EVENT, { detail: alert }));
 }
 
 export async function keepSessionAlive() {
