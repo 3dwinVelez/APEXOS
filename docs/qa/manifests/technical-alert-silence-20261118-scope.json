@@ -1,0 +1,340 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "technical-alert-silence-20261118",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-technical-alert-silence-promote-20261119",
+  "certified_commit": "36eb0ccb",
+  "base_commit": "9c82fca1a392db087085314e1c1c04b7caf7dab0",
+  "base_commits": {
+    "develop": "9c82fca1a392db087085314e1c1c04b7caf7dab0"
+  },
+  "target_head": "9c82fca1a392db087085314e1c1c04b7caf7dab0",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "original_commit": "0b1ba6f8",
+    "commit": "36eb0ccb"
+  },
+  "change_intent": {
+    "summary": "El fallo tecnico de la API deja de ser ventana emergente en la interfaz del cliente: el choke point de peticiones enmudece la capa de alertas, deja el motivo traducido en la propia pantalla (estado de dato, sin detalle tecnico en pantalla) y conserva el registro del fallo en platform-logs. Se sustituyen los banners de error tecnico de rutas, mapa en vivo y monitoreo TMS por estado honesto de dato, se protege el cierre de sesion por inactividad con aviso en el login y se retira el reloj duplicado del mapa. Los temporizadores de a pie se suben a 30 s para no multiplicar la tormenta. Solo codigo de apps/web, su certificador y la documentacion: no toca API, Prisma ni migraciones.",
+    "modules": [
+      "web-shell",
+      "talento-humano-rutas",
+      "talento-humano-mapa",
+      "transporte-monitoreo",
+      "autenticacion-sesion",
+      "certification-harness",
+      "documentation"
+    ]
+  },
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": ".gitignore"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/mapa/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/transporte/monitoreo/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/error.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/login/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/system/PlatformAlerts.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/api.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/platformAlerts.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/sessionSecurity.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/supabaseClient.ts"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/technical-alert-silence.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md"
+    },
+    {
+      "status": "M",
+      "file": "docs/project/filosofia-producto-ui.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/technical-alert-silence-20261118.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/equivalencia-candidato.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/soporte.txt"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt"
+    },
+    {
+      "status": "M",
+      "file": "package.json"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/technical-alert-silence-browser-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/technical-alert-silence-browser-qa.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-20261118-preqa.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/technical-alert-silence-20261118-scope.json"
+    }
+  ],
+  "allowed_paths": [
+    ".gitignore",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/error.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/system/PlatformAlerts.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/platformAlerts.ts",
+    "apps/web/lib/sessionSecurity.ts",
+    "apps/web/lib/supabaseClient.ts",
+    "apps/web/test/technical-alert-silence.test.mjs",
+    "docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md",
+    "docs/project/filosofia-producto-ui.md",
+    "docs/qa/certifications/technical-alert-silence-20261118.md",
+    "docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/equivalencia-candidato.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/soporte.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt",
+    "package.json",
+    "scripts/certifications/technical-alert-silence-browser-local.js",
+    "scripts/certifications/technical-alert-silence-browser-qa.js",
+    "docs/qa/manifests/technical-alert-silence-20261118-preqa.json",
+    "docs/qa/manifests/technical-alert-silence-20261118-scope.json"
+  ],
+  "allowed_deletions": [],
+  "certified_functional_paths": [
+    ".gitignore",
+    "apps/web/app/dashboard/talento-humano/mapa/page.tsx",
+    "apps/web/app/dashboard/transporte/monitoreo/page.tsx",
+    "apps/web/app/error.tsx",
+    "apps/web/app/login/page.tsx",
+    "apps/web/components/system/PlatformAlerts.tsx",
+    "apps/web/lib/api.ts",
+    "apps/web/lib/platformAlerts.ts",
+    "apps/web/lib/sessionSecurity.ts",
+    "apps/web/lib/supabaseClient.ts",
+    "apps/web/test/technical-alert-silence.test.mjs",
+    "docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md",
+    "docs/project/filosofia-producto-ui.md",
+    "docs/qa/certifications/technical-alert-silence-20261118.md",
+    "docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/equivalencia-candidato.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+    "docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png",
+    "docs/qa/evidence/technical-alert-silence-20261118/soporte.txt",
+    "docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt",
+    "package.json",
+    "scripts/certifications/technical-alert-silence-browser-local.js",
+    "scripts/certifications/technical-alert-silence-browser-qa.js"
+  ],
+  "protected_capabilities": [
+    {
+      "name": "ausencia de ventanas tecnicas ante tormenta real (500, 429 y red cortada) en rutas, mapa, servicios, monitoreo y lobby",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261118/certification.json",
+        "../certifications/technical-alert-silence-20261118.md"
+      ]
+    },
+    {
+      "name": "el fallo si queda registrado: la telemetria del cliente sigue apuntando a /api/v1/admin/platform-logs/client",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261118/certification.json",
+        "../evidence/technical-alert-silence-20261118/08-modo-diagnostico.png"
+      ]
+    },
+    {
+      "name": "modo diagnostico opt-in por usuario (apexos_diagnostics=1) con presupuesto de 5 tarjetas por minuto, sin señal de exito en la suite",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261118/08-modo-diagnostico.png",
+        "../certifications/technical-alert-silence-20261118.md"
+      ]
+    },
+    {
+      "name": "cierre de sesion por inactividad con aviso legible en el login y sin ventana tecnica",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png",
+        "../evidence/technical-alert-silence-20261118/certification.json"
+      ]
+    },
+    {
+      "name": "pantallas vivas durante la tormenta: ninguna cae al guard de acceso ni al cascaron del shell (autocontrol del arnes)",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261118/certification.json",
+        "../certifications/technical-alert-silence-20261118.md"
+      ]
+    },
+    {
+      "name": "autenticacion, sesion y navegacion transversales siguen respondiendo sobre el arbol del destino",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261118/suite-web.txt",
+        "../certifications/technical-alert-silence-20261118.md"
+      ]
+    },
+    {
+      "name": "el arnes es capaz de fallar: la medicion del antes en QA sobre develop 5fcc2ed1 (build desplegado sin el arreglo) detecta las tarjetas tecnicas reales, dos de ellas producidas por 403 legitimos en el camino feliz",
+      "status": "passed",
+      "evidence": [
+        "../evidence/technical-alert-silence-20261118/qa-antes/certification.json",
+        "../certifications/technical-alert-silence-20261118.md"
+      ]
+    }
+  ],
+  "notes": {
+    "generation": "Inventario exacto del candidato en forma de dos commits: los 36 archivos del commit funcional 36eb0ccb (cuyo padre es origin/develop 9c82fca1a3) mas los 2 manifiestos que viajan en el commit siguiente = 38 rutas (26 A, 12 M, 0 D), cero eliminaciones. La compuerta compara contra el tip real de la rama de promocion, no contra un hash fijo.",
+    "reconstruction": "El candidato no es la rama desarrollo: es el commit 0b1ba6f8 reconstruido sobre el tip vigente de develop. Cuando develop avanzo a 9c82fca1 (PR #95 del monitor por referencia), la medicion se repito sobre ese arbol (merge 132e1711 en la rama auxiliar de medicion codex/qa-technical-alert-silence-20261118, sin rebase ni reset) y el candidato que se promociona se reordeno en la forma de dos commits que exige git-governance-guard ci-promotion: este commit funcional con el padre en el destino, y los manifiestos en el commit siguiente. Ninguna ruta de gobernanza del contexto vivo (agents/registry.json, agents/*/SKILL.md y .qoder/skills/**) viaja: esa capa no existe en develop ni en main y su fuente de version es desarrollo.",
+    "equivalence": "equivalencia-candidato.txt clasifica las 36 rutas del paquete original por naturaleza: producto 14 de 17 byte a byte identicas (distintas: package.json y .gitignore por hunks re-aplicados sobre la version propia de develop, y apps/web/app/dashboard/talento-humano/rutas/page.tsx porque develop ya llevaba este mismo enmudecimiento desde el PR #95 y el blob del candidato es la union con el trabajo del monitor); evidencia 0 de 14 porque la corrida se re-midio sobre el arbol fusionado; contexto vivo 5 rutas declaradas ausentes a proposito. El resto del inventario es evidencia y documentacion generada sobre el propio candidato.",
+    "qa_baseline": "La primera columna del antes/despues se tomo contra el build que QA ya servia (develop 5fcc2ed16eae, sin el arreglo): el certificador detecto las tarjetas tecnicas en pantalla, incluido el camino feliz sin ninguna inyeccion. Esa corrida falla a proposito y es el control positivo del arnes: sin ella, el verde posterior no diria nada.",
+    "substrate": "La certificacion corre sobre el build de produccion (next build, BUILD_ID bz-upXyRkgIgsiVFNja2N) servido por next start, no sobre next dev.",
+    "certification": "Certificador local: 68/68 controles en verde sobre el arbol del candidato."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-19T00:00:00-05:00",
+    "instruction": "realiza la intervencion y garantiza que se implemente en main de manera correcta",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo completo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas."
+  }
+}

@@ -107,7 +107,9 @@ type OperationsMap = {
 };
 
 const TILE_SIZE = 256;
-const LIVE_REFRESH_SECONDS = 10;
+// La malla de 30 dias con huella GPS es la lectura mas pesada del modulo; a 10s entraba en cola con
+// el statement_timeout del servidor y el operario veia el mapa caer. Con 30s el rastro sigue vivo.
+const LIVE_REFRESH_SECONDS = 30;
 const DEFAULT_CENTER = { latitude: 4.711, longitude: -74.0721 };
 const statusTone: Record<string, string> = {
   "En ruta": "bg-emerald-500",

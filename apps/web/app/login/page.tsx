@@ -8,10 +8,27 @@ import { dashboardLandingPath, isMarkingOnlyAccess, MARKING_ONLY_PROFILE } from 
 import { getSupabaseConfigStatus, supabaseAuth, supabaseFetch } from "@/lib/supabaseClient";
 import { ThemeToggle } from "@/components/system/ThemeToggle";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const API_URL = API_BASE_URL;
 const LOGIN_ERROR_MESSAGE = "Credenciales no válidas o sin acceso autorizado.";
+const SESSION_END_REASON_KEY = "apex_session_end_reason";
+
+// El cierre de sesion dejaba de ser visible en cuanto la alerta tecnica enmudecio: el usuario
+// caia al login sin saber por que. El motivo ya se guardaba en localStorage y nadie lo leia.
+const SESSION_END_NOTICES: Record<string, string> = {
+  idle_timeout: "Tu sesión terminó por inactividad. Vuelve a ingresar para continuar.",
+  expired: "Tu sesión terminó. Vuelve a ingresar para continuar.",
+  refresh_failed: "No fue posible mantener tu sesión activa. Vuelve a ingresar para continuar.",
+  unauthorized: "Tu sesión dejó de ser válida. Vuelve a ingresar para continuar.",
+  supabase_unauthorized: "Tu sesión dejó de ser válida. Vuelve a ingresar para continuar.",
+  manual_logout: "Cerraste tu sesión correctamente."
+};
+
+function readSessionEndNotice(reason: string | null) {
+  if (!reason) return "";
+  return SESSION_END_NOTICES[reason] || "Tu sesión terminó. Vuelve a ingresar para continuar.";
+}
 
 type AnyRow = Record<string, unknown>;
 
@@ -59,8 +76,16 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [sessionNotice, setSessionNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const reason = localStorage.getItem(SESSION_END_REASON_KEY);
+    if (!reason) return;
+    localStorage.removeItem(SESSION_END_REASON_KEY);
+    setSessionNotice(readSessionEndNotice(reason));
+  }, []);
 
   async function resolveSupabaseProfile(email: string) {
     const rows = await supabaseFetch<Array<{ user_type?: string; metadata?: { role_name?: string; profile_kind?: string; access_profile?: string; permissions?: unknown; role_type?: string; role_scope?: string } }>>(
@@ -243,6 +268,8 @@ export default function LoginPage() {
             <h2 className="apex-login-form-title mt-3 text-4xl font-light tracking-[-0.03em] text-[#aebfda]"><strong className="font-black text-[#dce8f5]">Acceso</strong> empresarial</h2>
             <span className="apex-login-environment mt-4 inline-flex rounded bg-[#9eb1cd] px-2 py-0.5 text-xs font-semibold tracking-[0.12em] text-[#162033]">ENTORNO SEGURO</span>
           </div>
+
+          {sessionNotice ? <p className="apex-login-notice mb-6 rounded border border-[#8191aa] bg-[#172131] px-3 py-2 text-sm text-[#aebdd2]" role="status">{sessionNotice}</p> : null}
 
           <div className="space-y-5">
             <label className="apex-login-label block text-sm font-semibold text-[#aebdd2]">
