@@ -42,9 +42,9 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
  await check('single and batch use TimePunch identity photos, retain extra support and ActivityEvidence',async()=>{
   for(const punch of punches){const single=await call('/hr/monitor-evidence/'+(splitIdentity?'identity':'punch')+'/'+punch.id,token);assert.equal(single.status,200);assert.equal(single.body.base64_data,photo);}
   const batch=await call('/hr/monitor-evidence/route/'+route.id,token);assert.equal(batch.status,200);
-  if(splitIdentity){assert.equal(Object.keys(batch.body.identity_evidence).length,4);assert.equal(batch.body.counts.punch_evidence,1);assert.equal(batch.body.punch_evidence[punches[3].id].base64_data,support);}
+  if(splitIdentity){assert.equal(Object.keys(batch.body.identity_evidence).length,4);assert.equal(batch.body.counts.punch_evidence,1);assert.equal(batch.body.punch_evidence[punches[3].id].has_base64_data,true);assert.equal(batch.body.identity_evidence[punches[0].id].has_base64_data,true);assert.equal(batch.body.activity_evidence[activity.id][0].has_base64_data,true);assert.ok(!JSON.stringify(batch.body).includes(';base64,'),'el lote del monitor arrastra bytes de evidencia');const supportFile=await call('/hr/monitor-evidence/punch/'+punches[3].id,token);assert.equal(supportFile.status,200);assert.equal(supportFile.body.base64_data,support);const activityFile=await call('/hr/monitor-evidence/activity/'+activity.evidence[0].id,token);assert.equal(activityFile.status,200);assert.equal(activityFile.body.base64_data,support);}
   else{assert.equal(batch.body.counts.punch_evidence,4);const items=batch.body.punch_evidence[punches[3].id].items;assert.ok(items.some(item=>item.base64_data===photo));assert.ok(items.some(item=>item.base64_data===support));}
-  assert.equal(batch.body.activity_evidence[activity.id][0].base64_data,support);
+  if(!splitIdentity)assert.equal(batch.body.activity_evidence[activity.id][0].base64_data,support);
   for(const [access,expected]of [[null,401],[otherToken,404],[deniedToken,403]])assert.equal((await call('/hr/monitor-evidence/punch/'+punches[0].id,access)).status,expected);
  });
  await require('./hr-employee-user-association-browser-local')({origin,token,pagePath:'/dashboard/talento-humano',artifactName:'hr-punch-mobile-evidence',exercise:async(page,folder)=>{
