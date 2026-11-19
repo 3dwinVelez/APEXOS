@@ -239,6 +239,8 @@ const employeeSchema = {
       last_name: { type: "string" },
       second_last_name: { type: "string" },
       birth_date: { type: "string" },
+      bank_code: { type: "string", maxLength: 3 },
+      bank_account_code: { type: "string", maxLength: 100 },
       email: { type: "string" },
       phone: { type: "string" },
       company_id: { anyOf: [{ type: "integer" }, { type: "string" }] },
