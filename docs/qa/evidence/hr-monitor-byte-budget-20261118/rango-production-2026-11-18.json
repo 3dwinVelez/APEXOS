@@ -1,0 +1,56 @@
+{
+  "format": "APEXOS_TIMEPUNCH_RANGE_READ_V2",
+  "scope": "READ-ONLY. La misma ventana leida cruda y con el lector proyectado del producto; sin DDL, sin DML, sin contenido de cliente en la evidencia.",
+  "target": "production",
+  "project_ref": "jzbwzmkidfthknsohhnr",
+  "tenant_ref": "3f2313a4153c",
+  "candidatos_rango": [
+    {
+      "tenant_ref": "3f2313a4153c",
+      "filas": 53,
+      "bytes_evidencia": 31834919
+    }
+  ],
+  "day": "2026-11-18",
+  "umbral_bytes_metadata": 8192,
+  "umbral_bytes_evidencia": 16,
+  "muestras": 3,
+  "ran_at": "2026-11-19T04:23:56.355Z",
+  "cruda": {
+    "filas": 53,
+    "bytes_fila_completa": 32119048,
+    "bytes_metadata": 22752445,
+    "bytes_extra_evidence": 9337613,
+    "filas_con_binario_largo": 27,
+    "filas_con_selfie": 27,
+    "filas_con_soporte": 9,
+    "ms": 2916,
+    "runs_ms": [
+      3976,
+      2755,
+      2916
+    ]
+  },
+  "proyectada": {
+    "filas": 53,
+    "bytes_fila_completa": 80193,
+    "bytes_metadata": 50735,
+    "bytes_extra_evidence": 212,
+    "filas_con_binario_largo": 0,
+    "filas_con_selfie": 27,
+    "filas_con_soporte": 9,
+    "ms": 736,
+    "runs_ms": [
+      920,
+      731,
+      736
+    ]
+  },
+  "ids_iguales": true,
+  "reduction": {
+    "bytes_x": 400.5,
+    "ms_delta": 2180,
+    "ms_x": 4
+  },
+  "projected_sql_head": " SELECT \"TimePunch\".\"id\" AS \"id\", \"TimePunch\".\"tenant_id\" AS \"tenant_id\", \"TimePunch\".\"employee_id\" AS \"employee_id\", \"TimePunch\".\"user_name\" AS \"user_name\", \"TimePunch\".\"type\" AS \"type\", \"TimePunch\".\"punched_at\" AS \"punched_at\", \"TimePunch\".\"date\" AS \"date\", \"TimePunch\".\"time\" AS \"time\", \"TimePunch\".\"latitude\" AS \"lat"
+}

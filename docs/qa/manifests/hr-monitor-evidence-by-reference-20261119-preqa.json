@@ -1,0 +1,99 @@
+{
+  "change_id": "hr-monitor-evidence-by-reference-20261119",
+  "commit": "edffcb1eee7dbd0ad6e0507f6b3001ebf496388e",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-monitor-budget-20261119",
+  "target_head": "5fcc2ed16eae87d0ce16814462c11ba22abf2488",
+  "qa_status": "pending",
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "edwin",
+    "approved_at": "2026-11-19",
+    "instruction": "Procede con mi autorizacion y no pares hasta garantizar que main quede desplegado con la correccion",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true,
+      "deploy_to_qa": true
+    },
+    "limits": "La autorizacion cubre el mecanismo de promocion, no salta compuertas: cada pierna sigue exigiendo su manifiesto, sus gates y su certificacion E2E ejecutada."
+  },
+  "validation_summary": {
+    "certified_application_commit": "edffcb1eee7dbd0ad6e0507f6b3001ebf496388e",
+    "candidate_base_develop": "5fcc2ed16eae87d0ce16814462c11ba22abf2488",
+    "api_tests_passed": 1164,
+    "api_tests_total": 1168,
+    "api_failures_attributed": "1 rojo preexistente del destino: 6 pg_advisory_xact_lock reintroducidos por liquidacion/libranza en origin/develop (0 en origin/desarrollo)",
+    "web_tests_passed": 819,
+    "web_tests_total": 820,
+    "web_failures_attributed": "1 rojo preexistente del destino: /dashboard/contabilidad/pyg/ampliado ausente del registro de la paleta",
+    "typescript": "passed",
+    "hr_targeted_tests_passed": 30,
+    "budget_gate_selftest": "passed 4/4 con rojos provocados",
+    "e2e_demand_certification": "passed 10/10 contra datos reales de QA",
+    "budget_baseline_deployed_qa": "passed (mapa p95 1044 ms, contadores 794 ms, reporte 524 ms)",
+    "completed_at_utc": "2026-11-19T05:37:08.937Z"
+  },
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-monitor-evidence-by-reference-20261119.md",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json",
+        "../evidence/hr-monitor-evidence-by-reference-20261118/produccion-antes-despues-dia.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-monitor-evidence-by-reference-20261119.md",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/arnes-pooler-atribucion.txt"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-monitor-evidence-by-reference-20261119.md",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/arnes-pooler-atribucion.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-monitor-evidence-by-reference-20261119.md",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-monitor-evidence-by-reference-20261119.md",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/suites-y-medicion.txt",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json",
+        "../evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-candidato-local-pool3.json"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-evidence-demand-qa.js",
+    "evidence": [
+      "../evidence/hr-monitor-evidence-by-reference-develop-20261119/certificacion-evidencia-bajo-demanda-qa.json",
+      "../certifications/hr-monitor-evidence-by-reference-20261119.md"
+    ]
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/hr-monitor-byte-budget.js",
+    "evidence": [
+      "../evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-qa-desplegada-lineabase.json",
+      "../evidence/hr-monitor-evidence-by-reference-develop-20261119/presupuesto-candidato-local-pool3.json",
+      "../evidence/hr-monitor-evidence-by-reference-develop-20261119/arnes-pooler-atribucion.txt",
+      "../certifications/hr-monitor-evidence-by-reference-20261119.md"
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "change_id": "hr-monitor-byte-budget",
+  "environment": "qa",
+  "api_url": "apexos-api-qa-production.up.railway.app",
+  "date": "2026-11-19",
+  "generated_at": "2026-11-19T05:28:47.850Z",
+  "samples_per_endpoint": 5,
+  "budgets": {
+    "listing_bytes": 4194304,
+    "p95_ms": 3000,
+    "inline_base64_chars": 8192
+  },
+  "baseline": {
+    "source": "docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md",
+    "before": {
+      "bytes": 46556774.4,
+      "ms": [
+        7740,
+        9790
+      ]
+    },
+    "after": {
+      "bytes": 157696,
+      "ms": [
+        940,
+        1060
+      ]
+    },
+    "proof": "mismo dia, mismo tenant, mismos ids y mismo conteo de evidencias (27=27, 25=25)"
+  },
+  "measurements": [
+    {
+      "key": "operations_map",
+      "label": "Mapa del dia",
+      "samples": 5,
+      "bytes": 33958,
+      "p50_ms": 612,
+      "p95_ms": 1044,
+      "max_ms": 1044,
+      "inline_payloads": []
+    },
+    {
+      "key": "event_summaries",
+      "label": "Contadores de eventos",
+      "samples": 5,
+      "bytes": 4285,
+      "p50_ms": 666,
+      "p95_ms": 794,
+      "max_ms": 794,
+      "inline_payloads": []
+    },
+    {
+      "key": "attendance_day",
+      "label": "Reporte de asistencia (un dia)",
+      "samples": 5,
+      "bytes": 15400,
+      "p50_ms": 483,
+      "p95_ms": 524,
+      "max_ms": 524,
+      "inline_payloads": []
+    }
+  ],
+  "failures": [],
+  "status": "passed"
+}

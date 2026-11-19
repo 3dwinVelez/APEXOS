@@ -1,0 +1,38 @@
+# Suites del candidato codex/qa-hr-monitor-budget-20261119 (2026-11-19)
+# arbol evaluado: c66314de sobre origin/develop 5fcc2ed1
+
+## apps/api  ::  DISABLE_REDIS=true node --test "test/*.test.js"
+# tests 1168
+# suites 0
+# pass 1164
+# fail 1
+# cancelled 0
+# skipped 3
+rojo unico: fix concurrencia: ninguna escritura de Talento Humano deja un lock bloqueante
+  apps/api/test/hr-marking-concurrency.test.js:224 exige 0 pg_advisory_xact_lock y 4 acquireBoundedScopeLocks
+  pg_advisory_xact_lock en origin/develop: 6  |  en origin/desarrollo: 0
+  deuda del destino (liquidacion/libranza), ningun hunk de este candidato toca esos sitios
+
+## apps/web  ::  node --test "test/*.test.js" "test/*.test.mjs"
+# tests 820
+# suites 0
+# pass 819
+# fail 1
+# cancelled 0
+# skipped 0
+rojo unico: el registro de funciones cubre todas las rutas del dashboard
+  apps/web/test/command-palette-module-functions.test.mjs:57 · falta /dashboard/contabilidad/pyg/ampliado
+  deuda del frente PYG/Contabilidad en el arbol del destino, ajena a Talento Humano
+
+## typecheck web  ::  npm run typecheck
+sin errores (exit 0)
+
+## selftest del gate de presupuesto  ::  npm run certify:hr-monitor-budget:selftest
+# Puerta de presupuesto del monitor — selftest (el gate debe poder fallar)
+# comando: npm run certify:hr-monitor-budget:selftest
+# ejecutado: 2026-11-19T04:24:14Z
+OK   gordo-rojo -> Listado con binario inline: 46556774 bytes superan el presupuesto de 4194304 | Listado con binario inline: p95 de 7740 ms supera el presupuesto de 3000 ms | Listado con binario inline: 1 binario(s) inline en el listado (peor 2097175 caracteres)
+OK   anunciado-verde
+OK   lento-rojo -> Listado anunciado pero lento: p95 de 5200 ms supera el presupuesto de 3000 ms
+OK   volumen-rojo -> Listado gordo sin data URL: 12582912 bytes superan el presupuesto de 4194304
+SELFTEST APROBADO: el gate falla con binario inline o latencia fuera de presupuesto y pasa con el aviso por referencia.

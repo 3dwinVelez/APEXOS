@@ -22,8 +22,13 @@ test("lee la selfie en las dos formas en que puede estar guardada", () => {
   assert.match(page, /content\.startsWith\("data:"\)/);
 });
 
-test("cuenta selfie y soporte de horas extra", () => {
-  assert.match(page, /punch\.extra_evidence\?\.base64_data \|\| punch\.extra_evidence\?\.file_url/);
+test("cuenta selfie y soporte de horas extra, también cuando el listado solo los anuncia", () => {
+  // Contrato del 2026-11-19: `/hr/attendance` dejo de arrastrar el binario (MAR-109) y anuncia
+  // el soporte con `has_base64_data`; el archivo lo pide `HrTimelineEvidence` por id. Contar
+  // solo los bytes habria dejado el reporte otra vez en "Sin evidencia fotografica".
+  assert.match(page, /punchEvidenceAnnounced\(punch\.extra_evidence\) \? 1 : 0/);
+  assert.match(page, /evidence\.has_base64_data \|\| evidence\.base64_data \|\| evidence\.base64/);
+  assert.match(page, /if \(punchEvidenceAnnounced\(punch\.extra_evidence\)\) photos\.push\(\{ \.\.\.punch\.extra_evidence, id: punch\.id, source: "punch" \}\)/);
 });
 
 test("muestra la selfie y la insignia de identidad verificada", () => {

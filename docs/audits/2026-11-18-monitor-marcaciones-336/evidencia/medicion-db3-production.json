@@ -1,0 +1,310 @@
+{
+  "target": "production",
+  "ran_at": "2026-11-19T01:55:51.286Z",
+  "tp_metadata_keys": [
+    {
+      "key": "identity_photo",
+      "filas": 46,
+      "bytes_max": 2699051,
+      "bytes_sum": 29692530,
+      "filas_con_base64": 46
+    },
+    {
+      "key": "identity_aliases",
+      "filas": 1799,
+      "bytes_max": 85,
+      "bytes_sum": 137077,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "hr_evidence_rescue_extra",
+      "filas": 270,
+      "bytes_max": 387,
+      "bytes_sum": 101488,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "idempotency_key",
+      "filas": 1787,
+      "bytes_max": 48,
+      "bytes_sum": 85776,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "employee_code",
+      "filas": 1799,
+      "bytes_max": 47,
+      "bytes_sum": 69467,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "employee_name",
+      "filas": 1799,
+      "bytes_max": 47,
+      "bytes_sum": 69467,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "supplied_user_name",
+      "filas": 1799,
+      "bytes_max": 47,
+      "bytes_sum": 69467,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "user_email",
+      "filas": 1799,
+      "bytes_max": 42,
+      "bytes_sum": 69409,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "source",
+      "filas": 1799,
+      "bytes_max": 25,
+      "bytes_sum": 44963,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "mileage",
+      "filas": 310,
+      "bytes_max": 114,
+      "bytes_sum": 34920,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "tracking_mode",
+      "filas": 1787,
+      "bytes_max": 15,
+      "bytes_sum": 26805,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "display_route_id",
+      "filas": 1799,
+      "bytes_max": 15,
+      "bytes_sum": 26653,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "route_code",
+      "filas": 1799,
+      "bytes_max": 15,
+      "bytes_sum": 26653,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "source_route_id",
+      "filas": 1799,
+      "bytes_max": 12,
+      "bytes_sum": 21588,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "legacy_route_id",
+      "filas": 1799,
+      "bytes_max": 12,
+      "bytes_sum": 21588,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "current_user_only",
+      "filas": 1799,
+      "bytes_max": 12,
+      "bytes_sum": 21588,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "gps_required",
+      "filas": 1787,
+      "bytes_max": 12,
+      "bytes_sum": 21444,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "offline",
+      "filas": 1787,
+      "bytes_max": 12,
+      "bytes_sum": 21444,
+      "filas_con_base64": 0
+    }
+  ],
+  "gps_totales": {
+    "filas": 6522,
+    "metadata_total": "30 MB",
+    "metadata_max": 2699741,
+    "metadata_prom": 4761,
+    "tabla_total": "36 MB"
+  },
+  "gps_metadata_keys": [
+    {
+      "key": "identity_photo",
+      "filas": 44,
+      "bytes_max": 2699051,
+      "bytes_sum": 28515560,
+      "filas_con_base64": 44
+    },
+    {
+      "key": "identity_aliases",
+      "filas": 6243,
+      "bytes_max": 175,
+      "bytes_sum": 381312,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "employee_name",
+      "filas": 6243,
+      "bytes_max": 54,
+      "bytes_sum": 237651,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "supplied_user_name",
+      "filas": 6243,
+      "bytes_max": 54,
+      "bytes_sum": 236302,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "employee_code",
+      "filas": 6243,
+      "bytes_max": 47,
+      "bytes_sum": 233318,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "source",
+      "filas": 5951,
+      "bytes_max": 54,
+      "bytes_sum": 168715,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "user_email",
+      "filas": 2335,
+      "bytes_max": 73,
+      "bytes_sum": 99744,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "display_route_id",
+      "filas": 6168,
+      "bytes_max": 15,
+      "bytes_sum": 89221,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "route_code",
+      "filas": 6168,
+      "bytes_max": 15,
+      "bytes_sum": 89221,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "idempotency_key",
+      "filas": 1756,
+      "bytes_max": 48,
+      "bytes_sum": 84288,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "legacy_route_id",
+      "filas": 6168,
+      "bytes_max": 12,
+      "bytes_sum": 74016,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "source_route_id",
+      "filas": 6168,
+      "bytes_max": 12,
+      "bytes_sum": 74016,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "current_user_only",
+      "filas": 5372,
+      "bytes_max": 12,
+      "bytes_sum": 64464,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "type",
+      "filas": 2239,
+      "bytes_max": 27,
+      "bytes_sum": 49606,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "tracking_mode",
+      "filas": 1871,
+      "bytes_max": 15,
+      "bytes_sum": 28065,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "gps_required",
+      "filas": 1871,
+      "bytes_max": 12,
+      "bytes_sum": 22452,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "offline",
+      "filas": 1862,
+      "bytes_max": 12,
+      "bytes_sum": 22344,
+      "filas_con_base64": 0
+    },
+    {
+      "key": "identity_verification",
+      "filas": 197,
+      "bytes_max": 339,
+      "bytes_sum": 15082,
+      "filas_con_base64": 0
+    }
+  ],
+  "viaje": {
+    "punch_bytes": 28925433,
+    "ping_bytes": 16919216,
+    "punch_bytes_sin_b64": 15458
+  },
+  "ping_read_ms": 5004,
+  "ping_read_rows": 218,
+  "ping_read_bytes": 17240965,
+  "dia_b64": {
+    "filas": 49,
+    "con_b64": 26,
+    "max_meta": 2700091
+  },
+  "dia_muestra": [
+    {
+      "id": 2321,
+      "route_id": 335,
+      "type": "inicio_almuerzo",
+      "meta": 2700091,
+      "muestra": "{\"source\": \"apexos-mobile\", \"offline\": false, \"route_code\": \"335\", \"user_email\": \"anon@redacted\", \"gps_required\": t"
+    },
+    {
+      "id": 2305,
+      "route_id": 328,
+      "type": "entrada",
+      "meta": 2381903,
+      "muestra": "{\"source\": \"apexos-mobile\", \"offline\": false, \"route_code\": \"328\", \"user_email\": \"anon@redacted\", \"gps_required\": tr"
+    },
+    {
+      "id": 2348,
+      "route_id": 334,
+      "type": "salida",
+      "meta": 2024381,
+      "muestra": "{\"source\": \"apexos-mobile\", \"mileage\": {\"unit\": \"km\", \"value\": 34541, \"unusual\": true, \"threshold\": 450, \"vehicle_plate\": \"PUN774\""
+    },
+    {
+      "id": 2347,
+      "route_id": 334,
+      "type": "fin_almuerzo",
+      "meta": 1885061,
+      "muestra": "{\"source\": \"apexos-mobile\", \"offline\": false, \"route_code\": \"334\", \"user_email\": \"anon@redacted\", \"gps_required\": tru"
+    }
+  ]
+}
