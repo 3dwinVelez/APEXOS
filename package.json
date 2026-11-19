@@ -87,6 +87,8 @@
     "certify:hr-monitor-budget:selftest": "node scripts/certifications/hr-monitor-byte-budget.js --selftest",
     "certify:hr-monitor-budget:qa": "node scripts/certifications/hr-monitor-byte-budget.js --env-file=config/qa.env",
     "certify:hr-monitor-budget:production": "node scripts/certifications/hr-monitor-byte-budget.js --env-file=config/production.env",
+    "certify:hr-auth-latency:qa": "node scripts/certifications/hr-auth-latency-differential.js --env=qa --limit=3",
+    "certify:hr-auth-latency:production": "node scripts/certifications/hr-auth-latency-differential.js --env=production --limit=3",
     "certify:hr-marking-gate:qa": "node scripts/certifications/hr-marking-gate-qa.js",
     "certify:hr-schedule-write-integrity:local": "node scripts/certifications/hr-schedule-write-integrity-local.js --output=docs/qa/evidence/hr-schedule-write-integrity-20260920/local-simulation-certification.json",
     "certify:hr-route-p2028:local": "node scripts/certifications/hr-route-p2028-local.js --output=docs/qa/evidence/hr-route-p2028-20261026/local-certification.json",

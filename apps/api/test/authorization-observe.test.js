@@ -21,6 +21,16 @@ function fixture(overrides = {}) {
     updated: []
   };
   const prisma = {
+    // La decision se toma en una sola sentencia (AUTHORIZATION_SNAPSHOT): el mock reproduce sus
+    // condiciones, asi un sid que no es del usuario sigue sin devolver sesion.
+    async $queryRawUnsafe(_sql, sid, uid) {
+      if (!state.user || state.user.id !== uid) return [];
+      const { authorization_tenant_version, ...columns } = state.user;
+      const hit = sid && state.session && state.session.id === sid && state.session.user_id === state.user.id
+        ? state.session
+        : null;
+      return [{ user: columns, role: columns.role || null, tenant: state.tenant, session: hit ? { ...hit } : null }];
+    },
     user: {
       async findUnique({ where }) {
         return state.user && state.user.id === where.id ? state.user : null;
