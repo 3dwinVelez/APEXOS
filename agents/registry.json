@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-11-18",
+  "generated_at": "2026-11-19",
   "canonical_root": ".qoder/skills",
   "mirror_root": "agents",
   "semver_policy": {
@@ -287,9 +287,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.73.0",
+      "version": "2.74.0",
       "updated_at": "2026-11-19",
-      "sha256": "7fb9466f8813497b5ccd76090cd6237b7fbee44d89bb335c574a89e8a4d50d23",
+      "sha256": "c327724e0b1005d2620c906bf3ce91ab7b580d2bbcfb070932cd34c132470dce",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -350,7 +350,8 @@
         "certificacion-ambiente-anclada-al-commit",
         "purga-se-certifica-con-lector-stubbeado",
         "ausencia-se-certifica-con-tormenta-fabricada",
-        "puerta-de-presupuesto-se-demuestra-roja"
+        "puerta-de-presupuesto-se-demuestra-roja",
+        "columna-antes-en-el-ambiente-desplegado"
       ]
     },
     {
@@ -398,9 +399,9 @@
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.44.0",
+      "version": "2.45.0",
       "updated_at": "2026-11-19",
-      "sha256": "5df48378eaa662cbf17bc518225048bce05951f64c546c25488eee66c5c609c2",
+      "sha256": "60d50644a637c3b1cf8a99c6a4c56b30b3a05fda3a67d93d14b00f611cd916e3",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -438,7 +439,8 @@
         "curaduria-portafolio-por-evidencia",
         "evidencia-de-ambiente-es-intervencion-completa",
         "arbol-barrido-se-reconstruye-y-se-publica",
-        "garantia-de-experiencia-traducida-a-numero"
+        "garantia-de-experiencia-traducida-a-numero",
+        "inventario-de-manifiesto-contra-el-tip"
       ]
     }
   ],

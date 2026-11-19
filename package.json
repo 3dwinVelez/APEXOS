@@ -93,6 +93,7 @@
     "certify:hr-contention-p2028:local": "node scripts/certifications/hr-contention-p2028-local.js --output=docs/qa/evidence/hr-contention-p2028-20261026/local-certification.json --fixture-output=docs/qa/evidence/hr-contention-p2028-20261026/local-fixture.json",
     "certify:hr-contention-message-browser:local": "node scripts/certifications/hr-contention-message-browser-local.js --output=docs/qa/evidence/hr-contention-message-browser-20261026",
     "certify:technical-alerts-silence:local": "node scripts/certifications/technical-alert-silence-browser-local.js",
+    "certify:technical-alerts-silence:qa": "node scripts/certifications/technical-alert-silence-browser-qa.js",
     "certify:hr-offline-deferred-marking:local": "node scripts/certifications/hr-offline-deferred-marking-local.js --output=docs/qa/evidence/hr-offline-deferred-marking-20260921/local-certification.json",
     "certify:transport-tms:local": "node scripts/certifications/transport-tms-local.js",
     "certify:transport-four-stage:local": "node scripts/certifications/transport-four-stage-functional-local.js",
