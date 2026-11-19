@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { api } from "../../../../lib/api";
 import { API_BASE_URL } from "../../../../lib/apiBaseUrl";
+import TerminationManualAdjustments from "../../../../components/hr/TerminationManualAdjustments";
 
 type Employee = { id: number; code?: string; name?: string; contract_type?: string; metadata?: { name?: string; document?: string; document_type?: string } };
 type Line = { code: string; name: string; quantity: number; rate: number; amount: number; source?: string; salary_constitutive?: boolean; metadata?: { date_start?: string; date_end?: string; base?: number }; accrued_amount?: number; paid_amount?: number; balance_amount?: number };
@@ -56,6 +57,7 @@ export default function EmployeeTerminationLiquidationPage() {
   const [preview, setPreview] = useState<TerminationDocument | null>(null);
   const [selected, setSelected] = useState<TerminationDocument | null>(null);
   const [busy, setBusy] = useState(false);
+  const [manualBusy, setManualBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState({ employee_id: "", termination_date: today, termination_reason: "retiro_voluntario", contract_type: "indefinite", pending_start: "", recalculate: false, mark_inactive: false });
 
@@ -192,7 +194,7 @@ export default function EmployeeTerminationLiquidationPage() {
     window.open(URL.createObjectURL(blob), "_blank", "noopener,noreferrer");
   }
 
-  const canRun = contractReady && !contractLoading && Boolean(form.employee_id && form.termination_date && form.termination_reason);
+  const canRun = contractReady && !contractLoading && !manualBusy && Boolean(form.employee_id && form.termination_date && form.termination_reason);
   const rows = preview ? [preview, ...documents] : documents;
 
   return (
@@ -208,7 +210,7 @@ export default function EmployeeTerminationLiquidationPage() {
       {message ? <p className="rounded-md border border-line bg-white p-3 text-sm text-neutral-700">{message}</p> : null}
 
       <section className="rounded-md border border-line bg-white p-4">
-        <fieldset disabled={busy}>
+        <fieldset disabled={busy || manualBusy}>
         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
           <div className="relative text-sm">
             <label htmlFor="termination-employee-document">Empleado</label>
@@ -216,7 +218,7 @@ export default function EmployeeTerminationLiquidationPage() {
               <Search aria-hidden="true" className="absolute left-3 top-3 text-neutral-500" size={16} />
               <input id="termination-employee-document" type="search" autoComplete="off" maxLength={80}
                 className="h-10 w-full rounded-md border border-line pl-9 pr-3"
-                placeholder="Número de documento" value={employeeQuery} disabled={busy}
+                placeholder="Número de documento" value={employeeQuery} disabled={busy || manualBusy}
                 onChange={(event) => {
                   setEmployeeQuery(event.target.value);
                   setSelectedEmployee(null);
@@ -266,7 +268,7 @@ export default function EmployeeTerminationLiquidationPage() {
           </label>
           <label className="text-sm">Pendientes desde (opcional)<input className="mt-1 h-10 w-full rounded-md border border-line px-3" type="date" value={form.pending_start} max={form.termination_date} onChange={event => setForm(current => ({ ...current, pending_start: event.target.value }))} /><span className="text-xs text-neutral-500">Por defecto: desde la última nómina o el ingreso.</span></label>
         </div>
-        <p className="mt-3 text-sm text-neutral-600">Las bonificaciones y conceptos manuales se registran en <Link className="font-semibold text-apex underline" href="/dashboard/talento-humano/nomina">Ajustes de nómina</Link>, con empleado, fecha y periodo. Se incluyen los pendientes según su clasificación salarial. Los conceptos personalizados deben estar configurados en el maestro. Las prestaciones ya pagadas se descuentan y los pagos del retiro quedan incluidos en este mismo neto.</p>
+        <p className="mt-3 text-sm text-neutral-600">Registra las bonificaciones y conceptos manuales en la sección de abajo. Los conceptos personalizados conservan la clasificación del maestro. Las prestaciones ya pagadas se descuentan y los pagos del retiro quedan incluidos en este mismo neto.</p>
         {loans.length ? <fieldset className="mt-4 space-y-3 rounded-md border border-line p-3">
           <legend className="px-1 text-sm font-semibold">Libranzas al corte</legend>
           <p className="text-xs text-neutral-600">Se intentará cancelar el saldo con autorización expresa para la liquidación final. Se preserva el 50 % del salario neto después de descuentos. Las prestaciones solo se usan con autorización y revisión jurídica del porcentaje; la indemnización queda excluida. El saldo no cubierto seguirá pendiente.</p>
@@ -288,6 +290,8 @@ export default function EmployeeTerminationLiquidationPage() {
         </div>
         </fieldset>
       </section>
+
+      <TerminationManualAdjustments employeeId={Number(form.employee_id) || null} terminationDate={form.termination_date} pendingStart={form.pending_start} disabled={busy} onBusy={setManualBusy} onChanged={() => { setPreview(null); setSelected(null); }} />
 
       <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
         <div className="rounded-md border border-line bg-white">
