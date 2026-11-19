@@ -6307,6 +6307,17 @@ async function createPayrollAdjustment(tenantId, input = {}, user = {}) {
       code: "AJUSTE_NOMINA_CONCURRENCIA_TEMPORAL"
     });
     const employeeTenant = await tx.$queryRaw`SELECT id FROM "Employee" WHERE id = ${employeeId} AND tenant_id = ${tenantId} LIMIT 1`;
+    if (metadata.source === "liquidacion_trabajador" && metadata.request_id) {
+      const existing = await tx.$queryRaw`SELECT * FROM th_nomina_ajustes WHERE tenant_id = ${tenantId} AND employee_id = ${employeeId}
+        AND metadata->>'source' = 'liquidacion_trabajador' AND metadata->>'request_id' = ${String(metadata.request_id)} LIMIT 1`;
+      if (existing[0]) {
+        const row = existing[0];
+        if (row.status !== "activo" || row.concept_code !== conceptCode || row.period_key !== periodKey || Number(row.amount) !== Number(input.amount) || row.metadata?.work_date !== metadata.work_date || row.description !== String(input.description || "").trim()) {
+          throw validationError("La solicitud ya fue utilizada con otros datos o fue anulada.", 409, "SOLICITUD_MANUAL_RETIRO_DUPLICADA");
+        }
+        return row;
+      }
+    }
     if (!employeeTenant[0]) throw validationError("Empleado no pertenece al tenant activo.", 404, "EMPLEADO_NO_ENCONTRADO");
     if (metadata.advance_obligation_id) {
       const duplicateAdvance = await tx.$queryRaw`
@@ -7891,7 +7902,12 @@ async function listPayroll(tenantId, query = {}) {
   });
 }
 
+const terminationManualAdjustments = require("./terminationManualAdjustments")({ db: prisma, conceptsFor: activePayrollConcepts, create: createPayrollAdjustment, remove: deletePayrollAdjustment, error: validationError });
+
 module.exports = {
+  listTerminationManualAdjustments: terminationManualAdjustments.list,
+  addTerminationManualAdjustment: terminationManualAdjustments.add,
+  cancelTerminationManualAdjustment: terminationManualAdjustments.cancel,
   __setRouteLockWaitMsForTests: setRouteLockWaitMsForTests,
   __setContentionLockWaitMsForTests: setContentionLockWaitMsForTests,
   listSchedules,

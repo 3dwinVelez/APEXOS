@@ -778,7 +778,16 @@ const preopSubmitSchema = {
   }
 };
 
+const terminationManualAdjustmentSchema = {
+  body: { type: "object", required: ["employee_id", "termination_date", "work_date", "concept_code", "amount", "request_id"], properties: {
+    employee_id: { anyOf: [{ type: "integer" }, { type: "string" }] }, termination_date: { type: "string" }, pending_start: { type: "string" },
+    work_date: { type: "string" }, concept_code: { type: "string", maxLength: 100 }, amount: { anyOf: [{ type: "number" }, { type: "string" }] },
+    description: { type: "string", maxLength: 500 }, request_id: { type: "string", maxLength: 36 }
+  } }
+};
+
 module.exports = {
+  terminationManualAdjustmentSchema,
   scheduleSchema,
   punchSchema,
   routeSchema,

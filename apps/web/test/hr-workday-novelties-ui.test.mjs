@@ -281,6 +281,11 @@ test("employee termination liquidation page supports severance balances and inde
   assert.match(source, /Tipo contrato vigente/);
   assert.match(source, /<dialog ref=\{detailDialog\}/);
   assert.match(source, /libranza_authorizations: authorizations/);
+  assert.match(source, /<TerminationManualAdjustments employeeId=/);
+  const manual = read("components/hr/TerminationManualAdjustments.tsx");
+  assert.match(manual, /Bonificaciones y conceptos manuales/);
+  assert.match(manual, /Registrar concepto/);
+  assert.match(manual, /request_id: requestId.current/);
   assert.match(source, /Saldos de prestaciones/);
   assert.match(source, /Indemnizacion/);
   assert.match(source, /\/api\/v1\/talento-humano\/liquidacion-trabajador\/preview/);
