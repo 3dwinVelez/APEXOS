@@ -184,7 +184,7 @@ function stepsForPath(pathname: string): CoachStep[] {
       {
         id: "time-route-vehicle",
         selector: 'a[href="/dashboard/talento-humano/rutas"]',
-        title: "Asignar horarios",
+        title: "Horarios y mallas",
         body: "Los horarios asignan personas, recurso opcional, tolerancia y viaticos antes de que el usuario marque.",
         action: "Asignar horario"
       }

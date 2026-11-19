@@ -1,0 +1,185 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-unified-schedules-20261119",
+  "base_commits": {
+    "develop": "fd407e8150d158a38757b30dcdff11531abe1e40"
+  },
+  "target_head": "fd407e8150d158a38757b30dcdff11531abe1e40",
+  "certified_commit": "c0e2283673c83d0fc61fd7cd0fe85101bb14bbcc",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "c0e2283673c83d0fc61fd7cd0fe85101bb14bbcc",
+    "original_commits": [
+      "5ae04c50",
+      "890b72d9",
+      "2db0682d"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/shell/MobileNav.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "apps/web/test/hr-unified-schedules.test.mjs",
+    "scripts/certifications/hr-landing-hub-local.js",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "docs/qa/certifications/hr-unified-schedules-20261119.md"
+  ],
+  "change_intent": {
+    "summary": "Unificar Horarios y mallas en Programacion y Seguimiento, corregir accesos Bancos/PYG ampliado y pruebas de navegacion; conservar monitor y evidencias por referencia vigentes.",
+    "modules": [
+      "hr",
+      "accounting",
+      "navigation"
+    ]
+  },
+  "allowed_paths": [
+    "apps/web/app/dashboard/talento-humano/page.tsx",
+    "apps/web/app/dashboard/talento-humano/rutas/page.tsx",
+    "apps/web/components/brain/AiExperienceLayer.tsx",
+    "apps/web/components/shell/MobileNav.tsx",
+    "apps/web/lib/moduleFunctions.ts",
+    "apps/web/test/command-palette-module-functions.test.mjs",
+    "apps/web/test/hr-route-write-fallback.test.mjs",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "apps/web/test/hr-unified-schedules.test.mjs",
+    "scripts/certifications/hr-landing-hub-local.js",
+    "scripts/certifications/hr-punch-mobile-evidence-local.js",
+    "docs/qa/certifications/hr-unified-schedules-20261119.md",
+    "docs/qa/manifests/hr-unified-schedules-20261119-scope.json",
+    "docs/qa/manifests/hr-unified-schedules-20261119-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/rutas/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/brain/AiExperienceLayer.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/components/shell/MobileNav.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/lib/moduleFunctions.ts"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/command-palette-module-functions.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-route-write-fallback.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "apps/web/test/hr-unified-schedules.test.mjs"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-landing-hub-local.js"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-punch-mobile-evidence-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-unified-schedules-20261119.md"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-unified-schedules-20261119-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-unified-schedules-20261119-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "single_schedule_hub_and_existing_deep_links",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "schedule_create_edit_clone_and_persistence",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "tracking_read_only_desktop_and_mobile",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "monitor_GPS_counters_and_no_inline_photo_bytes",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "punch_and_activity_photo_viewer_and_journey_reports",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "bank_and_expanded_PYG_command_navigation",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "HR_RBAC_tenant_isolation_and_operational_fallback_guards",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    },
+    {
+      "name": "authenticated_session_navigation_reload_and_history",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-unified-schedules-20261119.md",
+        "hr-unified-schedules-20261119-preqa.json"
+      ]
+    }
+  ],
+  "traceability": "Punctual reconstruction of reviewed desarrollo commits on current remote develop. Conflict resolution retains counterText, reference-only evidence batch and current palette portfolio rules. No API implementation changes, migrations, financial calculations or unrelated workspace files. Separate payroll-period fix remains outside this scope."
+}

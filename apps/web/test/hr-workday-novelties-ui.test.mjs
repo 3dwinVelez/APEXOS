@@ -12,7 +12,9 @@ test("talent landing exposes novelties, employees and mallas navigation", () => 
   assert.match(source, /Maestro de empleados/);
   assert.match(source, /Entidades y afiliaciones/);
   assert.match(source, /Configuración laboral/);
-  assert.match(source, /\/dashboard\/talento-humano\/mallas/);
+  assert.match(source, /title: "Horarios y mallas"/);
+  assert.match(source, /\/dashboard\/talento-humano\/rutas/);
+  assert.doesNotMatch(source, /href: "\/dashboard\/talento-humano\/mallas"/);
 });
 
 test("mobile closing flow requires day mileage when the schedule has a vehicle", () => {
@@ -355,7 +357,11 @@ test("social benefit provisions live outside payroll liquidation", () => {
   assert.match(source, /Provisionar/);
   assert.doesNotMatch(payroll, /provisiones y aportes/);
   assert.match(payroll, /periodRangeError/);
-  assert.match(payroll, /no puede ser menor que la inicial/);
+  // La pagina publicada conserva la validacion inline; desarrollo puede usar el
+  // validador compartido del arreglo independiente de periodos. Ambos deben bloquear fechas invertidas.
+  const rangeValidation = payroll.includes("payrollPeriodError(") ? read("lib/payroll-period.ts") : payroll;
+  assert.match(rangeValidation, /no puede ser menor que la inicial/);
+  if (payroll.includes("payrollPeriodError(")) assert.match(payroll, /payrollPeriodError\(periodType, startDate, endDate\)/);
   assert.match(payroll, /payrollReceiptLines/);
   assert.match(payroll, /SOCIAL_BENEFIT_LINE_CODES/);
   assert.doesNotMatch(payroll, /<th className="px-3 py-2">Origen<\/th>/);
