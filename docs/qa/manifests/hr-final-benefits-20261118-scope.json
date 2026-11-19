@@ -1,0 +1,180 @@
+{
+  "scope_schema_version": 2,
+  "change_id": "hr-final-benefits-20261118",
+  "base_commits": {
+    "develop": "d329b884ae91af1f7473526a70f88db5c7a26d46"
+  },
+  "target_head": "d329b884ae91af1f7473526a70f88db5c7a26d46",
+  "certified_commit": "3ea3db87372dc57ff42ece09e1239421c3aad906",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "promotion_branch": "codex/qa-hr-employee-user-link-20261104",
+  "candidate_source": {
+    "branch": "desarrollo",
+    "commit": "3ea3db87372dc57ff42ece09e1239421c3aad906",
+    "original_commits": [
+      "3b61da3f13c6c88422aee763feb99b9312ff1c3e",
+      "53a6da1270d50e894ee9e6188e6c1a37d2fc7da8",
+      "1877596ee028f20c265a587d8e617a3a1a6e5a01"
+    ]
+  },
+  "certified_functional_paths": [
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationBenefitPayments.js",
+    "apps/api/src/modules/hr/terminationBenefits.js",
+    "apps/api/src/modules/hr/terminationDeductions.js",
+    "apps/api/test/hr-termination-benefits.test.js",
+    "apps/api/test/hr-termination-deductions.test.js",
+    "apps/api/test/hr-workday-novelties-contract.test.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-termination-complete-20261118.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-complete-local.js"
+  ],
+  "change_intent": {
+    "summary": "Final employee liquidation with pending payroll, authorized loan deductions, salary classified manual concepts and four integrated benefit payments.",
+    "modules": [
+      "hr"
+    ]
+  },
+  "allowed_paths": [
+    "apps/api/src/modules/hr/schema.js",
+    "apps/api/src/modules/hr/service.js",
+    "apps/api/src/modules/hr/terminationBenefitPayments.js",
+    "apps/api/src/modules/hr/terminationBenefits.js",
+    "apps/api/src/modules/hr/terminationDeductions.js",
+    "apps/api/test/hr-termination-benefits.test.js",
+    "apps/api/test/hr-termination-deductions.test.js",
+    "apps/api/test/hr-workday-novelties-contract.test.js",
+    "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx",
+    "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx",
+    "apps/web/test/hr-workday-novelties-ui.test.mjs",
+    "docs/qa/certifications/hr-termination-complete-20261118.md",
+    "scripts/certifications/hr-employee-user-association-isolated-local.js",
+    "scripts/certifications/hr-termination-complete-local.js",
+    "docs/qa/manifests/hr-final-benefits-20261118-scope.json",
+    "docs/qa/manifests/hr-final-benefits-20261118-preqa.json"
+  ],
+  "expected_changes": [
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/schema.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/src/modules/hr/service.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationBenefitPayments.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationBenefits.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/src/modules/hr/terminationDeductions.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-termination-benefits.test.js"
+    },
+    {
+      "status": "A",
+      "file": "apps/api/test/hr-termination-deductions.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/api/test/hr-workday-novelties-contract.test.js"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/liquidacion-trabajador/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/app/dashboard/talento-humano/prestaciones-pagos/page.tsx"
+    },
+    {
+      "status": "M",
+      "file": "apps/web/test/hr-workday-novelties-ui.test.mjs"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/certifications/hr-termination-complete-20261118.md"
+    },
+    {
+      "status": "M",
+      "file": "scripts/certifications/hr-employee-user-association-isolated-local.js"
+    },
+    {
+      "status": "A",
+      "file": "scripts/certifications/hr-termination-complete-local.js"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-final-benefits-20261118-scope.json"
+    },
+    {
+      "status": "A",
+      "file": "docs/qa/manifests/hr-final-benefits-20261118-preqa.json"
+    }
+  ],
+  "allowed_deletions": [],
+  "protected_capabilities": [
+    {
+      "name": "document_search_and_master_contract",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "final_modal_and_manual_salary_classification",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "four_benefit_payment_functions_and_reversals",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "no_double_payroll_for_settled_period_and_rehire",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "loan_limits_and_idempotent_recalculation",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "tenant_isolation_and_payroll_RBAC",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    },
+    {
+      "name": "current_develop_payroll_legal_controls_and_IBC",
+      "status": "passed",
+      "evidence": [
+        "../certifications/hr-termination-complete-20261118.md"
+      ]
+    }
+  ],
+  "traceability": "Punctual reconstruction of reviewed desarrollo commits on current develop. Preserve current SMMLV indemnization, payroll support, overtime limits, IBC and close controls."
+}
