@@ -1,0 +1,22 @@
+# Paquetes 1a-1f — suite del dominio HR (apps/api)
+# rama: desarrollo  base: 4f5a6e4b  corrida: 2026-11-19T02:47:28Z
+# comando: cd apps/api && node --test test/hr-*.test.js
+# linea base: el unico archivo de prueba tocado conserva 7 tests (git show HEAD:...|grep -c '^test(' = 7), asi que el conteo previo es el mismo 256; lo que cambio es la asercion que fijaba 'metadata::text' sin proyeccion.
+
+# tests 256
+# suites 0
+# pass 256
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 27693.4083
+
+# tests por archivo (pass):
+hr-monitor-evidence-columns.test.js: 7 pass (asercion re-escrita, mismo conteo)
+hr-gps-metadata-projection.test.js: 6 pass  (nuevo, paquete 1b)
+
+# Re-corrida al cerrar el frente de agentes: 2026-11-19T03:24:50Z
+# comando: cd apps/api && node --test test/hr-*.test.js
+# tests 262 | pass 262 | fail 0 | cancelled 0 | skipped 0 | duration_ms 16079
+# 256 -> 262: seis contratos nuevos del archivo de proyeccion GPS; ninguno retirado.

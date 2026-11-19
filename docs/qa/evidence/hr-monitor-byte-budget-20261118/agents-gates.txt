@@ -1,0 +1,25 @@
+# Gates de contexto del corte 2026-11-19T04:44:52Z
+
+## npm run agents:sync
+[agents] sincronizados 11 agentes y 11 documentos
+
+## npm run agents:check
+[agents] OK: 11 agentes y 11 documentos verificados
+
+## npm run test:agents
+# tests 46
+# pass 46
+# fail 0
+
+## npm run agents:preflight (inventario exacto)
+[agents:preflight] rama: desarrollo | HEAD: 0b1ba6f8 | fetch: si
+[agents:preflight] comparacion contra origin/desarrollo @ 0b1ba6f8
+Veredicto: OK_CON_ADVERTENCIAS
+
+## npm run agents:coverage (mismo inventario)
+[agents:coverage] rama: desarrollo | rutas: 18 | fetch: si
+  apexos-brief        2.60.0    local-ahead   si         OK
+  apexos-backend      2.18.0    local-ahead   si         OK
+  apexos-frontend     2.34.0    local-ahead   si         OK
+  apexos-performance  2.18.0    local-ahead   si         OK
+[agents:coverage] OK: contexto del equipo actualizado para todas las rutas.

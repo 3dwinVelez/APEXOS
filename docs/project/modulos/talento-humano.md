@@ -75,6 +75,21 @@
 
 Talento Humano debe separar operacion diaria, configuracion y seguimiento. Marcaciones y rutas deben funcionar bien desde celular.
 
+## Monitor de marcaciones: contrato de transporte (2026-11-18)
+
+El incidente del horario #336 en produccion no fue un problema de datos: las marcaciones estaban bien tomadas. Fue un problema de transporte. El monitor y el reporte pedian la fila cruda de `TimePunch` y arrastraban la selfie en base64 dentro del `metadata` y del `extra_evidence`. Medido ese dia sobre el tenant del cliente: 44,4 MB y 7,74 s + 9,79 s para abrir un horario. Con las mismas lecturas proyectadas: 80 KB y 0,74 s, con los mismos 53 ids, las mismas 27 selfies anunciadas y el mismo soporte de horas extra.
+
+La regla que sale de ahi, y la que sostiene el modulo de aqui en adelante:
+
+- **El listado anuncia, el detalle entrega.** Ningun listado del monitor, del reporte de asistencia ni del cierre de jornada transporta binarios. Anuncia `{ id, source, has_base64_data, available, storage_path? }` y los bytes se piden a `GET /api/v1/hr/monitor-evidence/:source/:id`. La proyeccion conserva los primeros 64 caracteres y un `#apexos-monitor-evidence-sha#` + `md5` para que el dedupe y el conteo por valor sigan funcionando sin abrir el TOAST.
+- **Un contador sin lectura no es un cero.** `punch_count` y `event_count` son `null` cuando la fuente no respondio por ese horario y `0` solo cuando la fuente afirmo que no hay. Pintar `0` sobre un fallo de red es exactamente el "el horario no tiene marcaciones" que el dueno leyio mal.
+- **El fallo tecnico es un estado del dato, no una ventana.** Las dos lecturas del monitor registran cuando fue la ultima lectura valida y si el ultimo intento fallo; el panel dice "Sin lectura reciente del monitor" con la hora de la ultima lectura y reintenta solo (respaldo periodico), en vez de afirmar un vacio.
+- **El presupuesto es una puerta, no una opinion.** `npm run certify:hr-monitor-budget:selftest` demuestra que la gate se pone roja con binario inline, con latencia fuera de presupuesto o con volumen; `certify:hr-monitor-budget:qa` y `:production` miden contra el ambiente desplegado (4 MiB por listado, p95 de 3.000 ms, cero data URL de mas de 8 KB).
+- **Toda lectura cruda sigue escribiendo su `tenant_id` en el SQL** y toda resolucion de referencia valida el `tenant_id` de la fila antes de tocar Storage. Recortar bytes jamas recorta el filtro de aislamiento.
+
+Mientras la purga del base64 ya rescatado no se ejecute en la nube (paquetes 5 a 7 del brief `2026-11-18-monitor-marcaciones-evidencia-por-referencia.md`), la columna pesada sigue ahi: lo que deja de viajar es la lectura, no todavia el almacenamiento.
+
+
 ## Validaciones esperadas
 
 - Registrar ingreso, almuerzo, retorno y cierre con GPS.

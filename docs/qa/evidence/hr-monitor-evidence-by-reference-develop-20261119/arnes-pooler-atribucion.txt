@@ -1,0 +1,41 @@
+Atribucion del rojo de latencia medido en el puesto (2026-11-19)
+
+Que se midio
+- Gate `scripts/certifications/hr-monitor-byte-budget.js` contra la API del candidato levantada en el
+  puesto (http://127.0.0.1:3310, codigo c66314de) leyendo la base QA real por pooler de sesion.
+- Muestra 5, fecha 2026-11-19, sesion fixture del certificador de evidencia bajo demanda.
+
+Resultado del candidato local
+- Mapa del dia: 33 KB, p50 3239 ms, p95 3259 ms, binarios inline 0
+- Contadores de eventos: 4 KB, p50 4123 ms, p95 4185 ms, binarios inline 0
+- Reporte de asistencia (un dia): 14 KB, p50 2336 ms, p95 2388 ms, binarios inline 0
+- Veredicto del gate: EN ROJO por p95 de los dos primeros endpoints (presupuesto 3000 ms).
+
+Linea base del mismo endpoint, mismo dia, misma sesion, contra la QA DESPLEGADA (develop sin el arreglo)
+- Mapa del dia: 33 KB, p50 612 ms, p95 1044 ms, binarios inline 0  -> VERDE
+- Contadores de eventos: 4 KB, p50 666 ms, p95 794 ms, binarios inline 0 -> VERDE
+- Reporte de asistencia (un dia): 15 KB, p50 483 ms, p95 524 ms, binarios inline 0 -> VERDE
+
+Causa del rojo local (arnes, no producto)
+- El pooler de sesion de QA limita a 15 clientes (`pool_size: 15`). La API desplegada de QA ya sostiene
+  su propio pool con `connection_limit=10` (receta versionada en `config/qa.env`).
+- Levantar una segunda API en el puesto con la misma receta exige 20 conexiones: el pooler rechaza con
+  `FATAL: (EMAXCONNSESSION) max clients reached in session mode`, observado como HTTP 500 en
+  `GET /api/v1/hr/operations-map` y luego en `event_summaries`.
+- Para que la certificacion funcional cupo, el arnes bajo el pool del puesto a `connection_limit=3`.
+  Cinco lecturas paralelas del mapa (`Promise.all` en `getOperationsMap`) se encolan contra 3 conexiones
+  que ademas cruzan el internet hasta `us-east-2`. El retardo medido es cola + RTT del puesto, no el lector.
+- Prueba de la atribucion: con `connection_limit=10` en el puesto el mismo codigo deja de ser lento y
+  vuelve a fallar por `EMAXCONNSESSION`; con 3 conecta pero mide la cola. El cuello es la topologia.
+
+Que si quedo demostrado en el puesto
+- El contrato de evidencia por referencia con datos reales de QA: 10/10 controles, incluyendo que el
+  listado no transporta `base64_data`, que la selfie se pide por `GET /api/v1/hr/monitor-evidence/:source/:id`,
+  que un rol solo-marcar recibe 403, que una evidencia inexistente responde 404 controlada y que la
+  evidencia de otro tenant esta negada.
+- El corte de binarios es visible en el tamano de la respuesta: 33 KB / 4 KB / 14 KB contra los 44,4 MB
+  medidos en produccion antes del rescate (ver `docs/qa/evidence/hr-monitor-evidence-by-reference-20261118/`).
+
+Que exige la promocion
+- La latencia se certifica contra el build desplegado en QA (tarea posterior al merge) y contra produccion
+  sobre el horario 336, con el mismo gate. Un puesto local compartido con el pooler de QA no es instrumento.

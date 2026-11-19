@@ -50,20 +50,25 @@ function buildProcessDayPrisma({ nightStart = 19, punches = punchesFor("2026-10-
     runWithTenant: (tenantId, callback) => Promise.resolve(callback()),
     employee: { findMany: async () => [employee] },
     workSchedule: { findMany: async () => [schedule] },
-    timePunch: { findMany: async () => punches },
     processedWorkday: {
       upsert: async ({ create }) => {
         created.push(create);
         return create;
       }
     },
-    $queryRaw: async (strings) => {
-      const sql = Array.isArray(strings) ? strings.join("?") : String(strings);
+    $queryRaw: async (query) => {
+      // Dos lecturas crudas conviven en el cierre: los parametros laborales llegan como
+      // plantilla (arreglo de strings) y las marcaciones como un `Prisma.sql` compuesto por
+      // `monitorEvidenceRows.readPunchRowsProjected` (MAR-109).
+      const sql = Array.isArray(query) ? query.join("?") : String(query?.sql ?? query);
       if (sql.includes("th_parametros_laborales")) {
         return [
           { code: "JORNADA_NOCTURNA_INICIO", value: nightStart, metadata: {} },
           { code: "JORNADA_NOCTURNA_FIN", value: 6, metadata: {} }
         ];
+      }
+      if (sql.includes('"TimePunch"')) {
+        return punches.map((punch) => ({ ...punch, metadata: null, has_extra_evidence: false }));
       }
       return [];
     }

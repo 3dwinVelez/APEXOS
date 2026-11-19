@@ -1,0 +1,2020 @@
+{
+  "env": "qa",
+  "ref": "jbirkghkekuifgfsgquq",
+  "mode": "execute",
+  "started_at": "2026-11-18T20:13:06.335Z",
+  "items": [
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 44,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 53,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 66,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 75,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 106,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 126,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 135,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 139,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 141,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 149,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 180,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 185,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 186,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 188,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 190,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 191,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 241,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 243,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 244,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 245,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 246,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 247,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 248,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 250,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 251,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 252,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 260,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 286,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 287,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 292,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 293,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 294,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 295,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 306,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 309,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 558,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 576,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1274,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1277,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1281,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1284,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1289,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1292,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1298,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1301,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1308,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1309,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1310,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1311,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1312,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1313,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1314,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1315,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1316,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1317,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1338,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1340,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1341,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1344,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1346,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1347,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1348,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1349,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1350,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1351,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1352,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1353,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1354,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1355,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1356,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1357,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1378,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1379,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1380,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1381,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1382,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1383,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1384,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1385,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1386,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1387,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1396,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1397,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1398,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1399,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1400,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1401,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1402,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1403,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1404,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1405,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1426,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1427,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1428,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1429,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1430,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1431,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1432,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1433,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1434,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1435,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1483,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1545,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1555,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1597,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1601,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1658,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1659,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1660,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1661,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1662,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1663,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1664,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1665,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1666,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1667,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1668,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1669,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1670,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1671,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1672,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1673,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1674,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1675,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1676,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1677,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1678,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1679,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1680,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1681,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1682,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1683,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1684,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1685,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1689,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1694,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1695,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1696,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1697,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1702,
+      "action": "objeto existente verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/overtime-extensions/555/1794026888305-sustento_1794026737683.jpg",
+      "bytes": 333373
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1702,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1703,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1704,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1705,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1706,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1707,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1708,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1709,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1710,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1713,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1713,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1714,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1715,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1718,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1718,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1719,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "TimePunch",
+      "kind": "extra_evidence",
+      "id": 1722,
+      "action": "objeto existente verificado",
+      "objectPath": "company/1d162ffd-bd27-4855-8141-b015388265fc/hr/overtime-extensions/582/1794943816204-evidencia-20261117192938.png",
+      "bytes": 307628
+    },
+    {
+      "table": "TimePunch",
+      "kind": "identity_photo",
+      "id": 1722,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 1,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 2,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 3,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 4,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 5,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 6,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 7,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 8,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 9,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 10,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 11,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 12,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 13,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 14,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 15,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 16,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 17,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 18,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 19,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 20,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 21,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 22,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 23,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 24,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 25,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 26,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 27,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 28,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 29,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 30,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 31,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 32,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 33,
+      "action": "omitido (ya rescatado)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 34,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/32/users/150/activities/34/1787589056121-Dise_o-y-Layout-de-almacenes-y-centros-de-distribuci_n-CEDI.webp",
+      "bytes": 42018
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 35,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/32/users/150/activities/35/1787596576375-1783456900847.jfif",
+      "bytes": 88735
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 36,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/33/users/150/activities/36/1787602334433-maxresdefault.jpg",
+      "bytes": 174412
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 37,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 38,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/37/users/228/activities/38/1787679150790-17876791326195614722540266421312.jpg",
+      "bytes": 536255
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 39,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/41/users/228/activities/39/1787933712091-17879336973788702819181909835605.jpg",
+      "bytes": 248524
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 40,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/40/1788012908830-17880128941923934619932184584222.jpg",
+      "bytes": 281000
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 41,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/41/1788013930771-17880139088655057910860974608841.jpg",
+      "bytes": 169339
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 42,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/55/users/259/activities/42/1788014123636-17880141053936474011634372949968.jpg",
+      "bytes": 173799
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 43,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/43/1788015293702-17880152598107223023624614164031.jpg",
+      "bytes": 386820
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 44,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/55/users/259/activities/44/1788015317905-17880152598107223023624614164031.jpg",
+      "bytes": 386820
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 45,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/55/users/259/activities/45/1788015341299-17880152598107223023624614164031.jpg",
+      "bytes": 386820
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 46,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/55/users/259/activities/46/1788015364772-17880153370872507666991763727172.jpg",
+      "bytes": 406879
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 47,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/47/1788017988259-17880179658093221146605023567184.jpg",
+      "bytes": 389571
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 48,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/55/users/259/activities/48/1788018074717-17880180338567413594961803803983.jpg",
+      "bytes": 376152
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 49,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/49/1788018892205-17880188326633953754459532640150.jpg",
+      "bytes": 286044
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 50,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/50/1788018907524-17880188326633953754459532640150.jpg",
+      "bytes": 286044
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 51,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/51/1788019495256-17880188326633953754459532640150.jpg",
+      "bytes": 286044
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 52,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/55/users/259/activities/52/1788022762024-17880227420118351579750248189599.jpg",
+      "bytes": 400599
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 53,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/54/users/260/activities/53/1788022926621-17880229116963815862914032647674.jpg",
+      "bytes": 339278
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 54,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/53/users/256/activities/54/1788039933964-17880399058542859176397954381743.jpg",
+      "bytes": 221737
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 55,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/73/users/260/activities/55/1788184533684-17881844973574702177447859497766.jpg",
+      "bytes": 294868
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 56,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/75/users/259/activities/56/1788184757562-17881847175818137643659082351182.jpg",
+      "bytes": 372108
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 57,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/61/users/261/activities/57/1788216316968-664698.jpg",
+      "bytes": 1946501
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 58,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/68/users/258/activities/58/1788233479147-image.jpg",
+      "bytes": 448559
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 59,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/68/users/258/activities/59/1788233544164-image.jpg",
+      "bytes": 333863
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 60,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/60/1788275829488-17882757758177131925912675408790.jpg",
+      "bytes": 295305
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 61,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/61/1788275834421-17882757758177131925912675408790.jpg",
+      "bytes": 295305
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 62,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/62/1788277328070-17882772976726004635411941430618.jpg",
+      "bytes": 189331
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 63,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/86/users/259/activities/63/1788277382170-1788277371754835925434167187060.jpg",
+      "bytes": 185567
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 64,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/64/1788278259955-17882782309638096591701775224575.jpg",
+      "bytes": 438419
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 65,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/86/users/259/activities/65/1788278338728-17882783180712033496195129907398.jpg",
+      "bytes": 404944
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 66,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/86/users/259/activities/66/1788282596465-17882825683748113510643193506010.jpg",
+      "bytes": 395117
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 67,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/67/1788282683037-17882826625201651168850768559875.jpg",
+      "bytes": 405091
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 68,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/86/users/259/activities/68/1788289002332-17882889825641163788903903188368.jpg",
+      "bytes": 425112
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 69,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/69/1788289044187-17882890303988752098182351061535.jpg",
+      "bytes": 339152
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 70,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/70/1788290510430-17882904886277775231437907341697.jpg",
+      "bytes": 311605
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 71,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/86/users/259/activities/71/1788290527976-17882904886277775231437907341697.jpg",
+      "bytes": 311605
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 72,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/86/users/259/activities/72/1788290600288-17882905661948103276862962025495.jpg",
+      "bytes": 328469
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 73,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/85/users/260/activities/73/1788294465429-17882944550103614190140899867330.jpg",
+      "bytes": 302353
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 74,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/87/users/262/activities/74/1788305255788-17883052411733923992806831795817.jpg",
+      "bytes": 152715
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 75,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/91/users/260/activities/75/1788389430630-1788389411496687840120388453712.jpg",
+      "bytes": 280155
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 76,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/92/users/259/activities/76/1788389506575-1788389496453922104236668242257.jpg",
+      "bytes": 362378
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 77,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/155/users/260/activities/77/1789167605135-17891674886981130153537939276250.jpg",
+      "bytes": 319318
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 78,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/156/users/260/activities/78/1789637204489-17896371896535057427596991092888.jpg",
+      "bytes": 172460
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 79,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 80,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 81,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 82,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 83,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/341/users/150/activities/83/1789764559443-ChatGPT_Image_15_sept_2026_02_38_21_p.m.png",
+      "bytes": 1691803
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 84,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 85,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 86,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 87,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 88,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 89,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 90,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 91,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 92,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 93,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 94,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 95,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 96,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 97,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 98,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 99,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 100,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 101,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 102,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 103,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 104,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 105,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 106,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 107,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 108,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 109,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 110,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 111,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 112,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 113,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 114,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 115,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 116,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 117,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 118,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 119,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 120,
+      "action": "decode fallo (placeholder)"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 121,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 122,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 123,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 124,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 125,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/392/users/260/activities/125/1790085299761-17900852657464207331364129894244.jpg",
+      "bytes": 243603
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 126,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/397/users/150/activities/126/1790172467674-test.jfif",
+      "bytes": 21768
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 127,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/397/users/150/activities/127/1790197949997-ChatGPT_Image_15_sept_2026_02_38_21_p.m.png",
+      "bytes": 1691803
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 128,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/397/users/150/activities/128/1790200503040-ChatGPT_Image_15_sept_2026_02_38_21_p.m.png",
+      "bytes": 1691803
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 129,
+      "action": "subido y verificado",
+      "objectPath": "company/c56bc5df-c807-4deb-83f8-fbb4751be613/hr/work-sessions/420/users/18/activities/138/1790254660066-qa-actividad-evidencia.png",
+      "bytes": 16522
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 130,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/437/users/595/activities/142/1790911620737-actividad_1790911616723.jpg",
+      "bytes": 516726
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 131,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/437/users/595/activities/143/1790911621696-actividad_1790911616723.jpg",
+      "bytes": 516726
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 132,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/437/users/595/activities/144/1790911665063-actividad_1790911661004.jpg",
+      "bytes": 557446
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 133,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/438/users/150/activities/145/1791066738567-madre1.jpg",
+      "bytes": 177679
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 134,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/439/users/150/activities/146/1791068241471-17910682292875634631899122732236.jpg",
+      "bytes": 300519
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 135,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/440/users/595/activities/147/1791206055538-actividad_1791206051399.jpg",
+      "bytes": 131823
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 136,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 137,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 138,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 139,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 140,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 141,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 142,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 143,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 144,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 145,
+      "action": "sin base64 real"
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 146,
+      "action": "subido y verificado",
+      "objectPath": "company/c56bc5df-c807-4deb-83f8-fbb4751be613/hr/work-sessions/453/users/608/activities/158/1793761854742-actividad_1793761850140.jpg",
+      "bytes": 436740
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 147,
+      "action": "subido y verificado",
+      "objectPath": "company/c56bc5df-c807-4deb-83f8-fbb4751be613/hr/work-sessions/453/users/608/activities/159/1793761938499-actividad_1793761935081.jpg",
+      "bytes": 343065
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 148,
+      "action": "subido y verificado",
+      "objectPath": "company/c56bc5df-c807-4deb-83f8-fbb4751be613/hr/work-sessions/456/users/606/activities/160/1793799081317-actividad_1793799077904.jpg",
+      "bytes": 329833
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 149,
+      "action": "subido y verificado",
+      "objectPath": "company/c56bc5df-c807-4deb-83f8-fbb4751be613/hr/work-sessions/457/users/608/activities/161/1793802116500-actividad_1793802112672.jpg",
+      "bytes": 444387
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 150,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/459/users/602/activities/162/1793844608236-actividad_1793844601686.jpg",
+      "bytes": 306132
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 151,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/460/users/609/activities/163/1793845773163-actividad_1793845767294.jpg",
+      "bytes": 477230
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 152,
+      "action": "subido y verificado",
+      "objectPath": "company/c56bc5df-c807-4deb-83f8-fbb4751be613/hr/work-sessions/461/users/608/activities/164/1793885139551-actividad_1793885134782.jpg",
+      "bytes": 511053
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 153,
+      "action": "subido y verificado",
+      "objectPath": "company/cbbf3627-4336-4f23-95c6-1077414bcd17/hr/work-sessions/469/users/603/activities/165/1794024157037-actividad_1794024152275.jpg",
+      "bytes": 396262
+    },
+    {
+      "table": "ActivityEvidence",
+      "kind": "base64_data",
+      "id": 154,
+      "action": "decode fallo (placeholder)"
+    }
+  ],
+  "counts": {
+    "timepunch_rows": 938,
+    "activity_rows": 154,
+    "processed": 312,
+    "marked": 66,
+    "errors": 0
+  },
+  "finished_at": "2026-11-18T20:15:07.241Z"
+}

@@ -1,0 +1,68 @@
+{
+  "change_id": "hr-monitor-byte-budget",
+  "environment": "qa",
+  "api_url": "127.0.0.1:3310",
+  "date": "2026-11-19",
+  "generated_at": "2026-11-19T05:28:14.234Z",
+  "samples_per_endpoint": 5,
+  "budgets": {
+    "listing_bytes": 4194304,
+    "p95_ms": 3000,
+    "inline_base64_chars": 8192
+  },
+  "baseline": {
+    "source": "docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md",
+    "before": {
+      "bytes": 46556774.4,
+      "ms": [
+        7740,
+        9790
+      ]
+    },
+    "after": {
+      "bytes": 157696,
+      "ms": [
+        940,
+        1060
+      ]
+    },
+    "proof": "mismo dia, mismo tenant, mismos ids y mismo conteo de evidencias (27=27, 25=25)"
+  },
+  "measurements": [
+    {
+      "key": "operations_map",
+      "label": "Mapa del dia",
+      "samples": 5,
+      "bytes": 33958,
+      "p50_ms": 3239,
+      "p95_ms": 3259,
+      "max_ms": 3259,
+      "inline_payloads": []
+    },
+    {
+      "key": "event_summaries",
+      "label": "Contadores de eventos",
+      "samples": 5,
+      "bytes": 4285,
+      "p50_ms": 4123,
+      "p95_ms": 4185,
+      "max_ms": 4185,
+      "inline_payloads": []
+    },
+    {
+      "key": "attendance_day",
+      "label": "Reporte de asistencia (un dia)",
+      "samples": 5,
+      "bytes": 13924,
+      "p50_ms": 2336,
+      "p95_ms": 2388,
+      "max_ms": 2388,
+      "inline_payloads": []
+    }
+  ],
+  "failures": [
+    "Mapa del dia: p95 de 3259 ms supera el presupuesto de 3000 ms",
+    "Contadores de eventos: p95 de 4185 ms supera el presupuesto de 3000 ms"
+  ],
+  "status": "failed"
+}
