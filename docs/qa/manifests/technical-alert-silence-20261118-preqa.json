@@ -1,0 +1,91 @@
+{
+  "change_id": "technical-alert-silence-20261118",
+  "environment": "LOCAL",
+  "source_branch": "desarrollo",
+  "target_branch": "develop",
+  "qa_status": "pending",
+  "promotion_branch": "codex/qa-technical-alert-silence-20261118",
+  "commit": "c4b7f41b",
+  "target_head": "5fcc2ed1",
+  "checks": {
+    "functional": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-20261118.md",
+        "../evidence/technical-alert-silence-20261118/certification.json"
+      ]
+    },
+    "error": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-20261118.md",
+        "../evidence/technical-alert-silence-20261118/certification.json",
+        "../evidence/technical-alert-silence-20261118/06-sesion-vencida.png"
+      ]
+    },
+    "support_scripts": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-20261118.md",
+        "../evidence/technical-alert-silence-20261118/suite-web.txt",
+        "../evidence/technical-alert-silence-20261118/soporte.txt"
+      ]
+    },
+    "regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-20261118.md",
+        "../evidence/technical-alert-silence-20261118/certification.json"
+      ]
+    },
+    "platform_regression": {
+      "status": "passed",
+      "evidence": [
+        "../certifications/technical-alert-silence-20261118.md",
+        "../evidence/technical-alert-silence-20261118/certification.json",
+        "../evidence/technical-alert-silence-20261118/suite-web.txt"
+      ]
+    }
+  },
+  "certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-local.js",
+    "evidence": [
+      "../evidence/technical-alert-silence-20261118/certification.json",
+      "../certifications/technical-alert-silence-20261118.md"
+    ],
+    "controls": 68,
+    "passed": 68,
+    "failed": 0,
+    "build_id": "jlUjFSh09mNnfsi-6VJw3",
+    "substrate": "next start (produccion)"
+  },
+  "regression_certification": {
+    "status": "passed",
+    "script": "../../../scripts/certifications/technical-alert-silence-browser-local.js",
+    "evidence": [
+      "../certifications/technical-alert-silence-20261118.md",
+      "../evidence/technical-alert-silence-20261118/suite-web.txt"
+    ],
+    "basis": "El mismo certificador barre los cuatro escenarios (500, 429, red cortada, sesion vencida) sobre cinco pantallas y dos temas, y la suite de contratos del frontend se corre sobre el arbol del candidato; no hay codigo de API ni de esquema en el diff."
+  },
+  "validation_summary": {
+    "certified_application_commit": "c4b7f41b",
+    "baseline_preserved": "5fcc2ed1",
+    "production_build": "passed",
+    "build_id": "jlUjFSh09mNnfsi-6VJw3",
+    "browser_certification": "68/68",
+    "evidence_policy": "La evidencia cruda del navegador viaja revisada en docs/qa/evidence/technical-alert-silence-20261118; los logs de next start quedan fuera del repositorio."
+  },
+  "approval": {
+    "status": "approved",
+    "scope": "promotion_to_develop_for_qa",
+    "approved_by": "Edwin (dueno de APEXOS)",
+    "approved_at": "2026-11-19T00:00:00-05:00",
+    "instruction": "realiza la intervencion y garantiza que se implemente en main de manera correcta",
+    "authorization_flags": {
+      "auxiliary_branch_promotion": true
+    },
+    "authorization_basis": "La instruccion del propietario autoriza el flujo completo desarrollo -> develop -> main con sus compuertas. No otorga force push, reescritura de historia, borrado de ramas, cambios de infraestructura o secretos, ni migraciones remotas."
+  }
+}
