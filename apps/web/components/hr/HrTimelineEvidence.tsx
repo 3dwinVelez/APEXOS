@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-export type HrTimelinePhoto = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; base64?: string; file_url?: string; file_name?: string; name?: string; storage_path?: string; items?: HrTimelinePhoto[] };
+export type HrTimelinePhoto = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; base64?: string; file_url?: string; file_name?: string; name?: string; storage_path?: string; has_base64_data?: boolean; available?: boolean; items?: HrTimelinePhoto[] };
 const empty: HrTimelinePhoto[] = [];
 function visible(items: HrTimelinePhoto[]) {
   const files = items.flatMap(item => item.items?.length ? item.items : [item]).map(item => ({ ...item, ...scheduleMonitorPunchEvidence({ extra_evidence: item }) }));

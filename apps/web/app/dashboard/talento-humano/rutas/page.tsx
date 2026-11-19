@@ -23,11 +23,13 @@ type OperatorPoint = { key: string; user_name: string; name: string; route_id: n
 type MonitorEvidence = { id?: number | string; source?: "activity" | "punch" | "identity"; base64_data?: string; file_name?: string; file_url?: string; has_base64_data?: boolean; available?: boolean; items?: MonitorEvidence[] };
 type PunchPoint = { id: number | string; user_name: string; type: string; time?: string; punched_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; extra_minutes?: number; late_minutes?: number; extra_reason?: string; extra_detail?: string; extra_evidence?: MonitorEvidence; identity_evidence?: MonitorEvidence; metadata?: { identity_verification?: { status?: string } } };
 type ActivityPoint = { id: number | string; user_name: string; type: string; time?: string; occurred_at: string; latitude?: number | null; longitude?: number | null; accuracy_meters?: number | null; observation?: string; evidence?: MonitorEvidence[] };
-type RouteEventSummary = { route_id: number | string; punch_count: number; activity_count: number; evidence_count: number; closed_count: number; event_count: number; last_event_at?: string | null };
+// `null` es "la fuente no respondio por este horario"; `0` es "la fuente afirmo que no hay".
+// Confundirlas es lo que hacia leer "el horario no tiene marcaciones" un fallo de red (MAR-103).
+type RouteEventSummary = { route_id: number | string; punch_count: number | null; activity_count: number | null; evidence_count: number | null; closed_count: number | null; event_count: number | null; last_event_at?: string | null };
 type RouteEventSummaryResponse = { generated_at: string; routes: RouteEventSummary[]; truncation?: ScheduleTruncationSignal };
 type MonitorMark = { id: number | string; type: string; time?: string };
 type MonitorMarksByUser = { user_name: string; marks: MonitorMark[] };
-type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[] };
+type RouteMonitor = TimeRoute & RouteEventSummary & { placa?: string; assigned_count?: number; online_count?: number; with_gps_count?: number; punch_points?: PunchPoint[]; activity_points?: ActivityPoint[]; marks_by_user?: MonitorMarksByUser[]; monitor_answered?: boolean };
 type OperationsMap = { date: string; generated_at: string; people: OperatorPoint[]; routes: RouteMonitor[]; truncation?: ScheduleTruncationSignal; totals: { routes: number; planned_people: number; online: number; without_gps: number; offline: number } };
 type RouteDeletionBlocker = { code: string; message: string; detail?: Record<string, unknown> };
 type RouteDeletionImpact = {
@@ -50,6 +52,17 @@ const ROUTES_LIST_LIMIT = 500;
 // empujaba la transaccion contra el statement_timeout del servidor.
 const ROUTES_BACKSTOP_POLL_MS = 30_000;
 const ROUTE_BUSY_ERROR_CODE = "ROUTE_ASSIGNMENT_BUSY";
+type MonitorSnapshot = { at: number; failed: boolean };
+
+// El monitor refresca solo (respaldo de 30 s + evento de marcacion), asi que lo unico que le
+// falta al operario es saber si lo que ve es de ahora. Esta frase es el estado de dato: la
+// hora de la ultima lectura valida, sin ruta, sin codigo HTTP y sin detalle del servidor.
+function monitorStaleNotice(label: string, snapshot: MonitorSnapshot) {
+  if (!snapshot.failed) return "";
+  if (!snapshot.at) return `${label}: aun no hay lectura de este dia. La pantalla reintenta sola.`;
+  const at = new Date(snapshot.at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+  return `${label}: lo que se muestra es la lectura de las ${at}. La pantalla reintenta sola.`;
+}
 const weekdayOptions = [
   { value: 1, label: "Lun" },
   { value: 2, label: "Mar" },
@@ -210,10 +223,20 @@ function routeDerivedStatus(route: RouteMonitor | TimeRoute) {
   return rawStatus || "active";
 }
 
-function routeEventCount(route: RouteMonitor | TimeRoute) {
-  const summaryCount = Number((route as RouteMonitor).event_count);
-  if (Number.isFinite(summaryCount)) return summaryCount;
-  return (((route as RouteMonitor).punch_points?.length || 0) + ((route as RouteMonitor).activity_points?.length || 0));
+function routeEventCount(route: RouteMonitor | TimeRoute): number | null {
+  const summaryCount = (route as RouteMonitor).event_count;
+  if (typeof summaryCount === "number" && Number.isFinite(summaryCount)) return summaryCount;
+  // El mapa del dia tambien afirma: si respondio por este horario, contar sus puntos es un
+  // numero real. Si ninguna fuente respondio, `null` — y la pantalla lo dice como tal.
+  if ((route as RouteMonitor).monitor_answered === false) return null;
+  return ((route as RouteMonitor).punch_points?.length || 0) + ((route as RouteMonitor).activity_points?.length || 0);
+}
+
+// Un contador sin lectura se escribe igual que un guion del resto de la pantalla: el numero 0
+// esta reservado para lo que la fuente afirmo.
+function counterText(value: number | null | undefined, noun: string) {
+  if (value === null || value === undefined) return `${noun} sin lectura`;
+  return `${value} ${noun}`;
 }
 
 function routeDisplayState(route: RouteMonitor | TimeRoute) {
@@ -221,6 +244,7 @@ function routeDisplayState(route: RouteMonitor | TimeRoute) {
   const status = routeDerivedStatus(route);
   if (status === "closed") return { status, label: "Cerrado", className: "bg-surface-muted text-content-body" };
   if (status === "cancelled") return { status, label: "Cancelado", className: "bg-error/10 text-content-strong" };
+  if (events === null) return { status, label: "Sin lectura", className: "bg-surface-muted text-content-muted" };
   if (events) return { status, label: "En seguimiento", className: "bg-success/10 text-content-strong" };
   return { status, label: "Sin eventos", className: "bg-warning/10 text-content-strong" };
 }
@@ -437,6 +461,12 @@ export default function RoutesPlanningPage() {
   const [modal, setModal] = useState<"route" | "edit" | null>(null);
   const [editingRoute, setEditingRoute] = useState<RouteMonitor | null>(null);
   const [loadingMonitor, setLoadingMonitor] = useState(false);
+  // MAR-103: el monitor conservaba la ultima lectura buena en silencio y, si la peticion caia,
+  // la pantalla afirmaba "Sin eventos en el dia consultado" sobre un horario que si los tiene.
+  // El fallo de red deja de ser invisible: se guarda la hora de la ultima lectura valida y si
+  // el ultimo intento fallo, y el panel lo dice con las dos cosas.
+  const [monitorSnapshot, setMonitorSnapshot] = useState<MonitorSnapshot>({ at: 0, failed: false });
+  const [summariesSnapshot, setSummariesSnapshot] = useState<MonitorSnapshot>({ at: 0, failed: false });
   const [savingRoute, setSavingRoute] = useState(false);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [saveNotice, setSaveNotice] = useState<{ tone: "info" | "error"; text: string } | null>(null);
@@ -519,8 +549,11 @@ export default function RoutesPlanningPage() {
     try {
       const operationsData = await api<OperationsMap>(`/api/v1/hr/operations-map?date=${encodeURIComponent(targetDate)}&minutes=30&footprint_days=30`, { cache: "no-store" });
       setOperations(operationsData);
+      setMonitorSnapshot({ at: Date.now(), failed: false });
     } catch {
-      // Keep the last valid snapshot visible while the next refresh retries.
+      // Keep the last valid snapshot visible while the next refresh retries — pero anunciada:
+      // el panel dice de cuando es y que el reintento sigue solo.
+      setMonitorSnapshot((current) => ({ at: current.at, failed: true }));
     } finally {
       setLoadingMonitor(false);
     }
@@ -531,8 +564,10 @@ export default function RoutesPlanningPage() {
       const data = await api<RouteEventSummaryResponse>("/api/v1/hr/routes/event-summaries", { cache: "no-store" });
       setEventSummaries(data.routes || []);
       setSummariesTruncation(data.truncation || null);
+      setSummariesSnapshot({ at: Date.now(), failed: false });
     } catch {
-      // Preserve the latest valid counters until the next short refresh.
+      // Preserve the latest valid counters until the next short refresh, con su hora visible.
+      setSummariesSnapshot((current) => ({ at: current.at, failed: true }));
     }
   }, []);
 
@@ -867,6 +902,10 @@ export default function RoutesPlanningPage() {
 
   const totalAssigned = useMemo(() => routes.reduce((sum, route) => sum + (routeEmployeeValues(route).length || 0), 0), [routes]);
   const truncationNotices = useMemo(() => scheduleTruncationNotices({ routesCount: routes.length, routesLimit: ROUTES_LIST_LIMIT, summaries: summariesTruncation, operations: operations?.truncation }), [operations?.truncation, routes.length, summariesTruncation]);
+  const monitorNotices = useMemo(() => [
+    monitorStaleNotice("El mapa del dia no se pudo refrescar", monitorSnapshot),
+    monitorStaleNotice("Los contadores de eventos no se pudieron refrescar", summariesSnapshot)
+  ].filter(Boolean), [monitorSnapshot, summariesSnapshot]);
   const selectedEmployeeCount = form.employees.length;
   const bulkCount = bulkMode ? rangePreview(bulk.start_date, bulk.end_date, bulk.weekdays) : 1;
   const monitorRoutes: RouteMonitor[] = useMemo(() => {
@@ -878,7 +917,8 @@ export default function RoutesPlanningPage() {
         const operationKeys = routeMergeKeys(item);
         return Array.from(routeKeys).some((key) => operationKeys.has(key));
       });
-      return { ...route, ...summary, ...operation, route_id: summary?.route_id || route.id, punch_count: summary?.punch_count || 0, activity_count: summary?.activity_count || 0, evidence_count: summary?.evidence_count || 0, closed_count: summary?.closed_count || 0, event_count: summary?.event_count || 0, employee_ids: operation?.employee_ids || route.employee_ids, employee_names: operation?.employee_names || route.employee_names, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
+      const answered = Boolean(summary || operation);
+      return { ...route, ...summary, ...operation, route_id: summary?.route_id || route.id, monitor_answered: answered, punch_count: summary?.punch_count ?? null, activity_count: summary?.activity_count ?? null, evidence_count: summary?.evidence_count ?? null, closed_count: summary?.closed_count ?? null, event_count: summary?.event_count ?? null, employee_ids: operation?.employee_ids || route.employee_ids, employee_names: operation?.employee_names || route.employee_names, punch_points: operation?.punch_points || [], activity_points: operation?.activity_points || [] };
     });
   }, [eventSummaries, operations, routes]);
   const activeRoutes = useMemo(() => monitorRoutes.filter((route) => routeDerivedStatus(route) !== "closed" && routeDerivedStatus(route) !== "cancelled"), [monitorRoutes]);
@@ -1023,7 +1063,7 @@ export default function RoutesPlanningPage() {
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [deleteTarget, lightboxIndex, lightboxItems.length, selectedRoute]);
-  const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => routeEventCount(route) > 0).length / monitorRoutes.length) * 100) : 0;
+  const routeCoverage = monitorRoutes.length ? Math.round((monitorRoutes.filter((route) => (routeEventCount(route) ?? 0) > 0).length / monitorRoutes.length) * 100) : 0;
   const administrativeRoutes = monitorRoutes.filter((route) => !route.vehicle_plate && !route.placa).length;
   const operationalRoutes = monitorRoutes.length - administrativeRoutes;
   const routesWithoutPeople = monitorRoutes.filter((route) => !(route.assigned_count ?? routeEmployeeValues(route).length ?? 0)).length;
@@ -1094,6 +1134,14 @@ export default function RoutesPlanningPage() {
             <input aria-label="Filtrar por fecha" className="h-10 rounded-md border border-line bg-paper px-3 text-sm" type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} />
           </div>
           {activeFilters ? <button className="mt-3 inline-flex h-9 items-center gap-2 rounded-md border border-line px-3 text-sm font-semibold text-content-body hover:bg-paper" onClick={clearFilters} type="button"><RotateCcw size={15} /> Limpiar {activeFilters} filtro(s)</button> : null}
+          {monitorNotices.length ? (
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">
+              <AlertTriangle className="mt-0.5 shrink-0" size={16} />
+              <ul className="list-disc space-y-0.5 pl-4">
+                {monitorNotices.map((notice) => <li key={notice}>{notice}</li>)}
+              </ul>
+            </div>
+          ) : null}
           {truncationNotices.length ? (
             <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
               <AlertTriangle className="mt-0.5 shrink-0" size={16} />
@@ -1121,9 +1169,9 @@ export default function RoutesPlanningPage() {
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-content-muted">
                   <span className="rounded-md bg-paper px-2 py-1">{route.start_time || "--"} - {route.end_time || "--"}</span>
                   <span className="rounded-md bg-paper px-2 py-1">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</span>
-                  <span className="rounded-md bg-paper px-2 py-1">{events} evento(s)</span>
+                  <span className="rounded-md bg-paper px-2 py-1">{counterText(events, "evento(s)")}</span>
                   <span className="rounded-md bg-paper px-2 py-1">{scheduleGpsRequired(route) ? "GPS" : "Sin GPS"}</span>
-                  <span className="rounded-md bg-paper px-2 py-1">{route.evidence_count || 0} evidencia(s)</span>
+                  <span className="rounded-md bg-paper px-2 py-1">{counterText(route.evidence_count, "evidencia(s)")}</span>
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button"><Navigation size={15} /> Abrir</button>
@@ -1148,7 +1196,7 @@ export default function RoutesPlanningPage() {
                   <td className="px-4 py-3"><p className="font-semibold">{inputDate(route.date)}</p><p className="mt-1 text-xs text-content-muted">{formatHour(route.start_time)} - {formatHour(route.end_time)} · {route.tolerance_minutes ?? 15} min tolerancia · {scheduleGpsRequired(route) ? "GPS" : "sin GPS"}</p></td>
                   <td className="px-4 py-3"><p className="flex items-center gap-2 font-semibold">{operational ? <Truck className="text-apex" size={15} /> : <Building2 className="text-apex" size={15} />}{operational ? "Operativa" : "Administrativa"}</p><p className="mt-1 text-xs text-content-muted">{operational ? routeLabel(route) : administrativeSiteFromNotes(route.notes || "") || "Sin sede definida"}</p></td>
                   <td className="px-4 py-3"><p className="font-semibold">{route.assigned_count ?? routeEmployeeValues(route).length ?? 0} persona(s)</p><p className="mt-1 max-w-72 truncate text-xs text-content-muted">{routeEmployeeNames(route).join(", ") || "Sin personas asignadas"}</p></td>
-                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span><p className="mt-1 text-xs capitalize text-content-muted">{displayState.status} · {events} evento(s)</p></td>
+                  <td className="px-4 py-3"><span className={`rounded-md px-2 py-1 text-xs font-semibold ${displayState.className}`}>{displayState.label}</span><p className="mt-1 text-xs capitalize text-content-muted">{displayState.status} · {counterText(events, "evento(s)")}</p></td>
                   <td className="px-4 py-3"><div className="flex justify-end gap-2"><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openRouteMonitor(route)} type="button">Abrir</button><button className="h-9 rounded-md border border-line bg-paper px-3 text-xs font-semibold hover:bg-surface-muted" onClick={() => openEditModal(route)} type="button">Editar</button><button className="h-9 rounded-md border border-apex px-3 text-xs font-semibold text-apex hover:bg-paper" onClick={() => openCreateModal(route)} type="button">Clonar</button></div></td>
                 </tr>;
               })}
@@ -1475,8 +1523,8 @@ export default function RoutesPlanningPage() {
                 {!selectedTimeline.length ? (
                   <div className="flex min-h-[260px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-surface p-6 text-center">
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-muted text-content-subtle"><CalendarDays size={22} /></span>
-                    <p className="mt-3 text-sm font-semibold text-content-strong">Sin eventos en el dia consultado</p>
-                    <p className="mt-1 max-w-md text-sm text-content-muted">{monitorDate !== scheduleMonitorDate(selectedRoute.date) ? `Estas viendo ${monitorDate}, pero este horario corresponde a ${scheduleMonitorDate(selectedRoute.date)}. Vuelve al dia del horario para ver sus marcaciones.` : "Este horario aun no registra marcaciones ni actividades. Cuando el equipo marque en campo, los eventos apareceran aqui en tiempo real."}</p>
+                    <p className="mt-3 text-sm font-semibold text-content-strong">{monitorSnapshot.failed ? "Sin lectura reciente del monitor" : !operations && loadingMonitor ? "Cargando los eventos del dia…" : "Sin eventos en el dia consultado"}</p>
+                    <p className="mt-1 max-w-md text-sm text-content-muted">{monitorSnapshot.failed ? "El ultimo intento por leer este dia no respondio, asi que el vacio no significa que no haya marcaciones. La pantalla reintenta sola; si persiste, avisa a operacion." : !operations && loadingMonitor ? "Es la primera lectura de este dia: los eventos aparecen cuando el servidor responde." : monitorDate !== scheduleMonitorDate(selectedRoute.date) ? `Estas viendo ${monitorDate}, pero este horario corresponde a ${scheduleMonitorDate(selectedRoute.date)}. Vuelve al dia del horario para ver sus marcaciones.` : "Este horario aun no registra marcaciones ni actividades. Cuando el equipo marque en campo, los eventos apareceran aqui en tiempo real."}</p>
                     <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                       <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => changeMonitorDate(-1)} type="button"><ChevronLeft size={15} /> Dia anterior</button>
                       {monitorDate !== scheduleMonitorDate(selectedRoute.date) ? <button className="inline-flex h-9 items-center gap-2 rounded-md bg-apex px-3 text-sm font-semibold text-white" onClick={() => changeMonitorDateTo(scheduleMonitorDate(selectedRoute.date))} type="button"><CalendarDays size={15} /> Ir al dia del horario</button> : null}

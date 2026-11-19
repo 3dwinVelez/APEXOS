@@ -417,9 +417,9 @@ brief `docs/briefs/2026-11-18-monitor-marcaciones-evidencia-por-referencia.md`.
 | MAR-105 | **CAMBIADO DE ENFOQUE — el rescate de `GpsPing` ya no hace falta.** Se verifico el binario de las 45 filas con selfie: es **copia exacta** de la que ya subio la marcación duena (2.699.051 B del ping = 2.699.051 B de su marcación). Subirlo otra vez al bucket duplicaria el objeto para despues borrarlo. La purga se hace por emparejamiento SHA-256 contra `TimePunch`, sin subida. | `gpsping-metadata-selfie`: 45 filas, 29,3 MB, `filas_con_esta_marcacion: 45`, `sin_binario_inalcanzable: 0`. |
 | MAR-106 | **CERRADO con la puerta que el propio hallazgo pedia.** El umbral `METADATA_SHRINK_MIN_BYTES = 8192` queda en la constante y en la prueba de presupuesto (debe caer entre 4.761 B y 75.000 B: el peor caso medido por debajo del umbral no detoastearia). | Presupuesto de respuesta del lote: `produccion-antes-despues-dia.json`. |
 | MAR-108 | **CERRADO** — la difusion ya no depende de que cada escritor recuerde despojar la selfie; el filtro vive en `routeEventMetadata` y `ActivityEvidence` queda como unica tabla con `storage_path` propio. | Diff del contrato en `service.js:442-462`; suite HR 262/262. |
-| MAR-103 | **ABIERTO** — paquete 3 (contrato null-vs-cero en `apps/web`); ningun archivo de `apps/web/**` se toco en esta intervención porque otra sesión activa tiene 11 archivos sin commitear alli. | — |
+| MAR-103 | **CERRADO** — ver §8: los dos `catch {}` del monitor se vuelven estado del dato con hora de ultima lectura, el panel distingue *cargando* / *sin lectura* / *sin eventos* y los contadores conservan `null` cuando ninguna fuente afirmo. | `apps/web/test/hr-monitor-stale-read.test.mjs` (7/7) + `docs/qa/evidence/hr-monitor-byte-budget-20261118/suites-y-medicion.txt`. |
 | MAR-107 | **ABIERTO** — paridad de grants `service_role`; paquete 4 con su propia autorización de nube. | — |
-| MAR-109 | **ABIERTO** — `processDay` (`service.js:3818`) y `listAttendance` (`:3723`) siguen con `findMany` sin proyectar. No es la ruta del monitor: no entra en el paquete 1. | `SELF_PUNCH_SELECT` ya existe y esta exportado; queda aplicarlo. |
+| MAR-109 | **CERRADO** — ver §8: `listAttendance` y `processDay` leen `readPunchRowsProjected` y `getRouteTracking` pasa a `SELF_PUNCH_SELECT`; el aviso `has_extra_evidence` + `publicPunchMetadata` conserva el conteo y la apertura por id. | PROD, mismo dia y tenant del cliente: 31.366 KB → 78 KB (400,5x), 2.916 ms → 736 ms (4x), 53 ids iguales, selfies 27=27, soporte 9=9, 0 filas con binario. `rango-production-2026-11-18.json`. |
 
 ### Correcciones al cuerpo de este documento
 
@@ -427,3 +427,36 @@ brief `docs/briefs/2026-11-18-monitor-marcaciones-evidencia-por-referencia.md`.
 2. **No existio nunca `gpsIngest.js`.** El brief de esta intervención lo citaba como si este documento lo nombrara en MAR-109. Cero coincidencias en el repo. El camino real por el que el GPS recibio la selfie es `routeEventMetadata` sin filtro, ya cerrado arriba.
 3. **La hipotesis del `storage_path` fantasma en `ActivityEvidence` queda descartada.** Se contrasto fila por fila: 106 de 106 con binario inline tienen bandera de rescate y su objeto existe en Storage con la misma longitud de bytes (muestra: ids 40/42/44, 2.494.899 B inline = 2.494.899 B en el objeto). Lo que pesa ahi es la **copia** que el rescate no borro, no una referencia falsa. Por eso el corte `NOT VALID` de la tabla si puede ir por bandera, y el de `GpsPing` no.
 4. **El numero que manda en disco es `TimePunch.extra_evidence`, no `metadata`:** 242,1 MB del total de 374,3 MB con binario. El paquete 1 ataca el viaje, no el disco; la purga C.2 sigue aplazada hasta que el lector este desplegado.
+
+## 8. Cierre medido de los paquetes 2 y 3 (2026-11-19, `desarrollo`)
+
+Igual que el apartado anterior: lo escribe la intervención corrective sobre el tip publicado de `desarrollo`, no la auditoría. Evidencia en `docs/qa/evidence/hr-monitor-byte-budget-20261118/`.
+
+### MAR-109 — las dos lecturas que quedaban
+
+El reporte de asistencia (`listAttendance`), el cierre de jornada (`processDay`) y el seguimiento de ruta (`getRouteTracking`) pedian la fila cruda. Ahora pasan por el mismo lector proyectado que el monitor, y el aviso que ve la pantalla se arma en el servicio (`announceProjectedPunchEvidence` + `publicPunchMetadata`), no en la pantalla.
+
+Medido en **producción**, el mismo día, el mismo tenant y la misma ventana de 24 horas, con el código del producto en los dos lados (`scripts/performance/timepunch-range-read-probe.js`, tres muestras, mediana):
+
+| Lado | Filas | Bytes de la respuesta | ms | Selfies contadas | Soportes contados | Filas con base64 largo |
+|---|---|---|---|---|---|---|
+| Crudo (comportamiento anterior) | 53 | 32.119.048 (31.366 KB) | 2.916 | 27 | 9 | 27 |
+| Proyectado (comportamiento actual) | 53 | 80.193 (78 KB) | 736 | 27 | 9 | **0** |
+
+Factor medido: **400,5x menos bytes y 4x menos tiempo**, con los 53 ids idénticos. La sonda **aborta** si la proyección pierde ids, selfies o soportes, así que el número no se puede publicar incompleto: la primera corrida de la puerta produjo exactamente ese aborto (`27 -> 0`) y obligó a medir con el lector real y no con el texto del SQL, que es como se habría colado el reporte en «Sin evidencia fotográfica».
+
+### Paquete 2 — la puerta de presupuesto, con rojo demostrado
+
+`npm run certify:hr-monitor-budget:selftest` fija tres topes (4 MiB por listado, p95 de 3.000 ms, ningún `data:…;base64,` de más de 8 KB dentro de un listado) y demuestra los dos sentidos sin red: el listado gordo del incidente cae en rojo por volumen y por binario inline (`46.556.774 bytes`, `2.097.175 caracteres`), uno lento cae en rojo por p95, y el listado anunciado por referencia pasa en verde. Salida versionada en `selftest-gate.txt`.
+
+La corrida contra el ambiente desplegado (`certify:hr-monitor-budget:qa` / `:production`, con `--fixture` de la certificación E2E) sigue pendiente: no existe evidencia de navegador ni de API desplegada hasta los paquetes 6 y P-A/P-B, y así queda declarado en el brief.
+
+### Paquete 3 — el contrato de estados en `apps/web`
+
+- `loadMonitor` y `loadEventSummaries` dejan de terminar en `catch {}`: registran la hora de la última lectura válida y marcar el intento fallido, y la banda `role="alert"` dice «lo que se muestra es la lectura de las HH:mm» o «aún no hay lectura de este día», con el reintento automático que ya existía.
+- El panel vacío pasa de tres estados: *cargando* (primera lectura del día), *sin lectura reciente* (el último intento no respondió) y *sin eventos* (la fuente afirmó cero). El vacío deja de afirmarse como ausencia de marcaciones.
+- Los contadores conservan `null` cuando ninguna fuente respondió por el horario (`punch_count`/`event_count`/`evidence_count` nulos en el tipo, `?? null` en la fusión, etiqueta «sin lectura» en la pantalla) y `0` solo cuando la fuente lo afirmó. Pruebas: `apps/web/test/hr-monitor-stale-read.test.mjs` (7/7).
+
+### Lo que esta medición todavía no dice
+
+El número de arriba es de base de datos y serialización con el lector del producto, no del navegador contra el build desplegado: el `delay` percibido por el usuario se certifica en QA (paquete 6) y en producción (P-B). La latencia del endpoint de evidencia por id (`/hr/monitor-evidence/:source/:id`) se sigue midiendo en la certificación E2E, y la purga del binario ya rescatado (`extra_evidence` 235,9 MB + `metadata` 21,9 MB + `ActivityEvidence` 72,5 MB) conserva su dependencia del lector desplegado.

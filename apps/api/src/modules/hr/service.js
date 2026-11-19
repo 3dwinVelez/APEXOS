@@ -212,6 +212,11 @@ function monitorPunchEvidenceFlag(punch) {
 // `storage_path` en la selfie y en el extra cuando la bandera o la columna ya lo prometen,
 // para que la pantalla pida el contenido por id a `getMonitorEvidence`. No toca lo que esta
 // en la base ni borra bytes de filas que aun los llevan.
+//
+// `publicPunchMetadata` cierra el viaje: es el unico lector de `identity_photo` en estos
+// listados y su contrato es anunciar el archivo sin arrastrarlo. Sin ella, la pantalla de
+// marcacion recibia la selfie en claro dentro de `metadata` (414 KB de media, 2,6 MB el peor
+// caso medido en produccion) cuando lo que pinta son tipo, hora, placa y ruta.
 function announceRescuedPunchEvidence(punch) {
   if (!punch || typeof punch !== "object") return punch;
   const metadata = punch.metadata && typeof punch.metadata === "object" ? punch.metadata : null;
@@ -225,6 +230,24 @@ function announceRescuedPunchEvidence(punch) {
     const rescued = evidenceStorage.pathForEvidence(extra, metadata, "extra");
     if (rescued) extra.storage_path = rescued;
   }
+  if (metadata) punch.metadata = mobileIdentity.publicPunchMetadata(metadata);
+  return punch;
+}
+
+// Aviso del reporte de asistencia: la fila llega sin bytes (proyeccion de
+// `monitorEvidenceRows`) y aqui el aviso interno se convierte en el contrato que la pantalla
+// ya entiende: `extra_evidence` anunciado con `has_base64_data` y, cuando la bandera de
+// rescate lo promete, con `storage_path`. La otra mitad del par se resuelve arriba. Sin este
+// paso el conteo del reporte caeria a cero en cuanto el listado deje de traer el payload.
+function announceProjectedPunchEvidence(punch) {
+  if (!punch || typeof punch !== "object") return punch;
+  announceRescuedPunchEvidence(punch);
+  const rescued = evidenceStorage.pathForEvidence(null, punch.metadata, "extra");
+  punch.extra_evidence = punch.has_extra_evidence || rescued
+    ? { has_base64_data: true, available: true, ...(rescued ? { storage_path: rescued } : {}) }
+    : null;
+  // El aviso interno no es parte del contrato de la pantalla: `extra_evidence` ya lo dice.
+  delete punch.has_extra_evidence;
   return punch;
 }
 
@@ -3392,6 +3415,10 @@ async function getRouteTracking(tenantId, id, query = {}) {
         ...routeScope,
         punched_at: { gte: dateStart, lt: endOfDay(dateStart) }
       },
+      // El seguimiento de la ruta pinta puntos en el mapa, no la selfie: 500 filas crudas
+      // eran hasta 2,8 MB por marcacion cruzando el pooler (MAR-109). La evidencia se sigue
+      // pidiendo por id en `/hr/monitor-evidence`.
+      select: SELF_PUNCH_SELECT,
       orderBy: { punched_at: "asc" },
       take: 500
     });
@@ -3720,12 +3747,14 @@ function nextPunchType(punches) {
 async function listAttendance(tenantId, query = {}) {
   const range = boundedReportRange(query);
   return prisma.runWithTenant(tenantId, async () => {
-    const punches = await prisma.timePunch.findMany({
-      where: {
-        date: { gte: range.start, lt: range.end },
-        ...(query.user_name || query.usuario ? { user_name: query.user_name || query.usuario } : {})
-      },
-      orderBy: [{ user_name: "asc" }, { punched_at: "asc" }]
+    // El reporte pinta la evidencia, pero no necesita traerla: pide el archivo por id
+    // (`HrTimelineEvidence` -> `/hr/monitor-evidence/:source/:id`). Leer la fila entera hacia
+    // medir 28 MB en un solo dia del tenant del horario 336 (MAR-109).
+    const punches = await monitorEvidenceRows.readPunchRowsProjected(prisma, tenantId, {
+      start: range.start,
+      end: range.end,
+      userName: query.user_name || query.usuario || null,
+      orderBy: "user_name"
     });
     if (query.flat === "1" || query.legacy === "1") {
       return punches.map((punch) => ({
@@ -3752,7 +3781,7 @@ async function listAttendance(tenantId, query = {}) {
       route_id: rows[0]?.route_id || null,
       last_type: rows[rows.length - 1].type || "sin_marcar",
       next_type: nextPunchType(rows),
-      punches: rows.map(announceRescuedPunchEvidence)
+      punches: rows.map(announceProjectedPunchEvidence)
     }));
   });
 }
@@ -3815,7 +3844,10 @@ async function processDay(tenantId, input = {}) {
     const [employees, schedules, punches, nightParameters] = await Promise.all([
       prisma.employee.findMany({ where: { active: true }, include: { user: { select: safeUserSelect } } }),
       prisma.workSchedule.findMany({ where: { active: true } }),
-      prisma.timePunch.findMany({ where: { date: { gte: day, lt: endOfDay(day) } }, orderBy: { punched_at: "asc" } }),
+      // El cierre solo suma tiempos: nunca abrio la evidencia y, igual que el reporte, pagaba
+      // el binario de cada marcacion (MAR-109). `processWorkday` lee escalares y `late_minutes`
+      // de `metadata`, que la proyeccion conserva.
+      monitorEvidenceRows.readPunchRowsProjected(prisma, tenantId, { start: day, end: endOfDay(day) }),
       activeLaborParameterValues(tenantId, day, ["JORNADA_NOCTURNA_INICIO", "JORNADA_NOCTURNA_FIN"])
     ]);
     const defaultSchedule = schedules[0];

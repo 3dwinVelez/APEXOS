@@ -243,6 +243,40 @@ function readDayEvidencePunches(prisma, tenantId, dayStart, dayEnd, limit) {
   `).then((rows) => rows.map(toRow));
 }
 
+// Reporte de asistencia y cierre de jornada. Son las dos lecturas de `TimePunch` que
+// quedaban sin proyectar (MAR-109): el reporte del rango y `processDay` del dia pedian la
+// fila entera, asi que cada apertura de Reportes o cada cierre pagaba el binario que nadie
+// consume. Medido el 2026-11-18 en produccion: 28 MB para un dia del tenant del cliente.
+//
+// Repite exactamente la proyeccion de `readDayEvidencePunches` -todos los escalares, la
+// misma guarda de tamano sobre `metadata` y el aviso de que `extra_evidence` existe sin
+// abrirlo- porque el contrato del cliente ya es ese: `has_extra_evidence` anuncia el archivo
+// y el binario se pide por id a `getMonitorEvidence`. `tenant_id` va escrito: `$queryRaw`
+// no pasa por el middleware de `core/prisma.js`.
+function readPunchRowsProjected(prisma, tenantId, { start, end, userName = null, orderBy = "punched_at", limit = null } = {}) {
+  const columns = Prisma.raw(PUNCH_COLUMNS.filter((column) => column !== "extra_evidence" && column !== "metadata")
+    .map((column) => `"TimePunch"."${column}" AS "${column}"`).join(", "));
+  const metadata = Prisma.raw(evidenceFreeMetadata('"TimePunch"."metadata"'));
+  // Orden permitido: el del reporte (usuario y luego hora) o el del cierre (hora). Cualquier
+  // otro valor cae al de hora, que es el unico que los consumidores de esta lectura suponen.
+  const order = orderBy === "user_name"
+    ? Prisma.raw('"TimePunch"."user_name" ASC, "TimePunch"."punched_at" ASC')
+    : Prisma.raw('"TimePunch"."punched_at" ASC');
+  const userFilter = userName ? Prisma.sql`AND "TimePunch"."user_name" = ${userName}` : Prisma.empty;
+  const rowLimit = Number.isFinite(limit) && limit > 0 ? Prisma.sql`LIMIT ${Number(limit)}` : Prisma.empty;
+  return prisma.$queryRaw(Prisma.sql`
+    SELECT ${columns},
+           ${metadata}::text AS "metadata",
+           coalesce(pg_column_size("TimePunch"."extra_evidence") > ${EVIDENCE_PRESENT_MIN_BYTES}, false) AS "has_extra_evidence"
+    FROM "public"."TimePunch"
+    WHERE "TimePunch"."tenant_id" = ${tenantId}
+      AND "TimePunch"."date" >= ${start} AND "TimePunch"."date" < ${end}
+      ${userFilter}
+    ORDER BY ${order}
+    ${rowLimit}
+  `).then((rows) => rows.map(toRow));
+}
+
 // El mapa de operaciones del dia tambien arrastra el GPS, y el deflector es el mismo
 // binario. Medido en produccion el 2026-11-18 sobre el tenant del horario 336: `GpsPing`
 // tiene 6.522 filas y 30 MB de `metadata`, 44 de esas filas llevan `identity_photo` en
@@ -335,6 +369,7 @@ module.exports = {
   readRouteActivityEvidence,
   readRouteEvidence,
   readRoutePunchEvidence,
+  readPunchRowsProjected,
   readUnlinkedEvidence,
   shrinkMetadataEvidence,
   shrinkNested,

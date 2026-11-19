@@ -2,8 +2,8 @@
 name: apexos-brief
 description: Convierte un prompt crudo en un brief de alcance versionado para APEXOS. Valida versiones de agentes y documentación contra origin/desarrollo, verifica rutas reales y escribe docs/briefs/<fecha>-<slug>.md con inventario A/M/D exacto, criterios de aceptación observables, evidencia exigida, actualización obligatoria de agentes y publicación acotada a origin/desarrollo.
 when_to_use: El usuario invoque /apexos-brief, presente una tarea multi-módulo, un pedido ambiguo o pida planear antes de implementar. Obligatorio antes de tocar código.
-version: 2.59.0
-updated_at: 2026-11-18
+version: 2.60.0
+updated_at: 2026-11-19
 contract: 2
 ---
 
@@ -186,6 +186,12 @@ Sin estas cuatro líneas, el siguiente lector amplía el alcance del producto o 
     - **`A` o `M` lo decide el índice.** La auditoría `docs/audits/2026-11-18-monitor-marcaciones-336/` estaba declarada `M` en el brief porque «se le añade una sección»; `git status --short` la devolvía `?? docs/audits/2026-11-18-monitor-marcaciones-336/`: la escribió esta misma intervención y nunca se commiteó, así que entra como `A` con sus tres JSON de `evidencia/`. Un manifiesto de alcance que anuncia `M` sobre un archivo no versionado no describe el diff neto y el gate de promoción lo rechaza.
     - **Rutas de carpetas sin seguimiento.** Cuando el inventario menciona una carpeta de evidencia recién creada (`docs/qa/evidence/<corte>/`), enumera sus archivos; si el padre ya tiene decenas de carpetas `??` de otras sesiones, decir solo el directorio invite a `git add` del vecino.
     - **Citas con número.** Cada ID de hallazgo, `archivo:linea` y nombre de archivo que el brief cita se comprueba con `grep` en el documento o código citado, y los números de línea se recalculan después de los comentarios que el propio corte insertó. El brief que publicó «MAR-109 decía `gpsIngest.js`» citaba un archivo inexistente y el hallazgo equivocado (MAR-104); además fijó `createGpsPing:3289` y `:2692` que tras sus propias ediciones ya eran `:3313` y `:2707`.
+
+73. **Un «fuera de alcance» con motivo de estado vence, y una autorización verbal se transcribe con su cita y con lo que no compra.** Dos reparaciones que el brief del monitor de marcaciones exigió el 2026-11-19:
+    - **El bloqueo por frente ajeno se revalida al cerrar.** La sección 3 declaraba `apps/web/**` fuera de alcance «hasta que otra sesión commitee sus 11 archivos». Cuando ese frente publicó, el bullet quedó falso y había que levantarlo. Regla: al cerrar, cada exclusión cuyo motivo sea un *estado* (otro frente, otro commit, otra ventana) se vuelve a verificar con `git log`/`git status` y se reescribe con el commit exacto que la levantó, verificado en esa corrida —nunca de memoria ni anotada al margen. El primer intento aquí produjo un párrafo autocontradictorio con un hash inexistente (`0b1ba6e8` en lugar de `0b1ba6f8`): un brief es el registro que lee el que promociona después, y un hash mal citado es peor que no citarlo.
+    - **La autorización se copia textual y se acota.** «procede con mi autorización y no pares hasta garantizar que el ambiente main esté completamente desplegado» cubre el mecanismo —paquetes 4 a 7, despliegues, purgas, P-A y P-B— y se registró con la cita en la sección 10, marcando cada casilla como *otorgada pero con su compuerta debida*. La transcripción dice en la misma línea lo que **no** otorga: ningún gate se salta, `qa:preqa:evidence`/`qa:approval:evidence` siguen exigiendo su evidencia ejecutada y una rojo bloquea aunque la orden sea no parar.
+    - **Un criterio de aceptación se cierra con su número o con su deuda nombrada.** Los criterios 6 y 7 del brief se cerraron con la medición (32.119.048 B → 80.193 B, 2.916 ms → 736 ms, 27 = 27, 9 = 9, suites 266/266 y 143/143) y con la frase «lo que todavía no está medido es la corrida contra el build desplegado, que es el paquete 6». Un criterio que solo dice «hecho» vuelve a abrirse con el primer reclamo del dueño.
+    Por qué: el brief no es la foto del plan inicial, es el contrato que se lee dos semanas después para promover; si envejece mal, el que promueve confía en una restricción que ya no existe o en una garantía que nunca se midió.
 
 ## Checklist de intervención
 

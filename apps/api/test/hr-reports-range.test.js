@@ -26,7 +26,9 @@ test("reportes de Talento Humano consultan el rango inclusivo solicitado", async
   const received = {};
   const fakePrisma = {
     runWithTenant: (_tenantId, callback) => callback(),
-    timePunch: { findMany: async (query) => { received.attendance = query; return []; } },
+    // `listAttendance` lee por proyeccion cruda (MAR-109): el rango viaja en los valores del
+    // `Prisma.sql`, no en un `where` de Prisma. El contrato de rango es el mismo.
+    $queryRaw: async (query) => { received.attendance = query; return []; },
     workActivity: { findMany: async (query) => { received.activities = query; return []; } },
     timeRoute: { findMany: async (query) => { received.routes = query; return []; } },
     employee: { findMany: async () => [] }
@@ -39,7 +41,8 @@ test("reportes de Talento Humano consultan el rango inclusivo solicitado", async
     await loaded.service.listRoutes("tenant-qa", query);
 
     const expected = { gte: new Date("2026-08-01T05:00:00.000Z"), lt: new Date("2026-08-11T05:00:00.000Z") };
-    assert.deepEqual(received.attendance.where.date, expected);
+    assert.deepEqual((received.attendance.values || []).filter((value) => value instanceof Date), [expected.gte, expected.lt]);
+    assert.match(received.attendance.sql, /"TimePunch"\."tenant_id" = \?/, "la lectura del reporte perdio el filtro de tenant");
     assert.deepEqual(received.activities.where.occurred_at, expected);
     assert.deepEqual(received.routes.where.date, expected);
   } finally {

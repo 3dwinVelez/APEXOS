@@ -55,9 +55,9 @@
     {
       "name": "apexos-backend",
       "role": "experto-backend",
-      "version": "2.17.0",
-      "updated_at": "2026-11-18",
-      "sha256": "2747dfd030c351b67a5959161cd8c7ae19f77b4eda1510d0e86378a71ab30f4c",
+      "version": "2.18.0",
+      "updated_at": "2026-11-19",
+      "sha256": "f34739503d509f3af7f62a43df989066966970cdbfe699781776a3e616573a42",
       "source": ".qoder/skills/apexos-backend/SKILL.md",
       "mirror": "agents/apexos-backend/SKILL.md",
       "controls": [
@@ -85,15 +85,16 @@
         "almacen-driver-configurado",
         "fallo-dependencia-conserva-codigo",
         "401-es-credencial-403-es-alcance",
-        "evidencia-storage-antes-de-transaccion"
+        "evidencia-storage-antes-de-transaccion",
+        "rango-timepunch-solo-por-lector-proyectado"
       ]
     },
     {
       "name": "apexos-brief",
       "role": "brief-alcance",
-      "version": "2.59.0",
-      "updated_at": "2026-11-18",
-      "sha256": "ea712dc984ee83f2022c24b06a9a8bb2e052b60960e2e8c29a534f829cf99bbc",
+      "version": "2.60.0",
+      "updated_at": "2026-11-19",
+      "sha256": "3ded72d54370ab9047f6e901c1342370556683eae2656d5a58cd7731abcf31a1",
       "source": ".qoder/skills/apexos-brief/SKILL.md",
       "mirror": "agents/apexos-brief/SKILL.md",
       "controls": [
@@ -139,7 +140,8 @@
         "brief-evidencia-qa-paquete-documental",
         "brief-ventana-ejecutada-y-deltas-atribuidos",
         "brief-marca-casillas-con-commit-medido",
-        "brief-post-checkpoint-narra-incidente-y-aplazamientos"
+        "brief-post-checkpoint-narra-incidente-y-aplazamientos",
+        "exclusion-vence-y-autorizacion-se-cita"
       ]
     },
     {
@@ -172,9 +174,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.33.0",
-      "updated_at": "2026-11-18",
-      "sha256": "6bfe020635854c2ef77ebe0036b58560551439943ca7beb7012fa7ff326724e8",
+      "version": "2.34.0",
+      "updated_at": "2026-11-19",
+      "sha256": "9b99242dadfd9870f199360772d3f03791b34f63d05c56426525cb95d5836747",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -210,15 +212,16 @@
         "portafolio-publicado-catalogo",
         "capa-visual-rebasada-y-recertificada",
         "evidencia-perezosa-por-referencia",
-        "fallo-tecnico-no-es-ventana-estado-de-dato"
+        "fallo-tecnico-no-es-ventana-estado-de-dato",
+        "contador-sin-lectura-no-es-cero"
       ]
     },
     {
       "name": "apexos-git-guardian",
       "role": "git-gobernanza",
-      "version": "2.20.0",
-      "updated_at": "2026-11-18",
-      "sha256": "7a76f0671f7774c50fcb036fb0426297617d0e760370739ce7bcf0913f7666af",
+      "version": "2.21.0",
+      "updated_at": "2026-11-19",
+      "sha256": "12bad8ebda2e90dcbbacd47ab254062cffcf3a6f71a43a798a868bb66ca01baa",
       "source": ".qoder/skills/apexos-git-guardian/SKILL.md",
       "mirror": "agents/apexos-git-guardian/SKILL.md",
       "controls": [
@@ -244,15 +247,16 @@
         "promocion-a-main-sin-pr",
         "evidencia-de-manifiesto-resuelta-contra-su-directorio",
         "paquete-transportado-se-compara-por-archivo",
-        "checkpoint-anti-barrido"
+        "checkpoint-anti-barrido",
+        "commit-citado-sale-de-un-comando"
       ]
     },
     {
       "name": "apexos-performance",
       "role": "experto-rendimiento",
-      "version": "2.17.0",
-      "updated_at": "2026-11-17",
-      "sha256": "a9f683ea6943d431925ad02212b9367f7150bfcbed03046d44cd36033476c069",
+      "version": "2.18.0",
+      "updated_at": "2026-11-19",
+      "sha256": "42cbc6a26a439293622d312e536965b5f4e8611d6f589ad94c59c2afeb8b0e87",
       "source": ".qoder/skills/apexos-performance/SKILL.md",
       "mirror": "agents/apexos-performance/SKILL.md",
       "controls": [
@@ -276,15 +280,16 @@
         "torre-umbrales-fuente-unica",
         "torre-presupuesto-por-ambiente",
         "torre-rejilla-y-punto-inspeccionable",
-        "torre-historia-medida-por-monitor"
+        "torre-historia-medida-por-monitor",
+        "sonda-transporte-con-lector-del-producto"
       ]
     },
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.72.0",
-      "updated_at": "2026-11-18",
-      "sha256": "dc7ff359bb9d74d2de8fde2a11b6aa8bb58610b83fdac7a1747b4ea26d752060",
+      "version": "2.73.0",
+      "updated_at": "2026-11-19",
+      "sha256": "7fb9466f8813497b5ccd76090cd6237b7fbee44d89bb335c574a89e8a4d50d23",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -344,15 +349,16 @@
         "smoke-produccion-supabase-auth-y-latencia",
         "certificacion-ambiente-anclada-al-commit",
         "purga-se-certifica-con-lector-stubbeado",
-        "ausencia-se-certifica-con-tormenta-fabricada"
+        "ausencia-se-certifica-con-tormenta-fabricada",
+        "puerta-de-presupuesto-se-demuestra-roja"
       ]
     },
     {
       "name": "apexos-seguridad",
       "role": "experto-ciberseguridad",
-      "version": "2.29.0",
-      "updated_at": "2026-11-18",
-      "sha256": "a42292b0d0529937a45e5a564c138ea9c1f0717b1a9c57c4de6e8034f293638d",
+      "version": "2.30.0",
+      "updated_at": "2026-11-19",
+      "sha256": "b1c9b431a0108673cea4ea502458169effc942d4974f258cbee8acf1fe61b00d",
       "source": ".qoder/skills/apexos-seguridad/SKILL.md",
       "mirror": "agents/apexos-seguridad/SKILL.md",
       "controls": [
@@ -385,15 +391,16 @@
         "reclasificacion-401-con-caso-espejo-medido",
         "promocion-de-bloque-reconstruida",
         "anillo-persistido-sin-dato-de-empresa",
-        "almacen-privado-rutas-saneadas"
+        "almacen-privado-rutas-saneadas",
+        "sonda-de-produccion-sin-contenido"
       ]
     },
     {
       "name": "equipo-apexos",
       "role": "orquestador",
-      "version": "2.43.0",
-      "updated_at": "2026-11-18",
-      "sha256": "20ee123cc494c932a343414f86366d565abe2e61f4cffb2a06b6d65e52ecc118",
+      "version": "2.44.0",
+      "updated_at": "2026-11-19",
+      "sha256": "5df48378eaa662cbf17bc518225048bce05951f64c546c25488eee66c5c609c2",
       "source": ".qoder/skills/equipo-apexos/SKILL.md",
       "mirror": "agents/equipo-apexos/SKILL.md",
       "controls": [
@@ -430,7 +437,8 @@
         "protagonismo-dato-jerarquia-visual",
         "curaduria-portafolio-por-evidencia",
         "evidencia-de-ambiente-es-intervencion-completa",
-        "arbol-barrido-se-reconstruye-y-se-publica"
+        "arbol-barrido-se-reconstruye-y-se-publica",
+        "garantia-de-experiencia-traducida-a-numero"
       ]
     }
   ],

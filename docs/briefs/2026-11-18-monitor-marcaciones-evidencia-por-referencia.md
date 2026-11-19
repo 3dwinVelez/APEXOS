@@ -67,9 +67,36 @@ Y una verificación que cambia el riesgo de la purga: `ActivityEvidence` del ten
 
 Ninguno.
 
+## 2b. Alcance del segundo corte (paquetes 2 y 3, en `desarrollo`)
+
+El frente de cargas de pantalla ya publico (`0b1ba6f8`), asi que `apps/web/**` entra sin mezclar dos alcances en un diff.
+
+| Estado | Archivo | Que cambia |
+|---|---|---|
+| `M` | `apps/api/src/modules/hr/monitorEvidenceRows.js` | Lectura nueva `readPunchRowsProjected(prisma, tenantId, { start, end, userName, orderBy, limit })`: escalares sin `extra_evidence` ni `metadata` crudas, `metadata` con la misma guarda `evidenceFreeMetadata` y `coalesce(pg_column_size(extra_evidence) > 16, false) AS has_extra_evidence`. |
+| `M` | `apps/api/src/modules/hr/service.js` | `listAttendance` y `processDay` abandonan `prisma.timePunch.findMany` y usan el lector proyectado; `getRouteTracking` aplica `SELF_PUNCH_SELECT`. Nacen `announceProjectedPunchEvidence` (aviso con `has_base64_data`/`available`/`storage_path`, borra el flag interno) y `announceRescuedPunchEvidence` pasa a emitir `metadata` con `publicPunchMetadata`, que es lo que conserva el conteo de selfies en el reporte. |
+| `M` | `apps/web/app/dashboard/talento-humano/reportes/page.tsx` | `punchEvidenceAnnounced` lee el aviso (no los bytes) y `punchEvidenceCount`/`punchTimelineEvidence` cuentan y abren por id: sin este lado, proyectar el reporte dejaba la pantalla otra vez en «Sin evidencia fotografica». |
+| `M` | `apps/web/components/hr/HrTimelineEvidence.tsx` | El tipo de la foto acepta el aviso (`has_base64_data`, `available`) y dispara la carga por id. |
+| `M` | `apps/web/app/dashboard/talento-humano/rutas/page.tsx` | Cierra MAR-103: `monitorSnapshot`/`summariesSnapshot` con la hora de la ultima lectura valida, banda `role="alert"` cuando el ultimo intento no respondio, panel vacio en tres estados (cargando / sin lectura / sin eventos) y contrato `null`-versus-cero en `punch_count`/`event_count`/`evidence_count` con etiqueta «sin lectura». |
+| `M` | `apps/api/test/hr-monitor-evidence-columns.test.js` | Candado del lector nuevo (forma del SQL, valores vinculados, orden del reporte y del cierre) + tres pruebas funcionales del aviso: anuncia sin bytes, purgada rescatada por bandera, y fila sin evidencia con `extra_evidence === null` y sin flag interno. |
+| `M` | `apps/api/test/hr-reports-range.test.js`, `apps/api/test/hr-labor-rates-vigencia.test.js` | Los `fake prisma` leen ahora la plantilla `Prisma.sql` (`query.sql`/`query.values`), no solo el arreglo de template: `String(Prisma.sql…)` es `[object Object]` y el candado viejo se satisfied en silencio. |
+| `M` | `apps/web/test/hr-report-punch-selfie.test.mjs` | Fija el contrato nuevo del reporte: cuenta `punchEvidenceAnnounced` y empuja la evidencia al timeline por aviso. |
+| `A` | `apps/web/test/hr-monitor-stale-read.test.mjs` | Siete contratos de MAR-103: registradores de snapshot, `catch` que no muda, banda de aviso, tres estados del vacio, reintento automatico y `null`-versus-cero. |
+| `A` | `scripts/certifications/hr-monitor-byte-budget.js` + 3 scripts `package.json` | Puerta de presupuesto (4 MiB por listado, p95 3.000 ms, ningun `data:…;base64,` > 8 KB) con `--selftest` que demuestra el rojo y el verde, y modo de medicion contra el ambiente desplegado con `--fixture`. |
+| `A` | `scripts/performance/timepunch-range-read-probe.js` | Sonda de solo lectura que mide crudo-versus-proyectado **con el codigo del producto** (lector + `publicPunchMetadata` + `punchPhotoItems`) y aborta si se pierden ids, selfies o soportes. |
+| `A` | `docs/qa/evidence/hr-monitor-byte-budget-20261118/` (4 archivos) | `selftest-gate.txt`, `rango-production-2026-11-18.json`, `suites-y-medicion.txt` (con su recertificacion tras el cierre documental) y `agents-gates.txt`. |
+| `M` | `docs/audits/2026-11-18-monitor-marcaciones-336/00-hallazgos-y-plan.md` | MAR-103 y MAR-109 pasan de ABIERTO a CERRADO en la tabla de §7 y se añade §8 con la medicion y lo que todavia no dice. |
+| `M` | `docs/briefs/2026-11-18-monitor-marcaciones-evidencia-por-referencia.md` | Esta seccion 2b, los criterios 6 y 7 medidos, la exclusion de `apps/web/**` levantada con su commit y las autorizaciones actualizadas. |
+| `M` | `docs/project/modulos/talento-humano.md` | Seccion nueva «Monitor de marcaciones: contrato de transporte (2026-11-18)»: anuncia/entrega, nulo-versus-cero, fallo tecnico como estado del dato, la puerta de presupuesto y el `tenant_id` que no se recorta. |
+| `M` | `.qoder/skills/**` + espejos `agents/**` + `agents/registry.json` + `agents/CHANGELOG.md` | Controles nuevos en los ocho dueños que el preflight ruteo para estas rutas: `apexos-backend` 2.18.0, `apexos-seguridad` 2.30.0, `apexos-frontend` 2.34.0, `apexos-performance` 2.18.0, `apexos-qa` 2.73.0, `equipo-apexos` 2.44.0, `apexos-brief` 2.60.0 y `apexos-git-guardian` 2.21.0. |
+
+### Borrados autorizados (`allowed_deletions`) de este corte
+
+Ninguno. Ningun archivo se elimina; lo unico que deja de pedirse son dos columnas dentro de una lectura (`extra_evidence` y `metadata` crudas), y eso esta fijado por las pruebas de contrato.
+
 ## 3. Fuera de alcance (con su motivo)
 
-- **`apps/web/**` en este commit.** Hay una intervención activa, sin commitear, sobre `rutas/page.tsx`, `mapa/page.tsx`, `lib/api.ts` y `hr-monitor-refresh.test.mjs`. Tocar las mismas rutas ahora mezclaría dos alcances en un diff y obligaría a commitear trabajo ajeno. El paquete 3 (contrato de estados en pantalla) se despacha sobre el tip que ya incluya su commit.
+- **~~`apps/web/**` en este commit.~~ Levantado.** El frente de cargas de pantalla publico su parte (`0b1ba6f8`) y el preflight de este corte corroboro `HEAD == origin/desarrollo` antes de escribir; el inventario de la seccion 2b es exactamente el de este corte y el commit va con rutas precisas, no con el indice ajeno.
 - **`scripts/certifications/performance-budget-guard-local.cjs`.** Ruta sin seguimiento de otro frente. El presupuesto de bytes del monitor entra en una gate nueva y propia (`hr-monitor-payload-budget-local.js`), no editando el arnés ajeno.
 - **La purga del base64, el `VACUUM FULL`, el índice `(tenant_id, route_id)` y el rescate de `GpsPing` en la nube.** Son escrituras en ambientes compartidos: cada una es autorización independiente y va en los paquetes 5 a 7.
 - **Alinear los grants de `service_role` entre QA y producción (MAR-107).** Es un `GRANT`/`REVOKE` en la base de producción, no un cambio de código.
@@ -97,8 +124,8 @@ Ninguno.
 
 **Paquetes siguientes (cada uno con su propia puerta, no se certifican por anticipado):**
 
-6. Paquete 2 — presupuesto medible: gate versionada que afirma que la respuesta de `operations-map` de un día real del tenant del cliente pesa menos de 200 KB y que ninguna lectura cruda devuelve `;base64,`; la gate se demuestra **pudiendo fallar** (rojo provocado con la proyección desactivada).
-7. Paquete 3 — contrato de estados (`apps/web/**`): `punch_count`/`event_count` pasan a `null` cuando la fuente todavía no respondió, `0` solo cuando la fuente afirmó cero; `catch` silencioso eliminado en `loadMonitor`/`loadEventSummaries`; la pantalla distingue *cargando*, *sin datos* y *no pude leer* en el DOM. Aceptación por navegador: abrir el horario del cliente y certificar los tres estados, no solo el camino feliz.
+6. Paquete 2 — presupuesto medible: gate versionada que afirma que la respuesta de `operations-map` de un día real del tenant del cliente pesa menos de 200 KB y que ninguna lectura cruda devuelve `;base64,`; la gate se demuestra **pudiendo fallar** (rojo provocado con la proyección desactivada). **Medido:** la gate vive en `scripts/certifications/hr-monitor-byte-budget.js` con tres presupuestos declarados (4 MiB por listado, p95 de 3.000 ms y cero binarios inline de más de 8 KB) y su `--selftest` cae en rojo en tres direcciones distintas —binario inline, latencia y volumen sin data URL— y en verde solo con el aviso por referencia (`selftest-gate.txt`, 4/4). La medición del corte sobre producción, con el código del producto en ambos lados, es **32.119.048 B y 2.916 ms → 80.193 B y 736 ms** (400,5× menos bytes, 4× más rápido, 53 ids idénticos, selfies 27 = 27, soporte 9 = 9, cero binario inline; `rango-production-2026-11-18.json`). El umbral de 200 KB del enunciado se relajó a 4 MiB a propósito: el corte real deja la lectura en 80 KB y la puerta tiene que seguir distinguiendo los dos mundos aunque el pooler vaya lento. Lo que **todavía no** está medido es la corrida de la gate contra el build desplegado en QA; eso es el paquete 6.
+7. Paquete 3 — contrato de estados (`apps/web/**`): `punch_count`/`event_count` pasan a `null` cuando la fuente todavía no respondió, `0` solo cuando la fuente afirmó cero; `catch` silencioso eliminado en `loadMonitor`/`loadEventSummaries`; la pantalla distingue *cargando*, *sin datos* y *no pude leer* en el DOM. Aceptación por navegador: abrir el horario del cliente y certificar los tres estados, no solo el camino feliz. **Medido en código y prueba:** los dos `catch` registran la última lectura válida y el fallo del intento (`hr-monitor-stale-read.test.mjs`, 7/7) y el contrato nulo-versus-cero quedó fijado en `rutas/page.tsx` —`punch_count: number | null`, `event_count: summary?.event_count ?? null`, `monitor_answered`, etiqueta «sin lectura» y `counterText()`— con dos pruebas que además prohíben el `|| 0` que borraba la distinción. Suite web del dominio: 143/143; `npm run typecheck`: exit 0. Falta la certificación de navegador sobre el build desplegado (paquetes 6/P-A), que es la que afirma el DOM y no la fuente.
 8. Paquete 4 — migración `CHECK` sobre `metadata` (ni `TimePunch` ni `GpsPing` admiten un `base64_data`/`base64` no vacío) declarada `NOT VALID` en el despliegue; alinear `GpsPing` (`tenant_id` por deflector y el índice de su lectura del día) en migración separada; la `VALIDATE` solo después de las purgas del paquete 5, porque hoy 46 filas de `TimePunch` y 44 de `GpsPing` la violarían.
 9. Paquete 5 — purga con verificación por contenido, en dos frentes que ya no son el mismo trabajo:
    - `ActivityEvidence`: sus 106 filas están rescatadas (bandera `hr_evidence_rescue`, `storage_path` y objeto descargado del mismo tamaño que la columna, medido el 2026-11-19). Se vacía `base64_data` conservando la referencia; recupera ~73 MB.
@@ -163,13 +190,14 @@ Consecuencia que gobierna el plan: **los ambientes liberados no pueden purgar ni
 ## 10. Autorizaciones requeridas
 
 - [x] «monta el plan de intervención y comenzamos» — cubre el paquete 1 (y el 2) en `desarrollo`, con su push acotado.
-- [ ] Paquete 3 (web) — se ejecuta sobre el tip que incluya el commit del frente de cargas de pantalla; no se le escribe encima.
-- [ ] Paquete 4 en la nube — aplicar migraciones en QA y producción.
-- [ ] Paquete 5 — rescate de `GpsPing` en QA y producción (subidas a Storage + banderas).
-- [ ] Paquete 6 — despliegue del lector en QA y producción.
-- [ ] Paquete 7 — purga C.2, `VACUUM FULL`, `VALIDATE CONSTRAINT`, índice nuevo.
-- [ ] P-A promoción a `develop` (con la ventana de su despliegue).
-- [ ] P-B promoción a `main` (con su aprobación funcional firmada).
+- [x] Paquete 3 (web) — el frente de cargas de pantalla publico su commit (`0b1ba6f8`) y este corte se escribio encima despues de verificar `HEAD == origin/desarrollo`. No hay dos alcances en el mismo diff.
+- [x] **Autorizacion del dueño (2026-11-18):** «procede con el cambio pero antes garantiza que con el cambio el monitor pueda cargar y actualizar los datos de manera muy eficientes sin retrasos, al igual que al explorar los horarios estos permitan ver las evidencias tambien de manera eficiente sin la sensacion de delay en la herramienta, procede con mi autorizacion y no pares hasta garantizar que el ambiente main este completamente desplegado con la correcion». Otorga los paquetes 4 a 7 y las promociones P-A y P-B con sus despliegues. **No otorga saltarse compuertas**: cada promocion sigue exigiendo su manifiesto v2, `qa:promotion:scope`, `qa:preqa:evidence` / `qa:approval:evidence` y la certificacion E2E ejecutada; un gate pendiente o en rojo bloquea, y la autorizacion no se convierte en aprobacion.
+- [ ] Paquete 4 en la nube — aplicar migraciones en QA y producción. *(autorizado arriba; pendiente de ejecutar con su manifiesto)*
+- [ ] Paquete 5 — rescate de `GpsPing` en QA y producción (subidas a Storage + banderas). *(autorizado arriba; escritura en la nube con evidencia por SHA-256)*
+- [ ] Paquete 6 — despliegue del lector en QA y producción. *(autorizado arriba; es la puerta de 7)*
+- [ ] Paquete 7 — purga C.2, `VACUUM FULL`, `VALIDATE CONSTRAINT`, índice nuevo. *(autorizado arriba; `allowed_deletions` exacto en el manifiesto)*
+- [ ] P-A promoción a `develop` (con la ventana de su despliegue). *(autorizada arriba; falta la verde de las compuertas)*
+- [ ] P-B promoción a `main` (con su aprobación funcional firmada). *(autorizada arriba; la aprobacion funcional del dueño no sustituye la evidencia de QA ejecutada)*
 
 ## 11. Documentación, agentes y publicación (obligatoria)
 

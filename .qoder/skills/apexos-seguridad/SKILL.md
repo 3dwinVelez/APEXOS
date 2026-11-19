@@ -2,8 +2,8 @@
 name: apexos-seguridad
 description: Experto en ciberseguridad del Equipo APEXOS. Revisa cambios contra OWASP Top 10, protege secretos, autenticación, autorización, RBAC/ABAC, RLS, subida de archivos y dependencias. Usar para auditorías de seguridad, revisión de código sensible, manejo de tokens/sesiones, secretos en el repositorio o hardening de accesos.
 when_to_use: Auditorías de seguridad, revisión de autenticación/autorización, secretos, RLS, subida de archivos, dependencias vulnerables.
-version: 2.29.0
-updated_at: 2026-11-18
+version: 2.30.0
+updated_at: 2026-11-19
 contract: 2
 ---
 
@@ -157,6 +157,8 @@ Antes de actuar, leer en este orden:
     - **Criterio de purga.** Nunca «existe `storage_path`»: el escritor guardaba la ruta declarada incluso con `HR_EVIDENCE_STORAGE_ENABLED` apagado, así que la columna puede anunciar un objeto que no se subió. Solo vale la bandera de rescate verificada por SHA-256 en la corrida, o el emparejamiento byte a byte contra la fila dueña. Puesto a prueba el 2026-11-19: las 106 filas de `ActivityEvidence` con binario sí estaban todas rescatadas y su objeto pesaba exactamente lo mismo (`produccion-evidencia-actividad.json`); el fantasma era la **copia** que el rescate no borró, no una ruta falsa. La consecuencia de seguridad es la contraria a la intuición: borrar por `storage_path` destruye evidencia sin duplicado.
     - **`$queryRaw` salta el middleware de tenant.** Toda lectura cruda del dominio escribe `tenant_id` en el SQL y lo vincula como valor; una proyección nueva que no lo incluya filtraría por fecha y expondría otras empresas.
     - **La proyección no filtra datos, los sustituye.** Se conserva la cabecera `data:<mime>;base64,` (los primeros 64 caracteres, de la que deriva el tipo el lector canónico) y el resto se reemplaza por `md5` del valor completo: el dedupe por valor sigue contando igual y ningún byte del rostro viaja en el listado. La certificación exige `filas_con_binario_largo = 0` sobre la respuesta proyectada, con la regex larga (`/base64,[A-Za-z0-9+/=]{256,}/`), no «la respuesta se ve chica».
+
+44. **Una sonda que mide producción es un acceso a datos del cliente: lleva guarda de ambiente, identidad por hash y cero contenido en la evidencia.** El corte del presupuesto del monitor trajo dos instrumentos nuevos que tocan la base y la API reales (`scripts/performance/timepunch-range-read-probe.js` y `scripts/certifications/hr-monitor-byte-budget.js`). Los controles que los hacen publicables: (a) **guarda de project ref antes de conectar** —el guion aborta si `config/<ambiente>.env` no apunta a `jzbwzmkidfthknsohhnr` (producción) o `jbirkghkekuifgfsgquq` (QA)—; (b) **el tenant se versiona como `sha256(id).slice(0,12)`**, nunca como nombre ni UUID, y el `api_url` se reduce al host; (c) **la salida son tamaños, conteos y milisegundos**, con el encabezado del SQL como prueba de la forma y sin ninguna fila de cliente; (d) **la gate de presupuesto no corre contra un puesto de pruebas** —exige `TARGET_ENV ∈ {qa, production}`— porque medir 4 MiB contra un seed local diría «verde» sobre un ambiente que no existe; (e) **las credenciales de la sesión de medición vienen de fixture, argumento o la tupla `NYVORA_REAL_ADMIN`, y la clave nunca se imprime ni entra al JSON de evidencia**. Y el control de producto que la medición afirma: ningún listado del monitor, del reporte ni del cierre transporta un `data:...;base64,`, de modo que la selfie de un trabajador viaja solo por `GET /hr/monitor-evidence/:source/:id`, que valida el `tenant_id` de la fila antes de tocar Storage. Por qué: un corte de rendimiento se certifica con logs que se comparten en QA y en el manifiesto de promoción; una evidencia con binarios de marca personal convierte una mejora en una filtración, y el `metadata` del monitor lo estaba siendo dentro de la base desde hacía meses.
 
 ## Checklist de intervención
 
