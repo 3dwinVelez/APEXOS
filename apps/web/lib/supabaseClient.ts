@@ -144,14 +144,19 @@ async function executeSupabaseFetch<T>(
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Supabase no respondio a tiempo. Reintenta en unos segundos.");
+      throw new Error("La plataforma no respondio a tiempo. Reintenta en unos segundos.");
     }
     throw error;
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: response.statusText }));
     const detail = body.message || body.error_description || body.error || JSON.stringify(body);
-    throw new Error(`Supabase ${response.status}: ${detail}`);
+    // El codigo y el detalle crudo viajan como propiedades para el diagnostico. La cadena del Error
+    // es lo que llega a la pantalla, y alli un "Supabase 503: {...}" no es un mensaje de usuario.
+    throw Object.assign(new Error(supabaseFailureNotice(response.status)), {
+      status: response.status,
+      detail: String(detail).slice(0, 240)
+    });
   }
   if (response.status === 204) return undefined as T;
   const text = await response.text();
@@ -159,9 +164,17 @@ async function executeSupabaseFetch<T>(
   return JSON.parse(text) as T;
 }
 
+function supabaseFailureNotice(status: number) {
+  if (status === 401) return "Tu sesion con la base de datos dejo de ser valida. Reintenta la operacion.";
+  if (status === 404) return "No encontramos la informacion solicitada. Recarga la pantalla.";
+  if (status === 408 || status === 429) return "La base de datos tardo demasiado en responder. Vuelve a intentar en unos segundos.";
+  if (status >= 500) return "La base de datos no pudo completar la operacion. Puedes reintentar en unos segundos.";
+  return "No fue posible completar la operacion en la base de datos.";
+}
+
 function isSupabaseUnauthorizedError(error: unknown) {
   if (!(error instanceof Error)) return false;
-  return /^Supabase 401\b/.test(error.message);
+  return (error as { status?: number }).status === 401;
 }
 
 export async function supabaseFetch<T>(path: string, options: SupabaseFetchOptions = {}): Promise<T> {

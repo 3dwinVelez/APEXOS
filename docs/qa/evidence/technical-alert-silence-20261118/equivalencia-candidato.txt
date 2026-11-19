@@ -1,0 +1,43 @@
+# Equivalencia entre el commit certificado en desarrollo y el candidato reconstruido sobre develop
+
+- Commit de origen (desarrollo): 0b1ba6f8e9238a6cd44d9f34ba05b463c8e4085a
+- Baseline del destino (origin/develop): 5fcc2ed16eae87d0ce16814462c11ba22abf2488
+- Candidato (arbol en indice, previo al commit): d068809ebf16c110428374eb0d8466e5c2ee977a
+
+| archivo | blob 0b1ba6f8 | blob candidato | igual |
+|---|---|---|---|
+| .gitignore | b9dccb5d3bed | c60a2d406cb0 | no |
+| apps/web/app/dashboard/talento-humano/mapa/page.tsx | 45ec7dba17cf | 45ec7dba17cf | si |
+| apps/web/app/dashboard/talento-humano/rutas/page.tsx | 18cfad87dea1 | 18cfad87dea1 | si |
+| apps/web/app/dashboard/transporte/monitoreo/page.tsx | dc06f3007278 | dc06f3007278 | si |
+| apps/web/app/error.tsx | cbca3a988418 | cbca3a988418 | si |
+| apps/web/app/login/page.tsx | 894157255929 | 894157255929 | si |
+| apps/web/components/system/PlatformAlerts.tsx | fdc74c3e4f90 | fdc74c3e4f90 | si |
+| apps/web/lib/api.ts | bf2f8721d01e | bf2f8721d01e | si |
+| apps/web/lib/platformAlerts.ts | 0b6ef8e10729 | 0b6ef8e10729 | si |
+| apps/web/lib/sessionSecurity.ts | c114e2b09956 | c114e2b09956 | si |
+| apps/web/lib/supabaseClient.ts | 712635e0279d | 712635e0279d | si |
+| apps/web/test/hr-monitor-refresh.test.mjs | 03a72817a0e4 | 03a72817a0e4 | si |
+| apps/web/test/technical-alert-silence.test.mjs | 7e85f9e82f5c | 7e85f9e82f5c | si |
+| docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md | 043b819cce96 | 043b819cce96 | si |
+| docs/project/filosofia-producto-ui.md | a0da523c07ec | a0da523c07ec | si |
+| docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png | ba04add92c2c | ba04add92c2c | si |
+| docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png | 053ffbdfe73c | 053ffbdfe73c | si |
+| docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png | 8f11526fc527 | 8f11526fc527 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/certification.json | 8f337764f468 | 8f337764f468 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png | 36c9e1675d50 | 36c9e1675d50 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png | b369345c5e67 | b369345c5e67 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png | 3bacfb134f92 | 3bacfb134f92 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png | 71beb2d49b6e | 71beb2d49b6e | si |
+| docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png | 09e3d36c4be4 | 09e3d36c4be4 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png | 4637948ef095 | 4637948ef095 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png | 8b43dac9b038 | 8b43dac9b038 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png | 36c63f93c475 | 36c63f93c475 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png | ddef2e9cbcb9 | ddef2e9cbcb9 | si |
+| docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png | 95a7d063e77c | 95a7d063e77c | si |
+| package.json | dbc1a1014a08 | 92dc30994c7a | no |
+| scripts/certifications/technical-alert-silence-browser-local.js | 5ddd8de9aecf | 5ddd8de9aecf | si |
+
+- Total rutas comparadas: 31
+- Rutas con blob identico al commit de desarrollo: 29
+- Las distintas son package.json y .gitignore: se re-aplicaron los mismos hunks sobre la version propia de develop (patch --3way limpio), no son contenido de producto.

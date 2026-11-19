@@ -1,4 +1,5 @@
-import { assertActiveSession, clearSession, emitAppAlert, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
+import { assertActiveSession, clearSession, keepSessionAlive, setPasswordChangeRequired, touchSession } from "./sessionSecurity";
+import { emitPlatformDiagnostic } from "./platformAlerts";
 import { clearSupabaseFetchCache, getSupabaseAccessToken, supabaseAuth, supabaseFetch } from "./supabaseClient";
 import { getServiceImageUrl, uploadServiceImageData } from "./supabaseStorage";
 import { API_BASE_URL } from "./apiBaseUrl";
@@ -166,13 +167,14 @@ function failureFromJsonBody(body: { error?: string; message?: string; code?: st
 }
 
 // Ventana corta de texto para el throw: la regresion FM-02 mide el contrato desde el literal.
-function friendlyFailure(path: string, status: number, method: string, failure: FailureEnvelope) {
-  return requestErrorMessage(path, status, failure.detail, method, failure.code, failure.requestId);
+function friendlyFailure(status: number, method: string, failure: FailureEnvelope) {
+  return requestErrorMessage(status, failure.detail, method, failure.code, failure.requestId);
 }
 
-// Mensaje para el operario: que paso, si su trabajo se perdio y que hacer. El detalle tecnico queda
-// en la alerta global y en platform-logs, no en el banner.
-function requestErrorMessage(path: string, status: number, detail: string, method = "GET", code = "", requestId = "") {
+// Mensaje para el operario: que paso, si su trabajo se perdio y que hacer. La ruta, el estado HTTP
+// y el detalle crudo del servidor no entran aqui: van al diagnostico y a platform-logs, porque esta
+// cadena se pinta en la pantalla del cliente.
+function requestErrorMessage(status: number, detail: string, method = "GET", code = "", requestId = "") {
   const reference = requestId ? ` Referencia para soporte: ${requestId}.` : "";
   const writing = isWriteRequest(method);
   const action = writing ? "guardar" : "cargar";
@@ -181,7 +183,7 @@ function requestErrorMessage(path: string, status: number, detail: string, metho
   if (status === 403 && SESSION_SCOPE_CODES.includes(code)) return "Tu cuenta no tiene una empresa activa asociada, por eso la administración no carga. Elige una empresa en el selector o pide que te asignen una. Tu sesión sigue activa.";
   if (status === 403 && code === "ROL_NO_DEFINIDO") return "Tu usuario no tiene un rol definido, por eso la administración no carga. Pide a un administrador que le asigne un rol. Tu sesión sigue activa.";
   if (status === 403) return writing ? "No tienes permiso para guardar este registro. Pide el acceso a tu administrador." : "No tienes permiso para ver esta información. Pide el acceso a tu administrador.";
-  if (status === 404) return writing ? "El registro que intentabas modificar ya no está disponible. Refresca la lista e inténtalo de nuevo." : `No encontramos la información solicitada en ${path}.`;
+  if (status === 404) return writing ? "El registro que intentabas modificar ya no está disponible. Refresca la lista e inténtalo de nuevo." : "No encontramos la información que pediste. Recarga la pantalla y, si sigue sin aparecer, avisa a soporte.";
   if (RETRYABLE_BUSY_CODES.includes(code)) {
     return writing
       ? "Otra persona está guardando ese mismo registro en este momento. Espera unos segundos e inténtalo de nuevo: tu información no se perdió."
@@ -208,12 +210,17 @@ function isPlatformLogsPath(path: string) {
   return path.includes("/admin/platform-logs");
 }
 
+// Un fallo de red, un 5xx o un 429 no son una ventana: son un registro. Viajan a platform-logs
+// (reportClientFailure), quedan en consola solo en desarrollo y solo abren una tarjeta si soporte
+// encendio el modo diagnostico en ese navegador. La pantalla que fallo ya muestra su propio estado.
 function alertRequestFailure(path: string, status: number | null, detail: string) {
   if (isPlatformLogsPath(path)) return;
-  emitAppAlert({
+  const technical = `Ruta: ${path}${status ? ` | Estado: ${status}` : ""}${detail ? ` | Detalle: ${detail}` : ""}`;
+  safeDevLog(`Solicitud fallida (${status ?? "sin respuesta"}).`, detail);
+  emitPlatformDiagnostic({
     title: status === 401 ? "Sesion invalida" : "Fallo tecnico detectado",
-    message: status === 401 ? "La sesion actual ya no es valida. Debes autenticarte otra vez." : `No fue posible completar la solicitud solicitada por el modulo actual.`,
-    technical: `Ruta: ${path}${status ? ` | Estado: ${status}` : ""}${detail ? ` | Detalle: ${detail}` : ""}`,
+    message: status === 401 ? "La sesion actual ya no es valida. Debes autenticarte otra vez." : "No fue posible completar la solicitud del modulo actual.",
+    technical,
     level: status === 401 || (status !== null && status >= 500) ? "error" : "warning"
   });
 }
@@ -367,7 +374,7 @@ export async function authorizedJson<T>(input: string, options: ApiRequestOption
   if (!response.ok) {
     if (response.status >= 500) {
       const failure = readFailurePayload(await response.text().catch(() => ""));
-      const message = friendlyFailure(input, response.status, method, failure);
+      const message = friendlyFailure(response.status, method, failure);
       if (!silenced) alertRequestFailure(input, response.status, failure.detail);
       reportClientFailure(input, response.status, failure.detail, method);
       const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
@@ -376,7 +383,7 @@ export async function authorizedJson<T>(input: string, options: ApiRequestOption
     }
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
-    const message = friendlyFailure(input, response.status, method, failureFromJsonBody(body));
+    const message = friendlyFailure(response.status, method, failureFromJsonBody(body));
     if (!silenced) alertRequestFailure(input, response.status, detail);
     reportClientFailure(input, response.status, detail, method);
     throw Object.assign(new Error(message), {
@@ -1291,6 +1298,18 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
   } finally {
     globalThis.clearTimeout(timeout);
   }
+}
+
+// Un "Failed to fetch" o un AbortError del navegador no le dicen nada al operario, y en ingles
+// mucho menos. El detalle crudo se registra; lo que se lanza es una frase accionable.
+function browserNetworkNotice(error: unknown) {
+  const message = error instanceof Error ? String(error.message || "") : "";
+  const name = error instanceof Error ? String(error.name || "") : "";
+  if (name === "AbortError" || /abort/i.test(message)) return "La plataforma tardo demasiado en responder. Vuelve a intentar en unos segundos.";
+  if (/failed to fetch|networkerror|load failed|net::|econn|err_/i.test(message)) {
+    return "No fue posible conectar con el servicio. Revisa tu conexion e intenta de nuevo: tu informacion no se perdio.";
+  }
+  return message;
 }
 
 function currentSupabaseUserId() {
@@ -4639,11 +4658,12 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
       }
     });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "Backend no disponible.";
-    if (!silenced) alertRequestFailure(path, null, detail);
-    reportClientFailure(path, null, detail, String(options.method || "GET"));
-    if (error instanceof Error) throw error;
-    throw new Error("API no disponible. Revisa el servicio backend.");
+    const raw = error instanceof Error ? error.message : "Backend no disponible.";
+    if (!silenced) alertRequestFailure(path, null, raw);
+    reportClientFailure(path, null, raw, String(options.method || "GET"));
+    const notice = browserNetworkNotice(error);
+    if (notice === raw && error instanceof Error) throw error;
+    throw new Error(notice);
   }
 
   if (response.status === 401 && typeof window !== "undefined") {
@@ -4667,7 +4687,7 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
 
     if (response.status >= 500) {
       const failure = readFailurePayload(await response.text().catch(() => ""));
-      const message = friendlyFailure(path, response.status, method, failure);
+      const message = friendlyFailure(response.status, method, failure);
       if (!silenced) alertRequestFailure(path, response.status, failure.detail);
       reportClientFailure(path, response.status, failure.detail, method);
       const failureError = Object.assign(new Error(message), { status: response.status, retryable: true });
@@ -4677,7 +4697,7 @@ async function apiInternal<T>(path: string, options: ApiRequestOptions = {}, ret
 
     const body = await response.json().catch(() => ({ error: response.statusText }));
     const detail = body.error || body.message || response.statusText;
-    const message = friendlyFailure(path, response.status, method, failureFromJsonBody(body));
+    const message = friendlyFailure(response.status, method, failureFromJsonBody(body));
     if (!silenced) alertRequestFailure(path, response.status, detail);
     reportClientFailure(path, response.status, detail, String(options.method || "GET"));
     throw Object.assign(new Error(message), {

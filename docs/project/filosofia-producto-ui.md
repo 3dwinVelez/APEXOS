@@ -39,6 +39,10 @@ Se agregaron componentes compartidos para extender esta filosofia:
 - `ActionCard`: tarjeta tactil para acciones principales y accesos a subflujos.
 - `ModalFrame`: ventana flotante reutilizable para formularios y tareas secundarias.
 
+## Patron de estado ante fallo: la tecnica no es interfaz
+
+Un fallo de la API, de la base de datos o de la red es un estado del dato, no una notificacion. La pantalla que no pudo cargar dice que no pudo cargar, si el trabajo del usuario se perdio y que puede hacer despues; cuando exista, cita una referencia para soporte (`request_id` o `digest`). La ruta, el codigo HTTP y el detalle crudo del servidor no se pintan: se registran (`POST /api/v1/admin/platform-logs/client`) y solo se muestran si soporte enciende `localStorage.apexos_diagnostics = "1"` en ese navegador, con presupuesto de 5 tarjetas por minuto y cierre automatico. El cascaron vive en `apps/web/lib/platformAlerts.ts` y `apps/web/components/system/PlatformAlerts.tsx`; el embudo de errores en `apps/web/lib/api.ts`. La sesion cerrada se explica en el propio formulario de acceso, no como ventana.
+
 ## Reglas para cambios futuros
 
 - Si una pantalla tiene mas de una funcion, separar la accion secundaria en modal o subpantalla.
@@ -46,3 +50,5 @@ Se agregaron componentes compartidos para extender esta filosofia:
 - Si una pantalla contiene maestros y operacion, separar maestro, consulta y creacion.
 - Si el usuario operativo usara celular, disenar primero para tactil.
 - Cada modulo debe conservar su flujo funcional, pero la interfaz debe reducir carga visual.
+- Ningun fallo tecnico nuevo se presenta como ventana emergente al usuario: se agrega estado a la pantalla afectada y registro a platform-logs.
+- Los temporizadores de refresco de una pantalla son parte de la interfaz: se eligen segun el costo de la lectura, no por defecto, y se respaldan en el evento que ya llega por otro canal.
