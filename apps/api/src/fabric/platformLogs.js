@@ -20,6 +20,56 @@ function logLevel(statusCode, source = "") {
   return "info";
 }
 
+// Lista blanca de claves diagnosticas que pueden bajar del servidor al registro tecnico. Nunca el
+// cuerpo completo: una selfie en base64 o una cadena de conexion convertirian un rechazo legible
+// en una filtracion. Medido en produccion, los 4xx de la marcacion se registraban sin codigo y sin
+// detalle, y un bloqueo de secuencia era indistinguible de un rechazo de foto.
+const REJECTION_DETAIL_KEYS = [
+  "evidence_failure_code",
+  "reason",
+  "field",
+  "declared_mime",
+  "sniffed_mime",
+  "byte_length",
+  "max_bytes",
+  "expected_type",
+  "punch_type",
+  "max_age_hours"
+];
+
+// `key=value` compacto y acotado: es lo que lee el instrumento de triage en la columna `detail`.
+function rejectionDetailFrom(source) {
+  const details = source && typeof source === "object" && source.details && typeof source.details === "object"
+    ? source.details
+    : source;
+  if (!details || typeof details !== "object") return "";
+  return REJECTION_DETAIL_KEYS.map((key) => {
+    const value = details[key];
+    if (value === null || value === undefined || value === "" || typeof value === "object") return null;
+    return `${key}=${String(value).slice(0, 40)}`;
+  })
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, 500);
+}
+
+// Un 4xx que un hook responde con `reply.code(400).send(...)` nunca pasa por `onError`: sin leer la
+// respuesta, su registro quedaba en el generico `REQUEST_REJECTED`. Se parsea solo para sacar el
+// codigo y la lista blanca; si el cuerpo no es JSON pequeno, se deja el registro como estaba.
+function rejectionFromPayload(payload) {
+  const empty = { code: "", detail: "" };
+  const text = typeof payload === "string" ? payload : Buffer.isBuffer(payload) ? payload.toString("utf8") : "";
+  if (!text || text.length > 65536) return empty;
+  let parsed = null;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return empty;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return empty;
+  return { code: cleanText(parsed.code), detail: rejectionDetailFrom(parsed) };
+}
+
 function dto(row) {
   const value = row.new_value || {};
   return {
@@ -97,4 +147,4 @@ async function listPlatformLogs(tenantId, query = {}) {
     .slice(0, take);
 }
 
-module.exports = { listPlatformLogs, recordPlatformLog, routeModule };
+module.exports = { listPlatformLogs, recordPlatformLog, rejectionDetailFrom, rejectionFromPayload, routeModule };

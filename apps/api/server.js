@@ -166,7 +166,17 @@ async function build() {
   bootLog("Registered audit hook");
 
   bootLog("Registering platform technical log hooks");
-  const { recordPlatformLog, routeModule } = require("./src/fabric/platformLogs");
+  const { recordPlatformLog, rejectionDetailFrom, rejectionFromPayload, routeModule } = require("./src/fabric/platformLogs");
+  // El 4xx hay que poder nombrarlo: el codigo de negocio y el detalle diagnostico (campo, MIME
+  // declarado vs olido, longitud contra tope, siguiente marcacion esperada) se capturan aqui, sobre
+  // la respuesta ya serializada y con lista blanca, porque un hook que responde sin lanzar nunca
+  // pasa por `onError`. El cuerpo completo nunca se persiste.
+  fastify.addHook("onSend", (request, reply, payload, done) => {
+    if (reply.statusCode >= 400 && reply.statusCode < 500 && !request.rejection) {
+      request.rejection = rejectionFromPayload(payload);
+    }
+    done(null, payload);
+  });
   fastify.addHook("onError", async (request, reply, error) => {
     request.platformErrorLogged = true;
     await recordPlatformLog({
@@ -179,6 +189,7 @@ async function build() {
       status_code: error.statusCode || reply.statusCode || 500,
       code: error.code || "",
       message: error.message,
+      detail: rejectionDetailFrom(error),
       stack: error.stack,
       request_id: request.id,
       ip: request.ip,
@@ -187,6 +198,7 @@ async function build() {
   });
   fastify.addHook("onResponse", async (request, reply) => {
     if (request.platformErrorLogged || reply.statusCode < 400) return;
+    const rejection = request.rejection || { code: "", detail: "" };
     await recordPlatformLog({
       tenant_id: request.user?.tenant_id,
       user_id: request.user?.id,
@@ -195,8 +207,9 @@ async function build() {
       route: request.routeOptions?.url || request.url,
       method: request.method,
       status_code: reply.statusCode,
-      code: reply.statusCode >= 500 ? "HTTP_ERROR" : "REQUEST_REJECTED",
+      code: rejection.code || (reply.statusCode >= 500 ? "HTTP_ERROR" : "REQUEST_REJECTED"),
       message: reply.statusCode >= 500 ? "Respuesta de error del API" : "Solicitud rechazada por validacion o permisos",
+      detail: rejection.detail,
       request_id: request.id,
       ip: request.ip,
       user_agent: request.headers["user-agent"]

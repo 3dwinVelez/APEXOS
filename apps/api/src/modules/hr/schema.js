@@ -67,7 +67,13 @@ const punchSchema = {
           }
         ]
       },
-      metadata: { type: "object" }
+      metadata: { type: "object" },
+      // Unica via fuera de la escalera lineal de marcacion. Solo tiene efecto en
+      // `/hr/time-punches` (permiso `hr:write`): el ambito lo fija el servidor y en el canal
+      // propio se ignora aunque el cliente lo mande. Exigir el motivo es lo que la distingue de un
+      // simple salto de orden, y lo que queda escrito en la novedad `AJUSTE_MANUAL_MARCACION`.
+      correccion_administrativa: { type: "boolean" },
+      motivo_correccion: { type: "string", maxLength: 300 }
     }
   }
 };
