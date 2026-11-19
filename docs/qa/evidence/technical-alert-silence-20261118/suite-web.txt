@@ -1,0 +1,125 @@
+# Suite web del candidato: node --test test/<archivo>.test.mjs desde apps/web, uno por uno (2026-11-19)
+- Arbol medido: reconstruccion puntual de 0b1ba6f8 sobre origin/develop 9c82fca1, con develop fusionado en la rama auxiliar
+- Tip medido: 132e17116e9201dae1e260f951328671dc5f1f27
+# Nota de sustrato: la corrida oficial se hace con cwd=apps/web, que es como el paquete invoca sus pruebas. Correandola
+#   desde la raiz del monorepo, ibc-nomina-ui.test.mjs da cuatro falsos ENOENT porque resuelve app/dashboard/... relativo al cwd.
+#   No es un fallo del producto ni de este cambio: es el arnes mal planteado, y se descarto al corregir el cwd.
+
+# tests 11 # pass 11 # fail 0 <- test/accounting-pyg-interactive.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/accounting-reversal-budget-import.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/admin-company-modal-frame.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/admin-role-capabilities.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/admin-user-credential-sync.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/ambient-background.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/apex-heart-ui.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/api-error-classification.test.mjs
+# tests 1 # pass 1 # fail 0 <- test/api-proxy-company-context.test.mjs
+# tests 10 # pass 10 # fail 0 <- test/comercio-reports-charts.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/comercio-storefront-resilience.test.mjs
+# tests 20 # pass 20 # fail 0 <- test/comercio-storefront-theme.test.mjs
+# tests 14 # pass 14 # fail 0 <- test/comercio-ux-consistency.test.mjs
+# tests 10 # pass 9 # fail 1 <- test/command-palette-module-functions.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/commercial-calendar-experience.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/commercial-module-catalog.test.mjs
+# tests 23 # pass 23 # fail 0 <- test/commercial-visit-selection.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/contabilidad-opening-balances.test.mjs
+# tests 7 # pass 7 # fail 0 <- test/erp-visual-normalization.test.mjs
+# tests 19 # pass 19 # fail 0 <- test/gastos-menores-entry-ux.test.mjs
+# tests 16 # pass 16 # fail 0 <- test/gastos-menores-masters.test.mjs
+# tests 7 # pass 7 # fail 0 <- test/gastos-menores-module-registration.test.mjs
+# tests 29 # pass 29 # fail 0 <- test/gastos-menores-operations.test.mjs
+# tests 14 # pass 14 # fail 0 <- test/gastos-menores-reports.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/hr-contention-write-feedback.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/hr-employee-biometric-reset.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/hr-landing-information-architecture.test.mjs
+# tests 8 # pass 8 # fail 0 <- test/hr-marking-lateness-selfie.test.mjs
+# tests 6 # pass 6 # fail 0 <- test/hr-marking-only-access.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/hr-marking-unassigned-gate.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/hr-monitor-identity-selfie.test.mjs
+# tests 8 # pass 8 # fail 0 <- test/hr-monitor-modal-per-user.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/hr-monitor-refresh.test.mjs
+# tests 7 # pass 7 # fail 0 <- test/hr-monitor-stale-read.test.mjs
+# tests 31 # pass 31 # fail 0 <- test/hr-offline-marking.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/hr-punch-mobile-evidence.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/hr-report-punch-alerts.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/hr-report-punch-selfie.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/hr-reports-xlsx.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/hr-route-write-fallback.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/hr-route-write-feedback.test.mjs
+# tests 14 # pass 14 # fail 0 <- test/hr-schedule-monitor.test.mjs
+# tests 14 # pass 14 # fail 0 <- test/hr-workday-novelties-ui.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/ibc-nomina-ui.test.mjs
+# tests 7 # pass 7 # fail 0 <- test/inventory-improvements-roadmap.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/latam.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/lobby-greeting.test.mjs
+# tests 1 # pass 1 # fail 0 <- test/local-login-tenant-context.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/login-error-contrast.test.mjs
+# tests 17 # pass 17 # fail 0 <- test/login-phase-zero-ux.test.mjs
+# tests 1 # pass 1 # fail 0 <- test/modal-focus-stability.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/module-access-company-context.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/module-access-policy.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/module-access-role.test.mjs
+# tests 6 # pass 6 # fail 0 <- test/module-portfolio.test.mjs
+# tests 1 # pass 1 # fail 0 <- test/nyvora-visual-route-gate.test.mjs
+# tests 16 # pass 16 # fail 0 <- test/offline-csp.test.mjs
+# tests 18 # pass 18 # fail 0 <- test/offline-operation-queue.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/offline-panel.test.mjs
+# tests 22 # pass 22 # fail 0 <- test/offline-storage.test.mjs
+# tests 15 # pass 15 # fail 0 <- test/operational-home-redesign.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/payroll-employee-entity-ui.test.mjs
+# tests 6 # pass 6 # fail 0 <- test/phase-one-design-system.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/phase-three-analytics.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/phase-three-collaboration.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/phase-three-personalization.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/phase-three-world-class-foundation.test.mjs
+# tests 6 # pass 6 # fail 0 <- test/phase-three-world-class-toolkit.test.mjs
+# tests 8 # pass 8 # fail 0 <- test/phase-two-intelligent-experience.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/plan-cuentas-tree.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/public-service-request-usability.test.mjs
+# tests 10 # pass 10 # fail 0 <- test/public-service-requests-security.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/pyg-expanded-chrome.test.mjs
+# tests 11 # pass 11 # fail 0 <- test/pyg-expanded-link.test.mjs
+# tests 10 # pass 10 # fail 0 <- test/pyg-expanded-route.test.mjs
+# tests 6 # pass 6 # fail 0 <- test/pyg-expanded-view.test.mjs
+# tests 13 # pass 13 # fail 0 <- test/pyg-expanded.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/role-permissions-special-edit.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/sales-collection-contracts.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/sales-invoice-lines.test.mjs
+# tests 6 # pass 6 # fail 0 <- test/search-select-contract.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/service-correction-form.test.mjs
+# tests 12 # pass 12 # fail 0 <- test/service-monitor-live-refresh.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/service-order-detail-contract-normalization.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/service-order-edit-modal-responsive.test.mjs
+# tests 7 # pass 7 # fail 0 <- test/service-order-execution-flow.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/service-order-special-edit.test.mjs
+# tests 6 # pass 6 # fail 0 <- test/service-order-support-grouping.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/service-reference-import.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/session-scope-403.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/standard-table-migration.test.mjs
+# tests 1 # pass 1 # fail 0 <- test/supplier-create-button-visibility.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/technical-alert-silence.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/transport-master-access.test.mjs
+# tests 2 # pass 2 # fail 0 <- test/transport-print-theme.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/transport-pyg-account-config.component.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/transport-pyg-account-config.test.mjs
+# tests 13 # pass 13 # fail 0 <- test/transport-pyg-centers-matrix.test.mjs
+# tests 13 # pass 13 # fail 0 <- test/transport-pyg-vehicle-page.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/transport-rate-cost-interactions.test.mjs
+# tests 12 # pass 12 # fail 0 <- test/transport-rate-cost-step.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/transport-rate-wizard-interactions.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/transport-search-select.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/transport-settlement-tariff-interactions.test.mjs
+# tests 9 # pass 9 # fail 0 <- test/transport-settlement-tower.test.mjs
+# tests 7 # pass 7 # fail 0 <- test/transport-settlement-ui.test.mjs
+# tests 3 # pass 3 # fail 0 <- test/transport-theme.test.mjs
+# tests 25 # pass 25 # fail 0 <- test/transport-tms-ui.test.mjs
+# tests 5 # pass 5 # fail 0 <- test/transport-vehicle-documents.test.mjs
+# tests 13 # pass 13 # fail 0 <- test/transport-vehicle-master-catalogs.test.mjs
+# tests 4 # pass 4 # fail 0 <- test/visual-operation.test.mjs
+
+# TOTAL archivos=112 tests=829 pass=828 fail=1
+
+# TOTAL archivos=112 tests=829 pass=828 fail=1
+# Unico fallo: command-palette-module-functions.test.mjs (PYG ampliado sin entrada en el centro de comandos).
+# Preexistente: la misma prueba, con el mismo mensaje, falla sobre un arbol limpio de origin/develop (worktree temporal sin node_modules).
+# Ninguna ruta del inventario de este cambio toca el centro de comandos ni la hoja PYG.

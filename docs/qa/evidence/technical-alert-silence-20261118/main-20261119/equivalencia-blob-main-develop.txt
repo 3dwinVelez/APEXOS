@@ -1,0 +1,74 @@
+# Equivalencia por blob — candidato de main vs commit certificado en develop (medido 68/68 local y 163/163 en QA)
+
+- Referencia de producto: 3ca8d541f7af1192cb1a3517c395b69364355ae1 (replay del certificado sobre main 956f2d239158)
+- Referencia medida:     36eb0ccbf4f0305aaba8ec5fa0081a3b9054f3ac (funcional del candidato promocionado a develop, desplegado en QA como 5ff1440ffbb6)
+- Se comparan los 36 archivos del inventario, blob a blob. Un `igual=no` significa que el byte difiere, no que el cambio se perdió: la columna de naturaleza dice dónde buscar la explicación.
+
+archivo | naturaleza | blob main | blob develop | igual
+--- | --- | --- | --- | ---
+`.gitignore` | raiz-del-destino | `c60a2d406c` | `c60a2d406c` | si
+`apps/web/app/dashboard/talento-humano/mapa/page.tsx` | codigo | `45ec7dba17` | `45ec7dba17` | si
+`apps/web/app/dashboard/transporte/monitoreo/page.tsx` | codigo | `dc06f30072` | `dc06f30072` | si
+`apps/web/app/error.tsx` | codigo | `cbca3a9884` | `cbca3a9884` | si
+`apps/web/app/login/page.tsx` | codigo | `8941572559` | `8941572559` | si
+`apps/web/components/system/PlatformAlerts.tsx` | codigo | `fdc74c3e4f` | `fdc74c3e4f` | si
+`apps/web/lib/api.ts` | codigo | `bf2f8721d0` | `bf2f8721d0` | si
+`apps/web/lib/platformAlerts.ts` | codigo | `0b6ef8e107` | `0b6ef8e107` | si
+`apps/web/lib/sessionSecurity.ts` | codigo | `c114e2b099` | `c114e2b099` | si
+`apps/web/lib/supabaseClient.ts` | codigo | `712635e027` | `712635e027` | si
+`apps/web/test/technical-alert-silence.test.mjs` | codigo | `7e85f9e82f` | `7e85f9e82f` | si
+`docs/briefs/2026-11-18-fallo-tecnico-no-es-ventana.md` | documento | `043b819cce` | `043b819cce` | si
+`docs/project/filosofia-producto-ui.md` | documento | `a0da523c07` | `a0da523c07` | si
+`docs/qa/certifications/technical-alert-silence-20261118.md` | documento | `4f3f7c59be` | `4f3f7c59be` | si
+`docs/qa/evidence/technical-alert-silence-20261118/06-sesion-vencida.png` | evidencia | `6c9c0ab16a` | `6c9c0ab16a` | si
+`docs/qa/evidence/technical-alert-silence-20261118/07-login-aviso-sesion.png` | evidencia | `471ff3e3f9` | `471ff3e3f9` | si
+`docs/qa/evidence/technical-alert-silence-20261118/08-modo-diagnostico.png` | evidencia | `6318c3f483` | `6318c3f483` | si
+`docs/qa/evidence/technical-alert-silence-20261118/certification.json` | evidencia | `defb877149` | `defb877149` | si
+`docs/qa/evidence/technical-alert-silence-20261118/dark-home-500.png` | evidencia | `8285068066` | `8285068066` | si
+`docs/qa/evidence/technical-alert-silence-20261118/dark-mapa-500.png` | evidencia | `caa1e67b6b` | `caa1e67b6b` | si
+`docs/qa/evidence/technical-alert-silence-20261118/dark-monitoreo-500.png` | evidencia | `8876454184` | `8876454184` | si
+`docs/qa/evidence/technical-alert-silence-20261118/dark-rutas-500.png` | evidencia | `8ddba7c2b4` | `8ddba7c2b4` | si
+`docs/qa/evidence/technical-alert-silence-20261118/dark-servicios-500.png` | evidencia | `3ca69b9321` | `3ca69b9321` | si
+`docs/qa/evidence/technical-alert-silence-20261118/equivalencia-candidato.txt` | evidencia | `b1433f0984` | `b1433f0984` | si
+`docs/qa/evidence/technical-alert-silence-20261118/light-home-500.png` | evidencia | `23c5fa508f` | `23c5fa508f` | si
+`docs/qa/evidence/technical-alert-silence-20261118/light-mapa-500.png` | evidencia | `f8a15e48c4` | `f8a15e48c4` | si
+`docs/qa/evidence/technical-alert-silence-20261118/light-monitoreo-500.png` | evidencia | `fba8a7c27d` | `fba8a7c27d` | si
+`docs/qa/evidence/technical-alert-silence-20261118/light-rutas-500.png` | evidencia | `6e150ae16f` | `6e150ae16f` | si
+`docs/qa/evidence/technical-alert-silence-20261118/light-servicios-500.png` | evidencia | `d6de875030` | `d6de875030` | si
+`docs/qa/evidence/technical-alert-silence-20261118/qa-antes/certification.json` | evidencia | `9140d9a21e` | `9140d9a21e` | si
+`docs/qa/evidence/technical-alert-silence-20261118/qa-antes/qa-sesion-final.png` | evidencia | `283834f11a` | `283834f11a` | si
+`docs/qa/evidence/technical-alert-silence-20261118/soporte.txt` | evidencia | `7543c7d041` | `7543c7d041` | si
+`docs/qa/evidence/technical-alert-silence-20261118/suite-web.txt` | evidencia | `0ae4854226` | `0ae4854226` | si
+`package.json` | raiz-del-destino | `f38ffc3e3c` | `5c3d6cf8d3` | NO
+`scripts/certifications/technical-alert-silence-browser-local.js` | codigo | `5ddd8de9ae` | `5ddd8de9ae` | si
+`scripts/certifications/technical-alert-silence-browser-qa.js` | codigo | `181db4cd10` | `181db4cd10` | si
+
+## Totales por naturaleza
+- raiz-del-destino: 1 de 2 blob-idénticas
+- codigo: 12 de 12 blob-idénticas
+- documento: 3 de 3 blob-idénticas
+- evidencia: 19 de 19 blob-idénticas
+
+## Lectura de las diferencias
+- `codigo`: son las rutas de `apps/web/**` y `scripts/certifications/**` del inventario. Cada diferencia aqui seria un producto distinto al que QA certifico, asi que esta es la linea que sostiene la promocion.
+- `evidencia` y `documento`: en el primer replay estos archivos llegaron de la corrida original de `desarrollo` y el commit `6f6c1a11` los reemplazo por los blobs del arbol realmente medido (BUILD_ID `bz-upXyRkgIgsiVFNja2N`, 68/68 local, 163/163 en QA). Lo que se compara aqui es el candidato final, despues de esa herencia.
+- `raiz-del-destino`: `package.json`. El replay conserva la version propia de main y le aplica solo las lineas nuevas de scripts (`certify:technical-alerts-silence:local|qa`); los demas renglones del archivo pertenecen a otros frentes del destino y no viajan. El diff exacto se imprime abajo, linea por linea, para que no haya que creer esta frase.
+
+## Diff real de package.json (main tip -> candidato)
+- lineas anadidas: 2
+  `"certify:technical-alerts-silence:local": "node scripts/certifications/technical-alert-silence-browser-local.js",`
+  `"certify:technical-alerts-silence:qa": "node scripts/certifications/technical-alert-silence-browser-qa.js",`
+- lineas eliminadas: 0
+
+## El unico rojo de la suite de main es del sustrato, y asi queda atribuido
+- Suite del candidato de main: 112 archivos, 829 pruebas, 828 pasan, 1 falla.
+- El rojo es `apps/web/test/transport-pyg-account-config.component.test.mjs`, subprueba `react y react-dom/server salen de la misma instalacion de node_modules`, que exige `resolved.startsWith(realpathSync(repoRoot) + path.sep)` para `react`, `react-dom` y `lucide-react`. La prueba hace bien su trabajo: se niega a certificar un render con dependencias de otro arbol.
+- Esta worktree no tenia `node_modules` y el sustrato se monto por junction desde la worktree certificada (lockfile `package-lock.json` blob-identico `6a62f9317f3b952f1f9099c81acbe24214ca3e00` entre `origin/main` y el candidato), asi que el `realpath` de cada dependencia apunta a la otra worktree y la asercion cae por diseno.
+- Control 1 (misma prueba, misma version del archivo): blob `0d7e7460e6eff0773036ab18d2f3bddd3b1098da` en `origin/main`, `origin/develop` y el candidato, y en la corrida certificada de develop sale `3 pruebas / 3 pasan / 0 fallan` sobre un arbol con instalacion propia.
+- Control 2 (baseline intacto del destino): worktree temporal desprendida de `origin/main` (`956f2d23`), sin este diff, con el mismo sustrato de junction → `not ok 3` con el mismo mensaje y la misma ruta `...apexos-cand-alertsilence-develop\node_modules\react\index.js` (2 pasan, 1 falla). El rojo no lo produce este corte.
+- Ninguna ruta del inventario toca `apps/web/**/transporte/**` ni la configuracion de cuentas PYG; el area del test es ajena al diff por las dos vias: blob y control.
+
+## Estado del arbol del candidato al generar este informe
+- HEAD: 6f6c1a11b9e7c4937ab27f34bc839fea4aeb0b06
+- rutas del inventario: 36
+- rutas distintas en codigo entre las dos patas: 0
