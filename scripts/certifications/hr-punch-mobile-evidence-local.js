@@ -99,6 +99,8 @@ async function check(name,fn){await fn();result.checks.push(name);console.log('P
    await button('Abrir','tr[data-route-id="'+route.id+'"]');
    assert.equal(await page.$$eval('[role="dialog"] button',buttons=>buttons.filter(el=>['Editar','Eliminar'].includes(el.textContent.trim())).length),0);
    await page.waitForFunction(()=>document.body.innerText.includes('Trazabilidad cronologica del equipo')||document.body.innerText.includes('Trazabilidad cronológica del equipo'));
+   await page.waitForFunction(()=>[...document.querySelectorAll('[role="dialog"] button')].some(node=>node.textContent.trim()==='Cargar evidencia')||[...document.querySelectorAll('[role="dialog"] img')].filter(node=>node.complete&&node.naturalWidth>0).length>=6);
+   await page.evaluate(()=>[...document.querySelectorAll('[role="dialog"] button')].filter(node=>node.textContent.trim()==='Cargar evidencia').forEach(node=>node.click()));
    await page.waitForFunction(()=>[...document.querySelectorAll('[role="dialog"] img')].filter(node=>node.src.startsWith('data:image/')&&node.complete&&node.naturalWidth>0).length>=6);
    assert.equal(await page.evaluate(()=>document.querySelector('[role="dialog"]').innerText.includes('Sin evidencia fotografica')),false);
    await page.screenshot({path:path.join(folder,'timeline.png')});
