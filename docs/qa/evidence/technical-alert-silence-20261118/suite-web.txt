@@ -1,6 +1,10 @@
-# Suite web del candidato: node --test apps/web/test/<archivo>.test.mjs, uno por uno (2026-11-18)
-# Arbol medido: reconstruccion puntual de 0b1ba6f8 sobre origin/develop 5fcc2ed1
-# tests 6 # pass 6 # fail 0 <- test/accounting-pyg-budget-errors.component.test.mjs
+# Suite web del candidato: node --test test/<archivo>.test.mjs desde apps/web, uno por uno (2026-11-19)
+- Arbol medido: reconstruccion puntual de 0b1ba6f8 sobre origin/develop 9c82fca1, con develop fusionado en la rama auxiliar
+- Tip medido: 132e17116e9201dae1e260f951328671dc5f1f27
+# Nota de sustrato: la corrida oficial se hace con cwd=apps/web, que es como el paquete invoca sus pruebas. Correandola
+#   desde la raiz del monorepo, ibc-nomina-ui.test.mjs da cuatro falsos ENOENT porque resuelve app/dashboard/... relativo al cwd.
+#   No es un fallo del producto ni de este cambio: es el arnes mal planteado, y se descarto al corregir el cwd.
+
 # tests 11 # pass 11 # fail 0 <- test/accounting-pyg-interactive.test.mjs
 # tests 9 # pass 9 # fail 0 <- test/accounting-reversal-budget-import.test.mjs
 # tests 2 # pass 2 # fail 0 <- test/admin-company-modal-frame.test.mjs
@@ -34,6 +38,7 @@
 # tests 4 # pass 4 # fail 0 <- test/hr-monitor-identity-selfie.test.mjs
 # tests 8 # pass 8 # fail 0 <- test/hr-monitor-modal-per-user.test.mjs
 # tests 5 # pass 5 # fail 0 <- test/hr-monitor-refresh.test.mjs
+# tests 7 # pass 7 # fail 0 <- test/hr-monitor-stale-read.test.mjs
 # tests 31 # pass 31 # fail 0 <- test/hr-offline-marking.test.mjs
 # tests 2 # pass 2 # fail 0 <- test/hr-punch-mobile-evidence.test.mjs
 # tests 4 # pass 4 # fail 0 <- test/hr-report-punch-alerts.test.mjs
@@ -112,7 +117,9 @@
 # tests 13 # pass 13 # fail 0 <- test/transport-vehicle-master-catalogs.test.mjs
 # tests 4 # pass 4 # fail 0 <- test/visual-operation.test.mjs
 
-# TOTAL archivos=111 tests=822 pass=821 fail=1
+# TOTAL archivos=112 tests=829 pass=828 fail=1
+
+# TOTAL archivos=112 tests=829 pass=828 fail=1
 # Unico fallo: command-palette-module-functions.test.mjs (PYG ampliado sin entrada en el centro de comandos).
-# Preexistente: la misma prueba falla con el mismo mensaje sobre un arbol limpio de origin/develop 5fcc2ed1.
+# Preexistente: la misma prueba, con el mismo mensaje, falla sobre un arbol limpio de origin/develop (worktree temporal sin node_modules).
 # Ninguna ruta del inventario de este cambio toca el centro de comandos ni la hoja PYG.
