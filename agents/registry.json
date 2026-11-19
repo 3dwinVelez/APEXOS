@@ -172,9 +172,9 @@
     {
       "name": "apexos-frontend",
       "role": "experto-frontend",
-      "version": "2.32.0",
+      "version": "2.33.0",
       "updated_at": "2026-11-18",
-      "sha256": "89e6e6cca6bd208f2ca63b5c67cf898eb56bfdd9ba1c00b019977ece9a2e8da5",
+      "sha256": "6bfe020635854c2ef77ebe0036b58560551439943ca7beb7012fa7ff326724e8",
       "source": ".qoder/skills/apexos-frontend/SKILL.md",
       "mirror": "agents/apexos-frontend/SKILL.md",
       "controls": [
@@ -282,9 +282,9 @@
     {
       "name": "apexos-qa",
       "role": "experto-calidad",
-      "version": "2.71.0",
+      "version": "2.72.0",
       "updated_at": "2026-11-18",
-      "sha256": "6d8dde9f8c265a749d81b6fd3fab802a69c59020193079630e9aec51728ab483",
+      "sha256": "dc7ff359bb9d74d2de8fde2a11b6aa8bb58610b83fdac7a1747b4ea26d752060",
       "source": ".qoder/skills/apexos-qa/SKILL.md",
       "mirror": "agents/apexos-qa/SKILL.md",
       "controls": [
@@ -492,8 +492,8 @@
     {
       "name": "Filosofía de producto UI",
       "path": "docs/project/filosofia-producto-ui.md",
-      "updated_at": "2026-08-21",
-      "sha256": "2a557d7e92a9256847ba71f02f5fa4b00a8364accc92115a2145bc34dd652594"
+      "updated_at": "2026-11-18",
+      "sha256": "d3792f3ab38fea1064b2012d16e75fc079a141f578d20ec6107359b0b671fd21"
     },
     {
       "name": "Modelo de amenazas",
