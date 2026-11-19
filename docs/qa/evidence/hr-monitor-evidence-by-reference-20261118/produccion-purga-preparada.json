@@ -1,0 +1,33 @@
+{
+ "notas": "Medicion SOLO LECTURA del 2026-11-19 en todo el ambiente de produccion (sin filtro de empresa). MB en claro = octet_length de la columna donde vive el binario. purgable_hoy = las filas con su bandera de rescate (hr_evidence_rescue_extra / _identity / legacy hr_evidence_rescue), es decir el objeto ya existe en Storage y fue verificado por SHA-256 en la corrida C.1.",
+ "ambiente": "production",
+ "alcance": "todas las empresas del ambiente",
+ "timepunch": {
+  "extra_evidence": {
+   "filas": 278,
+   "MB": 242.1,
+   "filas_rescatadas": 270,
+   "MB_purgable_hoy": 235.9,
+   "MB_pendiente_rescate": 6.3
+  },
+  "metadata_selfie": {
+   "filas": 47,
+   "MB": 30.4,
+   "filas_rescatadas": 38,
+   "MB_purgable_hoy": 21.9,
+   "MB_pendiente_rescate": 8.6
+  }
+ },
+ "gpsping_metadata_selfie": {
+  "filas": 45,
+  "MB": 29.3,
+  "nota": "sin bandera de rescate: la copia no existe en Storage"
+ },
+ "activity_evidence": {
+  "filas": 136,
+  "MB": 72.5,
+  "filas_rescatadas": 124,
+  "MB_purgable_hoy": 72.5,
+  "MB_pendiente_rescate": 0
+ }
+}

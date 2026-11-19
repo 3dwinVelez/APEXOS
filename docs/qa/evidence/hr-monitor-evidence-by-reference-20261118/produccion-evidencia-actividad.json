@@ -1,0 +1,38 @@
+{
+ "target": "production",
+ "muestra": [
+  {
+   "id": 40,
+   "ruta_declarada_existe": true,
+   "bytes_inline": 2494899,
+   "rescatada": true,
+   "prefijo_ruta": "company/TENANT_ANNOTATED/hr/work-sessions",
+   "largo_data": 2494899
+  },
+  {
+   "id": 42,
+   "ruta_declarada_existe": true,
+   "bytes_inline": 2494899,
+   "rescatada": true,
+   "prefijo_ruta": "company/TENANT_ANNOTATED/hr/work-sessions",
+   "largo_data": 2494899
+  },
+  {
+   "id": 44,
+   "ruta_declarada_existe": true,
+   "bytes_inline": 2494899,
+   "rescatada": true,
+   "prefijo_ruta": "company/TENANT_ANNOTATED/hr/work-sessions",
+   "largo_data": 2494899
+  }
+ ],
+ "totales": [
+  {
+   "filas": 106,
+   "con_binario": 106,
+   "con_ruta": 106,
+   "con_bandera_rescate": 106,
+   "bytes_inline": 72968693
+  }
+ ]
+}

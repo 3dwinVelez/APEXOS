@@ -1,0 +1,32 @@
+'use strict';
+// SOLO LECTURA: `ActivityEvidence` tiene 106 filas con 73 MB de base64 en claro y una
+// `storage_path` declarada. Si ese objeto no existe, la purga C.2 destruiria la evidencia.
+// Se comprueban 3 rutas con GET: null = no existe. No se sube ni se borra nada.
+const fs = require('node:fs');
+const path = require('node:path');
+const { PrismaClient } = require('C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/@prisma/client');
+const ROOT = 'C:/Users/mq1/Documents/Proyectos/APEXOS';
+const TARGET = process.argv[2] || 'production';
+const EXPECTED = { production: 'jzbwzmkidfthknsohhnr', qa: 'jbirkghkekuifgfsgquq' }[TARGET];
+function parseEnv(f) { const o = {}; for (const l of fs.readFileSync(f, 'utf8').split(/\r?\n/)) { const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(l); if (m) o[m[1]] = m[2].replace(/^["']|["']$/g, ''); } return o; }
+const conf = parseEnv(path.join(ROOT, 'config', `${TARGET}.env`));
+if (!String(conf.SUPABASE_URL || '').includes(EXPECTED)) throw new Error('project ref inesperado');
+for (const [k, v] of Object.entries(conf)) if (process.env[k] === undefined) process.env[k] = v;
+const evidenceStorage = require(`${ROOT}/apps/api/src/modules/hr/evidenceStorage`);
+const prisma = new PrismaClient({ datasources: { db: { url: conf.DATABASE_URL } }, log: ['error'] });
+const TENANT = 'TENANT_ANNOTATED';
+(async () => {
+  const rows = await prisma.$queryRawUnsafe(`
+    SELECT id, storage_path, octet_length(coalesce(base64_data,''))::bigint AS bytes_inline,
+           (metadata->'hr_evidence_rescue') IS NOT NULL AS rescatada
+    FROM "ActivityEvidence" WHERE tenant_id = '${TENANT}' AND coalesce(base64_data,'') <> ''
+    ORDER BY octet_length(coalesce(base64_data,'')) DESC LIMIT 3`);
+  const out = [];
+  for (const r of rows) {
+    const data = await evidenceStorage.downloadDataUrl(r.storage_path).catch((e) => `ERROR:${String(e).slice(0, 60)}`);
+    out.push({ id: r.id, ruta_declarada_existe: Boolean(data && data !== null && !String(data).startsWith('ERROR')), bytes_inline: Number(r.bytes_inline), rescatada: r.rescatada, prefijo_ruta: String(r.storage_path || '').split('/').slice(0, 4).join('/'), largo_data: data && data.length ? data.length : 0 });
+  }
+  const tot = await prisma.$queryRawUnsafe(`SELECT count(*)::bigint filas, count(*) FILTER (WHERE coalesce(base64_data,'') <> '')::bigint con_binario, count(*) FILTER (WHERE coalesce(storage_path,'') <> '')::bigint con_ruta, count(*) FILTER (WHERE (metadata->'hr_evidence_rescue') IS NOT NULL)::bigint con_bandera_rescate, COALESCE(sum(octet_length(coalesce(base64_data,'')))::bigint,0) bytes_inline FROM "ActivityEvidence" WHERE tenant_id='${TENANT}'`);
+  console.log(JSON.stringify({ target: TARGET, muestra: out, totales: tot.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === 'bigint' ? Number(v) : v]))) }, null, 1));
+  await prisma.$disconnect();
+})().catch(async (e) => { console.error('FALLO:', String(e).slice(0, 300)); try { await prisma.$disconnect(); } catch {} process.exit(1); });

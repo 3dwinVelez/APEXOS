@@ -1,0 +1,65 @@
+'use strict';
+// Medicion SOLO LECTURA en produccion, con la misma base a los dos lados:
+//  - bytes = JSON.stringify del metadata (no String de un objeto);
+//  - paridad de evidencia = solo lo que vive en `metadata`, porque la columna
+//    `extra_evidence` no la pide ninguna de las dos lecturas del monitor;
+//  - fuga = cadena base64 de mas de 256 caracteres dentro del metadata proyectado.
+const fs = require('node:fs');
+const path = require('node:path');
+const { PrismaClient, Prisma } = require('C:/Users/mq1/Documents/Proyectos/APEXOS/node_modules/@prisma/client');
+const ROOT = 'C:/Users/mq1/Documents/Proyectos/APEXOS';
+const TARGET = process.argv[2] || 'production';
+const EXPECTED = { production: 'jzbwzmkidfthknsohhnr', qa: 'jbirkghkekuifgfsgquq' }[TARGET];
+function parseEnv(f) { const o = {}; for (const l of fs.readFileSync(f, 'utf8').split(/\r?\n/)) { const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)$/.exec(l); if (m) o[m[1]] = m[2].replace(/^["']|["']$/g, ''); } return o; }
+const conf = parseEnv(path.join(ROOT, 'config', `${TARGET}.env`));
+if (!String(conf.SUPABASE_URL || '').includes(EXPECTED)) throw new Error('project ref inesperado');
+const HR = require(`${ROOT}/apps/api/src/modules/hr/monitorEvidenceRows`);
+const { punchPhotoItems } = require(`${ROOT}/apps/api/src/modules/hr/punchEvidence`);
+const prisma = new PrismaClient({ datasources: { db: { url: conf.DATABASE_URL } }, log: ['error'] });
+const TENANT = 'TENANT_DEL_CLIENTE';
+const DAY = new Date('2026-11-18T05:00:00Z');
+const NEXT = new Date('2026-11-19T04:59:59Z');
+const jb = (v) => Buffer.byteLength(JSON.stringify(v ?? null), 'utf8');
+const LONG_B64 = /base64,[A-Za-z0-9+/=]{256,}/;
+const timed = async (fn) => { const t0 = process.hrtime.bigint(); const out = await fn(); return { ms: Math.round(Number(process.hrtime.bigint() - t0) / 1e6), out }; };
+const summarize = (rows, metaOf) => ({
+  filas: rows.length,
+  bytes_metadata: rows.reduce((s, r) => s + jb(metaOf(r)), 0),
+  bytes_max_metadata: Math.max(0, ...rows.map((r) => jb(metaOf(r)))),
+  filas_con_binario_largo: rows.filter((r) => LONG_B64.test(JSON.stringify(metaOf(r) ?? {}))).length,
+  evidencias_desde_metadata: rows.reduce((s, r) => s + punchPhotoItems({ metadata: metaOf(r) }).length, 0)
+});
+
+(async () => {
+  const result = { target: TARGET, ran_at: new Date().toISOString(), dia: '2026-11-18', umbral_bytes: HR.METADATA_SHRINK_MIN_BYTES };
+  try {
+    const tpCrudo = await timed(() => prisma.$queryRaw(Prisma.sql`
+      SELECT "TimePunch"."id", "TimePunch"."metadata"
+      FROM "public"."TimePunch"
+      WHERE "TimePunch"."tenant_id" = ${TENANT}
+        AND "TimePunch"."date" >= ${DAY} AND "TimePunch"."date" < ${NEXT}
+      ORDER BY "TimePunch"."punched_at" DESC LIMIT 300`));
+    const tpNuevo = await timed(() => HR.readDayEvidencePunches(prisma, TENANT, DAY, NEXT, 300));
+    result.timepunch = {
+      cruda: { ms: tpCrudo.ms, ...summarize(tpCrudo.out, (r) => r.metadata) },
+      proyectada: { ms: tpNuevo.ms, ...summarize(tpNuevo.out, (r) => r.metadata) },
+      ids_iguales: JSON.stringify(tpCrudo.out.map((r) => r.id).sort()) === JSON.stringify(tpNuevo.out.map((r) => r.id).sort()),
+      anuncios_disponibles: tpNuevo.out.filter((r) => r.has_extra_evidence).length
+    };
+    const gpsCrudo = await timed(() => prisma.$queryRaw(Prisma.sql`
+      SELECT "GpsPing"."id", "GpsPing"."metadata"
+      FROM "public"."GpsPing"
+      WHERE "GpsPing"."tenant_id" = ${TENANT}
+        AND "GpsPing"."captured_at" >= ${DAY} AND "GpsPing"."captured_at" < ${NEXT}
+      ORDER BY "GpsPing"."captured_at" DESC LIMIT 300`));
+    const gpsNuevo = await timed(() => HR.readDayGpsPings(prisma, TENANT, DAY, NEXT, 300));
+    result.gps = {
+      cruda: { ms: gpsCrudo.ms, ...summarize(gpsCrudo.out, (r) => r.metadata) },
+      proyectada: { ms: gpsNuevo.ms, ...summarize(gpsNuevo.out, (r) => r.metadata) },
+      ids_iguales: JSON.stringify(gpsCrudo.out.map((r) => r.id).sort()) === JSON.stringify(gpsNuevo.out.map((r) => r.id).sort()),
+      claves_metadata: Object.keys(gpsNuevo.out.reduce((a, r) => Object.assign(a, r.metadata || {}), {})).sort().join(',')
+    };
+  } catch (e) { result.error = String(e).slice(0, 300); }
+  await prisma.$disconnect();
+  console.log(JSON.stringify(result, null, 1));
+})().catch(async (e) => { console.error('FALLO:', String(e).slice(0, 400)); try { await prisma.$disconnect(); } catch {} process.exit(1); });
