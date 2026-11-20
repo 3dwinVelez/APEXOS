@@ -34,7 +34,7 @@ test("ambos caminos de fallback bloquean escrituras y lecturas del monitor opera
   for (const line of conditions) {
     const expression = line.slice(4, line.lastIndexOf(")"));
     const allowed = new Function("supabaseSession", "preferOperationalApi", "path", "method", "shouldBlockHrWriteFallback", "scheduleMonitorUsesOperationalSource", `return Boolean(${expression});`);
-    for (const [path, method] of [["/api/v1/hr/routes", "POST"], ["/api/v1/hr/routes/12", "PATCH"], ["/api/v1/hr/self/time-punches", "POST"], ["/api/v1/hr/routes?date=2026-11-19", "GET"], ["/api/v1/hr/operations-map", "GET"], ["/api/v1/hr/monitor-evidence/route/12", "GET"]]) {
+    for (const [path, method] of [["/api/v1/hr/routes", "POST"], ["/api/v1/hr/routes/12", "PATCH"], ["/api/v1/hr/self/time-punches", "POST"], ["/api/v1/hr/routes?date=2026-11-19", "GET"], ["/api/v1/hr/operations-map", "GET"], ["/api/v1/hr/monitor-evidence/route/12", "GET"], ["/api/v1/hr/employees?active=true", "GET"], ["/api/v1/talento-humano/empleados?active=true", "GET"]]) {
       assert.equal(allowed(true, false, path, method, writeGuard, readGuard), false, `${method} ${path}`);
     }
     assert.equal(allowed(true, false, "/api/v1/admin/user-master-data", "GET", writeGuard, readGuard), true);

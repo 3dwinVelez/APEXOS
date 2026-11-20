@@ -404,6 +404,7 @@ function KpiTile({ hint, label, tone = "default", value }: { hint?: string; labe
 export default function RoutesPlanningPage() {
   const initialDate = localCalendarDate();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeLoadError, setEmployeeLoadError] = useState("");
   const [dayAssignments, setDayAssignments] = useState<DayAssignment[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [administrativeSites, setAdministrativeSites] = useState<MasterOption[]>([]);
@@ -472,11 +473,21 @@ export default function RoutesPlanningPage() {
 
   const loadReferenceData = useCallback(async () => {
     const [employeeData, vehicleData, masterData] = await Promise.all([
-      api<Employee[]>("/api/v1/hr/employees?active=true").catch(() => []),
+      api<Employee[]>("/api/v1/talento-humano/empleados?active=true", { cache: "no-store" }).catch(() => null),
       api<Vehicle[]>("/api/v1/transport/vehicles").catch(() => []),
       api<UserMasterData>("/api/v1/admin/user-master-data").catch(() => ({ locations: [] }))
     ]);
-    setEmployees(employeeData);
+    if (employeeData) {
+      setEmployees(employeeData);
+      setEmployeeLoadError("");
+      setMessage(current => current.startsWith("No fue posible consultar el maestro de empleados.") ? "" : current);
+    }
+    else {
+      const error = "No fue posible consultar el maestro de empleados. Se conserva la lista anterior; pulsa Actualizar para reintentar.";
+      setEmployeeLoadError(error);
+      setMessage(error);
+      setMessageTone("error");
+    }
     setVehicles(vehicleData);
     const activeSites = (masterData.locations || []).filter((site) => site.active !== false).sort((a, b) => (a.sort_order || 100) - (b.sort_order || 100));
     setAdministrativeSites(activeSites);
@@ -1082,7 +1093,7 @@ export default function RoutesPlanningPage() {
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <span className="rounded-md border border-line bg-paper px-3 py-1.5 text-xs font-semibold text-content-muted">{filteredRoutes.length} de {monitorRoutes.length} visibles</span>
-              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
+              <button className="inline-flex h-10 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); loadReferenceData(); if (selectedRouteId) loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={16} /> Actualizar</button>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
@@ -1280,6 +1291,7 @@ export default function RoutesPlanningPage() {
             </div>
           </div>
           <div className="mt-3">
+            {employeeLoadError ? <div role="alert" className="mb-3 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">{employeeLoadError}<button type="button" className="ml-2 underline" onClick={() => void loadReferenceData()}>Actualizar empleados</button></div> : null}
             <PeoplePicker dayAssignmentLabel={(employee) => { const assignment = dayAssignmentFor(employee); return assignment ? `${formatHour(assignment.start_time)}-${formatHour(assignment.end_time)}` : ""; }} employees={employees} selected={form.employees} onChange={(next) => setForm((prev) => ({ ...prev, employees: next }))} />
           </div>
           {saveNotice ? (
@@ -1341,7 +1353,7 @@ export default function RoutesPlanningPage() {
                     <input aria-label="Fecha del monitor" className="h-7 bg-transparent text-xs font-semibold text-content-body outline-none" onChange={(event) => changeMonitorDateTo(event.target.value)} type="date" value={monitorDate} />
                     <button aria-label="Dia siguiente" className="flex h-7 w-7 items-center justify-center rounded-md text-content-muted hover:bg-surface-muted hover:text-content-strong" onClick={() => changeMonitorDate(1)} type="button"><ChevronRight size={16} /></button>
                   </div>
-                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={15} /> Actualizar</button>
+                  <button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => { loadRoutes(); loadEventSummaries(); loadReferenceData(); loadMonitor(); }} type="button"><RefreshCw className={loadingMonitor ? "animate-spin" : ""} size={15} /> Actualizar</button>
                   {!onMallasPath ? <><button className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" onClick={() => openEditModal(selectedRoute)} type="button"><Edit3 size={15} /> Editar</button>
                   <button className="inline-flex h-9 items-center gap-2 rounded-md border border-red-300 bg-paper px-3 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void openDeleteModal(selectedRoute)} type="button"><Trash2 size={15} /> Eliminar</button></> : null}
                   <Link className="inline-flex h-9 items-center gap-2 rounded-md border border-line bg-paper px-3 text-sm font-semibold hover:bg-surface-muted" href="/dashboard/talento-humano/mapa"><Navigation size={15} /> Mapa</Link>
