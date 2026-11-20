@@ -76,8 +76,12 @@ const MANUAL_ADJUSTMENT_NOVELTY_CODE = "AJUSTE_MANUAL_MARCACION";
 
 // `contentionLockWaitMs` en apps/api/src/modules/hr/service.js: 15 s de presupuesto compartido.
 const CONTENTION_DEADLINE_MS = 15_000;
-const HOLD_OVER_DEADLINE_MS = 19_000;
-const HOLD_LEAD_IN_MS = 1_200;
+// El lock del holder se sostiene `HOLD_EXTRA_MS` mas alla del presupuesto del cliente, medido desde
+// que la marcacion esta EN VUELO. Antes era un `pg_sleep(19 s)` a ciegas desde que abria la
+// transaccion, y los ~4 s que toma sembrar la cola y recargar la pagina se comian el margen: medido
+// el 2026-11-19, la peticion espero 14,857 s, el lock se libero y respondio 200 sin llegar al 503.
+const HOLD_EXTRA_MS = 4_000;
+const HOLD_GATE_TIMEOUT_MS = 90_000;
 // El tambo fijo de 12 s de la version anterior disparaba ciclos solapados: aqui se mide que no.
 const OLD_FIXED_DRUMBEAT_MS = 12_000;
 const NAV_TIMEOUT = 60_000;
@@ -701,6 +705,14 @@ async function main() {
       result.console_errors.push(text.slice(0, 300));
     });
     page.on("pageerror", (error) => result.page_errors.push(String(error.message).slice(0, 300)));
+    // Puerta del criterio 8: el holder arranca su cronometro cuando la marcacion contendida sale del
+    // navegador, no cuando abre la transaccion (ver HOLD_EXTRA_MS).
+    let stallSignal = null;
+    const stallInFlight = new Promise((resolve) => { stallSignal = resolve; });
+    const waitForStallInFlight = () => Promise.race([
+      stallInFlight,
+      new Promise((resolve) => { const timer = setTimeout(() => resolve(false), HOLD_GATE_TIMEOUT_MS); timer.unref?.(); })
+    ]);
     page.on("request", (request) => {
       // Ningun listener puede lanzar: un error aqui mataria el proceso con los fixtures vivos.
       try {
@@ -720,6 +732,7 @@ async function main() {
           /* payload no inspeccionable: la ventana sigue registrada */
         }
         punchWindows.push(ventana);
+        if (url.pathname === PUNCH_SELF_PATH && ventana.dia === dayStall) señalDeVuelo?.(ventana);
       } catch {
         /* ignorado */
       }
@@ -861,13 +874,14 @@ async function main() {
     const holder = prisma.$transaction(async (tx) => {
       const rows = await tx.$queryRaw`SELECT pg_try_advisory_xact_lock(hashtextextended(${stallScope}, 0)) AS acquired`;
       holderAcquired = rows?.[0]?.acquired === true;
-      await tx.$executeRaw`SELECT pg_sleep(${HOLD_OVER_DEADLINE_MS / 1000}::double precision)`;
+      // Sin el lock no hay contencion que sostener, y si la marcacion nunca salio del navegador
+      // tampoco: en ambos casos el holder se retira y el control positivo lo reporta rojo.
+      if (!holderAcquired || !(await waitForStallInFlight())) return false;
+      await tx.$executeRaw`SELECT pg_sleep(${(CONTENTION_DEADLINE_MS + HOLD_EXTRA_MS) / 1000}::double precision)`;
       return true;
-    }, { maxWait: 5_000, timeout: HOLD_OVER_DEADLINE_MS + 40_000 }).then(() => { holderSettled = true; return true; });
-    await new Promise((resolve) => setTimeout(resolve, HOLD_LEAD_IN_MS));
-    check("lock_de_marcacion_sostenido_desde_otra_conexion", holderAcquired === true && holderSettled === false, {
-      ambito: stallScope, sostiene_ms: HOLD_OVER_DEADLINE_MS
-    });
+    }, { maxWait: 5_000, timeout: HOLD_GATE_TIMEOUT_MS + CONTENTION_DEADLINE_MS + HOLD_EXTRA_MS + 60_000 })
+      .then(() => { holderSettled = true; return true; })
+      .catch(() => { holderSettled = true; return false; });
 
     await writeQueue(page, seededQueue);
     // El sembrado es parte de lo que se mide: si la cola no sobrevive a la escritura en el navegador,
@@ -879,6 +893,14 @@ async function main() {
       estados: leidoAlSembrar.map((item) => item.status || "queued")
     });
     await page.reload({ waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
+    // El control positivo se mide con la marcacion ya en vuelo: afirma que ESTE arnes le sostiene el
+    // lock al cliente mientras espera. Sin eso, un "no hubo 503" no se puede atribuir a nadie.
+    const enVuelo = await waitForStallInFlight();
+    check("lock_de_marcacion_sostenido_desde_otra_conexion", enVuelo !== false
+      && holderAcquired === true && holderSettled === false, {
+      ambito: stallScope, sostiene_ms: CONTENTION_DEADLINE_MS + HOLD_EXTRA_MS,
+      peticion_en_vuelo: enVuelo !== false, adquirido: holderAcquired, asentado: holderSettled
+    });
     const contentionDeadline = Date.now() + CONTENTION_DEADLINE_MS + 60_000;
     let stallSeen = null;
     while (Date.now() < contentionDeadline && !stallSeen) {
