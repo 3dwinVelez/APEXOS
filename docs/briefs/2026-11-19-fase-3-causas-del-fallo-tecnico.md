@@ -90,6 +90,8 @@ La cuenta de la suite web que deja esta fase: baseline de la rama **861 tests / 
 
 Repararlos es tocar Transporte, Contabilidad y el registro del portafolio: un merge de rama completa disfrazado, que la gobernanza prohibe en un corte de `api-core` + `web-api-handlers`. Quedan declarados con su frente responsable.
 
+**El pipeline del corte emitido:** push `89ca1f5b..1ac03d64` → run `44695663918` (CI, `desarrollo`) **success** en las cinco compuertas: Build API 1m48s, Lint & TypeCheck 2m29s, Git Governance Guard 1m26s, Security Audit 2m4s, Build Web 4m22s. El `Lint & TypeCheck` de la rama cierra con `✖ 24 problems (0 errors, 24 warnings)`, la misma cuenta que el `eslint` ejecutado a mano durante el cierre: el corte no sumó ni una advertencia. Las dos advertencias que el visor de runs resalta son `react-hooks/exhaustive-deps` sobre `rows` (líneas 130 y 151, nacidas en `125:9`) de `apps/web/app/dashboard/talento-humano/provisiones/page.tsx`, archivo fuera de este diff. La consulta del run del commit empujado pasa a formar parte del cierre, no de la cortesía.
+
 ### Lo que ya está cerrado (no reabrir)
 
 - **Telemetría sin sesión**: `apps/api/src/modules/admin/public-routes.js` (`POST /api/v1/public/telemetry/client-logs`, 202 honesto, sin tenant en el cuerpo) y `apps/web/lib/api.ts` (`reportClientFailure`) en `desarrollo` desde esta intervención. La variable del buzón **ya está puesta y medida** (§10): QA `e8fac747-…` (Empresa Demo APEX-OS, `docs/qa/certifications/technical-alert-silence-seguencia-20261119.md:54`) y Producción `52db0658-…` (APEXOS Platform, `docs/qa/evidence/technical-alert-silence-20261119/prod-20261120/lectura.txt:21`). Nunca el tenant de un cliente real.
